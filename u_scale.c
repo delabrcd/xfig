@@ -48,8 +48,8 @@ read_scale_arc(arc, mul, offset)
     arc->point[2].x = arc->point[2].x * mul + offset;
     arc->point[2].y = arc->point[2].y * mul + offset;
 
-    read_scale_arrow(arc->for_arrow, mul, offset);
-    read_scale_arrow(arc->back_arrow, mul, offset);
+    read_scale_arrow(arc->for_arrow, mul);
+    read_scale_arrow(arc->back_arrow, mul);
 }
 
 read_scale_line(line, mul, offset)
@@ -68,8 +68,8 @@ read_scale_line(line, mul, offset)
 	line->pic->size_y = line->pic->size_y * mul + offset;
     }
 
-    read_scale_arrow(line->for_arrow, mul, offset);
-    read_scale_arrow(line->back_arrow, mul, offset);
+    read_scale_arrow(line->for_arrow, mul);
+    read_scale_arrow(line->back_arrow, mul);
 }
 
 read_scale_text(text, mul, offset)
@@ -95,20 +95,19 @@ read_scale_spline(spline, mul, offset)
 	point->y = point->y * mul + offset;
     }
 
-    read_scale_arrow(spline->for_arrow, mul, offset);
-    read_scale_arrow(spline->back_arrow, mul, offset);
+    read_scale_arrow(spline->for_arrow, mul);
+    read_scale_arrow(spline->back_arrow, mul);
 }
 
-read_scale_arrow(arrow, mul, offset)
+read_scale_arrow(arrow, mul)
     F_arrow        *arrow;
     float           mul;
-    int		    offset;
 {
   if(!arrow)
     return;
 
-    arrow->wd  = arrow->wd * mul + offset;
-    arrow->ht   = arrow->ht  * mul + offset;
+    arrow->wd  = arrow->wd * mul;
+    arrow->ht   = arrow->ht  * mul;
 }
 
 read_scale_compound(compound, mul, offset)

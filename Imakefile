@@ -318,26 +318,31 @@ install::
 	@(cd Doc ; \
 	$(INSTALL) -c xfig-howto.pdf $(XFIGLIBDIR) ; \
 	$(INSTALL) -c xfig.pdf $(XFIGLIBDIR) ; \
-	$(INSTALL) -d $(XFIGLIBDIR)/html ; \
-	$(INSTALL) -d $(XFIGLIBDIR)/html/japanese ; \
-	$(INSTALL) -d $(XFIGLIBDIR)/html/images ; \
 	echo Copying html files to $(XFIGLIBDIR)/html ; \
+	if [ -d $(XFIGLIBDIR)/html ]; then set +x; \
+	   else (set -x; $(MKDIRHIER) $(XFIGLIBDIR)/html ); fi ; \
 	(cd html ; $(INSTALL) -c *.* $(XFIGLIBDIR)/html ; ) ;\
 	echo "  Copying japanese html files" ; \
+	if [ -d $(XFIGLIBDIR)/html/japanese ]; then set +x; \
+	   else (set -x; $(MKDIRHIER) $(XFIGLIBDIR)/html/japanese ); fi ; \
 	(cd html/japanese ; $(INSTALL) -c * $(XFIGLIBDIR)/html/japanese ; ) ; \
 	echo "  Copying image files for html" ; \
+	if [ -d $(XFIGLIBDIR)/html/images ]; then set +x; \
+	   else (set -x; $(MKDIRHIER) $(XFIGLIBDIR)/html/images ); fi ; \
 	(cd html/images ; $(INSTALL) -c * $(XFIGLIBDIR)/html/images ; ) ; \
 	) ;
 	@echo "Copying Fig Object Libraries"
 	@(cd Examples/Libraries ; \
 	for d in * ;  do \
 	    (cd $$d ; \
-	    $(INSTALL) -d $(OBJLIBDIR)/$$d ; \
+	    if [ -d $(OBJLIBDIR)/$$d ]; then set +x; \
+		else (set -x; $(MKDIRHIER) $(OBJLIBDIR)/$$d ); fi ; \
 	    echo "  Copying $$d library files to $(OBJLIBDIR)/$$d" ; \
 	    for f in * ;  do \
 		if [ -d $$f ]; then ( \
 		    echo "    Copying files to $(OBJLIBDIR)/$$d/$$f" ; \
-		    $(INSTALL) -d $(OBJLIBDIR)/$$d/$$f ; \
+		    if [ -d $(OBJLIBDIR)/$$d/$$f ]; then set +x; \
+			else (set -x; $(MKDIRHIER) $(OBJLIBDIR)/$$d/$$f ); fi ; \
 		    cd $$f ; $(INSTALL) -c * $(OBJLIBDIR)/$$d/$$f ); \
 	        else ($(INSTALL) -c $$f $(OBJLIBDIR)/$$d ) ; fi ; \
 	    done ) ; \

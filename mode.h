@@ -36,6 +36,8 @@
 #define		F_ARC_BOX		14
 #define		F_REGPOLY		15
 #define		F_PICOBJ		16
+#define		F_PLACE_LIB_OBJ		17
+
 #define	    FIRST_EDIT_MODE	    F_GLUE
 #define		F_GLUE			30
 #define		F_BREAK			31
@@ -63,7 +65,6 @@
 #define		F_EXIT_COMP		52
 #define		F_EXIT_ALL_COMP		53
 #define		F_OPEN_CLOSE		54
-#define		F_PLACE_LIB_OBJ		55
 
 extern int	cur_mode;
 

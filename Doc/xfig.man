@@ -108,7 +108,7 @@
 .PD
 ..
 .\"-------
-.TH XFIG 1 "Version 3.2 Patchlevel 1 (Protocol 3.2, July 1, 1998)"
+.TH XFIG 1 "Version 3.2 Patchlevel 2 (Protocol 3.2, July 2, 1998)"
 .SH NAME
 xfig - Facility for Interactive Generation of figures under X11
 .SH SYNOPSIS
@@ -129,7 +129,9 @@ The objects in the file will be read at the start of
 .PP
 For a HTML-based
 .IR xfig
-reference guide, see
+reference guide, see the Help menu in
+.IR xfig
+or
 .IR index.html
 provided with the
 .IR xfig

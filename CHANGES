@@ -1,6 +1,21 @@
 =============================================================================
 Version 3.2
 =============================================================================
+
+Patchlevel 2 (July 2, 1998)
+
+BUGS FIXED:
+	o Placing a library object caused xfig to die after recursing for a
+	  long time 
+	o Arrowheads in xfig 2.x files were incorrectly converted to 3.2.1
+	  (they came out too large)
+	o Imakefile didn't properly install Electrical/Physical and 
+	  Electrical/Schematic directories
+	o Some variables multiply defined in u_draw.c
+	o Some systems' "install" program don't have the "-d" (create directory)
+	  option so I have reworked the install part of the Imakefile
+
+--------------------------
 Patchlevel 1 Final (July 1, 1998)
 
 NEW FEATURES:

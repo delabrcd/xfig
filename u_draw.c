@@ -83,15 +83,9 @@ static INLINE double h_blend();
 /************** POLYGON/CURVE DRAWING FACILITIES ****************/
 
 static int	npoints;
-static zXPoint *points;
-static int	max_points;
-static int	allocstep;
-
-
-
 static zXPoint *points = NULL;
-static int max_points = 0;
-static int allocstep = 200;
+static int	max_points = 0;
+static int	allocstep = 200;
 
 static void
 init_point_array()
