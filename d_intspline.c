@@ -47,6 +47,7 @@ init_intspline_drawing(x, y)
     min_num_points = 3;
     init_trace_drawing(x, y);
     canvas_middlebut_save = create_intsplineobject;
+    return_proc = intspline_drawing_selected;
 }
 
 static
@@ -55,7 +56,7 @@ create_intsplineobject(x, y)
 {
     F_spline       *spline;
 
-    if (x != fix_x || y != fix_y) {
+    if (x != fix_x || y != fix_y || num_point < min_num_points) {
 	if (manhattan_mode || mountain_mode)
 	    get_direction(x, y);
 	else if (latexline_mode || latexarrow_mode)

@@ -103,7 +103,7 @@ readfp_fig(fp, obj)
     float           fproto;
 
     num_object = 0;
-#ifdef SYSV
+#if defined(SYSV) || defined(SVR4)
     memset((char *) obj, 0, COMOBJ_SIZE);
 #else
     bzero((char *) obj, COMOBJ_SIZE);
@@ -250,6 +250,9 @@ read_arcobject(fp)
 	return (NULL);
     }
     a->area_fill = FILL_CONVERT(a->area_fill);
+    /* change depths < 0 to 0 */
+    if (a->depth < 0)
+	a->depth = 0;
     skip_comment(fp);
     if (fa) {
 	line_no++;
@@ -407,6 +410,9 @@ read_ellipseobject()
 	return (NULL);
     }
     e->area_fill = FILL_CONVERT(e->area_fill);
+    /* change depths < 0 to 0 */
+    if (e->depth < 0)
+	e->depth = 0;
     return (e);
 }
 
@@ -453,6 +459,9 @@ read_lineobject(fp)
 	return (NULL);
     }
     l->area_fill = FILL_CONVERT(l->area_fill);
+    /* change depths < 0 to 0 */
+    if (l->depth < 0)
+	l->depth = 0;
     skip_comment(fp);
     if (fa) {
 	line_no++;
@@ -555,6 +564,9 @@ read_splineobject(fp)
 	return (NULL);
     }
     s->area_fill = FILL_CONVERT(s->area_fill);
+    /* change depths < 0 to 0 */
+    if (s->depth < 0)
+	s->depth = 0;
     skip_comment(fp);
     if (fa) {
 	line_no++;
@@ -666,6 +678,7 @@ read_textobject(fp)
     int             n;
     int             ignore = 0;
     char            s[BUF_SIZE], s_temp[BUF_SIZE], junk[2];
+    float	    tx_size, tx_height, tx_length;
 
     if ((t = create_text()) == NULL)
 	return (NULL);
@@ -676,17 +689,30 @@ read_textobject(fp)
      * to the CONTROL-A and then read that character. If we do not find the
      * CONTROL-A on this line then this must be a multi-line text object and
      * we will have to read more.
+     * 
+     * We read text size, height and length as floats because TransFig uses
+     * floats for these, but they are rounded to ints internally to xfig.
      */
-    n = sscanf(buf, "%*d%d%d%d%d%d%d%f%d%d%d%d%d %[^\1]%[\1]",
-	       &t->type, &t->font, &t->size, &t->pen,
+    n = sscanf(buf, "%*d%d%d%f%d%d%d%f%d%f%f%d%d %[^\1]%[\1]",
+	       &t->type, &t->font, &tx_size, &t->pen,
 	       &t->color, &t->depth, &t->angle,
-	       &t->flags, &t->height, &t->length,
+	       &t->flags, &tx_height, &tx_length,
 	       &t->base_x, &t->base_y, s, junk);
     if (n != 13 && n != 14) {
 	put_msg(Err_incomp, "text", line_no);
 	free((char *) t);
 	return (NULL);
     }
+    /* now round size, height and length to int */
+    if ((int) tx_size == DEFAULT)	/* just copy DEFAULT */
+	t->size = DEFAULT;
+    else
+	t->size = round(tx_size);
+    t->height = round(tx_height);
+    t->length = round(tx_length);
+    /* change depths < 0 to 0 */
+    if (t->depth < 0)
+	t->depth = 0;
     if (n == 13) {
 	/* Read in the remainder of the text object. */
 	do {

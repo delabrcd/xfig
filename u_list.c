@@ -723,3 +723,25 @@ prev_text(list, text)
     for (csr = list; csr->next != text; csr = csr->next);
     return csr;
 }
+
+int
+object_count(list)
+    F_compound	   *list;
+{
+    register int    cnt;
+    F_arc	   *a;
+    F_text	   *t;
+    F_compound	   *c;
+    F_ellipse	   *e;
+    F_line	   *l;
+    F_spline	   *s;
+
+    cnt = 0;
+    for (a = list->arcs; a != NULL; a = a->next, cnt++);
+    for (t = list->texts; t != NULL; t = t->next, cnt++);
+    for (c = list->compounds; c != NULL; c = c->next, cnt++);
+    for (e = list->ellipses; e != NULL; e = e->next, cnt++);
+    for (l = list->lines; l != NULL; l = l->next, cnt++);
+    for (s = list->splines; s != NULL; s = s->next, cnt++);
+    return(cnt);
+}

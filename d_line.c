@@ -72,9 +72,10 @@ cancel_line_drawing()
     elastic_line();
     cur_x = fix_x;
     cur_y = fix_y;
-    elastic_moveline(first_point);	/* erase control vector */
+    if (cur_point != first_point)
+      elastic_moveline(first_point);  /* erase control vector */
     free_points(first_point);
-    line_drawing_selected();
+    return_proc();
     draw_mousefun_canvas();
 }
 
@@ -103,6 +104,7 @@ init_trace_drawing(x, y)
 	canvas_middlebut_save = create_lineobject;
     }
     canvas_rightbut_proc = cancel_line_drawing;
+    return_proc = line_drawing_selected;
     num_point = 1;
     set_mousefun("next point", "", "cancel");
     if (num_point >= min_num_points - 1) {

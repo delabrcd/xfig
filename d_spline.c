@@ -53,6 +53,7 @@ init_spline_drawing(x, y)
 	init_trace_drawing(x, y);
 	canvas_middlebut_proc = create_splineobject;
     }
+    return_proc = spline_drawing_selected;
 }
 
 static
@@ -61,8 +62,14 @@ create_splineobject(x, y)
 {
     F_spline       *spline;
 
-    if (x != fix_x || y != fix_y)
-	get_intermediatepoint(x, y);
+    if (x != fix_x || y != fix_y || num_point < min_num_points) {
+        if (manhattan_mode || mountain_mode)
+            get_direction(x, y);
+        else if (latexline_mode || latexarrow_mode)
+            get_latexpoint(x, y);
+        else
+            get_intermediatepoint(x, y);
+    }
     elastic_line();
     if ((spline = create_spline()) == NULL)
 	return;

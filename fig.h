@@ -18,7 +18,9 @@
 
 #include <sys/stat.h>
 #ifndef SYSV
+#ifndef SVR4
 #include <fcntl.h>
+#endif
 #endif
 #include <pwd.h>
 #include <signal.h>
@@ -33,7 +35,7 @@ extern char    *sys_errlist[];
 
 #include <math.h>
 
-#ifdef SYSV
+#if defined(SYSV) || defined(SVR4)
 #define u_int uint
 #endif
 

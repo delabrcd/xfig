@@ -94,7 +94,7 @@ change_directory(path)
 get_directory(direct)
     char           *direct;
 {
-#ifdef SYSV
+#if defined(SYSV) || defined(SVR4)
     extern char    *getcwd();
 
 #else
@@ -102,7 +102,7 @@ get_directory(direct)
 
 #endif
 
-#ifdef SYSV
+#if defined(SYSV) || defined(SVR4)
     if (getcwd(direct, 1024) == NULL) {	/* get curent working dir */
 	put_msg("%s", "Can't get current directory");
 #else

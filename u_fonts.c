@@ -38,7 +38,7 @@ struct _xfstruct x_fontinfo[NUM_X_FONTS] = {
     {"-adobe-helvetica-medium-o-*--*", NULL},
     {"-adobe-helvetica-bold-r-*--*", NULL},
     {"-adobe-helvetica-bold-o-*--*", NULL},
-    {"-abode-new century schoolbook-medium-r-*--*", NULL},
+    {"-adobe-new century schoolbook-medium-r-*--*", NULL},
     {"-adobe-new century schoolbook-medium-i-*--*", NULL},
     {"-adobe-new century schoolbook-bold-r-*--*", NULL},
     {"-adobe-new century schoolbook-bold-i-*--*", NULL},

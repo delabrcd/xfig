@@ -140,7 +140,7 @@ static mode_sw_info mode_switches[] = {
     I_MIN1, "DELETE objects",},
     {&update_ic, F_UPDATE, update_selected, M_ALL,
     I_OBJECT, "UPDATE object <-> current settings",},
-    {&change_ic, F_EDIT, edit_item_selected, M_OBJECT,
+    {&change_ic, F_EDIT, edit_item_selected, M_ALL,
     I_MIN1, "CHANGE OBJECT via EDIT pane",},
     {&flip_x_ic, F_FLIP, flip_ud_selected, M_NO_TEXT,
     I_MIN1, "FLIP objects up or down",},

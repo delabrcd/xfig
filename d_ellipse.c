@@ -257,8 +257,8 @@ create_circlebyrad(x, y)
     c->radiuses.x = c->radiuses.y = round(sqrt((double) (rx * rx + ry * ry)));
     c->start.x = fix_x;
     c->start.y = fix_y;
-    c->end.x = x;
-    c->end.y = y;
+    c->end.x = fix_x + c->radiuses.x;
+    c->end.y = fix_y + c->radiuses.y;
     c->next = NULL;
     draw_ellipse(c, PAINT);
     add_ellipse(c);

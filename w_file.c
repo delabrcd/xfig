@@ -25,9 +25,10 @@
 extern String   text_translations;
 
 static char     load_msg[] = "The current figure is modified.\nDo you want to discard it and load the new file?";
+static char	buf[40];
 
 DeclareStaticArgs(12);
-static Widget   file_panel, file_popup, file_status;
+static Widget   file_panel, file_popup, file_status, num_objects;
 static Widget	cancel, save, merge, load, newfile, newdir;
 static Widget   file_w;
 static Position xposn, yposn;
@@ -115,7 +116,7 @@ do_save(w)
 	    XtSetSensitive(save, True);
 	}
     } else {
-	if (write_file(DEF_NAME) == 0)
+	if (write_file(cur_filename) == 0)
 	    reset_modifiedflag();
     }
 }
@@ -202,11 +203,19 @@ popup_file_panel(w)
 	file_status = XtCreateManagedWidget("file status", labelWidgetClass,
 					    file_panel, Args, ArgCount);
 
+	FirstArg(XtNlabel, "");
+	NextArg(XtNwidth, 380);
+	NextArg(XtNfromVert, file_status);
+	NextArg(XtNjustify, XtJustifyLeft);
+	NextArg(XtNborderWidth, 0);
+	num_objects = XtCreateManagedWidget("num objects", labelWidgetClass,
+					    file_panel, Args, ArgCount);
+
 	FirstArg(XtNlabel, "Cancel");
 	NextArg(XtNvertDistance, 15);
 	NextArg(XtNhorizDistance, 45);
 	NextArg(XtNheight, 25);
-	NextArg(XtNfromVert, file_status);
+	NextArg(XtNfromVert, num_objects);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
 				       file_panel, Args, ArgCount);
@@ -214,7 +223,7 @@ popup_file_panel(w)
 			  file_panel_cancel, (XtPointer) NULL);
 
 	FirstArg(XtNlabel, "Save");
-	NextArg(XtNfromVert, file_status);
+	NextArg(XtNfromVert, num_objects);
 	NextArg(XtNfromHoriz, cancel);
 	NextArg(XtNvertDistance, 15);
 	NextArg(XtNhorizDistance, 25);
@@ -226,7 +235,7 @@ popup_file_panel(w)
 			  do_save, (XtPointer) NULL);
 
 	FirstArg(XtNlabel, "Load");
-	NextArg(XtNfromVert, file_status);
+	NextArg(XtNfromVert, num_objects);
 	NextArg(XtNfromHoriz, save);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNvertDistance, 15);
@@ -238,7 +247,7 @@ popup_file_panel(w)
 			  do_load, (XtPointer) NULL);
 
 	FirstArg(XtNlabel, "Merge Read");
-	NextArg(XtNfromVert, file_status);
+	NextArg(XtNfromVert, num_objects);
 	NextArg(XtNfromHoriz, load);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNvertDistance, 15);
@@ -254,6 +263,9 @@ popup_file_panel(w)
     FirstArg(XtNlabel, (figure_modified ? "File Status: Modified" :
 			"File Status: Not modified"));
     SetValues(file_status);
+    sprintf(buf, "Num Objects: %d", object_count(&objects));
+    FirstArg(XtNlabel, buf);
+    SetValues(num_objects);
     XtPopup(file_popup, XtGrabNonexclusive);
 }
 

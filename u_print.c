@@ -36,7 +36,7 @@ print_to_printer(printer, center, mag)
 	    print_landscape ? "-l xxx" : " ");
 
     if (emptyname(printer)) {	/* send to default printer */
-#ifdef SYSV
+#if defined(SYSV) || defined(SVR4)
 	sprintf(syspr, "lp -oPS");
 #else
 	sprintf(syspr, "lpr -J %s", cur_filename);
@@ -44,7 +44,7 @@ print_to_printer(printer, center, mag)
 	put_msg("Printing figure on default printer in %s mode ...",
 		print_landscape ? "LANDSCAPE" : "PORTRAIT");
     } else {
-#ifdef SYSV
+#if defined(SYSV) || defined(SVR4)
 	sprintf(syspr, "lp -d%s -oPS", printer);
 #else
 	sprintf(syspr, "lpr -J %s -P%s", cur_filename, printer);

@@ -244,6 +244,7 @@ create_line()
     l->for_arrow = NULL;
     l->back_arrow = NULL;
     l->points = NULL;
+    l->radius = DEFAULT;
     return (l);
 }
 
@@ -263,6 +264,7 @@ copy_line(l)
 {
     F_line         *line;
     F_arrow        *arrow;
+    int		    nbytes;
 
     if ((line = create_line()) == NULL)
 	return (NULL);
@@ -297,9 +299,16 @@ copy_line(l)
 	    return (NULL);
 	}
 	bcopy(l->eps, line->eps, EPS_SIZE);
-	line->eps->bitmap = NULL;
-	if (line->eps->file[0] != '\0')
-	    read_epsf(line->eps);
+	if (l->eps->bitmap != NULL) {
+	    nbytes = (line->eps->bit_size.x + 7) / 8 * line->eps->bit_size.y;
+	    line->eps->bitmap = (unsigned char *) malloc(nbytes);
+            if (line->eps->bitmap == NULL)
+        	fprintf(stderr, "xfig: out of memory in function copy_line");
+	    bcopy(l->eps->bitmap, line->eps->bitmap, nbytes);
+	    line->eps->pix_width = 0;
+	    line->eps->pix_height = 0;
+	    line->eps->pixmap = 0;
+	}
     }
     return (line);
 }

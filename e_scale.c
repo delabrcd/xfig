@@ -28,9 +28,9 @@
 #include "w_mousefun.h"
 
 static int      init_box_scale();
-static int      init_boxscale_ellipse();
-static int      init_boxscale_line();
-static int      init_boxscale_compound();
+static Boolean	init_boxscale_ellipse();
+static Boolean	init_boxscale_line();
+static Boolean	init_boxscale_compound();
 static int      assign_newboxpoint();
 static int      boxrelocate_ellipsepoint();
 
@@ -61,6 +61,7 @@ static int      cancel_boxscale_ellipse();
 static int      cancel_boxscale_line();
 static int      cancel_scale_compound();
 static int      cancel_boxscale_compound();
+static int	prescale_compound();
 
 scale_selected()
 {
@@ -85,11 +86,8 @@ init_box_scale(obj, type, x, y, px, py)
     switch (type) {
     case O_POLYLINE:
 	cur_l = (F_line *) obj;
-	if (cur_l->type != T_BOX &&
-	    cur_l->type != T_ARC_BOX &&
-	    cur_l->type != T_EPS_BOX)
+	if (!init_boxscale_line(px, py))  /* non-box line */
 	    return;
-	init_boxscale_line(px, py);
 	break;
     case O_ELLIPSE:
 	cur_e = (F_ellipse *) obj;
@@ -98,7 +96,8 @@ init_box_scale(obj, type, x, y, px, py)
 	break;
     case O_COMPOUND:
 	cur_c = (F_compound *) obj;
-	init_boxscale_compound(px, py);
+	if (!init_boxscale_compound(px, py))  /* non-box compound */
+	    return;
 	break;
     default:
 	return;
@@ -166,15 +165,17 @@ wrapup_scale()
 
 /*************************  ellipse  *******************************/
 
-static
+static Boolean
 init_boxscale_ellipse(x, y)
     int             x, y;
 {
     double          dx, dy, l;
 
     if (cur_e->type == T_ELLIPSE_BY_RAD ||
-	cur_e->type == T_CIRCLE_BY_RAD)
+	cur_e->type == T_CIRCLE_BY_RAD) {
+	put_msg("Can't use box scale on selected object");
 	return False;
+    }
 
     if (x == cur_e->start.x && y == cur_e->start.y) {
 	fix_x = cur_e->end.x;
@@ -186,8 +187,15 @@ init_boxscale_ellipse(x, y)
 	fix_y = cur_e->start.y;
 	cur_x = from_x = x;
 	cur_y = from_y = y;
-    } else
+    } else {
+	put_msg("Can't use box scale on selected object");
 	return False;
+    }
+
+    if (cur_x == fix_x || cur_y == fix_y) {
+	put_msg("Can't use box scale on selected object");
+	return False;
+    }
 
     set_action_on();
     toggle_ellipsemarker(cur_e);
@@ -495,21 +503,27 @@ fix_scale_spline(x, y)
 
 /***************************  compound  ********************************/
 
-static
+static Boolean
 init_boxscale_compound(x, y)
     int             x, y;
 {
     int             xmin, ymin, xmax, ymax;
     double          dx, dy, l;
 
-    set_action_on();
-    toggle_compoundmarker(cur_c);
-    draw_compoundelements(cur_c, ERASE);
-    set_temp_cursor(&crosshair_cursor);
     xmin = min2(cur_c->secorner.x, cur_c->nwcorner.x);
     ymin = min2(cur_c->secorner.y, cur_c->nwcorner.y);
     xmax = max2(cur_c->secorner.x, cur_c->nwcorner.x);
     ymax = max2(cur_c->secorner.y, cur_c->nwcorner.y);
+
+    if (xmin == xmax || ymin == ymax) {
+	put_msg("Can't use box scale on selected object");
+	return False;
+    }
+
+    set_action_on();
+    toggle_compoundmarker(cur_c);
+    draw_compoundelements(cur_c, ERASE);
+    set_temp_cursor(&crosshair_cursor);
 
     if (x == xmin) {
 	fix_x = xmax;
@@ -562,16 +576,19 @@ init_boxscale_compound(x, y)
     cur_x = from_x;
     cur_y = from_y;
 
-    dx = (double) (cur_x - fix_x);
-    dy = (double) (cur_y - fix_y);
-    l = sqrt(dx * dx + dy * dy);
-    cosa = fabs(dx / l);
-    sina = fabs(dy / l);
+    if (constrained == BOX_SCALE) {
+	dx = (double) (cur_x - fix_x);
+	dy = (double) (cur_y - fix_y);
+	l = sqrt(dx * dx + dy * dy);
+	cosa = fabs(dx / l);
+	sina = fabs(dy / l);
+    }
 
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     canvas_locmove_proc = constrained_resizing_box;
     canvas_leftbut_proc = fix_boxscale_compound;
     canvas_rightbut_proc = cancel_boxscale_compound;
+    return True;
 }
 
 static
@@ -644,6 +661,7 @@ fix_scale_compound(x, y)
     wrapup_scale();
 }
 
+static int
 prescale_compound(c, x, y)
     F_compound     *c;
     int             x, y;
@@ -763,8 +781,8 @@ scale_ellipse(e, sx, sy, refx, refy)
     e->start.y = round(refy + (e->start.y - refy) * sy);
     e->end.x = round(refx + (e->end.x - refx) * sx);
     e->end.y = round(refy + (e->end.y - refy) * sy);
-    e->radiuses.x = round(e->radiuses.x * sx);
-    e->radiuses.y = round(e->radiuses.y * sy);
+    e->radiuses.x = abs(round(e->radiuses.x * sx));
+    e->radiuses.y = abs(round(e->radiuses.y * sy));
 }
 
 scale_text(t, sx, sy, refx, refy)
@@ -781,7 +799,7 @@ scale_text(t, sx, sy, refx, refy)
 
 /***************************  line  ********************************/
 
-static
+static Boolean
 init_boxscale_line(x, y)
     int             x, y;
 {
@@ -789,8 +807,13 @@ init_boxscale_line(x, y)
     F_point        *p0, *p1, *p2;
     double          dx, dy, l;
 
-    set_action_on();
-    toggle_linemarker(cur_l);
+    if (cur_l->type != T_BOX &&
+	cur_l->type != T_ARC_BOX &&
+	cur_l->type != T_EPS_BOX) {
+	put_msg("Can't use box scale on selected object");
+	return False;
+    }
+
     p0 = cur_l->points;
     p1 = p0->next;
     p2 = p1->next;
@@ -798,6 +821,14 @@ init_boxscale_line(x, y)
     ymin = min3(p0->y, p1->y, p2->y);
     xmax = max3(p0->x, p1->x, p2->x);
     ymax = max3(p0->y, p1->y, p2->y);
+
+    if (xmin == xmax || ymin == ymax) {
+	put_msg("Can't use box scale on selected object");
+	return False;
+    }
+
+    set_action_on();
+    toggle_linemarker(cur_l);
 
     if (x == xmin) {
 	fix_x = xmax;
@@ -852,16 +883,19 @@ init_boxscale_line(x, y)
     set_temp_cursor(&crosshair_cursor);
     draw_line(cur_l, ERASE);
 
-    dx = (double) (cur_x - fix_x);
-    dy = (double) (cur_y - fix_y);
-    l = sqrt(dx * dx + dy * dy);
-    cosa = fabs(dx / l);
-    sina = fabs(dy / l);
+    if (constrained == BOX_SCALE) {
+	dx = (double) (cur_x - fix_x);
+	dy = (double) (cur_y - fix_y);
+	l = sqrt(dx * dx + dy * dy);
+	cosa = fabs(dx / l);
+	sina = fabs(dy / l);
+    }
 
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     canvas_locmove_proc = constrained_resizing_box;
     canvas_leftbut_proc = fix_boxscale_line;
     canvas_rightbut_proc = cancel_boxscale_line;
+    return True;
 }
 
 static

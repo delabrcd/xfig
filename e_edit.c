@@ -64,13 +64,14 @@ static void     special_text_select();
 static Widget   popup, form;
 static Widget   below, beside;
 
-#define	NUM_IMAGES	15
+#define	NUM_IMAGES	16
 
 static int      done_line();
 static int      done_text();
 static int      done_arc();
 static int      done_ellipse();
 static int      done_spline();
+static int      done_compound();
 
 static Widget   shrink, expand;
 static Widget   label;
@@ -106,7 +107,7 @@ static Widget   rotn_panel;
 static Widget   font_panel;
 static Widget   cur_fontsize_panel;
 static Widget   fill_flag_panel;
-static Widget   radius;
+static Widget   radius, num_objects;
 static Widget   menu, hidden_text_menu, textjust_menu;
 static Widget   special_text_menu, rigid_text_menu;
 static Widget   but1;
@@ -212,11 +213,8 @@ edit_item(p, type, x, y)
 	make_window_spline((F_spline *) p);
 	break;
     case O_COMPOUND:
-	put_msg("There is no support for EDITING a compound object");
-	return;
+	make_window_compound((F_compound *) p);
 	break;
-    default:
-	return;
     }
 
     XtPopup(popup, XtGrabExclusive);
@@ -320,6 +318,83 @@ shrink_eps(w, ev)
 
 static char    *flip_eps_items[] = {"Normal            ",
 				    "Flipped about diag"};
+
+make_window_compound(c)
+    F_compound         *c;
+{
+    set_temp_cursor(&panel_cursor);
+    mask_toggle_compoundmarker(c);
+    new_c = copy_compound(c);
+    new_c->next = c;
+    generic_window("COMPOUND", "", &glue_ic, done_compound, 0, 0);
+    f_pos_panel(&c->nwcorner, "Top Left:", &x1_panel, &y1_panel);
+    f_pos_panel(&c->secorner, "Bottom Right:", &x2_panel, &y2_panel);
+    int_label(object_count(c), "Num Objects: ", &num_objects);
+}
+
+static
+get_new_compound_values()
+{
+    int		    dx, dy, nw_x, nw_y, se_x, se_y;
+    float	    scalex, scaley;
+
+    nw_x = atoi(panel_get_value(x1_panel));
+    nw_y = atoi(panel_get_value(y1_panel));
+    se_x = atoi(panel_get_value(x2_panel));
+    se_y = atoi(panel_get_value(y2_panel));
+    dx = nw_x - new_c->nwcorner.x;
+    dy = nw_y - new_c->nwcorner.y;
+    scalex = (float) (nw_x - se_x) /
+	     (float) (new_c->nwcorner.x - new_c->secorner.x);
+    scaley = (float) (nw_y - se_y) /
+	     (float) (new_c->nwcorner.y - new_c->secorner.y);
+
+    translate_compound(new_c, dx, dy);
+    scale_compound(new_c, scalex, scaley, nw_x, nw_y);
+
+    sprintf(buf, "%d", new_c->nwcorner.x);
+    panel_set_value(x1_panel, buf);
+    sprintf(buf, "%d", new_c->nwcorner.y);
+    panel_set_value(y1_panel, buf);
+    sprintf(buf, "%d", new_c->secorner.x);
+    panel_set_value(x2_panel, buf);
+    sprintf(buf, "%d", new_c->secorner.y);
+    panel_set_value(y2_panel, buf);
+}
+
+static
+done_compound()
+{
+    old_c = new_c->next;
+    switch (button_result) {
+    case APPLY:
+	draw_compoundelements(new_c, ERASE);
+	changed = 1;
+	get_new_compound_values();
+	draw_compoundelements(new_c, PAINT);
+	break;
+    case DONE:
+	draw_compoundelements(new_c, ERASE);
+	get_new_compound_values();
+	new_c->next = NULL;
+	change_compound(old_c, new_c);
+	draw_compoundelements(new_c, PAINT);
+	toggle_compoundmarker(new_c);
+	reset_cursor();
+	break;
+    case CANCEL:
+	if (changed) {
+	    draw_compoundelements(new_c, ERASE);
+	    draw_compoundelements(old_c, PAINT);
+	}
+	new_c->next = NULL;
+	free_compound(&new_c);
+	toggle_compoundmarker(old_c);
+	new_c = old_c;
+	reset_cursor();
+	break;
+    }
+}
 
 make_window_line(l)
     F_line         *l;
@@ -496,7 +571,8 @@ get_new_line_values()
 	    }
 	    strcpy(new_l->eps->file, s);
 	    new_l->eps->hw_ratio = 0.0;
-	    read_epsf(new_l->eps);
+	    if (strcmp(new_l->eps->file, EMPTY_EPS))
+		read_epsf(new_l->eps);
 	}
 	sprintf(buf, "%1.1f", new_l->eps->hw_ratio);
 	FirstArg(XtNlabel, buf);
@@ -581,9 +657,9 @@ make_window_text(t)
     static char    *textjust_items[] = {
     "Left Justified ", "Centered       ", "Right Justified"};
     static char    *hidden_text_items[] = {
-    "Normal", "Hidden"};
+    "Normal ", "Hidden "};
     static char    *rigid_text_items[] = {
-    "Normal", "Rigid "};
+    "Normal ", "Rigid  "};
     static char    *special_text_items[] = {
     "Normal ", "Special"};
 
@@ -605,16 +681,17 @@ make_window_text(t)
 	new_latex_font = new_t->font;	/* get current font */
     generic_window("TEXT", "", &text_ic, done_text, 0, 0);
 
-    int_panel(new_t->size, "Size =", &cur_fontsize_panel);
+    int_panel(new_t->size, "Size  =", &cur_fontsize_panel);
     int_panel(new_t->color, "Color =", &color_panel);
     int_panel(new_t->depth, "Depth =", &depth_panel);
-    int_panel(round(180 / M_PI * new_t->angle), "Angle =", &angle_panel);
+    int_panel(round(180 / M_PI * new_t->angle), "Angle (degrees) =",
+	      &angle_panel);
 
     /* make text justification menu */
 
     FirstArg(XtNfromVert, below);
     NextArg(XtNborderWidth, 0);
-    beside = XtCreateManagedWidget("Justification =", labelWidgetClass,
+    beside = XtCreateManagedWidget("Justification   =", labelWidgetClass,
 				   form, Args, ArgCount);
 
     FirstArg(XtNfromVert, below);
@@ -630,7 +707,7 @@ make_window_text(t)
 
     FirstArg(XtNfromVert, below);
     NextArg(XtNborderWidth, 0);
-    beside = XtCreateManagedWidget("Hidden Flag =", labelWidgetClass,
+    beside = XtCreateManagedWidget("Hidden Flag     =", labelWidgetClass,
 				   form, Args, ArgCount);
 
     FirstArg(XtNfromVert, below);
@@ -647,7 +724,7 @@ make_window_text(t)
 
     FirstArg(XtNfromVert, below);
     NextArg(XtNborderWidth, 0);
-    beside = XtCreateManagedWidget("Rigid Flag =", labelWidgetClass,
+    beside = XtCreateManagedWidget("Rigid Flag      =", labelWidgetClass,
 				   form, Args, ArgCount);
 
     FirstArg(XtNfromVert, below);
@@ -664,7 +741,7 @@ make_window_text(t)
 
     FirstArg(XtNfromVert, below);
     NextArg(XtNborderWidth, 0);
-    beside = XtCreateManagedWidget("Special Flag =", labelWidgetClass,
+    beside = XtCreateManagedWidget("Special Flag    =", labelWidgetClass,
 				   form, Args, ArgCount);
 
     FirstArg(XtNfromVert, below);
@@ -792,7 +869,8 @@ make_window_ellipse(e)
     }
     put_generic_vals(new_e);
     generic_window(s1, s2, image, done_ellipse, 1, 0);
-    int_panel(round(180 / M_PI * new_e->angle), "Angle =", &angle_panel);
+    int_panel(round(180 / M_PI * new_e->angle), "Angle (degrees) =",
+	      &angle_panel);
 
     if (ellipse_flag) {
 	f_pos_panel(&new_e->center, "Center:",
@@ -810,29 +888,23 @@ make_window_ellipse(e)
 static
 get_new_ellipse_values()
 {
-    F_pos           old_center;
-    F_pos           old_radiuses;
-
-#define	adjust_ref(s,f) \
-		s.f = new_e->center.f + \
-		((s.f - old_center.f)*new_e->radiuses.f)/old_radiuses.f
-
     get_generic_vals(new_e);
     new_e->angle = M_PI / 180 * atoi(panel_get_value(angle_panel));
-    old_center = new_e->center;
-    old_radiuses = new_e->radiuses;
     get_f_pos(&new_e->center, x1_panel, y1_panel);
     if (ellipse_flag)
 	get_f_pos(&new_e->radiuses, x2_panel, y2_panel);
-
     else
 	new_e->radiuses.x = new_e->radiuses.y =
 	    atoi(panel_get_value(x2_panel));
 
-    adjust_ref(new_e->start, x);
-    adjust_ref(new_e->start, y);
-    adjust_ref(new_e->end, x);
-    adjust_ref(new_e->end, y);
+    if (new_e->type == T_ELLIPSE_BY_RAD || new_e->type == T_CIRCLE_BY_RAD) {
+	new_e->start = new_e->center;
+    } else {
+	new_e->start.x = new_e->center.x - new_e->radiuses.x;
+	new_e->start.y = new_e->center.y - new_e->radiuses.y;
+    }
+    new_e->end.x = new_e->center.x + new_e->radiuses.x;
+    new_e->end.y = new_e->center.y + new_e->radiuses.y;
 }
 
 static

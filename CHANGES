@@ -1,6 +1,60 @@
 Version 2.1
 ===========
 
+Patchlevel 1
+Changes to Patchlevel 0:
+
+o xfig now reads text size, height and length as floats and rounds to ints
+	this is done because certain programs generate floats for these
+
+o compound object was rounded to next larger grid even if objects inside were
+	already on the grid
+
+o Examples/logo.fig included Logo.eps instead of logo.eps
+
+o cancellation of line drawing left single dot on screen
+
+o filename in File popup menu didn't get set until first popup - file save 
+	shortcut would save to unnamed.fig even if xfig was started with file name
+
+o bug fixed in not being able to delete points from certain objects
+
+o typo in FORMAT2.1 file (and all previous) stating that text angle is int when
+	it is really float
+
+o can now change corners of compound object with edit popup
+	also shows number of objects inside compound
+
+o file menu now shows number of objects in figure
+
+o some bugs fixed in calculating bounding boxes after scaling ellipses and 
+	compounds
+
+o "#ifdefined SYSV" now reads "#if defined(SYSV) || defined(SVR4)" because X11R5
+	doesn't define SYSV if SVR4 is defined
+	David Elliott (dce@krusty.smsc.Sony.COM)
+	
+o object depths < 0 are converted to depth = 0
+
+o typo in Adobe font name (was "-abode-new century schoolbook-medium-r-*--*")
+	Jan Lindheim (lindheim@ccsf.caltech.edu)
+
+o radius field for non-arcbox line objects now set to -1
+	Jan Nusteling (j.nusteling@et.tudelft.nl)
+
+o bug fixed in not trying to load an eps bitmap file called <empty>
+	and not trying to reload an eps bitmap during a copy.
+
+o bug fixed which caused crash after editing 0-width or 0-height ellipses
+
+o bug fixed which caused incorrect mode after cancelling draw (int)spline
+
+o bug fixed which caused incorrect minimum number of points for (int)spline
+
+o bug fixed which caused erroneous large values to occur after box scale of
+	0-width or 0-height objects.  You can no longer box scale such objects
+
+------------------------------------------------------------------------------
 Patchlevel 0
 Changes to Version 2.0 Patchlevel 10:
 Implemented by Paul King (king@cs.uq.oz.au) and

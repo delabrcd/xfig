@@ -148,8 +148,9 @@ next_line_found(x, y, tolerance, px, py, shift)
     else if (shift)
 	l = prev_line(objects.lines, l);
 
-    for (; l != NULL; l = prev_line(objects.lines, l), n++)
+    for (; l != NULL; l = prev_line(objects.lines, l))
 	if (validline_in_mask(l)) {
+	    n++;
 	    point = l->points;
 	    x1 = point->x;
 	    y1 = point->y;
@@ -192,8 +193,9 @@ next_spline_found(x, y, tolerance, px, py, shift)
 
     tol2 = (float) tolerance *tolerance;
 
-    for (; s != NULL; s = prev_spline(objects.splines, s), n++)
+    for (; s != NULL; s = prev_spline(objects.splines, s))
 	if (validspline_in_mask(s)) {
+	    n++;
 	    point = s->points;
 	    x1 = point->x;
 	    y1 = point->y;
@@ -224,8 +226,9 @@ next_text_found(x, y, tolerance, dummy1, dummy2, shift)
     else if (shift)
 	t = prev_text(objects.texts, t);
 
-    for (; t != NULL; t = prev_text(objects.texts, t), n++)
+    for (; t != NULL; t = prev_text(objects.texts, t))
 	if (validtext_in_mask(t)) {
+	    n++;
 	    if (abs(x - t->base_x) <= tolerance &&
 		abs(y - t->base_y) <= tolerance)
 		return (1);
@@ -546,8 +549,9 @@ next_spline_point_found(x, y, tol, p, q, shift)
     else if (shift)
         s = prev_spline(objects.splines, s);
 
-    for (; s != NULL; s = prev_spline(objects.splines, s), n++)
+    for (; s != NULL; s = prev_spline(objects.splines, s))
 	if (validspline_in_mask(s)) {
+	    n++;
 	    *p = NULL;
 	    for (*q = s->points; *q != NULL; *p = *q, *q = (*q)->next) {
 		if (abs((*q)->x - x) <= tol && abs((*q)->y - y) <= tol)
@@ -571,8 +575,9 @@ next_line_point_found(x, y, tol, p, q, shift)
     else if (shift)
         l = prev_line(objects.lines, l);
 
-    for (; l != NULL; l = prev_line(objects.lines, l), n++)
+    for (; l != NULL; l = prev_line(objects.lines, l))
 	if (validline_in_mask(l)) {
+	    n++;
 	    for (a = NULL, b = l->points; b != NULL; a = b, b = b->next) {
 		if (abs(b->x - x) <= tol && abs(b->y - y) <= tol) {
 		    *p = a;

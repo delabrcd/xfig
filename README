@@ -1,6 +1,65 @@
+Please report any bugs, fixes, contributions, etc. to:
+
+Brian V. Smith (bvsmith@lbl.gov)
+------------------------------------------------------
+
+NOTE:
+
 Openwindows has scalable fonts so xfig must be compiled with the -DOPENWIN
 flag in order to handle this.
 
 There is also a bug in OpenWindows 2.0 which relates to pixmaps in widgets.
 You must compile xfig with the -DOPENWIN_BUG option for this problem.
 
+Possible problems encountered installing xfig:
+=============================================
+
+PROBLEM:
+	The window oscillates and fights with the window manager when
+	I click on a mode button or try to resize the xfig window.
+
+POSSIBLE CAUSE AND SOLUTION:
+ 	Perhaps the following resource has been set
+ 		*allowShellResize: true
+	because another program requires it to be true.
+	Change the resource to be specific to the programs which need it.
+
+PROBLEM:
+	I tried to compile xfig on an SGI SystemV and got a error message.
+	> cc -O -prototypes -cckr -float -I/usr/include -DSYSV
+		-DMALLOC_0_RETURNS_NULL -DFUNCPROTO -DNARROWPROTO
+		-DFASTSERVER  -c u_redraw.c
+	>(ccom): u_redraw.c, line 106: ccom: Internal: out of tree space;
+		increase default option: -Wf,-XNh1000
+	>                        spline_depths(objects->splines)))))))))));
+
+POSSIBLE CAUSE AND SOLUTION:
+	The line in question involves quite a few levels of nesting and
+	could possibly be simplified.  Use the options -Wf,-XNh6000 as the
+	compiler message suggests and you shouldn't have any trouble.
+Possible problems encountered installing xfig:
+=============================================
+
+PROBLEM:
+	The window oscillates and fights with the window manager when
+	I click on a mode button or try to resize the xfig window.
+
+POSSIBLE CAUSE AND SOLUTION:
+ 	Perhaps the following resource has been set
+ 		*allowShellResize: true
+	because another program requires it to be true.
+	Change the resource to be specific to the programs which need it.
+
+PROBLEM:
+	I tried to compile xfig on an SGI SystemV and got a error message.
+	> cc -O -prototypes -cckr -float -I/usr/include -DSYSV
+		-DMALLOC_0_RETURNS_NULL -DFUNCPROTO -DNARROWPROTO
+		-DFASTSERVER  -c u_redraw.c
+	>(ccom): u_redraw.c, line 106: ccom: Internal: out of tree space;
+		increase default option: -Wf,-XNh1000
+	>                        spline_depths(objects->splines)))))))))));
+
+POSSIBLE CAUSE AND SOLUTION:
+	The line in question involves quite a few levels of nesting and
+	could possibly be simplified.  Use the options -Wf,-XNh6000 as the
+	compiler message suggests and you shouldn't have any trouble.
