@@ -2,6 +2,14 @@
 Version 3.1
 =============================================================================
 
+Patchlevel 4a (Aug, 24, 1995)
+
+BUG FIXED
+
+o incorrect values for white colormap entry when writing jpeg file on
+	monochrome display
+
+-----------------------------------------------------------------------------
 Patchlevel 4 (Aug, 16, 1995)
 
 NOTE 1: The Display PostScript code is not supported anymore until some kind

@@ -57,6 +57,37 @@ extern char    *mktemp();
 
 #include <X11/Xos.h>
 
+/* for those who have an older (R4) Xos.h, we need to include unistd.h here */
+
+/*
+ * Get open(2) constants
+ */
+#ifdef X_NOT_POSIX
+#include <fcntl.h>
+#ifdef USL
+#include <unistd.h>
+#endif /* USL */
+#ifdef CRAY
+#include <unistd.h>
+#endif /* CRAY */
+#ifdef MOTOROLA
+#include <unistd.h>
+#endif /* MOTOROLA */
+#ifdef SYSV386
+#include <unistd.h>
+#endif /* SYSV386 */
+#include <sys/file.h>
+#else /* X_NOT_POSIX */
+#if !defined(_POSIX_SOURCE) && defined(macII)
+#define _POSIX_SOURCE
+#include <fcntl.h>
+#undef _POSIX_SOURCE
+#else
+#include <fcntl.h>
+#endif
+#include <unistd.h>
+#endif /* X_NOT_POSIX else */
+
 #if XtSpecificationRelease > 4
 #include <X11/Xfuncs.h>
 #else

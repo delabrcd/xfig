@@ -85,7 +85,7 @@ create_n_write_jpg(filename,mag)
 	    return False;
 	}
 	/* setup black/white colormap */
-	jcolors[0].red = jcolors[0].green = jcolors[0].blue = 255;
+	jcolors[0].red = jcolors[0].green = jcolors[0].blue = 65535;
 	jcolors[1].red = jcolors[1].green = jcolors[1].blue = 0;
 	x = 0;
 	dptr = bptr;
