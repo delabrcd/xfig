@@ -72,6 +72,7 @@ extern Widget	choice_popup;
 extern ind_sw_info *fill_style_sw;
 
 Boolean switch_colormap();
+Boolean alloc_color();
 
 /* callback routines */
        void cancel_color_popup();
@@ -261,7 +262,7 @@ ind_sw_info	*isw;
 
 	if (all_colors_available) {
 	    /* allocate two colorcells for the mixed fill and pen color widgets */
-	    if (alloc_color(pixels,2) == 0) {
+	    if (!alloc_color(pixels,2)) {
 		file_msg("Can't allocate necessary colorcells, can't popup color panel");
 		return;
 	    }
@@ -833,7 +834,7 @@ int	r,g,b;
 
 	if (all_colors_available) {
 	    /* try to get a colorcell */
-	    if (alloc_color(pixels,1) == 0) {
+	    if (!alloc_color(pixels,1)) {
 		file_msg("Can't allocate user color, not enough colorcells");
 		return 0;
 	    }
@@ -903,13 +904,13 @@ int	r,g,b;
 
 /*
    allocate n colormap entries.  If not enough cells are available, switch 
-   to a private colormap.  If we are already using a private colormap return 0.
-   The pixel numbers allocated are returned in the Pixel array pixels[]
+   to a private colormap.  If we are already using a private colormap return
+   False.  The pixel numbers allocated are returned in the Pixel array pixels[]
    The new colormap (if used) is set into the main (tool) window and the color
    popup panel (if it exists)
 */
 
-int
+Boolean
 alloc_color(pixels,n)
 Pixel	pixels[];
 int	n;
@@ -923,25 +924,25 @@ int	n;
 	    if (!switch_colormap() ||
 	        (!XAllocColorCells(tool_d, tool_cm, 0, &plane_masks, 0, &pixels[i], 1))) {
 		    file_msg("Cannot define user colors.");
-		    return 0;
+		    return False;
 	    }
         }
     }
-    return 1;
+    return True;
 }
 
 /* switch colormaps to private one and reallocate the colors we already used. */
-/* Return false if already switched or if can't allocate new colormap */
+/* Return False if already switched or if can't allocate new colormap */
+
 Boolean
 switch_colormap()
 {
 	if (swapped_cmap || appres.dont_switch_cmap) {
-		return 0;
+		return False;
 	}
-	file_msg("Switching to private colormap.");
 	if ((newcmap = XCopyColormapAndFree(tool_d, tool_cm)) == 0) {
 		file_msg("Cannot allocate new colormap.");
-		return 0;
+		return False;
 	}
 	/* swap colormaps */
 	tool_cm = newcmap;
@@ -951,7 +952,8 @@ switch_colormap()
 		set_cmap(XtWindow(pen_color_button->panel));
 	if (tool_w)
 	    set_cmap(tool_w);
-	return 1;
+	file_msg("Switching to private colormap.");
+	return True;
 }
 
 /* delete a color memory (current_memory) from the user colors */

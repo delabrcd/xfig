@@ -2,15 +2,37 @@
 Version 3.1
 =============================================================================
 
-Patchlevel 1 (XXX, X, 1995)
+Patchlevel 2 (Jan, 13, 1995)
 
-NEW FEATURES:
+BUG FIXES:
+
+o ISO8859 restriction on font searching was inadvertantly removed - added back
+o for those brain-dead OpenWindows servers that don't recognize the hexadecimal
+	color name form (e.g. #339922) the 32 "standared" xfig colors have
+	alternate names like "blue3" etc. to use if the numbered colors can't be
+	allocated.  This OW bug was causing xfig to switch to monochrome mode
+	after complaining that it couldn't allocate the standard colors.
+	Scott Allendorf from U of Iowa enlightened me that it is OpenWindows'
+	fault.
+o definition for XCOMM in Imakefile for those running R4
+o fixed problem with popup message panel having wrong colors when xfig switches
+	to a private colormap
+o objects with dotted lines didn't show until an object with dashed line was
+	first created
+o moved #include of X11/Intrinsic.h to top of fig.h file so
+	XtSpecificationRelease would be defined when needed
+o comment for patchlevel 1 about command-line option -dontswitchcmap misspelled
+o new label in print panel - "Print to PostScript Printer" makes it obvious
+	that the only printer type available is PostScript
+
+-----------------------------------------------------------------------------
+Patchlevel 1 (Jan, 11, 1995)
 
 BUG FIXES:
 
 o couldn't read eps files that didn't have showpage command
 o segfault when non existent eps or other image file is referenced in a figure
-o command-line option -dont_switch_cmap (resource Fig.Dont_switch_cmap) fixed
+o command-line option -dontswitchcmap (resource Fig.Dont_switch_cmap) fixed
 o export and file load/merge offsets units (inches, cm, etc) not correctly
 	set when -metric option used
 o seg fault when converting line to spline because cap_style wasn't initialized
@@ -32,6 +54,8 @@ o NOTE:	An error in version 3.0.0 incorrectly positioned objects on the canvas
 
 *****	This is also why the file version number has changed.
 
+o conditionals and macros added for for machines with different random number
+	generators
 o segfault in show_pen_color and show_fill_color under certain conditions when
 	switching colors
 o error in x/y load/merge offset when reading pre 3.0 files

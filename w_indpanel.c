@@ -391,13 +391,13 @@ static String	ind_translations =
     <LeaveWindow>:LeaveIndSw()unhighlight()\n";
 
 /* bitmaps for set/clear and toggle buttons (10x10) */
-static char set_bits[] = {
+static unsigned char set_bits[] = {
    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-static char clr_bits[] = {
+static unsigned char clr_bits[] = {
    0xff, 0x03, 0x01, 0x02, 0x01, 0x02, 0x01, 0x02, 0x01, 0x02, 0x01, 0x02,
    0x01, 0x02, 0x01, 0x02, 0x01, 0x02, 0xff, 0x03};
-static char tog_bits[] = {
+static unsigned char tog_bits[] = {
    0xff, 0x03, 0x01, 0x02, 0x03, 0x02, 0x07, 0x02, 0x0f, 0x02, 0x1f, 0x02,
    0x3f, 0x02, 0x7f, 0x02, 0xff, 0x02, 0xff, 0x03};
 
@@ -770,17 +770,17 @@ setup_ind_panel()
 	}
 
     p = XCreatePixmapFromBitmapData(tool_d, XtWindow(ind_panel),
-		    set_bits, UPD_BITS, UPD_BITS, fg, bg,
+		    (char *) set_bits, UPD_BITS, UPD_BITS, fg, bg,
 		    DefaultDepthOfScreen(tool_s));
     FirstArg(XtNbitmap, p);
     SetValues(set_upd);
     p = XCreatePixmapFromBitmapData(tool_d, XtWindow(ind_panel),
-		    clr_bits, UPD_BITS, UPD_BITS, fg, bg,
+		    (char *) clr_bits, UPD_BITS, UPD_BITS, fg, bg,
 		    DefaultDepthOfScreen(tool_s));
     FirstArg(XtNbitmap, p);
     SetValues(clr_upd);
     p = XCreatePixmapFromBitmapData(tool_d, XtWindow(ind_panel),
-		    tog_bits, UPD_BITS, UPD_BITS, fg, bg,
+		    (char *) tog_bits, UPD_BITS, UPD_BITS, fg, bg,
 		    DefaultDepthOfScreen(tool_s));
     FirstArg(XtNbitmap, p);
     SetValues(tog_upd);

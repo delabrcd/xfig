@@ -17,6 +17,11 @@
  * the party supplying this software to the X Consortium.
  */
 
+/* include only Xlib.h and Intrinsic.h here - use figx.h for widget stuff */
+
+#include <X11/Xlib.h>
+#include <X11/Intrinsic.h>
+
 #include <X11/Xos.h>
 
 #if XtSpecificationRelease > 4
@@ -311,23 +316,11 @@ extern char *getenv();
 
 #define		DEF_NAME	"unnamed.fig"
 
-/* include only Xlib.h and Intrinsic.h here - use figx.h for widget stuff */
-
-#include <X11/Xlib.h>
-#include <X11/Intrinsic.h>
-
 #ifdef NOSTRSTR
 extern char *strstr();
 #endif
 
-#if defined(BSD) || defined(__bsdi__)
-
-extern	long		random();
-extern	void		srandom();
-
-#define	frandom()	(random()*(1./2147483648.))
-
-#else /* not BSD */
+#if defined(SYSV) || defined(SVR4)
 
 extern	void		srand48();
 extern	long		lrand48();
@@ -337,4 +330,11 @@ extern	double		drand48();
 #define	random()	lrand48()
 #define	frandom()	drand48()
 
-#endif	/* not BSD */
+#else /* not SYSV */
+
+extern	long		random();
+extern	void		srandom();
+
+#define	frandom()	(random()*(1./2147483648.))
+
+#endif	/* not SYSV */

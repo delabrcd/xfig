@@ -903,14 +903,14 @@ check_colors()
     }
 
     for (i=0; i<NUM_STD_COLS; i++) {
-	/* skip black and white */
-	if (i == BLACK || i==WHITE)
-		continue;
 	/* try to allocate another named color */
-	if (!XAllocNamedColor(tool_d, tool_cm, colorNames[i+1].rgb,&color,&dum)) {
-	    /* can't allocate it, switch colormaps try again */
-	    if (!switch_colormap() || 
-	        (!XAllocNamedColor(tool_d, tool_cm, colorNames[i+1].rgb,&color,&dum))) {
+	/* first try by #xxxxx form if exists, then by name from rgb.txt file */
+	if (!XAllocNamedColor(tool_d, tool_cm, colorNames[i+1].rgb,&color,&dum) &&
+	   (!XAllocNamedColor(tool_d, tool_cm, colorNames[i+1].aname,&color,&dum))) {
+	     /* can't allocate it, switch colormaps try again */
+	     if (!switch_colormap() || 
+	        (!XAllocNamedColor(tool_d, tool_cm, colorNames[i+1].rgb,&color,&dum)) ||
+		(!XAllocNamedColor(tool_d, tool_cm, colorNames[i+1].aname,&color,&dum))) {
 		    fprintf(stderr, "Not enough colormap entries available for basic colors\n");
 		    fprintf(stderr, "using monochrome mode.\n");
 		    all_colors_available = False;

@@ -26,7 +26,7 @@
 #define magnify_height 16
 #define magnify_x_hot 6
 #define magnify_y_hot 6
-static char magnify_bits[] = {
+static unsigned char magnify_bits[] = {
    0x40, 0x00, 0xf8, 0x03, 0xfc, 0x07, 0x4e, 0x0e, 0x46, 0x0c, 0x46, 0x0c,
    0xff, 0x1f, 0x46, 0x0c, 0x46, 0x0c, 0x4e, 0x1e, 0xfc, 0x3f, 0xf8, 0x7f,
    0x40, 0xfe, 0x00, 0xfc, 0x00, 0xf8, 0x00, 0x70};
@@ -56,7 +56,7 @@ init_cursor()
     /* we must make our on magnifying glass cursor as there is none
 	in the cursor font */
     mag_pixmap		= XCreateBitmapFromData(tool_d, DefaultRootWindow(tool_d),
-				magnify_bits, magnify_width, magnify_height);
+				(char *) magnify_bits, magnify_width, magnify_height);
     magnify_cursor	= XCreatePixmapCursor(d, mag_pixmap, mag_pixmap,
 				&x_fg_color, &x_bg_color, magnify_x_hot, magnify_y_hot);
     XFreePixmap(tool_d, mag_pixmap);

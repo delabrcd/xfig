@@ -17,6 +17,10 @@
  * the party supplying this software to the X Consortium.
  */
 
+
+/* This is for the message window below the command panel */
+/* The popup message window is handled in the second part of this file */
+
 #include "fig.h"
 #include "figx.h"
 #include "resources.h"
@@ -33,11 +37,20 @@
 /********************* IMPORTS *******************/
 
 extern char    *basname();
+extern Boolean	file_up;
+extern char    *read_file_name;
 
 /********************* EXPORTS *******************/
 
 int		put_msg();
 int		init_msgreceiving();
+
+/* so w_file.c can access */
+Boolean	file_msg_is_popped=False;
+Widget	file_msg_popup;
+
+/* for f_read.c */
+Boolean	first_file_msg;
 
 /************************  LOCAL ******************/
 
@@ -45,6 +58,24 @@ int		init_msgreceiving();
 static char	prompt[BUF_SIZE];
 
 DeclareStaticArgs(12);
+
+/* for the popup message window */
+
+static int	file_msg_length=0;
+static char	tmpstr[100];
+static Widget	file_msg_panel,
+		file_msg_win, file_msg_dismiss;
+
+static String	file_msg_translations =
+	"<Message>WM_PROTOCOLS: DismissFileMsg()\n";
+static XtEventHandler file_msg_panel_dismiss();
+static XtActionsRec	file_msg_actions[] =
+{
+    {"DismissFileMsg", (XtActionProc) file_msg_panel_dismiss},
+};
+
+
+/* message window code begins */
 
 int
 init_msg(tool, filename)
@@ -240,3 +271,181 @@ int x1,y1,x2,y2,x3,y3;
 		len1*appres.user_scale, len2*appres.user_scale, cur_fig_units);
 }
 
+/* This is the section for the popup message window (file_msg) */
+
+/* VARARGS1 */
+int
+file_msg(va_alist) va_dcl
+{
+    XawTextBlock block;
+    va_list ap;
+    char *format;
+
+    popup_file_msg();
+    if (first_file_msg)
+	{
+	first_file_msg = False;
+	file_msg("---------------------");
+	file_msg("File %s:",read_file_name);
+	}
+
+    va_start(ap);
+    format = va_arg(ap, char *);
+    vsprintf(tmpstr, format, ap );
+    va_end(ap);
+
+    strcat(tmpstr,"\n");
+    /* append this message to the file message widget string */
+    block.firstPos = 0;
+    block.ptr = tmpstr;
+    block.length = strlen(tmpstr);
+    block.format = FMT8BIT;
+    /* make editable to add new message */
+    FirstArg(XtNeditType, XawtextEdit);
+    SetValues(file_msg_win);
+    /* insert the new message after the end */
+    (void) XawTextReplace(file_msg_win,file_msg_length,file_msg_length,&block);
+    (void) XawTextSetInsertionPoint(file_msg_win,file_msg_length);
+
+    /* make read-only again */
+    FirstArg(XtNeditType, XawtextRead);
+    SetValues(file_msg_win);
+    file_msg_length += block.length;
+}
+
+clear_file_message(w, ev)
+    Widget	    w;
+    XButtonEvent   *ev;
+{
+    XawTextBlock	block;
+    int			replcode;
+
+    if (!file_msg_popup)
+	return;
+
+    tmpstr[0]=' ';
+    block.firstPos = 0;
+    block.ptr = tmpstr;
+    block.length = 1;
+    block.format = FMT8BIT;
+
+    /* make editable to clear message */
+    FirstArg(XtNeditType, XawtextEdit);
+    NextArg(XtNdisplayPosition, 0);
+    SetValues(file_msg_win);
+
+    /* replace all messages with one blank */
+    replcode = XawTextReplace(file_msg_win,0,file_msg_length,&block);
+    if (replcode == XawPositionError)
+	fprintf(stderr,"XawTextReplace XawPositionError\n");
+    else if (replcode == XawEditError)
+	fprintf(stderr,"XawTextReplace XawEditError\n");
+
+    /* make read-only again */
+    FirstArg(XtNeditType, XawtextRead);
+    SetValues(file_msg_win);
+    file_msg_length = 0;
+}
+
+static Bool grabbed=False;
+
+static
+XtEventHandler
+file_msg_panel_dismiss(w, ev)
+    Widget	    w;
+    XButtonEvent   *ev;
+{
+	if ((grabbed) && (!file_up))
+		XtAddGrab(file_msg_popup, False, False);
+	XtPopdown(file_msg_popup);
+	file_msg_is_popped=False;
+}
+
+popup_file_msg()
+{
+	extern Atom wm_delete_window;
+
+	if (file_msg_popup) {
+	    if (!file_msg_is_popped) {
+		if (file_up) {
+		    XtPopup(file_msg_popup, XtGrabNonexclusive);
+		    XSetWMProtocols(XtDisplay(file_msg_popup),
+				    XtWindow(file_msg_popup),
+				    &wm_delete_window, 1);
+		    grabbed = True;
+		} else {
+		    XtPopup(file_msg_popup, XtGrabNone);
+		    XSetWMProtocols(XtDisplay(file_msg_popup),
+				    XtWindow(file_msg_popup),
+				    &wm_delete_window, 1);
+		    grabbed = False;
+		}
+	    }
+	    /* ensure that the most recent colormap is installed */
+	    set_cmap(XtWindow(file_msg_popup));
+	    file_msg_is_popped = True;
+	    return;
+	}
+
+	file_msg_is_popped = True;
+	FirstArg(XtNx, 0);
+	NextArg(XtNy, 0);
+	NextArg(XtNcolormap, tool_cm);
+	NextArg(XtNtitle, "Xfig: File error messages");
+	file_msg_popup = XtCreatePopupShell("file_msg",
+					transientShellWidgetClass,
+					tool, Args, ArgCount);
+	XtOverrideTranslations(file_msg_popup,
+			XtParseTranslationTable(file_msg_translations));
+	XtAppAddActions(tool_app, file_msg_actions, XtNumber(file_msg_actions));
+
+	file_msg_panel = XtCreateManagedWidget("file_msg_panel", formWidgetClass,
+					   file_msg_popup, NULL, ZERO);
+	FirstArg(XtNwidth, 500);
+	NextArg(XtNheight, 200);
+	NextArg(XtNeditType, XawtextRead);
+	NextArg(XtNdisplayCaret, False);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
+	NextArg(XtNscrollVertical, XawtextScrollAlways);
+	file_msg_win = XtCreateManagedWidget("file_msg_win", asciiTextWidgetClass,
+					     file_msg_panel, Args, ArgCount);
+
+	FirstArg(XtNlabel, "Dismiss");
+	NextArg(XtNheight, 25);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNfromVert, file_msg_win);
+	file_msg_dismiss = XtCreateManagedWidget("dismiss", commandWidgetClass,
+				       file_msg_panel, Args, ArgCount);
+	XtAddEventHandler(file_msg_dismiss, ButtonReleaseMask, (Boolean) 0,
+			  (XtEventHandler)file_msg_panel_dismiss, (XtPointer) NULL);
+
+	FirstArg(XtNlabel, "Clear");
+	NextArg(XtNheight, 25);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNfromVert, file_msg_win);
+	NextArg(XtNfromHoriz, file_msg_dismiss);
+	file_msg_dismiss = XtCreateManagedWidget("clear", commandWidgetClass,
+				       file_msg_panel, Args, ArgCount);
+	XtAddEventHandler(file_msg_dismiss, ButtonReleaseMask, (Boolean) 0,
+			  (XtEventHandler)clear_file_message, (XtPointer) NULL);
+
+	if (file_up)
+		{
+		XtPopup(file_msg_popup, XtGrabNonexclusive);
+    		XSetWMProtocols(XtDisplay(file_msg_popup),
+				XtWindow(file_msg_popup),
+			       	&wm_delete_window, 1);
+		grabbed = True;
+		}
+	else
+		{
+		XtPopup(file_msg_popup, XtGrabNone);
+    		XSetWMProtocols(XtDisplay(file_msg_popup),
+				XtWindow(file_msg_popup),
+			       	&wm_delete_window, 1);
+		grabbed = False;
+		}
+	/* insure that the most recent colormap is installed */
+	set_cmap(XtWindow(file_msg_popup));
+}

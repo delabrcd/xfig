@@ -96,7 +96,7 @@
 .PD
 ..
 .\"-------
-.TH XFIG 1 "Release 3.1(.0) (Protocol 3.1)"
+.TH XFIG 1 "Release 3.1(.2) (Protocol 3.1)"
 .SH NAME
 xfig - Facility for Interactive Generation of figures under X11
 .SH SYNOPSIS

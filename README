@@ -96,9 +96,8 @@ Printing your figures:
 
 The program to translate your figure into one of many printer languages
 (Postscript, LaTex, etc) is called fig2dev and is part of the TransFig
-package by Micah Beck.
-It is available from export.lcs.mit.edu in /contrib/transfig.tar.Z or
-ftp.cs.cornell.edu in the directory /pub/fig.
+package put together by Micah Beck and maintained by Brian Smith.
+It is available from ftp.x.org in /contrib/applications/drawing_tools/transfig.
 See the man pages for more information.
 
 If you have a SYSV system but use BSD-style printing (lpr instead of lp) you
@@ -107,6 +106,14 @@ must define -DBSDLPR in the Imakefile/Makefile.
 -----------------
 Solaris users
 -----------------
+
+You should have:
+
+#define SystemV YES
+#define SystemV4 YES
+
+in your imake machine config file (usually in /usr/lib/X11/config or something
+like that).
 
 Add "-lc" to the LOCAL_LIBRARIES variable in the Imakefile to link with 
 /usr/lib/libc for the directory operations.

@@ -1,3 +1,9 @@
-To make the ps file:
-
+#!/bin/csh 
+echo This will make the xfig.ps file
+echo -n psroffing...
 psroff -t -man xfig.man > xfig.ps
+echo ""
+echo -n zipping...
+gzip -v xfig.ps
+echo done
+ls -l xfig.*

@@ -315,6 +315,8 @@ create_print_panel(w)
 	print_panel = XtCreateManagedWidget("print_panel", formWidgetClass,
 					    print_popup, NULL, ZERO);
 
+	/* start with the picture of the printer */
+
 	FirstArg(XtNlabel, "   ");
 	NextArg(XtNwidth, printer_ic.width);
 	NextArg(XtNheight, printer_ic.height);
@@ -334,7 +336,14 @@ create_print_panel(w)
 	FirstArg(XtNbitmap, p);
 	SetValues(image);
 
-	FirstArg(XtNlabel, "  Magnification%:");
+	FirstArg(XtNlabel, "Print to PostScript Printer");
+	NextArg(XtNfromHoriz, image);
+	NextArg(XtNjustify, XtJustifyLeft);
+	NextArg(XtNborderWidth, 0);
+	(void) XtCreateManagedWidget("print_label", labelWidgetClass,
+					print_panel, Args, ArgCount);
+
+	FirstArg(XtNlabel, "    Magnification%:");
 	NextArg(XtNfromVert, image);
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
@@ -353,7 +362,7 @@ create_print_panel(w)
 	XtOverrideTranslations(mag_text,
 			       XtParseTranslationTable(text_translations));
 
-	FirstArg(XtNlabel, "     Orientation:");
+	FirstArg(XtNlabel, "       Orientation:");
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNfromVert, mag_text);
@@ -369,7 +378,7 @@ create_print_panel(w)
 	orient_menu = make_popup_menu(orient_items, XtNumber(orient_items),
 				      print_orient_panel, orient_select);
 
-	FirstArg(XtNlabel, "   Justification:");
+	FirstArg(XtNlabel, "     Justification:");
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNfromVert, print_orient_panel);
@@ -388,7 +397,7 @@ create_print_panel(w)
 				    print_just_panel, just_select);
 
 
-	FirstArg(XtNlabel, "         Printer:");
+	FirstArg(XtNlabel, "PostScript Printer:");
 	NextArg(XtNfromVert, print_just_panel);
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
@@ -426,7 +435,7 @@ create_print_panel(w)
 		}
 	}
 
-	FirstArg(XtNlabel, "Print Job Params:");
+	FirstArg(XtNlabel, "  Print Job Params:");
 	NextArg(XtNfromVert, printer_text);
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
@@ -449,7 +458,7 @@ create_print_panel(w)
 	XtOverrideTranslations(param_text,
 			       XtParseTranslationTable(text_translations));
 
-	FirstArg(XtNlabel, "Figures in batch:");
+	FirstArg(XtNlabel, "  Figures in batch:");
 	NextArg(XtNfromVert, param_text);
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
