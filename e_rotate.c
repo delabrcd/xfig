@@ -60,7 +60,7 @@ rotate_selected()
     canvas_leftbut_proc = object_search_left;
     canvas_middlebut_proc = object_search_middle;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&pick15_cursor);
+    set_cursor(pick15_cursor);
 }
 
 static
@@ -129,7 +129,7 @@ init_rotateline(l, px, py)
 {
     F_line	   *line;
 
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     line = copy_line(l);
     rotate_line(line, px, py, rotn_dirn);
     if (copy) {
@@ -168,7 +168,7 @@ init_rotateellipse(e, px, py)
 {
     F_ellipse	   *ellipse;
 
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     ellipse = copy_ellipse(e);
     rotate_ellipse(ellipse, px, py, rotn_dirn);
     if (copy) {
@@ -189,7 +189,7 @@ init_rotatearc(a, px, py)
 {
     F_arc	   *arc;
 
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     arc = copy_arc(a);
     rotate_arc(arc, px, py, rotn_dirn);
     if (copy) {
@@ -210,7 +210,7 @@ init_rotatespline(s, px, py)
 {
     F_spline	   *spline;
 
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     spline = copy_spline(s);
     rotate_spline(spline, px, py, rotn_dirn);
     if (copy) {
@@ -236,7 +236,7 @@ init_rotatecompound(c, px, py)
 	return;
     }
 
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     compound = copy_compound(c);
     rotate_compound(compound, px, py, rotn_dirn);
     if (copy) {

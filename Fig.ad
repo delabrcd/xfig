@@ -10,5 +10,5 @@ Fig*export_panel*mask*string:	*.ps
 
 ! make the F20 key paste text in the canvas
 
-Fig.form.canvas.translations: #override \n\
+Fig*translations: #override \n\
 			<Key>F20: PasteCanv()\n

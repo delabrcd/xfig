@@ -23,19 +23,35 @@ INSTALLATION NOTES:
 
 1. Edit the Imakefile if you need to customize it (see following notes)
 2. Type "make Makefile" or "xmkmf" if you have xmkmf
->> Ignore the warning about redefining InstallManPage <<
-
 3. Type "make install"
 4. Type "make install.man"
 5. Add the resources from Fig.ad to /usr/lib/.../app-defaults/Fig that you
 	wish to use
+6. For X11R5 color implementations, copy the Fig-color.ad to 
+	/usr/lib/.../app-defaults and specify "*customization: -color" in your 
+	.Xdefaults file.
+	NOTE: this only works under X11R5.
+
+The SMOOTHMOTION option toggles between two methods for tracking the
+cursor.  The first way (SMOOTHMOTION) just uses the (x,y) information given
+in the X pointer motion event.  If your display server doesn't implement
+motion compression this is very slow for large movements of the mouse
+pointer because X sends back lots of small movement events, each of which
+causes the rubberband box to be erased and redrawn.  The alternative
+way (not SMOOTHMOTION) queries the position of the X cursor whenever
+a motion event is received and if you make a large movement and then
+stop actually turns out to involve less work even though the XQueryPointer
+call is quite slow.
+The SMOOTHMOTION method is also automatically used for OpenWindows (when the
+-DOPENWIN flag is used).
 
 -----------------
 OpenWindows users
 -----------------
 
 Openwindows has scalable fonts so xfig must be compiled with the -DOPENWIN
-flag in order to handle this.
+flag in order to handle this.  Also, there is a difference in the way the
+pointer position is queried for OpenWindows.  See the SMOOTHMOTION description.
 
 There is also a bug in OpenWindows 2.0 which relates to pixmaps in widgets.
 You must compile xfig with the -DOPENWIN_BUG option for this problem.

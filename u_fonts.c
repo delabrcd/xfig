@@ -106,3 +106,29 @@ x_fontnum(psflag, fnum)
     return (psflag ? ps_fontinfo[fnum + 1].xfontnum :
 	    latex_fontinfo[fnum].xfontnum);
 }
+
+psfontnum(font)
+char *font;
+{
+    int i;
+
+    if (font == NULL)
+	return(DEF_PS_FONT);
+    for (i=0; i<NUM_PS_FONTS; i++)
+	if (strcmp(ps_fontinfo[i].name, font) == 0)
+		return (i-1);
+    return(DEF_PS_FONT);
+}
+
+latexfontnum(font)
+char *font;
+{
+    int i;
+
+    if (font == NULL)
+	return(DEF_LATEX_FONT);
+    for (i=0; i<NUM_LATEX_FONTS; i++)
+	if (strcmp(latex_fontinfo[i].name, font) == 0)
+		return (i);
+    return(DEF_LATEX_FONT);
+}

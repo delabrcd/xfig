@@ -16,7 +16,6 @@
 
 /* IMPORTS */
 
-#include <math.h>		/* for atof() */
 #include "fig.h"
 #include "mode.h"
 #include "resources.h"
@@ -27,16 +26,17 @@
 extern String	text_translations;
 extern Widget	make_popup_menu();
 extern char    *panel_get_value();
+extern double	atof();
 
 /* LOCAL */
 
 static char    *orient_items[] = {
     "portrait ",
-"landscape"};
+    "landscape"};
 
 static char    *just_items[] = {
     "flush left",
-"centered  "};
+    "centered  "};
 
 static void	orient_select();
 static Widget	orient_panel, orient_menu, orient_lab;
@@ -46,7 +46,7 @@ static Widget	just_panel, just_menu, just_lab;
 
 static Widget	print_panel, print_popup, cancel, print, printer_text, printer_lab,
 		mag_lab, print_w, mag_text;
-static int	print_centered = 0;
+static int	print_centered = 1;
 static Position xposn, yposn;
 
 static void
@@ -130,6 +130,7 @@ popup_print_panel(w)
 
 	FirstArg(XtNx, xposn);
 	NextArg(XtNy, yposn + 50);
+	NextArg(XtNtitle, "Xfig: Print menu");
 	print_popup = XtCreatePopupShell("xfig_print_menu",
 					 transientShellWidgetClass,
 					 tool, Args, ArgCount);
@@ -197,10 +198,11 @@ popup_print_panel(w)
 	just_lab = XtCreateManagedWidget("just_label", labelWidgetClass,
 					 print_panel, Args, ArgCount);
 
-	FirstArg(XtNfromHoriz, just_lab);
+	FirstArg(XtNlabel, just_items[print_centered]);
+	NextArg(XtNfromHoriz, just_lab);
 	NextArg(XtNfromVert, orient_panel);
 	NextArg(XtNborderWidth, INTERNAL_BW);
-	just_panel = XtCreateManagedWidget(just_items[print_centered],
+	just_panel = XtCreateManagedWidget("justify",
 					   menuButtonWidgetClass,
 					   print_panel, Args, ArgCount);
 	just_menu = make_popup_menu(just_items, XtNumber(just_items),
@@ -240,7 +242,7 @@ popup_print_panel(w)
 	cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
 				       print_panel, Args, ArgCount);
 	XtAddEventHandler(cancel, ButtonReleaseMask, (Boolean) 0,
-			  print_panel_cancel, (XtPointer) NULL);
+			  (XtEventHandler)print_panel_cancel, (XtPointer) NULL);
 
 	FirstArg(XtNlabel, "Print");
 	NextArg(XtNfromVert, printer_text);
@@ -252,7 +254,7 @@ popup_print_panel(w)
 	print = XtCreateManagedWidget("print", commandWidgetClass,
 				      print_panel, Args, ArgCount);
 	XtAddEventHandler(print, ButtonReleaseMask, (Boolean) 0,
-			  do_print, (XtPointer) NULL);
+			  (XtEventHandler)do_print, (XtPointer) NULL);
 
     }
     XtSetSensitive(print_w, False);

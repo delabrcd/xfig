@@ -43,7 +43,7 @@ static int	(*save_leftbut_proc) ();
 static int	(*save_middlebut_proc) ();
 static int	(*save_middlebut_save) ();
 static int	(*save_rightbut_proc) ();
-static CURSOR	save_cur_cursor;
+static Cursor	save_cur_cursor;
 static int	save_action_on;
 
 int		zoomscale = 1;
@@ -110,7 +110,7 @@ init_zoombox_drawing(x, y)
     canvas_leftbut_proc = do_zoom;
     canvas_middlebut_proc = canvas_rightbut_proc = null_proc;
     elastic_box(my_fix_x, my_fix_y, my_cur_x, my_cur_y);
-    set_temp_cursor(&null_cursor);
+    set_temp_cursor(null_cursor);
     set_action_on();
     zoom_in_progress = True;
 }

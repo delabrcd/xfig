@@ -88,6 +88,7 @@ popup_query(query_type, message)
     NextArg(XtNx, xposn);
     NextArg(XtNy, yposn);
     NextArg(XtNborderWidth, POPUP_BW);
+    NextArg(XtNtitle, "Xfig: Query");
     query_popup = XtCreatePopupShell("query_popup", transientShellWidgetClass,
 				     tool, Args, ArgCount);
 
@@ -109,7 +110,7 @@ popup_query(query_type, message)
     query_yes = XtCreateManagedWidget("yes", commandWidgetClass,
 				      query_form, Args, ArgCount);
     XtAddEventHandler(query_yes, ButtonReleaseMask, (Boolean) 0,
-		      accept_yes, (XtPointer) NULL);
+		      (XtEventHandler)accept_yes, (XtPointer) NULL);
 
     if (query_type == QUERY_YESNO) {
 	ArgCount = 4;
@@ -119,7 +120,7 @@ popup_query(query_type, message)
 	query_no = XtCreateManagedWidget("no", commandWidgetClass,
 					 query_form, Args, ArgCount);
 	XtAddEventHandler(query_no, ButtonReleaseMask, (Boolean) 0,
-			  accept_no, (XtPointer) NULL);
+			  (XtEventHandler)accept_no, (XtPointer) NULL);
 
 	ArgCount = 5;
 	NextArg(XtNfromHoriz, query_no);
@@ -133,10 +134,10 @@ popup_query(query_type, message)
     query_cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
 					 query_form, Args, ArgCount);
     XtAddEventHandler(query_cancel, ButtonReleaseMask, (Boolean) 0,
-		      accept_cancel, (XtPointer) NULL);
+		      (XtEventHandler)accept_cancel, (XtPointer) NULL);
 
     XtPopup(query_popup, XtGrabExclusive);
-    XDefineCursor(tool_d, XtWindow(query_popup), (Cursor) arrow_cursor.bitmap);
+    XDefineCursor(tool_d, XtWindow(query_popup), arrow_cursor);
 
     query_done = 0;
     while (!query_done) {

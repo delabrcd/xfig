@@ -1,6 +1,73 @@
 Version 2.1
 ===========
 
+Patchlevel 3
+Changes to Patchlevel 2:
+
+o pressing carriage return in value part of popup indicator buttons that take 
+	integer or float (e.g. line width) now sets the value and pops down
+o added foreground colors to Text*, Menu* and List* widgets in default Fig-color.ad
+	this fixes problem of white-on-white text when using inverse video
+o changes two resource names -
+	"xfig_export_menu.export_panel.just_label.flush left" to 
+	"xfig_export_menu.export_panel.just_label.justify" 
+	and 
+	"xfig_print_menu.print_panel.just_label.flush left" to
+	"xfig_print_menu.print_panel.just_label.justify"
+o some type castings fixed
+	from Wayne D Richardson (wdr@rchland.vnet.ibm.com)
+o fixed "open file leak" - directory wasn't closed after file popup finished
+o fixed selection of Times-Roman font under Openwindows
+o changed titles of popup panels to meaningful names
+o leading blanks no longer stripped from text objects
+	from George Ferguson (ferguson@cs.rochester.edu)
+o null strings in text objects now abort load/read of file with error message
+	from George Ferguson (ferguson@cs.rochester.edu)
+o conditional in xfig.man to set page offset only when using troff
+	from George Ferguson (ferguson@cs.rochester.edu)
+o added translation so that pressing return in filename window in popup FILE
+	will load the file
+o added translation so that pressing return in filename window in popup EXPORT
+	will export the file
+o fixed filled objects of DEFAULT color
+o fixed bug in delete region
+	from Peter Asenstorfer (peter@audrey.levels.unisa.edu.au)
+o cleaned up cursor stuff - no impact on user
+	from Brian Boyter (pyrdc!bimbo!boyter@uunet.UU.NET)
+o new resource "-keyFile" to specify alternate compose key translation
+	file in the XFIGLIBDIR directory
+	From Herve Soulard (soulard@corto.inria.fr)
+o popup message window to inform user when illegal values in figure file
+	are fixed or when converting from older file versions to newest
+o limit on depth of objects to 1000 when reading figure file. Fixes problems
+	of infinite looping for files which were converted from Fig 2.0.
+	Also sets depth to zero (0) when reading files older than 2.1.
+o xfig.man now tells man to run tbl so that regular tables can be used
+	from James B. Davis (james@solbourne.com)
+o fixed Meta-Y (insert current selection), ^Y (unkill) and ^G (multiply reset) 
+	in CompKeyDB
+o added capability to delete whole text line from text widgets with ^X
+	from Brian Boyter (pyrdc!bimbo!boyter@uunet.UU.NET)
+o ^U no longer deletes line of text in text object mode for compatibility
+	with text widgets.  Use only ^X now.
+o fixed problem with OpenWindows and rubberbanding objects
+	from Brian Boyter (pyrdc!bimbo!boyter@uunet.UU.NET)
+o fixed minor bug in f_util.c line 82: assignment with '==' instead of '='
+        from pf@diab.se (Per Fogelstr|m)
+o fixed up bug in set_tags call in w_modepanel.c
+	from Graeme Gill (graeme@labtam.labtam.oz.au)
+o added strstr() function for systems without it
+o warning message about redefining InstallManPage fixed
+o removed unneeded O_NONE symbol from object.h
+o directory code fixed to work with SVR4
+	from David Elliot (dce@krusty.smsc.sony.com)
+o cleaned up function declarations for event handlers
+	from Anthony Datri (datri@lovecraft.convex.com)
+o renamed Fig-co.ad to Fig-color.ad for color customization under X11R5 (see 
+	README). Fig-co.ad can be deleted (if you have an older copy of xfig)
+	from David Elliot (dce@krusty.smsc.sony.com)
+
+------------------------------------------------------------------------------
 Patchlevel 2
 Changes to Patchlevel 1:
 
@@ -88,6 +155,7 @@ o additional command line flags supported
 
 o bug fixed where number of objects count in file popup was sometimes clipped
 
+------------------------------------------------------------------------------
 Patchlevel 1
 Changes to Patchlevel 0:
 
@@ -253,6 +321,8 @@ o The philosophy behind button usage has changed. This was necessary to
 	in the operation.  The right button can be used to cancel an operation.
 	Watch the mouse function window until you get the hang of it.
 
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 Version 2.0
 ===========
 

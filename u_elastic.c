@@ -32,7 +32,7 @@ extern float	compute_angle();
 int		constrained;
 int		fix_x, fix_y, work_numsides;
 int		x1off, x2off, y1off, y2off;
-CURSOR		cur_latexcursor;
+Cursor		cur_latexcursor;
 int		from_x, from_y;
 double		cosa, sina;
 int		movedpoint_num;
@@ -144,13 +144,13 @@ freehand_line(x, y)
 elastic_latexline()
 {
     int		    x, y;
-    CURSOR	    c;
+    Cursor	    c;
 
     latex_endpoint(fix_x, fix_y, cur_x, cur_y, &x, &y, latexarrow_mode,
 		   (cur_pointposn == P_ANY) ? 1 : posn_rnd[cur_pointposn]);
     pw_vector(canvas_win, fix_x, fix_y, x, y, INV_PAINT, 1, RUBBER_LINE, 0.0,
 	      DEFAULT_COLOR);
-    c = (x == cur_x && y == cur_y) ? &null_cursor : &crosshair_cursor;
+    c = (x == cur_x && y == cur_y) ? null_cursor : crosshair_cursor;
     if (c != cur_cursor) {
 	set_temp_cursor(c);
 	cur_cursor = c;
@@ -281,14 +281,14 @@ reshaping_line(x, y)
 reshaping_latexline(x, y)
     int		    x, y;
 {
-    CURSOR	    c;
+    Cursor	    c;
 
     elastic_linelink();
     adjust_pos(x, y, from_x, from_y, &cur_x, &cur_y);
     latex_endpoint(latex_fix_x, latex_fix_y, x, y, &cur_x, &cur_y,
     latexarrow_mode, (cur_pointposn == P_ANY) ? 1 : posn_rnd[cur_pointposn]);
     elastic_linelink();
-    c = (x == cur_x && y == cur_y) ? &null_cursor : &crosshair_cursor;
+    c = (x == cur_x && y == cur_y) ? null_cursor : crosshair_cursor;
     if (c != cur_latexcursor) {
 	set_temp_cursor(c);
 	cur_latexcursor = c;

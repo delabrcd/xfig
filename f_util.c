@@ -79,7 +79,7 @@ change_directory(path)
     char	   *path;
 {
     if (path == NULL) {
-	*cur_dir == '\0';
+	*cur_dir = '\0';
 	return (0);
     }
     if (chdir(path) == -1) {

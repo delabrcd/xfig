@@ -71,7 +71,7 @@ move_point_selected()
     canvas_leftbut_proc = point_search_left;
     canvas_middlebut_proc = point_search_middle;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&pick9_cursor);
+    set_cursor(pick9_cursor);
 }
 
 static
@@ -211,7 +211,7 @@ init_ellipsepointmoving()
     }
     from_x = cur_x;
     from_y = cur_y;
-    set_temp_cursor(&crosshair_cursor);
+    set_temp_cursor(crosshair_cursor);
     canvas_leftbut_proc = fix_movedellipsepoint;
     canvas_rightbut_proc = cancel_movedellipsepoint;
     return True;		/* all is Ok */
@@ -271,7 +271,7 @@ relocate_ellipsepoint(ellipse, x, y, point_num)
 {
     int		    dx, dy;
 
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     draw_ellipse(ellipse, ERASE);
     if (point_num == 0) {	/* starting point is selected  */
 	fix_x = ellipse->end.x;
@@ -323,7 +323,7 @@ init_arcpointmoving()
     toggle_arcmarker(cur_a);
     cur_x = cur_a->point[movedpoint_num].x;
     cur_y = cur_a->point[movedpoint_num].y;
-    set_temp_cursor(&crosshair_cursor);
+    set_temp_cursor(crosshair_cursor);
     win_setmouseposition(canvas_win, cur_x, cur_y);
     elastic_arclink();
     canvas_locmove_proc = reshaping_arc;
@@ -367,7 +367,7 @@ relocate_arcpoint(arc, x, y, movedpoint_num)
     p[movedpoint_num].x = x;
     p[movedpoint_num].y = y;
     if (compute_arccenter(p[0], p[1], p[2], &xx, &yy)) {
-	set_temp_cursor(&wait_cursor);
+	set_temp_cursor(wait_cursor);
 	draw_arc(arc, ERASE);	/* erase old arc */
 	arc->point[movedpoint_num].x = x;
 	arc->point[movedpoint_num].y = y;
@@ -390,7 +390,7 @@ init_splinepointmoving()
     toggle_splinemarker(cur_s);
     from_x = cur_x = moved_point->x;
     from_y = cur_y = moved_point->y;
-    set_temp_cursor(&crosshair_cursor);
+    set_temp_cursor(crosshair_cursor);
     if (closed_spline(cur_s) && left_point == NULL) {
 	for (left_point = right_point, p = left_point->next;
 	     p->next != NULL;
@@ -432,7 +432,7 @@ relocate_splinepoint(s, x, y, moved_point)
     int		    x, y;
     F_point	   *moved_point;
 {
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     draw_spline(s, ERASE);	/* erase old spline */
     moved_point->x = x;
     moved_point->y = y;
@@ -469,7 +469,7 @@ init_compoundpointmoving()
     from_y = cur_y;
     toggle_compoundmarker(cur_c);
     draw_compoundelements(cur_c, ERASE);
-    set_temp_cursor(&crosshair_cursor);
+    set_temp_cursor(crosshair_cursor);
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     if (constrained) {
 	dx = cur_x - fix_x;
@@ -534,7 +534,7 @@ init_linepointmoving()
     latex_case = 0;
     from_x = cur_x = moved_point->x;
     from_y = cur_y = moved_point->y;
-    set_temp_cursor(&crosshair_cursor);
+    set_temp_cursor(crosshair_cursor);
     switch (cur_l->type) {
     case T_POLYGON:
 	if (left_point == NULL)
@@ -608,7 +608,7 @@ init_linepointmoving()
 	canvas_locmove_proc = reshaping_latexline;
 	canvas_leftbut_proc = fix_movedlatexlinepoint;
 	canvas_rightbut_proc = cancel_movedlinepoint;
-	cur_latexcursor = &crosshair_cursor;
+	cur_latexcursor = crosshair_cursor;
     } else {
 	elastic_linelink();
 	canvas_locmove_proc = reshaping_line;
@@ -718,8 +718,8 @@ fix_movedlatexlinepoint(x, y)
     adjust_pos(x, y, from_x, from_y, &x, &y);
     latex_endpoint(latex_fix_x, latex_fix_y, x, y, &x, &y,
     latexarrow_mode, (cur_pointposn == P_ANY) ? 1 : posn_rnd[cur_pointposn]);
-    if (cur_latexcursor != &crosshair_cursor)
-	set_temp_cursor(&crosshair_cursor);
+    if (cur_latexcursor != crosshair_cursor)
+	set_temp_cursor(crosshair_cursor);
     old_l = copy_line(cur_l);
     clean_up();
     set_latestline(old_l);

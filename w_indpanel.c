@@ -38,6 +38,14 @@ extern int	show_zoom();
 static int	cur_anglegeom = L_UNCONSTRAINED;
 static int	cur_indmask = I_MIN1;
 
+static String	set_translations = 
+	"<Key>Return: SetValue()";
+static void	nval_panel_set();
+static XtActionsRec set_actions[] =
+{
+    {"SetValue", (XtActionProc) nval_panel_set},
+};
+
 DeclareStaticArgs(15);
 
 /* declarations for choice buttons */
@@ -190,7 +198,7 @@ ind_sw_info	ind_switches[] = {
 	&cur_fillstyle, NULL, darken_fill, lighten_fill, show_fillstyle,
 	fillstyle_choices, NUMFILLPATS + 1, (NUMFILLPATS + 1) / 2},
     {I_CHOICE, I_COLOR, "Color", "", WIDE_IND_SW_WD,
-	&cur_color, NULL, next_color, prev_color, show_color,
+	(int *) &cur_color, NULL, next_color, prev_color, show_color,
 	color_choices, NUMCOLORS + 1, (NUMCOLORS + 1) / 2},
     {I_CHOICE, I_LINKMODE, "Smart", "Links", DEF_IND_SW_WD,
 	&cur_linkmode, NULL, inc_choice, dec_choice, show_linkmode,
@@ -350,7 +358,7 @@ setup_ind_panel()
 	XtSetValues(isw->widget, &button_args[6], 1);
     }
 
-    XDefineCursor(d, XtWindow(ind_panel), (Cursor) arrow_cursor.bitmap);
+    XDefineCursor(d, XtWindow(ind_panel), arrow_cursor);
     update_current_settings();
 
     FirstArg(XtNmappedWhenManaged, True);
@@ -527,6 +535,7 @@ popup_choice_panel(isw)
     NextArg(XtNy, y_val);
     NextArg(XtNresize, False);
     NextArg(XtNresizable, False);
+    NextArg(XtNtitle, "Xfig: Set indicator panel");
 
     choice_popup = XtCreatePopupShell("xfig_set_indicator_panel",
 				      transientShellWidgetClass, tool,
@@ -547,13 +556,14 @@ popup_choice_panel(isw)
     cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
 				   form, Args, ArgCount);
     XtAddEventHandler(cancel, ButtonReleaseMask, (Boolean) 0,
-		      choice_panel_cancel, (XtPointer) NULL);
+		      (XtEventHandler)choice_panel_cancel, (XtPointer) NULL);
 
     tmp_choice = isw->choices;
 
     for (i = 0; i < isw->numchoices; tmp_choice++, i++) {
 	if (isw->func == I_FILLSTYLE)
-	    p = (cur_color==BLACK? 
+	    p = ((cur_color==BLACK || cur_color==DEFAULT_COLOR ||
+		 (!all_colors_available && cur_color!=WHITE))?
 		fillstyle_choices[i].blackPM :fillstyle_choices[i].normalPM);
 	else if (isw->func == I_COLOR) {
 	    p = NULL;
@@ -604,7 +614,7 @@ popup_choice_panel(isw)
 	beside = XtCreateManagedWidget(" ", commandWidgetClass,
 				       form, Args, ArgCount);
 	XtAddEventHandler(beside, ButtonReleaseMask, (Boolean) 0,
-			  choice_panel_set, (caddr_t) tmp_choice);
+			  (XtEventHandler)choice_panel_set, (caddr_t) tmp_choice);
     }
 
     /* auxiliary info */
@@ -737,13 +747,17 @@ popup_nval_panel(isw)
     newvalue = XtCreateManagedWidget(buf, asciiTextWidgetClass,
 				     form, Args, ArgCount);
 
+    /* add translation and action to set value on carriage return */
+    XtAppAddActions(tool_app, set_actions, XtNumber(set_actions));
+    XtOverrideTranslations(newvalue, XtParseTranslationTable(set_translations));
+
     FirstArg(XtNlabel, "cancel");
     NextArg(XtNfromVert, newvalue);
     NextArg(XtNborderWidth, INTERNAL_BW);
     cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
 				   form, Args, ArgCount);
     XtAddEventHandler(cancel, ButtonReleaseMask, (Boolean) 0,
-		      nval_panel_cancel, (XtPointer) NULL);
+		      (XtEventHandler)nval_panel_cancel, (XtPointer) NULL);
 
     FirstArg(XtNlabel, "set");
     NextArg(XtNfromVert, newvalue);
@@ -752,7 +766,7 @@ popup_nval_panel(isw)
     set = XtCreateManagedWidget("set", commandWidgetClass,
 				form, Args, ArgCount);
     XtAddEventHandler(set, ButtonReleaseMask, (Boolean) 0,
-		      nval_panel_set, (XtPointer) NULL);
+		      (XtEventHandler)nval_panel_set, (XtPointer) NULL);
 
     XtPopup(nval_popup, XtGrabExclusive);
 }
@@ -1160,22 +1174,23 @@ show_fillstyle(sw)
     ind_sw_info	   *sw;
 {
     if (cur_fillstyle == 0) {
-	XCopyArea(tool_d, ((cur_color==BLACK || 
-			    (!all_colors_available && cur_color!=WHITE))? 
+	XCopyArea(tool_d, ((cur_color==BLACK ||
+		   (cur_color==DEFAULT_COLOR && x_fg_color.pixel==appres.color[BLACK]) ||
+			(!all_colors_available && cur_color!=WHITE))? 
 			fillstyle_choices[0].blackPM: fillstyle_choices[0].normalPM),
 			sw->normalPM,
 			ind_button_gc, 0, 0, 32, 32, 32, 0);
 	put_msg("NO-FILL MODE");
     } else {
 	/* put the pixmap in the widget background */
-	XCopyArea(tool_d, ((cur_color==BLACK || 
-			    (!all_colors_available && cur_color!=WHITE))? 
+	XCopyArea(tool_d, ((cur_color==BLACK ||
+		   (cur_color==DEFAULT_COLOR && x_fg_color.pixel==appres.color[BLACK]) ||
+			(!all_colors_available && cur_color!=WHITE))? 
 				fillstyle_choices[cur_fillstyle].blackPM:
 				fillstyle_choices[cur_fillstyle].normalPM),
 			sw->normalPM,
 			ind_button_gc, 0, 0, 26, 24, 35, 4);
-	put_msg("FILL MODE (%s = %d%%)",
-		cur_color==BLACK? "black density": "color intensity",
+	put_msg("FILL MODE (black density/color intensity = %d%%)",
 		((cur_fillstyle - 1) * 100) / (NUMFILLPATS - 1));
     }
     button_args[6].value = 0;
@@ -1376,8 +1391,8 @@ static
 show_fontsize(sw)
     ind_sw_info	   *sw;
 {
-    if (cur_fontsize < 0)
-	cur_fontsize = 0;
+    if (cur_fontsize < 4)
+	cur_fontsize = 4;
     else if (cur_fontsize > 1000)
 	cur_fontsize = 1000;
 

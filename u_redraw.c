@@ -430,7 +430,7 @@ redisplay_canvas()
 redisplay_region(xmin, ymin, xmax, ymax)
     int		    xmin, ymin, xmax, ymax;
 {
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     /* kludge so that markers are redrawn */
     xmin -= 8;
     ymin -= 8;

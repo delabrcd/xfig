@@ -25,22 +25,30 @@
 #include "w_setup.h"
 #include "w_util.h"
 
-extern String	file_text_translations;
+extern String	text_translations;
 extern Widget	make_popup_menu();
 extern char    *panel_get_value();
 
 /* LOCAL */
+
+static String	file_name_translations =
+	"<Key>Return: ExportFile()\n";
+void		do_export();
+static XtActionsRec	file_name_actions[] =
+{
+    {"ExportFile", (XtActionProc) do_export},
+};
 
 static char	default_file[60];
 static char	named_file[60];
 
 static char    *orient_items[] = {
     "portrait ",
-"landscape"};
+    "landscape"};
 
 static char    *just_items[] = {
     "flush left",
-"centered  "};
+    "centered  "};
 
 static void	orient_select();
 static Widget	orient_panel, orient_menu, orient_lab;
@@ -50,7 +58,7 @@ static Widget	lang_panel, lang_menu, lang_lab;
 
 static void	just_select();
 static Widget	just_panel, just_menu, just_lab;
-static int	print_centered = 0;
+static int	print_centered = 1;
 
 static Widget	cancel_but, export_but;
 static Widget	dfile_lab, dfile_text, nfile_lab;
@@ -199,7 +207,7 @@ popup_export_panel(w)
 
     DeclareArgs(10);
 
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     XtSetSensitive(w, False);
     export_up = True;
 
@@ -209,6 +217,7 @@ popup_export_panel(w)
 
 	FirstArg(XtNx, xposn);
 	NextArg(XtNy, yposn + 50);
+	NextArg(XtNtitle, "Xfig: Export menu");
 	export_popup = XtCreatePopupShell("xfig_export_menu",
 					  transientShellWidgetClass,
 					  tool, Args, ArgCount);
@@ -234,7 +243,7 @@ popup_export_panel(w)
 	mag_text = XtCreateManagedWidget("magnification", asciiTextWidgetClass,
 					 export_panel, Args, ArgCount);
 	XtOverrideTranslations(mag_text,
-			   XtParseTranslationTable(file_text_translations));
+			   XtParseTranslationTable(text_translations));
 
 	FirstArg(XtNlabel, "      Orientation:");
 	NextArg(XtNjustify, XtJustifyLeft);
@@ -259,10 +268,11 @@ popup_export_panel(w)
 	just_lab = XtCreateManagedWidget("just_label", labelWidgetClass,
 					 export_panel, Args, ArgCount);
 
-	FirstArg(XtNfromHoriz, just_lab);
+	FirstArg(XtNlabel, just_items[print_centered]);
+	NextArg(XtNfromHoriz, just_lab);
 	NextArg(XtNfromVert, orient_panel);
 	NextArg(XtNborderWidth, INTERNAL_BW);
-	just_panel = XtCreateManagedWidget(just_items[print_centered],
+	just_panel = XtCreateManagedWidget("justify",
 					   menuButtonWidgetClass,
 					   export_panel, Args, ArgCount);
 	just_menu = make_popup_menu(just_items, XtNumber(just_items),
@@ -278,10 +288,10 @@ popup_export_panel(w)
 	FirstArg(XtNfromHoriz, lang_lab);
 	NextArg(XtNfromVert, just_panel);
 	NextArg(XtNborderWidth, INTERNAL_BW);
-	lang_panel = XtCreateManagedWidget(lang_items[cur_exp_lang],
+	lang_panel = XtCreateManagedWidget(lang_texts[cur_exp_lang],
 					   menuButtonWidgetClass,
 					   export_panel, Args, ArgCount);
-	lang_menu = make_popup_menu(lang_items, XtNumber(lang_items),
+	lang_menu = make_popup_menu(lang_texts, XtNumber(lang_texts),
 				    lang_panel, lang_select);
 
 	FirstArg(XtNlabel, " Default Filename:");
@@ -324,7 +334,14 @@ popup_export_panel(w)
 	exp_selfile = XtCreateManagedWidget("file", asciiTextWidgetClass,
 					    export_panel, Args, ArgCount);
 	XtOverrideTranslations(exp_selfile,
-			   XtParseTranslationTable(file_text_translations));
+			   XtParseTranslationTable(text_translations));
+
+	/* add action to export file for following translation */
+	XtAppAddActions(tool_app, file_name_actions, XtNumber(file_name_actions));
+
+	/* make <return> in the filename window export the file */
+	XtOverrideTranslations(exp_selfile,
+			   XtParseTranslationTable(file_name_translations));
 
 	create_dirinfo(export_panel, exp_selfile, &beside, &below,
 		       &exp_mask, &exp_dir, &exp_flist, &exp_dlist);
@@ -339,7 +356,7 @@ popup_export_panel(w)
 	cancel_but = XtCreateManagedWidget("cancel", commandWidgetClass,
 					   export_panel, Args, ArgCount);
 	XtAddEventHandler(cancel_but, ButtonReleaseMask, (Boolean) 0,
-			  export_panel_cancel, (XtPointer) NULL);
+			  (XtEventHandler)export_panel_cancel, (XtPointer) NULL);
 
 	FirstArg(XtNlabel, "Export");
 	NextArg(XtNfromVert, below);
@@ -351,7 +368,7 @@ popup_export_panel(w)
 	export_but = XtCreateManagedWidget("export", commandWidgetClass,
 					   export_panel, Args, ArgCount);
 	XtAddEventHandler(export_but, ButtonReleaseMask, (Boolean) 0,
-			  do_export, (XtPointer) NULL);
+			  (XtEventHandler)do_export, (XtPointer) NULL);
 
 	if (cur_exp_lang == LANG_XBITMAP) {
 	    XtSetSensitive(mag_lab, False);

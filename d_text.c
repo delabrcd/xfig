@@ -33,7 +33,6 @@ extern PIX_FONT lookfont();
 #define CTRL_H	8
 #define NL	10
 #define CR	13
-#define CTRL_U	21
 #define CTRL_X	24
 #define SP	32
 #define DEL	127
@@ -74,7 +73,7 @@ text_drawing_selected()
     canvas_leftbut_proc = init_text_input;
     canvas_rightbut_proc = null_proc;
     set_mousefun("posn cursor", "", "");
-    set_cursor(&pencil_cursor);
+    set_cursor(pencil_cursor);
 }
 
 static
@@ -458,7 +457,7 @@ char_handler(c)
 	    cur_x = rcur_x;
 	    draw_char_string();
 	}
-    } else if (c == CTRL_U || c == CTRL_X) {
+    } else if (c == CTRL_X) {
 	if (leng_prefix > 0) {
 	    erase_char_string();
 	    switch (work_textjust) {

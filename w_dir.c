@@ -42,17 +42,23 @@
 #include "w_dir.h"
 #include "w_setup.h"
 #include "w_drawprim.h"		/* for char_height */
+#ifdef USE_DIRENT
+#include <dirent.h>
+#else
 #include <sys/dir.h>
+#endif
 #include <sys/param.h>
 
 /* Static variables */
 
 DeclareStaticArgs(10);
 static Boolean	errorInProgress;
-static String	text_translations =
-"<Key>Return: SetDir()\n";
+static String	dir_translations =
+	"<Key>Return: SetDir()\n\
+	Ctrl<Key>X: EmptyTextKey()\n\
+	<Key>F18: PastePanelKey()\n";
 static String	list_panel_translations =
-"<Btn3Up>: ParentDir()\n";
+	"<Btn3Up>: ParentDir()\n";
 static char	CurrentSelectionName[MAXPATHLEN];
 static int	file_entry_cnt, dir_entry_cnt;
 static char   **file_list, **dir_list;
@@ -237,7 +243,7 @@ create_dirinfo(parent, below, ret_beside, ret_below,
 				   parent, Args, ArgCount);
 
     XtOverrideTranslations(*dir_w,
-			   XtParseTranslationTable(text_translations));
+			   XtParseTranslationTable(dir_translations));
 
     FirstArg(XtNlabel, "     Alternatives:");
     NextArg(XtNborderWidth, 0);
@@ -303,11 +309,11 @@ MakeFileList(dir_name, mask, dir_list, file_list)
     char	   *mask, ***dir_list, ***file_list;
 {
     DIR		   *dirp;
-    struct direct  *dp;
+    DIRSTRUCT	  *dp;
     char	  **cur_file, **cur_directory;
     char	  **last_file, **last_dir;
 
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     cur_file = filelist;
     cur_directory = dirlist;
     last_file = filelist + file_entry_cnt - 1;
@@ -365,11 +371,14 @@ MakeFileList(dir_name, mask, dir_list, file_list)
     }
     *cur_file = NULL;
     *cur_directory = NULL;
-    qsort(filelist, cur_file - filelist - 1, sizeof(char *), SPComp);
-    qsort(dirlist, cur_directory - dirlist - 1, sizeof(char *), SPComp);
+    if (cur_file != filelist)
+	qsort(filelist, cur_file - filelist - 1, sizeof(char *), SPComp);
+    if (cur_directory != dirlist)
+	qsort(dirlist, cur_directory - dirlist - 1, sizeof(char *), SPComp);
     *file_list = filelist;
     *dir_list = dirlist;
     reset_cursor();
+    closedir(dirp);
     return 1;
 }
 

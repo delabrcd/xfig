@@ -61,7 +61,7 @@ flip_selected()
     canvas_leftbut_proc = object_search_left;
     canvas_middlebut_proc = object_search_middle;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&pick15_cursor);
+    set_cursor(pick15_cursor);
 }
 
 static
@@ -126,7 +126,7 @@ init_fliparc(a, px, py)
 {
     F_arc	   *arc;
 
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     arc = copy_arc(a);
     flip_arc(arc, px, py, flip_axis);
     if (copy) {
@@ -148,7 +148,7 @@ init_flipcompound(c, px, py)
 {
     F_compound	   *compound;
 
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     compound = copy_compound(c);
     flip_compound(compound, px, py, flip_axis);
     if (copy) {

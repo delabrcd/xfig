@@ -70,6 +70,7 @@ init_fontmenu(tool)
 
     FirstArg(XtNborderWidth, POPUP_BW);
     NextArg(XtNmappedWhenManaged, False);
+    NextArg(XtNtitle, "Xfig: Font menu");
 
     ps_fontmenu = XtCreatePopupShell("xfig_ps_font_menu",
 				     transientShellWidgetClass, tool,
@@ -216,10 +217,8 @@ setup_fontmenu()
     XtRealizeWidget(ps_fontmenu);
     XtRealizeWidget(latex_fontmenu);
     /* at this point the windows are realized but not drawn */
-    XDefineCursor(tool_d, XtWindow(ps_fontpanes),
-		  (Cursor) arrow_cursor.bitmap);
-    XDefineCursor(tool_d, XtWindow(latex_fontpanes),
-		  (Cursor) arrow_cursor.bitmap);
+    XDefineCursor(tool_d, XtWindow(ps_fontpanes), arrow_cursor);
+    XDefineCursor(tool_d, XtWindow(latex_fontpanes), arrow_cursor);
 }
 
 void

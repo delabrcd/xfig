@@ -288,7 +288,7 @@ setup_mode_panel()
 				   but_bg, but_fg, DefaultDepthOfScreen(s));
     }
 
-    XDefineCursor(d, XtWindow(mode_panel), (Cursor) arrow_cursor.bitmap);
+    XDefineCursor(d, XtWindow(mode_panel), arrow_cursor);
     FirstArg(XtNmappedWhenManaged, True);
     SetValues(mode_panel);
 }
@@ -324,7 +324,7 @@ sel_mode_but(widget, msw, event)
 	     * reset tagged items when changing modes, perhaps this is not
 	     * really necessary
 	     */
-	    set_tags(objects, 0);
+	    set_tags(&objects, 0);
 	cur_mode = msw->mode;
 	anypointposn = !(msw->indmask & I_POINTPOSN);
 	new_objmask = msw->objmask;

@@ -94,9 +94,12 @@ print_to_file(file, lang, mag, center)
     else if (!strncmp(lang, "eps", 3))
 	sprintf(prcmd, "fig2dev -Lps -m %f %s %s %s",
 		mag, print_landscape ? "-l xxx" : " ", tmpfile, file);
+    else if (!strncmp(lang, "ibmgl", 5))
+	sprintf(prcmd, "fig2dev -Libmgl -m %f %s %s %s",
+		mag, print_landscape ? " " : "-P", tmpfile, file);
     else
-	sprintf(prcmd, "fig2dev -L%s -m %f %s %s %s", lang,
-		mag, print_landscape ? "-l xxx" : " ", tmpfile, file);
+	sprintf(prcmd, "fig2dev -L%s -m %f %s %s", lang,
+		mag, tmpfile, file);
     if (system(prcmd) == 127)
 	put_msg("Error during EXPORT (unable to find fig2dev?)");
     else

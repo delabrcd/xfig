@@ -39,7 +39,7 @@ arcbox_drawing_selected()
     canvas_leftbut_proc = init_arc_box_drawing;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&arrow_cursor);
+    set_cursor(arrow_cursor);
     reset_action_on();
 }
 
@@ -56,7 +56,7 @@ init_arc_box_drawing(x, y)
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = cancel_arc_boxobject;
     elastic_box(fix_x, fix_y, cur_x, cur_y);
-    set_temp_cursor(&null_cursor);
+    set_temp_cursor(null_cursor);
     set_action_on();
 }
 

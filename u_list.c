@@ -776,7 +776,6 @@ object_count(list)
     return (cnt);
 }
 
-int
 set_tags(list, tag)
     F_compound	   *list;
     int		    tag;

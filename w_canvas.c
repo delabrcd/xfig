@@ -31,6 +31,10 @@
 #include "sys/time.h"
 #include <X11/Xatom.h>
 
+#ifdef NOSTRSTR
+extern char *strstr();
+#endif
+
 extern		erase_rulermark();
 extern		erase_objecthighlight();
 extern		char_handler();
@@ -227,7 +231,7 @@ canvas_selected(tool, event, params, nparams)
 
     switch (event->type) {
     case MotionNotify:
-#ifdef SMOOTHMOTION
+#if defined(SMOOTHMOTION) || defined(OPENWIN)
 	/* translate from zoomed coords to object coords */
 	x = BACKX(event->x);
 	y = BACKY(event->y);
@@ -250,9 +254,9 @@ canvas_selected(tool, event, params, nparams)
 			  &rx, &ry,
 			  &cx, &cy,
 			  &mask);
-
 	    cx = BACKX(cx);
 	    cy = BACKY(cy);
+
 	    /* perform appropriate rounding if necessary */
 	    round_coords(cx, cy);
 
@@ -261,7 +265,7 @@ canvas_selected(tool, event, params, nparams)
 	    x = sx = cx;	/* these are zoomed */
 	    y = sy = cy;	/* coordinates!	    */
 	}
-#endif
+#endif /* SMOOTHMOTION || OPENWIN */
 	set_rulermark(x, y);
 	(*canvas_locmove_proc) (x, y);
 	break;
@@ -370,7 +374,7 @@ XKeyEvent *paste_event;
 	if (paste_event != NULL)
 		event_time = paste_event->time;
 	   else
-		time(&event_time);
+		time((time_t *) &event_time);
 	/***
 	This doesn't seem to work:
 	XtGetSelectionValue(w, XInternAtom(XtDisplay(w), "XA_PRIMARY", False),
@@ -432,10 +436,12 @@ readComposeKey()
     /* put together the filename from the dir name and file name */
     strcpy(line, XFIGLIBDIR);
     strcat(line, "/");
-    strcat(line, KEY_NAME);
+    strcat(line, appres.keyFile);
     if ((st = fopen(line, "r")) == NULL) {
 	allCompKey = NULL;
-	return (0);
+	fprintf(stderr,"%cCan't open compose key file '%s',\n",007,line);
+	fprintf(stderr,"\tno multi-key sequences available\n");
+	return;
     }
     fseek(st, 0, 2);
     size = ftell(st);

@@ -271,7 +271,6 @@ typedef struct f_linkinfo {
 
 /**********************	 object codes  **********************/
 
-#define		O_NONE			0
 #define		O_ELLIPSE		1
 #define		O_POLYLINE		2
 #define		O_SPLINE		3

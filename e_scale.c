@@ -73,7 +73,7 @@ scale_selected()
     canvas_leftbut_proc = object_search_left;
     canvas_middlebut_proc = object_search_middle;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&pick15_cursor);
+    set_cursor(pick15_cursor);
     reset_action_on();
 }
 
@@ -204,7 +204,7 @@ init_boxscale_ellipse(x, y)
     cosa = fabs(dx / l);
     sina = fabs(dy / l);
 
-    set_temp_cursor(&crosshair_cursor);
+    set_temp_cursor(crosshair_cursor);
     if (cur_e->type == T_CIRCLE_BY_DIA) {
 	canvas_locmove_proc = constrained_resizing_cbd;
 	elastic_cbd();
@@ -251,7 +251,7 @@ boxrelocate_ellipsepoint(ellipse, x, y)
 {
     int		    dx, dy;
 
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     draw_ellipse(ellipse, ERASE);
     if (ellipse->start.x == fix_x)
 	ellipse->end.x = x;
@@ -289,7 +289,7 @@ init_scale_ellipse()
     }
     set_action_on();
     toggle_ellipsemarker(cur_e);
-    set_temp_cursor(&crosshair_cursor);
+    set_temp_cursor(crosshair_cursor);
     canvas_locmove_proc = scaling_ellipse;
     elastic_scaleellipse(cur_e);
     canvas_middlebut_proc = fix_scale_ellipse;
@@ -326,7 +326,7 @@ relocate_ellipsepoint(ellipse, x, y)
     int		    newx, newy, oldx, oldy;
     float	    newd, oldd, scalefact;
 
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     draw_ellipse(ellipse, ERASE);
 
     newx = x - fix_x;
@@ -361,7 +361,7 @@ init_scale_arc()
     set_action_on();
     toggle_arcmarker(cur_a);
     elastic_scalearc(cur_a);
-    set_temp_cursor(&crosshair_cursor);
+    set_temp_cursor(crosshair_cursor);
     canvas_locmove_proc = scaling_arc;
     canvas_middlebut_proc = fix_scale_arc;
     canvas_rightbut_proc = cancel_scale_arc;
@@ -418,7 +418,7 @@ relocate_arcpoint(arc, x, y)
     p2.x = fix_x + (p2.x - fix_x) * scalefact;
     p2.y = fix_y + (p2.y - fix_y) * scalefact;
     if (compute_arccenter(p0, p1, p2, &xx, &yy)) {
-	set_temp_cursor(&wait_cursor);
+	set_temp_cursor(wait_cursor);
 	draw_arc(arc, ERASE);	/* erase old arc */
 	arc->point[0].x = p0.x;
 	arc->point[0].y = p0.y;
@@ -458,7 +458,7 @@ init_scale_spline()
 	return False;
     }
     set_action_on();
-    set_temp_cursor(&crosshair_cursor);
+    set_temp_cursor(crosshair_cursor);
     toggle_splinemarker(cur_s);
     draw_spline(cur_s, ERASE);
     elastic_scalepts(cur_s->points);
@@ -519,7 +519,7 @@ init_boxscale_compound(x, y)
     set_action_on();
     toggle_compoundmarker(cur_c);
     draw_compoundelements(cur_c, ERASE);
-    set_temp_cursor(&crosshair_cursor);
+    set_temp_cursor(crosshair_cursor);
 
     if (x == xmin) {
 	fix_x = xmax;
@@ -620,7 +620,7 @@ init_scale_compound()
     fix_y = (cur_c->nwcorner.y + cur_c->secorner.y) / 2;
     set_action_on();
     toggle_compoundmarker(cur_c);
-    set_temp_cursor(&crosshair_cursor);
+    set_temp_cursor(crosshair_cursor);
     draw_compoundelements(cur_c, ERASE);
     elastic_scalecompound(cur_c);
     canvas_locmove_proc = scaling_compound;
@@ -876,7 +876,7 @@ init_boxscale_line(x, y)
 
     cur_x = from_x;
     cur_y = from_y;
-    set_temp_cursor(&crosshair_cursor);
+    set_temp_cursor(crosshair_cursor);
     draw_line(cur_l, ERASE);
 
     if (constrained == BOX_SCALE) {
@@ -979,7 +979,7 @@ init_scale_line()
     }
     set_action_on();
     toggle_linemarker(cur_l);
-    set_temp_cursor(&crosshair_cursor);
+    set_temp_cursor(crosshair_cursor);
     draw_line(cur_l, ERASE);
     elastic_scalepts(cur_l->points);
     canvas_locmove_proc = scaling_line;

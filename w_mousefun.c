@@ -107,7 +107,7 @@ setup_mousefun()
 {
     reset_mousefun();
     set_mousefun("", "", "");
-    XDefineCursor(tool_d, XtWindow(mousefun), (Cursor) arrow_cursor.bitmap);
+    XDefineCursor(tool_d, XtWindow(mousefun), arrow_cursor);
 }
 
 void

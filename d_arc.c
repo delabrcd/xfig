@@ -46,7 +46,7 @@ arc_drawing_selected()
     canvas_leftbut_proc = init_arc_drawing;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&arrow_cursor);
+    set_cursor(arrow_cursor);
     reset_action_on();
 }
 
@@ -64,7 +64,7 @@ init_arc_drawing(x, y)
     canvas_leftbut_proc = get_arcpoint;
     canvas_middlebut_proc = null_proc;
     elastic_line();
-    set_temp_cursor(&null_cursor);
+    set_temp_cursor(null_cursor);
     set_action_on();
 }
 

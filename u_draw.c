@@ -21,7 +21,6 @@
  *
  */
 
-#include <strings.h>
 #include "fig.h"
 #include "resources.h"
 #include "object.h"

@@ -1,5 +1,7 @@
-.po .9i
-.TH XFIG 1 "Release 2.1 (Protocol 2.1)"
+'\" t
+.\" the previous line makes man call tbl
+.if t .po .9i
+.TH XFIG 1 "Release 2.1.3 (Protocol 2.1)"
 .SH NAME
 xfig \- Facility for Interactive Generation of figures under X11
 .SH SYNOPSIS
@@ -124,6 +126,12 @@ Cause the font used for displaying confirmation messages to be \fIfont\fP (defau
 \fB-startf[ontsize]\fP \fIpointsize\fP
 Set the default font size for text objects (default = 12pt).
 .TP
+\fB-startp[sFont]\fP \fIfont\fP
+Set the starting font name for \fIPostscript\fP fonts.
+.TP
+\fB-startl[atexFont]\fP \fIfont\fP
+Set the starting font name for \fILaTeX\fP fonts.
+.TP
 .B \-sh[owallbuttons]\fP
 Show all the xfig indicator buttons instead of only those relevant
 to the current drawing mode.  Normally, the buttons \fIline width\fP, 
@@ -145,6 +153,11 @@ Start xfig with the \fIspecial text\fP mode for text objects.
 .TP
 .B \-sc[alablefonts]
 Allows use of the X11R5 scalable fonts.
+.TP
+.B \-k[eyFile] \fIcompose-key-file\fP
+Use \fIcompose-key-file\fP instead of \fICompKeyDB\fP for compose key 
+database.  This file must be in the xfig libarary directory, usually 
+/usr/local/lib/xfig.
 .SH "GRAPHICAL OBJECTS"
 The objects in \fIxfig\fP are divided into \fBprimitive objects\fP and
 \fBcompound objects\fP. The primitive objects are: \fIARC\fP, \fICIRCLE\fP,
@@ -209,6 +222,7 @@ Left mouse button pops up a panel which contains several file-related functions:
 .TP
 .I Filename
 This is an editable AsciiTextWidget which contains the current filename.
+Pressing return in the Filename widget will Load the file.
 .TP
 .I (File) Alternatives
 Pressing the \fIleft\fP mouse button on a filename in the file alternatives
@@ -219,6 +233,7 @@ A wildcard mask may be typed into this editable AsciiTextWidget to restrict
 the search of filenames to a subset ala the \fIls\fP command.
 Pressing return in this widget will automatically 
 rescan the current directory.
+This string may be set by setting the resource \fB*file_panel*mask*string\fP.
 .TP
 .I Current Directory
 This is an editable AsciiTextWidget which shows the current directory.
@@ -249,12 +264,26 @@ asking the user to confirm or cancel the save.
 The current contents of the canvas are cleared and the figure
 is read from the filename specified in the \fIFile\fP menu item.
 This file will become the current file.
+Pressing return in the file name window will also load the file.
+
+A popup message window will appear and diagnostic messages will be written
+if xfig changes any "illegal" object values to legal values.  For example,
+older versions of xfig were lax about initializing unused parts such as 
+\fIdepth\fP, and would produce very large, random values.
+\fIXfig\fP now will "clean up" bad values and inform you when it does so.
+Also, if you read in an older file format, \fIxfig\fP will inform you that
+it is converting it to the current format for that version of xfig.
+
+This window can be popped down by clicking the mouse button on the 
+\fIDismiss\fP button.  The messages will be cleared before reading a new file.
 .TP
 .I Merge Read
 Read figure from the filename specified in the \fIFile\fP menu item
 and merge it with the figure already shown on the canvas.
 The filename in the \fIFile\fP will revert to the previous filename
 after this function is completed.
+
+See \fILoad\fP above for a description of the popup message window.
 .PP
 Right mouse button invokes \fISave\fP function without popping up the file
 panel.
@@ -301,6 +330,7 @@ language used.
 .I Output Filename
 This is an editable AsciiTextWidget which contains the filename to use
 to write output to a file.
+Pressing return in this widget will Export the file.
 .TP
 .I (File) Alternatives
 Pressing the \fIleft\fP mouse button on a filename in the file alternatives
@@ -311,6 +341,7 @@ A wildcard mask may be typed into this editable AsciiTextWidget to restrict
 the search of filenames to a subset ala the \fIls\fP command.
 Pressing return in this widget will automatically 
 rescan the current directory.
+This string may be set by setting the resource \fB*export_panel*mask*string\fP.
 .TP
 .I Current Directory
 This is an editable AsciiTextWidget which shows the current directory.
@@ -335,6 +366,7 @@ This button will pop down the print menu without doing any print operation.
 This button writes the figure to the file using the selected language.
 If the file already exists, a confirmation window will popup to ask the user to
 confirm the write or cancel.
+Pressing return in the Output Filename widget will also Export the file.
 .PP
 Right mouse button invokes \fIExport\fP function without popping up the export
 panel.
@@ -365,7 +397,7 @@ default is \fIflush left\fP.
 .I Printer
 This is an AsciiTextWidget which contains the printer to 
 use if output is directed to a printer.  The name of the printer may 
-be set using the resource \fI*printer*string:\fP
+be set setting the resource \fB*printer*string\fP.
 .TP
 .I Cancel
 This button will pop down the print menu without doing any print operation.
@@ -393,7 +425,8 @@ All of the buttons use the same mouse buttons for setting values.
 Pressing the \fIleft\fP mouse button on the indicator will pop up a panel
 in which either a value may be typed (e.g. for a line thickness) or the
 mouse may be clicked on one of several buttons (e.g. for grid style or 
-font name).
+font name).  For those that expect a value, pressing return in the value
+part of the window will set the new value and pop down the menu.
 .PP
 Pressing the \fImiddle\fP mouse button on an indicator will decrement the value
 (e.g. for line thickness)
@@ -688,7 +721,7 @@ from the PRIMARY cut buffer (xterm cut/paste buffer) by pressing
 \fIF18\fP function key or any key/button defined in the translation 
 table for the canvas.  See the default \fIFig.ad\fP file for example.
 Text is drawn using the current font, font size and justification settings.
-A DEL or ^H (backspace) will delete a character, while a ^U or ^X will 
+A DEL or ^H (backspace) will delete a character, while a ^X will 
 erase the entire line.
 Finish by clicking the \fImiddle\fP button or typing the \fI<return>\fP key.  
 If \fI<return>\fP is used, the text pointer automatically moves to the next "line",
@@ -944,31 +977,31 @@ pop down the menu.
 
 The following table shows which settings are used for the different objects.
 
+.if n .RS -.1i
 .nf
-.po -.4i
-.ta 0.8i 1.6i 2.1i 2.7i 3.3i 3.9i 4.6i 5.3i 6i 6.3i
-.ps 12
+.TS
+l c 1 c 1 c 1 c 1 c 1 c 1 c 1 c 1 c.
 Object	\(dgAngle	Area	Line	Line	Box	\(ddDepth	Color	Radius	Text Font/
 		Fill	Width	Style	Curve				Just./Size
-.ps 10
-\l'7i'
-Arc		  X	  X	  X		   X	   X
-\l'7i'
-Arc-Box		  X	  X	  X	  X	   X	   X
-\l'7i'
-Circle	   X	  X	  X	  X		   X	   X	   X
-\l'7i'
-Ellipse	   X	  X	  X	  X		   X	   X	   X
-\l'7i'
-EPS						   X	   X
-\l'7i'
-Box, Polygon, 	  X	  X	  X		   X	   X
-Line, Spline
-\l'7i'
-Text	   X					   X	   X			   X
-\l'7i'
+_
+Arc		X	X	X		X	X
+_
+Arc-Box		X	X	X	X	X	X
+_
+Circle	X	X	X	X		X	X	X
+_
+Ellipse	X	X	X	X		X	X	X
+_
+EPS						X	X
+_
+Box,Polygon,	X	X	X		X	X
+Line,Spline
+_
+Text	X					X	X		X
+_
+.TE
 .fi
-.po +.4i
+.if n .RE
 
 \(dg The angle may be set, but the object will only be rotated on \fIPostScript\fP
 output.
@@ -976,6 +1009,7 @@ output.
 \(dd The depth defines how overlapping objects are displayed. Objects with
 a greater depth value are obstructed by objects with smaller depth value. 
 This may only be changed in the popup edit menu.
+The maximum depth allowed is 1000.
 
 .TP
 .I UPDATE
@@ -1048,13 +1082,14 @@ middle mouse button will pan the figure to the origin.
 The overall widget name(Class) is xfig(Fig).  These
 resources correspond to the command line arguments:
 .nf
-.po -.5i
-.ta 2i 4i 4.8i 5.7i 
+.sp
+.TS
+L 1 L 1 L 1 L 1 L.
 Name	Class	Type	Default	Command-line
 				equivalent
-\l'6.8i'
-justify	Justify 	boolean	false	-left (false) 
-				   and -right (true)
+_
+justify	Justify 	boolean	false	-left (false) and
+				   -right (true)
 landscape	Orientation 	boolean	true	-Landscape and 
 				   -Portrait
 pwidth	Width	integer	10(8)	-pwidth
@@ -1069,10 +1104,13 @@ latexfonts	Latexfonts	boolean	off	-latexfonts
 normalFont	NormalFont	string	fixed	-normal
 boldFont	ButtonFont	string	8x13bold	-bold
 startfontsize	StartFontSize	integer	12	-startfontsize
+startpsFont	StartpsFont	string	Times-Roman	-startpsFont
+startlatexFont	StartlatexFont	string	Default	-startlatexFont
 showallbuttons	ShowAllButtons	boolean	false	-showallbuttons
 internalborderwidth	InternalBorderWidth	integer	1	-internalBW
 scalablefonts	ScalableFonts	boolean	false	-scalablefonts
 monochrome	Monochrome	boolean	false	-monochrome
+keyFile	KeyFile	string	CompKeyDB	-keyFile
 color0	Color0	pixel	black
 color1	Color1	pixel	blue
 color2	Color2	pixel	green
@@ -1081,9 +1119,9 @@ color4	Color4	pixel	red
 color5	Color5	pixel	magenta
 color6	Color6	pixel	yellow
 color7	Color7	pixel	white
-\l'6.8i'
+_
+.TE
 .fi
-.po +.5i
 .SH WIDGET TREE
 Below is the widget structure of \fIxfig\fP.
 The widget class name is given first, followed by the widget instance name.
@@ -1122,6 +1160,11 @@ Fig  xfig
 					Command  use_postscript_fonts
 				Command  pane (one for each of the 6 LaTeX font panes)
 
+	TransientShell  xfig_file_msg
+		Form  file_msg_panel
+			Text  file_msg_win
+			Command  dismiss
+
 	TransientShell  xfig_file_menu
 		Form  file_panel
 			Label  file_status
@@ -1156,7 +1199,7 @@ Fig  xfig
 					SmeBSB  portrait 
 					SmeBSB  landscape
 			Label  just_label
-			MenuButton  flush left
+			MenuButton  justify
 				SimpleMenu  menu
 					SmeBSB  flush left
 					SmeBSB  centered  
@@ -1210,7 +1253,7 @@ Fig  xfig
 					SmeBSB  portrait 
 					SmeBSB  landscape
 			Label  just_label
-			MenuButton  flush left
+			MenuButton  justify
 				SimpleMenu  menu
 					SmeBSB  flush left
 					SmeBSB  centered  

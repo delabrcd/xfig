@@ -148,13 +148,14 @@ extern int	min_num_points;
 
 extern int	print_landscape;/* def. orientation for printer */
 
-#define NUM_EXP_LANG	15
-#define LANG_EPS	8	/* position of eps starting from 0 */
-#define LANG_PS		9	/* position of ps starting from 0 */
-#define LANG_XBITMAP	14	/* position of Xbitmap starting from 0 */
+#define NUM_EXP_LANG	15	/* number of export languages */
+#define LANG_EPS	7	/* position of eps starting from 0 */
+#define LANG_PS		8	/* position of ps starting from 0 */
+#define LANG_XBITMAP	14	/* position of xbm starting from 0 */
 
 extern int	cur_exp_lang;
 extern char    *lang_items[NUM_EXP_LANG];
+extern char    *lang_texts[NUM_EXP_LANG];
 
 /***************************  Mode Settings  ****************************/
 

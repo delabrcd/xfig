@@ -32,7 +32,7 @@ int		init_msgreceiving();
 
 /************************  LOCAL ******************/
 
-#define			BUF_SIZE		128
+#define		BUF_SIZE		128
 static char	prompt[BUF_SIZE];
 
 DeclareStaticArgs(8);
@@ -64,7 +64,7 @@ setup_msg()
     FirstArg(XtNfont, roman_font);
     SetValues(msg_panel);
     msg_win = XtWindow(msg_panel);
-    XDefineCursor(tool_d, msg_win, (Cursor) arrow_cursor.bitmap);
+    XDefineCursor(tool_d, msg_win, arrow_cursor);
 }
 
 /* VARARGS1 */
@@ -97,3 +97,4 @@ clear_message()
     FirstArg(XtNlabel, "");
     SetValues(msg_panel);
 }
+

@@ -38,7 +38,7 @@ move_selected()
     canvas_middlebut_proc = object_search_middle;
     canvas_rightbut_proc = null_proc;
     return_proc = move_selected;
-    set_cursor(&pick9_cursor);
+    set_cursor(pick9_cursor);
     reset_action_on();
 }
 
@@ -77,51 +77,51 @@ init_move(p, type, x, y, px, py)
 {
     switch (type) {
     case O_COMPOUND:
-	set_temp_cursor(&wait_cursor);
+	set_temp_cursor(wait_cursor);
 	cur_c = (F_compound *) p;
 	list_delete_compound(&objects.compounds, cur_c);
 	redisplay_compound(cur_c);
-	set_temp_cursor(&null_cursor);
+	set_temp_cursor(null_cursor);
 	init_compounddragging(cur_c, px, py);
 	break;
     case O_POLYLINE:
-	set_temp_cursor(&wait_cursor);
+	set_temp_cursor(wait_cursor);
 	cur_l = (F_line *) p;
 	list_delete_line(&objects.lines, cur_l);
 	redisplay_line(cur_l);
-	set_temp_cursor(&null_cursor);
+	set_temp_cursor(null_cursor);
 	init_linedragging(cur_l, px, py);
 	break;
     case O_TEXT:
-	set_temp_cursor(&wait_cursor);
+	set_temp_cursor(wait_cursor);
 	cur_t = (F_text *) p;
 	list_delete_text(&objects.texts, cur_t);
 	redisplay_text(cur_t);
-	set_temp_cursor(&null_cursor);
+	set_temp_cursor(null_cursor);
 	init_textdragging(cur_t, x, y);
 	break;
     case O_ELLIPSE:
-	set_temp_cursor(&wait_cursor);
+	set_temp_cursor(wait_cursor);
 	cur_e = (F_ellipse *) p;
 	list_delete_ellipse(&objects.ellipses, cur_e);
 	redisplay_ellipse(cur_e);
-	set_temp_cursor(&null_cursor);
+	set_temp_cursor(null_cursor);
 	init_ellipsedragging(cur_e, px, py);
 	break;
     case O_ARC:
-	set_temp_cursor(&wait_cursor);
+	set_temp_cursor(wait_cursor);
 	cur_a = (F_arc *) p;
 	list_delete_arc(&objects.arcs, cur_a);
 	redisplay_arc(cur_a);
-	set_temp_cursor(&null_cursor);
+	set_temp_cursor(null_cursor);
 	init_arcdragging(cur_a, px, py);
 	break;
     case O_SPLINE:
-	set_temp_cursor(&wait_cursor);
+	set_temp_cursor(wait_cursor);
 	cur_s = (F_spline *) p;
 	list_delete_spline(&objects.splines, cur_s);
 	redisplay_spline(cur_s);
-	set_temp_cursor(&null_cursor);
+	set_temp_cursor(null_cursor);
 	init_splinedragging(cur_s, px, py);
 	break;
     default:

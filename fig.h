@@ -17,6 +17,12 @@
 #include <X11/Xos.h>
 
 #include <sys/stat.h>
+
+#if defined(__convex__) && defined(__STDC__)
+#define S_IFDIR _S_IFDIR
+#define S_IWRITE _S_IWRITE
+#endif
+
 #ifndef SYSV
 #ifndef SVR4
 #include <fcntl.h>
@@ -37,6 +43,10 @@ extern char    *sys_errlist[];
 
 #if defined(SYSV) || defined(SVR4)
 #define u_int uint
+#define USE_DIRENT
+#define DIRSTRUCT	struct dirent
+#else
+#define DIRSTRUCT	struct direct
 #endif
 
 #ifndef M_PI
@@ -52,7 +62,6 @@ extern char    *sys_errlist[];
 #define		signof(a)	(((a) < 0) ? -1 : 1)
 
 #define		DEF_NAME	"unnamed.fig"
-#define		KEY_NAME	"CompKeyDB"
 
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>

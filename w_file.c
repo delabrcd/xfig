@@ -23,24 +23,30 @@
 #include "w_util.h"
 #include "w_setup.h"
 
-/* these next translations are also used by the export filename widget */
-String		file_text_translations =
-"<Key>Return: no-op(RingBell)\n\
-			Ctrl<Key>J: no-op(RingBell)\n\
-			Ctrl<Key>M: no-op(RingBell)\n";
+extern Boolean	file_msg_is_popped;
+extern Widget	file_msg_popup;
 
+extern String	text_translations;
 static char	load_msg[] = "The current figure is modified.\nDo you want to discard it and load the new file?";
 static char	buf[40];
 
 DeclareStaticArgs(12);
-static Widget	file_panel, file_popup, file_status, num_objects;
+static Widget	file_panel,  file_status, num_objects;
 static Widget	cancel, save, merge, load;
 static Widget	file_w;
 static Position xposn, yposn;
+static String	file_name_translations =
+	"<Key>Return: LoadFile()\n";
+static void	do_load();
+static XtActionsRec	file_name_actions[] =
+{
+    {"LoadFile", (XtActionProc) do_load},
+};
 
 /* Global so w_dir.c can access us */
 
-Widget		file_selfile,	/* selected file widget */
+Widget		file_popup,	/* the popup itself */
+		file_selfile,	/* selected file widget */
 		file_mask,	/* mask widget */
 		file_dir,	/* current directory widget */
 		file_flist,	/* file list wiget */
@@ -154,9 +160,8 @@ popup_file_panel(w)
     PIX_FONT	    temp_font;
 
 
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     XtSetSensitive(w, False);
-    file_up = True;
 
     if (!file_popup) {
 	file_w = w;
@@ -164,6 +169,7 @@ popup_file_panel(w)
 
 	FirstArg(XtNx, xposn);
 	NextArg(XtNy, yposn + 50);
+	NextArg(XtNtitle, "Xfig: File menu");
 	file_popup = XtCreatePopupShell("xfig_file_menu",
 					transientShellWidgetClass,
 					tool, Args, ArgCount);
@@ -212,7 +218,14 @@ popup_file_panel(w)
 	file_selfile = XtCreateManagedWidget("file_name", asciiTextWidgetClass,
 					     file_panel, Args, ArgCount);
 	XtOverrideTranslations(file_selfile,
-			   XtParseTranslationTable(file_text_translations));
+			   XtParseTranslationTable(text_translations));
+
+	/* add action to load file */
+	XtAppAddActions(tool_app, file_name_actions, XtNumber(file_name_actions));
+
+	/* make <return> in the filename window load the file */
+	XtOverrideTranslations(file_selfile,
+			   XtParseTranslationTable(file_name_translations));
 
 	create_dirinfo(file_panel, file_selfile, &beside, &below,
 		       &file_mask, &file_dir, &file_flist, &file_dlist);
@@ -227,7 +240,7 @@ popup_file_panel(w)
 	cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
 				       file_panel, Args, ArgCount);
 	XtAddEventHandler(cancel, ButtonReleaseMask, (Boolean) 0,
-			  file_panel_cancel, (XtPointer) NULL);
+			  (XtEventHandler)file_panel_cancel, (XtPointer) NULL);
 
 	FirstArg(XtNlabel, "Save");
 	NextArg(XtNfromHoriz, cancel);
@@ -239,7 +252,7 @@ popup_file_panel(w)
 	save = XtCreateManagedWidget("save", commandWidgetClass,
 				     file_panel, Args, ArgCount);
 	XtAddEventHandler(save, ButtonReleaseMask, (Boolean) 0,
-			  do_save, (XtPointer) NULL);
+			  (XtEventHandler)do_save, (XtPointer) NULL);
 
 	FirstArg(XtNlabel, "Load");
 	NextArg(XtNborderWidth, INTERNAL_BW);
@@ -251,7 +264,7 @@ popup_file_panel(w)
 	load = XtCreateManagedWidget("load", commandWidgetClass,
 				     file_panel, Args, ArgCount);
 	XtAddEventHandler(load, ButtonReleaseMask, (Boolean) 0,
-			  do_load, (XtPointer) NULL);
+			  (XtEventHandler)do_load, (XtPointer) NULL);
 
 	FirstArg(XtNlabel, "Merge Read");
 	NextArg(XtNfromHoriz, load);
@@ -263,9 +276,11 @@ popup_file_panel(w)
 	merge = XtCreateManagedWidget("merge", commandWidgetClass,
 				      file_panel, Args, ArgCount);
 	XtAddEventHandler(merge, ButtonReleaseMask, (Boolean) 0,
-			  do_merge, (XtPointer) NULL);
+			  (XtEventHandler)do_merge, (XtPointer) NULL);
     } else {
+	file_up = True;
 	Rescan();
+	file_up = False;
     }
     FirstArg(XtNlabel, (figure_modified ? "      File Status: Modified	  " :
 			"      File Status: Not modified"));
@@ -274,5 +289,8 @@ popup_file_panel(w)
     FirstArg(XtNlabel, buf);
     SetValues(num_objects);
     XtPopup(file_popup, XtGrabNonexclusive);
+    if (file_msg_is_popped)
+	XtAddGrab(file_msg_popup, False, False);
+    file_up = True;
     reset_cursor();
 }

@@ -40,7 +40,7 @@ update_selected()
     canvas_leftbut_proc = object_search_left;
     canvas_middlebut_proc = object_search_middle;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&pick9_cursor);
+    set_cursor(pick9_cursor);
 }
 
 static
@@ -133,7 +133,7 @@ init_update_object(p, type, x, y, px, py)
 {
     switch (type) {
     case O_COMPOUND:
-	set_temp_cursor(&wait_cursor);
+	set_temp_cursor(wait_cursor);
 	cur_c = (F_compound *) p;
 	toggle_compoundmarker(cur_c);
 	new_c = copy_compound(cur_c);
@@ -142,7 +142,7 @@ init_update_object(p, type, x, y, px, py)
 	toggle_compoundmarker(new_c);
 	break;
     case O_POLYLINE:
-	set_temp_cursor(&wait_cursor);
+	set_temp_cursor(wait_cursor);
 	cur_l = (F_line *) p;
 	toggle_linemarker(cur_l);
 	new_l = copy_line(cur_l);
@@ -151,7 +151,7 @@ init_update_object(p, type, x, y, px, py)
 	toggle_linemarker(new_l);
 	break;
     case O_TEXT:
-	set_temp_cursor(&wait_cursor);
+	set_temp_cursor(wait_cursor);
 	cur_t = (F_text *) p;
 	toggle_textmarker(cur_t);
 	new_t = copy_text(cur_t);
@@ -160,7 +160,7 @@ init_update_object(p, type, x, y, px, py)
 	toggle_textmarker(new_t);
 	break;
     case O_ELLIPSE:
-	set_temp_cursor(&wait_cursor);
+	set_temp_cursor(wait_cursor);
 	cur_e = (F_ellipse *) p;
 	toggle_ellipsemarker(cur_e);
 	new_e = copy_ellipse(cur_e);
@@ -169,7 +169,7 @@ init_update_object(p, type, x, y, px, py)
 	toggle_ellipsemarker(new_e);
 	break;
     case O_ARC:
-	set_temp_cursor(&wait_cursor);
+	set_temp_cursor(wait_cursor);
 	cur_a = (F_arc *) p;
 	toggle_arcmarker(cur_a);
 	new_a = copy_arc(cur_a);
@@ -178,7 +178,7 @@ init_update_object(p, type, x, y, px, py)
 	toggle_arcmarker(new_a);
 	break;
     case O_SPLINE:
-	set_temp_cursor(&wait_cursor);
+	set_temp_cursor(wait_cursor);
 	cur_s = (F_spline *) p;
 	toggle_splinemarker(cur_s);
 	new_s = copy_spline(cur_s);

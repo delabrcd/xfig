@@ -54,9 +54,26 @@ int		print_landscape = 0;	/* def. orientation for printer */
 int		cur_exp_lang = LANG_EPS;
 
 char	       *lang_items[] = {
-    "box     ", "epic    ", "eepic   ", "eepicemu", "latex   ",
-    "null    ", "pic     ", "pictex  ", "eps     ", "ps      ",
-    "pstex   ", "pstex_t ", "textyl  ", "tpic    ", "Xbitmap "};
+    "box     ", "latex   ", "epic    ", "eepic   ", "eepicemu",
+    "pictex  ", "ibmgl   ", "eps     ", "ps      ", "pstex   ",
+    "pstex_t ", "textyl  ", "tpic    ", "pic     ", "xbm     "};
+
+char	       *lang_texts[] = {
+    "LaTeX box (figure boundary)    ",
+    "LaTeX picture                  ",
+    "LaTeX picture + epic macros    ",
+    "LaTeX picture + eepic macros   ",
+    "LaTeX picture + eepicemu macros",
+    "PiCTeX macros                  ",
+    "IBMGL (or HPGL)                ",
+    "Encapsulated Postscript        ",
+    "Postscript                     ",
+    "Combined PS/LaTeX (PS part)    ",
+    "Combined PS/LaTeX (LaTeX part) ",
+    "Textyl \\special commands       ",
+    "TPIC                           ",
+    "PIC                            ",
+    "X11 Bitmap                     "};
 
 /***************************  Mode Settings  ****************************/
 

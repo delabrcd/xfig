@@ -44,7 +44,7 @@ point_adding_selected()
     canvas_leftbut_proc = object_search_left;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&pick9_cursor);
+    set_cursor(pick9_cursor);
     force_nopositioning();
     constrained = MOVE_ARB;
 }
@@ -108,7 +108,7 @@ init_splinepointadding(px, py)
     set_mousefun("place new point", "", "cancel");
     draw_mousefun_canvas();
     find_endpoints(cur_s->points, px, py, &left_point, &right_point);
-    set_temp_cursor(&null_cursor);
+    set_temp_cursor(null_cursor);
     cur_x = px;
     cur_y = py;
     if (left_point == NULL && closed_spline(cur_s)) {
@@ -157,7 +157,7 @@ splinepoint_adding(spline, left_point, added_point, right_point)
 	if ((c = create_cpoint()) == NULL)
 	    return;
     }
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     mask_toggle_splinemarker(spline);
     draw_spline(spline, ERASE); /* erase old spline */
     if (left_point == NULL) {
@@ -194,7 +194,7 @@ init_linepointadding(px, py)
     set_mousefun("place new point", "", "cancel");
     draw_mousefun_canvas();
     find_endpoints(cur_l->points, px, py, &left_point, &right_point);
-    set_temp_cursor(&null_cursor);
+    set_temp_cursor(null_cursor);
     win_setmouseposition(canvas_win, px, py);
 
     /* set cur_x etc at new point coords */

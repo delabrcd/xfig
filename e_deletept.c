@@ -34,7 +34,7 @@ delete_point_selected()
     canvas_leftbut_proc = point_search_left;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&pick9_cursor);
+    set_cursor(pick9_cursor);
 }
 
 static
@@ -95,7 +95,7 @@ splinepoint_deleting(spline, prev_point, selected_point)
     F_point	   *p, *next_point;
 
     next_point = selected_point->next;
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     if (closed_spline(spline)) {
 	mask_toggle_splinemarker(spline);
 	draw_spline(spline, ERASE);	/* erase the spline */

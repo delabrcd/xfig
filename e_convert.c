@@ -36,7 +36,7 @@ convert_selected()
     canvas_leftbut_proc = object_search_left;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&pick15_cursor);
+    set_cursor(pick15_cursor);
 }
 
 static

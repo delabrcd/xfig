@@ -23,7 +23,7 @@
 extern int	constrained;
 extern int	fix_x, fix_y, work_numsides;
 extern int	x1off, x2off, y1off, y2off;
-extern CURSOR	cur_latexcursor;
+extern Cursor	cur_latexcursor;
 extern int	from_x, from_y;
 extern double	cosa, sina;
 extern int	movedpoint_num;

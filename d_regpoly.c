@@ -39,7 +39,7 @@ regpoly_drawing_selected()
     canvas_leftbut_proc = init_regpoly_drawing;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&arrow_cursor);
+    set_cursor(arrow_cursor);
     reset_action_on();
 }
 
@@ -57,7 +57,7 @@ init_regpoly_drawing(x, y)
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = cancel_regpoly;
     elastic_poly(fix_x, fix_y, cur_x, cur_y, work_numsides);
-    set_temp_cursor(&null_cursor);
+    set_temp_cursor(null_cursor);
     set_action_on();
 }
 

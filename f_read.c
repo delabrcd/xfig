@@ -16,24 +16,48 @@
 
 #include "fig.h"
 #include "object.h"
+#include "resources.h"
 #include "u_fonts.h"
 #include "u_create.h"
+#include "version.h"
+#include "w_setup.h"
+#include "w_util.h"
+
+#ifdef NOSTRSTR
+extern char *strstr();
+#endif
+
+/* file popup information */
+extern Widget	file_popup;	/* the popup itself */
+extern Boolean	file_up;
+
+/* so w_file.c can access */
+Boolean	file_msg_is_popped=False;
+Widget	file_msg_popup;
+
+static Widget	file_msg_panel,
+		file_msg_win, file_msg_dismiss;
+static Boolean	first_file_msg;
+static int	file_msg_length=0;
+static char    *read_file_name;
+static char	tmpstr[100];
 
 static char	Err_incomp[] = "Incomplete %s object at line %d.";
 
-static F_ellipse *read_ellipseobject();
-static F_line  *read_lineobject();
-static F_text  *read_textobject();
-static F_spline *read_splineobject();
-static F_arc   *read_arcobject();
+static F_ellipse  *read_ellipseobject();
+static F_line	  *read_lineobject();
+static F_text     *read_textobject();
+static F_spline   *read_splineobject();
+static F_arc      *read_arcobject();
 static F_compound *read_compoundobject();
 
-#define			FILL_CONVERT(f) \
-				(((proto>=20) || (f) == UNFILLED || !TFX) \
-					? (f) : 21 - ((f)-1)*5)
+#define		FILL_CONVERT(f) \
+			(((proto>=20) || (f) == UNFILLED || !TFX) \
+				? (f) : 21 - ((f)-1)*5)
 
-#define			BUF_SIZE		1024
+#define		BUF_SIZE		1024
 
+DeclareStaticArgs(10);
 char		buf[BUF_SIZE];
 int		line_no;
 int		num_object;
@@ -88,6 +112,8 @@ read_fig(file_name, obj)
     FILE	   *fp;
 
     line_no = 0;
+    read_file_name = file_name;
+    first_file_msg = True;
     if ((fp = fopen(file_name, "r")) == NULL)
 	return (errno);
     else {
@@ -102,6 +128,7 @@ readfp_fig(fp, obj)
 {
     int		    status;
     float	    fproto;
+    char	    tmpstr[10];
 
     num_object = 0;
 #if defined(SYSV) || defined(SVR4)
@@ -117,11 +144,16 @@ readfp_fig(fp, obj)
 	    proto = 14;
 	else
 	    proto = (fproto + .01) * 10;	/* protocol version*10 */
+	/* if file protocol != current protocol, give message */
+	sprintf(tmpstr,"%.1f",fproto);
+	if (strcmp(tmpstr,PROTOCOL_VERSION) != 0)
+	    file_msg("Converting figure from %s format to %s",tmpstr,PROTOCOL_VERSION);
 	TFX = False;
 	if (strstr(buf, "TFX") != NULL)
 	    TFX = True;
 	status = read_objects(fp, obj);
     } else {
+	file_msg("Converting figure from 1.3 format to %s",PROTOCOL_VERSION);
 	proto = 13;
 	status = read_1_3_objects(fp, obj);
     }
@@ -149,14 +181,14 @@ read_objects(fp, obj)
 	return (-1);
     }
     if (2 != sscanf(buf, "%d%d\n", &ppi, &coord_sys)) {
-	put_msg("Incomplete data at line %d", line_no);
+	file_msg("Incomplete data at line %d", line_no);
 	return (-1);
     }
     obj->nwcorner.x = ppi;
     obj->nwcorner.y = coord_sys;
     while (get_line(fp) > 0) {
 	if (1 != sscanf(buf, "%d", &object)) {
-	    put_msg("Incorrect format at line %d", line_no);
+	    file_msg("Incorrect format at line %d", line_no);
 	    return (-1);
 	}
 	switch (object) {
@@ -215,7 +247,7 @@ read_objects(fp, obj)
 	    num_object++;
 	    break;
 	default:
-	    put_msg("Incorrect object code at line %d", line_no);
+	    file_msg("Incorrect object code at line %d", line_no);
 	    return (-1);
 	}			/* switch */
     }				/* while */
@@ -249,14 +281,12 @@ read_arcobject(fp)
 	       &a->point[1].x, &a->point[1].y,
 	       &a->point[2].x, &a->point[2].y);
     if (n != 19) {
-	put_msg(Err_incomp, "arc", line_no);
+	file_msg(Err_incomp, "arc", line_no);
 	free((char *) a);
 	return (NULL);
     }
     a->fill_style = FILL_CONVERT(a->fill_style);
-    /* change depths < 0 to 0 */
-    if (a->depth < 0)
-	a->depth = 0;
+    fixdepth(&a->depth);
     skip_comment(fp);
     if (fa) {
 	line_no++;
@@ -306,13 +336,13 @@ read_compoundobject(fp)
     n = sscanf(buf, "%*d%d%d%d%d\n", &com->nwcorner.x, &com->nwcorner.y,
 	       &com->secorner.x, &com->secorner.y);
     if (4 != n) {
-	put_msg(Err_incomp, "compound", line_no);
+	file_msg(Err_incomp, "compound", line_no);
 	free((char *) com);
 	return (NULL);
     }
     while (get_line(fp) > 0) {
 	if (1 != sscanf(buf, "%d", &object)) {
-	    put_msg(Err_incomp, "compound", line_no);
+	    file_msg(Err_incomp, "compound", line_no);
 	    free_compound(&com);
 	    return (NULL);
 	}
@@ -380,7 +410,7 @@ read_compoundobject(fp)
 	case O_END_COMPOUND:
 	    return (com);
 	default:
-	    put_msg("Wrong object code at line %d", line_no);
+	    file_msg("Incorrect object code at line %d", line_no);
 	    return (NULL);
 	}			/* switch */
     }
@@ -409,14 +439,12 @@ read_ellipseobject()
 	       &e->start.x, &e->start.y,
 	       &e->end.x, &e->end.y);
     if (n != 18) {
-	put_msg(Err_incomp, "ellipse", line_no);
+	file_msg(Err_incomp, "ellipse", line_no);
 	free((char *) e);
 	return (NULL);
     }
     e->fill_style = FILL_CONVERT(e->fill_style);
-    /* change depths < 0 to 0 */
-    if (e->depth < 0)
-	e->depth = 0;
+    fixdepth(&e->depth);
     return (e);
 }
 
@@ -458,14 +486,12 @@ read_lineobject(fp)
 	    l->radius = 0;
     }
     if ((!radius_flag && n != 10) || (radius_flag && n != 11)) {
-	put_msg(Err_incomp, "line", line_no);
+	file_msg(Err_incomp, "line", line_no);
 	free((char *) l);
 	return (NULL);
     }
     l->fill_style = FILL_CONVERT(l->fill_style);
-    /* change depths < 0 to 0 */
-    if (l->depth < 0)
-	l->depth = 0;
+    fixdepth(&l->depth);
     skip_comment(fp);
     if (fa) {
 	line_no++;
@@ -494,7 +520,7 @@ read_lineobject(fp)
 	    return (NULL);
 	}
 	if (2 != fscanf(fp, "%d %s", &l->eps->flipped, l->eps->file)) {
-	    put_msg(Err_incomp, "Encapsulated Postscript", line_no);
+	    file_msg(Err_incomp, "Encapsulated Postscript", line_no);
 	    fprintf(stderr, Err_incomp, "Encapsulated Postscript", line_no);
 	    return (NULL);
 	}
@@ -512,14 +538,14 @@ read_lineobject(fp)
 
     /* read first point */
     if (fscanf(fp, "%d%d", &p->x, &p->y) != 2) {
-	put_msg(Err_incomp, "line", line_no);
+	file_msg(Err_incomp, "line", line_no);
 	free_linestorage(l);
 	return (NULL);
     }
     /* read subsequent points */
     for (;;) {
 	if (fscanf(fp, "%d%d", &x, &y) != 2) {
-	    put_msg(Err_incomp, "line", line_no);
+	    file_msg(Err_incomp, "line", line_no);
 	    free_linestorage(l);
 	    return (NULL);
 	}
@@ -563,14 +589,12 @@ read_splineobject(fp)
 	       &s->type, &s->style, &s->thickness, &s->color,
 	       &s->depth, &s->pen, &s->fill_style, &s->style_val, &fa, &ba);
     if (n != 10) {
-	put_msg(Err_incomp, "spline", line_no);
+	file_msg(Err_incomp, "spline", line_no);
 	free((char *) s);
 	return (NULL);
     }
     s->fill_style = FILL_CONVERT(s->fill_style);
-    /* change depths < 0 to 0 */
-    if (s->depth < 0)
-	s->depth = 0;
+    fixdepth(&s->depth);
     skip_comment(fp);
     if (fa) {
 	line_no++;
@@ -596,7 +620,7 @@ read_splineobject(fp)
 
     /* Read points */
     if ((n = fscanf(fp, "%d%d", &x, &y)) != 2) {
-	put_msg(Err_incomp, "spline", line_no);
+	file_msg(Err_incomp, "spline", line_no);
 	free_splinestorage(s);
 	return (NULL);
     };
@@ -609,7 +633,7 @@ read_splineobject(fp)
     p->y = y;
     for (c = 1;;) {
 	if (fscanf(fp, "%d%d", &x, &y) != 2) {
-	    put_msg(Err_incomp, "spline", line_no);
+	    file_msg(Err_incomp, "spline", line_no);
 	    p->next = NULL;
 	    free_splinestorage(s);
 	    return (NULL);
@@ -636,7 +660,7 @@ read_splineobject(fp)
     skip_comment(fp);
     /* Read controls */
     if ((n = fscanf(fp, "%f%f%f%f", &lx, &ly, &rx, &ry)) != 4) {
-	put_msg(Err_incomp, "spline", line_no);
+	file_msg(Err_incomp, "spline", line_no);
 	free_splinestorage(s);
 	return (NULL);
     };
@@ -651,7 +675,7 @@ read_splineobject(fp)
     cp->ry = ry;
     while (--c) {
 	if (fscanf(fp, "%f%f%f%f", &lx, &ly, &rx, &ry) != 4) {
-	    put_msg(Err_incomp, "spline", line_no);
+	    file_msg(Err_incomp, "spline", line_no);
 	    cp->next = NULL;
 	    free_splinestorage(s);
 	    return (NULL);
@@ -697,13 +721,14 @@ read_textobject(fp)
      * We read text size, height and length as floats because TransFig uses
      * floats for these, but they are rounded to ints internally to xfig.
      */
-    n = sscanf(buf, "%*d%d%d%f%d%d%d%f%d%f%f%d%d %[^\1]%[\1]",
+    /* read the leading blanks for the string, but delete the first later */
+    n = sscanf(buf, "%*d%d%d%f%d%d%d%f%d%f%f%d%d%[^\1]%[\1]",
 	       &t->type, &t->font, &tx_size, &t->pen,
 	       &t->color, &t->depth, &t->angle,
 	       &t->flags, &tx_height, &tx_length,
 	       &t->base_x, &t->base_y, s, junk);
     if (n != 13 && n != 14) {
-	put_msg(Err_incomp, "text", line_no);
+	file_msg(Err_incomp, "text", line_no);
 	free((char *) t);
 	return (NULL);
     }
@@ -714,9 +739,7 @@ read_textobject(fp)
 	t->size = round(tx_size);
     t->height = round(tx_height);
     t->length = round(tx_length);
-    /* change depths < 0 to 0 */
-    if (t->depth < 0)
-	t->depth = 0;
+    fixdepth(&t->depth);
     if (n == 13) {
 	/* Read in the remainder of the text object. */
 	do {
@@ -731,18 +754,19 @@ read_textobject(fp)
 	    /* Safety check */
 	    if (strlen(s) + 1 + strlen(s_temp) + 1 > BUF_SIZE) {
 		/* Too many characters.	 Ignore the rest. */
+		if (!ignore)
+		    file_msg("Truncating TEXT object to %d chars in line %d",
+				BUF_SIZE,line_no);
 		ignore = 1;
 	    }
 	    if (!ignore)
 		strcat(s, s_temp);
 	} while (n == 1);
     }
-#ifdef notdef
     if (t->type > T_RIGHT_JUSTIFIED) {
-	put_msg("Invalid text justification at line %d.", line_no);
-	return (NULL);
+	file_msg("Invalid text justification at line %d, setting to LEFT.", line_no);
+	t->type = T_LEFT_JUSTIFIED;
     }
-#endif
 
     if ((proto < 20) && (t->font == 0 || t->font == DEFAULT))
 	t->flags = ((t->flags != DEFAULT) ? t->flags : 0) | SPECIAL_TEXT;
@@ -750,16 +774,21 @@ read_textobject(fp)
 	t->flags = PSFONT_TEXT;
 
     if (t->font >= MAXFONT(t)) {
-	put_msg("Invalid text font (%d) at line %d.", t->font, line_no);
-	return (NULL);
+	file_msg("Invalid text font (%d) at line %d, setting to DEFAULT.",
+		t->font, line_no);
+	t->font = DEFAULT;
     }
-    if (strlen(s) == 0)
-	(void) strcpy(s, " ");
-    if ((t->cstring = new_string(strlen(s) + 1)) == NULL) {
+    if (strlen(s) <= 1)
+	{
+	file_msg("Empty text string at line %d", line_no);
+	return (NULL);
+	}
+    /* skip first blank from input file by starting at s[1] */
+    if ((t->cstring = new_string(strlen(&s[1]) + 1)) == NULL) {
 	free((char *) t);
 	return (NULL);
     }
-    (void) strcpy(t->cstring, s);
+    (void) strcpy(t->cstring, &s[1]);
 
     return (t);
 }
@@ -796,4 +825,154 @@ skip_line(fp)
 	if (feof(fp))
 	    return;
     }
+}
+
+fixdepth(depth) 
+    int		  *depth;
+{
+    if (*depth>1000) {
+	    *depth=1000; 
+	    file_msg("Depth > 1000, setting to 1000 in line %d", line_no); 
+	} 
+	else if (*depth<0 || proto<21) { 
+	    *depth=0; 
+	    if (proto>=21) 
+		file_msg("Depth < 0, setting to 0 in line %d", line_no); 
+	}
+}
+
+/* VARARGS1 */
+file_msg(format, arg1, arg2, arg3, arg4, arg5)
+    char	   *format;
+    int		    arg1, arg2, arg3, arg4, arg5;
+{
+    XawTextBlock block;
+    popup_file_msg();
+    if (first_file_msg)
+	{
+	first_file_msg = False;
+	file_msg("---------------------");
+	file_msg("File %s:",read_file_name);
+	}
+    sprintf(tmpstr, format, arg1, arg2, arg3, arg4, arg5);
+    strcat(tmpstr,"\n");
+    /* append this message to the file message widget string */
+    block.firstPos = 0;
+    block.ptr = tmpstr;
+    block.length = strlen(tmpstr);
+    block.format = FMT8BIT;
+    /* make editable to add new message */
+    FirstArg(XtNeditType, XawtextEdit);
+    SetValues(file_msg_win);
+    /* insert the new message after the end */
+    (void) XawTextReplace(file_msg_win,file_msg_length,file_msg_length,&block);
+    (void) XawTextSetInsertionPoint(file_msg_win,file_msg_length);
+
+    /* make read-only again */
+    FirstArg(XtNeditType, XawtextRead);
+    SetValues(file_msg_win);
+    file_msg_length += block.length;
+}
+
+clear_file_message(w, ev)
+    Widget	    w;
+    XButtonEvent   *ev;
+{
+    XawTextBlock	block;
+    int			replcode;
+
+    if (!file_msg_popup)
+	return;
+
+    tmpstr[0]=' ';
+    block.firstPos = 0;
+    block.ptr = tmpstr;
+    block.length = 1;
+    block.format = FMT8BIT;
+
+    /* make editable to clear message */
+    FirstArg(XtNeditType, XawtextEdit);
+    NextArg(XtNdisplayPosition, 0);
+    SetValues(file_msg_win);
+
+    /* replace all messages with one blank */
+    replcode = XawTextReplace(file_msg_win,0,file_msg_length,&block);
+    if (replcode == XawPositionError)
+	fprintf(stderr,"XawTextReplace XawPositionError\n");
+    else if (replcode == XawEditError)
+	fprintf(stderr,"XawTextReplace XawEditError\n");
+
+    /* make read-only again */
+    FirstArg(XtNeditType, XawtextRead);
+    SetValues(file_msg_win);
+    file_msg_length = 0;
+}
+
+XtEventHandler
+file_msg_panel_dismiss(w, ev)
+    Widget	    w;
+    XButtonEvent   *ev;
+{
+	XtPopdown(file_msg_popup);
+	file_msg_is_popped=False;
+}
+
+popup_file_msg()
+{
+	if (file_msg_popup)
+		{
+		if (!file_msg_is_popped)
+			{
+			if (file_up)
+				XtPopup(file_msg_popup, XtGrabNonexclusive);
+			else
+				XtPopup(file_msg_popup, XtGrabNone);
+			}
+		file_msg_is_popped = True;
+		return;
+		}
+
+	file_msg_is_popped = True;
+	FirstArg(XtNx, 0);
+	NextArg(XtNy, 0);
+	NextArg(XtNtitle, "Xfig: File error messages");
+	file_msg_popup = XtCreatePopupShell("xfig_file_msg",
+					transientShellWidgetClass,
+					tool, Args, ArgCount);
+
+	file_msg_panel = XtCreateManagedWidget("file_msg_panel", formWidgetClass,
+					   file_msg_popup, NULL, ZERO);
+	FirstArg(XtNwidth, 500);
+	NextArg(XtNheight, 200);
+	NextArg(XtNeditType, XawtextRead);
+	NextArg(XtNdisplayCaret, False);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNscrollHorizontal, XawtextScrollNever);
+	NextArg(XtNscrollVertical, XawtextScrollAlways);
+	file_msg_win = XtCreateManagedWidget("file_msg_win", asciiTextWidgetClass,
+					     file_msg_panel, Args, ArgCount);
+
+	FirstArg(XtNlabel, "Dismiss");
+	NextArg(XtNheight, 25);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNfromVert, file_msg_win);
+	file_msg_dismiss = XtCreateManagedWidget("dismiss", commandWidgetClass,
+				       file_msg_panel, Args, ArgCount);
+	XtAddEventHandler(file_msg_dismiss, ButtonReleaseMask, (Boolean) 0,
+			  (XtEventHandler)file_msg_panel_dismiss, (XtPointer) NULL);
+
+	FirstArg(XtNlabel, "Clear");
+	NextArg(XtNheight, 25);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNfromVert, file_msg_win);
+	NextArg(XtNfromHoriz, file_msg_dismiss);
+	file_msg_dismiss = XtCreateManagedWidget("clear", commandWidgetClass,
+				       file_msg_panel, Args, ArgCount);
+	XtAddEventHandler(file_msg_dismiss, ButtonReleaseMask, (Boolean) 0,
+			  (XtEventHandler)clear_file_message, (XtPointer) NULL);
+
+	if (file_up)
+		XtPopup(file_msg_popup, XtGrabNonexclusive);
+	else
+		XtPopup(file_msg_popup, XtGrabNone);
 }

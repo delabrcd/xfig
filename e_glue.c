@@ -46,7 +46,7 @@ compound_selected()
     canvas_leftbut_proc = object_search_left;
     canvas_middlebut_proc = init_tag_region;
     canvas_rightbut_proc = create_compoundobject;
-    set_cursor(&pick9_cursor);
+    set_cursor(pick9_cursor);
     reset_action_on();
 }
 

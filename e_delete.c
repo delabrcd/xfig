@@ -43,7 +43,7 @@ delete_selected()
     canvas_leftbut_proc = object_search_left;
     canvas_rightbut_proc = object_search_right;
     canvas_middlebut_proc = init_delete_region;
-    set_cursor(&buster_cursor);
+    set_cursor(buster_cursor);
     reset_action_on();
 }
 
@@ -124,6 +124,7 @@ delete_region(x, y)
     c->nwcorner.y = min2(fix_y, y);
     c->secorner.x = max2(fix_x, x);
     c->secorner.y = max2(fix_y, y);
+    tag_obj_in_region(c->nwcorner.x,c->nwcorner.y,c->secorner.x,c->secorner.y);
     if (compose_compound(c) == 0) {
 	free((char *) c);
 	delete_selected();
@@ -132,6 +133,8 @@ delete_region(x, y)
 	return;
     }
     clean_up();
+    toggle_markers_in_compound(c);
+    set_tags(c,0);
     set_latestobjects(c);
     tail(&objects, &object_tails);
     append_objects(&objects, &saved_objects, &object_tails);

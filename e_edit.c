@@ -31,7 +31,7 @@
 #include "w_util.h"
 #include "w_mousefun.h"
 
-char	       *panel_get_value();
+extern char    *panel_get_value();
 Widget		make_popup_menu();
 Widget		make_color_popup_menu();
 
@@ -192,7 +192,7 @@ edit_item_selected()
     canvas_leftbut_proc = object_search_left;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&pick9_cursor);
+    set_cursor(pick9_cursor);
     reset_action_on();
 }
 
@@ -360,13 +360,13 @@ static char    *flip_eps_items[] = {"Normal            ",
 make_window_compound(c)
     F_compound	   *c;
 {
-    set_temp_cursor(&panel_cursor);
+    set_temp_cursor(panel_cursor);
     mask_toggle_compoundmarker(c);
     new_c = copy_compound(c);
     new_c->next = c;
     generic_window("COMPOUND", "", &glue_ic, done_compound, 0, 0);
-    f_pos_panel(&c->nwcorner, "Top Left:", &x1_panel, &y1_panel);
-    f_pos_panel(&c->secorner, "Bottom Right:", &x2_panel, &y2_panel);
+    f_pos_panel(&c->nwcorner, "Top Left Corner:", &x1_panel, &y1_panel);
+    f_pos_panel(&c->secorner, "Bottom Right Corner:", &x2_panel, &y2_panel);
     int_label(object_count(c), "Num Objects: ", &num_objects);
 }
 
@@ -441,7 +441,7 @@ make_window_line(l)
     int		    dx, dy, rotation;
     float	    ratio;
 
-    set_temp_cursor(&panel_cursor);
+    set_temp_cursor(panel_cursor);
     mask_toggle_linemarker(l);
     new_l = copy_line(l);
     new_l->next = l;
@@ -462,15 +462,15 @@ make_window_line(l)
 	generic_window("POLYLINE", "Box", &box_ic, done_line, 1, 0);
 	p1 = *new_l->points;
 	p2 = *new_l->points->next->next;
-	xy_panel(p1.x, p1.y, "Top Left:", &x1_panel, &y1_panel);
-	xy_panel(p2.x, p2.y, "Bottom Right:", &x2_panel, &y2_panel);
+	xy_panel(p1.x, p1.y, "First Corner:", &x1_panel, &y1_panel);
+	xy_panel(p2.x, p2.y, "Opposite Corner:", &x2_panel, &y2_panel);
 	break;
     case T_ARC_BOX:
 	generic_window("POLYLINE", "ArcBox", &arc_box_ic, done_line, 1, 0);
 	p1 = *new_l->points;
 	p2 = *new_l->points->next->next;
-	xy_panel(p1.x, p1.y, "Top Left:", &x1_panel, &y1_panel);
-	xy_panel(p2.x, p2.y, "Bottom Right:", &x2_panel, &y2_panel);
+	xy_panel(p1.x, p1.y, "First Corner:", &x1_panel, &y1_panel);
+	xy_panel(p2.x, p2.y, "Opposite Corner:", &x2_panel, &y2_panel);
 	int_panel(new_l->radius, "Radius =", &radius);
 	break;
     case T_EPS_BOX:
@@ -479,11 +479,11 @@ make_window_line(l)
 	int_panel(new_l->depth, "Depth =", &depth_panel);
 	if (!strcmp(new_l->eps->file, EMPTY_EPS))
 	    new_l->eps->file[0] = '\0';
-	str_panel(new_l->eps->file, "EPS bitmap filename =", &eps_name_panel);
+	str_panel(new_l->eps->file, "EPS Filename =", &eps_name_panel);
 	p1 = *new_l->points;
 	p2 = *new_l->points->next->next;
-	xy_panel(p1.x, p1.y, "Eps origin:", &x1_panel, &y1_panel);
-	xy_panel(p2.x, p2.y, "Eps opposite corner:", &x2_panel, &y2_panel);
+	xy_panel(p1.x, p1.y, "First Corner:", &x1_panel, &y1_panel);
+	xy_panel(p2.x, p2.y, "Opposite corner:", &x2_panel, &y2_panel);
 
 	/* make popup flipped menu */
 	FirstArg(XtNfromVert, below);
@@ -531,7 +531,7 @@ make_window_line(l)
 	shrink = XtCreateManagedWidget("Shrink to orig", commandWidgetClass,
 				       form, Args, ArgCount);
 	XtAddEventHandler(shrink, ButtonReleaseMask, (Boolean) 0,
-			  shrink_eps, (XtPointer) NULL);
+			  (XtEventHandler)shrink_eps, (XtPointer) NULL);
 	beside = shrink;
 
 	ArgCount--;
@@ -539,7 +539,7 @@ make_window_line(l)
 	expand = XtCreateManagedWidget("Expand to orig", commandWidgetClass,
 				       form, Args, ArgCount);
 	XtAddEventHandler(expand, ButtonReleaseMask, (Boolean) 0,
-			  expand_eps, (XtPointer) NULL);
+			  (XtEventHandler)expand_eps, (XtPointer) NULL);
 
 	below = expand;
 	FirstArg(XtNfromVert, below);
@@ -548,7 +548,7 @@ make_window_line(l)
 					 commandWidgetClass, form, Args,
 					 ArgCount);
 	XtAddEventHandler(origsize, ButtonReleaseMask, (Boolean) 0,
-			  origsize_eps, (XtPointer) NULL);
+			  (XtEventHandler)origsize_eps, (XtPointer) NULL);
 	break;
     }
 }
@@ -691,7 +691,7 @@ make_window_text(t)
     static char	   *special_text_items[] = {
     "Normal ", "Special"};
 
-    set_temp_cursor(&panel_cursor);
+    set_temp_cursor(panel_cursor);
     toggle_textmarker(t);
     new_t = copy_text(t);
     new_t->next = t;
@@ -725,10 +725,11 @@ make_window_text(t)
     beside = XtCreateManagedWidget("Justification   =", labelWidgetClass,
 				   form, Args, ArgCount);
 
-    FirstArg(XtNfromVert, below);
+    FirstArg(XtNlabel, textjust_items[textjust]);
+    NextArg(XtNfromVert, below);
     NextArg(XtNfromHoriz, beside);
     textjust_panel = XtCreateManagedWidget(
-			    textjust_items[textjust], menuButtonWidgetClass,
+			    "justify", menuButtonWidgetClass,
 					   form, Args, ArgCount);
     below = textjust_panel;
     textjust_menu = make_popup_menu(textjust_items, XtNumber(textjust_items),
@@ -872,7 +873,7 @@ make_window_ellipse(e)
     char	   *s1, *s2;
     PIXRECT	    image;
 
-    set_temp_cursor(&panel_cursor);
+    set_temp_cursor(panel_cursor);
     toggle_ellipsemarker(e);
     new_e = copy_ellipse(e);
     new_e->next = e;
@@ -982,7 +983,7 @@ done_ellipse()
 make_window_arc(a)
     F_arc	   *a;
 {
-    set_temp_cursor(&panel_cursor);
+    set_temp_cursor(panel_cursor);
     toggle_arcmarker(a);
     new_a = copy_arc(a);
     new_a->next = a;
@@ -1056,7 +1057,7 @@ done_arc()
 make_window_spline(s)
     F_spline	   *s;
 {
-    set_temp_cursor(&panel_cursor);
+    set_temp_cursor(panel_cursor);
     toggle_splinemarker(s);
     new_s = copy_spline(s);
     new_s->next = s;
@@ -1242,7 +1243,7 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
 
     FirstArg(XtNx, x_val);
     NextArg(XtNy, y_val);
-
+    NextArg(XtNtitle, "Xfig: Edit panel");
     popup = XtCreatePopupShell("xfig_edit_panel",
 			       transientShellWidgetClass, tool,
 			       Args, ArgCount);
@@ -1311,20 +1312,20 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
     FirstArg(XtNfromVert, label);
     NextArg(XtNvertDistance, dist);
     but1 = XtCreateManagedWidget("done", commandWidgetClass, form, Args, ArgCount);
-    XtAddCallback(but1, XtNcallback, done_button, (XtPointer) NULL);
+    XtAddCallback(but1, XtNcallback, (XtCallbackProc)done_button, (XtPointer) NULL);
 
     below = but1;
     FirstArg(XtNfromHoriz, but1);
     NextArg(XtNfromVert, label);
     NextArg(XtNvertDistance, dist);
     but1 = XtCreateManagedWidget("apply", commandWidgetClass, form, Args, ArgCount);
-    XtAddCallback(but1, XtNcallback, apply_button, (XtPointer) NULL);
+    XtAddCallback(but1, XtNcallback, (XtCallbackProc)apply_button, (XtPointer) NULL);
 
     FirstArg(XtNfromHoriz, but1);
     NextArg(XtNfromVert, label);
     NextArg(XtNvertDistance, dist);
     but1 = XtCreateManagedWidget("cancel", commandWidgetClass, form, Args, ArgCount);
-    XtAddCallback(but1, XtNcallback, cancel_button, (XtPointer) NULL);
+    XtAddCallback(but1, XtNcallback, (XtCallbackProc)cancel_button, (XtPointer) NULL);
 
     FirstArg(XtNborderWidth, 0);
     NextArg(XtNfromVert, below);
@@ -1623,12 +1624,13 @@ int_label(x, label, pi_x)
 }
 
 /* don't allow newlines in text until we handle multiple line texts */
-
 String		text_translations =
-"<Key>Return: no-op(RingBell)\n\
+	"<Key>Return: no-op(RingBell)\n\
 	Ctrl<Key>J: no-op(RingBell)\n\
 	Ctrl<Key>M: no-op(RingBell)\n\
-	";
+	Ctrl<Key>X: EmptyTextKey()\n\
+	Ctrl<Key>U: multiply(4)\n\
+	<Key>F18: PastePanelKey()\n";
 
 static
 str_panel(string, label, pi_x)
@@ -1675,12 +1677,13 @@ str_panel(string, label, pi_x)
     NextArg(XtNheight, char_height(temp_font) * nlines + 4);
     NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
     NextArg(XtNscrollVertical, XawtextScrollWhenNeeded);
+
     *pi_x = XtCreateManagedWidget(label, asciiTextWidgetClass, form, Args, ArgCount);
 
     /* make Newline do nothing for now */
     XtOverrideTranslations(*pi_x, XtParseTranslationTable(text_translations));
 
-    /* read personnal key configuration */
+    /* read personal key configuration */
     XtOverrideTranslations(*pi_x, XtParseTranslationTable(local_translations));
 
     below = *pi_x;
@@ -2089,4 +2092,50 @@ fill_style_select(w, new_fillflag, garbage)
     FirstArg(XtNsensitive, fill_flag ? True : False);
     SetValues(fill_style_panel);
     SetValues(fill_style_label);
+}
+
+void clear_text_key(w)
+Widget w;
+{
+	panel_set_value(w, "");
+}
+
+void paste_panel_key(w, event)
+Widget w;
+XKeyEvent *event;
+{
+	static void get_clipboard();
+	Time event_time;
+
+        event_time = event->time;
+        XtGetSelectionValue(w, XA_PRIMARY, XA_STRING, get_clipboard, w, event_time);
+}
+
+static void get_clipboard(w, client_data, selection, type, buf, length, format)
+Widget w;
+XtPointer client_data;
+Atom *selection;
+Atom *type;
+XtPointer buf;
+unsigned long *length;
+int *format;
+{
+	char *c, *p;
+	int i;
+	char s[256];
+	char *strchr();
+
+	strcpy (s, panel_get_value(client_data));
+	p = strchr(s, '\0');
+	c = buf;
+	for (i=0; i<*length; i++) {
+		if (*c=='\0' || *c=='\n' || *c=='\r' || strlen(s)>=sizeof(s)-1)
+			break;
+		*p = *c;
+		p++;
+		*p = '\0';
+		c++;
+	}
+	XtFree(buf);
+	panel_set_value(client_data, s);
 }

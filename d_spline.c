@@ -36,7 +36,7 @@ spline_drawing_selected()
     canvas_leftbut_proc = init_spline_drawing;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&arrow_cursor);
+    set_cursor(arrow_cursor);
     reset_action_on();
 }
 

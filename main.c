@@ -31,6 +31,8 @@ extern		X_error_handler();
 extern void	error_handler();
 extern int	ignore_exp_cnt;
 extern char    *getenv();
+extern int	psfontnum();
+extern int	latexfontnum();
 
 #include "fig.icon.X"
 Pixmap		fig_icon;
@@ -72,6 +74,10 @@ static XtResource application_resources[] = {
     XtOffset(appresPtr, normalFont), XtRString, (caddr_t) NULL},
     {"buttonFont", "ButtonFont", XtRString, sizeof(char *),
     XtOffset(appresPtr, buttonFont), XtRString, (caddr_t) NULL},
+    {"startlatexFont", "StartlatexFont", XtRString, sizeof(char *),
+    XtOffset(appresPtr, startlatexFont), XtRString, (caddr_t) NULL},
+    {"startpsFont", "StartpsFont", XtRString, sizeof(char *),
+    XtOffset(appresPtr, startpsFont), XtRString, (caddr_t) NULL},
     {"startfontsize", "StartFontSize", XtRFloat, sizeof(float),
     XtOffset(appresPtr, startfontsize), XtRInt, (caddr_t) & zero},
     {"internalborderwidth", "InternalBorderWidth", XtRFloat, sizeof(float),
@@ -102,6 +108,8 @@ static XtResource application_resources[] = {
     XtOffset(appresPtr, monochrome), XtRBoolean, (caddr_t) & false},
     {"latexfonts", "Latexfonts", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, latexfonts), XtRBoolean, (caddr_t) & false},
+    {"keyFile", "KeyFile", XtRString, sizeof(char *),
+    XtOffset(appresPtr, keyFile), XtRString, (caddr_t) "CompKeyDB"},
 };
 
 static XrmOptionDescRec options[] =
@@ -126,6 +134,8 @@ static XrmOptionDescRec options[] =
     {"-boldFont", ".boldFont", XrmoptionSepArg, 0},
     {"-normalFont", ".normalFont", XrmoptionSepArg, 0},
     {"-buttonFont", ".buttonFont", XrmoptionSepArg, 0},
+    {"-startpsFont", ".startpsFont", XrmoptionSepArg, 0},
+    {"-startlatexFont", ".startlatexFont", XrmoptionSepArg, 0},
     {"-startFontSize", ".startfontsize", XrmoptionSepArg, 0},
     {"-startfontsize", ".startfontsize", XrmoptionSepArg, 0},
     {"-latexfonts", ".latexfonts", XrmoptionNoArg, "True"},
@@ -134,6 +144,7 @@ static XrmOptionDescRec options[] =
     {"-monochrome", ".monochrome", XrmoptionNoArg, "True"},
     {"-internalBW", ".internalborderwidth", XrmoptionSepArg, 0},
     {"-internalBorderWidth", ".internalborderwidth", XrmoptionSepArg, 0},
+    {"-keyFile", ".keyFile", XrmoptionSepArg, 0},
 };
 
 static XtCallbackRec callbacks[] =
@@ -154,6 +165,14 @@ static void	check_colors();
 XtActionsRec	form_actions[] =
 {
     {"ResizeForm", (XtActionProc) check_for_resize},
+};
+
+extern void clear_text_key();
+extern void paste_panel_key();
+static XtActionsRec text_panel_actions[] =
+{
+    {"PastePanelKey", (XtActionProc) paste_panel_key} ,
+    {"EmptyTextKey", (XtActionProc) clear_text_key} ,
 };
 
 static String	form_translations =
@@ -270,6 +289,12 @@ main(argc, argv)
 	cur_fontsize = (int) appres.startfontsize;
     if (cur_fontsize == 0)
 	cur_fontsize = DEF_FONTSIZE;
+
+    if (cur_latex_font == 0)
+	cur_latex_font = latexfontnum (appres.startlatexFont);
+
+    if (cur_ps_font == 0)
+	cur_ps_font = psfontnum (appres.startpsFont);
 
     if (INTERNAL_BW == 0)
 	INTERNAL_BW = (int) appres.internalborderwidth;
@@ -391,10 +416,11 @@ main(argc, argv)
     TOOL_WD = (int) w;
     TOOL_HT = (int) h;
     XtAppAddActions(tool_app, form_actions, XtNumber(form_actions));
+    XtAppAddActions(tool_app, text_panel_actions, XtNumber(text_panel_actions));
     XtOverrideTranslations(form, XtParseTranslationTable(form_translations));
 
     XSetErrorHandler(X_error_handler);
-    XSetIOErrorHandler(X_error_handler);
+    XSetIOErrorHandler((XIOErrorHandler) X_error_handler);
     (void) signal(SIGHUP, error_handler);
     (void) signal(SIGFPE, error_handler);
     (void) signal(SIGBUS, error_handler);
@@ -512,3 +538,21 @@ check_colors()
 	    break;
     }
 }
+
+#ifdef NOSTRSTR
+#include <stdio.h>
+#include <string.h>
+
+char *strstr(s1, s2)
+    char *s1, *s2;
+{
+    int len2;
+    char *stmp;
+
+    len2 = strlen(s2);
+    for (stmp = s1; *stmp != NULL; stmp++)
+	if (strncmp(stmp, s2, len2)==0)
+	    return stmp;
+    return NULL;
+}
+#endif

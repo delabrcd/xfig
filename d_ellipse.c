@@ -47,7 +47,7 @@ ellipsebyradius_drawing_selected()
     canvas_leftbut_proc = init_ellipsebyradius_drawing;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&arrow_cursor);
+    set_cursor(arrow_cursor);
     set_mousefun("center point", "", "");
     reset_action_on();
 }
@@ -64,7 +64,7 @@ init_ellipsebyradius_drawing(x, y)
     canvas_locmove_proc = resizing_ebr;
     canvas_rightbut_proc = cancel_ellipsebyrad;
     canvas_leftbut_proc = create_ellipsebyrad;
-    set_temp_cursor(&null_cursor);
+    set_temp_cursor(null_cursor);
     elastic_ebr();
     set_action_on();
 }
@@ -122,7 +122,7 @@ ellipsebydiameter_drawing_selected()
     canvas_leftbut_proc = init_ellipsebydiameter_drawing;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&arrow_cursor);
+    set_cursor(arrow_cursor);
     reset_action_on();
 }
 
@@ -138,7 +138,7 @@ init_ellipsebydiameter_drawing(x, y)
     canvas_locmove_proc = resizing_ebd;
     canvas_rightbut_proc = cancel_ellipsebydia;
     canvas_leftbut_proc = create_ellipsebydia;
-    set_temp_cursor(&null_cursor);
+    set_temp_cursor(null_cursor);
     elastic_ebd();
     set_action_on();
 }
@@ -198,7 +198,7 @@ circlebyradius_drawing_selected()
     canvas_leftbut_proc = init_circlebyradius_drawing;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&arrow_cursor);
+    set_cursor(arrow_cursor);
     reset_action_on();
 }
 
@@ -214,7 +214,7 @@ init_circlebyradius_drawing(x, y)
     canvas_locmove_proc = resizing_cbr;
     canvas_rightbut_proc = cancel_circlebyrad;
     canvas_leftbut_proc = create_circlebyrad;
-    set_temp_cursor(&null_cursor);
+    set_temp_cursor(null_cursor);
     elastic_cbr();
     set_action_on();
 }
@@ -274,7 +274,7 @@ circlebydiameter_drawing_selected()
     canvas_leftbut_proc = init_circlebydiameter_drawing;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&arrow_cursor);
+    set_cursor(arrow_cursor);
     reset_action_on();
 }
 
@@ -290,7 +290,7 @@ init_circlebydiameter_drawing(x, y)
     canvas_locmove_proc = resizing_cbd;
     canvas_leftbut_proc = create_circlebydia;
     canvas_rightbut_proc = cancel_circlebydia;
-    set_temp_cursor(&null_cursor);
+    set_temp_cursor(null_cursor);
     elastic_cbd();
     set_action_on();
 }

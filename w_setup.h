@@ -18,7 +18,7 @@
 						 * + (5.0/2))) */
 
 /* Portrait dimensions */
-#define		DEF_CANVAS_HT_PORT	9.5*PIX_PER_INCH
+#define		DEF_CANVAS_HT_PORT	9*PIX_PER_INCH
 #define		DEF_CANVAS_WD_PORT	8*PIX_PER_INCH
 
 /* Landscape dimensions */

@@ -142,7 +142,7 @@ setup_cmd_panel()
     register int    i;
     register cmd_sw_info *sw;
 
-    XDefineCursor(tool_d, XtWindow(cmd_panel), (Cursor) arrow_cursor.bitmap);
+    XDefineCursor(tool_d, XtWindow(cmd_panel), arrow_cursor);
 
     for (i = 0; i < NUM_CMD_SW; ++i) {
 	sw = &cmd_switches[i];

@@ -1,5 +1,9 @@
 This file contains some possible things to do in future versions of xfig.
 
+allow printing of grid in figure
+be able to select only certain object parameters for update mode
+have arc sub-type 2 for pie wedge-type arcs
+have common edit popup for all four splines to allow conversion between all
 allow fractional text sizes (float)
 save modified_flag before file operations and restore if undo used
 Should arrow mode be changed in update mode
@@ -23,10 +27,6 @@ Extend smart links to work for SCALE, MOVEPT and perhaps EDIT, UPDATE.
 	require changing the F_linkinfo structure to have left_endpt,
 	left_prevpt, right_endpt, right_prevpt fields instead of the current
 	endpt, prevpt and two_pts fields.
-The corners of rectangles aren't sorted.  In the edit popup sometimes
-	the corner labelled top left is actually the bottom right.
-	Should either sort them before displaying or use names like
-	"First Corner" and "Opposite Corner".
 Make xfig resources more consistent with normal use of resources in X clients.
 	e.g. provide support to allow each command button (say) to be
 	a different color.  Ditto for mode buttons, etc.
@@ -48,9 +48,6 @@ Still need to think about how point positioning should be utilized with
 	I think e) is the next best but it won't let you mimick b).
 Use clipping rectangles in more places:
 	use the redisplay_* routines as necessary.
-when started up in reverse video, the popups have a black border which
-	fades into the canvas.
-	Is this an xfig problem or just the way I've set up my window manager?
 allow popup menus to be pinned?
 have a resource which can be set to keep backups during a save, instead of
 	prompting the user about overwrite etc.

@@ -229,15 +229,15 @@ topruler_selected(tool, event, params, nparams)
     case ButtonPress:
 	switch (be->button) {
 	case Button1:
-	    XDefineCursor(tool_d, topruler_win, (Cursor) l_arrow_cursor.bitmap);
+	    XDefineCursor(tool_d, topruler_win, l_arrow_cursor);
 	    break;
 	case Button2:
-	    XDefineCursor(tool_d, topruler_win, (Cursor) bull_cursor.bitmap);
+	    XDefineCursor(tool_d, topruler_win, bull_cursor);
 	    orig_zoomoff = zoomxoff;
 	    last_drag_x = event->x;
 	    break;
 	case Button3:
-	    XDefineCursor(tool_d, topruler_win, (Cursor) r_arrow_cursor.bitmap);
+	    XDefineCursor(tool_d, topruler_win, r_arrow_cursor);
 	    break;
 	}
 	break;
@@ -254,7 +254,7 @@ topruler_selected(tool, event, params, nparams)
 	    pan_right();
 	    break;
 	}
-	XDefineCursor(tool_d, topruler_win, (Cursor) lr_arrow_cursor.bitmap);
+	XDefineCursor(tool_d, topruler_win, lr_arrow_cursor);
 	break;
     case MotionNotify:
 	if (event->x != last_drag_x)
@@ -380,7 +380,7 @@ setup_topruler()
     gcv.function = GXxor;
     tr_xor_gc = XCreateGC(tool_d, topruler_win, gcmask, &gcv);
 
-    XDefineCursor(tool_d, topruler_win, (Cursor) lr_arrow_cursor.bitmap);
+    XDefineCursor(tool_d, topruler_win, lr_arrow_cursor);
 
     topruler_pm = XCreatePixmap(tool_d, topruler_win,
 				TOPRULER_WD, TOPRULER_HT,
@@ -482,15 +482,15 @@ sideruler_selected(tool, event, params, nparams)
     case ButtonPress:
 	switch (be->button) {
 	case Button1:
-	    XDefineCursor(tool_d, sideruler_win, (Cursor) u_arrow_cursor.bitmap);
+	    XDefineCursor(tool_d, sideruler_win, u_arrow_cursor);
 	    break;
 	case Button2:
-	    XDefineCursor(tool_d, sideruler_win, (Cursor) bull_cursor.bitmap);
+	    XDefineCursor(tool_d, sideruler_win, bull_cursor);
 	    orig_zoomoff = zoomyoff;
 	    last_drag_y = event->y;
 	    break;
 	case Button3:
-	    XDefineCursor(tool_d, sideruler_win, (Cursor) d_arrow_cursor.bitmap);
+	    XDefineCursor(tool_d, sideruler_win, d_arrow_cursor);
 	    break;
 	}
 	break;
@@ -507,7 +507,7 @@ sideruler_selected(tool, event, params, nparams)
 	    pan_down();
 	    break;
 	}
-	XDefineCursor(tool_d, sideruler_win, (Cursor) ud_arrow_cursor.bitmap);
+	XDefineCursor(tool_d, sideruler_win, ud_arrow_cursor);
 	break;
     case MotionNotify:
 	if (event->y != last_drag_y)
@@ -623,7 +623,7 @@ setup_sideruler()
     gcv.function = GXxor;
     sr_xor_gc = XCreateGC(tool_d, sideruler_win, gcmask, &gcv);
 
-    XDefineCursor(tool_d, sideruler_win, (Cursor) ud_arrow_cursor.bitmap);
+    XDefineCursor(tool_d, sideruler_win, ud_arrow_cursor);
 
     sideruler_pm = XCreatePixmap(tool_d, sideruler_win,
 				 SIDERULER_WD, SIDERULER_HT,

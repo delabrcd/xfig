@@ -198,7 +198,10 @@ lookfont(f, s)
 
     for (i = 1; i < NUM_PS_FONTS + 1; i++)
 	if (ps_fontinfo[i].xfontnum == f)
+	    {
 	    sprintf(fn, "%s-%d", ps_fontinfo[i].name, s);
+	    break;
+	    }
 
     for (i = strlen(fn) - 1; i >= 0; i--)
 	if (isupper(fn[i]))
@@ -231,22 +234,29 @@ lookfont(f, s)
 	    fontst = XLoadQueryFont(tool_d, appres.normalFont);
 	}
 	return (fontst);
-    } else {			/* prior to X11R5: get best matching font */
+    } else {				/* prior to X11R5: get best matching font */
 
 	xf = x_fontinfo[f].xfontlist;	/* go through the linked list looking
 					 * for match */
 	if (xf == NULL)
-	    return roman_font;	/* use a default font */
+	    return roman_font;		/* use a default font */
 	while (1) {
-	    if (s <= xf->size)	/* exact or larger point size */
+	    if (s < xf->size)		/* larger point size */
+		{
+		put_msg("Font size %d not found, using larger %d point",s,xf->size);
+		break;
+		}
+	    if (s == xf->size)		/* exact point size */
 		break;
 	    if (xf->next != NULL)	/* keep ptr to last if not found */
 		xf = xf->next;
 	    else
-		break;		/* not found, use largest point size in the
-				 * list */
+		{
+		put_msg("Font size %d not found, using smaller %d point",s,xf->size);
+		break;		/* not found, use largest point size in the list */
+		}
 	}
-	if (xf->fid == NULL) {	/* if the font is not yet loaded, load it */
+	if (xf->fid == NULL) {		/* if the font is not yet loaded, load it */
 	    if (appres.DEBUG)
 		fprintf(stderr, "Loading font %s\n", xf->fname);
 	    if (fontst = XLoadQueryFont(tool_d, xf->fname)) {	/* load it */
@@ -662,11 +672,15 @@ set_fillgc(fill_style, op, color)
     Color	    color;
 {
     if (op == PAINT) {
-	fillgc = ((color==BLACK || (!all_colors_available && color!=WHITE))? 
+	fillgc = ((color==BLACK || 
+	     (color==DEFAULT_COLOR && x_fg_color.pixel==appres.color[BLACK]) ||
+	     (!all_colors_available && color!=WHITE))? 
 		black_fill_gc[fill_style - 1]: fill_gc[fill_style - 1]);
 	set_x_color(fillgc, color);
     } else
-	fillgc = ((color==BLACK || (!all_colors_available && color!=WHITE))? 
+	fillgc = ((color==BLACK || 
+	     (color==DEFAULT_COLOR && x_fg_color.pixel==appres.color[BLACK]) ||
+	     (!all_colors_available && color!=WHITE))? 
 		black_un_fill_gc[fill_style - 1]: un_fill_gc[fill_style - 1]);
     XSetClipRectangles(tool_d, fillgc, 0, 0, clip, 1, YXBanded);
 }

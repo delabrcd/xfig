@@ -37,7 +37,7 @@ load_file(file)
     c.splines = NULL;
     c.texts = NULL;
     c.next = NULL;
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
     s = read_fig(file, &c);
     if (s == 0) {		/* Successful read */
 	clean_up();
@@ -84,7 +84,7 @@ merge_file(file)
     c.splines = NULL;
     c.texts = NULL;
     c.next = NULL;
-    set_temp_cursor(&wait_cursor);
+    set_temp_cursor(wait_cursor);
 
     s = read_fig(file, &c);
     if (s == 0) {		/* Successful read */

@@ -45,7 +45,7 @@ line_drawing_selected()
     canvas_locmove_proc = null_proc;
     canvas_leftbut_proc = init_line_drawing;
     canvas_rightbut_proc = null_proc;
-    set_cursor(&arrow_cursor);
+    set_cursor(arrow_cursor);
     reset_action_on();
     if (cur_mode == F_POLYGON) {
 	set_mousefun("first point", "", "");
@@ -112,8 +112,8 @@ init_trace_drawing(x, y)
 	canvas_middlebut_proc = canvas_middlebut_save;
     }
     draw_mousefun_canvas();
-    set_temp_cursor(&null_cursor);
-    cur_cursor = &null_cursor;
+    set_temp_cursor(null_cursor);
+    cur_cursor = null_cursor;
     elastic_line();
 }
 
@@ -131,9 +131,9 @@ get_latexpoint(x, y)
     elastic_latexline();
     latex_endpoint(fix_x, fix_y, x, y, &cur_x, &cur_y, latexarrow_mode,
 		   (cur_pointposn == P_ANY) ? 1 : posn_rnd[cur_pointposn]);
-    if (cur_cursor != &null_cursor) {
-	set_temp_cursor(&null_cursor);
-	cur_cursor = &null_cursor;
+    if (cur_cursor != null_cursor) {
+	set_temp_cursor(null_cursor);
+	cur_cursor = null_cursor;
     }
     win_setmouseposition(canvas_win, cur_x, cur_y);
     get_intermediatepoint(cur_x, cur_y);
@@ -165,9 +165,9 @@ create_latexobject(x, y)
 	elastic_latexline();
 	latex_endpoint(fix_x, fix_y, x, y, &cur_x, &cur_y, latexarrow_mode,
 		    (cur_pointposn == P_ANY) ? 1 : posn_rnd[cur_pointposn]);
-	if (cur_cursor != &null_cursor) {
-	    set_temp_cursor(&null_cursor);
-	    cur_cursor = &null_cursor;
+	if (cur_cursor != null_cursor) {
+	    set_temp_cursor(null_cursor);
+	    cur_cursor = null_cursor;
 	}
     }
     create_lineobject(cur_x, cur_y);

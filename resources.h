@@ -60,24 +60,21 @@ typedef struct _appres {
     char	   *normalFont;
     char	   *boldFont;
     char	   *buttonFont;
+    char	   *startpsFont;	/* bab 11 Jan 92 */
+    char	   *startlatexFont;	/* bab 11 Jan 92 */
     float	    tmp_width;
     float	    tmp_height;
     float	    startfontsize;	/* ges 6 Feb 91 */
     float	    internalborderwidth;
     Pixel	    color[NUMCOLORS];
     Boolean	    monochrome;
+    char	   *keyFile;
 }		appresStruct, *appresPtr;
 extern appresStruct appres;
 
 typedef struct {
     int		    x, y;
 }		pr_size;
-
-typedef struct {
-    unsigned int    hotx, hoty;
-    unsigned int    graphop;
-    XImage	   *bitmap;
-}		CursorRec;
 
 typedef struct {
     unsigned int    r_width, r_height, r_left, r_top;
@@ -107,8 +104,6 @@ typedef XImage	PIXRECTREC;
 typedef XImage *PIXRECT;
 typedef XFontStruct *PIX_FONT;
 typedef MprData MPR_DATA;
-typedef CursorRec CURSORREC;
-typedef CursorRec *CURSOR;
 typedef Widget	TOOL;
 typedef Widget	TOOLSW;
 typedef Window	FDTYPE;
@@ -121,8 +116,8 @@ typedef MenuRec MENU;
 
 extern PIXWIN	canvas_win, msg_win, sideruler_win, topruler_win;
 
-extern CURSOR	cur_cursor;
-extern CURSORREC arrow_cursor, bull_cursor, buster_cursor, crosshair_cursor,
+extern Cursor	cur_cursor;
+extern Cursor	arrow_cursor, bull_cursor, buster_cursor, crosshair_cursor,
 		null_cursor, pencil_cursor, pick15_cursor, pick9_cursor,
 		panel_cursor, l_arrow_cursor, lr_arrow_cursor, r_arrow_cursor,
 		u_arrow_cursor, ud_arrow_cursor, d_arrow_cursor, wait_cursor;

@@ -24,8 +24,8 @@ Boolean		all_colors_available;
 appresStruct	appres;
 PIXWIN		canvas_win, msg_win, sideruler_win, topruler_win;
 
-CURSOR		cur_cursor;
-CURSORREC	arrow_cursor, bull_cursor, buster_cursor, crosshair_cursor,
+Cursor		cur_cursor;
+Cursor		arrow_cursor, bull_cursor, buster_cursor, crosshair_cursor,
 		null_cursor, pencil_cursor, pick15_cursor, pick9_cursor,
 		panel_cursor, l_arrow_cursor, lr_arrow_cursor, r_arrow_cursor,
 		u_arrow_cursor, ud_arrow_cursor, d_arrow_cursor, wait_cursor;
