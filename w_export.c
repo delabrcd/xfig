@@ -17,6 +17,7 @@
 /* IMPORTS */
 
 #include "fig.h"
+#include "figx.h"
 #include "mode.h"
 #include "resources.h"
 #include "w_dir.h"
@@ -28,6 +29,9 @@ extern String	text_translations;
 extern Widget	make_popup_menu();
 extern char    *panel_get_value();
 
+/* global so w_file.c can access it */
+char		default_export_file[PATH_MAX];
+
 /* LOCAL */
 
 static String	file_name_translations =
@@ -37,17 +41,25 @@ static XtActionsRec	file_name_actions[] =
 {
     {"ExportFile", (XtActionProc) do_export},
 };
+static String   export_translations =
+        "<Message>WM_PROTOCOLS: DismissExport()\n";
+static void     export_panel_cancel();
+static XtActionsRec     export_actions[] =
+{
+    {"DismissExport", (XtActionProc) export_panel_cancel},
+    {"cancel", (XtActionProc) export_panel_cancel},
+    {"export", (XtActionProc) do_export},
+};
 
-static char	default_file[60];
 static char	named_file[60];
 
 static char    *orient_items[] = {
-    "portrait ",
-    "landscape"};
+    "Portrait ",
+    "Landscape"};
 
 static char    *just_items[] = {
-    "flush left",
-    "centered  "};
+    "Flush left",
+    "Centered"};
 
 static void	orient_select();
 static Widget	orient_panel, orient_menu, orient_lab;
@@ -57,16 +69,16 @@ static Widget	lang_panel, lang_menu, lang_lab;
 
 static void	just_select();
 static Widget	just_panel, just_menu, just_lab;
-static int	print_centered = 1;
 
 static Widget	cancel_but, export_but;
 static Widget	dfile_lab, dfile_text, nfile_lab;
-static Widget	export_panel, export_popup, mag_lab, mag_text, export_w;
+static Widget	export_popup, mag_lab, mag_text, export_w;
 static Position xposn, yposn;
 
 /* Global so w_dir.c can access us */
 
-Widget		exp_selfile,	/* output (selected) file widget */
+Widget		export_panel,	/* so w_dir can access the scrollbars */
+		exp_selfile,	/* output (selected) file widget */
 		exp_mask,	/* mask widget */
 		exp_dir,	/* current directory widget */
 		exp_flist,	/* file list wiget */
@@ -110,18 +122,31 @@ do_export(w)
 	GetValues(exp_selfile);
 	FirstArg(XtNstring, &dval);
 	GetValues(exp_dir);
-	if (emptyname(fval))
-	    fval = default_file;
+	if (emptyname(fval))		/* output filename is empty, use default */
+	    fval = default_export_file;
 
-	strcpy(filename, dval);
-	strcat(filename, "/");
-	strcat(filename, fval);
+	if (*fval == '/') {
+	    strcpy(filename, fval);
+	}
+	else {
+	    strcpy(filename, dval);
+	    strcat(filename, "/");
+	    strcat(filename, fval);
+	}
 
 	/* check for XBitmap first */
 	if (cur_exp_lang == LANG_XBITMAP) {
 	    XtSetSensitive(export_but, False);
 	    if (write_bitmap(filename) == 0)
+		{
+		FirstArg(XtNlabel, fval);
+		SetValues(dfile_text);		/* set the default filename */
+		if (fval != default_export_file)
+		    strcpy(default_export_file,fval); /* and copy to default */
+		FirstArg(XtNstring, "\0");
+		SetValues(exp_selfile);		/* clear ascii widget string */
 		export_panel_dismiss();
+		}
 	    XtSetSensitive(export_but, True);
 	} else {
 	    mag = (float) atof(panel_get_value(mag_text)) / 100.0;
@@ -129,8 +154,16 @@ do_export(w)
 		mag = 1.0;
 	    XtSetSensitive(export_but, False);
 	    if (print_to_file(filename, lang_items[cur_exp_lang],
-			      mag, print_centered) == 0)
+			      mag, export_flushleft) == 0)
+		{
+		FirstArg(XtNlabel, fval);
+		SetValues(dfile_text);		/* set the default filename */
+		if (fval != default_export_file)
+		    strcpy(default_export_file,fval); /* and copy to default */
+		FirstArg(XtNstring, "\0");
+		SetValues(exp_selfile);		/* clear ascii widget string */
 		export_panel_dismiss();
+		}
 	    XtSetSensitive(export_but, True);
 	}
 }
@@ -156,7 +189,7 @@ just_select(w, new_just, garbage)
 
     FirstArg(XtNlabel, XtName(w));
     SetValues(just_panel);
-    print_centered = (int) new_just;
+    export_flushleft = (new_just? True: False);
 }
 
 static void
@@ -190,13 +223,15 @@ lang_select(w, new_lang, garbage)
     }
 
     update_def_filename();
-    FirstArg(XtNlabel, default_file);
+    FirstArg(XtNlabel, default_export_file);
     SetValues(dfile_text);
 }
 
 popup_export_panel(w)
     Widget	    w;
 {
+	extern Atom wm_delete_window;
+
 	DeclareArgs(10);
 
 	set_temp_cursor(wait_cursor);
@@ -208,10 +243,12 @@ popup_export_panel(w)
 	else
 		Rescan(0, 0, 0, 0);
 
-	FirstArg(XtNlabel, default_file);
+	FirstArg(XtNlabel, default_export_file);
 	NextArg(XtNwidth, 250);
 	SetValues(dfile_text);
 	XtPopup(export_popup, XtGrabNonexclusive);
+    	(void) XSetWMProtocols(XtDisplay(export_popup), XtWindow(export_popup),
+			       &wm_delete_window, 1);
 	reset_cursor();
 }
 
@@ -219,7 +256,6 @@ create_export_panel(w)
     Widget	    w;
 {
 	Widget	    	beside, below;
-	XtTranslations  popdown_actions;
 	PIX_FONT	temp_font;
 	DeclareArgs(10);
 
@@ -232,12 +268,12 @@ create_export_panel(w)
 	export_popup = XtCreatePopupShell("xfig_export_menu",
 					  transientShellWidgetClass,
 					  tool, Args, ArgCount);
+	XtOverrideTranslations(export_popup,
+			   XtParseTranslationTable(export_translations));
+	XtAppAddActions(tool_app, export_actions, XtNumber(export_actions));
 
 	export_panel = XtCreateManagedWidget("export_panel", formWidgetClass,
 					     export_popup, NULL, ZERO);
-	popdown_actions = XtParseTranslationTable(
-						  "<Btn1Up>:\n");
-	XtOverrideTranslations(export_panel, popdown_actions);
 
 	FirstArg(XtNlabel, "   Magnification%:");
 	NextArg(XtNjustify, XtJustifyLeft);
@@ -263,10 +299,11 @@ create_export_panel(w)
 	orient_lab = XtCreateManagedWidget("orient_label", labelWidgetClass,
 					   export_panel, Args, ArgCount);
 
-	FirstArg(XtNfromHoriz, orient_lab);
+	FirstArg(XtNlabel, orient_items[print_landscape]);
+	NextArg(XtNfromHoriz, orient_lab);
 	NextArg(XtNfromVert, mag_text);
 	NextArg(XtNborderWidth, INTERNAL_BW);
-	orient_panel = XtCreateManagedWidget(orient_items[print_landscape],
+	orient_panel = XtCreateManagedWidget("orientation",
 					     menuButtonWidgetClass,
 					     export_panel, Args, ArgCount);
 	orient_menu = make_popup_menu(orient_items, XtNumber(orient_items),
@@ -279,10 +316,11 @@ create_export_panel(w)
 	just_lab = XtCreateManagedWidget("just_label", labelWidgetClass,
 					 export_panel, Args, ArgCount);
 
-	FirstArg(XtNlabel, just_items[print_centered]);
+	FirstArg(XtNlabel, just_items[export_flushleft? 0 : 1]);
 	NextArg(XtNfromHoriz, just_lab);
 	NextArg(XtNfromVert, orient_panel);
 	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNresizable, True);
 	just_panel = XtCreateManagedWidget("justify",
 					   menuButtonWidgetClass,
 					   export_panel, Args, ArgCount);
@@ -296,10 +334,11 @@ create_export_panel(w)
 	lang_lab = XtCreateManagedWidget("lang_label", labelWidgetClass,
 					 export_panel, Args, ArgCount);
 
-	FirstArg(XtNfromHoriz, lang_lab);
+	FirstArg(XtNlabel, lang_texts[cur_exp_lang]);
+	NextArg(XtNfromHoriz, lang_lab);
 	NextArg(XtNfromVert, just_panel);
 	NextArg(XtNborderWidth, INTERNAL_BW);
-	lang_panel = XtCreateManagedWidget(lang_texts[cur_exp_lang],
+	lang_panel = XtCreateManagedWidget("language",
 					   menuButtonWidgetClass,
 					   export_panel, Args, ArgCount);
 	lang_menu = make_popup_menu(lang_texts, XtNumber(lang_texts),
@@ -313,7 +352,7 @@ create_export_panel(w)
 	dfile_lab = XtCreateManagedWidget("def_file_label", labelWidgetClass,
 					  export_panel, Args, ArgCount);
 
-	FirstArg(XtNlabel, default_file);
+	FirstArg(XtNlabel, default_export_file);
 	NextArg(XtNfromVert, lang_panel);
 	NextArg(XtNfromHoriz, dfile_lab);
 	NextArg(XtNvertDistance, 15);
@@ -384,6 +423,9 @@ create_export_panel(w)
 	XtAddEventHandler(export_but, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler)do_export, (XtPointer) NULL);
 
+	XtInstallAccelerators(export_panel, cancel_but);
+	XtInstallAccelerators(export_panel, export_but);
+
 	if (cur_exp_lang == LANG_XBITMAP) {
 	    XtSetSensitive(mag_lab, False);
 	    XtSetSensitive(mag_text, False);
@@ -401,18 +443,18 @@ update_def_filename()
 {
     int		    i;
 
-    (void) strcpy(default_file, cur_filename);
-    if (default_file[0] != '\0') {
-	i = strlen(default_file);
-	if (i >= 4 && strcmp(&default_file[i - 4], ".fig") == 0)
-	    default_file[i - 4] = '\0';
-	(void) strcat(default_file, ".");
-	(void) strcat(default_file, lang_items[cur_exp_lang]);
+    (void) strcpy(default_export_file, cur_filename);
+    if (default_export_file[0] != '\0') {
+	i = strlen(default_export_file);
+	if (i >= 4 && strcmp(&default_export_file[i - 4], ".fig") == 0)
+	    default_export_file[i - 4] = '\0';
+	(void) strcat(default_export_file, ".");
+	(void) strcat(default_export_file, lang_items[cur_exp_lang]);
     }
     /* remove trailing blanks */
-    for (i = strlen(default_file) - 1; i >= 0; i--)
-	if (default_file[i] == ' ')
-	    default_file[i] = '\0';
+    for (i = strlen(default_export_file) - 1; i >= 0; i--)
+	if (default_export_file[i] == ' ')
+	    default_export_file[i] = '\0';
 	else
 	    i = 0;
 }

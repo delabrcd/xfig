@@ -20,6 +20,7 @@
 #include "object.h"
 #include "paintop.h"
 #include "w_setup.h"
+#include "w_drawprim.h"
 
 static int	create_n_write_bitmap();
 
@@ -80,10 +81,11 @@ create_n_write_bitmap(filename)
     XSetPlaneMask(tool_d, gccache[ERASE], (unsigned long) 1);
     XSetForeground(tool_d, gccache[ERASE], (unsigned long) 0);
     XSetBackground(tool_d, gccache[ERASE], (unsigned long) 0);
-    save_fg_color = x_fg_color.pixel;	/* save current colors */
+    save_fg_color = x_color(cur_color);	/* save current colors */
     save_bg_color = x_bg_color.pixel;
-    x_fg_color.pixel = 1;	/* set fore=1, back=0 */
+    x_fg_color.pixel = 1;		/* set fore=1, back=0 */
     x_bg_color.pixel = 0;
+    writing_bitmap = True;		/* so the colors don't change */
     if (!havegcs) {
 	havegcs = True;
 	for (i = 0; i < NUMFILLPATS; i++) {	/* save current fill gc's */
@@ -112,10 +114,13 @@ create_n_write_bitmap(filename)
     cur_objmask = M_NONE;
     redisplay_objects(&objects);/* draw the figure into the pixmap */
     XFlush(tool_d);
+    writing_bitmap = False;
     canvas_win = sav_canvas;	/* go back to the real canvas */
     cur_objmask = sav_objmask;	/* restore point marker */
     bitmap = XCreatePixmap(tool_d, canvas_win, width, height,
 			   DefaultDepthOfScreen(tool_s));
+    /* set the foreground back to 1 */
+    XSetForeground(tool_d, gccache[PAINT], 1);
     /* now copy one plane of the pixmap to a bitmap of the correct size */
     XCopyPlane(tool_d, largepm, bitmap, gccache[PAINT],
 	       xmin, ymin, width, height, 0, 0, 1);

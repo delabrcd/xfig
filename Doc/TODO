@@ -1,5 +1,19 @@
 This file contains some possible things to do in future versions of xfig.
 
+make <Shift>middle mouse button DELETE previous points just created during
+	create POLYobject/ARC/Ellipse etc.  That way, one may backup when
+	creating objects.
+create resource for "print" command (e.g. lp, lpr, whatever) which uses meta-
+	notation to place filename (e.g.  print_command: "lpr -P%p %f" where %p
+	is the printer string and %f is the filename)
+put text FLAGS in indicator buttons
+use floating point coordinates for objects (at least internally to xfig if not
+	in the figure file)
+super/subscripts for text objects
+make line counter update correctly when reading multiple-line POLYLINES and
+	SPLINES from input file
+add at least 90-degree rotated text using pixmaps
+fix grid rounding problems at 0.75 zoom factor
 allow vertically-aligned text
   "top" would mean the insertion point specifies the line over the top of the
         text
@@ -20,7 +34,7 @@ save modified_flag before file operations and restore if undo used
 Should arrow size change in update mode when linewidth changes?
 investigate whether eps objects that don't have a preview bitmap
 	are scaled correctly
-add ability to add/delete arrows and change arrow size from edit panel
+add ability to change arrow size from edit panel
 change eps_bitmaps so that background is transparent (needs to work
 	in normal and reverse-video modes).
 Make popup windows come up so that they don't overlap the figure (if possible).

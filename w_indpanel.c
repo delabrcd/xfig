@@ -15,6 +15,7 @@
  */
 
 #include "fig.h"
+#include "figx.h"
 #include "resources.h"
 #include "object.h"
 #include "mode.h"
@@ -29,6 +30,7 @@
 #include "w_zoom.h"
 
 extern Pixmap	psfont_menu_bitmaps[], latexfont_menu_bitmaps[];
+extern Atom	wm_delete_window;
 extern struct	_fstruct ps_fontinfo[], latex_fontinfo[];
 extern char    *panel_get_value();
 extern int	show_zoom();
@@ -46,6 +48,20 @@ static void	nval_panel_set();
 static XtActionsRec set_actions[] =
 {
     {"SetValue", (XtActionProc) nval_panel_set},
+};
+static String   nval_translations =
+        "<Message>WM_PROTOCOLS: QuitNval()\n";
+static void	nval_panel_cancel();
+static XtActionsRec     nval_actions[] =
+{
+    {"QuitNval", (XtActionProc) nval_panel_cancel},
+};
+static String   choice_translations =
+        "<Message>WM_PROTOCOLS: QuitChoice()\n";
+static void     choice_panel_cancel();
+static XtActionsRec     choice_actions[] =
+{
+    {"QuitChoice", (XtActionProc) choice_panel_cancel},
 };
 
 DeclareStaticArgs(15);
@@ -66,21 +82,24 @@ static int	show_fontsize(), inc_fontsize(), dec_fontsize();
 static int	show_textstep(), inc_textstep(), dec_textstep();
 static int	inc_zoom(), dec_zoom();
 static int	show_rotnangle(), inc_rotnangle(), dec_rotnangle();
+static int	show_elltextangle(), inc_elltextangle(), dec_elltextangle();
 static int	show_numsides(), inc_numsides(), dec_numsides();
 static int	inc_depth(), dec_depth();
 
 static int	popup_fonts();
 static void	note_state();
 
-static char	indbuf[5];
+static char	indbuf[6];
 static float	old_zoomscale = -1.0;
 static int	old_rotnangle = -1;
+static float	old_elltextangle = -1.0;
 
 #define		DEF_IND_SW_HT		32
 #define		DEF_IND_SW_WD		64
 #define		FONT_IND_SW_WD		(40+PS_FONTPANE_WD)
 #define		NARROW_IND_SW_WD	56
 #define		WIDE_IND_SW_WD		76
+#define		XWIDE_IND_SW_WD		86
 
 /* indicator switch definitions */
 
@@ -222,6 +241,9 @@ ind_sw_info	ind_switches[] = {
     {I_CHOICE, I_TEXTJUST, "Text", "Just", DEF_IND_SW_WD,
 	&cur_textjust, NULL, inc_choice, dec_choice, show_textjust,
 	textjust_choices, NUM_TEXTJUST_CHOICES, NUM_TEXTJUST_CHOICES,},
+    {I_FVAL, I_ELLTEXTANGLE, "Text/Ellipse", "Angle", XWIDE_IND_SW_WD,
+	NULL, &cur_elltextangle, inc_elltextangle, dec_elltextangle, 
+	show_elltextangle,},
     {I_IVAL, I_FONTSIZE, "Text", "Size", NARROW_IND_SW_WD,
 	&cur_fontsize, NULL, inc_fontsize, dec_fontsize, show_fontsize,},
     {I_FVAL, I_TEXTSTEP, "Text", "Step", NARROW_IND_SW_WD,
@@ -284,34 +306,45 @@ init_ind_panel(tool)
     /* does he want to always see ALL of the indicator buttons? */
     if (appres.ShowAllButtons) {
 	cur_indmask = I_ALL;	/* yes */
-	i = DEF_IND_SW_HT * 2;	/* two rows high when showing all buttons */
-    } else
-	i = DEF_IND_SW_HT;
+	i = 2*DEF_IND_SW_HT+2*INTERNAL_BW+6;  /* two rows high when showing all buttons */
+    } else {
+	i = DEF_IND_SW_HT+4*INTERNAL_BW+14;   /* allow for thickness of scrollbar */
+    }
 
-    FirstArg(XtNwidth, INDPANEL_WD);
+    /* make a scrollable viewport in case all the buttons don't fit */
+    FirstArg(XtNallowHoriz, True);
+    NextArg(XtNwidth, INDPANEL_WD);
     NextArg(XtNheight, i);
-    NextArg(XtNhSpace, INTERNAL_BW);
-    NextArg(XtNvSpace, INTERNAL_BW);
+    NextArg(XtNborderWidth, 0);
     NextArg(XtNresizable, False);
     NextArg(XtNfromVert, canvas_sw);
     NextArg(XtNvertDistance, -INTERNAL_BW);
     NextArg(XtNtop, XtChainBottom);
     NextArg(XtNbottom, XtChainBottom);
     NextArg(XtNleft, XtChainLeft);
-    NextArg(XtNright, XtChainLeft);
+    NextArg(XtNright, XtChainRight);
+    NextArg(XtNuseBottom, True);
+
+    ind_viewp = XtCreateWidget("ind_viewport", viewportWidgetClass, tool,
+			Args, ArgCount);
+
+    FirstArg(XtNwidth, INDPANEL_WD);
+    NextArg(XtNheight, i);
+    NextArg(XtNhSpace, 0);
+    NextArg(XtNvSpace, 0);
+    NextArg(XtNresizable, True);
     NextArg(XtNborderWidth, 0);
     if (appres.ShowAllButtons) {
 	NextArg(XtNorientation, XtorientVertical);	/* use two rows */
     } else {
 	NextArg(XtNorientation, XtorientHorizontal);	/* expand horizontally */
     }
-    NextArg(XtNmappedWhenManaged, False);
+
+    ind_panel = XtCreateManagedWidget("ind_panel", boxWidgetClass, ind_viewp,
+			       Args, ArgCount);
 
     /* start with all components affected by update */
     cur_updatemask = I_UPDATEMASK;
-
-    ind_panel = XtCreateWidget("ind_panel", boxWidgetClass, tool,
-			       Args, ArgCount);
 
     XtAppAddActions(tool_app, ind_actions, XtNumber(ind_actions));
 
@@ -321,7 +354,7 @@ init_ind_panel(tool)
 	FirstArg(XtNwidth, sw->sw_width);
 	NextArg(XtNheight, DEF_IND_SW_HT);
 	NextArg(XtNdefaultDistance, 0);
-	NextArg(XtNborderWidth, 0);
+	NextArg(XtNborderWidth, INTERNAL_BW);
 	sw->formw = XtCreateWidget("button_form", formWidgetClass,
 			     ind_panel, Args, ArgCount);
 
@@ -354,14 +387,20 @@ init_ind_panel(tool)
 	XtOverrideTranslations(sw->button,
 			       XtParseTranslationTable(ind_translations));
     }
+    update_indpanel(cur_indmask);
 }
 
 static void
-note_state(w, sw, event)
+note_state(w, closure, ev, continue_to_dispatch)
     Widget	    w;
-    ind_sw_info	   *sw;
-    XButtonEvent   *event;
+    XtPointer	    closure;
+    XEvent         *ev;
+    Boolean        *continue_to_dispatch;
+
 {
+    ind_sw_info *sw = (ind_sw_info *) closure;
+    XButtonEvent *event = &ev->xbutton;
+
     if (event->button != Button1)
 	return;
 
@@ -391,11 +430,11 @@ unmanage_update_buts()
 		
 setup_ind_panel()
 {
-    register int    i;
-    register ind_sw_info *isw;
-    register Display *d = tool_d;
-    register Screen *s = tool_s;
-    register Pixmap p;
+    int		    i;
+    ind_sw_info	   *isw;
+    Display	   *d = tool_d;
+    Screen	   *s = tool_s;
+    Pixmap	    p;
 
     /* get the foreground and background from the indicator widget */
     /* and create a gc with those values */
@@ -420,7 +459,7 @@ setup_ind_panel()
     init_fill_gc();
 
     FirstArg(XtNbackgroundPixmap, fillstyle_choices[NUMFILLPATS].blackPM);
-    SetValues(ind_panel);
+    SetValues(ind_viewp);
 
     for (i = 0; i < NUM_IND_SW; ++i) {
 	isw = &ind_switches[i];
@@ -436,7 +475,9 @@ setup_ind_panel()
 
 	isw->normalPM = button_args[6].value = (XtArgVal) p;
 	XtSetValues(isw->button, &button_args[6], 1);
+	XtInstallAllAccelerators(isw->button, tool);
     }
+    XtInstallAllAccelerators(ind_panel, tool);
 
     XDefineCursor(d, XtWindow(ind_panel), arrow_cursor);
     update_current_settings();
@@ -479,10 +520,11 @@ sel_ind_but(widget, closure, event, continue_to_dispatch)
     XButtonEvent xbutton;
     ind_sw_info *isw = (ind_sw_info *) closure;
     xbutton = event->xbutton;
-    if (xbutton.button == Button3) {	/* right button */
-	inc_action(isw);
-    } else if (xbutton.button == Button2) {	/* middle button */
+    if ((xbutton.button == Button2)  ||
+              (xbutton.button == Button3 && xbutton.state & Mod1Mask)) { /* middle button */
 	dec_action(isw);
+    } else if (xbutton.button == Button3) {	/* right button */
+	inc_action(isw);
     } else {			/* left button */
 	if (isw->func == I_FONT)
 	    popup_fonts(isw);
@@ -494,13 +536,13 @@ sel_ind_but(widget, closure, event, continue_to_dispatch)
 }
 
 static
-update_string_pixmap(isw, buf, xpos)
+update_string_pixmap(isw, buf, xpos, ypos)
     ind_sw_info	   *isw;
     char	   *buf;
-    int		    xpos;
+    int		    xpos, ypos;
 {
     XDrawImageString(tool_d, isw->normalPM, ind_button_gc,
-		     xpos, 20, buf, strlen(buf));
+		     xpos, ypos, buf, strlen(buf));
     /*
      * Fool the toolkit by changing the background pixmap to 0 then giving it
      * the modified one again.	Otherwise, it sees that the pixmap ID is not
@@ -602,6 +644,7 @@ popup_choice_panel(isw)
     Pixmap	    p;
     Pixel	    form_fg;
     register int    i;
+    static int      actions_added=0;
 
     choice_i = isw;
     XtSetSensitive(choice_i->button, False);
@@ -622,6 +665,12 @@ popup_choice_panel(isw)
     choice_popup = XtCreatePopupShell("xfig_set_indicator_panel",
 				      transientShellWidgetClass, tool,
 				      Args, ArgCount);
+    XtOverrideTranslations(choice_popup,
+                       XtParseTranslationTable(choice_translations));
+    if (!actions_added) {
+        XtAppAddActions(tool_app, choice_actions, XtNumber(choice_actions));
+	actions_added = 1;
+    }
 
     form = XtCreateManagedWidget("form", formWidgetClass, choice_popup, NULL, 0);
 
@@ -652,7 +701,7 @@ popup_choice_panel(isw)
 	    tmp_choice->value = (i >= NUMCOLORS ? DEFAULT_COLOR : i);
 	} else
 	    p = XCreatePixmapFromBitmapData(tool_d, XtWindow(ind_panel),
-			    tmp_choice->icon->data, tmp_choice->icon->width,
+			    (char *) tmp_choice->icon->data, tmp_choice->icon->width,
 			   tmp_choice->icon->height, ind_but_fg, ind_but_bg,
 					    DefaultDepthOfScreen(tool_s));
 	if (i % isw->sw_per_row == 0) {
@@ -738,6 +787,9 @@ popup_choice_panel(isw)
     }
 
     XtPopup(choice_popup, XtGrabExclusive);
+    (void) XSetWMProtocols(XtDisplay(choice_popup), XtWindow(choice_popup),
+                           &wm_delete_window, 1);
+
 }
 
 static void
@@ -784,6 +836,7 @@ popup_nval_panel(isw)
     Position	    x_val, y_val;
     Dimension	    width, height;
     char	    buf[32];
+    static int      actions_added=0;
 
     nval_i = isw;
     XtSetSensitive(nval_i->button, False);
@@ -802,6 +855,12 @@ popup_nval_panel(isw)
     nval_popup = XtCreatePopupShell("xfig_set_indicator_panel",
 				    transientShellWidgetClass, tool,
 				    Args, ArgCount);
+    XtOverrideTranslations(nval_popup,
+                       XtParseTranslationTable(nval_translations));
+    if (!actions_added) {
+        XtAppAddActions(tool_app, nval_actions, XtNumber(nval_actions));
+	actions_added = 1;
+    }
 
     form = XtCreateManagedWidget("form", formWidgetClass, nval_popup, NULL, 0);
 
@@ -818,7 +877,7 @@ popup_nval_panel(isw)
     if (isw->type == I_IVAL)
 	    sprintf(buf, "%d", (*isw->i_varadr));
     else
-	    sprintf(buf, "%4.2f", (*isw->f_varadr));
+	    sprintf(buf, "%4.2lf", (*isw->f_varadr));
     FirstArg(XtNfromVert, label);
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNfromHoriz, newvalue);
@@ -851,6 +910,8 @@ popup_nval_panel(isw)
 		      (XtEventHandler)nval_panel_set, (XtPointer) NULL);
 
     XtPopup(nval_popup, XtGrabExclusive);
+    (void) XSetWMProtocols(XtDisplay(nval_popup), XtWindow(nval_popup),
+                           &wm_delete_window, 1);
 }
 
 /********************************************************
@@ -1482,7 +1543,51 @@ show_fontsize(sw)
     /* write the font size in the background pixmap */
     indbuf[0] = indbuf[1] = indbuf[2] = indbuf[3] = indbuf[4] = '\0';
     sprintf(indbuf, "%4d", cur_fontsize);
-    update_string_pixmap(sw, indbuf, sw->sw_width - 28);
+    update_string_pixmap(sw, indbuf, sw->sw_width - 28, 20);
+}
+
+static
+inc_elltextangle(sw)
+    ind_sw_info	   *sw;
+{
+
+    if (cur_elltextangle < 0.0)
+	cur_elltextangle = ((int) ((cur_elltextangle-14.999)/15.0))*15.0;
+    else
+	cur_elltextangle = ((int) (cur_elltextangle/15.0))*15.0;
+    cur_elltextangle += 15.0;
+    show_elltextangle(sw);
+}
+
+static
+dec_elltextangle(sw)
+    ind_sw_info	   *sw;
+{
+    if (cur_elltextangle < 0.0)
+	cur_elltextangle = ((int) (cur_elltextangle/15.0))*15.0;
+    else
+	cur_elltextangle = ((int) ((cur_elltextangle+14.999)/15.0))*15.0;
+    cur_elltextangle -= 15.0;
+    show_elltextangle(sw);
+}
+
+static
+show_elltextangle(sw)
+    ind_sw_info	   *sw;
+{
+    cur_elltextangle = round(cur_elltextangle*10.0)/10.0;
+    if (cur_elltextangle <= -360.0 || cur_elltextangle >= 360)
+	cur_elltextangle = 0.0;
+
+    put_fmsg("Text/Ellipse angle %.1f", cur_elltextangle);
+    if (cur_elltextangle == old_elltextangle)
+	return;
+
+    /* write the text/ellipse angle in the background pixmap */
+    indbuf[0]=indbuf[1]=indbuf[2]=indbuf[3]=indbuf[4]=indbuf[5]=' ';
+    sprintf(indbuf, "%5.1f", cur_elltextangle);
+    update_string_pixmap(sw, indbuf, sw->sw_width - 40, 26);
+    old_elltextangle = cur_elltextangle;
 }
 
 static
@@ -1532,10 +1637,10 @@ show_rotnangle(sw)
     if (cur_rotnangle == old_rotnangle)
 	return;
 
-    /* write the font size in the background pixmap */
+    /* write the rotation angle in the background pixmap */
     indbuf[0] = indbuf[1] = indbuf[2] = indbuf[3] = indbuf[4] = '\0';
     sprintf(indbuf, "%3d", cur_rotnangle);
-    update_string_pixmap(sw, indbuf, sw->sw_width - 22);
+    update_string_pixmap(sw, indbuf, sw->sw_width - 22, 20);
 
     /* change markers if we changed to or from 90 degrees (except at start) */
     if (old_rotnangle != -1) {
@@ -1578,7 +1683,7 @@ show_numsides(sw)
     /* write the font size in the background pixmap */
     indbuf[0] = indbuf[1] = indbuf[2] = indbuf[3] = indbuf[4] = '\0';
     sprintf(indbuf, "%2d", cur_numsides);
-    update_string_pixmap(sw, indbuf, sw->sw_width - 18);
+    update_string_pixmap(sw, indbuf, sw->sw_width - 18, 20);
 }
 
 /* ZOOM */
@@ -1621,7 +1726,7 @@ show_zoom(sw)
     else if (zoomscale > 10.0)
 	zoomscale = 10.0;
 
-    put_fmsg("Zoom scale %.2f", zoomscale);
+    put_fmsg("Zoom scale %.2lf", (double) zoomscale);
     if (zoomscale == old_zoomscale)
 	return;
 
@@ -1631,7 +1736,7 @@ show_zoom(sw)
 	sprintf(indbuf, " %.0f  ", zoomscale);
     else
 	sprintf(indbuf, "%.2f", zoomscale);
-    update_string_pixmap(sw, indbuf, sw->sw_width - 24);
+    update_string_pixmap(sw, indbuf, sw->sw_width - 24, 14);
 
     /* fix up the rulers and grid */
     reset_rulers();
@@ -1671,7 +1776,7 @@ show_depth(sw)
     /* write the font size in the background pixmap */
     indbuf[0] = indbuf[1] = indbuf[2] = indbuf[3] = indbuf[4] = '\0';
     sprintf(indbuf, "%3d", cur_depth);
-    update_string_pixmap(sw, indbuf, sw->sw_width - 22);
+    update_string_pixmap(sw, indbuf, sw->sw_width - 22, 20);
 }
 
 /* TEXTSTEP */
@@ -1722,9 +1827,9 @@ show_textstep(sw)
     else if (cur_textstep > 99.0)
 	cur_textstep = 99.0;
 
-    put_fmsg("Font step %.1f", cur_textstep);
+    put_fmsg("Font step %.1lf", (double) cur_textstep);
     /* write the font size in the background pixmap */
     indbuf[0] = indbuf[1] = indbuf[2] = indbuf[3] = indbuf[4] = '\0';
     sprintf(indbuf, "%4.1f", cur_textstep);
-    update_string_pixmap(sw, indbuf, sw->sw_width - 28);
+    update_string_pixmap(sw, indbuf, sw->sw_width - 28, 20);
 }

@@ -190,6 +190,7 @@ init_boxscale_ellipse(x, y)
 	put_msg("Can't use box scale on selected object");
 	return False;
     }
+    cur_angle = cur_e->angle;
 
     if (cur_x == fix_x || cur_y == fix_y) {
 	put_msg("Can't use box scale on selected object");
@@ -283,6 +284,7 @@ init_scale_ellipse()
 {
     fix_x = cur_e->center.x;
     fix_y = cur_e->center.y;
+    cur_angle = cur_e->angle;
     if (from_x == fix_x && from_y == fix_y) {
 	put_msg("Center point selected, ignored");
 	return False;
@@ -778,6 +780,10 @@ scale_ellipse(e, sx, sy, refx, refy)
     e->end.y = round(refy + (e->end.y - refy) * sy);
     e->radiuses.x = abs(round(e->radiuses.x * sx));
     e->radiuses.y = abs(round(e->radiuses.y * sy));
+    /* if this WAS a circle and is NOW an ellipse, change type to reflect */
+    if (e->type == T_CIRCLE_BY_RAD || e->type == T_CIRCLE_BY_DIA)
+	if (e->radiuses.x != e->radiuses.y)
+	    e->type -= 2;
 }
 
 scale_text(t, sx, sy, refx, refy)

@@ -25,8 +25,9 @@
 #include "u_undo.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
+#include "w_setup.h"
 
-static int	init_align();
+static int	init_align(), init_align_canvas();
 static int	llx, lly, urx, ury;
 static int	xcmin, ycmin, xcmax, ycmax;
 static int	dx, dy;
@@ -40,14 +41,50 @@ static int	get_dx_dy();
 
 align_selected()
 {
-    set_mousefun("align compound", "", "");
+    set_mousefun("align compound", "align canvas", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_align);
     canvas_leftbut_proc = object_search_left;
-    canvas_middlebut_proc = null_proc;
+    canvas_middlebut_proc = init_align_canvas;
     canvas_rightbut_proc = null_proc;
     set_cursor(pick15_cursor);
+}
+
+/* align objects to the whole canvas */
+
+static
+init_align_canvas(x, y, shift)
+    int		    x, y;
+    unsigned int    shift;	/* Shift Key Status from XEvent */
+{
+    cur_c = &objects;
+    toggle_all_compoundmarkers();
+    draw_compoundelements(cur_c, ERASE);
+    old_c = copy_compound(&objects);
+    xcmin=ycmin=0;
+    if (appres.INCHES)
+	{
+	xcmax=(appres.landscape? 11*PIX_PER_INCH : 8.5*PIX_PER_INCH);
+	ycmax=(appres.landscape? 8.5*PIX_PER_INCH : 11*PIX_PER_INCH);
+	}
+    else
+	{
+	xcmax=(appres.landscape? 29.7*PIX_PER_CM : 21*PIX_PER_CM);
+	ycmax=(appres.landscape? 21*PIX_PER_CM : 29.7*PIX_PER_CM);
+	}
+    align_ellipse();
+    align_arc();
+    align_line();
+    align_spline();
+    align_compound();
+    align_text();
+    draw_compoundelements(cur_c, PAINT);
+    toggle_all_compoundmarkers();
+    clean_up();
+    set_latestobjects(old_c);
+    set_action_object(F_CHANGE, O_ALL_OBJECT);
+    set_modifiedflag();
 }
 
 static
@@ -150,7 +187,9 @@ align_text()
     F_text	   *t;
 
     for (t = cur_c->texts; t != NULL; t = t->next) {
-	text_bound(t, &llx, &lly, &urx, &ury);
+	int   dum;
+	text_bound_actual(t, &llx, &lly, &urx, &ury,
+		   &dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
 	get_dx_dy();
 	translate_text(t, dx, dy);
     }

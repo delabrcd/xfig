@@ -16,8 +16,8 @@
 
 /*********************** IMPORTS ************************/
 
-#include <string.h>
 #include "fig.h"
+#include "figx.h"
 #include "resources.h"
 #include "mode.h"
 #include "paintop.h"
@@ -32,10 +32,6 @@
 #include "sys/time.h"
 #endif
 #include <X11/Xatom.h>
-
-#ifdef NOSTRSTR
-extern char *strstr();
-#endif
 
 extern		erase_rulermark();
 extern		erase_objecthighlight();
@@ -126,13 +122,14 @@ XtActionsRec	canvas_actions[] =
     {"EraseRulerMark", (XtActionProc) erase_rulermark},
 };
 
+/* need the ~Meta for the EventCanv action so that the accelerators still work */
 static String	canvas_translations =
 "<Motion>:EventCanv()\n\
     Any<BtnDown>:EventCanv()\n\
     <Key>F18: PasteCanv()\n\
     <EnterWindow>:EnterCanv()\n\
     <LeaveWindow>:LeaveCanv()EraseRulerMark()\n\
-    <Key>:EventCanv()\n\
+    ~Meta<Key>:EventCanv()\n\
     <Expose>:ExposeCanv()\n";
 
 init_canvas(tool)
@@ -269,6 +266,12 @@ canvas_selected(tool, event, params, nparams)
 	x = BACKX(event->x);
 	y = BACKY(event->y);
 
+	/* Convert Alt-Button3 to Button2 */
+	if (be->button == Button3 && be->state & Mod1Mask) {
+	    be->button = Button2;
+	    be->state &= ~Mod1Mask;
+	}
+
 	/* call interactive zoom function if control key is pressed */
 	if (be->state & ControlMask) {
 	    zoom_selected(x, y, be->button);
@@ -358,11 +361,12 @@ clear_region(xmin, ymin, xmax, ymax)
 	       xmax - xmin + 1, ymax - ymin + 1, False);
 }
 
+static void get_canvas_clipboard();
+
 static void canvas_paste(w, paste_event)
 Widget w;
 XKeyEvent *paste_event;
 {
-	static void get_canvas_clipboard();
 	Time event_time;
 
 	if (canvas_kbd_proc != char_handler)

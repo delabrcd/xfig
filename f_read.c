@@ -15,17 +15,15 @@
  */
 
 #include "fig.h"
+#include "figx.h"
 #include "object.h"
+#include "mode.h"
 #include "resources.h"
 #include "u_fonts.h"
 #include "u_create.h"
 #include "version.h"
 #include "w_setup.h"
 #include "w_util.h"
-
-#ifdef NOSTRSTR
-extern char *strstr();
-#endif
 
 /* file popup information */
 extern Widget	file_popup;	/* the popup itself */
@@ -41,6 +39,14 @@ static Boolean	first_file_msg;
 static int	file_msg_length=0;
 static char    *read_file_name;
 static char	tmpstr[100];
+
+static String	file_msg_translations =
+	"<Message>WM_PROTOCOLS: DismissFileMsg()\n";
+static XtEventHandler file_msg_panel_dismiss();
+static XtActionsRec	file_msg_actions[] =
+{
+    {"DismissFileMsg", (XtActionProc) file_msg_panel_dismiss},
+};
 
 static char	Err_incomp[] = "Incomplete %s object at line %d.";
 
@@ -131,16 +137,12 @@ readfp_fig(fp, obj)
     char	    tmpstr[10];
 
     num_object = 0;
-#if defined(SYSV) || defined(SVR4)
-    memset((char *) obj, 0, COMOBJ_SIZE);
-#else
-    bzero((char *) obj, COMOBJ_SIZE);
-#endif
+    bzero(obj, COMOBJ_SIZE);
     if (fgets(buf, BUF_SIZE, fp) == 0)	/* version */
 	return -2;
     if (strncmp(buf, "#FIG", 4) == 0) { /* versions 1.4/later have #FIG in
 					 * first line */
-	if ((sscanf(index(buf, ' ') + 1, "%f", &fproto)) == 0)	/* assume 1.4 */
+	if ((sscanf((char*)(index(buf, ' ') + 1), "%f", &fproto)) == 0)	/* assume 1.4 */
 	    proto = 14;
 	else
 	    proto = (fproto + .01) * 10;	/* protocol version*10 */
@@ -233,7 +235,8 @@ read_objects(fp, obj)
 	    break;
 	case O_TEXT:
 	    if ((t = read_textobject(fp)) == NULL)
-		return (-1);
+		continue;
+		/*return (-1);*/
 	    if (lt)
 		lt = (lt->next = t);
 	    else
@@ -860,6 +863,7 @@ F_compound	   *obj;
     F_text	   *t;
     int		    lowx,lowy,dx,dy;
     int		    llx,lly,urx,ury;
+    int		    rnd;
 
     lowx = 10000;
     lowy = 10000;
@@ -889,17 +893,31 @@ F_compound	   *obj;
 	lowy = min2(lly,lowy);
 	}
     for (t = obj->texts; t != NULL; t = t->next) {
-	text_bound(t, &llx, &lly, &urx, &ury);
+	int   dum;
+	text_bound_actual(t, &llx, &lly, &urx, &ury, 
+			  &dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
 	lowx = min2(llx,lowx);
 	lowy = min2(lly,lowy);
 	}
     /* check if any part of the figure has negative coords */
     if (lowx >= 0 && lowy >= 0)
 	return;				/* no, ok */
-    
+
     /* shift the whole figure to keep it "on the page" */
-    dx = -lowx + 10;
-    dy = -lowy + 10;
+    dx = dy = 0;
+    rnd = posn_rnd[cur_pointposn];
+    if (lowx < 0)
+	{
+	dx = -lowx+rnd;	/* and round up to small grid */
+	if (rnd != 0)
+	    dx--;
+	}
+    if (lowy < 0)
+	{
+	dy = -lowy+rnd;
+	if (rnd != 0)
+	    dy--;
+	}
     file_msg(
 	"Shifting entire figure %d pixels right and %d pixels down to keep on page",
 	dx,dy);
@@ -984,25 +1002,43 @@ clear_file_message(w, ev)
     file_msg_length = 0;
 }
 
+static Bool grabbed=False;
+
+static
 XtEventHandler
 file_msg_panel_dismiss(w, ev)
     Widget	    w;
     XButtonEvent   *ev;
 {
+	if ((grabbed) && (!file_up))
+		XtAddGrab(file_msg_popup, False, False);
 	XtPopdown(file_msg_popup);
 	file_msg_is_popped=False;
 }
 
 popup_file_msg()
 {
+	extern Atom wm_delete_window;
+
 	if (file_msg_popup)
 		{
 		if (!file_msg_is_popped)
 			{
 			if (file_up)
+				{
 				XtPopup(file_msg_popup, XtGrabNonexclusive);
+    				XSetWMProtocols(XtDisplay(file_msg_popup), 
+						XtWindow(file_msg_popup),
+			       			&wm_delete_window, 1);
+				grabbed = True;
+				}
 			else
+				{
 				XtPopup(file_msg_popup, XtGrabNone);
+    				XSetWMProtocols(XtDisplay(file_msg_popup), 
+						XtWindow(file_msg_popup),
+			       			&wm_delete_window, 1);
+				}
 			}
 		file_msg_is_popped = True;
 		return;
@@ -1015,6 +1051,9 @@ popup_file_msg()
 	file_msg_popup = XtCreatePopupShell("xfig_file_msg",
 					transientShellWidgetClass,
 					tool, Args, ArgCount);
+	XtOverrideTranslations(file_msg_popup,
+			XtParseTranslationTable(file_msg_translations));
+	XtAppAddActions(tool_app, file_msg_actions, XtNumber(file_msg_actions));
 
 	file_msg_panel = XtCreateManagedWidget("file_msg_panel", formWidgetClass,
 					   file_msg_popup, NULL, ZERO);
@@ -1048,7 +1087,18 @@ popup_file_msg()
 			  (XtEventHandler)clear_file_message, (XtPointer) NULL);
 
 	if (file_up)
+		{
 		XtPopup(file_msg_popup, XtGrabNonexclusive);
+    		XSetWMProtocols(XtDisplay(file_msg_popup), 
+				XtWindow(file_msg_popup),
+			       	&wm_delete_window, 1);
+		grabbed = True;
+		}
 	else
+		{
 		XtPopup(file_msg_popup, XtGrabNone);
+    		XSetWMProtocols(XtDisplay(file_msg_popup), 
+				XtWindow(file_msg_popup),
+			       	&wm_delete_window, 1);
+		}
 }

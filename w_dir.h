@@ -34,7 +34,7 @@ extern void	create_dirinfo();
 
 /* Xdir function declarations. */
 
-int		MakeFileList();
+Boolean		MakeFileList();
 char	       *SaveString();
 void		MakeFullPath();
 Boolean		IsDirectory();

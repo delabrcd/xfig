@@ -15,6 +15,7 @@
  */
 
 #include "fig.h"
+#include "figx.h"
 #include "resources.h"
 #include "paintop.h"
 

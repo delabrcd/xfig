@@ -16,6 +16,7 @@
  */
 
 #include "fig.h"
+#include "figx.h"
 #include "resources.h"
 #include "u_fonts.h"		/* printer font names */
 #include "w_setup.h"
@@ -27,6 +28,7 @@ extern char    *psfont_menu_bits[];
 extern char    *latexfont_menu_bits[];
 extern Pixmap	psfont_menu_bitmaps[];
 extern Pixmap	latexfont_menu_bitmaps[];
+extern Atom	wm_delete_window;
 extern struct _fstruct ps_fontinfo[];	/* font names */
 extern struct _fstruct latex_fontinfo[];	/* font names */
 
@@ -53,6 +55,13 @@ static XtCallbackRec pane_callbacks[] =
     {NULL, NULL},
 };
 
+static String	fontpane_translations =
+	"<Message>WM_PROTOCOLS: FontPaneCancel()\n";
+static XtActionsRec	fontpane_actions[] =
+{
+    {"FontPaneCancel", (XtActionProc) fontpane_cancel},
+};
+
 static TOOL	ps_fontpanes, ps_buttons;
 static TOOL	latex_fontpanes, latex_buttons;
 static TOOL	ps_fontpane[NUM_PS_FONTS + 1];
@@ -75,9 +84,14 @@ init_fontmenu(tool)
     ps_fontmenu = XtCreatePopupShell("xfig_ps_font_menu",
 				     transientShellWidgetClass, tool,
 				     Args, ArgCount);
+    XtOverrideTranslations(ps_fontmenu,
+			XtParseTranslationTable(fontpane_translations));
     latex_fontmenu = XtCreatePopupShell("xfig_latex_font_menu",
 					transientShellWidgetClass, tool,
 					Args, ArgCount);
+    XtOverrideTranslations(latex_fontmenu,
+			XtParseTranslationTable(fontpane_translations));
+    XtAppAddActions(tool_app, fontpane_actions, XtNumber(fontpane_actions));
 
     FirstArg(XtNvSpace, -INTERNAL_BW);
     NextArg(XtNhSpace, 0);
@@ -190,15 +204,15 @@ setup_fontmenu()
 
     for (i = 0; i < NUM_PS_FONTS + 1; i++)
 	psfont_menu_bitmaps[i] = XCreatePixmapFromBitmapData(tool_d,
-				   XtWindow(ind_panel), psfont_menu_bits[i],
+				   XtWindow(ind_panel), (char *) psfont_menu_bits[i],
 				     PS_FONTPANE_WD, PS_FONTPANE_HT, fg, bg,
-					     XDefaultDepthOfScreen(tool_s));
+				      XDefaultDepthOfScreen(tool_s));
 
     for (i = 0; i < NUM_LATEX_FONTS; i++)
 	latexfont_menu_bitmaps[i] = XCreatePixmapFromBitmapData(tool_d,
-				XtWindow(ind_panel), latexfont_menu_bits[i],
-			       LATEX_FONTPANE_WD, LATEX_FONTPANE_HT, fg, bg,
-					     XDefaultDepthOfScreen(tool_s));
+				     XtWindow(ind_panel), (char *) latexfont_menu_bits[i],
+				      LATEX_FONTPANE_WD, LATEX_FONTPANE_HT, fg, bg,
+				       XDefaultDepthOfScreen(tool_s));
 
     /* Store the bitmaps in the menu panes */
     for (i = 0; i < NUM_PS_FONTS + 1; i++) {
@@ -243,6 +257,9 @@ fontpane_popup(psfont_adr, latexfont_adr, psflag_adr, showfont_fn, show_widget)
     SetValues(ps_fontmenu);
     SetValues(latex_fontmenu);
     XtPopup(*flag_sel ? ps_fontmenu : latex_fontmenu, XtGrabExclusive);
+    XSetWMProtocols(XtDisplay(*flag_sel ? ps_fontmenu : latex_fontmenu),
+    		    XtWindow(*flag_sel ? ps_fontmenu : latex_fontmenu),
+		    &wm_delete_window, 1);
 }
 
 static void
@@ -280,4 +297,7 @@ fontpane_swap()
     /* put image of font in indicator window */
     (*font_setimage) (font_widget);
     XtPopup(*flag_sel ? ps_fontmenu : latex_fontmenu, XtGrabExclusive);
+    XSetWMProtocols(XtDisplay(*flag_sel ? ps_fontmenu : latex_fontmenu),
+    		    XtWindow(*flag_sel ? ps_fontmenu : latex_fontmenu),
+		    &wm_delete_window, 1);
 }

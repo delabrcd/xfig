@@ -38,16 +38,16 @@ error_handler(err_sig)
 {
     switch (err_sig) {
     case SIGHUP:
-	fprintf(stderr, "xfig: SIGHUP signal trapped\n");
+	fprintf(stderr, "\nxfig: SIGHUP signal trapped\n");
 	break;
     case SIGFPE:
-	fprintf(stderr, "xfig: SIGFPE signal trapped\n");
+	fprintf(stderr, "\nxfig: SIGFPE signal trapped\n");
 	break;
     case SIGBUS:
-	fprintf(stderr, "xfig: SIGBUS signal trapped\n");
+	fprintf(stderr, "\nxfig: SIGBUS signal trapped\n");
 	break;
     case SIGSEGV:
-	fprintf(stderr, "xfig: SIGSEGV signal trapped\n");
+	fprintf(stderr, "\nxfig: SIGSEGV signal trapped\n");
 	break;
     }
     emergency_quit();
@@ -80,9 +80,26 @@ emergency_quit()
     if (figure_modified && !emptyfigure()) {
 	fprintf(stderr, "xfig: attempting to save figure\n");
 	if (emergency_save("xfig.SAVE") == -1)
-	    if (emergency_save("/tmp/xfig.SAVE") == -1)
+	    if (emergency_save(strcat(TMPDIR,"/xfig.SAVE")) == -1)
 		fprintf(stderr, "xfig: unable to save figure\n");
     } else
 	fprintf(stderr, "xfig: figure empty or not modified - exiting\n");
+
     quit();
+}
+
+/* ARGSUSED */
+void my_quit(w, event, params, num_params)
+Widget w;
+XEvent *event;
+String *params;
+Cardinal *num_params;
+{
+    extern Atom wm_delete_window;
+    if (event && event->type == ClientMessage &&
+	event->xclient.data.l[0] != wm_delete_window)
+    {
+	return;
+    }
+    emergency_quit();
 }

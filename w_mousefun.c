@@ -15,6 +15,7 @@
  */
 
 #include "fig.h"
+#include "figx.h"
 #include "resources.h"
 #include "w_util.h"
 #include "w_drawprim.h"
@@ -23,11 +24,11 @@
 
 #define MOUSE_BUT_WID		(int) (MOUSEFUN_WD * 0.045)
 #define MOUSE_BUT_HGT		(int) (MOUSEFUN_HT * 0.5)
-#define MOUSE_LEFT_SPACE	(int) ((MOUSEFUN_WD - 5 * MOUSE_BUT_WID) / 2)
+#define MOUSE_LEFT_SPACE	(int) ((MOUSEFUN_WD - 4 * MOUSE_BUT_WID) / 2)
 #define MOUSE_LEFT_CTR		(int) (MOUSE_LEFT_SPACE/2)
 #define MOUSE_MID_CTR		(int) (MOUSEFUN_WD / 2)
 #define MOUSE_RIGHT_CTR		(int) (MOUSEFUN_WD - MOUSE_LEFT_CTR)
-#define MOUSEFUN_MAX	20
+#define MOUSEFUN_MAX		       20
 
 DeclareStaticArgs(14);
 static char	mousefun_l[MOUSEFUN_MAX];
@@ -37,8 +38,8 @@ static char	mousefun_r[MOUSEFUN_MAX];
 /* labels for the left and right buttons have 15 chars max */
 static char	lr_blank[] = "               ";
 
-/* give the middle button label a bit more space - 19 chars max */
-static char	mid_blank[] = "                   ";
+/* give the middle button label a bit more space - 18 chars max */
+static char	mid_blank[] = "                  ";
 static Pixmap	mousefun_pm;
 
 void
@@ -91,14 +92,28 @@ reset_mousefun()
     XDrawRectangle(tool_d, mousefun_pm, mouse_button_gc, MOUSE_LEFT_SPACE,
 		   (int) (MOUSEFUN_HT * 0.45), MOUSE_BUT_WID, MOUSE_BUT_HGT);
     XDrawRectangle(tool_d, mousefun_pm, mouse_button_gc,
-		   MOUSE_LEFT_SPACE + 2 * MOUSE_BUT_WID,
+		   (int) (MOUSE_LEFT_SPACE + 1.5 * MOUSE_BUT_WID),
 		   (int) (MOUSEFUN_HT * 0.45), MOUSE_BUT_WID, MOUSE_BUT_HGT);
     XDrawRectangle(tool_d, mousefun_pm, mouse_button_gc,
-		   MOUSE_LEFT_SPACE + 4 * MOUSE_BUT_WID,
+		   (int) (MOUSE_LEFT_SPACE + 3 * MOUSE_BUT_WID),
 		   (int) (MOUSEFUN_HT * 0.45), MOUSE_BUT_WID, MOUSE_BUT_HGT);
     FirstArg(XtNbackgroundPixmap, mousefun_pm);
     SetValues(mousefun);
+    mouse_title();
     FirstArg(XtNmappedWhenManaged, True);
+    SetValues(mousefun);
+}
+
+static char *title = "Mouse Buttons";
+
+mouse_title()
+{
+    /* put a title in the window */
+    XDrawImageString(tool_d, mousefun_pm, mouse_button_gc,
+		     4, button_font->ascent+4, title, strlen(title));
+    FirstArg(XtNbackgroundPixmap, 0);
+    SetValues(mousefun);
+    FirstArg(XtNbackgroundPixmap, mousefun_pm);
     SetValues(mousefun);
 }
 
@@ -130,35 +145,35 @@ void
 draw_mousefun_mode()
 {
     clear_mousefun();
-    draw_mousefun("change mode", "", "");
+    draw_mousefun("Change Mode", "", "");
 }
 
 void
 draw_mousefun_ind()
 {
     clear_mousefun();
-    draw_mousefun("menu", "dec/prev", "inc/next");
+    draw_mousefun("Menu", "Dec/Prev", "Inc/Next");
 }
 
 void
 draw_mousefun_unitbox()
 {
     clear_mousefun();
-    draw_mousefun("pan to origin", "", "");
+    draw_mousefun("Pan to Origin", "", "");
 }
 
 void
 draw_mousefun_topruler()
 {
     clear_mousefun();
-    draw_mousefun("pan left", "drag", "pan right");
+    draw_mousefun("Pan Left", "Drag", "Pan Right");
 }
 
 void
 draw_mousefun_sideruler()
 {
     clear_mousefun();
-    draw_mousefun("pan up", "drag", "pan down");
+    draw_mousefun("Pan Up", "Drag", "Pan Down");
 }
 
 void
@@ -194,7 +209,49 @@ draw_mousefun(left, middle, right)
 }
 
 void
+notused_middle()
+{
+    draw_mousefun_msg("Not Used", MOUSE_MID_CTR, 11);
+    FirstArg(XtNbackgroundPixmap, 0);
+    SetValues(mousefun);
+    FirstArg(XtNbackgroundPixmap, mousefun_pm);
+    SetValues(mousefun);
+}
+
+void
+clear_middle()
+{
+    draw_mousefun_msg(mid_blank, MOUSE_MID_CTR, 11);
+    FirstArg(XtNbackgroundPixmap, 0);
+    SetValues(mousefun);
+    FirstArg(XtNbackgroundPixmap, mousefun_pm);
+    SetValues(mousefun);
+}
+
+void
+notused_right()
+{
+    draw_mousefun_msg("Not Used", MOUSE_RIGHT_CTR, 30);
+    FirstArg(XtNbackgroundPixmap, 0);
+    SetValues(mousefun);
+    FirstArg(XtNbackgroundPixmap, mousefun_pm);
+    SetValues(mousefun);
+}
+
+void
+clear_right()
+{
+    draw_mousefun_msg(mid_blank, MOUSE_RIGHT_CTR, 30);
+    FirstArg(XtNbackgroundPixmap, 0);
+    SetValues(mousefun);
+    FirstArg(XtNbackgroundPixmap, mousefun_pm);
+    SetValues(mousefun);
+}
+
+void
 clear_mousefun()
 {
     draw_mousefun(lr_blank, mid_blank, lr_blank);
+    /* redraw the title in case the blanks overwrite it */
+    mouse_title();
 }

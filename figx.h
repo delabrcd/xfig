@@ -14,4 +14,24 @@
  *
  */
 
-#define PATCHLEVEL "5C"
+#include <X11/cursorfont.h>
+#include <X11/StringDefs.h>
+#include <X11/Shell.h>
+#include <X11/Xatom.h>
+
+#include <X11/Xaw/Command.h>
+#include <X11/Xaw/Label.h>
+#include <X11/Xaw/Dialog.h>
+#include <X11/Xaw/Box.h>
+#include <X11/Xaw/Form.h>
+#include <X11/Xaw/Cardinals.h>
+#include <X11/Xaw/Text.h>
+#include <X11/Xaw/AsciiText.h>
+#include <X11/Xaw/MenuButton.h>
+#include <X11/Xaw/SimpleMenu.h>
+#include <X11/Xaw/Sme.h>
+#include <X11/Xaw/SmeBSB.h>
+#include <X11/Xaw/Toggle.h>
+#include <X11/Xaw/Paned.h>
+#include <X11/Xaw/Viewport.h>
+#include <X11/Xaw/List.h>

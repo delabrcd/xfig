@@ -25,6 +25,7 @@
 #include "u_elastic.h"
 #include "u_list.h"
 #include "u_undo.h"
+#include "w_setup.h"
 
 /*************** EXPORTS *****************/
 
@@ -38,8 +39,10 @@
  * all the "next" fields of objects pointed to by object_tails to NULL.
  */
 
-F_compound	saved_objects = {0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-F_compound	object_tails = {0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+F_compound	saved_objects = {0, { 0, 0 }, { 0, 0 }, 
+				NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+F_compound	object_tails = {0, { 0, 0 }, { 0, 0 }, 
+				NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
 /*************** LOCAL *****************/
 
@@ -204,6 +207,9 @@ undo_delete_arrowhead()
 
 undo_change()
 {
+    int		    xmin, ymin, xmax, ymax;
+    F_compound	    swp_comp;
+
     last_action = F_NULL;	/* to avoid a clean-up during "unchange" */
     switch (last_object) {
     case O_POLYLINE:
@@ -241,6 +247,16 @@ undo_change()
 	old_c = saved_objects.compounds->next;
 	change_compound(old_c, new_c);
 	redisplay_compounds(new_c, old_c);
+	break;
+    case O_ALL_OBJECT:
+	swp_comp = objects;
+	objects = saved_objects;
+	saved_objects = swp_comp;
+	new_c = &objects;
+	old_c = &saved_objects;
+	set_action_object(F_CHANGE, O_ALL_OBJECT);
+	set_modifiedflag();
+	redisplay_zoomed_region(0, 0, CANVAS_WD, CANVAS_HT);
 	break;
     }
 }
@@ -339,6 +355,7 @@ undo_move()
     int		    dx, dy;
     int		    xmin1, ymin1, xmax1, ymax1;
     int		    xmin2, ymin2, xmax2, ymax2;
+    int		    dum;
 
     dx = last_position.x - new_position.x;
     dy = last_position.y - new_position.y;
@@ -359,9 +376,16 @@ undo_move()
 			  xmin2, ymin2, xmax2, ymax2);
 	break;
     case O_TEXT:
-	text_bound(saved_objects.texts, &xmin1, &ymin1, &xmax1, &ymax1);
+	if (appres.textoutline) {
+		text_bound_both(saved_objects.texts, &xmin1, &ymin1, &xmax1, &ymax1,
+			&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
+		text_bound_both(saved_objects.texts, &xmin2, &ymin2, &xmax2, &ymax2,
+			&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
+	} else {
+		text_bound(saved_objects.texts, &xmin1, &ymin1, &xmax1, &ymax1);
+		text_bound(saved_objects.texts, &xmin2, &ymin2, &xmax2, &ymax2);
+	}
 	translate_text(saved_objects.texts, dx, dy);
-	text_bound(saved_objects.texts, &xmin2, &ymin2, &xmax2, &ymax2);
 	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
 			  xmin2, ymin2, xmax2, ymax2);
 	break;

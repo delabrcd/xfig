@@ -326,20 +326,28 @@ rotate_ellipse(e, x, y, rotn_dirn)
     F_ellipse	   *e;
     int		    x, y, rotn_dirn;
 {
-    int		    dx;
+    int		    dxc,dxs,dxe;
 
-    dx = e->center.x - x;
-    e->center.x = x + rotn_dirn * (y - e->center.y);
-    e->center.y = y + rotn_dirn * dx;
-    dx = e->radiuses.x;
-    e->radiuses.x = e->radiuses.y;
-    e->radiuses.y = dx;
-    dx = e->start.x - x;
-    e->start.x = x + rotn_dirn * (y - e->start.y);
-    e->start.y = y + rotn_dirn * dx;
-    dx = e->end.x - x;
-    e->end.x = x + rotn_dirn * (y - e->end.y);
-    e->end.y = y + rotn_dirn * dx;
+    if (cur_rotnangle == 90) { /* treat 90 degs as special case for speed */
+	dxc = e->center.x - x;
+	dxs = e->start.x - x;
+	dxe = e->end.x - x;
+	e->center.x = x + rotn_dirn * (y - e->center.y);
+	e->center.y = y + rotn_dirn * dxc;
+	e->start.x = x + rotn_dirn * (y - e->start.y);
+	e->start.y = y + rotn_dirn * dxs;
+	e->end.x = x + rotn_dirn * (y - e->end.y);
+	e->end.y = y + rotn_dirn * dxe;
+    } else {
+	rotate_point(&e->center, x, y, rotn_dirn);
+	rotate_point(&e->start, x, y, rotn_dirn);
+	rotate_point(&e->end, x, y, rotn_dirn);
+    }
+    e->angle -= (float) (rotn_dirn * cur_rotnangle * M_PI / 180);
+    if (e->angle < 0)
+	e->angle += 2 * M_PI;
+    else if (e->angle >= 2 * M_PI)
+	e->angle -= 2 * M_PI;
 }
 
 rotate_arc(a, x, y, rotn_dirn)
@@ -395,8 +403,6 @@ valid_rot_angle(c)
 
     if (cur_rotnangle == 90)
 	return 1; /* always valid */
-    if (c->ellipses != NULL)
-	return 0;
     for (l = c->lines; l != NULL; l = l->next)
 	if (l->type == T_ARC_BOX || l->type == T_BOX)
 	    return 0;

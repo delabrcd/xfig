@@ -4,16 +4,32 @@
 #include "Fig"
 
 #ifdef COLOR
+! Top Ruler
+	Fig*topruler.background:	grey95
+	Fig*topruler.foreground:	black
+! Side Ruler
+	Fig*sideruler.background:	grey95
+	Fig*sideruler.foreground:	black
+! Message panel
+	Fig*message.background:		white
+	Fig*message.foreground:		black
+! Command (top) panel
+	Fig*commands*background:	grey85
+	Fig*commands*foreground:	black
 ! Indicator (lower) panel
-	Fig*ind_panel.button_form.button.background: yellow
-	Fig*ind_panel.button_form.button.foreground: blue
+	Fig*ind_panel.background: dodgerblue
+	Fig*ind_panel.foreground: black
+	Fig*ind_panel.button_form.button.background: dodgerblue
+	Fig*ind_panel.button_form.button.foreground: black
 	Fig*ind_panel.button_form.update.foreground: red
 	Fig*ind_panel.button_form.update.background: white
 ! Mode (left-hand) panel
-	Fig*mode_panel.button.background: cyan
-	Fig*mode_panel.button.foreground: red
+	Fig*mode_panel.background: lightskyblue
+	Fig*mode_panel.foreground: black
+	Fig*mode_panel.button.background: lightskyblue
+	Fig*mode_panel.button.foreground: black
 ! Mouse indicator panel
-	Fig*mouse_panel.background: green
+	Fig*mouse_panel.background: yellow
 	Fig*mouse_panel.foreground: black
 ! Edit popup
 	Fig*xfig_edit_panel.form.done.background: green
@@ -72,8 +88,12 @@
 	Fig*print_panel*landscape.menu.foreground: black
 	Fig*print_panel*flush left.menu.background: orange
 	Fig*print_panel*flush left.menu.foreground: black
-	Fig*print_panel.cancel.background:	red
-	Fig*print_panel.cancel.foreground:	black
+	Fig*print_panel.dismiss.background:	red
+	Fig*print_panel.dismiss.foreground:	black
+	Fig*print_panel.print_batch.background:	cornflowerblue
+	Fig*print_panel.print_batch.foreground:	black
+	Fig*print_panel.clear_batch.background:	orange
+	Fig*print_panel.clear_batch.foreground:	black
 	Fig*print_panel.print.background:	green
 	Fig*print_panel.print.foreground:	black
 	Fig*print_panel.output_printer.background: yellow
@@ -90,9 +110,9 @@
 	Fig*file_msg_panel.clear.foreground:	black
 ! Query popup
 	Fig*query_popup.query_form.background: lightslateblue
-	Fig*query_popup.query_form.foreground: orange
+	Fig*query_popup.query_form.foreground: black
 	Fig*query_popup.query_form.message.background: lightgrey
-	Fig*query_popup.query_form.message.foreground: orange
+	Fig*query_popup.query_form.message.foreground: black
 	Fig*query_popup.query_form.yes.background: red
 	Fig*query_popup.query_form.yes.foreground: black
 	Fig*query_popup.query_form.no.background: orange

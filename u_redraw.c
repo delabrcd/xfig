@@ -83,9 +83,7 @@ unsigned int	max_depth;
 redisplay_objects(objects)
     F_compound	   *objects;
 {
-    int		    fill;
     int		    depth;
-    int		    tdepth;
 
     if (objects == NULL)
 	return;
@@ -96,13 +94,13 @@ redisplay_objects(objects)
      */
 
     clearcounts();
-    tdepth = max2(compound_depths(objects->compounds),
+    max_depth = max2(compound_depths(objects->compounds),
 		  max2(text_depths(objects->texts),
 		       spline_depths(objects->splines)));
     max_depth = max2(arc_depths(objects->arcs),
 		     max2(line_depths(objects->lines),
 			  max2(ellipse_depths(objects->ellipses),
-			       tdepth)));
+			       max_depth)));
 
     /*
      * A new outer loop, executing once per depth level from max_depth down
@@ -111,14 +109,11 @@ redisplay_objects(objects)
      */
 
     for (depth = max_depth; depth >= 0; --depth) {
-	for (fill = 1; fill >= 0; fill--) {
-	    redisplay_arcobject(objects->arcs, depth, fill);
-	    redisplay_compoundobject(objects->compounds, depth, fill);
-	    redisplay_ellipseobject(objects->ellipses, depth, fill);
-	    redisplay_lineobject(objects->lines, depth, fill);
-	    redisplay_splineobject(objects->splines, depth, fill);
-	}
-	/* text doesn't have fill mode */
+	redisplay_arcobject(objects->arcs, depth);
+	redisplay_compoundobject(objects->compounds, depth);
+	redisplay_ellipseobject(objects->ellipses, depth);
+	redisplay_lineobject(objects->lines, depth);
+	redisplay_splineobject(objects->splines, depth);
 	redisplay_textobject(objects->texts, depth);
     }
 
@@ -246,39 +241,36 @@ compound_depths(compounds)
 {
     int		    maxdepth = 0;
     F_compound	   *fp;
-    int		    tdepth;
 
     for (fp = compounds; fp != NULL; fp = fp->next) {
-	tdepth = max2(compound_depths(fp->compounds),
+	maxdepth = max2(compound_depths(fp->compounds),
 		      max2(text_depths(fp->texts),
-			   spline_depths(fp->splines)));
+			   max2(spline_depths(fp->splines),
+				maxdepth)));
 	maxdepth = max2(arc_depths(fp->arcs),
 			max2(line_depths(fp->lines),
 			     max2(ellipse_depths(fp->ellipses),
-				  tdepth)));
+				  maxdepth)));
     }
     return maxdepth;
 }
 
 /*
- * Redisplay a list of arcs.  Only display arcs of the correct depth and fill
- * mode.  For each arc drawn, update the count for the appropriate depth in
+ * Redisplay a list of arcs.  Only display arcs of the correct depth.
+ * For each arc drawn, update the count for the appropriate depth in
  * the counts array.
  */
 
-redisplay_arcobject(arcs, depth, fill)
+redisplay_arcobject(arcs, depth)
     F_arc	   *arcs;
     int		    depth;
-    int		    fill;
 {
     F_arc	   *arc;
     struct counts  *cp = &counts[min2(depth, MAXDEPTH)];
 
     arc = arcs;
     while (arc != NULL && cp->cnt_arcs < cp->num_arcs) {
-	if (depth == arc->depth)
-	    if ((fill && arc->fill_style) ||
-		(fill == 0 && arc->fill_style == 0)) {
+	if (depth == arc->depth) {
 		draw_arc(arc, PAINT);
 		++cp->cnt_arcs;
 	    }
@@ -288,14 +280,13 @@ redisplay_arcobject(arcs, depth, fill)
 
 /*
  * Redisplay a list of ellipses.  Only display ellipses of the correct depth
- * and fill mode.  For each ellipse drawn, update the count for the
+ * For each ellipse drawn, update the count for the
  * appropriate depth in the counts array.
  */
 
-redisplay_ellipseobject(ellipses, depth, fill)
+redisplay_ellipseobject(ellipses, depth)
     F_ellipse	   *ellipses;
     int		    depth;
-    int		    fill;
 {
     F_ellipse	   *ep;
     struct counts  *cp = &counts[min2(depth, MAXDEPTH)];
@@ -303,9 +294,7 @@ redisplay_ellipseobject(ellipses, depth, fill)
 
     ep = ellipses;
     while (ep != NULL && cp->cnt_ellipses < cp->num_ellipses) {
-	if (depth == ep->depth)
-	    if ((fill && ep->fill_style) ||
-		(fill == 0 && ep->fill_style == 0)) {
+	if (depth == ep->depth) {
 		draw_ellipse(ep, PAINT);
 		++cp->cnt_ellipses;
 	    }
@@ -314,15 +303,14 @@ redisplay_ellipseobject(ellipses, depth, fill)
 }
 
 /*
- * Redisplay a list of lines.  Only display lines of the correct depth and
- * fill mode.  For each line drawn, update the count for the appropriate
+ * Redisplay a list of lines.  Only display lines of the correct depth.
+ * For each line drawn, update the count for the appropriate
  * depth in the counts array.
  */
 
-redisplay_lineobject(lines, depth, fill)
+redisplay_lineobject(lines, depth)
     F_line	   *lines;
     int		    depth;
-    int		    fill;
 {
     F_line	   *lp;
     struct counts  *cp = &counts[min2(depth, MAXDEPTH)];
@@ -330,9 +318,7 @@ redisplay_lineobject(lines, depth, fill)
 
     lp = lines;
     while (lp != NULL && cp->cnt_lines < cp->num_lines) {
-	if (depth == lp->depth)
-	    if ((fill && lp->fill_style) ||
-		(fill == 0 && lp->fill_style == 0)) {
+	if (depth == lp->depth) {
 		draw_line(lp, PAINT);
 		++cp->cnt_lines;
 	    }
@@ -342,23 +328,20 @@ redisplay_lineobject(lines, depth, fill)
 
 /*
  * Redisplay a list of splines.	 Only display splines of the correct depth
- * and fill mode.  For each spline drawn, update the count for the
+ * For each spline drawn, update the count for the
  * appropriate depth in the counts array.
  */
 
-redisplay_splineobject(splines, depth, fill)
+redisplay_splineobject(splines, depth)
     F_spline	   *splines;
     int		    depth;
-    int		    fill;
 {
     F_spline	   *spline;
     struct counts  *cp = &counts[min2(depth, MAXDEPTH)];
 
     spline = splines;
     while (spline != NULL && cp->cnt_splines < cp->num_splines) {
-	if (depth == spline->depth)
-	    if ((fill && spline->fill_style) ||
-		(fill == 0 && spline->fill_style == 0)) {
+	if (depth == spline->depth) {
 		draw_spline(spline, PAINT);
 		++cp->cnt_splines;
 	    }
@@ -394,24 +377,19 @@ redisplay_textobject(texts, depth)
  * work out to the objects contained in the compound.
  */
 
-redisplay_compoundobject(compounds, depth, fill)
+redisplay_compoundobject(compounds, depth)
     F_compound	   *compounds;
     int		    depth;
-    int		    fill;
 {
     F_compound	   *c;
 
     for (c = compounds; c != NULL; c = c->next) {
-	redisplay_arcobject(c->arcs, depth, fill);
-	redisplay_compoundobject(c->compounds, depth, fill);
-	redisplay_ellipseobject(c->ellipses, depth, fill);
-	redisplay_lineobject(c->lines, depth, fill);
-	redisplay_splineobject(c->splines, depth, fill);
-
-	/* no filled text mode, just do text on non-filled pass */
-	if (fill == 0) {
-	    redisplay_textobject(c->texts, depth);
-	}
+	redisplay_arcobject(c->arcs, depth);
+	redisplay_compoundobject(c->compounds, depth);
+	redisplay_ellipseobject(c->ellipses, depth);
+	redisplay_lineobject(c->lines, depth);
+	redisplay_splineobject(c->splines, depth);
+	redisplay_textobject(c->texts, depth);
     }
 }
 
@@ -546,8 +524,14 @@ redisplay_text(t)
     F_text	   *t;
 {
     int		    xmin, ymin, xmax, ymax;
+    int		    dum;
 
-    text_bound(t, &xmin, &ymin, &xmax, &ymax);
+    if (appres.textoutline) {
+	text_bound_both(t, &xmin, &ymin, &xmax, &ymax,
+			&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
+    } else {
+	text_bound(t, &xmin, &ymin, &xmax, &ymax);
+    }
     redisplay_zoomed_region(xmin, ymin, xmax, ymax);
 }
 
@@ -556,9 +540,17 @@ redisplay_texts(t1, t2)
 {
     int		    xmin1, ymin1, xmax1, ymax1;
     int		    xmin2, ymin2, xmax2, ymax2;
+    int		    dum;
 
-    text_bound(t1, &xmin1, &ymin1, &xmax1, &ymax1);
-    text_bound(t2, &xmin2, &ymin2, &xmax2, &ymax2);
+    if (appres.textoutline) {
+	text_bound_both(t1, &xmin1, &ymin1, &xmax1, &ymax1,
+			&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
+	text_bound_both(t2, &xmin2, &ymin2, &xmax2, &ymax2,
+			&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
+    } else {
+	text_bound(t1, &xmin1, &ymin1, &xmax1, &ymax1);
+	text_bound(t2, &xmin2, &ymin2, &xmax2, &ymax2);
+    }
     redisplay_regions(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2);
 }
 

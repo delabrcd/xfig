@@ -50,8 +50,8 @@ The following is the format of fig output (fig 2.1).
 
     The depth field is defined as follows:
 
-	 0 ... 2^30-1 where larger value means object is deeper than (under)
-		      objects with smaller depth
+	 0 ... 999 where larger value means object is deeper than (under)
+		   objects with smaller depth
 
     The area fill field is defined as follows:
 	
@@ -59,6 +59,13 @@ The following is the format of fig output (fig 2.1).
 	 1 = white
 	...  values from 2 to 20 are shades of grey, from lighter to darker
 	21 = black
+
+    The line_style field is defined as follows:
+
+	-1 = Default
+	 0 = Solid
+	 1 = Dashed
+	 2 = Dotted
 
     The style_val field is defined as the length, in pixels, of the on/off dashes
     for dashed lines, and the distance between the dots, in pixels, for dotted lines
@@ -202,10 +209,10 @@ The following is the format of fig output (fig 2.1).
 	type	name			(brief description)
 	----	----			-------------------
 	int	object_code		(always 3)
-	int	sub_type		(1 : open spline
-					 2 : closed spline
-					 3 : open interpolated spline
-					 4 : closed interpolated spline)
+	int	sub_type		(0 : open spline
+					 1 : closed spline
+					 2 : open interpolated spline
+					 3 : closed interpolated spline)
 	int	line_style		(See the end of this section)
 	int	thickness		(pixels)
 	int	color			(enumeration type)

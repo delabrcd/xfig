@@ -344,6 +344,13 @@ toggle_texthighlight(t)
     set_marker(canvas_win, t->base_x - 1, t->base_y - 1, 3, 3, 0, 0);
 }
 
+toggle_all_compoundmarkers()
+{
+    F_compound	   *c;
+    for (c=objects.compounds; c!=NULL ; c=c->next)
+	toggle_compoundmarker(c);
+}
+
 toggle_compoundmarker(c)
     F_compound	   *c;
 {

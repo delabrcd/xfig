@@ -48,7 +48,7 @@ struct _xfstruct x_fontinfo[NUM_X_FONTS] = {
     {"-*-lucidabright-medium-i-*--", NULL},
     {"-*-lucidabright-demibold-r-*--", NULL},
     {"-*-lucidabright-demibold-i-*--", NULL},
-    {"*-symbol-medium-r-*--", NULL},
+    {"-*-symbol-medium-r-*--", NULL},
     {"-*-zapfchancery-medium-i-*--", NULL},
     {"-*-zapfdingbats-*-*-*--", NULL},
 };

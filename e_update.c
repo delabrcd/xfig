@@ -77,21 +77,24 @@ init_update_settings(p, type, x, y, px, py)
 	return;
     case O_POLYLINE:
 	cur_l = (F_line *) p;
-	up_part(cur_linewidth, cur_l->thickness, I_LINEWIDTH);
-	up_part(cur_fillstyle, cur_l->fill_style, I_FILLSTYLE);
-	up_part(cur_color, cur_l->color, I_COLOR);
-	up_part(cur_linestyle, cur_l->style, I_LINESTYLE);
-	up_part(cur_styleval, cur_l->style_val, I_LINESTYLE);
+	if (cur_l->type != T_EPS_BOX) {
+		up_part(cur_linewidth, cur_l->thickness, I_LINEWIDTH);
+		up_part(cur_fillstyle, cur_l->fill_style, I_FILLSTYLE);
+		up_part(cur_color, cur_l->color, I_COLOR);
+		up_part(cur_linestyle, cur_l->style, I_LINESTYLE);
+		up_part(cur_styleval, cur_l->style_val, I_LINESTYLE);
+		up_part(cur_arrowmode, get_arrow_mode(cur_l), I_ARROWMODE);
+		}
 	up_part(cur_depth, cur_l->depth, I_DEPTH);
-	up_part(cur_arrowmode, get_arrow_mode(cur_l), I_ARROWMODE);
 	if (cur_l->type == T_ARC_BOX)
 	    up_part(cur_boxradius, cur_l->radius, I_BOXRADIUS);
 	break;
     case O_TEXT:
 	cur_t = (F_text *) p;
-	up_part(cur_color, cur_t->color, I_COLOR);
 	up_part(cur_textjust, cur_t->type, I_TEXTJUST);
+	up_part(cur_color, cur_t->color, I_COLOR);
 	up_part(cur_depth, cur_t->depth, I_DEPTH);
+	up_part(cur_elltextangle, cur_t->angle/M_PI*180.0, I_ELLTEXTANGLE);
 	cur_textflags =  cur_t->flags;
 	if (using_ps)
 	    {	/* must use {} because macro has 'if' */
@@ -102,11 +105,11 @@ init_update_settings(p, type, x, y, px, py)
 	    up_part(cur_latex_font, cur_t->font, I_FONT);
 	    }
 	up_part(cur_fontsize, cur_t->size, I_FONTSIZE);
-	cur_angle = cur_t->angle;
 	break;
     case O_ELLIPSE:
 	cur_e = (F_ellipse *) p;
 	up_part(cur_linewidth, cur_e->thickness, I_LINEWIDTH);
+	up_part(cur_elltextangle, cur_e->angle/M_PI*180.0, I_ELLTEXTANGLE);
 	up_part(cur_fillstyle, cur_e->fill_style, I_FILLSTYLE);
 	up_part(cur_color, cur_e->color, I_COLOR);
 	up_part(cur_linestyle, cur_e->style, I_LINESTYLE);
@@ -214,6 +217,7 @@ update_ellipse(ellipse)
 {
     draw_ellipse(ellipse, ERASE);
     up_part(ellipse->thickness, cur_linewidth, I_LINEWIDTH);
+    up_part(ellipse->angle, cur_elltextangle*M_PI/180.0, I_ELLTEXTANGLE);
     up_part(ellipse->style, cur_linestyle, I_LINESTYLE);
     up_part(ellipse->style_val, cur_styleval * (cur_linewidth + 1) / 2, 
 	    I_LINESTYLE);
@@ -257,16 +261,17 @@ update_line(line)
     F_line	   *line;
 {
     draw_line(line, ERASE);
-    up_part(line->thickness, cur_linewidth, I_LINEWIDTH);
-    up_part(line->style, cur_linestyle, I_LINESTYLE);
-    up_part(line->style_val, cur_styleval * (cur_linewidth + 1) / 2, 
-	    I_LINESTYLE);
-    up_part(line->color, cur_color, I_COLOR);
+    if (line->type != T_EPS_BOX) {
+	up_part(line->thickness, cur_linewidth, I_LINEWIDTH);
+	up_part(line->style, cur_linestyle, I_LINESTYLE);
+	up_part(line->style_val, cur_styleval * (cur_linewidth + 1) / 2, 
+		I_LINESTYLE);
+	up_part(line->color, cur_color, I_COLOR);
+	up_part(line->radius, cur_boxradius, I_BOXRADIUS);
+	up_part(line->fill_style, cur_fillstyle, I_FILLSTYLE);
+	}
     up_part(line->depth, cur_depth, I_DEPTH);
-    up_part(line->radius, cur_boxradius, I_BOXRADIUS);
-    up_part(line->fill_style, cur_fillstyle, I_FILLSTYLE);
-    if (line->type != T_POLYGON && line->type != T_BOX &&
-	line->type != T_ARC_BOX && line->points->next != NULL) {
+    if (line->type == T_POLYLINE && line->points->next != NULL) {
 	if (autoforwardarrow_mode)
 	    {	/* must use {} because macro has 'if' */
 	    up_part(line->for_arrow, forward_arrow(), I_ARROWMODE);
@@ -297,8 +302,9 @@ update_text(text)
     up_part(text->font, using_ps ? cur_ps_font : cur_latex_font, I_FONT);
     text->flags = cur_textflags;  
     up_part(text->size, cur_fontsize, I_FONTSIZE);
-    text->angle = cur_angle;
+    up_part(text->angle, cur_elltextangle*M_PI/180.0, I_ELLTEXTANGLE);
     up_part(text->color, cur_color, I_COLOR);
+    up_part(text->depth, cur_depth, I_DEPTH);
     size = pf_textwidth(text->font, psfont_text(text), text->size,
 			strlen(text->cstring), text->cstring);
     text->length = size.x;	/* in pixels */
@@ -314,8 +320,9 @@ update_spline(spline)
     up_part(spline->style, cur_linestyle, I_LINESTYLE);
     up_part(spline->style_val, cur_styleval * (cur_linewidth + 1) / 2, 
 	    I_LINESTYLE);
-    up_part(spline->color, cur_color, I_COLOR);
     up_part(spline->fill_style, cur_fillstyle, I_FILLSTYLE);
+    up_part(spline->color, cur_color, I_COLOR);
+    up_part(spline->depth, cur_depth, I_DEPTH);
     if (open_spline(spline)) {
 	if (autoforwardarrow_mode)
 	    {	/* must use {} because macro has 'if' */

@@ -58,6 +58,7 @@ init_ellipsebyradius_drawing(x, y)
 {
     cur_x = fix_x = x;
     cur_y = fix_y = y;
+    cur_angle = cur_elltextangle/180.0*M_PI;
     center_marker(fix_x, fix_y);
     set_mousefun("corner point", "", "cancel");
     draw_mousefun_canvas();
@@ -93,7 +94,7 @@ create_ellipsebyrad(x, y)
     ellipse->style = cur_linestyle;
     ellipse->thickness = cur_linewidth;
     ellipse->style_val = cur_styleval * (cur_linewidth + 1) / 2;
-    ellipse->angle = cur_angle;
+    ellipse->angle = cur_elltextangle/180.0*M_PI;	/* convert to radians */
     ellipse->color = cur_color;
     ellipse->depth = cur_depth;
     ellipse->pen = 0;
@@ -101,8 +102,8 @@ create_ellipsebyrad(x, y)
     ellipse->direction = 1;
     ellipse->center.x = fix_x;
     ellipse->center.y = fix_y;
-    ellipse->radiuses.x = abs(x - fix_x) + 1;
-    ellipse->radiuses.y = abs(y - fix_y) + 1;
+    ellipse->radiuses.x = abs(x - fix_x);
+    ellipse->radiuses.y = abs(y - fix_y);
     ellipse->start.x = fix_x;
     ellipse->start.y = fix_y;
     ellipse->end.x = x;
@@ -132,6 +133,7 @@ init_ellipsebydiameter_drawing(x, y)
 {
     cur_x = fix_x = x;
     cur_y = fix_y = y;
+    cur_angle = cur_elltextangle/180.0*M_PI;
     center_marker(fix_x, fix_y);
     set_mousefun("final corner", "", "cancel");
     draw_mousefun_canvas();
@@ -167,10 +169,10 @@ create_ellipsebydia(x, y)
     ellipse->style = cur_linestyle;
     ellipse->thickness = cur_linewidth;
     ellipse->style_val = cur_styleval * (cur_linewidth + 1) / 2;
-    ellipse->angle = cur_angle;
+    ellipse->angle = cur_elltextangle/180.0*M_PI;	/* convert to radians */
     ellipse->color = cur_color;
     ellipse->depth = cur_depth;
-    ellipse->pen = NULL;
+    ellipse->pen = 0;
     ellipse->fill_style = cur_fillstyle;
     ellipse->direction = 1;
     ellipse->center.x = (fix_x + x) / 2;
@@ -247,7 +249,7 @@ create_circlebyrad(x, y)
     c->angle = 0.0;
     c->color = cur_color;
     c->depth = cur_depth;
-    c->pen = NULL;
+    c->pen = 0;
     c->fill_style = cur_fillstyle;
     c->direction = 1;
     c->center.x = fix_x;
@@ -257,8 +259,8 @@ create_circlebyrad(x, y)
     c->radiuses.x = c->radiuses.y = round(sqrt((double) (rx * rx + ry * ry)));
     c->start.x = fix_x;
     c->start.y = fix_y;
-    c->end.x = fix_x + c->radiuses.x;
-    c->end.y = fix_y + c->radiuses.y;
+    c->end.x = x;
+    c->end.y = y;
     c->next = NULL;
     draw_ellipse(c, PAINT);
     add_ellipse(c);
@@ -323,7 +325,7 @@ create_circlebydia(x, y)
     c->angle = 0.0;
     c->color = cur_color;
     c->depth = cur_depth;
-    c->pen = NULL;
+    c->pen = 0;
     c->fill_style = cur_fillstyle;
     c->direction = 1;
     c->center.x = (fix_x + x) / 2 + .5;

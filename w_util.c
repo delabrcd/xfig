@@ -15,6 +15,7 @@
  */
 
 #include "fig.h"
+#include "figx.h"
 #include "resources.h"
 #include "w_drawprim.h"
 #include "w_util.h"
@@ -47,6 +48,14 @@ app_flush()
 /* popup a confirmation window */
 
 static		query_result, query_done;
+static String   query_translations =
+        "<Message>WM_PROTOCOLS: DismissQuery()\n";
+static void     accept_cancel();
+static XtActionsRec     query_actions[] =
+{
+    {"DismissQuery", (XtActionProc) accept_cancel},
+};
+
 
 static void
 accept_yes()
@@ -79,6 +88,8 @@ popup_query(query_type, message)
     int		    xposn, yposn;
     Window	    win;
     XEvent	    event;
+    static int      actions_added=0;
+    extern Atom	    wm_delete_window;
 
     DeclareArgs(7);
 
@@ -91,6 +102,12 @@ popup_query(query_type, message)
     NextArg(XtNtitle, "Xfig: Query");
     query_popup = XtCreatePopupShell("query_popup", transientShellWidgetClass,
 				     tool, Args, ArgCount);
+    XtOverrideTranslations(query_popup,
+                       XtParseTranslationTable(query_translations));
+    if (!actions_added) {
+        XtAppAddActions(tool_app, query_actions, XtNumber(query_actions));
+	actions_added = 1;
+    }
 
     FirstArg(XtNdefaultDistance, 10);
     query_form = XtCreateManagedWidget("query_form", formWidgetClass,
@@ -138,6 +155,8 @@ popup_query(query_type, message)
 		      (XtEventHandler)accept_cancel, (XtPointer) NULL);
 
     XtPopup(query_popup, XtGrabExclusive);
+    (void) XSetWMProtocols(XtDisplay(query_popup), XtWindow(query_popup),
+                           &wm_delete_window, 1);
     XDefineCursor(tool_d, XtWindow(query_popup), arrow_cursor);
 
     query_done = 0;

@@ -21,7 +21,8 @@
 
 /************************  Objects  **********************/
 
-F_compound	objects = {0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+F_compound	objects = {0, { 0, 0 }, { 0, 0 }, 
+				NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
 /************  global object pointers ************/
 
@@ -58,4 +59,4 @@ int		cur_textjust = T_LEFT_JUSTIFIED;
 int		cur_textflags = PSFONT_TEXT;
 
 /* Misc */
-float		cur_angle = 0.0;
+float		cur_elltextangle = 0.0;	/* text/ellipse input angle */

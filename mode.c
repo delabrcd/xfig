@@ -50,14 +50,21 @@ int		figure_modified = 0;
 int		num_point;
 int		min_num_points;
 
+/***************************  Export Settings  ****************************/
+
+Boolean		export_flushleft;	/* flush left (true) or center (false) */
+
 /***************************  Print Settings  ****************************/
 
 int		print_landscape = 0;	/* def. orientation for printer */
-int		cur_exp_lang = LANG_EPS;
+Boolean		print_flushleft;	/* flush left (true) or center (false) */
+int		cur_exp_lang = LANG_EPS; /* actually gets set up in main.c */
+Boolean		batch_exists = False;
+char		batch_file[32];
 
 char	       *lang_items[] = {
     "box",     "latex",  "epic", "eepic", "eepicemu",
-    "pictex",  "ibmgl",  "eps",  "ps",    "pstex",
+    "pictex",  "ibmgl",  "eps",  "ps",    "pstex", 
     "pstex_t", "textyl", "tpic", "pic",   "xbm"};
 
 char	       *lang_texts[] = {

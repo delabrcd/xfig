@@ -15,6 +15,7 @@
  */
 
 #include "fig.h"
+#include "figx.h"
 #include "resources.h"
 #include "object.h"
 #include "mode.h"
@@ -26,27 +27,42 @@
 extern Boolean	file_msg_is_popped;
 extern Widget	file_msg_popup;
 
+/* global so we can update export filename */
+extern char	default_export_file[];
+
 extern String	text_translations;
 static char	load_msg[] = "The current figure is modified.\nDo you want to discard it and load the new file?";
 static char	buf[40];
 
 DeclareStaticArgs(12);
-static Widget	file_panel,  file_status, num_objects;
+static Widget	file_status, num_objects;
 static Widget	cfile_lab, cfile_text;
 static Widget	cancel, save, merge, load;
 static Widget	file_w;
 static Position xposn, yposn;
 static String	file_name_translations =
 	"<Key>Return: LoadFile()\n";
-static void	do_load();
+static void	do_load(), file_panel_cancel(), do_merge();
+void		do_save();
 static XtActionsRec	file_name_actions[] =
 {
     {"LoadFile", (XtActionProc) do_load},
 };
+static String	file_translations =
+	"<Message>WM_PROTOCOLS: DismissFile()\n";
+static XtActionsRec	file_actions[] =
+{
+    {"DismissFile", (XtActionProc) file_panel_cancel},
+    {"cancel", (XtActionProc) file_panel_cancel},
+    {"load", (XtActionProc) do_load},
+    {"save", (XtActionProc) do_save},
+    {"merge", (XtActionProc) do_merge},
+};
 
 /* Global so w_dir.c can access us */
 
-Widget		file_popup,	/* the popup itself */
+Widget		file_panel,	/* so w_dir can access the scrollbars */
+		file_popup,	/* the popup itself */
 		file_selfile,	/* selected file widget */
 		file_mask,	/* mask widget */
 		file_dir,	/* current directory widget */
@@ -76,10 +92,7 @@ do_merge(w, ev)
     FirstArg(XtNstring, &fval);
     GetValues(file_selfile);	/* check the ascii widget for a filename */
     if (emptyname(fval))
-	{
-	FirstArg(XtNlabel, &fval);
-	GetValues(cfile_text);	/* "Filename" widget empty, use current filename */
-	}
+	fval = cur_filename;	/* "Filename" widget empty, use current filename */
 
     if (emptyname_msg(fval, "MERGE"))
 	return;
@@ -106,10 +119,7 @@ do_load(w, ev)
     FirstArg(XtNstring, &fval);
     GetValues(file_selfile);	/* check the ascii widget for a filename */
     if (emptyname(fval))
-	{
-	FirstArg(XtNlabel, &fval);
-	GetValues(cfile_text);	/* "Filename" widget empty, use current filename */
-	}
+	fval = cur_filename;	/* "Filename" widget empty, use current filename */
 
     if (emptyname_msg(fval, "LOAD"))
 	return;
@@ -125,9 +135,11 @@ do_load(w, ev)
     if (change_directory(dval) == 0) {
 	if (load_file(fval) == 0)
 	    {
-	    /* set the default filename */
 	    FirstArg(XtNlabel, fval);
-	    SetValues(cfile_text);
+	    SetValues(cfile_text);		/* set the current filename */
+	    if (fval != cur_filename)
+		strcpy(cur_filename,fval);	/* and copy to cur_filename */
+	    update_def_filename();		/* and the default export filename */
 	    file_panel_dismiss();
 	    }
     }
@@ -143,21 +155,28 @@ do_save(w)
 	FirstArg(XtNstring, &fval);
 	GetValues(file_selfile);	/* check the ascii widget for a filename */
 	if (emptyname(fval))
-		{
-		FirstArg(XtNlabel, &fval);
-		GetValues(cfile_text);	/* "Filename" widget empty, use current filename */
-		}
+	    fval = cur_filename;	/* "Filename" widget empty, use current filename */
+	/* copy the name from the file_name widget to the current filename */
+	else
+	    {
+	    FirstArg(XtNlabel, fval);
+	    SetValues(cfile_text);
+	    if (fval != cur_filename)
+		    strcpy(cur_filename,fval);	/* and copy to cur_filename */
+	    update_def_filename();		/* and the default export filename */
+	    }
 
 	if (emptyname_msg(fval, "SAVE"))
 	    return;
 
+	/* get the directory from the ascii widget */
 	FirstArg(XtNstring, &dval);
 	GetValues(file_dir);
 
 	if (change_directory(dval) == 0) {
 	    XtSetSensitive(save, False);
 	    if (write_file(fval) == 0) {
-		strcpy(cur_filename, fval);
+		strcpy(cur_filename, fval);	/* save as current filename */
 		reset_modifiedflag();
 		file_panel_dismiss();
 	    }
@@ -180,15 +199,36 @@ file_panel_cancel(w, ev)
 popup_file_panel(w)
     Widget	    w;
 {
-    Widget	    file, dir, beside, below;
-    XtTranslations  popdown_actions;
-    PIX_FONT	    temp_font;
-
+    extern Atom     wm_delete_window;
 
     set_temp_cursor(wait_cursor);
     XtSetSensitive(w, False);
+    file_up = True;
 
-    if (!file_popup) {
+    if (!file_popup)
+	create_file_panel(w);
+    else
+	Rescan(0, 0, 0, 0);
+
+    FirstArg(XtNlabel, (figure_modified ? "      File Status: Modified    " :
+					  "      File Status: Not modified"));
+    SetValues(file_status);
+    sprintf(buf, "Number of Objects: %d", object_count(&objects));
+    FirstArg(XtNlabel, buf);
+    SetValues(num_objects);
+    XtPopup(file_popup, XtGrabNonexclusive);
+    (void) XSetWMProtocols(XtDisplay(file_popup), XtWindow(file_popup),
+			   &wm_delete_window, 1);
+    if (file_msg_is_popped)
+	XtAddGrab(file_msg_popup, False, False);
+    reset_cursor();
+}
+
+create_file_panel(w)
+	Widget		   w;
+{
+	Widget		   file, dir, beside, below;
+	PIX_FONT	   temp_font;
 	file_w = w;
 	XtTranslateCoords(w, (Position) 0, (Position) 0, &xposn, &yposn);
 
@@ -198,11 +238,12 @@ popup_file_panel(w)
 	file_popup = XtCreatePopupShell("xfig_file_menu",
 					transientShellWidgetClass,
 					tool, Args, ArgCount);
+	XtOverrideTranslations(file_popup,
+			   XtParseTranslationTable(file_translations));
+	XtAppAddActions(tool_app, file_actions, XtNumber(file_actions));
 
 	file_panel = XtCreateManagedWidget("file_panel", formWidgetClass,
 					   file_popup, NULL, ZERO);
-	popdown_actions = XtParseTranslationTable("<Btn1Up>:\n");
-	XtOverrideTranslations(file_panel, popdown_actions);
 
 	FirstArg(XtNlabel, "");
 	NextArg(XtNwidth, 400);
@@ -322,20 +363,9 @@ popup_file_panel(w)
 				      file_panel, Args, ArgCount);
 	XtAddEventHandler(merge, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler)do_merge, (XtPointer) NULL);
-    } else {
-	file_up = True;
-	Rescan(0, 0, 0, 0);
-	file_up = False;
-    }
-    FirstArg(XtNlabel, (figure_modified ? "      File Status: Modified	  " :
-			"      File Status: Not modified"));
-    SetValues(file_status);
-    sprintf(buf, "Number of Objects: %d", object_count(&objects));
-    FirstArg(XtNlabel, buf);
-    SetValues(num_objects);
-    XtPopup(file_popup, XtGrabNonexclusive);
-    if (file_msg_is_popped)
-	XtAddGrab(file_msg_popup, False, False);
-    file_up = True;
-    reset_cursor();
+
+	XtInstallAccelerators(file_panel, cancel);
+	XtInstallAccelerators(file_panel, save);
+	XtInstallAccelerators(file_panel, load);
+	XtInstallAccelerators(file_panel, merge);
 }

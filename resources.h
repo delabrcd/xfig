@@ -47,6 +47,7 @@ extern Boolean	all_colors_available;
 /* resources structure */
 
 typedef struct _appres {
+    char	   *iconGeometry;
     Boolean	    INCHES;
     Boolean	    DEBUG;
     Boolean	    RHS_PANEL;
@@ -69,6 +70,9 @@ typedef struct _appres {
     Pixel	    color[NUMCOLORS];
     Boolean	    monochrome;
     char	   *keyFile;
+    char	   *exportLanguage;
+    Boolean	    flushleft;		/* center/flush-left printing */
+    Boolean	    textoutline;	/* draw text bounding box if true */
 }		appresStruct, *appresPtr;
 extern appresStruct appres;
 
@@ -128,7 +132,7 @@ extern XtAppContext tool_app;
 extern TOOLSW	canvas_sw, ps_fontmenu, /* printer font menu tool */
 		latex_fontmenu, /* printer font menu tool */
 		msg_panel, cmd_panel, mode_panel, d_label, e_label, mousefun,
-		ind_panel,	/* indicator panel */
+		ind_viewp, ind_panel,	/* indicator panel */
 		unitbox_sw, sideruler_sw, topruler_sw;
 
 extern Display *tool_d;
@@ -145,9 +149,13 @@ extern GC	gc, bold_gc, button_gc, ind_button_gc, mouse_button_gc,
 		black_un_fill_gc[NUMFILLPATS];
 extern Pixmap	fill_pm[NUMFILLPATS];
 extern XColor	x_fg_color, x_bg_color;
+extern Boolean	writing_bitmap;
 extern unsigned long but_fg, but_bg;
 extern unsigned long ind_but_fg, ind_but_bg;
 extern unsigned long mouse_but_fg, mouse_but_bg;
+
+/* will be filled in with environment variable XFIGTMPDIR */
+extern char    *TMPDIR;
 
 struct icon {
     short	    ic_width, ic_height;	/* overall icon dimensions */

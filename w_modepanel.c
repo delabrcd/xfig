@@ -15,6 +15,7 @@
  */
 
 #include "fig.h"
+#include "figx.h"
 #include "resources.h"
 #include "mode.h"
 #include "object.h"
@@ -91,9 +92,9 @@ static mode_sw_info mode_switches[] = {
     {&cirdia_ic, F_CIRCLE_BY_DIA, circlebydiameter_drawing_selected, M_NONE,
     I_BOX, "CIRCLE drawing: specify DIAMETER",},
     {&ellrad_ic, F_ELLIPSE_BY_RAD, ellipsebyradius_drawing_selected, M_NONE,
-    I_BOX, "ELLIPSE drawing: specify RADII",},
+    I_ELLIPSE, "ELLIPSE drawing: specify RADII",},
     {&elldia_ic, F_ELLIPSE_BY_DIA, ellipsebydiameter_drawing_selected, M_NONE,
-    I_BOX, "ELLIPSE drawing: specify DIAMETERS",},
+    I_ELLIPSE, "ELLIPSE drawing: specify DIAMETERS",},
     {&c_spl_ic, F_CLOSED_SPLINE, spline_drawing_selected, M_NONE,
     I_CLOSED, "CLOSED SPLINE drawing: specify control points",},
     {&spl_ic, F_SPLINE, spline_drawing_selected, M_NONE,
@@ -125,7 +126,7 @@ static mode_sw_info mode_switches[] = {
     {&scale_ic, F_SCALE, scale_selected, M_NO_TEXT,
     I_MIN2, "SCALE objects",},
     {&align_ic, F_ALIGN, align_selected, M_COMPOUND,
-    I_ALIGN, "ALIGN objects within a COMPOUND",},
+    I_ALIGN, "ALIGN objects within a COMPOUND or to CANVAS",},
     {&movept_ic, F_MOVE_POINT, move_point_selected, M_NO_TEXT,
     I_MIN2, "MOVE POINTs",},
     {&move_ic, F_MOVE, move_selected, M_ALL,
@@ -177,10 +178,20 @@ static XtActionsRec mode_actions[] =
 {
     {"EnterModeSw", (XtActionProc) draw_mousefun_mode},
     {"LeaveModeSw", (XtActionProc) clear_mousefun},
+    {"PressMiddle", (XtActionProc) notused_middle},
+    {"ReleaseMiddle", (XtActionProc) clear_middle},
+    {"PressRight", (XtActionProc) notused_right},
+    {"ReleaseRight", (XtActionProc) clear_right},
 };
 
 static String   mode_translations =
 "<EnterWindow>:EnterModeSw()highlight()\n\
+    <Btn1Down>:\n\
+    <Btn1Up>:\n\
+    <Btn2Down>:PressMiddle()\n\
+    <Btn2Up>:ReleaseMiddle()\n\
+    <Btn3Down>:PressRight()\n\
+    <Btn3Up>:ReleaseRight()\n\
     <LeaveWindow>:LeaveModeSw()unhighlight()\n";
 
 int
@@ -233,7 +244,7 @@ init_mode_panel(tool)
 			    mode_panel, button_args, XtNumber(button_args));
 
 	/* left button changes mode */
-	XtAddEventHandler(sw->widget, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(sw->widget, ButtonPressMask, (Boolean) 0,
 			  sel_mode_but, (XtPointer) sw);
 	XtOverrideTranslations(sw->widget,
 			       XtParseTranslationTable(mode_translations));
@@ -276,7 +287,7 @@ setup_mode_panel()
 	msw = &mode_switches[i];
 	/* create normal bitmaps */
 	msw->normalPM = XCreatePixmapFromBitmapData(d, XtWindow(msw->widget),
-		       msw->icon->data, msw->icon->width, msw->icon->height,
+		       (char *) msw->icon->data, msw->icon->width, msw->icon->height,
 				   but_fg, but_bg, DefaultDepthOfScreen(s));
 
 	FirstArg(XtNbackgroundPixmap, msw->normalPM);
@@ -284,9 +295,15 @@ setup_mode_panel()
 
 	/* create reverse bitmaps */
 	msw->reversePM = XCreatePixmapFromBitmapData(d, XtWindow(msw->widget),
-		       msw->icon->data, msw->icon->width, msw->icon->height,
+		       (char *) msw->icon->data, msw->icon->width, msw->icon->height,
 				   but_bg, but_fg, DefaultDepthOfScreen(s));
+	/* install the accelerators in the buttons */
+	XtInstallAllAccelerators(msw->widget, tool);
     }
+    /* install the accelerators for the surrounding parts */
+    XtInstallAllAccelerators(mode_panel, tool);
+    XtInstallAllAccelerators(d_label, tool);
+    XtInstallAllAccelerators(e_label, tool);
 
     XDefineCursor(d, XtWindow(mode_panel), arrow_cursor);
     FirstArg(XtNmappedWhenManaged, True);

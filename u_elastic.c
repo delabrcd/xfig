@@ -31,6 +31,7 @@ extern float	compute_angle();
 
 int		constrained;
 int		fix_x, fix_y, work_numsides;
+float		cur_angle;
 int		x1off, x2off, y1off, y2off;
 Cursor		cur_latexcursor;
 int		from_x, from_y;
@@ -479,17 +480,12 @@ resizing_poly(x, y)
 
 elastic_ebr()
 {
-    register int    x1, y1, x2, y2;
     int		    rx, ry;
 
     rx = cur_x - fix_x;
     ry = cur_y - fix_y;
-    x1 = fix_x + rx;
-    x2 = fix_x - rx;
-    y1 = fix_y + ry;
-    y2 = fix_y - ry;
-    pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, 1,
-	     RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+    angle_ellipse(fix_x, fix_y, rx, ry, cur_angle,
+		  INV_PAINT, 1, RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
 }
 
 resizing_ebr(x, y)
@@ -511,8 +507,12 @@ constrained_resizing_ebr(x, y)
 
 elastic_ebd()
 {
-    pw_curve(canvas_win, fix_x, fix_y, cur_x, cur_y,
-	     INV_PAINT, 1, RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+    int		    centx,centy;
+    centx = (fix_x+cur_x)/2;
+    centy = (fix_y+cur_y)/2;
+    angle_ellipse(centx, centy, abs(cur_x-fix_x)/2, 
+		  abs(cur_y-fix_y)/2, cur_angle,
+		  INV_PAINT, 1, RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
 }
 
 resizing_ebd(x, y)
@@ -597,8 +597,8 @@ elastic_moveellipse()
     x2 = cur_x + x2off;
     y1 = cur_y + y1off;
     y2 = cur_y + y2off;
-    pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, 1,
-	     RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+    angle_ellipse((x1+x2)/2, (y1+y2)/2, abs(x1-x2)/2, abs(y1-y2)/2, cur_angle,
+		  INV_PAINT, 1, RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
 }
 
 moving_ellipse(x, y)
@@ -612,7 +612,6 @@ moving_ellipse(x, y)
 elastic_scaleellipse(e)
     F_ellipse	   *e;
 {
-    register int    x1, y1, x2, y2;
     int		    rx, ry;
     int		    newx, newy, oldx, oldy;
     float	    newd, oldd, scalefact;
@@ -629,12 +628,8 @@ elastic_scaleellipse(e)
 
     rx = e->radiuses.x * scalefact;
     ry = e->radiuses.y * scalefact;
-    x1 = fix_x + rx;
-    x2 = fix_x - rx;
-    y1 = fix_y + ry;
-    y2 = fix_y - ry;
-    pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, 1,
-	     RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+    angle_ellipse(e->center.x, e->center.y, rx, ry, cur_angle,
+		  INV_PAINT, 1, RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
 }
 
 scaling_ellipse(x, y)
@@ -805,18 +800,28 @@ adjust_box_pos(curs_x, curs_y, orig_x, orig_y, ret_x, ret_y)
 
 	if (mag_csr2fix_x * sina > mag_csr2fix_y * cosa) {	/* above diagonal */
 	    *ret_x = curs_x;
-	    if (constrained == BOX_SCALE)
-		*ret_y = fix_y + sgn_csr2fix_y * (int) (mag_csr2fix_x * sina / cosa);
-	    else
-		*ret_y = fix_y + sgn_csr2fix_y * abs(fix_y - orig_y);
+	    if (constrained == BOX_SCALE) {
+		if (cosa == 0.0) {
+		    *ret_y = fix_y + sgn_csr2fix_y * (int) (mag_csr2fix_x);
+		} else {
+		    *ret_y = fix_y + sgn_csr2fix_y * (int) (mag_csr2fix_x * sina / cosa);
+		}
+	    } else {
+		    *ret_y = fix_y + sgn_csr2fix_y * abs(fix_y - orig_y);
+		 }
 	} else {
 	    *ret_y = curs_y;
-	    if (constrained == BOX_SCALE)
-		*ret_x = fix_x + sgn_csr2fix_x * (int) (mag_csr2fix_y * cosa / sina);
-	    else
+	    if (constrained == BOX_SCALE) {
+		if (sina == 0.0) {
+		    *ret_x = fix_x + sgn_csr2fix_x * (int) (mag_csr2fix_y);
+		} else {
+		    *ret_x = fix_x + sgn_csr2fix_x * (int) (mag_csr2fix_y * cosa / sina);
+		}
+	    } else {
 		*ret_x = fix_x + sgn_csr2fix_x * abs(fix_x - orig_x);
+	    }
 	}
-    }
+    } /* switch */
 }
 
 adjust_pos(curs_x, curs_y, orig_x, orig_y, ret_x, ret_y)

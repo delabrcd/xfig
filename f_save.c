@@ -154,7 +154,7 @@ write_ellipse(fp, e)
     if (e->radiuses.x == 0 || e->radiuses.y == 0)
 	return;
 
-    fprintf(fp, "%d %d %d %d %d %d %d %d %.3f %d %.3f %d %d %d %d %d %d %d %d\n",
+    fprintf(fp, "%d %d %d %d %d %d %d %d %.5f %d %.3f %d %d %d %d %d %d %d %d\n",
 	    O_ELLIPSE, e->type, e->style, e->thickness,
 	    e->color, e->depth, e->pen, e->fill_style,
 	    e->style_val, e->direction, e->angle,
@@ -249,7 +249,7 @@ write_text(fp, t)
 {
     if (t->length == 0)
 	return;
-    fprintf(fp, "%d %d %d %d %d %d %d %.3f %d %d %d %d %d %s\1\n",
+    fprintf(fp, "%d %d %d %d %d %d %d %.5f %d %d %d %d %d %s\1\n",
 	    O_TEXT, t->type, t->font, t->size, t->pen,
 	    t->color, t->depth, t->angle,
 	    t->flags, t->height, t->length,

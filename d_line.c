@@ -131,6 +131,7 @@ get_latexpoint(x, y)
     elastic_latexline();
     latex_endpoint(fix_x, fix_y, x, y, &cur_x, &cur_y, latexarrow_mode,
 		   (cur_pointposn == P_ANY) ? 1 : posn_rnd[cur_pointposn]);
+    elastic_latexline();
     if (cur_cursor != null_cursor) {
 	set_temp_cursor(null_cursor);
 	cur_cursor = null_cursor;

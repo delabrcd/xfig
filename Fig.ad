@@ -1,15 +1,22 @@
 ! some sample settings you may want to change
 
-Fig.internalborderwidth: 2
-Fig.geometry:		+0+0
-Fig.iconX:		+0
-Fig.iconY:		-0
-Fig*Text =*font: -*-times-medium-r-normal--14-*
+Fig.internalborderwidth:	2
+Fig.geometry:			+0+0
+Fig.iconX:			+0
+Fig.iconY:			-0
+! the following should fix the problem that some have had with
+! their window manager fighting with xfig over the geometry
+Fig*allowShellResize:		False
+! pick a nice font for the popup edit window for text objects
+Fig*Text =*font:		-*-times-medium-r-normal--14-*
+! filename mask for the file popup browser
 Fig*file_panel*mask*string:	*.fig
-Fig*export_panel*mask*string:	*.ps
+! filename mask for the export popup browser
+Fig*export_panel*mask*string:	*ps
+! printer name
+Fig*printer*string:		ps
 
 ! make the F20 key paste text in the canvas
-
 Fig*translations: #override \n\
 			<Key>F20: PasteCanv()\n
 
@@ -17,9 +24,46 @@ Fig*translations: #override \n\
 ! then the wired-in name of the xfig global directory won't be prefixed to it.
 ! An initial "~/" is replaced by the value of "$HOME/".
 !
-!Fig*ComposeKeyDB: ~/.xfig.Compose-key
+!Fig*ComposeKeyDB:	~/.xfig.Compose-key
 
 ! let's make these buttons oval in the edit panel
-Fig.xfig_edit_panel*done.ShapeStyle: oval
-Fig.xfig_edit_panel*cancel.ShapeStyle: oval
-Fig.xfig_edit_panel*cancel.ShapeStyle: oval
+Fig.xfig_edit_panel*done.label:		Done
+Fig.xfig_edit_panel*done.ShapeStyle:	oval
+Fig.xfig_edit_panel*apply.label:	Apply
+Fig.xfig_edit_panel*apply.ShapeStyle:	oval
+Fig.xfig_edit_panel*cancel.label:	Cancel
+Fig.xfig_edit_panel*cancel.ShapeStyle:	oval
+
+! keyboard accelerators
+
+Fig*quit*accelerators: \
+	Meta<Key>q: quit()\n
+Fig*delete_all*accelerators: \
+	Meta<Key>d: delete_all()\n
+Fig*undo*accelerators: \
+	Meta<Key>u: undo()\n
+Fig*redraw*accelerators: \
+	Meta<Key>r: redraw()\n
+Fig*paste*accelerators: \
+	Meta<Key>t: paste()\n
+Fig*file*accelerators: \
+	Meta<Key>f: file()\n
+Fig*xfig_file_menu*accelerators: \
+	Meta<Key>c: cancel()\n\
+	Meta<Key>l: load()\n\
+	Meta<Key>m: merge()\n\
+	Meta<Key>r: rescan()\n\
+	Meta<Key>s: save()\n
+Fig*export*accelerators: \
+	Meta<Key>e: export()\n
+Fig*xfig_export_menu*accelerators: \
+	Meta<Key>c: cancel()\n\
+	Meta<Key>e: export()\n\
+	Meta<Key>r: rescan()\n
+Fig*print*accelerators: \
+	Meta<Key>p: print()\n
+Fig*xfig_print_menu*accelerators: \
+	Meta<Key>c: cancel()\n\
+	Meta<Key>b: print_batch()\n\
+	Meta<Key>p: print()\n\
+	Meta<Key>x: clear_batch()\n

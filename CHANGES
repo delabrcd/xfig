@@ -1,6 +1,129 @@
 Version 2.1
 ===========
 
+Patchlevel 5
+Changes to Patchlevel 4:
+
+NEW FEATURES:
+
+o support for two button mouse - use META + Button 3 to simulate button 2
+	from Lars Berntzon (lasse@delila.cgl.se)
+o new resource "textoutline" (class "TextOutline") and command-line argument
+	"-textoutline" which will outline text in red to show the bounding box
+	that the text will occupy when printed (useful for rotated text)
+o print popup stays up until dismissed - can still pop up file/export menues, 
+	draw etc. while print popup is up.  HOWEVER, while file or export 
+	popups are up, the print panel is not active.
+o can align all objects to canvas, not just to compound - use mouse button 2
+	idea from Jon Forrest
+o ellipses may now be rotated by an arbitrary angle and show their rotation
+	from Janes Tough (jamest@cs.heriot-watt.ac.uk)
+o new -iconGeometry command-line argument
+o new command-line argument and resource -exportLanguage to specify default 
+	Export language.  See man pages.
+o new command-line argument and resource -flushleft to set default printing to 
+	flush left on page. See man pages.
+o keyboard accelerators! Resource file has defaults for file, export and print
+	popup panels and top command panel accelerators; <Meta>f will popup file
+	panel, <Meta>q will quit, etc. See resource file and man pages for
+	details.
+o one may now batch together several xfig files for printing with one print job.
+	See popup print panel and man pages.
+o new label in the mouse function window & more obvious default color (yellow)
+o added scrollbar for indicator panel when buttons won't all fit on screen
+o can now edit sizes of arrowheads using popup edit panel
+o "make install" now automatically installs Fig.ad and Fig-color.ad in 
+	app-defaults directory
+o WM_DELETE_WINDOW now supported by popups - cancels popup function
+	WM_DELETE_WINDOW in main canvas saves figure in xfig.SAVE and quits
+	from David Wexelblat (dwex@mtgzfs3.att.com)
+
+BUG FIXES:
+
+o rulers only allowed 2 digits for inches/cm
+o deleted line thickness/color/area-fill/line-style and arrow settings for EPS
+	objects in the update mode and removed color part in popup edit panel
+o depth wasn't being updated for splines and texts using update button
+o more cleanup with respect to procedure/variable types/casts
+	from Don Sharp (dws@mari.co.uk)
+o fixed text bounds calculation to take into account any rotation when reading
+	in figure from a file to decide whether to shift figure to keep on 
+	canvas
+	(fig2dev 2.1.5 is also fixed so figures with rotated text near edges
+	should center properly now)
+o fixed bug where segments disappeared while drawing interpolated spline in any
+	LaTeX drawing mode
+o rearranged a-z and A-Z keys in the CompKeyDB file because some HP computers
+	were apparently doing random things with capitalization
+	from Anthony Shipman (als@bohra.cpg.oz.au)
+o fixed export of color figure to X11 bitmap format.  White -> white, all other
+	colors -> black.
+o removed apparently unnecessary translation from w_export, w_file and w_print
+	which causes coredump on some HP machines.
+	From Alfred van der Hoeven (alfred@arthur.et.tudelft.nl)
+o fixed initialization bug in u_undo.c and object.c which caused HP 9000/700
+	compilers to segfault
+	From Alfred van der Hoeven (alfred@arthur.et.tudelft.nl)
+o new environvemt variable "XFIGTMPDIR" used for xfig temporary files directory
+o when reading a figure file, if any object coordinates are negative, the figure
+	is shifted to keep it on the canvas so that the upper-left corner of the
+	figure is placed on the current point positioning grid
+	(in 2.1.4, the upper-left corner was placed at 10,10)
+o changed "char" to "unsigned char" for initialization of bitmaps by compilers
+	from Teus Hagen (teus@oce.nl)
+o was passing floats to put_fmsg() instead of doubles.
+o includes copy of X11/Xfuncs.h now to use correct routines for zeroing/copying
+	memory.
+o zooming to 0.1 no longer gives X error (dash list was null)
+o filenames in File/Export windows weren't sorted correctly
+	from Simon Marshall (S.Marshall@sequent.cc.hull.ac.uk)
+o more explicit note about object depth in the man pages in the "GRAPHICAL 
+	OBJECTS" section
+o scaling vertical or horizontal line no longer causes floating point exception
+	from Steve Tynor (tynor@prism.gatech.edu)
+o null strings in text objects now produce warning message when reading from 
+	file but xfig continues to read rest of file
+o scrollbars in File and Export popups reset to top when changing directories
+o default output filename in Export popup now changes to reflect current 
+	figure filename
+o default colors in Fig-color are a little nicer :-)
+o checking for file writablity now uses access() call
+	from Devon Bowen (bowen@cs.buffalo.edu)
+o XtRemoveGrab bug when popping down file message window finally fixed
+	many thanks to David Wexelblat (dwex@mtgzfs3.att.com)
+o XtAppAddActions() only called once now for each action
+	from David Wexelblat (dwex@mtgzfs3.att.com)
+o changed cfree() calls to free() for those machines that don't have it
+	from Anthony Datri (datri@concave.convex.com)
+o moved static function definitions outside of procedures for those machines 
+	which can't handle them
+	from Anthony Datri (datri@concave.convex.com)
+o added second line to Imakefile to put the xfig directory containing the 
+	CompKeyDB (multi-key) database file in the standard X11 library
+o fixed bug introduced in 2.1.1 which incorrectly placed radius marker of
+	circles created by radius
+o circle is now changed to ellipse type when scaled assymetrically
+o fixed various typos in xfig.man
+o changed references to mouse buttons left/middle/right to say buttons 1/2/3
+	respectively
+o radius of ellipses-specified-by-radius was one pixel too large
+o changed interpretation of 1/0 bits in EPS preview bitmaps back to original
+	0=white, 1=black according to EPSF guide version 2.0.
+	Brought to my attention by Vivek Khera (khera@cs.duke.edu)
+o moved #include Xaw... directives to figx.h to speed up compilation
+o added conditional for Sun 3 and SunOs 4.0.3
+	from Peter Scott (pjs@euclid.jpl.nasa.gov)
+o fixed typo in FORMAT2.1 file describing values for types of splines
+o more lint cleanup and print file name "protection" in case filename has 
+	any shell meta characters
+	from Jonathan Kamens (jik@MIT.Edu)
+o epsf file wasn't closed after reading if there was no preview bitmap
+	from Herve Poirier (rvp@dxcern.cern.ch)
+o fixed bug where certain objects inside compound weren't being drawn when
+	there was more than one compound object in the figure
+o removed ISO8859 requirement for Symbol and ZapfDingbats fonts (those fonts
+	weren't being displayed)
+
 Patchlevel 4
 Changes to Patchlevel 3:
 
@@ -15,6 +138,7 @@ o if any object coordinates are negative, the whole figure is shifted to keep it
 	on the canvas
 o fixed major bug where the preview bitmap of EPS objects was in reverse video
 	(1 is white not black, according to the PostScript Language Ref. Manual)
+	*** SEE COMMENT IN PATCHLEVEL 5 ABOUT EPSI PREVIEW BITMAPS ***
 o general cleanup of param types in Xt callback/action etc. procedures and other
 	lint cleanup
 	from Jonathan Kamens (jik@MIT.Edu)
@@ -57,8 +181,8 @@ o scrollable x-y points panel in the popup edit panel for objects with many
 	the screen)
 o If you have Display Postscript in your server, compile xfig with -DDPS
 	and you will see the full Postscript object instead of preview bitmap
-	when you include EPS objects.  
-	!!! WARNING:  this has only been tested on IBM's AIX 3.2 (X11R4) on
+	when you include EPS objects.
+	!!! WARNING: this has only been tested on IBM's AIX 3.2 (X11R4) on
 	an RS/6000 !!!
 	from Dave Hale (dhale@green.mines.colorado.edu)
 o fixed bug in error return from system() - now popups error message when 
@@ -140,7 +264,7 @@ o ^U no longer deletes line of text in text object mode for compatibility
 o fixed problem with OpenWindows and rubberbanding objects
 	from Brian Boyter (pyrdc!bimbo!boyter@uunet.UU.NET)
 o fixed minor bug in f_util.c line 82: assignment with '==' instead of '='
-        from pf@diab.se (Per Fogelstr|m)
+	from pf@diab.se (Per Fogelstr|m)
 o fixed up bug in set_tags call in w_modepanel.c
 	from Graeme Gill (graeme@labtam.labtam.oz.au)
 o added strstr() function for systems without it
@@ -408,246 +532,3 @@ o The philosophy behind button usage has changed. This was necessary to
 	in the operation.  The right button can be used to cancel an operation.
 	Watch the mouse function window until you get the hang of it.
 
-------------------------------------------------------------------------------
-------------------------------------------------------------------------------
-Version 2.0
-===========
-
-Patchlevel 10
-Changes from patchlevel 9:
-
-o zooming and panning is now possible for all objects except texts.
-    Use new buttons, arrow keys for panning. See the man page.
-    From Henning Spruth (hns@regent.e-technik.tu-muenchen.de)
-o selecting one of several overlapping objects is implemented for
-    most functions.
-    Hold down Shift key while clicking on object to cycle through
-    candidate objects, release shift key for selection. See man page.
-    From Henning Spruth (hns@regent.e-technik.tu-muenchen.de)
-o dash length and dot gap width can be modified using the Change menu
-    From Dieter Pellkofer (dip@regent.e-technik.tu-muenchen.de)
-o dash length scaled to line width and zoom factor
-    From Henning Spruth (hns@regent.e-technik.tu-muenchen.de)
-o multiple Grid Sizes
-    Two grids are available in the -metric mode
-    From Dieter Pellkofer (dip@regent.e-technik.tu-muenchen.de)
-o open polygons and splines can be filled
-    From Dieter Pellkofer (dip@regent.e-technik.tu-muenchen.de)
-o new resource 'Startfontsize' and command line option -startfontsize
-    From Georg Sigl (ges@regent.e-technik.tu-muenchen.de)
-o point markers displayed with text objects
-    From Henning Spruth (hns@regent.e-technik.tu-muenchen.de)
-o grid and ruler bitmaps are created dynamically
-    This was neccessary for the zoom and pan commands
-    From Henning Spruth (hns@regent.e-technik.tu-muenchen.de)
-o changing text by clicking on it has to be finished with the left
-    button. Finishing with the middle button is no longer possible
-    (this is rather a workaround for the bug that gave interesting 
-    effects)
-    From Henning Spruth (hns@regent.e-technik.tu-muenchen.de)
-o if a point is to be deleted from a line, at least 2 points must remain
-    From Dieter Pellkofer (dip@regent.e-technik.tu-muenchen.de)
-o fixed bug where finishing text with middle button, saving figure
-    and trying to quit made xfig claim the figure hadn't been saved
-o fixed bug where line of zero length with an arrow head would cause f2ps 
-    to divide by zero
-o there is a bug in OpenWindows which causes xfig to crash when trying to 
-    create the pixmaps from one-plane bitmaps for the button icons.  According
-    to the Intrinsics manual, the XtNbitmap resource in a widget will auto-
-    matically be converted to the proper screen depth, but OpenWindows seems
-    not to do this.  Add the define "-DOPENWIN" to the "DEFINES" line
-    in the Imakefile if you are running OpenWindows.
-o depth of objects is now honored - set object depth with popup change window
-    From Mike Lutz <mjl@cs.rit.edu>
-o bug fixed where "create object -> read file -> undo" would delete objects
-    Tom Tkacik (tkacik@hobbes.cs.gmr.com)
-o creation of text is now undoable
-o text inside compound is erased properly when compound is moved/deleted etc
-o f2ps now uses the -s (font size) option when objects are defined
-    with default font size (-1)
-    From Ian Dall <idall@augean.ua.oz.au>
-o font spacing button value no longer crashes xfig on MIPS type machine
-o having spline where two or more points are coincident no longer
-    gives DOMAIN error or crashes xfig
-    From Mike Lawley <lawley@muse.cs.mu.oz.au>
-o attempting to draw arc with two or more coincident points no longer 
-    crashes xfig
-o definition of errno, sys_nerr and sys_errlist moved to fig.h
-    From Casey Leedem <casey@gauss.llnl.gov>
-o removed startup message printing to stdout
-
-Patchlevel 9
-Changes from patchlevel 8:
-
-o New feature for cutting/pasting objects from figures between xfig processes.
-    Select COPY/PASTE from the popup menu.  See the man page.
-    From Tom Tkacik (tkacik@kyzyl.mi.org)
-o New automatic text line spacing feature moves text input cursor
-    to next line (properly centered, or left/right justified) when
-    <CR> is input and automatically re-enters text input mode.
-    From Jon Tombs <jon@robots.oxford.ac.uk>
-o print button now calls fig2dev when xfig is compiled with -DTFX option
-    From Doug Flanagan (flanagan@cs.cornell.edu)
-o Arrows on lines, arcs, etc. are not be corrupted anymore when copying 
-    or changing objects
-o proper centering of figures in postscript printing
-    From Mark Maybe (markm@boulder.colorado.edu)
-o redundant $(DESTDIR) removed from Imakefile for installing troff fonts
-o reading figure file no longer loops infinitely if text object is missing ^A
-    From Kenneth H. Carpenter (khc@eece.ksu.edu)
-o more SYSV compatibility fixes
-    From David Elliot (dce@icky.Sony.COM)
-o uses 'lp' printer command for print button under SYSV
-    From Bo Thide' (bt@irfu.se)
-o object image in change object popup menu fixed (caused problems on MIPS
-    and some other machines)
-    From Ivan Herman (ivan@cwi.nl) and David Elliot (dce@icky.Sony.COM)
-
-Patchlevel 8
-Changes from patchlevel 7:
-
-o Many bugs fixed with flipping arcs, malloc/free, popup menu 
-    going off screen, gcc warnings, etc.
-    From Isamu Wada <i-wada@srans3.sra.co.jp>
-o Bug fixed in redisplay.c where all but the most recently created
-    compounds' objects were invisible
-o Changed code that assumed a (char *) return value for sprintf
-    to follow POSIX and ANSI C standard of returning int.
-o Removed conditional compilation flags for R3, since R3 is no
-    longer supported :-(
-o Moved initializing of Fig icon in main() to work with mwm
-    From David Elliot <dce@smsc.sony.com>
-o f2p and f2ps now return meaningful error codes: 0 for OK, 1 for error
-o Errors in reading figure file should report correct line numbers now
-o Handles "default" font for TransFig correctly
-o Text input is now correctly terminated whenever a menu item is chosen,
-    not just on CR or middle-button pressed
-o troff_ft_codes files allows ANY white space between troff font name
-    and Postscript fone name
-o Attempting to move the center point of circle/ellipse with move-point 
-    no longer makes point markers disappear
-o BoundingBox computed correctly for centered and right-justified text now
-    for f2ps and save-as-bitmap
-    From Tom Tkacik
-o Font names output by f2p and f2ps fixed for -TFX option.
-    From Guy Cardwell
-o Object icon displayed in change-object popup menu
-o Removed rounded-corner boxes from TFX compile-time option and reverted
-    protocol version to 1.4-TFX, as per Micah Beck (beck@cs.cornell.edu) 
-
-Patchlevel 7 (4/26/90)
-Changes from patchlevel 6:
-
-o New patch files for psfonts.c, panel.h to fix problems with those
-    files in patch level 6
-o The patch for search.c in patch 6 was an old patch and should
-    not be applied
-o Bug fix for f2ps where figure went off the page in landscape mode
-
-Patchlevel 6 (4/25/90)
-Changes from patchlevel 5:
-
-o *** New popup menu to change characteristics of existing objects, 
-   e.g. line thickness, style, text options, area fill etc.
-   Not ALL things may be modified yet (e.g. arrows on lines).
-   Jon Tombs and Frank Schmuck provided this much-needed feature
-o Because the popup menu uses the new Simple Menu widget from R4, xfig
-   will no longer compile under R3
-o Fixed WMHints to "or" in InputHint to retain any existing Hints
-  Thanks to David Elliott
-o Doesn't let one delete to fewer than 3 points in interpolated spline
-o Removed unused variables
-o Changed rounded-corner box objects to have radius component instead 
-   of using the pen component (new protocol version 2.0 and 2.0-TFX)
-o Added back support to read protocol version 1.3 files
-o Fixed bug where the line style wasn't passed in drawing bounding 
-   rectangle when moving/copying objects
-o Fixed cursor for popup command menu
-o Fixed bounding box bug for postscript output from f2ps
-o Fixed bug that erroneously allowed filled polylines (only polygons, boxes,
-   round-corner boxes, ellipses, circles, closed splines and arcs may be filled)
-o Fixed name of AvantGarde-Book font (was AvantGarde)
-o Added two X fonts that are similar to AvantGarde... and Palatino...
-   From Dave Davey 
-o Fixed bug that caused coredump when referencing a zero-radius ellipse
-o Added back the LaTex buttons even for non-TFX mode
-o More SYSV #ifdefs from Scott E. Garfinkle (dacseg@uts.amdahl.com)
-o New rule in Imakefile to install troff_ft_codes file
-o put_fmsg() uses double arguments instead of float to prevent some 
-    systems from choking on float-double-float conversions of invalid data.
-o 8-bit characters allowed for text objects
-    From Tor Lillqvist <tml@hemuli.tik.vtt.fi>
-
-Patchlevel 5 (3/27/90)
-Changes from patchlevel 4:
-
-o Line widths of zero now allowed for drawing borderless objects
-o Resources now parsed in more portable way
-o Variable "compound" changed to "cmpnd" in drag.c and search.c because 
-    SunOs 4.1 has function called compound()
-o Unknown "-" options no longer parsed as file name
-o Filled areas now drawn opaquely instead of transparently
-o Ruler arrows now drawn correctly
-o Area fill for rounded corner boxes displays properly
-o Lower panel buttons and rulers slightly smaller to allow 9.5 inch tall
-  canvas in portrait mode on screens that are "only" 864 pixels tall
-o Imakefile now uses XawClientDepLibs instead of $(DEPXAWLIB) $(DEPXMUlIB) ...
-o -1 for area fill (no fill) in TransFig files handled properly
-o u_int defined as uint for SYSV systems
-o 'figure_modified' flag cleared when editing new file
-o If "save in" is done and there is no current file name, then the
-  current file name is set to the one specified in the save
-o -track default is now True as man entry states
-o side panel resource renamed to side_panel
-o fixed bug in f2ps where filled arcs weren't filled
-o line width and font support for f2p (pic)
-  Thanks to Dave Davey for these additions
-
-Patchlevel 4 (3/12/90)
-Changes from patchlevel 3:
-
-o Bug fixed in drawing zero-length lines with arrows
-    Thanks to Dave Davey for this fix
-o Portrait/Landscape bug fixed (only appeared on Sun 4)
-o Fig will not allow edit of new figure without confirmation if
-    current figure has been modified
-o Widget resources work better now (e.g. xfig.form.indicator.background: green)
-o -ri option for button panel on right side works properly now
-o Changed some widget names for better resource hierarchy
-o Wrapped indicator widgets in box widget
-o Adds compatibility with Fig 1.4-TFX file format INSTEAD of 1.4X
-  as a compile time option (compiler flag -DTFX).  No change to program
-  as compiled without the -DTFX flag.  See file README.TFX.
-    Credit goes to Micah Beck (beck@cs.cornell.edu) for this one.
-o Fixed bug where scanf was doing %lf for text angle instead of %f
-  in read_textobject()
-    Thanks to Leroy Hugues (Hugues.Leroy@irisa.fr) for this fix
-o #include <X11/Scroll.h> put back in fig.h for R3 - XtRFloat is defined here
-o XtPointer is only defined in R4 - uses caddr_t for R3 blink() routine
-o Print figure on default printer, specify particular printer or print to file
-    Thanks to Daren Latham (dwl@udev.cdc.com) for this one
-o Original FORMAT1.4 file included to compare new 1.4X format with 1.4
-  New file that describes xfig file format is called FORMAT1.4X
-o Drawing too-narrow ellipses doesn't loop forever anymore, but they
-  are still not drawn correctly
-
-Patchlevel 3 (2/28/90)
-Changes from patchlevel 2:
-
-o now uses XtAddTimer instead of setitimer() for blinking cursor
-  This fixes the problem with text freezing up xfig or crashing with core dump
-o Changed include directives for Athena widgets to include/X11/Xaw directory
-o added put_fmsg() to print messages with floating point numbers
-  Some machines (MIPS) were dumping core when passing floats as ints.
-
-Patchlevel 2 (2/23/90)
-Changes from patchlevel 1:
-
-o removed call to free() in curve() which was causing coredumps
-o Imakefile had .o filenames in SRCS definition
-
-
-Patchlevel 1 (2/20/90)
-Changes from patchlevel 0:
-
-o included definition of put_msg()/FREE/CFREE in f2ps.c

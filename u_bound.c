@@ -223,7 +223,9 @@ compound_bound(compound, xmin, ymin, xmax, ymax)
     }
 
     for (t = compound->texts; t != NULL; t = t->next) {
-	text_bound(t, &sx, &sy, &bx, &by);
+	int    dum;
+	text_bound_actual(t, &sx, &sy, &bx, &by, 
+			  &dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
 	if (first) {
 	    first = 0;
 	    llx = sx;
@@ -249,17 +251,94 @@ compound_bound(compound, xmin, ymin, xmax, ymax)
     *ymax = ury;
 }
 
+/* basically, use the code for drawing the ellipse to find its bounds */
+/* From James Tough (see u_draw.c: angle_ellipse() */
+/* include the bounds for the markers (even though we don't know if they 
+   are on or off now */
+
 ellipse_bound(e, xmin, ymin, xmax, ymax)
     F_ellipse	   *e;
     int		   *xmin, *ymin, *xmax, *ymax;
 {
-    int		    half_wd;
+	int	    half_wd;
+	double	    c1, c2, c3, c4, c5, c6, v1, cphi, sphi, cphisqr, sphisqr;
+	double	    xleft, xright, d, asqr, bsqr;
+	int	    yymax, yy=0;
+	float	    xcen, ycen, a, b; 
 
-    half_wd = e->thickness / 2;
-    *xmin = e->center.x - e->radiuses.x - half_wd;
-    *ymin = e->center.y - e->radiuses.y - half_wd;
-    *xmax = e->center.x + e->radiuses.x + half_wd;
-    *ymax = e->center.y + e->radiuses.y + half_wd;
+	xcen = e->center.x;
+	ycen = e->center.y;
+	a = e->radiuses.x;
+	b = e->radiuses.y;
+	if (a==0 || b==0)
+		{
+		*xmin = *xmax = xcen;
+		*ymin = *ymax = ycen;
+		return;
+		}
+
+	cphi = cos((double)e->angle);
+	sphi = sin((double)e->angle);
+	cphisqr = cphi*cphi;
+	sphisqr = sphi*sphi;
+	asqr = a*a;
+	bsqr = b*b;
+	
+	c1 = (cphisqr/asqr)+(sphisqr/bsqr);
+	c2 = ((cphi*sphi/asqr)-(cphi*sphi/bsqr))/c1;
+	c3 = (bsqr*cphisqr) + (asqr*sphisqr);
+	yymax = sqrt(c3);
+	c4 = a*b/c3;
+	c5 = 0;
+	v1 = c4*c4;
+	c6 = 2*v1;
+	c3 = c3*v1-v1;
+	/* odd first points */
+	*xmin = *ymin =  100000;
+	*xmax = *ymax = -100000;
+	if (yymax % 2) {
+		d = sqrt(c3);
+		*xmin = min2(*xmin,xcen-d);
+		*xmax = max2(*xmax,xcen+d);
+		*ymin = min2(*ymin,ycen);
+		*ymax = max2(*ymax,ycen);
+		c5 = c2;
+		yy=1;
+	}
+	while (c3>=0) {
+		d = sqrt(c3);
+		xleft = c5-d;
+		xright = c5+d;                        
+		*xmin = min2(*xmin,xcen+xleft);
+		*xmax = max2(*xmax,xcen+xleft);
+		*ymax = max2(*ymax,ycen+yy);
+		*xmin = min2(*xmin,xcen+xright);
+		*xmax = max2(*xmax,xcen+xright);
+		*ymax = max2(*ymax,ycen+yy);
+		*xmin = min2(*xmin,xcen-xright);
+		*xmax = max2(*xmax,xcen-xright);
+		*ymin = min2(*ymin,ycen-yy);
+		*xmin = min2(*xmin,xcen-xleft);
+		*xmax = max2(*xmax,xcen-xleft);
+		*ymin = min2(*ymin,ycen-yy);
+		c5+=c2;
+		v1+=c6;
+		c3-=v1;
+		yy=yy+1;
+	}
+	/* for simplicity, just add half the line thickness to xmax and ymax
+	   and subtract half from xmin and ymin */
+	half_wd = e->thickness/2;
+	*xmax += half_wd;
+	*ymax += half_wd;
+	*xmin -= half_wd;
+	*ymin -= half_wd;
+	/* now include the markers because they could be outside the bounds of 
+	   the ellipse (+/-3 is (roughly) half the size of the markers (5)) */
+	*xmax = max2(*xmax, max2(e->start.x, e->end.x)+3);
+	*ymax = max2(*ymax, max2(e->start.y, e->end.y)+3);
+	*xmin = min2(*xmin, min2(e->start.x, e->end.x)-3);
+	*ymin = min2(*ymin, min2(e->start.y, e->end.y)-3);
 }
 
 line_bound(l, xmin, ymin, xmax, ymax)
@@ -416,6 +495,11 @@ normal_spline_bound(s, xmin, ymin, xmax, ymax)
     }
 }
 
+/* This procedure calculates the bounding box for text that is
+   displayed horizontally (all text on the canvas in otherwords)
+   Use text_bound_actual() to decide whether or not text would be off
+   the PRINTED page (if rotated) */
+
 text_bound(t, xmin, ymin, xmax, ymax)
     F_text	   *t;
     int		   *xmin, *ymin, *xmax, *ymax;
@@ -443,6 +527,85 @@ text_bound(t, xmin, ymin, xmax, ymax)
     *xmin = min2(*xmin, mx);
     *xmax = max2(*xmax, mx);
     *ymax = max2(*ymax, my);
+}
+
+/* this procedure calculates the bouding box for text ASSUMING that it 
+   will be DISPLAYED rotated (if it has any rotation angle).  It is called
+   from shift_figure() to decide if some text actually is off the canvas
+   or not. 
+   Use text_bound() for calculating the bounding box for text that is
+   displayed horizontally (all text on the canvas in otherwords)
+   The actual corners of the rectangle are returned in (rx1,ry1)...(rx4,ry4)
+   The min and max x and y are returned in (xmin, ymin) (xmax, ymax)
+*/
+
+text_bound_actual(t, xmin, ymin, xmax, ymax, 
+		  rx1, ry1, rx2, ry2, rx3, ry3, rx4, ry4)
+    F_text	   *t;
+    int		   *xmin, *ymin, *xmax, *ymax;
+    int		   *rx1,*ry1, *rx2,*ry2, *rx3,*ry3, *rx4,*ry4;
+{
+    int		    h, l;
+    int		    x1,y1, x2,y2, x3,y3, x4,y4;
+    double	    cost, sint;
+    double	    lcost, lsint, hcost, hsint;
+
+    l = text_length(t);
+    h = t->height;
+    cost = cos((double)t->angle);
+    sint = sin((double)t->angle);
+    lcost = round(l*cost);
+    lsint = round(l*sint);
+    hcost = round(h*cost);
+    hsint = round(h*sint);
+    x1 = t->base_x;
+    y1 = t->base_y;
+    if (t->type == T_CENTER_JUSTIFIED) {
+	x1 = t->base_x - round((l/2)*cost);
+	y1 = t->base_y + round((l/2)*sint);
+	x2 = x1 + lcost;
+	y2 = y1 - lsint;
+    }
+    else if (t->type == T_RIGHT_JUSTIFIED) {
+	x1 = t->base_x - lcost;
+	y1 = t->base_y + lsint;
+	x2 = t->base_x;
+	y2 = t->base_y;
+    }
+    else {
+	x2 = x1 + lcost;
+	y2 = y1 - lsint;
+    }
+    x4 = x1 - hsint;
+    y4 = y1 - hcost;
+    x3 = x2 - hsint;
+    y3 = y2 - hcost;
+
+    *xmin = min2(x1,min2(x2,min2(x3,x4)));
+    *xmax = max2(x1,max2(x2,max2(x3,x4)));
+    *ymin = min2(y1,min2(y2,min2(y3,y4)));
+    *ymax = max2(y1,max2(y2,max2(y3,y4)));
+    *rx1=x1; *ry1=y1;
+    *rx2=x2; *ry2=y2;
+    *rx3=x3; *ry3=y3;
+    *rx4=x4; *ry4=y4;
+}
+
+/* this procedure calculates the union of the two types of bounding boxes */
+
+text_bound_both(t, xmin, ymin, xmax, ymax)
+    int		   *xmin, *ymin, *xmax, *ymax;
+{
+    int		   xmin1, ymin1, xmax1, ymax1;
+    int		   xmin2, ymin2, xmax2, ymax2;
+    int		   dum;
+    text_bound_actual(t, &xmin1, &ymin1, &xmax1, &ymax1, 
+		  &dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
+    text_bound(t, &xmin2, &ymin2, &xmax2, &ymax2);
+    *xmin = min2(xmin1,xmin2);
+    *xmax = max2(xmax1,xmax2);
+    *ymin = min2(ymin1,ymin2);
+    *ymax = max2(ymax1,ymax2);
 }
 
 static void

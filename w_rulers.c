@@ -15,6 +15,7 @@
  */
 
 #include "fig.h"
+#include "figx.h"
 #include "resources.h"
 #include "mode.h"
 #include "paintop.h"
@@ -54,7 +55,7 @@ static int	lasty = -100, lastx = -100;
 static int	troffx = -8, troffy = -10;
 static int	orig_zoomoff;
 static int	last_drag_x, last_drag_y;
-static char	tr_marker_image[16] = {
+static unsigned char	tr_marker_image[16] = {
     0xFE, 0xFF,		/* ***************  */
     0x04, 0x40,		/*  *           *  */
     0x08, 0x20,		/*   *         *  */
@@ -66,7 +67,7 @@ static char	tr_marker_image[16] = {
 };
 static		mpr_static(trm_pr, TRM_WID, TRM_HT, 1, tr_marker_image);
 static int	srroffx = 2, srroffy = -7;
-static char	srr_marker_image[16] = {
+static unsigned char	srr_marker_image[16] = {
     0x80,		/*        *  */
     0xC0,		/*       **  */
     0xA0,		/*      * *  */
@@ -87,7 +88,7 @@ static char	srr_marker_image[16] = {
 static		mpr_static(srrm_pr, SRM_WID, SRM_HT, 1, srr_marker_image);
 
 static int	srloffx = -10, srloffy = -7;
-static char	srl_marker_image[16] = {
+static unsigned char	srl_marker_image[16] = {
     0x01,		/* *	      */
     0x03,		/* **	      */
     0x05,		/* * *	      */
@@ -175,7 +176,7 @@ int
 init_unitbox(tool)
     TOOL	    tool;
 {
-    FirstArg(XtNwidth, RULER_WD);
+    FirstArg(XtNwidth, SIDERULER_WD);
     NextArg(XtNheight, RULER_WD);
     NextArg(XtNlabel, appres.INCHES ? "in" : "cm");
     NextArg(XtNfont, button_font);
@@ -212,6 +213,7 @@ static String	topruler_translations =
 "Any<BtnDown>:EventTopRuler()\n\
     Any<BtnUp>:EventTopRuler()\n\
     <Btn2Motion>:EventTopRuler()\n\
+    Meta <Btn3Motion>:EventTopRuler()\n\
     <EnterWindow>:EnterTopRuler()\n\
     <LeaveWindow>:LeaveTopRuler()\n\
     <Expose>:ExposeTopRuler()\n";
@@ -227,6 +229,9 @@ topruler_selected(tool, event, params, nparams)
 
     switch (event->type) {
     case ButtonPress:
+	if (be->button == Button3 && be->state & Mod1Mask) {
+	    be->button = Button2;
+	}
 	switch (be->button) {
 	case Button1:
 	    XDefineCursor(tool_d, topruler_win, l_arrow_cursor);
@@ -242,6 +247,9 @@ topruler_selected(tool, event, params, nparams)
 	}
 	break;
     case ButtonRelease:
+	if (be->button == Button3 && be->state & Mod1Mask) {
+	    be->button = Button2;
+	}
 	switch (be->button) {
 	case Button1:
 	    pan_left();
@@ -310,7 +318,6 @@ int
 init_topruler(tool)
     TOOL	    tool;
 {
-    TOPRULER_HT = RULER_WD;
     FirstArg(XtNwidth, TOPRULER_WD);
     NextArg(XtNheight, TOPRULER_HT);
     NextArg(XtNlabel, "");
@@ -420,7 +427,7 @@ reset_topruler()
 		sprintf(number, "%d", j / PIX_PER_INCH);
 		XDrawString(tool_d, p, tr_gc, ZOOMX(i) - 3,
 			    TOPRULER_HT - INCH_MARK - 5, number,
-			    j < PIX_PER_INCH * 10 ? 1 : 2);
+			    (j < PIX_PER_INCH*10)? 1 : (j<PIX_PER_INCH*100? 2:3));
 	    } else if (j % HINCH == 0)
 		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
 			  TOPRULER_HT - HALF_MARK - 1);
@@ -441,7 +448,7 @@ reset_topruler()
 		sprintf(number, "%d", j / PIX_PER_CM);
 		XDrawString(tool_d, p, tr_gc, ZOOMX(i) - 3,
 			    TOPRULER_HT - INCH_MARK - 5, number,
-			    j < PIX_PER_CM * 10 ? 1 : 2);
+			    (j < PIX_PER_CM*10)? 1 : (j<PIX_PER_CM*100? 2:3));
 	    } else if (j % TWOMM == 0)
 		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
 			  TOPRULER_HT - QUARTER_MARK - 1);
@@ -465,6 +472,7 @@ static String	sideruler_translations =
 "Any<BtnDown>:EventSideRuler()\n\
     Any<BtnUp>:EventSideRuler()\n\
     <Btn2Motion>:EventSideRuler()\n\
+    Meta <Btn3Motion>:EventSideRuler()\n\
     <EnterWindow>:EnterSideRuler()\n\
     <LeaveWindow>:LeaveSideRuler()\n\
     <Expose>:ExposeSideRuler()\n";
@@ -480,6 +488,9 @@ sideruler_selected(tool, event, params, nparams)
 
     switch (event->type) {
     case ButtonPress:
+	if (be->button == Button3 && be->state & Mod1Mask) {
+	    be->button = Button2;
+	}
 	switch (be->button) {
 	case Button1:
 	    XDefineCursor(tool_d, sideruler_win, u_arrow_cursor);
@@ -495,6 +506,9 @@ sideruler_selected(tool, event, params, nparams)
 	}
 	break;
     case ButtonRelease:
+	if (be->button == Button3 && be->state & Mod1Mask) {
+	    be->button = Button2;
+	}
 	switch (be->button) {
 	case Button1:
 	    pan_up();
@@ -539,7 +553,6 @@ int
 init_sideruler(tool)
     TOOL	    tool;
 {
-    SIDERULER_WD = RULER_WD;
     FirstArg(XtNwidth, SIDERULER_WD);
     NextArg(XtNheight, SIDERULER_HT);
     NextArg(XtNlabel, "");
@@ -659,24 +672,24 @@ reset_sideruler()
 	    for (i = Y0+SINCH-1; i <= Y0+round(SIDERULER_HT/zoomscale); i += SINCH) {
 		j = i + 1;
 		if (j % PIX_PER_INCH == 0) {
-		    XDrawLine(tool_d, p, sr_gc, RULER_WD - INCH_MARK,
-			      ZOOMY(i), RULER_WD, ZOOMY(i));
-		    sprintf(number, "%2d", j / PIX_PER_INCH);
+		    XDrawLine(tool_d, p, sr_gc, SIDERULER_WD - INCH_MARK,
+			      ZOOMY(i), SIDERULER_WD, ZOOMY(i));
+		    sprintf(number, "%3d", j / PIX_PER_INCH);
 		    XDrawString(tool_d, p, sr_gc,
-				RULER_WD - INCH_MARK - 14, ZOOMY(i) + 3,
-				number, 2);
+				SIDERULER_WD - INCH_MARK - 22, ZOOMY(i) + 3,
+				number, 3);
 		} else if (j % HINCH == 0)
 		    XDrawLine(tool_d, p, sr_gc,
-			      RULER_WD - HALF_MARK, ZOOMY(i),
-			      RULER_WD, ZOOMY(i));
+			      SIDERULER_WD - HALF_MARK, ZOOMY(i),
+			      SIDERULER_WD, ZOOMY(i));
 		else if (j % QINCH == 0)
 		    XDrawLine(tool_d, p, sr_gc,
-			      RULER_WD - QUARTER_MARK, ZOOMY(i),
-			      RULER_WD, ZOOMY(i));
+			      SIDERULER_WD - QUARTER_MARK, ZOOMY(i),
+			      SIDERULER_WD, ZOOMY(i));
 		else if (j % SINCH == 0)
 		    XDrawLine(tool_d, p, sr_gc,
-			      RULER_WD - SIXTEENTH_MARK, ZOOMY(i),
-			      RULER_WD, ZOOMY(i));
+			      SIDERULER_WD - SIXTEENTH_MARK, ZOOMY(i),
+			      SIDERULER_WD, ZOOMY(i));
 	    }
 	} else {
 	    for (i = Y0+SINCH-1; i <= Y0+round(SIDERULER_HT/zoomscale); i += SINCH) {
@@ -684,9 +697,9 @@ reset_sideruler()
 		if (j % PIX_PER_INCH == 0) {
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
 			      INCH_MARK - 1, ZOOMY(i));
-		    sprintf(number, "%2d", j / PIX_PER_INCH);
+		    sprintf(number, "%3d", j / PIX_PER_INCH);
 		    XDrawString(tool_d, p, sr_gc, INCH_MARK + 3,
-				ZOOMY(i) + 3, number, 2);
+				ZOOMY(i) + 3, number, 3);
 		} else if (j % HINCH == 0)
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
 			      HALF_MARK - 1, ZOOMY(i));
@@ -704,16 +717,16 @@ reset_sideruler()
 	    for (i = Y0+TWOMM-1; i <= Y0+round(SIDERULER_HT/zoomscale); i++) {
 		j = i + 1;
 		if (j % PIX_PER_CM == 0) {
-		    XDrawLine(tool_d, p, sr_gc, RULER_WD - INCH_MARK,
-			      ZOOMY(i), RULER_WD, ZOOMY(i));
-		    sprintf(number, "%2d", j / PIX_PER_CM);
+		    XDrawLine(tool_d, p, sr_gc, SIDERULER_WD - INCH_MARK,
+			      ZOOMY(i), SIDERULER_WD, ZOOMY(i));
+		    sprintf(number, "%3d", j / PIX_PER_CM);
 		    XDrawString(tool_d, p, sr_gc,
-				RULER_WD - INCH_MARK - 14, ZOOMY(i) + 3,
-				number, 2);
+				SIDERULER_WD - INCH_MARK - 14, ZOOMY(i) + 3,
+				number, 3);
 		} else if (j % TWOMM == 0)
 		    XDrawLine(tool_d, p, sr_gc,
-			      RULER_WD - QUARTER_MARK, ZOOMY(i),
-			      RULER_WD, ZOOMY(i));
+			      SIDERULER_WD - QUARTER_MARK, ZOOMY(i),
+			      SIDERULER_WD, ZOOMY(i));
 	    }
 	} else {
 	    for (i = Y0+TWOMM-1; i <= Y0+round(SIDERULER_HT/zoomscale); i++) {
@@ -721,9 +734,9 @@ reset_sideruler()
 		if (j % PIX_PER_CM == 0) {
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
 			      INCH_MARK - 1, ZOOMY(i));
-		    sprintf(number, "%2d", j / PIX_PER_CM);
+		    sprintf(number, "%3d", j / PIX_PER_CM);
 		    XDrawString(tool_d, p, sr_gc, INCH_MARK + 3,
-				ZOOMY(i) + 3, number, 2);
+				ZOOMY(i) + 3, number, 3);
 		} else if (j % TWOMM == 0)
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
 			      QUARTER_MARK - 1, ZOOMY(i));
@@ -738,7 +751,7 @@ erase_siderulermark()
 {
     if (appres.RHS_PANEL)
 	XClearArea(tool_d, sideruler_win,
-		   RULER_WD + srloffx, ZOOMY(lasty) + srloffy,
+		   SIDERULER_WD + srloffx, ZOOMY(lasty) + srloffy,
 		   srlm_pr.width, srlm_pr.height, False);
     else
 	XClearArea(tool_d, sideruler_win,
@@ -755,11 +768,11 @@ set_siderulermark(y)
 	 * using XClearArea to erase the old thing.
 	 */
 	XClearArea(tool_d, sideruler_win,
-		   RULER_WD + srloffx, ZOOMY(lasty) + srloffy,
+		   SIDERULER_WD + srloffx, ZOOMY(lasty) + srloffy,
 		   srlm_pr.width, srlm_pr.height, False);
 	XCopyArea(tool_d, sidearrow_pm, sideruler_win,
 		  sr_xor_gc, 0, 0, srlm_pr.width,
-		  srlm_pr.height, RULER_WD + srloffx, ZOOMY(y) + srloffy);
+		  srlm_pr.height, SIDERULER_WD + srloffx, ZOOMY(y) + srloffy);
     } else {
 	/*
 	 * Because the ruler uses a background pixmap, we can win here by

@@ -19,6 +19,7 @@
 #include "mode.h"
 #include "resources.h"
 #include "w_util.h"
+#include <unistd.h>
 
 int
 emptyname(name)
@@ -140,13 +141,7 @@ ok_to_write(file_name, op_name)
 	}
 	if (file_status.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) {
 	    /* writing is permitted by SOMEONE */
-	    if (!((file_status.st_mode & S_IWUSR) &&	/* user writable */
-		  (file_status.st_uid == geteuid()))
-		&&
-		!((file_status.st_mode & S_IWGRP) &&	/* group writable */
-		  (file_status.st_gid == getegid()))
-		&&
-		!(file_status.st_mode & S_IWOTH)) {	/* world writable */
+	    if (access(file_name, W_OK)) {
 		put_msg("Write permission for \"%s\" is denied", file_name);
 		return (0);
 	    } else {

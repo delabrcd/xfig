@@ -145,7 +145,7 @@ wrap_up()
 	if (strlen(new_t->cstring) >= leng_prefix) {
 	    strcpy(new_t->cstring, prefix);
 	} else {		/* free old and allocate new */
-	    cfree(new_t->cstring);
+	    free(new_t->cstring);
 	    if ((new_t->cstring = new_string(leng_prefix + 1)) != NULL)
 		strcpy(new_t->cstring, prefix);
 	}
@@ -258,7 +258,7 @@ new_text()
     text->type = work_textjust;
     text->font = work_font;	/* put in current font number */
     text->size = work_fontsize; /* added 9/25/89 B.V.Smith */
-    text->angle = cur_angle;
+    text->angle = cur_elltextangle/180.0*M_PI;	/* convert to radians */
     text->flags = cur_textflags;
     text->color = cur_color;
     text->depth = cur_depth;

@@ -36,11 +36,8 @@ typedef unsigned char byte;
 
 #define			PI		3.14159
 
-extern char    *rindex();
-
 /************** POLYGON/CURVE DRAWING FACILITIES ****************/
 
-#define	  MaxNumPts	  10000
 static int	npoints;
 static int	max_points;
 static XPoint  *points;
@@ -53,12 +50,12 @@ init_point_array(init_size, step_size)
     npoints = 0;
     max_points = init_size;
     allocstep = step_size;
-    if (max_points > MaxNumPts) {
+    if (max_points > MAXNUMPTS) {
 	fprintf(stderr, "xfig: warning: too many points in polyline\n");
-	fprintf(stderr, "  Only first %d points are displayed\n", MaxNumPts);
-	fprintf(stderr, "  Recompile with MaxNumPts > %d in %s\n",
+	fprintf(stderr, "  Only first %d points are displayed\n", MAXNUMPTS);
+	fprintf(stderr, "  Recompile with MAXNUMPTS > %d in %s\n",
 		init_size, __FILE__);
-	max_points = MaxNumPts;
+	max_points = MAXNUMPTS;
     }
     if ((points = (XPoint *) malloc(max_points * sizeof(XPoint))) == 0) {
 	fprintf(stderr, "xfig: insufficient memory to allocate point array\n");
@@ -75,7 +72,7 @@ add_point(x, y)
 	XPoint	       *tmp_p;
 
 	max_points += allocstep;
-	if (max_points >= MaxNumPts)
+	if (max_points >= MAXNUMPTS)
 	    return False;	/* stop; it is not closing */
 
 	if ((tmp_p = (XPoint *) realloc(points,
@@ -148,18 +145,250 @@ draw_ellipse(e, op)
 		     clip_xmin, clip_ymin, clip_xmax, clip_ymax))
 	return;
 
-    if (op != ERASE && (e->style == DOTTED_LINE || e->style == DASH_LINE)) {
-	a = e->radiuses.x;
-	b = e->radiuses.y;
-	curve(canvas_win, a, 0, a, 0, e->direction, (b * b), (a * a),
-	      e->center.x, e->center.y, op,
-	      e->thickness, e->style, e->style_val, e->fill_style, e->color);
-    } else {
-	pw_curve(canvas_win, xmin, ymin, xmax, ymax, op,
-		 e->thickness, e->style, e->style_val, e->fill_style,
-		 e->color);
-    }
+    angle_ellipse(e->center.x, e->center.y, e->radiuses.x, e->radiuses.y, 
+		e->angle, op, e->thickness, e->style, 
+		e->style_val, e->fill_style, e->color);
 }
+
+/*
+ *  An Ellipse Generator.
+ *  Written by James Tough   7th May 92
+ *
+ *  The following routines displays a filled ellipse on the screen from the
+ *    semi-minor axis 'a', semi-major axis 'b' and angle of rotation
+ *    'phi'.
+ *
+ *  It works along these principles .....
+ *
+ *        The standard ellipse equation is
+ *
+ *             x*x     y*y
+ *             ---  +  ---
+ *             a*a     b*b
+ *
+ *
+ *        Rotation of a point (x,y) is well known through the use of
+ *
+ *            x' = x*COS(phi) - y*SIN(phi)
+ *            y' = y*COS(phi) + y*COS(phi)
+ *
+ *        Taking these to together, this gives the equation for a rotated
+ *      ellipse centered around the origin.
+ *
+ *           [x*COS(phi) - y*SIN(phi)]^2   [x*SIN(phi) + y*COS(phi)]^2
+ *           --------------------------- + ---------------------------
+ *                      a*a                           b*b
+ *
+ *        NOTE -  some of the above equation can be precomputed, eg,
+ *
+ *              i = COS(phi)/a        and        j = SIN(phi)/b
+ *       
+ *        NOTE -  y is constant for each line so,
+ *
+ *              m = -yk*SIN(phi)/a    and     n = yk*COS(phi)/b
+ *              where yk stands for the kth line ( y subscript k)
+ *
+ *        Where yk=y, we get a quadratic,
+ *
+ *              (i*x + m)^2 + (j*x + n)^2 = 1
+ *
+ *        Thus for any particular line, y, there is two corresponding x
+ *      values. These are the roots of the quadratic. To get the roots, 
+ *      the above equation can be rearranged using the standard method, 
+ *
+ *          -(i*m + j*n) +- sqrt[i^2 + j^2 - (i*n -j*m)^2]
+ *      x = ----------------------------------------------
+ *                           i^2 + j^2 
+ *
+ *        NOTE -  again much of this equation can be precomputed.
+ *     
+ *           c1 = i^2 + j^2 
+ *           c2 = [COS(phi)*SIN(phi)*(a-b)]
+ *           c3 = [b*b*(COS(phi)^2) + a*a*(SIN(phi)^2)]
+ *           c4 = a*b/c3
+ * 
+ *      x = c2*y +- c4*sqrt(c3 - y*y),    where +- must be evaluated once
+ *                                      for plus, and once for minus. 
+ *
+ *        We also need to know how large the ellipse is. This condition
+ *      arises when the sqrt of the above equation evaluates to zero.
+ *      Thus the height of the ellipse is give by 
+ * 
+ *              sqrt[ b*b*(COS(phi)^2) + a*a*(SIN(phi)^2) ]
+ *
+ *       which just happens to be equal to sqrt(c3).
+ *
+ *         It is now possible to create a routine that will scan convert 
+ *       the ellipse on the screen.
+ *
+ *        NOTE -  c2 is the gradient of the new ellipse axis.
+ *                c4 is the new semi-minor axis, 'a'.
+ *           sqr(c3) is the new semi-major axis, 'b'.
+ *
+ *         These values could be used in a 4WS or 8WS ellipse generator
+ *       that does not work on rotation, to give the feel of a rotated
+ *       ellipse. These ellipses are not very accurate and give visable
+ *       bumps along the edge of the ellipse. However, these routines
+ *       are very quick, and give a good approximation to a rotated ellipse.
+ *
+ *       NOTES on the code given.
+ * 
+ *           All the routines take there parameters as ( x, y, a, b, phi ),
+ *           where x,y are the center of the ellipse ( relative to the 
+ *           origin ), a and b are the vertical and horizontal axis, and
+ *           phi is the angle of rotation in RADIANS.
+ *
+ *           The 'moveto(x,y)' command moves the screen cursor to the 
+ *               (x,y) point.
+ *           The 'lineto(x,y)' command draws a line from the cursor to
+ *               the point (x,y).
+ *
+ *
+ *   Examples,
+ *
+ *       NOTE, all angles must be given in radians.
+ *
+ *       angle_ellipse(0,0,100,20,PI/4)         an ellipse at the origin,
+ *                                             major axis 100, minor 20
+ *                                             at angle 45 degrees.
+ *
+ *
+ */
+
+
+/*
+ *  QuickEllipse, uses the same method as Ellipse, but uses incremental
+ *    methods to reduce the amount of work that has to be done inside
+ *    the main loop. The speed increase is very noticeable.
+ *
+ *  Written by James Tough
+ *  7th May 1992
+ * 
+ */
+
+static int	x[MAXNUMPTS/4][4],y[MAXNUMPTS/4][4];
+static int	nump[4];
+static int	totpts,i,j;
+static int	order[4]={0,1,3,2};
+
+angle_ellipse(center_x, center_y, radius_x, radius_y, angle,
+	      op, thickness, style, style_val, fill_style, color)
+    int		    center_x, center_y;
+    int		    radius_x, radius_y;
+    float	    angle;
+    int		    op,thickness,style,fill_style,color;
+    float	    style_val;
+{
+	float	xcen, ycen, a, b; 
+
+	double	c1, c2, c3, c4, c5, c6, v1, cphi, sphi, cphisqr, sphisqr;
+	double	xleft, xright, d, asqr, bsqr;
+	int	ymax, yy=0;
+	int	k,m,n,dir;
+	XPoint	*pnts,*ppnts;
+
+	if (radius_x == 0 || radius_y == 0)
+		return;
+
+	xcen = center_x;
+	ycen = center_y;
+	a = radius_x;
+	b = radius_y;
+
+	cphi = cos((double)angle);
+	sphi = sin((double)angle);
+	cphisqr = cphi*cphi;
+	sphisqr = sphi*sphi;
+	asqr = a*a;
+	bsqr = b*b;
+	
+	c1 = (cphisqr/asqr)+(sphisqr/bsqr);
+	c2 = ((cphi*sphi/asqr)-(cphi*sphi/bsqr))/c1;
+	c3 = (bsqr*cphisqr) + (asqr*sphisqr);
+	ymax = sqrt(c3);
+	c4 = a*b/c3;
+	c5 = 0;
+	v1 = c4*c4;
+	c6 = 2*v1;
+	c3 = c3*v1-v1;
+	totpts = 0;
+	for (i=0; i<=3; i++)
+		nump[i]=0;
+	i=0; j=0;
+	/* odd first points */
+	if (ymax % 2) {
+		d = sqrt(c3);
+		newpoint(xcen-d,ycen);
+		newpoint(xcen+d,ycen);
+		c5 = c2;
+		yy=1;
+	}
+	while (c3>=0) {
+		d = sqrt(c3);
+		xleft = c5-d;
+		xright = c5+d;                        
+		newpoint(xcen+xleft,ycen+yy);
+		newpoint(xcen+xright,ycen+yy);
+		newpoint(xcen-xright,ycen-yy);
+		newpoint(xcen-xleft,ycen-yy);
+		c5+=c2;
+		v1+=c6;
+		c3-=v1;
+		yy=yy+1;
+	}
+	dir=0; n=0;
+	totpts++;	/* add another point to join with first */
+	pnts = (XPoint *) malloc(totpts * sizeof(XPoint));
+	ppnts = pnts;
+	/* now go down the 1st column, up the 2nd, down the 4th 
+	   and up the 3rd to get the points in the correct order */
+	for (k=0; k<=3; k++)
+	    {
+	    if (dir==0)
+		for (m=0; m<nump[k]; m++)
+		    {
+		    ppnts->x=x[m][order[k]];
+		    ppnts->y=y[m][order[k]];
+		    ppnts++;
+		    n++;
+		    }
+	    else
+		for (m=nump[k]-1; m>=0; m--)
+		    {
+		    ppnts->x=x[m][order[k]];
+		    ppnts->y=y[m][order[k]];
+		    ppnts++;
+		    n++;
+		    }
+	    dir = 1-dir;
+	    } /* next k */
+	/* add another point to join with first */
+	ppnts->x = pnts->x;
+	ppnts->y = pnts->y;
+	n++;
+	pw_lines(canvas_win, pnts, n, op, thickness, style, style_val, 
+		 fill_style, color);
+
+	free(pnts);
+	return;
+}
+
+/* store the points across (row-wise in) the matrix */
+
+newpoint(xp,yp)
+    float	   xp,yp;
+{
+    x[i][j]=round(xp);
+    y[i][j]=round(yp);
+    nump[j]++;
+    totpts++;
+    if (++j > 3)
+	{
+	j=0; 
+	i++;
+	}
+}
+
 
 /*********************** LINE ***************************/
 
@@ -354,7 +583,7 @@ create_eps_pixmap(box, rotation, width, height, flipped)
     bbytes = (box->eps->bit_size.x + 7) / 8;
     data = (byte *) malloc(nbytes * height);
     tdata = (byte *) malloc(nbytes);
-    memset((char *) data, NULL, nbytes * height);	/* clear memory */
+    bzero(data, nbytes * height);	/* clear memory */
 
     /* create a new bitmap at the specified size (requires interpolation) */
     if ((!flipped && (rotation == 0 || rotation == 180)) ||
@@ -381,7 +610,7 @@ create_eps_pixmap(box, rotation, width, height, flipped)
     /* horizontal swap */
     if (rotation == 180 || rotation == 270)
 	for (j = 0; j < height; j++) {
-	    memset((char *) tdata, NULL, nbytes);
+	    bzero(tdata, nbytes);
 	    for (i = 0; i < width; i++)
 		if (*(data + j * nbytes + (width - i - 1) / 8) & (1 << ((width - i - 1) & 7)))
 		    *(tdata + i / 8) += (1 << (i & 7));
@@ -592,12 +821,25 @@ draw_text(text, op)
     PR_SIZE	    size;
     int		    x;
     int		    xmin, ymin, xmax, ymax;
+    int		    x1,y1, x2,y2, x3,y3, x4,y4;
 
-    text_bound(text, &xmin, &ymin, &xmax, &ymax);
+    if (appres.textoutline)
+	text_bound_actual(text, &xmin, &ymin, &xmax, &ymax, 
+			  &x1,&y1, &x2,&y2, &x3,&y3, &x4,&y4);
+    else
+	text_bound(text, &xmin, &ymin, &xmax, &ymax);
+
     if (!overlapping(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax),
 		     clip_xmin, clip_ymin, clip_xmax, clip_ymax))
 	return;
 
+    /* outline the text bounds in red if textoutline resource is set */
+    if (appres.textoutline) {
+	pw_vector(canvas_win, x1, y1, x2, y2, PAINT, 1, RUBBER_LINE, 0.0, 4);
+	pw_vector(canvas_win, x2, y2, x3, y3, PAINT, 1, RUBBER_LINE, 0.0, 4);
+	pw_vector(canvas_win, x3, y3, x4, y4, PAINT, 1, RUBBER_LINE, 0.0, 4);
+	pw_vector(canvas_win, x4, y4, x1, y1, PAINT, 1, RUBBER_LINE, 0.0, 4);
+    }
 
     x = text->base_x;
     if (text->type == T_CENTER_JUSTIFIED || text->type == T_RIGHT_JUSTIFIED) {

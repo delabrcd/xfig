@@ -45,6 +45,7 @@ init_ellipsedragging(e, x, y)
     new_e = e;
     fix_x = cur_x = x;
     fix_y = cur_y = y;
+    cur_angle = e->angle;
     x1off = (e->center.x - e->radiuses.x) - cur_x;
     x2off = (e->center.x + e->radiuses.x) - cur_x;
     y1off = (e->center.y - e->radiuses.y) - cur_y;

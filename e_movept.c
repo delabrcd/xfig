@@ -189,8 +189,10 @@ init_ellipsepointmoving()
 	cosa = fabs(dx / l);
 	sina = fabs(dy / l);
     }
+    cur_angle = cur_e->angle;
     set_action_on();
     toggle_ellipsemarker(cur_e);
+    draw_ellipse(cur_e, ERASE);
     switch (cur_e->type) {
     case T_ELLIPSE_BY_RAD:
 	canvas_locmove_proc = constrained_resizing_ebr;
@@ -234,6 +236,7 @@ cancel_movedellipsepoint()
 	elastic_cbd();
 	break;
     }
+    draw_ellipse(cur_e, PAINT);
     toggle_ellipsemarker(cur_e);
     wrapup_movepoint();
 }
@@ -284,10 +287,11 @@ relocate_ellipsepoint(ellipse, x, y, point_num)
 	ellipse->end.x = x;
 	ellipse->end.y = y;
     }
+    cur_angle = ellipse->angle;
     switch (ellipse->type) {
     case T_ELLIPSE_BY_RAD:
-	ellipse->radiuses.x = abs(x - fix_x) + 1;
-	ellipse->radiuses.y = abs(y - fix_y) + 1;
+	ellipse->radiuses.x = abs(x - fix_x);
+	ellipse->radiuses.y = abs(y - fix_y);
 	break;
     case T_CIRCLE_BY_RAD:
 	dx = fix_x - x;

@@ -23,7 +23,6 @@
 #include "w_canvas.h"
 #include "w_setup.h"
 #include "mode.h"
-#include <stdio.h>
 
 read_epsf(eps)
     F_eps	   *eps;
@@ -105,6 +104,7 @@ read_epsf(eps)
 	}
 	if (preview) {
 	    file_msg("EPS object read OK, but no preview bitmap found");
+	    fclose(epsf);
 	    return 0;
 	}
 #ifdef DPS
@@ -125,7 +125,7 @@ read_epsf(eps)
 #ifdef DPS
     /* if Display PostScript */
     if (XQueryExtension(tool_d,"DPSExtension",&dummy,&dummy,&dummy)) {
-	int bitmapDPS (FILE*,int,int,int,int,int,int,int,unsigned char *);
+	static int bitmapDPS (FILE*,int,int,int,int,int,int,int,unsigned char *);
 	if (eps->bitmap!=NULL) {
 	    if (!bitmapDPS(epsf,llx,lly,urx,ury,
 		eps->size_x,eps->size_y,nbitmap,eps->bitmap)) {
@@ -153,9 +153,9 @@ read_epsf(eps)
 		if (*cp != '%')
 		    break;
 		cp++;
-		while (*cp != NULL) {
+		while (*cp != '\0') {
 		    if (isxdigit(*cp)) {
-		        hexnib = (~hex(*cp))&0xf;  /* invert to make 0 white, 1 black */
+		        hexnib = hex(*cp);
 		        if (flag) {
 			    flag = False;
 			    *mp = hexnib << 4;
@@ -202,13 +202,20 @@ lower(buf)
 /* Display PostScript */
 #ifdef DPS
 
+#ifdef sgi
+#include <X11/extensions/XDPS.h>
+#include <X11/extensions/XDPSlib.h>
+#include <X11/extensions/dpsXclient.h>
+#else
 #include <DPS/XDPS.h>
 #include <DPS/XDPSlib.h>
 #include <DPS/dpsXclient.h>
+#endif
 
 #define LBUF 1000
 
-static int bitmapDPS (FILE *fp, int llx, int lly, int urx, int ury,
+static 
+int bitmapDPS (FILE *fp, int llx, int lly, int urx, int ury,
 	int width, int height, int nbitmap, unsigned char *bitmap)
 {
 	Display *dpy=tool_d;
@@ -228,7 +235,8 @@ static int bitmapDPS (FILE *fp, int llx, int lly, int urx, int ury,
 	DPSContext dps;
 	
 	/* create bit pixmap and its GC */
-	bit = XCreatePixmap(dpy,DefaultRootWindow(dpy),width,height,1);
+	bit = XCreatePixmap(dpy,DefaultRootWindow(dpy),width,height,
+			    DefaultDepthOfScreen(tool_s));
         gcbit = XCreateGC(dpy,bit,0,NULL);
 
         /* create standard colormap for black-and-white only */
@@ -273,12 +281,9 @@ static int bitmapDPS (FILE *fp, int llx, int lly, int urx, int ury,
         DPSPrintf(dps,"%f %f scale\n",PIX_PER_INCH/dppi,PIX_PER_INCH/dppi);
 
         /* paint white background */
-        DPSPrintf(dps,
-                "gsave\n"
-                "1 setgray\n"
-                "0 0 %d %d rectfill\n"
-                "grestore\n",
-                urx-llx+2,ury-lly+2);
+        DPSPrintf(dps, "gsave\n"
+		 "gsave\n 1 setgray\n 0 0 %d %d rectfill\n grestore\n",
+		 urx-llx+2,ury-lly+2);
 
         /* translate */
         DPSPrintf(dps,"%d %d translate\n",-llx,-lly);

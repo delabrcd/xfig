@@ -17,6 +17,7 @@
 /********************* IMPORTS *******************/
 
 #include "fig.h"
+#include "figx.h"
 #include "resources.h"
 #include "paintop.h"
 #include "w_canvas.h"

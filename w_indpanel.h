@@ -14,6 +14,8 @@
  *
  */
 
+/* indicator button selection */
+
 #define I_ANGLEGEOM	0x000001
 #define I_VALIGN	0x000002
 #define I_HALIGN	0x000004
@@ -34,23 +36,28 @@
 #define I_COLOR		0x020000
 #define I_LINKMODE	0x040000
 #define I_DEPTH		0x080000
+#define I_ELLTEXTANGLE	0x100000
 
 #define I_NONE		0x000000
 #define I_ALL		0x0fffff
 #define I_MIN1		(I_GRIDMODE | I_ZOOM)
 #define I_MIN2		(I_MIN1 | I_POINTPOSN)
 #define I_MIN3		(I_MIN2 | I_LINKMODE)
-#define I_TEXT0		(I_TEXTJUST | I_FONT | I_FONTSIZE | I_COLOR | I_DEPTH)
+#define I_TEXT0		(I_TEXTJUST | I_FONT | I_FONTSIZE | I_COLOR | \
+				I_DEPTH | I_ELLTEXTANGLE)
 #define I_TEXT		(I_MIN2 | I_TEXTSTEP | I_TEXT0)
-#define I_LINE0		(I_FILLSTYLE | I_LINESTYLE | I_LINEWIDTH | I_COLOR | I_DEPTH)
+#define I_LINE0		(I_FILLSTYLE | I_LINESTYLE | I_LINEWIDTH | \
+				I_COLOR | I_DEPTH)
 #define I_BOX		(I_MIN2 | I_LINE0 | I_DEPTH)
+#define I_ELLIPSE	(I_MIN2 | I_LINE0 | I_DEPTH | I_ELLTEXTANGLE)
 #define I_ARC		(I_BOX | I_ARROWMODE)
 #define I_REGPOLY	(I_BOX | I_NUMSIDES)
 #define I_CLOSED	(I_BOX | I_ANGLEGEOM)
 #define I_OPEN		(I_CLOSED | I_ARROWMODE)
 #define I_ARCBOX	(I_BOX | I_BOXRADIUS)
 #define I_EPSOBJ	(I_MIN2 | I_DEPTH)
-#define I_OBJECT	(I_MIN1 | I_TEXT0 | I_LINE0 | I_ARROWMODE | I_BOXRADIUS | I_DEPTH)
+#define I_OBJECT	(I_MIN1 | I_TEXT0 | I_LINE0 | I_ARROWMODE | \
+				I_BOXRADIUS | I_DEPTH)
 #define I_ALIGN		(I_MIN1 | I_HALIGN | I_VALIGN)
 #define I_ROTATE	(I_MIN1 | I_ROTNANGLE)
 /* for checking which parts to update */
@@ -65,7 +72,7 @@ typedef struct choice_struct {
 typedef struct ind_sw_struct {
     int		    type;	/* one of I_CHOICE .. I_FVAL */
     int		    func;
-    char	    line1[6], line2[6];
+    char	    line1[14], line2[6];
     int		    sw_width;
     int		   *i_varadr;
     float	   *f_varadr;

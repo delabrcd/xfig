@@ -403,23 +403,20 @@ static
 sel_text(xmin, ymin, xmax, ymax)
     int		    xmin, ymin, xmax, ymax;
 {
-    int		    halflen;
     F_text	   *t;
+    int		    txmin, txmax, tymin, tymax;
+    int		    dum;
 
     for (t = objects.texts; t != NULL; t = t->next) {
-	halflen = t->length / 2;
-	if (((t->type == T_LEFT_JUSTIFIED) && xmin > t->base_x) ||
-	  ((t->type == T_CENTER_JUSTIFIED) && xmin > t->base_x - halflen) ||
-	 ((t->type == T_RIGHT_JUSTIFIED) && xmin > t->base_x - t->length))
-	    continue;
-	if (((t->type == T_LEFT_JUSTIFIED) && xmax < t->base_x + t->length) ||
-	  ((t->type == T_CENTER_JUSTIFIED) && xmax < t->base_x + halflen) ||
-	    ((t->type == T_RIGHT_JUSTIFIED) && xmax < t->base_x))
-	    continue;
-	if (ymin > t->base_y - t->height)
-	    continue;
-	if (ymax < t->base_y)
-	    continue;
+	if (appres.textoutline) {
+		text_bound_actual(t, &txmin, &tymin, &txmax, &tymax,
+				&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
+	} else {
+		text_bound(t, &txmin, &tymin, &txmax, &tymax);
+	}
+	if (xmin > txmin || xmax < txmax ||
+	    ymin > tymin || ymax < tymax)
+		continue;
 	t->tagged = 1 - t->tagged;
 	toggle_texthighlight(t);
     }

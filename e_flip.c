@@ -301,6 +301,7 @@ flip_ellipse(e, x, y, flip_axis)
 	e->end.x = x + (x - e->end.x);
 	break;
     }
+    e->angle = - e->angle;
 }
 
 flip_arc(a, x, y, flip_axis)

@@ -37,6 +37,7 @@
 
 #include "w_util.h"
 #include "fig.h"
+#include "figx.h"
 #include "resources.h"
 #include "mode.h"
 #include "w_dir.h"
@@ -64,10 +65,9 @@ static char   **file_list, **dir_list;
 static char   **filelist, **dirlist;
 static char    *dirmask;
 
-extern char    *rindex(),*index();
-
 /* External variables */
 
+extern Widget	file_panel, export_panel;
 extern Widget	exp_selfile, file_selfile, exp_dir, file_dir, exp_flist,
 		file_flist, exp_dlist, file_dlist, exp_mask, file_mask;
 extern Boolean	file_up, export_up;
@@ -173,7 +173,6 @@ char *path,*longpath;
 {
     char	  *home,*p;
     struct passwd *who;
-    char	  *getenv();
 
     /* this user's home */
     if (strlen(path)==1 || path[1]=='/')
@@ -205,15 +204,17 @@ char *path,*longpath;
 }
 
 static String	mask_text_translations =
-"<Key>Return: Rescan()\n\
-		Ctrl<Key>J: Rescan()\n\
-		Ctrl<Key>M: Rescan()\n";
+		"<Key>Return: rescan()\n\
+		Ctrl<Key>J: rescan()\n\
+		Ctrl<Key>M: rescan()\n";
 
 static XtActionsRec actionTable[] = {
     {"ParentDir", ParentDir},
     {"SetDir", SetDir},
-    {"Rescan", Rescan},
+    {"rescan", Rescan},
 };
+
+static int      actions_added=0;
 
 void
 create_dirinfo(parent, below, ret_beside, ret_below,
@@ -256,8 +257,8 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     FirstArg(XtNlabel, "    Filename Mask:");
     NextArg(XtNborderWidth, 0);
     NextArg(XtNfromVert, file_viewport);
-    w = XtCreateManagedWidget("mask_label", labelWidgetClass, parent,
-			      Args, ArgCount);
+    w = XtCreateManagedWidget("mask_label", labelWidgetClass, 
+				parent, Args, ArgCount);
 
     FirstArg(XtNeditType, XawtextEdit);
     NextArg(XtNscrollHorizontal, XawtextScrollNever);
@@ -267,15 +268,15 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     NextArg(XtNwidth, 100);
     NextArg(XtNfromHoriz, w);
     NextArg(XtNfromVert, file_viewport);
-    *mask_w = XtCreateManagedWidget("mask", asciiTextWidgetClass, parent,
-				    Args, ArgCount);
+    *mask_w = XtCreateManagedWidget("mask", asciiTextWidgetClass, 
+					parent, Args, ArgCount);
     XtOverrideTranslations(*mask_w,
 			   XtParseTranslationTable(mask_text_translations));
 
     /* get the first directory listing */
     FirstArg(XtNstring, &dirmask);
     GetValues(*mask_w);
-    if (MakeFileList(cur_dir, dirmask, &dir_list, &file_list) == 0)
+    if (MakeFileList(cur_dir, dirmask, &dir_list, &file_list) == False)
 	file_msg("No files in directory?");
 
     FirstArg(XtNlabel, "Current Directory:");
@@ -310,10 +311,10 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     FirstArg(XtNlabel, "Home");
     NextArg(XtNfromVert, dir_alt);
     NextArg(XtNfromHoriz, dir_alt);
-    NextArg(XtNhorizDistance, -46);
+    NextArg(XtNhorizDistance, -70);
     NextArg(XtNborderWidth, INTERNAL_BW);
-    home = XtCreateManagedWidget("home", commandWidgetClass, parent,
-			      Args, ArgCount);
+    home = XtCreateManagedWidget("home", commandWidgetClass, 
+				parent, Args, ArgCount);
     XtAddCallback(home, XtNcallback, GoHome, (XtPointer) NULL);
 
     FirstArg(XtNallowVert, True);
@@ -336,12 +337,16 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     FirstArg(XtNlist, dir_list);
     *dlist_w = XtCreateManagedWidget("dir_list_panel", listWidgetClass,
 				     dir_viewport, Args, ArgCount);
+
     XtOverrideTranslations(*dlist_w,
 			   XtParseTranslationTable(list_panel_translations));
     XtAddCallback(*dlist_w, XtNcallback, DirSelected,
 		  (XtPointer) NULL);
 
-    XtAppAddActions(tool_app, actionTable, XtNumber(actionTable));
+    if (!actions_added) {
+	XtAppAddActions(tool_app, actionTable, XtNumber(actionTable));
+	actions_added = 1;
+    }
 
     FirstArg(XtNlabel, "Rescan");
     NextArg(XtNfromVert, dir_viewport);
@@ -352,6 +357,11 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     w = XtCreateManagedWidget("rescan", commandWidgetClass, parent,
 			      Args, ArgCount);
     XtAddCallback(w, XtNcallback, CallbackRescan, NULL);
+
+    /* install accelerators so they can be used from each window */
+    XtInstallAccelerators(*flist_w, parent);
+    XtInstallAccelerators(*dlist_w, parent);
+
     *ret_beside = w;
     *ret_below = dir_viewport;
     return;
@@ -370,6 +380,7 @@ SPComp(s1, s2)
     return (strcmp(*s1, *s2));
 }
 
+Boolean
 MakeFileList(dir_name, mask, dir_list, file_list)
     char	   *dir_name;
     char	   *mask, ***dir_list, ***file_list;
@@ -392,7 +403,7 @@ MakeFileList(dir_name, mask, dir_list, file_list)
 	*file_list[0]="";
 	*dir_list = dirlist;
 	*dir_list[0]="..";
-	return (NULL);
+	return False;
     }
     /* process any events to ensure cursor is set to wait_cursor */
     /*
@@ -419,8 +430,6 @@ MakeFileList(dir_name, mask, dir_list, file_list)
 	    /* check if matches regular expression */
 	    if ((mask == NULL) || (*mask == '\0'))
 		mask = "*";
-	    else if (*mask == '\0')
-		mask = "*";
 	    if (wild_match(dp->d_name, mask) == 0)
 		continue;	/* no, do next */
 	    if (mask[0] == '*' && dp->d_name[0] == '.')
@@ -438,14 +447,14 @@ MakeFileList(dir_name, mask, dir_list, file_list)
     *cur_file = NULL;
     *cur_directory = NULL;
     if (cur_file != filelist)
-	qsort(filelist, cur_file - filelist - 1, sizeof(char *), SPComp);
+	qsort(filelist, cur_file - filelist, sizeof(char *), SPComp);
     if (cur_directory != dirlist)
-	qsort(dirlist, cur_directory - dirlist - 1, sizeof(char *), SPComp);
+	qsort(dirlist, cur_directory - dirlist, sizeof(char *), SPComp);
     *file_list = filelist;
     *dir_list = dirlist;
     reset_cursor();
     closedir(dirp);
-    return 1;
+    return True;
 }
 
 /* Function:	ParentDir() changes to the parent directory.
@@ -508,7 +517,7 @@ DoChangeDir(dir)
     if (change_directory(cur_dir) != 0 ) {
 	file_msg("Can't change to directory %s", cur_dir);
 	strcpy(cur_dir, tmpdir);
-    } else if ( MakeFileList(ndir, dirmask, &dirlist, &filelist) == 0) {
+    } else if (MakeFileList(ndir, dirmask, &dirlist, &filelist) == False) {
 	file_msg("Unable to list directory %s", ndir);
 	strcpy(cur_dir, tmpdir);
     }
@@ -521,13 +530,13 @@ DoChangeDir(dir)
 	{
 	SetValues(file_dir);
 	XawTextSetInsertionPoint(file_dir, strlen(cur_dir));
-	XawListChange(file_flist, filelist, 0, 0, True);
-	XawListChange(file_dlist, dirlist, 0, 0, True);
+	NewList(file_flist,filelist);
+	NewList(file_dlist,dirlist);
     } else {
 	SetValues(exp_dir);
 	XawTextSetInsertionPoint(exp_dir, strlen(cur_dir));
-	XawListChange(exp_flist, filelist, 0, 0, True);
-	XawListChange(exp_dlist, dirlist, 0, 0, True);
+	NewList(exp_flist, filelist);
+	NewList(exp_dlist, dirlist);
 	}
     CurrentSelectionName[0] = '\0';
 }
@@ -559,18 +568,29 @@ Rescan(widget, event, params, num_params)
 	GetValues(file_mask);
 	FirstArg(XtNstring, &dir);
 	GetValues(file_dir);
-	MakeFileList(dir, dirmask, &dir_list, &file_list);
-	XawListChange(file_flist, file_list, 0, 0, True);
-	XawListChange(file_dlist, dir_list, 0, 0, True);
+	(void) MakeFileList(dir, dirmask, &dir_list, &file_list);
+	NewList(file_flist,file_list);
+	NewList(file_dlist,dir_list);
     } else {
 	FirstArg(XtNstring, &dirmask);
 	GetValues(exp_mask);
 	FirstArg(XtNstring, &dir);
 	GetValues(exp_dir);
-	MakeFileList(dir, dirmask, &dir_list, &file_list);
-	XawListChange(exp_flist, file_list, 0, 0, True);
-	XawListChange(exp_dlist, dir_list, 0, 0, True);
+	(void) MakeFileList(dir, dirmask, &dir_list, &file_list);
+	NewList(exp_flist, file_list);
+	NewList(exp_dlist, dir_list);
     }
+}
+
+static String null_entry = " ";
+static String *null_list = { &null_entry };
+
+NewList(listwidget, list)
+    Widget    listwidget;
+    String   *list;
+{
+	XawListChange(listwidget, null_list, 1, 0, True);
+	XawListChange(listwidget, list, 0, 0, True);
 }
 
 

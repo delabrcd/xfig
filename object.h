@@ -305,7 +305,8 @@ typedef struct f_linkinfo {
 #define M_POLYLINE	(M_POLYLINE_LINE | M_POLYLINE_POLYGON | M_POLYLINE_BOX)
 #define M_VARPTS_OBJECT (M_POLYLINE_LINE | M_POLYLINE_POLYGON | M_SPLINE)
 #define M_OPEN_OBJECT	(M_POLYLINE_LINE | M_SPLINE_O | M_ARC)
-#define M_ROTATE_ANGLE	(M_VARPTS_OBJECT | M_ARC | M_TEXT | M_COMPOUND)
+#define M_ROTATE_ANGLE	(M_VARPTS_OBJECT | M_ARC | M_TEXT | M_COMPOUND | M_ELLIPSE)
+#define M_ELLTEXTANGLE	(M_ELLIPSE | M_TEXT)
 #define M_OBJECT	(M_ELLIPSE | M_POLYLINE | M_SPLINE | M_TEXT | M_ARC)
 #define M_NO_TEXT	(M_ELLIPSE | M_POLYLINE | M_SPLINE | M_COMPOUND | M_ARC)
 #define M_ALL		(M_OBJECT | M_COMPOUND)
@@ -348,4 +349,4 @@ extern int	cur_textjust;
 extern int	cur_textflags;
 
 /* Misc */
-extern float	cur_angle;
+extern float	cur_elltextangle;

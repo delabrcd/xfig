@@ -17,6 +17,7 @@
 /* IMPORTS */
 
 #include "fig.h"
+#include "figx.h"
 #include "resources.h"
 #include "mode.h"
 #include "w_canvas.h"		/* for null_proc() */
@@ -27,7 +28,7 @@
 
 extern		erase_objecthighlight();
 extern		emptyfigure();
-extern		do_print(), do_export(), do_save();
+extern		do_print(), do_print_batch(), do_export(), do_save();
 extern void	undo(), redisplay_canvas();
 extern void	popup_print_panel(), popup_file_panel(), popup_export_panel();
 
@@ -36,19 +37,9 @@ void		setup_cmd_panel();
 
 /* internal features and definitions */
 
-/* cmd panel definitions */
-#define CMD_LABEL_LEN	16
-typedef struct cmd_switch_struct {
-    char	    label[CMD_LABEL_LEN];
-    void	    (*cmd_func) ();
-    int		    (*quick_func) ();
-    char	    mousefun_l[CMD_LABEL_LEN];
-    char	    mousefun_r[CMD_LABEL_LEN];
-    TOOL	    widget;
-}		cmd_sw_info;
-
-#define cmd_action(z)	(z->cmd_func)(z->widget)
-#define quick_action(z) (z->quick_func)(z->widget)
+#define cmd_action(z)		(z->cmd_func)(z->widget)
+#define quick_action(z)		(z->quick_func)(z->widget)
+#define shift_quick_action(z)	(z->shift_quick_func)(z->widget)
 
 /* prototypes */
 static void	sel_cmd_but();
@@ -57,16 +48,34 @@ void		quit();
 static void	delete_all_cmd();
 static void	paste();
 
+/* cmd panel definitions */
+#define CMD_LABEL_LEN	16
+typedef struct cmd_switch_struct {
+    char	    label[CMD_LABEL_LEN];	/* label on the button */
+    char	    cmd_name[CMD_LABEL_LEN];	/* command name for resources */
+    void	    (*cmd_func) ();		/* mouse button 1 func */
+    int		    (*quick_func) ();		/* mouse button 3 func */
+    int		    (*shift_quick_func) ();	/* shift-mouse button 3 func */
+    char	    mousefun_l[CMD_LABEL_LEN];	/* label for mouse 1 func */
+    char	    mousefun_r[CMD_LABEL_LEN];	/* label for mouse 3 func */
+    Widget	    widget;			/* widget */
+}		cmd_sw_info;
+
 /* command panel of switches below the lower ruler */
-static cmd_sw_info cmd_switches[] = {
-    {"Quit", quit, null_proc, "command", ""},
-    {"Delete ALL", delete_all_cmd, null_proc, "command", ""},
-    {"Undo", undo, null_proc, "command", ""},
-    {"Redraw", redisplay_canvas, null_proc, "command", ""},
-    {"Paste", paste, null_proc, "command", ""},
-    {"File...", popup_file_panel, do_save, "popup", "save shortcut"},
-    {"Export...", popup_export_panel, do_export, "popup", "export shortcut"},
-    {"Print...", popup_print_panel, do_print, "popup", "print shortcut"},
+cmd_sw_info cmd_switches[] = {
+    {"Quit",	   "quit", quit, null_proc, null_proc, "Quit", ""},
+    {"Delete ALL", "delete_all", delete_all_cmd, null_proc, null_proc, 
+				"Delete all", ""},
+    {"Undo",	   "undo", undo, null_proc, null_proc, "Undo", ""},
+    {"Redraw",	   "redraw", redisplay_canvas, null_proc, null_proc, 
+				"Redraw", ""},
+    {"Paste",	   "paste", paste, null_proc, null_proc, "Paste", ""},
+    {"File...",	   "file", popup_file_panel, do_save, null_proc, 
+				"Popup", "Save Shortcut"},
+    {"Export...",  "export", popup_export_panel, do_export, null_proc, 
+				"Popup", "Export Shortcut"},
+    {"Print...",   "print", popup_print_panel, do_print, do_print_batch, 
+				"Popup","Print Shortcut"},
 };
 
 #define		NUM_CMD_SW  (sizeof(cmd_switches) / sizeof(cmd_sw_info))
@@ -74,6 +83,14 @@ static cmd_sw_info cmd_switches[] = {
 static XtActionsRec cmd_actions[] =
 {
     {"LeaveCmdSw", (XtActionProc) clear_mousefun},
+    {"quit", (XtActionProc) quit},
+    {"delete_all", (XtActionProc) delete_all_cmd},
+    {"undo", (XtActionProc) undo},
+    {"redraw", (XtActionProc) redisplay_canvas},
+    {"paste", (XtActionProc) paste},
+    {"file", (XtActionProc) popup_file_panel},
+    {"export", (XtActionProc) popup_export_panel},
+    {"print", (XtActionProc) popup_print_panel},
 };
 
 static String	cmd_translations =
@@ -92,7 +109,7 @@ num_cmd_sw()
 /* command panel */
 void
 init_cmd_panel(tool)
-    TOOL	    tool;
+    Widget	    tool;
 {
     register int    i;
     register cmd_sw_info *sw;
@@ -120,7 +137,7 @@ init_cmd_panel(tool)
 	sw = &cmd_switches[i];
 	NextArg(XtNlabel, sw->label);
 	NextArg(XtNfromHoriz, beside);
-	sw->widget = XtCreateManagedWidget("button", commandWidgetClass,
+	sw->widget = XtCreateManagedWidget(sw->cmd_name, commandWidgetClass,
 					   cmd_panel, Args, ArgCount);
 	/* setup callback and default actions */
 	XtAddEventHandler(sw->widget, ButtonReleaseMask, (Boolean) 0,
@@ -133,7 +150,6 @@ init_cmd_panel(tool)
 	NextArg(XtNhorizDistance, -INTERNAL_BW);
 	beside = sw->widget;
     }
-    return;
 }
 
 void
@@ -148,6 +164,9 @@ setup_cmd_panel()
 	sw = &cmd_switches[i];
 	FirstArg(XtNfont, button_font); /* label font */
 	SetValues(sw->widget);
+	/* install the keyboard accelerators for this command button 
+	   from the resources */
+	XtInstallAllAccelerators(sw->widget, tool);
     }
 }
 
@@ -175,8 +194,9 @@ sel_cmd_but(widget, closure, event, continue_to_dispatch)
     
     button = event->xbutton;
 
-    if (button.button == Button2)
-	return;
+    if ((button.button == Button2) ||
+	(button.button == Button3 && button.state & Mod1Mask))
+	    return;
 
     if (action_on) {
 	if (cur_mode == F_TEXT)
@@ -190,6 +210,8 @@ sel_cmd_but(widget, closure, event, continue_to_dispatch)
 
     if (button.button == Button1)
 	cmd_action(sw);
+    else if (button.state & ShiftMask)
+	shift_quick_action(sw);
     else
 	quick_action(sw);
 }
@@ -219,9 +241,13 @@ quit(w)
 	    }
 	}
     }
-    /* delete the cut buffer only if it is a temporary file */
-    if (strncmp(cut_buf_name, "/tmp", 4) == 0)
+    /* delete the cut buffer only if it is in a temporary directory */
+    if (strncmp(cut_buf_name, TMPDIR, strlen(TMPDIR)) == 0)
 	unlink(cut_buf_name);
+
+    /* delete any batch print file */
+    if (batch_exists)
+	unlink(batch_file);
 
     XtDestroyWidget(tool);
     exit(0);

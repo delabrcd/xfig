@@ -4,10 +4,20 @@
 #define InstallManPage(file,dest)                                       @@\
 InstallManPageLong(Doc/file,dest,file)
 
+# Uncomment the following if needed for DECstations running older X11R4
+#INCROOT=/usr/include/mit
+
 SYS_LIBRARIES= 		-lm
 DEPLIBS = 		XawClientDepLibs
+# use the following if NOT using DPS
 LOCAL_LIBRARIES = 	XawClientLibs
-XFIGLIBDIR =		/usr/local/lib/X11/xfig
+# use the following if using DPS, *** and add -DDPS to the DEFINES line ***
+#LOCAL_LIBRARIES = 	-ldps XawClientLibs
+# use (and change) the following if you want the multi-key data base file
+# somewhere other than the standard X11 library directory
+#XFIGLIBDIR =		/usr/local/lib/X11/xfig
+# use this if you want the multi-key data base file in the standard X11 tree
+XFIGLIBDIR =		$(LIBDIR)/xfig
 DEFINES =		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
 
 XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_epsobj.c \
@@ -52,3 +62,5 @@ OBJS = $(XFIGOBJ)
 ComplexProgramTarget(xfig)
 MakeDirectories(install,$(XFIGLIBDIR))
 InstallNonExec(CompKeyDB,$(XFIGLIBDIR))
+InstallAppDefaults(Fig)
+InstallAppDefaults(Fig-color)

@@ -21,6 +21,9 @@ extern PIX_FONT canvas_font;
 extern PIX_FONT canv_zoomed_font;
 extern PIX_FONT button_font;
 
+/* Maximum number of points for polygons etc */
+#define		MAXNUMPTS	5000
+
 #define		NORMAL_FONT	"fixed"
 #define		BOLD_FONT	"8x13bold"
 #define		BUTTON_FONT	"6x13"
@@ -32,3 +35,11 @@ extern PIX_FONT button_font;
 		    (((font)->per_char)?\
 		    ((font)->per_char[(char)-(font)->min_char_or_byte2].width):\
 		    ((font)->max_bounds.width))
+
+#define set_x_color(gc,col) XSetForeground(tool_d,gc,\
+	(!all_colors_available? (col==WHITE?x_bg_color.pixel:x_fg_color.pixel): \
+	(col<0||col>=NUMCOLORS)? x_fg_color.pixel:appres.color[col]))
+
+#define x_color(col)\
+	(!all_colors_available? (col==WHITE?x_bg_color.pixel:x_fg_color.pixel): \
+	(col<0||col>=NUMCOLORS)? x_fg_color.pixel:appres.color[col])

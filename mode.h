@@ -144,9 +144,14 @@ extern void	set_action_on();
 extern int	num_point;
 extern int	min_num_points;
 
+/***************************  Export Settings  ****************************/
+
+extern Boolean	export_flushleft;	/* flush left (true) or center (false) */
+
 /***************************  Print Settings  ****************************/
 
 extern int	print_landscape;/* def. orientation for printer */
+extern Boolean	print_flushleft; /* flush left (true) or center (false) */
 
 #define NUM_EXP_LANG	15	/* number of export languages */
 #define LANG_EPS	7	/* position of eps starting from 0 */
@@ -156,6 +161,8 @@ extern int	print_landscape;/* def. orientation for printer */
 extern int	cur_exp_lang;
 extern char    *lang_items[NUM_EXP_LANG];
 extern char    *lang_texts[NUM_EXP_LANG];
+extern Boolean  batch_exists;
+extern char     batch_file[];
 
 /***************************  Mode Settings  ****************************/
 
@@ -172,6 +179,6 @@ extern float	cur_textstep;
 
 extern char	cur_dir[];
 extern char	cur_filename[];
-extern char	save_filename[];/* to undo load */
+extern char	save_filename[];  /* to undo load */
 extern char	file_header[];
 extern char	cut_buf_name[];

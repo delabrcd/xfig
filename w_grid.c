@@ -15,6 +15,7 @@
  */
 
 #include "fig.h"
+#include "figx.h"
 #include "resources.h"
 #include "mode.h"
 #include "paintop.h"
@@ -43,7 +44,7 @@ init_grid()
     GetValues(canvas_sw);
 
     null_pm = XCreatePixmapFromBitmapData(tool_d, canvas_win,
-					  null_bits, null_width, null_height,
+				(char *) null_bits, null_width, null_height,
 				      fg, bg, DefaultDepthOfScreen(tool_s));
 
     if (appres.INCHES) {

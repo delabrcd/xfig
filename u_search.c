@@ -19,6 +19,7 @@
 #include "mode.h"
 #include "u_list.h"
 #include "w_zoom.h"
+#include "resources.h"
 
 #define TOLERANCE 3
 
@@ -219,6 +220,7 @@ next_text_found(x, y, tolerance, dummy1, dummy2, shift)
     int		    tolerance, dummy1, dummy2, shift;
 {
     int		    halflen, dx, dy;
+    int		    txmin, txmax, tymin, tymax, dum;
 
     if (!anytext_in_mask())
 	return (0);
@@ -229,30 +231,16 @@ next_text_found(x, y, tolerance, dummy1, dummy2, shift)
 
     for (; t != NULL; t = prev_text(objects.texts, t))
 	if (validtext_in_mask(t)) {
-	    /* adjust for text angle */
-	    dy = (int) ((double) t->height * cos(t->angle));
-	    dx = (int) ((double) t->height * sin(t->angle));
 	    n++;
-	    if (abs(x - t->base_x) <= tolerance &&
-		abs(y - t->base_y) <= tolerance)
-		return (1);
-	    if (abs(x - (t->base_x - dx)) <= tolerance &&
-		abs(y - (t->base_y - dy)) <= tolerance)
-		return (1);
-	    halflen = t->length / 2;
-	    if (t->base_y - t->height > y)
-		continue;
-	    if (t->base_y < y)
-		continue;
-	    if (((t->type == T_LEFT_JUSTIFIED) && t->base_x > x) ||
-	     ((t->type == T_CENTER_JUSTIFIED) && t->base_x - halflen > x) ||
-	      ((t->type == T_RIGHT_JUSTIFIED) && t->base_x - t->length > x))
-		continue;
-	    if (((t->type == T_LEFT_JUSTIFIED) && t->base_x + t->length < x) ||
-	     ((t->type == T_CENTER_JUSTIFIED) && t->base_x + halflen < x) ||
-		((t->type == T_RIGHT_JUSTIFIED) && t->base_x < x))
-		continue;
-	    return (1);
+	    if (appres.textoutline) {
+		text_bound_actual(t, &txmin, &tymin, &txmax, &tymax,
+				&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
+	    } else {
+		text_bound(t, &txmin, &tymin, &txmax, &tymax);
+	    }
+	    if (x >= txmin-tolerance && x <= txmax+tolerance &&
+	        y >= tymin-tolerance && y <= tymax+tolerance)
+			return (1);
 	}
     return (0);
 }

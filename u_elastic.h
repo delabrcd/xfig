@@ -22,6 +22,7 @@
 
 extern int	constrained;
 extern int	fix_x, fix_y, work_numsides;
+extern float	cur_angle;
 extern int	x1off, x2off, y1off, y2off;
 extern Cursor	cur_latexcursor;
 extern int	from_x, from_y;

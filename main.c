@@ -15,6 +15,7 @@
  */
 
 #include "fig.h"
+#include "figx.h"
 #include "version.h"
 #include "patchlevel.h"
 #include "object.h"
@@ -29,8 +30,8 @@
 extern void	setup_cmd_panel();
 extern		X_error_handler();
 extern void	error_handler();
+extern void	my_quit();
 extern int	ignore_exp_cnt;
-extern char    *getenv();
 extern int	psfontnum();
 extern int	latexfontnum();
 
@@ -50,6 +51,8 @@ static Boolean	false = False;
 static int	zero = 0;
 
 static XtResource application_resources[] = {
+    {"iconGeometry",  "IconGeometry",  XtRString,  sizeof(char *),
+    XtOffset(appresPtr,iconGeometry), XtRString, (caddr_t) NULL},
     {"showallbuttons", "ShowAllButtons", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, ShowAllButtons), XtRBoolean, (caddr_t) & false},
     {XtNjustify, XtCJustify, XtRBoolean, sizeof(Boolean),
@@ -110,10 +113,17 @@ static XtResource application_resources[] = {
     XtOffset(appresPtr, latexfonts), XtRBoolean, (caddr_t) & false},
     {"keyFile", "KeyFile", XtRString, sizeof(char *),
     XtOffset(appresPtr, keyFile), XtRString, (caddr_t) "CompKeyDB"},
+    {"exportLanguage", "ExportLanguage", XtRString, sizeof(char *),
+    XtOffset(appresPtr, exportLanguage), XtRString, (caddr_t) "eps"},
+    {"flushleft", "FlushLeft", XtRBoolean, sizeof(Boolean),
+    XtOffset(appresPtr, flushleft), XtRBoolean, (caddr_t) & false},
+    {"textoutline", "TextOutline", XtRBoolean, sizeof(Boolean),
+    XtOffset(appresPtr, textoutline), XtRBoolean, (caddr_t) & false},
 };
 
 static XrmOptionDescRec options[] =
 {
+    {"-iconGeometry", ".iconGeometry", XrmoptionSepArg, (caddr_t) NULL},
     {"-showallbuttons", ".showallbuttons", XrmoptionNoArg, "True"},
     {"-right", ".justify", XrmoptionNoArg, "True"},
     {"-left", ".justify", XrmoptionNoArg, "False"},
@@ -145,7 +155,12 @@ static XrmOptionDescRec options[] =
     {"-internalBW", ".internalborderwidth", XrmoptionSepArg, 0},
     {"-internalBorderWidth", ".internalborderwidth", XrmoptionSepArg, 0},
     {"-keyFile", ".keyFile", XrmoptionSepArg, 0},
+    {"-exportLanguage", ".exportLanguage", XrmoptionSepArg, 0},
+    {"-flushleft", ".flushleft", XrmoptionNoArg, "True"},
+    {"-textoutline", ".textoutline", XrmoptionNoArg, "True"},
 };
+
+Atom wm_delete_window;
 
 static XtCallbackRec callbacks[] =
 {
@@ -165,6 +180,7 @@ static void	check_colors();
 XtActionsRec	form_actions[] =
 {
     {"ResizeForm", (XtActionProc) check_for_resize},
+    {"Quit", (XtActionProc) my_quit},
 };
 
 extern void clear_text_key();
@@ -176,7 +192,9 @@ static XtActionsRec text_panel_actions[] =
 };
 
 static String	form_translations =
-"<ConfigureNotify>:ResizeForm()\n";
+			"<ConfigureNotify>:ResizeForm()\n";
+static String	tool_translations =
+			"<Message>WM_PROTOCOLS:Quit()\n";
 
 #define NCHILDREN	9
 static TOOL	form;
@@ -195,6 +213,13 @@ main(argc, argv)
     Dimension	    w, h;
 
     DeclareArgs(5);
+
+    /* we are not writing the figure to the bitmap */
+    writing_bitmap = False;
+
+    /* get the TMPDIR environment variable for temporary files */
+    if ((TMPDIR = getenv("XFIGTMPDIR"))==NULL)
+	TMPDIR = "/tmp";
 
     (void) sprintf(tool_name, " XFIG %s.%s  (protocol: %s)",
 		   FIG_VERSION, PATCHLEVEL, PROTOCOL_VERSION);
@@ -230,12 +255,27 @@ main(argc, argv)
 	i++;
     }
 
-    print_landscape = appres.landscape; /* match print and screen format to
-					 * start */
-
     tool_d = XtDisplay(tool);
     tool_s = XtScreen(tool);
     tool_sn = DefaultScreen(tool_d);
+
+    if (appres.iconGeometry != (char *) 0) {
+        int scr, x, y, junk;
+        Arg args[2];
+
+        for(scr = 0;
+            tool_s != ScreenOfDisplay(tool_d, scr);
+            scr++);
+
+        XGeometry(tool_d, scr, appres.iconGeometry,
+                  "", 0, 0, 0, 0, 0, &x, &y, &junk, &junk);
+        XtSetArg(args[0], XtNiconX, x);
+        XtSetArg(args[1], XtNiconY, y);
+        XtSetValues(tool, args, XtNumber(args));
+    }
+
+    print_flushleft = export_flushleft = appres.flushleft;	/* set both resources */
+    print_landscape = appres.landscape; /* match print and screen format to start */
 
     /* turn off PSFONT_TEXT flag if user specified -latexfonts */
     if (appres.latexfonts)
@@ -350,7 +390,7 @@ main(argc, argv)
     children[ichild++] = unitbox_sw;	/* box containing units */
     children[ichild++] = sideruler_sw;	/* side ruler */
     children[ichild++] = canvas_sw;	/* main drawing canvas */
-    children[ichild++] = ind_panel;	/* current settings indicators */
+    children[ichild++] = ind_viewp;	/* current settings indicators */
 
     /*
      * until the following XtRealizeWidget() is called, there are NO windows
@@ -360,8 +400,12 @@ main(argc, argv)
     XtManageChildren(children, NCHILDREN);
     XtRealizeWidget(tool);
 
+    wm_delete_window = XInternAtom(XtDisplay(tool), "WM_DELETE_WINDOW", False);
+    (void) XSetWMProtocols(XtDisplay(tool), XtWindow(tool),
+			   &wm_delete_window, 1);
+
     fig_icon = XCreateBitmapFromData(tool_d, XtWindow(tool),
-				     fig_bits, fig_width, fig_height);
+				     (char *) fig_bits, fig_width, fig_height);
 
     FirstArg(XtNtitle, tool_name);
     NextArg(XtNiconPixmap, fig_icon);
@@ -375,7 +419,7 @@ main(argc, argv)
 
     if (appres.RHS_PANEL) {	/* side button panel is on right size */
 	FirstArg(XtNfromHoriz, 0);
-	NextArg(XtNhorizDistance, RULER_WD + INTERNAL_BW);
+	NextArg(XtNhorizDistance, SIDERULER_WD + INTERNAL_BW);
 	SetValues(topruler_sw);
 
 	FirstArg(XtNfromHoriz, 0);
@@ -418,6 +462,26 @@ main(argc, argv)
     setup_ind_panel();
     get_directory(cur_dir);
 
+    /* parse the export language resource */
+    for (i=0; i<NUM_EXP_LANG; i++)
+	if (strcmp(appres.exportLanguage, lang_items[i])==0)
+	    break;
+    /* found it set the language number */
+    if (i < NUM_EXP_LANG)
+	cur_exp_lang = i;
+    else
+	file_msg("Unknown export language: %s, using default: %s",
+		appres.exportLanguage, lang_items[cur_exp_lang]);
+
+    /* install the accelerators - cmd_panel, ind_panel and mode_panel
+	accelerators are installed in their respective setup_xxx procedures */
+    XtInstallAllAccelerators(canvas_sw, tool);
+    XtInstallAllAccelerators(mousefun, tool);
+    XtInstallAllAccelerators(msg_panel, tool);
+    XtInstallAllAccelerators(topruler_sw, tool);
+    XtInstallAllAccelerators(sideruler_sw, tool);
+    XtInstallAllAccelerators(unitbox_sw, tool);
+
     FirstArg(XtNwidth, &w);
     NextArg(XtNheight, &h);
     GetValues(tool);
@@ -425,6 +489,7 @@ main(argc, argv)
     TOOL_HT = (int) h;
     XtAppAddActions(tool_app, form_actions, XtNumber(form_actions));
     XtAppAddActions(tool_app, text_panel_actions, XtNumber(text_panel_actions));
+    XtOverrideTranslations(tool, XtParseTranslationTable(tool_translations));
     XtOverrideTranslations(form, XtParseTranslationTable(form_translations));
 
     XSetErrorHandler(X_error_handler);
@@ -445,18 +510,18 @@ main(argc, argv)
      */
 
     userhome = getenv("HOME");
-    if (userhome != NULL && *strcpy(cut_buf_name, userhome) != NULL) {
+    if (userhome != NULL && *strcpy(cut_buf_name, userhome) != '\0') {
 	strcat(cut_buf_name, "/.xfig");
     } else {
 	sprintf(cut_buf_name, "%s%06d", "/tmp/xfig", getpid());
     }
 
-    app_flush();
-
     if (filename == NULL)
 	strcpy(cur_filename, DEF_NAME);
     else
 	load_file(filename);
+
+    app_flush();
 
     XtAppMainLoop(tool_app);
 }
@@ -548,9 +613,20 @@ check_colors()
     }
 }
 
+/* useful when using ups */
+XSyncOn()
+{
+	XSynchronize(tool_d, True);
+	XFlush(tool_d);
+}
+
+XSyncOff()
+{
+	XSynchronize(tool_d, False);
+	XFlush(tool_d);
+}
+
 #ifdef NOSTRSTR
-#include <stdio.h>
-#include <string.h>
 
 char *strstr(s1, s2)
     char *s1, *s2;
