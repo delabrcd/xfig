@@ -3,6 +3,7 @@
  * Copyright (c) 1985 by Supoj Sutanthavibul
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
  * The X Consortium, and any party obtaining a copy of these files from
  * the X Consortium, directly or indirectly, is granted, free of charge, a
@@ -18,9 +19,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -32,6 +30,7 @@
 #include "u_list.h"
 #include "u_elastic.h"
 #include "u_undo.h"
+#include "w_setup.h"
 
 void
 list_delete_arc(arc_list, arc)
@@ -555,7 +554,7 @@ cut_objects(objects, tails)
 	objects->texts = NULL;
 }
 
-append_point(x, y, point)
+append_point(x, y, point)    /** used in d_arcbox **/
     int		    x, y;
     F_point	  **point;
 {
@@ -569,6 +568,63 @@ append_point(x, y, point)
     p->next = NULL;
     (*point)->next = p;
     *point = p;
+}
+
+Boolean
+insert_point(x,y,point)
+    int		    x, y;
+    F_point	  *point;
+{
+    F_point	  *p;
+
+    if ((p = create_point()) == NULL)
+	return False;
+
+    p->x = x;
+    p->y = y;
+    p->next = (point)->next;
+    (point)->next = p;
+    return True;
+}
+
+Boolean
+append_sfactor(s, cpoint)
+     double        s;
+     F_sfactor     *cpoint;
+{
+  F_sfactor *newpoint;
+
+  if ((newpoint = create_sfactor()) == NULL)
+    return False;
+  newpoint->s = s;
+  newpoint->next = cpoint->next;
+  cpoint->next = newpoint;
+  return True;
+}
+
+
+Boolean
+first_spline_point(x, y, s , spline)
+     int           x, y;
+     double        s;
+     F_spline      *spline;
+{
+  F_point   *newpoint;
+  F_sfactor *cpoint;
+  
+  if ((newpoint = create_point()) == NULL)
+    return False;
+  if ((cpoint = create_sfactor()) == NULL)
+    return False;
+
+  newpoint->x = x;
+  newpoint->y = y;
+  newpoint->next = spline->points;
+  spline->points = newpoint;
+  cpoint->s = s;
+  cpoint->next = spline->sfactors;
+  spline->sfactors = cpoint;
+  return True;
 }
 
 num_points(points)
@@ -671,6 +727,48 @@ last_point(list)
     for (tt = list; tt->next != NULL; tt = tt->next);
     return tt;
 }
+
+F_sfactor       *
+last_sfactor(list)
+    F_sfactor	   *list;
+{
+    F_sfactor	   *tt;
+
+    if (list == NULL)
+	return NULL;
+
+    for (tt = list; tt->next != NULL; tt = tt->next);
+    return tt;
+}
+
+
+F_point        *
+search_spline_point(spline, x, y)
+     F_spline      *spline;
+     int           x, y;
+{
+  F_point *point;
+
+  for (point = spline->points ; 
+       point != NULL && (point->x != x || point->y != y); point = point->next);
+  return point;
+}
+
+
+F_sfactor      *
+search_sfactor(spline, selected_point)
+     F_spline      *spline;
+     F_point       *selected_point;
+{
+  F_sfactor *c_point = spline->sfactors;
+  F_point *cursor;
+
+  for (cursor = spline->points ; cursor != selected_point ; 
+       cursor = cursor->next)
+    c_point = c_point->next;
+  return c_point;
+}
+
 
 F_arc	       *
 prev_arc(list, arc)
@@ -870,7 +968,7 @@ get_links(llx, lly, urx, ury)
 	}
 }
 
-#define LINK_TOL 3
+static int LINK_TOL = 3 * PIX_PER_INCH / DISPLAY_PIX_PER_INCH;
 
 int
 point_on_perim(p, llx, lly, urx, ury)
@@ -932,8 +1030,6 @@ get_interior_links(llx, lly, urx, ury)
 	    }
 	}
 }
-
-#define LINK_TOL 3
 
 int
 point_on_inside(p, llx, lly, urx, ury)

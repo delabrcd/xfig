@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -78,18 +75,13 @@ translate_spline(spline, dx, dy)
     int		    dx, dy;
 {
     F_point	   *point;
-    F_control	   *cp;
+    F_sfactor	   *cp;
 
     for (point = spline->points; point != NULL; point = point->next) {
 	point->x += dx;
 	point->y += dy;
     }
-    for (cp = spline->controls; cp != NULL; cp = cp->next) {
-	cp->lx += dx;
-	cp->ly += dy;
-	cp->rx += dx;
-	cp->ry += dy;
-    }
+
 }
 
 translate_compound(compound, dx, dy)

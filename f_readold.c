@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -414,7 +411,7 @@ read_1_3_splineobject(fp)
     s->cap_style = CAP_BUTT;
     s->for_arrow = NULL;
     s->back_arrow = NULL;
-    s->controls = NULL;
+    s->sfactors = NULL;
     s->next = NULL;
     if ((p = create_point()) == NULL) {
 	free((char *) s);
@@ -431,9 +428,9 @@ read_1_3_splineobject(fp)
 	return (NULL);
     }
     if (t == DRAW_CLOSEDSPLINE)
-	s->type = T_CLOSED_NORMAL;
+	s->type = T_CLOSED_APPROX;
     else
-	s->type = T_OPEN_NORMAL;
+	s->type = T_OPEN_APPROX;
     if (f) {
 	s->for_arrow = forward_arrow();
 	s->for_arrow->wid = w;
@@ -461,6 +458,16 @@ read_1_3_splineobject(fp)
 	q->next = NULL;
 	p->next = q;
 	p = q;
+    }
+    if closed_spline(s) {	/* get rid of the first point (the last one
+				  has the same coordinates) */
+	F_point *ptr =s->points;
+	s->points=s->points->next;
+	free(ptr);
+    }
+    if (! make_sfactors(s)) {
+	free_splinestorage(s);
+	return (NULL);
     }
     return (s);
 }

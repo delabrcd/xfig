@@ -17,9 +17,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -29,6 +26,7 @@
 #include "paintop.h"
 #include "u_create.h"
 #include "u_list.h"
+#include "u_draw.h"
 #include "u_search.h"
 #include "w_canvas.h"
 #include "w_drawprim.h"
@@ -191,7 +189,7 @@ init_update_settings(p, type, x, y, px, py)
 	up_part(cur_styleval, 
             update_line_styleval((cur_s->style_val*2.) / (cur_s->thickness+1.)),
 	    I_LINESTYLE);
-	if (cur_s->type == T_OPEN_NORMAL || cur_s->type == T_OPEN_INTERP)
+	if (cur_s->type == T_OPEN_APPROX || cur_s->type == T_OPEN_INTERP)
 	    up_part(cur_capstyle, cur_s->cap_style, I_CAPSTYLE);
 	up_part(cur_depth, cur_s->depth, I_DEPTH);
 	up_part(cur_arrowmode, get_arrow_mode((F_line *)cur_s), I_ARROWMODE);
@@ -372,7 +370,7 @@ update_spline(spline)
     up_part(spline->style, cur_linestyle, I_LINESTYLE);
     up_part(spline->style_val, cur_styleval * (cur_linewidth + 1) / 2, 
 	    I_LINESTYLE);
-    if (spline->type == T_OPEN_NORMAL || spline->type == T_OPEN_INTERP)
+    if (spline->type == T_OPEN_APPROX || spline->type == T_OPEN_INTERP)
 	up_part(spline->cap_style, cur_capstyle, I_CAPSTYLE);
     up_part(spline->fill_style, cur_fillstyle, I_FILLSTYLE);
     up_part(spline->pen_color, cur_pencolor, I_PEN_COLOR);

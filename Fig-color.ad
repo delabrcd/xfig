@@ -1,235 +1,97 @@
-! Some interesting colors for the different parts of xfig
-! if you are using a COLOR workstation.
-
 #include "Fig"
 
 #ifdef COLOR
-! Unit box in corner of rulers
-	Fig*unitbox.background:			grey95
-	Fig*unitbox.foreground:			black
-! Top Ruler
-	Fig*topruler.background:		grey95
-	Fig*topruler.foreground:		black
-! Side Ruler
-	Fig*sideruler.background:		grey95
-	Fig*sideruler.foreground:		black
-! Filename panel
-	Fig*msg_form.file_name.background:	lightskyblue
-	Fig*msg_form.file_name.foreground:	black
-! Message panel
-	Fig*message*background:			lavender
-	Fig*message*foreground:			black
-! Command (top) panel
-	Fig*commands*background:		grey85
-	Fig*commands*foreground:		black
-! Indicator (lower) panel
-	Fig*ind_panel.ind_box.button_form.button*background:lightsteelblue1
-	Fig*ind_panel.ind_box.button_form.button*foreground: black
-	Fig*ind_panel.ind_box.button_form.update*foreground: red
-	Fig*ind_panel.ind_box.button_form.update*background: white
-! Scrollbar
-	Fig*ind_panel.horizontal.background:	lightsteelblue1
-	Fig*ind_panel.horizontal.foreground:	black
-!   The box that contains the buttons and the horiz. scrollbar
-	Fig*ind_panel.ind_box.background:	lightskyblue
-!   The border color of the buttons themselves
-	Fig*ind_panel.ind_box.button_form.borderColor: black
-! Control panel for updating
-	Fig*upd_ctrl_btns.foreground:		red
-	Fig*upd_ctrl_btns.background:		white
-! Mode (left-hand) panel
-!  This background resource shows between the buttons like a border
-	Fig*mode_panel.background:		black
-	Fig*mode_panel.foreground:		black
-	Fig*mode_panel.label.background:	lavender
-	Fig*mode_panel.label.foreground:	black
-	Fig*mode_panel.button.background:	lightskyblue
-	Fig*mode_panel.button.foreground:	black
-! Font popup menu from indicator panel
-	Fig*latex_font_menu*background:		white
-	Fig*latex_font_menu*foreground:		black
-	Fig*ps_font_menu*background:		white
-	Fig*ps_font_menu*foreground:		black
-! Mouse indicator panel
-	Fig*mouse_panel.background:		lavender
-	Fig*mouse_panel.foreground:		black
-! Edit popup
-	Fig*edit_panel.form.done.background:	green
-	Fig*edit_panel.form.apply.background:	yellow
-	Fig*edit_panel.form.cancel.background:	red
-	Fig*edit_panel.form.screen_capture.background:	lightskyblue
-	Fig*edit_panel.form.edit_image.background: lavender
-	Fig*edit_panel.form*background:		white
-	Fig*edit_panel.form*foreground:		black
-! Button to reread picture file
-	Fig*edit_panel.form.reread.background:	lightskyblue
-! Button to browse for picture files
-	Fig*edit_panel.form.browse.background:	lavender
-! Image of object in edit panel
-	Fig*edit_panel.form.image.background:	grey90
-	Fig*edit_panel.form.image.foreground:	blue
-! make a light grey background so you can see the color "white" in the edit menu
-	Fig*edit_panel.form*menu.background:	grey80
-! Browser popup for picture import
-	Fig*browse_panel*background:		lightskyblue
-	Fig*browse_panel*Text*background:	white
-	Fig*browse_panel*Text*foreground:	black
-	Fig*browse_panel*List*background:	white
-	Fig*browse_panel*List*foreground:	black
-	Fig*browse_panel*Scrollbar*background:	dodgerblue
-	Fig*browse_panel*Scrollbar*foreground:	red
-	Fig*browse_panel*file_name*Scrollbar*background: dodgerblue
-	Fig*browse_panel*file_name*Scrollbar*foreground: red
-	Fig*browse_panel*dir_name*Scrollbar*background:	dodgerblue
-	Fig*browse_panel*dir_name*Scrollbar*foreground:	red
-	Fig*browse_panel*home.foreground:	black
-	Fig*browse_panel*home.background:	lightsteelblue1
-	Fig*browse_panel*hidden.foreground:	black
-	Fig*browse_panel*hidden.background:	lightsteelblue1
-	Fig*browse_panel.rescan.foreground:	black
-	Fig*browse_panel.rescan.background:	lightsteelblue1
-	Fig*browse_panel.close.foreground:	black
-	Fig*browse_panel.close.background:	red2
-	Fig*browse_panel.apply.foreground:	black
-	Fig*browse_panel.apply.background:	green2
-! File popup
-	Fig*file_panel*background:		lightskyblue
-	Fig*file_panel*Text*background:		white
-	Fig*file_panel*Text*foreground:		black
-	Fig*file_panel*List*background:		white
-	Fig*file_panel*List*foreground:		black
-	Fig*file_panel*Scrollbar*background:	dodgerblue
-	Fig*file_panel*Scrollbar*foreground:	red
-	Fig*file_panel*file_name*Scrollbar*background:	dodgerblue
-	Fig*file_panel*file_name*Scrollbar*foreground:	red
-	Fig*file_panel*dir_name*Scrollbar*background:	dodgerblue
-	Fig*file_panel*dir_name*Scrollbar*foreground:	red
-	Fig*file_panel*home.foreground:		black
-	Fig*file_panel*home.background:		lightsteelblue1
-	Fig*file_panel*hidden.foreground:	black
-	Fig*file_panel*hidden.background:	lightsteelblue1
-	Fig*file_panel.rescan.foreground:	black
-	Fig*file_panel.rescan.background:	lightsteelblue1
-	Fig*file_panel.cancel.foreground:	black
-	Fig*file_panel.cancel.background:	red2
-	Fig*file_panel.save.foreground:		black
-	Fig*file_panel.save.background:		yellow2
-	Fig*file_panel.load.foreground:		black
-	Fig*file_panel.load.background:		green2
-	Fig*file_panel.merge.foreground:	black
-	Fig*file_panel.merge.background:	lightsteelblue1
-! Export popup
-	Fig*export_panel*background:		lightskyblue
-	Fig*export_panel*Text*background:	white
-	Fig*export_panel*Text*foreground:	black
-	Fig*export_panel*List*background:	white
-	Fig*export_panel*List*foreground:	black
-	Fig*export_panel*Scrollbar*background:	dodgerblue
-	Fig*export_panel*Scrollbar*foreground:	red
-	Fig*export_panel*file_name*Scrollbar*background: dodgerblue
-	Fig*export_panel*file_name*Scrollbar*foreground: red
-	Fig*export_panel*dir_name*Scrollbar*background:	dodgerblue
-	Fig*export_panel*dir_name*Scrollbar*foreground:	red
-	Fig*export_panel*MenuButton*background:	white
-	Fig*export_panel*MenuButton*foreground:	black
-	Fig*export_panel*landscape.menu.background: white
-	Fig*export_panel*landscape.menu.foreground: black
-	Fig*export_panel*home.foreground:	black
-	Fig*export_panel*home.background:	lightsteelblue1
-	Fig*export_panel*hidden.foreground:	black
-	Fig*export_panel*hidden.background:	lightsteelblue1
-	Fig*export_panel.rescan.foreground:	black
-	Fig*export_panel.rescan.background:	lightsteelblue1
-	Fig*export_panel.cancel.foreground:	black
-	Fig*export_panel.cancel.background:	red2
-	Fig*export_panel.export.foreground:	black
-	Fig*export_panel.export.background:	green2
-! Print popup
-	Fig*print_panel*Background:		lightskyblue
-	Fig*print_panel*Text*background:	white
-	Fig*print_panel*Text*foreground:	black
-	Fig*print_panel*MenuButton*background:	white
-	Fig*print_panel*MenuButton*foreground:	black
-	Fig*print_panel*printer_image*foreground: black
-	Fig*print_panel*landscape.menu.background: white
-	Fig*print_panel*landscape.menu.foreground: black
-	Fig*print_panel*justify.menu.background: white
-	Fig*print_panel*justify.menu.foreground: black
-	Fig*print_panel.num_batch_val.background: white
-	Fig*print_panel.num_batch_val.foreground: black
-	Fig*print_panel.dismiss.background:	red
-	Fig*print_panel.dismiss.foreground:	black
-	Fig*print_panel.print_batch.background:	lightsteelblue1
-	Fig*print_panel.print_batch.foreground:	black
-	Fig*print_panel.clear_batch.background:	orange1
-	Fig*print_panel.clear_batch.foreground:	black
-	Fig*print_panel.print.background:	green2
-	Fig*print_panel.print.foreground:	black
-	Fig*print_panel.output_printer.background: white
-	Fig*print_panel.output_printer.foreground: black
-	Fig*print_panel.output_file.background:	white
-	Fig*print_panel.output_file.foreground:	black
-! File message popup
-	Fig*file_msg_panel.background:		lightskyblue
-	Fig*file_msg_panel.file_msg_win*background: dodgerblue
-	Fig*file_msg_panel.file_msg_win*foreground: white
-	Fig*file_msg_panel.dismiss.background:	green2
-	Fig*file_msg_panel.dismiss.foreground:	black
-	Fig*file_msg_panel.clear.background:	red2
-	Fig*file_msg_panel.clear.foreground:	black
-! Query popup
-	Fig*query_popup.query_form.background:	lightskyblue
-	Fig*query_popup.query_form.foreground:	black
-	Fig*query_popup.query_form.message.background: lightgrey
-	Fig*query_popup.query_form.message.foreground: black
-	Fig*query_popup.query_form.yes.background: red2
-	Fig*query_popup.query_form.yes.foreground: black
-	Fig*query_popup.query_form.no.background: orange1
-	Fig*query_popup.query_form.no.foreground: black
-	Fig*query_popup.query_form.all.background: green2
-	Fig*query_popup.query_form.all.foreground: black
-	Fig*query_popup.query_form.part.background: red2
-	Fig*query_popup.query_form.part.foreground: black
-	Fig*query_popup.query_form.cancel.background: green2
-	Fig*query_popup.query_form.cancel.foreground: black
-! Basic background for all indicator popup panels
-	Fig*set_indicator_panel.form.Label.background: grey90
-	Fig*set_indicator_panel.form.Label.foreground: black
-	Fig*set_indicator_panel.form.background: grey90
-	Fig*set_indicator_panel.form.foreground: black
-!   and default any others to black/white
-	Fig*set_indicator_panel.form.*background: white
-	Fig*set_indicator_panel.form.*foreground: black
-! Close compound popup
-	Fig*close_compound_form.background:			lightskyblue
-	Fig*close_compound_form.close_compound.background:	orange1
-	Fig*close_compound_form.close_all_compounds.background:	yellow
-! Popup color panel
-!   Standard colors label
-	Fig*set_indicator_panel.form.stdLabel.background:	grey80
-	Fig*set_indicator_panel.form.stdLabel.foreground:	black
-!   Standard colors form
-	Fig*set_indicator_panel.form.stdForm.background:	grey90
-	Fig*set_indicator_panel.form.stdForm.foreground:	black
-!   User color label
-	Fig*set_indicator_panel.form.userLabel.background:	grey80
-	Fig*set_indicator_panel.form.userLabel.foreground:	black
-!   wrapper around user color area
-	Fig*set_indicator_panel.form.userForm.background:	grey90
-	Fig*set_indicator_panel.form.userForm.foreground:	black
-!   scrollable area for user colors
-	Fig*set_indicator_panel.form*userBox.background:	grey95
-	Fig*set_indicator_panel.form*userBox.foreground:	black
-!   Add color button
-	Fig*set_indicator_panel.form*addColor.background:	lightskyblue
-	Fig*set_indicator_panel.form*addColor.foreground:	black
-!   Del color button
-	Fig*set_indicator_panel.form*delColor.background:	red
-	Fig*set_indicator_panel.form*delColor.foreground:	black
-!   UnDel color button
-	Fig*set_indicator_panel.form*undelColor.background:	green2
-	Fig*set_indicator_panel.form*undelColor.foreground:	black
-!   rbg/hsv scrollbar form in color panel
-	Fig*set_indicator_panel.form*mixingForm.background:	grey95
-	Fig*set_indicator_panel.form*mixingForm.foreground:	black
-#endif
+
+Fig*beNiceToColormap: 			False
+
+Fig.internalborderwidth: 		0
+
+Fig*highlightThickness: 		2
+
+!##### Background, Foreground
+
+Fig*canvas.background: 			ivory
+Fig*canvas.foreground: 			black
+
+! all other fore/backgrounds not explicitely chosen
+Fig*foreground: 			black
+Fig*background:				gray85
+
+! widget to turn on/off the balloon messages
+Fig*msg_form.balloon_toggle*shadowWidth: 2
+Fig*msg_form.balloon_toggle.topShadowContrast: 	-40	
+Fig*msg_form.balloon_toggle.bottomShadowContrast: -10
+
+! balloon for current filename window
+Fig.filename_balloon_popup*Label.background:	yellow
+Fig.filename_balloon_popup*Label.foreground:	blue
+
+! balloon for balloon message window
+Fig.toggle_balloon_popup*Label.background:	yellow
+Fig.toggle_balloon_popup*Label.foreground:	blue
+
+!balloon describing drawing/editing mode function
+Fig.mode_balloon_popup*Label.background:	yellow
+Fig.mode_balloon_popup*Label.foreground:	blue
+
+!balloon describing command panel button function
+Fig.cmd_balloon_popup*Label.background:		yellow
+Fig.cmd_balloon_popup*Label.foreground:		blue
+
+!balloon describing unit function
+Fig.unit_balloon_popup*Label.background:	yellow
+Fig.unit_balloon_popup*Label.foreground:	blue
+
+!balloon describing mouse function
+Fig.mouse_balloon_popup*Label.background:	yellow
+Fig.mouse_balloon_popup*Label.foreground:	blue
+
+Fig*Text*background: 			linen
+
+Fig*Command*background:			navajowhite2
+Fig*button.background: 			navajowhite2
+Fig*MenuButton*background: 		navajowhite2
+Fig*mixedEdit.background: 		navajowhite2
+
+Fig*topruler.background: 		gray95
+Fig*sideruler.background: 		gray95
+Fig*List*background: 			gray95
+Fig*Scrollbar.background: 		gray95
+
+Fig*cancel.background: 			navajowhite1
+Fig*dismiss.background: 		navajowhite1
+Fig*button_form.button*background: 	navajowhite1
+Fig*commands*background: 		navajowhite1
+Fig*horizontal.background: 		navajowhite1
+
+Fig*Label.background: 			gray80
+Fig*ind_box.background:			gray80
+Fig*button_form.horizontal.background:	gray80
+
+Fig*button_form.update*background:	black
+Fig*button_form.update*foreground:	red
+Fig*upd_ctrl_form.upd_ctrl_btns*shadowWidth:	2
+
+!##### Shadows
+Fig*shadowWidth:			2
+Fig*Label.shadowWidth:			1
+Fig*horizontal.shadowWidth: 		2
+Fig*Scrollbar.shadowWidth:		2
+! no shadows for update indicators
+Fig*button_form.update.shadowWidth:	0
+
+Fig*topShadowContrast:			40
+Fig*bottomShadowContrast: 		-90 
+
+Fig*Label.topShadowContrast: 		-40	
+Fig*Label.bottomShadowContrast: 	-10
+
+! shadows for color buttons in popup
+Fig*form*stdForm*stdColor.shadowWidth:	2
+Fig*form*stdForm*stdColor.topShadowContrast:    -40	
+Fig*form*stdForm*stdColor.bottomShadowContrast: -10
+
+! shadows for picture types in edit box
+Fig*pic_type_box.shadowWidth:		0
+
+#endif	/* COLOR */

@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -322,24 +319,15 @@ flip_spline(s, x, y, flip_axis)
     int		    x, y, flip_axis;
 {
     F_point	   *p;
-    F_control	   *cp;
 
     switch (flip_axis) {
     case UD_FLIP:		/* x axis  */
 	for (p = s->points; p != NULL; p = p->next)
 	    p->y = y + (y - p->y);
-	for (cp = s->controls; cp != NULL; cp = cp->next) {
-	    cp->ly = y + (y - cp->ly);
-	    cp->ry = y + (y - cp->ry);
-	}
 	break;
     case LR_FLIP:		/* y axis  */
 	for (p = s->points; p != NULL; p = p->next)
 	    p->x = x + (x - p->x);
-	for (cp = s->controls; cp != NULL; cp = cp->next) {
-	    cp->lx = x + (x - cp->lx);
-	    cp->rx = x + (x - cp->rx);
-	}
 	break;
     }
 }

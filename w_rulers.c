@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -125,6 +122,10 @@ static		topruler_exposed();
 static		sideruler_selected();
 static		sideruler_exposed();
 
+/* popup message over button when mouse enters it */
+static void     unit_balloon();
+static void     unit_unballoon();
+
 redisplay_rulers()
 {
     redisplay_topruler();
@@ -168,7 +169,6 @@ static int	ONEMM = (PIX_PER_CM / 10);
 
 /************************* UNITBOX ************************/
 
-extern Widget	make_popup_menu();
 extern Atom	wm_delete_window;
 extern char	*panel_get_value();
 void popup_unit_panel();
@@ -178,7 +178,7 @@ static Widget	rul_unit_panel, fig_unit_panel, fig_scale_panel;
 static Widget	rul_unit_menu, fig_unit_menu, fig_scale_menu;
 static Widget	scale_factor_lab, scale_factor_panel;
 static Widget	user_unit_lab, user_unit_panel;
-
+static void     unit_panel_cancel(), unit_panel_set();
 
 XtActionsRec	unitbox_actions[] =
 {
@@ -189,10 +189,20 @@ XtActionsRec	unitbox_actions[] =
 };
 
 static String	unitbox_translations =
-"<EnterWindow>:EnterUnitBox()\n\
-    <LeaveWindow>:LeaveUnitBox()\n\
-    <Btn1Down>:HomeRulers()\n\
-    <Btn3Down>:PopupUnits()\n";
+	"<EnterWindow>:EnterUnitBox()\n\
+	<LeaveWindow>:LeaveUnitBox()\n\
+	<Btn1Down>:HomeRulers()\n\
+	<Btn3Down>:PopupUnits()\n";
+
+static String   unit_translations =
+        "<Message>WM_PROTOCOLS: QuitUnits()\n\
+	<Key>Return:SetUnits()\n";
+
+static XtActionsRec     unit_actions[] =
+{
+    {"QuitUnits", (XtActionProc) unit_panel_cancel},
+    {"SetUnits", (XtActionProc) unit_panel_set},
+};
 
 int
 init_unitbox(tool)
@@ -224,21 +234,118 @@ init_unitbox(tool)
     unitbox_sw = XtCreateWidget("unitbox", labelWidgetClass, tool,
 				Args, ArgCount);
     XtAppAddActions(tool_app, unitbox_actions, XtNumber(unitbox_actions));
+    /* popup when mouse passes over button */
+    XtAddEventHandler(unitbox_sw, EnterWindowMask, (Boolean) 0,
+		      unit_balloon, (XtPointer) unitbox_sw);
+    XtAddEventHandler(unitbox_sw, LeaveWindowMask, (Boolean) 0,
+		      unit_unballoon, (XtPointer) unitbox_sw);
     XtOverrideTranslations(unitbox_sw,
 			   XtParseTranslationTable(unitbox_translations));
     return (1);
 }
 
-static String   unit_translations =
-        "<Message>WM_PROTOCOLS: QuitUnits()\n";
-static void     unit_panel_cancel(), unit_panel_set();
-static XtActionsRec     unit_actions[] =
-{
-    {"QuitUnits", (XtActionProc) unit_panel_cancel},
-    {"SetUnit", (XtActionProc) unit_panel_set},
-};
+static	Pixmap mouse_l=(Pixmap) 0, mouse_r=(Pixmap) 0;
+
+#define mouse_r_width 19
+#define mouse_r_height 10
+static char mouse_r_bits[] = {
+   0xff, 0xff, 0x07, 0x41, 0xf0, 0x07, 0x41, 0xf0, 0x07, 0x41, 0xf0, 0x07,
+   0x41, 0xf0, 0x07, 0x41, 0xf0, 0x07, 0x41, 0xf0, 0x07, 0x41, 0xf0, 0x07,
+   0x41, 0xf0, 0x07, 0xff, 0xff, 0x07};
+
+#define mouse_l_width 19
+#define mouse_l_height 10
+static char mouse_l_bits[] = {
+   0xff, 0xff, 0x07, 0x7f, 0x10, 0x04, 0x7f, 0x10, 0x04, 0x7f, 0x10, 0x04,
+   0x7f, 0x10, 0x04, 0x7f, 0x10, 0x04, 0x7f, 0x10, 0x04, 0x7f, 0x10, 0x04,
+   0x7f, 0x10, 0x04, 0xff, 0xff, 0x07};
+
 
 static Widget	unit_popup, form, cancel, set, beside, below, label;
+
+/* come here when the mouse passes over the unit box */
+
+static	Widget unit_balloon_popup = (Widget) 0;
+
+static void
+unit_balloon(widget, closure, event, continue_to_dispatch)
+    Widget        widget;
+    XtPointer	  closure;
+    XEvent*	  event;
+    Boolean*	  continue_to_dispatch;
+{
+	Widget	  box, balloon_label;
+	Position  x, y;
+
+	if (!appres.show_balloons)
+	    return;
+
+	/* create the bitmaps that look like mouse buttons pressed */
+	if (mouse_l == 0) {
+	    mouse_l = XCreateBitmapFromData(tool_d, tool_w, 
+				mouse_l_bits, mouse_l_width, mouse_l_height);
+	    mouse_r = XCreateBitmapFromData(tool_d, tool_w, 
+				mouse_r_bits, mouse_r_width, mouse_r_height);
+	}
+
+	XtTranslateCoords(widget, 0, 0, &x, &y);
+	/* if mode panel is on right (units on left) position popup to right of box */
+	if (appres.RHS_PANEL) {
+	    x += SIDERULER_WD+5;
+	}
+	FirstArg(XtNx, x);
+	NextArg(XtNy, y);
+	unit_balloon_popup = XtCreatePopupShell("unit_balloon_popup",overrideShellWidgetClass,
+				tool, Args, ArgCount);
+	FirstArg(XtNborderWidth, 0);
+	NextArg(XtNhSpace, 0);
+	NextArg(XtNvSpace, 0);
+	box = XtCreateManagedWidget("box", boxWidgetClass, unit_balloon_popup, Args, ArgCount);
+
+	/* now make two label widgets, one for left button and one for right */
+	FirstArg(XtNborderWidth, 0);
+	NextArg(XtNleftBitmap, mouse_l);	/* bitmap of mouse with left button pushed */
+	NextArg(XtNlabel, "Pan to (0,0)   ");
+	balloon_label = XtCreateManagedWidget("l_label", labelWidgetClass,
+				    box, Args, ArgCount);
+	FirstArg(XtNborderWidth, 0);
+	NextArg(XtNleftBitmap, mouse_r);	/* bitmap of mouse with right button pushed */
+	NextArg(XtNlabel, "Set Units/Scale");
+	balloon_label = XtCreateManagedWidget("r_label", labelWidgetClass,
+				    box, Args, ArgCount);
+	XtRealizeWidget(unit_balloon_popup);
+	/* if the mode panel is on the left-hand side (units on right)
+	   shift popup to the left */
+	if (!appres.RHS_PANEL) {
+	    XtWidgetGeometry xtgeom,comp;
+	    Dimension wpop;
+
+	    /* get width of popup with label in it */
+	    FirstArg(XtNwidth, &wpop);
+	    GetValues(balloon_label);
+	    /* only change X position of widget */
+	    xtgeom.request_mode = CWX;
+	    /* shift popup left */
+	    xtgeom.x = x-wpop-5;
+	    (void) XtMakeGeometryRequest(unit_balloon_popup, &xtgeom, &comp);
+	    SetValues(balloon_label);
+	}
+	XtPopup(unit_balloon_popup,XtGrabNone);
+}
+
+/* come here when the mouse leaves a button in the mode panel */
+
+static void
+unit_unballoon(widget, closure, event, continue_to_dispatch)
+    Widget          widget;
+    XtPointer	    closure;
+    XEvent*	    event;
+    Boolean*	    continue_to_dispatch;
+{
+    if (unit_balloon_popup != (Widget) 0)
+	XtDestroyWidget(unit_balloon_popup);
+    unit_balloon_popup = 0;
+}
 
 /* handle unit/scale settings */
 
@@ -358,12 +465,18 @@ popup_unit_panel()
     "Ruler units ", "User defined"};
     static char    *fig_scale_items[] = {
     "Unity       ", "User defined"};
+    int		    x;
 
     FirstArg(XtNwidth, &width);
     NextArg(XtNheight, &height);
     GetValues(tool);
-    /* position the popup 2/3 in from left and 1/3 down from top */
-    XtTranslateCoords(tool, (Position) (2 * width / 3), (Position) (height / 3),
+    /* position the popup 2/3 in from left (1/8 if mode panel on right) 
+       and 1/3 down from top */
+    if (appres.RHS_PANEL)
+	x = (width / 8);
+    else
+	x = (2 * width / 3);
+    XtTranslateCoords(tool, (Position) x, (Position) (height / 6),
 		      &x_val, &y_val);
 
     FirstArg(XtNx, x_val);

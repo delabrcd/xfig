@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 /*********************** IMPORTS ************************/
@@ -31,12 +28,14 @@
 #include "mode.h"
 #include "paintop.h"
 #include <X11/keysym.h>
+#include "e_edit.h"
 #include "u_bound.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
+
 #ifndef SYSV
 #include <sys/time.h>
 #endif
@@ -45,6 +44,11 @@
 extern		erase_rulermark();
 extern		erase_objecthighlight();
 extern		char_handler();
+
+#ifdef I18N
+extern XIC xim_ic;
+extern i18n_char_handler();
+#endif
 
 /************** LOCAL STRUCTURE ***************/
 
@@ -76,7 +80,11 @@ String		local_translations = "";
 /*********************** LOCAL ************************/
 
 static CompKey *allCompKey = NULL;
+#ifdef I18N
+extern		canvas_selected();
+#else
 static		canvas_selected();
+#endif
 static unsigned char getComposeKey();
 static		readComposeKey();
 
@@ -134,8 +142,9 @@ XtActionsRec	canvas_actions[] =
 /* need the ~Meta for the EventCanv action so that the accelerators still work 
    during text input */
 static String	canvas_translations =
-"<Motion>:EventCanv()\n\
+   "<Motion>:EventCanv()\n\
     Any<BtnDown>:EventCanv()\n\
+    Any<BtnUp>:EventCanv()\n\
     <Key>F18: PasteCanv()\n\
     <EnterWindow>:EnterCanv()\n\
     <LeaveWindow>:LeaveCanv()EraseRulerMark()\n\
@@ -149,8 +158,6 @@ init_canvas(tool)
     DeclareArgs(12);
 
     FirstArg(XtNlabel, "");
-    NextArg(XtNforeground, x_fg_color.pixel);
-    NextArg(XtNbackground, x_bg_color.pixel);
     NextArg(XtNwidth, CANVAS_WD);
     NextArg(XtNheight, CANVAS_HT);
     NextArg(XtNfromHoriz, mode_panel);
@@ -163,13 +170,6 @@ init_canvas(tool)
 
     canvas_sw = XtCreateWidget("canvas", labelWidgetClass, tool,
 			       Args, ArgCount);
-    /* now fix the global GC */
-    XSetState(tool_d, gc, x_fg_color.pixel, x_bg_color.pixel, GXcopy,
-	      AllPlanes);
-
-    /* and recolor the cursors */
-    recolor_cursors();
-
     canvas_leftbut_proc = null_proc;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
@@ -192,7 +192,9 @@ setup_canvas()
     reset_clip_window();
 }
 
+#ifndef I18N
 static
+#endif
 canvas_selected(tool, event, params, nparams)
     Widget	    tool;
     XButtonEvent   *event;
@@ -205,6 +207,9 @@ canvas_selected(tool, event, params, nparams)
     char	    buf[1];
     XButtonPressedEvent *be = (XButtonPressedEvent *) event;
     XKeyPressedEvent *ke = (XKeyPressedEvent *) event;
+    Window	    rw, cw;
+    int		    rx, ry, cx, cy;
+    unsigned int    mask;
 
     static char	    compose_buf[2];
     static char	    compose_key = 0;
@@ -225,28 +230,23 @@ canvas_selected(tool, event, params, nparams)
 	sx = x;
 	sy = y;
 #else
-	{
-	    Window	    rw, cw;
-	    int		    rx, ry, cx, cy;
-	    unsigned int    mask;
-
-	    XQueryPointer(event->display, event->window,
+	XQueryPointer(event->display, event->window,
 			  &rw, &cw,
 			  &rx, &ry,
 			  &cx, &cy,
 			  &mask);
-	    cx = BACKX(cx);
-	    cy = BACKY(cy);
+	cx = BACKX(cx);
+	cy = BACKY(cy);
 
-	    /* perform appropriate rounding if necessary */
-	    round_coords(cx, cy);
+	/* perform appropriate rounding if necessary */
+	round_coords(cx, cy);
 
-	    if (cx == sx && cy == sy)
+	if (cx == sx && cy == sy)
 		break;
-	    x = sx = cx;	/* these are zoomed */
-	    y = sy = cy;	/* coordinates!	    */
-	}
+	x = sx = cx;	/* these are zoomed */
+	y = sy = cy;	/* coordinates!	    */
 #endif /* SMOOTHMOTION */
+
 	set_rulermark(x, y);
 	(*canvas_locmove_proc) (x, y);
 	break;
@@ -261,11 +261,19 @@ canvas_selected(tool, event, params, nparams)
 	    be->state &= ~Mod1Mask;
 	}
 
-	/* call interactive zoom function if control key is pressed */
-	if (be->state & ControlMask) {
+	/* call interactive zoom function when only control key pressed */
+	if (!zoom_in_progress && ((be->state & ControlMask) && !(be->state & ShiftMask))) {
 	    zoom_selected(x, y, be->button);
 	    break;
 	}
+
+        /* edit shape factor when pressing control & shift keys in edit mode */
+	if ((be->state & ControlMask && be->state & ShiftMask) &&
+	    cur_mode >= FIRST_EDIT_MODE) {
+		change_sfactor(x, y, be->button);
+		break;
+	}
+
 	/* perform appropriate rounding if necessary */
 	round_coords(x, y);
 
@@ -277,10 +285,41 @@ canvas_selected(tool, event, params, nparams)
 	    (*canvas_rightbut_proc) (x, y, be->state & ShiftMask);
 	break;
     case KeyPress:
+    case KeyRelease:
+	XQueryPointer(event->display, event->window, 
+			&rw, &cw, &rx, &ry, &cx, &cy, &mask);
 	/* we might want to check action_on */
 	/* if arrow keys are pressed, pan */
 	key = XLookupKeysym(ke, 0);
-	if (key == XK_Up ||
+
+	/* do the mouse function stuff first */
+	if (zoom_in_progress) {
+		set_temp_cursor(magnify_cursor);
+		draw_mousefun("final point", "", "cancel");
+	} else if (mask & ControlMask) {
+		if (mask & ShiftMask) {
+		  reset_cursor();
+		  if (cur_mode >= FIRST_EDIT_MODE)
+		    draw_mousefun("More approx", "Cycle shapes", "More interp");
+		  else
+		    draw_shift_mousefun_canvas();
+		} else {  /* show control-key action */
+		  set_temp_cursor(magnify_cursor);
+		  draw_mousefun("Zoom area", "Pan to origin", "Unzoom");
+		}
+	} else if (mask & ShiftMask) {
+		reset_cursor();
+		if (cur_mode >= FIRST_EDIT_MODE)
+		  draw_mousefun("Locate object", "Locate object", "");
+		else
+		  draw_shift_mousefun_canvas();
+	} else {
+		reset_cursor();
+		draw_mousefun_canvas();
+	}
+
+	if (event->type == KeyPress) {
+	  if (key == XK_Up ||
 	    key == XK_Down ||
 	    ((key == XK_Left ||    /* *don't* process the following if in text input mode */
 	      key == XK_Right ||
@@ -311,16 +350,6 @@ canvas_selected(tool, event, params, nparams)
 	      key == XK_Escape) && action_on && cur_mode == F_TEXT) {
 			compose_key = 1;
 			break;
-	} else if (key == XK_Control_L || key == XK_Control_R) { 
-		/* show the control-key actions */
-		set_temp_cursor(magnify_cursor);
-		draw_mousefun("Zoom area", "Pan to origin", "Unzoom");
-	} else if (key == XK_Shift_L || key == XK_Shift_R) {
-		/* show the shift-key function, but only if an edit mode */
-		if (cur_mode >= FIRST_EDIT_MODE)
-		    draw_mousefun("Locate object", "Locate object", "");
-		else
-		    draw_shift_mousefun_canvas();
 	} else {
 	    if (canvas_kbd_proc != null_proc) {
 		if (key == XK_Left || key == XK_Right || key == XK_Home || key == XK_End) {
@@ -329,6 +358,41 @@ canvas_selected(tool, event, params, nparams)
 		} else {
 		    switch (compose_key) {
 			case 0:
+#ifdef I18N
+			    if (xim_ic != NULL) {
+			      static int lbuf_size = 0;
+			      static char *lbuf = NULL;
+			      KeySym key_sym;
+			      Status status;
+			      int i, len;
+
+			       if (lbuf == NULL) {
+				 lbuf_size = 100;
+				 lbuf = malloc(lbuf_size + 1);
+			       }
+			       len = XmbLookupString(xim_ic, ke, lbuf, lbuf_size,
+						     &key_sym, &status);
+			       if (status == XBufferOverflow) {
+				 lbuf_size = len;
+				 lbuf = realloc(lbuf, lbuf_size + 1);
+				 len = XmbLookupString(xim_ic, ke, lbuf, lbuf_size,
+						       &key_sym, &status);
+			       }
+			       if (status == XBufferOverflow) {
+				 fprintf(stderr, "xfig: buffer overflow (XmbLookupString)\n");
+			       }
+			       lbuf[len] = '\0';
+			       if (0 < len) {
+				 if (2 <= len && canvas_kbd_proc == char_handler) {
+				   i18n_char_handler(lbuf);
+				 } else {
+				   for (i = 0; i < len; i++) {
+				     (*canvas_kbd_proc) (lbuf[i], (KeySym) 0);
+				   }
+				 }
+			       }
+			    } else
+#endif  /* I18N */
 			    if (XLookupString(ke, buf, sizeof(buf), NULL, NULL) > 0)
 				(*canvas_kbd_proc) (buf[0], (KeySym) 0);
 			    break;
@@ -358,20 +422,9 @@ canvas_selected(tool, event, params, nparams)
 		ke->subwindow = 0;
 		XPutBackEvent(ke->display,(XEvent *)ke);
 	    }
+	  }
+	  break;
 	}
-	break;
-
-    case KeyRelease:
-	/* if user is releasing Control or Shift keys redisplay original function */
-	key = XLookupKeysym(ke, 0);
-	    if (key == XK_Control_L || key == XK_Control_R ||
-		key == XK_Shift_L || key == XK_Shift_R)
-		    draw_mousefun_canvas();
-	    /* if releasing Control key and not in zoom mode, reset from 
-		magnifying glass to previous cursor */
-	    if ((key == XK_Control_L || key == XK_Control_R) && !zoom_in_progress)
-		reset_cursor();
-	break;
     }
 }
 
@@ -421,7 +474,7 @@ int *format;
 	unsigned char *c;
 	int i;
 
-	c = buf;
+	c = (unsigned char *) buf;
 	for (i=0; i<*length; i++) {
            canvas_kbd_proc(*c, (KeySym) 0);
            c++;

@@ -3,6 +3,7 @@
  * Copyright (c) 1985 by Supoj Sutanthavibul
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
  * The X Consortium, and any party obtaining a copy of these files from
  * the X Consortium, directly or indirectly, is granted, free of charge, a
@@ -18,9 +19,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 /**************** IMPORTS ****************/
@@ -30,6 +28,7 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "e_convert.h"
 #include "u_draw.h"
 #include "u_elastic.h"
 #include "u_list.h"
@@ -63,8 +62,11 @@ static int	last_object;
 static F_pos	last_position, new_position;
 static int	last_arcpointnum;
 static F_point *last_prev_point, *last_selected_point, *last_next_point;
+static F_sfactor  *last_selected_sfactor;
 static F_linkinfo *last_links;
+static F_arrow    *last_for_arrow, *last_back_arrow;
 static int	last_linkmode;
+static double	last_origin_tension, last_extremity_tension;
 
 void
 undo()
@@ -109,6 +111,9 @@ undo()
     case F_CONVERT:
 	undo_convert();
 	break;
+    case F_OPEN_CLOSE:
+	undo_open_close();
+	break;
     default:
 	put_msg("Nothing to UNDO");
 	return;
@@ -133,9 +138,12 @@ undo_deletepoint()
     if (last_object == O_POLYLINE)
 	linepoint_adding(saved_objects.lines, last_prev_point,
 			 last_selected_point);
-    else
+
+    else                        /* last_object is a spline */
 	splinepoint_adding(saved_objects.splines, last_prev_point,
-			   last_selected_point, last_next_point);
+			 last_selected_point, last_next_point,
+			 last_selected_sfactor->s);
+
     last_next_point = NULL;
 }
 
@@ -164,10 +172,19 @@ undo_convert()
 {
     switch (last_object) {
     case O_POLYLINE:
-	spline_2_line(saved_objects.splines);
+	spline_line(saved_objects.splines);
 	break;
     case O_SPLINE:
-	line_2_spline(saved_objects.lines);
+	line_spline(saved_objects.lines, saved_objects.splines->type);
+	/**********
+	draw_line(saved_objects.lines,ERASE);
+	list_add_spline(&objects.splines,saved_objects.splines);
+        list_delete_line(&objects.lines,saved_objects.lines);
+	(saved_objects.lines)->for_arrow = (saved_objects.lines)->back_arrow = NULL;
+	(saved_objects.lines)->points = NULL;
+	draw_spline(saved_objects.splines,PAINT);
+	set_action_object(F_CONVERT, O_POLYLINE);
+	************/
 	break;
     }
 }
@@ -475,6 +492,48 @@ undo_scale()
     swap_newp_lastp();
 }
 
+undo_open_close()
+{
+  switch (last_object) {
+  case O_POLYLINE:
+    if (saved_objects.lines->type == T_POLYGON)
+      {
+	saved_objects.lines->for_arrow = last_for_arrow;
+	saved_objects.lines->back_arrow = last_back_arrow;
+	last_for_arrow = last_back_arrow = NULL;
+      }
+    toggle_polyline_polygon(saved_objects.lines, last_prev_point,
+			    last_selected_point);   
+    break;
+  case O_SPLINE:
+    if (saved_objects.splines->type == T_OPEN_XSPLINE)
+      {
+	F_sfactor *c_tmp;
+
+	draw_spline(saved_objects.splines, ERASE);
+	saved_objects.splines->sfactors->s = last_origin_tension;
+	for (c_tmp=saved_objects.splines->sfactors ; c_tmp->next != NULL ;
+	    c_tmp=c_tmp->next)
+	  ;
+	c_tmp->s = last_extremity_tension;
+	saved_objects.splines->type = T_CLOSED_XSPLINE;
+	draw_spline(saved_objects.splines, PAINT);
+      }
+    else
+      {
+	if (closed_spline(saved_objects.splines))
+	  {
+	    saved_objects.splines->for_arrow = last_for_arrow;
+	    saved_objects.splines->back_arrow = last_back_arrow;
+	    last_for_arrow = last_back_arrow = NULL;
+	  }
+	toggle_open_closed_spline(saved_objects.splines, last_prev_point,
+				  last_selected_point);
+      }
+    break;
+  }   
+}
+
 swap_newp_lastp()
 {
     int		    t;		/* swap new_position and last_position	*/
@@ -491,8 +550,8 @@ swap_newp_lastp()
  * Clean_up should be called before committing a user's request. Clean_up
  * will attempt to free all the allocated memories which resulted from
  * delete/remove action.  It will set the last_action to F_NULL.  Thus this
- * routine should be before set_action_object(). if they are to be called in
- * the same routine.
+ * routine should be before set_action_object() and set_last_arrows().
+ *  if they are to be called in the same routine.
  */
 clean_up()
 {
@@ -555,6 +614,7 @@ clean_up()
     } else if (last_action == F_DELETE_POINT || last_action == F_ADD_POINT) {
 	if (last_action == F_DELETE_POINT) {
 	    free((char *) last_selected_point);
+	    free((char *) last_selected_sfactor);
 	    last_next_point = NULL;
 	}
 	last_prev_point = NULL;
@@ -586,8 +646,15 @@ clean_up()
 	saved_objects.texts = NULL;
 	free_linkinfo(&last_links);
     } else if (last_action == F_CONVERT) {
-	saved_objects.splines = NULL;
-	saved_objects.lines = NULL;
+	if (last_object == O_POLYLINE)
+	    saved_objects.splines = NULL;
+	else
+	    saved_objects.lines = NULL;
+    } else if (last_action == F_OPEN_CLOSE) {
+        saved_objects.splines = NULL;
+        saved_objects.lines = NULL;
+	free((char *) last_for_arrow);
+	free((char *) last_back_arrow);
     } else if (last_action == F_ADD_ARROW_HEAD ||
 	       last_action == F_DELETE_ARROW_HEAD) {
 	saved_objects.splines = NULL;
@@ -653,6 +720,12 @@ set_last_selectedpoint(selected_point)
     last_selected_point = selected_point;
 }
 
+set_last_selectedsfactor(selected_sfactor)
+     F_sfactor     *selected_sfactor;
+{
+  last_selected_sfactor = selected_sfactor;
+}
+
 set_last_nextpoint(next_point)
     F_point	   *next_point;
 {
@@ -698,4 +771,18 @@ set_lastlinkinfo(mode, links)
 {
     last_linkmode = mode;
     last_links = links;
+}
+
+set_last_tension(origin, extremity)
+    double          origin, extremity;
+{
+  last_origin_tension = origin;
+  last_extremity_tension = extremity;
+}
+
+set_last_arrows(forward, backward)
+     F_arrow *forward, *backward;
+{
+      last_for_arrow = forward;
+      last_back_arrow = backward;
 }

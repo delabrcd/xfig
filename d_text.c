@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -85,6 +82,38 @@ static int	turn_on_blinking_cursor();
 static int	turn_off_blinking_cursor();
 static int	move_blinking_cursor();
 
+#ifdef I18N
+#include <sys/wait.h>
+
+XIM xim_im = NULL;
+XIC xim_ic = NULL;
+XIMStyle xim_style = 0;
+Boolean xim_active = False;
+static int save_base_x, save_base_y;
+
+/*
+In EUC encoding, a character can 1 to 3 bytes long.
+Although fig2dev-i18n will support only G0 and G1,
+xfig-i18n will prepare for G2 and G3 here, too.
+  G0: 0xxxxxxx                   (ASCII, for example)
+  G1: 1xxxxxxx 1xxxxxxx          (JIS X 0208, for example)
+  G2: 10001110 1xxxxxxx          (JIS X 0201, for example)
+  G3: 10001111 1xxxxxxx 1xxxxxxx (JIS X 0212, for example)
+*/
+#define is_euc_multibyte(ch)  ((unsigned char)(ch) & 0x80)
+#define EUC_SS3 '\217'  /* single shift 3 */
+
+static int i18n_prefix_tail(), i18n_suffix_head();
+extern Boolean is_i18n_font();
+
+#ifndef I18N_NO_PREEDIT
+static pid_t preedit_pid = -1;
+static char preedit_filename[PATH_MAX] = "";
+static open_preedit_proc(), close_preedit_proc(), paste_preedit_proc();
+static Boolean is_preedit_running();
+#endif  /* I18N_NO_PREEDIT */
+#endif  /* I18N */
+
 text_drawing_selected()
 {
     canvas_kbd_proc = null_proc;
@@ -93,6 +122,20 @@ text_drawing_selected()
     canvas_leftbut_proc = init_text_input;
     canvas_rightbut_proc = null_proc;
     set_mousefun("posn cursor", "", "", "", "", "");
+#ifdef I18N
+#ifndef I18N_NO_PREEDIT
+    if (appres.international && strlen(appres.text_preedit) != 0) {
+      if (is_preedit_running()) {
+	canvas_middlebut_proc = paste_preedit_proc;
+	canvas_rightbut_proc = close_preedit_proc;
+	set_mousefun("posn cursor", "paste pre-edit", "close pre-edit", "", "", "");
+      } else {
+	canvas_rightbut_proc = open_preedit_proc;
+	set_mousefun("posn cursor", "", "open pre-edit", "", "", "");
+      }
+    }
+#endif  /* I18N_NO_PREEDIT */
+#endif  /* I18N */
     clear_mousefun_kbd();
     set_cursor(pencil_cursor);
     is_newline = 0;
@@ -222,6 +265,10 @@ init_text_input(x, y)
 	prefix[leng_prefix] = '\0';
 	base_x = cur_x;
 	base_y = cur_y;
+#ifdef I18N
+	save_base_x = base_x;
+	save_base_y = base_y;
+#endif
 
 	if (is_newline) {	/* working settings already set */
 	    is_newline = 0;
@@ -281,6 +328,10 @@ init_text_input(x, y)
 	length = cur_t->length;
 	lencos = length*cos_t;
 	lensin = length*sin_t;
+#ifdef I18N
+	save_base_x = base_x;
+	save_base_y = base_y;
+#endif
 
 	switch (cur_t->type) {
 	case T_CENTER_JUSTIFIED:
@@ -365,6 +416,21 @@ prefix_length(string, where_p)
     if (where_p >= len_p)
 	return (len_c);		/* entire string is the prefix */
 
+#ifdef I18N
+    if (appres.international && is_i18n_font(canvas_font)) {
+      where_c = 0;
+      while (where_c < len_c) {
+	size = textsize(canvas_font, where_c, string);
+	if (where_p <= size.length) return where_c;
+	if (appres.euc_encoding) {
+	  if (string[where_c] == EUC_SS3) where_c = where_c + 2;
+	  else if (is_euc_multibyte(string[where_c])) where_c = where_c + 1;
+	}
+	where_c = where_c + 1;
+      }
+      return len_c;
+    }
+#endif  /* I18N */
     char_wid = ZOOM_FACTOR * char_width(canvas_font);
     where_c = where_p / char_wid;	/* estimated char position */
     size = textsize(canvas_font, where_c, string);
@@ -435,6 +501,14 @@ initialize_char_handler(p, cr, bx, by)
     ch_height = ZOOM_FACTOR * canvas_font->max_bounds.ascent;
     turn_on_blinking_cursor(draw_cursor, draw_cursor,
 			    cur_x, cur_y, (long) BLINK_INTERVAL);
+#ifdef I18N
+    if (xim_ic != NULL && is_i18n_font(canvas_font)) {
+      put_msg("Ready for text input (from keyboard with input-method)");
+      XSetICFocus(xim_ic);
+      xim_active = True;
+      xim_set_spot(cur_x, cur_y);
+    }
+#endif
 }
 
 static int
@@ -442,6 +516,10 @@ terminate_char_handler()
 {
     turn_off_blinking_cursor();
     cr_proc = NULL;
+#ifdef I18N
+    if (xim_ic != NULL) XUnsetICFocus(xim_ic);
+    xim_active = False;
+#endif
 }
 
 static int
@@ -457,6 +535,50 @@ erase_char_string()
 static int
 draw_char_string()
 {
+#ifdef I18N
+    if (appres.international && is_i18n_font(canvas_font)) {
+      double cwidth;
+      int direc, asc, des;
+      XCharStruct overall;
+      float mag = ZOOM_FACTOR / display_zoomscale;
+      float prefix_width = 0, suffix_width = 0;
+      if (0 < leng_prefix) {
+	i18n_text_extents(canvas_zoomed_font, prefix, leng_prefix,
+			  &direc, &asc, &des, &overall);
+	prefix_width = (float)(overall.width) * mag;
+      }
+      if (0 < leng_suffix) {
+	i18n_text_extents(canvas_zoomed_font, suffix, leng_suffix,
+			  &direc, &asc, &des, &overall);
+	suffix_width = (float)(overall.width) * mag;
+      }
+
+      cbase_x = save_base_x;
+      cbase_y = save_base_y;
+      switch (work_textjust) {
+      case T_LEFT_JUSTIFIED:
+	break;
+      case T_RIGHT_JUSTIFIED:
+	cbase_x = cbase_x - (prefix_width + suffix_width) * cos_t;
+	cbase_y = cbase_y + (prefix_width + suffix_width) * sin_t;
+	break;
+      case T_CENTER_JUSTIFIED:
+	cbase_x = cbase_x - (prefix_width + suffix_width) * cos_t / 2;
+	cbase_y = cbase_y + (prefix_width + suffix_width) * sin_t / 2;
+	break;
+      }
+      
+      pw_text(pw, cbase_x, cbase_y, PAINT, canvas_zoomed_font, 
+	      work_angle, prefix, work_textcolor);
+      cur_x = cbase_x + prefix_width * cos_t;
+      cur_y = cbase_y - prefix_width * sin_t;
+      if (leng_suffix)
+	pw_text(pw, cur_x, cur_y, PAINT, canvas_zoomed_font, 
+		work_angle, suffix, work_textcolor);
+      move_blinking_cursor(cur_x, cur_y);
+      return;
+    }
+#endif
     pw_text(pw, cbase_x, cbase_y, PAINT, canvas_zoomed_font, 
 	    work_angle, prefix, work_textcolor);
     if (leng_suffix)
@@ -507,6 +629,22 @@ char_handler(c, keysym)
     /* move cursor left - move char from prefix to suffix */
     /* Control-B and the Left arrow key both do this */
     } else if (keysym == XK_Left || c == CTRL_B) {
+#ifdef I18N
+	if (leng_prefix > 0
+	      && appres.international && is_i18n_font(canvas_font)) {
+	    int len;
+	    erase_char_string();
+	    len = i18n_prefix_tail(NULL);
+	    for (i=leng_suffix+len; i>0; i--)	/* copies null too */
+		suffix[i]=suffix[i-len];
+	    for (i=0; i<len; i++)
+	        suffix[i]=prefix[leng_prefix-len+i];
+	    prefix[leng_prefix-len]='\0';
+	    leng_prefix-=len;
+	    leng_suffix+=len;
+	    draw_char_string();
+	} else
+#endif /* I18N */
 	if (leng_prefix > 0) {
 	    erase_char_string();
 	    for (i=leng_suffix+1; i>0; i--)	/* copies null too */
@@ -521,6 +659,22 @@ char_handler(c, keysym)
     /* move cursor right - move char from suffix to prefix */
     /* Control-F and Right arrow key both do this */
     } else if (keysym == XK_Right || c == CTRL_F) {
+#ifdef I18N
+	if (leng_suffix > 0
+	      && appres.international && is_i18n_font(canvas_font)) {
+	    int len;
+	    erase_char_string();
+	    len = i18n_suffix_head(NULL);
+	    for (i=0; i<len; i++)
+	        prefix[leng_prefix+i]=suffix[i];
+	    prefix[leng_prefix+len]='\0';
+	    for (i=0; i<=leng_suffix-len; i++)	/* copies null too */
+		suffix[i]=suffix[i+len];
+	    leng_suffix-=len;
+	    leng_prefix+=len;
+	    draw_char_string();
+	} else
+#endif /* I18N */
 	if (leng_suffix > 0) {
 	    erase_char_string();
 	    prefix[leng_prefix] = suffix[0];
@@ -537,6 +691,9 @@ char_handler(c, keysym)
     } else if (keysym == XK_Home || c == CTRL_A) {
 	if (leng_prefix > 0) {
 	    erase_char_string();
+#ifdef I18N
+	    if (!appres.international || !is_i18n_font(canvas_font))
+#endif  /* I18N */
 	    for (i=leng_prefix-1; i>=0; i--)
 		move_cur(-1, prefix[i], 1.0);
 	    strcat(prefix,suffix);
@@ -551,6 +708,9 @@ char_handler(c, keysym)
     } else if (keysym == XK_End || c == CTRL_E) {
 	if (leng_suffix > 0) {
 	    erase_char_string();
+#ifdef I18N
+	    if (!appres.international || !is_i18n_font(canvas_font))
+#endif  /* I18N */
 	    for (i=0; i<leng_suffix; i++)
 		move_cur(1, suffix[i], 1.0);
 	    strcat(prefix,suffix);
@@ -561,6 +721,17 @@ char_handler(c, keysym)
 	}
     /* backspace - delete char left of cursor */
     } else if (c == CTRL_H) {
+#ifdef I18N
+	if (leng_prefix > 0
+	      && appres.international && is_i18n_font(canvas_font)) {
+	    int len;
+	    len = i18n_prefix_tail(NULL);
+	    erase_char_string();
+	    leng_prefix-=len;
+	    prefix[leng_prefix]='\0';
+	    draw_char_string();
+	} else
+#endif /* I18N */
 	if (leng_prefix > 0) {
 	    erase_char_string();
 	    switch (work_textjust) {
@@ -581,6 +752,18 @@ char_handler(c, keysym)
     /* delete char to right of cursor */
     /* Control-D and Delete key both do this */
     } else if (c == DEL || c == CTRL_D) {
+#ifdef I18N
+	if (leng_suffix > 0
+	      && appres.international && is_i18n_font(canvas_font)) {
+	    int len;
+	    len = i18n_suffix_head(NULL);
+	    erase_char_string();
+	    for (i=0; i<=leng_suffix-len; i++)	/* copies null too */
+		suffix[i]=suffix[i+len];
+	    leng_suffix-=len;
+	    draw_char_string();
+	} else
+#endif /* I18N */
 	if (leng_suffix > 0) {
 	    erase_char_string();
 	    switch (work_textjust) {
@@ -606,6 +789,9 @@ char_handler(c, keysym)
     } else if (c == CTRL_X) {
 	if (leng_prefix > 0) {
 	    erase_char_string();
+#ifdef I18N
+	    if (!appres.international || !is_i18n_font(canvas_font))
+#endif  /* I18N */
 	    switch (work_textjust) {
 	    case T_CENTER_JUSTIFIED:
 		while (leng_prefix--) {	/* subtract char width/2 per char */
@@ -640,6 +826,9 @@ char_handler(c, keysym)
     } else if (c == CTRL_K) {
 	if (leng_suffix > 0) {
 	    erase_char_string();
+#ifdef I18N
+	    if (!appres.international || !is_i18n_font(canvas_font))
+#endif  /* I18N */
 	    switch (work_textjust) {
 	      case T_LEFT_JUSTIFIED:
 		break;
@@ -813,6 +1002,9 @@ move_blinking_cursor(x, y)
     draw(cursor_x, cursor_y);
     cursor_on = 1;
     cursor_is_moving = 0;
+#ifdef I18N
+    if (xim_active) xim_set_spot(x, y);
+#endif
 }
 
 /*
@@ -855,3 +1047,322 @@ reload_text_fstruct(t)
 			round(t->size*display_zoomscale));
     t->zoom = zoomscale;
 }
+
+
+
+/* ================================================================ */
+
+#ifdef I18N
+
+static void GetPreferredGeomerty(ic, name, area)
+     XIC ic;
+     char *name;
+     XRectangle **area;
+{
+  XVaNestedList list;
+  list = XVaCreateNestedList(0, XNAreaNeeded, area, NULL);
+  XGetICValues(ic, name, list, NULL);
+  XFree(list);
+}
+
+static void SetGeometry(ic, name, area)
+     XIC ic;
+     char *name;
+     XRectangle *area;
+{
+  XVaNestedList list;
+  list = XVaCreateNestedList(0, XNArea, area, NULL);
+  XSetICValues(ic, name, list, NULL);
+  XFree(list);
+}
+
+xim_set_ic_geometry(ic, width, height)
+     XIC ic;
+     int width;
+     int height;
+{
+  XRectangle preedit_area, *preedit_area_ptr;
+  XRectangle status_area, *status_area_ptr;
+
+  if (xim_ic == NULL) return;
+
+  if (appres.DEBUG)
+    fprintf(stderr, "xim_set_ic_geometry(%d, %d)\n", width, height);
+
+  if (xim_style & XIMStatusArea) {
+    GetPreferredGeomerty(ic, XNStatusAttributes, &status_area_ptr);
+    status_area.width = status_area_ptr->width;
+    status_area.height = status_area_ptr->height;
+    status_area.x = 0;
+    status_area.y = height - status_area.height;
+    SetGeometry(ic, XNStatusAttributes, &status_area);
+    if (appres.DEBUG) fprintf(stderr, "status geometry: %dx%d+%d+%d\n",
+			      status_area.width, status_area.height,
+			      status_area.x, status_area.y);
+  }
+  if (xim_style & XIMPreeditArea) {
+    GetPreferredGeomerty(ic, XNPreeditAttributes, &preedit_area_ptr);
+    preedit_area.width = preedit_area_ptr->width;
+    preedit_area.height = preedit_area_ptr->height;
+    preedit_area.x = width - preedit_area.width;
+    preedit_area.y = height - preedit_area.height;
+    SetGeometry(ic, XNPreeditAttributes, &preedit_area);
+    if (appres.DEBUG) fprintf(stderr, "preedit geometry: %dx%d+%d+%d\n",
+			      preedit_area.width, preedit_area.height,
+			      preedit_area.x, preedit_area.y);
+  }
+}
+
+Boolean xim_initialize(w)
+     Widget w;
+{
+  const XIMStyle style_notuseful = 0;
+  const XIMStyle style_over_the_spot = XIMPreeditPosition | XIMStatusNothing;
+  const XIMStyle style_off_the_spot = XIMPreeditArea | XIMStatusArea;
+  const XIMStyle style_root = XIMPreeditNothing | XIMStatusNothing;
+  static long int im_event_mask = 0;
+  XIMStyles *styles;
+  XIMStyle preferred_style;
+  int i;
+  XVaNestedList preedit_att, status_att;
+  XPoint spot;
+
+  preferred_style = style_notuseful;
+  if (strncasecmp(appres.xim_input_style, "OverTheSpot", 3) == 0)
+    preferred_style = style_over_the_spot;
+  else if (strncasecmp(appres.xim_input_style, "OffTheSpot", 3) == 0)
+    preferred_style = style_off_the_spot;
+  else if (strncasecmp(appres.xim_input_style, "Root", 3) == 0)
+    preferred_style = style_root;
+  else if (strncasecmp(appres.xim_input_style, "None", 3) != 0)
+    fprintf(stderr, "xfig: inputStyle should OverTheSpot, OffTheSpot, or Root\n");
+
+  if (preferred_style == style_notuseful) return;
+
+  if (appres.DEBUG) fprintf(stderr, "initialize_input_method()...\n");
+
+  xim_im = XOpenIM(XtDisplay(w), NULL, NULL, NULL);
+  if (xim_im == NULL) {
+    fprintf(stderr, "xfig: can't open input-method\n");
+    return False;
+  }
+  XGetIMValues(xim_im, XNQueryInputStyle, &styles, NULL, NULL);
+  for (i = 0; i < styles->count_styles; i++) {
+    if (appres.DEBUG)
+      fprintf(stderr, "styles[%d]=%lx\n", i, styles->supported_styles[i]);
+    if (styles->supported_styles[i] == preferred_style) {
+      xim_style = preferred_style;
+    } else if (styles->supported_styles[i] == style_root) {
+      if (xim_style == 0) xim_style = style_root;
+    }
+  }
+  if (xim_style != preferred_style) {
+    fprintf(stderr, "xfig: this input-method don't support %s input style\n",
+	    appres.xim_input_style);
+    if (xim_style == 0) {
+      fprintf(stderr, "xfig: it don't support ROOT input style, too...\n");
+      return False;
+    } else {
+      fprintf(stderr, "xfig: using ROOT input style instead.\n");
+    }
+  }
+  if (appres.DEBUG) {
+    char *s;
+    if (xim_style == style_over_the_spot) s = "OverTheSpot";
+    else if (xim_style == style_off_the_spot) s = "OffTheSpot";
+    else if (xim_style == style_root) s = "Root";
+    else s = "unknown";
+    fprintf(stderr, "xfig: selected input style: %s\n", s);
+  }
+
+  spot.x = 20;  /* dummy */
+  spot.y = 20;
+  preedit_att = XVaCreateNestedList(0, XNFontSet, appres.fixed_fontset,
+				    XNSpotLocation, &spot,
+				    NULL);
+  status_att = XVaCreateNestedList(0, XNFontSet, appres.fixed_fontset,
+				   NULL);
+  xim_ic = XCreateIC(xim_im, XNInputStyle , xim_style,
+		     XNClientWindow, XtWindow(w),
+		     XNFocusWindow, XtWindow(w),
+		     XNPreeditAttributes, preedit_att,
+		     XNStatusAttributes, status_att,
+		     NULL, NULL);
+  XFree(preedit_att);
+  XFree(status_att);
+  if (xim_ic == NULL) {
+    fprintf(stderr, "xfig: can't create input-context\n");
+    return False;
+  }
+
+  if (appres.DEBUG) fprintf(stderr, "input method initialized\n");
+
+  return True;
+}
+
+xim_set_spot(x, y)
+     int x, y;
+{
+  static XPoint spot;
+  XVaNestedList preedit_att;
+  int x1, y1;
+  if (xim_ic != NULL) {
+    if (xim_style & XIMPreeditPosition) {
+      if (appres.DEBUG) fprintf(stderr, "xim_set_spot(%d,%d)\n", x, y);
+      preedit_att = XVaCreateNestedList(0, XNSpotLocation, &spot, NULL);
+      x1 = ZOOMX(x) + 1;
+      y1 = ZOOMY(y);
+      if (x1 < 0) x1 = 0;
+      if (y1 < 0) y1 = 0;
+      if (x1 == spot.x && y1 == spot.y) {
+	/* XSetICValues() may be ignored if spot.x/y is not changed */
+	spot.x = 0;
+	spot.y = 0;
+	XSetICValues(xim_ic, XNPreeditAttributes, preedit_att, NULL);
+      }
+      spot.x = x1;
+      spot.y = y1;
+      XSetICValues(xim_ic, XNPreeditAttributes, preedit_att, NULL);
+      XFree(preedit_att);
+    }
+  }
+}
+
+static int i18n_prefix_tail(char *s1)
+{
+  int len, i;
+  if (appres.euc_encoding && is_euc_multibyte(prefix[leng_prefix-1])) {
+    if (leng_prefix > 2 && prefix[leng_prefix-3] == EUC_SS3)
+      len = 3;
+      /* G3: 10001111 1xxxxxxx 1xxxxxxx (JIS X 0212, for example) */
+    else if (leng_prefix > 1)
+      len = 2;
+      /* G2: 10001110 1xxxxxxx (JIS X 0201, for example) */
+      /* G1: 1xxxxxxx 1xxxxxxx (JIS X 0208, for example) */
+    else
+      len = 1;  /* this can't happen */
+  } else {
+    len = 1;  /* G0: 0xxxxxxx (ASCII, for example) */
+  }
+  if (s1 != NULL) {
+    for (i = 0; i < len; i++) s1[i] = prefix[leng_prefix - len + i];
+    s1[len] = '\0';
+  }
+  return len;
+}
+
+static int i18n_suffix_head(char *s1)
+{
+  int len, i;
+  if (appres.euc_encoding && is_euc_multibyte(suffix[0])) {
+    if (leng_suffix > 2 && suffix[0] == EUC_SS3) len = 3;  /* G3 */
+    else if (leng_suffix > 1) len = 2;  /* G1 or G2 */
+    else len = 1;  /* this can't happen */
+  } else {
+    len = 1;  /* G0 */
+  }
+  if (s1 != NULL) {
+    for (i = 0; i < len; i++) s1[i] = suffix[i];
+    s1[len] = '\0';
+  }
+  return len;
+}
+
+i18n_char_handler(str)
+     char *str;
+{
+  int i;
+  erase_char_string();	/* erase current string */
+  for (i = 0; str[i] != '\0'; i++) {
+    prefix[leng_prefix++] = str[i];
+    prefix[leng_prefix] = '\0';
+  }
+  draw_char_string();	/* draw new string */
+}
+
+#ifndef I18N_NO_PREEDIT
+static Boolean is_preedit_running()
+{
+  pid_t pid;
+  sprintf(preedit_filename, "%s/%s%06d", TMPDIR, "xfig-preedit", getpid());
+#if defined(_POSIX_SOURCE) || defined(SVR4)
+  pid = waitpid(-1, NULL, WNOHANG);
+#else
+  pid = wait3(NULL, WNOHANG, NULL);
+#endif
+  if (0 < preedit_pid && pid == preedit_pid) preedit_pid = -1;
+  return (0 < preedit_pid && access(preedit_filename, R_OK) == 0);
+}
+
+kill_preedit()
+{
+  if (0 < preedit_pid) {
+    kill(preedit_pid, SIGTERM);
+    preedit_pid = -1;
+  }
+}
+
+static close_preedit_proc(x, y)
+     int x, y;
+{
+  if (is_preedit_running()) {
+    kill_preedit();
+    put_msg("Pre-edit window closed");
+  }
+  text_drawing_selected();
+  draw_mousefun_canvas();
+}
+
+static open_preedit_proc(x, y)
+     int x, y;
+{
+  int i;
+  if (!is_preedit_running()) {
+    put_msg("Opening pre-edit window...");
+    draw_mousefun_canvas();
+    set_temp_cursor(wait_cursor);
+    preedit_pid = fork();
+    if (preedit_pid == -1) {  /* cannot fork */
+      fprintf(stderr, "Can't fork the process: %s\n", sys_errlist[errno]);
+    } else if (preedit_pid == 0) {  /* child process; execute xfig-preedit */
+      execlp(appres.text_preedit, appres.text_preedit, preedit_filename, NULL);
+      fprintf(stderr, "Can't execute %s\n", appres.text_preedit);
+      exit(-1);
+    } else {  /* parent process; wait until xfig-preedit is up */
+      for (i = 0; i < 10 && !is_preedit_running(); i++) sleep(1);
+    }
+    if (is_preedit_running()) put_msg("Pre-edit window opened");
+    else put_msg("Can't open pre-edit window");
+    reset_cursor();
+  }
+  text_drawing_selected();
+  draw_mousefun_canvas();
+}
+
+static paste_preedit_proc(x, y)
+     int x, y;
+{
+  FILE *fp;
+  char ch;
+  static new_text_line();
+  if (!is_preedit_running()) {
+    open_preedit_proc(x, y);
+  } else if ((fp = fopen(preedit_filename, "r")) != NULL) {
+    init_text_input(x, y);
+    while ((ch = getc(fp)) != EOF) {
+      if (ch == '\\') new_text_line();
+      else prefix[leng_prefix++] = ch;
+    }
+    prefix[leng_prefix] = '\0';
+    finish_text_input();
+    fclose(fp);
+    put_msg("Text pasted from pre-edit window");
+  } else {
+    put_msg("Can't get text from pre-edit window");
+  }
+  text_drawing_selected();
+  draw_mousefun_canvas();
+}
+#endif  /* I18N_NO_PREEDIT */
+
+#endif /* I18N */

@@ -16,9 +16,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 /* ********************************************************************** */
@@ -37,6 +34,14 @@
 #include <X11/Xatom.h>
 #include "w_rottext.h"
 
+#ifdef I18N
+extern Boolean is_i18n_font();
+extern i18n_draw_string(), i18n_draw_image_string(), i18n_text_extents();
+
+#define XDrawString i18n_draw_string
+#define XDrawImageString i18n_draw_image_string
+#define XTextExtents i18n_text_extents
+#endif  /* I18N */
 
 /* ---------------------------------------------------------------------- */
 
@@ -463,6 +468,14 @@ XRotPaintAlignedString(dpy, font, angle, drawable, gc, x, y, text,
 	hot_y=0;
     else if(align==BLEFT || align==BCENTRE || align==BRIGHT)
 	hot_y= -(float)item->rows_in/2*style.magnify;
+#ifdef I18N
+    else if (is_i18n_font(font)) {
+	int dir, asc, desc;
+	XCharStruct overall;
+	XTextExtents(font, text, strlen(text), &dir, &asc, &desc, &overall);
+	hot_y= -((float)item->rows_in/2-(float)overall.descent)*style.magnify;
+      }
+#endif  /* I18N */
     else
 	hot_y= -((float)item->rows_in/2-(float)font->descent)*style.magnify;
     
@@ -706,6 +719,24 @@ XRotDrawHorizontalString(dpy, font, drawable, gc, x, y, text,
 	return 1;
     
     str3=my_strtok(str1, str2);
+#ifdef I18N
+    if (is_i18n_font(font)) {
+      XTextExtents(font, str3, strlen(str3), &dir, &asc, &desc, &overall);
+
+      /* overall font height */
+      height=overall.ascent+overall.descent;
+
+      /* y position */
+      if(align==TLEFT || align==TCENTRE || align==TRIGHT)
+	  yp=y+overall.ascent;
+      else if(align==MLEFT || align==MCENTRE || align==MRIGHT)
+	  yp=y-nl*height/2+overall.ascent;
+      else if(align==BLEFT || align==BCENTRE || align==BRIGHT)
+	  yp=y-nl*height+overall.ascent;
+      else
+	  yp=y;
+    }
+#endif  /* I18N */
     
     /* loop through each section in the string */
     do {
@@ -971,8 +1002,16 @@ static RotatedTextItem
     while(str3!=NULL);
     
     free(str1);
+#ifdef I18N
+    if (item->max_width <= 0) return NULL;
+#endif  /* I18N */
     
     /* overall font height */
+#ifdef I18N
+    if (is_i18n_font(font))
+      height=overall.ascent+overall.descent;
+    else
+#endif  /* I18N */
     height=font->ascent+font->descent;
     
     /* dimensions horizontal text will have */
@@ -1012,6 +1051,11 @@ static RotatedTextItem
     /* draw text horizontally */
     
     /* start at top of bitmap */
+#ifdef I18N
+    if (is_i18n_font(font))
+      yp=overall.ascent;
+    else
+#endif  /* I18N */
     yp=font->ascent;
     
     str1=my_strdup(text);
@@ -1037,6 +1081,12 @@ static RotatedTextItem
 	XDrawString(dpy, canvas, font_gc, xp, yp, str3, strlen(str3));
 	
 	/* keep a note of corner positions of this string */
+#ifdef I18N
+	if (is_i18n_font(font))
+	  item->corners_y[ic]=((float)(yp-overall.ascent)-(float)item->rows_in/2)
+	    *style.magnify;
+	else
+#endif
 	item->corners_x[ic]=((float)xp-(float)item->cols_in/2)*style.magnify;
 	item->corners_y[ic]=((float)(yp-font->ascent)-(float)item->rows_in/2)
 	    *style.magnify;
@@ -1520,6 +1570,11 @@ XPoint
     free(str1);
     
     /* overall font height */
+#ifdef I18N
+    if (is_i18n_font(font))
+      height=overall.ascent+overall.descent;
+    else
+#endif  /* I18N */
     height=font->ascent+font->descent;
     
     /* dimensions horizontal text will have */
@@ -1537,6 +1592,10 @@ XPoint
 	hot_y=0;
     else if(align==BLEFT || align==BCENTRE || align==BRIGHT)
 	hot_y= -(float)rows_in/2*style.magnify;
+#ifdef I18N
+    else if (is_i18n_font(font))
+	hot_y= -((float)rows_in/2-(float)overall.descent)*style.magnify;
+#endif  /* I18N */
     else
 	hot_y= -((float)rows_in/2-(float)font->descent)*style.magnify;
     

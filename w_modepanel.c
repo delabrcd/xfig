@@ -17,9 +17,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -33,6 +30,7 @@
 #include "w_util.h"
 #include "w_mousefun.h"
 #include "w_setup.h"
+#include "d_spline.h"
 
 /* from e_rotate.c */
 extern int	setcenter;
@@ -58,8 +56,6 @@ extern          regpoly_drawing_selected();
 extern          picobj_drawing_selected();
 extern          text_drawing_selected();
 extern          arc_drawing_selected();
-extern          spline_drawing_selected();
-extern          intspline_drawing_selected();
 extern          align_selected();
 extern          compound_selected();
 extern          open_compound();
@@ -138,6 +134,12 @@ static mode_sw_info *current = NULL;
 
 /* button selection event handler */
 static void     sel_mode_but();
+
+/* popup message over button when mouse enters it */
+static void     mode_balloon();
+static void     mode_unballoon();
+
+/* popdown message */
 static void     turn_on();
 
 /* The M_XXX indicate which objects are selectable when the mode is on, and
@@ -152,14 +154,14 @@ static mode_sw_info mode_switches[] = {
       I_ELLIPSE, "ELLIPSE drawing: specify RADII",},
     {&elldia_ic, F_ELLIPSE_BY_DIA, ellipsebydiameter_drawing_selected, M_NONE,
       I_ELLIPSE, "ELLIPSE drawing: specify DIAMETERS",},
-    {&c_spl_ic, F_CLOSED_SPLINE, spline_drawing_selected, M_NONE,
-      I_CLOSED, "CLOSED SPLINE drawing: specify control points",},
-    {&spl_ic, F_SPLINE, spline_drawing_selected, M_NONE,
-      I_OPEN, "SPLINE drawing: specify control points",},
-    {&c_intspl_ic, F_CLOSED_INTSPLINE, intspline_drawing_selected, M_NONE,
-      I_CLOSED, "CLOSED INTERPOLATED SPLINE drawing",},
-    {&intspl_ic, F_INTSPLINE, intspline_drawing_selected, M_NONE,
-      I_OPEN, "INTERPOLATED SPLINE drawing",},
+    {&c_spl_ic, F_CLOSED_APPROX_SPLINE, spline_drawing_selected, M_NONE,
+      I_CLOSED, "CLOSED APPROXIMATED SPLINE drawing: specify control points",},
+    {&spl_ic, F_APPROX_SPLINE, spline_drawing_selected, M_NONE,
+      I_OPEN, "APPROXIMATED SPLINE drawing: specify control points",},
+    {&c_intspl_ic, F_CLOSED_INTERP_SPLINE, spline_drawing_selected, M_NONE,
+      I_CLOSED, "CLOSED INTERPOLATED SPLINE drawing: specify control points",},
+    {&intspl_ic, F_INTERP_SPLINE, spline_drawing_selected, M_NONE,
+      I_OPEN, "INTERPOLATED SPLINE drawing: specify control points",},
     {&polygon_ic, F_POLYGON, line_drawing_selected, M_NONE,
       I_CLOSED, "POLYGON drawing",},
     {&line_ic, F_POLYLINE, line_drawing_selected, M_NONE,
@@ -201,7 +203,7 @@ static mode_sw_info mode_switches[] = {
     {&update_ic, F_UPDATE, update_selected, M_ALL,
       I_OBJECT, "UPDATE object <-> current settings",},
     {&edit_ic, F_EDIT, edit_item_selected, M_ALL,
-      I_MIN1, "CHANGE OBJECT via EDIT pane",},
+      I_MIN1, "CHANGE OBJECT via EDIT panel",},
     {&flip_x_ic, F_FLIP, flip_ud_selected, M_NO_TEXT,
       I_MIN2, "FLIP objects up or down",},
     {&flip_y_ic, F_FLIP, flip_lr_selected, M_NO_TEXT,
@@ -210,8 +212,8 @@ static mode_sw_info mode_switches[] = {
       I_ROTATE, "ROTATE objects clockwise",},
     {&rotCCW_ic, F_ROTATE, rotate_ccw_selected, M_ALL,
       I_ROTATE, "ROTATE objects counter-clockwise",},
-    {&convert_ic, F_CONVERT, convert_selected, (M_POLYLINE | M_SPLINE_INTERP),
-      I_MIN1, "CONVERT lines into splines, boxes into arc-boxes or vice versa",},
+    {&convert_ic, F_CONVERT, convert_selected, M_VARPTS_OBJECT | M_POLYLINE_BOX, 
+      I_MIN1, "CONVERSION between lines, polygons and splines",},
     {&autoarrow_ic, F_AUTOARROW, arrow_head_selected, M_OPEN_OBJECT,
       I_MIN1 | I_LINEWIDTH | I_ARROWTYPE, "ADD/DELETE ARROWs",},
 };
@@ -233,11 +235,11 @@ static Arg      button_args[] =
 };
 
 static void
-stub_enter_mode_btn(widget, closure, event, continue_to_dispatch)
-    Widget        widget;
-    XtPointer     closure;
-    XEvent       *event;
-    Boolean      *continue_to_dispatch;
+stub_enter_mode_btn(widget, event, params, num_params)
+    Widget	 widget;
+    XEvent	*event;
+    String	*params;
+    Cardinal	*num_params;
 {
     draw_mousefun_mode();
 }
@@ -349,6 +351,11 @@ init_mode_panel(tool)
 	/* left button changes mode */
 	XtAddEventHandler(sw->widget, ButtonPressMask, (Boolean) 0,
 			  sel_mode_but, (XtPointer) sw);
+	/* popup when mouse passes over button */
+	XtAddEventHandler(sw->widget, EnterWindowMask, (Boolean) 0,
+			  mode_balloon, (XtPointer) sw);
+	XtAddEventHandler(sw->widget, LeaveWindowMask, (Boolean) 0,
+			  mode_unballoon, (XtPointer) sw);
 	XtOverrideTranslations(sw->widget,
 			       XtParseTranslationTable(mode_translations));
     }
@@ -398,6 +405,73 @@ setup_mode_panel()
     SetValues(mode_panel);
 }
 
+/* come here when the mouse passes over a button in the mode panel */
+
+static	Widget mode_balloon_popup = (Widget) 0;
+
+static void
+mode_balloon(widget, closure, event, continue_to_dispatch)
+    Widget        widget;
+    XtPointer	  closure;
+    XEvent*	  event;
+    Boolean*	  continue_to_dispatch;
+{
+	Widget	  box, balloon_label;
+	Position  x, y;
+	mode_sw_info *msw = (mode_sw_info *) closure;
+
+	if (!appres.show_balloons)
+	    return;
+
+	XtTranslateCoords(widget, msw->icon->width+5, 0, &x, &y);
+	FirstArg(XtNx, x);
+	NextArg(XtNy, y);
+	mode_balloon_popup = XtCreatePopupShell("mode_balloon_popup",overrideShellWidgetClass,
+				tool, Args, ArgCount);
+	FirstArg(XtNborderWidth, 0);
+	NextArg(XtNhSpace, 0);
+	NextArg(XtNvSpace, 0);
+	box = XtCreateManagedWidget("box", boxWidgetClass, mode_balloon_popup, Args, ArgCount);
+	FirstArg(XtNborderWidth, 0);
+	NextArg(XtNlabel, msw->modemsg);
+	balloon_label = XtCreateManagedWidget("label", labelWidgetClass,
+				    box, Args, ArgCount);
+	XtRealizeWidget(mode_balloon_popup);
+	/* if the panel is on the right-hand side shift popup to the left */
+	if (appres.RHS_PANEL) {
+	    XtWidgetGeometry xtgeom,comp;
+	    Dimension wpop,wbut;
+
+	    /* get width of popup with label in it */
+	    FirstArg(XtNwidth, &wpop);
+	    GetValues(balloon_label);
+	    /* and width of button */
+	    FirstArg(XtNwidth, &wbut);
+	    GetValues(widget);
+	    /* only change X position of widget */
+	    xtgeom.request_mode = CWX;
+	    /* shift popup left */
+	    xtgeom.x = x-wpop-wbut-10;
+	    (void) XtMakeGeometryRequest(mode_balloon_popup, &xtgeom, &comp);
+	    SetValues(balloon_label);
+	}
+	XtPopup(mode_balloon_popup,XtGrabNone);
+}
+
+/* come here when the mouse leaves a button in the mode panel */
+
+static void
+mode_unballoon(widget, closure, event, continue_to_dispatch)
+    Widget          widget;
+    XtPointer	    closure;
+    XEvent*	    event;
+    Boolean*	    continue_to_dispatch;
+{
+    if (mode_balloon_popup != (Widget) 0)
+	XtDestroyWidget(mode_balloon_popup);
+    mode_balloon_popup = 0;
+}
+
 /* come here when a button is pressed in the mode panel */
 
 static void
@@ -425,7 +499,8 @@ sel_mode_but(widget, closure, event, continue_to_dispatch)
 	if (cur_mode == F_TEXT)
 	    finish_text_input();/* finish up any text input */
 	else {
-	    put_msg("Please finish (or cancel) the current operation before changing modes");
+	    put_msg("Finish (or cancel) the current operation before changing modes");
+	    beep();
 	    return;
 	}
     } else if (highlighting)

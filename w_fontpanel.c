@@ -16,9 +16,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -238,6 +235,16 @@ setup_fontmenu()
 
     /* Create the bitmaps */
 
+#ifdef I18N
+    if (appres.international && appres.japanese) {
+      extern unsigned char Times_Roman_and_Mincho_bits[], Roman_and_Mincho_bits[];
+      extern unsigned char Times_Bold_and_Gothic_bits[], Bold_and_Gothic_bits[];
+      psfont_menu_bits[1] = Times_Roman_and_Mincho_bits;
+      latexfont_menu_bits[1] = Roman_and_Mincho_bits;
+      psfont_menu_bits[3] = Times_Bold_and_Gothic_bits;
+      latexfont_menu_bits[2] = Bold_and_Gothic_bits;
+    }
+#endif  /* I18N */
     for (i = 0; i < NUM_FONTS + 1; i++)
 	psfont_menu_bitmaps[i] = XCreatePixmapFromBitmapData(tool_d,
 				   XtWindow(ind_panel), (char *) psfont_menu_bits[i],

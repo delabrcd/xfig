@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include <X11/keysym.h>
@@ -67,6 +64,16 @@ zoom_selected(x, y, button)
     int		    x, y;
     unsigned int    button;
 {
+    /* if trying to zoom while drawing an object, don't allow it */
+    if (action_on && button != Button2) {	/* panning is ok */
+	if (cur_mode == F_TEXT)
+	    finish_text_input();		/* finish up any text input */
+	else {
+	    put_msg("Finish (or cancel) the current operation before zooming");
+	    beep();
+	    return;
+	}
+    }
     if (!zoom_in_progress) {
 	switch (button) {
 	case Button1:
@@ -104,6 +111,15 @@ static
 init_zoombox_drawing(x, y)
     int		    x, y;
 {
+    if (action_on) {
+	if (cur_mode == F_TEXT)
+	    finish_text_input();	/* finish up any text input */
+	else {
+	    put_msg("Finish (or cancel) the current operation before zooming");
+	    beep();
+	    return;
+	}
+    }
     save_kbd_proc = canvas_kbd_proc;
     save_locmove_proc = canvas_locmove_proc;
     save_leftbut_proc = canvas_leftbut_proc;

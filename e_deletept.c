@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -28,9 +25,12 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "u_list.h"
 #include "u_search.h"
+#include "u_draw.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
+#include "d_spline.h"
 
 static int	init_delete_point();
 
@@ -75,19 +75,16 @@ init_delete_point(obj, type, x, y, p, q)
 	cur_s = (F_spline *) obj;
 	n = num_points(cur_s->points);
 	if (closed_spline(cur_s)) {
-	    if (n <= 4) {	/* count first pt twice for closed object */
-		put_msg("A closed spline cannot have less than 3 points");
+	    if (n <= CLOSED_SPLINE_MIN_NUM_POINTS) {
+		put_msg("A closed spline cannot have less than %d points",
+			CLOSED_SPLINE_MIN_NUM_POINTS);
 		return;
 	    }
-	} else if (normal_spline(cur_s)) {
-	    if (n <= 2) {
-		put_msg("A spline cannot have less than 2 points");
+	} else if (n <= OPEN_SPLINE_MIN_NUM_POINTS) {
+		put_msg("A spline cannot have less than %d points",
+			OPEN_SPLINE_MIN_NUM_POINTS);
 		return;
 	    }
-	} else if (n <= 3) {	/* it must be an open interpolated spline */
-	    put_msg("An interpolated spline cannot have less than 3 points");
-	    return;
-	}
 	splinepoint_deleting(cur_s, p, q);
 	break;
     default:
@@ -97,63 +94,49 @@ init_delete_point(obj, type, x, y, p, q)
 
 /**************************  spline  *******************************/
 
-splinepoint_deleting(spline, prev_point, selected_point)
+splinepoint_deleting(spline, previous_point, selected_point)
     F_spline	   *spline;
-    F_point	   *prev_point, *selected_point;
+    F_point	   *previous_point, *selected_point;
 {
-    F_point	   *p, *next_point;
+    F_point	   *next_point;
+    F_sfactor      *s_prev_point, *selected_sfactor;
 
     next_point = selected_point->next;
     set_temp_cursor(wait_cursor);
+    clean_up();
+    set_last_prevpoint(previous_point);
     /* delete it and redraw underlying objects */
     list_delete_spline(&objects.splines, spline);
+    draw_spline(spline, ERASE);
     redisplay_spline(spline);
-    if (closed_spline(spline)) {
-	if (prev_point == NULL) {
-	    /* The deleted point is the first point */
+    if (previous_point == NULL) {
 	    spline->points = next_point;
-	    for (prev_point = next_point, p = prev_point->next;
-		 p->next != NULL;
-		 prev_point = p, p = p->next);
-	    /*
-	     * prev_point now points at next to last point (the last point is
-	     * a copy of the first).
-	     */
-	    p->x = spline->points->x;
-	    p->y = spline->points->y;
-	    next_point = p;
-	    /*
-	     * next_point becomes the last point.  If this operation (point
-	     * deletion) is reversed (undo), the selected_point will not be
-	     * inserted into it original place, but will be between
-	     * prev_point and next_point.
-	     */
-	} else
-	    prev_point->next = next_point;
-    } else {			/* open spline */
-	if (prev_point == NULL)
-	    spline->points = next_point;
-	else
-	    prev_point->next = next_point;
-    }
-    if (int_spline(spline)) {
-	F_control      *c;
+	if (open_spline(spline)) {
+	    selected_sfactor = spline->sfactors->next;
+	    spline->sfactors->next = selected_sfactor->next;
+	} else {
+	    selected_sfactor = spline->sfactors;
+	    spline->sfactors = spline->sfactors->next;
+	}
+    } else {
+	previous_point->next = next_point;
 
-	c = spline->controls;
-	spline->controls = c->next;
-	c->next = NULL;
-	free((char *) c);
-	remake_control_points(spline);
+	if ((next_point == NULL) && (open_spline(spline)))
+	  previous_point = prev_point(spline->points, previous_point);
+
+	s_prev_point = search_sfactor(spline,previous_point);
+	selected_sfactor = s_prev_point->next;
+	s_prev_point->next = s_prev_point->next->next;
     }
+
     /* put it back in the list and draw the new spline */
     list_add_spline(&objects.splines, spline);
     /* redraw it and anything on top of it */
     redisplay_spline(spline);
-    clean_up();
     set_action_object(F_DELETE_POINT, O_SPLINE);
     set_latestspline(spline);
-    set_last_prevpoint(prev_point);
     set_last_selectedpoint(selected_point);
+    set_last_selectedsfactor(selected_sfactor);
     set_last_nextpoint(next_point);
     set_modifiedflag();
     reset_cursor();

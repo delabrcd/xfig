@@ -1,3 +1,5 @@
+#ifndef W_MOUSEFUN_H
+#define W_MOUSEFUN_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
@@ -16,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 void		init_mousefun();
@@ -43,3 +42,4 @@ void		draw_mousefun_kbd();
 void		clear_mousefun_kbd();
 void		init_mousefun_actions();
 extern String	kbd_translations;
+#endif /* W_MOUSEFUN_H */

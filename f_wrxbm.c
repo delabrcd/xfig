@@ -1,5 +1,5 @@
 /*
- * FIG : Facility for Interactive Generation of figures
+ * FIG : Facility for Interactive Generation of figunres
  * Copyright (c) 1995 by Brian V. Smith
  *
  * The X Consortium, and any party obtaining a copy of these files from
@@ -16,9 +16,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -41,7 +38,7 @@ write_xbm(file_name,mag,margin)
     if (!ok_to_write(file_name, "EXPORT"))
 	return False;
 
-    return (create_n_write_xbm(file_name,mag,margin));  /* write the xbm file */
+    return (create_n_write_xbm(file_name,mag/100.0,margin));  /* write the xbm file */
 }
 
 static Boolean	havegcs = False;
@@ -51,21 +48,23 @@ static unsigned long save_bg_color;
 
 static Boolean
 create_n_write_xbm(filename,mag,margin)
-    char	   *filename;
-    float	    mag;
-    int		    margin;
+    char	 *filename;
+    float	  mag;
+    int		  margin;
 {
-    int		    xmin, ymin, xmax, ymax;
-    int		    width, height;
-    Window	    sav_canvas;
-    int		    sav_objmask;
-    Pixmap	    largepm, bitmap;
-    int		    i;
-    float	    savezoom;
-    int		    savexoff, saveyoff;
-    int		    status;
-    Boolean	    zoomchanged;
-    GC		    xgc, gc_bitmap;
+    int		  xmin, ymin, xmax, ymax;
+    int		  width, height;
+    Window	  sav_canvas;
+    int		  sav_objmask;
+    Pixmap	  largepm, bitmap;
+    int		  i;
+    float	  savezoom;
+    int		  savexoff, saveyoff;
+    Boolean	  status;
+    int		  wrstat;
+    Boolean	  zoomchanged;
+    GC		  xgc, gc_bitmap;
+    int		  save_posn;
 
     /* this may take a while */
     set_temp_cursor(wait_cursor);
@@ -82,7 +81,11 @@ create_n_write_xbm(filename,mag,margin)
     zoomxoff = zoomyoff = 0;
 
     /* Assume that there is at least one object */
+    /* save current point positioning grid and set to "ANY" */
+    save_posn = cur_pointposn;
+    cur_pointposn = P_ANY;
     compound_bound(&objects, &xmin, &ymin, &xmax, &ymax);
+    cur_pointposn = save_posn;
 
     /* adjust limits for magnification */
     xmin = round(xmin*zoomscale);
@@ -181,12 +184,15 @@ create_n_write_xbm(filename,mag,margin)
 	sav_fill_gc[i] = fill_gc[i];
 	fill_gc[i] = xgc;
     }
-    if (XWriteBitmapFile(tool_d, filename, bitmap, width, height, -1, -1)
+    if ((wrstat=XWriteBitmapFile(tool_d, filename, bitmap, width, height, -1, -1))
 	!= BitmapSuccess) {
-	file_msg("Couldn't write xbm file");
+	if (wrstat==BitmapOpenFailed)
+	    file_msg("Couldn't write xbm file");
+	else if (wrstat==BitmapNoMemory)
+	    put_msg("not enough memory");
 	status = False;
     } else {
-	put_msg("Bitmap written to \"%s\"", filename);
+	put_msg("%dx%d XBM bitmap written to \"%s\"", width, height, filename);
 	status = True;
     }
     XFreePixmap(tool_d, largepm);

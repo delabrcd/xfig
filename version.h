@@ -1,3 +1,5 @@
+#ifndef VERSION_H
+#define VERSION_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
@@ -16,10 +18,8 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
-#define			FIG_VERSION		"3.1"
-#define			PROTOCOL_VERSION	"3.1"	/* file format */
+#define			FIG_VERSION		"3.2"
+#define			PROTOCOL_VERSION	"3.2"	/* file format */
+#endif /* VERSION_H */

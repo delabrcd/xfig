@@ -16,9 +16,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -39,26 +36,28 @@ static	Boolean	    write_JPEG_file();
 extern	Pixmap	    init_write_color_image();
 static	XColor	    jcolors[MAX_COLORMAP_SIZE];
 static	int	    width, height;
+static	int	    bpp;
 static  XImage	   *image;
 static	unsigned char *dptr;
 
 Boolean
-write_jpg(file_name,mag,margin)
+write_jpg(file_name,mag,quality,margin)
     char	   *file_name;
     float	    mag;
-    int		    margin;
+    int		    quality,margin;
 {
     if (!ok_to_write(file_name, "EXPORT"))
 	return False;
 
-    return (create_n_write_jpg(file_name,mag,margin));	/* write the jpg file */
+    /* write the jpg file */
+    return (create_n_write_jpg(file_name,mag/100.0,quality,margin));
 }
 
 static Boolean
-create_n_write_jpg(filename,mag,margin)
+create_n_write_jpg(filename,mag,quality,margin)
     char	   *filename;
     float	    mag;
-    int		    margin;
+    int		    quality,margin;
 {
     int		    i;
     Pixmap	    pixmap;
@@ -79,15 +78,19 @@ create_n_write_jpg(filename,mag,margin)
 
     /* the image data itself */
     dptr = iptr = (unsigned char *) image->data;
+    /* number of bits per pixel */
+    bpp = image->bits_per_pixel;
 
     /* color */
     if (tool_cells > 2) {
-	/* get the rgb values for ALL pixels in the colormap */
-	for (i=0; i<tool_cells; i++) {
-	    jcolors[i].pixel = i;
-	    jcolors[i].flags = DoRed | DoGreen | DoBlue;
+	if (bpp == 8) { 
+	    /* get the rgb values for ALL pixels in the colormap */
+	    for (i=0; i<tool_cells; i++) {
+		jcolors[i].pixel = i;
+		jcolors[i].flags = DoRed | DoGreen | DoBlue;
+	    }
+	    XQueryColors(tool_d, tool_cm, jcolors, tool_cells);
 	}
-	XQueryColors(tool_d, tool_cm, jcolors, tool_cells);
 
     /* monochrome, copy bits to bytes */
     } else {
@@ -141,7 +144,7 @@ create_n_write_jpg(filename,mag,margin)
     put_msg("Writing JPEG file...");
     app_flush();
 
-    if (write_JPEG_file(file) == 0) {
+    if (write_JPEG_file(file,quality) == 0) {
 	file_msg("Couldn't write JPEG file");
 	status = False;
     } else {
@@ -173,12 +176,20 @@ static	void	error_exit();
  */
 
 static Boolean
-write_JPEG_file (file)
+write_JPEG_file (file,quality)
    FILE  *file;
+   int    quality;
 {
-  unsigned char *data;
-  int row_stride;		/* physical row width in image buffer */
-  int i;
+  unsigned char	*data;
+  int		 row_stride;		/* physical row width in image buffer */
+  int		 i;
+  int		 rshr,gshr,bshr;
+  int		 rshl,gshl,bshl;
+  unsigned long	 red_mask,green_mask,blue_mask;
+  unsigned long	 red_fill,green_fill,blue_fill;
+  int		 h32b,m32b,l32b,h24b,l24b,h16b,l16b;
+  int		 fill;
+  unsigned long	 o;
 
   /* This struct contains the JPEG compression parameters and pointers to
    * working space (which is allocated as needed by the JPEG library).
@@ -234,12 +245,9 @@ write_JPEG_file (file)
   jpeg_set_defaults(&cinfo);
 
   /* Now you can set any non-default parameters you wish to.
-   * Here we just illustrate the use of quality (quantization table) scaling:
+   * Here we just set the quality (quantization table) scaling:
    */
-  /* This may be an option in the future */
-#ifdef JPEG_QUALITY
   jpeg_set_quality(&cinfo, quality, True /* limit to baseline-JPEG values */);
-#endif /* JPEG_QUALITY */
 
   /* Step 4: Start compressor */
 
@@ -262,17 +270,107 @@ write_JPEG_file (file)
 	return False;
   }
 
+  /* adjust for high/low byte order */
+  if (image->byte_order) {
+	h32b = 1;	/* hi byte for 32 bits/pixel */
+	m32b = 2;	/* mid */
+	l32b = 3;	/* low */
+	h24b = 0;	/* hi byte for 24 bits/pixel */
+	l24b = 2;	/* low (mid byte is always 1) */
+	h16b = 0;	/* hi byte for 16 bits/pixel */
+	l16b = 1;	/* low */
+  } else {
+	h32b = 2;
+	m32b = 1;
+	l32b = 0;
+	h24b = 2;
+	l24b = 0;
+	h16b = 1;
+	l16b = 0;
+  }
   /* order the data as the jpeg libraries want it */
+  if (bpp != 8) {
+	  /* shift mask to count how many bits to shift red value */
+	  rshr = 0;
+	  red_mask = tool_v->red_mask;
+	  while ((red_mask & 1) == 0) {
+	     rshr++;
+	     red_mask>>=1;
+	  }
+	  /* now find how many bits in the mask (locate the high bit) */
+	  /* also, make fill bits to "OR" in when shifting pixel left */
+	  rshl = 0;
+	  red_fill = 0;
+	  while ((red_mask & 0x80) == 0) {
+	     rshl++;
+	     red_mask<<=1;
+	     red_fill = (red_fill<<1) + 1;
+	  }
+	  red_mask = tool_v->red_mask;
+	  gshr = 0;
+	  green_mask = tool_v->green_mask;
+	  while ((green_mask & 1) == 0) {
+	     gshr++;
+	     green_mask>>=1;
+	  }
+	  gshl = 0;
+	  green_fill = 0;
+	  while ((green_mask & 0x80) == 0) {
+	     gshl++;
+	     green_mask<<=1;
+	     green_fill = (red_fill<<1) + 1;
+	  }
+	  green_mask = tool_v->green_mask;
+	  bshr = 0;
+	  blue_mask = tool_v->blue_mask;
+	  while ((blue_mask & 1) == 0) {
+	     bshr++;
+	     blue_mask>>=1;
+	  }
+	  bshl = 0;
+	  blue_fill = 0;
+	  while ((blue_mask & 0x80) == 0) {
+	     bshl++;
+	     blue_mask<<=1;
+	     blue_fill = (red_fill<<1) + 1;
+	  }
+	  blue_mask = tool_v->blue_mask;
+  }
+  /* difference in width of scanline and image width */
+  fill = image->bytes_per_line - width*bpp/8;
   while (cinfo.next_scanline < cinfo.image_height) {
     for (i=0; i<width; i++) {
-	data[i*3+0] = (unsigned char) (jcolors[*dptr].red >> 8);
-	data[i*3+1] = (unsigned char) (jcolors[*dptr].green >> 8);
-	data[i*3+2] = (unsigned char) (jcolors[*dptr].blue >> 8);
-	dptr++;
+	if (bpp == 16) {
+	    o = (*(dptr+h16b)<<8) + *(dptr+l16b);
+	    data[i*3+0] = (((o & red_mask)   >> rshr) << rshl)|red_fill;
+	    data[i*3+1] = (((o & green_mask) >> gshr) << gshl)|green_fill;
+	    data[i*3+2] = (((o & blue_mask)  >> bshr) << bshl)|blue_fill;
+	    dptr+=2;
+	} else if (bpp == 24) {
+	    o = (*(dptr+h24b)<<16) + (*(dptr+1)<<8) + *(dptr+l24b);
+	    data[i*3+0] = ((o & red_mask)   >> rshr) << rshl;
+	    data[i*3+1] = ((o & green_mask) >> gshr) << gshl;
+	    data[i*3+2] = ((o & blue_mask)  >> bshr) << bshl;
+	    dptr += 3;
+	} else if (bpp == 32) {
+	    o = (*(dptr+h32b)<<16) + (*(dptr+m32b)<<8) + *(dptr+l32b);
+	    /* for 32 bit color, copy rgb straight over */
+	    data[i*3+0] = ((o & red_mask)   >> rshr) << rshl;
+	    data[i*3+1] = ((o & green_mask) >> gshr) << gshl;
+	    data[i*3+2] = ((o & blue_mask)  >> bshr) << bshl;
+	    dptr += 4;
+	} else if (bpp = 8) {
+	    /* go through colormap */
+	    data[i*3+0] = (unsigned char) (jcolors[*dptr].red >> 8);
+	    data[i*3+1] = (unsigned char) (jcolors[*dptr].green >> 8);
+	    data[i*3+2] = (unsigned char) (jcolors[*dptr].blue >> 8);
+	    dptr++;
+	}
     }
     /* for color image, adjust by difference of bytes_per_line and image width */
-    if (tool_cells > 2)
-	dptr += (image->bytes_per_line - width);
+    if (tool_cells > 2) {
+	dptr += fill;
+    }
     (void) jpeg_write_scanlines(&cinfo, &data, 1);
   }
   free(data);

@@ -1,3 +1,5 @@
+#ifndef U_FONTS_H
+#define U_FONTS_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Brian V. Smith
@@ -16,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #define MIN_P_SIZE 6
@@ -59,3 +58,4 @@ struct _xfstruct {
 };
 
 int		x_fontnum();
+#endif /* U_FONTS_H */

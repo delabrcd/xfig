@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -93,24 +90,34 @@ recolor_cursors()
     XRecolorCursor(d, magnify_cursor,   &x_fg_color, &x_bg_color);
 }
 
+static Cursor active_cursor = None;
+
 reset_cursor()
 {
-    XDefineCursor(tool_d, real_canvas, cur_cursor);
-    app_flush();
+    if (active_cursor != cur_cursor) {
+	active_cursor = cur_cursor;
+	XDefineCursor(tool_d, real_canvas, cur_cursor);
+	app_flush();
+    }
 }
 
 set_temp_cursor(cursor)
-    Cursor	    cursor;
+    Cursor            cursor;
 {
+  if (active_cursor != cursor) {
+    active_cursor = cursor;
     XDefineCursor(tool_d, real_canvas, cursor);
     app_flush();
+  }
 }
 
 set_cursor(cursor)
-    Cursor	    cursor;
+    Cursor            cursor;
 {
-    cur_cursor = cursor;
+  cur_cursor = cursor;
+  if (active_cursor != cur_cursor) {
+    active_cursor = cur_cursor;
     XDefineCursor(tool_d, real_canvas, cursor);
     app_flush();
+  }
 }
-

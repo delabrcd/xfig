@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -29,6 +26,7 @@
 #include "object.h"
 #include "paintop.h"
 #include "u_create.h"
+#include "u_draw.h"
 #include "u_search.h"
 #include "u_undo.h"
 #include "w_canvas.h"
@@ -154,7 +152,6 @@ add_splinearrow(spline, prev_point, selected_point)
     F_point	   *prev_point, *selected_point;
 {
     F_point	   *p;
-    F_control	   *c;
 
     if (prev_point == NULL) {	/* add backward arrow */
 	if (spline->back_arrow)
@@ -285,3 +282,8 @@ delete_splinearrow(spline, prev_point, selected_point)
     set_action_object(F_DELETE_ARROW_HEAD, O_SPLINE);
     set_modifiedflag();
 }
+
+
+
+
+

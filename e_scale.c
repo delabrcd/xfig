@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -85,6 +82,9 @@ scale_selected()
     reset_action_on();
 }
 
+char *BOX_SCL_MSG = "Can't use box scale on selected object";
+char *BOX_SCL2_MSG = "Can't use box scale on selected object; try putting it into a compound";
+
 static
 init_box_scale(obj, type, x, y, px, py)
     char	   *obj;
@@ -108,7 +108,7 @@ init_box_scale(obj, type, x, y, px, py)
 	    return;
 	break;
     default:
-	put_msg("Can't use box scale on selected object");
+	put_msg(BOX_SCL2_MSG);
 	return;
     }
     set_mousefun("new posn", "", "cancel", "", "", "");
@@ -203,7 +203,7 @@ init_boxscale_ellipse(x, y)
     cur_angle = cur_e->angle;
 
     if (cur_x == fix_x || cur_y == fix_y) {
-	put_msg("Can't use box scale on selected object");
+	put_msg(BOX_SCL2_MSG);
 	return False;
     }
     set_action_on();
@@ -526,8 +526,6 @@ fix_scale_spline(x, y)
     old_s->next = cur_s;
     /* now change the original to become the new object */
     rescale_points(cur_s->points, x, y);
-    if (int_spline(cur_s))
-	remake_control_points(cur_s);
     /* redraw anything under the old spline */
     redisplay_spline(old_s);
     /* and the new one */
@@ -550,7 +548,7 @@ init_boxscale_compound(x, y)
     ymax = max2(cur_c->secorner.y, cur_c->nwcorner.y);
 
     if (xmin == xmax || ymin == ymax) {
-	put_msg("Can't use box scale on selected object");
+	put_msg(BOX_SCL_MSG);
 	return False;
     }
     set_action_on();
@@ -765,7 +763,7 @@ scale_line(l, sx, sy, refx, refy)
 	p->x = round(refx + (p->x - refx) * sx);
 	p->y = round(refy + (p->y - refy) * sy);
     }
-    /* now scale the radius */
+    /* now scale the radius for an arc-box */
     if (l->type == T_ARC_BOX) {
 	int h,w;
 	/* scale by the average of height/width factor */
@@ -788,18 +786,12 @@ scale_spline(s, sx, sy, refx, refy)
     int		    refx, refy;
 {
     F_point	   *p;
-    F_control	   *c;
 
     for (p = s->points; p != NULL; p = p->next) {
 	p->x = round(refx + (p->x - refx) * sx);
 	p->y = round(refy + (p->y - refy) * sy);
     }
-    for (c = s->controls; c != NULL; c = c->next) {
-	c->lx = refx + (c->lx - refx) * sx;
-	c->ly = refy + (c->ly - refy) * sy;
-	c->rx = refx + (c->rx - refx) * sx;
-	c->ry = refy + (c->ry - refy) * sy;
-    }
+
 }
 
 scale_arc(a, sx, sy, refx, refy)
@@ -897,7 +889,7 @@ init_boxscale_line(x, y)
     if (cur_l->type != T_BOX &&
 	cur_l->type != T_ARC_BOX &&
 	cur_l->type != T_PICTURE) {
-	put_msg("Can't use box scale on selected object");
+	put_msg(BOX_SCL2_MSG);
 	return False;
     }
     p0 = cur_l->points;
@@ -909,7 +901,7 @@ init_boxscale_line(x, y)
     ymax = max3(p0->y, p1->y, p2->y);
 
     if (xmin == xmax || ymin == ymax) {
-	put_msg("Can't use box scale on selected object");
+	put_msg(BOX_SCL_MSG);
 	return False;
     }
     set_action_on();

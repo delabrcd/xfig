@@ -16,9 +16,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 /*
@@ -48,7 +45,8 @@ init_write_color_image(maxsize, mag, uwidth, uheight, margin)
     int		 *uwidth, *uheight;
     int		  margin;
 {
-    Pixmap pixmap;
+    Pixmap	  pixmap;
+    int		  save_posn;
 
     /* this may take a while */
     put_msg("Capturing canvas image...");
@@ -66,7 +64,11 @@ init_write_color_image(maxsize, mag, uwidth, uheight, margin)
     zoomxoff = zoomyoff = 0;
 
     /* Assume that there is at least one object */
+    /* save current point positioning grid and set to "ANY" */
+    save_posn = cur_pointposn;
+    cur_pointposn = P_ANY;
     compound_bound(&objects, &xmin, &ymin, &xmax, &ymax);
+    cur_pointposn = save_posn;
 
     if (appres.DEBUG) {
 	elastic_box(xmin, ymin, xmax, ymax);

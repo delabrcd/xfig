@@ -17,9 +17,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -32,6 +29,8 @@
 #include "w_util.h"
 #include "w_setup.h"
 
+/*  IMPORTS  */
+
 extern		erase_objecthighlight();
 extern		emptyfigure();
 extern Boolean	query_save();
@@ -43,6 +42,8 @@ extern void	popup_print_panel(), popup_file_panel(), popup_export_panel();
 extern Widget	export_orient_panel;
 extern Widget	print_orient_panel;
 
+
+/*  LOCAL  */
 
 void		init_cmd_panel();
 void		setup_cmd_panel();
@@ -61,6 +62,11 @@ void		new();
 void		delete_all_cmd();
 void		paste();
 
+/* popup message over button when mouse enters it */
+static void     cmd_balloon();
+static void     cmd_unballoon();
+Widget cmd_balloon_popup = (Widget) 0;
+
 /* cmd panel definitions */
 #define CMD_LABEL_LEN	16
 typedef struct cmd_switch_struct {
@@ -71,25 +77,45 @@ typedef struct cmd_switch_struct {
     int		    (*shift_quick_func) ();	/* shift-mouse button 3 func */
     char	    mousefun_l[CMD_LABEL_LEN];	/* label for mouse 1 func */
     char	    mousefun_r[CMD_LABEL_LEN];	/* label for mouse 3 func */
+    char	    balloons_l[255],balloons_r[255]; /* messages for popup indicator */
+    Boolean	    popup;			/* true for commands that popup something */
     Widget	    widget;			/* widget */
 }		cmd_sw_info;
 
+/* IMPORTANT NOTE:  The "popup" boolean must be True for those commands which 
+   may popup a window.  Because the command button is set insensitive in those
+   cases, the LeaveWindow event never happens on that button so the balloons popup
+   would never be destroyed in that case.  */
+
 /* command panel of switches below the lower ruler */
 cmd_sw_info cmd_switches[] = {
-    {"Quit",	   "quit", quit, null_proc, null_proc, "Quit", ""},
+    {"Quit",	   "quit", quit, null_proc, null_proc, 
+			"Quit", "", 
+			"Quit xfig", "", True},
     {"New", 	   "new", new, null_proc, null_proc, 
-				"New", ""},
-    {"Port/Land",  "orient", change_orient, null_proc, null_proc, "Change Orient.", ""},
-    {"Undo",	   "undo", undo, null_proc, null_proc, "Undo", ""},
+			"New", "", 
+			"Start new figure", "", False},
+    {"Port/Land",  "orient", change_orient, null_proc, null_proc, 
+			"Change Orient.", "",
+			"Switch to/from Portrait\nand Landscape", "", False},
+    {"Undo",	   "undo", undo, null_proc, null_proc, 
+			"Undo", "",
+			"Undo last change", "", False},
     {"Redraw",	   "redraw", redisplay_canvas, null_proc, null_proc, 
-				"Redraw", ""},
-    {"Paste",	   "paste", paste, null_proc, null_proc, "Paste", ""},
+			"Redraw", "",
+			"Redraw canvas", "", False},
+    {"Paste",	   "paste", paste, null_proc, null_proc, 
+			"Paste", "",
+			"Paste contents of cut buffer", "", False},
     {"File...",	   "file", popup_file_panel, do_save, null_proc, 
-				"Popup", "Save Shortcut"},
+			"Popup", "Save Shortcut",
+			"Popup File menu    ", "Save current figure", True},
     {"Export...",  "export", popup_export_panel, do_export, null_proc, 
-				"Popup", "Export Shortcut"},
+			"Popup", "Export Shortcut",
+			"Popup Export menu", "Export figure    ", True},
     {"Print...",   "print", popup_print_panel, do_print, do_print_batch, 
-				"Popup","Print Shortcut"},
+			"Popup","Print Shortcut",
+			"Popup Print menu", "Print figure    ", True},
 };
 
 #define		NUM_CMD_SW  (sizeof(cmd_switches) / sizeof(cmd_sw_info))
@@ -105,8 +131,8 @@ static XtActionsRec cmd_actions[] =
     {"redraw", (XtActionProc) redisplay_canvas},
     {"paste", (XtActionProc) paste},
     {"file", (XtActionProc) popup_file_panel},
-    {"export", (XtActionProc) popup_export_panel},
-    {"print", (XtActionProc) popup_print_panel},
+    {"popup_export", (XtActionProc) popup_export_panel},
+    {"popup_print", (XtActionProc) popup_print_panel},
 };
 
 static String	cmd_translations =
@@ -160,6 +186,11 @@ init_cmd_panel(tool)
 			  sel_cmd_but, (XtPointer) sw);
 	XtAddEventHandler(sw->widget, EnterWindowMask, (Boolean) 0,
 			  enter_cmd_but, (XtPointer) sw);
+	/* popup when mouse passes over button */
+	XtAddEventHandler(sw->widget, EnterWindowMask, (Boolean) 0,
+			  cmd_balloon, (XtPointer) sw);
+	XtAddEventHandler(sw->widget, LeaveWindowMask, (Boolean) 0,
+			  cmd_unballoon, (XtPointer) sw);
 	XtOverrideTranslations(sw->widget,
 			       XtParseTranslationTable(cmd_translations));
 	ArgCount -= 3;
@@ -181,6 +212,96 @@ setup_cmd_panel()
 	FirstArg(XtNfont, button_font); /* label font */
 	SetValues(sw->widget);
     }
+}
+
+static	Pixmap mouse_l=(Pixmap) 0, mouse_r=(Pixmap) 0;
+
+#define mouse_r_width 19
+#define mouse_r_height 10
+static char mouse_r_bits[] = {
+   0xff, 0xff, 0x07, 0x41, 0xf0, 0x07, 0x41, 0xf0, 0x07, 0x41, 0xf0, 0x07,
+   0x41, 0xf0, 0x07, 0x41, 0xf0, 0x07, 0x41, 0xf0, 0x07, 0x41, 0xf0, 0x07,
+   0x41, 0xf0, 0x07, 0xff, 0xff, 0x07};
+
+#define mouse_l_width 19
+#define mouse_l_height 10
+static char mouse_l_bits[] = {
+   0xff, 0xff, 0x07, 0x7f, 0x10, 0x04, 0x7f, 0x10, 0x04, 0x7f, 0x10, 0x04,
+   0x7f, 0x10, 0x04, 0x7f, 0x10, 0x04, 0x7f, 0x10, 0x04, 0x7f, 0x10, 0x04,
+   0x7f, 0x10, 0x04, 0xff, 0xff, 0x07};
+
+/* come here when the mouse passes over a button in the command panel */
+
+static void
+cmd_balloon(widget, closure, event, continue_to_dispatch)
+    Widget        widget;
+    XtPointer	  closure;
+    XEvent*	  event;
+    Boolean*	  continue_to_dispatch;
+{
+	Widget	  box, balloons_label_l, balloons_label_r;
+	Position  x, y;
+	Dimension w;
+	cmd_sw_info *sw= (cmd_sw_info *) closure;
+	char	  lab[255];
+
+	if (!appres.show_balloons)
+	    return;
+
+	/* create the bitmaps that look like mouse buttons pressed */
+	if (mouse_l == 0) {
+	    mouse_l = XCreateBitmapFromData(tool_d, tool_w, 
+				mouse_l_bits, mouse_l_width, mouse_l_height);
+	    mouse_r = XCreateBitmapFromData(tool_d, tool_w, 
+				mouse_r_bits, mouse_r_width, mouse_r_height);
+	}
+	/* get width of this button */
+	FirstArg(XtNwidth, &w);
+	GetValues(widget);
+	/* find right edge + 5 pixels */
+	XtTranslateCoords(widget, w+5, 0, &x, &y);
+
+	/* put popup there */
+	FirstArg(XtNx, x);
+	NextArg(XtNy, y);
+	cmd_balloon_popup = XtCreatePopupShell("cmd_balloon_popup",overrideShellWidgetClass,
+				tool, Args, ArgCount);
+	FirstArg(XtNborderWidth, 0);
+	NextArg(XtNhSpace, 0);
+	NextArg(XtNvSpace, 0);
+	NextArg(XtNorientation, XtorientVertical);
+	box = XtCreateManagedWidget("box", boxWidgetClass, cmd_balloon_popup, Args, ArgCount);
+	/* put left/right mouse button labels as message */
+	
+	FirstArg(XtNborderWidth, 0);
+	NextArg(XtNlabel, sw->balloons_l);
+	NextArg(XtNleftBitmap, mouse_l);	/* bitmap of mouse with left button pushed */
+	balloons_label_l = XtCreateManagedWidget("l_label", labelWidgetClass,
+				    box, Args, ArgCount);
+	/* don't make message for right button if none */
+	if (strlen(sw->balloons_r) != 0) {
+	    FirstArg(XtNborderWidth, 0);
+	    NextArg(XtNlabel, sw->balloons_r);
+	    NextArg(XtNleftBitmap, mouse_r);	/* bitmap of mouse with right button pushed */
+	    balloons_label_r = XtCreateManagedWidget("r_label", labelWidgetClass,
+				    box, Args, ArgCount);
+	}
+
+	XtPopup(cmd_balloon_popup,XtGrabNone);
+}
+
+/* come here when the mouse leaves a button in the command panel */
+
+static void
+cmd_unballoon(widget, closure, event, continue_to_dispatch)
+    Widget          widget;
+    XtPointer	    closure;
+    XEvent*	    event;
+    Boolean*	    continue_to_dispatch;
+{
+    if (cmd_balloon_popup != (Widget) 0)
+	XtDestroyWidget(cmd_balloon_popup);
+    cmd_balloon_popup = 0;
 }
 
 static void
@@ -220,6 +341,14 @@ sel_cmd_but(widget, closure, event, continue_to_dispatch)
     } else if (highlighting)
 	erase_objecthighlight();
 
+    /* if this command popups a window, destroy the balloons popup now. See the
+       note above about this above the command panel definition. */
+    if (sw->popup && cmd_balloon_popup != (Widget) 0) {
+	XtDestroyWidget(cmd_balloon_popup);
+	cmd_balloon_popup = 0;
+    }
+    app_flush();
+
     if (button.button == Button1)
 	cmd_action(sw);
     else if (button.state & ShiftMask)
@@ -246,6 +375,12 @@ quit(w)
 goodbye(abortflag)
     Boolean	    abortflag;
 {
+#ifdef I18N
+#ifndef I18N_NO_PREEDIT
+  extern kill_preedit();
+  kill_preedit();
+#endif  /* I18N_NO_PREEDIT */
+#endif  /* I18N */
     /* delete the cut buffer only if it is in a temporary directory */
     if (strncmp(cut_buf_name, TMPDIR, strlen(TMPDIR)) == 0)
 	unlink(cut_buf_name);
@@ -270,27 +405,28 @@ goodbye(abortflag)
 }
 
 void
-paste()
+paste(w)
+    Widget	    w;
 {
     merge_file(cut_buf_name, 0, 0);	/* maybe have x/y offset in the future */
 }
 
 void
-new()
+new(w)
+    Widget	    w;
 {
-    if (emptyfigure()) {
-	put_msg("New figure already");
-	return;
+    if (!emptyfigure()) {
+	delete_all();
+	strcpy(save_filename,cur_filename);
     }
-    delete_all();
-    strcpy(save_filename,cur_filename);
     update_cur_filename("");
     put_msg("Immediate Undo will restore the figure");
     redisplay_canvas();
 }
 
 void
-delete_all_cmd()
+delete_all_cmd(w)
+    Widget	    w;
 {
     if (emptyfigure()) {
 	put_msg("Figure already empty");
@@ -305,7 +441,8 @@ delete_all_cmd()
 /* Toggle canvas orientation from Portrait to Landscape or vice versa */
 
 void
-change_orient()
+change_orient(w)
+    Widget	    w;
 {
     Dimension	formw, formh;
     int		dx, dy;

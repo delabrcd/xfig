@@ -17,9 +17,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 /*
@@ -81,6 +78,8 @@ Boolean		status;
   /* capture the screen area */
   status = getImageData(&width, &height, &numcols, Red, Green, Blue);
 
+  /* make sure server is ungrabbed if we're debugging */
+  XSync(tool_d, False);
   /* map our windows again */
   XtMapWidget(tool);
   XtMapWidget(window);

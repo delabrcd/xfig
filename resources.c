@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -130,6 +127,7 @@ int		tool_vclass;
 Visual	       *tool_v;
 int		tool_dpth;
 int		tool_cells;
+int		image_bpp;	/* # of bytes-per-pixel for images at this visual */
 Colormap	tool_cm, newcmap;
 Boolean		swapped_cmap = False;
 Atom		wm_delete_window;
@@ -155,10 +153,10 @@ float		ZOOM_FACTOR;	/* assigned in main.c */
 char	       *TMPDIR;
 
 /***** translations used for asciiTextWidgets in general windows *****/
-char  *text_translations =
-	"<Key>Return: no-op(RingBell)\n\
-	Ctrl<Key>J: no-op(RingBell)\n\
-	Ctrl<Key>M: no-op(RingBell)\n\
+String  text_translations =
+	"<Key>Return: no-op()\n\
+	Ctrl<Key>J: no-op()\n\
+	Ctrl<Key>M: no-op()\n\
 	Ctrl<Key>X: EmptyTextKey()\n\
 	Ctrl<Key>U: multiply(4)\n\
 	<Key>F18: PastePanelKey()\n";
@@ -176,44 +174,26 @@ char    *just_items[] = {
 /* IMPORTANT:  if the number or order of this table is changed be sure
 		to change the PAPER_xx definitions in resources.h */
 
-char	*paper_sizes[] = {
-    "Letter ",
-    "Legal  ",
-    "Ledger ",
-    "Tabloid",
-    "A      ",
-    "B      ",
-    "C      ",
-    "D      ",
-    "E      ",
-    "A4     ",   
-    "A3     ",
-    "A2     ",
-    "A1     ",
-    "A0     ",
-    "B5     "
-    };
-
-char	*full_paper_sizes[] = {
-    "Letter  (8.5\" x 11\")",
-    "Legal   (8.5\" x 14\")",
-    "Ledger  ( 11\" x 17\")",
-    "Tabloid ( 17\" x 11\")",
-    "A       (8.5\" x 11\")",
-    "B       ( 11\" x 17\")",
-    "C       ( 17\" x 22\")",
-    "D       ( 22\" x 34\")",
-    "E       ( 34\" x 44\")",
-    "A4      (21  cm x  29.7cm)",   
-    "A3      (29.7cm x  42  cm)",
-    "A2      (42  cm x  59.4cm)",
-    "A1      (59.4cm x  84  cm)",
-    "A0      (84  cm x 118.8cm)",
-    "B5      (18.2cm x  25.7cm)"
+struct	paper_def paper_sizes[] = {
+    {"Letter  ", "Letter  (8.5\" x 11\")",   10200, 13200}, 
+    {"Legal   ", "Legal   (8.5\" x 14\")",   10200, 16800}, 
+    {"Ledger  ", "Ledger  ( 17\" x 11\")",   20400, 13200}, 
+    {"Tabloid ", "Tabloid ( 11\" x 17\")",   13200, 20400}, 
+    {"A       ", "A       (8.5\" x 11\")",   10200, 13200}, 
+    {"B       ", "B       ( 11\" x 17\")",   13200, 20400}, 
+    {"C       ", "C       ( 17\" x 22\")",   20400, 26400}, 
+    {"D       ", "D       ( 22\" x 34\")",   26400, 40800}, 
+    {"E       ", "E       ( 34\" x 44\")",   40800, 52800}, 
+    {"A4      ", "A4      (210mm x  297mm)",  9921, 14031}, 
+    {"A3      ", "A3      (297mm x  420mm)", 14031, 19843}, 
+    {"A2      ", "A2      (420mm x  594mm)", 19843, 28063}, 
+    {"A1      ", "A1      (594mm x  841mm)", 28063, 39732}, 
+    {"A0      ", "A0      (841mm x 1189mm)", 39732, 56173}, 
+    {"B5(JIS) ", "B5(JIS) (182mm x  257mm)",  8598, 12142}, 
     };
 
 char    *multiple_pages[] = {
-    "Single",
+    "Single  ",
     "Multiple"};
 
 /* for w_file.c and w_export.c */

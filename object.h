@@ -1,3 +1,5 @@
+#ifndef OBJECT_H
+#define OBJECT_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
@@ -18,14 +20,17 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
+
+/* values to signify color used for transparent GIF color */
+
+#define		TRANSP_BACKGROUND	-3	/* use background of figure as transp color */
+#define		TRANSP_NONE		-2	/* no transp color */
 
 /* DEFAULT is used for many things - font, color etc */
 
 #define		DEFAULT		      (-1)
+
 #define		SOLID_LINE		0
 #define		DASH_LINE		1
 #define		DOTTED_LINE		2
@@ -279,27 +284,34 @@ typedef struct f_text {
 
 #define		using_ps	(cur_textflags & PSFONT_TEXT)
 
-typedef struct f_control {
-    float	    lx, ly, rx, ry;
-    struct f_control *next;
+typedef struct f_shape {
+    double s;
+    struct f_shape *next;
 }
-		F_control;
+		F_sfactor;
 
 /* SEE NOTE AT TOP BEFORE CHANGING ANYTHING IN THE f_spline STRUCTURE */
 
 #define		int_spline(s)		(s->type & 0x2)
-#define		normal_spline(s)	(!(s->type & 0x2))
+#define         x_spline(s)	        (s->type & 0x4)
+#define		approx_spline(s)	(!(int_spline(s)|x_spline(s)))
 #define		closed_spline(s)	(s->type & 0x1)
 #define		open_spline(s)		(!(s->type & 0x1))
+
+#define S_SPLINE_ANGULAR 0.0
+#define S_SPLINE_APPROX 1.0
+#define S_SPLINE_INTERP (-1.0)
 
 typedef struct f_spline {
     int		    tagged;
     int		    distrib;
     int		    type;
-#define					T_OPEN_NORMAL	0
-#define					T_CLOSED_NORMAL 1
+#define					T_OPEN_APPROX	0
+#define					T_CLOSED_APPROX 1
 #define					T_OPEN_INTERP	2
 #define					T_CLOSED_INTERP 3
+#define                                 T_OPEN_XSPLINE  4
+#define                                 T_CLOSED_XSPLINE  5
     int		    style;
     int		    thickness;
     Color	    pen_color;
@@ -315,12 +327,10 @@ typedef struct f_spline {
 /* THE PRECEDING VARS MUST BE IN THE SAME ORDER IN f_arc, f_line and f_spline */
 
     /*
-     * For T_OPEN_NORMAL and T_CLOSED_NORMAL points are control points while
-     * they are knots for T_OPEN_INTERP and T_CLOSED_INTERP whose control
-     * points are stored in controls.
+     * "points" are control points. Shape factors are stored in "sfactors".
      */
     struct f_point *points;	/* this must immediately follow cap_style */
-    struct f_control *controls;
+    struct f_shape *sfactors;
     struct f_spline *next;
 }
 		F_spline;
@@ -357,7 +367,7 @@ typedef struct f_linkinfo {
 
 #define		ARROW_SIZE	sizeof(struct f_arrow)
 #define		POINT_SIZE	sizeof(struct f_point)
-#define		CONTROL_SIZE	sizeof(struct f_control)
+#define		CONTROL_SIZE	sizeof(struct f_shape)
 #define		ELLOBJ_SIZE	sizeof(struct f_ellipse)
 #define		ARCOBJ_SIZE	sizeof(struct f_arc)
 #define		LINOBJ_SIZE	sizeof(struct f_line)
@@ -381,26 +391,29 @@ typedef struct f_linkinfo {
 
 /********************* object masks for update  ************************/
 
-#define M_NONE			0x000
-#define M_POLYLINE_POLYGON	0x001
-#define M_POLYLINE_LINE		0x002
-#define M_POLYLINE_BOX		0x004	/* includes ARCBOX */
-#define M_SPLINE_O_NORMAL	0x008
-#define M_SPLINE_C_NORMAL	0x010
-#define M_SPLINE_O_INTERP	0x020
-#define M_SPLINE_C_INTERP	0x040
-#define M_TEXT_NORMAL		0x080
-#define M_TEXT_HIDDEN		0x100
-#define M_ARC			0x200
-#define M_ELLIPSE		0x400
-#define M_COMPOUND		0x800
+#define M_NONE			0x0000
+#define M_POLYLINE_POLYGON	0x0001
+#define M_POLYLINE_LINE		0x0002
+#define M_POLYLINE_BOX		0x0004	/* includes ARCBOX */
+#define M_SPLINE_O_APPROX	0x0008
+#define M_SPLINE_C_APPROX	0x0010
+#define M_SPLINE_O_INTERP	0x0020
+#define M_SPLINE_C_INTERP	0x0040
+#define M_SPLINE_O_XSPLINE      0x0080
+#define M_SPLINE_C_XSPLINE      0x0100
+#define M_TEXT_NORMAL		0x0200
+#define M_TEXT_HIDDEN		0x0400
+#define M_ARC			0x0800
+#define M_ELLIPSE		0x1000
+#define M_COMPOUND		0x2000
 
 #define M_TEXT		(M_TEXT_HIDDEN | M_TEXT_NORMAL)
-#define M_SPLINE_O	(M_SPLINE_O_NORMAL | M_SPLINE_O_INTERP)
-#define M_SPLINE_C	(M_SPLINE_C_NORMAL | M_SPLINE_C_INTERP)
-#define M_SPLINE_NORMAL (M_SPLINE_O_NORMAL | M_SPLINE_C_NORMAL)
+#define M_SPLINE_O	(M_SPLINE_O_APPROX | M_SPLINE_O_INTERP | M_SPLINE_O_XSPLINE)
+#define M_SPLINE_C	(M_SPLINE_C_APPROX | M_SPLINE_C_INTERP | M_SPLINE_C_XSPLINE)
+#define M_SPLINE_APPROX (M_SPLINE_O_APPROX | M_SPLINE_C_APPROX)
 #define M_SPLINE_INTERP (M_SPLINE_O_INTERP | M_SPLINE_C_INTERP)
-#define M_SPLINE	(M_SPLINE_NORMAL | M_SPLINE_INTERP)
+#define M_SPLINE_XSPLINE (M_SPLINE_O_XSPLINE | M_SPLINE_C_XSPLINE)
+#define M_SPLINE	(M_SPLINE_APPROX | M_SPLINE_INTERP | M_SPLINE_XSPLINE)
 #define M_POLYLINE	(M_POLYLINE_LINE | M_POLYLINE_POLYGON | M_POLYLINE_BOX)
 #define M_VARPTS_OBJECT (M_POLYLINE_LINE | M_POLYLINE_POLYGON | M_SPLINE)
 #define M_OPEN_OBJECT	(M_POLYLINE_LINE | M_SPLINE_O | M_ARC)
@@ -424,3 +437,5 @@ extern F_spline		*cur_s, *new_s, *old_s;
 extern F_compound	*cur_c, *new_c, *old_c;
 extern F_point		*first_point, *cur_point;
 extern F_linkinfo	*cur_links;
+
+#endif /* OBJECT_H */

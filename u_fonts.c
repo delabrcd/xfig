@@ -16,9 +16,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -66,8 +63,8 @@ struct _xfstruct x_fontinfo[NUM_FONTS] = {
     {"-*-lucidabright-demibold-r-normal--", (struct xfont*) NULL},
     {"-*-lucidabright-demibold-i-normal--", (struct xfont*) NULL},
     {"-*-symbol-medium-r-normal--", (struct xfont*) NULL},
-    {"-*-zapfchancery-medium-i-normal--", (struct xfont*) NULL},
-    {"-*-zapfdingbats-*-*-*--", (struct xfont*) NULL},
+    {"-*-itc zapf chancery-medium-i-normal--", (struct xfont*) NULL},
+    {"-*-itc zapf dingbats-*-*-*--", (struct xfont*) NULL},
 };
 
 struct _fstruct ps_fontinfo[NUM_FONTS + 1] = {

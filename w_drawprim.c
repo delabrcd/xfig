@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 /*
@@ -96,18 +93,17 @@ init_font()
 	    fprintf(stderr," with your server - quitting.\n");
 	    exit(1);
 	}
-	fprintf(stderr, "Can't load font: %s, using 'fixed'\n",
-		appres.normalFont);
+	file_msg("Can't load font: %s, using 'fixed'\n", appres.normalFont);
 	appres.normalFont = "fixed";
     } /* now loop to load "fixed" */
     hidden_text_length = 4 * roman_font->max_bounds.width;
     if ((bold_font = XLoadQueryFont(tool_d, appres.boldFont)) == 0) {
-	fprintf(stderr, "Can't load font: %s, using %s\n",
+	file_msg("Can't load font: %s, using %s\n",
 		appres.boldFont, appres.normalFont);
 	bold_font = XLoadQueryFont(tool_d, appres.normalFont);
     }
     if ((button_font = XLoadQueryFont(tool_d, appres.buttonFont)) == 0) {
-	fprintf(stderr, "Can't load font: %s, using %s\n",
+	file_msg("Can't load font: %s, using %s\n",
 		appres.buttonFont, appres.normalFont);
 	button_font = XLoadQueryFont(tool_d, appres.normalFont);
     }
@@ -145,7 +141,7 @@ init_font()
 	    strcat(template,"*-*-*-*-*-*-");
 	    /* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
 	    if (strstr(template,"symbol") == NULL &&
-		strstr(template,"zapfdingbats") == NULL)
+		strstr(template,"dingbats") == NULL)
 		    strcat(template,"ISO8859-*");
 	    else
 		strcat(template,"*-*");
@@ -230,8 +226,8 @@ lookfont(fnum, size)
 	    fnum = 0;			/* pass back the -normal font font */
 	if (size < 0)
 	    size = DEF_FONTSIZE;	/* default font size */
-	if (size < 2)
-	    size = 2;			/* minimum allowable */
+	if (size < 3)
+	    size = 3;			/* minimum allowable */
 
 	/* see if we've already loaded that font size 'size'
 	   from the font family 'fnum' */
@@ -293,7 +289,7 @@ lookfont(fnum, size)
 		strcat(template,"%d-*-*-*-*-*-");
 		/* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
 		if (strstr(template,"symbol") == NULL &&
-		strstr(template,"zapfdingbats") == NULL)
+		strstr(template,"dingbats") == NULL)
 		    strcat(template,"ISO8859-*");
 		else
 		    strcat(template,"*-*");
@@ -312,7 +308,7 @@ lookfont(fnum, size)
 	    fontst = XLoadQueryFont(tool_d, fn);
 	    reset_cursor();
 	    if (fontst == NULL) {
-		fprintf(stderr, "xfig: Can't load font %s ?!, using %s\n",
+		file_msg("xfig: Can't load font %s ?!, using %s\n",
 			fn, appres.normalFont);
 		fontst = XLoadQueryFont(tool_d, appres.normalFont);
 		if (nf->fname)
@@ -384,6 +380,16 @@ textsize(fstruct, n, s)
     int		    dir, asc, desc;
     XCharStruct	    overall;
 
+#ifdef I18N
+    if (appres.international) {
+      extern i18n_text_extents();
+      i18n_text_extents(fstruct, s, n, &dir, &asc, &desc, &overall);
+      ret.length = ZOOM_FACTOR * overall.width;
+      ret.ascent = ZOOM_FACTOR * overall.ascent;
+      ret.descent = ZOOM_FACTOR * overall.descent;
+      return (ret);
+    }
+#endif  /* I18N */
     ret.length = ZOOM_FACTOR * XTextWidth(fstruct, s, n);
     XTextExtents(fstruct, s, n, &dir, &asc, &desc, &overall);
     ret.ascent = ZOOM_FACTOR * overall.ascent;
@@ -1186,9 +1192,12 @@ set_fill_gc(fill_style, op, pencolor, fillcolor, xorg, yorg)
 		fg = x_color(pencolor);
 		bg = x_color(fillcolor);
 	  } else {
-	      if (fillcolor == BLACK || fillcolor == DEFAULT) {
+	      if (fillcolor == BLACK) {
 		fg = x_color(BLACK);
 		bg = x_color(WHITE);
+	      } else if (fillcolor == DEFAULT) {
+		fg = x_fg_color.pixel;
+		bg = x_bg_color.pixel;
 	      } else {
 		fg = x_color(fillcolor);
 		bg = (fill_style < NUMSHADEPATS? x_color(BLACK): x_color(WHITE));
@@ -1273,8 +1282,7 @@ set_line_stuff(width, style, style_val, join_style, cap_style, op, color)
 	((style != DASH_LINE && style != DOTTED_LINE &&
           style != DASH_DOT_LINE && style != DASH_2_DOTS_LINE &&
           style != DASH_3_DOTS_LINE) ||
-	 dash_list[op][1] == (unsigned char) round(style_val * display_zoomscale))
-	)
+	 dash_list[op][1] == (unsigned char) round(style_val * display_zoomscale)))
 	    return;			/* no need to change anything */
 
     gcv.line_width = width;
@@ -1328,9 +1336,9 @@ set_line_stuff(width, style, style_val, join_style, cap_style, op, color)
 					display_zoomscale);
 		} else {
 		    dash_list[op][il] = (char)display_zoomscale;
-		    if (dash_list[op][il]==0)	/* take care for rounding to zero ! */
-			dash_list[op][il]=1;
 		}
+		if (dash_list[op][il]==0)	/* take care for rounding to zero ! */
+			dash_list[op][il]=1;
 	    }
 	    XSetDashes(tool_d, gccache[op], 0, (char *) dash_list[op], nd);
 	}

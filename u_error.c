@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -107,8 +104,8 @@ emergency_quit(abortflag)
     aborting = abortflag;
     if (figure_modified && !emptyfigure()) {
 	fprintf(stderr, "xfig: attempting to save figure\n");
-	if (emergency_save("xfig.SAVE") == -1)
-	    if (emergency_save(strcat(TMPDIR,"/xfig.SAVE")) == -1)
+	if (emergency_save("SAVE.fig") == -1)
+	    if (emergency_save(strcat(TMPDIR,"/SAVE.fig")) == -1)
 		fprintf(stderr, "xfig: unable to save figure\n");
     } else
 	fprintf(stderr, "xfig: figure empty or not modified - exiting\n");

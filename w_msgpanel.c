@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 
@@ -66,7 +63,21 @@ static char	prompt[BUF_SIZE];
 
 DeclareStaticArgs(12);
 
-/* for the popup message window */
+/* for the balloon toggle window */
+static Widget	balloon_toggle;
+
+/* turns on and off the balloons setting */
+static XtCallbackProc toggle_balloons();
+
+/* popup message over toggle window when mouse enters it */
+static void     toggle_balloon();
+static void     toggle_unballoon();
+
+/* popup message over filename window when mouse enters it */
+static void     filename_balloon();
+static void     filename_unballoon();
+
+/* for the popup message (file_msg) window */
 
 static int	file_msg_length=0;
 static char	tmpstr[300];
@@ -81,6 +92,19 @@ static XtActionsRec	file_msg_actions[] =
     {"DismissFileMsg", (XtActionProc) file_msg_panel_dismiss},
 };
 
+#define balloons_on_width 16
+#define balloons_on_height 15
+static char balloons_on_bits[] = {
+   0x00, 0x00, 0xfe, 0x7f, 0xfe, 0x67, 0xfe, 0x63, 0xfe, 0x71, 0xfe, 0x79,
+   0xfe, 0x7c, 0xe2, 0x7c, 0x46, 0x7e, 0x0e, 0x7e, 0x0e, 0x7f, 0x1e, 0x7f,
+   0x9e, 0x7f, 0xfe, 0x7f, 0x00, 0x00};
+
+#define balloons_off_width 16
+#define balloons_off_height 15
+static char balloons_off_bits[] = {
+   0xff, 0xff, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80,
+   0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80,
+   0x01, 0x80, 0x01, 0x80, 0xff, 0xff};
 
 /* message window code begins */
 
@@ -89,7 +113,7 @@ init_msg(tool, filename)
     Widget	    tool;
     char	   *filename;
 {
-    /* first make a form to put the two widgets in */
+    /* first make a form to put the four widgets in */
     FirstArg(XtNwidth, MSGFORM_WD);
     NextArg(XtNheight, MSGFORM_HT);
     NextArg(XtNfromVert, cmd_panel);
@@ -107,6 +131,12 @@ init_msg(tool, filename)
     NextArg(XtNborderWidth, INTERNAL_BW);
     name_panel = XtCreateManagedWidget("file_name", labelWidgetClass, msg_form,
 				      Args, ArgCount);
+    /* popup when mouse passes over filename */
+    XtAddEventHandler(name_panel, EnterWindowMask, (Boolean) 0,
+		      filename_balloon, (XtPointer) name_panel);
+    XtAddEventHandler(name_panel, LeaveWindowMask, (Boolean) 0,
+		      filename_unballoon, (XtPointer) name_panel);
+
     /* now the message panel */
     FirstArg(XtNfont, roman_font);
     NextArg(XtNstring, "\0");
@@ -118,29 +148,201 @@ init_msg(tool, filename)
     NextArg(XtNdisplayCaret, False);
     msg_panel = XtCreateManagedWidget("message", asciiTextWidgetClass, msg_form,
 				      Args, ArgCount);
+    /* and finally, the button to turn on/off the popup balloon messages */
+    /* the checkmark bitmap is created and set in setup_msg() */
+    FirstArg(XtNstate, appres.show_balloons);
+    NextArg(XtNinternalWidth, 1);
+    NextArg(XtNinternalHeight, 1);
+    NextArg(XtNfromHoriz, msg_panel);
+    NextArg(XtNhorizDistance, -INTERNAL_BW);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainRight);
+    NextArg(XtNright, XtChainRight);
+    NextArg(XtNlabel, "Balloons   ");
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    balloon_toggle = XtCreateManagedWidget("balloon_toggle", toggleWidgetClass,
+				   msg_form, Args, ArgCount);
+    /* popup when mouse passes over toggle */
+    XtAddEventHandler(balloon_toggle, EnterWindowMask, (Boolean) 0,
+		      toggle_balloon, (XtPointer) balloon_toggle);
+    XtAddEventHandler(balloon_toggle, LeaveWindowMask, (Boolean) 0,
+		      toggle_unballoon, (XtPointer) balloon_toggle);
+    XtAddCallback(balloon_toggle, XtNcallback, (XtCallbackProc) toggle_balloons,
+		  (XtPointer) NULL);
 }
+
+static	Pixmap balloons_on_bitmap=(Pixmap) 0, balloons_off_bitmap=(Pixmap) 0;
+
+/* at this point the widget has been realized so we can do more */
 
 setup_msg()
 {
-    Dimension htm,htf;
+    Dimension htn,htf;
+
+    XtUnmanageChild(msg_panel);
 
     /* set the height of the message panel and filename panel to the 
-       greater of the two heights */
-    XtUnmanageChild(msg_panel);
-    FirstArg(XtNheight, &htm);
+       greater of the heights for everything in that form */
+    FirstArg(XtNheight, &htn);
     GetValues(name_panel);
     FirstArg(XtNheight, &htf);
     GetValues(msg_panel);
-    htf = max2(htf,htm);
+    htf = max2(htf,htn);
+
+    /* now the toggle widget */
+    FirstArg(XtNheight, &htn);
+    GetValues(balloon_toggle);
+    htf = max2(htf,htn);
+
+    /* set the MSGFORM_HT variable so the mouse panel can be resized to fit */
+    MSGFORM_HT = htf;
+
     FirstArg(XtNheight, htf);
     SetValues(msg_panel);
     SetValues(name_panel);
-    /* set the MSGFORM_HT variable so the mouse panel can be resized to fit */
-    MSGFORM_HT = htf;
+    SetValues(balloon_toggle);
+
+    /* create two bitmaps to show on/off state */
+    balloons_on_bitmap = XCreateBitmapFromData(tool_d, tool_w, 
+			balloons_on_bits, balloons_on_width, balloons_on_height);
+    balloons_off_bitmap = XCreateBitmapFromData(tool_d, tool_w, 
+			balloons_off_bits, balloons_off_width, balloons_off_height);
+    FirstArg(XtNleftBitmap, appres.show_balloons? balloons_on_bitmap: balloons_off_bitmap);
+    SetValues(balloon_toggle);
+
     XtManageChild(msg_panel);
     if (msg_win == 0)
 	msg_win = XtWindow(msg_panel);
     XDefineCursor(tool_d, msg_win, null_cursor);
+}
+
+/* come here when the mouse passes over the filename window */
+
+static	Widget filename_balloon_popup = (Widget) 0;
+
+static void
+filename_balloon(widget, closure, event, continue_to_dispatch)
+    Widget        widget;
+    XtPointer	  closure;
+    XEvent*	  event;
+    Boolean*	  continue_to_dispatch;
+{
+	Widget	  box, balloons_label;
+	Position  x, y;
+	Dimension w;
+
+	if (!appres.show_balloons)
+	    return;
+
+	/* get width of this window */
+	FirstArg(XtNwidth, &w);
+	GetValues(widget);
+	/* find right edge + 5 pixels */
+	XtTranslateCoords(widget, w+5, 0, &x, &y);
+
+	/* put popup there */
+	FirstArg(XtNx, x);
+	NextArg(XtNy, y);
+	filename_balloon_popup = XtCreatePopupShell("filename_balloon_popup",
+				overrideShellWidgetClass, tool, Args, ArgCount);
+	FirstArg(XtNborderWidth, 0);
+	NextArg(XtNhSpace, 0);
+	NextArg(XtNvSpace, 0);
+	box = XtCreateManagedWidget("box", boxWidgetClass, filename_balloon_popup, 
+			Args, ArgCount);
+	FirstArg(XtNborderWidth, 0);
+	NextArg(XtNlabel, "Current filename");
+	balloons_label = XtCreateManagedWidget("label", labelWidgetClass,
+				    box, Args, ArgCount);
+	XtPopup(filename_balloon_popup,XtGrabNone);
+}
+
+/* come here when the mouse leaves the filename window */
+
+static void
+filename_unballoon(widget, closure, event, continue_to_dispatch)
+    Widget          widget;
+    XtPointer	    closure;
+    XEvent*	    event;
+    Boolean*	    continue_to_dispatch;
+{
+    if (filename_balloon_popup != (Widget) 0)
+	XtDestroyWidget(filename_balloon_popup);
+    filename_balloon_popup = 0;
+}
+
+/* come here when the mouse passes over the toggle window */
+
+static	Widget toggle_balloon_popup = (Widget) 0;
+
+static void
+toggle_balloon(widget, closure, event, continue_to_dispatch)
+    Widget        widget;
+    XtPointer	  closure;
+    XEvent*	  event;
+    Boolean*	  continue_to_dispatch;
+{
+	Widget	  box, balloons_label;
+	Position  x, y;
+	Dimension w;
+
+	if (!appres.show_balloons)
+	    return;
+
+	/* get width of this button */
+	FirstArg(XtNwidth, &w);
+	GetValues(widget);
+	/* find right edge + 5 pixels */
+	XtTranslateCoords(widget, w+5, 0, &x, &y);
+
+	/* put popup there */
+	FirstArg(XtNx, x);
+	NextArg(XtNy, y);
+	toggle_balloon_popup = XtCreatePopupShell("toggle_balloon_popup",
+				overrideShellWidgetClass, tool, Args, ArgCount);
+	FirstArg(XtNborderWidth, 0);
+	NextArg(XtNhSpace, 0);
+	NextArg(XtNvSpace, 0);
+	box = XtCreateManagedWidget("box", boxWidgetClass, toggle_balloon_popup, 
+			Args, ArgCount);
+	FirstArg(XtNborderWidth, 0);
+	NextArg(XtNlabel, "Turn on and off balloon messages");
+	balloons_label = XtCreateManagedWidget("label", labelWidgetClass,
+				    box, Args, ArgCount);
+	XtPopup(toggle_balloon_popup,XtGrabNone);
+}
+
+/* come here when the mouse leaves the toggle window */
+
+static void
+toggle_unballoon(widget, closure, event, continue_to_dispatch)
+    Widget          widget;
+    XtPointer	    closure;
+    XEvent*	    event;
+    Boolean*	    continue_to_dispatch;
+{
+    if (toggle_balloon_popup != (Widget) 0)
+	XtDestroyWidget(toggle_balloon_popup);
+    toggle_balloon_popup = 0;
+}
+
+static
+XtCallbackProc
+toggle_balloons(w, dummy, dummy2)
+    Widget	   w;
+    XtPointer	   dummy;
+    XtPointer	   dummy2;
+{
+    /* toggle flag */
+    appres.show_balloons = !appres.show_balloons;
+    /* and change bitmap to show state */
+    if (appres.show_balloons) {
+	FirstArg(XtNleftBitmap, balloons_on_bitmap);
+    } else {
+	FirstArg(XtNleftBitmap, balloons_off_bitmap);
+    }
+    SetValues(w);
 }
 
 /*
@@ -154,11 +356,13 @@ setup_msg()
 update_cur_filename(newname)
 	char	*newname;
 {
-	Dimension namwid;
+	Dimension namwid,togwid;
 
 	XtUnmanageChild(msg_form);
 	XtUnmanageChild(msg_panel);
 	XtUnmanageChild(name_panel);
+	XtUnmanageChild(balloon_toggle);
+
 	strcpy(cur_filename,newname);
 
 	/* store the new filename in the name_panel widget */
@@ -170,7 +374,12 @@ update_cur_filename(newname)
 	/* get the new size of the name_panel */
 	FirstArg(XtNwidth, &namwid);
 	GetValues(name_panel);
-	MSGPANEL_WD = MSGFORM_WD-namwid;
+	/* and the other two */
+	FirstArg(XtNwidth, &togwid);
+	GetValues(balloon_toggle);
+
+	/* new size is form width minus all others */
+	MSGPANEL_WD = MSGFORM_WD-namwid-togwid;
 	if (MSGPANEL_WD <= 0)
 		MSGPANEL_WD = 100;
 	/* resize the message panel to fit with the new width of the name panel */
@@ -179,8 +388,11 @@ update_cur_filename(newname)
 	/* keep the height the same */
 	FirstArg(XtNheight, MSGFORM_HT);
 	SetValues(name_panel);
+	SetValues(balloon_toggle);
+
 	XtManageChild(msg_panel);
 	XtManageChild(name_panel);
+	XtManageChild(balloon_toggle);
 
 	/* now resize the whole form */
 	FirstArg(XtNwidth, MSGFORM_WD);

@@ -4,12 +4,11 @@ This file contains some possible things to do in future versions of xfig.
 The following items would require a change to the Fig file protocol:
 --------------------------------------------------------------------
 
+Separate dash/dot length from the gap
 Allow different arrow head points (miter, round, bevel)
 Enhance all objects to have cap_style type for dotted lines
 Allow selecting linecap type for dotted lines for closed splines, boxes
 	and ellipses
-Allow user to set the tension in splines (change to compute_cp() in
-	d_intspline.c)
 Rotatable boxes - store width, height, upper-left corner and angle only?
 Allow multiple pages of figures
 Store page size with file
@@ -26,6 +25,12 @@ Text that is connected to objects which appears in popup near object
 The following DON'T require a change to the file protocol:
 ----------------------------------------------------------
 
+Libraries of Fig objects to allow drag-and-drop of objects onto the canvas
+"Slide show" feature by hitting Alt-N to load next .fig file in the current
+	directory.  Also, say Tab in file menu would go to the next file
+	in the directory, loading that filename into the Filename slot.
+	Credit Alec Muffett (Alec.Muffett@UK.Sun.COM) for the idea.
+Option for grid to be constant screen-size (independent of zooming)
 Allow define arc by center and two points on radius
 Allow picking of points off the positioning grid
 Recursively uncompound objects with one click
@@ -168,6 +173,13 @@ Make xfig understand depth better:
 	What about support for negative depth values?
 Honor fractional text sizes (float).  Currently, xfig reads the size as float
 	but converts to integer internally.
+Allow direct modification of the tension of a X-spline point from the Edit
+	Object window, or at least, allow to copy the tension value from
+	one point to another.
+In version 3.2, closed X-splines don't have their first point
+	duplicated at the end of the list, because a circular list is
+	simulated. This technique should also be applied to a polygon object,
+	which still duplicates its first point.
 A 'gravity' mode whereby points placed by aiming and clicking are brought not
 	to the closest fiducial point of a figure, but to the closest continuous
 	point on the figure (applies only to circles, arcs, and straight lines),

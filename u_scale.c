@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -94,18 +91,13 @@ read_scale_spline(spline, mul, offset)
     int		    offset;
 {
     F_point	   *point;
-    F_control	   *cp;
+    F_sfactor	   *cp;
 
     for (point = spline->points; point != NULL; point = point->next) {
 	point->x = point->x * mul + offset;
 	point->y = point->y * mul + offset;
     }
-    for (cp = spline->controls; cp != NULL; cp = cp->next) {
-	cp->lx = cp->lx * mul + offset;
-	cp->ly = cp->ly * mul + offset;
-	cp->rx = cp->rx * mul + offset;
-	cp->ry = cp->ry * mul + offset;
-    }
+
 
     read_scale_arrow(spline->for_arrow, mul, offset);
     read_scale_arrow(spline->back_arrow, mul, offset);

@@ -1,3 +1,5 @@
+#ifndef F_NEUCLRTAB_H
+#define F_NEUCLRTAB_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1994 Anthony Dekker
@@ -16,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 /*
@@ -44,3 +43,4 @@ typedef unsigned char  BYTE;	/* 8-bit unsigned integer */
 typedef BYTE  COLR[4];		/* red, green, blue, exponent */
 
 #define MIN_NEU_SAMPLES	600	/* min number of samples (npixels/samplefac) needed for network */
+#endif /* F_NEUCLRTAB_H */

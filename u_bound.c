@@ -18,10 +18,9 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
+
+#include <stdlib.h>
 
 #include "fig.h"
 #include "resources.h"
@@ -37,10 +36,15 @@
 #define		Two_seventy_deg		(M_PI + M_PI_2)
 #define		Three_sixty_deg		(M_PI + M_PI)
 #define		half(z1 ,z2)		((z1+z2)/2.0)
+#define         MIN_MAX(X1, X2, Y1, Y2)  \
+                *xmax = max2(*xmax, X1); \
+         	*xmin = min2(*xmin, X2); \
+	        *ymax = max2(*ymax, Y1); \
+	        *ymin = min2(*ymin, Y2)
 
 static void	points_bound();
-static void	int_spline_bound();
-static void	normal_spline_bound();
+static void	general_spline_bound();
+static void	approx_spline_bound();
 
 arc_bound(arc, xmin, ymin, xmax, ymax)
     F_arc	   *arc;
@@ -123,6 +127,18 @@ arc_bound(arc, xmin, ymin, xmax, ymax)
 		by = (int) (arc->center.y + radius + 1.0);
 	}
     }
+    
+    /* If we have a pie wedge then the center must be considered 
+     * when calc. the bounding box.
+     */
+
+    if(arc->type == T_PIE_WEDGE_ARC) {
+    	bx = max2(bx,arc->center.x);
+    	by = max2(by,arc->center.y);
+    	sx = min2(sx,arc->center.x);
+    	sy = min2(sy,arc->center.y);
+    }
+
     half_wd = arc->thickness / 2 * ZOOM_FACTOR;
     *xmax = bx + half_wd;
     *ymax = by + half_wd;
@@ -153,6 +169,8 @@ compound_bound(compound, xmin, ymin, xmax, ymax)
     F_text	   *t;
     int		    bx, by, sx, sy, first = 1;
     int		    llx, lly, urx, ury;
+
+    llx = lly = urx = ury = 0;
 
     for (a = compound->arcs; a != NULL; a = a->next) {
 	arc_bound(a, &sx, &sy, &bx, &by);
@@ -405,150 +423,89 @@ spline_bound(s, xmin, ymin, xmax, ymax)
     F_spline	   *s;
     int		   *xmin, *ymin, *xmax, *ymax;
 {
-    if (int_spline(s)) {
-	int_spline_bound(s, xmin, ymin, xmax, ymax);
-    } else {
-	normal_spline_bound(s, xmin, ymin, xmax, ymax);
-    }
+    if (approx_spline(s))
+	approx_spline_bound(s, xmin, ymin, xmax, ymax);
+    else
+	general_spline_bound(s, xmin, ymin, xmax, ymax);
+
+    *xmax += s->thickness>>1;
+    *xmin -= s->thickness>>1;
+    *ymax += s->thickness>>1;
+    *ymin -= s->thickness>>1;
 
     /* now add in the arrow (if any) boundaries */
     arrow_bound(O_SPLINE, (F_line *)s, xmin, ymin, xmax, ymax);
 }
 
 static void
-int_spline_bound(s, xmin, ymin, xmax, ymax)
-    F_spline	   *s;
-    int		   *xmin, *ymin, *xmax, *ymax;
+general_spline_bound(s, xmin, ymin, xmax, ymax)
+    F_spline      *s;
+    int	          *xmin, *ymin, *xmax, *ymax;
 {
-    F_point	   *p1, *p2;
-    F_control	   *cp1, *cp2;
-    float	    x0, y0, x1, y1, x2, y2, x3, y3, sx1, sy1, sx2, sy2;
-    float	    tx, ty, tx1, ty1, tx2, ty2;
-    float	    sx, sy, bx, by;
-    int		    half_wd;
+  F_point   *cur_point, *previous_point, *next_point;
+  F_sfactor *cur_sfactor;     
+  int       x0, y0, x1, y1, x2, y2 ,x ,y;
+  
+  previous_point = cur_point = s->points;
+  cur_sfactor = s->sfactors;
+  *xmin = *xmax = x0 = x1 = cur_point->x;
+  *ymin = *ymax = y0 = y1 = cur_point->y;
+  next_point = cur_point->next;
+  x2 = next_point->x;
+  y2 = next_point->y;
+  
+  while (1)
+    {   
+      previous_point = cur_point;
+      cur_point = next_point;
+      next_point = next_point->next;
 
-    p1 = s->points;
-    sx = bx = p1->x;
-    sy = by = p1->y;
-    cp1 = s->controls;
-    for (p2 = p1->next, cp2 = cp1->next; p2 != NULL;
-	 p1 = p2, cp1 = cp2, p2 = p2->next, cp2 = cp2->next) {
-	x0 = p1->x;
-	y0 = p1->y;
-	x1 = cp1->rx;
-	y1 = cp1->ry;
-	x2 = cp2->lx;
-	y2 = cp2->ly;
-	x3 = p2->x;
-	y3 = p2->y;
-	tx = half(x1, x2);
-	ty = half(y1, y2);
-	sx1 = half(x0, x1);
-	sy1 = half(y0, y1);
-	sx2 = half(sx1, tx);
-	sy2 = half(sy1, ty);
-	tx2 = half(x2, x3);
-	ty2 = half(y2, y3);
-	tx1 = half(tx2, tx);
-	ty1 = half(ty2, ty);
+      if (next_point == NULL)
+	next_point = s->points;           /* usefull for closed splines,
+					     no consequences on open splines */
+      cur_sfactor = cur_sfactor->next;
 
-	sx = min2(x0, sx);
-	sy = min2(y0, sy);
-	sx = min2(sx1, sx);
-	sy = min2(sy1, sy);
-	sx = min2(sx2, sx);
-	sy = min2(sy2, sy);
-	sx = min2(tx1, sx);
-	sy = min2(ty1, sy);
-	sx = min2(tx2, sx);
-	sy = min2(ty2, sy);
-	sx = min2(x3, sx);
-	sy = min2(y3, sy);
-
-	bx = max2(x0, bx);
-	by = max2(y0, by);
-	bx = max2(sx1, bx);
-	by = max2(sy1, by);
-	bx = max2(sx2, bx);
-	by = max2(sy2, by);
-	bx = max2(tx1, bx);
-	by = max2(ty1, by);
-	bx = max2(tx2, bx);
-	by = max2(ty2, by);
-	bx = max2(x3, bx);
-	by = max2(y3, by);
+      x0 = x1;
+      y0 = y1;
+      x1 = x2;
+      y1 = y2;
+      x2 = next_point->x;
+      y2 = next_point->y;
+      
+      if (cur_sfactor->s < 0)
+	{
+	  x = abs(x2 - x0)>>2;
+	  y = abs(y2 - y0)>>2;
+	}
+      else
+	{
+	  x = y = 0;
+	}
+      
+      MIN_MAX((x1+x), (x1-x), (y1+y), (y1-y));
+      if (cur_point->next==NULL)
+	break;
     }
-    half_wd = s->thickness / 2 * ZOOM_FACTOR;
-    *xmin = round(sx) - half_wd;
-    *ymin = round(sy) - half_wd;
-    *xmax = round(bx) + half_wd;
-    *ymax = round(by) + half_wd;
 }
 
 static void
-normal_spline_bound(s, xmin, ymin, xmax, ymax)
+approx_spline_bound(s, xmin, ymin, xmax, ymax)
     F_spline	   *s;
     int		   *xmin, *ymin, *xmax, *ymax;
 {
     F_point	   *p;
-    float	    cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
-    float	    x1, y1, x2, y2, sx, sy, bx, by;
-    float	    px, py, qx, qy;
-    int		    half_wd;
+    int		    px, py;
 
     p = s->points;
-    x1 = p->x;
-    y1 = p->y;
-    p = p->next;
-    x2 = p->x;
-    y2 = p->y;
-    cx1 = (x1 + x2) / 2.0;
-    cy1 = (y1 + y2) / 2.0;
-    cx2 = (cx1 + x2) / 2.0;
-    cy2 = (cy1 + y2) / 2.0;
-    if (closed_spline(s)) {
-	x1 = (cx1 + x1) / 2.0;
-	y1 = (cy1 + y1) / 2.0;
-    }
-    sx = min2(x1, cx2);
-    sy = min2(y1, cy2);
-    bx = max2(x1, cx2);
-    by = max2(y1, cy2);
+    *xmin = *xmax = p->x;
+    *ymin = *ymax = p->y;
 
-    for (p = p->next; p != NULL; p = p->next) {
-	x1 = x2;
-	y1 = y2;
-	x2 = p->x;
-	y2 = p->y;
-	cx4 = (x1 + x2) / 2.0;
-	cy4 = (y1 + y2) / 2.0;
-	cx3 = (x1 + cx4) / 2.0;
-	cy3 = (y1 + cy4) / 2.0;
-	cx2 = (cx4 + x2) / 2.0;
-	cy2 = (cy4 + y2) / 2.0;
-
-	px = min2(cx2, cx3);
-	py = min2(cy2, cy3);
-	qx = max2(cx2, cx3);
-	qy = max2(cy2, cy3);
-
-	sx = min2(sx, px);
-	sy = min2(sy, py);
-	bx = max2(bx, qx);
-	by = max2(by, qy);
-    }
-    half_wd = s->thickness / 2 * ZOOM_FACTOR;
-    if (closed_spline(s)) {
-	*xmin = round(sx) - half_wd;
-	*ymin = round(sy) - half_wd;
-	*xmax = round(bx) + half_wd;
-	*ymax = round(by) + half_wd;
-    } else {
-	*xmin = round(min2(sx, x2)) - half_wd;
-	*ymin = round(min2(sy, y2)) - half_wd;
-	*xmax = round(max2(bx, x2)) + half_wd;
-	*ymax = round(max2(by, y2)) + half_wd;
-    }
+    for (p=p->next ; p!=NULL ; p=p->next)
+      {
+	px = p->x;
+	py = p->y;
+	MIN_MAX(px, px, py, py);
+      }
 }
 
 /* This procedure calculates the bounding box for text.  It returns

@@ -3,6 +3,7 @@
  * Copyright (c) 1985 by Supoj Sutanthavibul
  * Parts Copyright (c) 1994 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
  * The X Consortium, and any party obtaining a copy of these files from
  * the X Consortium, directly or indirectly, is granted, free of charge, a
@@ -18,9 +19,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -31,12 +29,17 @@
 #include "u_create.h"
 #include "u_elastic.h"
 #include "u_list.h"
+#include "u_draw.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
+#include "d_spline.h"
 
-static int	create_splineobject();
+
 static int	init_spline_drawing();
+static int 	   create_splineobject();
 
+
+int
 spline_drawing_selected()
 {
     set_mousefun("first point", "", "", "", "", "");
@@ -47,23 +50,30 @@ spline_drawing_selected()
     canvas_rightbut_proc = null_proc;
     set_cursor(arrow_cursor);
     reset_action_on();
+    return 1;
 }
+
 
 static
 init_spline_drawing(x, y)
     int		    x, y;
 {
-    if (cur_mode == F_CLOSED_SPLINE) {
-	min_num_points = 3;
-	init_trace_drawing(x, y);
-	canvas_middlebut_save = create_splineobject;
-    } else {
-	min_num_points = 2;
+  if ((cur_mode == F_APPROX_SPLINE) || (cur_mode == F_INTERP_SPLINE))
+    {
+      min_num_points = OPEN_SPLINE_MIN_NUM_POINTS;
 	init_trace_drawing(x, y);
 	canvas_middlebut_proc = create_splineobject;
     }
+  else
+    {
+      min_num_points = CLOSED_SPLINE_MIN_NUM_POINTS;
+      init_trace_drawing(x, y);     
+      canvas_middlebut_save = create_splineobject;
+    }
+
     return_proc = spline_drawing_selected;
 }
+
 
 static
 create_splineobject(x, y)
@@ -75,8 +85,16 @@ create_splineobject(x, y)
 	get_intermediatepoint(x, y, 0);
     }
     elastic_line();
-    if ((spline = create_spline()) == NULL)
+    if ((spline = create_spline()) == NULL) {
+	if (num_point == 1) {
+	    free((char *) cur_point);
+	    cur_point = NULL;
+	}
+	free((char *) first_point);
+	first_point = NULL;
 	return;
+    }
+
 
     spline->style = cur_linestyle;
     spline->thickness = cur_linewidth;
@@ -92,27 +110,63 @@ create_splineobject(x, y)
      * filling may not be available in all fig2dev languages).
      */
     spline->points = first_point;
-    spline->controls = NULL;
+    spline->sfactors = NULL;
     spline->next = NULL;
-    /* initialise for no arrows - updated below if necessary */
+    /* initialize for no arrows - changed below if necessary */
     spline->for_arrow = NULL;
     spline->back_arrow = NULL;
+
     cur_x = cur_y = fix_x = fix_y = 0;	/* used in elastic_moveline */
     elastic_moveline(spline->points);	/* erase control vector */
-    if (cur_mode == F_CLOSED_SPLINE) {
-	spline->type = T_CLOSED_NORMAL;
-	num_point++;
-	append_point(first_point->x, first_point->y, &cur_point);
-    } else {			/* It must be F_SPLINE */
+    if (cur_mode == F_CLOSED_APPROX_SPLINE) {
+	spline->type = T_CLOSED_APPROX;
+    } else if (cur_mode == F_CLOSED_INTERP_SPLINE) {			
+	spline->type = T_CLOSED_INTERP;
+    } else {				/* It must be F_SPLINE */
 	if (autoforwardarrow_mode)
 	    spline->for_arrow = forward_arrow();
 	if (autobackwardarrow_mode)
 	    spline->back_arrow = backward_arrow();
-	spline->type = T_OPEN_NORMAL;
+	spline->type = (cur_mode == F_APPROX_SPLINE) ? T_OPEN_APPROX : T_OPEN_INTERP;
     }
-    add_spline(spline);
+    if (!make_sfactors(spline)) {
+	free_spline(spline);
+    } else {
+	add_spline(spline);
+    }
+
     /* draw it and anything on top of it */
     redisplay_spline(spline);
     spline_drawing_selected();
     draw_mousefun_canvas();
+}
+
+int
+make_sfactors(spl)
+     F_spline *spl;
+{
+  F_point   *p = spl->points;
+  F_sfactor *sp, *cur_sp;
+  int       type_s = approx_spline(spl) ? S_SPLINE_APPROX : S_SPLINE_INTERP;
+  
+  spl->sfactors = NULL;
+  if ((sp = create_sfactor()) == NULL)
+    return 0;
+  spl->sfactors = cur_sp = sp;
+  sp->s = closed_spline(spl) ? type_s : S_SPLINE_ANGULAR;
+  p = p->next;
+  
+  for(; p!=NULL ; p=p->next)
+    {
+      if ((sp = create_sfactor()) == NULL)
+	return 0;
+
+      cur_sp->next = sp;
+      sp->s = type_s;
+      cur_sp = cur_sp->next;
+    }
+  
+  cur_sp->s = spl->sfactors->s;
+  cur_sp->next = NULL;
+  return 1;
 }

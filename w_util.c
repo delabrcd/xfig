@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -30,17 +27,6 @@
 #include "w_drawprim.h"
 #include "w_util.h"
 #include "w_setup.h"
-
-/*
- * The next routine is easy to implement, but I haven't missed it yet.
- * Generally it is a bad idea to warp the mouse without the users consent.
- */
-
-win_setmouseposition(w, x, y)
-    Window	    w;
-    int		    x, y;
-{
-}
 
 /* synchronize so that (e.g.) new cursor appears etc. */
 
@@ -267,3 +253,60 @@ fix_converters()
     XtAppAddConverter(tool_app, "String", "Float", CvtStringToFloat, NULL, 0);
     XtAppAddConverter(tool_app, "Int", "Float", CvtIntToFloat, NULL, 0);
 }
+
+Widget
+make_color_popup_menu(parent, callback, export)
+    Widget	    parent;
+    XtCallbackProc  callback;
+    Boolean	    export;
+
+{
+    Widget	    pop_menu, entry;
+    int		    i;
+    char	    buf[30];
+    DeclareArgs(3);
+
+    pop_menu = XtCreatePopupShell("menu", simpleMenuWidgetClass, parent,
+				  NULL, ZERO);
+
+    for (i = (export? -3: 0); i < NUM_STD_COLS+num_usr_cols; i++) {
+	/* put DEFAULT at end of menu */
+	if (i==-1)
+	    continue;
+	/* make a separator line before real colors */
+	if (export && i == 0)
+	    (void) XtCreateManagedWidget(buf, smeLineObjectClass, pop_menu, NULL, 0);
+	if (i >= NUM_STD_COLS && colorFree[i-NUM_STD_COLS])
+	    continue;
+	set_color_name(i,buf);
+	FirstArg(XtNvertSpace, -6);	/* less space between entries than default (25) */
+	if (all_colors_available)
+	    NextArg(XtNforeground, ((export && i<0)?
+					black_color.pixel: colors[i]))
+	entry = XtCreateManagedWidget(buf, smeBSBObjectClass, pop_menu,
+				      Args, ArgCount);
+	XtAddCallback(entry, XtNcallback, callback, (XtPointer) i);
+    }
+    set_color_name(DEFAULT,buf);
+    FirstArg(XtNforeground, x_fg_color.pixel);
+    entry = XtCreateManagedWidget(buf, smeBSBObjectClass, pop_menu,
+				  Args, ArgCount);
+    XtAddCallback(entry, XtNcallback, callback, (XtPointer) - 1);
+    return pop_menu;
+}
+
+void
+set_color_name(color, buf)
+    Color	    color;
+    char	   *buf;
+{
+    if (color == TRANSP_NONE)
+	sprintf(buf,"None");
+    else if (color == TRANSP_BACKGROUND)
+	sprintf(buf,"Background");
+    else if (color == DEFAULT || (color >= 0 && color < NUM_STD_COLS))
+	sprintf(buf, "%s", colorNames[color + 1].name);
+    else
+	sprintf(buf, "User %d", color);
+}
+

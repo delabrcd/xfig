@@ -1,3 +1,5 @@
+#ifndef W_UTIL_H
+#define W_UTIL_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
@@ -18,9 +20,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 /* constant values used for popup_query */
@@ -75,3 +74,8 @@
 	  XtSetArg(Args[ArgCount], (name), (val)); ArgCount++;}
 #define GetValues(n)	XtGetValues(n, Args, ArgCount)
 #define SetValues(n)	XtSetValues(n, Args, ArgCount)
+
+extern Widget	make_popup_menu();
+extern Widget	make_color_popup_menu();
+extern void	set_color_name();
+#endif /* W_UTIL_H */

@@ -17,9 +17,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -56,6 +53,10 @@ static char	mid_blank[] = "                  ";
 static Pixmap	mousefun_pm;
 static Pixmap	keybd_pm;
 
+/* popup message over button when mouse enters it */
+static void     mouse_balloon();
+static void     mouse_unballoon();
+
 void
 init_mousefun(tool)
     Widget	    tool;
@@ -78,6 +79,71 @@ init_mousefun(tool)
 
     mousefun = XtCreateManagedWidget("mouse_panel", labelWidgetClass,
 				     tool, Args, ArgCount);
+    /* popup when mouse passes over button */
+    XtAddEventHandler(mousefun, EnterWindowMask, (Boolean) 0,
+		      mouse_balloon, (XtPointer) mousefun);
+    XtAddEventHandler(mousefun, LeaveWindowMask, (Boolean) 0,
+		      mouse_unballoon, (XtPointer) mousefun);
+}
+
+/* come here when the mouse passes over a button in the mouse indicator panel */
+
+static	Widget mouse_balloon_popup = (Widget) 0;
+
+static void
+mouse_balloon(widget, closure, event, continue_to_dispatch)
+    Widget        widget;
+    XtPointer	  closure;
+    XEvent*	  event;
+    Boolean*	  continue_to_dispatch;
+{
+	Widget	  box, balloon_label;
+	Position  x, y;
+	XtWidgetGeometry xtgeom,comp;
+	Dimension wpop;
+
+	if (!appres.show_balloons)
+	    return;
+
+	XtTranslateCoords(widget, 0, 0, &x, &y);
+	FirstArg(XtNx, x);
+	NextArg(XtNy, y);
+	mouse_balloon_popup = XtCreatePopupShell("mouse_balloon_popup",overrideShellWidgetClass,
+				tool, Args, ArgCount);
+	FirstArg(XtNborderWidth, 0);
+	NextArg(XtNhSpace, 0);
+	NextArg(XtNvSpace, 0);
+	box = XtCreateManagedWidget("box", boxWidgetClass, mouse_balloon_popup, Args, ArgCount);
+	FirstArg(XtNborderWidth, 0);
+	NextArg(XtNlabel, "Shows which mouse buttons\nare active in each mode");
+	balloon_label = XtCreateManagedWidget("label", labelWidgetClass,
+				    box, Args, ArgCount);
+
+	XtRealizeWidget(mouse_balloon_popup);
+	/* get width of popup with label in it */
+	FirstArg(XtNwidth, &wpop);
+	GetValues(balloon_label);
+	/* only change X position of widget */
+	xtgeom.request_mode = CWX;
+	/* shift popup left */
+	xtgeom.x = x-wpop-5;
+	(void) XtMakeGeometryRequest(mouse_balloon_popup, &xtgeom, &comp);
+	SetValues(balloon_label);
+	XtPopup(mouse_balloon_popup,XtGrabNone);
+}
+
+/* come here when the mouse leaves a button in the mouse panel */
+
+static void
+mouse_unballoon(widget, closure, event, continue_to_dispatch)
+    Widget          widget;
+    XtPointer	    closure;
+    XEvent*	    event;
+    Boolean*	    continue_to_dispatch;
+{
+    if (mouse_balloon_popup != (Widget) 0)
+	XtDestroyWidget(mouse_balloon_popup);
+    mouse_balloon_popup = 0;
 }
 
 static void
@@ -299,20 +365,34 @@ draw_mousefun_msg(s, xctr, ypos)
 		     xctr - (int) (width / 2), ypos, s, strlen(s));
 }
 
+static char	mousefun_cur_l[MOUSEFUN_MAX];
+static char	mousefun_cur_m[MOUSEFUN_MAX];
+static char	mousefun_cur_r[MOUSEFUN_MAX];
+
 void
 draw_mousefun(left, middle, right)
-    char	   *left, *middle, *right;
+    char     *left, *middle, *right;
 {
+  if (strcmp(left, mousefun_cur_l)
+      || strcmp(middle, mousefun_cur_m)
+      || strcmp(right, mousefun_cur_r)) {
     clear_mousefun();
     draw_mousefn2(left, middle, right);
+  }
 }
 
 #define MOUSE_LR_Y 32
 #define MOUSE_MID_Y 10
 void
 draw_mousefn2(left, middle, right)
-    char	   *left, *middle, *right;
+    char     *left, *middle, *right;
 {
+  if (strcmp(left, mousefun_cur_l)
+      || strcmp(middle, mousefun_cur_m)
+      || strcmp(right, mousefun_cur_r)) {
+    strcpy(mousefun_cur_l, left);
+    strcpy(mousefun_cur_m, middle);
+    strcpy(mousefun_cur_r, right);
     draw_mousefun_msg(left, MOUSE_LEFT_CTR, MOUSE_LR_Y);
     draw_mousefun_msg(middle, MOUSE_MID_CTR, MOUSE_MID_Y);
     draw_mousefun_msg(right, MOUSE_RIGHT_CTR, MOUSE_LR_Y);
@@ -320,6 +400,7 @@ draw_mousefn2(left, middle, right)
     SetValues(mousefun);
     FirstArg(XtNbackgroundPixmap, mousefun_pm);
     SetValues(mousefun);
+  }
 }
 
 void

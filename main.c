@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -46,11 +43,18 @@
 #include "X11/extensions/XInput.h"
 #endif
 
+#ifdef I18N
+#include <locale.h>
+
+extern XIC xim_ic;
+extern Boolean xim_active;
+#endif  /* I18N */
+
 /************** EXTERNAL functions **************/
 
 extern void	quit(), undo(), paste(), redisplay_canvas(), delete_all_cmd();
 extern void	popup_print_panel(), popup_file_panel(), popup_export_panel();
-extern void	do_load(), do_save(), popup_unit_panel();
+extern void	do_load(), do_save(), popup_unit_panel(), popup_search_panel();
 extern void	inc_zoom(), dec_zoom();
 
 extern void	setup_cmd_panel();
@@ -74,12 +78,9 @@ static char    *filename = NULL;
 
 static Boolean	true = True;
 static Boolean	false = False;
-static int	Idefault = DEFAULT;
-static int	Izero = 0;
-static int	Ione = 1;
-static int	Itwo = 2;
 static float	Fzero = 0.0;
 static float	Fone = 1.0;
+static float	F100 = 100.0;
 
 /* to get any visual the user specifies */
 
@@ -113,91 +114,138 @@ static XtActionsRec	main_actions[] =
     {"Export", (XtActionProc) popup_export_panel},
     {"Print", (XtActionProc) popup_print_panel},
     {"Units", (XtActionProc) popup_unit_panel},
+    {"Search", (XtActionProc) popup_search_panel},
 };
 
 static XtResource application_resources[] = {
+    {"version",  "version",    XtRString,  sizeof(char *),
+      XtOffset(appresPtr,version), XtRString, (caddr_t) NULL},
     {"zoom", "Zoom", XtRFloat, sizeof(float),
-    XtOffset(appresPtr, zoom), XtRFloat, (caddr_t) & Fone},
-    {"canvasbackground",  "canvasBackground",  XtRString,  sizeof(char *),
-    XtOffset(appresPtr,canvasBackground), XtRString, (caddr_t) NULL},
-    {"canvasforeground",  "canvasForeground",  XtRString,  sizeof(char *),
-    XtOffset(appresPtr,canvasForeground), XtRString, (caddr_t) NULL},
-    {"iconGeometry",  "IconGeometry",  XtRString,  sizeof(char *),
-    XtOffset(appresPtr,iconGeometry), XtRString, (caddr_t) NULL},
-    {"showallbuttons", "ShowAllButtons", XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, ShowAllButtons), XtRBoolean, (caddr_t) & false},
-    {XtNjustify, XtCJustify, XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, RHS_PANEL), XtRBoolean, (caddr_t) & false},
-    {"landscape", XtCOrientation, XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, landscape), XtRBoolean, (caddr_t) & true},
-    {"debug", "Debug", XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, DEBUG), XtRBoolean, (caddr_t) & false},
-    {"pwidth", XtCWidth, XtRFloat, sizeof(float),
-    XtOffset(appresPtr, tmp_width), XtRFloat, (caddr_t) & Fzero},
-    {"pheight", XtCHeight, XtRFloat, sizeof(float),
-    XtOffset(appresPtr, tmp_height), XtRFloat, (caddr_t) & Fzero},
-    {XtNreverseVideo, XtCReverseVideo, XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, INVERSE), XtRBoolean, (caddr_t) & false},
-    {"trackCursor", "Track", XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, TRACKING), XtRBoolean, (caddr_t) & true},
-    {"inches", "Inches", XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, INCHES), XtRBoolean, (caddr_t) & true},
-    {"boldFont", "Font", XtRString, sizeof(char *),
-    XtOffset(appresPtr, boldFont), XtRString, (caddr_t) NULL},
-    {"normalFont", "Font", XtRString, sizeof(char *),
-    XtOffset(appresPtr, normalFont), XtRString, (caddr_t) NULL},
-    {"buttonFont", "Font", XtRString, sizeof(char *),
-    XtOffset(appresPtr, buttonFont), XtRString, (caddr_t) NULL},
-    {"startlatexFont", "StartlatexFont", XtRString, sizeof(char *),
-    XtOffset(appresPtr, startlatexFont), XtRString, (caddr_t) NULL},
-    {"startpsFont", "StartpsFont", XtRString, sizeof(char *),
-    XtOffset(appresPtr, startpsFont), XtRString, (caddr_t) NULL},
-    {"startfontsize", "StartFontSize", XtRFloat, sizeof(float),
-    XtOffset(appresPtr, startfontsize), XtRFloat, (caddr_t) & Fzero},
-    {"internalborderwidth", "InternalBorderWidth", XtRInt, sizeof(int),
-    XtOffset(appresPtr, internalborderwidth), XtRInt, (caddr_t) & Izero},
-    {"starttextstep", "StartTextStep", XtRFloat, sizeof(float),
-    XtOffset(appresPtr, starttextstep), XtRFloat, (caddr_t) & Fzero},
-    {"startfillstyle", "StartFillStyle", XtRInt, sizeof(int),
-    XtOffset(appresPtr, startfillstyle), XtRInt, (caddr_t) & Idefault},
-    {"startlinewidth", "StartLineWidth", XtRInt, sizeof(int),
-    XtOffset(appresPtr, startlinewidth), XtRInt, (caddr_t) & Ione},
-    {"startgridmode", "StartGridMode", XtRInt, sizeof(int),
-    XtOffset(appresPtr, startgridmode), XtRInt, (caddr_t) & Izero},
-    {"startposnmode", "StartPosnMode", XtRInt, sizeof(int),
-    XtOffset(appresPtr, startposnmode), XtRInt, (caddr_t) & Ione},
-    {"latexfonts", "Latexfonts", XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, latexfonts), XtRBoolean, (caddr_t) & false},
-    {"specialtext", "SpecialText", XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, specialtext), XtRBoolean, (caddr_t) & false},
-    {"scalablefonts", "ScalableFonts", XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, SCALABLEFONTS), XtRBoolean, (caddr_t) & true},
-    {"monochrome", "Monochrome", XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, monochrome), XtRBoolean, (caddr_t) & false},
-    {"latexfonts", "Latexfonts", XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, latexfonts), XtRBoolean, (caddr_t) & false},
-    {"keyFile", "KeyFile", XtRString, sizeof(char *),
-    XtOffset(appresPtr, keyFile), XtRString, (caddr_t) "CompKeyDB"},
-    {"exportLanguage", "ExportLanguage", XtRString, sizeof(char *),
-    XtOffset(appresPtr, exportLanguage), XtRString, (caddr_t) "eps"},
-    {"flushleft", "FlushLeft", XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, flushleft), XtRBoolean, (caddr_t) & false},
-    {"userscale", "UserScale", XtRFloat, sizeof(float),
-    XtOffset(appresPtr, user_scale), XtRFloat, (caddr_t) & Fone},
-    {"userunit", "UserUnit", XtRString, sizeof(char *),
-    XtOffset(appresPtr, user_unit), XtRString, (caddr_t) ""},
-    {"but_per_row", "But_per_row", XtRInt, sizeof(int),
-    XtOffset(appresPtr, but_per_row), XtRInt, (caddr_t) & Itwo},
+      XtOffset(appresPtr, zoom), XtRFloat, (caddr_t) & Fone},
+    {"canvasbackground",  "canvasBackground",    XtRString,  sizeof(char *),
+      XtOffset(appresPtr,canvasBackground), XtRString, (caddr_t) NULL},
+    {"canvasforeground",  "canvasForeground",    XtRString,  sizeof(char *),
+      XtOffset(appresPtr,canvasForeground), XtRString, (caddr_t) NULL},
+    {"iconGeometry",  "IconGeometry",    XtRString,  sizeof(char *),
+      XtOffset(appresPtr,iconGeometry), XtRString, (caddr_t) NULL},
+    {"showallbuttons", "ShowAllButtons",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, ShowAllButtons), XtRBoolean, (caddr_t) & false},
+    {XtNjustify,   XtCJustify, XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, RHS_PANEL), XtRBoolean, (caddr_t) & false},
+    {"landscape",   XtCOrientation, XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, landscape), XtRBoolean, (caddr_t) & true},
+    {"debug", "Debug",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, DEBUG), XtRBoolean, (caddr_t) & false},
+    {"pwidth",   XtCWidth, XtRFloat, sizeof(float),
+      XtOffset(appresPtr, tmp_width), XtRFloat, (caddr_t) & Fzero},
+    {"pheight",   XtCHeight, XtRFloat, sizeof(float),
+      XtOffset(appresPtr, tmp_height), XtRFloat, (caddr_t) & Fzero},
+    {XtNreverseVideo,   XtCReverseVideo, XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, INVERSE), XtRBoolean, (caddr_t) & false},
+    {"trackCursor", "Track",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, TRACKING), XtRBoolean, (caddr_t) & true},
+    {"inches", "Inches",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, INCHES), XtRBoolean, (caddr_t) & true},
+    {"boldFont", "Font",   XtRString, sizeof(char *),
+      XtOffset(appresPtr, boldFont), XtRString, (caddr_t) NULL},
+    {"normalFont", "Font",   XtRString, sizeof(char *),
+      XtOffset(appresPtr, normalFont), XtRString, (caddr_t) NULL},
+    {"buttonFont", "Font",   XtRString, sizeof(char *),
+      XtOffset(appresPtr, buttonFont), XtRString, (caddr_t) NULL},
+    {"startlatexFont", "StartlatexFont",   XtRString, sizeof(char *),
+      XtOffset(appresPtr, startlatexFont), XtRString, (caddr_t) NULL},
+    {"startpsFont", "StartpsFont",   XtRString, sizeof(char *),
+      XtOffset(appresPtr, startpsFont), XtRString, (caddr_t) NULL},
+    {"startfontsize", "StartFontSize",   XtRFloat, sizeof(float),
+      XtOffset(appresPtr, startfontsize), XtRFloat, (caddr_t) & Fzero},
+    {"internalborderwidth", "InternalBorderWidth",   XtRInt, sizeof(int),
+      XtOffset(appresPtr, internalborderwidth), XtRImmediate, (caddr_t) 0},
+    {"starttextstep", "StartTextStep",   XtRFloat, sizeof(float),
+      XtOffset(appresPtr, starttextstep), XtRFloat, (caddr_t) & Fzero},
+    {"startfillstyle", "StartFillStyle",   XtRInt, sizeof(int),
+      XtOffset(appresPtr, startfillstyle), XtRImmediate, (caddr_t) DEFAULT},
+    {"startlinewidth", "StartLineWidth",   XtRInt, sizeof(int),
+      XtOffset(appresPtr, startlinewidth), XtRImmediate, (caddr_t) 1},
+    {"startgridmode", "StartGridMode",   XtRInt, sizeof(int),
+      XtOffset(appresPtr, startgridmode), XtRImmediate, (caddr_t) 0},
+    {"startposnmode", "StartPosnMode",   XtRInt, sizeof(int),
+      XtOffset(appresPtr, startposnmode), XtRImmediate, (caddr_t) 1 },
+    {"latexfonts", "Latexfonts",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, latexfonts), XtRBoolean, (caddr_t) & false},
+    {"specialtext", "SpecialText",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, specialtext), XtRBoolean, (caddr_t) & false},
+    {"scalablefonts", "ScalableFonts",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, SCALABLEFONTS), XtRBoolean, (caddr_t) & true},
+    {"monochrome", "Monochrome",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, monochrome), XtRBoolean, (caddr_t) & false},
+    {"latexfonts", "Latexfonts",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, latexfonts), XtRBoolean, (caddr_t) & false},
+    {"keyFile", "KeyFile",   XtRString, sizeof(char *),
+      XtOffset(appresPtr, keyFile), XtRString, (caddr_t) "CompKeyDB"},
+    {"exportLanguage", "ExportLanguage",   XtRString, sizeof(char *),
+      XtOffset(appresPtr, exportLanguage), XtRString, (caddr_t) "eps"},
+    {"flushleft", "FlushLeft",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, flushleft), XtRBoolean, (caddr_t) & false},
+    {"userscale", "UserScale",   XtRFloat, sizeof(float),
+      XtOffset(appresPtr, user_scale), XtRFloat, (caddr_t) & Fone},
+    {"userunit", "UserUnit",   XtRString, sizeof(char *),
+      XtOffset(appresPtr, user_unit), XtRString, (caddr_t) ""},
+    {"but_per_row", "But_per_row",   XtRInt, sizeof(int),
+      XtOffset(appresPtr, but_per_row), XtRImmediate, (caddr_t) 2},
     {"max_image_colors", "Max_image_colors", XtRInt, sizeof(int),
-    XtOffset(appresPtr, max_image_colors), XtRInt, (caddr_t) & Izero},
+      XtOffset(appresPtr, max_image_colors), XtRImmediate, (caddr_t) 0},
     {"dont_switch_cmap", "Dont_switch_cmap", XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, dont_switch_cmap), XtRBoolean, (caddr_t) & false},
+      XtOffset(appresPtr, dont_switch_cmap), XtRBoolean, (caddr_t) & false},
     {"tablet", "Tablet", XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, tablet), XtRBoolean, (caddr_t) & false},
+      XtOffset(appresPtr, tablet), XtRBoolean, (caddr_t) & false},
     {"rulerthick", "RulerThick", XtRInt, sizeof(int),
-    XtOffset(appresPtr, rulerthick), XtRInt, (caddr_t) & Izero},
+      XtOffset(appresPtr, rulerthick), XtRImmediate, (caddr_t) 0},
     {"image_editor", "ImageEditor", XtRString, sizeof(char *),
-    XtOffset(appresPtr, image_editor), XtRString, (caddr_t) NULL},
+      XtOffset(appresPtr, image_editor), XtRString, (caddr_t) NULL},
+    {"magnification", "Magnification", XtRFloat, sizeof(float),
+      XtOffset(appresPtr, magnification), XtRFloat, (caddr_t) & F100},
+    {"paper_size", "Papersize", XtRString, sizeof(char *),
+      XtOffset(appresPtr, paper_size), XtRString, (caddr_t) NULL},
+    {"multiple",   XtCOrientation, XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, multiple), XtRBoolean, (caddr_t) & false},
+    {"show_balloons",   "ShowBalloons", XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, show_balloons), XtRBoolean, (caddr_t) & true},
+    {"spellcheckcommand", "spellCheckCommand",   XtRString, sizeof(char *),
+      XtOffset(appresPtr, spellcheckcommand), XtRString, (caddr_t) "spell %s"},
+    {"jpeg_quality", "Quality", XtRInt, sizeof(int),
+      XtOffset(appresPtr, jpeg_quality), XtRImmediate, (caddr_t) 0},
+    {"transparent", "Transparent", XtRInt, sizeof(int),
+      XtOffset(appresPtr, transparent), XtRImmediate, (caddr_t) -2 },
+#ifdef I18N
+    {"international", "International", XtRBoolean, sizeof(Boolean),
+       XtOffset(appresPtr, international), XtRBoolean, (caddr_t) & false},
+    {"japanese", "Japanese", XtRBoolean, sizeof(Boolean),
+       XtOffset(appresPtr, japanese), XtRBoolean, (caddr_t) & true},
+    {"eucEncoding", "EucEncoding", XtRBoolean, sizeof(Boolean),
+       XtOffset(appresPtr, euc_encoding), XtRBoolean, (caddr_t) & true},
+    {"normalFontSet", "NormalFontSet", XtRFontSet, sizeof(XFontSet),
+       XtOffset(appresPtr, normal_fontset), XtRString,
+       (caddr_t) "-*-times-medium-r-normal--16-*-*-*-*-*-*-*,"
+	 "-*-*-medium-r-normal--16-*-*-*-*-*-*-*,"
+	 "-*-*-*-r-*--16-*-*-*-*-*-*-*" },
+    {"boldFontSet", "BoldFontSet", XtRFontSet, sizeof(XFontSet),
+       XtOffset(appresPtr, bold_fontset), XtRString,
+       (caddr_t) "-*-times-bold-r-normal--16-*-*-*-*-*-*-*,"
+	 "-*-*-bold-r-normal--16-*-*-*-*-*-*-*,"
+	 "-*-*-*-r-*--16-*-*-*-*-*-*-*" },
+    {"fontSetSize", "FontSetSize", XtRInt, sizeof(int),
+       XtOffset(appresPtr, fontset_size), XtRImmediate, (caddr_t)16 },
+    {"inputStyle", "InputStyle", XtRString, sizeof(char *),
+       XtOffset(appresPtr, xim_input_style), XtRString, (caddr_t) "OffTheSpot"},
+    {"fixedFontSet", "FontSet", XtRFontSet, sizeof(XFontSet),
+       XtOffset(appresPtr, fixed_fontset), XtRString,
+       (caddr_t) "-*-times-medium-r-normal--16-*-*-*-*-*-*-*,"
+	 "-*-*-medium-r-normal--16-*-*-*-*-*-*-*,*--16-*" },
+    {"textPreedit", "TextPreedit", XtRString, sizeof(char *),
+       XtOffset(appresPtr, text_preedit), XtRString, (caddr_t) ""},
+    {"fig2devLocalizeOption", "Fig2devLocalizeOption", XtRString, sizeof(char *),
+       XtOffset(appresPtr, fig2dev_localize_option), XtRString, (caddr_t) "-j"},
+#endif  /* I18N */
 };
 
 /* BE SURE TO UPDATE THE -help COMMAND OPTION LIST IF ANY CHANGES ARE MADE HERE */
@@ -207,63 +255,75 @@ static XrmOptionDescRec options[] =
     {"-visual", "*visual", XrmoptionSepArg, NULL},
     {"-depth", "*depth", XrmoptionSepArg, NULL},
 
-    {"-zoom", ".zoom", XrmoptionSepArg, 0},
-    {"-cbg", ".canvasBackground", XrmoptionSepArg, (caddr_t) NULL},
-    {"-cfg", ".canvasForeground", XrmoptionSepArg, (caddr_t) NULL},
-    {"-iconGeometry", ".iconGeometry", XrmoptionSepArg, (caddr_t) NULL},
-    {"-showallbuttons", ".showallbuttons", XrmoptionNoArg, "True"},
-    {"-right", ".justify", XrmoptionNoArg, "True"},
-    {"-left", ".justify", XrmoptionNoArg, "False"},
-    {"-debug", ".debug", XrmoptionNoArg, "True"},
-    {"-landscape", ".landscape", XrmoptionNoArg, "True"},
-    {"-Landscape", ".landscape", XrmoptionNoArg, "True"},
-    {"-portrait", ".landscape", XrmoptionNoArg, "False"},
-    {"-Portrait", ".landscape", XrmoptionNoArg, "False"},
-    {"-pwidth", ".pwidth", XrmoptionSepArg, 0},
-    {"-pheight", ".pheight", XrmoptionSepArg, 0},
-    {"-inverse", ".reverseVideo", XrmoptionNoArg, "True"},
-    {"-notrack", ".trackCursor", XrmoptionNoArg, "False"},
-    {"-track", ".trackCursor", XrmoptionNoArg, "True"},
-    {"-inches", ".inches", XrmoptionNoArg, "True"},
-    {"-imperial", ".inches", XrmoptionNoArg, "True"},
-    {"-centimeters", ".inches", XrmoptionNoArg, "False"},
-    {"-metric", ".inches", XrmoptionNoArg, "False"},
     {"-boldFont", ".boldFont", XrmoptionSepArg, 0},
-    {"-normalFont", ".normalFont", XrmoptionSepArg, 0},
     {"-buttonFont", ".buttonFont", XrmoptionSepArg, 0},
-    {"-startpsFont", ".startpsFont", XrmoptionSepArg, 0},
-    {"-startlatexFont", ".startlatexFont", XrmoptionSepArg, 0},
-    {"-startFontSize", ".startfontsize", XrmoptionSepArg, 0},
-    {"-startfontsize", ".startfontsize", XrmoptionSepArg, 0},
-    {"-latexfonts", ".latexfonts", XrmoptionNoArg, "True"},
-    {"-specialtext", ".specialtext", XrmoptionNoArg, "True"},
-    {"-scalablefonts", ".scalablefonts", XrmoptionNoArg, "True"},
-    {"-noscalablefonts", ".scalablefonts", XrmoptionNoArg, "False"},
-    {"-monochrome", ".monochrome", XrmoptionNoArg, "True"},
-    {"-internalBW", ".internalborderwidth", XrmoptionSepArg, 0},
-    {"-internalBorderWidth", ".internalborderwidth", XrmoptionSepArg, 0},
-    {"-keyFile", ".keyFile", XrmoptionSepArg, 0},
+    {"-but_per_row", ".but_per_row", XrmoptionSepArg, 0},
+    {"-cbg", ".canvasBackground", XrmoptionSepArg, (caddr_t) NULL},
+    {"-center", ".flushleft", XrmoptionNoArg, "False"},
+    {"-centimeters", ".inches", XrmoptionNoArg, "False"},
+    {"-cfg", ".canvasForeground", XrmoptionSepArg, (caddr_t) NULL},
+    {"-debug", ".debug", XrmoptionNoArg, "True"},
+    {"-dontshowballoons", ".show_balloons", XrmoptionNoArg, "False"},
+    {"-dontswitchcmap", ".dont_switch_cmap", XrmoptionNoArg, "True"},
     {"-exportLanguage", ".exportLanguage", XrmoptionSepArg, 0},
     {"-flushleft", ".flushleft", XrmoptionNoArg, "True"},
-    {"-center", ".flushleft", XrmoptionNoArg, "False"},
+    {"-iconGeometry", ".iconGeometry", XrmoptionSepArg, (caddr_t) NULL},
+    {"-image_editor", ".image_editor", XrmoptionSepArg, 0},
+    {"-imperial", ".inches", XrmoptionNoArg, "True"},
+    {"-inches", ".inches", XrmoptionNoArg, "True"},
+    {"-internalBorderWidth", ".internalborderwidth", XrmoptionSepArg, 0},
+    {"-internalBW", ".internalborderwidth", XrmoptionSepArg, 0},
+    {"-inverse", ".reverseVideo", XrmoptionNoArg, "True"},
+    {"-jpeg_quality", ".jpeg_quality", XrmoptionSepArg, 0},
+    {"-keyFile", ".keyFile", XrmoptionSepArg, 0},
+    {"-Landscape", ".landscape", XrmoptionNoArg, "True"},
+    {"-landscape", ".landscape", XrmoptionNoArg, "True"},
+    {"-latexfonts", ".latexfonts", XrmoptionNoArg, "True"},
+    {"-left", ".justify", XrmoptionNoArg, "False"},
+    {"-magnification", ".magnification", XrmoptionSepArg, 0},
+    {"-max_image_colors", ".max_image_colors", XrmoptionSepArg, 0},
+    {"-metric", ".inches", XrmoptionNoArg, "False"},
+    {"-monochrome", ".monochrome", XrmoptionNoArg, "True"},
+    {"-multiple", ".multiple", XrmoptionNoArg, "True"},
+    {"-normalFont", ".normalFont", XrmoptionSepArg, 0},
+    {"-noscalablefonts", ".scalablefonts", XrmoptionNoArg, "False"},
+    {"-notrack", ".trackCursor", XrmoptionNoArg, "False"},
+    {"-paper_size", ".paper_size", XrmoptionSepArg, (caddr_t) NULL},
+    {"-pheight", ".pheight", XrmoptionSepArg, 0},
+    {"-Portrait", ".landscape", XrmoptionNoArg, "False"},
+    {"-portrait", ".landscape", XrmoptionNoArg, "False"},
+    {"-pwidth", ".pwidth", XrmoptionSepArg, 0},
+    {"-right", ".justify", XrmoptionNoArg, "True"},
+    {"-rulerthick", ".rulerthick", XrmoptionSepArg, 0},
+    {"-scalablefonts", ".scalablefonts", XrmoptionNoArg, "True"},
+    {"-showallbuttons", ".showallbuttons", XrmoptionNoArg, "True"},
+    {"-showballoons", ".show_balloons", XrmoptionNoArg, "True"},
+    {"-single", ".multiple", XrmoptionNoArg, "False"},
+    {"-specialtext", ".specialtext", XrmoptionNoArg, "True"},
+    {"-spellcheckcommand", ".spellcheckcommand", XrmoptionSepArg, 0},
+    {"-startfillstyle", ".startfillstyle", XrmoptionSepArg, 0},
+    {"-startFontSize", ".startfontsize", XrmoptionSepArg, 0},
+    {"-startfontsize", ".startfontsize", XrmoptionSepArg, 0},
+    {"-startgridmode", ".startgridmode",  XrmoptionSepArg, 0},
+    {"-startlatexFont", ".startlatexFont", XrmoptionSepArg, 0},
+    {"-startlinewidth", ".startlinewidth", XrmoptionSepArg, 0},
+    {"-startposnmode", ".startposnmode",  XrmoptionSepArg, 0},
+    {"-startpsFont", ".startpsFont", XrmoptionSepArg, 0},
+    {"-starttextstep", ".starttextstep",  XrmoptionSepArg, 0},
+    {"-tablet", ".tablet", XrmoptionNoArg, "True"},
+    {"-track", ".trackCursor", XrmoptionNoArg, "True"},
     {"-userscale", ".userscale", XrmoptionSepArg, 0},
     {"-userunit", ".userunit", XrmoptionSepArg, 0},
-    {"-but_per_row", ".but_per_row", XrmoptionSepArg, 0},
-    {"-starttextstep", ".starttextstep",  XrmoptionSepArg, 0},
-    {"-startfillstyle", ".startfillstyle", XrmoptionSepArg, 0},
-    {"-startlinewidth", ".startlinewidth", XrmoptionSepArg, 0},
-    {"-startgridmode", ".startgridmode",  XrmoptionSepArg, 0},
-    {"-startposnmode", ".startposnmode",  XrmoptionSepArg, 0},
-    {"-max_image_colors", ".max_image_colors", XrmoptionSepArg, 0},
-    {"-dontswitchcmap", ".dont_switch_cmap", XrmoptionNoArg, "True"},
-    {"-tablet", ".tablet", XrmoptionNoArg, "True"},
-    {"-rulerthick", ".rulerthick", XrmoptionSepArg, 0},
-    {"-image_editor", ".image_editor", XrmoptionSepArg, 0},
+    {"-zoom", ".zoom", XrmoptionSepArg, 0},
+#ifdef I18N
+    {"-international", ".international", XrmoptionNoArg, "True"},
+    {"-inputStyle", ".inputStyle", XrmoptionSepArg, 0},
+#endif  /* I18N */
 };
 
 char *help_list =
     "Usage:\n\
-xfig [-help] \
+xfig [-h[elp]] \
 [-boldFont <font>] \
 [-but_per_row <number>] \
 [-buttonFont <font>] \
@@ -272,30 +332,37 @@ xfig [-help] \
 [-centimeters] \
 [-flushleft] \
 [-debug] \
-[-dontswitchcmap] \
+[-dontshowballoons] \
 \n     \
+[-dontswitchcmap] \
 [-exportLanguage <language>] \
 [-iconGeometry <geom>] \
-[-image_editor <editor>] \
 \n     \
+[-image_editor <editor>] \
 [-imperial] \
 [-inches] \
 [-internalBW <width>] \
-[-internalBorderWidth <width>] \
 \n     \
+[-internalBorderWidth <width>] \
 [-inverse] \
+[-jpeg_quality <quality>] \
+\n     \
 [-keyFile <file>] \
 [-landscape] \
 [-latexfonts] \
 [-left] \
 \n     \
+[-magnification <print/export_mag>] \
 [-max_image_colors <number>] \
 [-metric] \
-[-monochrome] \
-[-normalFont <font>] \
 \n     \
+[-monochrome] \
+[-multiple] \
+[-normalFont <font>] \
 [-noscalablefonts] \
+\n     \
 [-notrack] \
+[-paper_size <size>] \
 [-pheight <height>] \
 [-portrait] \
 \n     \
@@ -305,7 +372,11 @@ xfig [-help] \
 [-scalablefonts] \
 \n     \
 [-showallbuttons] \
-[-specialtext]\
+[-showballoons] \
+[-single] \
+[-specialtext] \
+\n     \
+[-spellcheckcommand <command>] \
 [-startfillstyle <style>] \
 \n     \
 [-startfontsize <size>] \
@@ -317,13 +388,16 @@ xfig [-help] \
 [-startpsFont <font>] \
 \n     \
 [-starttextstep <number>] \
-[-tablet (if installed)] \
+[-tablet] \
 [-track] \
-\n     \
 [-userscale <scale>] \
+\n     \
 [-userunit <units>] \
 [-visual <visual>] \
-[file]\n";
+[file] \
+\n \
+\n \
+Note: all options may be abbreviated to minimum unique string.\n";
 
 Atom wm_protocols[2];
 
@@ -348,6 +422,10 @@ static String	form_translations =
 static String	tool_translations =
 			"<Message>WM_PROTOCOLS:Quit()\n";
 
+struct geom {
+	int wid,ht;
+	};
+
 #define NCHILDREN	9
 static Widget	form;
 
@@ -360,9 +438,9 @@ main(argc, argv)
     int		    ichild;
     int		    init_canv_wd, init_canv_ht;
     XWMHints	   *wmhints;
-    int		    i;
+    int		    i,j,n;
     char	   *userhome;
-    Dimension	    w, h;
+    Dimension	    w, h, w1, h1;
     XGCValues	    gcv;
     Colormap	    colormap;		/* created colormap */
     XVisualInfo	    vinfo;		/* template for find visual */
@@ -373,9 +451,15 @@ main(argc, argv)
     int		    xargc;		/* keeps copies of the command-line arguments */
     char	  **xargv;
     XColor	    dumcolor;
+    char	    version[30];
+    Boolean	    geomspec;
+    struct geom	    geom;
+    XPixmapFormatValues *pmf;
 
     DeclareArgs(5);
 
+    geomspec = False;
+   
     /* version number only */
     if (argc > 1 && strcasecmp(argv[1],"-v")==0) {
 	(void) fprintf(stderr, " XFIG %s patchlevel %s (Protocol %s)\n",
@@ -383,10 +467,51 @@ main(argc, argv)
 	exit(0);
 
     /* help message only */
-    } else if (argc > 1 && strcmp(argv[1],"-help")==0) {
-	fprintf(stderr,"%s",help_list);
-	exit(0);
+    } else if (argc > 1 && 
+	((strcmp(argv[1],"-help")==0) || (strcmp(argv[1],"-h")==0))) {
+	    fprintf(stderr,"%s",help_list);
+	    exit(0);
+    } else if (argc > 1) {
+	char *p1,*p2,*p;
+	/* make sure that if he uses the -geom argument it only has the position */
+	for (i=1; i<argc; i++) {
+	    if (strncmp(argv[i],"-ge",3)==0) {
+		if (i+1 < argc) {
+		    if ((argv[i+1][0]=='+') || (argv[i+1][0]=='-'))
+			break;			/* yes, starts with +/-x+/-y */
+		}
+		geomspec = True;
+		sscanf(argv[i+1],"%dx%d",&geom.wid,&geom.ht);
+		/* now, if there is an offset, (+/-x+/-y) then move it to beginning of arg */
+		p1=strchr(argv[i+1],'+');
+		p2=strchr(argv[i+1],'-');
+		if (p1 || p2) {
+		    if (p1 == 0)
+			p = p2;
+		    else if (p2 == 0)
+			p = p1;
+		    else
+			p = min2(p1,p2);
+		    strcpy(argv[i+1],p);
+		    break;
+		}
+		/* only specified geometry and not offset, get rid of it altogether */
+		for (j=i+2; j<argc; j++) {
+		    argv[i] = argv[j];
+		}
+		argc -= 2;
+		fprintf(stderr,
+			"Do not use -geometry, use -pwidth and -pheight to set canvas size\n");
+		break;
+	    }
+	}
     }
+
+#ifdef I18N
+    setlocale(LC_ALL, "");
+    setlocale(LC_NUMERIC, "C");
+    XtSetLanguageProc(NULL, NULL, NULL);
+#endif  /* I18N */
 
 /* start of visual check/set */
 
@@ -410,10 +535,19 @@ main(argc, argv)
 	tool_sn = DefaultScreen(tool_d);
 
 	XtGetApplicationResources (tool, &Options, resources,
-				   XtNumber (resources),
-				   args, 0);
+				   XtNumber (resources), args, 0);
 	cnt = 0;
-	if (Options.visual && Options.visual != DefaultVisualOfScreen (tool_s)) {
+	if ((Options.visual && Options.visual != DefaultVisualOfScreen (tool_s)) ||
+	    (Options.depth && Options.depth != DefaultDepthOfScreen (tool_s))) {
+		if (! Options.visual) {
+		    /* no visual specified by the user, use default */
+		    Options.visual = DefaultVisual(tool_d,tool_sn);
+		}
+		if (Options.depth == 0) {
+		    /* no depth specified by the user, use default */
+		    Options.depth = DefaultDepthOfScreen(tool_s);
+		}
+
 		XtSetArg (args[cnt], XtNvisual, Options.visual); ++cnt;
 		/*
 		 * Now we create an appropriate colormap.  We could
@@ -452,6 +586,29 @@ main(argc, argv)
 	/* and save the class */
 	tool_vclass = tool_v->class;
 
+	/* now get the pixmap formats supported and find the bits-per-pixel
+	   for the depth we are using */
+	
+	pmf = XListPixmapFormats (tool_d, &n);
+	image_bpp = 0;
+	if (pmf) {
+	    for (i = 0; i < n; i++) {
+		if (pmf[i].depth == tool_dpth) {
+		    /* calculate bytes per pixel from bits per pixel */
+		    if ((image_bpp = pmf[i].bits_per_pixel/8)==0)
+			image_bpp = 1;
+		}
+	    }
+	    XFree ((char *) pmf);
+	} else {
+	    fprintf(stderr,"*????* NO supported pixmap formats (from XListPixmapFormats)?\n");
+	    fprintf(stderr,"Report this to your vendor\n");
+	}
+	if (image_bpp == 0) {
+	    file_msg("Can't find bits per pixel from Pixmap formats, using 8");
+	    image_bpp = 1;
+	}
+
 	XtDestroyWidget (tool);
 
 	/*
@@ -483,14 +640,22 @@ main(argc, argv)
 
     fix_converters();
 
-    /* get the application resources */
+    /* get the application resources again now that we have the new visual */
     XtGetApplicationResources(tool, &appres, application_resources,
 			      XtNumber(application_resources), NULL, 0);
 
     /* All option args have now been deleted, leaving other args. (from Gordon Ross) */
+
+    /* the Fig filename is the only option now */
     if (argc > 1) {
-	    filename = argv[1];
+	filename = argv[1];
     }
+
+#ifdef I18N
+    if (appres.international)
+      (void) sprintf(&tool_name[strlen(tool_name)], " [locale: %s]",
+		     setlocale(LC_CTYPE, NULL));
+#endif  /* I18N */
 
     tool_cells = CellsOfScreen(tool_s);
     screen_res = (int) ((float) WidthOfScreen(tool_s) /
@@ -502,24 +667,36 @@ main(argc, argv)
     if (appres.zoom <= 0.0)
 	appres.zoom = 1.0;		/* user didn't specify starting zoom, use 1.0 */
 
+    /* set print/export magnification to user selection (if any) and fix any bad value */
+    if (appres.magnification <= 0.0 || appres.magnification > 100.0)
+	appres.magnification = 100.0;	/* user didn't specify or chose bad value */
+
+    /* set jpeg quality to user selection (if any) and fix any bad value */
+    if (appres.jpeg_quality <= 0 || appres.jpeg_quality > 100)
+	appres.jpeg_quality = DEF_JPEG_QUALITY;	/* user didn't specify or chose bad value */
+
     ZOOM_FACTOR = PIX_PER_INCH/DISPLAY_PIX_PER_INCH;
 
     display_zoomscale = appres.zoom;
     zoomscale=display_zoomscale/ZOOM_FACTOR;
 
-    /* start with default paper size; letter for imperial and A4 for Metric */
-    appres.papersize = (appres.INCHES? PAPER_LETTER: PAPER_A4);
-    appres.multiple = False;
-
+    /* parse any paper size the user wants */
+    if (appres.paper_size) {
+	appres.papersize = parse_papersize(appres.paper_size);
+    } else {
+	/* default paper size; letter for imperial and A4 for Metric */
+	appres.papersize = (appres.INCHES? PAPER_LETTER: PAPER_A4);
+    }
+   
     /* filled in later */
     tool_w = (Window) NULL;
 
+    /* set the icon geometry */
     if (appres.iconGeometry != (char *) 0) {
         int scr, x, y, junk;
 
-        for(scr = 0;
-            tool_s != ScreenOfDisplay(tool_d, scr);
-            scr++);
+        for(scr = 0; tool_s != ScreenOfDisplay(tool_d, scr); scr++)
+		;
 
         XGeometry(tool_d, scr, appres.iconGeometry,
                   "", 0, 0, 0, 0, 0, &x, &y, &junk, &junk);
@@ -650,29 +827,6 @@ main(argc, argv)
      */
     check_colors();
 
-    /* parse any canvas background or foreground color the user wants */
-    if (appres.canvasBackground) {
-	XParseColor(tool_d, tool_cm, appres.canvasBackground, &x_bg_color);
-	if (XAllocColor(tool_d, tool_cm, &x_bg_color)==0) {
-	    fprintf(stderr,"Can't allocate background color for canvas\n");
-	    appres.canvasBackground = (char*) NULL;
-	}
-    } else {
-	x_bg_color = white_color;
-    }
-    if (appres.canvasForeground) {
-	XParseColor(tool_d, tool_cm, appres.canvasForeground, &x_fg_color);
-	if (XAllocColor(tool_d, tool_cm, &x_fg_color)==0) {
-	    fprintf(stderr,"Can't allocate background color for canvas\n");
-	    appres.canvasForeground = (char*) NULL;
-	}
-    } else {
-	x_fg_color = black_color;
-    }
-
-    /* setup the cursors */
-    init_cursor();
-
     /* make the top-level widget */
     FirstArg(XtNinput, (XtArgVal) True);
     NextArg(XtNdefaultDistance, (XtArgVal) 0);
@@ -704,33 +858,38 @@ main(argc, argv)
     if (RULER_WD < DEF_RULER_WD)
 	RULER_WD = DEF_RULER_WD;
 
-    CANVAS_WD_LAND = DEF_CANVAS_WD_LAND;
-    CANVAS_HT_LAND = DEF_CANVAS_HT_LAND;
-    CANVAS_WD_PORT = DEF_CANVAS_WD_PORT;
-    CANVAS_HT_PORT = DEF_CANVAS_HT_PORT;
-
     if (appres.landscape) {
 	CANVAS_WD_LAND = init_canv_wd;
 	CANVAS_HT_LAND = init_canv_ht;
+	CANVAS_WD_PORT = init_canv_ht;
+	CANVAS_HT_PORT = init_canv_wd;
     } else {
 	CANVAS_WD_PORT = init_canv_wd;
 	CANVAS_HT_PORT = init_canv_ht;
+	CANVAS_WD_LAND = init_canv_ht;
+	CANVAS_HT_LAND = init_canv_wd;
     }
+    /* if the user didn't specify anything in the resources for width/height */
     if (init_canv_wd == 0) {
+	CANVAS_WD_LAND = DEF_CANVAS_WD_LAND;
+	CANVAS_WD_PORT = DEF_CANVAS_WD_PORT;
 	if (appres.landscape) {
-	    init_canv_wd = CANVAS_WD_LAND = DEF_CANVAS_WD_LAND;
+	    init_canv_wd = CANVAS_WD_LAND;
 	} else {
-	    init_canv_wd = CANVAS_WD_PORT = DEF_CANVAS_WD_PORT;
+	    init_canv_wd = CANVAS_WD_PORT;
 	}
     }
     if (init_canv_ht == 0) {
+	CANVAS_HT_LAND = DEF_CANVAS_HT_LAND;
+	CANVAS_HT_PORT = DEF_CANVAS_HT_PORT;
 	if (appres.landscape) {
-	    init_canv_ht = CANVAS_HT_LAND = DEF_CANVAS_HT_LAND;
+	    init_canv_ht = CANVAS_HT_LAND;
 	} else {
-	    init_canv_ht = CANVAS_HT_PORT = DEF_CANVAS_HT_PORT;
+	    init_canv_ht = CANVAS_HT_PORT;
 	}
     }
 	
+
     setup_sizes(init_canv_wd, init_canv_ht);
     (void) init_cmd_panel(form);
     (void) init_msg(form,filename);
@@ -738,6 +897,53 @@ main(argc, argv)
     (void) init_mode_panel(form);
     (void) init_topruler(form);
     (void) init_canvas(form);
+
+    /* parse any canvas background or foreground color the user wants */
+    /* we had to wait until the canvas was created to get any color the
+       user set through resources */
+    if (appres.canvasBackground) {
+	XParseColor(tool_d, tool_cm, appres.canvasBackground, &x_bg_color);
+	if (XAllocColor(tool_d, tool_cm, &x_bg_color)==0) {
+	    fprintf(stderr,"Can't allocate background color for canvas\n");
+	    appres.canvasBackground = (char*) NULL;
+	}
+    } else {
+	Pixel bg;
+	FirstArg(XtNbackground, &bg);
+	GetValues(canvas_sw);
+	x_bg_color.pixel = bg;
+	/* get the rgb values for it */
+	XQueryColor(tool_d, tool_cm, &x_bg_color);
+    }
+    if (appres.canvasForeground) {
+	XParseColor(tool_d, tool_cm, appres.canvasForeground, &x_fg_color);
+	if (XAllocColor(tool_d, tool_cm, &x_fg_color)==0) {
+	    fprintf(stderr,"Can't allocate background color for canvas\n");
+	    appres.canvasForeground = (char*) NULL;
+	}
+    } else {
+	Pixel fg;
+	FirstArg(XtNforeground, &fg);
+	GetValues(canvas_sw);
+	x_fg_color.pixel = fg;
+	/* get the rgb values for it */
+	XQueryColor(tool_d, tool_cm, &x_fg_color);
+    }
+    /* now set the canvas to the user's choice, if any */
+    FirstArg(XtNbackground, x_bg_color.pixel);
+    NextArg(XtNforeground, x_fg_color.pixel);
+    SetValues(canvas_sw);
+
+    /* now fix the global GC */
+    XSetState(tool_d, gc, x_fg_color.pixel, x_bg_color.pixel, GXcopy,
+	      AllPlanes);
+
+    /* setup the cursors */
+    init_cursor();
+
+    /* and recolor the cursors */
+    recolor_cursors();
+
     (void) init_fontmenu(form); /* printer font menu */
     (void) init_unitbox(form);
     (void) init_sideruler(form);
@@ -762,6 +968,14 @@ main(argc, argv)
     XtManageChildren(children, NCHILDREN);
     XtRealizeWidget(tool);
     tool_w = XtWindow(tool);
+
+#ifdef I18N
+    if (appres.international) {
+      xim_initialize(canvas_sw);
+      if (xim_ic != NULL)
+	xim_set_ic_geometry(xim_ic, CANVAS_WD, CANVAS_HT);
+    }
+#endif  /* I18N */
 
     /* make sure we have the most current colormap */
     set_cmap(tool_w);
@@ -876,6 +1090,48 @@ main(argc, argv)
     setup_mousefun();
     setup_fontmenu();		/* setup bitmaps in printer font menu */
     setup_ind_panel();
+
+    /* if the user specified a geometry, change canvas size to fit */
+    if (geomspec) {
+	/* set the tool size to user's request */
+	TOOL_HT = geom.ht;
+	TOOL_WD = geom.wid;
+	XtResizeWidget(tool, TOOL_WD, TOOL_HT, 0);
+
+	/* get width of mode panel and side ruler */
+	FirstArg(XtNwidth, &w1);
+	GetValues(mode_panel);
+	w = w1;
+	GetValues(sideruler_sw);
+	w += w1;
+	if (appres.landscape) {
+	    CANVAS_WD_LAND = geom.wid - w;
+	} else {
+	    CANVAS_WD_PORT = geom.wid - w;
+	}
+	/* now get height of the cmd panel, msg panel, top ruler and ind panel */
+	FirstArg(XtNheight, &h1);
+	GetValues(cmd_panel);
+	h = h1;
+	GetValues(msg_panel);
+	h += h1;
+	GetValues(topruler_sw);
+	h += h1;
+	GetValues(ind_panel);
+	h += h1;
+	h += INTERNAL_BW*2;
+	/* finally whole tool */
+	GetValues(tool);
+	if (appres.landscape) {
+	    CANVAS_HT_LAND = geom.ht - h;
+	    resize_all((int) (CANVAS_WD_LAND), (int) (CANVAS_HT_LAND));
+	} else {
+	    CANVAS_HT_PORT = geom.ht - h;
+	    resize_all((int) (CANVAS_WD_PORT), (int) (CANVAS_HT_PORT));
+	}
+    }
+
+    /* get the current directory */
     get_directory(cur_dir);
 
     /* parse the export language resource */
@@ -917,6 +1173,15 @@ main(argc, argv)
 #endif
     (void) signal(SIGSEGV, error_handler);
     (void) signal(SIGINT, SIG_IGN);	/* in case user accidentally types ctrl-c */
+
+    /* now that everything is up, check the version number in the app-defaults */
+    sprintf(version,"%s.%s",FIG_VERSION,PATCHLEVEL);
+    if (!appres.version || strcasecmp(appres.version,version) < 0) {
+	file_msg("The app-defaults file is older than this version of xfig.");
+	file_msg("You should install the new version or you may lose some features.");
+	beep();
+	beep();
+    }
 
     put_msg("READY. Select a mode or load a file");
 
@@ -1102,6 +1367,26 @@ notablet:
 	XtAppMainLoop(tool_app);
     }
     else
+#ifdef I18N
+    if (xim_ic != NULL) {
+      extern canvas_selected();
+      XEvent event;
+      for (;;) {
+	XtAppNextEvent(tool_app, &event);
+	if (!xim_active) {
+	  XtDispatchEvent(&event);
+	} else if (!XFilterEvent(&event, XtWindow(canvas_sw))) {
+	  if (event.type == KeyPress) {
+	    canvas_selected(canvas_sw, &event, NULL, NULL);
+	    /* call it directly because Window ID may different */
+	    /* this is not good... */
+	  } else {
+	    XtDispatchEvent(&event);
+	  }
+	}
+      }
+    } else
+#endif  /* I18N */
 	XtAppMainLoop(tool_app);
     return 0;
 }
@@ -1123,6 +1408,10 @@ check_for_resize(tool, event, params, nparams)
     TOOL_WD = xc->width;
     TOOL_HT = xc->height;
     resize_all(CANVAS_WD + dx, CANVAS_HT + dy);
+#ifdef I18N
+    if (xim_ic != NULL)
+      xim_set_ic_geometry(xim_ic, CANVAS_WD, CANVAS_HT);
+#endif
 }
 
 /* resize whole shebang given new canvas size (width,height) */

@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  *
  */
 
@@ -61,7 +58,7 @@ read_epsf(file,filetype,pic)
 #ifdef GSBIT
     int		    status;
     FILE	   *pixfile, *gsfile;
-    char	    pixnam[PATH_MAX],gscom[PATH_MAX];
+    char	    pixnam[PATH_MAX],errnam[PATH_MAX],gscom[PATH_MAX];
 #endif /* GSBIT */
     Boolean	    useGS;
     useGS = False;
@@ -141,7 +138,8 @@ read_epsf(file,filetype,pic)
 #ifdef GSBIT
 	/* if monochrome and a preview bitmap exists, don't use gs */
 	if ((!appres.monochrome || !bitmapz) && !bad_bbox) {
-	    int	wid,ht;
+	    int   wid,ht;
+	    char *driver;
 
 	    wid = urx - llx + 1;
 	    ht  = ury - lly + 1;
@@ -155,20 +153,20 @@ read_epsf(file,filetype,pic)
 #endif
 	    /* make name /TMPDIR/xfig-pic.pix */
 	    sprintf(pixnam, "%s/%s%06d.pix", TMPDIR, "xfig-pic", getpid());
+	    /* and file name for any error messages from gs */
+	    sprintf(errnam, "%s/%s%06d.err", TMPDIR, "xfig-pic", getpid());
 	    /* generate gs command line */
 	    /* for monchrome, use pbm */
 	    if (tool_cells <= 2 || appres.monochrome) {
-		sprintf(gscom,
-		   "gs -r72x72 -dSAFER -sDEVICE=pbmraw -g%dx%d -sOutputFile=%s -q -",
-		    wid, ht, pixnam);
-	    /* for color, use pcx */
+		/* monochrome output */
+		driver = "pbmraw";
 	    } else {
-		sprintf(gscom,
-		    "gs -r72x72 -dSAFER -sDEVICE=pcx256 -g%dx%d -sOutputFile=%s -q -",
-		    wid, ht, pixnam);
+		/* for color, use pcx */
+		driver = "pcx256";
 	    }
-	    if (!appres.DEBUG)	/* if debugging, don't divert errors from gs to /dev/null */
-		 strcat(gscom," >/dev/null 2>&1");
+	    sprintf(gscom,
+		   "gs -r72x72 -dSAFER -sDEVICE=%s -g%dx%d -sOutputFile=%s -q - > %s 2>&1",
+		    driver, wid, ht, pixnam, errnam);
 	    if ((gsfile = popen(gscom,"w" )) != 0) {
 		pic->bit_size.x = wid;
 		pic->bit_size.y = ht;
@@ -239,25 +237,47 @@ read_epsf(file,filetype,pic)
 	gs -dSAFER -sDEVICE=pbmraw(or pcx256) -gWxH -sOutputFile=/tmp/xfig-pic%%%.pix -q -
 
 	-llx -lly translate 
+	% mark dictionary (otherwise fails for tiger.ps (e.g.):
+	% many ps files don't 'end' their dictionaries)
+	countdictstack
+	mark
 	/oldshowpage {showpage} bind def
 	/showpage {} def
 	(psfile) run
 	oldshowpage
+	% clean up stacks and dicts
+	cleartomark
+	countdictstack exch sub { end } repeat
 	quit
 	*********************************************/
 
 	fprintf(gsfile, "%d %d translate\n",-llx,-lly);
+	fprintf(gsfile, "countdictstack\n");
+	fprintf(gsfile, "mark\n");
 	fprintf(gsfile, "/oldshowpage {showpage} bind def\n");
 	fprintf(gsfile, "/showpage {} def\n");
 	fprintf(gsfile, "(%s) run\n", psnam);
 	fprintf(gsfile, "oldshowpage\n");
+	fprintf(gsfile, "cleartomark\n");
+	fprintf(gsfile, "countdictstack exch sub { end } repeat\n");
 	fprintf(gsfile, "quit\n");
 
 	status = pclose(gsfile);
 	if (tmpfile[0])
 	    unlink(tmpfile);
+	/* error return from ghostscript, look in error file */
 	if (status != 0 || ( pixfile = fopen(pixnam,"r") ) == NULL ) {
-	    file_msg( "Could not parse EPS file with GS: %s", pic->file);
+	    FILE *errfile = fopen(errnam,"r");
+	    file_msg("Could not parse EPS file with ghostscript: %s", pic->file);
+	    if (errfile) {
+		file_msg("ERROR from ghostscript:");
+		while (fgets(buf, 300, errfile) != NULL) {
+		    buf[strlen(buf)-1]='\0';	/* strip newlines */
+		    file_msg("%s",buf);
+		}
+		fclose(errfile);
+		unlink(errnam);
+	    }
 	    free((char *) pic->bitmap);
 	    pic->bitmap = NULL;
 	    unlink(pixnam);

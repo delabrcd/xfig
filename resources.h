@@ -1,3 +1,5 @@
+#ifndef RESOURCES_H
+#define RESOURCES_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
@@ -18,9 +20,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "paintop.h"
@@ -49,7 +48,10 @@
 #define DEF_MAX_IMAGE_COLS 64
 
 /* for GIF files */
-#define	MAX_COLORMAP_SIZE	256	/* for GIF files */
+#define	MAX_COLORMAP_SIZE	256
+
+/* for JPEG export */
+#define	DEF_JPEG_QUALITY	75
 
 struct Cmap {
 	unsigned short red, green, blue;
@@ -134,9 +136,31 @@ typedef struct _appres {
     Boolean	    dont_switch_cmap;	/* don't allow switching of colormap */
     int		    rulerthick;		/* thickness of rulers */
     char	   *image_editor;	/* image editor (xv, etc) */
-    int		    papersize;		/* size of paper */
-    Boolean	    multiple;		/* multiple/single page for export/print */
     float	    zoom;		/* starting zoom scale */
+    Boolean	    multiple;		/* multiple/single page for export/print */
+    int		    papersize;		/* size of paper */
+    char	   *paper_size;		/* ASCII size of paper (from command-line) */
+    int		    transparent;	/* transparent color for GIF export
+						(-2=none, -1=background) */
+    float	    magnification;	/* export/print magnification */
+    Boolean	    show_balloons;	/* show popup messages when user passes over buttons */
+    char	   *spellcheckcommand;	/* spell check command e.g. 
+					   "spell %s" or  "ispell -l < %s | sort -u" */
+    char	   *version;		/* version of the app-defaults file (compared with
+					   the version/patchlevel of xfig when starting */
+    int		    jpeg_quality;	/* jpeg image quality */
+#ifdef I18N
+    Boolean international;
+    Boolean japanese;
+    Boolean euc_encoding;
+    XFontSet normal_fontset;
+    XFontSet bold_fontset;
+    int fontset_size;
+    String fig2dev_localize_option;
+    String xim_input_style;
+    XFontSet fixed_fontset;
+    String text_preedit;
+#endif  /* I18N */
 }		appresStruct, *appresPtr;
 extern appresStruct appres;
 
@@ -163,6 +187,13 @@ struct Menu {
     MenuItemRec	   *m_items;
     struct Menu	   *m_next;
     caddr_t	    m_data;
+};
+
+/* def for paper size list */
+struct paper_def {
+    char  *sname;		/* short name e.g. 'A' */
+    char  *fname;		/* full name e.g. 'A     (8.5" x 11")' */
+    int	   width,height;	/* size in Fig units e.g. 10200 13200 */
 };
 
 typedef struct Menu MenuRec;
@@ -201,6 +232,7 @@ extern int	tool_vclass;
 extern Visual  *tool_v;
 extern int	tool_dpth;
 extern int	tool_cells;
+extern int	image_bpp;	/* # of bytes-per-pixel for images at this visual */
 extern Colormap	tool_cm, newcmap;
 extern Boolean	swapped_cmap;
 extern Atom	wm_delete_window;
@@ -223,19 +255,19 @@ extern unsigned long mouse_but_fg, mouse_but_bg;
 /* will be filled in with environment variable XFIGTMPDIR */
 extern char    *TMPDIR;
 
-extern char *text_translations;
+extern String  text_translations;
 
 /* for w_export.c and w_print.c */
 
 extern char    *orient_items[2];
 extern char    *just_items[2];
-extern char    *paper_sizes[NUMPAPERSIZES];
-extern char    *full_paper_sizes[NUMPAPERSIZES];
+extern struct   paper_def paper_sizes[NUMPAPERSIZES];
 extern char    *multiple_pages[2];
 
 /* for w_file.c and w_export.c */
 
 extern char    *offset_unit_items[3];
+#endif /* RESOURCES_H */
 
 extern int	RULER_WD;
 

@@ -3,6 +3,7 @@
  * Copyright (c) 1985 by Supoj Sutanthavibul
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
  * The X Consortium, and any party obtaining a copy of these files from
  * the X Consortium, directly or indirectly, is granted, free of charge, a
@@ -18,9 +19,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -88,13 +86,11 @@ new_arrow(type, style, thickness, wid, ht)
     if ((a = create_arrow()) == NULL)
 	return (NULL);
 
-    /* if thickness, width, or height are 0.0, make reasonable values */
+    /* if thickness or width are 0.0, make reasonable values */
     if (thickness==0.0)
 	thickness = (float) (max2(1,cur_linewidth));
     if (wid==0.0)
 	wid = thickness * DEF_ARROW_WID;
-    if (ht==0.0)
-	ht = thickness * DEF_ARROW_HT;
     a->type = type;
     a->style = style;
     a->thickness = thickness;
@@ -135,12 +131,12 @@ create_point()
     return (p);
 }
 
-F_control      *
-create_cpoint()
+F_sfactor      *
+create_sfactor()
 {
-    F_control	   *cp;
+    F_sfactor	   *cp;
 
-    if ((cp = (F_control *) malloc(CONTROL_SIZE)) == NULL)
+    if ((cp = (F_sfactor *) malloc(CONTROL_SIZE)) == NULL)
 	put_msg(Err_mem);
     return (cp);
 }
@@ -349,7 +345,7 @@ copy_spline(s)
     F_spline	   *s;
 {
     F_spline	   *spline;
-    F_control	   *new_cp, *orig_cp, *last_cp;
+    F_sfactor	   *new_cp, *orig_cp, *last_cp;
     F_arrow	   *arrow;
 
     if ((spline = create_spline()) == NULL)
@@ -379,20 +375,20 @@ copy_spline(s)
 	free_splinestorage(spline);
 	return (NULL);
     }
-    spline->controls = NULL;
-    if (s->controls == NULL)
+    spline->sfactors = NULL;
+    if (s->sfactors == NULL)
 	return (spline);
 
-    if ((new_cp = create_cpoint()) == NULL) {
+    if ((new_cp = create_sfactor()) == NULL) {
 	free_splinestorage(spline);
 	return (NULL);
     }
     new_cp->next = NULL;
-    last_cp = spline->controls = new_cp;
-    orig_cp = s->controls;
+    last_cp = spline->sfactors = new_cp;
+    orig_cp = s->sfactors;
     *new_cp = *orig_cp;
     for (orig_cp = orig_cp->next; orig_cp != NULL; orig_cp = orig_cp->next) {
-	if ((new_cp = create_cpoint()) == NULL) {
+	if ((new_cp = create_sfactor()) == NULL) {
 	    free_splinestorage(spline);
 	    return (NULL);
 	}

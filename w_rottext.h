@@ -1,3 +1,5 @@
+#ifndef W_ROTTEXT_H
+#define W_ROTTEXT_H
 /* ************************************************************************ */
 
 /* Header file for the `xvertext 5.0' routines.
@@ -18,9 +20,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 /* ************************************************************************ */
@@ -93,4 +92,4 @@ extern XPoint *XRotTextExtents();
 #endif /* _XVERTEXT_INCLUDED_ */
 
 
-
+#endif /* W_ROTTEXT_H */

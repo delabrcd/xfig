@@ -1,3 +1,5 @@
+#ifndef MODE_H
+#define MODE_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
@@ -18,9 +20,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #define		F_NULL			0
@@ -34,10 +33,10 @@
 #define		F_BOX			7
 #define		F_POLYGON		8
 #define		F_TEXT			9
-#define		F_SPLINE		10
-#define		F_CLOSED_SPLINE		11
-#define		F_INTSPLINE		12
-#define		F_CLOSED_INTSPLINE	13
+#define		F_APPROX_SPLINE		10
+#define		F_CLOSED_APPROX_SPLINE	11
+#define		F_INTERP_SPLINE		12
+#define		F_CLOSED_INTERP_SPLINE	13
 #define		F_ARC_BOX		14
 #define		F_REGPOLY		15
 #define		F_PICOBJ		16
@@ -67,6 +66,7 @@
 #define		F_ENTER_COMP		51
 #define		F_EXIT_COMP		52
 #define		F_EXIT_ALL_COMP		53
+#define		F_OPEN_CLOSE		54
 
 extern int	cur_mode;
 
@@ -181,31 +181,25 @@ enum {
 	LANG_EPS,
 	LANG_PS,
 	LANG_PSTEX,
-	LANG_PXTEX_T,
 	LANG_TEXTYL,
 	LANG_TPIC,
 	LANG_PIC,
 	LANG_MF,
-
-/* the bitmap formats follow LANG_MF (METAFONT) */
-
+	LANG_ACAD,
 	LANG_PCX,
-#ifdef USE_GIF
+	LANG_PNG,
 	LANG_GIF,
-#endif
 #ifdef USE_JPEG
 	LANG_JPEG,
 #endif
+	LANG_TIFF,
 	LANG_XBM,
 #ifdef USE_XPM
 	LANG_XPM,
 #endif
+	LANG_PPM,
 	END_OF_LANGS
 };
-
-/* IMPORTANT: Bitmap formats (e.g. GIF, JPEG) must follow BITMAP_FORMAT */
-
-#define	BITMAP_FORMAT	LANG_MF+1
 
 /* number of export languages */
 
@@ -263,3 +257,4 @@ extern char	cur_filename[];
 extern char	save_filename[];	/* to undo load or "new" command */
 extern char	file_header[];
 extern char	cut_buf_name[];
+#endif /* MODE_H */

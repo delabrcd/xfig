@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -126,10 +123,10 @@ free_spline(list)
 free_splinestorage(s)
     F_spline	   *s;
 {
-    F_control	   *a, *b;
+    F_sfactor	   *a, *b;
 
     free_points(s->points);
-    for (a = s->controls; a != NULL; a = b) {
+    for (a = s->sfactors; a != NULL; a = b) {
 	b = a->next;
 	free((char *) a);
     }

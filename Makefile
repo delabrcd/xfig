@@ -300,10 +300,19 @@ PICFLAGS = -pic
 # If you don't have the JPEG library or don't want to use JPEG, comment
 # out the following line
 
+# If you have installed the jpeg library on your system, uncomment the
+# USEINSTALLEDJPEG variable, change the JPEGLIBDIR variable to the directory
+# where your jpeg library resides and change the JPEGINCDIR to the
+# directory where your jpeg header files (include) reside.
+# You must have version 5b or newer of the jpeg library.
+# If you haven't installed the jpeg library leave the XCOMM comment in and
+# set JPEGLIBDIR after the #else to the directory where you have the source
+# for jpeg.
+
 # Uncomment the following definition for XAWLIB if you want to use
 # the 3d Athena Widget Set (highly recommended!)
 
-# XAWLIB = -lXaw3d
+XAWLIB = -lXaw3d
 
 # Uncomment the following if needed for DECstations running older X11R4
 # INCROOT=/usr/include/mit
@@ -318,31 +327,24 @@ PICFLAGS = -pic
 # Change XPMLIB if necessary to point to the xpm library (libXpm)
 # Change XPMINC if necessary to point to the include file for xpm (xpm.h)
 
-XPMLIBDIR = /usr/lib
-XPMINC = -I/usr/include/X11
+XPMLIBDIR = $(USRLIBDIR)
+XPMINC = -I$(INCDIR)
 XPMLIB = -L$(XPMLIBDIR) -lXpm
 
-# If you have installed the jpeg library on your system, uncomment the
-# USEINSTALLEDJPEG variable, change the JPEGLIBDIR variable to the directory
-# where your jpeg library resides and change the JPEGINC to the
-# directory where your jpeg header files (include) reside.
-# You must have version 5b or newer of the jpeg library.
-# If you haven't installed the jpeg library leave the XCOMM comment in and
-# set JPEGLIBDIR after the #else to the directory where you have the source
-# for jpeg.
-
-# #define USEINSTALLEDJPEG
-
-JPEGLIBDIR = ../jpeg-5b
-JPEGCONF = configure
-JPEGINC = -I/$(JPEGLIBDIR)
-JPEGLIB = $(JPEGLIBDIR)/libjpeg.a
-DEPLIBJPEG = $(JPEGLIBDIR)/libjpeg.a
+JPEGLIBDIR = /usr/local/lib
+JPEGINCDIR = -I/usr/include/X11
+JPEGLIB = -L$(JPEGLIBDIR) -ljpeg
 
 # If using an input tablet uncomment the following
 
 # TABLIB = $(XILIB)
 # USETAB = -DUSE_TAB
+
+# uncomment the following line if your compiler supports
+# inline functions. With the "INLINE" keyword, you should notice that
+# the display will be a bit faster in complex figures
+
+# USEINLINE = -DUSE_INLINE
 
 # use (and change) the following if you want the multi-key data base file
 # somewhere other than the standard X11 library directory
@@ -368,7 +370,7 @@ STRDEFINES = $(HAVE_NO_NOSTRSTR) \
 
 # For the rotated text code:
 #   Add one of `-DCACHE_XIMAGES' or `-DCACHE_BITMAPS' to decide what is
-#   cached.  If you are converned about memory usage in your X server (e.g.
+#   cached.  If you are concerned about memory usage in your X server (e.g.
 #   if you are using an X terminal) then you might want to cache Ximages,
 #   which reside on the client-side.  On the other hand it is much slower,
 #   so you might want to cache bitmaps (which reside in the X server)
@@ -396,11 +398,11 @@ CACHE = -DCACHE_BITMAPS -DCACHE_SIZE_LIMIT=300
 
 # Additionally, there is a bug in the pcx driver in Aladdin Ghostscript
 # versions prior to 3.32, which writes an incorrect pcx file for images
-# with odd width (not even).  The following compile-time flag PCXBUG is
-# set to make xfig add one pixel to the width of an odd-width image
+# with odd width (not even).  Uncomment the following compile-time flag
+# PCXBUG to make xfig add one pixel to the width of an odd-width image
 # it reads in the pcx output from Ghostscript.
 # If you have Aladdin Ghostscript 3.32 or newer (which wasn't released
-# as of this writing) you may comment out PCXBUG and your images will
+# as of this writing) you may leave it commented out and your images will
 # have the proper width.  However, one pixel extra in width shouldn't
 # matter for most imported eps files.
 
@@ -426,10 +428,11 @@ WRXPMO = f_wrxpm.o
 
 DUSEXPMICON = -DUSE_XPM_ICON
 
-DEFINES =             $(STRDEFINES) -DGSBIT $(DUSEXPM) $(DUSEXPMICON) $(DUSEGIF) $(DUSEJPEG)
+DEFINES =             $(STRDEFINES) -DGSBIT $(USEINLINE) $(DUSEXPM) \
+			$(DUSEXPMICON) $(DUSEGIF) $(DUSEJPEG)
 
 XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
-		d_intspline.c d_line.c d_regpoly.c d_spline.c d_text.c \
+		d_subspline.c d_line.c d_regpoly.c d_spline.c d_text.c \
 		e_addpt.c e_align.c e_arrow.c e_break.c e_compound.c \
 		e_convert.c e_copy.c e_delete.c e_deletept.c \
 		e_edit.c e_flip.c e_glue.c e_move.c \
@@ -443,14 +446,14 @@ XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
 		u_elastic.c u_error.c u_fonts.c u_free.c u_geom.c \
 		u_list.c u_markers.c u_pan.c u_print.c \
 		u_redraw.c u_scale.c u_search.c u_translate.c u_undo.c \
-		w_browse.c w_capture.c \
+		w_browse.c w_capture.c w_srchrepl.c \
 		w_canvas.c w_cmdpanel.c w_color.c w_cursor.c w_dir.c w_drawprim.c \
 		w_export.c w_file.c w_fontbits.c w_fontpanel.c w_grid.c \
 		w_icons.c w_indpanel.c w_modepanel.c w_mousefun.c w_msgpanel.c \
 		w_print.c w_rottext.c w_rulers.c w_setup.c w_util.c w_zoom.c
 
 XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
-		d_intspline.o d_line.o d_regpoly.o d_spline.o d_text.o \
+		d_subspline.o d_line.o d_regpoly.o d_spline.o d_text.o \
 		e_addpt.o e_align.o e_arrow.o e_break.o e_compound.o \
 		e_convert.o e_copy.o e_delete.o e_deletept.o \
 		e_edit.o e_flip.o e_glue.o e_move.o \
@@ -464,7 +467,7 @@ XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
 		u_elastic.o u_error.o u_fonts.o u_free.o u_geom.o \
 		u_list.o u_markers.o u_pan.o u_print.o \
 		u_redraw.o u_scale.o u_search.o u_translate.o u_undo.o \
-		w_browse.o w_capture.o \
+		w_browse.o w_capture.o w_srchrepl.o \
 		w_canvas.o w_cmdpanel.o w_color.o w_cursor.o w_dir.o w_drawprim.o \
 		w_export.o w_file.o w_fontbits.o w_fontpanel.o w_grid.o \
 		w_icons.o w_indpanel.o w_modepanel.o w_mousefun.o w_msgpanel.o \
@@ -477,7 +480,7 @@ MAINDEPFILES =  fig.icon.X patchlevel.h version.h
 SRCS = $(XFIGSRC)
 OBJS = $(XFIGOBJ)
 
-EXTRA_INCLUDES = $(JPEGINC) $(XPMINC)
+EXTRA_INCLUDES = $(JPEGINCDIR) $(XPMINC)
 DEPLIBS = $(DEPXAWLIB) $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
 
 LOCAL_LIBRARIES = 	$(JPEGLIB)
@@ -486,12 +489,6 @@ SYS_LIBRARIES= 		-lm $(XPMLIB) $(TABLIB) $(XAWLIB) $(XMULIB) $(XTOOLLIB) $(XLIB)
 xfig: $(DEPLIBJPEG)
 
 # only compile our jpeg if the use doesn't have one installed
-
-$(JPEGLIBDIR)/libjpeg.a: $(JPEGLIBDIR)/jconfig.h
-	cd $(JPEGLIBDIR); $(MAKE) libjpeg.a
-
-$(JPEGLIBDIR)/jconfig.h:
-	cd $(JPEGLIBDIR) ; ./$(JPEGCONF) CC='$(CC)'
 
 PROGRAM = xfig
 
@@ -554,14 +551,19 @@ install:: Fig-color.ad
 main.o:  $(MAINDEPFILES)
 	$(RM) $@
 	$(CC) -c $(CFLAGS)  $(USETAB)  $*.c
+# f_read.c and u_error.c use version.h
 
-f_readjpg.o:  $(JPEGLIBDIR)/jconfig.h
+f_read.o:  $(MAINDEPFILES)
 	$(RM) $@
-	$(CC) -c $(CFLAGS)    $*.c
+	$(CC) -c $(CFLAGS)  $(USETAB)  $*.c
 
-f_wrjpg.o:  $(JPEGLIBDIR)/jconfig.h
+u_error.o:  $(MAINDEPFILES)
 	$(RM) $@
-	$(CC) -c $(CFLAGS)    $*.c
+	$(CC) -c $(CFLAGS)  $(USETAB)  $*.c
+
+resources.o:  resources.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
 
 f_readeps.o:
 	$(RM) $@

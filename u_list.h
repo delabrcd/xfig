@@ -1,3 +1,5 @@
+#ifndef U_LIST_H
+#define U_LIST_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
@@ -18,9 +20,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 void		list_delete_arc();
@@ -44,6 +43,14 @@ F_text	       *last_text();
 F_spline       *last_spline();
 F_compound     *last_compound();
 F_point	       *last_point();
+F_sfactor      *last_sfactor();
+
+Boolean         first_spline_point();
+Boolean         append_sfactor();
+F_point        *search_spline_point();
+F_sfactor      *search_sfactor();
+Boolean         insert_point();
+int             num_points();
 
 F_line	       *prev_line();
 F_arc	       *prev_arc();
@@ -76,3 +83,4 @@ void		change_compound();
 
 void		get_links();
 void		adjust_links();
+#endif /* U_LIST_H */

@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -29,7 +26,9 @@
 #include "object.h"
 #include "paintop.h"
 #include "u_create.h"
+#include "u_draw.h"
 #include "u_elastic.h"
+#include "u_list.h"
 #include "u_search.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
@@ -69,7 +68,6 @@ init_point_adding(p, type, x, y, px, py)
     set_mousefun("place new point", "", "cancel", "", "", "");
     draw_mousefun_canvas();
     set_temp_cursor(null_cursor);
-    win_setmouseposition(canvas_win, px, py);
     switch (type) {
     case O_POLYLINE:
 	cur_l = (F_line *) p;
@@ -143,6 +141,10 @@ init_splinepointadding(px, py)
 	left_point = right_point;
 	right_point = right_point->next;
     }
+    if (right_point == NULL && closed_spline(cur_s)) {
+	/* The added_point is between the last and 1st point. */
+	right_point = cur_s->points;
+    }
     canvas_leftbut_proc = fix_splinepoint_adding;
     canvas_rightbut_proc = cancel_pointadding;
 }
@@ -161,28 +163,28 @@ fix_splinepoint_adding(x, y)
     p->x = cur_x;
     p->y = cur_y;
     elastic_linelink();
-    splinepoint_adding(cur_s, left_point, p, right_point);
+    splinepoint_adding(cur_s, left_point, p, right_point,
+		   approx_spline(cur_s) ? S_SPLINE_APPROX : S_SPLINE_INTERP);
     wrapup_pointadding();
 }
 
 /*
  * Added_point is always inserted between left_point and
  * right_point, except in two cases. (1) left_point is NULL, the added_point
- * will be prepended to the list of points. This case will never occur if the
- * spline is closed (periodic). (2) right_point is NULL, the added_point will
- * be appended to the end of the list.
+ * will be prepended to the list of points. (2) right_point is NULL, the 
+ * added_point will be appended to the end of the list.
  */
 
-splinepoint_adding(spline, left_point, added_point, right_point)
+splinepoint_adding(spline, left_point, added_point, right_point, sfactor)
     F_spline	   *spline;
     F_point	   *left_point, *added_point, *right_point;
+    double         sfactor;
 {
-    F_control	   *c;
+    F_sfactor	   *c, *prev_sfactor;
 
-    if (int_spline(spline)) {	/* Interpolated spline */
-	if ((c = create_cpoint()) == NULL)
+
+    if ((c = create_sfactor()) == NULL)
 	    return;
-    }
     set_temp_cursor(wait_cursor);
     mask_toggle_splinemarker(spline);
     /* delete it and redraw underlying objects */
@@ -191,15 +193,30 @@ splinepoint_adding(spline, left_point, added_point, right_point)
     if (left_point == NULL) {
 	added_point->next = spline->points;
 	spline->points = added_point;
-    } else {
-	added_point->next = right_point;
-	left_point->next = added_point;
+	if (open_spline(spline)) {
+	  c->s = S_SPLINE_ANGULAR;
+	  spline->sfactors->s = sfactor;
     }
+	else
+	  c->s = sfactor;
 
-    if (int_spline(spline)) {	/* Interpolated spline */
-	c->next = spline->controls;
-	spline->controls = c;
-	remake_control_points(spline);
+	c->next = spline->sfactors;
+	spline->sfactors = c;
+      }
+    else {
+      prev_sfactor = search_sfactor(spline, left_point);
+      if (open_spline(spline) && (right_point == NULL))
+	{
+	  c->s = S_SPLINE_ANGULAR;
+	  prev_sfactor->s = sfactor;
+	}
+      else
+	c->s = sfactor;
+     
+      c->next = prev_sfactor->next;
+      prev_sfactor->next = c;
+      added_point->next = left_point->next; /*right_point;*/
+      left_point->next = added_point;
     }
     /* put it back in the list and draw the new spline */
     list_add_spline(&objects.splines, spline);

@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -362,7 +359,6 @@ rotate_spline(s, x, y)
     int		    x, y;
 {
     F_point	   *p;
-    F_control	   *cp;
     int		    dx;
 
     /* for speed we treat 90 degrees as a special case */
@@ -372,19 +368,9 @@ rotate_spline(s, x, y)
 	    p->x = x + rotn_dirn * (y - p->y);
 	    p->y = y + rotn_dirn * dx;
 	}
-	for (cp = s->controls; cp != NULL; cp = cp->next) {
-	    dx = cp->lx - x;
-	    cp->lx = x + rotn_dirn * (y - cp->ly);
-	    cp->ly = y + rotn_dirn * dx;
-	    dx = cp->rx - x;
-	    cp->rx = x + rotn_dirn * (y - cp->ry);
-	    cp->ry = y + rotn_dirn * dx;
-	}
     } else {
 	for (p = s->points; p != NULL; p = p->next)
 	    rotate_point(p, x, y);
-	if (int_spline(s))
-	    remake_control_points(s);
     }
 }
 
@@ -569,7 +555,7 @@ rotate_xy(orig_x, orig_y, x, y)
 	return;
 
     theta = compute_angle(dx, dy);
-    theta -= (double) (rotn_dirn * cur_rotnangle * M_PI / 180.0);
+    theta -= (double) (rotn_dirn * act_rotnangle * M_PI / 180.0);
     if (theta < 0.0)
 	theta += M_2PI;
     else if (theta >= M_2PI - 0.001)

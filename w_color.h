@@ -1,3 +1,5 @@
+#ifndef W_COLOR_H
+#define W_COLOR_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1987 Christopher A. Kent
@@ -16,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 /* 
@@ -34,7 +33,10 @@ Boolean switch_colormap();
 Boolean alloc_color_cells();
 
 /*
- * $Log:	color.h,v $
+ * $Log: w_color.h,v $
+ * Revision 1.1  1995/02/28  15:40:16  feuille
+ * Initial revision
+ *
  * Revision 1.2  90/06/30  14:33:12  rlh2
  * patchlevel 1
  * 
@@ -72,3 +74,4 @@ RGB	PctToRGB();
 HSV	PctToHSV();
 RGB	CMYToRGB();
 CMY	RGBToCMY();
+#endif /* W_COLOR_H */

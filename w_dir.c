@@ -17,9 +17,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  *
  *	Created: 13 Aug 88
  *
@@ -28,7 +25,7 @@
  *	Digital Equipment Corporation
  *	treese@crl.dec.com
  *
- *	$Source: /trx/u2/treese/Src/Xdir.rel/RCS/xdir.c,v $
+ *	$Source: /a/aliboron/krakatoa/home/feuille/XFIG/xfig/RCS/w_dir.c,v $
  *
  *	    COPYRIGHT 1990
  *	  DIGITAL EQUIPMENT CORPORATION
@@ -56,9 +53,9 @@
  *
  */
 
-#include "w_util.h"
 #include "fig.h"
 #include "figx.h"
+#include "w_util.h"
 #include "resources.h"
 #include "mode.h"
 #include "w_dir.h"
@@ -682,12 +679,20 @@ NewList(listwidget, list)
     Widget    listwidget;
     String   *list;
 {
-	int n;
+	/* delete scrollbars because of a bug in the viewport widget */
+	FirstArg(XtNallowVert, False);
+	NextArg(XtNallowHoriz, False);
+	SetValues(XtParent(listwidget));
+
 	/* make the scrollbar reset to the top */
-	XawListChange(listwidget, null_list, 1, 0, True);
 	XawListChange(listwidget, list, 0, 0, True);
-	FirstArg(XtNnumberStrings, &n);
-	GetValues(listwidget);
+
+	/* re-enable the scrollbars */
+	FirstArg(XtNallowVert, True);
+	NextArg(XtNallowHoriz, True);
+	SetValues(XtParent(listwidget));
+
+	XawListChange(listwidget, list, 0, 0, True);
 }
 
 

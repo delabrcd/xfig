@@ -1,3 +1,5 @@
+#ifndef PATCHLEVEL_H
+#define PATCHLEVEL_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
@@ -17,9 +19,7 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
-#define PATCHLEVEL "5i-beta"
+#define PATCHLEVEL "0-beta4"
+#endif /* PATCHLEVEL_H */

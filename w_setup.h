@@ -1,3 +1,5 @@
+#ifndef W_SETUP_H
+#define W_SETUP_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
@@ -18,14 +20,12 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #define		PIX_PER_INCH		1200
-#define		PIX_PER_CM		450	/* ((int)(PIX_PER_INCH / 2.54
-						 * + (5.0/2))) */
+#define		PIX_PER_CM		450	/* closest to correct (472.4) and still
+						   have the rulers look good */
+						 
 #define DISPLAY_PIX_PER_INCH 80
 
 /* Portrait dimensions */
@@ -72,3 +72,4 @@ extern int	TOPRULER_WD, TOPRULER_HT;
 extern int	SIDERULER_WD, SIDERULER_HT;
 extern int	SW_PER_ROW;
 extern int	NUM_MODE_SW;
+#endif /* W_SETUP_H */

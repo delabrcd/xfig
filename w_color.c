@@ -4,6 +4,9 @@
  * Copyright (c) 1994 by Brian V. Smith
  * Parts Copyright 1990,1992 Richard Hesketh
  *          Computing Lab. University of Kent at Canterbury, UK
+ * Pixel Grab color lookup Copyright 1993, David Koblas (koblas@netcom.com)
+ * and Copyright 1995, 1996 Torsten Martinsen (bullestock@dk-online.dk)
+ * (full copyright and permission notice appears above code)
  *
  * The X Consortium, and any party obtaining a copy of these files from
  * the X Consortium, directly or indirectly, is granted, free of charge, a
@@ -19,9 +22,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  *
  ****************************************************************************
  *
@@ -105,11 +105,15 @@ static void set_std_color();
 static void add_color();
 static void del_color();
 static void undel_color();
+static void lookup_color();
 
 /* some local procedures */
 
 static int WhichButton();
 static Boolean color_used();
+static void DoGrabPixel();
+static void doGrab();
+static void xyToWindowCmap();
 
 #define S_RED    1
 #define S_GREEN  2
@@ -122,15 +126,17 @@ static Boolean color_used();
 /* width/height and space between the scrollbars */
 #define SCROLL_W	23
 #define SCROLL_H	120
-#define SCROLL_SP	5
+#define SCROLL_SP	4
 
 /* width/height of the standard color cells */
-#define STD_COL_W	30
+#define STD_COL_W	31
 #define STD_COL_H	20
 
 /* width/height of the user color cells */
 #define USR_COL_W	30
 #define USR_COL_H	20
+/* spacing between cells */
+#define USR_COL_SP	4
 
 /* thickness (height) of the scrollbar (fraction of total) */
 #define	THUMB_H		0.04
@@ -176,7 +182,7 @@ static Widget	redScroll, greenScroll, blueScroll, lockedScroll;
 static Widget	hueScroll, satScroll, valScroll;
 static Widget	hueLabel, satLabel, valLabel;
 static Widget	ok_button;
-static Widget	addColor, delColor, undelColor;
+static Widget	addColor, delColor, undelColor, lookupColor;
 static Widget	userLabel, userForm, userViewport, userBox;
 static Widget	colorMemory[MAX_USR_COLS];
 
@@ -477,21 +483,19 @@ ind_sw_info	*isw;
 
 	/* make a scrollable viewport widget to contain the color memory buttons */
 
-	FirstArg(XtNallowHoriz, True);
-	NextArg(XtNwidth, isw->sw_per_row*(STD_COL_W+5)+1);
-	NextArg(XtNheight, 47);
+	FirstArg(XtNallowVert, True);
+	NextArg(XtNwidth, isw->sw_per_row*(STD_COL_W+3));
+	NextArg(XtNheight, (USR_COL_H+USR_COL_SP)*3+22);  /* the 22 is for the scrollbar */
 	NextArg(XtNborderWidth, 1);
-	NextArg(XtNuseBottom, True);
 	NextArg(XtNforceBars, True);
 
 	userViewport = XtCreateManagedWidget("userViewport", viewportWidgetClass, 
 			userForm, Args, ArgCount);
 
-	FirstArg(XtNheight, 47);
-	NextArg(XtNhSpace, 5);
+	FirstArg(XtNhSpace, USR_COL_SP);		/* spacing between cells */
 	NextArg(XtNresizable, True);
 	NextArg(XtNborderWidth, 0);
-	NextArg(XtNorientation, XtorientHorizontal);	/* expand horizontally */
+	NextArg(XtNorientation, XtorientVertical);
 
 	userBox = XtCreateManagedWidget("userBox", boxWidgetClass, userViewport,
 			       Args, ArgCount);
@@ -538,22 +542,30 @@ ind_sw_info	*isw;
 
 	/* now the add/delete color buttons */
 
-	FirstArg(XtNlabel, "Add Color");
+	FirstArg(XtNlabel, "Add");
 	NextArg(XtNfromVert, userViewport);
 	addColor = XtCreateManagedWidget("addColor", commandWidgetClass,
 					       userForm, Args, ArgCount);
 	XtAddEventHandler(addColor, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler) add_color, (XtPointer) 0);
 
-	FirstArg(XtNlabel, "Del Color");
+	FirstArg(XtNlabel, "Lookup");
 	NextArg(XtNfromHoriz, addColor);
+	NextArg(XtNfromVert, userViewport);
+	lookupColor = XtCreateManagedWidget("lookupColor", commandWidgetClass,
+					       userForm, Args, ArgCount);
+	XtAddEventHandler(lookupColor, ButtonReleaseMask, (Boolean) 0,
+			  (XtEventHandler) lookup_color, (XtPointer) 0);
+
+	FirstArg(XtNlabel, "Delete");
+	NextArg(XtNfromHoriz, lookupColor);
 	NextArg(XtNfromVert, userViewport);
 	delColor = XtCreateManagedWidget("delColor", commandWidgetClass,
 					       userForm, Args, ArgCount);
 	XtAddEventHandler(delColor, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler) del_color, (XtPointer) 0);
 
-	FirstArg(XtNlabel, "UnDel Color");
+	FirstArg(XtNlabel, "UnDelete");
 	NextArg(XtNfromHoriz, delColor);
 	NextArg(XtNfromVert, userViewport);
 	undelColor = XtCreateManagedWidget("undelColor", commandWidgetClass,
@@ -744,7 +756,7 @@ ind_sw_info	*isw;
 
 	/* get the name of the scrollbar in the user color viewport so we can 
 	   make it solid instead of the default grey pixmap */
-	sb = XtNameToWidget(userViewport, "horizontal");
+	sb = XtNameToWidget(userViewport, "vertical");
 	FirstArg(XtNthumb, None);
 	SetValues(sb);
 
@@ -957,6 +969,98 @@ XtPointer closure, ptr;
 	colorUsed[current_memory]=True;
 }
 
+/* delete a color memory (current_memory) from the user colors */
+
+static void
+del_color(w, closure, ptr)
+Widget w;
+XtPointer closure, ptr;
+{
+	choice_info choice;
+	int save_mem, save_edit;
+	int i;
+	if (current_memory == -1 || num_usr_cols <= 0) {
+		beep();
+		return;
+	}
+	/* only allow deletion of this color of no object in the figure uses it */
+	if (color_used(current_memory+NUM_STD_COLS, &objects)) {
+		put_msg("That color is in use by an object in the figure");
+		beep();
+		return;
+	}
+	/* get rid of the box drawn around this cell */
+	draw_a_box(colorMemory[current_memory], unboxedGC);
+	/* save it to undelete */
+	undel_user_color = user_colors[current_memory];
+	del_color_cell(current_memory);
+	/* inactivate the delete color button until user clicks on colorcell */
+	XtSetSensitive(delColor, False);
+	/* and activate the undelete button */
+	XtSetSensitive(undelColor, True);
+	/* change the current pen/fill color to default if we just deleted that color */
+	choice.value = DEFAULT;
+	save_mem = current_memory;
+	save_edit = edit_fill;
+	/* set_std_color() sets current_memory to -1 when finished (which we want) */
+	for (i=0; i<2; i++) {
+	    if (mixed_color_indx[i] == save_mem+NUM_STD_COLS) {
+		edit_fill = i;
+		set_std_color(w, &choice, (XButtonEvent*)0);
+	    }
+	}
+	edit_fill = save_edit;
+}
+
+/* undelete the last user color deleted */
+
+static void
+undel_color(w, closure, ptr)
+Widget w;
+XtPointer closure, ptr;
+{
+	int	    indx;
+
+	XtSetSensitive(undelColor, False);
+	if ((indx=add_color_cell(False, 0, undel_user_color.red/256,
+		undel_user_color.green/256,
+		undel_user_color.blue/256)) == -1) {
+		    put_msg("Can't allocate more than %d user colors, not enough colormap entries",
+				num_usr_cols);
+		    return;
+		}
+	colorUsed[indx] = True;
+}
+
+/* lookup color from another window - the user clicks the mouse
+   on a color and a new cell is created with that color */
+
+static void
+lookup_color(w, closure, ptr)
+Widget w;
+XtPointer closure, ptr;
+{
+    Colormap	cmap;
+    Pixel	p;
+    XColor	xcol;
+
+    /* grab the server to get a pixel from a window */
+    DoGrabPixel(w, &p, &cmap);
+    /* make a new cell and set current_memory to that */
+    add_color(w, closure, ptr);
+
+    xcol.pixel = p;
+    xcol.flags = DoRed | DoGreen | DoBlue;
+    XQueryColor(XtDisplay(w), cmap, &xcol);
+
+    /* and store the chosen color */
+    user_colors[current_memory].red = xcol.red;
+    user_colors[current_memory].green = xcol.green;
+    user_colors[current_memory].blue = xcol.blue;
+    user_colors[current_memory].flags = DoRed|DoGreen|DoBlue;
+    set_user_color(current_memory);
+}
+
 /* add a widget to the user color list with color r,g,b */
 /* call with use_exist true if you wish to allocate cell <indx> explicitly */
 /* also increment num_usr_cols if we add a colorcell beyond the current number */
@@ -1127,69 +1231,6 @@ switch_colormap()
 	return True;
 }
 
-/* delete a color memory (current_memory) from the user colors */
-
-static void
-del_color(w, closure, ptr)
-Widget w;
-XtPointer closure, ptr;
-{
-	choice_info choice;
-	int save_mem, save_edit;
-	int i;
-	if (current_memory == -1 || num_usr_cols <= 0) {
-		XBell(tool_d,0);
-		return;
-	}
-	/* only allow deletion of this color of no object in the figure uses it */
-	if (color_used(current_memory+NUM_STD_COLS, &objects)) {
-		put_msg("That color is in use by an object in the figure");
-		XBell(tool_d,0);
-		return;
-	}
-	/* get rid of the box drawn around this cell */
-	draw_a_box(colorMemory[current_memory], unboxedGC);
-	/* save it to undelete */
-	undel_user_color = user_colors[current_memory];
-	del_color_cell(current_memory);
-	/* inactivate the delete color button until user clicks on colorcell */
-	XtSetSensitive(delColor, False);
-	/* and activate the undelete button */
-	XtSetSensitive(undelColor, True);
-	/* change the current pen/fill color to default if we just deleted that color */
-	choice.value = DEFAULT;
-	save_mem = current_memory;
-	save_edit = edit_fill;
-	/* set_std_color() sets current_memory to -1 when finished (which we want) */
-	for (i=0; i<2; i++) {
-	    if (mixed_color_indx[i] == save_mem+NUM_STD_COLS) {
-		edit_fill = i;
-		set_std_color(w, &choice, (XButtonEvent*)0);
-	    }
-	}
-	edit_fill = save_edit;
-}
-
-/* undelete the last user color deleted */
-
-static void
-undel_color(w, closure, ptr)
-Widget w;
-XtPointer closure, ptr;
-{
-	int	    indx;
-
-	XtSetSensitive(undelColor, False);
-	if ((indx=add_color_cell(False, 0, undel_user_color.red/256,
-		undel_user_color.green/256,
-		undel_user_color.blue/256)) == -1) {
-		    put_msg("Can't allocate more than %d user colors, not enough colormap entries",
-				num_usr_cols);
-		    return;
-		}
-	colorUsed[indx] = True;
-}
-
 
 /* delete a color memory cell (indx) from the widgets and arrays */
 
@@ -1314,14 +1355,13 @@ XButtonEvent	*ev;
 
 	if (modified[0]) {
 	    cur_pencolor = mixed_color_indx[0];
-	    show_pen_color();
+	    show_pen_color(); /* update the button in the indicator panel */
 	}
 	if (modified[1]) {
 	    cur_fillcolor = mixed_color_indx[1];
-	    show_fill_color();
+	    show_fill_color(); /* update the button in the indicator panel */
 	}
 	modified[0] = modified[1] = False;
-	/* update the button in the indicator panel */
 	choice_panel_dismiss();
 }
 
@@ -1671,7 +1711,7 @@ Cardinal *num_params;
 	}
 	if ((strlen(hexvalue) != 7) ||
 	   (sscanf(hexvalue,"#%02x%02x%02x",&red,&green,&blue) != 3)) {
-		XBell(tool_d,0);
+		beep();
 		put_msg("Bad hex value");
 		return;
 	}
@@ -1859,6 +1899,7 @@ XtPointer closure, change;
 	Boolean going_up = (int) change < 0;
 	int which = (int) closure;
 	int pos = 0;
+	float blip = 1.0/256.0;
 
 	switch (which) {
 		case S_RED:
@@ -1874,9 +1915,16 @@ XtPointer closure, change;
 			pos = 255 - (int)(locked_top * 255 + 0.5);
 			break;
 		case S_HUE:
+			hsv_values.h += (going_up? -blip: blip);
+			ThumbHSV(w, hsv_values.h);
+			return;
 		case S_SAT:
+			hsv_values.s += (going_up? -blip: blip);
+			ThumbHSV(w, hsv_values.s);
+			return;
 		case S_VAL:
-			/* Not yet implemented */
+			hsv_values.v += (going_up? -blip: blip);
+			ThumbHSV(w, hsv_values.v);
 			return;
 		default:
 			fprintf(stderr, "Oops Scroll calldata invalid\n");
@@ -1918,15 +1966,23 @@ XtPointer closure, ptr;
 			break;
 	}
 
-	rgb_values[edit_fill] = HSVToRGB(hsv_values);
+	ThumbHSV(w, top);
+}
 
+ThumbHSV(w, top)
+Widget w;
+double top;
+{
+	rgb_values[edit_fill] = HSVToRGB(hsv_values);
 	XawScrollbarSetThumb(w, top, (float)THUMB_H);
 
+	/* don't update the scrollbars yet */
 	do_change = False;
 	pass_value = 1.0 - rgb_values[edit_fill].r/65536.0;
 	Thumbed(redScroll, (XtPointer)S_RED, (XtPointer)(&pass_value));
 	pass_value = 1.0 - rgb_values[edit_fill].g/65536.0;
 	Thumbed(greenScroll, (XtPointer)S_GREEN, (XtPointer)(&pass_value));
+	/* now update the scrollbars */
 	do_change = True;
 	pass_value = 1.0 - rgb_values[edit_fill].b/65536.0;
 	Thumbed(blueScroll, (XtPointer)S_BLUE, (XtPointer)(&pass_value));
@@ -2156,7 +2212,10 @@ Window window;
  */
 
 /*
- * $Log:	color.c,v $
+ * $Log: w_color.c,v $
+ * Revision 1.1  1995/02/28  15:40:16  feuille
+ * Initial revision
+ *
  * Revision 1.2  90/06/30  14:32:48  rlh2
  * patchlevel 1
  * 
@@ -2290,3 +2349,186 @@ float	rr, gg, bb;
 	rgb.b = (int)(0.5 + bb * MAX_INTENSITY);
 	return rgb;
 }
+
+/* +-------------------------------------------------------------------+ */
+/* | Copyright 1993, David Koblas (koblas@netcom.com)                  | */
+/* | Copyright 1995, 1996 Torsten Martinsen (bullestock@dk-online.dk)  | */
+/* |                                                                   | */
+/* | Permission to use, copy, modify, and to distribute this software  | */
+/* | and its documentation for any purpose is hereby granted without   | */
+/* | fee, provided that the above copyright notice appear in all       | */
+/* | copies and that both that copyright notice and this permission    | */
+/* | notice appear in supporting documentation.  There is no           | */
+/* | representations about the suitability of this software for        | */
+/* | any purpose.  this software is provided "as is" without express   | */
+/* | or implied warranty.                                              | */
+/* |                                                                   | */
+/* +-------------------------------------------------------------------+ */
+
+
+/*
+**  Grab the pixel value from some other window
+**
+**  Store pixel value in *p and colormap ID in *cmap unless they are NULL.
+**
+**   General strategy:
+**     Grab the cursor
+**     Wait for the up/down button event
+**     Lookup what window the event is over
+**     Query the pixel value
+ */
+static void 
+DoGrabPixel(w, p, cmap)
+    Widget	 w;
+    Pixel	*p;
+    Colormap	*cmap;
+{
+    int x, y, nx, ny;
+    XImage *xim;
+    Colormap amap;
+    Window root = RootWindowOfScreen(XtScreen(w));
+    Window window;
+    Display *dpy = XtDisplay(w);
+
+    doGrab(w, 0, 0, &x, &y);
+
+    if (cmap == NULL)
+	cmap = &amap;
+
+    xyToWindowCmap(dpy, x, y, root, &nx, &ny, &window, cmap);
+
+    xim = XGetImage(dpy, window, nx, ny, 1, 1, AllPlanes, ZPixmap);
+
+    if (p != NULL)
+	*p = XGetPixel(xim, 0, 0);
+
+    XDestroyImage(xim);
+}
+
+/*
+ * Grab a rectangle of some window.
+ * Zero width and height specifies to just grab a single pixel.
+ * Returns coords of event.
+ */
+
+/*
+**  Convenience function for doing server pointer grabs
+ */
+#define GRAB_INTERVAL	30
+
+typedef struct {
+    XtAppContext app;
+    Display *dpy;
+    GC gc;
+    Window root;
+    Boolean drawn;
+    int x, y, ox, oy, width, height;
+    XtIntervalId id;
+} GrabInfo;
+
+static void 
+doGrab(w, width, height, x, y)
+    Widget	 w;
+    int		 width, height;
+    int		*x, *y;
+{
+    Display *dpy = XtDisplay(w);
+    XtAppContext app = XtWidgetToApplicationContext(w);
+    Window root = DefaultRootWindow(dpy);
+    XEvent event;
+    Cursor cursor = XCreateFontCursor(dpy, XC_crosshair);
+    int count = 0;
+    GrabInfo *info = NULL;
+
+    /* Set up grab cursor */
+    if (XGrabPointer(dpy, root, False,
+		     info == NULL ? ButtonPressMask | ButtonReleaseMask
+	       : ButtonPressMask | ButtonReleaseMask | PointerMotionMask,
+		     GrabModeSync, GrabModeAsync,
+		     root, cursor, CurrentTime))
+	return;
+
+    do {
+	XAllowEvents(dpy, SyncPointer, CurrentTime);
+	XtAppNextEvent(app, &event);
+	if (event.type == ButtonPress)
+	    count++;
+	else if (event.type == ButtonRelease) {
+	    if (count == 1)
+		break;
+	    else
+		count--;
+	} else if (event.type == MotionNotify) {
+	    info->x = event.xmotion.x;
+	    info->y = event.xmotion.y;
+	} else
+	    XtDispatchEvent(&event);
+    }
+    while (True);
+
+    XUngrabPointer(dpy, CurrentTime);
+
+    if (info != NULL) {
+	/* remove grab cursor */
+	if (info->drawn)
+	    XDrawRectangle(info->dpy, info->root, info->gc,
+			   info->ox - info->width / 2,
+			   info->oy - info->height / 2,
+			   info->width, info->height);
+	XtRemoveTimeOut(info->id);
+	XFreeGC(XtDisplay(w), info->gc);
+	XtFree((XtPointer) info);
+    }
+    *x = event.xbutton.x;
+    *y = event.xbutton.y;
+}
+
+/*
+ * Given coords x,y in the 'base' window, descend the window hierarchy
+ * and find the child window of class InputOutput containing those
+ * coordinates. Return coords in child window in (*nx,*ny).
+ * If the child window has a colormap, return that; otherwise return
+ * the default colormap for the display.
+ */
+static void 
+xyToWindowCmap(dpy, x, y, base, nx, ny, window, cmap)
+    Display	*dpy;
+    int		 x, y;
+    Window	 base;
+    int		*nx, *ny;
+    Window	*window;
+    Colormap	*cmap;
+{
+    Window twin;
+    Colormap tmap;
+    Window child, sub;
+    XWindowAttributes attr;
+
+    twin = base;
+    tmap = None;
+
+    sub = base;
+    *nx = x;
+    *ny = y;
+
+    while (sub != None) {
+	x = *nx;
+	y = *ny;
+	child = sub;
+	XTranslateCoordinates(dpy, base, child, x, y, nx, ny, &sub);
+	base = child;
+
+	XGetWindowAttributes(dpy, child, &attr);
+	if (attr.class == InputOutput && attr.colormap != None) {
+	    tmap = attr.colormap;
+	    twin = child;
+	}
+    }
+
+    if (tmap == None)
+	*cmap = DefaultColormap(dpy, DefaultScreen(dpy));
+    else
+	*cmap = tmap;
+    *window = twin;
+}
+

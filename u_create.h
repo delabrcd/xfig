@@ -1,3 +1,5 @@
+#ifndef U_CREATE_H
+#define U_CREATE_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
@@ -18,9 +20,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 extern F_arc   *create_arc();
@@ -31,7 +30,7 @@ extern F_text  *create_text();
 extern F_compound *create_compound();
 extern F_pic   *create_pic();
 extern F_point *create_point();
-extern F_control *create_cpoint();
+extern F_sfactor *create_sfactor();
 
 extern F_arc   *copy_arc();
 extern F_ellipse *copy_ellipse();
@@ -43,6 +42,8 @@ extern F_compound *copy_compound();
 extern F_point *copy_points();
 extern F_arrow *forward_arrow();
 extern F_arrow *backward_arrow();
+extern F_arrow *create_arrow();
 extern F_arrow *new_arrow();
 extern char    *new_string();
 extern F_linkinfo *new_link();
+#endif /* U_CREATE_H */

@@ -1,3 +1,5 @@
+#ifndef U_UNDO_H
+#define U_UNDO_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
@@ -18,14 +20,12 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 /*******************  DECLARE EXPORTS  ********************/
 
 extern F_compound saved_objects;
 extern F_compound object_tails;
+#endif /* U_UNDO_H */
 extern F_arrow *saved_for_arrow;
 extern F_arrow *saved_back_arrow;

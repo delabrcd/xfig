@@ -44,7 +44,8 @@ ______________________________________________________________________________
 
 NOTE 1: Because Unisys has stated that they will not charge royalties for the
 	use of the LZW compression algorithm in FREE programs, xfig will
-	continue to support importing and exporting of GIF images.
+	continue to support importing of GIF images (exporting is handled by
+	the ppmtogif program in the netpbm[pbmplus] package).
 	However, be aware that if you sell xfig, for example as part of
 	a CD-ROM package with freeware, you may be liable for paying royalties
 	to Unisys.
@@ -53,11 +54,12 @@ NOTE 1: Because Unisys has stated that they will not charge royalties for the
 	*** The authors of xfig and the Lawrence Berkeley Laboratory cannot be held
 	responsible in any case. ***
 
-NOTE 2: Because of the patent/licensing issue with Unisys and the LZW
-	compression algorithm used in GIF files, the author of Ghostscript has
-	decided to remove GIF support from that program.  xfig now uses
-	PCX output from Ghostscript when importing EPS files.  This means that
-	you must compile Ghostscript with the pcx256 and pbmraw drivers.
+NOTE 2: For exporting Fig files to any of the bitmap formats (e.g. GIF, JPEG)
+	you will need to get a version of ghostscript that has JPEG, PCX256,
+	pbmraw, ppmraw and tiff24nc drivers.  Ghostscript is available from
+	ftp.cs.wisc.edu in /ghost/aladdin.
+	fig2dev uses ghostscript for exporting and xfig uses it for importing
+	PS and EPS files.
 
 	Additionally, there is a bug in the pcx driver in Aladdin Ghostscript
 	versions prior to 3.32, which writes an incorrect pcx file for images
@@ -85,17 +87,10 @@ INSTALLATION NOTES:
 ===================
 
 1. Edit the Imakefile if you need to customize it (see following notes).
-	For a 3D look, see NOTE below.
-	If you already have the JPEG library on your system uncomment
-	the "#define USEINSTALLEDJPEG" line in the Imakefile.
-	You must have version 5b or newer of the JPEG library.
-	The JPEG library is available from several places.  The official
-	archive site is ftp.uu.net in /graphics/jpeg.
-	Another is ftp.x.org in /contrib/libaries.
-	** Make sure you delete or rename any older version of the JPEG
-	library you might have on your system.  Some Linux systems come
-	with an older version which is incompatible with xfig.
-	Look for any other comments in the Imakefile which describe options.
+	Specifically, if you want to install xfig in a directory other than
+	the default X11 binary directory, add "BINDIR=<directory>" at the
+	top of the Imakefile, where <directory> is the full path of the 
+	directory in which you want xfig to be installed.
 2. Type "xmkmf" to create the Makefile from the Imakefile.  If you don't have
 	xmkmf you can do "make Makefile".  In either case you must have imake,
 	which can be found at the X Consortium site, ftp.x.org.
@@ -111,29 +106,114 @@ INSTALLATION NOTES:
 4. Type "make install"
    ****	If you don't do this step, be sure to install the app-defaults files
 	Fig.ad and Fig-color.ad in the system app-defaults directory (usually
-	/usr/lib/X11/app-defaults or something like that) and the CompKeyDB file
-	in the directory specified by XFIGLIBDIR
+	/usr/lib/X11/app-defaults) as "Fig" and "Fig-color" respectively, and
+	the CompKeyDB file in the directory specified by XFIGLIBDIR
 	(default: /usr/local/lib/X11/xfig).
+	There are two app-defaults files for colors: one I call the "classic"
+	color scheme (blues for the buttons and primary colors for OK/CANCEL
+	buttons) and a new one provided by Joel D. Young (jdyoung@afit.af.mil)
+	which looks more like tcl, and I think is a little nicer.  It looks
+	best when used with Xaw3d.1.0, which can show 3d relief for labels, 
+	not just buttons.  This new color set is the default.
+	If you want the "classic" colors, copy Fig-color.classic.ad to your
+	app-defaults directory as "Fig-color".
 5. Type "make install.man".
 6. For X11R5 and later color implementations, specify "*customization: -color"
 	in your .Xdefaults or .Xresources file.
 	NOTE: this only works under X11R5 and later.
 
-If you have the XPM3 package (X11 color pixmaps) you can export your figures
-   in that format.  Also, you can import xpm files as picture objects.
-   Uncomment the XPMDEFINES and related variables in the Imakefile in that case.
-   You need version 3.4c or newer.  This is available from ftp.x.org in
-   /contrib/libraries.
-If you have Ghostscript, xfig will attempt to use it to interpret any
-   encapsulated Postscript (EPS) files you import.  Ghostscript must be compiled
-   with with the "pcx256" and "pbmraw" drivers.  The pbm driver is used when you
-   run xfig on a monochrome display and the pcx256 driver is used on a color
-   display.
-   See NOTE 2 above about the pcx driver in Ghostscript.
-If you don't have Ghostscript, remove the -DGSBIT flag in the "DEFINES" variable
-   in the Imakefile.
+------------------------------
+NOTES on changes to Imakefile:
+------------------------------
 
-If you have the default paper size for Ghostscript as A4 (metric) change (in gs_init.ps)
+o For a 3D look, I recommend using Kaleb Keithley's 3D Athena Widget set, a
+  direct replacement for the Xaw library.  After you compile and install that
+  package, and after step 1 above, just uncomment the definition of XAWLIB in
+  the Imakefile and it will use the 3D widget set.  This set is available from
+  ftp.x.org in /contrib/widgets.
+
+o If you *don't* want JPEG import/export, comment out the #define USEJPEG
+  line in the Imakefile.
+
+o If you *want* JPEG then:
+  o If you already have a JPEG library on your system uncomment
+    the "#define USEINSTALLEDJPEG" line in the Imakefile.
+  o You must have version 5b or newer of the JPEG library.
+  o The JPEG library is available from several places.  The official
+    archive site is ftp.uu.net in /graphics/jpeg.
+    Another is ftp.x.org in /contrib/libaries.
+  o ** Make sure you delete or rename any older version of the JPEG
+    library you might have on your system.  Some Linux systems come
+    with an older version which is incompatible with xfig.
+
+o If you have the XPM3 package (X11 color pixmaps) you can export your figures
+  in that format.  Also, you can import xpm files as picture objects.
+  Uncomment the #define USEXPM line in the Imakefile in that case.
+  Additionally, if you want to use the color icon for xfig (which is in XPM
+  format) uncomment the #define USEXPM_ICON line in the Imakefile.
+  You need xpm version 3.4c or newer.  This is available from ftp.x.org in
+  /contrib/libraries.
+
+o If you have Ghostscript, xfig will attempt to use it to interpret any
+  encapsulated Postscript (EPS) files you import.  Ghostscript must be compiled
+  with with the "pcx256" and "pbmraw" drivers.  The pbm driver is used when you
+  run xfig on a monochrome display and the pcx256 driver is used on a color
+  display.
+  See NOTE 2 above about the pcx driver in Ghostscript.
+
+o If you don't have Ghostscript, remove the -DGSBIT flag in the "DEFINES" variable
+  in the Imakefile.
+
+o If you are using the HP compiler, add "-Aa -D_HPUX_SOURCE | -O" to the DEFINES
+  variable in the Imakefile.  Note carefully the "|" which prevents the compiler
+  from overriding the -O option.  Problems occur if the +O3 optimization is used.
+
+o If your system doesn't have strstr(), uncomment the line with HAVE_NO_STRSTR
+  in the Imakefile.
+
+o If your system doesn't have strcasecmp() and/or strncasecmp(), uncomment the
+  lines in the Imakefile with HAVE_NO_STRCASECMP and HAVE_NO_STRNCASECMP.
+
+o If you have an input tablet and your X server supports the XInputExtension
+  uncomment the lines that define TABLIB and USETAB in the Imakefile.
+  Start xfig with -tablet or define the resource Fig.Tablet to use it.
+
+o The maximum width of the top ruler is set to 1020 pixels and the height of the
+  side ruler to 860 pixels.  If your server can handle pixmaps larger than this
+  and you need longer/taller rulers, you may set the maximum allowed in your
+  Imakefile with -DMAX_TOPRULER_WD=1160 (or whatever value you wish) and 
+  -DMAX_SIDERULER_HT=1024 (or whatever value you wish).
+
+o The SMOOTHMOTION option toggles between two methods for tracking the
+  cursor.  The first way (SMOOTHMOTION) just uses the (x,y) information given
+  in the X pointer motion event.  If your display server doesn't implement
+  motion compression this is very slow for large movements of the mouse
+  pointer because X sends back lots of small movement events, each of which
+  causes the rubberband box to be erased and redrawn.  The alternative
+  way (not SMOOTHMOTION) queries the position of the X cursor whenever
+  a motion event is received and if you make a large movement and then
+  stop actually turns out to involve less work even though the XQueryPointer
+  call is quite slow.
+  The SMOOTHMOTION flag MIGHT be necessary for older versions of OpenWindows on
+  certain machines if the performance is slow when moving or drawing objects.
+
+o Look for any other comments in the Imakefile which describe options.
+
+--------------
+General NOTES:
+--------------
+
+The pattern shading (e.g. bricks, shingles, etc.) only work for PostScript,
+GIF, JPEG, TIFF, ACAD, PCX, XPM and X11 Bitmap output.
+
+Unless you have an image (picture object) in your figure, you may not gain
+very much by exporting in JPEG over GIF because of the nature of compression
+used in both methods.  GIF is usually better for line drawings or drawings
+with large blocks of continuous color (e.g. filled polygons).  JPEG is usually
+better for compressing images.
+ 
+If you have the default paper size for Ghostscript as A4 (metric) change the
+following (in gs_init.ps):
 
 % Optionally choose a default paper size other than U.S. letter.
    (a4) /PAPERSIZE where { pop pop } { /PAPERSIZE exch def } ifelse
@@ -143,56 +223,13 @@ to
     { (a4) /PAPERSIZE where { pop pop } { /PAPERSIZE exch def } ifelse
     } if
 
-If your system doesn't have strstr(), uncomment the line with HAVE_NO_STRSTR
-   in the Imakefile.
-If your system doesn't have strcasecmp() and/or strncasecmp(), uncomment the
-   lines in the Imakefile with HAVE_NO_STRCASECMP and HAVE_NO_STRNCASECMP.
-If you have an input tablet and your X server supports the XInputExtension
-   uncomment the lines that define TABLIB and USETAB in the Imakefile.
-   Start xfig with -tablet or define the resource Fig.Tablet to use it.
- 
-NOTE:	For a 3D look, I recommend using Kaleb Keithley's 3D Athena Widget set,
-	a direct replacement for the Xaw library.  After you compile and install that
-	package, and after step 1 above, just uncomment the definition of XAWLIB in
-	the Imakefile and it will use the 3D widget set.
-	This set is available from ftp.x.org in /contrib/widgets.
-
-The maximum width of the top ruler is set to 1020 pixels and the height of the
-side ruler to 860 pixels.  If your server can handle pixmaps larger than this
-and you need longer/taller rulers, you may set the maximum allowed in your
-Imakefile with -DMAX_TOPRULER_WD=1160 (or whatever value you wish) and 
--DMAX_SIDERULER_HT=1024 (or whatever value you wish).
-
-The SMOOTHMOTION option toggles between two methods for tracking the
-cursor.  The first way (SMOOTHMOTION) just uses the (x,y) information given
-in the X pointer motion event.  If your display server doesn't implement
-motion compression this is very slow for large movements of the mouse
-pointer because X sends back lots of small movement events, each of which
-causes the rubberband box to be erased and redrawn.  The alternative
-way (not SMOOTHMOTION) queries the position of the X cursor whenever
-a motion event is received and if you make a large movement and then
-stop actually turns out to involve less work even though the XQueryPointer
-call is quite slow.
-
-The SMOOTHMOTION flag MIGHT be necessary for older versions of OpenWindows on
-certain machines if the performance is slow when moving or drawing objects.
-
-The pattern shading (e.g. bricks, shingles, etc.) only work for PostScript,
-GIF, JPEG, XPM and X11 Bitmap output.
-
-Unless you have an image (picture object) in your figure, you may not gain
-very much by exporting in JPEG over GIF because of the nature of compression
-used in both methods.  GIF is usually better for line drawings or drawings
-with large blocks of continuous color (e.g. filled polygons).  JPEG is usually
-better for compressing images.
-
 ----------------------
 Printing your figures:
 ----------------------
 
 The program to translate your figure into one of many printer languages
 (Postscript, LaTex, etc) is called fig2dev and is part of the TransFig
-package put together by Micah Beck and maintained by Brian Smith.
+package put together by Micah Beck and maintained by me, Brian Smith.
 It is available from ftp.x.org in /contrib/applications/drawing_tools/transfig.
 See the man pages for more information.
 
@@ -204,66 +241,39 @@ app-defaults file:
 
 !Fig*job_params*string:		-T PS
 
--------------
-Solaris users
--------------
+--------------
+Solaris users:
+--------------
 
 You should have:
 
 #define SystemV4 YES
 
-in your imake machine config file (usually in /usr/lib/X11/config or something
-like that).
+in your imake machine config file (usually in /usr/lib/X11/config/<machine>.cf
+or something like that).
 
 Some people have had trouble with the Sun cc 3.0.1 compiler and optimization.
 You may need to shut off optimization.
 A common symptom is that xfig just core dumps when starting.
 
--------------
-XFree86 Users
--------------
+--------------
+XFree86 Users:
+--------------
 
 Version 3.1 of XFree86 causes problems.  Get version 3.1.1 or newer.
 
-================================================================================
-Artwork credits
-================================================================================
+------------------------------------------------------
+Possible problems encountered installing/running xfig:
+------------------------------------------------------
 
-This section gives credit to those people who have contributed to the Examples
-directory.
-Any figures not listed here were probably done by Brian Smith.
+PROBLEM:
+	icons in side and bottom panels appear then disappear
 
-Fig file	Description			Artist
---------	-----------			------
-antennas.fig	various ultra-wideband antennas	(can't remember who submitted this)
-
-sowpig.fig	RAAF F-111C fighter		Carlo Kopp (he has an "Unofficial F-111"
-		w/2xAGM-142 Have Nap SOWs	web page at:
-rfxc.fig	RFX Strike/Recon Fighter	http://www.cs.monash.edu.au/~carlo/archive/MILITARY/F-111/
-greenpig.fig	F/RF-111C/G Tactical Fighter
-lidar.fig	Sidelooking battlefield surveillance LIDAR
-
-Linuxlogo.fig	This was an entry in the	Philipp Reisner
-		Linux 2.0 Logo contest
-
-clp_computer.fig computer clipart		W. Chimiak (chim@tachyon.medeng.wfu.edu)
-clp_network.fig	 computer network clipart
-clp_bldgs.fig	 various buildings clipart
-
-illusion.fig	"impossible" 3-D object		Vivek Khera (khera@cs.duke.edu)
-recycle.fig	recycling logo
-
-flowchart.fig	flowchart building blocks	Tim P. Starrin (noid@cyborg.larc.nasa.gov)
-
-logo.fig	first fig file using imported	Bryan Boyter (original author of eps
-		eps object			import code for xfig)
-	
-================================================================================
-
-**********************************************
-Possible problems encountered installing xfig:
-**********************************************
-
+POSSIBLE CAUSE AND SOLUTION:
+	On Linux (2.0.29 at least), the libNextaw version of the Athena Widget
+	set (libXaw) seem to cause this problem.
+	Relink with vanilla libXaw or libXaw3d.
+________________________________________________________________________________
 PROBLEM:
 	A warning about some action not found occurs, e.g.:
 	Warning: Actions not found: ModeOpenCompound
@@ -272,6 +282,10 @@ POSSIBLE CAUSE AND SOLUTION:
 	You didn't install the app-defaults files.
 ________________________________________________________________________________
 PROBLEM:
+	X error occurs with X_SetClipRectangles as the Request code 
+
+	or:
+
 	Thick line shows through arrowhead in certain orientations.
 
 POSSIBLE CAUSE AND SOLUTION:
@@ -410,11 +424,72 @@ POSSIBLE CAUSE AND SOLUTION:
 	Use +O2 instead of +O3 or get patch from HP for the compiler from
 	http://support.mayfield.hp.com/
 	Choose: Patch Browsing and Downloading
-
 ________________________________________________________________________________
 PROBLEM:
-	On Linux machines xfig crashes.
+	On Linux, you may get errors such as:
+	   > f_wrjpg.o(.text+0x5b2): undefined reference to `jpeg_write_scanlines'
+	   > f_wrjpg.o(.text+0x5dc): undefined reference to `jpeg_finish_compress'
+	   > f_wrjpg.o(.text+0x5e2): undefined reference to `jpeg_destroy_compress'
 
 POSSIBLE CAUSE AND SOLUTION:
-	On linux you need to have gcc version 2.6.2 or newer.
+	On most Linux machines, there is an old version of the JPEG library
+	already installed, and is incompatible with xfig.
+	Delete its library files (usually /usr/local/lib/libjpeg.so and
+	/usr/local/lib/libjpeg.a) and the header file (usually
+	/usr/local/include/jpegdata.h)
+________________________________________________________________________________
+PROBLEM:
+	Arc-boxes don't appear correct when viewing exported PostScript with 
+	ghostview or ghostscript.
 
+POSSIBLE CAUSE AND SOLUTION:
+	Ghostscript version 4.01 has a bug with the arcto operators.
+	Get version 4.03 or newer.
+
+
+----------------
+Artwork credits:
+----------------
+
+This section gives credit to those people who have contributed to the Examples
+directory.
+Any figures not listed here were probably done by Brian Smith.
+
+Fig file	Description			Artist
+--------	-----------			------
+antennas.fig	various ultra-wideband antennas	(can't remember who submitted this)
+
+sowpig.fig	RAAF F-111C fighter		Carlo Kopp (he has an "Unofficial F-111"
+		w/2xAGM-142 Have Nap SOWs	web page at:
+rfxc.fig	RFX Strike/Recon Fighter	http://www.cs.monash.edu.au/~carlo/archive/MILITARY/F-111/
+greenpig.fig	F/RF-111C/G Tactical Fighter
+lidar.fig	Sidelooking battlefield surveillance LIDAR
+
+Linuxlogo.fig	This was an entry in the	Philipp Reisner
+		Linux 2.0 Logo contest
+
+clp_computer.fig computer clipart		W. Chimiak (chim@tachyon.medeng.wfu.edu)
+clp_network.fig	 computer network clipart
+clp_bldgs.fig	 various buildings clipart
+
+illusion.fig	"impossible" 3-D object		Vivek Khera (khera@cs.duke.edu)
+recycle.fig	recycling logo
+
+flowchart.fig	flowchart building blocks	Tim P. Starrin (noid@cyborg.larc.nasa.gov)
+
+logo.fig	first fig file using imported	Bryan Boyter (original author of eps
+		eps object			import code for xfig)
+transit.fig	transit map of Saint John,	Robort Ford (rford@mailserv.mta.ca)
+		New Brunswick (Canada) Don't
+		use it for locating transit routes - it is only good
+		through July 1996 and only shows non-rush-hour routes
+aircraft.fig	light aircraft			Peter Hiscocks (phiscock@ee.ryerson.ca)
+ps-foil.fig	power supply circuit board foil layout
+ps-foil.fig	power supply circuit board schematic
+Linuxlogo.fig	the only entry in the		Philipp Reisner (Austria)  
+		Linux 2.0 Logo contest to be
+		rendered with xfig. Unfortunately,
+		it didn't win :-(
+clp_computer.fig various computers, monitors etc.  W. Chimiak (chim@tachyon.medeng.wfu.edu)
+clp_network.fig	computer network components
+	

@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -550,7 +547,7 @@ next_spline_point_found(x, y, tol, p, q, shift)
 	    n++;
 	    *p = NULL;
 	    for (*q = s->points; *q != NULL; *p = *q, *q = (*q)->next) {
-		if (abs((*q)->x - x) <= tol && abs((*q)->y - y) <= tol)
+		if ((abs((*q)->x - x) <= tol) && (abs((*q)->y - y) <= tol))
 		    return (1);
 	    }
 	}
@@ -895,3 +892,26 @@ compound_point_search(x, y, tol, cx, cy, fx, fy)
     }
     return (NULL);
 }
+
+
+
+F_spline   *
+get_spline_point(x, y, p, q)
+    int		    x, y;
+    F_point	  **p, **q;
+{
+    F_spline *spline;
+    spline = last_spline(objects.splines);
+    for (; spline != NULL; spline = prev_spline(objects.splines, spline))
+	if (validspline_in_mask(spline)) {
+	    n++;
+	    *p = NULL;
+	    for (*q = spline->points; *q != NULL; *p = *q, *q = (*q)->next) {
+		if ((abs((*q)->x - x) <= TOLERANCE) && 
+		    (abs((*q)->y - y) <= TOLERANCE))
+		    return spline;
+	    }
+	}
+    return (NULL);
+}
+

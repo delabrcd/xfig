@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  *
  */
 
@@ -48,7 +45,7 @@ write_pcx(file_name,mag,margin)
     if (!ok_to_write(file_name, "EXPORT"))
 	return False;
 
-    return (create_n_write_pcx(file_name,mag,margin));	/* write the pcx file */
+    return (create_n_write_pcx(file_name,mag/100.0,margin));	/* write the pcx file */
 }
 
 static Boolean
@@ -71,6 +68,12 @@ create_n_write_pcx(filename,mag,margin)
     unsigned char   Red[MAX_COLORMAP_SIZE],
 		    Green[MAX_COLORMAP_SIZE],
 		    Blue[MAX_COLORMAP_SIZE];
+
+    if (tool_dpth > 8) {
+	file_msg("Exporting to PCX not working for screen depths > 8");
+	file_msg("Please export to JPEG or start your X server with a depth of 8");
+	return False;
+    }
 
     /* setup the canvas, pixmap and zoom */
     if ((pixmap = init_write_color_image(4096,mag,&width,&height,margin)) == 0)

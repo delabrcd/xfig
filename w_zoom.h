@@ -1,3 +1,5 @@
+#ifndef W_ZOOM_H
+#define W_ZOOM_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Henning Spruth
@@ -16,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 extern float	zoomscale;
@@ -67,3 +66,4 @@ typedef struct { int x,y; } zXPoint ;
      XFillPolygon(d,w,gc,pp,n,m,o);\
      free(pp); \
     }
+#endif /* W_ZOOM_H */

@@ -1,20 +1,34 @@
+!Don't change the following string - xfig uses it to determine
+! if you have the newest app-defaults files installed
+
+Fig.version:			3.2.0-beta4
+
 ! some sample settings you may want to change
 
 ! Image editor - can edit imported image
 Fig.image_editor:		xv -rw
+
 ! Spacing between buttons
 Fig.internalborderwidth:	2
+
 ! font for the buttons
 Fig.buttonFont:			6x13
+
 ! font for the rulers and message window
 Fig.normalFont:			6x13
+
 ! font for the file name and popup query widgets
 Fig.boldFont:			8x13bold
+
 ! font for the ruler numbers
 Fig*topruler.font:		6x13
 Fig*sideruler.font:		6x13
+
 ! font for the units box in the corner where the rulers meet
 Fig*unitbox.font:		6x13
+
+! font for everything else
+Fig*Font:			7x13bold
 
 ! the following should fix the problem that some have had with
 ! their window manager fighting with xfig over the geometry
@@ -111,6 +125,7 @@ Fig*canvas.translations: #override \n\
 
 
 Fig*accelerators: \
+	Meta<Key>h: Search()\n\
 	Meta<Key>d: delete_all()\n\
 	Meta<Key>n: new()\n\
 	Meta<Key>o: orient()\n\
@@ -130,17 +145,17 @@ Fig*quit*accelerators: \
 Fig*file*accelerators: \
 	Meta<Key>f: file()\n
 Fig*export*accelerators: \
-	Meta<Key>e: export()\n
+	Meta<Key>e: popup_export()\n
 Fig*print*accelerators: \
-	Meta<Key>p: print()\n
+	Meta<Key>p: popup_print()\n
 Fig*file_menu*accelerators: \
-	Meta<Key>c: cancel()\n\
+	Meta<Key>c: file_cancel()\n\
 	Meta<Key>l: load()\n\
 	Meta<Key>m: merge()\n\
 	Meta<Key>r: rescan()\n\
 	Meta<Key>s: save()\n
 Fig*export_menu*accelerators: \
-	Meta<Key>c: cancel()\n\
+	Meta<Key>c: export_cancel()\n\
 	Meta<Key>e: export()\n\
 	Meta<Key>r: rescan()\n
 Fig*print_menu*accelerators: \
@@ -148,13 +163,13 @@ Fig*print_menu*accelerators: \
 	Meta<Key>d: dismiss()\n\
 	Meta<Key>b: print_batch()\n\
 	Meta<Key>x: clear_batch()\n\
-	<Key>Return: print()\n\
 	Meta<Key>p: print()\n
 Fig*set_unit_panel*accelerators: \
 	Meta<Key>c: QuitUnits()\n\
-	Meta<Key>s: SetUnits()\n
+	Meta<Key>s: SetUnits()\n\
+	<Key>Return: SetUnits()\n
 Fig*ind_panel*accelerators: \
-	Shift<Key>Z: ZoomIn()\n\
+	Shift<Key>z: ZoomIn()\n\
 	<Key>z: ZoomOut()\n
 Fig*mode_panel*accelerators: \
 	None<Key>m: ModeMoveObject()\n\

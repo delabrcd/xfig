@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -33,6 +30,7 @@
 #include "u_create.h"
 #include "u_elastic.h"
 #include "u_list.h"
+#include "u_markers.h"
 #include "u_undo.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
@@ -351,7 +349,6 @@ init_arcpointmoving()
     cur_x = cur_a->point[movedpoint_num].x;
     cur_y = cur_a->point[movedpoint_num].y;
     set_temp_cursor(crosshair_cursor);
-    win_setmouseposition(canvas_win, cur_x, cur_y);
     elastic_arclink();
     canvas_locmove_proc = reshaping_arc;
     canvas_leftbut_proc = fix_movedarcpoint;
@@ -449,10 +446,13 @@ init_splinepointmoving()
 	force_noanglegeom();
 	canvas_locmove_proc = reshaping_line;
 	if (left_point == NULL) {
-	    for (left_point = right_point, p = left_point->next;
-		 p->next != NULL;
-		 left_point = p, p = p->next);
+	    for (left_point = right_point;
+		 left_point->next != NULL;
+		 left_point = left_point->next);
 	}
+	if (right_point == NULL) {
+	   right_point = cur_s->points;  /* take the first */
+    }
     }
     /* show current length(s) */
     (canvas_locmove_proc)(cur_x, cur_y);
@@ -497,12 +497,6 @@ relocate_splinepoint(s, x, y, moved_point)
     set_temp_cursor(wait_cursor);
     moved_point->x = x;
     moved_point->y = y;
-    if (closed_spline(s)) {
-	left_point->next->x = x;
-	left_point->next->y = y;
-    }
-    if (int_spline(s))
-	remake_control_points(s);
     set_modifiedflag();
     reset_cursor();
 }

@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -133,7 +130,6 @@ get_intermediatepoint(x, y, shift)
 	set_temp_cursor(null_cursor);
 	cur_cursor = null_cursor;
     }
-    win_setmouseposition(canvas_win, cur_x, cur_y);
     if (shift != 0 && num_point > 2) {
 	F_point	*p;
 

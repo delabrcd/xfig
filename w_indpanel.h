@@ -1,3 +1,5 @@
+#ifndef W_INDPANEL_H
+#define W_INDPANEL_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
@@ -16,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "w_icons.h"
@@ -134,3 +133,8 @@ extern ind_sw_info ind_switches[];
 
 extern unsigned char	arrow0_bits[], arrow1_bits[], arrow2_bits[], arrow3_bits[];
 extern unsigned char	arrow4_bits[], arrow5_bits[], arrow6_bits[];
+
+/* pointer to the color popup so it can be re-used in the popup edit panel */
+extern ind_sw_info *color_popup;
+
+#endif /* W_INDPANEL_H */

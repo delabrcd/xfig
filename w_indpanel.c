@@ -17,9 +17,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -44,10 +41,14 @@ extern char    *panel_get_value();
 extern int	show_zoom();
 extern int	show_depth();
 extern int	cur_updatemask;
-extern Widget	make_popup_menu();
 extern ind_sw_info *pen_color_button, *fill_color_button;
 
-/**************	    local variables and routines   **************/
+/**************	exported variables **************/
+
+/* pointer to the color popup so it can be re-used in the popup edit panel */
+ind_sw_info *color_popup = (ind_sw_info *) NULL;
+
+/**************	local variables and routines   **************/
 
 static int	cur_anglegeom = L_UNCONSTRAINED;
 static int	cur_indmask = I_MIN1;
@@ -71,14 +72,6 @@ static String set_translations =
 	Ctrl<Key>X: EmptyTextKey()\n\
 	Ctrl<Key>U: multiply(4)\n\
 	<Key>F18: PastePanelKey()\n";
-
-/************ testing
-static void	nval_panel_set();
-static XtActionsRec set_actions[] =
-{
-    {"SetValue", (XtActionProc) nval_panel_set},
-};
-*********************/
 
 /***** value panel cancel translations and actions *****/
 static String   nval_translations =
@@ -682,6 +675,7 @@ init_ind_panel(tool)
 	NextArg(XtNresizable, False);
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNresize, False);
+	NextArg(XtNresizable, False);
 	NextArg(XtNbackgroundPixmap, NULL);
 	sw->button = XtCreateManagedWidget("button", commandWidgetClass,
 			     sw->formw, Args, ArgCount);
@@ -1225,6 +1219,10 @@ popup_choice_panel(isw)
     form = XtCreateManagedWidget("form", formWidgetClass, choice_popup, NULL, 0);
 
     FirstArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XawChainTop);
+    NextArg(XtNbottom, XawChainTop);
+    NextArg(XtNleft, XawChainLeft);
+    NextArg(XtNright, XawChainLeft);
     if (isw->func == I_PEN_COLOR || isw->func == I_FILL_COLOR)
 	sprintf(buf, "Colors");
     else
@@ -1237,6 +1235,10 @@ popup_choice_panel(isw)
     NextArg(XtNresizable, False);
     NextArg(XtNheight, 32);
     NextArg(XtNborderWidth, INTERNAL_BW);
+    NextArg(XtNtop, XawChainTop);
+    NextArg(XtNbottom, XawChainTop);
+    NextArg(XtNleft, XawChainLeft);
+    NextArg(XtNright, XawChainLeft);
     cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
 				   form, Args, ArgCount);
     XtAddEventHandler(cancel, ButtonReleaseMask, (Boolean) 0,
@@ -1245,12 +1247,13 @@ popup_choice_panel(isw)
     /* colors have the additional "extended color" panel */
     if (isw->func == I_PEN_COLOR || isw->func == I_FILL_COLOR) {
 	create_color_panel(form,label,cancel,isw);
+	/* keep pointer so we can use this from the popup edit panel */
+	color_popup = isw;
 	return;
     }
 
     tmp_choice = isw->choices;
 
-    count = 0;
     for (i = 0; i < isw->numchoices; tmp_choice++, i++) {
 	if (isw->func == I_FILLSTYLE) {
 	    if (cur_fillcolor == BLACK || cur_fillcolor == WHITE ||
@@ -1278,6 +1281,10 @@ popup_choice_panel(isw)
 	    FirstArg(XtNlabel, "Patterns");
 	    NextArg(XtNfromVert, obeside);
 	    NextArg(XtNborderWidth, 0);
+	    NextArg(XtNtop, XawChainTop);
+	    NextArg(XtNbottom, XawChainTop);
+	    NextArg(XtNleft, XawChainLeft);
+	    NextArg(XtNright, XawChainLeft);
 	    below = XtCreateManagedWidget("pattern_label", labelWidgetClass, 
 					form, Args, ArgCount);
 	    beside = cancel;
@@ -1291,6 +1298,10 @@ popup_choice_panel(isw)
 	NextArg(XtNresize, False);
 	NextArg(XtNresizable, False);
 	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNtop, XawChainTop);
+	NextArg(XtNbottom, XawChainTop);
+	NextArg(XtNleft, XawChainLeft);
+	NextArg(XtNright, XawChainLeft);
 	beside = XtCreateManagedWidget((String)" ", commandWidgetClass,
 				       form, Args, ArgCount);
 	obeside = beside;
@@ -1654,7 +1665,7 @@ popup_nval_panel(isw)
     if (isw->type == I_IVAL)
 	sprintf(buf, "%d", (*isw->i_varadr));
     else
-	sprintf(buf, "%4.2lf", (*isw->f_varadr));
+	sprintf(buf, "%4.2f", (*isw->f_varadr));
     FirstArg(XtNfromVert, label);
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNfromHoriz, newvalue);
@@ -1746,17 +1757,17 @@ show_arrowmode(sw)
     case L_FARROWS:
 	autobackwardarrow_mode = 0;
 	autoforwardarrow_mode = 1;
-	put_msg("Auto FORWARD ARROWS (for ARC, POLYLINE and SPLINE)");
+	put_msg("Auto FORWARD ARROWS");
 	break;
     case L_FBARROWS:
 	autobackwardarrow_mode = 1;
 	autoforwardarrow_mode = 1;
-	put_msg("Auto FORWARD and BACKWARD ARROWS (for ARC, POLYLINE and SPLINE)");
+	put_msg("Auto FORWARD and BACKWARD ARROWS");
 	break;
     case L_BARROWS:
 	autobackwardarrow_mode = 1;
 	autoforwardarrow_mode = 0;
-	put_msg("Auto BACKWARD ARROWS (for ARC, POLYLINE and SPLINE)");
+	put_msg("Auto BACKWARD ARROWS");
 	break;
     }
 }
@@ -2714,6 +2725,15 @@ show_numycopies(sw)
 inc_zoom(sw)
     ind_sw_info	   *sw;
 {
+    if (action_on) {
+	if (cur_mode == F_TEXT)
+	    finish_text_input();	/* finish up any text input */
+	else {
+	    put_msg("Finish (or cancel) the current operation before zooming");
+	    beep();
+	    return;
+	}
+    }
     if (display_zoomscale < 1.0) {
 	if (display_zoomscale < 0.2)
 	    display_zoomscale = 0.2;
@@ -2731,6 +2751,15 @@ inc_zoom(sw)
 dec_zoom(sw)
     ind_sw_info	   *sw;
 {
+    if (action_on) {
+	if (cur_mode == F_TEXT)
+	    finish_text_input();	/* finish up any text input */
+	else {
+	    put_msg("Finish (or cancel) the current operation before zooming");
+	    beep();
+	    return;
+	}
+    }
     if (display_zoomscale <= 1.0) {
 	display_zoomscale -= 0.2; /* always quantized */
 	display_zoomscale = (int)(display_zoomscale*5.0);

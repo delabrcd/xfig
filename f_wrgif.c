@@ -1,8 +1,5 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * This file is from GIFencode by Evgeni Chernyaev (chernaev@mx.decnet.ihep.su)
- * Parts Copyright (c) 1995 by Brian V. Smith
- *
  * The X Consortium, and any party obtaining a copy of these files from
  * the X Consortium, directly or indirectly, is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -47,7 +44,7 @@ write_gif(file_name,mag,transparent,margin)
     if (!ok_to_write(file_name, "EXPORT"))
 	return False;
 
-    return (create_n_write_gif(file_name,mag,transparent,margin));	/* write the gif file */
+    return create_n_write_gif(file_name,mag/100.0,transparent,margin);	/* write the gif file */
 }
 
 static Boolean
@@ -71,6 +68,12 @@ create_n_write_gif(filename,mag,transparent,margin)
     unsigned char   Red[MAX_COLORMAP_SIZE],
 		    Green[MAX_COLORMAP_SIZE],
 		    Blue[MAX_COLORMAP_SIZE];
+
+    if (tool_dpth > 8) {
+	file_msg("Exporting to GIF not working for screen depths > 8");
+	file_msg("Please export to JPEG or start your X server with a depth of 8");
+	return False;
+    }
 
     /* setup the canvas, pixmap and zoom */
     if ((pixmap = init_write_color_image(4096,mag,&width,&height,margin)) == 0)
@@ -177,9 +180,11 @@ create_n_write_gif(filename,mag,transparent,margin)
     /* use the mapped color for the transparent color */
     /* the color was mapped from  Fig.color -> X.color -> mapped.color */
     transp = transparent;
-    if (transp >= -1) {
+    if (transp == TRANSP_NONE)
+	transp = -1;
+    if (transp >= TRANSP_BACKGROUND) {
 	/* make background transparent */
-	if (transp == -1)
+	if (transp == TRANSP_BACKGROUND)
 	    transp = mapcols[x_bg_color.pixel];
 	/* make other color transp */
 	else

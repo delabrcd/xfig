@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -32,6 +29,8 @@
 #include "u_create.h"
 #include "version.h"
 #include "w_drawprim.h"
+#include "w_export.h"
+#include "w_print.h"
 #include "w_indpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
@@ -44,10 +43,6 @@ char    *read_file_name;
 
 /* from w_msgpanel.c */
 extern Boolean	first_file_msg;
-
-/* from w_export.c and w_print.c */
-extern Widget	export_just_panel;
-extern Widget	print_just_panel;
 
 static char	Err_incomp[] = "Incomplete %s object at line %d.";
 
@@ -195,9 +190,11 @@ uncompress_file(name)
 
     /* do the uncompression/unzip if needed */
     if (compr) {
+	char *c;
 	system(unc);
 	/* strip off the trailing .Z, .z or .gz */
-	*strrchr(name,'.') = '\0';
+	c = strrchr(name,'.');
+	*c= '\0';
 	if (compname)
 	    free(compname);
     }
@@ -249,7 +246,7 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 
 	if (proto >= 30) {
 	    /* read Portrait/Landscape indicator now */
-	    if (fgets(buf, BUF_SIZE, fp) == 0) {
+	    if (read_line(fp) < 0) {
 		file_msg("No Portrait/Landscape specification");
 		return -1;		/* error */
 	    }
@@ -265,7 +262,7 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 	    }
 
 	    /* read Centering indicator now */
-	    if (fgets(buf, BUF_SIZE, fp) == 0) {
+	    if (read_line(fp) < 0) {
 		file_msg("No Center/Flushleft specification");
 		return -1;		/* error */
 	    }
@@ -276,18 +273,18 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 		    appres.flushleft = !strncasecmp(buf,"flush",5);
 		    /* and the printer and export justification labels */
 		    FirstArg(XtNlabel, just_items[appres.flushleft]);
-		    if (print_just_panel)
-			SetValues(print_just_panel);
-		    if (export_just_panel)
+		    if (export_popup)
 			SetValues(export_just_panel);
+		    if (print_popup)
+			SetValues(print_just_panel);
 		    /* NOW read metric/inches indicator */
-		    if (fgets(buf, BUF_SIZE, fp) == 0) {
+		    if (read_line(fp) < 0) {
 			file_msg("No Metric/Inches specification");
 			return -1;		/* error*/
 		    }
 		    line_no++;
 	    }
-	    /* set appres mode appropriately */
+	    /* set metric/inches mode appropriately */
 	    fig_units = (strncasecmp(buf,"metric",5) != 0);
 	    if (!merge) {
 		/* set the units string for the length messages */
@@ -297,12 +294,86 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 		    appres.INCHES = (Boolean) fig_units;
 		    reset_rulers();
 		    init_grid();
+		    setup_grid(cur_gridmode);
 		    /* change the label in the units widget */
 		    FirstArg(XtNlabel, appres.INCHES ? "in" : "cm");
 		    SetValues(unitbox_sw);
 		}
 	    }
+	    /* paper size, magnification, multiple page flag and transparent color
+	       (for GIF export) new in 3.2 */
+	    if (proto >= 32) {
+		/* read paper size now */
+		if (read_line(fp) < 0) {
+		    file_msg("No Paper size specification");
+		    return -1;		/* error */
+		}
+		/* parse the paper size */
+		if ((appres.papersize = parse_papersize(buf)) < 0) {
+		    file_msg("Illegal paper size in file, using default");
+		    appres.papersize = (appres.INCHES? PAPER_LETTER: PAPER_A4);
+		}
+		/* and the print and export paper size menus */
+		FirstArg(XtNlabel, paper_sizes[appres.papersize].fname);
+		if (export_popup)
+		    SetValues(export_papersize_panel);
+		if (print_popup)
+		    SetValues(print_papersize_panel);
+		line_no++;
+
+		/* read magnification now */
+		if (read_line(fp) < 0) {
+		    file_msg("No Magnification specification");
+		    return -1;		/* error */
+		}
+		appres.magnification = atoi(buf);
+		/* set the magnification in the export and print panels */
+		sprintf(buf,"%.2f",appres.magnification);
+		FirstArg(XtNstring, buf);
+		if (export_popup)
+		    SetValues(export_mag_text);
+		if (print_popup) {
+		    SetValues(print_mag_text);
+		    print_update_figure_size();
+		}
+		line_no++;
+
+		/* read multiple page flag now */
+		if (read_line(fp) < 0) {
+		    file_msg("No Multiple page flag specification");
+		    return -1;		/* error */
+		}
+		if (strncasecmp(buf,"multiple",8) != 0 &&
+		    strncasecmp(buf,"single",6) != 0) {
+		    file_msg("No Multiple page flag specification");
+		    return -1;
+		}
+		appres.multiple = (strncasecmp(buf,"multiple",8) == 0);
+		FirstArg(XtNlabel, multiple_pages[appres.multiple]);
+		if (export_popup)
+		    SetValues(export_multiple_panel);
+		if (print_popup)
+		    SetValues(print_multiple_panel);
+		line_no++;
+
+		/* read transparent color now */
+		if (read_line(fp) < 0) {
+		    file_msg("No Transparent color specification");
+		    return -1;		/* error */
+		}
+		appres.transparent = atoi(buf);
+#ifdef USE_GIF
+		/* make colorname from number */
+		set_color_name(appres.transparent, buf);
+		FirstArg(XtNlabel, buf);
+		if (export_popup)
+		    SetValues(export_transp_panel);
+#endif
+		line_no++;
+	    }
 	}
+
+	/* now read the figure itself */
 	status = read_objects(fp, obj);
 
     } else {
@@ -348,16 +419,15 @@ readfp_fig(fp, obj, merge, xoff, yoff)
        file_msg("Warning, because of a bug in version 3.0 you may need to offset");
        file_msg("your figure by 14 fig units in X and Y if this figure was");
        file_msg("converted from an older version of xfig.  See the File panel.");
-    }
-    if (proto == 30)
        scale_figure(obj,((float)PIX_PER_INCH)/obj->nwcorner.x,0);
-    else if (obj->nwcorner.x != PIX_PER_INCH)
+    } else if (obj->nwcorner.x != PIX_PER_INCH) {
        if (proto == 21 && obj->nwcorner.x == 76 && !appres.INCHES)
 	  scale_figure(obj,((float)PIX_PER_INCH)/80,15); /* for 2.1.8S, HWS */
        else
           scale_figure(obj,((float)PIX_PER_INCH)/obj->nwcorner.x,15);
+    }
 
-    if (merge && proto >= 30) {		/* rescale for mixed units, HWS */
+    if (merge && (proto >= 30)) {		/* rescale for mixed units, HWS */
        if (!fig_units && appres.INCHES)
 	   read_scale_compound(obj,((float)PIX_PER_INCH)/(2.54*PIX_PER_CM),0);
        if (fig_units && !appres.INCHES)
@@ -371,6 +441,29 @@ readfp_fig(fp, obj, merge, xoff, yoff)
     shift_figure(obj);
 
     return (status);
+}
+
+parse_papersize(size)
+    char	   *size;
+{
+    int i,len;
+    char *c;
+
+    /* first get rid of trailing newline */
+    if (size[strlen(size)-1]=='\n')
+	size[strlen(size)-1]='\0';
+    /* then truncate at first space or parenthesis "(" in passed size */
+    if (((c=strchr(size,' '))!= NULL)||((c=strchr(size,'(')) != NULL)) {
+	*c ='\0';
+    }
+    len = strlen(size);
+    for (i=0; i<NUMPAPERSIZES; i++) {
+	if (strncasecmp(size,paper_sizes[i].sname,len) == 0)
+	    break;
+    }
+    if (i >= NUMPAPERSIZES)
+	return -1;
+    return i;
 }
 
 read_objects(fp, obj)
@@ -842,8 +935,8 @@ read_lineobject(fp)
 	free_linestorage(l);
 	return (NULL);
     }
-    ox = x;
-    oy = y;
+    ox = p->x;
+    oy = p->y;
     /* read subsequent points */
     if (proto < 22)
 	npts = 1000000;	/* loop until we find 9999 9999 for previous fig files */
@@ -892,18 +985,17 @@ read_splineobject(fp)
 {
     F_spline	   *s;
     F_point	   *p, *q;
-    F_control	   *cp, *cq;
+    F_sfactor	   *cp, *cq;
     int		    c, n, x, y, fa, ba, npts;
-    int		    ox, oy;
     int		    type, style;
     float	    thickness, wid, ht;
-    float	    lx, ly, rx, ry;
+    double	    s_param,sbis;
 
     if ((s = create_spline()) == NULL)
 	return (NULL);
 
     s->points = NULL;
-    s->controls = NULL;
+    s->sfactors = NULL;
     s->for_arrow = s->back_arrow = NULL;
     s->next = NULL;
 
@@ -968,8 +1060,6 @@ read_splineobject(fp)
     p->x = x;
     p->y = y;
     c = 1;
-    ox = x;
-    oy = y;
     /* read subsequent points */
     if (proto < 22)
 	npts = 1000000;	/* loop until we find 9999 9999 for previous fig files */
@@ -981,12 +1071,6 @@ read_splineobject(fp)
 	    free_splinestorage(s);
 	    return (NULL);
 	};
-	/* ignore identical consecutive points *ONLY FOR NORMAL SPLINE* */
-	/* interpolated spline has control points which would have to be deleted too */
-	if (normal_spline(s) && (ox == x && oy == y))
-	    continue;
-	ox = x;
-	oy = y;
 	if (proto < 22 && x == 9999)
 	    break;
 	if ((q = create_point()) == NULL) {
@@ -1002,45 +1086,53 @@ read_splineobject(fp)
     p->next = NULL;
     skip_line(fp);
 
-    if (normal_spline(s))
-	return (s);
+    if (proto <= 31) {		/* to read files from version 3.1 and older */
+	if int_spline(s)
+	  for (;c>00;c-=2)    /* 2 control points per point given by user in
+			      version 3.1 and older : don't read them */
+	    skip_line(fp);
+	if (closed_spline(s)) {
+	    F_point *ptr   = s->points; 
+	    s->points = s->points->next;
+	    free (ptr);
+	}
+	if (! make_sfactors(s)) {
+	    free_splinestorage(s);
+	    return (NULL);
+	}
+	return(s);
+    }
 
     line_no++;
     skip_comment(fp);
 
-    /* Read controls */
-
-    if ((n = fscanf(fp, "%f%f%f%f", &lx, &ly, &rx, &ry)) != 4) {
+    /* Read sfactors - the s parameter for splines */
+    
+    if ((n = fscanf(fp, "%lf", &s_param)) != 1) {
 	file_msg(Err_incomp, "spline", line_no);
 	free_splinestorage(s);
 	return (NULL);
     };
-    if ((cp = create_cpoint()) == NULL) {
+    if ((cp = create_sfactor()) == NULL) {
 	free_splinestorage(s);
 	return (NULL);
     }
-    s->controls = cp;
-    cp->lx = lx;
-    cp->ly = ly;
-    cp->rx = rx;
-    cp->ry = ry;
+    s->sfactors = cp;
+    cp->s = s_param;
     while (--c) {
 	count_lines_correctly(fp);
-	if (fscanf(fp, "%f%f%f%f", &lx, &ly, &rx, &ry) != 4) {
+	if (fscanf(fp, "%lf", &s_param) != 1) {
 	    file_msg(Err_incomp, "spline", line_no);
 	    cp->next = NULL;
 	    free_splinestorage(s);
 	    return (NULL);
 	};
-	if ((cq = create_cpoint()) == NULL) {
+	if ((cq = create_sfactor()) == NULL) {
 	    cp->next = NULL;
 	    free_splinestorage(s);
 	    return (NULL);
 	}
-	cq->lx = lx;
-	cq->ly = ly;
-	cq->rx = rx;
-	cq->ry = ry;
+	cq->s=s_param;
 	cp->next = cq;
 	cp = cq;
     }
@@ -1682,3 +1774,29 @@ count_lines_correctly(fp)
     } while (cc==' '||cc=='\t');
     ungetc(cc,fp);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

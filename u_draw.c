@@ -3,6 +3,7 @@
  * Copyright (c) 1985 by Supoj Sutanthavibul
  * Copyright (c) 1990 by Brian V. Smith
  * Copyright (c) 1992 by James Tough
+ * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
  * The X Consortium, and any party obtaining a copy of these files from
  * the X Consortium, directly or indirectly, is granted, free of charge, a
@@ -18,9 +19,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -30,6 +28,7 @@
 #include "u_bound.h"
 #include "u_create.h"
 #include "u_draw.h"
+#include "u_list.h"
 #include "w_canvas.h"
 #include "w_drawprim.h"
 #include "w_setup.h"
@@ -38,12 +37,58 @@
 extern PIX_FONT lookfont();
 extern		X_error_handler();
 
+extern char * basname();
+
+/* declarations for splines */
+
+#define         HIGH_PRECISION    0.5
+#define         LOW_PRECISION     1.0
+#define         ZOOM_PRECISION    5.0
+#define         ARROW_START       4
+#define         MAX_SPLINE_STEP   0.2
+
+#define COPY_CONTROL_POINT(P0, S0, P1, S1) \
+      P0 = P1; \
+      S0 = S1
+
+#define NEXT_CONTROL_POINTS(P0, S0, P1, S1, P2, S2, P3, S3) \
+      COPY_CONTROL_POINT(P0, S0, P1, S1); \
+      COPY_CONTROL_POINT(P1, S1, P2, S2); \
+      COPY_CONTROL_POINT(P2, S2, P3, S3); \
+      COPY_CONTROL_POINT(P3, S3, P3->next, S3->next)
+
+#define INIT_CONTROL_POINTS(SPLINE, P0, S0, P1, S1, P2, S2, P3, S3) \
+      COPY_CONTROL_POINT(P0, S0, SPLINE->points, SPLINE->sfactors); \
+      COPY_CONTROL_POINT(P1, S1, P0->next, S0->next);               \
+      COPY_CONTROL_POINT(P2, S2, P1->next, S1->next);               \
+      COPY_CONTROL_POINT(P3, S3, P2->next, S2->next)
+
+#define SPLINE_SEGMENT_LOOP(K, P0, P1, P2, P3, S1, S2, PREC) \
+      step = step_computing(K, P0, P1, P2, P3, S1, S2, PREC);    \
+      spline_segment_computing(step, K, P0, P1, P2, P3, S1, S2)
+
+static Boolean       compute_closed_spline();
+static Boolean       compute_open_spline();
+
+static void          spline_segment_computing();
+static float         step_computing();
+static INLINE        point_adding();
+static INLINE        point_computing();
+static INLINE        negative_s1_influence();
+static INLINE        negative_s2_influence();
+static INLINE        positive_s1_influence();
+static INLINE        positive_s2_influence();
+static INLINE double f_blend();
+static INLINE double g_blend();
+static INLINE double h_blend();
+
 /************** POLYGON/CURVE DRAWING FACILITIES ****************/
 
 static int	npoints;
-static int	max_points;
 static zXPoint *points;
+static int	max_points;
 static int	allocstep;
+
 
 static		Boolean
 init_point_array(init_size, step_size)
@@ -62,11 +107,13 @@ init_point_array(init_size, step_size)
     return True;
 }
 
+
 too_many_points()
 {
 	put_msg("Too many points, recompile with MAXNUMPTS > %d in w_drawprim.h",
 		MAXNUMPTS);
 }
+
 
 static		Boolean
 add_point(x, y)
@@ -107,6 +154,7 @@ add_point(x, y)
    other than the first point in that array.
    The real array points is freed at the end of this procedure
 */
+
 
 static void
 draw_point_array(w, op, line_width, line_style, style_val, 
@@ -162,7 +210,7 @@ draw_arc(a, op)
 
     /* setup clipping so that spline doesn't protrude beyond arrowhead */
     /* also create the arrowheads */
-    clip_arrows(a,O_ARC,op);
+    clip_arrows(a,O_ARC,op,0);
 
     /* draw the arc itself */
     draw_point_array(canvas_win, op, a->thickness,
@@ -497,11 +545,7 @@ draw_line(line, op)
 	    if (line->pic->file[0] == '\0')
 		string = EMPTY_PIC;
 	    else {
-		string = strrchr(line->pic->file, '/');
-		if (string == NULL)
-		    string = line->pic->file;
-		else
-		    string++;
+		string = basname(line->pic->file);
 	    }
 	    p0 = line->points;
 	    p1 = p0->next;
@@ -547,7 +591,7 @@ draw_line(line, op)
 
     /* setup clipping so that spline doesn't protrude beyond arrowhead */
     /* also create the arrowheads */
-    clip_arrows(line,O_POLYLINE,op);
+    clip_arrows(line,O_POLYLINE,op,0);
 
     draw_point_array(canvas_win, op, line->thickness, line->style,
 		     line->style_val, line->join_style,
@@ -681,8 +725,8 @@ create_pic_pixmap(box, rotation, width, height, flipped)
     if (box->pic->numcols == 0) {
 	    nbytes = (width + 7) / 8;
 	    bbytes = (cwidth + 7) / 8;
-	    data = (char *) malloc(nbytes * height);
-	    tdata = (char *) malloc(nbytes);
+	    data = (unsigned char *) malloc(nbytes * height);
+	    tdata = (unsigned char *) malloc(nbytes);
 	    bzero((char*)data, nbytes * height);	/* clear memory */
 	    if ((!flipped && (rotation == 0 || rotation == 180)) ||
 		(flipped && !(rotation == 0 || rotation == 180))) {
@@ -720,13 +764,14 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 
 	    /* vertical swap */
 	    if ((!flipped && (rotation == 180 || rotation == 270)) ||
-		(flipped && !(rotation == 180 || rotation == 270)))
+		(flipped && !(rotation == 180 || rotation == 270))) {
 		for (j = 0; j < (height + 1) / 2; j++) {
 		    jnb = j*nbytes;
 		    bcopy(data + jnb, tdata, nbytes);
 		    bcopy(data + (height - j - 1) * nbytes, data + jnb, nbytes);
 		    bcopy(tdata, data + (height - j - 1) * nbytes, nbytes);
 		}
+	    }
 
 	    if (writing_bitmap) {
 		fg = x_fg_color.pixel;			/* writing xbm, 1 and 0 */
@@ -750,26 +795,19 @@ create_pic_pixmap(box, rotation, width, height, flipped)
       /* EPS, PCX, XPM, GIF or JPEG on color display */
       /* It is important to note that the Cmap pixels are unsigned long. */
       /* Therefore all manipulation of the image data should be as unsigned long. */
-      /* bpp = bytes per pixel */
       /* bpl = bytes per line */
       } else {
-            unsigned char *pixel, *cpixel, *p1, *p2, tmp;
-            int bpp, bpl, cbpp, cbpl;
-            unsigned long *Lpixel;
-            unsigned short *Spixel;
-            unsigned char *Cpixel;
-	    struct Cmap	*cmap = box->pic->cmap;
+            unsigned char	*pixel, *cpixel, *p1, *p2, tmp;
+            int			 bpl, cbpp, cbpl;
+            unsigned int	*Lpixel;
+            unsigned short	*Spixel;
+            unsigned char	*Cpixel;
+	    struct Cmap		*cmap = box->pic->cmap;
 
             cbpp = 1;
             cbpl = cwidth * cbpp;
-	    if (tool_dpth == 24 || tool_dpth == 32)
-                bpp = 4;
-	    else if (tool_dpth == 16)
-                bpp = 2;
-	    else
-                bpp = 1;
-            bpl = width * bpp;
-	    data = (char *) malloc(bpl * height);
+            bpl = width * image_bpp;
+	    data = (unsigned char *) malloc(bpl * height);
 	    bzero((char*)data, bpl * height);
 	    if ((!flipped && (rotation == 0 || rotation == 180)) ||
 		(flipped && !(rotation == 0 || rotation == 180))) {
@@ -777,17 +815,17 @@ create_pic_pixmap(box, rotation, width, height, flipped)
                   p1 = data + (j * bpl);
                   p2 = box->pic->bitmap + (j * cheight / height * cbpl);
                   for( i=0; i<width; i++ ){
-                    pixel = p1 + (i * bpp);
+                    pixel = p1 + (i * image_bpp);
                     cpixel = p2 + (i * cbpl / width );
-		    if (bpp == 4) {
-			Lpixel = (unsigned long *) pixel;
-			*Lpixel = cmap[*cpixel].pixel;
-		    } else if (bpp == 2) {
+		    if (image_bpp == 4) {
+			Lpixel = (unsigned int *) pixel;
+			*Lpixel = (unsigned int)(cmap[*cpixel].pixel);
+		    } else if (image_bpp == 2) {
 			Spixel = (unsigned short *) pixel;
-			*Spixel = cmap[*cpixel].pixel;
+			*Spixel = (unsigned short)cmap[*cpixel].pixel;
 		    } else {
 			Cpixel = (unsigned char *) pixel;
-			*Cpixel = cmap[*cpixel].pixel;
+			*Cpixel = (unsigned char)cmap[*cpixel].pixel;
 		    }
                   }
                 }
@@ -796,17 +834,17 @@ create_pic_pixmap(box, rotation, width, height, flipped)
                   p1 = data + (j * bpl);
                   p2 = box->pic->bitmap + (j * cbpl / height);
                   for( i=0; i<width; i++ ){
-                    pixel = p1 + (i * bpp);
+                    pixel = p1 + (i * image_bpp);
                     cpixel = p2 + (i * cheight / width * cbpl);
-		    if (bpp == 4) {
-			Lpixel = (unsigned long *) pixel;
-			*Lpixel = cmap[*cpixel].pixel;
-		    } else if (bpp == 2) {
+		    if (image_bpp == 4) {
+			Lpixel = (unsigned int *) pixel;
+			*Lpixel = (unsigned int)cmap[*cpixel].pixel;
+		    } else if (image_bpp == 2) {
 			Spixel = (unsigned short *) pixel;
-			*Spixel = cmap[*cpixel].pixel;
+			*Spixel = (unsigned short)cmap[*cpixel].pixel;
 		    } else {
 			Cpixel = (unsigned char *) pixel;
-			*Cpixel = cmap[*cpixel].pixel;
+			*Cpixel = (unsigned char)cmap[*cpixel].pixel;
 		    }
                   }
                 }
@@ -816,9 +854,9 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 	    if (rotation == 180 || rotation == 270){
                 for( j=0; j<height; j++ ){
                   p1 = data + (j * bpl);
-                  p2 = p1 + ((width - 1) * bpp);
-                  for( i=0; i<width/2; i++, p2 -= 2*bpp ){
-                    for( k=0; k<bpp; k++, p1++, p2++ ){
+                  p2 = p1 + ((width - 1) * image_bpp);
+                  for( i=0; i<width/2; i++, p2 -= 2*image_bpp ){
+                    for( k=0; k<image_bpp; k++, p1++, p2++ ){
                       tmp = *p1;
                       *p1 = *p2;
                       *p2 = tmp;
@@ -828,13 +866,13 @@ create_pic_pixmap(box, rotation, width, height, flipped)
             }
 
 	    /* vertical swap */
-	    if ((!flipped && (rotation == 180 || rotation == 270)) ||
-		(flipped && !(rotation == 180 || rotation == 270))){
+	    if ((!flipped && (rotation == 90 || rotation == 180)) ||
+		( flipped && (rotation == 90 || rotation == 180))){
                 for( i=0; i<width; i++ ){
-                  p1 = data + (i * bpp);
+                  p1 = data + (i * image_bpp);
                   p2 = p1 + ((height - 1) * bpl);
-                  for( j=0; j<height/2; j++, p1 += (width-1)*bpp, p2 -= (width+1)*bpp ){
-                    for( k=0; k<bpp; k++, p1++, p2++ ){
+                  for( j=0; j<height/2; j++, p1 += (width-1)*image_bpp, p2 -= (width+1)*image_bpp ){
+                    for( k=0; k<image_bpp; k++, p1++, p2++ ){
                       tmp = *p1;
                       *p1 = *p2;
                       *p2 = tmp;
@@ -844,7 +882,7 @@ create_pic_pixmap(box, rotation, width, height, flipped)
             }
 
 	    image = XCreateImage(tool_d, tool_v, tool_dpth,
-				ZPixmap, 0, data, width, height, 8*bpp, 0);
+				ZPixmap, 0, data, width, height, 8, 0);
 	    box->pic->pixmap = XCreatePixmap(tool_d, canvas_win,
 				width, height, tool_dpth);
 	    XPutImage(tool_d, box->pic->pixmap, gc, image, 0, 0, 0, 0, width, height);
@@ -861,186 +899,151 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 
 /*********************** SPLINE ***************************/
 
+void
 draw_spline(spline, op)
     F_spline	   *spline;
     int		    op;
 {
+    Boolean         success;
     int		    xmin, ymin, xmax, ymax;
+    float           precision;
 
     spline_bound(spline, &xmin, &ymin, &xmax, &ymax);
     if (!overlapping(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax),
 		     clip_xmin, clip_ymin, clip_xmax, clip_ymax))
 	return;
 
-    if (int_spline(spline))
-	draw_intspline(spline, op);
-    else if (spline->type == T_CLOSED_NORMAL)
-	draw_closed_spline(spline, op);
-    else if (spline->type == T_OPEN_NORMAL)
-	draw_open_spline(spline, op);
-}
+    precision = (display_zoomscale < ZOOM_PRECISION) ? LOW_PRECISION 
+                                                     : HIGH_PRECISION;
 
-draw_intspline(spline, op)
-    F_spline	   *spline;
-    int		    op;
-{
-    F_point	   *p1, *p2;
-    F_control	   *cp1, *cp2;
+    if (open_spline(spline))
+	success = compute_open_spline(spline, precision);
+    else
+	success = compute_closed_spline(spline, precision);
+    if (success) {
+	/* setup clipping so that spline doesn't protrude beyond arrowhead */
+	/* also create the arrowheads */
+	clip_arrows(spline,O_SPLINE,op,4);
 
-    p1 = spline->points;
-    cp1 = spline->controls;
-    cp2 = cp1->next;
+	draw_point_array(canvas_win, op, spline->thickness, spline->style,
+		       spline->style_val, JOIN_MITER, spline->cap_style,
+		       spline->fill_style, spline->pen_color,
+		       spline->fill_color);
+	/* restore clipping */
+	set_clip_window(clip_xmin, clip_ymin, clip_xmax, clip_ymax);
 
-    if (!init_point_array(300, 200))
-	return;
-
-    for (p2 = p1->next, cp2 = cp1->next; p2 != NULL;
-	 p1 = p2, cp1 = cp2, p2 = p2->next, cp2 = cp2->next) {
-	bezier_spline((float) p1->x, (float) p1->y, cp1->rx, cp1->ry,
-		      cp2->lx, cp2->ly, (float) p2->x, (float) p2->y);
+	if (spline->back_arrow)	/* backward arrow  */
+	    draw_arrow(spline, spline->back_arrow, barpts, nbpts, op);
+	if (spline->for_arrow)	/* backward arrow  */
+	    draw_arrow(spline, spline->for_arrow, farpts, nfpts, op);
     }
-
-    if (!add_point(p1->x, p1->y))
-	too_many_points();
-
-    /* setup clipping so that spline doesn't protrude beyond arrowhead */
-    /* also create the arrowheads */
-    clip_arrows(spline,O_SPLINE,op);
-
-    /* draw the spline */
-    draw_point_array(canvas_win, op, spline->thickness, 
-			spline->style, spline->style_val, JOIN_BEVEL,
-			spline->type==T_CLOSED_INTERP? CAP_ROUND: spline->cap_style,
-			spline->fill_style, spline->pen_color, spline->fill_color);
-
-    /* restore clipping */
-    set_clip_window(clip_xmin, clip_ymin, clip_xmax, clip_ymax);
-
-    if (spline->back_arrow)
-	draw_arrow(spline, spline->back_arrow, barpts, nbpts, op);
-    if (spline->for_arrow)
-	draw_arrow(spline, spline->for_arrow, farpts, nfpts, op);
 }
 
-draw_open_spline(spline, op)
-    F_spline	   *spline;
-    int		    op;
+static Boolean
+compute_open_spline(spline, precision)
+     F_spline	   *spline;
+     float         precision;
 {
-    F_point	   *p;
-    float	    cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
-    float	    x1, y1, x2, y2;
+  int       k;
+  float     step;
+  F_point   *p0, *p1, *p2, *p3;
+  F_sfactor *s0, *s1, *s2, *s3;
 
-    if (!init_point_array(300, 200))
-	return;
+  if (!init_point_array(300, 200))
+      return False;
 
-    p = spline->points;
-    x1 = p->x;
-    y1 = p->y;
-    p = p->next;
-    x2 = p->x;
-    y2 = p->y;
-    cx1 = (x1 + x2) / 2;
-    cy1 = (y1 + y2) / 2;
-    cx2 = (cx1 + x2) / 2;
-    cy2 = (cy1 + y2) / 2;
-    if (!add_point(round(x1), round(y1)))
-	; /* error */
-    else {
-	    for (p = p->next; p != NULL; p = p->next) {
-		x1 = x2;
-		y1 = y2;
-		x2 = p->x;
-		y2 = p->y;
-		cx4 = (x1 + x2) / 2;
-		cy4 = (y1 + y2) / 2;
-		cx3 = (x1 + cx4) / 2;
-		cy3 = (y1 + cy4) / 2;
-		quadratic_spline(cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4);
-		cx1 = cx4;
-		cy1 = cy4;
-		cx2 = (cx1 + x2) / 2;
-		cy2 = (cy1 + y2) / 2;
-	    }
-    }
+  COPY_CONTROL_POINT(p0, s0, spline->points, spline->sfactors);
+  COPY_CONTROL_POINT(p1, s1, p0, s0);
+  /* first control point is needed twice for the first segment */
+  COPY_CONTROL_POINT(p2, s2, p1->next, s1->next);
 
-    add_point(round(cx1), round(cy1));
-    if (!add_point(round(x2), round(y2)))
-	too_many_points();
+  if (p2->next == NULL) {
+      COPY_CONTROL_POINT(p3, s3, p2, s2);
+  } else {
+      COPY_CONTROL_POINT(p3, s3, p2->next, s2->next);
+  }
 
-    /* setup clipping so that spline doesn't protrude beyond arrowhead */
-    /* also create the arrowheads */
-    clip_arrows(spline,O_SPLINE,op);
 
-    draw_point_array(canvas_win, op, spline->thickness, spline->style,
-		     spline->style_val, JOIN_BEVEL, spline->cap_style,
-		     spline->fill_style, spline->pen_color, spline->fill_color);
-
-    /* restore clipping */
-    set_clip_window(clip_xmin, clip_ymin, clip_xmax, clip_ymax);
-
-    if (spline->back_arrow)	/* backward arrow  */
-	draw_arrow(spline, spline->back_arrow, barpts, nbpts, op);
-    if (spline->for_arrow)	/* forward arrow  */
-	draw_arrow(spline, spline->for_arrow, farpts, nfpts, op);
+  for (k = 0 ;  ; k++) {
+      SPLINE_SEGMENT_LOOP(k, p0, p1, p2, p3, s1->s, s2->s, precision);
+      if (p3->next == NULL)
+	break;
+      NEXT_CONTROL_POINTS(p0, s0, p1, s1, p2, s2, p3, s3);
+  }
+  /* last control point is needed twice for the last segment */
+  COPY_CONTROL_POINT(p0, s0, p1, s1);
+  COPY_CONTROL_POINT(p1, s1, p2, s2);
+  COPY_CONTROL_POINT(p2, s2, p3, s3);
+  SPLINE_SEGMENT_LOOP(k, p0, p1, p2, p3, s1->s, s2->s, precision);
+  
+  if (!add_point(p3->x, p3->y))
+    too_many_points();
+  
+  return True;
 }
 
-draw_closed_spline(spline, op)
-    F_spline	   *spline;
-    int		    op;
+
+static Boolean
+compute_closed_spline(spline, precision)
+     F_spline	   *spline;
+     float         precision;
 {
-    F_point	   *p;
-    float	    cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
-    float	    x1, y1, x2, y2;
+  int k, npoints = num_points(spline->points), i;
+  float     step;
+  double    t;
+  F_point   *p0, *p1, *p2, *p3, *first;
+  F_sfactor *s0, *s1, *s2, *s3, *s_first;
 
-    if (!init_point_array(300, 200))
-	return;
+  if (!init_point_array(300, 200))
+      return False;
 
-    p = spline->points;
-    x1 = p->x;
-    y1 = p->y;
-    p = p->next;
-    x2 = p->x;
-    y2 = p->y;
-    cx1 = (x1 + x2) / 2;
-    cy1 = (y1 + y2) / 2;
-    cx2 = (x1 + 3 * x2) / 4;
-    cy2 = (y1 + 3 * y2) / 4;
+  INIT_CONTROL_POINTS(spline, p0, s0, p1, s1, p2, s2, p3, s3);
+  COPY_CONTROL_POINT(first, s_first, p0, s0); 
 
-    for (p = p->next; p != NULL; p = p->next) {
-	x1 = x2;
-	y1 = y2;
-	x2 = p->x;
-	y2 = p->y;
-	cx4 = (x1 + x2) / 2;
-	cy4 = (y1 + y2) / 2;
-	cx3 = (x1 + cx4) / 2;
-	cy3 = (y1 + cy4) / 2;
-	quadratic_spline(cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4);
-	cx1 = cx4;
-	cy1 = cy4;
-	cx2 = (cx1 + x2) / 2;
-	cy2 = (cy1 + y2) / 2;
-    }
-    x1 = x2;
-    y1 = y2;
-    p = spline->points->next;
-    x2 = p->x;
-    y2 = p->y;
-    cx4 = (x1 + x2) / 2;
-    cy4 = (y1 + y2) / 2;
-    cx3 = (x1 + cx4) / 2;
-    cy3 = (y1 + cy4) / 2;
-    quadratic_spline(cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4);
+  for (k = 0 ; p3 != NULL ; k++) {
+      SPLINE_SEGMENT_LOOP(k, p0, p1, p2, p3, s1->s, s2->s, precision);
+      NEXT_CONTROL_POINTS(p0, s0, p1, s1, p2, s2, p3, s3);
+  }
+  /* when we are at the end, join to the beginning */
+  COPY_CONTROL_POINT(p3, s3, first, s_first);
+  SPLINE_SEGMENT_LOOP(k, p0, p1, p2, p3, s1->s, s2->s, precision);
 
-    if (!add_point(round(cx4), round(cy4)))
-	too_many_points();
+  for (i=0; i<2; i++) {
+      k++;
+      NEXT_CONTROL_POINTS(p0, s0, p1, s1, p2, s2, p3, s3);
+      SPLINE_SEGMENT_LOOP(k, p0, p1, p2, p3, s1->s, s2->s, precision);
+  }
 
-    draw_point_array(canvas_win, op, spline->thickness, spline->style,
-		     spline->style_val, JOIN_BEVEL, 
-		     spline->style==DOTTED_LINE? CAP_ROUND: CAP_BUTT,
-		     spline->fill_style, spline->pen_color, spline->fill_color);
+  if (!add_point(points[0].x,points[0].y))
+    too_many_points();
+
+  return True;
 }
 
+
+void
+quick_draw_spline(spline, operator)
+     F_spline      *spline;
+     int           operator;
+{
+  int        k;
+  float     step;
+  F_point   *p0, *p1, *p2, *p3;
+  F_sfactor *s0, *s1, *s2, *s3;
+  
+  if (!init_point_array(300, 200))
+    return;
+
+  INIT_CONTROL_POINTS(spline, p0, s0, p1, s1, p2, s2, p3, s3);
+ 
+  for (k=0 ; p3!=NULL ; k++) {
+      SPLINE_SEGMENT_LOOP(k, p0, p1, p2, p3, s1->s, s2->s, LOW_PRECISION);
+      NEXT_CONTROL_POINTS(p0, s0, p1, s1, p2, s2, p3, s3);
+  }
+  draw_point_array(canvas_win, operator, spline->thickness, spline->style,
+		   spline->style_val, JOIN_MITER, spline->cap_style,
+		   spline->fill_style, spline->pen_color, spline->fill_color);
+}
 
 /*********************** TEXT ***************************/
 
@@ -1199,12 +1202,17 @@ tempXErrorHandler (display, event)
  themselves and put the polygons in farpts[nfpts] for forward
  arrow and barpts[nbpts] for backward arrow.
 
+ The points[] array must already have the points for the object
+ being drawn (spline, line etc), and npoints, the number of points.
+
+ "skip" points are skipped from each end of the points[] array (for splines)
 ****************************************************************/
 
-clip_arrows(obj, objtype, op)
+clip_arrows(obj, objtype, op, skip)
     F_line	   *obj;
     int		    objtype;
     int		    op;
+    int		    skip;
 {
     Region	    mainregion, newregion;
     Region	    region;
@@ -1213,6 +1221,7 @@ clip_arrows(obj, objtype, op)
     int		    bcx1, bcy1, bcx2, bcy2;
     int		    x, y;
     int		    i, j;
+
 
     if (obj->for_arrow || obj->back_arrow) {
 	/* start with current clipping area - maybe we won't have to draw anything */
@@ -1227,10 +1236,13 @@ clip_arrows(obj, objtype, op)
 	mainregion = XPolygonRegion(xpts, 4, WindingRule);
     }
 
+    if (skip > npoints-2)
+	skip = 0;
+
     /* get points for any forward arrowhead */
     if (obj->for_arrow) {
-	x = points[npoints-2].x;
-	y = points[npoints-2].y;
+	x = points[npoints-skip-2].x;
+	y = points[npoints-skip-2].y;
 	if (objtype == O_ARC) {
 	    F_arc  *a = (F_arc *) obj;
 	    compute_arcarrow_angle(a->center.x, a->center.y, a->point[2].x,
@@ -1271,8 +1283,8 @@ clip_arrows(obj, objtype, op)
 	
     /* get points for any backward arrowhead */
     if (obj->back_arrow) {
-	x = points[1].x;
-	y = points[1].y;
+	x = points[skip+1].x;
+	y = points[skip+1].y;
 	if (objtype == O_ARC) {
 	    F_arc  *a = (F_arc *) obj;
 	    compute_arcarrow_angle(a->center.x, a->center.y, a->point[0].x,
@@ -1617,148 +1629,296 @@ curve(window, xstart, ystart, xend, yend, draw_points, draw_center,
 
 /********************* CURVES FOR SPLINES *****************************
 
-	The following spline drawing routine is from
+ The following spline drawing routines are from
 
-	"An Algorithm for High-Speed Curve Generation"
-	by George Merrill Chaikin,
-	Computer Graphics and Image Processing, 3, Academic Press,
-	1974, 346-349.
+    "X-splines : A Spline Model Designed for the End User"
 
-	and
-
-	"On Chaikin's Algorithm" by R. F. Riesenfeld,
-	Computer Graphics and Image Processing, 4, Academic Press,
-	1975, 304-310.
+    by Carole BLANC and Christophe SCHLICK,
+    in Proceedings of SIGGRAPH ' 95
 
 ***********************************************************************/
 
-#define		half(z1, z2)	((z1+z2)/2.0)
-#define		THRESHOLD	5*ZOOM_FACTOR
+#define Q(s)  (-(s)/2.0)
+#define EQN_NUMERATOR(dim) \
+  (A_blend[0]*p0->dim+A_blend[1]*p1->dim+A_blend[2]*p2->dim+A_blend[3]*p3->dim)
 
-/* iterative version */
-/*
- * because we draw the spline with small line segments, the style parameter
- * doesn't work
- */
-
-quadratic_spline(a1, b1, a2, b2, a3, b3, a4, b4)
-    float	    a1, b1, a2, b2, a3, b3, a4, b4;
+static INLINE double
+f_blend(numerator, denominator)
+     double numerator, denominator;
 {
-    register float  xmid, ymid;
-    float	    x1, y1, x2, y2, x3, y3, x4, y4;
+  double p = 2 * denominator * denominator;
+  double u = numerator / denominator;
+  double u2 = u * u;
 
-    clear_stack();
-    push(a1, b1, a2, b2, a3, b3, a4, b4);
+  return (u * u2 * (10 - p + (2*p - 15)*u + (6 - p)*u2));
+}
 
-    while (pop(&x1, &y1, &x2, &y2, &x3, &y3, &x4, &y4)) {
-	xmid = half(x2, x3);
-	ymid = half(y2, y3);
-	if (fabs(x1 - xmid) < THRESHOLD && fabs(y1 - ymid) < THRESHOLD &&
-	    fabs(xmid - x4) < THRESHOLD && fabs(ymid - y4) < THRESHOLD) {
-	    if (!add_point(round(x1), round(y1)))
-		break;
-	    if (!add_point(round(xmid), round(ymid)))
-		break;
-	} else {
-	    push(xmid, ymid, half(xmid, x3), half(ymid, y3),
-		 half(x3, x4), half(y3, y4), x4, y4);
-	    push(x1, y1, half(x1, x2), half(y1, y2),
-		 half(x2, xmid), half(y2, ymid), xmid, ymid);
+static INLINE double
+g_blend(u, q)             /* p equals 2 */
+     double u, q;
+{
+  return(u*(q + u*(2*q + u*(8 - 12*q + u*(14*q - 11 + u*(4 - 5*q))))));
+}
+
+static INLINE double
+h_blend(u, q)
+     double u, q;
+{
+  double u2=u*u;
+   return (u * (q + u * (2 * q + u2 * (-2*q - u*q))));
+}
+
+static INLINE
+negative_s1_influence(t, s1, A0, A2)
+     double       t, s1, *A0 ,*A2;
+{
+  *A0 = h_blend(-t, Q(s1));
+  *A2 = g_blend(t, Q(s1));
+}
+
+static INLINE
+negative_s2_influence(t, s2, A1, A3)
+     double       t, s2, *A1 ,*A3;
+{
+  *A1 = g_blend(1-t, Q(s2));
+  *A3 = h_blend(t-1, Q(s2));
+}
+
+static INLINE
+positive_s1_influence(k, t, s1, A0, A2)
+     int          k;
+     double       t, s1, *A0 ,*A2;
+{
+  double Tk;
+  
+  Tk = k+1+s1;
+  *A0 = (t+k+1<Tk) ? f_blend(t+k+1-Tk, k-Tk) : 0.0;
+  
+  Tk = k+1-s1;
+  *A2 = f_blend(t+k+1-Tk, k+2-Tk);
+}
+
+static INLINE
+positive_s2_influence(k, t, s2, A1, A3)
+     int          k;
+     double       t, s2, *A1 ,*A3;
+{
+  double Tk;
+
+  Tk = k+2+s2; 
+  *A1 = f_blend(t+k+1-Tk, k+1-Tk);
+  
+  Tk = k+2-s2;
+  *A3 = (t+k+1>Tk) ? f_blend(t+k+1-Tk, k+3-Tk) : 0.0;
+}
+
+static INLINE
+point_adding(A_blend, p0, p1, p2, p3)
+     F_point     *p0, *p1, *p2, *p3;
+     double      *A_blend;
+{
+  double weights_sum;
+
+  weights_sum = A_blend[0] + A_blend[1] + A_blend[2] + A_blend[3];
+  if (!add_point(round(EQN_NUMERATOR(x) / (weights_sum)),
+		 round(EQN_NUMERATOR(y) / (weights_sum))))
+      too_many_points();
+}
+
+static INLINE
+point_computing(A_blend, p0, p1, p2, p3, x, y)
+     F_point     *p0, *p1, *p2, *p3;
+     double      *A_blend;
+     int         *x, *y;
+{
+  double weights_sum;
+
+  weights_sum = A_blend[0] + A_blend[1] + A_blend[2] + A_blend[3];
+
+  *x = round(EQN_NUMERATOR(x) / (weights_sum));
+  *y = round(EQN_NUMERATOR(y) / (weights_sum));
+}
+
+static float
+step_computing(k, p0, p1, p2, p3, s1, s2, precision)
+     int     k;
+     F_point *p0, *p1, *p2, *p3;
+     double  s1, s2;
+     float   precision;
+{
+  double A_blend[4];
+  int    xstart, ystart, xend, yend, xmid, ymid, xlength, ylength;
+  int    start_to_end_dist, number_of_steps;
+  float  step, angle_cos, scal_prod, xv1, xv2, yv1, yv2, sides_length_prod;
+  
+  /* This function computes the step used to draw the segment (p1, p2)
+     (xv1, yv1) : coordinates of the vector from middle to origin
+     (xv2, yv2) : coordinates of the vector from middle to extremity */
+
+  if ((s1 == 0) && (s2 == 0))
+    return(1.0);              /* only one step in case of linear segment */
+
+  /* compute coordinates of the origin */
+  if (s1>0)
+    {
+      if (s2<0)
+	{
+	  positive_s1_influence(k, 0.0, s1, &A_blend[0], &A_blend[2]);
+	  negative_s2_influence(0.0, s2, &A_blend[1], &A_blend[3]); 
 	}
+      else
+	{
+	  positive_s1_influence(k, 0.0, s1, &A_blend[0], &A_blend[2]);
+	  positive_s2_influence(k, 0.0, s2, &A_blend[1], &A_blend[3]); 
+	}
+      point_computing(A_blend, p0, p1, p2, p3, &xstart, &ystart);
+    }
+  else
+    {
+      xstart = p1->x;
+      ystart = p1->y;
+    }
+  
+  /* compute coordinates  of the extremity */
+  if (s2>0)
+    {
+      if (s1<0)
+	{
+	  negative_s1_influence(1.0, s1, &A_blend[0], &A_blend[2]);
+	  positive_s2_influence(k, 1.0, s2, &A_blend[1], &A_blend[3]);
+	}
+      else
+	{
+	  positive_s1_influence(k, 1.0, s1, &A_blend[0], &A_blend[2]);
+	  positive_s2_influence(k, 1.0, s2, &A_blend[1], &A_blend[3]); 
+	}
+      point_computing(A_blend, p0, p1, p2, p3, &xend, &yend);
+    }
+  else
+    {
+      xend = p2->x;
+      yend = p2->y;
+    }
+
+  /* compute coordinates  of the middle */
+  if (s2>0)
+    {
+      if (s1<0)
+	{
+	  negative_s1_influence(0.5, s1, &A_blend[0], &A_blend[2]);
+	  positive_s2_influence(k, 0.5, s2, &A_blend[1], &A_blend[3]);
+	}
+      else
+	{
+	  positive_s1_influence(k, 0.5, s1, &A_blend[0], &A_blend[2]);
+	  positive_s2_influence(k, 0.5, s2, &A_blend[1], &A_blend[3]); 
+	}
+    }
+  else if (s1<0)
+    {
+      negative_s1_influence(0.5, s1, &A_blend[0], &A_blend[2]);
+      negative_s2_influence(0.5, s2, &A_blend[1], &A_blend[3]);
+    }
+  else
+    {
+      positive_s1_influence(k, 0.5, s1, &A_blend[0], &A_blend[2]);
+      negative_s2_influence(0.5, s2, &A_blend[1], &A_blend[3]);
+    }
+  point_computing(A_blend, p0, p1, p2, p3, &xmid, &ymid);
+
+  xv1 = xstart - xmid;
+  yv1 = ystart - ymid;
+  xv2 = xend - xmid;
+  yv2 = yend - ymid;
+
+  scal_prod = xv1*xv2 + yv1*yv2;
+  
+  sides_length_prod = sqrt((xv1*xv1 + yv1*yv1)*(xv2*xv2 + yv2*yv2));
+
+  /* compute cosinus of origin-middle-extremity angle, which approximates the
+     curve of the spline segment */
+  if (sides_length_prod == 0.0)
+    angle_cos = 0.0;
+  else
+    angle_cos = scal_prod/sides_length_prod; 
+
+  xlength = xend - xstart;
+  ylength = yend - ystart;
+
+  start_to_end_dist = sqrt(xlength*xlength + ylength*ylength);
+
+  /* more steps if segment's origin and extremity are remote */
+  number_of_steps = sqrt(start_to_end_dist)/2;
+
+  /* more steps if the curve is high */
+  number_of_steps += (int)((1 + angle_cos)*10);
+
+  if (number_of_steps == 0)
+    step = 1;
+  else
+    step = precision/number_of_steps;
+  
+  if ((step > MAX_SPLINE_STEP) || (step == 0))
+    step = MAX_SPLINE_STEP;
+  return (step);
+}
+
+static void
+spline_segment_computing(step, k, p0, p1, p2, p3, s1, s2)
+     float   step;
+     F_point *p0, *p1, *p2, *p3;
+     int     k;
+     double  s1, s2;
+{
+  double A_blend[4];
+  double t;
+  
+  if (s1<0)
+    {  
+     if (s2<0)
+       {
+	 for (t=0.0 ; t<1 ; t+=step)
+	   {
+	     negative_s1_influence(t, s1, &A_blend[0], &A_blend[2]);
+	     negative_s2_influence(t, s2, &A_blend[1], &A_blend[3]);
+
+	     point_adding(A_blend, p0, p1, p2, p3);
+	   }
+       }
+     else
+       {
+	 for (t=0.0 ; t<1 ; t+=step)
+	   {
+	     negative_s1_influence(t, s1, &A_blend[0], &A_blend[2]);
+	     positive_s2_influence(k, t, s2, &A_blend[1], &A_blend[3]);
+
+	     point_adding(A_blend, p0, p1, p2, p3);
+	   }
+       }
+   }
+  else if (s2<0)
+    {
+      for (t=0.0 ; t<1 ; t+=step)
+	   {
+	     positive_s1_influence(k, t, s1, &A_blend[0], &A_blend[2]);
+	     negative_s2_influence(t, s2, &A_blend[1], &A_blend[3]);
+
+	     point_adding(A_blend, p0, p1, p2, p3);
+	   }
+    }
+  else
+    {
+      for (t=0.0 ; t<1 ; t+=step)
+	   {
+	     positive_s1_influence(k, t, s1, &A_blend[0], &A_blend[2]);
+	     positive_s2_influence(k, t, s2, &A_blend[1], &A_blend[3]);
+
+	     point_adding(A_blend, p0, p1, p2, p3);
+	   } 
     }
 }
 
-/*
- * the style parameter doesn't work for splines because we use small line
- * segments
- */
 
-bezier_spline(a0, b0, a1, b1, a2, b2, a3, b3)
-    float	    a0, b0, a1, b1, a2, b2, a3, b3;
-{
-    register float  tx, ty;
-    float	    x0, y0, x1, y1, x2, y2, x3, y3;
-    float	    sx1, sy1, sx2, sy2, tx1, ty1, tx2, ty2, xmid, ymid;
-
-    clear_stack();
-    push(a0, b0, a1, b1, a2, b2, a3, b3);
-
-    while (pop(&x0, &y0, &x1, &y1, &x2, &y2, &x3, &y3)) {
-	if (fabs(x0 - x3) < THRESHOLD && fabs(y0 - y3) < THRESHOLD) {
-	    if (!add_point(round(x0), round(y0)))
-		break;
-	} else {
-	    tx = half(x1, x2);
-	    ty = half(y1, y2);
-	    sx1 = half(x0, x1);
-	    sy1 = half(y0, y1);
-	    sx2 = half(sx1, tx);
-	    sy2 = half(sy1, ty);
-	    tx2 = half(x2, x3);
-	    ty2 = half(y2, y3);
-	    tx1 = half(tx2, tx);
-	    ty1 = half(ty2, ty);
-	    xmid = half(sx2, tx1);
-	    ymid = half(sy2, ty1);
-
-	    push(xmid, ymid, tx1, ty1, tx2, ty2, x3, y3);
-	    push(x0, y0, sx1, sy1, sx2, sy2, xmid, ymid);
-	}
-    }
-}
-
-/* utilities used by spline drawing routines */
-
-#define		STACK_DEPTH		20
-
-typedef struct stack {
-    float	    x1, y1, x2, y2, x3, y3, x4, y4;
-}
-		Stack;
-
-static Stack	stack[STACK_DEPTH];
-static Stack   *stack_top;
-static int	stack_count;
-
-clear_stack()
-{
-    stack_top = stack;
-    stack_count = 0;
-}
-
-push(x1, y1, x2, y2, x3, y3, x4, y4)
-    float	    x1, y1, x2, y2, x3, y3, x4, y4;
-{
-    stack_top->x1 = x1;
-    stack_top->y1 = y1;
-    stack_top->x2 = x2;
-    stack_top->y2 = y2;
-    stack_top->x3 = x3;
-    stack_top->y3 = y3;
-    stack_top->x4 = x4;
-    stack_top->y4 = y4;
-    stack_top++;
-    stack_count++;
-}
-
-int
-pop(x1, y1, x2, y2, x3, y3, x4, y4)
-    float	   *x1, *y1, *x2, *y2, *x3, *y3, *x4, *y4;
-{
-    if (stack_count == 0)
-	return (0);
-    stack_top--;
-    stack_count--;
-    *x1 = stack_top->x1;
-    *y1 = stack_top->y1;
-    *x2 = stack_top->x2;
-    *y2 = stack_top->y2;
-    *x3 = stack_top->x3;
-    *y3 = stack_top->y3;
-    *x4 = stack_top->x4;
-    *y4 = stack_top->y4;
-    return (1);
-}
 
 /* redraw all the picture objects */
 
@@ -1776,4 +1936,5 @@ redraw_images(obj)
 		redisplay_line(l);
     }
 }
+
 

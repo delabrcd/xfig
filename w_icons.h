@@ -1,3 +1,5 @@
+#ifndef W_ICONS_H
+#define W_ICONS_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
@@ -17,9 +19,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 typedef struct _icon_struct {
@@ -47,6 +46,7 @@ extern icon_struct	arc_box_ic;
 extern icon_struct	cirrad_ic;
 extern icon_struct	cirdia_ic;
 extern icon_struct	c_spl_ic;
+extern icon_struct	c_xspl_ic;
 extern icon_struct	copy_ic;
 extern icon_struct	glue_ic;
 extern icon_struct	break_ic;
@@ -121,3 +121,5 @@ extern icon_struct	barrows_ic;
 extern icon_struct	fbarrows_ic;
 extern icon_struct	open_arc_ic;
 extern icon_struct	pie_wedge_arc_ic;
+extern icon_struct	xspl_ic;
+#endif /* W_ICONS_H */

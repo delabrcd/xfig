@@ -17,9 +17,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -36,7 +33,6 @@
 
 extern Boolean	file_msg_is_popped;
 extern Widget	file_msg_popup;
-extern Widget	make_popup_menu();
 extern char    *panel_get_value();
 extern Boolean	popup_up;
 
@@ -89,7 +85,7 @@ static String	file_translations =
 static XtActionsRec	file_actions[] =
 {
     {"DismissFile", (XtActionProc) file_panel_cancel},
-    {"cancel", (XtActionProc) file_panel_cancel},
+    {"file_cancel", (XtActionProc) file_panel_cancel},
     {"load", (XtActionProc) do_load},
     {"save", (XtActionProc) do_save},
     {"merge", (XtActionProc) do_merge},
@@ -173,7 +169,7 @@ do_load(w, ev)
        is empty, popup the file panel to force him/her to enter a name */
     if (emptyname(cur_filename) && !file_up) {
 	put_msg("No filename, please enter name");
-	XBell(tool_d,0);
+	beep();
 	popup_file_panel(w);
 	return;
     }
@@ -226,7 +222,7 @@ do_save(w)
        is empty, popup the file panel to force him/her to enter a name */
     if (emptyname(cur_filename) && !file_up) {
 	put_msg("No filename, please enter name");
-	XBell(tool_d,0);
+	beep();
 	popup_file_panel(w);
 	return;
     }

@@ -1,3 +1,5 @@
+#ifndef W_DIR_H
+#define W_DIR_H
 /* This file is part of xdir, an X-based directory browser.
  *
  * Parts Copyright (c) 1994 by Brian V. Smith
@@ -17,9 +19,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  *
  *	Created: 13 Aug 88
  *
@@ -77,3 +76,4 @@ Boolean		MakeFileList();
 char	       *SaveString();
 void		MakeFullPath();
 Boolean		IsDirectory();
+#endif /* W_DIR_H */

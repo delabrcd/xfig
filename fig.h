@@ -1,3 +1,5 @@
+#ifndef FIG_H
+#define FIG_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
@@ -18,9 +20,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 /* For the X stuff, include only Xlib.h and Intrinsic.h here - 
@@ -347,6 +346,14 @@ extern char *getenv();
 #define		signof(a)	(((a) < 0) ? -1 : 1)
 
 #define		DEF_NAME	"unnamed.fig"
+
+#ifdef USE_INLINE
+#define INLINE inline
+#else
+#define INLINE
+#endif /* USE_INLINE */
+
+#endif /* FIG_H */
 
 #ifdef NOSTRSTR
 extern char *strstr();

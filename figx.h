@@ -1,3 +1,5 @@
+#ifndef FIGX_H
+#define FIGX_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1994 by Brian V. Smith
@@ -16,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include <X11/cursorfont.h>
@@ -44,3 +43,4 @@
 #include <X11/Xaw/Paned.h>
 #include <X11/Xaw/Viewport.h>
 #include <X11/Xaw/List.h>
+#endif /* FIGX_H */

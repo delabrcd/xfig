@@ -18,18 +18,20 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
 #include "resources.h"
 #include "mode.h"
 #include "object.h"
+#include "u_create.h"
 #include "w_setup.h"
+#include "w_zoom.h"
+
+
 
 extern int	num_object;
+
 
 write_file(file_name)
     char	   *file_name;
@@ -46,11 +48,16 @@ write_file(file_name)
     num_object = 0;
     if (write_objects(fp)) {
 	put_msg("Error writing file %s, %s", file_name, sys_errlist[errno]);
+	exit (2);
 	return (-1);
     }
     put_msg("%d object(s) saved in \"%s\"", num_object, file_name);
     return (0);
 }
+
+
+/* for fig2dev */
+
 
 int
 write_objects(fp)
@@ -100,6 +107,8 @@ write_objects(fp)
     }
     if (fclose(fp) == EOF)
 	return (-1);
+
+
     return (0);
 }
 
@@ -110,6 +119,10 @@ write_file_header(fp)
     fprintf(fp, appres.landscape? "Landscape\n": "Portrait\n");
     fprintf(fp, appres.flushleft? "Flush left\n": "Center\n");
     fprintf(fp, appres.INCHES? "Inches\n": "Metric\n");
+    fprintf(fp, "%s\n", paper_sizes[appres.papersize].sname);
+    fprintf(fp, "%.2f\n", appres.magnification);
+    fprintf(fp, "%s\n", appres.multiple? "Multiple": "Single");
+    fprintf(fp, "%d\n", appres.transparent);
     fprintf(fp, "%d %d\n", PIX_PER_INCH, 2);
     /* write the user color definitions (if any) */
     write_colordefs(fp);
@@ -241,11 +254,13 @@ write_line(fp, l)
     fprintf(fp, "\n");
 }
 
+
+
 write_spline(fp, s)
     FILE	   *fp;
     F_spline	   *s;
 {
-    F_control	   *cp;
+    F_sfactor	   *cp;
     F_point	   *p;
     F_arrow	   *f, *b;
     int		   npts;
@@ -277,14 +292,18 @@ write_spline(fp, s)
     };
     fprintf(fp, "\n");
 
-    if (s->controls == NULL)
+    if (s->sfactors == NULL)
 	return;
+
+
+
+/* save new shape factor */
+
     fprintf(fp, "\t");
     npts=0;
-    for (cp = s->controls; cp != NULL; cp = cp->next) {
-	fprintf(fp, " %.2f %.2f %.2f %.2f",
-		cp->lx, cp->ly, cp->rx, cp->ry);
-	if (++npts >= 2 && cp->next != NULL) {
+    for (cp = s->sfactors; cp != NULL; cp = cp->next) {
+	fprintf(fp, " %.3f",cp->s);
+	if (++npts >= 8 && cp->next != NULL) {
 		fprintf(fp,"\n\t");
 		npts=0;
 	}
@@ -337,7 +356,12 @@ emergency_save(file_name)
     num_object = 0;
     if (write_objects(fp))
 	return (-1);
-    (void) fprintf(stderr, "xfig: %d object(s) saved in \"%s\"\n",
+    if (file_name[0] != '/') {
+	(void) fprintf(stderr, "xfig: %d object(s) saved in \"%s/%s\"\n",
+		   num_object, cur_dir, file_name);
+    } else {
+	(void) fprintf(stderr, "xfig: %d object(s) saved in \"%s\"\n",
 		   num_object, file_name);
+    }
     return (0);
 }

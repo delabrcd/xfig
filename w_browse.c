@@ -17,9 +17,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -47,17 +44,17 @@ static Widget	browse_panel,
 
 static String	file_list_translations =
 	"<Btn1Down>,<Btn1Up>: Set()Notify()\n\
-	<Btn1Up>(2): apply()\n\
-	<Key>Return: apply()\n";
+	<Btn1Up>(2): ApplyBrowse()\n\
+	<Key>Return: ApplyBrowse()\n";
 
 static String	file_name_translations =
-	"<Key>Return: apply()\n";
+	"<Key>Return: ApplyBrowse()\n";
 static void	browse_panel_close();
 void		got_browse();
 
 static XtActionsRec	file_name_actions[] =
 {
-    {"apply", (XtActionProc) got_browse},
+    {"ApplyBrowse", (XtActionProc) got_browse},
 };
 
 static String	file_translations =
@@ -66,8 +63,8 @@ static String	file_translations =
 static XtActionsRec	file_actions[] =
 {
     {"DismissBrowse", (XtActionProc) browse_panel_close},
-    {"close", (XtActionProc) browse_panel_close},
-    {"apply", (XtActionProc) got_browse},
+    {"CloseBrowse", (XtActionProc) browse_panel_close},
+    {"ApplyBrowse", (XtActionProc) got_browse},
 };
 
 static char browse_filename[PATH_MAX];

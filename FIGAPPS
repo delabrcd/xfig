@@ -1,6 +1,20 @@
 The following are applications which can produce Fig files as their output:
 
 ************************************************************************
+xfigbar and xfigpie - Two C programs to produce bar and pie charts as Fig
+	files.  Written by John Conover <john@johncon.johncon.com>,
+	these programs are available by sending email thus:
+
+	mail info-request@johncon.com
+	Subject: archive
+
+	get xfigutilities.shar
+************************************************************************
+mifXfig - MIF to XFig and XFig to MIF Converter 
+	see http://www.ida.liu.se/~vaden/teaching/m2f/ for details, but it
+	basically converts to and from MIF and Fig files
+	From Vadim Engelson (vaden@ida.liu.se)
+************************************************************************
 pstoedit - converts Postscript(TM) files to other vector graphic formats
 	that can be edited. Besides Fig output, tgif, Framemaker(TM) (MIF-
 	format) and flattened PostScript are supported along with several
@@ -8,12 +22,8 @@ pstoedit - converts Postscript(TM) files to other vector graphic formats
 	You need a C++ compiler to install and GhostScript to run pstoedit.
 	pstoedit should run on all Un*x like systems and has also been ported
 	to OS/2 and DOS.
-	The newest version as of this writing (9 Jul 1996) is 2.41 and is
-	available from:
 
-	ftp://ftp.x.org/contrib/applications/tgif/pstoedit/pstoedit.2.41.tar.gz
-	ftp://ftp.cs.ucla.edu/pub/tgif/pstoedit/pstoedit.2.41.tar.gz
-	ftp://bourbon.cs.ucla.edu/pub/pstoedit/pstoedit.2.41.tar.gz
+	ftp://ftp.x.org/contrib/applications/pstoedit/pstoedit.html
 
 ************************************************************************
 hp2xx - converts HPGL to EPS, LaTex, Fig or simplified HPGL converter

@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -28,11 +25,15 @@
 #include "object.h"
 #include "mode.h"
 #include "paintop.h"
+#include "u_markers.h"
 #include "w_zoom.h"
 
 #define set_marker(win,x,y,w,h) \
 	XDrawRectangle(tool_d,(win),gccache[INV_PAINT], \
 	     ZOOMX(x)-((w-1)/2),ZOOMY(y)-((w-1)/2),(w),(h))
+
+#define CHANGED_MASK(msk) \
+    ((oldmask & msk) != (newmask & msk))
 
 center_marker(x, y)
     int		    x, y;
@@ -72,7 +73,7 @@ compound_in_mask()
 
 anytext_in_mask()
 {
-    return ((cur_objmask & M_TEXT_NORMAL) || (cur_objmask & M_TEXT_HIDDEN));
+    return (cur_objmask & M_TEXT);
 }
 
 validtext_in_mask(t)
@@ -84,9 +85,7 @@ validtext_in_mask(t)
 
 anyline_in_mask()
 {
-    return ((cur_objmask & M_POLYLINE_LINE) ||
-	    (cur_objmask & M_POLYLINE_POLYGON) ||
-	    (cur_objmask & M_POLYLINE_BOX));
+    return (cur_objmask & M_POLYLINE);
 }
 
 validline_in_mask(l)
@@ -101,19 +100,18 @@ validline_in_mask(l)
 
 anyspline_in_mask()
 {
-    return ((cur_objmask & M_SPLINE_O_NORMAL) ||
-	    (cur_objmask & M_SPLINE_O_INTERP) ||
-	    (cur_objmask & M_SPLINE_C_NORMAL) ||
-	    (cur_objmask & M_SPLINE_C_INTERP));
+    return (cur_objmask & M_SPLINE);
 }
 
 validspline_in_mask(s)
     F_spline	   *s;
 {
     return (((s->type == T_OPEN_INTERP) && (cur_objmask & M_SPLINE_O_INTERP)) ||
-	((s->type == T_OPEN_NORMAL) && (cur_objmask & M_SPLINE_O_NORMAL)) ||
+	    ((s->type == T_OPEN_APPROX) && (cur_objmask & M_SPLINE_O_APPROX))   ||
+	    ((s->type == T_OPEN_XSPLINE) && (cur_objmask & M_SPLINE_O_XSPLINE)) ||
       ((s->type == T_CLOSED_INTERP) && (cur_objmask & M_SPLINE_C_INTERP)) ||
-       ((s->type == T_CLOSED_NORMAL) && (cur_objmask & M_SPLINE_C_NORMAL)));
+	    ((s->type == T_CLOSED_APPROX) && (cur_objmask & M_SPLINE_C_APPROX)) ||
+	    ((s->type == T_CLOSED_XSPLINE) && (cur_objmask & M_SPLINE_C_XSPLINE)));
 }
 
 mask_toggle_ellipsemarker(e)
@@ -178,7 +176,7 @@ toggle_markers_in_compound(cmpnd)
     if (mask & M_ELLIPSE)
 	for (e = cmpnd->ellipses; e != NULL; e = e->next)
 	    toggle_ellipsemarker(e);
-    if ((mask & M_TEXT_NORMAL) || (mask & M_TEXT_HIDDEN))
+    if (mask & M_TEXT)
 	for (t = cmpnd->texts; t != NULL; t = t->next) {
 	    if ((hidden_text(t) && (mask & M_TEXT_HIDDEN)) ||
 		((!hidden_text(t)) && (mask & M_TEXT_NORMAL)))
@@ -187,9 +185,7 @@ toggle_markers_in_compound(cmpnd)
     if (mask & M_ARC)
 	for (a = cmpnd->arcs; a != NULL; a = a->next)
 	    toggle_arcmarker(a);
-    if ((mask & M_POLYLINE_LINE) ||
-	(mask & M_POLYLINE_POLYGON) ||
-	(mask & M_POLYLINE_BOX))
+    if (mask & M_POLYLINE)
 	for (l = cmpnd->lines; l != NULL; l = l->next) {
 	    if ((((l->type == T_BOX) ||
 		  (l->type == T_ARC_BOX)) && (mask & M_POLYLINE_BOX)) ||
@@ -198,13 +194,14 @@ toggle_markers_in_compound(cmpnd)
 		((l->type == T_POLYGON) && (mask & M_POLYLINE_POLYGON)))
 		toggle_linemarker(l);
 	}
-    if ((mask & M_SPLINE_O_NORMAL) || (mask & M_SPLINE_O_INTERP) ||
-	(mask & M_SPLINE_C_NORMAL) || (mask & M_SPLINE_C_INTERP))
+    if (mask & M_SPLINE)
 	for (s = cmpnd->splines; s != NULL; s = s->next) {
 	    if (((s->type == T_OPEN_INTERP) && (mask & M_SPLINE_O_INTERP)) ||
-		((s->type == T_OPEN_NORMAL) && (mask & M_SPLINE_O_NORMAL)) ||
+		((s->type == T_OPEN_APPROX) && (mask & M_SPLINE_O_APPROX))   ||
+		((s->type == T_OPEN_XSPLINE) && (mask & M_SPLINE_O_XSPLINE)) ||
 	     ((s->type == T_CLOSED_INTERP) && (mask & M_SPLINE_C_INTERP)) ||
-		((s->type == T_CLOSED_NORMAL) && (mask & M_SPLINE_C_NORMAL)))
+		((s->type == T_CLOSED_APPROX) && (mask & M_SPLINE_C_APPROX)) ||
+		((s->type == T_CLOSED_XSPLINE) && (mask & M_SPLINE_C_XSPLINE)))
 		toggle_splinemarker(s);
 	}
     if (mask & M_COMPOUND)
@@ -225,59 +222,46 @@ update_markers(mask)
 
     oldmask = cur_objmask;
     newmask = mask;
-    if ((oldmask & M_ELLIPSE) != (newmask & M_ELLIPSE))
+    if (CHANGED_MASK(M_ELLIPSE))
 	for (e = objects.ellipses; e != NULL; e = e->next)
 	    toggle_ellipsemarker(e);
-    if (((oldmask & M_TEXT_NORMAL) != (newmask & M_TEXT_NORMAL)) ||
-	((oldmask & M_TEXT_HIDDEN) != (newmask & M_TEXT_HIDDEN)))
+    if (CHANGED_MASK(M_TEXT_NORMAL) || CHANGED_MASK(M_TEXT_HIDDEN))
 	for (t = objects.texts; t != NULL; t = t->next) {
-	    if ((hidden_text(t) &&
-		 ((oldmask & M_TEXT_HIDDEN) != (newmask & M_TEXT_HIDDEN))) ||
-		((!hidden_text(t)) &&
-		 ((oldmask & M_TEXT_NORMAL) != (newmask & M_TEXT_NORMAL))))
-		toggle_textmarker(t);
+	    if ((hidden_text(t) && CHANGED_MASK(M_TEXT_HIDDEN))   ||
+		((!hidden_text(t)) && CHANGED_MASK(M_TEXT_NORMAL)))
+	      toggle_textmarker(t);
 	}
-    if ((oldmask & M_ARC) != (newmask & M_ARC))
+    if (CHANGED_MASK(M_ARC))
 	for (a = objects.arcs; a != NULL; a = a->next)
 	    toggle_arcmarker(a);
-    if (((oldmask & M_POLYLINE_LINE) != (newmask & M_POLYLINE_LINE)) ||
-	((oldmask & M_POLYLINE_POLYGON) != (newmask & M_POLYLINE_POLYGON)) ||
-	((oldmask & M_POLYLINE_BOX) != (newmask & M_POLYLINE_BOX)))
+    if (CHANGED_MASK(M_POLYLINE_LINE) ||
+	CHANGED_MASK(M_POLYLINE_POLYGON) ||
+	CHANGED_MASK(M_POLYLINE_BOX))
 	for (l = objects.lines; l != NULL; l = l->next) {
-	    if ((((l->type == T_BOX) ||
-		  (l->type == T_ARC_BOX || l->type == T_PICTURE)) &&
-	      ((oldmask & M_POLYLINE_BOX) != (newmask & M_POLYLINE_BOX))) ||
-		((l->type == T_POLYLINE) &&
-	    ((oldmask & M_POLYLINE_LINE) != (newmask & M_POLYLINE_LINE))) ||
-		((l->type == T_POLYGON) &&
-		 ((oldmask & M_POLYLINE_POLYGON) != (newmask & M_POLYLINE_POLYGON))))
-		toggle_linemarker(l);
+	    if ((((l->type == T_BOX || l->type == T_ARC_BOX || 
+		   l->type == T_PICTURE)) &&
+		 CHANGED_MASK(M_POLYLINE_BOX)) ||
+		((l->type == T_POLYLINE) && CHANGED_MASK(M_POLYLINE_LINE)) ||
+		((l->type == T_POLYGON) && CHANGED_MASK(M_POLYLINE_POLYGON)))
+	      toggle_linemarker(l);
 	}
-    if (((oldmask & M_SPLINE_O_NORMAL) != (newmask & M_SPLINE_O_NORMAL)) ||
-	((oldmask & M_SPLINE_O_INTERP) != (newmask & M_SPLINE_O_INTERP)) ||
-	((oldmask & M_SPLINE_C_NORMAL) != (newmask & M_SPLINE_C_NORMAL)) ||
-	((oldmask & M_SPLINE_C_INTERP) != (newmask & M_SPLINE_C_INTERP)))
+    if (CHANGED_MASK(M_SPLINE_O_APPROX) || CHANGED_MASK(M_SPLINE_C_APPROX) ||
+	CHANGED_MASK(M_SPLINE_O_INTERP) || CHANGED_MASK(M_SPLINE_C_INTERP) ||
+	CHANGED_MASK(M_SPLINE_O_XSPLINE) || CHANGED_MASK(M_SPLINE_C_XSPLINE))
 	for (s = objects.splines; s != NULL; s = s->next) {
-	    if (((s->type == T_OPEN_INTERP) &&
-		 ((oldmask & M_SPLINE_O_INTERP) !=
-		  (newmask & M_SPLINE_O_INTERP))) ||
-		((s->type == T_OPEN_NORMAL) &&
-		 ((oldmask & M_SPLINE_O_NORMAL) !=
-		  (newmask & M_SPLINE_O_NORMAL))) ||
-		((s->type == T_CLOSED_INTERP) &&
-		 ((oldmask & M_SPLINE_C_INTERP) !=
-		  (newmask & M_SPLINE_C_INTERP))) ||
-		((s->type == T_CLOSED_NORMAL) &&
-		 ((oldmask & M_SPLINE_C_NORMAL) !=
-		  (newmask & M_SPLINE_C_NORMAL))))
-		toggle_splinemarker(s);
-	}
-    if ((oldmask & M_COMPOUND) != (newmask & M_COMPOUND))
+	  if (((s->type == T_OPEN_INTERP) && CHANGED_MASK(M_SPLINE_O_INTERP)) ||
+	      ((s->type == T_OPEN_APPROX) && CHANGED_MASK(M_SPLINE_O_APPROX)) ||
+	      ((s->type == T_OPEN_XSPLINE) && CHANGED_MASK(M_SPLINE_O_XSPLINE)) ||
+	      ((s->type == T_CLOSED_INTERP) && CHANGED_MASK(M_SPLINE_C_INTERP)) ||
+	      ((s->type == T_CLOSED_APPROX) && CHANGED_MASK(M_SPLINE_C_APPROX)) ||
+	      ((s->type == T_CLOSED_XSPLINE) && CHANGED_MASK(M_SPLINE_C_XSPLINE)))
+	    toggle_splinemarker(s);
+	  }
+    if (CHANGED_MASK(M_COMPOUND))
 	for (c = objects.compounds; c != NULL; c = c->next)
 	    toggle_compoundmarker(c);
     cur_objmask = newmask;
 }
-
 toggle_ellipsemarker(e)
     F_ellipse	   *e;
 {
@@ -470,4 +454,11 @@ toggle_splinehighlight(s)
 	set_marker(canvas_win, fx, fy, 1, 1);
 	set_marker(canvas_win, fx - 1, fy - 1, SM_MARK, SM_MARK);
     }
+}
+
+void
+toggle_pointmarker(x, y)
+     int x, y;
+{
+  set_marker(canvas_win, x - MARK_SIZ/2, y - MARK_SIZ/2, MARK_SIZ, MARK_SIZ);
 }

@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -78,11 +75,16 @@ print_to_printer(printer, mag,  params)
     outfile = shell_protect_string(cur_filename);
     if (!outfile || outfile[0] == '\0')
 	outfile = "NoName";
+#ifdef I18N
+    sprintf(translator, "fig2dev -Lps %s %s -P -z %s %s -m %f %s -n %s",
+	    appres.international ? appres.fig2dev_localize_option : "",
+#else
     sprintf(translator, "fig2dev -Lps %s -P -z %s %s -m %f %s -n %s",
+#endif /* I18N */
 	    (!appres.multiple && !appres.flushleft ? "-c" : "") ,
-	    paper_sizes[appres.papersize],
+	    paper_sizes[appres.papersize].sname,
 	    appres.multiple ? "-M" : "",
-	    mag,
+	    mag/100.0,
 	    appres.landscape ? "-l xxx" : "-p xxx",
 	    outfile);
 
@@ -95,11 +97,13 @@ print_to_printer(printer, mag,  params)
 	file_msg("Error during PRINT (check standard error output)");
     else {
 	if (emptyname(printer))
-	    put_msg("Printing on printer %s in %s mode ... done",
-		    printer, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
+	    put_msg("Printing on default printer with %s paper size in %s mode ... done",
+		paper_sizes[appres.papersize].sname,
+		appres.landscape ? "LANDSCAPE" : "PORTRAIT");
 	else
-	    put_msg("Printing on printer %s in %s mode ... done",
-		    printer, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
+	    put_msg("Printing on \"%s\" with %s paper size in %s mode ... done",
+		printer, paper_sizes[appres.papersize].sname,
+		appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     }
     unlink(tmpfile);
 }
@@ -120,7 +124,8 @@ gen_print_cmd(cmd,file,printer,pr_params)
 		pr_params,
 		shell_protect_string(file));
 #endif
-	put_msg("Printing on default printer in %s mode ...     ",
+	put_msg("Printing on default printer with %s paper size in %s mode ...     ",
+		paper_sizes[appres.papersize].sname,
 		appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     } else {
 #if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
@@ -134,8 +139,8 @@ gen_print_cmd(cmd,file,printer,pr_params)
 		printer,
 		shell_protect_string(file));
 #endif
-	put_msg("Printing on printer %s with paper size %s in %s mode ...     ",
-		printer, paper_sizes[appres.papersize],
+	put_msg("Printing on \"%s\" with %s paper size in %s mode ...     ",
+		printer, paper_sizes[appres.papersize].sname,
 		appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     }
     app_flush();		/* make sure message gets displayed */
@@ -165,49 +170,68 @@ print_to_file(file, lang, mag, xoff, yoff)
 	return (1);
     outfile = shell_protect_string(file);
 
-    put_msg("Exporting figure to file \"%s\" in %s mode ...     ",
+    put_msg("Exporting to file \"%s\" in %s mode ...     ",
 	    file, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     app_flush();		/* make sure message gets displayed */
 
     if (!strcmp(lang, "ps"))
+#ifdef I18N
+	sprintf(prcmd, "fig2dev -Lps %s %s -P -z %s %s -m %f %s -n %s -x %d -y %d %s %s", 
+		appres.international ? appres.fig2dev_localize_option : "",
+#else
 	sprintf(prcmd, "fig2dev -Lps %s -P -z %s %s -m %f %s -n %s -x %d -y %d %s %s", 
+#endif  /* I18N */
 		(!appres.multiple && !appres.flushleft ? "-c" : "") ,
-		paper_sizes[appres.papersize],
+		paper_sizes[appres.papersize].sname,
 		appres.multiple ? "-M" : "",
-		mag, appres.landscape ? "-l xxx" : "-p xxx", outfile,
+		mag/100.0, appres.landscape ? "-l xxx" : "-p xxx", outfile,
 		xoff, yoff,
 		tmp_fig_file, outfile);
     else if (!strcmp(lang, "eps"))
+#ifdef I18N
+	sprintf(prcmd, "fig2dev -Lps %s -z %s -m %f %s -n %s %s %s",
+		appres.international ? appres.fig2dev_localize_option : "",
+#else
 	sprintf(prcmd, "fig2dev -Lps -z %s -m %f %s -n %s %s %s",
-		paper_sizes[appres.papersize],
-		mag, appres.landscape ? "-l xxx" : "-p xxx",
+#endif  /* I18N */
+		paper_sizes[appres.papersize].sname,
+		mag/100.0, appres.landscape ? "-l xxx" : "-p xxx",
 		outfile, tmp_fig_file, outfile);
     else if (!strcmp(lang, "hpl"))
 	sprintf(prcmd, "fig2dev -Libmgl -m %f %s %s %s",
-		mag, appres.landscape ? "" : "-P", tmp_fig_file,
+		mag/100.0, appres.landscape ? "" : "-P", tmp_fig_file,
 		outfile);
-    else if (!strcmp(lang, "pstex_t")) {
-	/* make it automatically input the postscript part */
-	strcpy(tmp_name, file);
-	tlen = strlen(tmp_name);
-	if (tlen > 2) {
-	    if (tmp_name[tlen-1] == 't' && tmp_name[tlen-2] == '_')
-		tmp_name[tlen-2] = '\0';
-	    else
-		tmp_name[0] = '\0';
-	} else
-	    tmp_name[0] = '\0';
+    else if (!strcmp(lang, "pstex")) {
+	/* do both PostScript part and text part */
+	/* first the postscript part */
+	sprintf(prcmd, "fig2dev -L%s -m %f -n %s %s %s", lang,
+		mag/100.0, outfile, tmp_fig_file, outfile);
+	if (appres.DEBUG)
+	    fprintf(stderr,"execing: %s\n",prcmd);
+	if (system(prcmd) != 0)
+	    file_msg("Error during EXPORT of PostScript part (check standard error output)");
+	/* now the text part */
+	/* add "_t" to the output filename and put in tmp_name */
+	strcpy(tmp_name,outfile);
+	strcat(tmp_name,"_t");
+	/* make it automatically input the postscript part (-p option) */
 	sprintf(prcmd, "fig2dev -Lpstex_t -p %s -m %f %s %s",
-		tmp_name, mag, tmp_fig_file, outfile);
+		outfile, mag/100.0, tmp_fig_file, tmp_name);
+    } else if (!strcmp(lang, "jpeg")) {
+	/* set the image quality for JPEG export */
+	sprintf(prcmd, "fig2dev -L%s -q %d -m %f %s %s", lang,
+		appres.jpeg_quality, mag/100.0, tmp_fig_file, outfile);
     } else
 	sprintf(prcmd, "fig2dev -L%s -m %f %s %s", lang,
-		mag, tmp_fig_file, outfile);
+		mag/100.0, tmp_fig_file, outfile);
+
+    /* now execute fig2dev */
     if (appres.DEBUG)
 	fprintf(stderr,"execing: %s\n",prcmd);
     if (system(prcmd) != 0)
 	file_msg("Error during EXPORT (check standard error output)");
     else
-	put_msg("Exporting figure to file \"%s\" in %s mode ... done",
+	put_msg("Exporting to file \"%s\" in %s mode ... done",
 		file, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
 
     unlink(tmp_fig_file);

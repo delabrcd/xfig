@@ -110,7 +110,7 @@
 .PD
 ..
 .\"-------
-.TH XFIG 1 "Release 3.1(.5) (Protocol 3.1)"
+.TH XFIG 1 "Release 3.2) (Protocol 3.2)"
 .SH NAME
 xfig - Facility for Interactive Generation of figures under X11
 .SH SYNOPSIS
@@ -257,8 +257,8 @@ parameter to reduce the canvas height for small screens.
 .Ap
 Use
 .I color
-as the background color for the canvas.  
-If you want to set the background of everything in xfig 
+as the background color for the canvas.
+If you want to set the background of everything in xfig
 (e.g. menus, etc.) use the general -bg option.
 .\"-------
 .At
@@ -267,7 +267,7 @@ If you want to set the background of everything in xfig
 Use
 .I color
 as the default color for objects.
-If you want to set the foreground of everything in xfig 
+If you want to set the foreground of everything in xfig
 (e.g. menus, etc.) use the general -fg option.
 .\"-------
 .At
@@ -281,7 +281,7 @@ Prints various debugging messages like font names etc.
 .Ap
 Choose depth of visual desired.  Your server must support the desired
 visual and depth chosen.
-Use 
+Use
 .I xdpyinfo
 to see what visuals and depths are supported.
 See also the
@@ -329,15 +329,18 @@ pictex\&	PiCTeX macros
 ibmgl\&\&	IBMGL (or HPGL)
 eps\&\&\&	Encapuslated PostScript
 ps\&\&\&	PostScript
-pstex\&\&	Combined PS/LaTeX (PS part)
-pstex_t\&	Combined PS/LaTeX (LaTeX part)
+pstex\&\&	Combined PS/LaTeX (both PS and LaTeX parts)
 textyl\&	Textyl special commands
 tpic\&\&	TPIC
 pic\&\&\&	PIC
 mf\&\&\&\&	MF (MetaFont)
-gif\&\&\&	GIF*
+acad\&\&	ACAD (AutoCad slide)
 pcx\&\&\&	PCX
-jpg\&\&\&	JPEG (JFIF)
+png\&\&\&	PNG
+gif\&\&\&	GIF*
+jpeg\&\&	JPEG (JFIF)
+tiff\&\&	TIFF
+ppm\&\&\&	PPM (portable pixmap package)
 xbm\&\&\&	X11 Bitmap
 xpm\&\&\&	X11 Pixmap (XPM3 package)
 
@@ -361,9 +364,9 @@ The default is to center the figure on the page.
 .BR \-geom [ etry ]
 .RI + X + Y
 .Ap
-Do not use the -geometry option or resource to 
+Do not use the -geometry option or resource to
 .I size xfig.
-It may only be used to position the 
+It may only be used to position the
 .I xfig
 window.
 Use -pwidth and/or -pheight
@@ -379,26 +382,6 @@ Specifies the position for the icon.
 .BR \-inc [ hes ]
 .Ap
 Make inches the unit of choice (default).
-.\"-------
-.At
-.BR \-ma [ x_image_colors ]
-.I numcols
-.Ap
-Limit the number of colors used for EPS, GIF, JPEG, PCX or XPM images to
-.I numcols (default 64).
-.\"-------
-.At
-.BR \-me [ tric ]
-.Ap
-Make centimeters the unit of choice.
-.IP \&
-After
-.I xfig
-is started you may change the units from metric to
-imperial or vice versa from a popup menu available by pressing mouse
-button 3 in the
-.I units
-box where the two rulers meet.
 .\"-------
 .At
 .BI \-internalBW " width"
@@ -461,9 +444,40 @@ Change the position of the side panel window to the left of the canvas window.
 This is the default.
 .\"-------
 .At
+.BR \-mag [ nification ]
+.I mag
+.Ap
+Set export and print magnification in %.
+.At
+.BR \-max [ _image_colors ]
+.I numcols
+.Ap
+Limit the number of colors used for EPS, GIF, JPEG, PCX or XPM images to
+.I numcols (default 64).
+.\"-------
+.At
+.BR \-me [ tric ]
+.Ap
+Make centimeters the unit of choice.
+.IP \&
+After
+.I xfig
+is started you may change the units from metric to
+imperial or vice versa from a popup menu available by pressing mouse
+button 3 in the
+.I units
+box where the two rulers meet.
+.\"-------
+.At
 .BR \-mo [ nochrome ]
 .Ap
 Use black and white only.
+.\"-------
+.At
+.BR \-mu [ ltiple ]
+.Ap
+Sets multiple page mode for print or export. See also 
+.BR \-single.
 .\"-------
 .At
 .BR \-nor [ mal ]
@@ -475,9 +489,43 @@ This font is also used on the canvas when the selected font is not
 available in an X11 font (default = 6x13).
 .\"-------
 .At
+.BR \-nos [ calablefonts ]
+.Ap
+Disables use of the X11R5 or OpenWindows scalable fonts.
+You might want to use this for debugging.
+.\"-------
+.At
 .BR \-not [ rack ]
 .Ap
 Turn off cursor (mouse) tracking arrows.
+.\"-------
+.At
+.BR \-pa [ per_size ]
+.I size
+.Ap
+Set the initial paper size for Export and Print.  Choices are
+.in +.5i
+.nf
+Letter (8.5" x 11"),
+Legal (8.5" x 14"),
+Ledger ( 17" x 11"),
+Tabloid ( 11" x 17"),
+A (8.5" x 11"),
+B ( 11" x 17"),
+C ( 17" x 22"),
+D ( 22" x 34"),
+E ( 34" x 44"),
+A4 (21 cm x 29.7cm),
+A3 (29.7cm x 42 cm),
+A2 (42 cm x 59.4cm),
+A1 (59.4cm x 84.1 cm),
+A0 (84.1 cm x 118.9cm),
+B5 (18.2cm x 25.7cm)
+.fi
+.in
+.Sp
+Note that this doesn't affect the size of the drawing canvas. 
+Use the -pheight and -pwidth options for that.
 .\"-------
 .At
 .BR \-ph [ eight ]
@@ -518,12 +566,6 @@ If the scalable fonts aren't available
 will automatically switch to non-scaling fonts.
 .\"-------
 .At
-.BR \-nosc [ alablefonts ]
-.Ap
-Disables use of the X11R5 or OpenWindows scalable fonts.
-You might want to use this for debugging.
-.\"-------
-.At
 .BR \-sh [ owallbuttons ]
 .Ap
 Show all the
@@ -545,7 +587,14 @@ This takes up more screen real estate,
 but allows the user to see all settable parameters.
 .\"-------
 .At
-.BR \-sp [ ecialtext ]
+.BR \-si [ ngle ]
+.Ap
+Sets single page mode for print or export. 
+This is the default.  See also 
+.BR \-multiple.
+.\"-------
+.At
+.BR \-spec [ ialtext ]
 .Ap
 Start
 .I xfig
@@ -558,6 +607,19 @@ processed but are passed directly to
 This is most useful for writing LaTeX equations.
 If this flag is not set, then the backslash character '\\' is changed
 to the \\backslash command, a brace '{' is turned into a brace command \\{, etc.
+.\"-------
+.At
+.BR \-spel [ lcheckcommand ]
+.I command
+.Ap
+Use
+.I command
+for the external spell checking program when using the spell check/search/replace
+popup.  
+The string
+.I command
+should include the string ``%s'' which is replaced by a temporary filename.
+Default is ``spell %s''.
 .\"-------
 .At
 .BR \-startfi [ llstyle ]
@@ -599,10 +661,10 @@ Set the starting line width.
 .I modenumber
 .Ap
 Set the starting point positioning mode (0 to 4)
-In imperial (inches) mode, positioning mode 0 is "any",
+In imperial (inches) mode, positioning mode 0 is ``any'',
 mode 1 is 1/16 inch,
 mode 2 is 1/4 inch, mode 3 is 1/2 inch and mode 4 is 1 inch.
-In metric mode, mode 0 is "any",
+In metric mode, mode 0 is ``any'',
 mode 1 is 1mm, mode 2 is 5mm, mode 3 is 10mm and mode 4 is 20mm.
 .\"-------
 .At
@@ -680,7 +742,7 @@ StaticColor, DirectColor, StaticGray, GrayScale and PseudoColor.
 .I xfig
 uses the default visual unless this is specified.  Your server must
 support the desired visual.
-Use 
+Use
 .I xdpyinfo
 to see what visuals and depths are supported.
 See also the
@@ -702,14 +764,14 @@ and
 The primitive objects are:
 .IR ARC ,
 .IR CIRCLE ,
-.IR "CLOSED SPLINE" ,
 .IR ELLIPSE ,
 .IR POLYLINE ,
 .IR POLYGON ,
 .IR PICTURE ,
 .IR BOX ,
 .IR ARC-BOX ,
-.IR SPLINE ,
+.IR "CLOSED SPLINE" ,
+.IR "OPEN SPLINE" ,
 and
 .IR TEXT .
 .PP
@@ -739,19 +801,35 @@ polygons may be created using a special drawing mode, but a
 general
 .I POLYGON
 is created as a result, which may then be modified, i.e.
-the individual vertices may be moved if desired.
-.SH "DISPLAY WINDOWS"
-Ten regions comprise the display area of
-.IR xfig :
-the command region, top ruler, side ruler, drawing mode region,
-editing mode region, filename region, message region,
-mouse function indicator region and canvas region,
-and indicator region with buttons to set and show current line thickness,
-line style, color, area-fill gray color and several other settings.
+the individual vertices may be moved if desired. Conversions between
+.I POLYLINE
+, 
+.I POLYGON
+,
+.I OPENSPLINE
+and
+.I CLOSEDSPLINE
+are achieved by the 
+.I CONVERT
+tool. 
+.SH "DISPLAY REGIONS"
+There are ten regions in the
+.IR xfig
+window: the command region, top ruler, side ruler, drawing mode,
+editing mode, filename, message,
+mouse function indicator, canvas (drawing area),
+and indicator region with buttons to show and change settings such 
+as line thickness, line style, color, etc.
 (The mouse function indicator region was inspired by the UPS
 debugger from the University of Kent.)
 The drawing and editing mode regions may be placed (together) to the left or
-right of the the canvas window (default: left).
+right of the the canvas region (default: left).
+.Sp
+In addition, when the mouse passes over certain buttons or regions there are 
+``balloons'' (messages) which popup to indicate the function of the area under
+the mouse.  These may be turned on and off by clicking on the button
+labelled ``Balloons'', to the right of the message region.
+There is a check mark indicating their state.
 .SH "COMMAND PANEL FUNCTIONS"
 .TP
 .I Quit
@@ -779,7 +857,7 @@ to make a new drawing (may be undone).
 The accelerator
 .I <Meta>n
 will also perform this function.
-If you attempt to save the new figure using the keyboard accelerator 
+If you attempt to save the new figure using the keyboard accelerator
 .I <Meta>s
 or with mouse button 3 on the
 .I "File"
@@ -825,8 +903,8 @@ suffix ``.bak'' appended.  This provides a backup file.
 Mouse button 1 or
 .I <Meta>f
 pops up a panel which contains several file-related functions.
-Do not use this function for importing images (picture objects). 
-See the "IMPORTING PICTURE OBJECTS" section.
+Do not use this function for importing images (picture objects).
+See the ``IMPORTING PICTURE OBJECTS'' section.
 .PP
 .po +.5i
 .nr LL 6i
@@ -1046,6 +1124,39 @@ This is an editable AsciiTextWidget which contains the magnification to use
 when translating figure to the output language.
 The default is 100%.
 .TP
+.I "Fit to Page"
+Pressing this button will set the magnification so that the figure
+will just fit the current paper size with no less than a 1/2 inch margin.
+.TP 
+.I "Fig Size:"
+This label shows the figure size at the current magnification.  
+It is updated when the panel is popped up and when the user changes
+the magnification and shows the size in inches or cm depending on the
+current units.
+.TP
+.I "Paper Size"
+This is a pulldown menu which allows you to select the paper size for printing.
+The choices are:
+.in +.5i
+.nf
+Letter (8.5" x 11"),
+Legal (8.5" x 14"),
+Ledger ( 17" x 11"),
+Tabloid ( 11" x 17"),
+A (8.5" x 11"),
+B ( 11" x 17"),
+C ( 17" x 22"),
+D ( 22" x 34"),
+E ( 34" x 44"),
+A4 (21 cm x 29.7cm),
+A3 (29.7cm x 42 cm),
+A2 (42 cm x 59.4cm),
+A1 (59.4cm x 84.1 cm),
+A0 (84.1 cm x 118.9cm),
+B5 (18.2cm x 25.7cm)
+.fi
+.in
+.TP
 .I Orientation
 This button will toggle the output orientation between Landscape (horizontal)
 and Portrait (vertical).
@@ -1064,11 +1175,11 @@ or
 in the
 output file.
 .TP
-.I "Paper Size"
-This is a pulldown menu which allows you to select the paper size for printing.
-The choices are "A4" (21cm x 29.7cm), "B5" (18.2cm x 25.7cm),
-"Letter" 8.5" x 11"), "Legal" (11" x 14") "Ledger" (11" x 17"), and
-"Tabloid" (17" x 11", really Ledger in landscape).
+.I Pages
+With this pulldown menu you can select whether the figure should be
+exported as a single page or multiple pages.  The multiple page
+option would only be useful if the figure is larger than the current
+physical paper size.
 .TP
 .I "Export Offset"
 These two editable AsciiTextWidgets allow one to export
@@ -1094,22 +1205,28 @@ Encapsulated PostScript as xfig is distributed.
 .br
 Several languages are available; PostScript, Encapsulated PostScript,
 LaTeX, TPIC, PIC, Textyl, IBM/GL (HP/GL), MetaFont, and serveral bitmap
-formats; GIF, JPEG (JFIF), PCX (PC Paintbrush),
-XBM (X11 monochrome bitmap) and XPM (XPM3 package, 
+formats; GIF, JPEG (JFIF), PNG, PCX (PC Paintbrush), ACAD (AutoCad slide),
+TIFF (no compression), PPM (Portable Pixmap package),
+XBM (X11 monochrome bitmap) and XPM (XPM3 package,
 producing color pixmaps).
 .br
-The quality factor for exporting JPEG is fixed at 75.  This seems to be
+.TP
+.I "Image quality (%)"
+For JPEG(JFIF) export, this entry will appear, and you may select the 
+quality factor for the JPEG image. Valid values are 1 to 100%.
+The default quality of 75% seems to be
 fine for figures containing only solid objects (no images) and adequate
 for figures containing imported images (GIF, JPEG, etc.).
 .TP
 .I "Transparent Color"
-For GIF export, you may choose that one of the colors in the figure is
-``transparent'', meaning that for those GIF viewers that support 
+For GIF export, this menu button will appear and 
+you may choose that one of the colors in the figure is
+``transparent'', meaning that for those GIF viewers that support
 transparent color (Netscape, for example) that color will not appear
 in the figure. Instead, the background of the viewer will show through
 in place of that color
 .br
-The default is "None" (no transparent color).
+The default is ``None'' (no transparent color).
 .TP
 .I "Default Output Filename"
 This is read-only AsciiTextWidget which contains the filename that will be used
@@ -1234,6 +1351,20 @@ print-related functions:
 This is an AsciiTextWidget which contains the magnification to use
 when translating figure to the output language.
 .TP
+.I "Fit to Page"
+Pressing this button will set the magnification so that the figure
+will just fit the current paper size with no less than a 1/2 inch margin.
+.TP 
+.I "Fig Size:"
+This label shows the figure size at the current magnification.  
+It is updated when the panel is popped up and when the user changes
+the magnification and shows the size in inches or cm depending on the
+current units.
+.TP
+.I "Paper Size"
+This is a pulldown menu which allows you to select the paper size for printing.
+See the Export menu for the paper sizes.
+.TP
 .I Orientation
 This button will toggle the output orientation between Landscape (horizontal)
 and Portrait (vertical).
@@ -1251,11 +1382,11 @@ to justify the figure on the page.
 The default is
 .IR "flush left" .
 .TP
-.I "Paper Size"
-This is a pulldown menu which allows you to select the paper size for printing.
-The choices are "A4" (21cm x 29.7cm), "B5" (18.2cm x 25.7cm),
-"Letter" 8.5" x 11"), "Legal" (11" x 14") "Ledger" (11" x 17"), and
-"Tabloid" (17" x 11", really Ledger in landscape).
+.I Pages
+With this pulldown menu you can select whether the figure should be
+printed as a single page or multiple pages.  The multiple page
+option would only be useful if the figure is larger than the current
+physical paper size.
 .TP
 .I Printer
 This is an AsciiTextWidget which contains the printer to
@@ -1376,7 +1507,7 @@ Pressing the control key and mouse button 3 together will
 set the zoom scale to 1.
 .Sp
 The figure may also be zoomed by defining a zoom rectangle by pressing
-the control key and mouse button 1 together.
+the Control key and mouse button 1 together.
 This will define one corner of the zoom rectangle.
 Move the mouse and click mouse button 1 again to
 define the opposite corner of the zoom rectangle.
@@ -1449,7 +1580,7 @@ mode, the end segment of the link slides so
 that the box remains linked and the angle of the end segment is maintained.
 This is useful for keeping the last segment of a link horizontal or vertical.
 .IP \&
-(At the moment, this mode only works for the
+(At the moment, smart-links only work for the
 .I MOVE
 and
 .I COPY
@@ -1548,7 +1679,7 @@ or to turn off area fill altogether.
 There are 21 ``shades'' going from black to full saturation of the fill color,
 and 21 more ``tints'' from full saturation + 1 to white.
 In addition, there are 16 patterns (currently only available for PostScript,
-GIF, JPEG, PCX, XPM and X11 bitmap output):
+GIF, JPEG, PNG, PCX, ACAD, TIFF, PPM, XPM and XBM output):
 .in +.5i
 .nf
 30 degree left-leaning diagonal lines,
@@ -1588,7 +1719,7 @@ four shades of cyan, four shades of red, five shades of magenta,
 four shades of brown, and four shades of pink.
 .sp
 To select one of the standard colors either click mouse button 1 on the
-desired color and either press Return or click mouse button 1 on the "Ok" button.
+desired color and either press Return or click mouse button 1 on the ``Ok'' button.
 The latter step will pop down the color panel.
 You may also double click mouse button 1 on the desired color to select
 it and pop down the color panel in one step.
@@ -1605,7 +1736,7 @@ The last color deleted may be undeleted by pressing the ``UnDel Color'' button.
 To edit a user color first select the color square by pressing mouse button 1
 on the desired square. A solid or dashed line will be drawn around the box to show
 that it is selected.  Then choose the color either by
-using the RGB (red, green, blue) or the HSV (hue, saturation, value) sliders.
+using the RGB (red, green, blue) or the HSV (hue, saturation, value) sliders
 or by typing a hexadecimal value into the window under the pen or fill
 color boxes representing the red,
 green and blue components (00 to FF).  If the latter is used, typing carriage
@@ -1682,7 +1813,7 @@ forward-pointing arrow head or both.
 If one or both arrow head modes are turned on, then
 arrow heads are automatically drawn when drawing
 .IR POLYLINE ,
-.I SPLINE
+.I OPEN SPLINE
 or
 .I "OPEN ARC"
 objects.
@@ -1769,7 +1900,7 @@ flag is used for figures that will be used with
 and is applicable only to the display of the document in
 .IR xfig .
 It means that the text itself is not shown onscreen, but only the string
-"<text>".  This is to keep long sequences of
+``<text>''.  This is to keep long sequences of
 .I LaTeX
 formatting commands from making the screen messy and hard to read.
 The default for the
@@ -1867,7 +1998,7 @@ Click mouse button 1 again to finish the circle.
 .I ELLIPSE
 Create ellipses using the same procedure as for the drawing of circles.
 .TP
-IMPORTING \fIPICTURE OBJECTS\fR
+\fIIMPORTING PICTURE OBJECTS\fR
 This has been changed from the previous (2.1) version to be more generic,
 allowing GIF files, JPEG (JFIF) files, PCX (PC Paintbrush),
 X11 bitmap (monochrome) files and
@@ -1884,7 +2015,7 @@ For EPS files, xfig will attempt to use
 to generate a
 color image if xfig is running on an color display.
 .I Ghostscript
-must be compiled with with the "pcx256" and "pbmraw" drivers.
+must be compiled with with the ``pcx256'' and ``pbmraw'' drivers.
 The pbm driver is used when you run xfig on a monochrome display and the pcx256
 driver is used on a color display.
 .Sp
@@ -1972,8 +2103,8 @@ button you press and release mouse button 1 at one corner of the area of the
 screen you want to capture, drag out the rectangle and press and release
 mouse button 1 to finish.  You may cancel the operation by pressing
 either of the two other mouse buttons.  The filename given to the capture
-file is the user's login name plus the time in seconds since 00:00:00 GMT,
-Jan 1, 1970 (from the Unix time() call), e.g. joeuser_828065129.gif.
+file is the base of the figure name plus the time in seconds since 00:00:00 GMT,
+Jan 1, 1970 (from the Unix time() call), e.g. myfigure_828065129.gif.
 .Sp
 *If xfig was compiled without the USEGIF symbol then the capture
 file is in PCX format (PC Paintbrush) with the suffix ``.pcx''.
@@ -1987,7 +2118,7 @@ The xfig windows are automatically unmapped during the call of the editor.
 .Sp
 The
 .I Reread
-button will cause xfig to re-read the image file in case it has 
+button will cause xfig to re-read the image file in case it has
 changed.  This is useful (e.g.) when you have made changes to the image
 file in a program external to xfig and you wish to update the imported
 image.
@@ -1998,16 +2129,6 @@ button which will popup a file browser to allow
 you to search directories for image files.  The default search mask
 will match *.gif*, *.jpg*, *.pcx*, *.xpm*, *.xbm*, *.ps*  and *.eps*.
 This mask is in the Fig.ad application defaults file.
-.TP
-.I "INTERPOLATED SPLINE"
-Create (cubic spline) spline objects.
-Enter control vectors in the same way as for creation of a
-.I POLYLINE
-object.
-At least three points (two control vectors) must be entered.
-The spline will pass through the entered points.
-Newly created points may be deleted by pressing the shift key and mouse button 1
-before pressing mouse button 2.
 .TP
 .I POLYLINE
 Create polylines (line segments connecting a sequence of points).
@@ -2020,7 +2141,7 @@ Newly created points may be deleted by pressing the shift key and mouse button 1
 before pressing mouse button 2.
 .TP
 .I POLYGON
-Same as
+The function is similar to
 .I POLYLINE
 except that a line segment is drawn connecting the first and last
 points entered.
@@ -2035,32 +2156,37 @@ The object may be rotated as it is being created
 by moving the mouse up or down relative to the starting point.
 Click mouse button 1 to finish.
 .TP
-.I "CLOSED INTERPOLATED SPLINE"
-Create closed or periodic splines.
+.I "INTERPOLATED SPLINE"
 The function is similar to
-.I POLYGON
-except that a closed interpolated spline is drawn.
-The spline will pass through the points (knots).
-.TP
-.I "CLOSED SPLINE"
-Create closed or periodic spline objects.
-The function is similar to
-.I POLYGON
-except that a closed spline will be drawn instead of polygon.
-The entered points are just control points; i.e. the spline will
-not pass any of these points.
-Newly created points may be deleted by pressing the shift key and mouse button 1
-before pressing mouse button 2.
-.TP
-.I SPLINE
-Create (quadratic spline) spline objects.
-Enter control vectors in the same way as for creation of a
 .I POLYLINE
-object.
-At least three points (two control vectors) must be entered.
-The spline will only pass through the two end points.
-Newly created points may be deleted by pressing the shift key and mouse button 1
-before pressing mouse button 2.
+except that an open interpolated spline (a spline curve that passes through
+the control points) is drawn. At least two points must be entered.
+.TP
+.I "CLOSED INTERPOLATED SPLINE"
+The function is similar to
+.I POLYGON
+except that a closed interpolated spline is drawn. At least three points 
+must be entered.
+.TP
+.I "APPROXIMATED SPLINE"
+The function is similar to
+.I POLYLINE
+except that an open approximated spline (a spline curve that passes through
+the two boundary points and approximates the shape of the other points)
+is drawn. At least two points must be entered.
+.TP
+.I "CLOSED APPROXIMATED SPLINE"
+The function is similar to
+.I POLYGON
+except that a closed approximated spline is drawn.
+At least three points must be entered. 
+.Sp
+Note: xfig provides conversion tools to switch between any two of the
+following objects: polylines, polygones, open interpolated spline,
+closed interpolated spline, open approximated spline, closed
+approximated spline. This conversion can be done either globally for the
+whole object (see LINE<->SPLINE and OPEN<->CLOSED) or locally for each
+individual point (see EDIT POINT).
 .TP
 .I TEXT
 Create text strings.
@@ -2080,13 +2206,13 @@ See the default
 file for example.
 Text is drawn using the current font, font size and justification settings.
 .Sp
-A Control-H (backspace) will delete a character to the left of the cursor, while the 
+A Control-H (backspace) will delete a character to the left of the cursor, while the
 Delete key or Control-D will delete the character to the right of the cursor.
-A Control-X will erase all the text to the left of the cursor, while a 
+A Control-X will erase all the text to the left of the cursor, while a
 Control-K will erase all the text to the right of the cursor.
-The Home key or Control-A will move the cursor to the start of the text, 
+The Home key or Control-A will move the cursor to the start of the text,
 while the End key or Control-E move the cursor to the end of the text.
-The left arrow key or Control-B move the cursor left one character 
+The left arrow key or Control-B move the cursor left one character
 and the right arrow or Control-F move the cursor right one character.
 Finish entering/editing text by clicking mouse button 2 or typing the
 .I <return>
@@ -2108,10 +2234,14 @@ Or, use the popup
 mode to modify the text.
 .Sp
 Eight-bit characters may be entered using the meta (compose) key.
-For example, to create an ``a umlaut'', press and release the meta key, then
-the letter ``a'', then " (quote).
+For example, to create an ``a umlaut'', press and release either the Meta key,
+the Alt key or the Compose key, then the letter ``a'', then " (quote).
 To create a ``c cedilla'', use <meta>c followed by comma.
-The following is a list of all special characters available using the meta key:
+.Sp
+When modifying text in the popup eidt panel, only the Compose key will work.
+.Sp
+The following is a list of all special characters available using the Meta,
+Alt or Compose keys:
 .Sp
 .\"--------------------------------------------------------------------
 .\" Table Begin
@@ -2235,6 +2365,30 @@ on the screen, but they are printed by fig2dev.
 .\"--------------------------------------------------------------------
 .\" Table End
 .\"--------------------------------------------------------------------
+.sp
+.SH "Spell Checking and String Search in Text Objects"
+By pressing <Meta>h in the canvas area a popup panel will appear
+which lets you search for strings in the text objects and/or do
+string replacement and spell checking.
+.sp
+The external spell checking program can be specified by the -spellcheckcommand
+command-line argument (resource Fig.spellCheckCommand).  The default
+is the ``spell'' program.  See the -spellcheckcommand description 
+for usage details.
+.sp
+The ``Search/Replace/Update'' button will search all text objects for the
+pattern given in the ``Search:'' entry.  A panel pops up showing any
+matching text objects.  
+If the ``Replace'' button is pressed, the 
+matched pattern in the text objects will be replaced by the string
+in the ``Replace with:'' entry.
+If the ``Update'' button is pressed, the matching
+text objects' attributes will be updated from the current settings in
+the bottom indicator panel.
+.sp
+If the search pattern is empty all text objects will be listed.
+If the Update button is pressed in that case,
+all text objects will be updated.
 .SH "EDITING MODE PANEL COMMAND DESCRIPTIONS"
 When a button in the editing mode panel is pressed, any
 objects that may be affected by that editing operation will show their
@@ -2304,19 +2458,19 @@ adding and deleting objects.  If you delete all the objects in the compound,
 the compound will be removed entirely.
 .Sp
 A popup panel with two buttons appears which lets you close the
-compound again.  The first, labeled "Close This Compound" will close the 
+compound again.  The first, labeled ``Close This Compound'' will close the
 currently open compound.
-If you open a compound within a compound, you may close all the compounds 
-with one step by clicking on the second button labelled "Close All Compounds".
+If you open a compound within a compound, you may close all the compounds
+with one step by clicking on the second button labelled ``Close All Compounds''.
 .Sp
 After all compounds are closed, the rest of the original figure will reappear.
 .Sp
 IMPORTANT NOTE:  A side effect occurs when you open a compound, delete an object
-in that compound, close the compound and "undo" the delete operation.  The
-object you deleted will reappear but it will not be part of the original 
+in that compound, close the compound and ``undo'' the delete operation.  The
+object you deleted will reappear but it will not be part of the original
 compound anymore.  You may use this to remove objects from a compound.
 .Sp
-Conversely, if you delete an object from the canvas, open a compound then 
+Conversely, if you delete an object from the canvas, open a compound then
 undo the delete of the original object, it will now be part of the open compound.
 .TP
 .I "SCALE OBJECT"
@@ -2396,19 +2550,11 @@ When the object is positioned where desired, click mouse button 1 to
 place it if that button was used to start the move (unconstrained),
 or mouse button 2 (constrained) if that button was used.
 .TP
-.I MOVE
-Move object.
-Click mouse button 1 (unconstrained move) or mouse button 2
-(constrained move) on any corner marker of the object to be moved.
-The horizontal/vertical constrained movement (mouse button 2) works
-exactly as described for
-.IR "MOVE POINT" .
-.TP
 .I "ADD POINTS"
 Add points to
 .IR POLYLINE ,
 .IR POLYGON ,
-.IR SPLINE ,
+.IR "OPEN SPLINE" ,
 or
 .I "CLOSED SPLINE"
 objects (points of a
@@ -2420,6 +2566,23 @@ is really an ordinary
 .IR POLYGON ,
 so adding points to this object is allowed and does NOT keep
 the polygon regular.
+.TP
+.I "MODIFY SHAPE"
+This tool is activated by holding down the Control and Shift keys in any of the 
+.I EDIT
+modes. Clicking on a control point of a spline object with mouse button 1
+(resp. 3) decreases (resp. increases) the shape factor of the spline at
+this point, while clicking with mouse button 2 allows the user to cycle
+quickly between the three basic status of a control point (i.e.
+approximation, sharp interpolation, smooth interpolation).
+.TP
+.I MOVE
+Move object.
+Click mouse button 1 (unconstrained move) or mouse button 2
+(constrained move) on any corner marker of the object to be moved.
+The horizontal/vertical constrained movement (mouse button 2) works
+exactly as described for
+.IR "MOVE POINT" .
 .TP
 .I "COPY / CUT TO CUT BUFFER"
 Copy object to canvas or cut buffer.
@@ -2467,7 +2630,7 @@ is used.
 Delete points from
 .IR POLYLINE ,
 .IR POLYGON ,
-.IR SPLINE ,
+.IR "OPEN SPLINE" ,
 or
 .IR "CLOSED SPLINE" .
 Objects (points of a
@@ -2578,6 +2741,16 @@ the pen color for coloring the bitmap image.
 .\" Table End
 .\"--------------------------------------------------------------------
 .TP
+.I EDIT POINT
+In the
+.I EDIT OBJECT
+mode, click on a control point of a spline with mouse button 3 to call the
+.I EDIT POINT
+window. Set the shape factor either with the scrollbar for arbitrary
+values, or with the buttons for preset values. Modifications are
+displayed interactively (the fill pattern, if any, will be temporally
+removed during the edition, to provide interactive rates). 
+.TP
 .I UPDATE
 By pressing mouse button 1 on an object, the current settings for
 the indicator buttons (line width, line style, area fill etc.) which
@@ -2657,31 +2830,22 @@ set a rotation point about which the object will be rotated.
 A crosshair indicates the rotation point on the canvas.
 Pressing this button again will unset the rotation point.
 .TP
-.I "SPLINE <\-> POLYLINE"
-and
-.sp -1
-.TP
-.I "BOX <\-> ARC-BOX"
-Turn a
-.I POLYGON
-into a
-.I "CLOSED INTERPOLATED SPLINE"
-, turn a
-.I POLYLINE
-into a
-.I "INTERPOLATED SPLINE"
-or turn a
-.I BOX
-into a
-ARC-BOX
-or vice versa.
+.I "SPLINE <\-> LINE"
+Click on mouse button 1 to cycle between polyline, open interpolated
+spline and open approximated spline when the selected object is open,
+or between polygon, closed interpolated spline and closed approximated
+spline when the selected object is closed.
+.br
+Click on mouse button 3 to turn an open object (polyline or open spline) into
+its corresponding closed object (polygon or closed spline) and vice
+versa. The closed object is opened at the selected point.
 .TP
 .I "ADD/DELETE ARROWS"
 Add or delete arrow heads of
-.IR "OPEN ARC" ,
+.IR "OPEN SPLINE" ,
 .I POLYLINE
 or
-.I SPLINE
+.I ARC
 objects.
 Add an arrow head by clicking mouse button 1 on the endpoint of the object.
 Delete an arrow head by clicking mouse button 2 on the endpoint or arrow head.
@@ -2720,7 +2884,7 @@ return the figure to the origin.
 Also, pressing the Control Key and mouse button 2
 will pan the figure to the origin.
 .bp
-.SH "X DEFAULTS"
+.SH "X RESOURCES and DEFAULTS"
 The overall widget name(Class) is xfig(Fig).
 These resources correspond to the command line arguments:
 .PP
@@ -2774,16 +2938,23 @@ keyFile\&\&\&\&\&	KeyFile\&\&\&\&\&	string	CompKeyDB\&\&\&\&	\-keyFile
 landscape\&\&\&\&	Orientation\&\&\&	boolean	true\&\&\&\&\&\&	\-Landscape,
 \&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-Portrait
 latexfonts\&\&\&	Latexfonts\&\&\&	boolean	off\&\&\&\&\&\&\&	\-latexfonts
+magnification\&\&	Magnification\&\&	float	100\&\&\&\&\&\&\&	\-magnification
 max_image_colors\&	Max_image_colors	integer	64\&\&\&\&\&\&\&	\-max_image_colors
 monochrome\&\&\&\&	Monochrome\&\&\&	boolean	false\&\&\&\&\&\&	\-monochrome
+multiple\&\&\&\&	Multiple\&\&\&\&	boolean	false\&\&\&\&\&\&\&	\-multiple
 normalFont\&\&\&	Font\&\&\&	string	6x13\&\&\&\&\&\&	\-normal
+page_size\&\&\&\&	Pagesize	string	Letter/A4\&\&\&\&	\-page_size
 pheight\&\&\&\&\&	Height\&\&\&\&\&	float	8(9.5)\&\&\&\&\&	\-pheight
 pwidth\&\&\&\&\&	Width\&\&\&\&\&\&	float	10(8)\&\&\&\&\&\&	\-pwidth
 reverseVideo\&\&	ReverseVideo\&\&	boolean	off\&\&\&\&\&\&\&	\-inverse
 rulerthick\&\&\&	RulerThick\&\&\&	integer	24\&\&\&\&\&\&\&	\-rulerthick
 scalablefonts\&\&	ScalableFonts\&\&	boolean	true\&\&\&\&\&\&	\-scalablefonts
 showallbuttons\&	ShowAllButtons\&	boolean	false\&\&\&\&\&\&	\-showallbuttons
+show_balloons\&\&	Showballoons\&\&	boolean	true\&\&\&\&\&\&	\-showballoons
+\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-dontshowballoons
+single\&\&\&\&\&	Single\&\&\&\&\&	boolean	true\&\&\&\&\&\&\&	\-single
 specialtext\&\&\&	SpecialText\&\&\&	boolean	false\&\&\&\&\&\&	\-specialtext
+spellcheckcommand	spellCheckCommand	string	spell %s\&\&\&\&\&	\-spellcheckcommand
 startfillstyle\&\&	StartFillStyle\&	integer	0\&\&\&\&\&\&\&\&	\-startfillstyle
 startfontsize\&\&	StartFontSize\&\&	float	12\&\&\&\&\&\&\&	\-startfontsize
 startgridmode\&\&	StartGridMode\&\&	integer	0\&\&\&\&\&\&\&\&	\-startgridmode
@@ -2877,8 +3048,8 @@ app-defaults file:
 	<Shift>c	Draw circle by diameter
 	<None>e	Draw ellipse by radius
 	<Shift>e	Draw ellipse by diameter
-	<Shift>s	Draw closed spline
-	<None>s	Draw open spline
+	<Shift>s	Draw closed approximated spline
+	<None>s	Draw open approximated spline
 	<Shift>i	Draw closed interpolated spline
 	<None>i	Draw open interpolated spline
 	<None>p	Draw polygon
@@ -2925,6 +3096,7 @@ The widget class name is given first, followed by the widget instance name.
 .if n .ta 2n  +2n  +2n  +2n  +2n  +2n  +2n  +2n  +2n
 .Sp
 Fig  xfig
+.Sp
 	Form  form
 		Form  commands
 			Command  quit
@@ -3009,17 +3181,17 @@ Fig  xfig
 			Label  fig_offset_label
 			Label  fig_offset_lbl_x
 			Text  fig_offset_x
-			MenuButton   Inches  
+			MenuButton   Inches
 				SimpleMenu  menu
-					SmeBSB   Inches  
-					SmeBSB   Centim. 
+					SmeBSB   Inches
+					SmeBSB   Centim.
 					SmeBSB  Fig Units
 			Label  fig_offset_lbl_x
 			Text  fig_offset_x
-			MenuButton   Inches  
+			MenuButton   Inches
 				SimpleMenu  menu
-					SmeBSB   Inches  
-					SmeBSB   Centim. 
+					SmeBSB   Inches
+					SmeBSB   Centim.
 					SmeBSB  Fig Units
 .Sp
 	TransientShell  export_menu
@@ -3039,17 +3211,17 @@ Fig  xfig
 			Label  export_offset_label
 			Label  export_offset_lbl_x
 			Text  export_offset_x
-			MenuButton   Inches  
+			MenuButton   Inches
 				SimpleMenu  menu
-					SmeBSB   Inches  
-					SmeBSB   Centim. 
+					SmeBSB   Inches
+					SmeBSB   Centim.
 					SmeBSB  Fig Units
 			Label  export_offset_lbl_y
 			Text  export_offset_y
-			MenuButton   Inches  
+			MenuButton   Inches
 				SimpleMenu  menu
-					SmeBSB   Inches  
-					SmeBSB   Centim. 
+					SmeBSB   Inches
+					SmeBSB   Centim.
 					SmeBSB  Fig Units
 			Label  lang_label
 			MenuButton  language
@@ -3063,17 +3235,20 @@ Fig  xfig
 					SmeBSB  IBMGL (or HPGL)
 					SmeBSB  Encapsulated PostScript
 					SmeBSB  PostScript
-					SmeBSB  Combined PS/LaTeX (PS part)
-					SmeBSB  Combined PS/LaTeX (LaTeX part)
+					SmeBSB  Combined PS/LaTeX (both parts)
 					SmeBSB  Textyl \especial commands
 					SmeBSB  TPIC
 					SmeBSB  PIC
-					SmeBSB  MF
+					SmeBSB  MF   (MetaFont)
+					SmeBSB	ACAD (AutoCAD Slide)
+					SmeBSB  PCX  (PC Paintbrush)
+					SmeBSB  PNG
 					SmeBSB  GIF
-					SmeBSB  PCX
 					SmeBSB  JPEG
-					SmeBSB  X11 Bitmap
-					SmeBSB  X11 Pixmap
+					SmeBSB  TIFF (no compression)
+					SmeBSB  PPM
+					SmeBSB  X11 Bitmap (XBM)
+					SmeBSB  X11 Pixmap (XPM)
 			Label  def_file_label
 			Label  def_file_name
 			Label  out_file_name
@@ -3210,7 +3385,48 @@ Close compound popup:
 		Form  close_compound_form
 			Command  close_compound
 			Command  close_all_compounds
-
+.Sp
+	TransientShell  cmd_balloon_popup
+		Box  box
+			Label  l_label
+			Label  r_label
+.Sp
+	TransientShell  mode_balloon_popup
+		Box  box
+			Label  label
+.Sp
+	TransientShell  unit_balloon_popup
+		Box  box
+			Label  label
+.Sp
+	TransientShell  mouse_balloon_popup
+		Box  box
+			Label  label
+.Sp
+	TransientShell  toggle_balloon_popup
+		Box  box
+			Label  label
+.Sp
+	TransientShell  search_panel
+		VendorShellExt  shellext
+		Form  form
+			Label  search_lab
+			Text  search_text
+			Toggle  case_sensitive
+			Label  replace_lab
+			Text  replace_text
+			Command  dismiss
+			Command  search
+			Command  replace
+			Command  spell_button
+.Sp
+	TransientShell  found_text
+		VendorShellExt  shellext
+		Form  form
+			Text  found_msg_win
+			Command  dismiss
+			Command  do_replace
+			Command  dismiss
 .fi
 .Sp
 NOTE:  The following is a
@@ -3268,8 +3484,8 @@ The panel will be different for other objects.
 					SmeBSB  Pattern
 			Label  Fill intensity % =
 			Text  Fill intensity % =
-			Label  Fill pattern = 
-			Text  Fill pattern = 
+			Label  Fill pattern =
+			Text  Fill pattern =
 			Label  Line style =
 			MenuButton  Solid Line
 				SimpleMenu  menu
@@ -3290,7 +3506,18 @@ The panel will be different for other objects.
 			Text  Opposite Corner
 			Label  Opposite Corner
 			Text  Opposite Corner
+
 .Sp
+Popup edit spline point panel:
+	TransientShell  edit_spline_point_panel
+		Form  form
+			ScrollBar control_bar
+			Label    Use scrollbar to modify tension
+			Command  done
+			Command  cancel
+			Command  Approximated
+			Command  Angular
+			Command  Interpolated
 .fi
 The following is the widget structure for the popup browser available
 for the
@@ -3324,7 +3551,7 @@ edit popup.
 .SH BUGS and RESTRICTIONS
 Please send bug reports, fixes, new features etc. to:
 .br
-xfig-bugs@lbl.gov
+xfig-bugs@epb1.lbl.gov
 (Brian V. Smith)
 .PP
 Because of the difference of some fonts in some X servers and the PostScript
@@ -3372,6 +3599,12 @@ at 255 pixels long.  This is due to a restriction in X
 that the dash list is defined by char (255 pixels maximum for a dash).
 The figure will print correctly, however.
 .PP
+When you do a copy/rotate or array place when making multiple copies
+of objects, only the creation of the last object can be undone with the Undo button.
+.PP
+Modifications to text using the popup search/update/replace/spell check panel 
+cannot be undone.
+.PP
 See the
 .B README
 file for troubleshooting.
@@ -3402,7 +3635,7 @@ The X Consortium, and any party obtaining a copy of these files from
 the X Consortium, directly or indirectly, is granted, free of charge, a
 full and unrestricted irrevocable, world-wide, paid up, royalty-free,
 nonexclusive right and license to deal in this software and
-documentation files (the "Software"), including without limitation the
+documentation files (the ``Software''), including without limitation the
 rights to use, copy, modify, merge, publish, distribute, sublicense,
 and/or sell copies of the Software, and to permit persons who receive
 copies from any such party to do so, with the only requirement being
@@ -3427,13 +3660,13 @@ software and its documentation for any purpose and without
 fee is hereby granted, provided that the above copyright
 notice appear in all copies and that both that copyright
 notice and this permission notice appear in supporting
-documentation.  This software is provided "as is" without
+documentation.  This software is provided ``as is'' without
 express or implied warranty.
 .fi
 .br
 .SH FILES
 .ft B
-.nr n \w'DOC/FORMAT3.1\0\0\0\0'+1n-1/1n
+.nr n \w'DOC/FORMAT3.2\0\0\0\0'+1n-1/1n
 .ft P
 .TP \nn
 .B CompKeyDB
@@ -3629,8 +3862,8 @@ Color quantization using neural network by:
 Anthony Dekker (dekker@ACM.org)
 .br
 [NEUQUANT Neural-Net quantization algorithm by Anthony Dekker, 1994.
-See "Kohonen neural networks for optimal colour quantization"
-in "Network: Computation in Neural Systems" Vol. 5 (1994) pp 351-367.
+See ``Kohonen neural networks for optimal colour quantization''
+in ``Network: Computation in Neural Systems'' Vol. 5 (1994) pp 351-367.
 for a discussion of the algorithm.]
 .sp
 Floyd-Steinberg algorithm for dithering color images on monochrome
@@ -3651,7 +3884,7 @@ Greg LaCoste (greg@seismo.do.usbr.gov)
 .in +4
 .br
 The only difference between protocol version 3.0 and version 3.1 is
-that the position of the "magnet" has been shifted by 14 fig units.
+that the position of the ``magnet'' has been shifted by 14 fig units.
 In the 2.1 and older versions of xfig the grid was in multiples of 5 fig
 units, but they were on intervals 4, 9, 14, 19, etc.
 When version 3.0 was created, coordinates were simply multiplied by the
@@ -3666,9 +3899,53 @@ Image browser, editor and screen capture features by:
 Jim Daley (jdaley@cix.compulink.co.uk)
 .in -4
 .sp
-Many bug fixes/cleanups etc. by a host of faithful users
+.B "Version 3.2:"
+.sp 2
+.in +4
+.br
+The changes to the version 3.2 file protocol are the addition of the
+paper size, print/export magnification, single/multiple page indicator
+and a transparent color name used for GIF export to the header
+of the file.
+.br
+The other difference in the version 3.2 protocol is the
+mathematical model used for splines. The new version
+uses X-splines which allows the user to mix interpolation and approximation
+points in a same curve. More precisely, it means that an X-spline curve
+is neither an interpolated spline nor an approximated one, it is BOTH
+(the behaviour of each point is controlled by one single parameter
+called ``shape factor''). For additional information about X-splines, see:
+.sp
+  ``X-Splines: A Spline Model Designed for the End User''
+  by C. Blanc and C. Schlick, Proceedings of SIGGRAPH'95
+  http://dept-info.labri.u-bordeaux.fr/~schlick/DOC/sig1.html
+.sp
+Caveat: Because previous spline models (quadratic B-splines and Bezier
+with hidden points) are no longer supported, curves that are present
+in version 3.1 and older files are automatically converted to X-splines.
+This translation is only an approximation process. It means that the
+converted curves are not exactly the same as the original ones. Though
+they are usually very close, some hand-fitting may be needed in
+some pathological cases.
+.sp
+Inclusion of X\-splines by:
+.br
+Carole Blanc (blanc@labri.u\-bordeaux.fr)
+.br
+Christophe Schlick (schlick@labri.u\-bordeaux.fr)
+.br
+Note: the initial implementation was done by C. Feuille, S. Grosbois, L.
+Maziere and L. Minihot as a student practice (Universite Bordeaux, France).
 .sp
 .br
+Open/close compound feature written by
+.br
+Bill Taylor (bill@mainstream.com)
+.sp
+.SH NOTES
+.nf
+Many bug fixes/cleanups etc. by a host of faithful users
+.sp
 See the
 .B CHANGES
 file for all the credits

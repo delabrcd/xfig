@@ -19,9 +19,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 /*
@@ -95,6 +92,16 @@ close_compound()
   F_compound *c;
   F_compound *d;		/* Destination */
 
+  /* if trying to close compound while drawing an object, don't allow it */
+  if (action_on) {
+    if (cur_mode == F_TEXT)
+	finish_text_input();		/* finish up any text input */
+    else {
+	put_msg("Finish (or cancel) the current operation before closing compound");
+	beep();
+	return;
+    }
+  }
   if (c = (F_compound *)objects.parent) {
     objects.parent = NULL;
     d = (F_compound *)objects.GABPtr;	/* Where this compound was */
@@ -125,6 +132,16 @@ close_all_compounds()
   F_compound *c;
   F_compound *d;		/* Destination */
 
+  /* if trying to close compound while drawing an object, don't allow it */
+  if (action_on) {
+    if (cur_mode == F_TEXT)
+	finish_text_input();		/* finish up any text input */
+    else {
+	put_msg("Finish (or cancel) the current operation before closing compounds");
+	beep();
+	return;
+    }
+  }
   if (objects.parent) {
     while (c = (F_compound *)objects.parent) {
       objects.parent = NULL;

@@ -18,9 +18,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -75,49 +72,48 @@ Boolean		batch_exists = False;
 char		batch_file[32];
 
 char	       *lang_items[] = {
-    "box",     "latex",  "epic", "eepic", "eepicemu",
-    "pictex",  "hpl",    "eps",  "ps",    "pstex", 
-    "pstex_t", "textyl", "tpic", "pic",   "mf",      "pcx", 
-#ifdef USE_GIF
-    "gif",
-#endif
+	"box",  "latex", "epic", "eepic", "eepicemu", "pictex",
+	"hpl",  "eps",   "ps",   "pstex", "textyl",   "tpic",
+	"pic",  "mf",    "acad", "pcx",   "png",      "gif",
 #ifdef USE_JPEG
-    "jpg",
-#endif
-    "xbm",
+	"jpeg",
+#endif /* USE_JPEG */
+	"tiff",  "xbm",
 #ifdef USE_XPM
-    "xpm",
-#endif
-	};
+	"xpm",
+#endif /* USE_XPM */
+	"ppm"
+    };
 
 char	       *lang_texts[] = {
-    "LaTeX box (figure boundary)    ",
-    "LaTeX picture                  ",
-    "LaTeX picture + epic macros    ",
-    "LaTeX picture + eepic macros   ",
-    "LaTeX picture + eepicemu macros",
-    "PiCTeX macros                  ",
-    "IBMGL (or HPGL)                ",
-    "Encapsulated Postscript        ",
-    "Postscript                     ",
-    "Combined PS/LaTeX (PS part)    ",
-    "Combined PS/LaTeX (LaTeX part) ",
-    "Textyl \\special commands       ",
-    "TPIC                           ",
-    "PIC                            ",
-    "MF (MetaFont)                  ",
-    "PCX paintbrush format          ",
-#ifdef USE_GIF
-    "GIF                            ",
-#endif
+	"LaTeX box (figure boundary)    ",
+	"LaTeX picture                  ",
+	"LaTeX picture + epic macros    ",
+	"LaTeX picture + eepic macros   ",
+	"LaTeX picture + eepicemu macros",
+	"PiCTeX macros                  ",
+	"IBMGL (or HPGL)                ",
+	"Encapsulated Postscript        ",
+	"Postscript                     ",
+	"Combined PS/LaTeX (both parts) ",
+	"Textyl \\special commands       ",
+	"TPIC                           ",
+	"PIC                            ",
+	"MF   (MetaFont)                ",
+	"ACAD (AutoCad Slide)           ",
+	"PCX  (PC Paintbrush)           ",
+	"PNG                            ",
+	"GIF                            ",
 #ifdef USE_JPEG
-    "JPEG                           ",
-#endif
-    "X11 Bitmap (XBM)               ",
+	"JPEG                           ",
+#endif /* USE_JPEG */
+	"TIFF (no compression)          ",
+	"X11 Bitmap (XBM)               ",
 #ifdef USE_XPM
-    "X11 Pixmap (XPM)               ",
-#endif
-	};
+	"X11 Pixmap (XPM)               ",
+#endif /* USE_XPM */
+	"Portable Pixmap (PPM)          ",
+    };
 
 /***************************  Mode Settings  ****************************/
 

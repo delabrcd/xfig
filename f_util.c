@@ -16,9 +16,6 @@
  * actions under any patents of the party supplying this software to the 
  * X Consortium.
  *
- * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
- * be included if xfig is to be sold, due to the patent held by Unisys Corp.
- * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -51,7 +48,7 @@ emptyname_msg(name, msg)
 
     if (returnval = emptyname(name)) {
 	put_msg("No file name specified, %s command ignored", msg);
-	XBell(tool_d,0);
+	beep();
     }
     return (returnval);
 }
@@ -312,7 +309,7 @@ remap_imagecolors(obj)
 	for (i=0; i<mult; i++)
 	    add_pixels(obj);
 
-	/* make a new colortable with the opimal colors */
+	/* make a new colortable with the optimal colors */
 	avail_image_cols = neu_clrtab(avail_image_cols);
 
 	/* now change the color cells with the new colors */
@@ -325,10 +322,10 @@ remap_imagecolors(obj)
 	/* get the new, mapped indices for the image colormap */
 	remap_image_colormap(obj);
     } else {
-/*
- * Extract the RGB values from the image's colormap and allocate
- * the appropreate X colormap entries.
- */
+	/*
+	 * Extract the RGB values from the image's colormap and allocate
+	 * the appropriate X colormap entries.
+	 */
 	scol = 0;	/* global color counter */
 	extract_cmap(obj);
 	for (i=0; i<scol; i++) {
@@ -666,6 +663,11 @@ F_pic	*pic;
 	return;
 }
 
+beep()
+{
+	XBell(tool_d,0);
+}
+
 #ifdef NOSTRSTR
 
 char *strstr(s1, s2)
@@ -695,8 +697,8 @@ strncasecmp(const char* s1, const char* s2, int n)
 	  /* Check for end of string, if either of the strings
 	   * is ended, we can terminate the test
 	   */
-	  if (*s1=='\0' && s2!='\0') return -1; /* s1 ended premature */
-	  if (*s1!='\0' && s2=='\0') return +1; /* s2 ended premature */
+	  if (*s1=='\0' && *s2!='\0') return -1; /* s1 ended premature */
+	  if (*s1!='\0' && *s2=='\0') return +1; /* s2 ended premature */
 
 	  c1=toupper(*s1++);
 	  c2=toupper(*s2++);
@@ -724,8 +726,8 @@ strcasecmp(const char* s1, const char* s2)
    /* Check for end of string, if not both the strings ended they are 
     * not the same. 
 	*/
-   if (*s1=='\0' && s2!='\0') return -1; /* s1 ended premature */
-   if (*s1!='\0' && s2=='\0') return +1; /* s2 ended premature */
+   if (*s1=='\0' && *s2!='\0') return -1; /* s1 ended premature */
+   if (*s1!='\0' && *s2=='\0') return +1; /* s2 ended premature */
    return 0;
 }
 

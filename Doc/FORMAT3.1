@@ -46,12 +46,12 @@ Description of the Fig Format Follows
 
 (2) The first non-comment line consists of two numbers and two strings:
 
-	int	fig_resolution		(Fig units/inch)
 	string	orientation		("Landscape" or "Portrait")
 	string	justification		("Center" or "Flush Left")
 	string	units			("Metric" or "Inches")
-	int	coordinate_system	(1: origin is the lower left corner (NOT USED)
-					 2: upper left)
+	int	resolution coord_system	(Fig units/inch and coordinate system:
+					   1: origin at lower left corner (NOT USED)
+					   2: upper left)
 
     Fig_resolution is the resolution of the figure in the file.
     Xfig will always write the file with a resolution of 1200ppi so it
@@ -491,7 +491,7 @@ Description of the Fig Format Follows
 	 4	Sans Serif
 	 5	Typewriter
 
-	For font_flags bit 3 = 1 (PostScript fonts):
+	For font_flags bit 2 = 1 (PostScript fonts):
 
 	-1	Default font
 	 0	Times Roman

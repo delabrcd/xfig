@@ -1,37 +1,233 @@
 =============================================================================
-Version 3.1
+Version 3.2 Final (Aug 22, 1997)
 =============================================================================
 
 GENERAL NOTE:
-	Because Unisys Corp. has stated that they will not charge royalties for
-	the use of the LZW compression algorithm in *FREE* programs, xfig will
-	continue to support importing and exporting of GIF images.
-	However, be aware that if you sell xfig, for example as part of a CD-ROM
-	package with freeware, you may be liable for paying royalties to Unisys.
-	You may comment out the USEGIF variable in the Imakefile to avoid this.
-	With USEGIF commented out, xfig will still import GIF files, but not
-	export in that format.
-	*** The authors of xfig and the Lawrence Berkeley National Laboratory
-	cannot be held responsible in any case. ***
+ 	Because Unisys Corp. has stated that they will not charge royalties for
+ 	the use of the LZW compression algorithm in *FREE* programs, xfig will
+ 	continue to support importing and exporting of GIF images.
+ 	However, be aware that if you sell xfig, for example as part of a CD-ROM
+ 	package with freeware, you may be liable for paying royalties to Unisys.
+ 	You may comment out the USEGIF variable in the Imakefile to avoid this.
+ 	With USEGIF commented out, xfig will still import GIF files, but not
+ 	export in that format.  Also, for screen capture, xfig will create a PCX
+	file instead of a GIF file.
+ 	*** The authors of xfig and the Lawrence Berkeley National Laboratory
+ 	cannot be held responsible in any case. ***
 
-Patchlevel 5 (XXX, XX, XXXX)
+NOTE:	fig2dev now handles the exporting to bitmap formats (GIF, JPEG etc)
+	  instead of xfig, so there is more consistent output. Requires the
+	  netpbm package and ghostscript.  See the README file.
+
+NEW FEATURES:
+	o Japanese text objects (i18n) availble using flag I18N in Imakefile
+	    from T.Sato (VEF00200@niftyserve.or.jp)
+	o ppm, tiff (no compression) and AutoCad (acad) output languages added
+	o image quality (0-100) is selectable for JPEG export
+	o figure size (in inches or cm) is shown in the export and print panels,
+	  taking into account current magnification
+	o "Fit to page" button sets magnification so that figure size will just
+	  fill current paper size with (at least) 1/2 inch margin all around
+	o emergency save file renamed from xfig.SAVE to SAVE.fig
+	o when doing a screen capture for a picture object, the filename of
+	  the capture is the name of the figure file + the time according
+	  to time(3) + .gif, e.g. myfigure_858367466.gif
+	o xfig version number in app-defaults file is checked and warning
+	    message appears if older than current version
+	o spell checker to find misspelled words in text objects
+	    from T.Sato (VEF00200@niftyserve.or.jp)
+	o search and replace - search for strings and either replace them with
+	    new string or update settings like color, etc. on matched strings
+	    from T.Sato (VEF00200@niftyserve.or.jp)
+	o exporting to pstex does both PostScript and LaTeX part in one step
+	    to file.pstex and file.pstex_t respectively
+	o popup messages (balloons): 
+	    o describes drawing/editing function when mouse passes over
+	      any drawing/editing button 
+	    o describes how to activate unit/scale popup when mouse passes over
+	      units box (where the rulers meet)
+	    o describes mouse function indicator when mouse passes over it
+	    o describes each command button in top row as mouse passes over
+	      buttons
+	    o toggle button labelled "Balloons" to turn on/off the balloon
+	      messages
+	   o all have configurable colors; see Fig-color.ad
+	o new figures in Examples directory from Bill Chimiak (chim@bgsm.edu):
+		1. clp_computer1.fig - computer equipment clipart
+		2. clp_hospit_equip.fig - hospital equipment clipart
+		3. clp_network.fig - updated network equipment clipart
+		4. musicnotes.fig - musical notes, scale lines and clef
+	o checks version number in app-default file with xfig version and warns
+	   if file is older
+
+BUGS FIXED:
+	o arrowheads on splines didn't always point correctly (fig2dev did the
+	  right thing, though)
+	o accomodation for 15-bit visual (believe it or not!)
+	o checks bits-per-pixel for image formats because some vendors use 32 bits
+	  for 24 bit depths
+	o minor difference in A0 and A1 page sizes
+	o changed XPM variables to default X include/library in Imakefile
+	o path added to save filename when xfig makes emergency save
+	o incorrect email address for xfig-bugs in man page (should be
+	  xfig-bugs@epb1.lbl.gov)
+	o typo about font_flags bit number for LaTeX vs PostScript in
+	  Doc/FORMAT3.2 file
+	o not enough space allocated for buf[] in create_print_panel()
+	  and create_export_panel()
+	  from T.Sato (VEF00200@niftyserve.or.jp)
+	o typo in Doc/FORMAT3.2 file about header information in Fig files
+	o typo in man pages - zooming uses only CONTROL key, changing spline
+	  shape factor requires both CONTROL and SHIFT keys.
+	o justification and page size are now disabled with EPS export
+	o undo of converting spline to line caused seg fault
+	o added #ifdef USE_GIF around transparent color in export and read file
+	o error in sprintf format (was %4.2lf - should be %4.2f) in bottom
+	  indicator panel buttons that have floats
+	  from T.Sato (VEF00200@niftyserve.or.jp)
+	o center of pie-wedge style arc wasn't included in bounding box
+	  from Andy Thomas (alt@picnic.demon.co.uk)
+	o better handling of mouse function indicator
+	  from T.Sato (VEF00200@niftyserve.or.jp)
+	o if "edit spline point" panel is popped up before general edit panel,
+	  'Warning: Action not found: apply' appeared when edit panel was
+	  later opened
+	  from T.Sato (VEF00200@niftyserve.or.jp)
+	o actions that had same names renamed to unique names
+	  from T.Sato (VEF00200@niftyserve.or.jp)
+	o mouse button 1 and 3 didn't scroll the H, S, or V sliders in the color
+	  edit panel
+	o unsigned/signed char pointer mix in create_pic_pixmap and
+	  get_canvas_clipboard
+	o cleanup of dictionary wrapped around imported EPS files 
+	  from Franz Koch (franz.koch@zdv.uni-tuebingen.de)
+	o Portrait/Landscape changes didn't properly toggle width/height
+	o New font specified in app-defaults for those systems whose default
+	  font was too large for popup panels (Fig*Font: 7x13bold)
+	o Zooming not allowed if drawing object in progress (panning is OK)
+	o strcasecmp and strncasecmp bugs (s2 != '\0' and s2 == '\0' should
+	  be *s2 ...)
+	o when exporting to bitmap format, bounding box of figure was rounded
+	  to current point positioning grid (unintended)
+	o unaligned access errors on 64-bit machines (e.g. Alpha) when importing
+	  bitmap pictures.  Now uses unsigned int for pointers
+	o code to remove identical consecutive points in line objects had bug
+	o workaround for long-time Intrinsics bug with scrolling text widget in
+	  viewport for file and export lists provided by 
+	  Mark London (mrl@psfc.mit.edu)
+	o bug in control-key-button-1 zoom sequence - didn't allow control key
+	  pressed when completing zoom operation
+	o mis-named fonts for zapf chancery and zapf dingbats (many servers don't
+	  have these fonts anyway so please don't ask me where to get them)
+	o error in JPEGINC variable in Imakefile - had leading "/" in path
+	o width of "open compound" button was slightly too large such that 
+	  the mode panel (left) obscured part of the indicator panel (bottom)
+	  when -but_per_row was 3
+	o transparent color for GIF export wasn't "None" as default
+	o box objects read in from Fig file would only have three points on
+	  some machines
+	o grid wasn't changed to metric when loading metric figure
+	o 24- and 32-bit export to JPEG was incorrect
+	o "rotate and copy" for text placed first copy correctly, but subsequent
+	  copies incorrectly
+	o comments after #FIG before end of header weren't parsed correctly
+	o Landscape/Portrait is only available for PostScript export
+	o Ledger/Tabloid sizes reversed (Tabloid is 11x17", Ledger is 17x11")
+	o deleting all objects (Meta-D) prevented the "New figure" function
+	  by keeping the original figure name
+	o arrowheads were inadvertantly allowed for closed splines via the popup
+	  edit panel
+
+	o picture objects rotated 90 or 270 degrees were also flipped
+	o changed sense of USEINLINE so default is NOT to use it
+
+--------------------------
+V3.2 Beta 1 (Jan, 9, 1997)
+--------------------------
+
+NEW EXAMPLE FILES (Examples/ directory)
+
+    o fantastic figure from Robort Ford (rford@mailserv.mta.ca):
+	transit.fig	- transit map of Saint John, New Brunswick (Canada)
+			  Don't use it for locating transit routes - it is only
+			  good through July 1996 and only shows non-rush-hour
+			  routes
+    o great figures from Carlo Kopp (carlo@cs.monash.edu.au):
+	greenpig.fig	- F/RF-111C/G Tactical Fighter
+	rfxc.fig	- RFX Strike/Recon Fighter
+	lidar.fig	- Sidelooking battlefield surveillance LIDAR
+	sowpig.fig	- RAAF F-111C fighter jet w/ 2x AGM-142 Have Nap SOWs
+    o some nice figures from Peter Hiscocks (phiscock@ee.ryerson.ca)
+	aircraft.fig	- light aircraft
+	ps-foil.fig	- power supply circuit board foil layout
+	ps-foil.fig	- power supply circuit board schematic
+    o from Philipp Reisner (Austria).  
+	Linuxlogo.fig	- the only entry in the Linux 2.0 Logo contest to be
+			  rendered with xfig - Unfortunately, it didn't win :-(
+    o new clip art objects from W. Chimiak (chim@tachyon.medeng.wfu.edu):
+	clp_computer.fig - various computers, monitors etc.
+	clp_network.fig	- computer network components
+    o more new example files (done by me, Brian Smith)
+	3dhouse.fig	- cutaway view of a simple house drawn in 3D
+	ctrlbox_lay.fig	- dimensioned drawing of a control box for a project in my group
+	ctrlbox_sch.fig	- electrical schematic of the control box
 
 NEW FEATURES
 
+o better error reporting from ghostscript when importing EPS files
+o in color popop panel, "lookup color" button allows user to grab color from
+	any window for user-defined color in xfig
+	uses code from xpaint (Copyright 1993 David Koblas (koblas@netcom.com)
+	and Copyright 1995, 1996 Torsten Martinsen (bullestock@dk-online.dk))
+o There is a new mathematical model for splines. The new version uses X-splines
+	which allows to mix interpolation and approximation points in a same
+	curve. More precisely, it means that an X-spline curve is neither an
+	interpolated spline nor an approximated one, it is BOTH (the behaviour
+	of each point is controlled by one single parameter called "shape
+	factor"). For additional information about X-splines, see:
+
+	  "X-Splines: A Spline Model Designed for the End User"
+	  by C. Blanc and C. Schlick, Proceedings of SIGGRAPH'95
+
+  o the shape factor of each individual point can be modified interactively
+    with a dialog box that is displayed when pressing the right button in
+    the EDIT OBJECT mode.
+  o the shape factor can also be modified in any of the EDIT modes, by
+    holding down the CONTROL key while pressing the mouse buttons.
+  o because the CONTROL modifier is used for the shape factor edition,
+    the zoom rectangle is now obtained by pressing the SHIFT key AND the
+    CONTROL key while dragging the rectangle.
+  o new features have been added in the CONVERT mode. Any conversion between
+    polylines, polygons, open splines and closed splines are now possible.
+
+    *** Caveat: Because spline models of previous versions (quadratic B-splines
+    and Bezier with hidden points) are no longer supported, curves that are
+    present in version 3.1 and older files are automatically converted to
+    X-splines. This translation is only an approximation process. It means
+    that the converted curves are not exactly the same as the original ones.
+    Though the translation usually provides almost identical curves, some
+    hand-fitting may be needed in some pathological cases.
+
+    The new spline features were written by Carole Blanc (blanc@labri.u-bordeaux.fr)
+    and Christophe Schlick (schlick@labri.u-bordeaux.fr) starting from an initial
+    implementation done by C. Feuille, S. Grosbois, L. Maziere and L. Minihot as
+    a student practice (Universite Bordeaux, France).
+
+o the file format (protocol) has changed (see Doc/FORMAT3.2 for details). This
+	means you must also get transfig 3.2. Xfig will still read older Fig
+	format files but will always write the new format.
+o multiple page flag, paper size, transparent color (GIF export) and print/
+	export magnification now stored in Fig file (new protocol format 3.2)
+o export/print magnification now command-line argument (-magnification) and
+	resource (Fig.Magnification)
+o paper size now command-line argument (-paper_size) and resource
+	(Fig.paper_size)
+o multiple page flag now command-line argument (-multiple) and resource
+	(Fig.Multiple) (-single is default)
 o option of transparent color for GIF export (e.g. make background transparent)
-o fantastic new Examples from Carlo Kopp:
-	1. Examples/greenpig.fig - F/RF-111C/G Tactical Fighter
-	2. Examples/rfxc.fig - RFX Strike/Recon Fighter
-	3. Examples/lidar.fig - Sidelooking battlefield surveillance LIDAR
-	4. Examples/sowpig - RAAF F-111C fighter jet w/ 2x AGM-142 Have Nap SOWs
-o Examples/Linuxlogo.fig is the only entry in the Linux 2.0 Logo constest to be
-	rendered with xfig - from Philipp Reisner (Austria)
-o new clip art objects in Examples/clp_computer.fig and Examples/clp_network.fig
-	from W. Chimiak (chim@tachyon.medeng.wfu.edu)
-o more new example files (done by me, Brian Smith)
-	3dhouse.fig
-	control_box_schemat.fig
-	control_box.fig
+o new colors in Fig-color.ad resource file from Joel D. Young
+	(jdyoung@afit.af.mil).  If you want the old colors, copy Fig-color.old.ad
+	to your app-defaults directory as "Fig-color".
 o works with GrayScale, TrueColor, DirectColor, StaticColor and StaticGray
 	visuals now.  Use "-visual <visualname>" command-line argument or 
 	"Fig.visual: <visualname>".  Also, "-depth <depth>" (Fig.depth: <depth>)
@@ -54,6 +250,7 @@ o new edit features when entering text on canvas:
 o "Open Compound" operation to temporarily go inside a compound object to edit
 	individual components.  Can enter nested compounds. Close compound to 
 	group objects back into compound.
+	Written by Bill Taylor (bill@mainstream.com)
 o xfig will now automatically unzip/uncompress Fig files with .Z, .z or .gz
 	suffixes automatically.  It does not recompress/zip them when saving,
 	though.
@@ -85,6 +282,7 @@ o default suffix for hpgl (ibmgl) export changed to "hpl" for PC users
 
 BUGS FIXED
 
+o smart links didn't work when the box being moved had line thickness > 1
 o -exportLanguage ignores case now (e.g. GIF == gif)
 o identical consecutive points in lines and "normal" splines are removed as file
 	is read into xfig
@@ -168,7 +366,10 @@ o if there is an error when writing screen capture to a file, the popup error
 	message window shows the error
 o Examples/logo.fig had squished logo eps file
 
------------------------------------------------------------------------------
+=============================================================================
+Version 3.1
+=============================================================================
+
 Patchlevel 4b (May, 20, 1996)
 
 BUGS FIXED
