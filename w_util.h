@@ -12,8 +12,9 @@
 
 /* constant values used for popup_query */
 
-#define QUERY_YES	0
+#define QUERY_YESCAN	0
 #define QUERY_YESNO	1
+#define QUERY_YESNOCAN	2
 #define RESULT_NO	-1
 #define RESULT_YES	1
 #define RESULT_CANCEL	0
@@ -40,7 +41,7 @@
  *	}
  */
 
-#include "assert.h"
+#include <assert.h>
 
 #define ArgCount	_fooArgCount
 #define Args		_fooArgList

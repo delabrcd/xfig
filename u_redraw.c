@@ -520,12 +520,8 @@ redisplay_text(t)
     int		    xmin, ymin, xmax, ymax;
     int		    dum;
 
-    if (appres.textoutline) {
-	text_bound_both(t, &xmin, &ymin, &xmax, &ymax,
-			&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
-    } else {
-	text_bound(t, &xmin, &ymin, &xmax, &ymax);
-    }
+    text_bound(t, &xmin, &ymin, &xmax, &ymax,
+		&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
     redisplay_zoomed_region(xmin, ymin, xmax, ymax);
 }
 
@@ -536,16 +532,12 @@ redisplay_texts(t1, t2)
     int		    xmin2, ymin2, xmax2, ymax2;
     int		    dum;
 
-    if (appres.textoutline) {
-	text_bound_both(t1, &xmin1, &ymin1, &xmax1, &ymax1,
-			&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
-	text_bound_both(t2, &xmin2, &ymin2, &xmax2, &ymax2,
-			&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
-    } else {
-	text_bound(t1, &xmin1, &ymin1, &xmax1, &ymax1);
-	text_bound(t2, &xmin2, &ymin2, &xmax2, &ymax2);
-    }
-    redisplay_regions(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2);
+    text_bound(t1, &xmin1, &ymin1, &xmax1, &ymax1,
+		&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
+    text_bound(t2, &xmin2, &ymin2, &xmax2, &ymax2,
+		&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
+    redisplay_regions(xmin1, ymin1, xmax1, ymax1,
+		      xmin2, ymin2, xmax2, ymax2);
 }
 
 redisplay_regions(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2)

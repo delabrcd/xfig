@@ -148,7 +148,7 @@ typedef struct f_text {
 #define					T_CENTER_JUSTIFIED	1
 #define					T_RIGHT_JUSTIFIED	2
     int		    font;
-    PIX_ROT_FONT    fontstruct;
+    PIX_FONT	    fontstruct;
     int		    size;	/* point size */
     Color	    color;
     int		    depth;
@@ -170,7 +170,7 @@ typedef struct f_text {
 }
 		F_text;
 
-#define MAXFONT(T) (psfont_text(T) ? NUM_PS_FONTS : NUM_LATEX_FONTS)
+#define MAXFONT(T) (psfont_text(T) ? NUM_FONTS : NUM_LATEX_FONTS)
 
 #define		rigid_text(t) \
 			(t->flags == DEFAULT \

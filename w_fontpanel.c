@@ -24,8 +24,8 @@ extern char    *latexfont_menu_bits[];
 extern Pixmap	psfont_menu_bitmaps[];
 extern Pixmap	latexfont_menu_bitmaps[];
 extern Atom	wm_delete_window;
-extern struct _fstruct ps_fontinfo[];	/* font names */
-extern struct _fstruct latex_fontinfo[];	/* font names */
+extern struct _fstruct ps_fontinfo[];	  /* PostScript/OpenWindows font names */
+extern struct _fstruct latex_fontinfo[];  /* LaTeX font names */
 
 /* LOCAL VARIABLES */
 
@@ -37,7 +37,7 @@ static int	(*font_setimage) ();
 
 /********************  local variables	***************************/
 
-static MenuItemRec ps_fontmenu_items[NUM_PS_FONTS + 1];
+static MenuItemRec ps_fontmenu_items[NUM_FONTS + 1];
 static MenuItemRec latex_fontmenu_items[NUM_LATEX_FONTS];
 
 static void	fontpane_select();
@@ -59,7 +59,7 @@ static XtActionsRec	fontpane_actions[] =
 
 static TOOL	ps_fontpanes, ps_buttons;
 static TOOL	latex_fontpanes, latex_buttons;
-static TOOL	ps_fontpane[NUM_PS_FONTS + 1];
+static TOOL	ps_fontpane[NUM_FONTS+1];
 static TOOL	latex_fontpane[NUM_LATEX_FONTS];
 
 init_fontmenu(tool)
@@ -96,7 +96,7 @@ init_fontmenu(tool)
     latex_fontpanes = XtCreateManagedWidget("menu", boxWidgetClass,
 					    latex_fontmenu, Args, ArgCount);
 
-    for (i = 0; i < NUM_PS_FONTS + 1; i++) {
+    for (i = 0; i < NUM_FONTS + 1; i++) {
 	ps_fontmenu_items[i].type = MENU_IMAGESTRING;	/* put the fontnames in
 							 * menu */
 	ps_fontmenu_items[i].label = ps_fontinfo[i].name;
@@ -161,7 +161,7 @@ init_fontmenu(tool)
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNresize, False);	/* don't allow resize */
 
-    for (i = 0; i < NUM_PS_FONTS + 1; ++i) {
+    for (i = 0; i < NUM_FONTS + 1; ++i) {
 	mi = &ps_fontmenu_items[i];
 	pane_callbacks[0].closure = (caddr_t) mi;
 	ps_fontpane[i] = XtCreateManagedWidget("pane", commandWidgetClass,
@@ -197,7 +197,7 @@ setup_fontmenu()
 
     /* Create the bitmaps */
 
-    for (i = 0; i < NUM_PS_FONTS + 1; i++)
+    for (i = 0; i < NUM_FONTS + 1; i++)
 	psfont_menu_bitmaps[i] = XCreatePixmapFromBitmapData(tool_d,
 				   XtWindow(ind_panel), (char *) psfont_menu_bits[i],
 				     PS_FONTPANE_WD, PS_FONTPANE_HT, fg, bg,
@@ -210,7 +210,7 @@ setup_fontmenu()
 				       XDefaultDepthOfScreen(tool_s));
 
     /* Store the bitmaps in the menu panes */
-    for (i = 0; i < NUM_PS_FONTS + 1; i++) {
+    for (i = 0; i < NUM_FONTS + 1; i++) {
 	FirstArg(XtNbitmap, psfont_menu_bitmaps[i]);
 	SetValues(ps_fontpane[i]);
     }

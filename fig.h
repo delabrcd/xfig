@@ -174,17 +174,29 @@ int bcmp();
 
 #ifndef X_NOT_STDC_ENV
 #include <string.h>
+#ifndef index
 #define index strchr
+#endif
+#ifndef rindex
 #define rindex strrchr
+#endif
 #else  /* X_NOT_STDC_ENV IS defined */
 #ifdef SYSV
 #include <string.h>
+#ifndef index
 #define index strchr
+#endif
+#ifndef rindex
 #define rindex strrchr
+#endif
 #else  /* NOT SYSV */
 #include <strings.h>
+#ifndef strchr
 #define strchr index
+#endif
+#ifndef strrchr
 #define strrchr rindex
+#endif
 #endif  /* SYSV */
 #endif  /* X_NOT_STDC_ENV */
 
@@ -228,7 +240,8 @@ extern double atof();
 #endif /* __STDC__ */
 #else  /* NOT defined(SYS) && defined(SYSV386) */
 #ifdef X_NOT_STDC_ENV
-#if defined(sun) && !defined(sparc) || defined(titan)
+#if defined(ultrix) || defined(sun) && !defined(sparc) || defined(titan) || \
+	(defined(ibm032) && !defined(_AIX))
 extern double atof();
 extern char *getenv();
 #endif /* (sun) !(sparc) (titan) */

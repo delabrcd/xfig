@@ -222,8 +222,7 @@ init_textdragging(t, x, y)
     F_text	   *t;
     int		    x, y;
 {
-    int		   cw,cw2;
-    float	   angle;
+    float	   cw,cw2;
 
     new_t = t;
     /* adjust in case text was off positioning grid and positioning is now on */
@@ -234,27 +233,14 @@ init_textdragging(t, x, y)
     y1off = new_t->base_y - y;
     if (t->type == T_CENTER_JUSTIFIED || t->type == T_RIGHT_JUSTIFIED) {
 	txsize = pf_textwidth(t->fontstruct, strlen(t->cstring), t->cstring);
-	angle = t->angle*180.0/M_PI;
 	if (t->type == T_CENTER_JUSTIFIED) {
-	    cw2 = round(txsize.x/2/zoomscale);
-	    if (angle < 90.0 - 0.001)
-		x1off -= cw2;
-	    else if (angle < 180.0 - 0.001) 
-		y1off += cw2;
-	    else if (angle < 270.0 - 0.001) 
-		x1off += cw2;
-	    else 
-		y1off -= cw2;
+	    cw2 = txsize.x/2.0/zoomscale;
+	    x1off = round(x1off - cos((double)t->angle)*cw2);
+	    y1off = round(y1off + sin((double)t->angle)*cw2);
 	} else { /* T_RIGHT_JUSTIFIED */
-	    cw = round(txsize.x/zoomscale);
-	    if (angle < 90.0 - 0.001)
-		x1off -= cw;
-	    else if (angle < 180.0 - 0.001) 
-		y1off += cw;
-	    else if (angle < 270.0 - 0.001) 
-		x1off += cw;
-	    else 
-		y1off -= cw;
+	    cw = 1.0*txsize.x/zoomscale;
+	    x1off = round(x1off - cos((double)t->angle)*cw);
+	    y1off = round(y1off + sin((double)t->angle)*cw);
 	}
     }
     canvas_locmove_proc = moving_text;

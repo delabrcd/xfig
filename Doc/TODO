@@ -1,5 +1,6 @@
 This file contains some possible things to do in future versions of xfig.
 
+make xfig understand and use different file resolutions (e.g. 1200dpi)
 allow rotated boxes (not just polygons)
 reduce number of grid lines (if necessary) when zooming < 1.0
 fix grid rounding problems at 0.75 zoom factor
@@ -127,6 +128,7 @@ allow background color for figure and store in fig file - also requires that
 allow fractional text sizes (float)
 possibly make extension to Fig protocol to handle several line 
 	cap/join styles (e.g. round, butt, miter)
+write 8-bit characters as (e.g.) \341\321
 
 --------------------------------------------------------------------
 What really needs to be done is a major rework of the list structures used

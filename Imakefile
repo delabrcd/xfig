@@ -25,9 +25,23 @@ DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
     (defined(SunOSPlatform) && (OSMinorVersion==0))
 STRSTRDEFINES = -DNOSTRSTR
 #endif
+
 # remove -DGSBIT from the DEFINES if you DON'T want to have gs (ghostscript)
 # generate a preview bitmap.  If you do use ghostscript you will need 
 # version 2.4 or later.
+#
+# For the rotated text code:
+#   Add one of `-DCACHE_XIMAGES' or `-DCACHE_BITMAPS' to decide what is
+#   cached.
+#
+#   Add `-DCACHE_SIZE_LIMIT=xxxx' where xxxx is the cache size in kilobytes.
+#   A cache size of zero turns caching off.
+#
+# For SYSV systems with BSD-style printer command which use lpr instead of 
+# lp (SGI is one such machine), add -DBSDLPR to the DEFINES variable
+
+CACHE = -DCACHE_BITMAPS -DCACHE_SIZE_LIMIT=300
+
 DEFINES =             $(STRSTRDEFINES) -DGSBIT
 
 XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_epsobj.c \
@@ -66,6 +80,8 @@ XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_epsobj.o \
 		w_icons.o w_indpanel.o w_modepanel.o w_mousefun.o w_msgpanel.o \
 		w_print.o w_rottext.o w_rulers.o w_setup.o w_util.o w_zoom.o
 
+ICONXFIGFILES =  fig.icon.X
+
 SRCS = $(XFIGSRC)
 OBJS = $(XFIGOBJ)
 
@@ -74,4 +90,5 @@ MakeDirectories(install,$(XFIGLIBDIR))
 InstallNonExec(CompKeyDB,$(XFIGLIBDIR))
 InstallAppDefaults(Fig)
 InstallAppDefaults(Fig-color)
-SpecialObjectRule(w_canvas.o, $(ICONFIGFILES), $(DIR_DEFS))
+SpecialObjectRule(w_canvas.o, $(ICONXFIGFILES), $(DIR_DEFS))
+SpecialObjectRule(w_rottext.o, $(ICONXFIGFILES), $(CACHE))

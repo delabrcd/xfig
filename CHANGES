@@ -1,6 +1,111 @@
 Version 2.1
 ===========
 
+Patchlevel 8 (Oct 1, 1993)
+Changes to Patchlevel 7:
+
+NEW FEATURES:
+
+o minimum movement for mountain/manhatten mode reduced from 7 pixels to 2
+o lengths/radii of objects now displayed on first click in move point mode, not
+	just when actually moving the points
+o -DOPENWIN no longer necessary - xfig automatically first uses OpenWindows
+	scalable fonts (e.g. times-roman-33) if they are available, X11R5
+	scalable fonts next if they are available or non-scaling fonts if
+	neither of the above is available.
+o maximum radius of arc-boxes increased from 30 to 100 pixels
+o icon now shows current filename (without full path)
+o Control-L does Redraw when not in text input mode (same as Meta-R)
+o popup query to shift whole figure when reading in figure file if any objects
+	have negative coordinates
+o mouse function window shows pan/zoom operations when control key is pressed
+o popup query when exporting figure if figure has not been saved (note: this
+	is not necessary for exporting current figure but is a warning to
+	the user that the figure hasn't been saved yet)
+o BSD-style printing on SYSV machines (like SGI) allowed by setting -DBSDLPR
+	in Imakefile/Makefile
+	from Dave Goldberg (dsg@blackbird.mitre.org)
+o on-screen rotation of text at any angle
+	xfig now uses xvertext 5.0 from Alan Richardson which allows rotation
+	at any angle. The whole font is not loaded anymore, and strings are
+	cached, which speeds up the interactive input of text.
+o man pages no longer use .TS (table) commands for those systems whose roff
+	doesn't support tables.  Also formatting cleaned up and typos fixed.
+	From David W. Sanderson (dws@ssec.wisc.edu)
+o double click on filename in File menu will automatically load figure
+o double click on filename in Export menu will automatically export figure
+o some more information about text objects has been added to the Doc/FORMAT2.1
+	file - specificly about the font and font_flags fields
+o keyboard accelerators for drawing/editing mode panel.  See Fig.ad for details
+	From Tim MacKenzie (tym@dibbler.cs.monash.edu.au)
+o Example figure which contains building blocks for making flowcharts - called
+	flowchart.fig in the Examples directory (replaces old flowchart.fig)
+	from Tim P. Starrin (noid@cyborg.larc.nasa.gov)
+o The default is now for xfig to use X11R5 scalable fonts unless the server
+	doesn't support them.  The user may still disable them with -noscalable
+	or the resource "Fig*scalablefonts: false".
+o new button panel in the indicator panel to set/clear or toggle update flags to
+	make it easier to control which object attributes are affected by update
+o new command-line paramter: -but_per_row (resource But_per_row) specifies the
+	number of buttons wide the mode panel should be.  This is useful in
+	conjunction with -pheight for small screens to reduce the canvas area.
+o no need to add -DNO_SIGBUS to Imakefile for systems without SIGBUS anymore.
+	This this is automatic now.
+
+BUG FIXES:
+
+o changing a filled object to unfilled now draws background correctly
+o cleaned up inconsistencies with fill colors in monochrome mode
+o GC's were being freed twice if window quit was executed (window manager)
+o exporting figure to X11 bitmap only exported visible part of canvas
+o current directory wasn't set in export popup unless file menu had been popped
+	up previously
+o units box didn't change from "in" to "cm" or vice versa when changing from
+	Imperial to/from Metric
+o editing text with popup edit at zoomscale != 1 shows correct text size now
+o undo of text delete at another zoomscale shows correct text size now
+o colons (:) removed from widget names (difficult to set resources with colons)
+o conditional definition of index = strchr (or strchr = index) for those systems
+	which already have them defined
+o workaround for linux bug where certain 8-bit characters are not read properly
+	by sscanf()
+	from Alain Lucien Knaff (knaff@mururoa.imag.fr)
+o height of cursor for text input closer to actual text height (was "descent+
+	ascent" tall, now is "ascent" tall)
+o <Meta>L (LoadFile function) didn't query if current figure was modified before
+	re-loading file
+o if normalFont can't be loaded, "fixed" font is tried - if that fails xfig
+	quits with error message
+o 8-bit character did not appear on canvas
+o semicolon missing from "for" statement in main.c
+o caused core dump if the environment variable PRINTER was not set and the
+	Fig*printer*string was not set
+o -startfontsize parameter wasn't being honored
+o quit() function was being called with too few parameters.  This kills xfig
+	on OpenWindows servers.
+	From David Partain (dlp@ida.liu.se)
+o fixed bug with freeing two identical GC's (caused coredump when quitting on
+	certain machines)
+o fixed bug inadvertently introduced in 2.1.7 which caused some arcs to be drawn
+	as circles
+o scaling of arc inside compound no longer produces co-linear points
+o messages didn't appear in the message panel when filename panel wasn't
+	large enough
+o parameter missing from call to curve() which made strange half-ellipse for box
+	curve radius indicator. Caused massive problems for OpenWindows servers.
+o moved two accelerators (SaveFile and LoadFile) from top-level to the File
+	widget heirarchy (this was causing OpenWindows servers to eat memory)
+o work around for bug in OpenWindows 2.0 with bitmaps in widgets (caused
+	BadMatch error when popping up the print panel)
+o duplicate .TP in xfig.man caused nroff to throw away the text following the
+	"Dismiss" description in the print section
+o emptyname() dereferenced null pointer if printer name was NULL
+o malloc didn't alloc enough space for fontname + null in w_drawprim.c
+o text outline box was sometimes drawn incorrectly
+o Renamed ICONFIGFILES (already used by X11 config) to ICONXFIGFILES and defined
+	it in Imakefile (it was referenced but undefined)
+
+------------------------------------------------------------------------------
 Patchlevel 7 (May 3, 1993)
 Changes to Patchlevel 6:
 
@@ -89,7 +194,7 @@ o number[] array wasn't large enough for new 3-character numbers in the rulers
 	from Andrew Haylett (ajh@gec-mrc.co.uk)
 o check for X_NOT_STDC_ENV reversed in fig.h for inclusion of stdlib.h and
 	defs of getenv() and atof()
-	from Jonathan Kamens (jik@pit-manager.mit.edu)
+	from Jonathan Kamens (jik@rtfm.mit.edu)
 o SetDir() parameters added (but not used) to placate certain compilers
 o point positioning resolution wasn't available with add-point-in-object
 o angle geometry indicator appeared when moving/adding points but isn't used
@@ -236,7 +341,7 @@ o removed ISO8859 requirement for Symbol and ZapfDingbats fonts (those fonts
 	weren't being displayed)
 
 ------------------------------------------------------------------------------
-Patchlevel 4 (April 1992)
+Patchlevel 4 (Apr 1992)
 Changes to Patchlevel 3:
 
 o keyFile resource allows ANY path for compose key data base, not just relative
@@ -315,17 +420,17 @@ o changed ^U (control U) in w_canvas.c to \023 for mailers which clobber
 o added possibility of wider top ruler and taller side ruler by using
 	-DMAX_TOPRULER_WD=value and -DMAX_SIDERULER_HT=value in Imakefile
 o added function strtol() for those systems that don't have it.
-	from Jonathan Kamens (jik@pit-manager.MIT.EDU)
+	from Jonathan Kamens (jik@rtfm.MIT.EDU)
 o added note about -DNOSTRSTR and -DNOSTRTOL for those systems that don't
 	have strstr() and/or strtol() respectively.
 o fixed type mismatch and bug in call to getenv in main().
 o type mismatch fixed for X11R5 in call to XtAppInitialize(). 
-	from Jonathan Kamens (jik@pit-manager.MIT.EDU)
+	from Jonathan Kamens (jik@rtfm.MIT.EDU)
 o small performance fix in u_draw.c in add_point() when reallocating points
 	from Dave Hale (dhale@green.Mines.Colorado.EDU)
 
 ------------------------------------------------------------------------------
-Patchlevel 3
+Patchlevel 3 (Jan 1992)
 Changes to Patchlevel 2:
 
 o pressing carriage return in value part of popup indicator buttons that take 
@@ -392,149 +497,107 @@ o renamed Fig-co.ad to Fig-color.ad for color customization under X11R5 (see
 	from David Elliot (dce@krusty.smsc.sony.com)
 
 ------------------------------------------------------------------------------
-Patchlevel 2
+Patchlevel 2 (Dec 1991)
 Changes to Patchlevel 1:
 
 o the font flag (LaTeX, PostScript) wasn't being changed correctly in the
 	UPDATE text object operation when switching from LaTeX to PostScript 
 	or vice versa.
-
 o the textstep value may now be entered in floating point in the popup menu
-
 o the eps-bitmap icon was renamed to eps-object because it can be any
 	eps object that is imported.  If it has a preview bitmap
 	that will be displayed.  Several filenames/program variables
 	were also changed to reflect this.
-
 o there is now a more general glue mechanism for compounding objects
-
 o text pasting into canvas now possible with F18 function key or any translation
 	desired by user.  F18 is hardwired default in program; F20 also 
 	programmed in Fig.ad to paste text.
 	Brian Boyter (pyrdc!bimbo!boyter@uunet.UU.NET)
-
 o DEFAULT fill_style caused core dump 
 	from Jeffry R. Abramson (jra@violin.att.com)
-
 o made the mouse-tracking markers hollow so as not to be visually obtrusive
 	as suggested by Stephen Gildea (gildea@expo.lcs.mit.edu)
-
 o removed extraneous call to free() in add_point() (u_draw.c)
 	from Per Fogelstr|m (pf@diab.se)
-
 o cleaned up gcc compiler warnings about type mismatches etc.
-
 o compound objects may be rotated by arbitrary angles if there are no boxes, 
 	arc-boxes, ellipses or circles contained within.
-
 o text rotation support is improved - markers are now shown rotated and
 	the angle attribute is set by the relevant rotate operations.
-
 o both ps and eps modes now supported in export menu.
-
 o new directory browsing facilities integrated with File and Export popups.
 	Allows selection of file by clicking on the filename.  Has mask to list
 	only those files of interest.  See the man pages for further details.
-
 o Default font for Postscript fonts may now be selected and objects that
 	have default font may be edited
-
 o FASTSERVER flag removed; now always uses smart redrawing when available
 	Additionally, smart redrawing is available more often
-
 o fixed bug in regular polygon where some vertices were off by one pixel
-
 o added "Use orig. size" button for eps objects to set object to original 
 	size in popup edit
 	from Peter Scott (pjs@euclid.jpl.nasa.gov)
-
 o international characters supported (umlauts, accents, cedilla etc) using
 	compose (meta) key
 	from Herve Soulard (soulard@corto.inria.fr)
-
 o much improved color support
 	from Henning Spruth (hns@regent.e-technik.tu-muenchen.de)
-
 o additional pan and zoom mode with <Ctrl>Key and left/middle/right button
 	from Henning Spruth (hns@regent.e-technik.tu-muenchen.de)
-
 o removed reference to FONTLIBDIR in Imakefile (no longer required)
-
 o added a smart-links feature for the MOVE and COPY commands.
 	With smart links turned on, when a BOX-like object is moved
 	so are the lines which join up to it (its links).
 	Two modes are supported: one which moves just the endpoint,
 	the other slides the endlink so that it's angle doesn't change.
 	In the second mode horizontal/vertical lines remain that way.
-
 o added the ability to save figure during quit if it is modified
-
 o added support for scalable fonts under R5
-
 o additional command line flags supported
 	-latexfonts flag (resource .latexfonts) to start xfig with the LaTeX
 	fonts as the default instead of PostScript fonts
 	-specialtext flag (resource .specialtext) to start xfig with special
 	text as the default
-
 o bug fixed where number of objects count in file popup was sometimes clipped
-
 ------------------------------------------------------------------------------
-Patchlevel 1
+
+Patchlevel 1 (Oct 1991)
 Changes to Patchlevel 0:
 
 o xfig now reads text size, height and length as floats and rounds to ints
 	this is done because certain programs generate floats for these
-
 o compound object was rounded to next larger grid even if objects inside were
 	already on the grid
-
 o Examples/logo.fig included Logo.eps instead of logo.eps
-
 o cancellation of line drawing left single dot on screen
-
 o filename in File popup menu didn't get set until first popup - file save 
 	shortcut would save to unnamed.fig even if xfig was started with file name
-
 o bug fixed in not being able to delete points from certain objects
-
 o typo in FORMAT2.1 file (and all previous) stating that text angle is int when
 	it is really float
-
 o can now change corners of compound object with edit popup
 	also shows number of objects inside compound
-
 o file menu now shows number of objects in figure
-
 o some bugs fixed in calculating bounding boxes after scaling ellipses and 
 	compounds
-
 o "#ifdefined SYSV" now reads "#if defined(SYSV) || defined(SVR4)" because X11R5
 	doesn't define SYSV if SVR4 is defined
 	David Elliott (dce@krusty.smsc.Sony.COM)
-	
 o object depths < 0 are converted to depth = 0
-
 o typo in Adobe font name (was "-abode-new century schoolbook-medium-r-*--*")
 	Jan Lindheim (lindheim@ccsf.caltech.edu)
-
 o radius field for non-arcbox line objects now set to -1
 	Jan Nusteling (j.nusteling@et.tudelft.nl)
-
 o bug fixed in not trying to load an eps bitmap file called <empty>
 	and not trying to reload an eps bitmap during a copy.
-
 o bug fixed which caused crash after editing 0-width or 0-height ellipses
-
 o bug fixed which caused incorrect mode after cancelling draw (int)spline
-
 o bug fixed which caused incorrect minimum number of points for (int)spline
-
 o bug fixed which caused erroneous large values to occur after box scale of
 	0-width or 0-height objects.  You can no longer box scale such objects
-
 ------------------------------------------------------------------------------
-Patchlevel 0
+
+VERSION 2.1
+Patchlevel 0 (Sep 1991)
 Changes to Version 2.0 Patchlevel 10:
 Implemented by Paul King (king@cs.uq.oz.au) and
 Brian Smith (envbvs@epb7.lbl.gov) with help from
@@ -562,14 +625,10 @@ o The buttons are now grouped into three panels:
 o Pan figure by using left/middle/right button in the rulers in addition to
 	the previously supported arrow keys.  Also a pan to origin operation
 	is available by clicking in the units window (or using HOME key).
-
 o May now print figure that hasn't been saved (i.e. print what is on the 
 	canvas, not the file)
-
 o Zoom up or down with zoom button.
-
 o Mouse function window shows function of active buttons
-
 o New resources/command-line switches which affect the user interface:
 	-showallbuttons		(show all indicator buttons all the time)
 	-internalBW n		(use lines of width n between buttons/panels)
@@ -579,40 +638,28 @@ DRAWING MODES
 
 o Regular polygon drawing button - select number of sized from bottom panel.
         Object created is normal xfig polygon.
-
 o Inclusion of Encapsulated Postscript files (bitmap image in EPS file is
 	displayed).
-
 o Rubberbanding of ellipses/circles.
-
 o Filled splines show areafill on screen now
         also dashed/dotted line type shows on screen
-
 o Dot-gap and dash-length can be changed in the line-style indicator popup.
 
 EDITING MODES
 -------------
 
 o Cut to buffer operation is now part of Copy object mode & Delete object mode.
-
 o Update button to either update objects to current settings, or update
         indicator settings from an object.
-
 o Rotation of certain objects by any angle (30, 45, 60, 90, 120 degrees can
 	be selected using the mouse middle/right shortcut buttons).
-
 o Alignment horizontally and/or vertically of objects to compound object edge(s)
-
 o Objects can be scaled (not just compounds).
-
 o Point move or object copy/move constrainable to horizontal or vertical
 	movement (middle mouse button)
-
 o Compound bounding corners shrink to fit enclosed objects and have markers
 	that appear the same as other objects.
-
 o Shift-click selection should work on all editing operations.
-
 o Only the objects relevant to a particular editing operation will
 	have their markers shown.
 
@@ -622,26 +669,18 @@ OVERALL OPERATION
 o Smarter redrawing (if compiled with -DFASTSERVER).
 	Only the relevant objects are redrawn after an expose or after
 	an edit operation (not all operations support this yet).
-
 o Undo should work for all commands.
-
 o Operations can now be cancelled (using the right button when appropriate).
-
 o Point positioning to three resolutions:
 	magnet (1/16inch), small grid or large grid
-
 o TransFig 2.1 features: LaTex fonts, hidden text, scalable text, "special" text
         see TransFig man pages for description
         scalable text sizes with resizing of figure
-
 o Attempts to save figure if signal detected (segmentation violation, etc)
-
 o Resizing the xfig window should now be a bit smarter.
-
 o The philosophy behind button usage has changed. This was necessary to
 	provide a consistent (as possible) philosophy which supports the
 	use of several buttons per mode.  Now the same button used to start
 	an edit/draw operation is used to continue to the normal next step
 	in the operation.  The right button can be used to cancel an operation.
 	Watch the mouse function window until you get the hang of it.
-

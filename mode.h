@@ -55,12 +55,12 @@
 extern int	cur_mode;
 
 /* alignment mode */
-#define		NONE			0
-#define		LEFT			1
-#define		TOP			1
-#define		CENTER			2
-#define		RIGHT			3
-#define		BOTTOM			3
+#define		ALIGN_NONE		0
+#define		ALIGN_LEFT		1
+#define		ALIGN_TOP		1
+#define		ALIGN_CENTER		2
+#define		ALIGN_RIGHT		3
+#define		ALIGN_BOTTOM		3
 
 extern int	cur_halign;
 extern int	cur_valign;

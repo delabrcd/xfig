@@ -29,7 +29,7 @@
 #include "w_mousefun.h"
 
 extern char    *panel_get_value();
-extern PIX_ROT_FONT lookfont();
+extern PIX_FONT lookfont();
 Widget		make_popup_menu();
 static Widget	make_color_popup_menu();
 
@@ -343,8 +343,7 @@ origsize_eps(w, ev)
     XButtonEvent   *ev;
 {
     struct f_point  p1, p2;
-    int		    dx, dy, rotation;
-    float	    ratio;
+    int		    dx, dy;
     register float  orig_ratio = new_l->eps->hw_ratio;
 
     p1.x = atoi(panel_get_value(x1_panel));
@@ -380,9 +379,9 @@ make_window_compound(c)
     new_c = copy_compound(c);
     new_c->next = c;
     generic_window("COMPOUND", "", &glue_ic, done_compound, 0, 0);
-    f_pos_panel(&c->nwcorner, "Top Left Corner:", &x1_panel, &y1_panel);
-    f_pos_panel(&c->secorner, "Bottom Right Corner:", &x2_panel, &y2_panel);
-    int_label(object_count(c), "Num Objects: ", &num_objects);
+    f_pos_panel(&c->nwcorner, "Top Left Corner", &x1_panel, &y1_panel);
+    f_pos_panel(&c->secorner, "Bottom Right Corner", &x2_panel, &y2_panel);
+    int_label(object_count(c), "Num Objects ", &num_objects);
 }
 
 static
@@ -476,15 +475,15 @@ make_window_line(l)
 	generic_window("POLYLINE", "Box", &box_ic, done_line, 1, 0);
 	p1 = *new_l->points;
 	p2 = *new_l->points->next->next;
-	xy_panel(p1.x, p1.y, "First Corner:", &x1_panel, &y1_panel);
-	xy_panel(p2.x, p2.y, "Opposite Corner:", &x2_panel, &y2_panel);
+	xy_panel(p1.x, p1.y, "First Corner", &x1_panel, &y1_panel);
+	xy_panel(p2.x, p2.y, "Opposite Corner", &x2_panel, &y2_panel);
 	break;
     case T_ARC_BOX:
 	generic_window("POLYLINE", "ArcBox", &arc_box_ic, done_line, 1, 0);
 	p1 = *new_l->points;
 	p2 = *new_l->points->next->next;
-	xy_panel(p1.x, p1.y, "First Corner:", &x1_panel, &y1_panel);
-	xy_panel(p2.x, p2.y, "Opposite Corner:", &x2_panel, &y2_panel);
+	xy_panel(p1.x, p1.y, "First Corner", &x1_panel, &y1_panel);
+	xy_panel(p2.x, p2.y, "Opposite Corner", &x2_panel, &y2_panel);
 	int_panel(new_l->radius, form, "Radius =", &radius);
 	break;
     case T_EPS_BOX:
@@ -495,8 +494,8 @@ make_window_line(l)
 	str_panel(new_l->eps->file, "EPS Filename =", &eps_name_panel);
 	p1 = *new_l->points;
 	p2 = *new_l->points->next->next;
-	xy_panel(p1.x, p1.y, "First Corner:", &x1_panel, &y1_panel);
-	xy_panel(p2.x, p2.y, "Opposite corner:", &x2_panel, &y2_panel);
+	xy_panel(p1.x, p1.y, "First Corner", &x1_panel, &y1_panel);
+	xy_panel(p2.x, p2.y, "Opposite corner", &x2_panel, &y2_panel);
 
 	/* make popup flipped menu */
 	FirstArg(XtNfromVert, below);
@@ -802,10 +801,10 @@ make_window_text(t)
 					XtNumber(special_text_items),
 				   special_text_panel, special_text_select);
 
-    xy_panel(new_t->base_x, new_t->base_y, "Origin:", &x1_panel, &y1_panel);
+    xy_panel(new_t->base_x, new_t->base_y, "Origin", &x1_panel, &y1_panel);
     font_image_panel(new_psflag ? psfont_menu_bitmaps[new_t->font + 1] :
-		 latexfont_menu_bitmaps[new_t->font], "Font:", &font_panel);
-    str_panel(new_t->cstring, "Text:", &text_panel);
+		 latexfont_menu_bitmaps[new_t->font], "Font", &font_panel);
+    str_panel(new_t->cstring, "Text", &text_panel);
 }
 
 static
@@ -832,6 +831,7 @@ get_new_text_values()
     new_t->color = color;
     new_t->depth = atoi(panel_get_value(depth_panel));
     new_t->angle = M_PI / 180 * atoi(panel_get_value(angle_panel));
+    fixangle(&new_t->angle);	/* keep between 0 and 2PI */
     new_t->base_x = atoi(panel_get_value(x1_panel));
     new_t->base_y = atoi(panel_get_value(y1_panel));
     if (new_t->cstring)
@@ -839,18 +839,20 @@ get_new_text_values()
     s = panel_get_value(text_panel);
     new_t->cstring = new_string(strlen(s) + 1);
     strcpy(new_t->cstring, s);
+    /* get the fontstruct for zoom = 1 to get the size of the string */
     canvas_font = lookfont(x_fontnum(new_t->flags, new_t->font), 
-			new_t->size, new_t->angle*180.0/M_PI);
-    new_t->fontstruct = canvas_font;
+			new_t->size);
     size = pf_textwidth(canvas_font, strlen(s), s);
     new_t->height = size.y;
     new_t->length = size.x;
+    /* now set the fontstruct for this zoom scale */
+    reload_text_fstruct(new_t);
 }
 
 static
 done_text()
 {
-    int		    xmin, ymin, xmax, ymax;
+    int		    xmin, ymin, xmax, ymax, dum;
 
     old_t = new_t->next;
     switch (button_result) {
@@ -865,14 +867,16 @@ done_text()
 	get_new_text_values();
 	new_t->next = NULL;
 	change_text(old_t, new_t);
-	text_bound(new_t, &xmin, &ymin, &xmax, &ymax);
+	text_bound(new_t, &xmin, &ymin, &xmax, &ymax,
+		   &dum, &dum, &dum, &dum, &dum, &dum, &dum, &dum);
 	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
 	reset_cursor();
 	break;
     case CANCEL:
 	if (changed) {
 	    draw_text(new_t, ERASE);
-	    text_bound(old_t, &xmin, &ymin, &xmax, &ymax);
+	    text_bound(old_t, &xmin, &ymin, &xmax, &ymax,
+		   &dum, &dum, &dum, &dum, &dum, &dum, &dum, &dum);
 	    redisplay_zoomed_region(xmin, ymin, xmax, ymax);
 	} else {
 	    toggle_textmarker(old_t);
@@ -928,12 +932,12 @@ make_window_ellipse(e)
 	      &angle_panel);
 
     if (ellipse_flag) {
-	f_pos_panel(&new_e->center, "Center:",
+	f_pos_panel(&new_e->center, "Center",
 		    &x1_panel, &y1_panel);
-	f_pos_panel(&new_e->radiuses, "Radiuses:",
+	f_pos_panel(&new_e->radiuses, "Radiuses",
 		    &x2_panel, &y2_panel);
     } else {
-	f_pos_panel(&new_e->center, "Center:",
+	f_pos_panel(&new_e->center, "Center",
 		    &x1_panel, &y1_panel);
 	int_panel(new_e->radiuses.x, form, "Radius =",
 		  &x2_panel);
@@ -945,6 +949,7 @@ get_new_ellipse_values()
 {
     get_generic_vals(new_e);
     new_e->angle = M_PI / 180 * atoi(panel_get_value(angle_panel));
+    fixangle(&new_e->angle);	/* keep between 0 and 2PI */
     get_f_pos(&new_e->center, x1_panel, y1_panel);
     if (ellipse_flag)
 	get_f_pos(&new_e->radiuses, x2_panel, y2_panel);
@@ -965,8 +970,6 @@ get_new_ellipse_values()
 static
 done_ellipse()
 {
-    int		    xmin, ymin, xmax, ymax;
-
     old_e = new_e->next;
     switch (button_result) {
     case APPLY:
@@ -1009,9 +1012,9 @@ make_window_arc(a)
     put_generic_vals(new_a);
     put_generic_arrows(new_a);
     generic_window("ARC", "Specified by 3 points", &arc_ic, done_arc, 1, 1);
-    f_pos_panel(&new_a->point[0], "p1:", &x1_panel, &y1_panel);
-    f_pos_panel(&new_a->point[1], "p2:", &x2_panel, &y2_panel);
-    f_pos_panel(&new_a->point[2], "p3:", &x3_panel, &y3_panel);
+    f_pos_panel(&new_a->point[0], "p1", &x1_panel, &y1_panel);
+    f_pos_panel(&new_a->point[1], "p2", &x2_panel, &y2_panel);
+    f_pos_panel(&new_a->point[2], "p3", &x3_panel, &y3_panel);
 }
 
 static
@@ -1039,8 +1042,6 @@ get_new_arc_values()
 static
 done_arc()
 {
-    int		    xmin, ymin, xmax, ymax;
-
     old_a = new_a->next;
     switch (button_result) {
     case APPLY:
@@ -1109,8 +1110,6 @@ make_window_spline(s)
 static
 done_spline()
 {
-    int		    xmin, ymin, xmax, ymax;
-
     old_s = new_s->next;
     switch (button_result) {
     case APPLY:
@@ -1259,12 +1258,6 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
     Pixmap	    image_pm;
     static int      actions_added=0;
 
-#ifdef OPENWIN_BUG
-    /* to cater for OpenWindows bug - see below */
-    Pixel	    fg, bg;
-
-#endif
-
     static char	   *linestyle_items[] = {
     "Solid Line ", "Dashed Line", "Dotted Line"};
     static char	   *fill_style_items[] = {
@@ -1318,8 +1311,9 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
 
     /* doesn't already exist, create a pixmap from the data (ala panel.c) */
     /* OpenWindows bug doesn't handle a 1-plane bitmap on a n-plane display */
+    /* so we use CreatePixmap.... */
     if (!image_pm) {
-#ifdef OPENWIN_BUG
+	Pixel	    fg, bg;
 	/* get the foreground/background of the widget */
 	FirstArg(XtNforeground, &fg);
 	NextArg(XtNbackground, &bg);
@@ -1328,10 +1322,6 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
 	image_pm = XCreatePixmapFromBitmapData(tool_d, canvas_win,
 				     (char *) icon->data, icon->width, icon->height,
 				     fg, bg, XDefaultDepthOfScreen(tool_s));
-#else
-	image_pm = XCreateBitmapFromData(tool_d, canvas_win,
-				     (char *) icon->data, icon->width, icon->height);
-#endif
 	pix_table[i].image_pm = image_pm;
 	pix_table[i].image = icon;
     }
@@ -1808,19 +1798,29 @@ String		text_translations =
 	<Key>F18: PastePanelKey()\n";
 
 static
-str_panel(string, label, pi_x)
+str_panel(string, name, pi_x)
     char	   *string;
-    char	   *label;
+    char	   *name;
     Widget	   *pi_x;
 {
     int		    width, nlines, i;
     Dimension	    pwidth;
     PIX_FONT	    temp_font;
+    char	   *labelname, *textname;
+
+    /* make the labels of the widgets xxx_lab for the label part and xxx_text for 
+	the asciiwidget part */
+    labelname = (char *) malloc(strlen(name)+5);
+    textname = (char *) malloc(strlen(name)+6);
+    strcpy(labelname,name);
+    strcat(labelname,"_lab");
+    strcpy(textname,name);
+    strcat(textname,"_text");
 
     FirstArg(XtNfromVert, below);
-    NextArg(XtNlabel, label);
+    NextArg(XtNlabel, name);
     NextArg(XtNborderWidth, 0);
-    beside = XtCreateManagedWidget(label, labelWidgetClass, form, Args, ArgCount);
+    beside = XtCreateManagedWidget(labelname, labelWidgetClass, form, Args, ArgCount);
 
     /* get the font and width of above label widget */
     FirstArg(XtNfont, &temp_font);
@@ -1852,7 +1852,7 @@ str_panel(string, label, pi_x)
     NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
     NextArg(XtNscrollVertical, XawtextScrollWhenNeeded);
 
-    *pi_x = XtCreateManagedWidget(label, asciiTextWidgetClass, form, Args, ArgCount);
+    *pi_x = XtCreateManagedWidget(textname, asciiTextWidgetClass, form, Args, ArgCount);
 
     /* make Newline do nothing for now */
     XtOverrideTranslations(*pi_x, XtParseTranslationTable(text_translations));
@@ -1861,6 +1861,9 @@ str_panel(string, label, pi_x)
     XtOverrideTranslations(*pi_x, XtParseTranslationTable(local_translations));
 
     below = *pi_x;
+
+    free((char *) textname);
+    free((char *) labelname);
 }
 
 static

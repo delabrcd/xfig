@@ -1,73 +1,79 @@
-/*
- * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1992 by Alan Richardson
- *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
- */
+/* ************************************************************************ */
 
-#define TLEFT	 1
-#define TCENTRE	 2
-#define TRIGHT	 3
-#define MLEFT	 4
-#define MCENTRE	 5
-#define MRIGHT	 6
-#define BLEFT	 7
-#define BCENTRE	 8
-#define BRIGHT	 9
+
+/* Header file for the `xvertext 5.0' routines.
+
+   Copyright (c) 1993 Alan Richardson (mppa3@uk.ac.sussex.syma) */
+
+
+/* ************************************************************************ */
+
+#ifndef _XVERTEXT_INCLUDED_ 
+#define _XVERTEXT_INCLUDED_
+
+
+#define XV_VERSION      5.0
+#define XV_COPYRIGHT \
+      "xvertext routines Copyright (c) 1993 Alan Richardson"
 
 
 /* ---------------------------------------------------------------------- */
 
 
-/* *** The font structures *** */
+/* text alignment */
 
-typedef struct
-{ int		 bit_w;
-  int		 bit_h;
-
-  Pixmap	 bm; 		} BitmapStruct;
-
-typedef struct
-{ int		 ascent;
-  int		 descent;
-  int	 	 lbearing;
-  int		 rbearing;
-  int		 width;
-
-  BitmapStruct	 glyph;		} XRotCharStruct;
-
-typedef struct
-{ int		 dir;
-  int		 height;	/* max_ascent+max_descent */
-  int		 width;		/* max_bounds.width from XFontStruct */
-  int		 max_ascent;
-  int		 max_descent;
-  int		 max_char;
-  int		 min_char;
-  char		*name;
-
-  XFontStruct	*xfontstruct;
-
-  XRotCharStruct per_char[95];	} XRotFontStruct;
+#define NONE             0
+#define TLEFT            1
+#define TCENTRE          2
+#define TRIGHT           3
+#define MLEFT            4
+#define MCENTRE          5
+#define MRIGHT           6
+#define BLEFT            7
+#define BCENTRE          8
+#define BRIGHT           9
 
 
 /* ---------------------------------------------------------------------- */
 
+/* this shoulf be C++ compliant, thanks to 
+     vlp@latina.inesc.pt (Vasco Lopes Paulo) */
 
-extern XRotFontStruct		 *XRotLoadFont();
-extern void                       XRotUnloadFont();
-extern int                        XRotTextWidth();
-extern int                        XRotTextHeight();
-extern void                       XRotDrawString();
-extern void                       XRotDrawImageString();
-extern void                       XRotDrawAlignedString();
-extern void                       XRotDrawAlignedImageString();
+#if defined(__cplusplus) || defined(c_plusplus)
 
+extern "C" {
+float   XRotVersion(char*, int);
+void    XRotSetMagnification(float);
+void    XRotSetBoundingBoxPad(int);
+int     XRotDrawString(Display*, XFontStruct*, float,
+                       Drawable, GC, int, int, char*);
+int     XRotDrawImageString(Display*, XFontStruct*, float,
+                            Drawable, GC, int, int, char*);
+int     XRotDrawAlignedString(Display*, XFontStruct*, float,
+                              Drawable, GC, int, int, char*, int);
+int     XRotDrawAlignedImageString(Display*, XFontStruct*, float,
+                                   Drawable, GC, int, int, char*, int);
+XPoint *XRotTextExtents(Display*, XFontStruct*, float,
+			int, int, char*, int);
+}
+
+#else
+
+extern float   XRotVersion();
+extern void    XRotSetMagnification();
+extern void    XRotSetBoundingBoxPad();
+extern int     XRotDrawString();
+extern int     XRotDrawImageString();
+extern int     XRotDrawAlignedString();
+extern int     XRotDrawAlignedImageString();
+extern XPoint *XRotTextExtents();
+
+#endif /* __cplusplus */
+
+/* ---------------------------------------------------------------------- */
+
+
+#endif /* _XVERTEXT_INCLUDED_ */
 
 
 

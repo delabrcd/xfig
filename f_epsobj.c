@@ -33,7 +33,7 @@ read_epsf(eps)
     char	   *cp;
     unsigned char  *mp;
     unsigned int    hexnib;
-    int		    flag,preview;
+    int		    flag;
     char	    buf[300];
     int		    llx, lly, urx, ury, bad_bbox;
     FILE	   *epsf;

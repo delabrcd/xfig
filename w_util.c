@@ -126,7 +126,7 @@ popup_query(query_type, message)
     XtAddEventHandler(query_yes, ButtonReleaseMask, (Boolean) 0,
 		      (XtEventHandler)accept_yes, (XtPointer) NULL);
 
-    if (query_type == QUERY_YESNO) {
+    if (query_type == QUERY_YESNO || query_type == QUERY_YESNOCAN) {
 	ArgCount = 4;
 	NextArg(XtNhorizDistance, 25);
 	NextArg(XtNlabel, "  No  ");
@@ -144,11 +144,13 @@ popup_query(query_type, message)
 	NextArg(XtNfromHoriz, query_yes);
     }
 
-    NextArg(XtNlabel, "Cancel");
-    query_cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
+    if (query_type == QUERY_YESCAN || query_type == QUERY_YESNOCAN) {
+	NextArg(XtNlabel, "Cancel");
+	query_cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
 					 query_form, Args, ArgCount);
-    XtAddEventHandler(query_cancel, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(query_cancel, ButtonReleaseMask, (Boolean) 0,
 		      (XtEventHandler)accept_cancel, (XtPointer) NULL);
+    }
 
     XtPopup(query_popup, XtGrabExclusive);
     (void) XSetWMProtocols(XtDisplay(query_popup), XtWindow(query_popup),

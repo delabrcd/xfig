@@ -25,7 +25,7 @@
 #include "w_util.h"
 #include "w_zoom.h"
 #ifndef SYSV
-#include "sys/time.h"
+#include <sys/time.h>
 #endif
 #include <X11/Xatom.h>
 
@@ -125,6 +125,7 @@ static String	canvas_translations =
     <Key>F18: PasteCanv()\n\
     <EnterWindow>:EnterCanv()\n\
     <LeaveWindow>:LeaveCanv()EraseRulerMark()\n\
+    <KeyUp>:EventCanv()\n\
     ~Meta<Key>:EventCanv()\n\
     <Expose>:ExposeCanv()\n";
 
@@ -210,7 +211,7 @@ canvas_selected(tool, event, params, nparams)
 
     switch (event->type) {
     case MotionNotify:
-#if defined(SMOOTHMOTION) || defined(OPENWIN)
+#if defined(SMOOTHMOTION)
 	/* translate from zoomed coords to object coords */
 	x = BACKX(event->x);
 	y = BACKY(event->y);
@@ -244,7 +245,7 @@ canvas_selected(tool, event, params, nparams)
 	    x = sx = cx;	/* these are zoomed */
 	    y = sy = cy;	/* coordinates!	    */
 	}
-#endif /* SMOOTHMOTION || OPENWIN */
+#endif /* SMOOTHMOTION */
 	set_rulermark(x, y);
 	(*canvas_locmove_proc) (x, y);
 	break;
@@ -285,52 +286,77 @@ canvas_selected(tool, event, params, nparams)
 	    key == XK_Home ||
 	    key == XK_Multi_key ||
 	    key == XK_Alt_L ) {
-	    switch (key) {
-	    case XK_Left:
-		pan_left();
-		break;
-	    case XK_Right:
-		pan_right();
-		break;
-	    case XK_Up:
-		pan_up();
-		break;
-	    case XK_Down:
-		pan_down();
-		break;
-	    case XK_Home:
-		pan_origin();
-		break;
-	    case XK_Multi_key:
-	    case XK_Alt_L:
-		compose_key = 1;
-		break;
-	    }
-	} else {
-	    switch (compose_key) {
-	    case 0:
-		if (XLookupString(ke, buf, sizeof(buf), NULL, NULL) > 0)
-		    (*canvas_kbd_proc) ((unsigned char) buf[0]);
-		break;
-	    case 1:
-		if (XLookupString(ke, &compose_buf[0], 1, NULL, NULL)
-		    > 0)
-		    compose_key = 2;
-		break;
-	    case 2:
-		if (XLookupString(ke, &compose_buf[1], 1, NULL, NULL)
-		    > 0) {
-		    if ((c = getComposeKey(compose_buf)) != '\0')
-			(*canvas_kbd_proc) (c);
-		    else {
-			(*canvas_kbd_proc) ((unsigned char) compose_buf[0]);
-			(*canvas_kbd_proc) ((unsigned char) compose_buf[1]);
-		    }
-		    compose_key = 0;
+	        switch (key) {
+		    case XK_Left:
+			pan_left();
+			break;
+		    case XK_Right:
+			pan_right();
+			break;
+		    case XK_Up:
+			pan_up();
+			break;
+		    case XK_Down:
+			pan_down();
+			break;
+		    case XK_Home:
+			pan_origin();
+			break;
+		    case XK_Multi_key:
+		    case XK_Alt_L:
+			compose_key = 1;
+			break;
 		}
-		break;
+	} else if (key == XK_Control_L || key == XK_Control_R) { 
+		/* show the control-key actions */
+		draw_mousefun("Zoom area", "Pan to origin", "Unzoom");
+	} else if (key == XK_Shift_L || key == XK_Shift_R) {
+		/* show the shift-key function, but only if an edit mode */
+		if (cur_mode >= FIRST_EDIT_MODE)
+		    draw_mousefun("Locate object", "Locate object", "");
+	} else {
+	    if (canvas_kbd_proc != null_proc) {
+		switch (compose_key) {
+		case 0:
+		    if (XLookupString(ke, buf, sizeof(buf), NULL, NULL) > 0)
+			(*canvas_kbd_proc) ((unsigned char) buf[0]);
+		    break;
+		case 1:
+		    if (XLookupString(ke, &compose_buf[0], 1, NULL, NULL)
+			> 0)
+			compose_key = 2;
+		    break;
+		case 2:
+		    if (XLookupString(ke, &compose_buf[1], 1, NULL, NULL)
+			> 0) {
+			if ((c = getComposeKey(compose_buf)) != '\0')
+			    (*canvas_kbd_proc) (c);
+			else {
+			    (*canvas_kbd_proc) ((unsigned char) compose_buf[0]);
+			    (*canvas_kbd_proc) ((unsigned char) compose_buf[1]);
+			}
+			compose_key = 0;
+		    }
+		    break;
+		}
+	    } else {
+		/* Be cheeky... we aren't going to do anything, so pass the
+		 * key on to the mode_panel window by rescheduling the event
+		 * The message window might treat it as a hotkey!
+		 */
+		ke->window = XtWindow(mode_panel);
+		ke->subwindow = 0;
+		XPutBackEvent(ke->display,(XEvent *)ke);
 	    }
 	}
+	break;
+
+    case KeyRelease:
+	/* if user is releasing Control or Shift keys redisplay original function */
+	key = XLookupKeysym(ke, 0);
+	    if (key == XK_Control_L || key == XK_Control_R ||
+		key == XK_Shift_L || key == XK_Shift_R)
+		draw_mousefun_canvas();
 	break;
     }
 }
@@ -363,11 +389,6 @@ XKeyEvent *paste_event;
 		event_time = paste_event->time;
 	   else
 		time((time_t *) &event_time);
-	/***
-	This doesn't seem to work:
-	XtGetSelectionValue(w, XInternAtom(XtDisplay(w), "XA_PRIMARY", False),
-		XA_STRING, get_canvas_clipboard, NULL, event_time);
-	***/
 	XtGetSelectionValue(w, XA_PRIMARY,
 		XA_STRING, get_canvas_clipboard, NULL, event_time);
 }

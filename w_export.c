@@ -22,6 +22,7 @@
 extern String	text_translations;
 extern Widget	make_popup_menu();
 extern char    *panel_get_value();
+extern Boolean	query_save();
 extern Widget	file_popup;
 extern Widget	file_dir;
 
@@ -31,6 +32,10 @@ char		export_dir[PATH_MAX];
 
 /* LOCAL */
 
+static String	file_list_translations =
+	"<Btn1Down>,<Btn1Up>: Set()Notify()\n\
+	<Btn1Down>(2): export()\n\
+	<Key>Return: ExportFile()\n";
 static String	file_name_translations =
 	"<Key>Return: ExportFile()\n";
 void		do_export();
@@ -104,6 +109,7 @@ export_panel_cancel(w, ev)
 }
 
 static char	export_msg[] = "EXPORT";
+static char	exp_msg[] = "The current figure is modified.\nDo you want to save it before exporting?";
 
 void
 do_export(w)
@@ -116,6 +122,10 @@ do_export(w)
 	if (emptyfigure_msg(export_msg))
 		return;
 
+	/* if modified (and non-empty) ask to save first */
+	if (!query_save(exp_msg))
+	    return;		/* cancel, do not export */
+
 	if (!export_popup) 
 		create_export_panel(w);
 	FirstArg(XtNstring, &fval);
@@ -123,8 +133,8 @@ do_export(w)
 	if (emptyname(fval)) {		/* output filename is empty, use default */
 	    fval = default_export_file;
 	    warnexist = False;		/* don't warn if this file exists */
-	} else {
-	    warnexist = True;		/* otherwise warn if the file exists */
+	} else if (strcmp(fval,default_export_file) != 0) {
+	    warnexist = True;		/* warn if the file exists and is diff. from default */
 	}
 
 	/* if not absolute path, change directory */
@@ -394,9 +404,9 @@ create_export_panel(w)
 
 	create_dirinfo(export_panel, exp_selfile, &beside, &below,
 		       &exp_mask, &exp_dir, &exp_flist, &exp_dlist);
-	/* make <return> in the file list window export the file */
+	/* make <return> or double click in the file list window export the file */
 	XtOverrideTranslations(exp_flist,
-			   XtParseTranslationTable(file_name_translations));
+			   XtParseTranslationTable(file_list_translations));
 
 	FirstArg(XtNlabel, "Cancel");
 	NextArg(XtNfromHoriz, beside);
@@ -463,5 +473,7 @@ update_def_filename()
 	FirstArg(XtNstring, &dval);
 	GetValues(file_dir);
 	strcpy(export_dir,dval);
+    } else {
+	strcpy(export_dir,cur_dir);
     }
 }

@@ -17,6 +17,7 @@
 #include "paintop.h"
 #include "w_setup.h"
 #include "w_drawprim.h"
+#include "w_zoom.h"
 
 static int	create_n_write_bitmap();
 
@@ -47,6 +48,10 @@ create_n_write_bitmap(filename)
     Pixmap	    largepm, bitmap;
     extern F_compound objects;
     int		    i;
+    float	    savezoom;
+    int		    savexoff, saveyoff;
+    int		    status;
+    Boolean	    zoomchanged;
     GC		    xgc, gc_bitmap;
 
     /* this may take a while */
@@ -54,8 +59,22 @@ create_n_write_bitmap(filename)
     put_msg("Capturing canvas image...");
     app_flush();
 
+    /* set the zoomscale to 1 and offset to origin */
+    zoomchanged = (zoomscale != 1.0);
+    savezoom = zoomscale;
+    savexoff = zoomxoff;
+    saveyoff = zoomyoff;
+    zoomscale = 1.0;
+    zoomxoff = zoomyoff = 0;
+    /* resize texts back to zoomscale 1 if necessary */
+    if (zoomchanged)
+	reload_text_fstructs();
+
     /* Assume that there is at least one object */
     compound_bound(&objects, &xmin, &ymin, &xmax, &ymax);
+
+    /* set the clipping to include ALL objects */
+    set_clip_window(xmin, ymin, xmax, ymax);
 
     if (appres.DEBUG) {
 	elastic_box(xmin, ymin, xmax, ymax);
@@ -65,10 +84,8 @@ create_n_write_bitmap(filename)
 	xmin = 0;
     if ((ymin -= 10) < 0)
 	ymin = 0;
-    if ((xmax += 10) > CANVAS_WD)
-	xmax = CANVAS_WD;
-    if ((ymax += 10) > CANVAS_HT)
-	ymax = CANVAS_HT;
+    xmax += 10;
+    ymax += 10;
 
     width = xmax - xmin + 1;
     height = ymax - ymin + 1;
@@ -149,17 +166,22 @@ create_n_write_bitmap(filename)
     if (XWriteBitmapFile(tool_d, filename, bitmap, width, height, -1, -1)
 	!= BitmapSuccess) {
 	put_msg("Couldn't write bitmap file");
-	XFreePixmap(tool_d, largepm);
-	XFreePixmap(tool_d, bitmap);
-	/* all done */
-	reset_cursor();
-	return (1);
+	status = 1;
     } else {
 	put_msg("Bitmap written to \"%s\"", filename);
-	XFreePixmap(tool_d, largepm);
-	XFreePixmap(tool_d, bitmap);
-	/* all done */
-	reset_cursor();
-	return (0);
+	status = 0;
     }
+    XFreePixmap(tool_d, largepm);
+    XFreePixmap(tool_d, bitmap);
+    reset_cursor();
+    /* restore the zoom */
+    zoomscale = savezoom;
+    zoomxoff = savexoff;
+    zoomyoff = saveyoff;
+    /* resize texts back to original if necessary */
+    if (zoomchanged)
+	reload_text_fstructs();
+    /* reset the clipping to the canvas */
+    reset_clip_window();
+    return (status);
 }

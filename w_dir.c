@@ -52,13 +52,13 @@
 /* Static variables */
 
 DeclareStaticArgs(10);
-static Boolean	errorInProgress;
 static String	dir_translations =
 	"<Key>Return: SetDir()\n\
 	Ctrl<Key>X: EmptyTextKey()\n\
 	<Key>F18: PastePanelKey()\n";
 static String	list_panel_translations =
 	"<Btn3Up>: ParentDir()\n";
+
 static char	CurrentSelectionName[PATH_MAX];
 static int	file_entry_cnt, dir_entry_cnt;
 static char   **file_list, **dir_list;
@@ -100,15 +100,13 @@ FileSelected(w, client_data, ret_val)
 
     strcpy(CurrentSelectionName, ret_struct->string);
     FirstArg(XtNstring, CurrentSelectionName);
-	/* I don't know why this doesn't work? */
-	/* NextArg(XtNinsertPosition, strlen(CurrentSelectionName));*/
-	if (export_up) {
+    if (export_up) {
 	SetValues(exp_selfile);
 		XawTextSetInsertionPoint(exp_selfile, strlen(CurrentSelectionName));
-	} else {
+    } else {
 	SetValues(file_selfile);
 		XawTextSetInsertionPoint(file_selfile, strlen(CurrentSelectionName));
-	}
+    }
 }
 
 /* Function:	DirSelected() is called when the user selects a directory.
@@ -163,9 +161,9 @@ SetDir(widget, event, params, num_params)
 
     /* get the string from the widget */
     FirstArg(XtNstring, &ndir);
-    if (file_up)
+    if (file_up) {
 	GetValues(file_dir);
-    else {
+    } else {
 	GetValues(exp_dir);
 	strcpy(export_dir,ndir);	/* save in global var */
     }
@@ -184,36 +182,32 @@ SetDir(widget, event, params, num_params)
 parseuserpath(path,longpath)
 char *path,*longpath;
 {
-    char	  *home,*p;
+    char	  *p;
     struct passwd *who;
 
     /* this user's home */
-    if (strlen(path)==1 || path[1]=='/')
-	{
+    if (strlen(path)==1 || path[1]=='/') {
 	strcpy(longpath,getenv("HOME"));
 	if (strlen(path)==1)		/* nothing after the ~, we have the full path */
 		return;
 	strcat(longpath,&path[1]);	/* append the rest of the path */
 	return;
-	}
+    }
     /* another user name after ~ */
     strcpy(longpath,&path[1]);
-    p=index(longpath,'/');
+    p=strchr(longpath,'/');
     if (p)
 	    *p='\0';
     who = getpwnam(longpath);
-    if (!who)
-	{
+    if (!who) {
 	file_msg("No such user: %s",longpath);
 	strcpy(longpath,path);
-	}
-    else
-	{
+    } else {
 	strcpy(longpath,who->pw_dir);
 	p=index(path,'/');
 	if (p)
 		strcat(longpath,p);	/* attach stuff after the / */
-	}
+    }
 }
 
 static String	mask_text_translations =
@@ -278,7 +272,7 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNscrollVertical, XawtextScrollNever);
     NextArg(XtNresize, XawtextResizeWidth);
-    NextArg(XtNwidth, 100);
+    NextArg(XtNwidth, 350);
     NextArg(XtNfromHoriz, w);
     NextArg(XtNfromVert, file_viewport);
     *mask_w = XtCreateManagedWidget("mask", asciiTextWidgetClass, 
@@ -342,10 +336,10 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     FirstArg(XtNlist, file_list);
     *flist_w = XtCreateManagedWidget("file_list_panel", listWidgetClass,
 				     file_viewport, Args, ArgCount);
-    XtOverrideTranslations(*flist_w,
-			   XtParseTranslationTable(list_panel_translations));
     XtAddCallback(*flist_w, XtNcallback, FileSelected,
 		  (XtPointer) NULL);
+    XtOverrideTranslations(*flist_w,
+			   XtParseTranslationTable(list_panel_translations));
 
     FirstArg(XtNlist, dir_list);
     *dlist_w = XtCreateManagedWidget("dir_list_panel", listWidgetClass,
@@ -425,6 +419,8 @@ MakeFileList(dir_name, mask, dir_list, file_list)
      */
     app_flush();
 
+    if ((mask == NULL) || (*mask == '\0'))
+	mask = "*";
     for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
 	/* skip over '.' (current dir) */
 	if (!strcmp(dp->d_name, "."))
@@ -441,8 +437,6 @@ MakeFileList(dir_name, mask, dir_list, file_list)
 	    }
 	} else {
 	    /* check if matches regular expression */
-	    if ((mask == NULL) || (*mask == '\0'))
-		mask = "*";
 	    if (wild_match(dp->d_name, mask) == 0)
 		continue;	/* no, do next */
 	    if (mask[0] == '*' && dp->d_name[0] == '.')
@@ -499,11 +493,7 @@ void
 DoChangeDir(dir)
     char	   *dir;
 {
-    char	  **file_list;
-    char	  **dir_list;
     char	   *p;
-    Arg		    args[10];
-    Cardinal	    arg_cnt;
     char	    ndir[PATH_MAX], tmpdir[PATH_MAX];
 
     
@@ -604,8 +594,12 @@ NewList(listwidget, list)
     Widget    listwidget;
     String   *list;
 {
+	int n;
+	/* make the scrollbar reset to the top */
 	XawListChange(listwidget, null_list, 1, 0, True);
 	XawListChange(listwidget, list, 0, 0, True);
+	FirstArg(XtNnumberStrings, &n);
+	GetValues(listwidget);
 }
 
 

@@ -226,8 +226,7 @@ static XtActionsRec     unit_actions[] =
     {"SetUnit", (XtActionProc) unit_panel_set},
 };
 
-static Widget	unit_popup, form, cancel, set, beside, below, newvalue,
-		label;
+static Widget	unit_popup, form, cancel, set, beside, below, label;
 
 /* handle unit/scale settings */
 
@@ -252,7 +251,6 @@ unit_panel_set(w, ev)
     XButtonEvent   *ev;
 {
     int old_rul_unit;
-    char	    buf[32];
 
     old_rul_unit = appres.INCHES;
     appres.INCHES = rul_unit_setting ? 1 : 0;
@@ -276,8 +274,12 @@ unit_panel_set(w, ev)
 		appres.INCHES ? "in" : "cm", appres.user_scale);
     }
 
-    if (old_rul_unit != appres.INCHES)
+    if (old_rul_unit != appres.INCHES) {
+	/* change the label in the widget */
+	FirstArg(XtNlabel, appres.INCHES ? "in" : "cm");
+	SetValues(unitbox_sw);
 	reset_rulers();
+    }
     unit_panel_dismiss();
 }
 

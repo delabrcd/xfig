@@ -139,7 +139,7 @@ readfp_fig(fp, obj)
 	return -2;
     if (strncmp(buf, "#FIG", 4) == 0) { /* versions 1.4/later have #FIG in
 					 * first line */
-	if ((sscanf((char*)(index(buf, ' ') + 1), "%f", &fproto)) == 0)	/* assume 1.4 */
+	if ((sscanf((char*)(strchr(buf, ' ') + 1), "%f", &fproto)) == 0)	/* assume 1.4 */
 	    proto = 14;
 	else
 	    proto = (fproto + .01) * 10;	/* protocol version*10 */
@@ -157,9 +157,8 @@ readfp_fig(fp, obj)
 	status = read_1_3_objects(fp, obj);
     }
 
-    /* shift the figure on the page if there are negative coords */
-    /**** DISABLE UNTIL WE PUT IN AN *OPTION* TO DO THIS */
-    /* shift_figure(obj); */
+    /* ask the user if the figure should be shifted if there are negative coords */
+    shift_figure(obj);
 
     fclose(fp);
     return (status);
@@ -448,6 +447,7 @@ read_ellipseobject()
 	return (NULL);
     }
     e->fill_style = FILL_CONVERT(e->fill_style);
+    fixangle(&e->angle);	/* make sure angle is 0 to 2PI */
     fixdepth(&e->depth);
     return (e);
 }
@@ -711,7 +711,7 @@ read_textobject(fp)
     int		    ignore = 0;
     char	    s[BUF_SIZE], s_temp[BUF_SIZE], junk[2];
     float	    tx_size, tx_height, tx_length;
-    extern PIX_ROT_FONT lookfont();
+    extern PIX_FONT lookfont();
 
     if ((t = create_text()) == NULL)
 	return (NULL);
@@ -726,12 +726,48 @@ read_textobject(fp)
      * We read text size, height and length as floats because TransFig uses
      * floats for these, but they are rounded to ints internally to xfig.
      */
-    /* read the leading blanks for the string, but delete the first later */
+    /* read the leading blanks for the string, but delete the first one later */
+#ifdef linux
+    {
+	char replaced;
+	int pos;
+	register int len;
+	pos = 0;
+	len = strlen(buf);
+	while (((unsigned char) buf[pos] <= 'e' ) &&
+		((unsigned char) buf[pos] >= ' ' ) && buf[pos] )
+			pos++;
+	replaced = buf[pos];
+	buf[pos]='f';
+	n = sscanf(buf, "%*d%d%d%f%d%d%d%f%d%f%f%d%d%[^f]%[f]",
+		&t->type, &t->font, &tx_size, &t->pen,
+		&t->color, &t->depth, &t->angle,
+		&t->flags, &tx_height, &tx_length,
+		&t->base_x, &t->base_y, s, junk);
+	n--;
+	if ( n < 13 ) {
+	    file_msg(Err_incomp, "text", line_no);
+	    free((char *) t);
+	    return (NULL);
+	   }
+	buf[pos]=replaced;
+	strcpy( s, buf+pos-strlen(s));
+	len=strlen(s);
+	if ( len && (s[len-1] ==  '\n') )
+	    s[len-1]='\0';
+	len=strlen(s);
+	if ( len && (s[len-1] ==  1) ) {
+	    n++;
+	    s[len-1]='\0';
+	}
+    }
+#else
     n = sscanf(buf, "%*d%d%d%f%d%d%d%f%d%f%f%d%d%[^\1]%[\1]",
-	       &t->type, &t->font, &tx_size, &t->pen,
-	       &t->color, &t->depth, &t->angle,
-	       &t->flags, &tx_height, &tx_length,
-	       &t->base_x, &t->base_y, s, junk);
+		&t->type, &t->font, &tx_size, &t->pen,
+		&t->color, &t->depth, &t->angle,
+		&t->flags, &tx_height, &tx_length,
+		&t->base_x, &t->base_y, s, junk);
+#endif
     if (n != 13 && n != 14) {
 	file_msg(Err_incomp, "text", line_no);
 	free((char *) t);
@@ -742,13 +778,13 @@ read_textobject(fp)
 	t->size = DEFAULT;
     else
 	t->size = round(tx_size);
-    while (t->angle < 0.0)
-	t->angle += M_2PI;
-    while (t->angle > M_2PI)
-	t->angle -= M_2PI;
+
+    /* make sure angle is 0 to 2PI */
+    fixangle(&t->angle);
+
     /* get the font struct */
     t->fontstruct = lookfont(x_fontnum(t->flags, t->font), 
-			round(t->size*zoomscale), t->angle);  
+			round(t->size*zoomscale));  
     t->height = round(tx_height);
     t->length = round(tx_length);
     fixdepth(&t->depth);
@@ -843,6 +879,17 @@ skip_line(fp)
     }
 }
 
+/* make sure angle is 0 to 2PI */
+
+fixangle(angle)
+    float	  *angle;
+{
+    while (*angle < 0.0)
+	*angle += M_2PI;
+    while (*angle >= M_2PI)
+	*angle -= M_2PI;
+}
+
 fixdepth(depth) 
     int		  *depth;
 {
@@ -857,6 +904,8 @@ fixdepth(depth)
 		file_msg("Depth < 0, setting to 0 in line %d", line_no); 
 	}
 }
+
+char shift_msg[] = "The figure has objects which have negative coordinates,\ndo you wish to shift it back on the page?";
 
 shift_figure(obj)
 F_compound	   *obj;
@@ -900,14 +949,18 @@ F_compound	   *obj;
 	}
     for (t = obj->texts; t != NULL; t = t->next) {
 	int   dum;
-	text_bound_actual(t, t->angle, &llx, &lly, &urx, &ury, 
-			  &dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
+	text_bound(t, &llx, &lly, &urx, &ury, 
+		  &dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
 	lowx = min2(llx,lowx);
 	lowy = min2(lly,lowy);
 	}
     /* check if any part of the figure has negative coords */
     if (lowx >= 0 && lowy >= 0)
 	return;				/* no, ok */
+
+    /* ask the user */
+    if (popup_query(QUERY_YESNO, shift_msg)==RESULT_NO)
+	return;
 
     /* shift the whole figure to keep it "on the page" */
     dx = dy = 0;

@@ -11,7 +11,6 @@
  */
 
 #include "paintop.h"
-#include "w_rottext.h"
 
 typedef struct {
     unsigned int    x, y, z;
@@ -66,6 +65,7 @@ typedef struct _appres {
     float	    tmp_height;
     float	    startfontsize;	/* ges 6 Feb 91 */
     int		    internalborderwidth;
+    int		    but_per_row;	/* number of buttons wide for the mode panel */
     Pixel	    color[NUMCOLORS];
     Boolean	    monochrome;
     char	   *keyFile;
@@ -107,7 +107,6 @@ typedef struct Menu MenuRec;
 typedef XImage	PIXRECTREC;
 typedef XImage *PIXRECT;
 typedef XFontStruct *PIX_FONT;
-typedef XRotFontStruct *PIX_ROT_FONT;
 typedef MprData MPR_DATA;
 typedef Widget	TOOL;
 typedef Widget	TOOLSW;
@@ -138,7 +137,7 @@ extern int	tool_sn;
 
 #define NUMFILLPATS 21
 
-extern GC	gc, bold_gc, button_gc, ind_button_gc, mouse_button_gc,
+extern GC	gc, button_gc, ind_button_gc, mouse_button_gc,
 		color_gc, blank_gc, ind_blank_gc, mouse_blank_gc, gccache[NUMOPS],
 		fillgc, fill_gc[NUMFILLPATS],	/* fill style gc's */
 		black_fill_gc[NUMFILLPATS],

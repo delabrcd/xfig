@@ -29,8 +29,6 @@ INSTALLATION NOTES:
 	.Xdefaults or .Xresources file.
 	NOTE: this only works under X11R5.
 
-If your system doesn't have the signal SIGBUS, add the flag -DNO_SIBGUS in the
-   Imakefile DEFINES line.
 If your system doesn't have strstr(), add the flag -DNOSTRSTR in the Imakefile
    in the DEFINES line.
 If your system doesn't have strtol(), add the flag -DNOSTRTOL in the Imakefile
@@ -56,8 +54,9 @@ way (not SMOOTHMOTION) queries the position of the X cursor whenever
 a motion event is received and if you make a large movement and then
 stop actually turns out to involve less work even though the XQueryPointer
 call is quite slow.
-The SMOOTHMOTION method is also automatically used for OpenWindows (when the
--DOPENWIN flag is used in the Imakefile DEFINES line).
+
+The SMOOTHMOTION flag MIGHT be necessary for older versions of OpenWindows on
+certain machines if the performance is slow when moving or drawing objects.
 
 ----------------------
 Printing your figures:
@@ -70,22 +69,46 @@ It is available from export.lcs.mit.edu in /contrib/transfig.tar.Z or
 ftp.cs.cornell.edu in the directory /pub/fig.
 See the man pages for more information.
 
+If you have a SYSV system but use BSD-style printing (lpr instead of lp) you
+must define -DBSDLPR in the Imakefile/Makefile.
+
 -----------------
 OpenWindows users
 -----------------
 
-Openwindows has scalable fonts so xfig must be compiled with the -DOPENWIN
-flag in order to handle this.  Also, there is a difference in the way the
-pointer position is queried for OpenWindows.  See the SMOOTHMOTION description.
+Xfig now automatically looks for the OpenWindows style of font names
+(e.g. times-roman-13) and uses those when available so the -DOPENWIN flag
+is no longer necessary 
 
-There is also a bug in OpenWindows 2.0 which relates to pixmaps in widgets.
-You must compile xfig with the -DOPENWIN_BUG option in the Imakefile DEFINES
-line for this problem.
+There is no need to compile with the -DOPENWIN_BUG flag anymore for 
+OpenWindows 2.0 (or any version of OpenWindows for that matter).
 
 ----------------------------------------------
 Possible problems encountered installing xfig:
 ----------------------------------------------
 
+PROBLEM:
+	When using LaTeX fonts in Xfig I always end up with postscript
+	fonts instead rather than, say, Computer Modern. 
+
+POSSIBLE CAUSE AND SOLUTION:
+	To put fonts under the control of LaTeX when generating PS, you must
+	tag the text object as "special" and then use the pstex output mode.
+	This mode forces special text objects to be passed through to LaTeX,
+	allowing the use of Math mode and CM fonts among other things.
+
+PROBLEM:
+	xfig hangs when pressing the Text or Update button.
+
+POSSIBLE CAUSE AND SOLUTION:
+	Increase the height of the indicator panel by changing init_ind_panel()
+	where it says:
+
+        i = DEF_IND_SW_HT+4*INTERNAL_BW+14;   /* allow for thickness of scrollbar */
+
+	Try increasing the 14 to 16 or 20 and see if that fixes it.  Please
+	send me email if you have to do this and tell me the value you used.
+________________________________________________________________________________
 PROBLEM:
 	On a DEC Alpha the compiler may complain about something like: ".mask
 	must have pcreg from .frame set if any bits are set in .mask or .fmask"
@@ -127,17 +150,6 @@ POSSIBLE CAUSE AND SOLUTION:
 	Cause unknown, here is a temporary kludge. Place the line:
 		Fig*iconPixmap:               ..../your_lib_area/fig.icon.X
 	in your .Xdefaults file and copy fig.icon.X into your lib area.
-________________________________________________________________________________
-PROBLEM:
-	I can't seem to get a single xfig binary to work under both
-	openwindows and standard X.
-
-POSSIBLE CAUSE AND SOLUTION:
-	You can compile xfig so that it knows about openwindows fonts
-	but then it won't work under standard X.  If you want a single
-	binary, compile with -DOPENWIN_BUG but not -DOPENWIN.  This
-	will work on both systems but you won't be able to access the
-	openwindows fonts.
 ________________________________________________________________________________
 PROBLEM:
 	When compiling on an HP 750 running HP-UX 8.05, the compiler dies with

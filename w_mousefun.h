@@ -20,6 +20,7 @@ void		draw_mousefun_topruler();
 void		draw_mousefun_sideruler();
 void		draw_mousefun_canvas();
 void		draw_mousefun();
+void		draw_mousefn2();
 void		clear_mousefun();
 void		notused_middle();
 void		clear_middle();

@@ -184,7 +184,7 @@ align_text()
 
     for (t = cur_c->texts; t != NULL; t = t->next) {
 	int   dum;
-	text_bound_actual(t, t->angle, &llx, &lly, &urx, &ury,
+	text_bound(t, &llx, &lly, &urx, &ury,
 		   &dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
 	get_dx_dy();
 	translate_text(t, dx, dy);
@@ -195,30 +195,30 @@ static int
 get_dx_dy()
 {
     switch (cur_valign) {
-	case NONE:
+	case ALIGN_NONE:
 	dy = 0;
 	break;
-    case TOP:
+    case ALIGN_TOP:
 	dy = ycmin - lly;
 	break;
-    case BOTTOM:
+    case ALIGN_BOTTOM:
 	dy = ycmax - ury;
 	break;
-    case CENTER:
+    case ALIGN_CENTER:
 	dy = (ycmin - lly) + (abs(ycmin - lly) + abs(ycmax - ury)) / 2;
 	break;
     }
     switch (cur_halign) {
-    case NONE:
+    case ALIGN_NONE:
 	dx = 0;
 	break;
-    case LEFT:
+    case ALIGN_LEFT:
 	dx = xcmin - llx;
 	break;
-    case RIGHT:
+    case ALIGN_RIGHT:
 	dx = xcmax - urx;
 	break;
-    case CENTER:
+    case ALIGN_CENTER:
 	dx = (xcmin - llx) + (abs(xcmin - llx) + abs(xcmax - urx)) / 2;
 	break;
     }

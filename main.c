@@ -41,7 +41,6 @@ extern int	latexfontnum();
 Pixmap		fig_icon;
 
 static char	tool_name[100];
-static		sigwinched();
 
 /************** FIG options ******************/
 
@@ -49,8 +48,9 @@ static char    *filename = NULL;
 
 static Boolean	true = True;
 static Boolean	false = False;
-static int	zero = 0;
-static float	one = 1.0;
+static int	Izero = 0;
+static float	Fone = 1.0;
+static int	Itwo = 2;
 
 /* actions so that we may install accelerators at the top level */
 static XtActionsRec	main_actions[] =
@@ -80,9 +80,9 @@ static XtResource application_resources[] = {
     {"debug", "Debug", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, DEBUG), XtRBoolean, (caddr_t) & false},
     {"pwidth", XtCWidth, XtRFloat, sizeof(float),
-    XtOffset(appresPtr, tmp_width), XtRInt, (caddr_t) & zero},
+    XtOffset(appresPtr, tmp_width), XtRInt, (caddr_t) & Izero},
     {"pheight", XtCHeight, XtRFloat, sizeof(float),
-    XtOffset(appresPtr, tmp_height), XtRInt, (caddr_t) & zero},
+    XtOffset(appresPtr, tmp_height), XtRInt, (caddr_t) & Izero},
     {XtNreverseVideo, XtCReverseVideo, XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, INVERSE), XtRBoolean, (caddr_t) & false},
     {"trackCursor", "Track", XtRBoolean, sizeof(Boolean),
@@ -99,16 +99,16 @@ static XtResource application_resources[] = {
     XtOffset(appresPtr, startlatexFont), XtRString, (caddr_t) NULL},
     {"startpsFont", "StartpsFont", XtRString, sizeof(char *),
     XtOffset(appresPtr, startpsFont), XtRString, (caddr_t) NULL},
-    {"startfontsize", "StartFontSize", XtRInt, sizeof(int),
-    XtOffset(appresPtr, startfontsize), XtRInt, (caddr_t) & zero},
+    {"startfontsize", "StartFontSize", XtRFloat, sizeof(float),
+    XtOffset(appresPtr, startfontsize), XtRInt, (caddr_t) & Izero},
     {"internalborderwidth", "InternalBorderWidth", XtRInt, sizeof(int),
-    XtOffset(appresPtr, internalborderwidth), XtRInt, (caddr_t) & zero},
+    XtOffset(appresPtr, internalborderwidth), XtRInt, (caddr_t) & Izero},
     {"latexfonts", "Latexfonts", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, latexfonts), XtRBoolean, (caddr_t) & false},
     {"specialtext", "SpecialText", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, specialtext), XtRBoolean, (caddr_t) & false},
     {"scalablefonts", "ScalableFonts", XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, SCALABLEFONTS), XtRBoolean, (caddr_t) & false},
+    XtOffset(appresPtr, SCALABLEFONTS), XtRBoolean, (caddr_t) & true},
     {"color0", "Color0", XtRPixel, sizeof(Pixel),
     XtOffset(appresPtr, color[0]), XtRString, (caddr_t) "black"},
     {"color1", "Color1", XtRPixel, sizeof(Pixel),
@@ -125,6 +125,25 @@ static XtResource application_resources[] = {
     XtOffset(appresPtr, color[6]), XtRString, (caddr_t) "yellow"},
     {"color7", "Color7", XtRPixel, sizeof(Pixel),
     XtOffset(appresPtr, color[7]), XtRString, (caddr_t) "white"},
+    /* don't get any ideas about using the following colors yet */
+    /* the protocol needs modification before we can do that */
+    {"color8", "Color8", XtRPixel, sizeof(Pixel),
+    XtOffset(appresPtr, color[8]), XtRString, (caddr_t) "lightblue"},
+    {"color9", "Color9", XtRPixel, sizeof(Pixel),
+    XtOffset(appresPtr, color[9]), XtRString, (caddr_t) "darkgreen"},
+    {"color10", "Color10", XtRPixel, sizeof(Pixel),
+    XtOffset(appresPtr, color[10]), XtRString, (caddr_t) "brown"},
+    {"color11", "Color11", XtRPixel, sizeof(Pixel),
+    XtOffset(appresPtr, color[11]), XtRString, (caddr_t) "orange"},
+    {"color12", "Color12", XtRPixel, sizeof(Pixel),
+    XtOffset(appresPtr, color[12]), XtRString, (caddr_t) "purple"},
+    {"color13", "Color13", XtRPixel, sizeof(Pixel),
+    XtOffset(appresPtr, color[13]), XtRString, (caddr_t) "pink"},
+    {"color14", "Color14", XtRPixel, sizeof(Pixel),
+    XtOffset(appresPtr, color[14]), XtRString, (caddr_t) "firebrick"},
+    {"color15", "Color15", XtRPixel, sizeof(Pixel),
+    XtOffset(appresPtr, color[15]), XtRString, (caddr_t) "gold"},
+
     {"monochrome", "Monochrome", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, monochrome), XtRBoolean, (caddr_t) & false},
     {"latexfonts", "Latexfonts", XtRBoolean, sizeof(Boolean),
@@ -138,9 +157,11 @@ static XtResource application_resources[] = {
     {"textoutline", "TextOutline", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, textoutline), XtRBoolean, (caddr_t) & false},
     {"userscale", "UserScale", XtRFloat, sizeof(float),
-    XtOffset(appresPtr, user_scale), XtRFloat, (caddr_t) & one},
+    XtOffset(appresPtr, user_scale), XtRFloat, (caddr_t) & Fone},
     {"userunit", "UserUnit", XtRString, sizeof(char *),
     XtOffset(appresPtr, user_unit), XtRString, (caddr_t) ""},
+    {"but_per_row", "But_per_row", XtRInt, sizeof(int),
+    XtOffset(appresPtr, but_per_row), XtRInt, (caddr_t) & Itwo},
 };
 
 static XrmOptionDescRec options[] =
@@ -183,6 +204,7 @@ static XrmOptionDescRec options[] =
     {"-textoutline", ".textoutline", XrmoptionNoArg, "True"},
     {"-userscale", ".userscale", XrmoptionSepArg, 0},
     {"-userunit", ".userunit", XrmoptionSepArg, 0},
+    {"-but_per_row", ".but_per_row", XrmoptionSepArg, 0},
 };
 
 Atom wm_delete_window;
@@ -236,6 +258,7 @@ main(argc, argv)
     char	    i;
     char	   *userhome;
     Dimension	    w, h;
+    XGCValues	    gcv;
 
     DeclareArgs(5);
 
@@ -246,7 +269,7 @@ main(argc, argv)
     if ((TMPDIR = getenv("XFIGTMPDIR"))==NULL)
 	TMPDIR = "/tmp";
 
-    (void) sprintf(tool_name, " XFIG %s(.%s) (Protocol %s)",
+    (void) sprintf(tool_name, " XFIG %s patchlevel %s (Protocol %s)",
 		   FIG_VERSION, PATCHLEVEL, PROTOCOL_VERSION);
     (void) strcat(file_header, PROTOCOL_VERSION);
     tool = XtAppInitialize(&tool_app, (String) "Fig", (XrmOptionDescList) options,
@@ -348,13 +371,14 @@ main(argc, argv)
     init_font();
 
     gc = DefaultGC(tool_d, tool_sn);
-    bold_gc = DefaultGC(tool_d, tool_sn);
-    button_gc = DefaultGC(tool_d, tool_sn);
-
-    /* set the roman and bold fonts for the message windows */
+    /* set the roman font for the message window */
     XSetFont(tool_d, gc, roman_font->fid);
-    XSetFont(tool_d, bold_gc, bold_font->fid);
-    XSetFont(tool_d, button_gc, button_font->fid);
+
+    /* make a gc for the command buttons */
+    gcv.font = button_font->fid;
+    button_gc = XCreateGC(tool_d, DefaultRootWindow(tool_d), GCFont, &gcv);
+    /* copy the other components from the default gc to the button_gc */
+    XCopyGC(tool_d, gc, ~GCFont, button_gc);
 
     /*
      * check if the NUMCOLORS drawing colors could be allocated and have
@@ -378,12 +402,17 @@ main(argc, argv)
 	cur_ps_font = psfontnum (appres.startpsFont);
 
     if (INTERNAL_BW == 0)
-	INTERNAL_BW = (int) appres.internalborderwidth;
+	INTERNAL_BW = appres.internalborderwidth;
     if (INTERNAL_BW <= 0)
 	INTERNAL_BW = DEF_INTERNAL_BW;
 
-    SW_PER_ROW = SW_PER_ROW_PORT;
-    SW_PER_COL = SW_PER_COL_PORT;
+    /* get the desired number of buttons per row for the mode panel */
+    SW_PER_ROW = appres.but_per_row;
+    if (SW_PER_ROW <= 0)
+	SW_PER_ROW = DEF_SW_PER_ROW;
+    else if (SW_PER_ROW > 6)
+	SW_PER_ROW = 6;
+
     init_canv_wd = appres.tmp_width *
 	(appres.INCHES ? PIX_PER_INCH : PIX_PER_CM);
     init_canv_ht = appres.tmp_height *
@@ -397,11 +426,6 @@ main(argc, argv)
 	init_canv_ht = appres.landscape ? DEF_CANVAS_HT_LAND :
 	    DEF_CANVAS_HT_PORT;
 
-    if ((init_canv_ht < DEF_CANVAS_HT_PORT) ||
-	(HeightOfScreen(tool_s) < DEF_CANVAS_HT_PORT)) {
-	SW_PER_ROW = SW_PER_ROW_LAND;
-	SW_PER_COL = SW_PER_COL_LAND;
-    }
     setup_sizes(init_canv_wd, init_canv_ht);
     (void) init_cmd_panel(form);
     (void) init_msg(form,filename);
@@ -529,7 +553,7 @@ main(argc, argv)
     XSetIOErrorHandler((XIOErrorHandler) X_error_handler);
     (void) signal(SIGHUP, error_handler);
     (void) signal(SIGFPE, error_handler);
-#ifndef NO_SIBGUS
+#ifdef SIGBUS
     (void) signal(SIGBUS, error_handler);
 #endif
     (void) signal(SIGSEGV, error_handler);
@@ -768,7 +792,7 @@ strtol(nptr, endptr, base)
 	cutoff = neg ? -(unsigned long)LONG_MIN : LONG_MAX;
 	cutlim = cutoff % (unsigned long)base;
 	cutoff /= (unsigned long)base;
-	for (acc = 0, any = 0; c = *s++) {
+	for (acc = 0, any = 0; c = *s++; ) {
 		if (isdigit(c))
 			c -= '0';
 		else if (isalpha(c))

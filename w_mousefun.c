@@ -148,42 +148,36 @@ set_mousefun(left, middle, right)
 void
 draw_mousefun_mode()
 {
-    clear_mousefun();
     draw_mousefun("Change Mode", "", "");
 }
 
 void
 draw_mousefun_ind()
 {
-    clear_mousefun();
     draw_mousefun("Menu", "Dec/Prev", "Inc/Next");
 }
 
 void
 draw_mousefun_unitbox()
 {
-    clear_mousefun();
     draw_mousefun("Pan to Origin", "", "Set Units/Scale");
 }
 
 void
 draw_mousefun_topruler()
 {
-    clear_mousefun();
     draw_mousefun("Pan Left", "Drag", "Pan Right");
 }
 
 void
 draw_mousefun_sideruler()
 {
-    clear_mousefun();
     draw_mousefun("Pan Up", "Drag", "Pan Down");
 }
 
 void
 draw_mousefun_canvas()
 {
-    clear_mousefun();
     draw_mousefun(mousefun_l, mousefun_m, mousefun_r);
 }
 
@@ -201,6 +195,14 @@ draw_mousefun_msg(s, xctr, ypos)
 
 void
 draw_mousefun(left, middle, right)
+    char	   *left, *middle, *right;
+{
+    clear_mousefun();
+    draw_mousefn2(left, middle, right);
+}
+
+void
+draw_mousefn2(left, middle, right)
     char	   *left, *middle, *right;
 {
     draw_mousefun_msg(left, MOUSE_LEFT_CTR, 30);
@@ -255,7 +257,7 @@ clear_right()
 void
 clear_mousefun()
 {
-    draw_mousefun(lr_blank, mid_blank, lr_blank);
+    draw_mousefn2(lr_blank, mid_blank, lr_blank);
     /* redraw the title in case the blanks overwrite it */
     mouse_title();
 }

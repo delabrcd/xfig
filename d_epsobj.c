@@ -79,7 +79,7 @@ create_epsobj(x, y)
     box->type = T_EPS_BOX;
     box->style = SOLID_LINE;
     box->thickness = 1;
-    box->color = cur_color;
+    box->color = DEFAULT;
     box->depth = cur_depth;
     box->pen = 0;
     box->fill_style = 0;
@@ -111,7 +111,7 @@ create_epsobj(x, y)
     draw_line(box, PAINT);
     add_line(box);
     put_msg("Please enter name of EPS file in EDIT window");
-    edit_item((char *) box, O_POLYLINE);
+    edit_item((char *) box, O_POLYLINE, 0, 0);
     epsobj_drawing_selected();
     draw_mousefun_canvas();
 }

@@ -161,17 +161,19 @@ constrainedangle_line(x, y)
 {
     float	    angle, dx, dy;
 
+    length_msg(MSG_LENGTH);
     if (x == cur_x && y == cur_y)
 	return;
 
     dx = x - fix_x;
     dy = fix_y - y;
-    if (sqrt((double) (dx * dx + dy * dy)) < 7)
+    /* only move if the pointer has moved at least 2 pixels */
+    if (sqrt((double) (dx * dx + dy * dy)) < 2.0)
 	return;
     if (dx == 0)
-	angle = -90;
+	angle = -90.0;
     else
-	angle = 180 * atan((double) (dy / dx)) / 3.1416;
+	angle = 180.0 * atan((double) (dy / dx)) / M_PI;
 
     elastic_line();
     if (manhattan_mode) {
@@ -187,21 +189,20 @@ constrainedangle_line(x, y)
 	    else
 		angle90_line(x, y);
 	} else {
-	    if (angle < -45)
+	    if (angle < -45.0)
 		angle90_line(x, y);
-	    else if (angle < 45)
+	    else if (angle < 45.0)
 		angle0_line(x, y);
 	    else
 		angle90_line(x, y);
 	}
     } else {
-	if (angle < 0)
+	if (angle < 0.0)
 	    angle135_line(x, y);
 	else
 	    angle45_line(x, y);
     }
     elastic_line();
-    length_msg(MSG_LENGTH);
 }
 
 angle0_line(x, y)
@@ -442,8 +443,8 @@ elastic_ebr()
     rx = cur_x - fix_x;
     ry = cur_y - fix_y;
     if (cur_angle != 0.0) {
-	angle_ellipse(fix_x, fix_y, rx, ry, cur_angle,
-		  INV_PAINT, 1, RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+	angle_ellipse(fix_x, fix_y, rx, ry, cur_angle, INV_PAINT, 1, 
+	     RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
     } else {
 	x1 = fix_x + rx;
 	x2 = fix_x - rx;
@@ -754,7 +755,8 @@ moving_text(x, y)
 elastic_movetext()
 {
     pw_text(canvas_win, cur_x + x1off, cur_y + y1off, INV_PAINT,
-	    new_t->fontstruct, new_t->cstring, new_t->color);
+	    new_t->fontstruct, new_t->angle, 
+	    new_t->cstring, new_t->color);
 }
 
 

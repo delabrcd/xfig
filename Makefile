@@ -7,7 +7,7 @@
 #
 
 # -------------------------------------------------------------------------
-# Makefile generated from "Imake.tmpl" and </tmp/IIf.a11890>
+# Makefile generated from "Imake.tmpl" and </tmp/IIf.a23979>
 # $XConsortium: Imake.tmpl,v 1.139 91/09/16 08:52:48 rws Exp $
 #
 # Platform-specific parameters may be set in the appropriate <vendor>.cf
@@ -94,7 +94,6 @@
     INSTKMEMFLAGS = -g kmem -m 2755
 
       CDEBUGFLAGS = -O
-      CDEBUGFLAGS = -g
         CCOPTIONS =
 
       ALLINCLUDES = $(INCLUDES) $(EXTRA_INCLUDES) $(TOP_INCLUDES) $(STD_INCLUDES)
@@ -286,7 +285,20 @@ DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
 # remove -DGSBIT from the DEFINES if you DON'T want to have gs (ghostscript)
 # generate a preview bitmap.  If you do use ghostscript you will need
 # version 2.4 or later.
-DEFINES =             $(STRSTRDEFINES) -DGSBIT 
+#
+# For the rotated text code:
+#   Add one of `-DCACHE_XIMAGES' or `-DCACHE_BITMAPS' to decide what is
+#   cached.
+#
+#   Add `-DCACHE_SIZE_LIMIT=xxxx' where xxxx is the cache size in kilobytes.
+#   A cache size of zero turns caching off.
+#
+# For SYSV systems with BSD-style printer command which use lpr instead of
+# lp (SGI is one such machine), add -DBSDLPR to the DEFINES variable
+
+CACHE = -DCACHE_BITMAPS -DCACHE_SIZE_LIMIT=300
+
+DEFINES =             $(STRSTRDEFINES) -DGSBIT
 
 XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_epsobj.c \
 		d_intspline.c d_line.c d_regpoly.c d_spline.c d_text.c \
@@ -323,6 +335,8 @@ XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_epsobj.o \
 		w_export.o w_file.o w_fontbits.o w_fontpanel.o w_grid.o \
 		w_icons.o w_indpanel.o w_modepanel.o w_mousefun.o w_msgpanel.o \
 		w_print.o w_rottext.o w_rulers.o w_setup.o w_util.o w_zoom.o
+
+ICONXFIGFILES =  fig.icon.X
 
 SRCS = $(XFIGSRC)
 OBJS = $(XFIGOBJ)
@@ -381,9 +395,13 @@ install:: Fig-color.ad
 	else (set -x; $(MKDIRHIER) $(DESTDIR)$(XAPPLOADDIR)); fi
 	$(INSTALL) -c $(INSTAPPFLAGS) Fig-color.ad $(DESTDIR)$(XAPPLOADDIR)/Fig-color
 
-w_canvas.o:  $(ICONFIGFILES)
+w_canvas.o:  $(ICONXFIGFILES)
 	$(RM) $@
 	$(CC) -c $(CFLAGS)  $(DIR_DEFS) $*.c
+
+w_rottext.o:  $(ICONXFIGFILES)
+	$(RM) $@
+	$(CC) -c $(CFLAGS)  $(CACHE) $*.c
 
 # -------------------------------------------------------------------------
 # common rules for all Makefiles - do not edit

@@ -222,7 +222,7 @@ init_delete_to_scrap(p, type, x, y, px, py)
 	fclose(fp);
 	return;
     }
-    put_msg("Object deleted to scrap");
+    put_msg("Object deleted to scrapfile %s",cut_buf_name);
     fclose(fp);
 }
 

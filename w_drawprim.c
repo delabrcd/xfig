@@ -40,8 +40,8 @@
 #include "w_util.h"
 #include "w_zoom.h"
 
-extern struct _xfstruct x_fontinfo[NUM_X_FONTS];
-extern struct _fstruct ps_fontinfo[];	/* font names */
+extern struct _xfstruct x_fontinfo[];	/* X11 fontnames */
+extern struct _fstruct ps_fontinfo[];	/* PostScript/OpenWindow font names */
 extern choice_info fillstyle_choices[];
 
 /* EXPORTS */
@@ -49,14 +49,14 @@ extern choice_info fillstyle_choices[];
 PIX_FONT	bold_font;
 PIX_FONT	roman_font;
 PIX_FONT	button_font;
-PIX_ROT_FONT	canvas_font;
+PIX_FONT	canvas_font;
 
 /* LOCAL */
 
 static Pixel	gc_color[NUMOPS];
 static XRectangle clip[1];
-static pr_size	pfx_textwidth();
 static int	parsesize();
+static Boolean	openwinfonts;
 
 #define MAXNAMES 35
 
@@ -79,7 +79,16 @@ init_font()
     if (appres.buttonFont == NULL || *appres.buttonFont == '\0')
 	appres.buttonFont = BUTTON_FONT;
 
-    roman_font = XLoadQueryFont(tool_d, appres.normalFont);
+    while ((roman_font = XLoadQueryFont(tool_d, appres.normalFont)) == 0) {
+	if (strcmp(appres.normalFont,"fixed") == 0) {
+	    fprintf(stderr, "Can't load 'fixed' font, something is wrong");
+	    fprintf(stderr," with your server - quitting.\n");
+	    exit(1);
+	}
+	fprintf(stderr, "Can't load font: %s, using 'fixed'\n",
+		appres.normalFont);
+	appres.normalFont = "fixed";
+    } /* now loop to load "fixed" */
     hidden_text_length = 4 * roman_font->max_bounds.width;
     if ((bold_font = XLoadQueryFont(tool_d, appres.boldFont)) == 0) {
 	fprintf(stderr, "Can't load font: %s, using %s\n",
@@ -98,19 +107,28 @@ init_font()
      * it.
      */
 
-#ifndef OPENWIN
-    /* if the user asked for scalable fonts, check that the server 
-       really has them by checking for font of 0-0 size */
+    /* if the user hasn't disallowed off scalable fonts, check that the 
+       server really has them by checking for font of 0-0 size */
+    openwinfonts = False;
     if (appres.SCALABLEFONTS) {
-	strcpy(template,x_fontinfo[0].template);  /* just check the first font */
-	strcat(template,"0-0-*-*-*-*-*-*");
-	if ((fontlist = XListFonts(tool_d, template, 1, &count))==0)
-	    appres.SCALABLEFONTS = False;	/* none, turn off request for them */
+	/* first look for OpenWindow style font names (e.g. times-roman) */
+	if ((fontlist = XListFonts(tool_d, ps_fontinfo[1].name, 1, &count))!=0) {
+		openwinfonts = True;	/* yes, use them */
+		for (f=0; f<NUM_FONTS; f++)	/* copy the OpenWindow font names */
+		    x_fontinfo[f].template = ps_fontinfo[f+1].name;
+	} else {
+	    strcpy(template,x_fontinfo[0].template);  /* nope, check for font size 0 */
+	    strcat(template,"0-0-*-*-*-*-*-*");
+	    if ((fontlist = XListFonts(tool_d, template, 1, &count))==0)
+		appres.SCALABLEFONTS = False;	/* none, turn off request for them */
+	}
     }
 
-    /* X11R5 has scalable fonts - skip next section in that case */
+    /* no scalable fonts - query the server for all the font 
+       names and sizes and build a list of them */
+
     if (!appres.SCALABLEFONTS) {
-	for (f = 0; f < NUM_X_FONTS; f++) {
+	for (f = 0; f < NUM_FONTS; f++) {
 	    nf = NULL;
 	    strcpy(template,x_fontinfo[f].template);
 	    strcat(template,"*-*-*-*-*-*-");
@@ -150,13 +168,12 @@ init_font()
 			nf = newfont;	/* keep current ptr */
 			nf->size = ss;	/* store the size here */
 			nf->fname = flist[i].fn;	/* keep actual name */
-			nf->list = NULL;
+			nf->fstruct = NULL;
 			nf->next = NULL;
 		    }
 	    } /* next size */
 	} /* next font, f */
     } /* !appres.SCALABLEFONTS */
-#endif /* OPENWIN */
 }
 
 /* parse the point size of font 'name' */
@@ -182,73 +199,34 @@ parsesize(name)
 }
 
 /*
- * Lookup an X font corresponding to a Postscript font style that is close in
- * size and with angle "angle"
+ * Lookup an X font, "f" corresponding to a Postscript font style that is 
+ * close in size to "s"
  */
 
-PIX_ROT_FONT
-lookfont(f, s, angle)
+PIX_FONT
+lookfont(f, s)
     int		    f, s;
-    float	    angle;
 {
-    struct xfont   *xf;
-    PIX_ROT_FONT   fontst;
-    int		   dir;
-
-    /*** Must fix the following to actually return the "-normal font" ROTATED font */
-    if (f == DEFAULT)
-	f = 0;		/* pass back the -normal font font */
-    if (s < 0)
-	s = DEF_FONTSIZE;	/* default font size */
-
-#ifdef OPENWIN
-  {
-    /* to search for OpenWindows font - see below */
-    char	    fn[128];
-    int		    i;
-
-    for (i = 1; i < NUM_PS_FONTS + 1; i++)
-	if (ps_fontinfo[i].xfontnum == f)
-	    {
-	    sprintf(fn, "%s-%d", ps_fontinfo[i].name, s);
-	    break;
-	    }
-
-    for (i = strlen(fn) - 1; i >= 0; i--)
-	if (isupper(fn[i]))
-	    fn[i] = tolower(fn[i]);
-    if (appres.DEBUG)
-	fprintf(stderr, "Loading font %s\n", fn);
-    set_temp_cursor(wait_cursor);
-    app_flush();
-    fontst = XRotLoadFont(tool_d, fn, angle*180.0/M_PI);
-    if (fontst == NULL) {
-	fprintf(stderr, "xfig: Can't load font %s ?!, using %s\n",
-		fn, appres.normalFont);
-	fontst = XRotLoadFont(tool_d, appres.normalFont, angle);
-    }
-    reset_cursor();
-    return (fontst);
-  }
-
-#else
-  {
+	PIX_FONT        fontst;
 	char		fn[128];
 	char		template[200];
 	Boolean		found;
 	struct xfont   *newfont, *nf, *oldnf;
-	struct flist   *lp, *nlp, *oldlp;
 
-	/* see if we've already loaded that font size 's' at angle 'angle' 
+
+	if (f == DEFAULT)
+	    f = 0;		/* pass back the -normal font font */
+	if (s < 0)
+	    s = DEF_FONTSIZE;	/* default font size */
+
+	/* see if we've already loaded that font size 's' 
 	   from the font family 'f' */
-	/* actually, we've reduced the number of angles to four - 0, 90, 180 and 270 */
-	if (angle < 0.0)
-		angle += 2.0*M_PI;
-	dir = (int)(angle/M_PI_2+0.0001);
-	if (dir > 3)
-		dir -= 4;
+
 	found = False;
-	/* start with the basic font name (e.g. adobe-times-medium-r-normal-...) */
+
+	/* start with the basic font name (e.g. adobe-times-medium-r-normal-... 
+		OR times-roman for OpenWindows fonts) */
+
 	nf = x_fontinfo[f].xfontlist;
 	oldnf = nf;
 	if (nf != NULL) {
@@ -268,11 +246,15 @@ lookfont(f, s, angle)
 	    strcpy(fn,nf->fname);  /* put the name in fn */
 	    if (s < nf->size)
 		put_msg("Font size %d not found, using larger %d point",s,nf->size);
+	    if (appres.DEBUG)
+		fprintf(stderr, "Located font %s\n", fn);
 	} else if (!appres.SCALABLEFONTS) {	/* not found, use largest available */
 	    nf = oldnf;
-	    strcpy(fn,nf->fname);  /* put the name in fn */
+	    strcpy(fn,nf->fname);  		/* put the name in fn */
 	    if (s > nf->size)
 		put_msg("Font size %d not found, using smaller %d point",s,nf->size);
+	    if (appres.DEBUG)
+		fprintf(stderr, "Using font %s for size %d\n", fn, s);
 	} else { /* SCALABLE; none yet of that size, alloc one and put it in the list */
 	    newfont = (struct xfont *) malloc(sizeof(struct xfont));
 	    /* add it on to the end of the list */
@@ -282,88 +264,72 @@ lookfont(f, s, angle)
 	        oldnf->next = newfont;
 	    nf = newfont;		/* keep current ptr */
 	    nf->size = s;		/* store the size here */
-	    nf->list = NULL;
+	    nf->fstruct = NULL;
 	    nf->next = NULL;
 
-	    /* create a full XLFD font name */
-	    strcpy(template,x_fontinfo[f].template);
-	    /* attach pointsize to font name */
-	    strcat(template,"%d-*-*-*-*-*-");
-	    /* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
-	    if (strstr(template,"symbol") == NULL && 
+	    if (openwinfonts) {
+		/* OpenWindows fonts, create font name like times-roman-13 */
+		sprintf(fn, "%s-%d", x_fontinfo[f].template, s);
+	    } else {
+		/* X11 fonts, create a full XLFD font name */
+		strcpy(template,x_fontinfo[f].template);
+		/* attach pointsize to font name */
+		strcat(template,"%d-*-*-*-*-*-");
+		/* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
+		if (strstr(template,"symbol") == NULL && 
 		strstr(template,"zapfdingbats") == NULL)
 		    strcat(template,"ISO8859-*");
-	    else
-		strcat(template,"*-*");
-	    /* use the pixel field instead of points in the fontname so that the
-		font scales with screen size */
-	    sprintf(fn, template, s);
-	    /* allocate space for the name and put it in the structure */
-	    nf->fname = (char *) malloc(strlen(fn));
-	    strcpy(nf->fname, fn);
-	} /* if (!found) */
-	if (appres.DEBUG)
-	    fprintf(stderr, "Loading font %s at angle %f (%f)\n", 
-			fn, (float) dir*90.0, angle);
-	lp = nf->list;
-	oldlp = lp;
-	found = False;
-	while (lp) {
-		if (lp->dir == dir) {
-		    found = True;
-		    break;
-		}
-		oldlp = lp;
-		lp = lp->next;
-	} /* while (lp) */
-	if (!found) {
-		nlp = (struct flist *) malloc(sizeof(struct flist));
-		nlp->next = NULL;
-		if (oldlp)
-			oldlp->next = nlp;	/* add this to the list */
 		else
-			nf->list = nlp;		/* first on the list */
-		nlp->dir = dir;
-		set_temp_cursor(wait_cursor);
-		app_flush();
-		fontst = XRotLoadFont(tool_d, fn, (float) dir*90.0);
-		reset_cursor();
-		if (fontst == NULL) {
-		    fprintf(stderr, "xfig: Can't load font %s ?!, using %s\n",
+		strcat(template,"*-*");
+		/* use the pixel field instead of points in the fontname so that the
+		font scales with screen size */
+		sprintf(fn, template, s);
+	    }
+	    /* allocate space for the name and put it in the structure */
+	    nf->fname = (char *) malloc(strlen(fn)+1);
+	    strcpy(nf->fname, fn);
+	} /* scalable */
+	if (nf->fstruct == NULL) {
+	    if (appres.DEBUG)
+		fprintf(stderr, "Loading font %s\n", fn);
+	    set_temp_cursor(wait_cursor);
+	    app_flush();
+	    fontst = XLoadQueryFont(tool_d, fn);
+	    reset_cursor();
+	    if (fontst == NULL) {
+		fprintf(stderr, "xfig: Can't load font %s ?!, using %s\n",
 			fn, appres.normalFont);
-		    fontst = XRotLoadFont(tool_d, appres.normalFont, (float) dir*90.0);
-		    nf->fname = fn;	/* keep actual name */
-		}
-		/* put the structure in the list */
-		nlp->fstruct = fontst;
-		lp = nlp;
-	} /* if (!found) */
-	fontst = lp->fstruct;
-	return (fontst);
-  }
+		fontst = XLoadQueryFont(tool_d, appres.normalFont);
+		nf->fname = fn;	/* keep actual name */
+	    }
+	    /* put the structure in the list */
+	    nf->fstruct = fontst;
+	} /* if (nf->fstruct == NULL) */
 
-#endif				/* !OPENWIN */
-
+	return (nf->fstruct);
 }
 
-/* print "string" in window "w" using font specified in fstruct at (x,y) */
+/* print "string" in window "w" using font specified in fstruct at angle
+	"angle" (radians) at (x,y) */
 
-pw_text(w, x, y, op, fstruct, string, color)
+pw_text(w, x, y, op, fstruct, angle, string, color)
     Window	    w;
     int		    x, y, op;
-    PIX_ROT_FONT    fstruct;
+    PIX_FONT	    fstruct;
+    float	    angle;
     char	   *string;
     Color	    color;
 {
     if (fstruct == NULL)
 	fprintf(stderr,"Error, in pw_text, fstruct==NULL\n");
-    pwx_text(w, x, y, op, fstruct, string, color);
+    pwx_text(w, x, y, op, fstruct, angle, string, color);
 }
 
-pwx_text(w, x, y, op, fstruct, string, color)
+pwx_text(w, x, y, op, fstruct, angle, string, color)
     Window	    w;
     int		    x, y, op;
-    PIX_ROT_FONT    fstruct;
+    PIX_FONT	    fstruct;
+    float	    angle;
     char	   *string;
     Color	    color;
 {
@@ -385,20 +351,20 @@ pwx_text(w, x, y, op, fstruct, string, color)
 		gc_color[op] = writing_bitmap? color : x_color(color);
 	    }
     }
-    zXRotDrawString(tool_d, w, fstruct, gccache[op], x, y, 
-		    string, strlen(string));
+    zXRotDrawString(tool_d, fstruct, angle, w, gccache[op], 
+		    x, y, string);
 }
 
 pr_size
 pf_textwidth(fstruct, n, s)
-    PIX_ROT_FONT    fstruct;
+    PIX_FONT	    fstruct;
     int		    n;
     char	   *s;
 {
     pr_size	    ret;
 
-    ret.x = XRotTextWidth(fstruct, s, n);
-    ret.y = XRotTextHeight(fstruct, s, n);
+    ret.x = XTextWidth(fstruct, s, n);
+    ret.y = char_height(fstruct);
     return (ret);
 }
 
@@ -476,12 +442,13 @@ init_fill_gc()
     gcv.arc_mode = ArcPieSlice; /* fill mode for arcs */
     gcv.fill_rule = EvenOddRule /* WindingRule */ ;
     for (i = 0; i < NUMFILLPATS; i++) {
-	/* make color fill pattern with black bg (fg is set later in set_x_color() */
+	/* make color fill pattern with black bg - fg is set later in set_fillgc() */
 	fill_gc[i] = makegc(PAINT, x_fg_color.pixel, x_color(BLACK));
-	un_fill_gc[i] = makegc(ERASE, x_fg_color.pixel, x_color(BLACK));
+	/* make un-fill gc's with canvas background color as foreground */
+	un_fill_gc[i] = makegc(PAINT, x_bg_color.pixel, x_color(BLACK));
 	/* make black fill pattern with default background */
 	black_fill_gc[i] = makegc(PAINT, x_fg_color.pixel, x_bg_color.pixel);
-	black_un_fill_gc[i] = makegc(ERASE, x_fg_color.pixel, x_bg_color.pixel);
+	black_un_fill_gc[i] = makegc(PAINT, x_bg_color.pixel, x_fg_color.pixel);
 	gcv.stipple = fill_pm[i];
 	XChangeGC(tool_d, fill_gc[i],
 		  GCStipple | GCFillStyle | GCFillRule | GCArcMode, &gcv);
@@ -744,12 +711,12 @@ pw_curve(w, xstart, ystart, xend, yend,
     Color	    color;
 {
     short	    xmin, ymin;
-    unsigned short  wd, ht;
+    unsigned int    wd, ht;
 
-    xmin = (short) min2(xstart, xend);
-    ymin = (short) min2(ystart, yend);
-    wd = (unsigned short) abs(xstart - xend);
-    ht = (unsigned short) abs(ystart - yend);
+    xmin = min2(xstart, xend);
+    ymin = min2(ystart, yend);
+    wd = (unsigned int) abs(xstart - xend);
+    ht = (unsigned int) abs(ystart - yend);
 
     /* if it's a fill pat we know about */
     if (fill_style >= 1 && fill_style <= NUMFILLPATS) {
@@ -891,9 +858,8 @@ set_fillgc(fill_style, op, color)
     Color	    color;
 {
     if (op == PAINT) {
-	fillgc = ((color==BLACK || 
-	     (color==DEFAULT_COLOR && x_fg_color.pixel==appres.color[BLACK]) ||
-	     (!all_colors_available && color!=WHITE))? 
+	fillgc = (color==BLACK || 
+	     (color==DEFAULT_COLOR && x_fg_color.pixel==appres.color[BLACK])?
 		black_fill_gc[fill_style - 1]: fill_gc[fill_style - 1]);
 	if (writing_bitmap)
 	    {
@@ -904,12 +870,11 @@ set_fillgc(fill_style, op, color)
 	    XSetForeground(tool_d,fillgc,color);
 	    }
 	else
-	    set_x_color(fillgc, color);
+	    set_fill_color(fillgc, color);
     } else
-	fillgc = ((color==BLACK || 
-	     (color==DEFAULT_COLOR && x_fg_color.pixel==appres.color[BLACK]) ||
-	     (!all_colors_available && color!=WHITE))? 
-		black_un_fill_gc[fill_style - 1]: un_fill_gc[fill_style - 1]);
+	fillgc = (color==BLACK || 
+	     (color==DEFAULT_COLOR && x_fg_color.pixel==appres.color[BLACK])?
+		black_un_fill_gc[NUMFILLPATS-1]: un_fill_gc[NUMFILLPATS-1]);
     XSetClipRectangles(tool_d, fillgc, 0, 0, clip, 1, YXBanded);
 }
 
@@ -920,7 +885,7 @@ set_line_stuff(width, style, style_val, op, color)
 {
     XGCValues	    gcv;
     unsigned long   mask;
-    static unsigned char dash_list[2] = {-1, -1};
+    static unsigned char dash_list[2] = {255, 255};
 
     switch (style) {
     case RUBBER_LINE:
@@ -952,7 +917,7 @@ set_line_stuff(width, style, style_val, op, color)
 
     if (width == gc_thickness[op] && style == gc_line_style[op] &&
 	(writing_bitmap? color == gc_color[op] : x_color(color) == gc_color[op]) &&
-	(style != DASH_LINE && style != DOTTED_LINE ||
+	((style != DASH_LINE && style != DOTTED_LINE) ||
 	 dash_list[1] == (char) round(style_val * zoomscale)))
 	return;			/* no need to change anything */
 

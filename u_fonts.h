@@ -20,8 +20,7 @@
 #define LATEX_FONTPANE_WD 112
 #define PS_FONTPANE_HT 20
 #define LATEX_FONTPANE_HT 20
-#define NUM_X_FONTS 27
-#define NUM_PS_FONTS 35
+#define NUM_FONTS 35
 #define NUM_LATEX_FONTS 6
 
 /* element of linked list for each font
@@ -33,15 +32,9 @@ struct xfont {
     int		    size;	/* size in points */
     Font	    fid;	/* X font id */
     char	   *fname;	/* actual name of X font found */
-    struct flist   *list;	/* list of fonts by angle */
+    XFontStruct	   *fstruct;	/* X font structure */
     struct xfont   *next;	/* next in the list */
 };
-
-struct flist {
-    int		    dir;	/* direction (0=0 degrees, 1=90, 2=180, 3=270) */
-    XRotFontStruct *fstruct;	/* X font structure */
-    struct flist   *next;
-    };
 
 struct _fstruct {
     char	   *name;	/* Postscript font name */

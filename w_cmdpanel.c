@@ -22,6 +22,7 @@
 
 extern		erase_objecthighlight();
 extern		emptyfigure();
+extern Boolean	query_save();
 extern		do_print(), do_print_batch(), do_export(), do_save();
 extern void	undo(), redisplay_canvas();
 extern void	popup_print_panel(), popup_file_panel(), popup_export_panel();
@@ -158,9 +159,6 @@ setup_cmd_panel()
 	sw = &cmd_switches[i];
 	FirstArg(XtNfont, button_font); /* label font */
 	SetValues(sw->widget);
-	/* install the keyboard accelerators for this command button 
-	   from the resources */
-	/*XtInstallAllAccelerators(sw->widget, tool);*/
     }
 }
 
@@ -172,7 +170,6 @@ enter_cmd_but(widget, closure, event, continue_to_dispatch)
     Boolean*	    continue_to_dispatch;
 {
     cmd_sw_info *sw = (cmd_sw_info *) closure;
-    clear_mousefun();
     draw_mousefun(sw->mousefun_l, "", sw->mousefun_r);
 }
 
@@ -216,25 +213,17 @@ void
 quit(w)
     Widget	    w;
 {
-    int		    qresult;
-
-    if (!emptyfigure() && figure_modified && !aborting) {
-	XtSetSensitive(w, False);
-	if ((qresult = popup_query(QUERY_YESNO, quit_msg)) == RESULT_CANCEL) {
-	    XtSetSensitive(w, True);
-	    return;
-	} else if (qresult == RESULT_YES) {
-	    do_save(w);
-	    /*
-	     * if saving was not successful, figure_modified is still true:
-	     * do not quit!
-	     */
-	    if (figure_modified) {
-		XtSetSensitive(w, True);
-		return;
-	    }
-	}
+    XtSetSensitive(w, False);
+    /* if modified (and non-empty) ask to save first */
+    if (!query_save(quit_msg)) {
+	XtSetSensitive(w, True);
+	return;		/* cancel, do not quit */
     }
+    goodbye();		/* finish up and exit */
+}
+
+goodbye()
+{
     /* delete the cut buffer only if it is in a temporary directory */
     if (strncmp(cut_buf_name, TMPDIR, strlen(TMPDIR)) == 0)
 	unlink(cut_buf_name);

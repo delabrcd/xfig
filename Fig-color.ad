@@ -28,10 +28,12 @@
 ! Mode (left-hand) panel
 	Fig*mode_panel.background: lightskyblue
 	Fig*mode_panel.foreground: black
+	Fig*mode_panel.label.background: lavender
+	Fig*mode_panel.label.foreground: black
 	Fig*mode_panel.button.background: lightskyblue
 	Fig*mode_panel.button.foreground: black
 ! Mouse indicator panel
-	Fig*mouse_panel.background: yellow
+	Fig*mouse_panel.background: lavender
 	Fig*mouse_panel.foreground: black
 ! Edit popup
 	Fig*xfig_edit_panel.form.done.background: green

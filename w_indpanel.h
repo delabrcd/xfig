@@ -89,3 +89,5 @@ typedef struct ind_sw_struct {
 
 #define ZOOM_SWITCH_INDEX	0	/* used by w_zoom.c */
 extern ind_sw_info ind_switches[];
+
+extern Widget	    upd_ctrl;

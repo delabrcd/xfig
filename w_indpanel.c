@@ -25,6 +25,7 @@
 #include "w_util.h"
 #include "w_zoom.h"
 
+#define MAX_SCROLL_WD 50
 extern Pixmap	psfont_menu_bitmaps[], latexfont_menu_bitmaps[];
 extern Atom	wm_delete_window;
 extern struct	_fstruct ps_fontinfo[], latex_fontinfo[];
@@ -88,12 +89,15 @@ static int	inc_depth(), dec_depth();
 
 static int	popup_fonts();
 static void	note_state();
+static void	set_all_update(), clr_all_update(), tog_all_update();
 
 static char	indbuf[12];
 static float	old_zoomscale = -1.0;
 static int	old_rotnangle = -1;
 static float	old_elltextangle = -1.0;
 
+Widget		upd_ctrl, set_upd, upd_tog,
+		clr_upd, tog_upd, upd_ctrl_lab, upd_ctrl_btns;
 #define		DEF_IND_SW_HT		32
 #define		DEF_IND_SW_WD		64
 #define		FONT_IND_SW_WD		(40+PS_FONTPANE_WD)
@@ -115,19 +119,19 @@ static choice_info anglegeom_choices[] = {
 #define NUM_ANGLEGEOM_CHOICES (sizeof(anglegeom_choices)/sizeof(choice_info))
 
 static choice_info valign_choices[] = {
-    {NONE, &none_ic,},
-    {TOP, &valignt_ic,},
-    {CENTER, &valignc_ic,},
-    {BOTTOM, &valignb_ic,},
+    {ALIGN_NONE, &none_ic,},
+    {ALIGN_TOP, &valignt_ic,},
+    {ALIGN_CENTER, &valignc_ic,},
+    {ALIGN_BOTTOM, &valignb_ic,},
 };
 
 #define NUM_VALIGN_CHOICES (sizeof(valign_choices)/sizeof(choice_info))
 
 static choice_info halign_choices[] = {
-    {NONE, &none_ic,},
-    {LEFT, &halignl_ic,},
-    {CENTER, &halignc_ic,},
-    {RIGHT, &halignr_ic,},
+    {ALIGN_NONE, &none_ic,},
+    {ALIGN_LEFT, &halignl_ic,},
+    {ALIGN_CENTER, &halignc_ic,},
+    {ALIGN_RIGHT, &halignr_ic,},
 };
 
 #define NUM_HALIGN_CHOICES (sizeof(halign_choices)/sizeof(choice_info))
@@ -299,23 +303,36 @@ static String	ind_translations =
 "<EnterWindow>:EnterIndSw()highlight()\n\
     <LeaveWindow>:LeaveIndSw()unhighlight()\n";
 
+/* bitmaps for set/clear and toggle buttons */
+static unsigned char set_bits[] = {
+   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+static unsigned char clr_bits[] = {
+   0xff, 0x03, 0x01, 0x02, 0x01, 0x02, 0x01, 0x02, 0x01, 0x02, 0x01, 0x02,
+   0x01, 0x02, 0x01, 0x02, 0x01, 0x02, 0xff, 0x03};
+static unsigned char tog_bits[] = {
+   0xff, 0x03, 0x01, 0x02, 0x03, 0x02, 0x07, 0x02, 0x0f, 0x02, 0x1f, 0x02,
+   0x3f, 0x02, 0x7f, 0x02, 0xff, 0x02, 0xff, 0x03};
+
 init_ind_panel(tool)
     TOOL	    tool;
 {
-    int		i;
+    int		 i;
     ind_sw_info	*sw;
+    Widget	 tw; /* temporary widget to get scrollbar widget */
 
-    /* does he want to always see ALL of the indicator buttons? */
-    if (appres.ShowAllButtons) {
-	cur_indmask = I_ALL;	/* yes */
-	i = 2*DEF_IND_SW_HT+2*INTERNAL_BW+6;  /* two rows high when showing all buttons */
-    } else {
-	i = DEF_IND_SW_HT+4*INTERNAL_BW+14;   /* allow for thickness of scrollbar */
-    }
 
     /* make a scrollable viewport in case all the buttons don't fit */
     FirstArg(XtNallowHoriz, True);
     NextArg(XtNwidth, INDPANEL_WD);
+    /* does he want to always see ALL of the indicator buttons? */
+    if (appres.ShowAllButtons) {
+	cur_indmask = I_ALL;	/* yes */
+	i = 2*DEF_IND_SW_HT+5*INTERNAL_BW; /* two rows high when showing all buttons */
+    } else {
+	i = DEF_IND_SW_HT+2*INTERNAL_BW+MAX_SCROLL_WD;   /* allow for thickness of scrollbar */
+	NextArg(XtNforceBars, True);
+    }
     NextArg(XtNheight, i);
     NextArg(XtNborderWidth, 0);
     NextArg(XtNresizable, False);
@@ -344,6 +361,59 @@ init_ind_panel(tool)
 
     ind_panel = XtCreateManagedWidget("ind_panel", boxWidgetClass, ind_viewp,
 			       Args, ArgCount);
+
+    /* make a widget which contains the label and toggle/set/clear form */
+
+    FirstArg(XtNdefaultDistance, 0);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    NextArg(XtNorientation, XtorientVertical);
+    NextArg(XtNhSpace, 0);
+    NextArg(XtNvSpace, 1);
+    NextArg(XtNheight, DEF_IND_SW_HT);
+    NextArg(XtNwidth, DEF_IND_SW_WD);
+    upd_ctrl = XtCreateWidget("upd_ctrl_form", boxWidgetClass,
+			ind_panel, Args, ArgCount);
+
+    /* make a widget which contains the buttons to toggle/set/clear
+       the update buttons in the indicator panel buttons */
+
+    FirstArg(XtNborderWidth, 0);
+    NextArg(XtNheight, 13);
+    NextArg(XtNwidth, 50);
+    NextArg(XtNjustify, XtJustifyCenter);
+    NextArg(XtNfont, button_font);
+    NextArg(XtNlabel, "Control");
+    upd_ctrl_lab = XtCreateManagedWidget("upd_ctrl_label", labelWidgetClass,
+			upd_ctrl, Args, ArgCount);
+
+    /* make a widget which contains the buttons to toggle/set/clear
+       the update buttons in the indicator panel buttons */
+
+    FirstArg(XtNdefaultDistance, 0);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNorientation, XtorientHorizontal);
+    NextArg(XtNhSpace, 3);
+    NextArg(XtNvSpace, 0);
+    upd_ctrl_btns = XtCreateManagedWidget("upd_ctrl_btns", boxWidgetClass,
+			upd_ctrl, Args, ArgCount);
+
+    FirstArg(XtNheight, 9);
+    NextArg(XtNwidth, 9);
+    NextArg(XtNinternalWidth, 2);
+    NextArg(XtNinternalHeight, 2);
+    NextArg(XtNborderWidth, 1);
+    set_upd = XtCreateManagedWidget("set_upd", commandWidgetClass,
+			upd_ctrl_btns, Args, ArgCount);
+    XtAddEventHandler(set_upd, ButtonReleaseMask, (Boolean) 0,
+			set_all_update, (XtPointer) 0);
+    clr_upd = XtCreateManagedWidget("clr_upd", commandWidgetClass,
+			upd_ctrl_btns, Args, ArgCount);
+    XtAddEventHandler(clr_upd, ButtonReleaseMask, (Boolean) 0,
+			clr_all_update, (XtPointer) 0);
+    tog_upd = XtCreateManagedWidget("tog_upd", commandWidgetClass,
+			upd_ctrl_btns, Args, ArgCount);
+    XtAddEventHandler(tog_upd, ButtonReleaseMask, (Boolean) 0,
+			tog_all_update, (XtPointer) 0);
 
     /* start with all components affected by update */
     cur_updatemask = I_UPDATEMASK;
@@ -389,6 +459,27 @@ init_ind_panel(tool)
 	XtOverrideTranslations(sw->button,
 			       XtParseTranslationTable(ind_translations));
     }
+
+    /* now get the real height of the scrollbar and resize the ind_panel if necessary */
+    tw = XtNameToWidget(ind_viewp, "horizontal");
+    if (!appres.ShowAllButtons && tw != NULL) {
+	Dimension    td1; /* temporary variable to get scrollbar thickness */
+	Dimension    td2; /* temporary variable to get indpanel height */
+	Dimension    bdw; /* temporary variable to get scrollbar border width */
+	FirstArg(XtNthickness, &td1);
+	NextArg(XtNborderWidth, &bdw);
+	GetValues(tw);
+	FirstArg(XtNheight, &td2);
+	GetValues(ind_panel);
+	td2 = td2 - MAX_SCROLL_WD /* initial kludge value */ + td1 + 4 + bdw;
+	XtUnmanageChild(ind_panel);
+	FirstArg(XtNheight, td2);
+	SetValues(ind_viewp);
+	SetValues(ind_panel);
+	FirstArg(XtNforceBars, False);
+	SetValues(ind_viewp);
+	XtManageChild(ind_panel);
+    }
     update_indpanel(cur_indmask);
 }
 
@@ -414,6 +505,57 @@ note_state(w, closure, ev, continue_to_dispatch)
 	cur_updatemask &= ~sw->func;	/* turn off update status */
 }
 
+/* toggle the update buttons in all the widgets */
+static void
+tog_all_update()
+{
+    int i;
+
+    cur_updatemask = ~cur_updatemask;	/* tuggle all */
+    for (i = 0; i < NUM_IND_SW; ++i) {
+	if (ind_switches[i].updbut == NULL)
+		continue;
+	ind_switches[i].update = !ind_switches[i].update;
+	FirstArg(XtNstate, &ind_switches[i].update);
+	SetValues(ind_switches[i].updbut);
+    }
+    put_msg("Update command status TOGGLED for all buttons");
+}
+
+/* turn on the update buttons in all the widgets */
+static void
+set_all_update()
+{
+    int i;
+
+    cur_updatemask = I_UPDATEMASK;	/* turn all on */
+    for (i = 0; i < NUM_IND_SW; ++i) {
+	if (ind_switches[i].updbut == NULL)
+		continue;
+	ind_switches[i].update = True;
+	FirstArg(XtNstate, True);
+	SetValues(ind_switches[i].updbut);
+    }
+    put_msg("Update commands are now ENABLED for all buttons");
+}
+
+/* turn off the update buttons in all the widgets */
+static void
+clr_all_update()
+{
+    int i;
+
+    for (i = 0; i < NUM_IND_SW; ++i) {
+    cur_updatemask = 0;			/* turn all off */
+	if (ind_switches[i].updbut == NULL)
+		continue;
+	ind_switches[i].update = False;
+	FirstArg(XtNstate, False);
+	SetValues(ind_switches[i].updbut);
+    }
+    put_msg("Update commands will be IGNORED for all buttons");
+}
+
 manage_update_buts()
 {
     int		    i;
@@ -437,6 +579,7 @@ setup_ind_panel()
     Display	   *d = tool_d;
     Screen	   *s = tool_s;
     Pixmap	    p;
+    Pixel	    fg,bg;
 
     /* get the foreground and background from the indicator widget */
     /* and create a gc with those values */
@@ -480,6 +623,32 @@ setup_ind_panel()
 	XtInstallAllAccelerators(isw->button, tool);
     }
     XtInstallAllAccelerators(ind_panel, tool);
+
+    /* now put cute little images in them (full box (set), empty box (clear)
+	and half full (toggle) */
+    FirstArg(XtNforeground, &fg);
+    NextArg(XtNbackground, &bg);
+    for (i = 0; i < NUM_IND_SW; ++i)		/* find one of the update buttons */
+	if (ind_switches[i].func & I_UPDATEMASK) { /* and get its bg color */
+	    GetValues(ind_switches[i].updbut);
+	    break;
+	}
+
+    p = XCreatePixmapFromBitmapData(tool_d, XtWindow(ind_panel),
+		    (char *) set_bits, 10, 10, fg, bg,
+		    DefaultDepthOfScreen(tool_s));
+    FirstArg(XtNbitmap, p);
+    SetValues(set_upd);
+    p = XCreatePixmapFromBitmapData(tool_d, XtWindow(ind_panel),
+		    (char *) clr_bits, 10, 10, fg, bg,
+		    DefaultDepthOfScreen(tool_s));
+    FirstArg(XtNbitmap, p);
+    SetValues(clr_upd);
+    p = XCreatePixmapFromBitmapData(tool_d, XtWindow(ind_panel),
+		    (char *) tog_bits, 10, 10, fg, bg,
+		    DefaultDepthOfScreen(tool_s));
+    FirstArg(XtNbitmap, p);
+    SetValues(tog_upd);
 
     XDefineCursor(d, XtWindow(ind_panel), arrow_cursor);
     update_current_settings();
@@ -698,8 +867,7 @@ popup_choice_panel(isw)
 
     for (i = 0; i < isw->numchoices; tmp_choice++, i++) {
 	if (isw->func == I_FILLSTYLE)
-	    p = ((cur_color==BLACK || cur_color==DEFAULT_COLOR ||
-		 (!all_colors_available && cur_color!=WHITE))?
+	    p = (cur_color==BLACK || cur_color==DEFAULT_COLOR?
 		fillstyle_choices[i].blackPM :fillstyle_choices[i].normalPM);
 	else if (isw->func == I_COLOR) {
 	    p = 0;
@@ -737,10 +905,19 @@ popup_choice_panel(isw)
 			form_fg = appres.color[BLACK];
 		    NextArg(XtNforeground, form_fg);
 		    NextArg(XtNbackground, appres.color[i]);
+		} else {
+		    if (i == BLACK) {
+			NextArg(XtNforeground, appres.color[WHITE]);
+			NextArg(XtNbackground, appres.color[BLACK]);
+		    } else {
+			NextArg(XtNforeground, appres.color[BLACK]);
+			NextArg(XtNbackground, appres.color[WHITE]);
+		    }
 		}
 		NextArg(XtNlabel, colorNames[i + 1]);
 	    } else {		/* it's the default color */
-		NextArg(XtNforeground, x_fg_color.pixel);
+		NextArg(XtNbackground, x_fg_color.pixel);
+		NextArg(XtNforeground, x_bg_color.pixel);
 		NextArg(XtNlabel, colorNames[0]);
 	    }
 	}
@@ -823,9 +1000,6 @@ flags_panel_set(w, ev)
     Widget	    w;
     XButtonEvent   *ev;
 {
-    int		    new_i_value;
-    float	    new_f_value;
-
     if (hidden_text_flag)
 	cur_textflags |= HIDDEN_TEXT;
     else
@@ -1330,16 +1504,16 @@ show_valign(sw)
 {
     update_choice_pixmap(sw, cur_valign);
     switch (cur_valign) {
-    case NONE:
+    case ALIGN_NONE:
 	put_msg("No vertical alignment");
 	break;
-    case TOP:
+    case ALIGN_TOP:
 	put_msg("Vertically align to TOP");
 	break;
-    case CENTER:
+    case ALIGN_CENTER:
 	put_msg("Center vertically when aligning");
 	break;
-    case BOTTOM:
+    case ALIGN_BOTTOM:
 	put_msg("Vertically align to BOTTOM");
 	break;
     }
@@ -1353,16 +1527,16 @@ show_halign(sw)
 {
     update_choice_pixmap(sw, cur_halign);
     switch (cur_halign) {
-    case NONE:
+    case ALIGN_NONE:
 	put_msg("No horizontal alignment");
 	break;
-    case LEFT:
+    case ALIGN_LEFT:
 	put_msg("Horizontally align to LEFT");
 	break;
-    case CENTER:
+    case ALIGN_CENTER:
 	put_msg("Center horizontally when aligning");
 	break;
-    case RIGHT:
+    case ALIGN_RIGHT:
 	put_msg("Horizontally align to RIGHT");
 	break;
     }
@@ -1475,7 +1649,8 @@ inc_boxradius(sw)
     show_boxradius(sw);
 }
 
-#define MAXRADIUS 30
+#define MAXRADIUS 100
+
 static
 show_boxradius(sw)
     ind_sw_info	   *sw;
@@ -1531,18 +1706,16 @@ show_fillstyle(sw)
     ind_sw_info	   *sw;
 {
     if (cur_fillstyle == 0) {
-	XCopyArea(tool_d, ((cur_color==BLACK ||
-		   (cur_color==DEFAULT_COLOR && x_fg_color.pixel==appres.color[BLACK]) ||
-			(!all_colors_available && cur_color!=WHITE))? 
+	XCopyArea(tool_d, (cur_color==BLACK ||
+		   (cur_color==DEFAULT_COLOR && x_fg_color.pixel==appres.color[BLACK])?
 			fillstyle_choices[0].blackPM: fillstyle_choices[0].normalPM),
 			sw->normalPM,
 			ind_button_gc, 0, 0, 32, 32, 32, 0);
 	put_msg("NO-FILL MODE");
     } else {
 	/* put the pixmap in the widget background */
-	XCopyArea(tool_d, ((cur_color==BLACK ||
-		   (cur_color==DEFAULT_COLOR && x_fg_color.pixel==appres.color[BLACK]) ||
-			(!all_colors_available && cur_color!=WHITE))? 
+	XCopyArea(tool_d, (cur_color==BLACK ||
+		   (cur_color==DEFAULT_COLOR && x_fg_color.pixel==appres.color[BLACK])?
 				fillstyle_choices[cur_fillstyle].blackPM:
 				fillstyle_choices[cur_fillstyle].normalPM),
 			sw->normalPM,
@@ -1583,10 +1756,11 @@ show_color(sw)
     int		    color;
 
     if (cur_color < 0 || cur_color >= NUMCOLORS) {
-	cur_color == DEFAULT_COLOR;
+	cur_color = DEFAULT_COLOR;
 	color = x_fg_color.pixel;
     } else
-	color = all_colors_available ? appres.color[cur_color] : x_fg_color.pixel;
+	color = all_colors_available ? appres.color[cur_color] : 
+			(cur_color == WHITE? x_bg_color.pixel: x_fg_color.pixel);
 
     show_fillstyle(fill_style_sw);
     put_msg("Color set to %s", colorNames[cur_color + 1]);
@@ -1686,10 +1860,10 @@ show_font(sw)
     ind_sw_info	   *sw;
 {
     if (using_ps) {
-	if (cur_ps_font >= NUM_PS_FONTS)
+	if (cur_ps_font >= NUM_FONTS)
 	    cur_ps_font = DEFAULT;
 	else if (cur_ps_font < DEFAULT)
-	    cur_ps_font = NUM_PS_FONTS - 1;
+	    cur_ps_font = NUM_FONTS - 1;
     } else {
 	if (cur_latex_font >= NUM_LATEX_FONTS)
 	    cur_latex_font = 0;

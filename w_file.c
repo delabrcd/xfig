@@ -33,6 +33,10 @@ static Widget	cfile_lab, cfile_text;
 static Widget	cancel, save, merge, load;
 static Widget	file_w;
 static Position xposn, yposn;
+static String	file_list_translations =
+	"<Btn1Down>,<Btn1Up>: Set()Notify()\n\
+	<Btn1Down>(2): load()\n\
+	<Key>Return: load()\n";
 static String	file_name_translations =
 	"<Key>Return: load()\n";
 static void	file_panel_cancel(), do_merge();
@@ -79,7 +83,7 @@ do_merge(w, ev)
     Widget	    w;
     XButtonEvent   *ev;
 {
-    char	    filename[100];
+    char	    filename[200];
     char	   *fval, *dval;
 
     FirstArg(XtNstring, &fval);
@@ -107,25 +111,25 @@ do_load(w, ev)
 {
     char	   *fval, *dval;
 
+    /* first check if the figure was modified before reloading it */
+    if (!emptyfigure() && figure_modified) {
+	if (file_popup)
+	    XtSetSensitive(load, False);
+	if (!popup_query(QUERY_YESCAN, load_msg)) {
+	    if (file_popup)
+		XtSetSensitive(load, True);
+	    return;
+	}
+    }
     if (file_popup) {
 	FirstArg(XtNstring, &dval);
 	GetValues(file_dir);
 	FirstArg(XtNstring, &fval);
 	GetValues(file_selfile);	/* check the ascii widget for a filename */
 	if (emptyname(fval))
-	    fval = cur_filename;	/* "Filename" widget empty, use current filename */
-
+	    fval = cur_filename;	/* Filename widget empty, use current filename */
 	if (emptyname_msg(fval, "LOAD"))
 	    return;
-
-	if (!emptyfigure() && figure_modified) {
-	    XtSetSensitive(load, False);
-	    if (!popup_query(QUERY_YES, load_msg)) {
-		XtSetSensitive(load, True);
-		return;
-	    }
-	    XtSetSensitive(load, True);
-	}
 	if (change_directory(dval) == 0) {
 	    if (load_file(fval) == 0) {
 		FirstArg(XtNlabel, fval);
@@ -133,6 +137,7 @@ do_load(w, ev)
 		if (fval != cur_filename)
 			update_cur_filename(fval);	/* and update cur_filename */
 		update_def_filename();		/* and the default export filename */
+		XtSetSensitive(load, True);
 		file_panel_dismiss();
 	    }
 	}
@@ -191,6 +196,28 @@ do_save(w)
     }
 }
 
+Boolean
+query_save(msg)
+    char	   *msg;
+{
+    int		    qresult;
+    if (!emptyfigure() && figure_modified && !aborting) {
+	if ((qresult = popup_query(QUERY_YESNOCAN, msg)) == RESULT_CANCEL) 
+	    return False;
+	else if (qresult == RESULT_YES) {
+	    do_save((Widget) 0);
+	    /*
+	     * if saving was not successful, figure_modified is still true:
+	     * do not quit!
+	     */
+	    if (figure_modified)
+		return False;
+	}
+    }
+    /* ok */
+    return True;
+}
+
 static void
 file_panel_cancel(w, ev)
     Widget	    w;
@@ -230,7 +257,7 @@ popup_file_panel(w)
 create_file_panel(w)
 	Widget		   w;
 {
-	Widget		   file, dir, beside, below;
+	Widget		   file, beside, below;
 	PIX_FONT	   temp_font;
 	static int	   actions_added=0;
 	file_w = w;
@@ -314,15 +341,16 @@ create_file_panel(w)
 	    XtAppAddActions(tool_app, file_name_actions, XtNumber(file_name_actions));
 	}
 
+	create_dirinfo(file_panel, file_selfile, &beside, &below,
+		       &file_mask, &file_dir, &file_flist, &file_dlist);
+
 	/* make <return> in the filename window load the file */
 	XtOverrideTranslations(file_selfile,
 			   XtParseTranslationTable(file_name_translations));
 
-	create_dirinfo(file_panel, file_selfile, &beside, &below,
-		       &file_mask, &file_dir, &file_flist, &file_dlist);
-	/* make <return> in the file list window load the file */
-	XtOverrideTranslations(file_flist,
-			   XtParseTranslationTable(file_name_translations));
+	/* make <return> and a double click in the file list window load the file */
+	XtAugmentTranslations(file_flist,
+			   XtParseTranslationTable(file_list_translations));
 	FirstArg(XtNlabel, "Cancel");
 	NextArg(XtNvertDistance, 15);
 	NextArg(XtNhorizDistance, 25);

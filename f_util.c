@@ -21,7 +21,7 @@ emptyname(name)
     char	    name[];
 
 {
-    if (*name == '\0') {
+    if  (name == NULL || *name == '\0') {
 	return (1);
     } else {
 	return (0);
@@ -74,7 +74,7 @@ int
 change_directory(path)
     char	   *path;
 {
-    if (path == NULL) {
+    if (path == NULL || *path == '\0') {
 	*cur_dir = '\0';
 	return (0);
     }
@@ -107,7 +107,7 @@ get_directory(direct)
 	put_msg("%s", direct);	/* err msg is in directory */
 #endif
 	*direct = '\0';
-	return NULL;
+	return 0;
     }
     return 1;
 }
@@ -142,7 +142,7 @@ ok_to_write(file_name, op_name)
 	    } else {
 		if (warnexist) {
 		    sprintf(string, "\"%s\" already exists.\nDo you want to overwrite it?", file_name);
-		    if (!popup_query(QUERY_YES, string)) {
+		    if (!popup_query(QUERY_YESCAN, string)) {
 			put_msg("%s cancelled", op_name);
 			return (0);
 		    }
@@ -162,4 +162,18 @@ ok_to_write(file_name, op_name)
     }
 
     return (1);
+}
+
+char *
+basename(filename)
+    char	   *filename;
+{
+    char	   *p;
+    if (filename == NULL || *filename == '\0')
+	return NULL;
+    if (p=strrchr(filename,'/')) {
+	return ++p;
+    } else {
+	return filename;
+    }
 }

@@ -33,13 +33,10 @@
 
 #define		MAXDEPTH		999
 
-#define		SW_PER_ROW_PORT 2	/* switches/row in mode panel */
-#define		SW_PER_ROW_LAND 2	/* same for landscape mode */
-#define		SW_PER_COL_PORT 17
-#define		SW_PER_COL_LAND 17
-
 #define		MODE_SW_HT	32	/* height of a mode switch icon */
 #define		MODE_SW_WD	36	/* width of a mode switch icon */
+
+#define		DEF_SW_PER_ROW		2 /* def num of btns per row in mode panel */
 
 #define		DEF_INTERNAL_BW		1
 #define		POPUP_BW		2
@@ -56,4 +53,5 @@ extern int	CANVAS_WD, CANVAS_HT;
 extern int	INTERNAL_BW;
 extern int	TOPRULER_WD, TOPRULER_HT;
 extern int	SIDERULER_WD, SIDERULER_HT;
-extern int	SW_PER_ROW, SW_PER_COL;
+extern int	SW_PER_ROW;
+extern int	NUM_MODE_SW;

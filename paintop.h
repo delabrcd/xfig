@@ -21,3 +21,7 @@
 #define UNDRAW		0
 
 #define DEFAULT_COLOR	-1
+
+/* size of markers for selected objects */
+#define	MARK_SIZ	5
+#define SM_MARK		3

@@ -771,10 +771,10 @@ static unsigned char	PS_Default_bits[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-Pixmap		psfont_menu_bitmaps[NUM_PS_FONTS + 1];
+Pixmap		psfont_menu_bitmaps[NUM_FONTS + 1];
 Pixmap		latexfont_menu_bitmaps[NUM_LATEX_FONTS];
 
-unsigned char	       *psfont_menu_bits[NUM_PS_FONTS + 1] = {
+unsigned char	       *psfont_menu_bits[NUM_FONTS + 1] = {
     PS_Default_bits,
     Times_Roman_bits,
     Times_Italic_bits,

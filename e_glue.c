@@ -15,6 +15,7 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "u_bound.h"
 #include "u_create.h"
 #include "u_draw.h"
 #include "u_elastic.h"
@@ -147,6 +148,26 @@ create_compoundobject(x, y)
     compound_bound(c, &c->nwcorner.x, &c->nwcorner.y,
 		   &c->secorner.x, &c->secorner.y);
 
+    /* if zero width or height in the compound, adjust to next positioning 
+       grid point or a few pixels if positioning grid is "ANY" */
+    if (c->nwcorner.x == c->secorner.x) {
+	if (cur_pointposn == P_ANY) {
+	    c->secorner.x += MARK_SIZ+1;  /* just enough to clear the markers */
+	}
+	else {
+	    c->secorner.x += posn_rnd[cur_pointposn];
+	    ceil_coords(c->secorner.x);
+	}
+    }
+    if (c->nwcorner.y == c->secorner.y) {
+	if (cur_pointposn == P_ANY) {
+	    c->secorner.y += MARK_SIZ+1;  /* just enough to clear the markers */
+	}
+	else {
+	    c->secorner.y += posn_rnd[cur_pointposn];
+	    ceil_coords(c->secorner.y);
+	}
+    }
     c->next = NULL;
     clean_up();
     set_action(F_GLUE);
@@ -404,12 +425,8 @@ sel_text(xmin, ymin, xmax, ymax)
     int		    dum;
 
     for (t = objects.texts; t != NULL; t = t->next) {
-	if (appres.textoutline) {
-		text_bound_actual(t, t->angle, &txmin, &tymin, &txmax, &tymax,
-				&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
-	} else {
-		text_bound(t, &txmin, &tymin, &txmax, &tymax);
-	}
+	text_bound(t, &txmin, &tymin, &txmax, &tymax,
+			&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
 	if (xmin > txmin || xmax < txmax ||
 	    ymin > tymin || ymax < tymax)
 		continue;

@@ -96,8 +96,12 @@ do_print(w)
 	   var and put it into the widget */
 	if (emptyname(printer_val)) {
 		printer_val=getenv("PRINTER");
-		FirstArg(XtNstring, printer_val);
-		SetValues(printer_text);
+		if (printer_val == NULL) {
+			printer_val = "";
+		} else {
+			FirstArg(XtNstring, printer_val);
+			SetValues(printer_text);
+		}
 	}
 	FirstArg(XtNstring, &param_val);
 	GetValues(param_text);
@@ -122,7 +126,7 @@ gen_print_cmd(cmd,file,printer,pr_params)
     char	   *pr_params;
 {
     if (emptyname(printer)) {	/* send to default printer */
-#if defined(SYSV) || defined(SVR4)
+#if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
 	sprintf(cmd, "lp %s -oPS %s", 
 		pr_params,
 		shell_protect_string(file));
@@ -135,7 +139,7 @@ gen_print_cmd(cmd,file,printer,pr_params)
 	put_msg("Printing figure on default printer in %s mode ...     ",
 		print_landscape ? "LANDSCAPE" : "PORTRAIT");
     } else {
-#if defined(SYSV) || defined(SVR4)
+#if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
 	sprintf(cmd, "lp %s, -d%s -oPS %s",
 		pr_params,
 		printer, 
@@ -160,7 +164,6 @@ void
 do_print_batch(w)
     Widget	    w;
 {
-	DeclareArgs(1);
 	float	    mag;
 	FILE	   *infp,*outfp;
 	char	    tmp_exp_file[32];
@@ -215,8 +218,6 @@ static void
 do_clear_batch(w)
     Widget	    w;
 {
-	DeclareArgs(1);
-  
 	unlink(batch_file);
 	batch_exists = False;
 	num_batch_figures = 0;
@@ -228,7 +229,7 @@ do_clear_batch(w)
 
 update_batch_count()
 {
-	String	    num[4];
+	char	    num[4];
 	DeclareArgs(1);
 
 	sprintf(num,"%3d",num_batch_figures);
@@ -272,9 +273,6 @@ just_select(w, new_just, garbage)
 popup_print_panel(w)
     Widget	    w;
 {
-    Widget	    image;
-    Pixmap	    p;
-    DeclareArgs(10);
     extern	    Atom wm_delete_window;
 
     set_temp_cursor(wait_cursor);
@@ -294,6 +292,7 @@ create_print_panel(w)
 	Widget	    image;
 	Pixmap	    p;
 	DeclareArgs(10);
+	unsigned long fg, bg;
 
 	print_w = w;
 	XtTranslateCoords(w, (Position) 0, (Position) 0, &xposn, &yposn);
@@ -311,13 +310,9 @@ create_print_panel(w)
 	print_panel = XtCreateManagedWidget("print_panel", formWidgetClass,
 					    print_popup, NULL, ZERO);
 
-	p = XCreateBitmapFromData(tool_d, XtWindow(canvas_sw),
-		      (char *) printer_ic.data, printer_ic.width, printer_ic.height);
-
 	FirstArg(XtNlabel, "   ");
 	NextArg(XtNwidth, printer_ic.width);
 	NextArg(XtNheight, printer_ic.height);
-	NextArg(XtNbitmap, p);
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNinternalWidth, 0);
 	NextArg(XtNinternalHeight, 0);
@@ -325,6 +320,14 @@ create_print_panel(w)
 	NextArg(XtNresizable, False);
 	image = XtCreateManagedWidget("printer_image", labelWidgetClass,
 				      print_panel, Args, ArgCount);
+	FirstArg(XtNforeground, &fg);
+	NextArg(XtNbackground, &bg);
+	GetValues(image);
+	p = XCreatePixmapFromBitmapData(tool_d, XtWindow(canvas_sw),
+		      (char *) printer_ic.data, printer_ic.width, printer_ic.height,
+		      fg, bg, DefaultDepthOfScreen(tool_s));
+	FirstArg(XtNbitmap, p);
+	SetValues(image);
 
 	FirstArg(XtNlabel, "  Magnification%:");
 	NextArg(XtNfromVert, image);

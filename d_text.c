@@ -19,13 +19,14 @@
 #include "u_fonts.h"
 #include "u_list.h"
 #include "u_search.h"
+#include "u_undo.h"
 #include "w_canvas.h"
 #include "w_drawprim.h"
 #include "w_mousefun.h"
 #include "w_setup.h"
 #include "w_zoom.h"
 
-extern PIX_ROT_FONT lookfont();
+extern PIX_FONT lookfont();
 
 #define CTRL_H	8
 #define NL	10
@@ -41,11 +42,13 @@ char		prefix[BUF_SIZE],	/* part of string left of mouse click */
 int		leng_prefix, leng_suffix;
 static int	char_ht;
 static int	base_x, base_y;
-static PIX_ROT_FONT canvas_zoomed_font;
+static PIX_FONT canvas_zoomed_font;
 
+static int	is_newline;
 static int	work_psflag, work_font, work_fontsize, work_textjust;
-static PIX_ROT_FONT work_fontstruct;
-static float	work_angle;
+static PIX_FONT work_fontstruct;
+static float	work_angle;		/* in RADIANS */
+static double	sin_t, cos_t;		/* sin(work_angle) and cos(work_angle) */
 static		finish_n_start();
 static		init_text_input(), cancel_text_input();
 static		wrap_up();
@@ -71,6 +74,7 @@ text_drawing_selected()
     canvas_rightbut_proc = null_proc;
     set_mousefun("posn cursor", "", "");
     set_cursor(pencil_cursor);
+    is_newline = 0;
 }
 
 static
@@ -105,19 +109,14 @@ static
 new_text_line()
 {
     wrap_up();
-    if (work_angle < 90.0 - 0.001) {
-	cur_y += (int) ((float) char_ht * cur_textstep);
-	cur_x = base_x;
-    } else if (work_angle < 180.0 - 0.001) {
-	cur_x += (int) ((float) char_ht * cur_textstep);
-	cur_y = base_y;
-    } else if (work_angle < 270.0 - 0.001) {
-	cur_y -= (int) ((float) char_ht * cur_textstep);
-	cur_x = base_x;
-    } else {
-	cur_x -= (int) ((float) char_ht * cur_textstep);
-	cur_y = base_y;
+    if (cur_t) {	/* use current text's position as ref */
+	cur_x = round(cur_t->base_x + char_ht*cur_textstep*sin_t);
+	cur_y = round(cur_t->base_y + char_ht*cur_textstep*cos_t);
+    } else {		/* use position from previous text */
+	cur_x = round(base_x + char_ht*cur_textstep*sin_t);
+	cur_y = round(base_y + char_ht*cur_textstep*cos_t);
     }
+    is_newline = 1;
     init_text_input(cur_x, cur_y);
 }
 
@@ -170,8 +169,9 @@ static
 init_text_input(x, y)
     int		    x, y;
 {
-    int		    length, d;
+    int		    length, posn;
     PR_SIZE	    tsize;
+    float	    lensin, lencos;
 
     cur_x = x;
     cur_y = y;
@@ -191,31 +191,36 @@ init_text_input(x, y)
      * through
      */
 
-    put_msg("Ready for text input (from keyboard)");
-    if ((cur_t = text_search(cur_x, cur_y)) == NULL) {	/* new text input */
+    if ((cur_t = text_search(cur_x, cur_y, &posn)) == NULL) {	/* new text input */
 	leng_prefix = leng_suffix = 0;
 	*suffix = 0;
 	prefix[leng_prefix] = '\0';
 	base_x = cur_x;
 	base_y = cur_y;
 
-	work_fontsize = cur_fontsize;
-	work_font     = using_ps ? cur_ps_font : cur_latex_font;
-	work_psflag   = using_ps;
-	work_textjust = cur_textjust;
-	work_angle    = cur_elltextangle;
-	if (work_angle < 0.0)
-		work_angle += 360.0;
+	if (is_newline) {	/* working settings already set */
+	    is_newline = 0;
+	} else {		/* set working settings from ind panel */
+	    work_fontsize = cur_fontsize;
+	    work_font     = using_ps ? cur_ps_font : cur_latex_font;
+	    work_psflag   = using_ps;
+	    work_textjust = cur_textjust;
+	    work_angle    = cur_elltextangle*M_PI/180.0;
+	    while (work_angle < 0.0)
+		work_angle += M_2PI;
+	    sin_t = sin((double)work_angle);
+	    cos_t = cos((double)work_angle);
 
-	/* load the X font and get its id for this font, size and angle UNZOOMED */
-	/* this is to get widths etc for the unzoomed chars */
-	canvas_font = lookfont(x_fontnum(work_psflag, work_font), 
-			   work_fontsize, work_angle*M_PI/180.0);
-	/* get the ZOOMED font for actually drawing on the canvas */
-	canvas_zoomed_font = lookfont(x_fontnum(work_psflag, work_font), 
-			   round(work_fontsize*zoomscale), work_angle*M_PI/180.0);
-	/* save the working font structure */
-	work_fontstruct = canvas_zoomed_font;
+	    /* load the X font and get its id for this font and size UNZOOMED */
+	    /* this is to get widths etc for the unzoomed chars */
+	    canvas_font = lookfont(x_fontnum(work_psflag, work_font), 
+			   work_fontsize);
+	    /* get the ZOOMED font for actually drawing on the canvas */
+	    canvas_zoomed_font = lookfont(x_fontnum(work_psflag, work_font), 
+			   round(work_fontsize*zoomscale));
+	    /* save the working font structure */
+	    work_fontstruct = canvas_zoomed_font;
+	}
     } else {			/* clicked on existing text */
 	if (hidden_text(cur_t)) {
 	    put_msg("Can't edit hidden text");
@@ -229,70 +234,50 @@ init_text_input(x, y)
 	work_fontsize = cur_t->size;
 	work_psflag   = cur_t->flags;
 	work_textjust = cur_t->type;
-	work_angle    = cur_t->angle*180.0/M_PI;
-	if (work_angle < 0.0)
-		work_angle += 360.0;
+	work_angle    = cur_t->angle;
+	while (work_angle < 0.0)
+		work_angle += M_2PI;
+	sin_t = sin((double)work_angle);
+	cos_t = cos((double)work_angle);
+
 	/* load the X font and get its id for this font, size and angle UNZOOMED */
 	/* this is to get widths etc for the unzoomed chars */
 	canvas_font = lookfont(x_fontnum(work_psflag, work_font), 
-			   work_fontsize, work_angle*M_PI/180.0);
+			   work_fontsize);
 
 	toggle_textmarker(cur_t);
 	draw_text(cur_t, ERASE);
 	base_x = cur_t->base_x;
 	base_y = cur_t->base_y;
 	length = cur_t->length;
+	lencos = length*cos_t;
+	lensin = length*sin_t;
+
 	switch (cur_t->type) {
 	case T_CENTER_JUSTIFIED:
-	    if (work_angle < 90.0 - 0.001) 
-		base_x -= length / 2;
-	    else if (work_angle < 180.0 - 0.001)
-		base_y += length / 2;
-	    else if (work_angle < 270.0 - 0.001)
-		base_x += length / 2;
-	    else
-		base_y -= length / 2;
+	    base_x = round(base_x - lencos/2.0);
+	    base_y = round(base_y + lensin/2.0);
 	    break;
 
 	case T_RIGHT_JUSTIFIED:
-	    if (work_angle < 90.0 - 0.001) 
-		base_x -= length;
-	    else if (work_angle < 180.0 - 0.001)
-		base_y += length;
-	    else if (work_angle < 270.0 - 0.001)
-		base_x += length;
-	    else
-		base_y -= length;
+	    base_x = round(base_x - lencos);
+	    base_y = round(base_y + lensin);
 	    break;
 	} /* switch */
-	if (work_angle < 90.0 - 0.001 || (work_angle >= 180.0 - 0.001 
-	    && work_angle < 270.0 - 0.001))
-		d = abs(cur_x - base_x);
-	else
-		d = abs(cur_y - base_y);
+
 	leng_suffix = strlen(cur_t->cstring);
 	/* leng_prefix is # of char in the text before the cursor */
-	leng_prefix = prefix_length(cur_t->cstring, d);
+	leng_prefix = prefix_length(cur_t->cstring, posn);
 	leng_suffix -= leng_prefix;
 	cpy_n_char(prefix, cur_t->cstring, leng_prefix);
 	strcpy(suffix, &cur_t->cstring[leng_prefix]);
 	tsize = pf_textwidth(canvas_font, leng_prefix, prefix);
 
-	if (work_angle < 90.0 - 0.001) {
-	    cur_x = base_x + tsize.x;
-	    cur_y = base_y;
-	} else if (work_angle < 180.0 - 0.001) {
-	    cur_x = base_x;
-	    cur_y = base_y - tsize.x;
-	} else if (work_angle < 270.0 - 0.001) {
-	    cur_x = base_x - tsize.x;
-	    cur_y = base_y;
-	} else {
-	    cur_x = base_x;
-	    cur_y = base_y + tsize.x;
-	}
+	cur_x = round(base_x + tsize.x * cos_t);
+	cur_y = round(base_y - tsize.x * sin_t);
     }
-    char_ht = rot_char_height(canvas_font);
+    put_msg("Ready for text input (from keyboard)");
+    char_ht = char_height(canvas_font);
     initialize_char_handler(canvas_win, finish_text_input,
 			    base_x, base_y);
     draw_char_string();
@@ -316,7 +301,7 @@ new_text()
     text->font = work_font;	/* put in current font number */
     text->fontstruct = work_fontstruct;
     text->size = work_fontsize;
-    text->angle = work_angle/180.0*M_PI;	/* convert to radians */
+    text->angle = work_angle;
     text->flags = cur_textflags;
     text->color = cur_color;
     text->depth = cur_depth;
@@ -359,30 +344,32 @@ prefix_length(string, where_p)
     if (where_p >= len_p)
 	return (len_c);		/* entire string is the prefix */
 
-    char_wid = rot_char_width(canvas_font);
+    char_wid = char_width(canvas_font);
     where_c = where_p / char_wid;	/* estimated char position */
     size = pf_textwidth(canvas_font, where_c, string);
     l = size.x;			/* actual length (pixels) of string of
 				 * where_c chars */
     if (l < where_p) {
 	do {			/* add the width of next char to l */
-	    l += (char_wid = rot_char_advance(canvas_font, 
+	    l += (char_wid = char_advance(canvas_font, 
 				(unsigned char) string[where_c++]));
 	} while (l < where_p);
 	if (l - (char_wid >> 1) >= where_p)
 	    where_c--;
     } else if (l > where_p) {
 	do {			/* subtract the width of last char from l */
-	    l -= (char_wid = rot_char_advance(canvas_font, 
+	    l -= (char_wid = char_advance(canvas_font, 
 				(unsigned char) string[--where_c]));
 	} while (l > where_p);
-	if (l + (char_wid >> 1) >= where_p)
+	if (l + (char_wid >> 1) <= where_p)
 	    where_c++;
     }
     if (where_c < 0) {
 	fprintf(stderr, "xfig file %s line %d: Error in prefix_length - adjusted\n", __FILE__, __LINE__);
 	where_c = 0;
     }
+    if ( where_c > len_c ) 
+	return (len_c);
     return (where_c);
 }
 
@@ -405,18 +392,10 @@ static
 draw_cursor(x, y)
     int		    x, y;
 {
-    if (work_angle < 90.0 - 0.001)		/* 0-89 degrees */
-	    pw_vector(pw, x, y, x, y-ch_height, INV_PAINT, 1, RUBBER_LINE, 0.0,
-		DEFAULT_COLOR);
-    else if (work_angle < 180.0 - 0.001)	/* 90-179 degrees */
-	    pw_vector(pw, x-ch_height, y, x, y, INV_PAINT, 1, RUBBER_LINE, 0.0,
-		DEFAULT_COLOR);
-    else if (work_angle < 270.0 - 0.001)	/* 180-269 degrees */
-	    pw_vector(pw, x, y+ch_height, x, y, INV_PAINT, 1, RUBBER_LINE, 0.0,
-		DEFAULT_COLOR);
-    else				/* 270-359 degrees */
-	    pw_vector(pw, x, y, x+ch_height, y, INV_PAINT, 1, RUBBER_LINE, 0.0,
-		DEFAULT_COLOR);
+    pw_vector(pw, x, y, 
+		round(x-ch_height*sin_t),
+		round(y-ch_height*cos_t),
+		INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
 }
 
 static int
@@ -432,7 +411,7 @@ initialize_char_handler(p, cr, bx, by)
     rcur_x = cur_x;
     rcur_y = cur_y;
 
-    ch_height = rot_char_height(canvas_font);
+    ch_height = canvas_font->max_bounds.ascent;
     turn_on_blinking_cursor(draw_cursor, draw_cursor,
 			    cur_x, cur_y, (long) BLINK_INTERVAL);
 }
@@ -454,20 +433,20 @@ static int
 erase_char_string()
 {
     pw_text(pw, cbase_x, cbase_y, INV_PAINT, canvas_zoomed_font, 
-	    prefix, DEFAULT_COLOR);
+	    work_angle, prefix, DEFAULT_COLOR);
     if (leng_suffix)
 	pw_text(pw, cur_x, cur_y, INV_PAINT, canvas_zoomed_font, 
-		suffix, DEFAULT_COLOR);
+		work_angle, suffix, DEFAULT_COLOR);
 }
 
 static int
 draw_char_string()
 {
     pw_text(pw, cbase_x, cbase_y, INV_PAINT, canvas_zoomed_font, 
-	    prefix, DEFAULT_COLOR);
+	    work_angle, prefix, DEFAULT_COLOR);
     if (leng_suffix)
 	pw_text(pw, cur_x, cur_y, INV_PAINT, canvas_zoomed_font, 
-		suffix, DEFAULT_COLOR);
+		work_angle, suffix, DEFAULT_COLOR);
     move_blinking_cursor(cur_x, cur_y);
 }
 
@@ -476,7 +455,7 @@ draw_suffix()
 {
     if (leng_suffix)
 	pw_text(pw, cur_x, cur_y, PAINT, canvas_zoomed_font, 
-		suffix, DEFAULT_COLOR);
+		work_angle, suffix, DEFAULT_COLOR);
 }
 
 static int
@@ -484,7 +463,7 @@ erase_suffix()
 {
     if (leng_suffix)
 	pw_text(pw, cur_x, cur_y, INV_PAINT, canvas_zoomed_font, 
-		suffix, DEFAULT_COLOR);
+		work_angle, suffix, DEFAULT_COLOR);
 }
 
 static int
@@ -495,13 +474,15 @@ char	c;
     s[0]=c;
     s[1]='\0';
     pw_text(pw, cur_x, cur_y, INV_PAINT, canvas_zoomed_font, 
-	    s, DEFAULT_COLOR);
+	    work_angle, s, DEFAULT_COLOR);
 }
 
 char_handler(c)
     unsigned char   c;
 {
     float	    cwidth, cw2;
+    float	    cwsin, cwcos;
+    float	    cw2sin, cw2cos;
 
     if (cr_proc == NULL)
 	return;
@@ -511,52 +492,36 @@ char_handler(c)
     } else if (c == DEL || c == CTRL_H) {
 	if (leng_prefix > 0) {
 	    erase_char_string();
-	    cwidth = (float) rot_char_advance(canvas_font, 
+	    cwidth = (float) char_advance(canvas_font, 
 			(unsigned char) prefix[leng_prefix - 1]);
 	    cw2 = cwidth/2.0;
+	    cwsin = cwidth*sin_t;
+	    cwcos = cwidth*cos_t;
+	    cw2sin = cw2*sin_t;
+	    cw2cos = cw2*cos_t;
+
 	    /* correct text/cursor posn for justification and zoom factor */
 	    switch (work_textjust) {
 	    case T_LEFT_JUSTIFIED:
-		if (work_angle < 90.0 - 0.001)
-		    rcur_x -= cwidth;		   /* 0-89 deg, move the suffix left */
-		else if (work_angle < 180.0 - 0.001) 
-		    rcur_y += cwidth;		   /* 90-179 deg, move suffix down */
-		else if (work_angle < 270.0 - 0.001) 
-		    rcur_x += cwidth;		   /* 180-269 deg, move suffix right */
-		else 
-		    rcur_y -= cwidth;		   /* 270-359 deg, move suffix up */
+		rcur_x -= cwcos;
+		rcur_y += cwsin;
 		break;
 	    case T_CENTER_JUSTIFIED:
-		if (work_angle < 90.0 - 0.001) { 
-		    rbase_x += cw2;	/* 0-89 deg, move base right cw/2 */
-		    rcur_x -= cw2;	/* move suffix left by cw/2 */
-		} else if (work_angle < 180.0 - 0.001) { 
-		    rbase_y -= cw2;	/* 90-179 deg, move base up cw/2 */
-		    rcur_y += cw2;	/* move suffix down cw/2 */
-		} else if (work_angle < 270.0 - 0.001) {
-		    rbase_x -= cw2;	/* 180-269 deg, move base left cw/2 */
-		    rcur_x += cw2;	/* move suffix right cw/2 */
-		} else { 				     
-		    rbase_y += cw2;	/* 270-359 deg, move base down cw/2 */
-		    rcur_y -= cw2;	/* move suffix up cw/2 */
-		}
+		rbase_x += cw2cos;
+		rbase_y -= cw2sin;
+		rcur_x -= cw2cos;
+		rcur_y += cw2sin;
 		break;
 	    case T_RIGHT_JUSTIFIED:
-		if (work_angle < 90.0 - 0.001) 
-		    rbase_x += cwidth;		   /* 0-89 deg, move the prefix right */
-		else if (work_angle < 180.0 - 0.001)
-		    rbase_y -= cwidth;		   /* 90-179 deg, move prefix up */
-		else if (work_angle < 270.0 - 0.001)
-		    rbase_x -= cwidth;		   /* 180-269 deg, move prefix left */
-		else
-		    rbase_y += cwidth;		   /* 270-359 deg, move prefix down */
+		rbase_x += cwcos;
+		rbase_y -= cwsin;
 		break;
 	    }
 	    prefix[--leng_prefix] = '\0';
-	    cbase_x = rbase_x;	/* fix */
-	    cbase_y = rbase_y;
-	    cur_x = rcur_x;
-	    cur_y = rcur_y;
+	    cbase_x = round(rbase_x);
+	    cbase_y = round(rbase_y);
+	    cur_x = round(rcur_x);
+	    cur_y = round(rcur_y);
 	    draw_char_string();
 	}
     } else if (c == CTRL_X) {
@@ -564,29 +529,28 @@ char_handler(c)
 	    erase_char_string();
 	    switch (work_textjust) {
 	    case T_CENTER_JUSTIFIED:
-		while (leng_prefix--)	/* subtract char width/2 per char */
-		    if (work_angle < 90.0 - 0.001)	/* 0-89 degrees */
-			rcur_x -= rot_char_advance(canvas_font, 
-				(unsigned char) prefix[leng_prefix]) / 2.0;
-		else if (work_angle < 180.0 - 0.001) 	/* 90-179 degrees */
-			rcur_y += rot_char_advance(canvas_font, 
-				(unsigned char) prefix[leng_prefix]) / 2.0;
-		else if (work_angle < 270.0 - 0.001) 	/* 180-269 degrees */
-			rcur_x += rot_char_advance(canvas_font, 
-				(unsigned char) prefix[leng_prefix]) / 2.0;
-		else 					/* 270-359 degrees */
-			rcur_y -= rot_char_advance(canvas_font, 
-				(unsigned char) prefix[leng_prefix]) / 2.0;
-		cur_x = cbase_x = rbase_x = rcur_x;
-		cur_y = cbase_y = rbase_y = rcur_y;
+		while (leng_prefix--) {	/* subtract char width/2 per char */
+		    rcur_x -= cos_t*char_advance(canvas_font,
+					(unsigned char) prefix[leng_prefix]) / 2.0;
+		    rcur_y += sin_t*char_advance(canvas_font,
+					(unsigned char) prefix[leng_prefix]) / 2.0;
+		}
+		rbase_x = rcur_x;
+		cur_x = cbase_x = round(rbase_x);
+		rbase_y = rcur_y;
+		cur_y = cbase_y = round(rbase_y);
 		break;
 	    case T_RIGHT_JUSTIFIED:
-		cbase_x = rbase_x = cur_x = rcur_x;
-		cbase_y = rbase_y = cur_y = rcur_y;
+		rbase_x = rcur_x;
+		cbase_x = cur_x = round(rbase_x);
+		rbase_y = rcur_y;
+		cbase_y = cur_y = round(rbase_y);
 		break;
 	    case T_LEFT_JUSTIFIED:
-		cur_x = rcur_x = cbase_x = rbase_x;
-		cur_y = rcur_y = cbase_y = rbase_y;
+		rcur_x = rbase_x;
+		cur_x = cbase_x = round(rcur_x);
+		rcur_y = rbase_y;
+		cur_y = cbase_y = round(rcur_y);
 		break;
 	    }
 	    leng_prefix = 0;
@@ -600,54 +564,38 @@ char_handler(c)
 
     /* normal text character */
     } else {	
-	draw_char_string();
-	cwidth = rot_char_advance(canvas_font, (unsigned char) c);
+	draw_char_string();	/* erase current string */
+
+	cwidth = char_advance(canvas_font, (unsigned char) c);
+	cwsin = cwidth*sin_t;
+	cwcos = cwidth*cos_t;
 	cw2 = cwidth/2.0;
-	/* correct text/cursor posn for justification and zoom factor */
+	cw2sin = cw2*sin_t;
+	cw2cos = cw2*cos_t;
+	/* correct text/cursor posn for justification and rotation */
 	switch (work_textjust) {
 	  case T_LEFT_JUSTIFIED:
-	    if (work_angle < 90.0 - 0.001)
-		rcur_x += cwidth;		   /* 0-89 deg, move the suffix right */
-	    else if (work_angle < 180.0 - 0.001) 
-		rcur_y -= cwidth;		   /* 90-179 deg, move suffix up */
-	    else if (work_angle < 270.0 - 0.001) 
-		rcur_x -= cwidth;		   /* 180-269 deg, move suffix left */
-	    else 
-		rcur_y += cwidth;		   /* 270-359 deg, move suffix down */
+	    rcur_x += cwcos;
+	    rcur_y -= cwsin;
 	    break;
 	  case T_CENTER_JUSTIFIED:
-	    if (work_angle < 90.0 - 0.001) { 
-		rbase_x -= cw2;	/* 0-89 deg, move base left cw/2 */
-		rcur_x += cw2;	/* move suffix right by cw/2 */
-	    } else if (work_angle < 180.0 - 0.001) { 
-		rbase_y += cw2;	/* 90-179 deg, move base down cw/2 */
-		rcur_y -= cw2;	/* move suffix up cw/2 */
-	    } else if (work_angle < 270.0 - 0.001) {
-		rbase_x += cw2;	/* 180-269 deg, move base right cw/2 */
-		rcur_x -= cw2;	/* move suffix left cw/2 */
-	    } else { 				     
-		rbase_y -= cw2;	/* 270-359 deg, move base up cw/2 */
-		rcur_y += cw2;	/* move suffix down cw/2 */
-	    }
+	    rbase_x -= cw2cos;
+	    rbase_y += cw2sin;
+	    rcur_x += cw2cos;
+	    rcur_y -= cw2sin;
 	    break;
 	  case T_RIGHT_JUSTIFIED:
-	    if (work_angle < 90.0 - 0.001) 
-		rbase_x -= cwidth;		   /* 0-89 deg, move the prefix left */
-	    else if (work_angle < 180.0 - 0.001)
-		rbase_y += cwidth;		   /* 90-179 deg, move prefix down */
-	    else if (work_angle < 270.0 - 0.001)
-		rbase_x += cwidth;		   /* 180-269 deg, move prefix right */
-	    else
-		rbase_y -= cwidth;		   /* 270-359 deg, move prefix up */
+	    rbase_x -= cwcos;
+	    rbase_y += cwsin;
 	    break;
 	}
 	prefix[leng_prefix++] = c;
 	prefix[leng_prefix] = '\0';
-	cbase_x = rbase_x;
-	cbase_y = rbase_y;
-	cur_x = rcur_x;
-	cur_y = rcur_y;
-	draw_char_string();
+	cbase_x = round(rbase_x);
+	cbase_y = round(rbase_y);
+	cur_x = round(rcur_x);
+	cur_y = round(rcur_y);
+	draw_char_string();	/* draw new string */
     }
 }
 
@@ -737,14 +685,23 @@ move_blinking_cursor(x, y)
     cursor_is_moving = 0;
 }
 
+/*
+ * Reload the font structure for all texts, the saved texts and the 
+   current work_fontstruct.
+ */
+
 reload_text_fstructs()
 {
     F_text	   *t;
 
     /* reload the compound objects' texts */
     reload_compoundfont(objects.compounds);
+    reload_compoundfont(saved_objects.compounds);
     /* and the separate texts */
     for (t=objects.texts; t != NULL; t = t->next)
+	reload_text_fstruct(t);
+    /* also for the saved texts */
+    for (t=saved_objects.texts; t != NULL; t = t->next)
 	reload_text_fstruct(t);
 }
 
@@ -769,5 +726,5 @@ reload_text_fstruct(t)
     F_text	   *t;
 {
     t->fontstruct = lookfont(x_fontnum(t->flags, t->font), 
-			round(t->size*zoomscale), t->angle);
+			round(t->size*zoomscale));
 }

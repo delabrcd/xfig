@@ -725,6 +725,21 @@ scale_line(l, sx, sy, refx, refy)
 	p->x = round(refx + (p->x - refx) * sx);
 	p->y = round(refy + (p->y - refy) * sy);
     }
+    /* now scale the radius */
+    if (l->type == T_ARC_BOX) {
+	int h,w;
+	/* scale by the average of height/width factor */
+	l->radius = round(l->radius * (sx+sy)/2);
+	/* if the radius is larger than half the width or height, set it to the 
+	   minimum of the width or heigth divided by 2 */
+	w = abs(l->points->x-l->points->next->next->x);
+	h = abs(l->points->y-l->points->next->next->y);
+	if ((l->radius > w/2) || (l->radius > h/2))
+		l->radius = min2(w,h)/2;
+	/* finally, if it is 0, make it 1 */
+	if (l->radius == 0)
+		l->radius = 1;
+    }
 }
 
 scale_spline(s, sx, sy, refx, refy)
@@ -753,13 +768,36 @@ scale_arc(a, sx, sy, refx, refy)
     int		    refx, refy;
 {
     int		    i;
+    F_point	    p[3];
 
     for (i = 0; i < 3; i++) {
+	/* save original points for co-linear check later */
+	p[i].x = a->point[i].x;
+	p[i].y = a->point[i].y;
 	a->point[i].x = round(refx + (a->point[i].x - refx) * sx);
 	a->point[i].y = round(refy + (a->point[i].y - refy) * sy);
     }
-    compute_arccenter(a->point[0], a->point[1], a->point[2],
-		      &a->center.x, &a->center.y);
+    if (compute_arccenter(a->point[0], a->point[1], a->point[2],
+		          &a->center.x, &a->center.y) == 0) {
+	/* the new arc is co-linear, move the middle point one pixel */
+	if (a->point[0].x == a->point[1].x) { /* vertical, move middle left or right */
+	    if (p[1].x > p[0].x)
+		a->point[1].x++;	/* convex to the right -> ) */
+	    else
+		a->point[1].x--;	/* convex to the left -> ( */
+	} 
+	/* check ALSO for horizontally co-linear in case all three points are equal */
+	if (a->point[0].y == a->point[1].y) { /* horizontal, move middle point up or down */
+	    if (p[1].y > p[0].y)
+		a->point[1].y++;	/* curves up */
+	    else
+		a->point[1].y--;	/* curves down */
+	}
+	/* now check if the endpoints are equal, move one of them */
+	if (a->point[0].x == a->point[2].x &&
+	    a->point[0].y == a->point[2].y)
+		a->point[2].x++;
+    }
     a->direction = compute_direction(a->point[0], a->point[1], a->point[2]);
 }
 
@@ -926,11 +964,35 @@ fix_boxscale_line(x, y)
 	    new_l->eps->flipped = 1 - new_l->eps->flipped;
 	if (signof(fix_y - from_y) != signof(fix_y - y))
 	    new_l->eps->flipped = 1 - new_l->eps->flipped;
+    } else if (new_l->type == T_ARC_BOX) {	/* scale the radius also */
+	scale_radius(cur_l, new_l);
     }
     change_line(cur_l, new_l);
     draw_line(new_l, PAINT);
     toggle_linemarker(new_l);
     wrapup_scale();
+}
+
+scale_radius(old, new)
+    F_line	   *old, *new;
+{
+	int owd,oht, nwd, nht;
+	float wdscale, htscale;
+	owd = abs(old->points->x - old->points->next->next->x);
+	oht = abs(old->points->y - old->points->next->next->y);
+	nwd = abs(new->points->x - new->points->next->next->x);
+	nht = abs(new->points->y - new->points->next->next->y);
+	wdscale = (float) nwd/owd;
+	htscale = (float) nht/oht;
+	/* scale by the average of height/width factor */
+	new->radius = round(new->radius * (wdscale+htscale)/2);
+	/* next, if the radius is larger than half the width, set it to the 
+	   minimum of the width or heigth divided by 2 */
+	if ((new->radius > nwd/2) || (new->radius > nht/2))
+		new->radius = min2(nwd,nht)/2;
+	/* finally, if it is 0, make it 1 */
+	if (new->radius == 0)
+		new->radius = 1;
 }
 
 static
@@ -1021,6 +1083,9 @@ fix_scale_line(x, y)
     old_l->next = cur_l;
     /* now change the original to become the new object */
     rescale_points(cur_l->points, x, y);
+    /* and scale the radius if ARC_BOX */
+    if (cur_l->type == T_ARC_BOX)
+	scale_radius(old_l, cur_l);
     draw_line(cur_l, PAINT);
     toggle_linemarker(cur_l);
     wrapup_scale();

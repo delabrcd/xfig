@@ -11,3 +11,20 @@
  */
 
 extern int	overlapping();
+
+/* macro which rounds DOWN the coordinates depending on point positioning mode */
+#define		floor_coords(x) \
+    if (cur_pointposn != P_ANY) { \
+	    register int tmp_t; \
+	    tmp_t = ((x) + 1) % posn_rnd[cur_pointposn]; \
+	    (x) = (x) - tmp_t; \
+	}
+
+/* macro which rounds UP the coordinates depending on point positioning mode */
+#define		ceil_coords(x) \
+    if (cur_pointposn != P_ANY) { \
+	    register int tmp_t; \
+	    (x) = (x) + posn_rnd[cur_pointposn]; \
+	    tmp_t = (x)%posn_rnd[cur_pointposn]; \
+	    (x) = (x) - tmp_t - 1; \
+	}

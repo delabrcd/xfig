@@ -29,8 +29,7 @@ extern		pan_origin();
 
 /* extern int		   gc_thickness[NUMOPS]; */
 
-static		do_zoom();
-static		zoom_up();
+static		do_zoom(), cancel_zoom();
 static		init_zoombox_drawing();
 
 static int	(*save_kbd_proc) ();
@@ -104,6 +103,7 @@ init_zoombox_drawing(x, y)
     canvas_locmove_proc = my_box;
     canvas_leftbut_proc = do_zoom;
     canvas_middlebut_proc = canvas_rightbut_proc = null_proc;
+    canvas_rightbut_proc = cancel_zoom;
     elastic_box(my_fix_x, my_fix_y, my_cur_x, my_cur_y);
     set_temp_cursor(null_cursor);
     set_action_on();
@@ -133,6 +133,22 @@ do_zoom(x, y)
 
 	show_zoom(&ind_switches[ZOOM_SWITCH_INDEX]);
     }
+    /* restore state */
+    canvas_kbd_proc = save_kbd_proc;
+    canvas_locmove_proc = save_locmove_proc;
+    canvas_leftbut_proc = save_leftbut_proc;
+    canvas_middlebut_proc = save_middlebut_proc;
+    canvas_rightbut_proc = save_rightbut_proc;
+    canvas_kbd_proc = save_kbd_proc;
+    set_cursor(save_cur_cursor);
+    action_on = save_action_on;
+    zoom_in_progress = False;
+}
+
+static
+cancel_zoom()
+{
+    elastic_box(my_fix_x, my_fix_y, my_cur_x, my_cur_y);
     /* restore state */
     canvas_kbd_proc = save_kbd_proc;
     canvas_locmove_proc = save_locmove_proc;

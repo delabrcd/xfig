@@ -68,7 +68,7 @@ print_to_printer(printer, mag, flushleft, params)
 
 
     if (emptyname(printer)) {	/* send to default printer */
-#if defined(SYSV) || defined(SVR4)
+#if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
 	sprintf(syspr, "lp %s -oPS", params);
 #else
 	sprintf(syspr, "lpr %s -J %s", params, shell_protect_string(cur_filename));
@@ -76,7 +76,7 @@ print_to_printer(printer, mag, flushleft, params)
 	put_msg("Printing figure on default printer in %s mode ...     ",
 		print_landscape ? "LANDSCAPE" : "PORTRAIT");
     } else {
-#if defined(SYSV) || defined(SVR4)
+#if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
 	sprintf(syspr, "lp %s -d%s -oPS", params, printer);
 #else
 	sprintf(syspr, "lpr %s -J %s -P%s", params, shell_protect_string(cur_filename),
@@ -111,7 +111,7 @@ print_to_file(file, lang, mag, flushleft)
     char	    tmp_name[PATH_MAX];
     char	    tmp_fig_file[32];
     char	   *outfile;
-    int		    tlen, status;
+    int		    tlen;
 
     /* if file exists, ask if ok */
     if (!ok_to_write(file, "EXPORT"))

@@ -25,6 +25,7 @@
 #include "w_mousefun.h"
 
 extern void     force_anglegeom(), force_noanglegeom();
+extern		scale_radius();
 
 /* local routine declarations */
 
@@ -51,7 +52,6 @@ static int	fix_movedellipsepoint();
 static int	fix_movedsplinepoint();
 static int	fix_box();
 static int	fix_movedlinepoint();
-static int	fix_movedlatexlinepoint();
 
 static int	cancel_movedarcpoint();
 static int	cancel_movedellipsepoint();
@@ -88,7 +88,7 @@ init_arb_move_point(obj, type, x, y, p, q)
 
 static
 init_stretch_move_point(obj, type, x, y, p, q)
-    char	   *obj;
+    F_line	   *obj;
     int		    type, x, y;
     F_point	   *p, *q;
 {
@@ -213,6 +213,8 @@ init_ellipsepointmoving()
 	elastic_cbd();
 	break;
     }
+    /* show current radius(ii) */
+    (canvas_locmove_proc)(cur_x, cur_y);
     from_x = cur_x;
     from_y = cur_y;
     set_temp_cursor(crosshair_cursor);
@@ -340,6 +342,8 @@ init_arcpointmoving()
     canvas_locmove_proc = reshaping_arc;
     canvas_leftbut_proc = fix_movedarcpoint;
     canvas_rightbut_proc = cancel_movedarcpoint;
+    /* show current length(s) */
+    (canvas_locmove_proc)(cur_x, cur_y);
 }
 
 static
@@ -435,6 +439,8 @@ init_splinepointmoving()
 		 left_point = p, p = p->next);
 	}
     }
+    /* show current length(s) */
+    (canvas_locmove_proc)(cur_x, cur_y);
     elastic_linelink();
     canvas_leftbut_proc = fix_movedsplinepoint;
     canvas_rightbut_proc = cancel_movedsplinepoint;
@@ -519,6 +525,8 @@ init_compoundpointmoving()
     canvas_locmove_proc = constrained_resizing_box;
     canvas_leftbut_proc = prescale_compound;
     canvas_rightbut_proc = cancel_compound;
+    /* show current length(s) */
+    (canvas_locmove_proc)(cur_x, cur_y);
 }
 
 static
@@ -606,6 +614,8 @@ init_linepointmoving()
 	canvas_locmove_proc = constrained_resizing_box;
 	canvas_leftbut_proc = fix_box;
 	canvas_rightbut_proc = cancel_box;
+	/* show current length(s) */
+	(canvas_locmove_proc)(cur_x, cur_y);
 	return;
 
     case T_POLYLINE:
@@ -657,6 +667,8 @@ init_linepointmoving()
     elastic_linelink();
     canvas_leftbut_proc = fix_movedlinepoint;
     canvas_rightbut_proc = cancel_movedlinepoint;
+    /* show current length(s) */
+    (canvas_locmove_proc)(cur_x, cur_y);
 }
 
 static
@@ -683,6 +695,8 @@ fix_box(x, y)
 	    new_l->eps->flipped = 1 - new_l->eps->flipped;
     }
     assign_newboxpoint(new_l, fix_x, fix_y, x, y);
+    if (new_l->type == T_ARC_BOX)	/* don't scale radius unless too large */
+	scale_radius(new_l, new_l);
     change_line(cur_l, new_l);
     draw_line(new_l, PAINT);
     toggle_linemarker(new_l);

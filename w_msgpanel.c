@@ -23,6 +23,10 @@
 #include "w_setup.h"
 #include <varargs.h>
 
+/********************* IMPORTS *******************/
+
+extern char    *basename();
+
 /********************* EXPORTS *******************/
 
 int		put_msg();
@@ -73,16 +77,21 @@ init_msg(tool, filename)
 
 setup_msg()
 {
-    Dimension ht;
+    Dimension htm,htf;
 
-    /* set the height of the message panel to the height of the file name panel */
+    /* set the height of the message panel and filename panel to the 
+       greater of the two heights */
     XtUnmanageChild(msg_panel);
-    FirstArg(XtNheight, &ht);
+    FirstArg(XtNheight, &htm);
     GetValues(name_panel);
-    FirstArg(XtNheight, ht);
+    FirstArg(XtNheight, &htf);
+    GetValues(msg_panel);
+    htf = max2(htf,htm);
+    FirstArg(XtNheight, htf);
     SetValues(msg_panel);
+    SetValues(name_panel);
     /* set the MSGFORM_HT variable so the mouse panel can be resized to fit */
-    MSGFORM_HT = ht;
+    MSGFORM_HT = htf;
     XtManageChild(msg_panel);
     if (msg_win == 0)
 	msg_win = XtWindow(msg_panel);
@@ -95,6 +104,7 @@ setup_msg()
  * space, by getting the width of the command panel and subtract the new 
  * width of the name_panel to get the new width of the message panel
  */
+
 update_cur_filename(newname)
 	char	*newname;
 {
@@ -112,9 +122,14 @@ update_cur_filename(newname)
 	FirstArg(XtNwidth, &namwid);
 	GetValues(name_panel);
 	MSGPANEL_WD = MSGFORM_WD-namwid;
+	if (MSGPANEL_WD <= 0)
+		MSGPANEL_WD = 100;
 	/* resize the message panel to fit with the new width of the name panel */
 	FirstArg(XtNwidth, MSGPANEL_WD);
 	SetValues(msg_panel);
+	/* keep the height the same */
+	FirstArg(XtNheight, MSGFORM_HT);
+	SetValues(name_panel);
 	XtManageChild(msg_panel);
 	XtManageChild(name_panel);
 
@@ -122,6 +137,8 @@ update_cur_filename(newname)
 	FirstArg(XtNwidth, MSGFORM_WD);
 	SetValues(msg_form);
 	XtManageChild(msg_form);
+	/* put the filename being edited in the icon */
+	XSetIconName(tool_d, XtWindow(tool), basename(cur_filename));
 }
 
 /* VARARGS1 */

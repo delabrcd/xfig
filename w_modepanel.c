@@ -57,6 +57,40 @@ extern          convert_selected();
 extern          arrow_head_selected();
 extern          edit_item_selected();
 extern          update_selected();
+static stub_circlebyradius_drawing_selected();
+static stub_circlebydiameter_drawing_selected();
+static stub_ellipsebyradius_drawing_selected();
+static stub_ellipsebydiameter_drawing_selected();
+static stub_box_drawing_selected();
+static stub_arcbox_drawing_selected();
+static stub_line_drawing_selected();
+static stub_poly_drawing_selected();
+static stub_regpoly_drawing_selected();
+static stub_epsobj_drawing_selected();
+static stub_text_drawing_selected();
+static stub_arc_drawing_selected();
+static stub_spline_drawing_selected();
+static stub_cl_spline_drawing_selected();
+static stub_intspline_drawing_selected();
+static stub_cl_intspline_drawing_selected();
+static stub_align_selected();
+static stub_compound_selected();
+static stub_break_selected();
+static stub_scale_selected();
+static stub_point_adding_selected();
+static stub_delete_point_selected();
+static stub_move_selected();
+static stub_move_point_selected();
+static stub_delete_selected();
+static stub_copy_selected();
+static stub_rotate_cw_selected();
+static stub_rotate_ccw_selected();
+static stub_flip_ud_selected();
+static stub_flip_lr_selected();
+static stub_convert_selected();
+static stub_arrow_head_selected();
+static stub_edit_item_selected();
+static stub_update_selected();
 
 /**************	    local variables and routines   **************/
 
@@ -154,7 +188,7 @@ static mode_sw_info mode_switches[] = {
     I_MIN1 | I_LINEWIDTH, "ADD/DELETE ARROWs",},
 };
 
-#define		NUM_MODE_SW	(sizeof(mode_switches) / sizeof(mode_sw_info))
+int	NUM_MODE_SW = (sizeof(mode_switches) / sizeof(mode_sw_info));
 
 static Arg      button_args[] =
 {
@@ -178,6 +212,40 @@ static XtActionsRec mode_actions[] =
     {"ReleaseMiddle", (XtActionProc) clear_middle},
     {"PressRight", (XtActionProc) notused_right},
     {"ReleaseRight", (XtActionProc) clear_right},
+    {"ModeCircleR", (XtActionProc) stub_circlebyradius_drawing_selected},
+    {"ModeCircleD", (XtActionProc) stub_circlebydiameter_drawing_selected},
+    {"ModeEllipseR", (XtActionProc) stub_ellipsebyradius_drawing_selected},
+    {"ModeEllipseD", (XtActionProc) stub_ellipsebydiameter_drawing_selected},
+    {"ModeBox", (XtActionProc) stub_box_drawing_selected},
+    {"ModeArcBox", (XtActionProc) stub_arcbox_drawing_selected},
+    {"ModeLine", (XtActionProc) stub_line_drawing_selected},
+    {"ModePoly", (XtActionProc) stub_poly_drawing_selected},
+    {"ModeRegPoly", (XtActionProc) stub_regpoly_drawing_selected},
+    {"ModeEPS", (XtActionProc) stub_epsobj_drawing_selected},
+    {"ModeText", (XtActionProc) stub_text_drawing_selected},
+    {"ModeArc", (XtActionProc) stub_arc_drawing_selected},
+    {"ModeSpline", (XtActionProc) stub_spline_drawing_selected},
+    {"ModeClSpline", (XtActionProc) stub_cl_spline_drawing_selected},
+    {"ModeIntSpline", (XtActionProc) stub_intspline_drawing_selected},
+    {"ModeClIntSpline", (XtActionProc) stub_cl_intspline_drawing_selected},
+    {"ModeAlign", (XtActionProc) stub_align_selected},
+    {"ModeCompound", (XtActionProc) stub_compound_selected},
+    {"ModeBreakCompound", (XtActionProc) stub_break_selected},
+    {"ModeScale", (XtActionProc) stub_scale_selected},
+    {"ModeAddPoint", (XtActionProc) stub_point_adding_selected},
+    {"ModeDeletePoint", (XtActionProc) stub_delete_point_selected},
+    {"ModeMoveObject", (XtActionProc) stub_move_selected},
+    {"ModeMovePoint", (XtActionProc) stub_move_point_selected},
+    {"ModeDeleteObject", (XtActionProc) stub_delete_selected},
+    {"ModeCopyObject", (XtActionProc) stub_copy_selected},
+    {"ModeRotateObjectCW", (XtActionProc) stub_rotate_cw_selected},
+    {"ModeRotateObjectCCW", (XtActionProc) stub_rotate_ccw_selected},
+    {"ModeFlipObjectUD", (XtActionProc) stub_flip_ud_selected},
+    {"ModeFlipObjectLR", (XtActionProc) stub_flip_lr_selected},
+    {"ModeConvertObject", (XtActionProc) stub_convert_selected},
+    {"ModeArrow", (XtActionProc) stub_arrow_head_selected},
+    {"ModeEditObject", (XtActionProc) stub_edit_item_selected},
+    {"ModeUpdateObject", (XtActionProc) stub_update_selected},
 };
 
 static String   mode_translations =
@@ -194,7 +262,7 @@ int
 init_mode_panel(tool)
     TOOL            tool;
 {
-    register int    i;
+    register int    i, numindraw;
     register mode_sw_info *sw;
 
     FirstArg(XtNwidth, MODEPANEL_WD);
@@ -227,6 +295,7 @@ init_mode_panel(tool)
 	    d_label = XtCreateManagedWidget("label", labelWidgetClass,
 					    mode_panel, Args, ArgCount);
 	} else if (sw->mode == FIRST_EDIT_MODE) {
+	    numindraw = i;	/* this is the number of btns in drawing mode area */
 	    /* assume Args still set up from d_label */
 	    ArgCount -= 2;
 	    NextArg(XtNheight, (MODEPANEL_SPACE) / 2);
@@ -332,10 +401,22 @@ sel_mode_but(widget, closure, event, continue_to_dispatch)
     if (xbutton.button == Button1) {	/* left button */
 	turn_off_current();
 	turn_on(msw);
-	/* turn off the update boxes if not in update mode */
-	if (msw->mode != F_UPDATE)
+	if (msw->mode == F_UPDATE) {	/* map the set/clr/toggle button for update */
+	    if (cur_mode != F_UPDATE) {
+		update_indpanel(0);	/* first remove ind buttons */
+		XtManageChild(upd_ctrl);
+		update_indpanel(msw->indmask);	/* now manage the relevant buttons */
+	    }
+	} else { 	/* turn off the update boxes if not in update mode */
+	    if (cur_mode == F_UPDATE) {	/* if previous mode is update and current */
+		update_indpanel(0);	/* is not, first remove ind buttons */
 		unmanage_update_buts();
-	update_indpanel(msw->indmask);
+		XtUnmanageChild(upd_ctrl);
+		update_indpanel(msw->indmask);	/* now manage the relevant buttons */
+	    } else {
+		update_indpanel(msw->indmask);	/* just update indicator buttons */
+	    }
+	}
 	put_msg(msw->modemsg);
 	if ((cur_mode == F_GLUE || cur_mode == F_BREAK) &&
 	    msw->mode != F_GLUE &&
@@ -402,4 +483,188 @@ turn_off_current()
 	FirstArg(XtNbackgroundPixmap, current->normalPM);
 	SetValues(current->widget);
     }
+}
+
+change_mode(icon)
+PIXRECT icon;
+{
+    int i;
+    XButtonEvent ev; /* To fake an event with */
+
+    ev.button = Button1;
+    for (i = 0; i < NUM_MODE_SW; ++i)
+	if (mode_switches[i].icon == icon) {
+	    sel_mode_but(0,&mode_switches[i],&ev,0);
+	    break;
+	}
+}
+
+static stub_circlebyradius_drawing_selected()
+{
+	change_mode(&cirrad_ic);
+}
+
+static stub_circlebydiameter_drawing_selected()
+{
+	change_mode(&cirdia_ic);
+}
+
+static stub_ellipsebyradius_drawing_selected()
+{
+	change_mode(&ellrad_ic);
+}
+
+static stub_ellipsebydiameter_drawing_selected()
+{
+	change_mode(&elldia_ic);
+}
+
+static stub_box_drawing_selected()
+{
+	change_mode(&box_ic);
+}
+
+static stub_arcbox_drawing_selected()
+{
+	change_mode(&arc_box_ic);
+}
+
+static stub_poly_drawing_selected()
+{
+	change_mode(&polygon_ic);
+}
+
+static stub_line_drawing_selected()
+{
+	change_mode(&line_ic);
+}
+
+static stub_regpoly_drawing_selected()
+{
+	change_mode(&regpoly_ic);
+}
+
+static stub_epsobj_drawing_selected()
+{
+	change_mode(&epsobj_ic);
+}
+
+static stub_text_drawing_selected()
+{
+	change_mode(&text_ic);
+}
+
+static stub_arc_drawing_selected()
+{
+	change_mode(&arc_ic);
+}
+
+static stub_cl_spline_drawing_selected()
+{
+	change_mode(&c_spl_ic);
+}
+
+static stub_spline_drawing_selected()
+{
+	change_mode(&spl_ic);
+}
+
+static stub_cl_intspline_drawing_selected()
+{
+	change_mode(&c_intspl_ic);
+}
+
+static stub_intspline_drawing_selected()
+{
+	change_mode(&intspl_ic);
+}
+
+static stub_align_selected()
+{
+	change_mode(&align_ic);
+}
+
+static stub_compound_selected()
+{
+	change_mode(&glue_ic);
+}
+
+static stub_break_selected()
+{
+	change_mode(&break_ic);
+}
+
+static stub_scale_selected()
+{
+	change_mode(&scale_ic);
+}
+
+static stub_point_adding_selected()
+{
+	change_mode(&addpt_ic);
+}
+
+static stub_delete_point_selected()
+{
+	change_mode(&deletept_ic);
+}
+
+static stub_move_selected()
+{
+	change_mode(&move_ic);
+}
+
+static stub_move_point_selected()
+{
+	change_mode(&movept_ic);
+}
+
+static stub_delete_selected()
+{
+	change_mode(&delete_ic);
+}
+
+static stub_copy_selected()
+{
+	change_mode(&copy_ic);
+}
+
+static stub_rotate_cw_selected()
+{
+	change_mode(&rotCW_ic);
+}
+
+static stub_rotate_ccw_selected()
+{
+	change_mode(&rotCCW_ic);
+}
+
+static stub_flip_ud_selected()
+{
+	change_mode(&flip_y_ic);
+}
+
+static stub_flip_lr_selected()
+{
+	change_mode(&flip_x_ic);
+}
+
+static stub_convert_selected()
+{
+	change_mode(&convert_ic);
+}
+
+static stub_arrow_head_selected()
+{
+	change_mode(&autoarrow_ic);
+}
+
+static stub_edit_item_selected()
+{
+	change_mode(&change_ic);
+}
+
+static stub_update_selected()
+{
+	change_mode(&update_ic);
 }

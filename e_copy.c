@@ -181,6 +181,6 @@ init_copy_to_scrap(p, type, x, y, px, py)
 	fclose(fp);
 	return;
     }
-    put_msg("Object copied to scrap");
+    put_msg("Object copied to scrapfile %s",cut_buf_name);
     fclose(fp);
 }

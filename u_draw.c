@@ -24,7 +24,7 @@
 #include "w_zoom.h"
 
 typedef unsigned char byte;
-extern PIX_ROT_FONT lookfont();
+extern PIX_FONT lookfont();
 
 /************** POLYGON/CURVE DRAWING FACILITIES ****************/
 
@@ -71,6 +71,10 @@ add_point(x, y)
 	}
 	points = tmp_p;
     }
+    /* ignore identical points */
+    if (npoints > 0 && 
+	points[npoints-1].x == (short) x && points[npoints-1].y == (short) y)
+		return;
     points[npoints].x = (short) x;
     points[npoints].y = (short) y;
     npoints++;
@@ -292,7 +296,8 @@ angle_ellipse(center_x, center_y, radius_x, radius_y, angle,
 	double	xleft, xright, d, asqr, bsqr;
 	int	ymax, yy=0;
 	int	k,m,dir;
-	float	savezoom, savexoff, saveyoff;
+	float	savezoom;
+	int	savexoff, saveyoff;
 	int	zoomthick;
 	XPoint	*ipnts;
 
@@ -313,7 +318,7 @@ angle_ellipse(center_x, center_y, radius_x, radius_y, angle,
 	savexoff = zoomxoff;
 	saveyoff = zoomyoff;
 	zoomscale = 1.0;
-	zoomxoff = zoomyoff = 0.0;
+	zoomxoff = zoomyoff = 0;
 
 	cphi = cos((double)angle);
 	sphi = sin((double)angle);
@@ -440,7 +445,7 @@ draw_line(line, op)
 	    if (line->eps->file[0] == '\0')
 		string = EMPTY_EPS;
 	    else {
-		string = rindex(line->eps->file, '/');
+		string = strrchr(line->eps->file, '/');
 		if (string == NULL)
 		    string = line->eps->file;
 		else
@@ -453,11 +458,12 @@ draw_line(line, op)
 	    ymin = min3(p0->y, p1->y, p2->y);
 	    xmax = max3(p0->x, p1->x, p2->x);
 	    ymax = max3(p0->y, p1->y, p2->y);
-	    canvas_font = lookfont(0, 12, 0.0);	/* get a size 12 font */
+	    canvas_font = lookfont(0, 12);	/* get a size 12 font */
 	    txt = pf_textwidth(canvas_font, strlen(string), string);
 	    x = (xmin + xmax) / 2 - txt.x / 2;
 	    y = (ymin + ymax) / 2;
-	    pw_text(canvas_win, x, y, op, canvas_font, string, DEFAULT_COLOR);
+	    pw_text(canvas_win, x, y, op, canvas_font, 
+		    0.0, string, DEFAULT_COLOR);
 	    /* return; */
 	}
     }
@@ -832,15 +838,11 @@ draw_text(text, op)
 {
     PR_SIZE	    size;
     int		    x,y;
-    float	    angle;
     int		    xmin, ymin, xmax, ymax;
     int		    x1,y1, x2,y2, x3,y3, x4,y4;
 
-    if (appres.textoutline)	/* get corners of rectangle at actual angle */
-	text_bound_both(text, &xmin, &ymin, &xmax, &ymax, 
-			  &x1,&y1, &x2,&y2, &x3,&y3, &x4,&y4);
-    else
-	text_bound(text, &xmin, &ymin, &xmax, &ymax);
+    text_bound(text, &xmin, &ymin, &xmax, &ymax, 
+	       &x1,&y1, &x2,&y2, &x3,&y3, &x4,&y4);
 
     if (!overlapping(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax),
 		     clip_xmin, clip_ymin, clip_xmax, clip_ymax))
@@ -856,38 +858,24 @@ draw_text(text, op)
 
     x = text->base_x;
     y = text->base_y;
-    angle = text->angle*180.0/M_PI;
     if (text->type == T_CENTER_JUSTIFIED || text->type == T_RIGHT_JUSTIFIED) {
 	size = pf_textwidth(text->fontstruct, strlen(text->cstring), 
 			    text->cstring);
 	size.x = size.x/zoomscale;
 	if (text->type == T_CENTER_JUSTIFIED) {
-	    if (angle < 90.0 - 0.001)
-		x -= size.x / 2;	/*   0 to  89 degrees */
-	    else if (angle < 180.0 - 0.001)
-		y += size.x / 2;	/*  90 to 179 degrees */
-	    else if (angle < 270.0 - 0.001)
-		x += size.x / 2;	/* 180 to 269 degrees */
-	    else 
-		y -= size.x / 2;	/* 270 to 359 degrees */
-
+	    x = round(x-cos(text->angle)*size.x/2);
+	    y = round(y+sin(text->angle)*size.x/2);
 	} else {	/* T_RIGHT_JUSTIFIED */
-	    if (angle < 90.0 - 0.001)
-		x -= size.x;		/*   0 to  89 degrees */
-	    else if (angle < 180.0 - 0.001)
-		y += size.x;		/*  90 to 179 degrees */
-	    else if (angle < 270.0 - 0.001)
-		x += size.x;		/* 180 to 269 degrees */
-	    else 
-		y -= size.x;		/* 270 to 359 degrees */
+	    x = round(x-cos(text->angle)*size.x);
+	    y = round(y+sin(text->angle)*size.x);
 	}
     }
     if (hidden_text(text))
-	pw_text(canvas_win, x, y, op, lookfont(0,12,text->angle),
-		hidden_text_string, DEFAULT_COLOR);
+	pw_text(canvas_win, x, y, op, lookfont(0,12),
+		text->angle, hidden_text_string, DEFAULT_COLOR);
     else
 	pw_text(canvas_win, x, y, op, text->fontstruct,
-		text->cstring, text->color);
+		text->angle, text->cstring, text->color);
 }
 
 /*********************** COMPOUND ***************************/
@@ -1038,9 +1026,9 @@ curve(window, xstart, ystart, xend, yend, direction, estnpts,
 	dec = 1;
     }
     if (xstart == xend && ystart == yend) {
-	test_succeed = margin = 1;
+	test_succeed = margin = 2;
     } else {
-	test_succeed = margin = 1;
+	test_succeed = margin = 3;
     }
 
     if (!add_point(xoff + x, yoff - y))
@@ -1072,8 +1060,9 @@ curve(window, xstart, ystart, xend, yend, direction, estnpts,
 	if (!add_point(xoff + x, yoff - y))
 	    break;
 
-	if (abs(x - xend) < margin && abs(y - yend) < margin)
-	    test_succeed--;
+	if ((abs(x - xend) < margin && abs(y - yend) < margin) &&
+	    (x != xend || y != yend))
+		test_succeed--;
     }
 
     if (xstart == xend && ystart == yend)	/* end points should touch */

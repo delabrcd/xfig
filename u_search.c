@@ -27,6 +27,7 @@ static int	type;
 static long	objectcount;
 static long	n;
 static int	csr_x, csr_y;
+Boolean		in_text_bound();
 
 static F_point	point1, point2;
 
@@ -215,8 +216,8 @@ next_text_found(x, y, tolerance, px, py, shift)
     int		    x, y, tolerance, *px, *py;
     int		    shift;
 {
-    int		    halflen, dx, dy;
     int		    txmin, txmax, tymin, tymax;
+    int		    dum;
 
     if (!anytext_in_mask())
 	return (0);
@@ -228,7 +229,8 @@ next_text_found(x, y, tolerance, px, py, shift)
     for (; t != NULL; t = prev_text(objects.texts, t))
 	if (validtext_in_mask(t)) {
 	    n++;
-	    text_bound(t, &txmin, &tymin, &txmax, &tymax);
+	    text_bound(t, &txmin, &tymin, &txmax, &tymax,
+			&dum, &dum, &dum, &dum, &dum, &dum, &dum, &dum);
 	    if (x >= txmin-tolerance && x <= txmax+tolerance &&
 	        y >= tymin-tolerance && y <= tymax+tolerance) {
 			*px = x;
@@ -752,24 +754,68 @@ point_search_right(x, y, shift)
     do_point_search(x, y, shift);
 }
 
-/* =============================================================== */
-
-/* These are some of the original search subroutines which are still in use */
-
 F_text	       *
-text_search(x, y)
-    int		    x, y;
+text_search(x, y, posn)
+    int		    x, y, *posn;
 {
     F_text	   *t;
-    int		    xmin, xmax, ymin, ymax;
 
     for (t = objects.texts; t != NULL; t = t->next) {
-	text_bound(t, &xmin, &ymin, &xmax, &ymax);
-	if (x >= xmin && x <= xmax &&
-	    y >= ymin && y <= ymax)
+	if (in_text_bound(t, x, y, posn))
 		return(t);
     }
     return (NULL);
+}
+
+/* return true if (x,y) is in the text rectangle by rotating the point (x,y) 
+   around the text base point by it's negative angle and seeing if that is
+   in the rectangle.
+   Additionally, set posn to the pixel position of the mouse from the beginning
+   of the string
+ */
+
+Boolean
+in_text_bound(t, x, y, posn)
+    F_text	   *t;
+    int		    x,y,*posn;
+{
+    double	    cost, sint;
+    int		    xo,yo, xr,yr;
+    int		    x1,y1, x2,y2;
+    int		    l, h;
+
+    cost = cos((double) -t->angle);
+    sint = sin((double) -t->angle);
+    xo = t->base_x;
+    yo = t->base_y;
+    /* rotate the point (x,y) about (xo,yo) giving (xr,yr) */
+    xr = xo + (x-xo)*cost - (yo-y)*sint;
+    yr = yo - (yo-y)*cost - (x-xo)*sint;
+    /* now see if that point is in the text bounds of the unrotated text */
+    l = text_length(t);
+    h = t->height;
+    x1 = t->base_x;
+    y1 = t->base_y;
+    if (t->type == T_CENTER_JUSTIFIED) {
+	x2 = x1 + l/2;
+	x1 = x1 - l/2;
+	y2 = y1 - h;
+    }
+    else if (t->type == T_RIGHT_JUSTIFIED) {
+	x2 = x1;
+	x1 = x1 - l;
+	y2 = y1 - h;
+    }
+    else {
+	x2 = x1 + l;
+	y2 = y1 - h;
+    }
+    if (xr >= x1 && xr <= x2 && yr <= y1 && yr >= y2) {
+	/* return the pixel position from the beginning of the string */
+	*posn = xr-x1;
+	return True;
+    }
+    return False;
 }
 
 F_compound     *

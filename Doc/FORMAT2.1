@@ -80,7 +80,7 @@ The following is the format of fig output (fig 2.1).
 	int	line_style		(enumeration type)
 	int	line_thickness		(pixels)
 	int	color			(enumeration type)
-	int	depth			(no units)
+	int	depth			(enumeration type)
 	int	pen			(not used)
 	int	area_fill		(enumeration type)
 	float	style_val		(pixels)
@@ -148,7 +148,7 @@ The following is the format of fig output (fig 2.1).
 	int	line_style		(enumeration type)
 	int	thickness		(pixels)
 	int	color			(enumeration type)
-	int	depth			(no units)
+	int	depth			(enumeration type)
 	int	pen			(not used)
 	int	area_fill		(enumeration type)
 	float	style_val		(pixels)
@@ -173,7 +173,7 @@ The following is the format of fig output (fig 2.1).
 	int	line_style		(enumeration type)
 	int	thickness		(pixels)
 	int	color			(enumeration type)
-	int	depth			(no units)
+	int	depth			(enumeration type)
 	int	pen			(not used)
 	int	area_fill		(enumeration type)
 	float	style_val		(pixels)
@@ -216,7 +216,7 @@ The following is the format of fig output (fig 2.1).
 	int	line_style		(See the end of this section)
 	int	thickness		(pixels)
 	int	color			(enumeration type)
-	int	depth			(no units)
+	int	depth			(enumeration type)
 	int	pen			(not used)
 	int	area_fill		(enumeration type)
 	float	style_val		(pixels)
@@ -229,7 +229,7 @@ The following is the format of fig output (fig 2.1).
 
     Points line : same as POLYLINE object
 
-    Control points line (absent if sub_type is 1 or 2) :
+    Control points line (absent if sub_type is 0 or 1) :
 	Control points of interpolated spline.  There are two control
 	points for each knots.  A section i, of the spline is drawn
 	using Bezier cubic with the following four points:
@@ -258,10 +258,10 @@ The following is the format of fig output (fig 2.1).
 					 1 : Center justified
 					 2 : Right justified)
 	int	font 			(enumeration type)
-	int	font_size 		(points)
+	int	font_size 		(font size in points)
 	int	pen			(not used)
 	int	color			(enumeration type)
-	int	depth			(no units)
+	int	depth			(enumeration type)
 	float	angle			(radians, the angle of the text)
 	int	font_flags		(bit vector)
 	int	height			(pixels)
@@ -273,7 +273,66 @@ The following is the format of fig output (fig 2.1).
 					 center.  Otherwise it is the lower
 					 right corner of the string.)
 	char	string[]		(ascii characters; starts after a blank
-					character following the last number and
-					ends before the character '\1'.  This
-					character is not part of the string.
-					Note that the string may contain '\n'.)
+					 character following the last number and
+					 ends before the character '\1' (control-A).
+					 This character is not part of the string.
+					 Note that the string may contain '\n'.)
+
+    The font_flags field is defined as follows:
+
+	 Bit	Description
+
+	  0	Rigid text (text doesn't scale when scaling compound objects)
+	  1	Special text (for LaTeX)
+	  2	PostScript font (otherwise LaTeX font is used)
+	  3	Hidden text
+
+    The font field is defined as follows:
+
+	For font_flags bit 3 = 0 (LaTeX fonts):
+
+	-1	Default font
+	 0	Roman
+	 1	Bold
+	 2	Italic
+	 3	Modern
+	 4	Typewriter
+
+	For font_flags bit 3 = 1 (PostScript fonts):
+
+	-1	Default font
+	 0	Times Roman
+	 1	Times Italic
+	 2	Times Bold
+	 3	Times Bold Italic
+	 4	AvantGarde Book
+	 5	AvantGarde Book Oblique
+	 6	AvantGarde Demi
+	 7	AvantGarde Demi Oblique
+	 8	Bookman Light
+	 9	Bookman Light Italic
+	10	Bookman Demi
+	11	Bookman Demi Italic
+	12	Courier
+	13	Courier Oblique
+	14	Courier Bold
+	15	Courier Bold Oblique
+	16	Helvetica
+	17	Helvetica Oblique
+	18	Helvetica Bold
+	19	Helvetica Bold Oblique
+	20	Helvetica Narrow
+	21	Helvetica Narrow Oblique
+	22	Helvetica Narrow Bold
+	23	Helvetica Narrow Bold Oblique
+	24	New Century Schoolbook Roman
+	25	New Century Schoolbook Italic
+	26	New Century Schoolbook Bold
+	27	New Century Schoolbook Bold Italic
+	28	Palatino Roman
+	29	Palatino Italic
+	30	Palatino Bold
+	31	Palatino Bold Italic
+	32	Symbol
+	33	Zapf Chancery Medium Italic
+	34	Zapf Dingbats

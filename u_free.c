@@ -169,7 +169,6 @@ free_GCs()
 	int i;
 
 	XFreeGC(tool_d, gc);
-	XFreeGC(tool_d, bold_gc);
 	XFreeGC(tool_d, button_gc);
 	XFreeGC(tool_d, color_gc);
 	XFreeGC(tool_d, ind_button_gc);

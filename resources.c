@@ -15,6 +15,10 @@
 
 char	       *colorNames[] = {"Default", "Black", "Blue", "Green", "Cyan",
 				"Red", "Magenta", "Yellow", "White"};
+				/**** for future expansion 
+				"Lgtblue", "Dkgreen", "Brown", "Orange",
+				"Purple", "Pink", "Brick", "Gold"};
+				****/
 Boolean		all_colors_available;
 
 appresStruct	appres;
@@ -40,7 +44,7 @@ Display	       *tool_d;
 Screen	       *tool_s;
 int		tool_sn;
 
-GC		gc, bold_gc, button_gc, ind_button_gc, color_gc, mouse_button_gc,
+GC		gc, button_gc, ind_button_gc, color_gc, mouse_button_gc,
 		blank_gc, ind_blank_gc, mouse_blank_gc, gccache[NUMOPS],
 		fillgc, fill_gc[NUMFILLPATS],	/* fill style gc's */
 		black_fill_gc[NUMFILLPATS],

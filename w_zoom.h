@@ -28,8 +28,8 @@ extern int	zoomyoff;
 	      a1,a2)
 #define zXDrawLine(d,w,gc,x1,y1,x2,y2)\
     XDrawLine(d,w,gc,ZOOMX(x1),ZOOMY(y1),ZOOMX(x2),ZOOMY(y2))
-#define zXRotDrawString(d,w,font,gc,x,y,s,l)\
-    XRotDrawString(d,w,font,gc,ZOOMX(x),ZOOMY(y),s,l)
+#define zXRotDrawString(d,font,ang,w,gc,x,y,s)\
+    XRotDrawString(d,font,ang,w,gc,ZOOMX(x),ZOOMY(y),s)
 #define zXFillRectangle(d,w,gc,x1,y1,x2,y2)\
     XFillRectangle(d,w,gc,ZOOMX(x1),ZOOMY(y1),\
 		round(zoomscale*(x2)),round(zoomscale*(y2)))

@@ -17,8 +17,8 @@
 #include "w_indpanel.h"
 
 int		cur_mode = F_NULL;
-int		cur_halign = NONE;
-int		cur_valign = NONE;
+int		cur_halign = ALIGN_NONE;
+int		cur_valign = ALIGN_NONE;
 int		manhattan_mode = 0;
 int		mountain_mode = 0;
 int		latexline_mode = 0;

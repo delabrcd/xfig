@@ -15,6 +15,8 @@
 #include "w_setup.h"
 #include "w_util.h"
 
+#define	NUM_DRAW_SW 16 /* kludge - shouldn't have to edit this by hand */
+
 int		TOOL_WD, TOOL_HT;
 int		CMDPANEL_WD, CMDPANEL_HT = 22;
 int		MODEPANEL_WD, MODEPANEL_HT;
@@ -68,10 +70,10 @@ setup_sizes(new_canv_wd, new_canv_ht)
     if (CMDPANEL_WD < 5 * NUM_CMD_SW)
 	CMDPANEL_WD = 5 * NUM_CMD_SW;
     MSGFORM_WD = CMDPANEL_WD;
-
-    MODEPANEL_SPACE = CANVAS_HT + RULER_WD -
-	SW_PER_COL * (MODE_SW_HT + INTERNAL_BW);
+    INDPANEL_WD = MODEPANEL_WD + CANVAS_WD + SIDERULER_WD + INTERNAL_BW*2;
+    MODEPANEL_SPACE = CANVAS_HT + RULER_WD - (MODE_SW_HT + INTERNAL_BW) *
+	(ceil((double)NUM_DRAW_SW/SW_PER_ROW) +
+	ceil((double)(NUM_MODE_SW-NUM_DRAW_SW)/SW_PER_ROW));
     if (MODEPANEL_SPACE < 2)
 	MODEPANEL_SPACE = 2;
-    INDPANEL_WD = MODEPANEL_WD + CANVAS_WD + SIDERULER_WD + INTERNAL_BW*2;
 }

@@ -40,8 +40,8 @@ toggle_csrhighlight(x, y)
     int		    x, y;
 {
     set_line_stuff(1, RUBBER_LINE, 0.0, (INV_PAINT), DEFAULT_COLOR);
-    set_marker(canvas_win, x - 2, y - 2, 5, 5, 0, 0);
-    set_marker(canvas_win, x - 1, y - 1, 3, 3, 0, 0);
+    set_marker(canvas_win, x - 2, y - 2, MARK_SIZ, MARK_SIZ, 0, 0);
+    set_marker(canvas_win, x - 1, y - 1, MARK_SIZ-2, MARK_SIZ-2, 0, 0);
 }
 
 ellipse_in_mask()
@@ -271,8 +271,8 @@ toggle_ellipsemarker(e)
     F_ellipse	   *e;
 {
     set_line_stuff(1, RUBBER_LINE, 0.0, (INV_PAINT), DEFAULT_COLOR);
-    set_marker(canvas_win, e->start.x - 2, e->start.y - 2, 5, 5, 0, 0);
-    set_marker(canvas_win, e->end.x - 2, e->end.y - 2, 5, 5, 0, 0);
+    set_marker(canvas_win, e->start.x - 2, e->start.y - 2, MARK_SIZ, MARK_SIZ, 0, 0);
+    set_marker(canvas_win, e->end.x - 2, e->end.y - 2, MARK_SIZ, MARK_SIZ, 0, 0);
     if (e->tagged)
 	toggle_ellipsehighlight(e);
 }
@@ -282,18 +282,18 @@ toggle_ellipsehighlight(e)
 {
     set_line_stuff(1, RUBBER_LINE, 0.0, (INV_PAINT), DEFAULT_COLOR);
     set_marker(canvas_win, e->start.x, e->start.y, 1, 1, 0, 0);
-    set_marker(canvas_win, e->start.x - 1, e->start.y - 1, 3, 3, 0, 0);
+    set_marker(canvas_win, e->start.x - 1, e->start.y - 1, SM_MARK, SM_MARK, 0, 0);
     set_marker(canvas_win, e->end.x, e->end.y, 1, 1, 0, 0);
-    set_marker(canvas_win, e->end.x - 1, e->end.y - 1, 3, 3, 0, 0);
+    set_marker(canvas_win, e->end.x - 1, e->end.y - 1, SM_MARK, SM_MARK, 0, 0);
 }
 
 toggle_arcmarker(a)
     F_arc	   *a;
 {
     set_line_stuff(1, RUBBER_LINE, 0.0, (INV_PAINT), DEFAULT_COLOR);
-    set_marker(canvas_win, a->point[0].x - 2, a->point[0].y - 2, 5, 5, 0, 0);
-    set_marker(canvas_win, a->point[1].x - 2, a->point[1].y - 2, 5, 5, 0, 0);
-    set_marker(canvas_win, a->point[2].x - 2, a->point[2].y - 2, 5, 5, 0, 0);
+    set_marker(canvas_win,a->point[0].x-2,a->point[0].y-2,MARK_SIZ,MARK_SIZ,0,0);
+    set_marker(canvas_win,a->point[1].x-2,a->point[1].y-2,MARK_SIZ,MARK_SIZ,0,0);
+    set_marker(canvas_win,a->point[2].x-2,a->point[2].y-2,MARK_SIZ,MARK_SIZ,0,0);
     if (a->tagged)
 	toggle_archighlight(a);
 }
@@ -303,11 +303,11 @@ toggle_archighlight(a)
 {
     set_line_stuff(1, RUBBER_LINE, 0.0, (INV_PAINT), DEFAULT_COLOR);
     set_marker(canvas_win, a->point[0].x, a->point[0].y, 1, 1, 0, 0);
-    set_marker(canvas_win, a->point[0].x - 1, a->point[0].y - 1, 3, 3, 0, 0);
+    set_marker(canvas_win, a->point[0].x-1, a->point[0].y-1, SM_MARK, SM_MARK, 0, 0);
     set_marker(canvas_win, a->point[1].x, a->point[1].y, 1, 1, 0, 0);
-    set_marker(canvas_win, a->point[1].x - 1, a->point[1].y - 1, 3, 3, 0, 0);
+    set_marker(canvas_win, a->point[1].x-1, a->point[1].y-1, SM_MARK, SM_MARK, 0, 0);
     set_marker(canvas_win, a->point[2].x, a->point[2].y, 1, 1, 0, 0);
-    set_marker(canvas_win, a->point[2].x - 1, a->point[2].y - 1, 3, 3, 0, 0);
+    set_marker(canvas_win, a->point[2].x-1, a->point[2].y-1, SM_MARK, SM_MARK, 0, 0);
 }
 
 toggle_textmarker(t)
@@ -319,8 +319,8 @@ toggle_textmarker(t)
     /* adjust for text angle */
     dy = (int) ((double) t->height * cos(t->angle));
     dx = (int) ((double) t->height * sin(t->angle));
-    set_marker(canvas_win, t->base_x - dx - 2, t->base_y - dy - 2, 5, 5, 0, 0);
-    set_marker(canvas_win, t->base_x - 2, t->base_y - 2, 5, 5, 0, 0);
+    set_marker(canvas_win,t->base_x-dx-2,t->base_y-dy-2,MARK_SIZ,MARK_SIZ,0,0);
+    set_marker(canvas_win,t->base_x-2,t->base_y-2,MARK_SIZ,MARK_SIZ,0,0);
     if (t->tagged)
 	toggle_texthighlight(t);
 }
@@ -334,10 +334,10 @@ toggle_texthighlight(t)
     /* adjust for text angle */
     dy = (int) ((double) t->height * cos(t->angle));
     dx = (int) ((double) t->height * sin(t->angle));
-    set_marker(canvas_win, t->base_x - dx, t->base_y - dy, 1, 1, 0, 0);
-    set_marker(canvas_win, t->base_x - dx - 1, t->base_y - dy - 1, 3, 3, 0, 0);
+    set_marker(canvas_win, t->base_x-dx, t->base_y-dy, 1, 1, 0, 0);
+    set_marker(canvas_win, t->base_x-dx-1, t->base_y-dy-1, SM_MARK, SM_MARK, 0, 0);
     set_marker(canvas_win, t->base_x, t->base_y, 1, 1, 0, 0);
-    set_marker(canvas_win, t->base_x - 1, t->base_y - 1, 3, 3, 0, 0);
+    set_marker(canvas_win, t->base_x-1, t->base_y-1, SM_MARK, SM_MARK, 0, 0);
 }
 
 toggle_all_compoundmarkers()
@@ -351,10 +351,10 @@ toggle_compoundmarker(c)
     F_compound	   *c;
 {
     set_line_stuff(1, RUBBER_LINE, 0.0, (INV_PAINT), DEFAULT_COLOR);
-    set_marker(canvas_win, c->nwcorner.x - 2, c->nwcorner.y - 2, 5, 5, 0, 0);
-    set_marker(canvas_win, c->secorner.x - 2, c->secorner.y - 2, 5, 5, 0, 0);
-    set_marker(canvas_win, c->nwcorner.x - 2, c->secorner.y - 2, 5, 5, 0, 0);
-    set_marker(canvas_win, c->secorner.x - 2, c->nwcorner.y - 2, 5, 5, 0, 0);
+    set_marker(canvas_win,c->nwcorner.x-2,c->nwcorner.y-2,MARK_SIZ,MARK_SIZ,0,0);
+    set_marker(canvas_win,c->secorner.x-2,c->secorner.y-2,MARK_SIZ,MARK_SIZ,0,0);
+    set_marker(canvas_win,c->nwcorner.x-2,c->secorner.y-2,MARK_SIZ,MARK_SIZ,0,0);
+    set_marker(canvas_win,c->secorner.x-2,c->nwcorner.y-2,MARK_SIZ,MARK_SIZ,0,0);
     if (c->tagged)
 	toggle_compoundhighlight(c);
 }
@@ -364,13 +364,13 @@ toggle_compoundhighlight(c)
 {
     set_line_stuff(1, RUBBER_LINE, 0.0, (INV_PAINT), DEFAULT_COLOR);
     set_marker(canvas_win, c->nwcorner.x, c->nwcorner.y, 1, 1, 0, 0);
-    set_marker(canvas_win, c->nwcorner.x - 1, c->nwcorner.y - 1, 3, 3, 0, 0);
+    set_marker(canvas_win, c->nwcorner.x-1, c->nwcorner.y-1, SM_MARK, SM_MARK, 0, 0);
     set_marker(canvas_win, c->secorner.x, c->secorner.y, 1, 1, 0, 0);
-    set_marker(canvas_win, c->secorner.x - 1, c->secorner.y - 1, 3, 3, 0, 0);
+    set_marker(canvas_win, c->secorner.x-1, c->secorner.y-1, SM_MARK, SM_MARK, 0, 0);
     set_marker(canvas_win, c->nwcorner.x, c->secorner.y, 1, 1, 0, 0);
-    set_marker(canvas_win, c->nwcorner.x - 1, c->secorner.y - 1, 3, 3, 0, 0);
+    set_marker(canvas_win, c->nwcorner.x-1, c->secorner.y-1, SM_MARK, SM_MARK, 0, 0);
     set_marker(canvas_win, c->secorner.x, c->nwcorner.y, 1, 1, 0, 0);
-    set_marker(canvas_win, c->secorner.x - 1, c->nwcorner.y - 1, 3, 3, 0, 0);
+    set_marker(canvas_win, c->secorner.x-1, c->nwcorner.y-1, SM_MARK, SM_MARK, 0, 0);
 }
 
 toggle_linemarker(l)
@@ -386,10 +386,10 @@ toggle_linemarker(l)
     for (p = p->next; p != NULL; p = p->next) {
 	x = p->x;
 	y = p->y;
-	set_marker(canvas_win, x - 2, y - 2, 5, 5, 0, 0);
+	set_marker(canvas_win, x - 2, y - 2, MARK_SIZ, MARK_SIZ, 0, 0);
     }
     if (x != fx || y != fy || l->points->next == NULL) {
-	set_marker(canvas_win, fx - 2, fy - 2, 5, 5, 0, 0);
+	set_marker(canvas_win, fx - 2, fy - 2, MARK_SIZ, MARK_SIZ, 0, 0);
     }
     if (l->tagged)
 	toggle_linehighlight(l);
@@ -409,11 +409,11 @@ toggle_linehighlight(l)
 	x = p->x;
 	y = p->y;
 	set_marker(canvas_win, x, y, 1, 1, 0, 0);
-	set_marker(canvas_win, x - 1, y - 1, 3, 3, 0, 0);
+	set_marker(canvas_win, x - 1, y - 1, SM_MARK, SM_MARK, 0, 0);
     }
     if (x != fx || y != fy) {
 	set_marker(canvas_win, fx, fy, 1, 1, 0, 0);
-	set_marker(canvas_win, fx - 1, fy - 1, 3, 3, 0, 0);
+	set_marker(canvas_win, fx - 1, fy - 1, SM_MARK, SM_MARK, 0, 0);
     }
 }
 
@@ -430,10 +430,10 @@ toggle_splinemarker(s)
     for (p = p->next; p != NULL; p = p->next) {
 	x = p->x;
 	y = p->y;
-	set_marker(canvas_win, x - 2, y - 2, 5, 5, 0, 0);
+	set_marker(canvas_win, x - 2, y - 2, MARK_SIZ, MARK_SIZ, 0, 0);
     }
     if (x != fx || y != fy) {
-	set_marker(canvas_win, fx - 2, fy - 2, 5, 5, 0, 0);
+	set_marker(canvas_win, fx - 2, fy - 2, MARK_SIZ, MARK_SIZ, 0, 0);
     }
     if (s->tagged)
 	toggle_splinehighlight(s);
@@ -453,10 +453,10 @@ toggle_splinehighlight(s)
 	x = p->x;
 	y = p->y;
 	set_marker(canvas_win, x, y, 1, 1, 0, 0);
-	set_marker(canvas_win, x - 1, y - 1, 3, 3, 0, 0);
+	set_marker(canvas_win, x - 1, y - 1, SM_MARK, SM_MARK, 0, 0);
     }
     if (x != fx || y != fy) {
 	set_marker(canvas_win, fx, fy, 1, 1, 0, 0);
-	set_marker(canvas_win, fx - 1, fy - 1, 3, 3, 0, 0);
+	set_marker(canvas_win, fx - 1, fy - 1, SM_MARK, SM_MARK, 0, 0);
     }
 }

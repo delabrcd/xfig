@@ -39,11 +39,11 @@ F_compound	saved_objects = {0, { 0, 0 }, { 0, 0 },
 				NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 F_compound	object_tails = {0, { 0, 0 }, { 0, 0 }, 
 				NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+int		last_action = F_NULL;
 
 /*************** LOCAL *****************/
 
 static int	last_object;
-static int	last_action = F_NULL;
 static F_pos	last_position, new_position;
 static int	last_arcpointnum;
 static F_point *last_prev_point, *last_selected_point, *last_next_point;
@@ -116,7 +116,7 @@ undo_deletepoint()
 
     if (last_object == O_POLYLINE)
 	linepoint_adding(saved_objects.lines, last_prev_point,
-			 last_selected_point, last_next_point);
+			 last_selected_point);
     else
 	splinepoint_adding(saved_objects.splines, last_prev_point,
 			   last_selected_point, last_next_point);
@@ -203,7 +203,6 @@ undo_delete_arrowhead()
 
 undo_change()
 {
-    int		    xmin, ymin, xmax, ymax;
     F_compound	    swp_comp;
 
     last_action = F_NULL;	/* to avoid a clean-up during "unchange" */
@@ -372,17 +371,11 @@ undo_move()
 			  xmin2, ymin2, xmax2, ymax2);
 	break;
     case O_TEXT:
-	if (appres.textoutline) {
-		text_bound_both(saved_objects.texts, &xmin1, &ymin1, &xmax1, &ymax1,
-			&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
-		translate_text(saved_objects.texts, dx, dy);
-		text_bound_both(saved_objects.texts, &xmin2, &ymin2, &xmax2, &ymax2,
-			&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
-	} else {
-		text_bound(saved_objects.texts, &xmin1, &ymin1, &xmax1, &ymax1);
-		translate_text(saved_objects.texts, dx, dy);
-		text_bound(saved_objects.texts, &xmin2, &ymin2, &xmax2, &ymax2);
-	}
+	text_bound(saved_objects.texts, &xmin1, &ymin1, &xmax1, &ymax1,
+		&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
+	translate_text(saved_objects.texts, dx, dy);
+	text_bound(saved_objects.texts, &xmin2, &ymin2, &xmax2, &ymax2,
+		&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
 	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
 			  xmin2, ymin2, xmax2, ymax2);
 	break;
@@ -415,7 +408,7 @@ undo_move()
 undo_load()
 {
     F_compound	    temp;
-    char	    ctemp[128];
+    char	    ctemp[200];
 
     temp = objects;
     objects = saved_objects;

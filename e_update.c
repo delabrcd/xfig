@@ -24,6 +24,7 @@
 #include "w_mousefun.h"
 
 extern		update_current_settings();
+extern PIX_FONT lookfont();
 static int	init_update_object();
 static int	init_update_settings();
 
@@ -316,8 +317,8 @@ update_text(text)
     up_part(text->angle, cur_elltextangle*M_PI/180.0, I_ELLTEXTANGLE);
     up_part(text->color, cur_color, I_COLOR);
     up_part(text->depth, cur_depth, I_DEPTH);
-    size = pf_textwidth(lookfont(x_fontnum(text->flags, text->font), text->size,
-			cur_elltextangle), strlen(text->cstring), text->cstring);
+    size = pf_textwidth(lookfont(x_fontnum(text->flags, text->font), text->size),
+			strlen(text->cstring), text->cstring);
     text->length = size.x;	/* in pixels */
     text->height = size.y;	/* in pixels */
     reload_text_fstruct(text);	/* make sure fontstruct is current */

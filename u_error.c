@@ -85,7 +85,7 @@ emergency_quit()
     } else
 	fprintf(stderr, "xfig: figure empty or not modified - exiting\n");
 
-    quit();
+    goodbye();	/* finish up and exit */
 }
 
 /* ARGSUSED */
@@ -101,7 +101,5 @@ Cardinal *num_params;
     {
 	return;
     }
-    /* free all the GC's */
-    free_GCs();
     emergency_quit();
 }
