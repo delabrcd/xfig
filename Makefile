@@ -7,7 +7,7 @@
 #
 
 # -------------------------------------------------------------------------
-# Makefile generated from "Imake.tmpl" and </tmp/IIf.a12617>
+# Makefile generated from "Imake.tmpl" and </tmp/IIf.a11890>
 # $XConsortium: Imake.tmpl,v 1.139 91/09/16 08:52:48 rws Exp $
 #
 # Platform-specific parameters may be set in the appropriate <vendor>.cf
@@ -94,6 +94,7 @@
     INSTKMEMFLAGS = -g kmem -m 2755
 
       CDEBUGFLAGS = -O
+      CDEBUGFLAGS = -g
         CCOPTIONS =
 
       ALLINCLUDES = $(INCLUDES) $(EXTRA_INCLUDES) $(TOP_INCLUDES) $(STD_INCLUDES)
@@ -285,7 +286,7 @@ DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
 # remove -DGSBIT from the DEFINES if you DON'T want to have gs (ghostscript)
 # generate a preview bitmap.  If you do use ghostscript you will need
 # version 2.4 or later.
-DEFINES =             $(STRSTRDEFINES) -DGSBIT
+DEFINES =             $(STRSTRDEFINES) -DGSBIT 
 
 XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_epsobj.c \
 		d_intspline.c d_line.c d_regpoly.c d_spline.c d_text.c \

@@ -1489,7 +1489,7 @@ show_boxradius(sw)
 	      DEF_IND_SW_WD, DEF_IND_SW_HT / 2, ERASE,
 	      DEF_IND_SW_HT, PANEL_LINE, 0.0, DEFAULT_COLOR);
     /* draw current radius into pixmap */
-    curve(sw->normalPM, 0, cur_boxradius, -cur_boxradius, 0, 1,
+    curve(sw->normalPM, 0, cur_boxradius, -cur_boxradius, 0, 1, 50,
 	  cur_boxradius, cur_boxradius, DEF_IND_SW_WD - 2, DEF_IND_SW_HT - 2,
 	  PAINT, 1, PANEL_LINE, 0.0, 0, DEFAULT_COLOR);
 

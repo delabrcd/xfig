@@ -221,7 +221,7 @@ lookfont(f, s, angle)
 	fprintf(stderr, "Loading font %s\n", fn);
     set_temp_cursor(wait_cursor);
     app_flush();
-    fontst = XRotLoadFont(tool_d, fn, angle);
+    fontst = XRotLoadFont(tool_d, fn, angle*180.0/M_PI);
     if (fontst == NULL) {
 	fprintf(stderr, "xfig: Can't load font %s ?!, using %s\n",
 		fn, appres.normalFont);
