@@ -17,6 +17,8 @@
 #include "fig.h"
 #include "mode.h"
 #include "object.h"
+#include "resources.h"
+#include "w_indpanel.h"
 
 int		cur_mode = F_NULL;
 int		cur_halign = NONE;
@@ -54,9 +56,9 @@ int		print_landscape = 0;	/* def. orientation for printer */
 int		cur_exp_lang = LANG_EPS;
 
 char	       *lang_items[] = {
-    "box     ", "latex   ", "epic    ", "eepic   ", "eepicemu",
-    "pictex  ", "ibmgl   ", "eps     ", "ps      ", "pstex   ",
-    "pstex_t ", "textyl  ", "tpic    ", "pic     ", "xbm     "};
+    "box",     "latex",  "epic", "eepic", "eepicemu",
+    "pictex",  "ibmgl",  "eps",  "ps",    "pstex",
+    "pstex_t", "textyl", "tpic", "pic",   "xbm"};
 
 char	       *lang_texts[] = {
     "LaTeX box (figure boundary)    ",
@@ -78,6 +80,8 @@ char	       *lang_texts[] = {
 /***************************  Mode Settings  ****************************/
 
 int		cur_objmask = M_NONE;
+int		cur_updatemask = I_UPDATEMASK;
+int		cur_depth = 0;
 
 /***************************  Text Settings  ****************************/
 

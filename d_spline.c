@@ -78,7 +78,7 @@ create_splineobject(x, y)
     spline->thickness = cur_linewidth;
     spline->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     spline->color = cur_color;
-    spline->depth = 0;
+    spline->depth = cur_depth;
     spline->pen = 0;
     spline->fill_style = cur_fillstyle;
     /*

@@ -92,7 +92,7 @@ create_arc_boxobject(x, y)
     box->style = cur_linestyle;
     box->thickness = cur_linewidth;
     box->color = cur_color;
-    box->depth = 0;
+    box->depth = cur_depth;
     box->pen = 0;
     box->fill_style = cur_fillstyle;
     /* multiply	 dash length by line thickness */

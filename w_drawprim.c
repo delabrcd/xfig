@@ -111,9 +111,13 @@ init_font()
 
 #ifndef OPENWIN
     if (!appres.SCALABLEFONTS) {/* X11R5 has scalable fonts */
+	char	template[200];
+
 	for (f = 0; f < NUM_X_FONTS; f++) {
 	    nf = NULL;
-	    if (fontlist = XListFonts(tool_d, x_fontinfo[f].template, MAXNAMES, &count)) {
+	    strcpy(template,x_fontinfo[f].template);
+	    strcat(template,"*-*-*-*-*-*-iso8859-*");
+	    if (fontlist = XListFonts(tool_d, template, MAXNAMES, &count)) {
 		fname = fontlist;	/* go through the list finding point
 					 * sizes */
 		p = 0;
@@ -219,11 +223,11 @@ lookfont(f, s)
 #else
     if (appres.SCALABLEFONTS) { /* scalable fonts! */
 	char		fn[128];
-	char		template[128];
+	char		template[200];
 
-	strcpy(template, x_fontinfo[f].template);
-	template[strlen(template) - 1] = 0;
-	strcat(template, "%d-*-*-*-*-*-*-*");
+	/* attach pointsize and iso8859 to font name */
+	strcpy(template,x_fontinfo[f].template);
+	strcat(template,"%d-*-*-*-*-*-iso8859-*");
 	sprintf(fn, template, s);
 	if (appres.DEBUG)
 	    fprintf(stderr, "Loading font %s\n", fn);
@@ -285,7 +289,7 @@ pw_text(w, x, y, op, font, psflag, size, string, color)
     char	   *string;
     Color	    color;
 {
-    pwx_text(w, x, y, op, x_fontnum(psflag, font), size * zoomscale, string,
+    pwx_text(w, x, y, op, x_fontnum(psflag, font), round(size * zoomscale), string,
 	     color);
 }
 
@@ -701,7 +705,7 @@ set_line_stuff(width, style, style_val, op, color)
     case PANEL_LINE:
 	break;
     default:
-	width = zoomscale * width;
+	width = round(zoomscale * width);
 	break;
     }
 
@@ -716,7 +720,7 @@ set_line_stuff(width, style, style_val, op, color)
     if (width == gc_thickness[op] && style == gc_line_style[op] &&
 	x_color(color) == gc_color[op] &&
 	(style != DASH_LINE && style != DOTTED_LINE ||
-	 dash_list[1] == (char) style_val * zoomscale))
+	 dash_list[1] == (char) round(style_val * zoomscale)))
 	return;			/* no need to change anything */
 
     gcv.line_width = width;
@@ -732,7 +736,7 @@ set_line_stuff(width, style, style_val, op, color)
     if (style == DASH_LINE || style == DOTTED_LINE) {
 	if (style_val > 0.0) {	/* style_val of 0.0 causes problems */
 	    /* length of ON/OFF pixels */
-	    dash_list[0] = dash_list[1] = (char) style_val *zoomscale;
+	    dash_list[0] = dash_list[1] = (char) round(style_val *zoomscale);
 
 	    if (style == DOTTED_LINE)
 		dash_list[0] = 1;	/* length of ON pixels for dotted */

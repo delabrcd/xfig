@@ -86,7 +86,7 @@ change_directory(path)
 	put_msg("Can't go to directory %s, : %s", path, sys_errlist[errno]);
 	return (1);
     }
-    if (get_directory(cur_dir) != NULL) /* get cwd */
+    if (get_directory(cur_dir)) /* get cwd */
 	return (0);
     else
 	return (1);

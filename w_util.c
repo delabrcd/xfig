@@ -98,7 +98,8 @@ popup_query(query_type, message)
 
     FirstArg(XtNfont, bold_font);
     NextArg(XtNborderWidth, 0);
-    query_message = XtCreateManagedWidget(message, labelWidgetClass,
+    NextArg(XtNlabel, message);
+    query_message = XtCreateManagedWidget("message", labelWidgetClass,
 					  query_form, Args, ArgCount);
 
     FirstArg(XtNheight, 25);

@@ -1,6 +1,93 @@
 Version 2.1
 ===========
 
+Patchlevel 4
+Changes to Patchlevel 3:
+
+o keyFile resource allows ANY path for compose key data base, not just relative
+	to $XFIGLIBDIR
+	from Pete Kaiser (kaiser@heron.enet.dec.com)
+o simple edit arrowhead feature in the popup edit for lines - can add/delete 
+	arrow heads.  No adjustment of arrow size yet - uses current linewidth 
+	from indicator panel
+o Example figure files have all been converted to 2.1 file format
+o if any object coordinates are negative, the whole figure is shifted to keep it
+	on the canvas
+o fixed major bug where the preview bitmap of EPS objects was in reverse video
+	(1 is white not black, according to the PostScript Language Ref. Manual)
+o general cleanup of param types in Xt callback/action etc. procedures and other
+	lint cleanup
+	from Jonathan Kamens (jik@MIT.Edu)
+o Alt_L key added to list of keys to do international characters
+	from Marc Goldburg (marcg@alfalfa.stanford.edu)
+o fractional zoom (i.e. zoom < 1) - see man pages
+o eps data wasn't being initialized when the eps file wasn't available
+o redefined filename length for eps object to PATH_MAX
+o -showallbuttons option didn't show the depth indicator
+	from Paul King (king@cs.uq.oz.au)
+o fixed bugs where using export and print shortcut before ever popping
+	up respective menus used incorrect options
+o changes to the file popup:
+	o new "Home" button changes directory to $HOME
+	o ~ (username) operator allowed in the current directory ascii widget
+	o new label widget shows the current figure filename
+	o presssing "Load", "Save" or "Merge Read" will operate on the 
+	  filename in the "Filename" window.  If that name is empty the
+	  operation is done on the file specified in the "Current Filename" 
+	  window.
+	o additionally, the "Load" operation will copy the name (if any)
+	  from the "Filename" window to the "Current Filename" window
+	o pressing return in the "list of files" window in the popup File panel
+	  will "Load" the file
+o changes to the export popup:
+	o new "Home" button changes directory to $HOME
+	o ~ (username) operator allowed in the current directory ascii widget
+	o pressing return in the "list of files" window in the popup Export 
+	  panel will "Export" the file
+o Pre-2.1 fig files now have text flags set to PostScript mode when reading into
+	xfig 2.1.4
+o 1.4-TFX fig files now have text flags set to PostScript mode PLUS Special
+o font names now include "ISO-8859" to insure that ISO Latin characters are used
+	from Thierry EXCOFFIER (exco@ligiahp.univ-lyon1.fr)
+o -debug no longer runs xfig synchronously - use standard toolkit option -sync
+o control points for spline objects now span multiple lines in output file if 
+	there are many points
+o scrollable x-y points panel in the popup edit panel for objects with many
+	points (mwm didn't display the x-y values when the popup was taller than
+	the screen)
+o If you have Display Postscript in your server, compile xfig with -DDPS
+	and you will see the full Postscript object instead of preview bitmap
+	when you include EPS objects.  
+	!!! WARNING:  this has only been tested on IBM's AIX 3.2 (X11R4) on
+	an RS/6000 !!!
+	from Dave Hale (dhale@green.mines.colorado.edu)
+o fixed bug in error return from system() - now popups error message when 
+	can't export/print figure
+o unused function clear_char_string() deleted from w_canvas.c
+o current depth is now in an indicator window and may be set like line 
+	thickness, color etc.
+o added update tags to control which object components are modified/copied
+	when using the update button.  Button appears in upper-right corner
+	of indicator button (e.g linewidth) when in update mode.  Clicking 
+	on the update tag enables/disables components (e.g. linewidth) from 
+	being copied to/from objects when using update.
+o fixed exporting of pstex_t and pstex (used to give Postscript for both)
+o FIG 1.4-TFX file area_fill values now correctly translated to 2.1 format
+o deleted duplicate #include <math.h> from u_geom.c and w_export.c
+o changed ^U (control U) in w_canvas.c to \023 for mailers which clobber 
+	control chars
+o added possibility of wider top ruler and taller side ruler by using
+	-DMAX_TOPRULER_WD=value and -DMAX_SIDERULER_HT=value in Imakefile
+o added function strtol() for those systems that don't have it.
+	from Jonathan Kamens (jik@pit-manager.MIT.EDU)
+o added note about -DNOSTRSTR and -DNOSTRTOL for those systems that don't
+	have strstr() and/or strtol() respectively.
+o fixed type mismatch and bug in call to getenv in main().
+o type mismatch fixed for X11R5 in call to XtAppInitialize(). 
+	from Jonathan Kamens (jik@pit-manager.MIT.EDU)
+o small performance fix in u_draw.c in add_point() when reallocating points
+	from Dave Hale (dhale@green.Mines.Colorado.EDU)
+
 Patchlevel 3
 Changes to Patchlevel 2:
 

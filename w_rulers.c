@@ -412,7 +412,7 @@ reset_topruler()
     X0 = BACKX(0);
     if (appres.INCHES) {
 	X0 -= (X0 % SINCH);
-	for (i = X0 + SINCH - 1; i <= X0 + TOPRULER_WD; i += SINCH) {
+	for (i = X0+SINCH-1; i <= X0+round(TOPRULER_WD/zoomscale); i += SINCH) {
 	    j = i + 1;
 	    if (j % PIX_PER_INCH == 0) {
 		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
@@ -433,7 +433,7 @@ reset_topruler()
 	}
     } else {
 	X0 -= (X0 % TWOMM);
-	for (i = X0 + TWOMM - 1; i <= X0 + TOPRULER_WD; i++) {
+	for (i = X0+TWOMM-1; i <= X0+round(TOPRULER_WD/zoomscale); i++) {
 	    j = i + 1;
 	    if (j % PIX_PER_CM == 0) {
 		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
@@ -656,7 +656,7 @@ reset_sideruler()
     if (appres.INCHES) {
 	Y0 -= (Y0 % SINCH);
 	if (appres.RHS_PANEL) {
-	    for (i = Y0 + SINCH - 1; i <= Y0 + SIDERULER_HT; i += SINCH) {
+	    for (i = Y0+SINCH-1; i <= Y0+round(SIDERULER_HT/zoomscale); i += SINCH) {
 		j = i + 1;
 		if (j % PIX_PER_INCH == 0) {
 		    XDrawLine(tool_d, p, sr_gc, RULER_WD - INCH_MARK,
@@ -679,7 +679,7 @@ reset_sideruler()
 			      RULER_WD, ZOOMY(i));
 	    }
 	} else {
-	    for (i = Y0 + SINCH - 1; i <= Y0 + SIDERULER_HT; i += SINCH) {
+	    for (i = Y0+SINCH-1; i <= Y0+round(SIDERULER_HT/zoomscale); i += SINCH) {
 		j = i + 1;
 		if (j % PIX_PER_INCH == 0) {
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
@@ -701,7 +701,7 @@ reset_sideruler()
     } else {
 	Y0 -= (Y0 % TWOMM);
 	if (appres.RHS_PANEL) {
-	    for (i = Y0 + TWOMM - 1; i <= Y0 + SIDERULER_HT; i++) {
+	    for (i = Y0+TWOMM-1; i <= Y0+round(SIDERULER_HT/zoomscale); i++) {
 		j = i + 1;
 		if (j % PIX_PER_CM == 0) {
 		    XDrawLine(tool_d, p, sr_gc, RULER_WD - INCH_MARK,
@@ -716,7 +716,7 @@ reset_sideruler()
 			      RULER_WD, ZOOMY(i));
 	    }
 	} else {
-	    for (i = Y0 + TWOMM - 1; i <= Y0 + SIDERULER_HT; i++) {
+	    for (i = Y0+TWOMM-1; i <= Y0+round(SIDERULER_HT/zoomscale); i++) {
 		j = i + 1;
 		if (j % PIX_PER_CM == 0) {
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),

@@ -95,7 +95,7 @@ create_ellipsebyrad(x, y)
     ellipse->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     ellipse->angle = cur_angle;
     ellipse->color = cur_color;
-    ellipse->depth = 0;
+    ellipse->depth = cur_depth;
     ellipse->pen = 0;
     ellipse->fill_style = cur_fillstyle;
     ellipse->direction = 1;
@@ -169,7 +169,7 @@ create_ellipsebydia(x, y)
     ellipse->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     ellipse->angle = cur_angle;
     ellipse->color = cur_color;
-    ellipse->depth = 0;
+    ellipse->depth = cur_depth;
     ellipse->pen = NULL;
     ellipse->fill_style = cur_fillstyle;
     ellipse->direction = 1;
@@ -246,7 +246,7 @@ create_circlebyrad(x, y)
     c->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     c->angle = 0.0;
     c->color = cur_color;
-    c->depth = 0;
+    c->depth = cur_depth;
     c->pen = NULL;
     c->fill_style = cur_fillstyle;
     c->direction = 1;
@@ -322,7 +322,7 @@ create_circlebydia(x, y)
     c->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     c->angle = 0.0;
     c->color = cur_color;
-    c->depth = 0;
+    c->depth = cur_depth;
     c->pen = NULL;
     c->fill_style = cur_fillstyle;
     c->direction = 1;

@@ -27,11 +27,7 @@
  * Support for rendering based on correct object depth.	 A simple depth based
  * caching scheme; anything more will require major surgery on the object
  * data structures that will percolate throughout program.
- */
-
-#define MAXDEPTH	(10)
-
-/*
+ *
  * One ``counts'' structure for each object type at each nesting depth from 0
  * to MAXDEPTH - 1.  We track both the number of objects per type per depth,
  * as well as the number of objects drawn so far per type per depth to cut

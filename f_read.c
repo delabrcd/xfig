@@ -53,7 +53,7 @@ static F_compound *read_compoundobject();
 
 #define		FILL_CONVERT(f) \
 			(((proto>=20) || (f) == UNFILLED || !TFX) \
-				? (f) : 21 - ((f)-1)*5)
+				? (f) : (!TFX? 21 - ((f)-1)*5: 0))
 
 #define		BUF_SIZE		1024
 
@@ -72,22 +72,22 @@ read_fail_message(file, err)
 	return;
 #ifdef ENAMETOOLONG
     else if (err == ENAMETOOLONG)
-	put_msg("File name \"%s\" is too long", file);
+	file_msg("File name \"%s\" is too long", file);
 #endif
     else if (err == ENOENT)
-	put_msg("File \"%s\" does not exist", file);
+	file_msg("File \"%s\" does not exist", file);
     else if (err == ENOTDIR)
-	put_msg("A name in the path \"%s\" is not a directory", file);
+	file_msg("A name in the path \"%s\" is not a directory", file);
     else if (err == EACCES)
-	put_msg("Read access to file \"%s\" is blocked", file);
+	file_msg("Read access to file \"%s\" is blocked", file);
     else if (err == EISDIR)
-	put_msg("File \"%s\" is a directory", file);
+	file_msg("File \"%s\" is a directory", file);
     else if (err == -2) {
-	put_msg("File \"%s\" is empty", file);
+	file_msg("File \"%s\" is empty", file);
     } else if (err == -1) {
 	/* Format error; relevant error message is already delivered */
     } else
-	put_msg("File \"%s\" is not accessable; %s", file, sys_errlist[err]);
+	file_msg("File \"%s\" is not accessable; %s", file, sys_errlist[err]);
 }
 
 /**********************************************************
@@ -117,7 +117,7 @@ read_fig(file_name, obj)
     if ((fp = fopen(file_name, "r")) == NULL)
 	return (errno);
     else {
-	put_msg("reading objects from \"%s\" ...", file_name);
+	put_msg("Reading objects from \"%s\" ...", file_name);
 	return (readfp_fig(fp, obj));
     }
 }
@@ -158,6 +158,9 @@ readfp_fig(fp, obj)
 	status = read_1_3_objects(fp, obj);
     }
 
+    /* shift the figure on the page if there are negative coords */
+    shift_figure(obj);	
+
     fclose(fp);
     return (status);
 }
@@ -177,7 +180,7 @@ read_objects(fp, obj)
 
     line_no++;
     if (get_line(fp) < 0) {
-	put_msg("File is truncated");
+	file_msg("File is truncated");
 	return (-1);
     }
     if (2 != sscanf(buf, "%d%d\n", &ppi, &coord_sys)) {
@@ -768,10 +771,14 @@ read_textobject(fp)
 	t->type = T_LEFT_JUSTIFIED;
     }
 
-    if ((proto < 20) && (t->font == 0 || t->font == DEFAULT))
-	t->flags = ((t->flags != DEFAULT) ? t->flags : 0) | SPECIAL_TEXT;
-    else if (proto == 20)
+    /* convert all pre-2.1 NON-TFX text flags (used to be font_style) to PostScript
+       and all pre-2.1 TFX flags to PostScript + Special */
+    if (proto <= 20)
+	{
 	t->flags = PSFONT_TEXT;
+	if (TFX)
+		t->flags |= SPECIAL_TEXT;
+	}
 
     if (t->font >= MAXFONT(t)) {
 	file_msg("Invalid text font (%d) at line %d, setting to DEFAULT.",
@@ -830,15 +837,84 @@ skip_line(fp)
 fixdepth(depth) 
     int		  *depth;
 {
-    if (*depth>1000) {
-	    *depth=1000; 
-	    file_msg("Depth > 1000, setting to 1000 in line %d", line_no); 
+    if (*depth>MAXDEPTH) {
+	    *depth=MAXDEPTH; 
+	    file_msg("Depth > %d, setting to %d in line %d", 
+			MAXDEPTH,line_no,MAXDEPTH); 
 	} 
 	else if (*depth<0 || proto<21) { 
 	    *depth=0; 
 	    if (proto>=21) 
 		file_msg("Depth < 0, setting to 0 in line %d", line_no); 
 	}
+}
+
+shift_figure(obj)
+F_compound	   *obj;
+{
+    F_ellipse	   *e;
+    F_arc	   *a;
+    F_line	   *l;
+    F_spline	   *s;
+    F_compound	   *c;
+    F_text	   *t;
+    int		    lowx,lowy,dx,dy;
+    int		    llx,lly,urx,ury;
+
+    lowx = 10000;
+    lowy = 10000;
+    for (e = obj->ellipses; e != NULL; e = e->next) {
+	ellipse_bound(e, &llx, &lly, &urx, &ury);
+	lowx = min2(llx,lowx);
+	lowy = min2(lly,lowy);
+	}
+    for (a = obj->arcs; a != NULL; a = a->next) {
+	arc_bound(a, &llx, &lly, &urx, &ury);
+	lowx = min2(llx,lowx);
+	lowy = min2(lly,lowy);
+	}
+    for (l = obj->lines; l != NULL; l = l->next) {
+	line_bound(l, &llx, &lly, &urx, &ury);
+	lowx = min2(llx,lowx);
+	lowy = min2(lly,lowy);
+	}
+    for (s = obj->splines; s != NULL; s = s->next) {
+	spline_bound(s, &llx, &lly, &urx, &ury);
+	lowx = min2(llx,lowx);
+	lowy = min2(lly,lowy);
+	}
+    for (c = obj->compounds; c != NULL; c = c->next) {
+	compound_bound(c, &llx, &lly, &urx, &ury);
+	lowx = min2(llx,lowx);
+	lowy = min2(lly,lowy);
+	}
+    for (t = obj->texts; t != NULL; t = t->next) {
+	text_bound(t, &llx, &lly, &urx, &ury);
+	lowx = min2(llx,lowx);
+	lowy = min2(lly,lowy);
+	}
+    /* check if any part of the figure has negative coords */
+    if (lowx >= 0 && lowy >= 0)
+	return;				/* no, ok */
+    
+    /* shift the whole figure to keep it "on the page" */
+    dx = -lowx + 10;
+    dy = -lowy + 10;
+    file_msg(
+	"Shifting entire figure %d pixels right and %d pixels down to keep on page",
+	dx,dy);
+    for (e = obj->ellipses; e != NULL; e = e->next)
+	translate_ellipse(e, dx, dy);
+    for (a = obj->arcs; a != NULL; a = a->next)
+	translate_arc(a, dx, dy);
+    for (l = obj->lines; l != NULL; l = l->next)
+	translate_line(l, dx, dy);
+    for (s = obj->splines; s != NULL; s = s->next)
+	translate_spline(s, dx, dy);
+    for (c = obj->compounds; c != NULL; c = c->next)
+	translate_compound(c, dx, dy);
+    for (t = obj->texts; t != NULL; t = t->next)
+	translate_text(t, dx, dy);
 }
 
 /* VARARGS1 */
@@ -947,7 +1023,7 @@ popup_file_msg()
 	NextArg(XtNeditType, XawtextRead);
 	NextArg(XtNdisplayCaret, False);
 	NextArg(XtNborderWidth, INTERNAL_BW);
-	NextArg(XtNscrollHorizontal, XawtextScrollNever);
+	NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
 	NextArg(XtNscrollVertical, XawtextScrollAlways);
 	file_msg_win = XtCreateManagedWidget("file_msg_win", asciiTextWidgetClass,
 					     file_msg_panel, Args, ArgCount);

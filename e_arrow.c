@@ -289,10 +289,9 @@ delete_splinearrow(spline, prev_point, selected_point)
 	    spline->back_arrow = NULL;
 	    draw_spline(spline, PAINT);
 	} else {
-	    F_control	   *a, *b;
+	    F_control	   *a;
 
 	    a = spline->controls;
-	    b = a->next;
 	    draw_arrow(round(a->rx), round(a->ry), selected_point->x,
 		       selected_point->y, spline->back_arrow, ERASE,
 		       spline->color);

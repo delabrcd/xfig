@@ -235,9 +235,9 @@ init_textdragging(t, x, y)
 	txsize = pf_textwidth(t->font, psfont_text(t), t->size,
 			      strlen(t->cstring), t->cstring);
 	if (t->type == T_CENTER_JUSTIFIED)
-	    x1off -= txsize.x / 2 / zoomscale;
+	    x1off -= round(txsize.x / 2 / zoomscale);
 	else
-	    x1off -= txsize.x / zoomscale;
+	    x1off -= round(txsize.x / zoomscale);
     }
     canvas_locmove_proc = moving_text;
     canvas_leftbut_proc = place_text;

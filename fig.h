@@ -39,7 +39,26 @@ extern int	errno;
 extern int	sys_nerr;
 extern char    *sys_errlist[];
 
-#include <math.h>
+#include <math.h>	/* for sin(), cos() etc */
+
+#if defined(SYS) && defined(SYSV386)
+#if defined(__STDC__)
+#ifdef ISC
+extern double atof(char const *);
+#endif
+#ifdef SCO
+extern double atof(const char *);
+#else
+extern double atof();
+#endif
+#else
+extern double atof();
+#endif
+#else
+#ifndef X_NOT_STDC_ENV
+#include <stdlib.h>	/* for atof() */
+#endif
+#endif
 
 #if defined(SYSV) || defined(SVR4)
 #define u_int uint
@@ -48,6 +67,26 @@ extern char    *sys_errlist[];
 #else
 #define DIRSTRUCT	struct direct
 #endif
+
+/* define PATH_MAX if not already defined */
+/* taken from the X11R5 server/os/osfonts.c file */
+#ifndef X_NOT_POSIX
+#ifdef _POSIX_SOURCE
+#include <limits.h>
+#else
+#define _POSIX_SOURCE
+#include <limits.h>
+#undef _POSIX_SOURCE
+#endif
+#endif /* X_NOT_POSIX */
+#ifndef PATH_MAX
+#include <sys/param.h>
+#ifdef MAXPATHLEN
+#define PATH_MAX MAXPATHLEN
+#else
+#define PATH_MAX 1024
+#endif
+#endif /* PATH_MAX */
 
 #ifndef M_PI
 #define M_PI	3.14159265358979323846

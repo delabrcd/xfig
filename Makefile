@@ -32,14 +32,12 @@
 ###########################################################################
 # site-specific configuration parameters - edit site.def to change
 
-# site:  $XConsortium: site.def,v 1.21 89/12/06 11:46:50 jim Exp $
-
             SHELL = /bin/sh
 
               TOP = .
       CURRENT_DIR = .
 
-               AR = ar cq
+               AR = ar clq
   BOOTSTRAPCFLAGS =
                CC = cc
 
@@ -86,7 +84,7 @@
 
       CDEBUGFLAGS = -O
         CCOPTIONS =
-      COMPATFLAGS = -DXAW_BC
+      COMPATFLAGS =
 
       ALLINCLUDES = $(STD_INCLUDES) $(TOP_INCLUDES) $(INCLUDES) $(EXTRA_INCLUDES)
        ALLDEFINES = $(ALLINCLUDES) $(STD_DEFINES) $(PROTO_DEFINES) $(DEFINES) $(COMPATFLAGS)
@@ -117,7 +115,7 @@
 # $XConsortium: Project.tmpl,v 1.63 89/12/18 16:46:44 jim Exp $
 
           PATHSEP = /
-        USRLIBDIR = /usr/local/lib
+        USRLIBDIR = $(DESTDIR)/usr/lib
            BINDIR = $(DESTDIR)/usr/bin/X11
           INCROOT = $(DESTDIR)/usr/include
      BUILDINCROOT = $(TOP)
@@ -137,7 +135,7 @@
            GWMDIR = $(LIBDIR)/gwm
           MANPATH = $(DESTDIR)/usr/man
     MANSOURCEPATH = $(MANPATH)/man
-           MANDIR = $(MANSOURCEPATH)l
+           MANDIR = $(MANSOURCEPATH)n
         LIBMANDIR = $(MANSOURCEPATH)3
       XAPPLOADDIR = $(LIBDIR)/app-defaults
 
@@ -185,8 +183,8 @@
      MKFONTDIRSRC = $(FONTSRC)/mkfontdir
      EXTENSIONSRC = $(TOP)/extensions
 
-  DEPEXTENSIONLIB = $(USRLIBDIR)/libXext.a
-     EXTENSIONLIB =  -lXext
+  DEPEXTENSIONLIB =
+     EXTENSIONLIB = -lXext
 
           DEPXLIB = $(DEPEXTENSIONLIB)
              XLIB = $(EXTENSIONLIB) -lX11
@@ -212,10 +210,6 @@
         LINTXTOOL = $(USRLIBDIR)/llib-lXt.ln
           LINTXAW = $(USRLIBDIR)/llib-lXaw.ln
 
-        XWLIBSRC = $(CONTRIBSRC)/toolkits/Xw
-        DEPXWLIB = $(USRLIBDIR)/libXw.a
-        XWLIB =  -lXw
-
           DEPLIBS = $(DEPXAWLIB) $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
 
          DEPLIBS1 = $(DEPLIBS)
@@ -233,7 +227,7 @@ SYS_LIBRARIES= 		-lm
 DEPLIBS = 		$(DEPXAWLIB) $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
 LOCAL_LIBRARIES = 	$(XAWLIB) $(XMULIB) $(XTOOLLIB) $(XLIB)
 CDEBUGFLAGS =		-O
-XFIGLIBDIR =		/usr/local/lib/xfig
+XFIGLIBDIR =		/usr/local/lib/X11/xfig
 DEFINES =		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
 
 XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_epsobj.c\

@@ -41,12 +41,11 @@ static int	(*save_kbd_proc) ();
 static int	(*save_locmove_proc) ();
 static int	(*save_leftbut_proc) ();
 static int	(*save_middlebut_proc) ();
-static int	(*save_middlebut_save) ();
 static int	(*save_rightbut_proc) ();
 static Cursor	save_cur_cursor;
 static int	save_action_on;
 
-int		zoomscale = 1;
+float		zoomscale = 1.0;
 int		zoomxoff = 0;
 int		zoomyoff = 0;
 
@@ -69,7 +68,7 @@ zoom_selected(x, y, button)
 	    pan_origin();
 	    break;
 	case Button3:
-	    zoomscale = 1;
+	    zoomscale = 1.0;
 	    show_zoom(&ind_switches[ZOOM_SWITCH_INDEX]);
 	    break;
 	}
@@ -120,7 +119,6 @@ do_zoom(x, y)
     int		    x, y;
 {
     int		    dimx, dimy;
-    int		    t;		/* loop counter */
     float	    scalex, scaley;
 
     elastic_box(my_fix_x, my_fix_y, my_cur_x, my_cur_y);
@@ -135,7 +133,7 @@ do_zoom(x, y)
     if (dimx && dimy) {
 	scalex = CANVAS_WD / (float) dimx;
 	scaley = CANVAS_HT / (float) dimy;
-	zoomscale = (int) scalex > scaley ? scaley : scalex;
+	zoomscale = (int)((scalex > scaley ? scaley : scalex)+.99);
 
 	show_zoom(&ind_switches[ZOOM_SWITCH_INDEX]);
     }

@@ -4,10 +4,15 @@
 #include "Fig"
 
 #ifdef COLOR
-	Fig*ind_panel.button.background: yellow
-	Fig*ind_panel.button.foreground: blue
+! Indicator (lower) panel
+	Fig*ind_panel.button_form.button.background: yellow
+	Fig*ind_panel.button_form.button.foreground: blue
+	Fig*ind_panel.button_form.update.foreground: red
+	Fig*ind_panel.button_form.update.background: white
+! Mode (left-hand) panel
 	Fig*mode_panel.button.background: cyan
 	Fig*mode_panel.button.foreground: red
+! Mouse indicator panel
 	Fig*mouse_panel.background: green
 	Fig*mouse_panel.foreground: black
 ! Edit popup
@@ -22,10 +27,12 @@
 	Fig*file_panel*Text*foreground:		black
 	Fig*file_panel*List*background:		white
 	Fig*file_panel*List*foreground:		black
-	Fig*file_panel*Scrollbar*background:	lightskyblue
+	Fig*file_panel*Scrollbar*background:	cornflowerblue
 	Fig*file_panel*Scrollbar*foreground:	red
+	Fig*file_panel*home.foreground:		black
+	Fig*file_panel*home.background:		cornflowerblue
 	Fig*file_panel.rescan.foreground:	black
-	Fig*file_panel.rescan.background:	lightskyblue
+	Fig*file_panel.rescan.background:	cornflowerblue
 	Fig*file_panel.cancel.foreground:	black
 	Fig*file_panel.cancel.background:	red
 	Fig*file_panel.save.foreground:		black
@@ -33,21 +40,23 @@
 	Fig*file_panel.load.foreground:		black
 	Fig*file_panel.load.background:		green
 	Fig*file_panel.merge.foreground:	black
-	Fig*file_panel.merge.background:	lightskyblue
+	Fig*file_panel.merge.background:	cornflowerblue
 ! Export popup
 	Fig*export_panel*background:		orchid
 	Fig*export_panel*Text*background:	white
 	Fig*export_panel*Text*foreground:	black
 	Fig*export_panel*List*background:	white
 	Fig*export_panel*List*foreground:	black
-	Fig*export_panel*Scrollbar*background:	lightskyblue
+	Fig*export_panel*Scrollbar*background:	cornflowerblue
 	Fig*export_panel*Scrollbar*foreground:	red
 	Fig*export_panel*MenuButton*background:	white
 	Fig*export_panel*MenuButton*foreground:	black
 	Fig*export_panel*landscape.menu.background: yellow
 	Fig*export_panel*landscape.menu.foreground: black
+	Fig*export_panel*home.foreground:	black
+	Fig*export_panel*home.background:	cornflowerblue
 	Fig*export_panel.rescan.foreground:	black
-	Fig*export_panel.rescan.background:	lightskyblue
+	Fig*export_panel.rescan.background:	cornflowerblue
 	Fig*export_panel.cancel.foreground:	black
 	Fig*export_panel.cancel.background:	red
 	Fig*export_panel.export.foreground:	black
@@ -73,10 +82,21 @@
 	Fig*print_panel.output_file.foreground:	black
 ! File message popup
 	Fig*file_msg_panel.background:		orchid
-	Fig*file_msg_panel.file_msg_win*background: lightskyblue
-	Fig*file_msg_panel.file_msg_win*foreground: red
+	Fig*file_msg_panel.file_msg_win*background: cornflowerblue
+	Fig*file_msg_panel.file_msg_win*foreground: yellow
 	Fig*file_msg_panel.dismiss.background:	green
 	Fig*file_msg_panel.dismiss.foreground:	black
 	Fig*file_msg_panel.clear.background:	red
 	Fig*file_msg_panel.clear.foreground:	black
+! Query popup
+	Fig*query_popup.query_form.background: lightslateblue
+	Fig*query_popup.query_form.foreground: orange
+	Fig*query_popup.query_form.message.background: lightgrey
+	Fig*query_popup.query_form.message.foreground: orange
+	Fig*query_popup.query_form.yes.background: red
+	Fig*query_popup.query_form.yes.foreground: black
+	Fig*query_popup.query_form.no.background: orange
+	Fig*query_popup.query_form.no.foreground: black
+	Fig*query_popup.query_form.cancel.background: green
+	Fig*query_popup.query_form.cancel.foreground: black
 #endif

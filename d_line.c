@@ -213,7 +213,7 @@ create_lineobject(x, y)
     line->style = cur_linestyle;
     line->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     line->color = cur_color;
-    line->depth = 0;
+    line->depth = cur_depth;
     line->pen = 0;
     line->points = first_point;
     if (!dot) {

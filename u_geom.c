@@ -22,7 +22,6 @@
 
 #include "fig.h"
 #include "object.h"
-#include "math.h"
 
 #define			PI		3.14159
 

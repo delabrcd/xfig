@@ -29,9 +29,11 @@
 #include "w_zoom.h"
 
 extern Pixmap	psfont_menu_bitmaps[], latexfont_menu_bitmaps[];
-extern struct _fstruct ps_fontinfo[], latex_fontinfo[];
+extern struct	_fstruct ps_fontinfo[], latex_fontinfo[];
 extern char    *panel_get_value();
 extern int	show_zoom();
+extern int	show_depth();
+extern int	cur_updatemask;
 
 /**************	    local variables and routines   **************/
 
@@ -65,11 +67,13 @@ static int	show_textstep(), inc_textstep(), dec_textstep();
 static int	inc_zoom(), dec_zoom();
 static int	show_rotnangle(), inc_rotnangle(), dec_rotnangle();
 static int	show_numsides(), inc_numsides(), dec_numsides();
+static int	inc_depth(), dec_depth();
 
 static int	popup_fonts();
+static void	note_state();
 
 static char	indbuf[5];
-static int	old_zoomscale = -1;
+static float	old_zoomscale = -1.0;
 static int	old_rotnangle = -1;
 
 #define		DEF_IND_SW_HT		32
@@ -173,14 +177,16 @@ static ind_sw_info *fill_style_sw;
 #define		show_action(z)	(z->show_func)(z)
 
 ind_sw_info	ind_switches[] = {
-    {I_IVAL, I_ZOOM, "Zoom", "Scale", NARROW_IND_SW_WD,
-	&zoomscale, NULL, inc_zoom, dec_zoom, show_zoom,},
+    {I_FVAL, I_ZOOM, "Zoom", "Scale", NARROW_IND_SW_WD,
+	NULL, &zoomscale, inc_zoom, dec_zoom, show_zoom,},
     {I_CHOICE, I_GRIDMODE, "Grid", "Mode", DEF_IND_SW_WD,
 	&cur_gridmode, NULL, inc_choice, dec_choice, show_gridmode,
 	gridmode_choices, NUM_GRIDMODE_CHOICES, NUM_GRIDMODE_CHOICES,},
     {I_CHOICE, I_POINTPOSN, "Point", "Posn", DEF_IND_SW_WD,
 	&cur_pointposn, NULL, inc_choice, dec_choice, show_pointposn,
 	pointposn_choices, NUM_POINTPOSN_CHOICES, NUM_POINTPOSN_CHOICES,},
+    {I_IVAL, I_DEPTH, "Depth", "", NARROW_IND_SW_WD,
+	&cur_depth, NULL, inc_depth, dec_depth, show_depth,},
     {I_IVAL, I_ROTNANGLE, "Rotn", "Angle", NARROW_IND_SW_WD,
 	&cur_rotnangle, NULL, inc_rotnangle, dec_rotnangle, show_rotnangle,},
     {I_IVAL, I_NUMSIDES, "Num", "Sides", NARROW_IND_SW_WD,
@@ -243,6 +249,22 @@ static Arg	button_args[] =
 /* button selection event handler */
 static void	sel_ind_but();
 
+/* arguments for the update indicator boxes in the indicator buttons */
+
+static Arg	upd_args[] = 
+{
+    /* 0 */ {XtNwidth, (XtArgVal) 8},
+    /* 1 */ {XtNheight, (XtArgVal) 8},
+    /* 2 */ {XtNborderWidth, (XtArgVal) 1},
+    /* 3 */ {XtNtop, XtChainTop},
+    /* 4 */ {XtNright, XtChainRight},
+    /* 5 */ {XtNstate, (XtArgVal) True},
+    /* 6 */ {XtNvertDistance, (XtArgVal) 0},
+    /* 7 */ {XtNhorizDistance, (XtArgVal) 0},
+    /* 8 */ {XtNlabel, (XtArgVal) " "},
+    /* 9 */ {XtNhighlightThickness, (XtArgVal) 0},
+};
+
 static XtActionsRec ind_actions[] =
 {
     {"EnterIndSw", (XtActionProc) draw_mousefun_ind},
@@ -256,8 +278,8 @@ static String	ind_translations =
 init_ind_panel(tool)
     TOOL	    tool;
 {
-    register int    i;
-    register ind_sw_info *sw;
+    int		i;
+    ind_sw_info	*sw;
 
     /* does he want to always see ALL of the indicator buttons? */
     if (appres.ShowAllButtons) {
@@ -285,6 +307,9 @@ init_ind_panel(tool)
     }
     NextArg(XtNmappedWhenManaged, False);
 
+    /* start with all components affected by update */
+    cur_updatemask = I_UPDATEMASK;
+
     ind_panel = XtCreateWidget("ind_panel", boxWidgetClass, tool,
 			       Args, ArgCount);
 
@@ -293,22 +318,77 @@ init_ind_panel(tool)
     for (i = 0; i < NUM_IND_SW; ++i) {
 	sw = &ind_switches[i];
 
+	FirstArg(XtNwidth, sw->sw_width);
+	NextArg(XtNheight, DEF_IND_SW_HT);
+	NextArg(XtNdefaultDistance, 0);
+	NextArg(XtNborderWidth, 0);
+	sw->formw = XtCreateWidget("button_form", formWidgetClass,
+			     ind_panel, Args, ArgCount);
+
+	/* make an update button in the upper-right corner of the main button */
+	if (sw->func & I_UPDATEMASK)
+	    {
+	    upd_args[7].value = sw->sw_width
+					- upd_args[0].value
+					- 2*upd_args[2].value;
+	    sw->updbut = XtCreateWidget("update", toggleWidgetClass,
+			     sw->formw, upd_args, XtNumber(upd_args));
+	    sw->update = True;
+	    XtAddEventHandler(sw->updbut, ButtonReleaseMask, (Boolean) 0,
+			     note_state, (XtPointer) sw);
+	    }
+
+	/* now create the command button */
 	button_args[1].value = sw->sw_width;
 	button_args[2].value = DEF_IND_SW_HT;
-	sw->widget = XtCreateWidget("button", commandWidgetClass,
-			     ind_panel, button_args, XtNumber(button_args));
+	sw->button = XtCreateManagedWidget("button", commandWidgetClass,
+			     sw->formw, button_args, XtNumber(button_args));
+	/* map this button if it is needed */
 	if (sw->func & cur_indmask)
-	    XtManageChild(sw->widget);
+	    XtManageChild(sw->formw);
 
 	/* allow left & right buttons */
 	/* (callbacks pass same data for ANY button) */
-	XtAddEventHandler(sw->widget, ButtonReleaseMask, (Boolean) 0,
-			  sel_ind_but, (caddr_t) sw);
-	XtOverrideTranslations(sw->widget,
+	XtAddEventHandler(sw->button, ButtonReleaseMask, (Boolean) 0,
+			  sel_ind_but, (XtPointer) sw);
+	XtOverrideTranslations(sw->button,
 			       XtParseTranslationTable(ind_translations));
     }
 }
 
+static void
+note_state(w, sw, event)
+    Widget	    w;
+    ind_sw_info	   *sw;
+    XButtonEvent   *event;
+{
+    if (event->button != Button1)
+	return;
+
+    /* toggle update status of this indicator */
+    sw->update = !sw->update;
+    if (sw->update)
+	cur_updatemask |= sw->func;	/* turn on update status */
+    else
+	cur_updatemask &= ~sw->func;	/* turn off update status */
+}
+
+manage_update_buts()
+{
+    int		    i;
+    for (i = 0; i < NUM_IND_SW; ++i)
+	if (ind_switches[i].func & I_UPDATEMASK)
+	    XtManageChild(ind_switches[i].updbut);
+}
+		
+unmanage_update_buts()
+{
+    int		    i;
+    for (i = 0; i < NUM_IND_SW; ++i)
+	if (ind_switches[i].func & I_UPDATEMASK)
+	    XtUnmanageChild(ind_switches[i].updbut);
+}
+		
 setup_ind_panel()
 {
     register int    i;
@@ -322,7 +402,7 @@ setup_ind_panel()
     ind_button_gc = XCreateGC(tool_d, XtWindow(ind_panel), (unsigned long) 0, NULL);
     FirstArg(XtNforeground, &ind_but_fg);
     NextArg(XtNbackground, &ind_but_bg);
-    GetValues(ind_switches[0].widget);
+    GetValues(ind_switches[0].button);
     XSetBackground(tool_d, ind_button_gc, ind_but_bg);
     XSetForeground(tool_d, ind_button_gc, ind_but_fg);
     XSetFont(tool_d, ind_button_gc, button_font->fid);
@@ -347,7 +427,7 @@ setup_ind_panel()
 	if (ind_switches[i].func == I_FILLSTYLE)
 		fill_style_sw = isw;
 
-	p = XCreatePixmap(d, XtWindow(isw->widget), isw->sw_width,
+	p = XCreatePixmap(d, XtWindow(isw->button), isw->sw_width,
 			  DEF_IND_SW_HT, DefaultDepthOfScreen(s));
 	XFillRectangle(d, p, ind_blank_gc, 0, 0,
 		       isw->sw_width, DEF_IND_SW_HT);
@@ -355,7 +435,7 @@ setup_ind_panel()
 	XDrawImageString(d, p, ind_button_gc, 3, 25, isw->line2, strlen(isw->line2));
 
 	isw->normalPM = button_args[6].value = (XtArgVal) p;
-	XtSetValues(isw->widget, &button_args[6], 1);
+	XtSetValues(isw->button, &button_args[6], 1);
     }
 
     XDefineCursor(d, XtWindow(ind_panel), arrow_cursor);
@@ -379,9 +459,9 @@ update_indpanel(mask)
     XtUnmanageChild(ind_panel);
     for (isw = ind_switches, i = 0; i < NUM_IND_SW; isw++, i++) {
 	if (isw->func & cur_indmask) {
-	    XtManageChild(isw->widget);
+	    XtManageChild(isw->formw);
 	} else {
-	    XtUnmanageChild(isw->widget);
+	    XtUnmanageChild(isw->formw);
 	}
     }
     XtManageChild(ind_panel);
@@ -390,14 +470,18 @@ update_indpanel(mask)
 /* come here when a button is pressed in the indicator panel */
 
 static void
-sel_ind_but(widget, isw, event)
+sel_ind_but(widget, closure, event, continue_to_dispatch)
     Widget	    widget;
-    ind_sw_info	   *isw;
-    XButtonEvent   *event;
+    XtPointer	    closure;
+    XEvent*	    event;
+    Boolean*	    continue_to_dispatch;
 {
-    if (event->button == Button3) {	/* right button */
+    XButtonEvent xbutton;
+    ind_sw_info *isw = (ind_sw_info *) closure;
+    xbutton = event->xbutton;
+    if (xbutton.button == Button3) {	/* right button */
 	inc_action(isw);
-    } else if (event->button == Button2) {	/* middle button */
+    } else if (xbutton.button == Button2) {	/* middle button */
 	dec_action(isw);
     } else {			/* left button */
 	if (isw->func == I_FONT)
@@ -416,18 +500,18 @@ update_string_pixmap(isw, buf, xpos)
     int		    xpos;
 {
     XDrawImageString(tool_d, isw->normalPM, ind_button_gc,
-		     xpos, 18, buf, strlen(buf));
+		     xpos, 20, buf, strlen(buf));
     /*
      * Fool the toolkit by changing the background pixmap to 0 then giving it
      * the modified one again.	Otherwise, it sees that the pixmap ID is not
      * changed and doesn't actually draw it into the widget window
      */
     button_args[6].value = 0;
-    XtSetValues(isw->widget, &button_args[6], 1);
+    XtSetValues(isw->button, &button_args[6], 1);
 
     /* put the pixmap in the widget background */
     button_args[6].value = isw->normalPM;
-    XtSetValues(isw->widget, &button_args[6], 1);
+    XtSetValues(isw->button, &button_args[6], 1);
 }
 
 static
@@ -436,13 +520,11 @@ update_choice_pixmap(isw, mode)
     int		    mode;
 {
     choice_info	   *tmp_choice;
-    int		    i;
     register Pixmap p;
 
     /* put the pixmap in the widget background */
     p = isw->normalPM;
-    tmp_choice = isw->choices;
-    for (i = mode; i > 0; i--, tmp_choice++);
+    tmp_choice = isw->choices + mode;
     XPutImage(tool_d, p, ind_button_gc, tmp_choice->icon, 0, 0, 32, 0, 32, 32);
     /*
      * Fool the toolkit by changing the background pixmap to 0 then giving it
@@ -450,9 +532,9 @@ update_choice_pixmap(isw, mode)
      * changed and doesn't actually draw it into the widget window
      */
     button_args[6].value = 0;
-    XtSetValues(isw->widget, &button_args[6], 1);
+    XtSetValues(isw->button, &button_args[6], 1);
     button_args[6].value = p;
-    XtSetValues(isw->widget, &button_args[6], 1);
+    XtSetValues(isw->button, &button_args[6], 1);
 }
 
 /********************************************************
@@ -473,7 +555,7 @@ static void
 choice_panel_dismiss()
 {
     XtDestroyWidget(choice_popup);
-    XtSetSensitive(choice_i->widget, True);
+    XtSetSensitive(choice_i->button, True);
 }
 
 static void
@@ -522,7 +604,7 @@ popup_choice_panel(isw)
     register int    i;
 
     choice_i = isw;
-    XtSetSensitive(choice_i->widget, False);
+    XtSetSensitive(choice_i->button, False);
 
     FirstArg(XtNwidth, &width);
     NextArg(XtNheight, &height);
@@ -566,7 +648,7 @@ popup_choice_panel(isw)
 		 (!all_colors_available && cur_color!=WHITE))?
 		fillstyle_choices[i].blackPM :fillstyle_choices[i].normalPM);
 	else if (isw->func == I_COLOR) {
-	    p = NULL;
+	    p = 0;
 	    tmp_choice->value = (i >= NUMCOLORS ? DEFAULT_COLOR : i);
 	} else
 	    p = XCreatePixmapFromBitmapData(tool_d, XtWindow(ind_panel),
@@ -614,7 +696,7 @@ popup_choice_panel(isw)
 	beside = XtCreateManagedWidget(" ", commandWidgetClass,
 				       form, Args, ArgCount);
 	XtAddEventHandler(beside, ButtonReleaseMask, (Boolean) 0,
-			  (XtEventHandler)choice_panel_set, (caddr_t) tmp_choice);
+			  (XtEventHandler)choice_panel_set, (XtPointer) tmp_choice);
     }
 
     /* auxiliary info */
@@ -662,7 +744,7 @@ static void
 nval_panel_dismiss()
 {
     XtDestroyWidget(nval_popup);
-    XtSetSensitive(nval_i->widget, True);
+    XtSetSensitive(nval_i->button, True);
 }
 
 static void
@@ -704,7 +786,7 @@ popup_nval_panel(isw)
     char	    buf[32];
 
     nval_i = isw;
-    XtSetSensitive(nval_i->widget, False);
+    XtSetSensitive(nval_i->button, False);
 
     FirstArg(XtNwidth, &width);
     NextArg(XtNheight, &height);
@@ -736,7 +818,7 @@ popup_nval_panel(isw)
     if (isw->type == I_IVAL)
 	    sprintf(buf, "%d", (*isw->i_varadr));
     else
-	    sprintf(buf, "%4.1f", (*isw->f_varadr));
+	    sprintf(buf, "%4.2f", (*isw->f_varadr));
     FirstArg(XtNfromVert, label);
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNfromHoriz, newvalue);
@@ -882,10 +964,10 @@ show_linewidth(sw)
      * changed and doesn't actually draw it into the widget window
      */
     button_args[6].value = 0;
-    XtSetValues(sw->widget, &button_args[6], 1);
+    XtSetValues(sw->button, &button_args[6], 1);
     /* put the pixmap in the widget background */
     button_args[6].value = (XtArgVal) sw->normalPM;
-    XtSetValues(sw->widget, &button_args[6], 1);
+    XtSetValues(sw->button, &button_args[6], 1);
     put_msg("LINE Thickness = %d", cur_linewidth);
 }
 
@@ -1142,10 +1224,10 @@ show_boxradius(sw)
      * changed and doesn't actually draw it into the widget window
      */
     button_args[6].value = 0;
-    XtSetValues(sw->widget, &button_args[6], 1);
+    XtSetValues(sw->button, &button_args[6], 1);
     /* put the pixmap in the widget background */
     button_args[6].value = (XtArgVal) sw->normalPM;
-    XtSetValues(sw->widget, &button_args[6], 1);
+    XtSetValues(sw->button, &button_args[6], 1);
     put_msg("ROUNDED-CORNER BOX Radius = %d", cur_boxradius);
 }
 
@@ -1194,9 +1276,9 @@ show_fillstyle(sw)
 		((cur_fillstyle - 1) * 100) / (NUMFILLPATS - 1));
     }
     button_args[6].value = 0;
-    XtSetValues(sw->widget, &button_args[6], 1);
+    XtSetValues(sw->button, &button_args[6], 1);
     button_args[6].value = (XtArgVal) sw->normalPM;
-    XtSetValues(sw->widget, &button_args[6], 1);
+    XtSetValues(sw->button, &button_args[6], 1);
 }
 
 /* COLOR */
@@ -1248,9 +1330,9 @@ show_color(sw)
     XDrawImageString(tool_d, sw->normalPM, ind_button_gc, 3, 25,
 	      colorNames[cur_color + 1], strlen(colorNames[cur_color + 1]));
     button_args[6].value = 0;
-    XtSetValues(sw->widget, &button_args[6], 1);
+    XtSetValues(sw->button, &button_args[6], 1);
     button_args[6].value = (XtArgVal) sw->normalPM;
-    XtSetValues(sw->widget, &button_args[6], 1);
+    XtSetValues(sw->button, &button_args[6], 1);
     show_fillstyle(fill_style_sw);
 }
 
@@ -1300,7 +1382,7 @@ show_font(sw)
     /* and redraw info */
     XDrawImageString(tool_d, sw->normalPM, ind_button_gc, 3, 12, sw->line1,
 		     strlen(sw->line1));
-    XDrawImageString(tool_d, sw->normalPM, ind_button_gc, 3, 25, sw->line2,
+    XDrawImageString(tool_d, sw->normalPM, ind_button_gc, 3, 25, sw->line2, 
 		     strlen(sw->line2));
 
     XCopyArea(tool_d, using_ps ? psfont_menu_bitmaps[cur_ps_font + 1] :
@@ -1311,10 +1393,10 @@ show_font(sw)
 	  using_ps ? 32 : 32 + (PS_FONTPANE_WD - LATEX_FONTPANE_WD) / 2, 6);
 
     button_args[6].value = 0;
-    XtSetValues(sw->widget, &button_args[6], 1);
+    XtSetValues(sw->button, &button_args[6], 1);
     /* put the pixmap in the widget background */
     button_args[6].value = (XtArgVal) sw->normalPM;
-    XtSetValues(sw->widget, &button_args[6], 1);
+    XtSetValues(sw->button, &button_args[6], 1);
     put_msg("Font: %s", using_ps ? ps_fontinfo[cur_ps_font + 1].name :
 	    latex_fontinfo[cur_latex_font].name);
 }
@@ -1333,7 +1415,7 @@ popup_fonts(sw)
     return_sw = sw;
     psflag = using_ps ? 1 : 0;
     fontpane_popup(&cur_ps_font, &cur_latex_font, &psflag,
-		   show_font_return, sw->widget);
+		   show_font_return, sw->button);
 }
 
 show_font_return(w)
@@ -1505,7 +1587,14 @@ static
 inc_zoom(sw)
     ind_sw_info	   *sw;
 {
-    zoomscale++;
+    if (zoomscale < 1.0)
+	{
+	zoomscale = (int)(zoomscale*4.0)/4.0 + 0.25;
+	if (zoomscale > 1.0)
+		zoomscale = 1.0;
+	}
+    else
+	zoomscale = (int)zoomscale + 1.0;
     show_zoom(sw);
 }
 
@@ -1513,32 +1602,76 @@ static
 dec_zoom(sw)
     ind_sw_info	   *sw;
 {
-    zoomscale--;
+    if (zoomscale <= 1.0)	/* keep to 0.25 increments */
+	zoomscale = (int)((zoomscale+0.23)*4.0)/4.0 - 0.25;
+    else
+	{
+	zoomscale = (int)zoomscale - 1.0;
+	if (zoomscale < 1.0)
+		zoomscale = 1.0;
+	}
     show_zoom(sw);
 }
 
 show_zoom(sw)
     ind_sw_info	   *sw;
 {
-    if (zoomscale < 1)
-	zoomscale = 1;
-    else if (zoomscale > 10)
-	zoomscale = 10;
+    if (zoomscale < 0.1)
+	zoomscale = 0.1;
+    else if (zoomscale > 10.0)
+	zoomscale = 10.0;
 
-    put_msg("Zoom scale %2d", zoomscale);
+    put_fmsg("Zoom scale %.2f", zoomscale);
     if (zoomscale == old_zoomscale)
 	return;
 
     /* write the font size in the background pixmap */
     indbuf[0] = indbuf[1] = indbuf[2] = indbuf[3] = indbuf[4] = '\0';
-    sprintf(indbuf, "%2d", zoomscale);
-    update_string_pixmap(sw, indbuf, sw->sw_width - 18);
+    if (zoomscale == (int) zoomscale)
+	sprintf(indbuf, " %.0f  ", zoomscale);
+    else
+	sprintf(indbuf, "%.2f", zoomscale);
+    update_string_pixmap(sw, indbuf, sw->sw_width - 24);
 
     /* fix up the rulers and grid */
     reset_rulers();
     redisplay_rulers();
     setup_grid(cur_gridmode);
     old_zoomscale = zoomscale;
+}
+
+/* DEPTH */
+
+static
+inc_depth(sw)
+    ind_sw_info	   *sw;
+{
+    cur_depth++;
+    show_depth(sw);
+}
+
+static
+dec_depth(sw)
+    ind_sw_info	   *sw;
+{
+    cur_depth--;
+    show_depth(sw);
+}
+
+show_depth(sw)
+    ind_sw_info	   *sw;
+{
+    if (cur_depth < 0)
+	cur_depth = 0;
+    else if (cur_depth > MAXDEPTH)
+	cur_depth = MAXDEPTH;
+
+    put_msg("Depth %3d", cur_depth);
+
+    /* write the font size in the background pixmap */
+    indbuf[0] = indbuf[1] = indbuf[2] = indbuf[3] = indbuf[4] = '\0';
+    sprintf(indbuf, "%3d", cur_depth);
+    update_string_pixmap(sw, indbuf, sw->sw_width - 22);
 }
 
 /* TEXTSTEP */

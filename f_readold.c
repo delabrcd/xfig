@@ -61,7 +61,7 @@ read_1_3_objects(fp, obj)
 
     n = fscanf(fp, "%d%d%d%d\n", &pixperinch, &coord_sys, &canvaswid, &canvasht);
     if (n != 4) {
-	put_msg("Incorrect format in the first line in input file");
+	file_msg("Incorrect format in the first line in input file");
 	return (-1);
     }
     obj->nwcorner.x = pixperinch;
@@ -123,7 +123,7 @@ read_1_3_objects(fp, obj)
 	    num_object++;
 	    break;
 	default:
-	    put_msg("Incorrect object code %d", object);
+	    file_msg("Incorrect object code %d", object);
 	    return (-1);
 	}			/* switch */
     }				/* while */
@@ -158,7 +158,7 @@ read_1_3_arcobject(fp)
 	       &a->point[1].x, &a->point[1].y,
 	       &a->point[2].x, &a->point[2].y);
     if (n != 17) {
-	put_msg("incomplete arc data");
+	file_msg("Incomplete arc data");
 	free((char *) a);
 	return (NULL);
     }
@@ -200,7 +200,7 @@ read_1_3_compoundobject(fp)
     n = fscanf(fp, " %d %d %d %d\n", &com->nwcorner.x, &com->nwcorner.y,
 	       &com->secorner.x, &com->secorner.y);
     if (n != 4) {
-	put_msg("Incorrect compound object format");
+	file_msg("Incorrect compound object format");
 	return (NULL);
     }
     while (fscanf(fp, "%d", &object) == 1) {
@@ -272,7 +272,7 @@ read_1_3_compoundobject(fp)
     if (feof(fp))
 	return (com);
     else {
-	put_msg("Format error: %s", sys_errlist[errno]);
+	file_msg("Format error: %s", sys_errlist[errno]);
 	return (NULL);
     }
 }
@@ -291,7 +291,7 @@ read_1_3_ellipseobject(fp)
     e->angle = 0.0;
     e->depth = 0;
     e->pen = 0;
-    e->fill_style = NULL;
+    e->fill_style = 0;
     e->next = NULL;
     n = fscanf(fp, " %d %d %d %f %d %d %d %d %d %d %d %d %d\n",
 	       &t, &e->style,
@@ -301,7 +301,7 @@ read_1_3_ellipseobject(fp)
 	       &e->start.x, &e->start.y,
 	       &e->end.x, &e->end.y);
     if (n != 13) {
-	put_msg("incomplete ellipse data");
+	file_msg("Incomplete ellipse data");
 	free((char *) e);
 	return (NULL);
     }
@@ -330,7 +330,7 @@ read_1_3_lineobject(fp)
     l->color = BLACK;
     l->depth = 0;
     l->pen = 0;
-    l->fill_style = NULL;
+    l->fill_style = 0;
     l->for_arrow = NULL;
     l->back_arrow = NULL;
     l->next = NULL;
@@ -343,7 +343,7 @@ read_1_3_lineobject(fp)
 	       &l->style, &l->thickness, &l->style_val,
 	       &f, &b, &h, &w, &p->x, &p->y);
     if (n != 10) {
-	put_msg("incomplete line data");
+	file_msg("Incomplete line data");
 	free((char *) l);
 	return (NULL);
     }
@@ -365,7 +365,7 @@ read_1_3_lineobject(fp)
     }
     for (;;) {
 	if (fscanf(fp, " %d %d", &x, &y) != 2) {
-	    put_msg("incomplete line object");
+	    file_msg("Incomplete line object");
 	    free_linestorage(l);
 	    return (NULL);
 	}
@@ -396,7 +396,7 @@ read_1_3_splineobject(fp)
     s->color = BLACK;
     s->depth = 0;
     s->pen = 0;
-    s->fill_style = NULL;
+    s->fill_style = 0;
     s->for_arrow = NULL;
     s->back_arrow = NULL;
     s->controls = NULL;
@@ -411,7 +411,7 @@ read_1_3_splineobject(fp)
 	       &f, &b,
 	       &h, &w, &p->x, &p->y);
     if (n != 10) {
-	put_msg("incomplete spline data");
+	file_msg("Incomplete spline data");
 	free((char *) s);
 	return (NULL);
     }
@@ -431,7 +431,7 @@ read_1_3_splineobject(fp)
     }
     for (;;) {
 	if (fscanf(fp, " %d %d", &x, &y) != 2) {
-	    put_msg("incomplete spline object");
+	    file_msg("Incomplete spline object");
 	    free_splinestorage(s);
 	    return (NULL);
 	};
@@ -472,7 +472,7 @@ read_1_3_textobject(fp)
 	       &t->size, &t->flags, &t->height, &t->length,
 	       &t->base_x, &t->base_y, buf);
     if (n != 8) {
-	put_msg("incomplete text data");
+	file_msg("Incomplete text data");
 	free((char *) t);
 	return (NULL);
     }

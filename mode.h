@@ -160,6 +160,8 @@ extern char    *lang_texts[NUM_EXP_LANG];
 /***************************  Mode Settings  ****************************/
 
 extern int	cur_objmask;
+extern int	cur_updatemask;
+extern int	cur_depth;
 
 /***************************  Text Settings  ****************************/
 

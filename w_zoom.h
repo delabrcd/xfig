@@ -14,37 +14,38 @@
  *
  */
 
-extern int	zoomscale;
+extern float	zoomscale;
 extern int	zoomxoff;
 extern int	zoomyoff;
 
-#define ZOOMX(x) (zoomscale*(x-zoomxoff))
-#define ZOOMY(y) (zoomscale*(y-zoomyoff))
-#define BACKX(x) ((int) (x/(float)zoomscale+zoomxoff+0.5))
-#define BACKY(y) ((int) (y/(float)zoomscale+zoomyoff+0.5))
+#define ZOOMX(x) round(zoomscale*((x)-zoomxoff))
+#define ZOOMY(y) round(zoomscale*((y)-zoomyoff))
+#define BACKX(x) round((x)/zoomscale+zoomxoff)
+#define BACKY(y) round((y)/zoomscale+zoomyoff)
 
 #define zXDrawPoint(d,w,gc,x,y) XDrawPoint(d,w,gc,ZOOMX(x),ZOOMY(y))
 #define zXDrawArc(d,w,gc,x,y,d1,d2,a1,a2)\
-    XDrawArc(d,w,gc,ZOOMX(x),ZOOMY(y),zoomscale*(d1),zoomscale*(d2),\
+    XDrawArc(d,w,gc,ZOOMX(x),ZOOMY(y),round(zoomscale*(d1)),round(zoomscale*(d2)),\
 	      a1,a2)
 #define zXFillArc(d,w,gc,x,y,d1,d2,a1,a2)\
-    XFillArc(d,w,gc,ZOOMX(x),ZOOMY(y),zoomscale*(d1),zoomscale*(d2),\
+    XFillArc(d,w,gc,ZOOMX(x),ZOOMY(y),round(zoomscale*(d1)),round(zoomscale*(d2)),\
 	      a1,a2)
 #define zXDrawLine(d,w,gc,x1,y1,x2,y2)\
     XDrawLine(d,w,gc,ZOOMX(x1),ZOOMY(y1),ZOOMX(x2),ZOOMY(y2))
 #define zXDrawString(d,w,gc,x,y,s,l)\
     XDrawString(d,w,gc,ZOOMX(x),ZOOMY(y),s,l)
 #define zXFillRectangle(d,w,gc,x1,y1,x2,y2)\
-    XFillRectangle(d,w,gc,ZOOMX(x1),ZOOMY(y1),zoomscale*(x2),zoomscale*(y2))
+    XFillRectangle(d,w,gc,ZOOMX(x1),ZOOMY(y1),\
+		round(zoomscale*(x2)),round(zoomscale*(y2)))
 #define zXDrawRectangle(d,w,gc,x1,y1,x2,y2)\
-    XDrawRectangle(d,w,gc,ZOOMX(x1),ZOOMY(y1),zoomscale*(x2),zoomscale*(y2))
+    XDrawRectangle(d,w,gc,ZOOMX(x1),ZOOMY(y1),\
+		round(zoomscale*(x2)),round(zoomscale*(y2)))
 #define zXDrawLines(d,w,gc,p,n,m)\
     {int i;\
      for(i=0;i<n;i++){p[i].x=ZOOMX(p[i].x);p[i].y=ZOOMY(p[i].y);}\
      XDrawLines(d,w,gc,p,n,m);\
      for(i=0;i<n;i++){p[i].x=BACKX(p[i].x);p[i].y=BACKY(p[i].y);}\
     }
-
 #define zXFillPolygon(d,w,gc,p,n,m,o)\
     {int i;\
      for(i=0;i<n;i++){p[i].x=ZOOMX(p[i].x);p[i].y=ZOOMY(p[i].y);}\

@@ -15,6 +15,7 @@
  */
 
 #include <X11/Xlib.h>
+#include "fig.h"
 #include "u_fonts.h"
 #include "object.h"
 
@@ -23,33 +24,33 @@
 /* printer font names for indicator window */
 
 struct _xfstruct x_fontinfo[NUM_X_FONTS] = {
-    {"-adobe-times-medium-r-*--*", NULL},
-    {"-adobe-times-medium-i-*--*", NULL},
-    {"-adobe-times-bold-r-*--*", NULL},
-    {"-adobe-times-bold-i-*--*", NULL},
-    {"-schumacher-clean-medium-r-*--*", NULL},
-    {"-schumacher-clean-medium-i-*--*", NULL},
-    {"-schumacher-clean-bold-r-*--*", NULL},
-    {"-schumacher-clean-bold-i-*--*", NULL},
-    {"-adobe-courier-medium-r-*--*", NULL},
-    {"-adobe-courier-medium-o-*--*", NULL},
-    {"-adobe-courier-bold-r-*--*", NULL},
-    {"-adobe-courier-bold-o-*--*", NULL},
-    {"-adobe-helvetica-medium-r-*--*", NULL},
-    {"-adobe-helvetica-medium-o-*--*", NULL},
-    {"-adobe-helvetica-bold-r-*--*", NULL},
-    {"-adobe-helvetica-bold-o-*--*", NULL},
-    {"-adobe-new century schoolbook-medium-r-*--*", NULL},
-    {"-adobe-new century schoolbook-medium-i-*--*", NULL},
-    {"-adobe-new century schoolbook-bold-r-*--*", NULL},
-    {"-adobe-new century schoolbook-bold-i-*--*", NULL},
-    {"-*-lucidabright-medium-r-*--*", NULL},
-    {"-*-lucidabright-medium-i-*--*", NULL},
-    {"-*-lucidabright-demibold-r-*--*", NULL},
-    {"-*-lucidabright-demibold-i-*--*", NULL},
-    {"*-symbol-medium-r-*--*", NULL},
-    {"-*-zapfchancery-medium-i-*--*", NULL},
-    {"-*-zapfdingbats-*-*-*--*", NULL},
+    {"-adobe-times-medium-r-*--", NULL},
+    {"-adobe-times-medium-i-*--", NULL},
+    {"-adobe-times-bold-r-*--", NULL},
+    {"-adobe-times-bold-i-*--", NULL},
+    {"-schumacher-clean-medium-r-*--", NULL},
+    {"-schumacher-clean-medium-i-*--", NULL},
+    {"-schumacher-clean-bold-r-*--", NULL},
+    {"-schumacher-clean-bold-i-*--", NULL},
+    {"-adobe-courier-medium-r-*--", NULL},
+    {"-adobe-courier-medium-o-*--", NULL},
+    {"-adobe-courier-bold-r-*--", NULL},
+    {"-adobe-courier-bold-o-*--", NULL},
+    {"-adobe-helvetica-medium-r-*--", NULL},
+    {"-adobe-helvetica-medium-o-*--", NULL},
+    {"-adobe-helvetica-bold-r-*--", NULL},
+    {"-adobe-helvetica-bold-o-*--", NULL},
+    {"-adobe-new century schoolbook-medium-r-*--", NULL},
+    {"-adobe-new century schoolbook-medium-i-*--", NULL},
+    {"-adobe-new century schoolbook-bold-r-*--", NULL},
+    {"-adobe-new century schoolbook-bold-i-*--", NULL},
+    {"-*-lucidabright-medium-r-*--", NULL},
+    {"-*-lucidabright-medium-i-*--", NULL},
+    {"-*-lucidabright-demibold-r-*--", NULL},
+    {"-*-lucidabright-demibold-i-*--", NULL},
+    {"*-symbol-medium-r-*--", NULL},
+    {"-*-zapfchancery-medium-i-*--", NULL},
+    {"-*-zapfdingbats-*-*-*--", NULL},
 };
 
 struct _fstruct ps_fontinfo[NUM_PS_FONTS + 1] = {

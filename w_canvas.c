@@ -28,7 +28,9 @@
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
+#ifndef SYSV
 #include "sys/time.h"
+#endif
 #include <X11/Xatom.h>
 
 #ifdef NOSTRSTR
@@ -72,7 +74,6 @@ static CompKey *allCompKey = NULL;
 static		canvas_selected();
 static unsigned char getComposeKey();
 static		readComposeKey();
-static void	clear_char_string();
 
 int		ignore_exp_cnt = 2;	/* we get 2 expose events at startup */
 
@@ -189,12 +190,6 @@ init_canvas(tool)
     return (1);
 }
 
-static void
-clear_char_string()
-{
-    char_handler('');
-}
-
 setup_canvas()
 {
     canvas_win = XtWindow(canvas_sw);
@@ -298,7 +293,8 @@ canvas_selected(tool, event, params, nparams)
 	    t == XK_Up ||
 	    t == XK_Down ||
 	    t == XK_Home ||
-	    t == XK_Multi_key) {
+	    t == XK_Multi_key ||
+	    t == XK_Alt_L ) {
 	    switch (t) {
 	    case XK_Left:
 		pan_left();
@@ -316,6 +312,7 @@ canvas_selected(tool, event, params, nparams)
 		pan_origin();
 		break;
 	    case XK_Multi_key:
+	    case XK_Alt_L:
 		compose_key = 1;
 		break;
 	    }
@@ -432,11 +429,42 @@ readComposeKey()
     char	   *p2;
     char	   *p3;
     long	    size;
+    int		    charfrom;
+    int		    charinto;
 
-    /* put together the filename from the dir name and file name */
-    strcpy(line, XFIGLIBDIR);
-    strcat(line, "/");
-    strcat(line, appres.keyFile);
+
+/* Treat the compose key DB a different way.  In this order:
+ *
+ *  1.	If the resource contains no "/", prefix it with the name of
+ *	the wired-in directory and use that.
+ *
+ *  2.	Otherwise see if it begins with "~/", and if so use that,
+ *	with the leading "~" replaced by the name of this user's
+ *	$HOME directory.
+ *
+ * This way a user can have private compose key settings even when running
+ * xfig privately.
+ *
+ * Pete Kaiser
+ * 24 April 1992
+ */
+
+     /* no / in name, make relative to XFIGLIBDIR */
+     if (strchr(appres.keyFile, '/') == NULL) {
+	 strcpy(line, XFIGLIBDIR);
+	 strcat(line, "/");
+	 strcat(line, appres.keyFile);
+	 }
+
+     /* expand the ~ to the user's home directory */
+     else if (! strncmp(appres.keyFile, "~/", 2)) {
+	 strcpy(line, getenv("HOME"));
+	 for (charinto = strlen(line), charfrom = 1;
+	      line[charinto++] = appres.keyFile[charfrom++]; );
+       }
+    else
+	strcpy(line, appres.keyFile);
+
     if ((st = fopen(line, "r")) == NULL) {
 	allCompKey = NULL;
 	fprintf(stderr,"%cCan't open compose key file '%s',\n",007,line);

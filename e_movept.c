@@ -630,8 +630,6 @@ static
 fix_box(x, y)
     int		    x, y;
 {
-    int		    delta;
-
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     adjust_box_pos(x, y, from_x, from_y, &x, &y);
     new_l = copy_line(cur_l);
@@ -655,7 +653,6 @@ assign_newboxpoint(b, x1, y1, x2, y2)
     int		    x1, y1, x2, y2;
 {
     F_point	   *p;
-    register int    tmp;
 
     p = b->points;
     if (p->x != x1)

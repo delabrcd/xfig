@@ -32,6 +32,19 @@ INSTALLATION NOTES:
 	.Xdefaults file.
 	NOTE: this only works under X11R5.
 
+If your system doesn't have strstr(), add the flag -DNOSTRSTR in your Imakefile
+   in the DEFINES line.
+If your system doesn't have strtol(), add the flag -DNOSTRTOL in your Imakefile
+   in the DEFINES line.
+If you are running on an IBM RS/6000 with AIX 3.2, add the flag -DDPS in your
+   Imakefile and you will see the full PostScript object when using EPS objects.
+ 
+The maximum width of the top ruler is set to 1020 pixels and the height of the
+side ruler to 860 pixels.  If your server can handle pixmaps larger than this
+and you need longer/taller rulers, you may set the maximum allowed in your
+Imakefile with -DMAX_TOPRULER_WD=1160 (or whatever value you wish) and 
+-DMAX_SIDERULER_HT=1024 (or whatever value you wish).
+
 The SMOOTHMOTION option toggles between two methods for tracking the
 cursor.  The first way (SMOOTHMOTION) just uses the (x,y) information given
 in the X pointer motion event.  If your display server doesn't implement
@@ -43,18 +56,7 @@ a motion event is received and if you make a large movement and then
 stop actually turns out to involve less work even though the XQueryPointer
 call is quite slow.
 The SMOOTHMOTION method is also automatically used for OpenWindows (when the
--DOPENWIN flag is used).
-
------------------
-OpenWindows users
------------------
-
-Openwindows has scalable fonts so xfig must be compiled with the -DOPENWIN
-flag in order to handle this.  Also, there is a difference in the way the
-pointer position is queried for OpenWindows.  See the SMOOTHMOTION description.
-
-There is also a bug in OpenWindows 2.0 which relates to pixmaps in widgets.
-You must compile xfig with the -DOPENWIN_BUG option for this problem.
+-DOPENWIN flag is used in the Imakefile DEFINES line).
 
 ----------------------
 Printing your figures:
@@ -66,6 +68,18 @@ package by Micah Beck.
 It is available from export.lcs.mit.edu in /contrib/transfig.tar.Z or
 ftp.cs.cornell.edu in the directory /pub/fig.
 See the man pages for more information.
+
+-----------------
+OpenWindows users
+-----------------
+
+Openwindows has scalable fonts so xfig must be compiled with the -DOPENWIN
+flag in order to handle this.  Also, there is a difference in the way the
+pointer position is queried for OpenWindows.  See the SMOOTHMOTION description.
+
+There is also a bug in OpenWindows 2.0 which relates to pixmaps in widgets.
+You must compile xfig with the -DOPENWIN_BUG option in the Imakefile DEFINES
+line for this problem.
 
 ----------------------------------------------
 Possible problems encountered installing xfig:

@@ -241,7 +241,7 @@ fix_linepoint_adding(x, y)
     p->x = x;
     p->y = y;
     elastic_linelink();
-    linepoint_adding(cur_l, left_point, p, right_point);
+    linepoint_adding(cur_l, left_point, p);
     wrapup_pointadding();
 }
 
@@ -257,13 +257,13 @@ mm_fix_linepoint_adding()
     p->x = cur_x;
     p->y = cur_y;
     elastic_linelink();
-    linepoint_adding(cur_l, left_point, p, right_point);
+    linepoint_adding(cur_l, left_point, p);
     wrapup_pointadding();
 }
 
-linepoint_adding(line, left_point, added_point, right_point)
+linepoint_adding(line, left_point, added_point)
     F_line	   *line;
-    F_point	   *left_point, *added_point, *right_point;
+    F_point	   *left_point, *added_point;
 {
     mask_toggle_linemarker(line);
     draw_line(line, ERASE);

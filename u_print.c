@@ -57,8 +57,8 @@ print_to_printer(printer, center, mag)
 
     /* make up the whole translate/print command */
     sprintf(prcmd, "%s %s | %s", translator, tmpfile, syspr);
-    if (system(prcmd) == 127)
-	put_msg("Error during PRINT (unable to find fig2dev?)");
+    if (system(prcmd) != 0)
+	file_msg("Error during PRINT (unable to find fig2dev?)");
     else {
 	if (emptyname(printer))
 	    put_msg("Printing figure on printer %s in %s mode ... done",
@@ -76,6 +76,7 @@ print_to_file(file, lang, mag, center)
 {
     char	    prcmd[200];
     char	    tmpfile[32];
+    int		    status;
 
     if (!ok_to_write(file, "EXPORT"))
 	return (1);
@@ -88,20 +89,20 @@ print_to_file(file, lang, mag, center)
 	    file, print_landscape ? "LANDSCAPE" : "PORTRAIT");
     app_flush();		/* make sure message gets displayed */
 
-    if (!strncmp(lang, "ps", 2))
+    if (!strcmp(lang, "ps"))
 	sprintf(prcmd, "fig2dev -Lps %s -P -m %f %s %s %s", center ? "-c" : "",
 		mag, print_landscape ? "-l xxx" : " ", tmpfile, file);
-    else if (!strncmp(lang, "eps", 3))
+    else if (!strcmp(lang, "eps"))
 	sprintf(prcmd, "fig2dev -Lps -m %f %s %s %s",
 		mag, print_landscape ? "-l xxx" : " ", tmpfile, file);
-    else if (!strncmp(lang, "ibmgl", 5))
+    else if (!strcmp(lang, "ibmgl"))
 	sprintf(prcmd, "fig2dev -Libmgl -m %f %s %s %s",
 		mag, print_landscape ? " " : "-P", tmpfile, file);
     else
 	sprintf(prcmd, "fig2dev -L%s -m %f %s %s", lang,
 		mag, tmpfile, file);
-    if (system(prcmd) == 127)
-	put_msg("Error during EXPORT (unable to find fig2dev?)");
+    if (system(prcmd) != 0)
+	file_msg("Error during EXPORT (unable to find fig2dev?)");
     else
 	put_msg("Exporting figure to file \"%s\" in %s mode ... done",
 		file, print_landscape ? "LANDSCAPE" : "PORTRAIT");

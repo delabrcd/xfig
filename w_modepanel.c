@@ -91,7 +91,7 @@ static mode_sw_info mode_switches[] = {
     {&cirdia_ic, F_CIRCLE_BY_DIA, circlebydiameter_drawing_selected, M_NONE,
     I_BOX, "CIRCLE drawing: specify DIAMETER",},
     {&ellrad_ic, F_ELLIPSE_BY_RAD, ellipsebyradius_drawing_selected, M_NONE,
-    I_BOX, "ELLIPSE drawing: specify RADIUSES",},
+    I_BOX, "ELLIPSE drawing: specify RADII",},
     {&elldia_ic, F_ELLIPSE_BY_DIA, ellipsebydiameter_drawing_selected, M_NONE,
     I_BOX, "ELLIPSE drawing: specify DIAMETERS",},
     {&c_spl_ic, F_CLOSED_SPLINE, spline_drawing_selected, M_NONE,
@@ -115,7 +115,7 @@ static mode_sw_info mode_switches[] = {
     {&arc_ic, F_CIRCULAR_ARC, arc_drawing_selected, M_NONE,
     I_ARC, "ARC drawing: specify three points on the arc",},
     {&epsobj_ic, F_EPSOBJ, epsobj_drawing_selected, M_NONE,
-    I_MIN2, "Encapsulated Postscript Object",},
+    I_EPSOBJ, "Encapsulated Postscript Object",},
     {&text_ic, F_TEXT, text_drawing_selected, M_TEXT_NORMAL,
     I_TEXT, "TEXT input (from keyboard)",},
     {&glue_ic, F_GLUE, compound_selected, M_ALL,
@@ -234,7 +234,7 @@ init_mode_panel(tool)
 
 	/* left button changes mode */
 	XtAddEventHandler(sw->widget, ButtonReleaseMask, (Boolean) 0,
-			  sel_mode_but, (caddr_t) sw);
+			  sel_mode_but, (XtPointer) sw);
 	XtOverrideTranslations(sw->widget,
 			       XtParseTranslationTable(mode_translations));
     }
@@ -296,13 +296,17 @@ setup_mode_panel()
 /* come here when a button is pressed in the mode panel */
 
 static void
-sel_mode_but(widget, msw, event)
+sel_mode_but(widget, closure, event, continue_to_dispatch)
     Widget          widget;
-    mode_sw_info   *msw;
-    XButtonEvent   *event;
+    XtPointer	    closure;
+    XEvent*	    event;
+    Boolean*	    continue_to_dispatch;
 {
+    XButtonEvent    xbutton;
+    mode_sw_info    *msw = (mode_sw_info *) closure;
     int             new_objmask;
 
+    xbutton = event->xbutton;
     if (action_on) {
 	if (cur_mode == F_TEXT)
 	    finish_text_input();/* finish up any text input */
@@ -312,9 +316,12 @@ sel_mode_but(widget, msw, event)
 	}
     } else if (highlighting)
 	erase_objecthighlight();
-    if (event->button == Button1) {	/* left button */
+    if (xbutton.button == Button1) {	/* left button */
 	turn_off_current();
 	turn_on(msw);
+	/* turn off the update boxes if not in update mode */
+	if (msw->mode != F_UPDATE)
+		unmanage_update_buts();
 	update_indpanel(msw->indmask);
 	put_msg(msw->modemsg);
 	if ((cur_mode == F_GLUE || cur_mode == F_BREAK) &&

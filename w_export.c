@@ -16,7 +16,6 @@
 
 /* IMPORTS */
 
-#include <math.h>		/* for atof() */
 #include "fig.h"
 #include "mode.h"
 #include "resources.h"
@@ -97,15 +96,16 @@ void
 do_export(w)
     Widget	    w;
 {
-    DeclareArgs(1);
-    float	    mag;
-    char	   *fval, *dval;
-    char	    filename[100];
+	DeclareArgs(1);
+	float	    mag;
+	char	   *fval, *dval;
+	char	    filename[100];
 
-    if (emptyfigure_msg(export_msg))
-	return;
+	if (emptyfigure_msg(export_msg))
+		return;
 
-    if (export_popup) {
+	if (!export_popup) 
+		create_export_panel(w);
 	FirstArg(XtNstring, &fval);
 	GetValues(exp_selfile);
 	FirstArg(XtNstring, &dval);
@@ -133,10 +133,6 @@ do_export(w)
 		export_panel_dismiss();
 	    XtSetSensitive(export_but, True);
 	}
-    } else {
-	update_def_filename();
-	print_to_file(default_file, lang_items[cur_exp_lang], 0, 1.0);
-    }
 }
 
 static void
@@ -201,17 +197,32 @@ lang_select(w, new_lang, garbage)
 popup_export_panel(w)
     Widget	    w;
 {
-    Widget	    image, beside, below;
-    XtTranslations  popdown_actions;
-    PIX_FONT	    temp_font;
+	DeclareArgs(10);
 
-    DeclareArgs(10);
+	set_temp_cursor(wait_cursor);
+	XtSetSensitive(w, False);
+	export_up = True;
 
-    set_temp_cursor(wait_cursor);
-    XtSetSensitive(w, False);
-    export_up = True;
+	if (!export_popup)
+		create_export_panel(w);
+	else
+		Rescan(0, 0, 0, 0);
 
-    if (!export_popup) {
+	FirstArg(XtNlabel, default_file);
+	NextArg(XtNwidth, 250);
+	SetValues(dfile_text);
+	XtPopup(export_popup, XtGrabNonexclusive);
+	reset_cursor();
+}
+
+create_export_panel(w)
+    Widget	    w;
+{
+	Widget	    	beside, below;
+	XtTranslations  popdown_actions;
+	PIX_FONT	temp_font;
+	DeclareArgs(10);
+
 	export_w = w;
 	XtTranslateCoords(w, (Position) 0, (Position) 0, &xposn, &yposn);
 
@@ -345,6 +356,9 @@ popup_export_panel(w)
 
 	create_dirinfo(export_panel, exp_selfile, &beside, &below,
 		       &exp_mask, &exp_dir, &exp_flist, &exp_dlist);
+	/* make <return> in the file list window export the file */
+	XtOverrideTranslations(exp_flist,
+			   XtParseTranslationTable(file_name_translations));
 
 	FirstArg(XtNlabel, "Cancel");
 	NextArg(XtNfromHoriz, beside);
@@ -380,15 +394,7 @@ popup_export_panel(w)
 	    XtSetSensitive(just_lab, False);
 	    XtSetSensitive(just_panel, False);
 	}
-    } else {
-	Rescan();
-    }
-    update_def_filename();
-    FirstArg(XtNlabel, default_file);
-    NextArg(XtNwidth, 250);
-    SetValues(dfile_text);
-    XtPopup(export_popup, XtGrabNonexclusive);
-    reset_cursor();
+	update_def_filename();
 }
 
 update_def_filename()

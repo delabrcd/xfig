@@ -56,6 +56,7 @@ static		points_panel();
 static		get_points();
 int		panel_set_value();
 static XtCallbackProc done_button(), apply_button(), cancel_button();
+static XtCallbackProc toggle_for_arrow(), toggle_back_arrow();
 static void	line_style_select();
 static void	textjust_select();
 static void	fill_style_select();
@@ -95,12 +96,6 @@ static Widget	fill_style_label;
 static Widget	style_panel;
 static Widget	style_val_panel;
 
-#ifdef notdef
-/* not used at present */
-static Widget	for_arrow_panel;
-static Widget	back_arrow_panel;
-
-#endif
 static Widget	text_panel;
 static Widget	eps_name_panel;
 static Widget	x1_panel, y1_panel;
@@ -328,8 +323,7 @@ origsize_eps(w, ev)
     XButtonEvent   *ev;
 {
     struct f_point  p1, p2;
-    int		    dx, dy, rotation;
-    float	    ratio;
+    int		    dx, dy;
     register float  orig_ratio = new_l->eps->hw_ratio;
 
     p1.x = atoi(panel_get_value(x1_panel));
@@ -947,8 +941,6 @@ get_new_ellipse_values()
 static
 done_ellipse()
 {
-    int		    xmin, ymin, xmax, ymax;
-
     old_e = new_e->next;
     switch (button_result) {
     case APPLY:
@@ -1021,8 +1013,6 @@ get_new_arc_values()
 static
 done_arc()
 {
-    int		    xmin, ymin, xmax, ymax;
-
     old_a = new_a->next;
     switch (button_result) {
     case APPLY:
@@ -1091,8 +1081,6 @@ make_window_spline(s)
 static
 done_spline()
 {
-    int		    xmin, ymin, xmax, ymax;
-
     old_s = new_s->next;
     switch (button_result) {
     case APPLY:
@@ -1155,16 +1143,6 @@ new_generic_values()
     } else
 	generic_vals.fill_style = 0;
 }
-
-#ifdef notdef
-/* not used at present */
-static
-new_arrow_values()
-{
-    generic_vals.for_arrow = panel_get_value(for_arrow_panel);
-    generic_vals.back_arrow = panel_get_value(back_arrow_panel);
-}
-#endif
 
 static		XtCallbackProc
 done_button(panel_local, item, event)
@@ -1402,7 +1380,80 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
 	    /* and clear any value from the dash length panel */
 	    panel_clear_value(style_val_panel);
 	}
+	if (arrows) {
+	    Widget	aform,w;
+
+	    FirstArg(XtNfromVert, below);
+	    NextArg(XtNborderWidth, 0);
+	    below = XtCreateManagedWidget("Arrows", labelWidgetClass,
+				       form, Args, ArgCount);
+	    FirstArg(XtNfromVert, below);
+	    aform = XtCreateManagedWidget("arrow_form", formWidgetClass, 
+					  form, Args, ArgCount);
+	    FirstArg(XtNborderWidth, 0);
+	    w = XtCreateManagedWidget("Forward", labelWidgetClass,
+				       aform, Args, ArgCount);
+	    FirstArg(XtNfromHoriz, w);
+	    NextArg(XtNhorizDistance, 10);
+	    NextArg(XtNlabel, "<-");
+	    NextArg(XtNstate, (generic_vals.for_arrow? True: False));
+	    beside = XtCreateManagedWidget("for.arrow", toggleWidgetClass,
+					   aform, Args, ArgCount);
+	    XtAddCallback(beside, XtNcallback, (XtCallbackProc) toggle_for_arrow,
+			  (XtPointer) NULL);
+	    FirstArg(XtNfromHoriz, beside);
+	    NextArg(XtNhorizDistance, 20);
+	    NextArg(XtNborderWidth, 0);
+	    w = XtCreateManagedWidget("Backward", labelWidgetClass,
+				       aform, Args, ArgCount);
+	    FirstArg(XtNfromHoriz, w);
+	    NextArg(XtNhorizDistance, 10);
+	    NextArg(XtNlabel, "->");
+	    NextArg(XtNstate, (generic_vals.back_arrow? True: False));
+	    beside = XtCreateManagedWidget("back.arrow", toggleWidgetClass,
+					   aform, Args, ArgCount);
+	    XtAddCallback(beside, XtNcallback, (XtCallbackProc) toggle_back_arrow,
+			  (XtPointer) NULL);
+	    below = aform;
+	}
     }
+}
+
+static
+XtCallbackProc
+toggle_for_arrow(w, dummy, dummy2)
+    Widget	   w;
+    XtPointer	   dummy;
+    XtPointer	   dummy2;
+{
+    /* either add or delete arrowhead */
+    if (generic_vals.for_arrow)
+	{
+	generic_vals.for_arrow = NULL;
+	}
+    else
+	{
+	generic_vals.for_arrow = forward_arrow();
+	}
+}
+
+static
+XtCallbackProc
+toggle_back_arrow(w, dummy, dummy2)
+    Widget	   w;
+    XtPointer	   dummy;
+    XtPointer	   dummy2;
+{
+    /* either add or delete arrowhead */
+    if (generic_vals.back_arrow)
+	{
+	free((char *) generic_vals.back_arrow);
+	generic_vals.back_arrow = NULL;
+	}
+    else
+	{
+	generic_vals.back_arrow = backward_arrow();
+	}
 }
 
 /* make a button panel with the image 'pixmap' in it */
@@ -1784,14 +1835,29 @@ points_panel(p, closed)
     struct f_point *p;
     int		    closed;
 {
+    struct f_point *pts;
     char	    buf[32];
     char	    bufxy[32];
     int		    i;
+    Widget	    viewp,formw;
 
     FirstArg(XtNfromVert, below);
     NextArg(XtNborderWidth, 0);
     below = XtCreateManagedWidget("Points", labelWidgetClass, form,
 				  Args, ArgCount);
+    FirstArg(XtNallowVert, True);
+    NextArg(XtNfromVert, below);
+    pts = p;
+    for (i = 0; pts != NULL; i++)
+	pts = pts->next;
+    /* limit size of points panel and scroll if more than 8 points */
+    if (i>8)
+	    NextArg(XtNheight, 200);
+    viewp = XtCreateManagedWidget("Pointspanel", viewportWidgetClass, form,
+				  Args, ArgCount);
+    formw = XtCreateManagedWidget("pointsform", formWidgetClass, viewp,
+				  NULL, 0);
+    below = 0;
     for (i = 0; p != NULL; i++) {
 	if (i >= MAX_POINTS)
 	    break;
@@ -1799,7 +1865,7 @@ points_panel(p, closed)
 	NextArg(XtNhorizDistance, 30);
 	NextArg(XtNborderWidth, 0);
 	sprintf(buf, "X%d =", i);
-	beside = XtCreateManagedWidget(buf, labelWidgetClass, form,
+	beside = XtCreateManagedWidget(buf, labelWidgetClass, formw,
 				       Args, ArgCount);
 	sprintf(bufxy, "%d", p->x);
 	ArgCount = 1;
@@ -1809,14 +1875,14 @@ points_panel(p, closed)
 	NextArg(XtNeditType, "append");
 	NextArg(XtNwidth, 40);
 	px_panel[i] = XtCreateManagedWidget("xy", asciiTextWidgetClass,
-					    form, Args, ArgCount);
+					    formw, Args, ArgCount);
 
 	sprintf(buf, "Y%d =", i);
 	ArgCount = 1;
 	NextArg(XtNfromHoriz, px_panel[i]);
 	NextArg(XtNborderWidth, 0);
 	beside = XtCreateManagedWidget(buf, labelWidgetClass,
-				       form, Args, ArgCount);
+				       formw, Args, ArgCount);
 
 	sprintf(bufxy, "%d", p->y);
 	ArgCount = 1;
@@ -1827,7 +1893,7 @@ points_panel(p, closed)
 	NextArg(XtNwidth, 40);
 
 	py_panel[i] = XtCreateManagedWidget("xy", asciiTextWidgetClass,
-					    form, Args, ArgCount);
+					    formw, Args, ArgCount);
 	below = px_panel[i];
 
 	p = p->next;

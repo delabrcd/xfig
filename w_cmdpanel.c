@@ -124,9 +124,9 @@ init_cmd_panel(tool)
 					   cmd_panel, Args, ArgCount);
 	/* setup callback and default actions */
 	XtAddEventHandler(sw->widget, ButtonReleaseMask, (Boolean) 0,
-			  sel_cmd_but, (caddr_t) sw);
+			  sel_cmd_but, (XtPointer) sw);
 	XtAddEventHandler(sw->widget, EnterWindowMask, (Boolean) 0,
-			  enter_cmd_but, (caddr_t) sw);
+			  enter_cmd_but, (XtPointer) sw);
 	XtOverrideTranslations(sw->widget,
 			       XtParseTranslationTable(cmd_translations));
 	ArgCount -= 3;
@@ -152,22 +152,30 @@ setup_cmd_panel()
 }
 
 static void
-enter_cmd_but(widget, sw, event)
+enter_cmd_but(widget, closure, event, continue_to_dispatch)
     Widget	    widget;
-    cmd_sw_info	   *sw;
-    XButtonEvent   *event;
+    XtPointer	    closure;
+    XEvent*	    event;
+    Boolean*	    continue_to_dispatch;
 {
+    cmd_sw_info *sw = (cmd_sw_info *) closure;
     clear_mousefun();
     draw_mousefun(sw->mousefun_l, "", sw->mousefun_r);
 }
 
 static void
-sel_cmd_but(widget, sw, event)
+sel_cmd_but(widget, closure, event, continue_to_dispatch)
     Widget	    widget;
-    cmd_sw_info	   *sw;
-    XButtonEvent   *event;
+    XtPointer	    closure;
+    XEvent*	    event;
+    Boolean*	    continue_to_dispatch;
 {
-    if (event->button == Button2)
+    cmd_sw_info *sw = (cmd_sw_info *) closure;
+    XButtonEvent button;
+    
+    button = event->xbutton;
+
+    if (button.button == Button2)
 	return;
 
     if (action_on) {
@@ -180,7 +188,7 @@ sel_cmd_but(widget, sw, event)
     } else if (highlighting)
 	erase_objecthighlight();
 
-    if (event->button == Button1)
+    if (button.button == Button1)
 	cmd_action(sw);
     else
 	quick_action(sw);

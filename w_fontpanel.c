@@ -246,10 +246,13 @@ fontpane_popup(psfont_adr, latexfont_adr, psflag_adr, showfont_fn, show_widget)
 }
 
 static void
-fontpane_select(widget, mi)
-    TOOL	    widget;
-    MENUITEM	   *mi;
+fontpane_select(w, closure, call_data)
+    Widget    w;
+    XtPointer closure;
+    XtPointer call_data;
 {
+    TOOL	    widget = (TOOL) w;
+    MENUITEM	   *mi = (MENUITEM *) closure;
     char	   *font_name = mi->label;
 
     if (*flag_sel)

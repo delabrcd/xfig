@@ -47,7 +47,6 @@
 #else
 #include <sys/dir.h>
 #endif
-#include <sys/param.h>
 
 /* Static variables */
 
@@ -59,12 +58,13 @@ static String	dir_translations =
 	<Key>F18: PastePanelKey()\n";
 static String	list_panel_translations =
 	"<Btn3Up>: ParentDir()\n";
-static char	CurrentSelectionName[MAXPATHLEN];
+static char	CurrentSelectionName[PATH_MAX];
 static int	file_entry_cnt, dir_entry_cnt;
 static char   **file_list, **dir_list;
 static char   **filelist, **dirlist;
 static char    *dirmask;
 
+extern char    *rindex(),*index();
 
 /* External variables */
 
@@ -76,7 +76,8 @@ extern Boolean	file_up, export_up;
 
 void		DoChangeDir(),
 		SetDir(),
-		Rescan();
+		Rescan(),
+		CallbackRescan();
 
 static void	ParentDir();
 
@@ -91,8 +92,8 @@ static void	ParentDir();
 void
 FileSelected(w, client_data, ret_val)
     Widget	    w;
-    caddr_t	    client_data;
-    caddr_t	    ret_val;
+    XtPointer	    client_data;
+    XtPointer	    ret_val;
 {
     XawListReturnStruct *ret_struct = (XawListReturnStruct *) ret_val;
 
@@ -119,13 +120,23 @@ FileSelected(w, client_data, ret_val)
 void
 DirSelected(w, client_data, ret_val)
     Widget	    w;
-    caddr_t	    client_data;
-    caddr_t	    ret_val;
+    XtPointer	    client_data;
+    XtPointer	    ret_val;
 {
     XawListReturnStruct *ret_struct = (XawListReturnStruct *) ret_val;
 
     strcpy(CurrentSelectionName, ret_struct->string);
     DoChangeDir(CurrentSelectionName);
+}
+
+void
+GoHome(w, client_data, ret_val)
+    Widget	    w;
+    XtPointer	    client_data;
+    XtPointer	    ret_val;
+{
+     parseuserpath("~",cur_dir);
+     DoChangeDir(cur_dir);
 }
 
 /*
@@ -145,8 +156,52 @@ SetDir()
 	GetValues(file_dir);
     else
 	GetValues(exp_dir);
+    /* if there is a ~ in the directory, parse the username */
+    if (ndir[0]=='~')
+	{
+	char longdir[PATH_MAX];
+	parseuserpath(ndir,longdir);
+	ndir=longdir;
+	}
     strcpy(cur_dir, ndir);
     DoChangeDir(cur_dir);
+}
+
+/* make the full path from ~/partialpath */
+parseuserpath(path,longpath)
+char *path,*longpath;
+{
+    char	  *home,*p;
+    struct passwd *who;
+    char	  *getenv();
+
+    /* this user's home */
+    if (strlen(path)==1 || path[1]=='/')
+	{
+	strcpy(longpath,getenv("HOME"));
+	if (strlen(path)==1)		/* nothing after the ~, we have the full path */
+		return;
+	strcat(longpath,&path[1]);	/* append the rest of the path */
+	return;
+	}
+    /* another user name after ~ */
+    strcpy(longpath,&path[1]);
+    p=index(longpath,'/');
+    if (p)
+	    *p='\0';
+    who = getpwnam(longpath);
+    if (!who)
+	{
+	file_msg("No such user: %s",longpath);
+	strcpy(longpath,path);
+	}
+    else
+	{
+	strcpy(longpath,who->pw_dir);
+	p=index(path,'/');
+	if (p)
+		strcat(longpath,p);	/* attach stuff after the / */
+	}
 }
 
 static String	mask_text_translations =
@@ -167,7 +222,7 @@ create_dirinfo(parent, below, ret_beside, ret_below,
 		   *flist_w, *dlist_w;
 
 {
-    Widget	    w;
+    Widget	    w,dir_alt,home;
     Widget	    file_viewport;
     Widget	    dir_viewport;
     PIX_FONT	    temp_font;
@@ -183,7 +238,7 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     FirstArg(XtNlabel, "     Alternatives:");
     NextArg(XtNfromVert, below);
     NextArg(XtNborderWidth, 0);
-    w = XtCreateManagedWidget("filename", labelWidgetClass,
+    w = XtCreateManagedWidget("file_alt_label", labelWidgetClass,
 			      parent, Args, ArgCount);
     FirstArg(XtNfont, &temp_font);
     GetValues(w);
@@ -221,13 +276,13 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     FirstArg(XtNstring, &dirmask);
     GetValues(*mask_w);
     if (MakeFileList(cur_dir, dirmask, &dir_list, &file_list) == 0)
-	put_msg("No files in directory?");
+	file_msg("No files in directory?");
 
     FirstArg(XtNlabel, "Current Directory:");
     NextArg(XtNborderWidth, 0);
     NextArg(XtNfromVert, *mask_w);
     NextArg(XtNvertDistance, 15);
-    w = XtCreateManagedWidget("dirname", labelWidgetClass,
+    w = XtCreateManagedWidget("dir_label", labelWidgetClass,
 			      parent, Args, ArgCount);
     FirstArg(XtNstring, cur_dir);
 	NextArg(XtNinsertPosition, strlen(cur_dir));
@@ -239,7 +294,7 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     NextArg(XtNvertDistance, 15);
     NextArg(XtNfromHoriz, w);
     NextArg(XtNwidth, 350);
-    *dir_w = XtCreateManagedWidget("dirname", asciiTextWidgetClass,
+    *dir_w = XtCreateManagedWidget("dir_name", asciiTextWidgetClass,
 				   parent, Args, ArgCount);
 
     XtOverrideTranslations(*dir_w,
@@ -248,10 +303,21 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     FirstArg(XtNlabel, "     Alternatives:");
     NextArg(XtNborderWidth, 0);
     NextArg(XtNfromVert, *dir_w);
-    w = XtCreateManagedWidget("dirname", labelWidgetClass,
+    dir_alt = XtCreateManagedWidget("dir_alt_label", labelWidgetClass,
 			      parent, Args, ArgCount);
+
+    /* put a Home button to the left of the list of directories */
+    FirstArg(XtNlabel, "Home");
+    NextArg(XtNfromVert, dir_alt);
+    NextArg(XtNfromHoriz, dir_alt);
+    NextArg(XtNhorizDistance, -46);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    home = XtCreateManagedWidget("home", commandWidgetClass, parent,
+			      Args, ArgCount);
+    XtAddCallback(home, XtNcallback, GoHome, (XtPointer) NULL);
+
     FirstArg(XtNallowVert, True);
-    NextArg(XtNfromHoriz, w);
+    NextArg(XtNfromHoriz, dir_alt);
     NextArg(XtNfromVert, *dir_w);
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNwidth, 350);
@@ -265,7 +331,7 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     XtOverrideTranslations(*flist_w,
 			   XtParseTranslationTable(list_panel_translations));
     XtAddCallback(*flist_w, XtNcallback, FileSelected,
-		  (caddr_t) NULL);
+		  (XtPointer) NULL);
 
     FirstArg(XtNlist, dir_list);
     *dlist_w = XtCreateManagedWidget("dir_list_panel", listWidgetClass,
@@ -273,7 +339,7 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     XtOverrideTranslations(*dlist_w,
 			   XtParseTranslationTable(list_panel_translations));
     XtAddCallback(*dlist_w, XtNcallback, DirSelected,
-		  (caddr_t) NULL);
+		  (XtPointer) NULL);
 
     XtAppAddActions(tool_app, actionTable, XtNumber(actionTable));
 
@@ -285,7 +351,7 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     NextArg(XtNheight, 25);
     w = XtCreateManagedWidget("rescan", commandWidgetClass, parent,
 			      Args, ArgCount);
-    XtAddCallback(w, XtNcallback, Rescan, NULL);
+    XtAddCallback(w, XtNcallback, CallbackRescan, NULL);
     *ret_beside = w;
     *ret_below = dir_viewport;
     return;
@@ -383,16 +449,17 @@ MakeFileList(dir_name, mask, dir_list, file_list)
 }
 
 /* Function:	ParentDir() changes to the parent directory.
- * Arguments:	Standard Xt callback arguments.
+ * Arguments:	Standard Xt action arguments.
  * Returns:	Nothing.
  * Notes:
  */
 
 static void
-ParentDir(w, client_data, call_data)
+ParentDir(w, event, params, num_params)
     Widget	    w;
-    caddr_t	    client_data;
-    caddr_t	    call_data;
+    XEvent*	    event;
+    String*	    params;
+    Cardinal*	    num_params;
 {
     DoChangeDir("..");
 }
@@ -415,7 +482,7 @@ DoChangeDir(dir)
     char	   *p;
     Arg		    args[10];
     Cardinal	    arg_cnt;
-    char	    ndir[MAXPATHLEN], tmpdir[MAXPATHLEN];
+    char	    ndir[PATH_MAX], tmpdir[PATH_MAX];
 
     
     strcpy(ndir, cur_dir);
@@ -439,10 +506,10 @@ DoChangeDir(dir)
     strcpy(tmpdir, cur_dir);
     strcpy(cur_dir, ndir);
     if (change_directory(cur_dir) != 0 ) {
-	put_msg("Can't change to directory %s", cur_dir);
+	file_msg("Can't change to directory %s", cur_dir);
 	strcpy(cur_dir, tmpdir);
     } else if ( MakeFileList(ndir, dirmask, &dirlist, &filelist) == 0) {
-	put_msg("Unable to list directory %s", ndir);
+	file_msg("Unable to list directory %s", ndir);
 	strcpy(cur_dir, tmpdir);
     }
 
@@ -465,10 +532,23 @@ DoChangeDir(dir)
     CurrentSelectionName[0] = '\0';
 }
 
-void
-Rescan()
+void 
+CallbackRescan(widget, closure, call_data)
+    Widget    widget;
+    XtPointer closure;
+    XtPointer call_data;
 {
-    char	   *dir;
+     Rescan(0, 0, 0, 0);
+}
+
+void
+Rescan(widget, event, params, num_params)
+    Widget	widget;
+    XEvent*	event;
+    String*	params;
+    Cardinal*	num_params;
+{
+    char	*dir;
 
     /*
      * get the mask string from the File or Export mask widget and put in
@@ -522,7 +602,7 @@ IsDirectory(root, path)
     char	   *root;
     char	   *path;
 {
-    char	    fullpath[MAXPATHLEN];
+    char	    fullpath[PATH_MAX];
     struct stat	    statbuf;
 
     if (path == NULL)

@@ -170,6 +170,7 @@ write_line(fp, l)
 {
     F_point	   *p;
     F_arrow	   *f, *b;
+    int		   npts;
 
     if (l->points == NULL)
 	return;
@@ -187,8 +188,14 @@ write_line(fp, l)
 	fprintf(fp, "\t%d %s\n", l->eps->flipped, l->eps->file);
 
     fprintf(fp, "\t");
+    npts=0;
     for (p = l->points; p != NULL; p = p->next) {
 	fprintf(fp, " %d %d", p->x, p->y);
+	if (++npts >= 8 && p->next != NULL)
+		{
+		fprintf(fp,"\n\t");
+		npts=0;
+		}
     };
     fprintf(fp, " 9999 9999\n");
 }
@@ -200,6 +207,7 @@ write_spline(fp, s)
     F_control	   *cp;
     F_point	   *p;
     F_arrow	   *f, *b;
+    int		   npts;
 
     if (s->points == NULL)
 	return;
@@ -222,9 +230,15 @@ write_spline(fp, s)
     if (s->controls == NULL)
 	return;
     fprintf(fp, "\t");
+    npts=0;
     for (cp = s->controls; cp != NULL; cp = cp->next) {
 	fprintf(fp, " %.3f %.3f %.3f %.3f",
 		cp->lx, cp->ly, cp->rx, cp->ry);
+	if (++npts >= 2 && cp->next != NULL)
+		{
+		fprintf(fp,"\n\t");
+		npts=0;
+		}
     };
     fprintf(fp, "\n");
 }

@@ -261,7 +261,7 @@ new_text()
     text->angle = cur_angle;
     text->flags = cur_textflags;
     text->color = cur_color;
-    text->depth = 0;
+    text->depth = cur_depth;
     text->pen = 0;
     size = pf_textwidth(text->font, psfont_text(text), text->size,
 			leng_prefix, prefix);
@@ -417,11 +417,6 @@ char_handler(c)
 
     if (c == CR || c == NL) {
 	erase_char_string();
-	/*
-	 * comment out the cr_proc() and un-comment the new_text-line() to
-	 * have new text automatically start after old
-	 */
-	/* cr_proc(); */
 	new_text_line();
     } else if (c == DEL || c == CTRL_H) {
 	if (leng_prefix > 0) {
@@ -560,13 +555,7 @@ turn_off_blinking_cursor()
 
 static		XtTimerCallbackProc
 blink(client_data, id)
-#if XtSpecificationRelease >= 4
     XtPointer	    client_data;
-
-#else
-    caddr_t	    client_data;
-
-#endif
     XtIntervalId   *id;
 {
     if (!stop_blinking) {

@@ -84,7 +84,7 @@ create_epsobj(x, y)
     box->style = SOLID_LINE;
     box->thickness = 1;
     box->color = cur_color;
-    box->depth = 0;
+    box->depth = cur_depth;
     box->pen = 0;
     box->fill_style = 0;
     box->style_val = 0;

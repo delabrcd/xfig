@@ -38,8 +38,8 @@
  * all the "next" fields of objects pointed to by object_tails to NULL.
  */
 
-F_compound	saved_objects = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-F_compound	object_tails = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+F_compound	saved_objects = {0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+F_compound	object_tails = {0, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
 /*************** LOCAL *****************/
 

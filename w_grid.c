@@ -91,11 +91,11 @@ setup_grid(grid)
 	FirstArg(XtNbackgroundPixmap, null_pm);
     } else {
 	if (grid == GRID_1) {
-	    coarse = (int) (grid_coarse[P_GRID1] * zoomscale);
-	    fine = (int) (grid_fine[P_GRID1] * zoomscale);
+	    coarse = round(grid_coarse[P_GRID1] * zoomscale);
+	    fine = round(grid_fine[P_GRID1] * zoomscale);
 	} else {
-	    coarse = (int) (grid_coarse[P_GRID2] * zoomscale);
-	    fine = (int) (grid_fine[P_GRID2] * zoomscale);
+	    coarse = round(grid_coarse[P_GRID2] * zoomscale);
+	    fine = round(grid_fine[P_GRID2] * zoomscale);
 	}
 
 	if (!coarse && !fine) { /* grid values both zero */
@@ -114,11 +114,11 @@ setup_grid(grid)
 	XSetForeground(tool_d, gc, bg);
 	XFillRectangle(tool_d, grid_pm, gc, 0, 0, dim, dim);
 	XSetForeground(tool_d, gc, fg);
-	x0c = -(zoomscale * zoomxoff) % coarse - zoomscale;
-	y0c = -(zoomscale * zoomyoff) % coarse - zoomscale;
+	x0c = -round(zoomscale * zoomxoff) % coarse - zoomscale;
+	y0c = -round(zoomscale * zoomyoff) % coarse - zoomscale;
 	if (fine) {
-	    x0f = -(zoomscale * zoomxoff) % fine - zoomscale;
-	    y0f = -(zoomscale * zoomyoff) % fine - zoomscale;
+	    x0f = -round(zoomscale * zoomxoff) % fine - zoomscale;
+	    y0f = -round(zoomscale * zoomyoff) % fine - zoomscale;
 	    for (x = x0c; x < dim; x += coarse)
 		for (y = y0f; y < dim; y += fine)
 		    XDrawPoint(tool_d, grid_pm, gc, x, y);

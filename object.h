@@ -108,7 +108,7 @@ typedef struct f_arc {
 #define		DEF_DOTGAP		3
 
 typedef struct f_eps {
-    char	    file[256];
+    char	    file[PATH_MAX];
     int		    flipped;
     unsigned char  *bitmap;
     float	    hw_ratio;

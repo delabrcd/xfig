@@ -110,7 +110,7 @@ Use \fIcolor\fP as the foreground color and default color for objects.
 Use \fIcolor\fP as the background color for the canvas and buttons.
 .TP
 .B \-de[bug]
-Turn on debugging mode.
+Turn on debugging mode.  Prints various debugging messages like font names etc.
 .TP
 \fB-nor[mal]\fP \fIfont\fP
 Cause the font used for the message panel and ruler numbers to be \fIfont\fP.
@@ -220,33 +220,47 @@ Left mouse button pops up a panel which contains several file-related functions:
 .po +.5i
 .nr LL 6i
 .TP
+.I Current Filename
+This is a label widget showing the current filename.  It is automatically
+updated from the \fIFilename\fP Ascii widget when the \fILoad\fP operation
+is executed, either by pressing the \fILoad\fP button or pressing return
+in the \fIFilename\fP window.
+.TP
 .I Filename
 This is an editable AsciiTextWidget which contains the current filename.
-Pressing return in the Filename widget will Load the file.
+Pressing return in the \fIFilename\fP window will Load the file and update the
+\fICurrent Filename\fP widget.
 .TP
 .I (File) Alternatives
 Pressing the \fIleft\fP mouse button on a filename in the file alternatives
-widget will select that file by copying the filename into Filename widget.
+window will select that file by copying the filename into \fIFilename\fP window.
 .TP
 .I Filename Mask
 A wildcard mask may be typed into this editable AsciiTextWidget to restrict
 the search of filenames to a subset ala the \fIls\fP command.
-Pressing return in this widget will automatically 
+Pressing return in this window will automatically 
 rescan the current directory.
 This string may be set by setting the resource \fB*file_panel*mask*string\fP.
 .TP
 .I Current Directory
 This is an editable AsciiTextWidget which shows the current directory.
 It may be modified by the user to manually set a directory name.  When
-return is pressed in this widget the directory specified is scanned for 
+return is pressed in this window the directory specified is scanned for 
 files matching the \fIFilenamemask\fP, if any.
+
+The ~ (tilde) character may be used to specify a user's home directory, ala
+unix shell tilde expansion.
 .TP
 .I (Directory) Alternatives
 Pressing the \fIleft\fP mouse button on a directory name in the directory
 alternatives list will do a "change directory" to that directory.
 
-Pressing the \fIright\fP mouse button in either the file or directory
-alternatives widget will do a "change directory" to the parent directory.
+Pressing the \fIright\fP mouse button in either the file or 
+\fIDirectory Alternatives\fP window will do a "change directory" to the 
+parent directory.
+.TP
+.I Home
+This button will change the current directory to the user's home directory.
 .TP
 .I Rescan
 This button will rescan the current directory.
@@ -309,7 +323,7 @@ and Portrait (vertical).  The default orientation is the same as the mode
 that xfig was started with.
 .TP
 .I Justification
-This widget will only be sensitive when the language selected is "ps" (\fIPostScript\fP).
+This window will only be sensitive when the language selected is "ps" (\fIPostScript\fP).
 You may choose that the figure is \fIflush left\fP or \fIcentered\fP in the
 output file.
 .TP
@@ -330,31 +344,38 @@ language used.
 .I Output Filename
 This is an editable AsciiTextWidget which contains the filename to use
 to write output to a file.
-Pressing return in this widget will Export the file.
+Pressing return in this window will Export the file.
 .TP
 .I (File) Alternatives
 Pressing the \fIleft\fP mouse button on a filename in the file alternatives
-widget will select that file by copying the filename into Filename widget.
+window will select that file by copying the filename into \fIFilename\fP window.
 .TP
 .I Filename Mask
 A wildcard mask may be typed into this editable AsciiTextWidget to restrict
 the search of filenames to a subset ala the \fIls\fP command.
-Pressing return in this widget will automatically 
+Pressing return in this window will automatically 
 rescan the current directory.
 This string may be set by setting the resource \fB*export_panel*mask*string\fP.
 .TP
 .I Current Directory
 This is an editable AsciiTextWidget which shows the current directory.
 It may be modified by the user to manually set a directory name.  When
-return is pressed in this widget the directory specified is scanned for 
+return is pressed in this window the directory specified is scanned for 
 files matching the \fIFilenamemask\fP, if any.
+
+The ~ (tilde) character may be used to specify a user's home directory, ala
+unix shell tilde expansion.
 .TP
 .I (Directory) Alternatives
 Pressing the \fIleft\fP mouse button on a directory name in the directory
 alternatives list will do a "change directory" to that directory.
 
-Pressing the \fIright\fP mouse button in either the file or directory
-alternatives widget will do a "change directory" to the parent directory.
+Pressing the \fIright\fP mouse button in either the file or 
+\fIDirectory Alternatives\fP window will do a "change directory" to the 
+parent directory.
+.TP
+.I Home
+This button will change the current directory to the user's home directory.
 .TP
 .I Rescan
 This button will rescan the current directory.
@@ -366,7 +387,7 @@ This button will pop down the print menu without doing any print operation.
 This button writes the figure to the file using the selected language.
 If the file already exists, a confirmation window will popup to ask the user to
 confirm the write or cancel.
-Pressing return in the Output Filename widget will also Export the file.
+Pressing return in the Output Filename window will also Export the file.
 .PP
 Right mouse button invokes \fIExport\fP function without popping up the export
 panel.
@@ -436,27 +457,19 @@ in the other direction.
 .TP
 .I ZOOM SCALE
 The canvas zoom scale may be set/increased/decreased with this button.
-The integer zoom scale is displayed within the zoom button. Ruler,
-grid and linewidth are scaled, too.  Pressing the control key and the right
+The zoom scale is displayed within the zoom button. Ruler,
+grid and linewidth are scaled, too.  
+Pressing the middle button will decrease the zoom factor by 1.0 unless it
+is less than 1.0 already in which case it will reduce to the nearest 0.25.
+Pressing the right button will increase the zoom factor by 1.0 unless it
+is less than 1.0 in which case it will increase it to the nearest 0.25.
+Pressing the control key and the right
 mouse button together will set the zoom scale to 1.
 .sp
 The figure may also be zoomed by defining a zoom rectangle by pressing 
 the control key and left mouse button together.  This will define one corner
 of the zoom rectangle.  Move the mouse and click the left button again to 
 define the opposite corner of the zoom rectangle.
-.TP
-.I ROTATION ANGLE
-The rotation angle for rotating objects may be set/increased/decreased with
-this button.
-Note that not all objects may be rotated, and certain objects may only be
-rotated by certain angles.
-Pressing the \fImiddle\fP or \fIright\fP button will decrease(increase) the angle
-in steps of 15 degrees.  To select other angles, press the \fIleft\fP button and
-enter the angle in the popup menu.
-.TP
-.I NUMBER OF POLYGON SIDES
-The number of sides used in creating a \fIREGULAR POLYGON\fP is set with
-this button.
 .TP
 .I GRID MODE
 With this button the user may select no grid,
@@ -474,6 +487,23 @@ of the point positioning resolution you may not be able to pick it.  If this
 happens, a black square will temporarily appear above the mouse cursor.  
 This square will also appear anytime the user tries to pick a nonexistent
 object.
+.TP
+.I ROTATION ANGLE
+The rotation angle for rotating objects may be set/increased/decreased with
+this button.
+Note that not all objects may be rotated, and certain objects may only be
+rotated by certain angles.
+Pressing the \fImiddle\fP or \fIright\fP button will decrease(increase) the angle
+in steps of 15 degrees.  To select other angles, press the \fIleft\fP button and
+enter the angle in the popup menu.
+.TP
+.I DEPTH
+The depth at which new objects will be created may be set/increased/decreased 
+with this button.
+.TP
+.I NUMBER OF POLYGON SIDES
+The number of sides used in creating a \fIREGULAR POLYGON\fP is set with
+this button.
 .TP
 .I SMART-LINKS MODE
 This button controls the smart-links mode.  When turned on, lines which
@@ -1008,17 +1038,23 @@ output.
 
 \(dd The depth defines how overlapping objects are displayed. Objects with
 a greater depth value are obstructed by objects with smaller depth value. 
-This may only be changed in the popup edit menu.
 The maximum depth allowed is 1000.
 
 .TP
 .I UPDATE
 By pressing the \fIleft\fP button on an object, the current settings for
-the indicator buttons (line width, line style, area fill etc.) are
-copied into that object.  If the \fImiddle\fP button is clicked on an
-object, the settings in the object are copied into the indicator button
-settings.  Thus, one may copy attributes of one object to another.
-The \fIdepth\fP attribute is not copied when updating objects.
+the indicator buttons (line width, line style, area fill etc.) which
+have been selected for update are copied into that object.  
+When xfig is started, all indicator buttons which are components of objects
+are selected for update.  To unselect an indicator, click on the update button
+and click the \fIleft\fP mouse button on the small button in the upper-right 
+corner of the indicator.  When that indicator is selected the foreground color
+(default black) shows.  When it is unselected the background color (default white)
+shows.
+.sp
+If the \fImiddle\fP button is clicked on an object, the settings in the object 
+that are selected by the indicator buttons are copied into those indicator button
+settings.  Thus, one may copy selected attributes of one object to another.
 .TP
 .I FLIP VERTICALLY
 Flip the object up/down (\fIleft\fP button) or copy the object and flip it
@@ -1144,7 +1180,9 @@ Fig  xfig
 		Label  unitbox
 		Label  sideruler
 		Box  ind_panel
-			Command  button (one for each of the 17 indicator buttons)
+			Form  button_form
+				Command  button (one for each of the 20 indicator buttons)
+				Toggle  update (some have update buttons, some don't)
 
 		TransientShell  xfig_ps_font_menu
 			Box  menu
@@ -1177,9 +1215,10 @@ Fig  xfig
 				List  file_list_panel
 			Label  mask_label
 			Text  mask
-			Label  dirname
-			Text  dirname
-			Label  dirname
+			Label  dir_label
+			Text  dir_name
+			Label  dir_alt_label
+			Command home
 			Viewport  dirvport
 				Core  clip
 				List  dir_list_panel
@@ -1232,9 +1271,10 @@ Fig  xfig
 				Scrollbar  vertical
 			Label  mask_label
 			Text  mask
-			Label  dirname
-			Text  dirname
-			Label  dirname
+			Label  dir_label
+			Text  dir_name
+			Label  dir_alt_label
+			Command home
 			Viewport  dirvport
 				Core  clip
 				List  dir_list_panel

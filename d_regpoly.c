@@ -98,7 +98,7 @@ create_regpoly(x, y)
     poly->style = cur_linestyle;
     poly->thickness = cur_linewidth;
     poly->color = cur_color;
-    poly->depth = 0;
+    poly->depth = cur_depth;
     poly->pen = 0;
     poly->fill_style = cur_fillstyle;
     /* scale dash length by line thickness */

@@ -1,12 +1,22 @@
 This file contains some possible things to do in future versions of xfig.
 
+allow vertically-aligned text
+  "top" would mean the insertion point specifies the line over the top of the
+        text
+  "middle" would mean that it specifies the midline of the text (I'm not
+        sure how this is defined, perhaps the average of top and base
+        or top and bottom.
+  "base" would mean the line under all letters which do not hang down.
+        For example, g and j extend below the baseline.
+  "bottom" would mean the time under the bottom of the text including
+        descenders.
+allow background color for figure and store in fig file - also requires that
+	fig2dev knows about this background color
 allow printing of grid in figure
-be able to select only certain object parameters for update mode
 have arc sub-type 2 for pie wedge-type arcs
 have common edit popup for all four splines to allow conversion between all
 allow fractional text sizes (float)
 save modified_flag before file operations and restore if undo used
-Should arrow mode be changed in update mode
 Should arrow size change in update mode when linewidth changes?
 investigate whether eps objects that don't have a preview bitmap
 	are scaled correctly

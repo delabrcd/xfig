@@ -26,7 +26,6 @@
 extern String	text_translations;
 extern Widget	make_popup_menu();
 extern char    *panel_get_value();
-extern double	atof();
 
 /* LOCAL */
 
@@ -70,14 +69,15 @@ void
 do_print(w)
     Widget	    w;
 {
-    DeclareArgs(1);
-    float	    mag;
-    char	   *pval;
+	DeclareArgs(1);
+	float	    mag;
+	char	   *pval;
 
-    if (emptyfigure_msg(print_msg))
-	return;
+	if (emptyfigure_msg(print_msg))
+		return;
 
-    if (print_popup) {
+	if (!print_popup) 
+		create_print_panel(w);
 	mag = (float) atof(panel_get_value(mag_text)) / 100.0;
 	if (mag <= 0.0)
 	    mag = 1.0;
@@ -86,9 +86,6 @@ do_print(w)
 	GetValues(printer_text);
 	print_to_printer(pval, print_centered, mag);
 	print_panel_dismiss();
-    } else {
-	print_to_printer("", 0, 1.0);
-    }
 }
 
 static void
@@ -121,10 +118,22 @@ popup_print_panel(w)
     Widget	    image;
     XtTranslations  popdown_actions;
     Pixmap	    p;
-
     DeclareArgs(10);
 
-    if (!print_popup) {
+    if (!print_popup)
+	create_print_panel(w);
+    XtSetSensitive(print_w, False);
+    XtPopup(print_popup, XtGrabNonexclusive);
+}
+
+create_print_panel(w)
+    Widget	    w;
+{
+	Widget	    image;
+	XtTranslations  popdown_actions;
+	Pixmap	    p;
+	DeclareArgs(10);
+
 	print_w = w;
 	XtTranslateCoords(w, (Position) 0, (Position) 0, &xposn, &yposn);
 
@@ -256,7 +265,4 @@ popup_print_panel(w)
 	XtAddEventHandler(print, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler)do_print, (XtPointer) NULL);
 
-    }
-    XtSetSensitive(print_w, False);
-    XtPopup(print_popup, XtGrabNonexclusive);
 }

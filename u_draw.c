@@ -36,6 +36,8 @@ typedef unsigned char byte;
 
 #define			PI		3.14159
 
+extern char    *rindex();
+
 /************** POLYGON/CURVE DRAWING FACILITIES ****************/
 
 #define	  MaxNumPts	  10000
@@ -69,7 +71,7 @@ static		Boolean
 add_point(x, y)
     int		    x, y;
 {
-    if (npoints >= (max_points - 1)) {
+    if (npoints >= max_points) {
 	XPoint	       *tmp_p;
 
 	max_points += allocstep;

@@ -148,7 +148,7 @@ create_arcobject(lx, ly)
     arc->pen = 0;
     arc->fill_style = cur_fillstyle;
     arc->color = cur_color;
-    arc->depth = 0;
+    arc->depth = cur_depth;
     arc->direction = compute_direction(point[0], point[1], point[2]);
     if (autoforwardarrow_mode)
 	arc->for_arrow = forward_arrow();

@@ -26,9 +26,15 @@
 #define		DEF_CANVAS_WD_LAND	10*PIX_PER_INCH
 
 #define		RULER_WD		24
-#define		MAX_TOPRULER_WD		1.1*DEF_CANVAS_WD_LAND
-#define		MAX_SIDERULER_HT	1.1*DEF_CANVAS_HT_PORT
+#ifndef MAX_TOPRULER_WD
+#define		MAX_TOPRULER_WD		1020
+#endif
+#ifndef MAX_SIDERULER_HT
+#define		MAX_SIDERULER_HT	860
+#endif
 #define		MIN_MOUSEFUN_WD		240
+
+#define		MAXDEPTH		999
 
 #define		SW_PER_ROW_PORT 2	/* switches/row in mode panel */
 #define		SW_PER_ROW_LAND 2	/* same for landscape mode */

@@ -78,7 +78,7 @@ create_intsplineobject(x, y)
     spline->thickness = cur_linewidth;
     spline->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     spline->color = cur_color;
-    spline->depth = 0;
+    spline->depth = cur_depth;
     spline->fill_style = cur_fillstyle;
     /*
      * The current fill style is saved in all intspline objects (but support

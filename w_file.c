@@ -32,6 +32,7 @@ static char	buf[40];
 
 DeclareStaticArgs(12);
 static Widget	file_panel,  file_status, num_objects;
+static Widget	cfile_lab, cfile_text;
 static Widget	cancel, save, merge, load;
 static Widget	file_w;
 static Position xposn, yposn;
@@ -57,6 +58,8 @@ Boolean		file_up = False;
 static void
 file_panel_dismiss()
 {
+    FirstArg(XtNstring, "\0");
+    SetValues(file_selfile);	/* clear Filename string */
     XtPopdown(file_popup);
     XtSetSensitive(file_w, True);
     file_up = False;
@@ -71,12 +74,18 @@ do_merge(w, ev)
     char	   *fval, *dval;
 
     FirstArg(XtNstring, &fval);
-    GetValues(file_selfile);
-    FirstArg(XtNstring, &dval);
-    GetValues(file_dir);
+    GetValues(file_selfile);	/* check the ascii widget for a filename */
+    if (emptyname(fval))
+	{
+	FirstArg(XtNlabel, &fval);
+	GetValues(cfile_text);	/* "Filename" widget empty, use current filename */
+	}
 
     if (emptyname_msg(fval, "MERGE"))
 	return;
+
+    FirstArg(XtNstring, &dval);
+    GetValues(file_dir);
 
     strcpy(filename, dval);
     strcat(filename, "/");
@@ -95,7 +104,12 @@ do_load(w, ev)
     FirstArg(XtNstring, &dval);
     GetValues(file_dir);
     FirstArg(XtNstring, &fval);
-    GetValues(file_selfile);
+    GetValues(file_selfile);	/* check the ascii widget for a filename */
+    if (emptyname(fval))
+	{
+	FirstArg(XtNlabel, &fval);
+	GetValues(cfile_text);	/* "Filename" widget empty, use current filename */
+	}
 
     if (emptyname_msg(fval, "LOAD"))
 	return;
@@ -110,7 +124,12 @@ do_load(w, ev)
     }
     if (change_directory(dval) == 0) {
 	if (load_file(fval) == 0)
+	    {
+	    /* set the default filename */
+	    FirstArg(XtNlabel, fval);
+	    SetValues(cfile_text);
 	    file_panel_dismiss();
+	    }
     }
 }
 
@@ -122,12 +141,18 @@ do_save(w)
 
     if (file_popup) {
 	FirstArg(XtNstring, &fval);
-	GetValues(file_selfile);
-	FirstArg(XtNstring, &dval);
-	GetValues(file_dir);
+	GetValues(file_selfile);	/* check the ascii widget for a filename */
+	if (emptyname(fval))
+		{
+		FirstArg(XtNlabel, &fval);
+		GetValues(cfile_text);	/* "Filename" widget empty, use current filename */
+		}
 
 	if (emptyname_msg(fval, "SAVE"))
 	    return;
+
+	FirstArg(XtNstring, &dval);
+	GetValues(file_dir);
 
 	if (change_directory(dval) == 0) {
 	    XtSetSensitive(save, False);
@@ -196,9 +221,27 @@ popup_file_panel(w)
 	num_objects = XtCreateManagedWidget("num_objects", labelWidgetClass,
 					    file_panel, Args, ArgCount);
 
+	FirstArg(XtNlabel, " Current Filename:");
+	NextArg(XtNfromVert, num_objects);
+	NextArg(XtNvertDistance, 15);
+	NextArg(XtNjustify, XtJustifyLeft);
+	NextArg(XtNborderWidth, 0);
+	cfile_lab = XtCreateManagedWidget("cur_file_label", labelWidgetClass,
+					  file_panel, Args, ArgCount);
+
+	FirstArg(XtNlabel, cur_filename);
+	NextArg(XtNfromVert, num_objects);
+	NextArg(XtNfromHoriz, cfile_lab);
+	NextArg(XtNvertDistance, 15);
+	NextArg(XtNjustify, XtJustifyLeft);
+	NextArg(XtNborderWidth, 0);
+	NextArg(XtNwidth, 250);
+	cfile_text = XtCreateManagedWidget("cur_file_name", labelWidgetClass,
+					   file_panel, Args, ArgCount);
+
 	FirstArg(XtNlabel, "         Filename:");
 	NextArg(XtNvertDistance, 15);
-	NextArg(XtNfromVert, num_objects);
+	NextArg(XtNfromVert, cfile_lab);
 	NextArg(XtNborderWidth, 0);
 	file = XtCreateManagedWidget("file_label", labelWidgetClass,
 				     file_panel, Args, ArgCount);
@@ -213,7 +256,7 @@ popup_file_panel(w)
 	NextArg(XtNfromHoriz, file);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNvertDistance, 15);
-	NextArg(XtNfromVert, num_objects);
+	NextArg(XtNfromVert, cfile_lab);
 	NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
 	file_selfile = XtCreateManagedWidget("file_name", asciiTextWidgetClass,
 					     file_panel, Args, ArgCount);
@@ -229,7 +272,9 @@ popup_file_panel(w)
 
 	create_dirinfo(file_panel, file_selfile, &beside, &below,
 		       &file_mask, &file_dir, &file_flist, &file_dlist);
-
+	/* make <return> in the file list window load the file */
+	XtOverrideTranslations(file_flist,
+			   XtParseTranslationTable(file_name_translations));
 	FirstArg(XtNlabel, "Cancel");
 	NextArg(XtNvertDistance, 15);
 	NextArg(XtNhorizDistance, 25);
@@ -279,7 +324,7 @@ popup_file_panel(w)
 			  (XtEventHandler)do_merge, (XtPointer) NULL);
     } else {
 	file_up = True;
-	Rescan();
+	Rescan(0, 0, 0, 0);
 	file_up = False;
     }
     FirstArg(XtNlabel, (figure_modified ? "      File Status: Modified	  " :
