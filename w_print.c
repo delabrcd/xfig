@@ -24,6 +24,7 @@
 #include "w_export.h"
 #include "w_print.h"
 #include "w_icons.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
 

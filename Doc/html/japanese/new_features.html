@@ -10,7 +10,15 @@
 <a href="contents.html"><img src="../images/xfig-title.gif"
   alt="XFIG Users Manual" border=0></a>
 
-<h1>xfig 3.2.3 の新しい機能</h1>
+<h1>xfig 3.2.3a の新しい機能</h1>
+
+<p>
+<img src="../images/blueballdot.gif" alt="-">
+	Library of UML objects (Unified Modelling Language)
+	  From Andreas Ludwig (ludwig@ipd.info.uni-karlsruhe.de)
+
+
+<h2>xfig 3.2.3 の新しい機能</h2>
 
 <h2>GIF サポートについて</h2>
 
@@ -26,6 +34,45 @@ xfig は GIF ファイルを取り込むために giftopnm、
 <h2>新しい機能</h2>
 
 <ul>
+<li>矢印の太さの設定は、デフォルトで、絶対的な寸法ではなく
+線幅に対する比率で行なうようになりました。
+
+<p>
+<li>図が変更されており、ユーザーが <i>Files/New</i> を選択した場合には、
+まずユーザーが図をセーブしたいかどうかを尋ねるようにしました。
+
+<p>
+<li>ほとんどのシステムが F20 キーを持っていないため、
+app-defaults での <i>Paste Text</i> のキーを F20 から F12 に変更しました。
+Sun ワークステーションの Paste キー (本当は F18) も、
+テキストのペーストのために用いることができます。
+
+<p>
+<li>Export に際しての余白のデフォルトを 0 に変更しました。
+
+<p>
+<li>ライブラリに、Rolan Rosenfeld からの“Flags”を追加しました。
+これは、Rolan が Sketch のサンプルから変換したヨーロッパの国旗です。
+Brian Smith が xfig で作成した日本とアメリカの国旗も含まれています。
+
+<p>
+<li>Ian MacPhedran の FIG に関連した情報の Web サイト、
+<a href="http://duke.usask.ca/~macphed/soft/fig">http://duke.usask.ca/~macphed/soft/fig</a> 
+の情報を、HTML ドキュメントの「Xfig の入手とインストール」の章の
+「関連するアプリケーション」に追加しました。
+
+<p>
+<li>カラーマップが使い切られて <b>xfig</b> が
+プライベート・カラーマップに切り替える前に
+ウィジェットが正しい色を確保できるチャンスが高くなるように、
+<b>xfig</b> の 32個の「標準」カラーの割り当てを
+セットアップ処理の最後に行なうようにしました。
+
+<p>
+<li>取り込む EPS ファイルに %%BoundingBox がない場合に、
+Letter (metric モードでは A4) を仮定するようにしました。
+
+<p>
 <li><a href="i18n.html">国際化 <b>xfig</b></a> を
 韓国語環境 (<tt>ko_KR.eucKR</tt>) で動かした場合に、
 <a href="attributes.html#font-panel">フォント・パネル</a>の 
@@ -290,7 +337,7 @@ http://member.nifty.ne.jp/tsato/xfig/</a>
 <li><a href="printing.html#export">Export パネル</a>で 
 <i>Language</i> が選択された時に、
 <i>Filename Mask</i> をそれに応じて変更する 
-(例えば、GIF が選択されたならば <tt>*.gif</tt> に) 
+(例えば、PNG が選択されたならば <tt>*.png</tt> に) 
 ようにしました。
 従って、<tt>Fig*export_panel*mask*string</tt> は過去のものとなりました。
 

@@ -21,6 +21,7 @@
 #include "object.h"
 #include "f_read.h"
 #include "u_create.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 #include "w_zoom.h"
 

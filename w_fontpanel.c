@@ -18,6 +18,7 @@
 #include "resources.h"
 #include "u_fonts.h"		/* printer font names */
 #include "w_fontbits.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
 

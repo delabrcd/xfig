@@ -26,6 +26,7 @@
 #include "u_create.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 
 /* local routine declarations */

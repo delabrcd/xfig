@@ -29,6 +29,7 @@
 #include "u_undo.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
+#include "w_msgpanel.h"
 
 static Boolean	init_boxscale_ellipse();
 static Boolean	init_boxscale_line();

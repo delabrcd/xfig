@@ -113,7 +113,9 @@ Region region;
     int	font_ascent, font_descent, y_loc;
 
     int	fontset_ascent, fontset_descent;
+#if (XtVersion >= 11006)
     XFontSetExtents *ext = XExtentsOfFontSet(entry->sme_bsb.fontset);
+#endif
 
     Dimension s;
 #ifdef XAW3D
@@ -125,6 +127,7 @@ Region region;
     /* call the superclass expose method first (draw the label) */
     (*superclass->rect_class.expose) (w, event, region);
 
+#if (XtVersion >= 11006)
     if ( entry->sme.international == True ) {
         fontset_ascent = abs(ext->max_ink_extent.y);
         fontset_descent = ext->max_ink_extent.height - fontset_ascent;
@@ -133,6 +136,11 @@ Region region;
         font_ascent = entry->sme_bsb.font->max_bounds.ascent;
         font_descent = entry->sme_bsb.font->max_bounds.descent;
     }
+#else
+    font_ascent = entry->sme_bsb.font->max_bounds.ascent;
+    font_descent = entry->sme_bsb.font->max_bounds.descent;
+#endif /* XtVersion R6 */
+
     y_loc = entry->rectangle.y;
 
     if (XtIsSensitive(w) && XtIsSensitive( XtParent(w) ) ) {
@@ -154,6 +162,7 @@ Region region;
 	    int width, t_width;
 
 	case XtJustifyCenter:
+#if (XtVersion >= 11006)
             if ( entry->sme.international == True ) {
 	        t_width = XmbTextEscapement(entry->sme_bsb.fontset,label,len);
                 width = entry->rectangle.width - (entry->sme_bsb.left_margin +
@@ -164,9 +173,15 @@ Region region;
 	        width = entry->rectangle.width - (entry->sme_bsb.left_margin +
 					      entry->sme_bsb.right_margin);
             }
+#else
+	    t_width = XTextWidth(entry->sme_bsb.font, label, len);
+	    width = entry->rectangle.width - (entry->sme_bsb.left_margin +
+					      entry->sme_bsb.right_margin);
+#endif /* XtVersion R6 */
 	    x_loc += (width - t_width)/2;
 	    break;
 	case XtJustifyRight:
+#if (XtVersion >= 11006)
             if ( entry->sme.international == True ) {
                 t_width = XmbTextEscapement(entry->sme_bsb.fontset,label,len);
                 x_loc = entry->rectangle.width - ( entry->sme_bsb.right_margin
@@ -177,6 +192,11 @@ Region region;
 	        x_loc = entry->rectangle.width - ( entry->sme_bsb.right_margin
 						 + t_width );
             }
+#else
+	    t_width = XTextWidth(entry->sme_bsb.font, label, len);
+	    x_loc = entry->rectangle.width - ( entry->sme_bsb.right_margin
+						 + t_width );
+#endif /* XtVersion R6 */
 	    break;
 	case XtJustifyLeft:
 	default:
@@ -186,6 +206,7 @@ Region region;
 
 	/* this will center the text in the gadget top-to-bottom */
 
+#if (XtVersion >= 11006)
         if ( entry->sme.international==True ) {
             y_loc += ((int)entry->rectangle.height - 
 		  (fontset_ascent + fontset_descent)) / 2 + fontset_ascent;
@@ -193,6 +214,10 @@ Region region;
             y_loc += ((int)entry->rectangle.height - 
 		  (font_ascent + font_descent)) / 2 + font_ascent;
         }
+#else
+        y_loc += ((int)entry->rectangle.height - 
+		  (font_ascent + font_descent)) / 2 + font_ascent;
+#endif /* XtVersion R6 */
 
 	/* do the underlining here */
 	if ( entry->figSme_bsb.underline >= 0 ) {

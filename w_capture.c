@@ -23,6 +23,7 @@
 #include "resources.h"
 #include "object.h"
 #include "w_capture.h"
+#include "w_msgpanel.h"
 
 static Boolean  getImageData();	  	/* returns zero on failure */
 static Boolean  selectedRootArea();	/* returns zero on failure */

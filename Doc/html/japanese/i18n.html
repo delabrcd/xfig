@@ -12,7 +12,7 @@
 
 <h1>国際化 (日本語、韓国語などの使用)</h1>
 
-<b>xfig 3.2</b>、及び <b>fig2dev 3.2</b> には国際化のためのコードが含まれており、
+<b>xfig 3.2.X</b>、及び <b>fig2dev 3.2.X</b> には国際化のためのコードが含まれており、
 テキストに日本語などの文字を含めることが可能となっています。
 現時点では、日本語、及び<a href="../images/screen-korean.gif">韓国語</a>
 での動作が確認されています。
@@ -77,11 +77,11 @@
 <h3><a name="install-xfig">xfig のインストール</a></h3>
 
 <ol>
-<li><a href="installation.html"><b>xfig.3.2.3.tar.gz</b></a> 
+<li><a href="installation.html"><b>xfig.3.2.3a.tar.gz</b></a> 
 を入手し、展開します。
 
 <p>
-<li><tt>xfig.3.2.3/Imakefile</tt> の、
+<li><tt>xfig.3.2.3a/Imakefile</tt> の、
 ``<tt>#define I18N</tt>'' のコメント・アウトを解除 
 (<tt>XCOMM</tt> を削除) します。
 
@@ -101,11 +101,11 @@ C ライブラリが必要なロケールをサポートしていないならば、
 <h3><a name="install-fig2dev">fig2dev のインストール</a></h3>
 
 <ol>
-<li><a href="installation.html"><b>transfig.3.2.3.tar.gz</b></a> 
+<li><a href="installation.html"><b>transfig.3.2.3a.tar.gz</b></a> 
 を入手し、展開します。
 
 <p>
-<li><tt>transfig.3.2.3/fig2dev/Imakefile</tt> の、
+<li><tt>transfig.3.2.3a/fig2dev/Imakefile</tt> の、
 ``<tt>#define I18N</tt>'' のコメント・アウトを解除 
 (<tt>XCOMM</tt> を削除) します。
 
@@ -364,7 +364,7 @@ JIS-X-0201 のカナ (いわゆる半角カナ) や JIS-X-0212 (補助漢字) の文字を
 
 <p>
 <li>残念ながら、X11R5 のシステムの多くにおいては、
-<b>xfig 3.2</b> の国際化機能を使用できるようにすることは難しいようです。
+<b>xfig 3.2.X</b> の国際化機能を使用できるようにすることは難しいようです。
 日本語 Solaris 2 の OpenWindows、及び Solaris CDE での動作は確認されていますが、
 それ以外の X11R5 ベースのシステムでの動作については未確認です。
 </ul>
@@ -414,7 +414,7 @@ JPEG ライブラリのソースを入手してコンパイルする必要があるかも知れません。
 <dl>
 <dt>参照:
 <dd><a href="http://pantheon.yale.edu/~jshin/faq/">Hangul and Internet in Korea FAQ</a><br>
-<a href="http://nuclina.hoseo.ac.kr/ps/">Hungle and Printing</a>
+<a href="http://nuclina.hoseo.ac.kr/ps/">Hangul and Printing</a>
 </dl>
 
 <p>

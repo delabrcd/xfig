@@ -31,6 +31,7 @@
 #include "w_canvas.h"
 #include "w_layers.h"
 #include "w_mousefun.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 
 static void	init_delete();

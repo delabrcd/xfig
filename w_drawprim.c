@@ -39,6 +39,7 @@
 #include "w_canvas.h"
 #include "w_drawprim.h"
 #include "w_indpanel.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
@@ -971,6 +972,7 @@ pw_point(w, x, y, line_width, op, color, cap_style)
     zXDrawLine(tool_d, w, gccache[op], x-hf_wid, y, x+hf_wid+(line_width%2), y);
 }
 
+void
 pw_arcbox(w, xmin, ymin, xmax, ymax, radius, op,
 	  line_width, line_style, style_val, fill_style,
 	  pen_color, fill_color)

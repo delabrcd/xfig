@@ -29,6 +29,7 @@
 #include "u_undo.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
+#include "w_msgpanel.h"
 #include "d_spline.h"
 
 static void	init_convert_line_spline();

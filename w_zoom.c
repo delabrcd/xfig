@@ -26,6 +26,7 @@
 #include "u_pan.h"
 #include "w_canvas.h"
 #include "w_file.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"

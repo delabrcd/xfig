@@ -27,6 +27,7 @@
 #include "u_create.h"
 #include "u_elastic.h"
 #include "w_canvas.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 #include "mode.h"
 #ifdef USE_XPM

@@ -32,6 +32,7 @@
 #include "w_cmdpanel.h"
 #include "w_layers.h"
 #include "w_mousefun.h"
+#include "w_msgpanel.h"
 #include "w_rulers.h"
 #include "w_setup.h"
 #include "w_util.h"

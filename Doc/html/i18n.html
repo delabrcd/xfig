@@ -13,7 +13,7 @@
 
 <h1>Internationalization (Using Japanese, Korean, etc.)</h1>
 
-<b>xfig 3.2</b> and <b>fig2dev 3.2</b> include code for internationalization,
+<b>xfig 3.2.X</b> and <b>fig2dev 3.2.X</b> include code for internationalization,
 and it is possible to put characters of Japanese
 and some another languages in texts.
 At now, it is known to worked under Japanese and Korean.
@@ -75,12 +75,12 @@ These facilities may be implemented as a single program.
 <h3><a name="install-xfig">Install <b>xfig</b></a></h3>
 
 <ol>
-<li>Get <a href="installation.html"><b>xfig.3.2.3.tar.gz</b></a> 
+<li>Get <a href="installation.html"><b>xfig.3.2.3a.tar.gz</b></a> 
 and <i>gunzip</i> and <i>untar</i> it.
 
 <p>
 <li>Uncomment ``<tt>#define I18N</tt>''
-in <tt>xfig.3.2.3/Imakefile</tt> (remove the <tt>XCOMM</tt> comment).
+in <tt>xfig.3.2.3a/Imakefile</tt> (remove the <tt>XCOMM</tt> comment).
 
 <p>
 <li>If your C library supports the required locale,
@@ -97,12 +97,12 @@ make sure that <tt>-DSETLOCALE</tt> is specified.
 <h3><a name="install-fig2dev">Install <b>fig2dev</b></a></h3>
 
 <ol>
-<li>Get <a href="installation.html"><b>transfig.3.2.3.tar.gz</b></a> 
+<li>Get <a href="installation.html"><b>transfig.3.2.3a.tar.gz</b></a> 
 and <i>gunzip</i> and <i>untar</i> it.
 
 <p>
 <li>Uncomment ``<tt>#define I18N</tt>''
-in <tt>transfig.3.2.3/fig2dev/Imakefile</tt> (remove the <tt>XCOMM</tt> comment).
+in <tt>transfig.3.2.3a/fig2dev/Imakefile</tt> (remove the <tt>XCOMM</tt> comment).
 
 <p>
 <li>If you want to install files like <tt>japanese.ps</tt> 
@@ -348,7 +348,7 @@ or JIS-X-0212 (supplement <i>kanji</i>),
 but <b>fig2dev</b> will not accept those characters.
 
 <p>
-<li>Regrettably, making <b>xfig 3.2</b>'s Japanese entering feature
+<li>Regrettably, making <b>xfig 3.2.X</b>'s Japanese entering feature
 available may difficult on many X11R5 systems.
 It is known to work on Japanese Solaris 2's OpenWindows and Solaris CDE,
 but unknown about another X11R5-based systems.
@@ -400,7 +400,7 @@ to avoid using JPEG library distributed with IRIX.
 <dl>
 <dt>SEE ALSO:
 <dd><a href="http://pantheon.yale.edu/~jshin/faq/">Hangul and Internet in Korea FAQ</a><br>
-<a href="http://nuclina.hoseo.ac.kr/ps/">Hungle and Printing</a>
+<a href="http://nuclina.hoseo.ac.kr/ps/">Hangul and Printing</a>
 </dl>
 
 <p>

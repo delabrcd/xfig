@@ -26,6 +26,7 @@
 #include "u_undo.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
+#include "w_msgpanel.h"
 #include "w_modepanel.h"
 #include "w_zoom.h"
 

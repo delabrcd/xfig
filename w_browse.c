@@ -22,6 +22,7 @@
 #include "e_edit.h"
 #include "w_drawprim.h"
 #include "w_dir.h"
+#include "w_msgpanel.h"
 #include "w_util.h"
 #include "w_setup.h"
 

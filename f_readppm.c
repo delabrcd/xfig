@@ -16,6 +16,7 @@
 #include "fig.h"
 #include "resources.h"
 #include "object.h"
+#include "w_msgpanel.h"
 
 #define BUFLEN 1024
 
@@ -38,7 +39,7 @@ read_ppm(file,filetype,pic)
 	/* make command to convert gif to pcx into temp file */
 	sprintf(buf, "ppmtopcx > %s 2> /dev/null", pcxname);
 	if ((giftopcx = popen(buf,"w" )) == 0) {
-	    file_msg("Cannot open pipe to giftoppm\n");
+	    file_msg("Cannot open pipe to ppmtopcx\n");
 	    return FileInvalid;
 	}
 	while ((size=fread(buf, 1, BUFLEN, file)) != 0) {

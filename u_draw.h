@@ -30,5 +30,11 @@ void		draw_compoundelements();
 
 void            draw_spline();
 void            quick_draw_spline();
+
+/* curve routine needed by arc() and show_boxradius() */
+
+void curve(Window, int, int, int, int, Boolean, Boolean,
+		int, int, int, int, int, int, int, int, 
+		float, int, int, int, int);
  
 #endif /* U_DRAW_H */

@@ -67,6 +67,12 @@
 図をシフトさせるかどうかを尋ねられるようになります。
 
 <p>
+<dt><kbd>-dont_show_zero_lines </kbd> (<kbd>-dont_s</kbd>)
+<dd>キャンバス上に 0,0 を通る線を引かないようにします。
+<a href="#showpageborder">-dontshowpageborder</a> が指定されない限り、
+ページの境界は依然として描画されます。
+
+<p>
 <dt><kbd>-hiddentext </kbd> (<kbd>-hi</kbd>)
 <dd><a href="attributes.html#text-flags">TEXT FLAGS</a> の 
 <i>Hidden</i> フラグを on にします。
@@ -118,6 +124,11 @@
 <dd><a href="attributes.html#text-flags">TEXT FLAGS</a> の 
 <i>Rigid</i> フラグを on にします。
 デフォルトは off です。
+
+<p>
+<dt><kbd>-rulerthick <i>thick</i></kbd> (<kbd>-ru</kbd>)
+<dd>上、及び横の目盛の太さを指定します。
+デフォルト (そして最小値) は 24 です。
 
 <p>
 <dt><kbd>-specialtext </kbd> (<kbd>-spec</kbd>)
@@ -534,9 +545,10 @@ TrueColor、StaticColor、DirectColor、StaticGray、GrayScale、
 の左右を反転させます。
 
 <p>
-<dt><kbd>-hide_depth_manager </kbd> (<kbd>-hide</kbd>)
+<dt><kbd>-show_depth_manager </kbd> (<kbd>-show_d</kbd>)
+<br><kbd>-hide_depth_manager </kbd> (<kbd>-hide</kbd>)
   <img src="../images/pict-new.gif" alt="New!">
-<dd><a href="layers.html">Depth パネル</a>を隠します。
+<dd><a href="layers.html">Depth パネル</a>を表示するかどうかを指定します。
 これはキャンバスの空間を大きくします。
 デフォルトでは、Depth パネルは表示されます。
 
@@ -573,12 +585,6 @@ TrueColor、StaticColor、DirectColor、StaticGray、GrayScale、
 ページの境界の表示は、
 <kbd>-showpageborder</kbd> オプション (<tt>Fig.showpageborder</tt> リソース) 
 によって on となり、現在の用紙サイズでのページの境界を示します。
-
-<p>
-<dt><kbd>-show_depth_manager </kbd> (<kbd>-show_d</kbd>)
-  <img src="../images/pict-new.gif" alt="New!">
-<dd>キャンバスの右側に<a href="layers.html">Depth パネル</a>を表示します。
-これがデフォルトです。
 
 <p>
 <dt><a name="showlengths"><kbd>-showlengths </kbd></a> (<kbd>-showl</kbd>)<br>
@@ -1213,7 +1219,7 @@ PDF (Portable Document Format) ビューアを指定します。
 <b>Default:</b> on (show balloons)
 
 <p>
-<dt><kbd>show_depth_manager </kbd> (<kbd>Hints</kbd>)
+<dt><kbd>showdepthmanager </kbd> (<kbd>Hints</kbd>)
 <img src="../images/pict-new.gif" alt="New!">
 <dd>キャンバスの右側に<a href="layers.html">Depth パネル</a>を表示します。
 <br>

@@ -59,6 +59,7 @@
 #include "fig.h"
 #include "resources.h"
 #include "object.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 #include <setjmp.h>
 #include <jpeglib.h>

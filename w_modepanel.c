@@ -27,9 +27,10 @@
 #include "w_drawprim.h"
 #include "w_library.h"
 #include "w_indpanel.h"
-#include "w_util.h"
 #include "w_mousefun.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
+#include "w_util.h"
 #include "d_spline.h"
 
 /* it is easier to put these extern declarations here than to create 

@@ -19,6 +19,7 @@
 #include "resources.h"
 #include "object.h"
 #include "f_read.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 #include "u_create.h"
 

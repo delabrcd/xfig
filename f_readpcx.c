@@ -17,6 +17,7 @@
 #include "resources.h"
 #include "object.h"
 #include "w_color.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 #include "pcx.h"
 

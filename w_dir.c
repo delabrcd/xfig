@@ -59,6 +59,7 @@
 #include "w_export.h"
 #include "w_file.h"
 #include "w_listwidget.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
 #ifdef HAVE_NO_DIRENT

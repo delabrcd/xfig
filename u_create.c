@@ -23,6 +23,7 @@
 #include "u_create.h"
 #include "w_indpanel.h"
 #include "w_layers.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 
 static char	Err_mem[] = "Running out of memory.";

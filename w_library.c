@@ -32,6 +32,7 @@
 #include "w_file.h"
 #include "w_listwidget.h"
 #include "w_layers.h"
+#include "w_msgpanel.h"
 #include "w_util.h"
 #include "w_setup.h"
 #include "w_icons.h"
@@ -62,8 +63,8 @@ static Widget	object_list,new_object_viewport;
 static Widget	lib_obj_label,library_label,library_menu,sel_library_panel;
 static Widget	cancel,intro;
 static Widget	library_panel,library_status,selobj;
-static Widget	preview_widget, preview_comments;
-static Pixmap	preview_pixmap, cur_obj_preview;
+static Widget	preview_lib_widget, preview_comments;
+static Pixmap	preview_lib_pixmap, cur_obj_preview;
 static int	num_library_name;
 static int	num_list_items, which_num;
 static Boolean	MakeObjectLibrary(),MakeLibraryList(),MakeLibrary();
@@ -160,7 +161,7 @@ library_cancel(w, ev)
 	set_comments(cur_library_object->comments);
 
 	/* copy current object preview back to main preview pixmap */
-	XCopyArea(tool_d, cur_obj_preview, preview_pixmap, gccache[PAINT], 0, 0, 
+	XCopyArea(tool_d, cur_obj_preview, preview_lib_pixmap, gccache[PAINT], 0, 0, 
 			LIB_PREVIEW_CANVAS_SIZE, LIB_PREVIEW_CANVAS_SIZE, 0, 0);
     }
 
@@ -198,7 +199,7 @@ library_load(w, new_library, garbage)
 	/* set new */
 	cur_library = new;
 	/* erase the preview and preview backup */
-	erase_pixmap(preview_pixmap);
+	erase_pixmap(preview_lib_pixmap);
 	erase_pixmap(cur_obj_preview);
 	/* force the toolkit to refresh it */
 	update_preview();
@@ -245,7 +246,7 @@ put_new_object_sel(w, ev)
 	    return;		/* problem loading object */
     old_library_object = cur_library_object;
     /* copy current preview pixmap to current object preview pixmap */
-    XCopyArea(tool_d, preview_pixmap, cur_obj_preview, gccache[PAINT], 0, 0, 
+    XCopyArea(tool_d, preview_lib_pixmap, cur_obj_preview, gccache[PAINT], 0, 0, 
 			LIB_PREVIEW_CANVAS_SIZE, LIB_PREVIEW_CANVAS_SIZE, 0, 0);
     library_dismiss();
 }
@@ -547,34 +548,34 @@ create_library_panel()
 
   /* first create a pixmap for its background, into which we'll draw the figure */
   
-  preview_pixmap = XCreatePixmap(tool_d, canvas_win, 
+  preview_lib_pixmap = XCreatePixmap(tool_d, canvas_win, 
 			LIB_PREVIEW_CANVAS_SIZE, LIB_PREVIEW_CANVAS_SIZE, tool_dpth);
 
   /* create a second one as a copy in case the user cancels the popup */
   cur_obj_preview = XCreatePixmap(tool_d, canvas_win, 
 			LIB_PREVIEW_CANVAS_SIZE, LIB_PREVIEW_CANVAS_SIZE, tool_dpth);
   /* erase them */
-  erase_pixmap(preview_pixmap);
+  erase_pixmap(preview_lib_pixmap);
   erase_pixmap(cur_obj_preview);
 
   /* now make a preview canvas to the right of the object list */
   FirstArg(XtNfromHoriz, new_object_viewport);
   NextArg(XtNfromVert, lib_obj_label);
   NextArg(XtNlabel, "");
-  NextArg(XtNbackgroundPixmap, preview_pixmap);
+  NextArg(XtNbackgroundPixmap, preview_lib_pixmap);
   NextArg(XtNwidth, LIB_PREVIEW_CANVAS_SIZE);
   NextArg(XtNheight, LIB_PREVIEW_CANVAS_SIZE);
   NextArg(XtNtop, XtChainTop);
   NextArg(XtNbottom, XtChainTop);
   NextArg(XtNleft, XtChainRight);
   NextArg(XtNright, XtChainRight);
-  preview_widget = XtCreateManagedWidget("library_preview_widget", labelWidgetClass,
+  preview_lib_widget = XtCreateManagedWidget("library_preview_widget", labelWidgetClass,
 					  library_panel, Args, ArgCount);
 
   /* now a place for the library object comments */
   FirstArg(XtNlabel, "Object comments:");
   NextArg(XtNwidth, LIB_PREVIEW_CANVAS_SIZE);
-  NextArg(XtNfromVert, preview_widget)
+  NextArg(XtNfromVert, preview_lib_widget)
   NextArg(XtNfromHoriz, new_object_viewport);
   below = XtCreateManagedWidget("comment_label", labelWidgetClass,
 					  library_panel, Args, ArgCount);
@@ -948,7 +949,7 @@ preview_libobj(objnum)
     save_counts(&obj_counts[0]);
 
     /* now switch the drawing canvas to our preview window */
-    canvas_win = (Window) preview_pixmap;
+    canvas_win = (Window) preview_lib_pixmap;
     
     /* make wait cursor */
     XDefineCursor(tool_d, XtWindow(library_panel), wait_cursor);
@@ -979,7 +980,7 @@ preview_libobj(objnum)
 	zoomyoff = -(LIB_PREVIEW_CANVAS_SIZE/zoomscale - height)/2.0 + ymin;
 
 	/* clear pixmap */
-	XFillRectangle(tool_d, preview_pixmap, gccache[ERASE], 0, 0, 
+	XFillRectangle(tool_d, preview_lib_pixmap, gccache[ERASE], 0, 0, 
 				LIB_PREVIEW_CANVAS_SIZE, LIB_PREVIEW_CANVAS_SIZE);
 
 	/* draw the preview into the pixmap */
@@ -1034,9 +1035,9 @@ static void
 update_preview()
 {
     FirstArg(XtNbackgroundPixmap, (Pixmap)0);
-    SetValues(preview_widget);
-    FirstArg(XtNbackgroundPixmap, preview_pixmap);
-    SetValues(preview_widget);
+    SetValues(preview_lib_widget);
+    FirstArg(XtNbackgroundPixmap, preview_lib_pixmap);
+    SetValues(preview_lib_widget);
 }
 
 set_comments(comments)

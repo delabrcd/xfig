@@ -57,6 +57,8 @@ Enhance all objects to have cap_style type for dotted lines
 Allow selecting linecap type for dotted lines for closed splines, boxes
 	and ellipses
 Rotatable boxes - store width, height, upper-left corner and angle only
+Background color for text (or "None") to allow background (ala XDrawImageString)
+	Note: need to add flag/call to text rotation code to do this
 Honor fractional text sizes (float).  Currently, xfig reads the size as float
 	but converts to integer internally.
 No need for duplicating first point at end for polygon in file itself

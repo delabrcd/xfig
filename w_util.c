@@ -1140,7 +1140,8 @@ CreateCheckbutton(label, widget_name, parent, below, beside, manage, large,
 {
 	DeclareArgs(10);
 	Widget   form, toggle, labelw;
-	unsigned int check_ht, dum;
+	unsigned int check_ht, udum;
+	int	 idum;
 	Window	 root;
 
 	FirstArg(XtNdefaultDistance, 1);
@@ -1182,7 +1183,7 @@ CreateCheckbutton(label, widget_name, parent, below, beside, manage, large,
 
 	/* get the height of the checkmark pixmap */
 	(void) XGetGeometry(tool_d, (large?check_pm:sm_check_pm), &root, 
-			&dum, &dum, &dum, &check_ht, &dum, &dum);
+			&idum, &idum, &udum, &check_ht, &udum, &udum);
 
 	FirstArg(XtNlabel, label);
 	NextArg(XtNheight, check_ht+6);	/* make label as tall as the check mark */

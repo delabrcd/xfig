@@ -10,7 +10,36 @@
 <a href="contents.html"><img src="../images/xfig-title.gif"
   alt="XFIG Users Manual" border=0></a>
 
-<h1><a name="bugsfixed">Bugs Fixed in <i>xfig 3.2.3</i></a></h1>
+<h1><a name="bugsfixed">Bugs Fixed in <i>xfig 3.2.3a</i></a></h1>
+
+<p>
+<img src="../images/blueballdot.gif" alt="-">
+	w_menuentry (subclassed menu entry widget) has been modified to be
+	  compatible with the X11R5 Intrinsics besides R6
+<p>
+<img src="../images/blueballdot.gif" alt="-">
+	Several bugs in sprintf statements which create export command
+<p>
+<img src="../images/blueballdot.gif" alt="-">
+	Incorrect lengths reported when drawing box with "showlengths" on
+	  and user scale != 1.0 (e.g. 1cm = 3km)
+<p>
+<img src="../images/blueballdot.gif" alt="-">
+	Declaration for preview_widget was both static and extern
+<p>
+<img src="../images/blueballdot.gif" alt="-">
+	Declaration for preview_pixmap was both static and extern
+<p>
+<img src="../images/blueballdot.gif" alt="-">
+	Two vars passed to XGetGeometry should have been int instead of
+	  unsigned int (CreateCheckbutton() proc)
+<p>
+<img src="../images/blueballdot.gif" alt="-">
+	Added '#include "w_msgpanel.h"' for every file containing calls to
+	  put_msg() or file_msg() since they contain varargs and should be
+	  declared as having variable arguments
+
+<h2><a name="bugsfixed">Bugs Fixed in <i>xfig 3.2.3</i></a></h2>
 
 <p>
 <img src="../images/blueballdot.gif" alt="-">

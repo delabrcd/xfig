@@ -108,7 +108,7 @@
 .PD
 ..
 .\"-------
-.TH XFIG 1 "Xfig 3.2.3 (Jan 14, 2000)"
+.TH XFIG 1 "Xfig 3.2.3a (Jan 19, 2000)"
 .SH NAME
 xfig - Facility for Interactive Generation of figures under X11
 .SH SYNOPSIS

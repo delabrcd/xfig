@@ -22,6 +22,7 @@
 #include "u_create.h"
 #include "u_fonts.h"
 #include "w_drawprim.h"
+#include "w_msgpanel.h"
 #include "w_zoom.h"
 
 /*******    Fig 1.3 subtype of objects	  *******/

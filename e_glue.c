@@ -30,6 +30,7 @@
 #include "u_undo.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
+#include "w_msgpanel.h"
 
 static void	create_compoundobject(), cancel_tag_region(),
 		init_tag_region(), tag_region(), tag_object();

@@ -145,6 +145,7 @@ boxsize_msg(fact)
 		(float)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM)*appres.user_scale;
     put_msg("Width = %.3lf %s, Height = %.3lf %s", 
 		fabs(dx), cur_fig_units, fabs(dy), cur_fig_units);
+    /* if showing line lengths */
     if (appres.showlengths && !freehand_line) {
 	if (dx < 0)
 	    sdx = -2.0/zoomscale;
@@ -161,9 +162,9 @@ boxsize_msg(fact)
 
 	/* draw new text */
 
-	sprintf(bufx,"%.3f", fabs(dx*appres.user_scale));
+	sprintf(bufx,"%.3f", fabs(dx));
 	sizex = textsize(roman_font, strlen(bufx), bufx);
-	sprintf(bufy,"%.3f", fabs(dy*appres.user_scale));
+	sprintf(bufy,"%.3f", fabs(dy));
 	sizey = textsize(roman_font, strlen(bufy), bufy);
 
 	/* dx first */
@@ -231,8 +232,9 @@ void
 altlength_msg(type, fx, fy)
     int type;
 {
-  float		len;
   double	dx,dy;
+  float		len, rlen;
+  float		udx, udy;
   float		ang;
   int		sdx, sdy;
   int		t1x, t1y, t2x, t2y, t3x, t3y;
@@ -240,7 +242,13 @@ altlength_msg(type, fx, fy)
 
   dx = (cur_x - fx)/(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
   dy = (cur_y - fy)/(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
-  len = (float)sqrt(dx*dx + dy*dy);
+  rlen = (float)sqrt(dx*dx + dy*dy);
+
+  /* in user units */
+  udx = dx*appres.user_scale;
+  udy = dy*appres.user_scale;
+  len = rlen*appres.user_scale;
+
   if (dy != 0.0 || dx != 0.0) {
 	ang = (float) - atan2(dy,dx) * 180.0/M_PI;
   } else {
@@ -251,30 +259,25 @@ altlength_msg(type, fx, fy)
     case MSG_DIAM:
 	put_msg("%s = %.3f %s, dx = %.3lf %s, dy = %.3lf %s",
                 (type==MSG_RADIUS? "Radius": "Diameter"),
-		len*appres.user_scale, cur_fig_units,
-		(float)dx*appres.user_scale, cur_fig_units,
-		(float)dy*appres.user_scale, cur_fig_units);
+		len, cur_fig_units,
+		udx, cur_fig_units, udy, cur_fig_units);
 	break;
     case MSG_RADIUS2:
 	put_msg("Radius1 = %.3f %s, Radius2 = %.3f %s",
-		(float)dx*appres.user_scale, cur_fig_units,
-		(float)dy*appres.user_scale, cur_fig_units);
+		udx, cur_fig_units, udy, cur_fig_units);
 	break;
     case MSG_PNTS_LENGTH:
 	put_msg("%d point%s, Length = %.3f %s, dx = %.3lf %s, dy = %.3lf %s (%.1f deg)",
 		num_point, ((num_point != 1)? "s": ""),
-		len*appres.user_scale, cur_fig_units,
-		(float)dx*appres.user_scale, cur_fig_units,
-		(float)dy*appres.user_scale, cur_fig_units,
-		ang );
+		len, cur_fig_units,
+		udx, cur_fig_units, udy, cur_fig_units, ang );
 	break;
     case MSG_RADIUS_ANGLE:
     case MSG_DIAM_ANGLE:
 	if (num_point == 0)
 	  put_msg("%s = %.3f %s, Angle = %.1f deg",
 		  (type==MSG_RADIUS_ANGLE? "Radius":"Diameter"),
-		  len*appres.user_scale, cur_fig_units,
-		  ang );
+		  len, cur_fig_units, ang );
 	else
 	  put_msg("%d point%s, Angle = %.1f deg",
 		  num_point, ((num_point != 1)? "s": ""),
@@ -283,9 +286,8 @@ altlength_msg(type, fx, fy)
     default:
 	put_msg("%s = %.3f %s, dx = %.3lf %s, dy = %.3lf %s (%.1f) deg",
 		(type==MSG_LENGTH? "Length": "Distance"),
-		len*appres.user_scale, cur_fig_units,
-		(float)dx*appres.user_scale, cur_fig_units,
-		(float)dy*appres.user_scale, cur_fig_units,
+		len, cur_fig_units,
+		udx, cur_fig_units, udy, cur_fig_units,
 		ang );
 	break;
   }
@@ -336,11 +338,11 @@ altlength_msg(type, fx, fy)
 		/* draw new text */
 
 		/* put the lengths in strings and get their sizes for positioning */
-		sprintf(bufx,"%.3f", fabs(dx*appres.user_scale));
+		sprintf(bufx,"%.3f", fabs(udx));
 		sizex = textsize(roman_font, strlen(bufx), bufx);
-		sprintf(bufy,"%.3f", fabs(dy*appres.user_scale));
+		sprintf(bufy,"%.3f", fabs(udy));
 		sizey = textsize(roman_font, strlen(bufy), bufy);
-		sprintf(bufhyp,"%.3f", len*appres.user_scale);
+		sprintf(bufhyp,"%.3f", len);
 		sizehyp = textsize(roman_font, strlen(bufhyp), bufhyp);
 
 		/* dx first */
@@ -372,7 +374,7 @@ altlength_msg(type, fx, fy)
 		    t3y = t2y + sizehyp.ascent + 3.0/zoomscale;	/* below the hyp */
 		else
 		    t3y = t2y - 3.0/zoomscale;			/* above the hyp */
-		if (len > 0.01 && fabs(len-fabs(dx)) > 0.001 && fabs(len-fabs(dy)) > 0.001) {
+		if (rlen > 0.01 && fabs(rlen-fabs(dx)) > 0.001 && fabs(rlen-fabs(dy)) > 0.001) {
 		    pw_text(canvas_win, t3x, t3y, PAINT, roman_font, 0.0, bufhyp, RED);
 		}
 

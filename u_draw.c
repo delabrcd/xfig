@@ -37,6 +37,7 @@
 #include "w_file.h"
 #include "w_indpanel.h"
 #include "w_layers.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 #include "w_zoom.h"
 
@@ -253,8 +254,7 @@ draw_arc(a, op)
 	  round(a->center.y - a->point[0].y),
 	  round(a->point[2].x - a->center.x),
 	  round(a->center.y - a->point[2].y),
-	  False,
-	  (a->type == T_PIE_WEDGE_ARC),
+	  False, (a->type == T_PIE_WEDGE_ARC),
 	  a->direction, radius, radius,
 	  round(a->center.x), round(a->center.y), op,
 	  a->thickness, a->style, a->style_val, a->fill_style,
@@ -1894,14 +1894,17 @@ draw_arrow(obj, arrow, points, npoints, op)
 
 ****************************************************************/
 
+void
 curve(window, xstart, ystart, xend, yend, draw_points, draw_center,
 	direction, a, b, xoff, yoff, op, thick,
 	style, style_val, fill_style, pen_color, fill_color, cap_style)
     Window	    window;
-    int		    xstart, ystart, xend, yend, a, b, xoff, yoff;
+    int		    xstart, ystart, xend, yend;
     Boolean	    draw_points, draw_center;
-    int		    direction, op, thick, style, fill_style;
+    int		    direction, a, b, xoff, yoff;
+    int		    op, thick, style;
     float	    style_val;
+    int		    fill_style;
     Color	    pen_color, fill_color;
     int		    cap_style;
 {

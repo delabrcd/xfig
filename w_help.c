@@ -19,6 +19,7 @@
 #include "object.h"
 #include "mode.h"
 #include "f_util.h"
+#include "w_msgpanel.h"
 #include "w_util.h"
 
 char	*browsecommand;

@@ -17,6 +17,7 @@
 #include "resources.h"
 #include "u_fonts.h"
 #include "object.h"
+#include "w_msgpanel.h"
 
 /* X11 font names */
 

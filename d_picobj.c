@@ -26,6 +26,7 @@
 #include "u_list.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
+#include "w_msgpanel.h"
 
 /*************************** local declarations *********************/
 

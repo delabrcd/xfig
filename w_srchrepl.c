@@ -52,6 +52,7 @@ There is currently no way to undo replace/update operations.
 #include "w_util.h"
 #include "w_drawprim.h"
 #include "w_listwidget.h"
+#include "w_msgpanel.h"
 #include "w_srchrepl.h"
 #include "u_create.h"
 #include <stdarg.h>

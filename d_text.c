@@ -29,6 +29,7 @@
 #include "w_canvas.h"
 #include "w_drawprim.h"
 #include "w_mousefun.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 #include "w_zoom.h"
 #include <X11/keysym.h>

@@ -25,6 +25,7 @@
 #include "w_file.h"
 #include "w_util.h"
 #include "w_icons.h"
+#include "w_msgpanel.h"
 #include "version.h"
 
 int

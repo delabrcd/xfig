@@ -19,6 +19,7 @@
 #include "resources.h"
 #include "object.h"
 #include "f_picobj.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 
 int	_read_pcx();

@@ -16,6 +16,7 @@
 #include "fig.h"
 #include "resources.h"
 #include "object.h"
+#include "w_msgpanel.h"
 
 /* return codes:  PicSuccess (1) : success
 		  FileInvalid (-2) : invalid file

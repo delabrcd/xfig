@@ -28,6 +28,7 @@
 #include "w_drawprim.h"
 #include "w_indpanel.h"
 #include "w_mousefun.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 
 static void	init_update_object();

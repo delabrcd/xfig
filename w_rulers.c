@@ -25,6 +25,7 @@
 #include "w_drawprim.h"
 #include "w_icons.h"
 #include "w_mousefun.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"

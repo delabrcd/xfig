@@ -26,17 +26,6 @@
 #define MAXERRMSGLEN 512
 
 static int	error_cnt = 0;
-
-/* VARARGS1 */
-put_err(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
-    char	   *format, *arg1, *arg2, *arg3, *arg4, *arg5, *arg6, *arg7,
-		   *arg8;
-{
-    fprintf(stderr, format, arg1, arg2, arg3, arg4, arg5,
-	    arg6, arg7, arg8);
-    put_msg(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-}
-
 error_handler(err_sig)
     int		    err_sig;
 {

@@ -28,6 +28,7 @@
 #include "w_export.h"
 #include "w_file.h"
 #include "w_layers.h"
+#include "w_msgpanel.h"
 #include "w_print.h"
 #include "w_util.h"
 #include "w_setup.h"
