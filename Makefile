@@ -320,14 +320,17 @@ DEPLIBS = 		$(DEPXAWLIB) $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
 # to link with /usr/lib/libc for the directory operations.
 
 # uncomment the following if using DPS (Display PostScript)
+# NOTE: This is only guaranteed to work on an IBM RS/6000 running AIX 3.2
+#       and Suns running Solaris 2.3
 
-#DPSLIB = -ldps
-#DPSDEF = -DDPS
+# DPSLIB = -ldps
+# DPSDEF = -DDPS
 
-# uncomment the following if *NOT* using DPS (Display PostScript)
+# comment out the following if using DPS (Display PostScript) on
+# an IBM RS/6000 or Sun Solaris 2.3
 
-# DPSLIB =
-# DPSDEF =
+DPSLIB =
+DPSDEF =
 
 # If using an input tablet uncomment the following
 
@@ -345,6 +348,13 @@ XFIGLIBDIR =		$(LIBDIR)/xfig
 
 DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
 
+# remove -DGSBIT from the DEFINES if you DON'T want to have gs (ghostscript)
+# generate a preview bitmap for Encapsulated PostScript objects if they
+# don't have one.  If you do use ghostscript you will need version 2.4 or
+# later, and it must have the 'gif8' and 'pbmraw' devices compiled in
+# besides any other device drivers you already use with it.
+# See the Ghostscript Makefile for details.
+#
 # For the rotated text code:
 #   Add one of `-DCACHE_XIMAGES' or `-DCACHE_BITMAPS' to decide what is
 #   cached.  If you are converned about memory usage in your X server (e.g.
@@ -366,7 +376,7 @@ DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
 
 CACHE = -DCACHE_BITMAPS -DCACHE_SIZE_LIMIT=300
 
-DEFINES =             $(STRSTRDEFINES) $(XPMDEFINES) $(DPSDEF)
+DEFINES =             $(STRSTRDEFINES) -DGSBIT $(XPMDEFINES) $(DPSDEF)
 
 XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
 		d_intspline.c d_line.c d_regpoly.c d_spline.c d_text.c \
@@ -376,7 +386,7 @@ XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
 		e_movept.c e_rotate.c e_scale.c e_update.c \
 		f_load.c f_neuclrtab.c f_read.c \
 		f_picobj.c f_readeps.c f_readxbm.c f_readxpm.c f_readgif.c \
-		f_readold.c f_save.c f_util.c f_wrgif.o f_wrxbm.c f_wrxpm.c \
+		f_readold.c f_save.c f_util.c f_wrgif.c f_wrxbm.c f_wrxpm.c \
 		main.c mode.c object.c resources.c \
 		u_bound.c u_create.c u_drag.c u_draw.c \
 		u_elastic.c u_error.c u_fonts.c u_free.c u_geom.c \

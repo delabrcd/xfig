@@ -31,13 +31,12 @@ extern Widget	file_msg_popup;
 extern Widget	make_popup_menu();
 extern char    *panel_get_value();
 
+/* these are in fig units */
+
+static float	offset_unit_conv[] = { (float)PIX_PER_INCH, (float)PIX_PER_CM, 1.0 };
+
 static char	load_msg[] = "The current figure is modified.\nDo you want to discard it and load the new file?";
 static char	buf[40];
-
-static char    *offset_unit_items[] = {
-        " Inches  ", " Centim. ", "Fig Units" };
-static float    offset_unit_conv[] = {
-	(float)PIX_PER_INCH, (float)PIX_PER_CM, 1.0 };
 
 DeclareStaticArgs(12);
 static Widget	file_status, num_objects;
@@ -321,8 +320,11 @@ create_file_panel(w)
 	Widget		   file, beside, below;
 	PIX_FONT	   temp_font;
 	static int	   actions_added=0;
+
 	file_w = w;
 	XtTranslateCoords(w, (Position) 0, (Position) 0, &xposn, &yposn);
+
+	xoff_unit_setting = yoff_unit_setting = (int) appres.INCHES? 0: 1;
 
 	FirstArg(XtNx, xposn);
 	NextArg(XtNy, yposn + 50);

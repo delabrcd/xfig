@@ -87,6 +87,7 @@ line_2_spline(l)
     s->fill_color = l->fill_color;
     s->depth = l->depth;
     s->style_val = l->style_val;
+    s->cap_style = l->cap_style;
     s->pen_style = l->pen_style;
     s->fill_style = l->fill_style;
     s->for_arrow = l->for_arrow;
@@ -141,7 +142,7 @@ spline_2_line(s)
     l->fill_color = s->fill_color;
     l->depth = s->depth;
     l->style_val = s->style_val;
-    l->cap_style = cur_capstyle;
+    l->cap_style = s->cap_style;
     l->join_style = cur_joinstyle;
     l->pen_style = s->pen_style;
     l->radius = DEF_BOXRADIUS;

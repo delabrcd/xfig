@@ -51,12 +51,13 @@ read_picobj(pic,color)
     /* don't touch the flipped flag - caller has already set it */
     pic->subtype = 0;
     pic->bitmap = (unsigned char *) NULL;
+    pic->pixmap = (Pixmap) NULL;
     pic->hw_ratio = 0.0;
     pic->size_x = 0;
     pic->size_y = 0;
     pic->bit_size.x = 0;
     pic->bit_size.y = 0;
-    pic->pixmap = (Pixmap) NULL;
+    pic->numcols = 0;
     pic->pix_rotation = 0;
     pic->pix_width = 0;
     pic->pix_height = 0;

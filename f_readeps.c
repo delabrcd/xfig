@@ -221,13 +221,19 @@ read_epsf(pic)
 	gs -dSAFER -sDEVICE=pbmraw(or gif8) -gWxH -sOutputFile=/tmp/xfig-pic%%%%%%%.pbm -q -
 
 	-llx -lly translate
+        /showpage {} def
 	(psfile) run
+	showpage
 	quit
 	*********************************************/
 
 	fprintf(gsfile, "%d neg %d neg translate\n",llx,lly);
+        fprintf(gsfile, "save\n");
+        fprintf(gsfile, "/showpage {} def\n");
 	fprintf(gsfile, "(%s) run\n", psnam);
-	fprintf(gsfile, "quit\n", psnam);
+        fprintf(gsfile, "restore\n");
+	fprintf(gsfile, "showpage\n");
+	fprintf(gsfile, "quit\n");
 
         status = pclose(gsfile);
 	if (tmpfile[0])

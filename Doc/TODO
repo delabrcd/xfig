@@ -1,5 +1,7 @@
 This file contains some possible things to do in future versions of xfig.
 
+Undo should undo multiple copy, rotate/copy etc.
+Arrowheads should not go past endpoint of line
 Should arrow size change in update mode when linewidth changes?
 	Easier method to set/change arrow size
 Rotate objects using only the mouse (requires new mode button)

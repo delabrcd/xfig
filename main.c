@@ -211,7 +211,7 @@ static XrmOptionDescRec options[] =
     {"-startlinewidth", ".startlinewidth", XrmoptionSepArg, 0},
     {"-startgridmode", ".startgridmode",  XrmoptionSepArg, 0},
     {"-maximagecolors", ".max_image_colors", XrmoptionSepArg, 0},
-    {"-dontswitchcmap", ".dont_switch_cmap", XrmoptionNoArg, "False"},
+    {"-dontswitchcmap", ".dont_switch_cmap", XrmoptionNoArg, "True"},
 #ifdef USE_TAB
     {"-tablet", ".tablet", XrmoptionNoArg, "True"},
 #endif

@@ -238,3 +238,7 @@ extern char *text_translations;
 
 extern char    *orient_items[2];
 extern char    *just_items[2];
+
+/* for w_file.c and w_export.c */
+
+extern char    *offset_unit_items[3];

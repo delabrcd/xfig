@@ -149,3 +149,8 @@ char    *orient_items[] = {
 char    *just_items[] = {
     "Centered  ",
     "Flush left"};
+
+/* for w_file.c and w_export.c */
+
+char    *offset_unit_items[] = {
+        " Inches  ", " Centim. ", "Fig Units" };

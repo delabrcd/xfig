@@ -47,11 +47,9 @@ Widget		export_just_panel;
 
 /* LOCAL */
 
-static char    *offset_unit_items[] = {
-        "In", "Cm"};
-static float    offset_unit_conv[] = {
-	72.0, 72.0/2.54 };
-	/* these are in fig2dev print units (1/72 inch) */
+/* these are in fig2dev print units (1/72 inch) */
+
+static float    offset_unit_conv[] = { 72.0, 72.0/2.54, 72.0/PIX_PER_INCH };
 
 static String	file_list_translations =
 	"<Btn1Down>,<Btn1Up>: Set()Notify()\n\
@@ -350,6 +348,8 @@ create_export_panel(w)
 
 	export_w = w;
 	XtTranslateCoords(w, (Position) 0, (Position) 0, &xposn, &yposn);
+
+	xoff_unit_setting = yoff_unit_setting = (int) appres.INCHES? 0: 1;
 
 	FirstArg(XtNx, xposn);
 	NextArg(XtNy, yposn + 50);

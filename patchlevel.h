@@ -16,4 +16,4 @@
  * the party supplying this software to the X Consortium.
  */
 
-#define PATCHLEVEL "0"
+#define PATCHLEVEL "1"

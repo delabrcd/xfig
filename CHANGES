@@ -2,6 +2,22 @@
 Version 3.1
 =============================================================================
 
+Patchlevel 1 (XXX, X, 1995)
+
+NEW FEATURES:
+
+BUG FIXES:
+
+o couldn't read eps files that didn't have showpage command
+o segfault when non existent eps or other image file is referenced in a figure
+o command-line option -dont_switch_cmap (resource Fig.Dont_switch_cmap) fixed
+o export and file load/merge offsets units (inches, cm, etc) not correctly
+	set when -metric option used
+o seg fault when converting line to spline because cap_style wasn't initialized
+o when converting spline to line, cap_style was set to current cap_style
+	instead of style of line being converted
+
+-----------------------------------------------------------------------------
 Patchlevel 0 (Jan, 9, 1995)
 
 BUG FIXES:

@@ -1297,11 +1297,19 @@ The number of copies to make when doing a
 function on an object.  Each copy will be rotated an additional
 .I "ROTATION ANGLE"
 angle from the previous.
+.br
+NOTE: The
+.I undo
+command will only undo the last of the objects created.
 .TP
 .I "NUMBER OF X (or Y) COPIES"
 The number of copies to make in the X (or Y) direction when doing a
 .I COPY
 function on an object.
+.br
+NOTE: The
+.I undo
+command will only undo the last of the objects created.
 .TP
 .I "SMART-LINKS MODE"
 This button controls the smart-links mode.
@@ -3070,13 +3078,26 @@ PostScript previewer)
 Many thanks goes to Professor Donald E. Fussell who inspired the
 creation of this tool.
 .SH COPYRIGHT
+.nf
 Original Copyright (c) 1985 by Supoj Sutanthavibul
+Parts Copyright (c) 1994 by Brian V. Smith
+Parts Copyright (c) 1991 by Paul King
+Other Copyrights may be found in various files
+.sp
+.fi
 .PP
-Permission to use, copy, modify, distribute, and sell this software and its
-documentation for any purpose is hereby granted without fee, provided that
-the above copyright notice appear in all copies and that both that
-copyright notice and this permission notice appear in supporting
-documentation.
+The X Consortium, and any party obtaining a copy of these files from
+the X Consortium, directly or indirectly, is granted, free of charge, a
+full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+nonexclusive right and license to deal in this software and
+documentation files (the "Software"), including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons who receive
+copies from any such party to do so, with the only requirement being
+that this copyright notice remain intact.  This license includes without
+limitation a license to do the foregoing actions under any patents of
+the party supplying this software to the X Consortium.
+.br
 No representations are made about suitability of this
 software for any purpose.
 It is provided ``as is'' without express or
