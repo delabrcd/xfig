@@ -43,14 +43,16 @@
 #include <ctype.h>
 #include <errno.h>
 
-#if !defined(__bsdi__) && !defined(__NetBSD__) && !defined(__GNU_LIBRARY__)
-extern int	errno;
-extern int	sys_nerr;
-#if ( !(defined(BSD) && (BSD >= 199306)) && !defined(__NetBSD__) && \
-	!defined(__GNU_LIBRARY__) && !defined(__FreeBSD__) && !defined(__GLIBC__))
-extern char    *sys_errlist[];
-#endif
-#endif
+#ifdef NEED_STRERROR
+#  if !defined(__bsdi__) && !defined(__NetBSD__) && !defined(__GNU_LIBRARY__)
+      extern int	errno;
+      extern int	sys_nerr;
+#     if ( !(defined(BSD) && (BSD - 0 >= 199306)) && !defined(__NetBSD__) && \
+	   !defined(__GNU_LIBRARY__) && !defined(__FreeBSD__) && !defined(__GLIBC__))
+	 extern char    *sys_errlist[];
+#     endif
+#  endif
+#endif /* NEED_STRERROR */
 
 extern char    *mktemp();
 

@@ -46,14 +46,14 @@ write_file(file_name, update_recent)
     if (!ok_to_write(file_name, "SAVE"))
 	return (-1);
 
-    if ((fp = fopen(file_name, "w")) == NULL) {
-	file_msg("Couldn't open file %s, %s", file_name, sys_errlist[errno]);
+    if ((fp = fopen(file_name, "wb")) == NULL) {
+	file_msg("Couldn't open file %s, %s", file_name, strerror(errno));
 	beep();
 	return (-1);
     }
     num_object = 0;
     if (write_objects(fp)) {
-	file_msg("Error writing file %s, %s", file_name, sys_errlist[errno]);
+	file_msg("Error writing file %s, %s", file_name, strerror(errno));
 	beep();
 	exit (2);
 	return (-1);
@@ -278,9 +278,9 @@ write_line(fp, l)
 	char *s1;
 	if (l->pic->file == NULL || strlen(l->pic->file) == 0) {
 	    s1 = "<empty>";
-	} else if (strncmp(l->pic->file, cur_dir, strlen(cur_dir)) == 0) {
+	} else if (strncmp(l->pic->file, cur_file_dir, strlen(cur_file_dir)) == 0) {
 	    /* use relative path if the file is under current directory */
-	    s1 = l->pic->file + strlen(cur_dir);
+	    s1 = l->pic->file + strlen(cur_file_dir);
 	    while (*s1 == '/')
 		s1++;
 	} else {
@@ -421,14 +421,14 @@ emergency_save(file_name)
 {
     FILE	   *fp;
 
-    if ((fp = fopen(file_name, "w")) == NULL)
+    if ((fp = fopen(file_name, "wb")) == NULL)
 	return (-1);
     num_object = 0;
     if (write_objects(fp))
 	return (-1);
     if (file_name[0] != '/') {
 	(void) fprintf(stderr, "xfig: %d object(s) saved in \"%s/%s\"\n",
-		   num_object, cur_dir, file_name);
+		   num_object, cur_file_dir, file_name);
     } else {
 	(void) fprintf(stderr, "xfig: %d object(s) saved in \"%s\"\n",
 		   num_object, file_name);

@@ -513,6 +513,33 @@ set_color_name(color, buf)
 	sprintf(buf, "User %d", color);
 }
 
+/*
+ * Set the color name in the label of widget, set its foreground to 
+ * that color, and set its background to a contrasting color
+ */
+
+void
+set_but_col(widget, color)
+    Widget	    widget;
+    Pixel	    color;
+{
+	XColor		 xcolor;
+	Pixel		 but_col;
+	char		 buf[50];
+
+	/* put the color name in the label and the color itself as the background */
+	set_color_name(color, buf);
+	but_col = x_color(color);
+	FirstArg(XtNlabel, buf);
+	NextArg(XtNbackground, but_col);  /* set color of button */
+	SetValues(widget);
+
+	/* now set foreground to contrasting color */
+	xcolor.pixel = but_col;
+	XQueryColor(tool_d, tool_cm, &xcolor);
+	pick_contrast(xcolor, widget);
+}
+
 static void
 inc_flt_spinner(widget, info, dum)
     Widget  widget;

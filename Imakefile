@@ -74,9 +74,13 @@ XCOMM #define USESMALLICONS
 
 XCOMM Uncomment the following definition for XAW3D if you want to use
 XCOMM the 3d Athena Widget Set (highly recommended!)
+XCOMM Then be sure to change the XAW3DINC to point to the directory where your
+XCOMM 3D Athena widget headers are located
 
 #define XAW3D
+
 #ifdef XAW3D
+XAW3DINC = -I/usr/include/X11/Xaw3d
 DUSEXAW3D = -DXAW3D
 XAWLIB = -lXaw3d
 #endif
@@ -99,6 +103,7 @@ COMP_LED = -DCOMP_LED=3
 XCOMM Uncomment the next line if you want use Japanese (i18n) on xfig.
 XCOMM If your setlocale() dosen't support the locale, you should
 XCOMM add -DSETLOCALE to I18N_DEFS.
+
 XCOMM #define I18N
 
 XCOMM If using an input tablet uncomment the following
@@ -114,6 +119,7 @@ XCOMM USEINLINE = -DUSE_INLINE
 
 XCOMM use (and change) the following if you want the multi-key data base file
 XCOMM somewhere other than the standard X11 library directory
+XCOMM be sure to comment out the second copy of XFIGLIBDIR if you use this one
 XCOMM XFIGLIBDIR = /usr/local/lib/xfig
 
 XCOMM use this if you want the multi-key data base file in the standard X11 tree
@@ -127,6 +133,11 @@ XCOMM undefine the following two definitions
 
 XCOMM HAVE_NO_STRCASECMP = -DHAVE_NO_STRCASECMP
 XCOMM HAVE_NO_STRNCASECMP = -DHAVE_NO_STRNCASECMP
+
+XCOMM If your system has the strerror() function (doesn't have sys_errlist) then
+XCOMM comment out NEED_STRERROR with an XCOMM comment.
+
+NEED_STRERROR = -DNEED_STRERROR
 
 XCOMM If your system doesn't have dirent.h undefine the following definition
 
@@ -202,7 +213,8 @@ OBJLIB =		-DOBJLIBDIR=\"$(OBJLIBDIR)\"
 
 STRDEFINES = $(HAVE_NO_NOSTRSTR) \
 		$(HAVE_NO_STRNCASECMP) \
-		$(HAVE_NO_STRCASECMP)
+		$(HAVE_NO_STRCASECMP) \
+		$(NEED_STRERROR)
 
 #ifdef InstallManPage
 #undef InstallManPage
@@ -285,7 +297,7 @@ MAINDEPFILES =  patchlevel.h version.h
 SRCS = $(XFIGSRC)
 OBJS = $(XFIGOBJ)
 
-EXTRA_INCLUDES = $(JPEGINC) $(XPMINC)
+EXTRA_INCLUDES = $(JPEGINC) $(XPMINC) $(XAW3DINC)
 DEPLIBS = XawClientDepLibs
 
 LOCAL_LIBRARIES = 	$(JPEGLIB)
@@ -295,7 +307,7 @@ SYS_LIBRARIES= 		-lm $(XPMLIBS) $(TABLIB) XawClientLibs
 
 xfig: $(DEPLIBJPEG)
 
-XCOMM only compile our jpeg if the use doesn't have one installed
+XCOMM only compile our jpeg if the user doesn't have one installed
 
 #ifdef USEJPEG
 
@@ -321,36 +333,36 @@ XCOMM Install the compose key database, object libraries and documentation
 XCOMM here with "make install"
 
 install::
-	@if [ -d $(XFIGLIBDIR) ]; then set +x; \
-		else (set -x; $(MKDIRHIER) $(XFIGLIBDIR) ; set +x; ); fi
-	chmod a+x,u+w $(XFIGLIBDIR)
-	$(INSTALL) -c CompKeyDB $(XFIGLIBDIR)
-	make install.libs
-	make install.doc
+	@if [ -d $(DESTDIR)$(XFIGLIBDIR) ]; then set +x; \
+		else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGLIBDIR) ; set +x; ); fi
+	chmod a+x,u+w $(DESTDIR)$(XFIGLIBDIR)
+	$(INSTALL) -c CompKeyDB $(DESTDIR)$(XFIGLIBDIR)
+	$(MAKE) install.libs
+	$(MAKE) install.doc
 
 XCOMM Install the documentation here with "make install.doc"
 install.doc::
-	@echo Installing man pages to $(MANDIR)
-	@make install.man
+	@echo Installing man pages to $(DESTDIR)$(MANDIR)
+	@$(MAKE) install.man
 #ifdef I18N
-	@make install.jhtml
+	@$(MAKE) install.jhtml
 #endif
 	@(cd Doc ; \
-	echo Copying pdf and html files to $(XFIGLIBDIR) ; \
-	$(INSTALL) -c xfig.html $(XFIGLIBDIR) ; \
-	$(INSTALL) -c xfig-howto.pdf $(XFIGLIBDIR) ; \
-	if [ -d $(XFIGLIBDIR)/html ]; then set +x; \
-	   else (set -x; $(MKDIRHIER) $(XFIGLIBDIR)/html ); fi ; \
+	echo Copying pdf and html files to $(DESTDIR)$(XFIGLIBDIR) ; \
+	$(INSTALL) -c xfig.html $(DESTDIR)$(XFIGLIBDIR) ; \
+	$(INSTALL) -c xfig-howto.pdf $(DESTDIR)$(XFIGLIBDIR) ; \
+	if [ -d $(DESTDIR)$(XFIGLIBDIR)/html ]; then set +x; \
+	   else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGLIBDIR)/html ); fi ; \
 	(cd html ; \
 	   for f in *.* ; do \
-	      $(INSTALL) -c $$f $(XFIGLIBDIR)/html ; \
+	      $(INSTALL) -c $$f $(DESTDIR)$(XFIGLIBDIR)/html ; \
 	   done) ; \
 	echo "  Copying image files for html" ; \
-	if [ -d $(XFIGLIBDIR)/html/images ]; then set +x; \
-	   else (set -x; $(MKDIRHIER) $(XFIGLIBDIR)/html/images ); fi ; \
+	if [ -d $(DESTDIR)$(XFIGLIBDIR)/html/images ]; then set +x; \
+	   else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGLIBDIR)/html/images ); fi ; \
 	(cd html/images ; \
 	   for f in * ; do \
-	       $(INSTALL) -c $$f $(XFIGLIBDIR)/html/images ; \
+	       $(INSTALL) -c $$f $(DESTDIR)$(XFIGLIBDIR)/html/images ; \
 	   done) ; \
 	) ;
 
@@ -358,48 +370,48 @@ install.doc::
 install.jhtml::
 	@echo "Copying japanese html files"
 	@(cd Doc/html/japanese ; \
-	if [ -d $(XFIGLIBDIR)/html/japanese ]; then set +x; \
-	   else (set -x; $(MKDIRHIER) $(XFIGLIBDIR)/html/japanese ); fi ; \
+	if [ -d $(DESTDIR)$(XFIGLIBDIR)/html/japanese ]; then set +x; \
+	   else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGLIBDIR)/html/japanese ); fi ; \
 	for f in * ; do \
-	      $(INSTALL) -c $$f $(XFIGLIBDIR)/html/japanese ; \
+	      $(INSTALL) -c $$f $(DESTDIR)$(XFIGLIBDIR)/html/japanese ; \
 	done) ;
 #endif
 
 XCOMM Install the object libraries here with "make install.libs"
 install.libs::
 	@echo "Copying Fig Object Libraries"
-	@if [ -d $(OBJLIBDIR) ]; then set +x; \
-		else (set -x; $(MKDIRHIER) $(OBJLIBDIR) ; set +x; ); fi
+	@if [ -d $(DESTDIR)$(OBJLIBDIR) ]; then set +x; \
+		else (set -x; $(MKDIRHIER) $(DESTDIR)$(OBJLIBDIR) ; set +x; ); fi
 	@if [ -d Examples/Libraries ]; then \
 	(cd Examples/Libraries ; \
 	for d in * ;  do \
 	    (cd $$d ; \
-	    if [ -d $(OBJLIBDIR)/$$d ]; then set +x; \
-		else (set -x; $(MKDIRHIER) $(OBJLIBDIR)/$$d ); fi ; \
-	    echo "  Copying $$d library files to $(OBJLIBDIR)/$$d" ; \
+	    if [ -d $(DESTDIR)$(OBJLIBDIR)/$$d ]; then set +x; \
+		else (set -x; $(MKDIRHIER) $(DESTDIR)$(OBJLIBDIR)/$$d ); fi ; \
+	    echo "  Copying $$d library files to $(DESTDIR)$(OBJLIBDIR)/$$d" ; \
 	    for f in * ;  do \
 		if [ -d $$f ]; then ( \
-		    if [ -d $(OBJLIBDIR)/$$d/$$f ]; then set +x; \
-			else (set -x; $(MKDIRHIER) $(OBJLIBDIR)/$$d/$$f ); fi ; \
+		    if [ -d $(DESTDIR)$(OBJLIBDIR)/$$d/$$f ]; then set +x; \
+			else (set -x; $(MKDIRHIER) $(DESTDIR)$(OBJLIBDIR)/$$d/$$f ); fi ; \
 			(cd $$f ; \
 			for dd in * ; do \
 			    if [ -d $$dd ]; then ( \
-				if [ -d $(OBJLIBDIR)/$$d/$$f/$$dd ]; then set +x; \
-				    else (set -x; $(MKDIRHIER) $(OBJLIBDIR)/$$d/$$f/$$dd ); fi ; \
+				if [ -d $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd ]; then set +x; \
+				    else (set -x; $(MKDIRHIER) $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd ); fi ; \
 				    (cd $$dd ; \
 				    for l in * ; do \
 					if [ -d $$l ]; then ( \
-					    if [ -d $(OBJLIBDIR)/$$d/$$f/$$dd/$$l ]; then set +x; \
-						else (set -x; $(MKDIRHIER) $(OBJLIBDIR)/$$d/$$f/$$dd/$$l ); fi ; \
+					    if [ -d $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd/$$l ]; then set +x; \
+						else (set -x; $(MKDIRHIER) $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd/$$l ); fi ; \
 					    (cd $$l ; \
 						for m in * ; do \
-						    $(INSTALL) -c $$m $(OBJLIBDIR)/$$d/$$f/$$dd/$$l ; \
+						    $(INSTALL) -c $$m $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd/$$l ; \
 						done ) ) ; \
-					else ( $(INSTALL) -c $$l $(OBJLIBDIR)/$$d/$$f/$$dd ) ; fi ; \
+					else ( $(INSTALL) -c $$l $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd ) ; fi ; \
 				done) ) ; \
-			    else ( $(INSTALL) -c $$dd $(OBJLIBDIR)/$$d/$$f ) ; fi ; \
+			    else ( $(INSTALL) -c $$dd $(DESTDIR)$(OBJLIBDIR)/$$d/$$f ) ; fi ; \
 			done) ); \
-		else ($(INSTALL) -c $$f $(OBJLIBDIR)/$$d ) ; fi ; \
+		else ($(INSTALL) -c $$f $(DESTDIR)$(OBJLIBDIR)/$$d ) ; fi ; \
 	    done ) ; \
 	done ; ) ; \
 	else echo No Object Libraries to install ; \
@@ -418,13 +430,6 @@ SpecialObjectRule(w_icons.o, w_icons.c w_icons.h, $(DUSESMALLICONS) $(DUSEXPMICO
 SpecialObjectRule(w_print.o, w_print.c w_print.h, )
 SpecialObjectRule(w_setup.o, w_setup.c w_setup.h w_icons.h, $(DUSESMALLICONS) )
 SpecialObjectRule(w_rottext.o, w_rottext.c, $(CACHE) )
-
-#ifdef USEJPEG
-#ifndef USEINSTALLEDJPEG
-SpecialObjectRule(f_readjpg.o, f_readjpg.c $(JPEGLIBDIR)/jconfig.h,  )
-#endif /* USEINSTALLEDJPEG */
-#endif /* USEJPEG */
-
 SpecialObjectRule(d_arc.o, d_arc.c  mode.h, )
 SpecialObjectRule(d_arcbox.o, d_arcbox.c  mode.h, )
 SpecialObjectRule(d_box.o, d_box.c  mode.h, )
@@ -474,9 +479,16 @@ SpecialObjectRule(w_drawprim.o, w_drawprim.c  mode.h, )
 SpecialObjectRule(w_export.o, w_export.c  mode.h, )
 SpecialObjectRule(w_file.o, w_file.c  mode.h, )
 SpecialObjectRule(w_grid.o, w_grid.c  mode.h, )
-SpecialObjectRule(w_indpanel.o, w_indpanel.c  mode.h w_indpanel.h, )
+SpecialObjectRule(w_indpanel.o, w_indpanel.c  mode.h w_indpanel.h object.h, )
 SpecialObjectRule(w_library.o, w_library.c  mode.h, )
-SpecialObjectRule(w_modepanel.o, w_modepanel.c  mode.h w_icons.h, $(DUSESMALLICONS))
+SpecialObjectRule(w_menuentry.o, w_menuentry.c  w_menuentry.h w_menuentryP.h, )
+SpecialObjectRule(w_modepanel.o, w_modepanel.c  mode.h w_icons.h object.h, $(DUSESMALLICONS))
 SpecialObjectRule(w_msgpanel.o, w_msgpanel.c  mode.h, )
 SpecialObjectRule(w_rulers.o, w_rulers.c  mode.h, )
 SpecialObjectRule(w_zoom.o, w_zoom.c  mode.h, )
+
+#ifdef USEJPEG
+#ifndef USEINSTALLEDJPEG
+SpecialObjectRule(f_readjpg.o, f_readjpg.c $(JPEGLIBDIR)/jconfig.h,  )
+#endif /* USEINSTALLEDJPEG */
+#endif /* USEJPEG */

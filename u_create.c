@@ -297,7 +297,20 @@ create_arc()
     if ((a = (F_arc *) malloc(ARCOBJ_SIZE)) == NULL)
 	put_msg(Err_mem);
     a->tagged = 0;
+    a->next = NULL;
+    a->type = 0;
+    a->for_arrow = NULL;
+    a->back_arrow = NULL;
     a->comments = NULL;
+    a->depth = 0;
+    a->thickness = 0;
+    a->pen_color = BLACK;
+    a->fill_color = DEFAULT;
+    a->fill_style = UNFILLED;
+    a->pen_style = 0;
+    a->style = SOLID_LINE;
+    a->style_val = 0.0;
+    a->cap_style = CAP_BUTT;
     return (a);
 }
 

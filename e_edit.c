@@ -437,6 +437,7 @@ put_generic_arrows(x)
 	generic_vals.for_arrow.wd	= x->for_arrow->wd;
 	generic_vals.for_arrow.ht	= x->for_arrow->ht;
     } else {
+	/* no existing arrow, set dialog to current ind panel settings */
 	generic_vals.for_arrow.type	= ARROW_TYPE(cur_arrowtype);
 	generic_vals.for_arrow.style	= ARROW_STYLE(cur_arrowtype);
 	if (use_abs_arrowvals) {
@@ -445,9 +446,9 @@ put_generic_arrows(x)
 	    generic_vals.for_arrow.ht	= cur_arrowheight;
 	} else {
 	    /* use multiple of current line thickness */
-	    generic_vals.for_arrow.thickness = cur_arrow_multthick * cur_linewidth;
-	    generic_vals.for_arrow.wd	= cur_arrow_multwidth * cur_linewidth;;
-	    generic_vals.for_arrow.ht	= cur_arrow_multheight * cur_linewidth;;
+	    generic_vals.for_arrow.thickness = cur_arrow_multthick * x->thickness;
+	    generic_vals.for_arrow.wd	= cur_arrow_multwidth * x->thickness;
+	    generic_vals.for_arrow.ht	= cur_arrow_multheight * x->thickness;
 	}
     }
     if (back_arrow) {
@@ -457,6 +458,7 @@ put_generic_arrows(x)
 	generic_vals.back_arrow.wd	= x->back_arrow->wd;
 	generic_vals.back_arrow.ht	= x->back_arrow->ht;
     } else {
+	/* no existing arrow, set dialog to current ind panel settings */
 	generic_vals.back_arrow.type	= ARROW_TYPE(cur_arrowtype);
 	generic_vals.back_arrow.style	= ARROW_STYLE(cur_arrowtype);
 	if (use_abs_arrowvals) {
@@ -465,9 +467,9 @@ put_generic_arrows(x)
 	    generic_vals.back_arrow.ht	= cur_arrowheight;
 	} else {
 	    /* use multiple of current line thickness */
-	    generic_vals.back_arrow.thickness = cur_arrow_multthick * cur_linewidth;
-	    generic_vals.back_arrow.wd	= cur_arrow_multwidth * cur_linewidth;;
-	    generic_vals.back_arrow.ht	= cur_arrow_multheight * cur_linewidth;;
+	    generic_vals.back_arrow.thickness = cur_arrow_multthick * x->thickness;
+	    generic_vals.back_arrow.wd	= cur_arrow_multwidth * x->thickness;
+	    generic_vals.back_arrow.ht	= cur_arrow_multheight * x->thickness;
 	}
     }
 }
@@ -2271,11 +2273,16 @@ make_window_spline_point(s, x, y)
     if (sub_new_s == NULL)
       return;
 
-    if (s->fill_style != UNFILLED) {
-	s->fill_style         = UNFILLED;
-	sub_new_s->fill_style = UNFILLED;
-	redisplay_spline(s);
-    }
+    /* make solid, black unfilled spline of thickness 1 */
+    s->thickness		= 1;
+    s->pen_color		= BLACK;
+    s->fill_style		= UNFILLED;
+    s->style			= SOLID_LINE;
+    sub_new_s->thickness	= 1;
+    sub_new_s->pen_color	= BLACK;
+    sub_new_s->fill_style	= UNFILLED;
+    sub_new_s->style		= SOLID_LINE;
+    redisplay_spline(s);
 
     spline_point_window();
 }
@@ -2285,7 +2292,11 @@ static void
 done_spline_point()
 {
     old_s = new_s->next;
+    /* restore original attributes */
+    old_s->thickness = new_s->thickness;
+    old_s->pen_color = new_s->pen_color;
     old_s->fill_style = new_s->fill_style;
+    old_s->style = new_s->style;
     edited_sfactor->s = sub_sfactor->s;
     free_subspline(num_spline_points, &sub_new_s);
 
@@ -4624,7 +4635,7 @@ image_edit_button(panel_local, closure, call_data)
 	err = execvp(argv[0], argv);
 	/* should only come here if an error in the execlp */
 	fprintf(stderr,"Error in exec'ing image editor (%s): %s\n",
-			argv[0], sys_errlist[errno]);
+			argv[0], strerror(errno));
         exit(-1);
     }
 
@@ -4644,7 +4655,7 @@ image_edit_button(panel_local, closure, call_data)
 
     } else {
         fprintf(stderr,"Unable to fork to exec image editor (%s): %s\n",
-		argv[0], sys_errlist[errno]);
+		argv[0], strerror(errno));
     }
 }
 

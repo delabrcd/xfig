@@ -794,7 +794,7 @@ spell_check()
   sprintf(filename, "%s/xfig-spell.%d", TMPDIR, (int)getpid());
   fp = fopen(filename, "w");
   if (fp == NULL) {
-    file_msg("Can't open temporary file: %s: %s\n", filename, sys_errlist[errno]);
+    file_msg("Can't open temporary file: %s: %s\n", filename, strerror(errno));
   } else {
     /* locate all text objects and write them to file fp */
     write_text_from_compound(fp, &objects);
@@ -824,7 +824,7 @@ spell_check()
     popup_spell_check_panel(miss_word_list, lines);
 
     if (!done) 
-	show_spell_msg("Can't exec \"%s\": %s", cmd, sys_errlist[errno]);
+	show_spell_msg("Can't exec \"%s\": %s", cmd, strerror(errno));
     else if (lines == 0) 
 	show_spell_msg("No misspelled words found");
     else if (lines >= MAX_MISSPELLED_WORDS)

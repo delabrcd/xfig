@@ -174,7 +174,8 @@ float		cur_elltextangle = 0.0;	/* text/ellipse input angle */
 
 /***************************  File Settings  ****************************/
 
-char		cur_dir[PATH_MAX];
+char		cur_file_dir[PATH_MAX];
+char		cur_export_dir[PATH_MAX];
 char		cur_filename[PATH_MAX] = "";
 char		save_filename[PATH_MAX] = "";	/* to undo load */
 char		file_header[32] = "#FIG ";

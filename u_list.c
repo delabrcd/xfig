@@ -21,6 +21,7 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "f_read.h"
 #include "u_create.h"
 #include "u_list.h"
 #include "u_elastic.h"
@@ -260,6 +261,8 @@ remove_compound_depth(comp)
     F_text	   *tt;
     F_compound	   *cc;
 
+    /* defer updating of layer buttons until we've added the entire compound */
+    defer_update_layers++;
     for (aa=comp->arcs; aa; aa=aa->next)
 	remove_depth(O_ARC, aa->depth);
     for (ee=comp->ellipses; ee; ee=ee->next)
@@ -272,6 +275,9 @@ remove_compound_depth(comp)
 	remove_depth(O_TEXT, tt->depth);
     for (cc=comp->compounds; cc; cc=cc->next)
 	remove_compound_depth(cc);
+    /* decrement the defer flag and update layer buttons if it hits 0 */
+    defer_update_layers--;
+    update_layers();
 }
 
 
@@ -381,11 +387,12 @@ list_add_compound(list, c)
     else
 	cc->next = c;
     
-    if (list == &objects.compounds || list == &saved_objects.compounds)
+    if (list == &objects.compounds || list == &saved_objects.compounds) {
 	while (c) {
 	    add_compound_depth(c);
 	    c = c->next;
 	}
+    }
 }
 
 /* increment objects_depth[depth] for a new object, and add to the 
@@ -462,6 +469,8 @@ add_compound_depth(comp)
     F_text	   *tt;
     F_compound	   *cc;
 
+    /* defer updating of layer buttons until we've added the entire compound */
+    defer_update_layers++;
     for (aa=comp->arcs; aa; aa=aa->next)
 	add_depth(O_ARC, aa->depth);
     for (ee=comp->ellipses; ee; ee=ee->next)
@@ -474,6 +483,9 @@ add_compound_depth(comp)
 	add_depth(O_TEXT, tt->depth);
     for (cc=comp->compounds; cc; cc=cc->next)
 	add_compound_depth(cc);
+    /* decrement the defer flag and update layer buttons if it hits 0 */
+    defer_update_layers--;
+    update_layers();
 }
 
 /**********************************/

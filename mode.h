@@ -275,7 +275,8 @@ extern float	cur_elltextangle;	/* text/ellipse input angle */
 
 /***************************  File Settings  ****************************/
 
-extern char	cur_dir[];
+extern char	cur_file_dir[];
+extern char	cur_export_dir[];
 extern char	cur_filename[];
 extern char	save_filename[];	/* to undo load or "new" command */
 extern char	file_header[];

@@ -90,19 +90,13 @@ int
 change_directory(path)
     char	   *path;
 {
-    if (path == NULL || *path == '\0') {
-	*cur_dir = '\0';
-	return (0);
-    }
-    if (chdir(path) == -1) {
-	file_msg("Can't go to directory %s, : %s", path, sys_errlist[errno]);
-	return (1);
-    }
-    if (get_directory(cur_dir)) /* get cwd */
+    if (path == NULL || *path == '\0')
 	return 0;
-    else
+    if (chdir(path) == -1) {
+	file_msg("Can't go to directory %s, : %s", path, strerror(errno));
 	return 1;
-
+    }
+    return 0;
 }
 
 get_directory(direct)
@@ -892,7 +886,7 @@ safe_strcpy(p1,p2)
     return c1;
 }
 
-/* unzip/uncompress file if necessary */
+/* gunzip file if necessary */
 
 Boolean
 uncompress_file(name)
@@ -903,13 +897,15 @@ uncompress_file(name)
     char	   *c;
     Boolean	    compr=False;
     struct stat	    status;
+    int		    fstat;
 
-    /* first see if file exists */
-    if (stat(name, &status)) {
+    /* first see if file exists AS NAMED */
+
+    if (fstat = stat(name, &status)) {
 	strcpy(compname,name);
-	/* no, if it has a compression suffix (.Z .gz etc) remove it and try that */
-	if (strlen(name) > 2 && !strcmp(".Z", name + (strlen(name)-2)) ||
-	    (strlen(name) > 3 && !strcmp(".gz", name + (strlen(name)-3))) ||
+	/* no, see if it has a compression suffix (.gz, .Z etc) and remove it and try that */
+	if ((strlen(name) > 3 && !strcmp(".gz", name + (strlen(name)-3))) ||
+	    (strlen(name) > 2 && !strcmp(".Z", name + (strlen(name)-2))) ||
 	    (strlen(name) > 2 && !strcmp(".z", name + (strlen(name)-2)))) {
 		c = strrchr(compname,'.');
 		if (c) {
@@ -925,22 +921,19 @@ uncompress_file(name)
 	}
     }
 
-    /* see if the filename ends with .Z */
-    /* if so, generate uncompress command and use pipe (filetype = 1) */
-    if (strlen(name) > 2 && !strcmp(".Z", name + (strlen(name)-2))) {
-	sprintf(unc,"uncompress %s",name);
-	compr = True;
-    /* or with .z or .gz */
-    } else if ((strlen(name) > 3 && !strcmp(".gz", name + (strlen(name)-3))) ||
-	      ((strlen(name) > 2 && !strcmp(".z", name + (strlen(name)-2))))) {
-	sprintf(unc,"gunzip -q %s",name);
-	compr = True;
+    /* see if the filename ends with .Z or with .z or .gz */
+    /* if so, generate gunzip command and use pipe (filetype = 1) */
+    if ((strlen(name) > 3 && !strcmp(".gz", name + (strlen(name)-3))) ||
+	(strlen(name) > 2 && !strcmp(".Z", name + (strlen(name)-2))) ||
+	(strlen(name) > 2 && !strcmp(".z", name + (strlen(name)-2)))) {
+	    sprintf(unc,"gunzip -q %s",name);
+	    compr = True;
     /* none of the above, see if the file with .Z or .gz or .z appended exists */
-    } else {
+    } else if (fstat != 0) {
 	strcpy(compname, name);
-	strcat(compname, ".Z");
+	strcat(compname, ".gz");
 	if (!stat(compname, &status)) {
-	    sprintf(unc, "uncompress %s",compname);
+	    sprintf(unc, "gunzip -q %s",compname);
 	    compr = True;
 	    strcpy(name,compname);
 	} else {
@@ -952,7 +945,7 @@ uncompress_file(name)
 		strcpy(name,compname);
 	    } else {
 		strcpy(compname, name);
-		strcat(compname, ".gz");
+		strcat(compname, ".Z");
 		if (!stat(compname, &status)) {
 		    sprintf(unc, "gunzip -q %s",compname);
 		    compr = True;
@@ -1062,8 +1055,8 @@ update_xfigrc(name, string)
     finish_update_xfigrc();
 }
 
-/* copy all lines from .xfigrc without the "name" spec into a temp file */
-/* files are left open after copy */
+/* copy all lines from .xfigrc without the "name" spec into a temp file (global tmpf) */
+/* temp file is left open after copy */
 
 strain_out(name)
     char	*name;
@@ -1073,9 +1066,9 @@ strain_out(name)
     /* make a temp filename in the user's home directory so we
        can just rename it to .xfigrc after creating it */
     sprintf(tmpname, "%s/%s%06d", userhome, "xfig-xfigrc", getpid());
-    tmpf = fopen(tmpname,"w");
+    tmpf = fopen(tmpname,"wb");
     if (tmpf == 0) {
-	file_msg("Can't make temporary file for .xfigrc - error: %s",sys_errlist[errno]);
+	file_msg("Can't make temporary file for .xfigrc - error: %s",strerror(errno));
 	return -1;	
     }
     /* read the .xfigrc file and write all to temp file except file names */
@@ -1083,7 +1076,7 @@ strain_out(name)
     /* does the .xfigrc file exist? */
     if (xfigrc == 0) {
 	/* no, create one */
-	xfigrc = fopen(xfigrc_name,"w");
+	xfigrc = fopen(xfigrc_name,"wb");
 	fclose(xfigrc);
 	xfigrc = (FILE *) 0;
 	return 0;
@@ -1106,11 +1099,11 @@ finish_update_xfigrc()
 	fclose(xfigrc);
     /* delete original .xfigrc and move temp file to .xfigrc */
     if (unlink(xfigrc_name) != 0) {
-	file_msg("Can't update your .xfigrc file - error: %s",sys_errlist[errno]);
+	file_msg("Can't update your .xfigrc file - error: %s",strerror(errno));
 	return;
     }
     if (rename(tmpname, xfigrc_name) != 0)
-	file_msg("Can't rename %s to .xfigrc - error: %s",tmpname, sys_errlist[errno]);
+	file_msg("Can't rename %s to .xfigrc - error: %s",tmpname, strerror(errno));
 }
 
 /************************************************/
@@ -1273,4 +1266,16 @@ build_command(program, filename)
     strcat(cmd," 2> /dev/null &");
     return cmd;
 }
+
+/* define the strerror() function to return str_errlist[] if 
+   the system doesn't have the strerror() function already */
+
+#ifdef NEED_STRERROR
+char *
+strerror(e)
+	int e;
+{
+	return sys_errlist[e];
+	}
+#endif
 

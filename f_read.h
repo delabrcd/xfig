@@ -15,6 +15,12 @@
  *
  */
 
+/* errors from read_figc in addition to those in errno.h (e.g. ENOENT) */
+#define	BAD_FORMAT	-1
+#define	EMPTY_FILE	-2
+#define NO_VERSION	-3
+
+extern int	 defer_update_layers;	/* if != 0, update_layers() doesn't update */
 extern int	 line_no;
 extern int	 num_object;
 extern char	*read_file_name;

@@ -13,11 +13,11 @@
  *
  ***********************************************************************/
 
-#include <X11/Xaw/SmeP.h>
-
 #ifdef XAW3D
+#include <X11/Xaw3d/SmeP.h>
 #include <X11/Xaw3d/SmeBSBP.h>
 #else
+#include <X11/Xaw/SmeP.h>
 #include <X11/Xaw/SmeBSBP.h>
 #endif /* XAW3D */
 

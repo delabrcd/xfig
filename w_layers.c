@@ -21,6 +21,7 @@
 #include "resources.h"
 #include "object.h"
 #include "mode.h"
+#include "f_read.h"
 #include "w_drawprim.h"		/* for max_char_height */
 #include "w_dir.h"
 #include "w_file.h"
@@ -241,7 +242,9 @@ update_layers()
     Window	 w = XtWindow(layer_canvas);
     int		 i, height;
 
-    if (preview_in_progress) return;  /* don't update depth panel when previewing */
+    /* don't update depth panel when previewing or reading in a Fig file */
+    if (preview_in_progress || defer_update_layers)
+	return;
 
     XClearWindow(tool_d, w);
     if (min_depth < 0) return;  /* if no objects, return */

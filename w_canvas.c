@@ -716,13 +716,13 @@ toggle_show_vertexnums()
 	put_msg("%s vertex numbers on objects",appres.shownums? "Show": "Don't show");
 	refresh_view_menu();
 
-	/* if user just turned on the border, draw only it */
+	/* if user just turned on vertex numbers, redraw only objects */
 	if (appres.shownums) {
-	    redisplay_pageborder();
+	    redisplay_canvas();
 	} else {
 	    /* otherwise redraw whole canvas */
 	    clear_canvas();
-	    redisplay_objects(&objects);
+	    redisplay_canvas();
 	}
 }
 
@@ -742,7 +742,7 @@ toggle_show_borders()
 	} else {
 	    /* otherwise redraw whole canvas */
 	    clear_canvas();
-	    redisplay_objects(&objects);
+	    redisplay_canvas();
 	}
 }
 

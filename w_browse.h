@@ -18,6 +18,6 @@
 
 extern Widget	browse_selfile, browse_dir, browse_flist,
 		browse_dlist, browse_mask;
-extern char	browse_cur_dir[];
+extern char	cur_browse_dir[];
 extern Boolean	browse_up;
 extern		popup_browse_panel();

@@ -20,8 +20,8 @@ extern Boolean	first_file_msg;
 extern Boolean	file_msg_is_popped;
 extern Widget	file_msg_popup;
 
-extern void	put_msg(char*,...);
-extern void	file_msg(char *format,...);
+extern void	put_msg(char *format, ...);
+extern void	file_msg(char *format, ...);
 extern void	boxsize_msg();
 extern void	length_msg();
 extern void	altlength_msg();

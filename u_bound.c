@@ -267,10 +267,10 @@ compound_bound(compound, xmin, ymin, xmax, ymax)
     }
 
     /* round the corners to the current positioning grid */
-    floor_coords(llx);
-    floor_coords(lly);
-    ceil_coords(urx);
-    ceil_coords(ury);
+    llx = floor_coords(llx);
+    lly = floor_coords(lly);
+    urx = ceil_coords(urx);
+    ury = ceil_coords(ury);
     *xmin = llx;
     *ymin = lly;
     *xmax = urx;
@@ -692,3 +692,43 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 	}
     }
 }
+
+/* rounds DOWN the coordinates depending on point positioning mode */
+
+int
+floor_coords(x)
+int x;
+{
+    register int tmp_t;
+
+    if (cur_pointposn == P_ANY)
+	return x;
+
+    if (x < 0)
+	return -ceil_coords(-x);
+
+    tmp_t = x % posn_rnd[cur_pointposn];
+    x = x - tmp_t;
+    return x;
+}
+
+/* rounds UP the coordinates depending on point positioning mode */
+
+int
+ceil_coords(x)
+int x;
+{
+    register int tmp_t;
+
+    if (cur_pointposn == P_ANY)
+	return x;
+
+    if (x < 0)
+	return -floor_coords(-x);
+
+    x = x + posn_rnd[cur_pointposn]-1;
+    tmp_t = x%posn_rnd[cur_pointposn];
+    x = x - tmp_t;
+    return x;
+}
+

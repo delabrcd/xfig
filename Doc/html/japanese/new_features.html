@@ -10,28 +10,67 @@
 <a href="contents.html"><img src="../images/xfig-title.gif"
   alt="XFIG Users Manual" border=0></a>
 
-<h1>xfig 3.2.3a の新しい機能</h1>
+<h1>新しい機能</h1>
+
+<h2>xfig 3.2.3b の新しい機能</h2>
+
+<ul>
+<li><a href="drawing.html#library">オブジェクト・ライブラリ</a>の
+全てのオブジェクトのアイコンを表示するようになりました。
+アイコンの大きさは、プルダウン・メニュー、
+及びリソース (Fig.library_icon_size) によって、
+40〜120ピクセルのあいだで設定することができます。
+古い「リスト」形式での表示も可能です。
 
 <p>
-<img src="../images/blueballdot.gif" alt="-">
-	Library of UML objects (Unified Modelling Language)
-	  From Andreas Ludwig (ludwig@ipd.info.uni-karlsruhe.de)
+<li><a href="drawing.html#arc">円弧</a>を中心点を指定して描画する際、
+ユーザーのマウスのドラグに応じて円弧の半径を示す円が描画され、
+最初の点がクリックされるとマウスのドラグに応じて円弧が描画されます。
 
+<p>
+<li>上付き添字のために Ctrl-^ を、
+また下付き添字のために Ctrl-_ をタイプすることによる、簡単な添字の入力。
+これは、添字のために適切な大きさと位置の新しい文字列を生成する。
+入れ子にすることも可能。
+centered、あるいは right-justified のテキストに対しては機能しない。
+<br>from Ian Hutchinson (hutch@psfc.mit.edu) with improvements by Brian V. Smith
+
+<p>
+<li>Imakefile に、
+エラー文字列配列 sys_errlist[] を持たないシステムのための
+NEED_STRERROR (これは fig2dev には既に含まれていた) を追加。
+
+<p>
+<li>新たな JPEG ファイル・フォーマット (EXIF) の追加。
+これは大抵はデジタル・カメラから得られる。
+
+<p>
+<li>knitting symbol のライブラリの追加。
+<br>from Kate Hedstrom (kate@IMCS.rutgers.edu)
+
+<p>
+<li>Libraries/Networks に Cisco のネットワーク・デバイスを追加。
+<br>from Louis B. Moore (moore.louis@childrens.tchden.org)
+
+<p>
+<li>Libraries/Networks に 10/100Mbit Ethernet ハブを追加。
+<br>from Dirko van Schalkwyk (dvschalk@ing.sun.ac.za)
+
+<p>
+<li>Chen's model of Entity Relations のためのライブラリ (Libraries/ERD)、
+及びボタン、スライダ、スクロール・バーなどの
+様々なウィジェットのためのシンボル (Libraries/GUI)。
+<br>from Al Delgado
+</ul>
+
+<h2>xfig 3.2.3a の新しい機能</h2>
+
+<ul>
+<li>UML (Unified Modelling Language) オブジェクトのライブラリ
+<br>from Andreas Ludwig (ludwig@ipd.info.uni-karlsruhe.de)
+</ul>
 
 <h2>xfig 3.2.3 の新しい機能</h2>
-
-<h2>GIF サポートについて</h2>
-
-<b>Unisys が、たとえ<u>フリー</u>なプログラムであっても、
-LZW 圧縮アルゴリズムの使用に対してロイヤリティを<u>要求する</u>と
-言明したため、xfig から GIF LZW 圧縮アルゴリズムの
-全ての痕跡を取り除きました。
-xfig は GIF ファイルを取り込むために giftopnm、
-及び ppmtopcx を呼び出すようになりました。
-スクリーン・キャプチャは PCX ファイルを書き出します。
-エクスポートは、fig2dev から ppmtogif を呼ぶことによって扱われます。</b>
-
-<h2>新しい機能</h2>
 
 <ul>
 <li>矢印の太さの設定は、デフォルトで、絶対的な寸法ではなく
@@ -475,6 +514,19 @@ ANSI の <tt>stdargs.h</tt> を使うようにしました。
 <li><a href="attributes.html#text-flags">TEXT FLAGS</a> を設定するための、
 <tt>-hiddentext</tt>、及び <tt>-rigidtext</tt> オプションの追加。
 </ul>
+
+<hr>
+
+<h2>GIF サポートについて</h2>
+
+<b>Unisys が、たとえ<u>フリー</u>なプログラムであっても、
+LZW 圧縮アルゴリズムの使用に対してロイヤリティを<u>要求する</u>と
+言明したため、xfig から GIF LZW 圧縮アルゴリズムの
+全ての痕跡を取り除きました。
+xfig は GIF ファイルを取り込むために giftopnm、
+及び ppmtopcx を呼び出すようになりました。
+スクリーン・キャプチャは PCX ファイルを書き出します。
+エクスポートは、fig2dev から ppmtogif を呼ぶことによって扱われます。</b>
 
 <hr>
 

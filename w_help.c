@@ -102,7 +102,7 @@ check_docfile(name)
 	    if (errno == ENOENT) {
 		file_msg("%s is not installed, please see README file",name);
 	    } else {
-		file_msg("System error: %s on file %s",sys_errlist[errno],name);
+		file_msg("System error: %s on file %s",strerror(errno),name);
 	    }
 	    beep();
 	    return False;

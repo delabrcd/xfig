@@ -250,7 +250,6 @@ create_color_panel(form,label,cancel,isw)
 	choice_info	*choice;
 	XColor		 col;
 	Pixel		 form_fg;
-	XGCValues	 values;
 	Widget		 below, beside, stdForm, stdLabel;
 	Widget		 sb;
 	char		 str[8];
@@ -707,7 +706,8 @@ create_color_panel(form,label,cancel,isw)
 	valScroll = XtCreateManagedWidget("valScroll", scrollbarWidgetClass,
 						mixingForm, Args, ArgCount);
 
-	original_background = values.foreground;
+	/* get background color of redLocked to restore background for locked sliders */
+	XtVaGetValues(redLocked, XtNbackground, &(original_background), NULL);
 	bars_locked = 0;
 
 	XtAddCallback(redScroll,    XtNjumpProc, Thumbed, (XtPointer)S_RED);
@@ -960,6 +960,8 @@ add_color(w, closure, call_data)
 		put_msg("No more user colors allowed");
 	modified[edit_fill] = True;
 	pick_memory(current_memory);
+	colorUsed[current_memory]=True;
+
 }
 
 /* delete a color memory (current_memory) from the user colors */
@@ -1020,6 +1022,7 @@ undel_color(w, closure, call_data)
 				num_usr_cols);
 		    return;
 		}
+	colorUsed[indx] = True;
 }
 
 /* count the number of unique user colors actually used by Fig objects */
@@ -1212,7 +1215,7 @@ add_color_cell(use_exist, indx, r, g, b)
 
 	/* if not, increment num_usr_cols */
 	if (indx>= num_usr_cols) {
-	    if (num_usr_cols >= MAX_USR_COLS-1)
+	    if (num_usr_cols >= MAX_USR_COLS)
 		return -1;
 	    if (use_exist)
 		num_usr_cols = indx+1;
@@ -1233,6 +1236,8 @@ add_color_cell(use_exist, indx, r, g, b)
 	colors[NUM_STD_COLS+indx] = user_colors[indx].pixel;
 
 	colorFree[indx] = False;
+	colorUsed[indx] = False;
+
 
 	/* if the color popup has been created create the widgets */
 	if (pen_color_button->panel) {
@@ -1397,6 +1402,7 @@ del_color_cell(indx)
 	    XFreeColors(tool_d, tool_cm, pixels, 1, 0);
 	/* now set free flag for that cell */
 	colorFree[indx] = True;
+	colorUsed[indx] = False;
 }
 
 /* if any object in the figure uses the user color "color" return True */
@@ -1903,8 +1909,11 @@ move_scroll(w, event, params, num_params)
 	}
 
 	do_change = True;
-	if (current_memory >= 0)
+	if (current_memory >= 0) {
 	    StoreMix_and_Mem();
+	    if (!colorUsed[current_memory])
+		colorUsed[current_memory] = True;
+	}
 	update_scrl_triple((Widget)NULL, (XEvent *)NULL,
 			(String *)NULL, (Cardinal *)NULL);
 }
@@ -2058,6 +2067,8 @@ Thumbed(w, closure, call_data)
 	if (do_change) {
 	    if (current_memory >= 0) {
 		StoreMix_and_Mem();
+		if (!colorUsed[current_memory])
+			colorUsed[current_memory] = True;
 		update_scrl_triple((Widget)NULL, (XEvent *)NULL,
 					(String *)NULL, (Cardinal *)NULL);
 	    }

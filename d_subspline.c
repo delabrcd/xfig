@@ -123,6 +123,7 @@ extract_subspline(spline, point)
   subspline->sfactors   = NULL;
   subspline->for_arrow  = NULL;
   subspline->back_arrow = NULL;
+  subspline->comments   = NULL;
 
   prev1 = prev2 = spline->points;
   for (cursor=spline->points ; cursor!=point ; cursor = cursor->next)

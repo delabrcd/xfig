@@ -59,7 +59,7 @@ And here is the copyright notice that you will find in every source file:
  Copyright (c) 1985-1988 by Supoj Sutanthavibul
  Parts Copyright (c) 1989-2000 by Brian V. Smith
  Parts Copyright (c) 1991 by Paul King
- 
+
  Any party obtaining a copy of these files is granted, free of charge, a
  full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  nonexclusive right and license to deal in this software and
@@ -162,14 +162,14 @@ INSTALLATION NOTES:
 4. Type "make install"
 	This will install the executable (xfig) into the execute directory,
 	and the documentation files into xfig's library directory XFIGLIBDIR.
-	There is a reference in HTML, a tutorial in PDF format, and the man 
+	There is a reference in HTML, a tutorial in PDF format, and the man
 	pages in PDF format, although the HTML files are much better than the
 	man pages.  The Help menu in xfig will launch the browser to read the
 	HTML files and the PDF viewer to view the other two.  The programs
 	that are used for these are specified in the app-defaults file under
 	Fig.browser and Fig.pdfviewer respectively.  The default for HTML is
 	"netscape" and "acroread" for the PDF files.
-	If your Netscape can read PDF files you may want to change the 
+	If your Netscape can read PDF files you may want to change the
 	Fig.pdfviewer resource to say "netscape" instead of "acroread".
 	You can get both Netscape and Acroread for just about every platform.
 	Netscape is available from Netscape Communications at:
@@ -220,7 +220,7 @@ o If you have a small screen (e.g. 800x600) you may want to uncomment
   the line with USESMALLICONS in the Imakefile to use smaller icons for the
   mode panel.
   Also, when starting xfig use -pwidth 8 -pheight 5.5 -but_per_row 3
-  This will make it use 3 buttons per row on the left panel and size the canvas 
+  This will make it use 3 buttons per row on the left panel and size the canvas
   to fit in 800x600.
   You can also use the X resources by putting the following in the app-defaults
   files or your personal X defaults file:
@@ -281,6 +281,9 @@ o If your system doesn't have strstr(), uncomment the line with HAVE_NO_STRSTR
 o If your system doesn't have strcasecmp() and/or strncasecmp(), uncomment the
   lines in the Imakefile with HAVE_NO_STRCASECMP and HAVE_NO_STRNCASECMP.
 
+o If your system has the strerror() function (doesn't have sys_errlist) then
+  comment out NEED_STRERROR with an XCOMM comment.
+
 o If you have an input tablet and your X server supports the XInputExtension
   uncomment the lines that define TABLIB and USETAB in the Imakefile.
   Start xfig with -tablet or define the resource Fig.Tablet to use it.
@@ -306,7 +309,7 @@ o The SMOOTHMOTION option toggles between two methods for tracking the
   certain machines if the performance is slow when moving or drawing objects.
 
 o If you have a Sun Sparcstation and would like the Compose LED (light) turned
-  on when you are entering multi-key characters (like a-umlaut, c-cedilla, etc), 
+  on when you are entering multi-key characters (like a-umlaut, c-cedilla, etc),
   uncomment the line: COMP_LED = -DCOMP_LED=3
   (Note: older versions of X11, e.g. R5 may use 1 instead of 3 for the LED)
 
@@ -372,7 +375,7 @@ A common symptom is that xfig just core dumps when starting.
 ------------------------------------------------------
 Possible problems encountered installing/running xfig:
 ------------------------------------------------------
-Please see the FAQ in Doc/html/faq.html for an up-to-date FAQ.  This is 
+Please see the FAQ in Doc/html/faq.html for an up-to-date FAQ.  This is
 available from the Help/Xfig Reference menu entry while running xfig,
 or by viewing Doc/html/faq with your favorite web browser.
 ________________________________________________________________________________

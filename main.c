@@ -240,6 +240,10 @@ static XtResource application_resources[] = {
       XtOffset(appresPtr, showdepthmanager), XtRBoolean, (caddr_t) & true},
     {"flipvisualhints", "Hints",   XtRBoolean, sizeof(Boolean),
       XtOffset(appresPtr, flipvisualhints), XtRBoolean, (caddr_t) & false},
+    {"icon_view", "View",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, icon_view), XtRBoolean, (caddr_t) & true},
+    {"library_icon_size", "Dimension",   XtRInt, sizeof(int),
+      XtOffset(appresPtr, library_icon_size), XtRImmediate, (caddr_t) DEF_ICON_SIZE},
 
 #ifdef I18N
     {"international", "International", XtRBoolean, sizeof(Boolean),
@@ -311,6 +315,7 @@ XrmOptionDescRec options[] =
     {"-hiddentext", ".hiddentext", XrmoptionNoArg, "True"},
     {"-hidedepthmanager", ".showdepthmanager", XrmoptionNoArg, "False"},
     {"-iconGeometry", ".iconGeometry", XrmoptionSepArg, (caddr_t) NULL},
+    {"-icon_view", ".icon_view", XrmoptionNoArg, "True"},
     {"-image_editor", ".image_editor", XrmoptionSepArg, 0},
     {"-imperial", ".inches", XrmoptionNoArg, "True"},
     {"-inches", ".inches", XrmoptionNoArg, "True"},
@@ -322,6 +327,7 @@ XrmOptionDescRec options[] =
     {"-latexfonts", ".latexfonts", XrmoptionNoArg, "True"},
     {"-left", ".justify", XrmoptionNoArg, "False"},
     {"-library_dir", ".library_dir", XrmoptionSepArg, 0},
+    {"-list_view", ".icon_view", XrmoptionNoArg, "False"},
     {"-magnification", ".magnification", XrmoptionSepArg, 0},
     {"-max_image_colors", ".max_image_colors", XrmoptionSepArg, 0},
     {"-metric", ".inches", XrmoptionNoArg, "False"},
@@ -399,6 +405,7 @@ char *help_list[] = {
 	"[-hiddentext] ",
 	"[-hidedepthmanager] ",
 	"[-iconGeometry <geom>] ",
+	"[-icon_view] ",
 	"[-image_editor <editor>] ",
 	"[-imperial] ",
 	"[-inches] ",
@@ -409,6 +416,7 @@ char *help_list[] = {
 	"[-latexfonts] ",
 	"[-left] ",
 	"[-library_dir <directory>] ",
+	"[-list_view ]",
 	"[-magnification <print/export_mag>] ",
 	"[-max_image_colors <number>] ",
 	"[-metric] ",
@@ -527,6 +535,7 @@ main(argc, argv)
     char	    version[30];
     Boolean	    geomspec;
     struct geom	    geom;
+    char	   *dval;
 
 
     geomspec = False;
@@ -1181,11 +1190,7 @@ main(argc, argv)
 	GetValues(layer_form);
 	w += w1;
 	/* subtract them from the total xfig window to get the width of the canvas */
-	if (appres.landscape) {
-	    CANVAS_WD_LAND = geom.wid - w;
-	} else {
-	    CANVAS_WD_PORT = geom.wid - w;
-	}
+	CANVAS_WD_PORT = CANVAS_WD_LAND = geom.wid - w;
 	/* now get height of the cmd panel, msg panel, top ruler and ind panel */
 	FirstArg(XtNheight, &h1);
 	GetValues(cmd_form);
@@ -1199,20 +1204,36 @@ main(argc, argv)
 	h += INTERNAL_BW*2;
 	/* finally whole tool */
 	GetValues(tool);
-	if (appres.landscape) {
-	    CANVAS_HT_LAND = geom.ht - h;
-	    resize_all((int) (CANVAS_WD_LAND), (int) (CANVAS_HT_LAND));
-	} else {
-	    CANVAS_HT_PORT = geom.ht - h;
-	    resize_all((int) (CANVAS_WD_PORT), (int) (CANVAS_HT_PORT));
-	}
+	CANVAS_HT_LAND = CANVAS_HT_PORT = geom.ht - h;
+	resize_all((int) (CANVAS_WD_LAND), (int) (CANVAS_HT_LAND));
     } else {
 	    /* this really settles things to the right size */
 	    resize_all(CANVAS_WD, CANVAS_HT);
     }
 
-    /* get the current directory */
-    get_directory(cur_dir);
+    /* get the current directory for both file and export operations */
+    get_directory(cur_file_dir);
+    get_directory(cur_export_dir);
+
+    /********************************************/
+    /* save any filename passed in cur_filename */
+    /********************************************/
+
+    if (arg_filename == NULL)
+	cur_filename[0] = '\0';
+    else
+	strcpy(cur_filename, arg_filename);
+    /* strip off any preceding path */
+    if (dval=strrchr(cur_filename, '/')) {
+	/* append it to the current directory */
+	*dval = '\0';  /* terminate string at the last "/" */
+	strcat(cur_file_dir,"/");
+	strcat(cur_file_dir,cur_filename);	/* append the path to the directory */
+	strcpy(cur_filename,++dval);		/* put the part after the last / in the name */
+	change_directory(cur_file_dir);		/* go there */
+    }
+    /* update the name panel with the filename */
+    update_cur_filename(cur_filename);
 
     /* parse the export language resource */
     for (i=0; i<NUM_EXP_LANG; i++)
@@ -1277,11 +1298,9 @@ main(argc, argv)
     /************************************************/
     /* if the user passed a filename to us, load it */
     /************************************************/
-    if (arg_filename == NULL)
-	cur_filename[0] = '\0';
-    else
-	load_file(arg_filename, 0, 0);
-    update_cur_filename(cur_filename);
+
+    if (strlen(cur_filename))
+	load_file(cur_filename, 0, 0);
 
     /* If the user requests a tablet then do the set up for it */
     /*   and handle the tablet XInput extension events */

@@ -28,7 +28,7 @@
 
 /* EXPORTS */
 
-char		browse_cur_dir[PATH_MAX];	/* current directory for browsing */
+char		cur_browse_dir[PATH_MAX];	/* current directory for browsing */
 
 Widget		browse_selfile,	/* selected file widget */
 		browse_mask,	/* mask widget */
@@ -154,7 +154,7 @@ popup_browse_panel(w)
     if (!browse_popup) {
 	get_directory( local_dir );
     } else {
-	strcpy(local_dir, browse_cur_dir);
+	strcpy(local_dir, cur_browse_dir);
     }
 
     /* move to the file directory  - if not the current dir

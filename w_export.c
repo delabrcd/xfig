@@ -33,7 +33,6 @@
 /* EXPORTS */
 
 char	default_export_file[PATH_MAX];
-char	export_cur_dir[PATH_MAX];	/* current directory for export */
 
 Widget	export_popup;	/* the main export popup */
 Widget	exp_selfile,	/* output (selected) file widget */
@@ -288,7 +287,7 @@ do_export(w)
 	
 	/* if not absolute path, change directory */
 	if (*fval != '/') {
-	    if (change_directory(export_cur_dir) != 0)
+	    if (change_directory(cur_export_dir) != 0)
 		return;
 	}
 
@@ -803,6 +802,11 @@ popup_export_panel(w)
 	    background_menu = make_color_popup_menu(export_background_panel,
 	    				"Background Color", background_select, 
 					False, True);
+	    /* now set the color and name in the background button */
+	    set_but_col(export_background_panel, export_background_color);
+	    /* now set the color and name in the transparent button */
+	    set_but_col(export_transp_panel, appres.transparent);
+
 	    /* also the magnification may have been changed in the print popup */
 	    sprintf(buf,"%.1f",appres.magnification);
 	    FirstArg(XtNstring, buf);
@@ -816,7 +820,7 @@ popup_export_panel(w)
 	}
 
 	/* set the directory widget to the current export directory */
-	FirstArg(XtNstring, export_cur_dir);
+	FirstArg(XtNstring, cur_export_dir);
 	SetValues(exp_dir);
 
 	Rescan(0, 0, 0, 0);
@@ -1254,10 +1258,8 @@ create_export_panel(w)
 	export_background_panel = XtCreateManagedWidget("background",
 					   menuButtonWidgetClass,
 					   export_panel, Args, ArgCount);
-	/* now set foreground to contrasting color */
-	xcolor.pixel = x_color(export_background_color);
-	XQueryColor(tool_d, tool_cm, &xcolor);
-	pick_contrast(xcolor, export_background_panel);
+	/* now set the color and name in the button */
+	set_but_col(export_background_panel, export_background_color);
 
 	/* make color menu */
 	background_menu = make_color_popup_menu(export_background_panel, 
@@ -1294,10 +1296,9 @@ create_export_panel(w)
 	export_transp_panel = XtCreateManagedWidget("transparent",
 					   menuButtonWidgetClass,
 					   export_panel, Args, ArgCount);
-	/* now set foreground to contrasting color */
-	xcolor.pixel = x_color(appres.transparent);
-	XQueryColor(tool_d, tool_cm, &xcolor);
-	pick_contrast(xcolor, export_transp_panel);
+
+	/* now set the color and name in the button */
+	set_but_col(export_transp_panel, appres.transparent);
 
 	transp_menu = make_color_popup_menu(export_transp_panel, 
 					"Transparent Color", transp_select, 
@@ -1394,6 +1395,7 @@ create_export_panel(w)
 			   XtParseTranslationTable(file_name_translations));
 
 	/* create the directory widgets */
+	change_directory(cur_export_dir);
 	create_dirinfo(False, export_panel, exp_selfile, &beside, &below,
 		       &exp_mask, &exp_dir, &exp_flist, &exp_dlist, E_FILE_WIDTH, False);
 	/* make <return> or double click in the file list window export the file */
@@ -1440,8 +1442,6 @@ create_export_panel(w)
 	set_sensitivity();
 
 	update_def_filename();
-	/* start the export directory at the current dir */
-	strcpy(export_cur_dir, cur_dir);
 	/* set the initial wildcard mask based on the current export language */
 	set_export_mask(cur_exp_lang);
 }

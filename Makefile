@@ -326,7 +326,10 @@ XPMINC = -I/usr/include/X11
 
 # Uncomment the following definition for XAW3D if you want to use
 # the 3d Athena Widget Set (highly recommended!)
+# Then be sure to change the XAW3DINC to point to the directory where your
+# 3D Athena widget headers are located
 
+XAW3DINC = -I/usr/include/X11/Xaw3d
 DUSEXAW3D = -DXAW3D
 XAWLIB = -lXaw3d
 
@@ -348,6 +351,7 @@ COMP_LED = -DCOMP_LED=3
 # Uncomment the next line if you want use Japanese (i18n) on xfig.
 # If your setlocale() dosen't support the locale, you should
 # add -DSETLOCALE to I18N_DEFS.
+
 # #define I18N
 
 # If using an input tablet uncomment the following
@@ -363,6 +367,7 @@ USETAB = -DUSE_TAB
 
 # use (and change) the following if you want the multi-key data base file
 # somewhere other than the standard X11 library directory
+# be sure to comment out the second copy of XFIGLIBDIR if you use this one
 # XFIGLIBDIR = /usr/local/lib/xfig
 
 # use this if you want the multi-key data base file in the standard X11 tree
@@ -376,6 +381,11 @@ XFIGLIBDIR = $(LIBDIR)/xfig
 
 # HAVE_NO_STRCASECMP = -DHAVE_NO_STRCASECMP
 # HAVE_NO_STRNCASECMP = -DHAVE_NO_STRNCASECMP
+
+# If your system has the strerror() function (doesn't have sys_errlist) then
+# comment out NEED_STRERROR with an # comment.
+
+NEED_STRERROR = -DNEED_STRERROR
 
 # If your system doesn't have dirent.h undefine the following definition
 
@@ -436,7 +446,8 @@ OBJLIB =		-DOBJLIBDIR=\"$(OBJLIBDIR)\"
 
 STRDEFINES = $(HAVE_NO_NOSTRSTR) \
 		$(HAVE_NO_STRNCASECMP) \
-		$(HAVE_NO_STRCASECMP)
+		$(HAVE_NO_STRCASECMP) \
+		$(NEED_STRERROR)
 
 DUSEJPEG = -DUSE_JPEG
 READJPEGS = f_readjpg.c
@@ -504,7 +515,7 @@ MAINDEPFILES =  patchlevel.h version.h
 SRCS = $(XFIGSRC)
 OBJS = $(XFIGOBJ)
 
-EXTRA_INCLUDES = $(JPEGINC) $(XPMINC)
+EXTRA_INCLUDES = $(JPEGINC) $(XPMINC) $(XAW3DINC)
 DEPLIBS = $(DEPXAWLIB) $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
 
 LOCAL_LIBRARIES = 	$(JPEGLIB)
@@ -512,7 +523,7 @@ SYS_LIBRARIES= 		-lm $(XPMLIBS) $(TABLIB) $(XAWLIB) $(XMULIB) $(XTOOLLIB) $(XLIB
 
 xfig: $(DEPLIBJPEG)
 
-# only compile our jpeg if the use doesn't have one installed
+# only compile our jpeg if the user doesn't have one installed
 
 PROGRAM = xfig
 
@@ -567,72 +578,72 @@ install:: Fig-color.ad
 # here with "make install"
 
 install::
-	@if [ -d $(XFIGLIBDIR) ]; then set +x; \
-		else (set -x; $(MKDIRHIER) $(XFIGLIBDIR) ; set +x; ); fi
-	chmod a+x,u+w $(XFIGLIBDIR)
-	$(INSTALL) -c CompKeyDB $(XFIGLIBDIR)
-	make install.libs
-	make install.doc
+	@if [ -d $(DESTDIR)$(XFIGLIBDIR) ]; then set +x; \
+		else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGLIBDIR) ; set +x; ); fi
+	chmod a+x,u+w $(DESTDIR)$(XFIGLIBDIR)
+	$(INSTALL) -c CompKeyDB $(DESTDIR)$(XFIGLIBDIR)
+	$(MAKE) install.libs
+	$(MAKE) install.doc
 
 # Install the documentation here with "make install.doc"
 install.doc::
-	@echo Installing man pages to $(MANDIR)
-	@make install.man
+	@echo Installing man pages to $(DESTDIR)$(MANDIR)
+	@$(MAKE) install.man
 
 	@(cd Doc ; \
-	echo Copying pdf and html files to $(XFIGLIBDIR) ; \
-	$(INSTALL) -c xfig.html $(XFIGLIBDIR) ; \
-	$(INSTALL) -c xfig-howto.pdf $(XFIGLIBDIR) ; \
-	if [ -d $(XFIGLIBDIR)/html ]; then set +x; \
-	   else (set -x; $(MKDIRHIER) $(XFIGLIBDIR)/html ); fi ; \
+	echo Copying pdf and html files to $(DESTDIR)$(XFIGLIBDIR) ; \
+	$(INSTALL) -c xfig.html $(DESTDIR)$(XFIGLIBDIR) ; \
+	$(INSTALL) -c xfig-howto.pdf $(DESTDIR)$(XFIGLIBDIR) ; \
+	if [ -d $(DESTDIR)$(XFIGLIBDIR)/html ]; then set +x; \
+	   else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGLIBDIR)/html ); fi ; \
 	(cd html ; \
 	   for f in *.* ; do \
-	      $(INSTALL) -c $$f $(XFIGLIBDIR)/html ; \
+	      $(INSTALL) -c $$f $(DESTDIR)$(XFIGLIBDIR)/html ; \
 	   done) ; \
 	echo "  Copying image files for html" ; \
-	if [ -d $(XFIGLIBDIR)/html/images ]; then set +x; \
-	   else (set -x; $(MKDIRHIER) $(XFIGLIBDIR)/html/images ); fi ; \
+	if [ -d $(DESTDIR)$(XFIGLIBDIR)/html/images ]; then set +x; \
+	   else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGLIBDIR)/html/images ); fi ; \
 	(cd html/images ; \
 	   for f in * ; do \
-	       $(INSTALL) -c $$f $(XFIGLIBDIR)/html/images ; \
+	       $(INSTALL) -c $$f $(DESTDIR)$(XFIGLIBDIR)/html/images ; \
 	   done) ; \
 	) ;
 
 # Install the object libraries here with "make install.libs"
 install.libs::
 	@echo "Copying Fig Object Libraries"
-	@if [ -d $(OBJLIBDIR) ]; then set +x; \
-		else (set -x; $(MKDIRHIER) $(OBJLIBDIR) ; set +x; ); fi
+	@if [ -d $(DESTDIR)$(OBJLIBDIR) ]; then set +x; \
+		else (set -x; $(MKDIRHIER) $(DESTDIR)$(OBJLIBDIR) ; set +x; ); fi
 	@if [ -d Examples/Libraries ]; then \
 	(cd Examples/Libraries ; \
 	for d in * ;  do \
 	    (cd $$d ; \
-	    if [ -d $(OBJLIBDIR)/$$d ]; then set +x; \
-		else (set -x; $(MKDIRHIER) $(OBJLIBDIR)/$$d ); fi ; \
-	    echo "  Copying $$d library files to $(OBJLIBDIR)/$$d" ; \
+	    if [ -d $(DESTDIR)$(OBJLIBDIR)/$$d ]; then set +x; \
+		else (set -x; $(MKDIRHIER) $(DESTDIR)$(OBJLIBDIR)/$$d ); fi ; \
+	    echo "  Copying $$d library files to $(DESTDIR)$(OBJLIBDIR)/$$d" ; \
 	    for f in * ;  do \
 		if [ -d $$f ]; then ( \
-		    if [ -d $(OBJLIBDIR)/$$d/$$f ]; then set +x; \
-			else (set -x; $(MKDIRHIER) $(OBJLIBDIR)/$$d/$$f ); fi ; \
+		    if [ -d $(DESTDIR)$(OBJLIBDIR)/$$d/$$f ]; then set +x; \
+			else (set -x; $(MKDIRHIER) $(DESTDIR)$(OBJLIBDIR)/$$d/$$f ); fi ; \
 			(cd $$f ; \
 			for dd in * ; do \
 			    if [ -d $$dd ]; then ( \
-				if [ -d $(OBJLIBDIR)/$$d/$$f/$$dd ]; then set +x; \
-				    else (set -x; $(MKDIRHIER) $(OBJLIBDIR)/$$d/$$f/$$dd ); fi ; \
+				if [ -d $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd ]; then set +x; \
+				    else (set -x; $(MKDIRHIER) $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd ); fi ; \
 				    (cd $$dd ; \
 				    for l in * ; do \
 					if [ -d $$l ]; then ( \
-					    if [ -d $(OBJLIBDIR)/$$d/$$f/$$dd/$$l ]; then set +x; \
-						else (set -x; $(MKDIRHIER) $(OBJLIBDIR)/$$d/$$f/$$dd/$$l ); fi ; \
+					    if [ -d $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd/$$l ]; then set +x; \
+						else (set -x; $(MKDIRHIER) $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd/$$l ); fi ; \
 					    (cd $$l ; \
 						for m in * ; do \
-						    $(INSTALL) -c $$m $(OBJLIBDIR)/$$d/$$f/$$dd/$$l ; \
+						    $(INSTALL) -c $$m $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd/$$l ; \
 						done ) ) ; \
-					else ( $(INSTALL) -c $$l $(OBJLIBDIR)/$$d/$$f/$$dd ) ; fi ; \
+					else ( $(INSTALL) -c $$l $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd ) ; fi ; \
 				done) ) ; \
-			    else ( $(INSTALL) -c $$dd $(OBJLIBDIR)/$$d/$$f ) ; fi ; \
+			    else ( $(INSTALL) -c $$dd $(DESTDIR)$(OBJLIBDIR)/$$d/$$f ) ; fi ; \
 			done) ); \
-		else ($(INSTALL) -c $$f $(OBJLIBDIR)/$$d ) ; fi ; \
+		else ($(INSTALL) -c $$f $(DESTDIR)$(OBJLIBDIR)/$$d ) ; fi ; \
 	    done ) ; \
 	done ; ) ; \
 	else echo No Object Libraries to install ; \
@@ -886,7 +897,7 @@ w_grid.o:  w_grid.c  mode.h
 	$(RM) $@
 	$(CC) -c $(CFLAGS)   $*.c
 
-w_indpanel.o:  w_indpanel.c  mode.h w_indpanel.h
+w_indpanel.o:  w_indpanel.c  mode.h w_indpanel.h object.h
 	$(RM) $@
 	$(CC) -c $(CFLAGS)   $*.c
 
@@ -894,7 +905,11 @@ w_library.o:  w_library.c  mode.h
 	$(RM) $@
 	$(CC) -c $(CFLAGS)   $*.c
 
-w_modepanel.o:  w_modepanel.c  mode.h w_icons.h
+w_menuentry.o:  w_menuentry.c  w_menuentry.h w_menuentryP.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+w_modepanel.o:  w_modepanel.c  mode.h w_icons.h object.h
 	$(RM) $@
 	$(CC) -c $(CFLAGS)  $(DUSESMALLICONS) $*.c
 

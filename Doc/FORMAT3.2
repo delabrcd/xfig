@@ -67,8 +67,8 @@ Description of the Fig Format Follows
 	float	magnification		(export and print magnification, %)
 	string	multiple-page		("Single" or "Multiple" pages)
 	int	transparent color	(color number for transparent color for GIF
-					 export. -2=None, -1=background, 0-31 for
-					 standard colors or 32- for user colors)
+					 export. -3=background, -2=None, -1=Default,
+					 0-31 for standard colors or 32- for user colors)
 	# optional comment		(An optional set of comments may be here,
 					 which are associated with the whole figure)
 	int	resolution coord_system	(Fig units/inch and coordinate system:
@@ -89,7 +89,9 @@ Description of the Fig Format Follows
     upper-left corner.
 
     ** Coordinates are given in "fig_resolution" units.
-    ** Line thicknesses are given in 80-ths of an inch ("display units").
+    ** Line thicknesses are given in 1/80 inch (0.3175mm) or 1 screen pixel.
+       When exporting to EPS, PostScript or any bitmap format (e.g. GIF),  the
+       line thickness is reduced to 1/160 inch (0.159mm) to "lighten" the look.
     ** dash-lengths/dot-gaps are given in 80-ths of an inch.
 
 
@@ -422,11 +424,11 @@ Description of the Fig Format Follows
 	type	name			(brief description)
 	----	----			-------------------
 	int	object_code		(always 3)
-	int	sub_type		(0: opened approximated spline
+	int	sub_type		(0: open approximated spline
 					     1: closed approximated spline
-					     2: opened interpolated spline
+					     2: open   interpolated spline
 					     3: closed interpolated spline
-					     4: opened x-spline 
+					     4: open   x-spline 
 					     5: closed x-spline)
 	int	line_style		(See the end of this section)
 	int	thickness		(1/80 inch)

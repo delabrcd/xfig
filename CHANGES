@@ -3,6 +3,112 @@ Changes to Xfig
 Version 3.2
 =============================================================================
 
+Patchlevel 3b (Jul 19, 2000)
+
+NEW FEATURES:
+	o Object library now shows icons of all objects. The size of the icons
+	  is selectable from 40 pixels to 120 via a pulldown menu and resource
+	  (Fig.library_icon_size). The the old "list" view is also available.
+	o When drawing an arc by specifying the center point, a circle is drawn
+	  showing the radius of the arc as the user drags the mouse, then when
+	  the first end point is clicked an arc is drawn as the mouse is dragged
+	o Simplistic super/subscripting by typing Ctrl-^ for superscript and
+	  Ctrl-_ for subscript.  It creates a new string in the proper size
+	  and position for super- or subscripting.  May be nested.  Does NOT
+	  work for centered or right-justified text.
+	  from Ian Hutchinson (hutch@psfc.mit.edu) with improvements by Brian V.
+	  Smith
+	o new Imakefile variable NEED_STRERROR to allow for systems that don't
+	  have the sys_errlist[] error string array (this is already in fig2dev)
+	o Additional JPEG file format (EXIF) added. These usually come from
+	  digital cameras
+	o New library of knitting symbols from Kate Hedstrom
+	  (kate@IMCS.rutgers.edu)
+	o New Cisco network devices in Libraries/Networks from Louis B. Moore
+	  (moore.louis@childrens.tchden.org)
+	o New 10/100 Ether network hub in Libraries/Networks from Dirko van
+	  Schalkwyk (dvschalk@ing.sun.ac.za)
+	o New libraries from Al Delgado for Chen's model of Entity Relations
+	  (Libraries/ERD) and symbols for various widgets, e.g. buttons,
+	  sliders, scrollbars, etc. (Libraries/GUI)
+
+BUGS FIXED:
+	o If the BSD symbol is defined but has no value, the "#if" condition
+		#if ( !(defined(BSD) && (BSD >= 199306)) && ...
+	o Importing 24-bit PCX files works now with the new PCX reader from
+	  Russell Marks (public domain).
+	o Importing PPM images with more than 256 colors failed because it was
+	  first converted to 24-bit PCX, which xfig couldn't read before now.
+	o Importing TIFF files (which is first converted to PPM them to PCX)
+	  works now with new PCX reader to handle 24-bit images.
+	o Bug where updating an arrowhead used the line thickness from the
+	  current settings instead of the line being updated to set the
+	  arrowhead thickness.
+	o "=" instead of "==" in checking if picture type is XBM to allow
+	  updating pen color from update button
+	o xfig would stop reading objects from a file when it encountered one
+	  bad object unless it had already read one or more good objects
+	o If a polygon was created with ALL coincident points (i.e. zero width/
+	  height, xfig would remove ALL points when reading the file and would
+	  subsequently crash.  Objects with zero width/height are now removed
+	  when reading the file.
+	o If a box with fewer than four points or a polygon with fewer than
+	  three points is read from a file, xfig removes it
+	o Could still move point of object even if its depth was not active
+	o References to "make" in Imakefile changed to "$(MAKE)"
+	o When vertex number display was turned on, canvas wasn't refreshed to
+	  show them
+	o When the page border was turned off, the zero-crossing lines weren't
+	  redrawn
+	o User colors defined in the current session weren't saved with the
+	  figure.
+	o User could click on text in disabled layer when in text mode
+	o Bug which allowed only 511 user colors instead of 512
+	o Background color of RGB slider lock buttons changed to random color
+	  when lock turned off
+	o User colors in current figure would be lost if user previewed more
+	  than one file before cancelling file popup
+	o "Transparent" color menu button for GIF export wasn't updated after
+	  export panel was created when loading new figure
+	o Spurious comments would appear in spline after editing control point
+	o If editing spline point for curvature and spline line had zero
+	  thickness, the spline would dissappear during edit
+	o Incorrect declaration for put_msg()
+	o Prepended $(DESTDIR) to $(XFIGLIBDIR) directory variable in Imakefile
+	  to be portable
+	o Changed w_menuentryP.h and w_menuentry.c to explicitely use
+	  X11/Xaw3d/...  path for menu entry when user has XAW3D set in
+	  Imakefile to use 3D Athena Widget set
+	o xfig now uses gunzip instead of uncompress to uncompress .Z files to
+	  be more portable for Cygwin environment
+	o Current directory for loading/saving figures was overwritten when
+	  changing export or picture browse directory
+	o Loading a .fig file or importing a picture from an MSDOS filesystem
+	  failed because xfig tried to see if the file existed with a suffix of
+	  .Z, .gz, or .z, all of which were reported by stat() to exist because
+	  it apparently truncates any suffixes after the first
+	o Bounding box of objects in negative region weren't calculated
+	  correctly when positioning grid was on
+	o If "allow negative coordinates" was turned off, one could still pan
+	  into negative region by dragging mouse on side ruler with middle
+	  button pressed
+	o Bug which prevented dragging rulers (with middle mouse button) into
+	  negative region unless it had been moved into the positive region first
+	o If user specified a -geometry on the command-line and then switched to
+	  Portrait mode, the geometry requested was overridden
+	o Various bugs in export commands when calling fig2dev
+	o Inconsistent prototypes declared for pw_arcbox() and curve()
+	o One of the header values for TIFF files was incorrect (was "DD",
+	  should be "II")
+	o When scaling a box and the point positioning grid is more coarse than
+	  the points in the box, and you try to grab a corner of the box, xfig
+	  thought you want to scale either horizontally or vertically only.
+	o Excessive updating of layer buttons when reading Fig file fixed
+	o Problem when exporting to GIF with transparent = background
+	o Certain files are now opened in binary mode ("wb" or "rb") for DOS
+	  compatibility
+
+-----------------------
 Patchlevel 3a (Jan 19, 2000)
 
 NEW FEATURES:

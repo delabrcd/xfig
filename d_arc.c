@@ -63,13 +63,19 @@ arc_drawing_selected()
     reset_action_on();
 }
 
+static int save_cur_x, save_fix_x, save_cur_y, save_fix_y;
+
 static void
 init_arc_drawing(x, y)
     int		    x, y;
 {
     if (center_marked) {
-	elastic_line();
+	save_cur_x = cur_x;
+	save_fix_x = fix_x;
+	save_cur_y = cur_y;
+	save_fix_y = fix_y;
 	set_mousefun("mid angle", "", "cancel", "", "", "");
+	canvas_locmove_proc = unconstrained_line;
 	d_line(center_point.x, center_point.y, 
 		(int)(0.2*(x-center_point.x)+x),
 		(int)(0.2*(y-center_point.y)+y));
@@ -102,7 +108,7 @@ init_arc_c_drawing(x, y)
 {
     set_mousefun("first point", "", "cancel", "", "", "");
     draw_mousefun_canvas();
-    canvas_locmove_proc = arc_point;
+    canvas_locmove_proc = resizing_cbr;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = cancel_arc;
     center_point.x = fix_x = cur_x = x;
@@ -115,11 +121,8 @@ init_arc_c_drawing(x, y)
 static void
 cancel_arc()
 {
-    if (center_marked) {
-      center_marked = FALSE;
-      center_marker(center_point.x, center_point.y);  /* clear center marker */
-    }
-    elastic_line();
+    if (!center_marked || num_point > 0)
+	elastic_line();
     /* erase any length info if appres.showlengths is true */
     erase_lengths();
     if (num_point == 2) {
@@ -127,6 +130,29 @@ cancel_arc()
 	cur_x = point[0].x;
 	cur_y = point[0].y;
 	elastic_line();
+    }
+    if (center_marked) {
+	if (num_point >= 1) {
+	    d_line(center_point.x, center_point.y,
+		(int)(0.2*(point[0].x-center_point.x)+point[0].x),
+		(int)(0.2*(point[0].y-center_point.y)+point[0].y));
+	}
+	if (num_point == 2) {
+	    d_line(center_point.x, center_point.y,
+		(int)(0.2*(point[1].x-center_point.x)+point[1].x),
+		(int)(0.2*(point[1].y-center_point.y)+point[1].y));
+	}
+	/* erase circle */
+	if (canvas_locmove_proc != resizing_cbr) {
+	    /* restore saved circle if we already made one or more points */
+	    cur_x = save_cur_x;
+	    fix_x = save_fix_x;
+	    cur_y = save_cur_y;
+	    fix_y = save_fix_y;
+	}
+	elastic_cbr();
+	center_marked = FALSE;
+	center_marker(center_point.x, center_point.y);  /* clear center marker */
     }
     arc_drawing_selected();
     draw_mousefun_canvas();
@@ -151,6 +177,15 @@ get_arcpoint(x, y)
 	draw_mousefun_canvas();
     }
     if (num_point == 2) {
+	if (center_marked) {
+	    /* erase circle */
+	    cur_x = save_cur_x;
+	    fix_x = save_fix_x;
+	    cur_y = save_cur_y;
+	    fix_y = save_fix_y;
+	    elastic_cbr();
+	}
+	/* create the arc */
 	create_arcobject(x, y);
 	return;
     }
@@ -171,12 +206,14 @@ create_arcobject(lx, ly)
     int		    x, y, i;
     float	    xx, yy;
 
-    elastic_line();
+    if (!center_marked)
+	elastic_line();
     /* erase any length info if appres.showlengths is true */
     erase_lengths();
     cur_x = lx;
     cur_y = ly;
-    elastic_line();
+    if (!center_marked)
+	elastic_line();
     point[num_point].x = lx;
     point[num_point++].y = ly;
     x = point[0].x;

@@ -47,7 +47,7 @@ read_ppm(file,filetype,pic)
 	}
 	/* close pipe */
 	pclose(giftopcx);
-	if ((giftopcx = fopen(pcxname, "r")) == NULL) {
+	if ((giftopcx = fopen(pcxname, "rb")) == NULL) {
 	    file_msg("Can't open temp output file\n");
 	    return FileInvalid;
 	}

@@ -1,7 +1,7 @@
 !Don't change the following string - xfig uses it to determine
 ! if you have the newest app-defaults files installed
 
-Fig.version:			3.2.3a
+Fig.version:			3.2.3b
 
 ! some sample settings you may want to change
 
@@ -133,9 +133,9 @@ Fig.internalborderwidth:	1
 ! the boxes are so small.
 	Fig*ind_panel.ind_box.button_form.update.highlightThickness: 0
 
-! You probably don't want the "spinners" for the settings panels to have shadows
-	Fig*spinup.shadowWidth: 0
-	Fig*spindown.shadowWidth: 0
+! This sets the shadows for the spinner arrows
+	Fig*spinup.shadowWidth:   2
+	Fig*spindown.shadowWidth: 2
 
 ! This gets rid of that funny black line that sometimes borders the canvas
 
@@ -163,7 +163,13 @@ Fig*canvas.translations: #override \n\
 ! Note that you shouldn't remove the following "Fig*international: false".  
 ! It must be there to cancel any *international: true that may defined via xrdb.
 ! This can cause problems on xfig even if the i18n facility is used.
+
 Fig*international: false
+
+! Uncomment following lines if you use i18n text.
+!
+!Fig*edit_panel*Text_text*international: true
+!Fig*edit_panel*inputMethod: xim
 
 Fig.translations: #override \n\
          <Key>: \n\
@@ -210,7 +216,10 @@ Fig*accelerators: \
 	Meta<Key>b: ToggleShowBorders() \n\
 	Alt<Key>b:  ToggleShowBorders() \n\
 	Meta<Key>l: ToggleShowLengths() \n\
-	Alt<Key>l:  ToggleShowLengths()
+	Alt<Key>l:  ToggleShowLengths() \n\
+	Shift<Key>z: ZoomIn() \n\
+	Ctrl<Key>z: ZoomFit() \n\
+	<Key>z: ZoomOut()
 
 ! Translations for when File menu is popped up
 Fig*commands*File*translations: #augment \n\
@@ -397,11 +406,6 @@ Fig*global_panel*accelerators: \
 	Alt<Key>c: DismissGlobal() \n\
 	Meta<Key>q: DismissGlobal() \n\
 	Alt<Key>q: DismissGlobal()
-
-Fig*ind_panel*accelerators: \
-	Shift<Key>z: ZoomIn() \n\
-	Ctrl<Key>z: ZoomFit() \n\
-	<Key>z: ZoomOut()
 
 ! Acceleraters for object creation/editing
 

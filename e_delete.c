@@ -240,8 +240,8 @@ open_cut_file()
 	put_msg("Error: cut file didn't pass stat check");
 	return NULL;			/* file does exist but stat fails */
     }
-    if ((fp = fopen(cut_buf_name, "w")) == NULL) {
-	put_msg("Error: couldn't open cut file %s", sys_errlist[errno]);
+    if ((fp = fopen(cut_buf_name, "wb")) == NULL) {
+	put_msg("Error: couldn't open cut file %s", strerror(errno));
 	return NULL;
     }
     return fp;

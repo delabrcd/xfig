@@ -33,8 +33,10 @@ void            quick_draw_spline();
 
 /* curve routine needed by arc() and show_boxradius() */
 
-void curve(Window, int, int, int, int, Boolean, Boolean,
-		int, int, int, int, int, int, int, int, 
-		float, int, int, int, int);
+void	curve(Window window, int xstart, int ystart, int xend, int yend, 
+		Boolean draw_points, Boolean draw_center, int direction,
+		int a, int b, int xoff, int yoff, int op, int thick, int style,
+		float style_val, int fill_style, 
+		Color pen_color, Color fill_color, int cap_style);
  
 #endif /* U_DRAW_H */

@@ -31,8 +31,8 @@ read_tif(filename,filetype,pic)
     F_pic	   *pic;
 {
 	char	 buf[2*PATH_MAX+40],pcxname[PATH_MAX];
-	FILE	*giftopcx;
-	int	 stat, size;
+	FILE	*tiftopcx;
+	int	 stat;
 
 	/* make name for temp output file */
 	sprintf(pcxname, "%s/%s%06d.pix", TMPDIR, "xfig-pcx", getpid());
@@ -41,22 +41,22 @@ read_tif(filename,filetype,pic)
 	/* for some reason, tifftopnm requires a file and can't work in a pipe */
 	sprintf(buf, "tifftopnm %s 2> /dev/null | ppmtopcx > %s 2> /dev/null",
 		filename, pcxname);
-	if ((giftopcx = popen(buf,"w" )) == 0) {
+	if ((tiftopcx = popen(buf,"w" )) == 0) {
 	    file_msg("Cannot open pipe to tifftopnm or ppmtopcx\n");
 	    /* remove temp file */
 	    unlink(pcxname);
 	    return FileInvalid;
 	}
 	/* close pipe */
-	pclose(giftopcx);
-	if ((giftopcx = fopen(pcxname, "r")) == NULL) {
+	pclose(tiftopcx);
+	if ((tiftopcx = fopen(pcxname, "rb")) == NULL) {
 	    file_msg("Can't open temp output file\n");
 	    /* remove temp file */
 	    unlink(pcxname);
 	    return FileInvalid;
 	}
 	/* now call read_pcx to read the pcx file */
-	stat = read_pcx(giftopcx, filetype, pic);
+	stat = read_pcx(tiftopcx, filetype, pic);
 	pic->subtype = T_PIC_TIF;
 	/* remove temp file */
 	unlink(pcxname);

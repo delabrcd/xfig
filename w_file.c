@@ -82,8 +82,6 @@ static float	offset_unit_conv[] = { (float)PIX_PER_INCH, (float)PIX_PER_CM, 1.0 
 static char	*load_msg = "The current figure is modified.\nDo you want to discard it and load the new file?";
 static char	buf[40];
 
-static char	cur_dir[PATH_MAX] = "";
-
 /* to save image colors when doing a figure preview */
 
 static XColor	save_image_cells[MAX_COLORMAP_SIZE];
@@ -151,7 +149,8 @@ file_panel_dismiss()
 {
     int i;
 
-    if (cur_dir[0] != '\0') change_directory(cur_dir);
+    if (cur_file_dir[0] != '\0')
+	change_directory(cur_file_dir);
 
     if (image_colors_are_saved) {
 	/* restore image colors on canvas */
@@ -329,7 +328,6 @@ do_load(w, ev)
 		XtSetSensitive(load_button, True);
 		/* we have just loaded the image colors from the file */
 		image_colors_are_saved = False;
-		cur_dir[0] = '\0';  /* clear saved old directory */
 		if (file_up)
 		    file_panel_dismiss();
 	    }
@@ -360,7 +358,7 @@ new_xfig_request(w, ev)
   else put_msg("Launching new xfig for file %s...", fval);
   pid = fork();
   if (pid == -1) {
-    file_msg("Couldn't fork the process: %s", sys_errlist[errno]);
+    file_msg("Couldn't fork the process: %s", strerror(errno));
   } else if (pid == 0) {
     xxargv = (char **)XtMalloc((xargc+2) * sizeof (char *));
     for (i = j = 0; i < xargc; i++) {
@@ -371,7 +369,7 @@ new_xfig_request(w, ev)
     xxargv[j] = NULL;
     execvp(xxargv[0], xxargv);
 
-    fprintf(stderr, "xfig: couldn't exec %s: %s\n", xxargv[0], sys_errlist[errno]);
+    fprintf(stderr, "xfig: couldn't exec %s: %s\n", xxargv[0], strerror(errno));
     exit(1);
   }
 
@@ -426,6 +424,10 @@ do_save(w, ev)
 	    close_all_compounds();
     }
 
+    /* go to the file directory */
+    if (change_directory(cur_file_dir) != 0)
+	return;
+
     /* if the user used a keyboard accelerator or right button on File but the filename
        is empty, popup the file panel to force him/her to enter a name */
     if (emptyname(cur_filename) && !file_up) {
@@ -470,7 +472,6 @@ do_save(w, ev)
 		    update_def_filename();	/* update the default export filename */
 		}
 		reset_modifiedflag();
-		cur_dir[0] = '\0';  /* clear saved old directory */
 		if (file_up)
 		    file_panel_dismiss();
 	    }
@@ -586,8 +587,6 @@ popup_file_panel(mode)
 	    return;
 	}
 
-	get_directory(cur_dir);
-
 	/* clear flags */
 	colors_are_swapped = False;
 	image_colors_are_saved = False;
@@ -604,10 +603,9 @@ popup_file_panel(mode)
 	if (!file_popup) {
 	    create_file_panel();
 	} else {
-	    FirstArg(XtNstring, cur_dir);
+	    FirstArg(XtNstring, cur_file_dir);
 	    SetValues(file_dir);
 	    Rescan(0, 0, 0, 0);
-	    clear_preview();
 	}
 	XtSetSensitive(figure_off, mode != F_SAVEAS);
 	XtSetSensitive(fig_offset_lbl_x, mode != F_SAVEAS);
@@ -932,6 +930,7 @@ create_file_panel()
 	}
 
 	/* make the directory list etc */
+	change_directory(cur_file_dir);
 	create_dirinfo(True, file_panel, file_selfile, &beside, &butbelow, &file_mask,
 		       &file_dir, &file_flist, &file_dlist, FILE_ALT_WID, True);
 
@@ -1206,8 +1205,10 @@ preview_figure(filename, parent, canvas, size_widget, pixmap)
     reset_layers();
 
     /* save user colors in case preview changes them */
-    save_user_colors();
-    save_nuser_colors();
+    if (!user_colors_saved) {
+	save_user_colors();
+	save_nuser_colors();
+    }
 
     /* make the cancel button sensitive */
     XtSetSensitive(preview_stop, True);
@@ -1268,7 +1269,7 @@ preview_figure(filename, parent, canvas, size_widget, pixmap)
 		   break;
 	   case -2: file_msg("File is empty");
 		   break;
-	   default: file_msg("Error reading %s: %s",filename,sys_errlist[errno]);
+	   default: file_msg("Error reading %s: %s",filename,strerror(errno));
 	}
 	/* clear pixmap of any figure so user knows something went wrong */
 	XFillRectangle(tool_d, pixmap, gccache[ERASE], 0, 0, 

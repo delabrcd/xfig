@@ -21,9 +21,12 @@
 #include "mode.h"
 #include "u_list.h"
 #include "w_layers.h"
+#include "w_setup.h"
 #include "w_zoom.h"
 
-#define TOLERANCE (zoomscale>1?3:(int)(3/zoomscale))
+#define TOLERANCE (display_zoomscale > 1 ? \
+		5*PIX_PER_INCH/DISPLAY_PIX_PER_INCH : \
+		(int)(5*PIX_PER_INCH/DISPLAY_PIX_PER_INCH/display_zoomscale))
 
 static		(*manipulate) ();
 static		(*handlerproc_left) ();
@@ -514,6 +517,8 @@ next_ellipse_point_found(x, y, tol, point_num, shift)
 	e = prev_ellipse(objects.ellipses, e);
 
     for (; e != NULL; e = prev_ellipse(objects.ellipses, e), n++) {
+	if (!active_layer(e->depth))
+	    continue;
 	if (abs(e->start.x - x) <= tol && abs(e->start.y - y) <= tol) {
 	    *point_num = 0;
 	    return (1);
@@ -542,6 +547,8 @@ next_arc_point_found(x, y, tol, point_num, shift)
 	a = prev_arc(objects.arcs, a);
 
     for (; a != NULL; a = prev_arc(objects.arcs, a), n++) {
+	if (!active_layer(a->depth))
+	    continue;
 	for (i = 0; i < 3; i++) {
 	    if (abs(a->point[i].x - x) <= tol &&
 		abs(a->point[i].y - y) <= tol) {
@@ -565,7 +572,9 @@ next_spline_point_found(x, y, tol, p, q, shift)
     else if (shift)
 	s = prev_spline(objects.splines, s);
 
-    for (; s != NULL; s = prev_spline(objects.splines, s))
+    for (; s != NULL; s = prev_spline(objects.splines, s)) {
+	if (!active_layer(s->depth))
+	    continue;
 	if (validspline_in_mask(s)) {
 	    n++;
 	    *p = NULL;
@@ -574,6 +583,7 @@ next_spline_point_found(x, y, tol, p, q, shift)
 		    return (1);
 	    }
 	}
+    }
     return (0);
 }
 
@@ -591,7 +601,9 @@ next_line_point_found(x, y, tol, p, q, shift)
     else if (shift)
 	l = prev_line(objects.lines, l);
 
-    for (; l != NULL; l = prev_line(objects.lines, l))
+    for (; l != NULL; l = prev_line(objects.lines, l)) {
+	if (!active_layer(l->depth))
+	    continue;
 	if (validline_in_mask(l)) {
 	    n++;
 	    for (a = NULL, b = l->points; b != NULL; a = b, b = b->next) {
@@ -602,6 +614,7 @@ next_line_point_found(x, y, tol, p, q, shift)
 		}
 	    }
 	}
+    }
     return (0);
 }
 
@@ -619,6 +632,8 @@ next_compound_point_found(x, y, tol, p, q, shift)
 	c = prev_compound(objects.compounds, c);
 
     for (; c != NULL; c = prev_compound(objects.compounds, c), n++) {
+	if (!any_active_in_compound(c))
+		continue;
 	if (abs(c->nwcorner.x - x) <= tol &&
 	    abs(c->nwcorner.y - y) <= tol) {
 	    *p = c->nwcorner.x;
@@ -790,7 +805,7 @@ text_search(x, y, posn)
     F_text	   *t;
 
     for (t = objects.texts; t != NULL; t = t->next) {
-	if (in_text_bound(t, x, y, posn))
+	if (active_layer(t->depth) && in_text_bound(t, x, y, posn))
 		return(t);
     }
     return (NULL);

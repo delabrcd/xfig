@@ -244,8 +244,8 @@ read_epsf_pdf(file,filetype,pic,pdf_flag)
 	    close_picfile(file, filetype);
 	    file = open_picfile(psnam, &filetype, True, realname);
 	    sprintf(tmpfile, "%s/%s%06d", TMPDIR, "xfig-eps", getpid());
-	    if ((tmpfp = fopen(tmpfile, "w")) == NULL) {
-		file_msg("Couldn't open tmp file %s, %s", tmpfile, sys_errlist[errno]);
+	    if ((tmpfp = fopen(tmpfile, "wb")) == NULL) {
+		file_msg("Couldn't open tmp file %s, %s", tmpfile, strerror(errno));
 		return PicSuccess;
 	    }
 	    while (fgets(buf, 300, file) != NULL)
@@ -295,7 +295,7 @@ read_epsf_pdf(file,filetype,pic,pdf_flag)
 	if (tmpfile[0])
 	    unlink(tmpfile);
 	/* error return from ghostscript, look in error file */
-	if (status != 0 || ( pixfile = fopen(pixnam,"r") ) == NULL ) {
+	if (status != 0 || ( pixfile = fopen(pixnam,"rb") ) == NULL ) {
 	    FILE *errfile = fopen(errnam,"r");
 	    file_msg("Could not parse %s file with ghostscript: %s", 
 			pdf_flag? "PDF": "EPS", pic->file);

@@ -232,6 +232,8 @@ up_from_arrow(arrow, thick)
 	}
 }
 
+/* update the selected object FROM the indicator buttons */
+
 static void
 init_update_object(p, type, x, y, px, py)
     F_line	   *p;
@@ -410,7 +412,7 @@ update_line(line)
 	up_part(line->radius, cur_boxradius, I_BOXRADIUS);
 	up_part(line->fill_style, cur_fillstyle, I_FILLSTYLE);
 	}
-    else if (line->pic->subtype = T_PIC_XBM)	/* only xbm images have pen color */
+    else if (line->pic->subtype == T_PIC_XBM)	/* only xbm images have pen color */
 	up_part(line->pen_color, cur_pencolor, I_PEN_COLOR);
     up_part(line->depth, cur_depth, I_DEPTH);
     /* only POLYLINES with more than one point may have arrow heads */
@@ -506,9 +508,12 @@ up_arrow(object)
 	    up_part(object->for_arrow->wd,cur_arrowwidth,I_ARROWSIZE);
 	    up_part(object->for_arrow->ht,cur_arrowheight,I_ARROWSIZE);
 	} else {
-	    up_part(object->for_arrow->thickness,cur_arrow_multthick*cur_linewidth,I_ARROWSIZE);
-	    up_part(object->for_arrow->wd,cur_arrow_multwidth*cur_linewidth,I_ARROWSIZE);
-	    up_part(object->for_arrow->ht,cur_arrow_multheight*cur_linewidth,I_ARROWSIZE);
+	    up_part(object->for_arrow->thickness,
+				cur_arrow_multthick*object->thickness, I_ARROWSIZE);
+	    up_part(object->for_arrow->wd,
+	   			cur_arrow_multwidth*object->thickness, I_ARROWSIZE);
+	    up_part(object->for_arrow->ht,
+				cur_arrow_multheight*object->thickness, I_ARROWSIZE);
 	}
     }
     if (object->back_arrow) {
@@ -519,9 +524,12 @@ up_arrow(object)
 	    up_part(object->back_arrow->wd,cur_arrowwidth,I_ARROWSIZE);
 	    up_part(object->back_arrow->ht,cur_arrowheight,I_ARROWSIZE);
 	} else {
-	    up_part(object->back_arrow->thickness,cur_arrow_multthick*cur_linewidth,I_ARROWSIZE);
-	    up_part(object->back_arrow->wd,cur_arrow_multwidth*cur_linewidth,I_ARROWSIZE);
-	    up_part(object->back_arrow->ht,cur_arrow_multheight*cur_linewidth,I_ARROWSIZE);
+	    up_part(object->back_arrow->thickness,
+				cur_arrow_multthick*object->thickness,I_ARROWSIZE);
+	    up_part(object->back_arrow->wd,
+				cur_arrow_multwidth*object->thickness,I_ARROWSIZE);
+	    up_part(object->back_arrow->ht,
+				cur_arrow_multheight*object->thickness, I_ARROWSIZE);
 	}
     }
 

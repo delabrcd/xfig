@@ -21,6 +21,7 @@
 #include "object.h"
 #include "paintop.h"
 #include "d_line.h"
+#include "f_read.h"
 #include "u_bound.h"
 #include "u_create.h"
 #include "u_draw.h"
@@ -166,13 +167,13 @@ create_compoundobject(x, y)
     if (c->nwcorner.x == c->secorner.x) {
 	if (cur_pointposn != P_ANY) {
 	    c->secorner.x += posn_rnd[cur_pointposn];
-	    ceil_coords(c->secorner.x);
+	    c->secorner.x = ceil_coords(c->secorner.x);
 	}
     }
     if (c->nwcorner.y == c->secorner.y) {
 	if (cur_pointposn != P_ANY) {
 	    c->secorner.y += posn_rnd[cur_pointposn];
-	    ceil_coords(c->secorner.y);
+	    c->secorner.y = ceil_coords(c->secorner.y);
 	}
     }
     c->next = NULL;
@@ -209,12 +210,17 @@ compose_compound(c)
     c->arcs = NULL;
     c->comments = NULL;
     c->compounds = NULL;
+    /* defer updating of layer buttons until we've composed the entire compound */
+    defer_update_layers = True;
     get_ellipse(&c->ellipses);
     get_line(&c->lines);
     get_spline(&c->splines);
     get_text(&c->texts);
     get_arc(&c->arcs);
     get_compound(&c->compounds);
+    /* now update the layer buttons */
+    defer_update_layers = False;
+    update_layers();
     if (c->ellipses != NULL)
 	return (1);
     if (c->splines != NULL)

@@ -218,6 +218,8 @@ typedef struct _appres {
     Boolean	    rigidtext;
     Boolean	    hiddentext;
     Boolean	    showdepthmanager;	/* whether or not to display the depth manager */
+    Boolean	    icon_view;		/* icon or list view of library objects */
+    int		    library_icon_size;	/* size of those icons */
 #ifdef I18N
     Boolean international;
     String font_menu_language;

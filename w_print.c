@@ -316,11 +316,11 @@ do_print_batch(w)
 	app_flush();		/* make sure message gets displayed */
 
 	/* now append that to the batch file */
-	if ((infp = fopen(tmp_exp_file, "r")) == NULL) {
+	if ((infp = fopen(tmp_exp_file, "rb")) == NULL) {
 		file_msg("Error during PRINT - can't open temporary file to read");
 		return;
 		}
-	if ((outfp = fopen(batch_file, "a")) == NULL) {
+	if ((outfp = fopen(batch_file, "ab")) == NULL) {
 		file_msg("Error during PRINT - can't open print file to append");
 		return;
 		}

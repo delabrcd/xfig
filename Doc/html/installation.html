@@ -40,16 +40,16 @@ see also <a href="i18n.html">Internationalization</a>.
 
 <p>
 <ol>
-<li>Get the source of <b>xfig</b> (<tt>xfig.3.2.3a.tar.gz</tt>)
+<li>Get the source of <b>xfig</b> (<tt>xfig.3.2.3b.tar.gz</tt>)
 and <i>gunzip</i> and <i>untar</i> the file:
 <br>
 Either do:
 <ol>
-<li><tt>gunzip -c xfig.3.2.3a.tar.gz | tar xvf -</tt>
+<li><tt>gunzip -c xfig.3.2.3b.tar.gz | tar xvf -</tt>
 <br><b>or</b>
-<li><tt>gunzip xfig.3.2.3a.tar.gz</tt>
+<li><tt>gunzip xfig.3.2.3b.tar.gz</tt>
 <br>
-<tt>tar xvf xfig.3.2.3a.tar</tt>
+<tt>tar xvf xfig.3.2.3b.tar</tt>
 </ol>
 <p>
 <a name="getting_xfig">You can get the source from</a> 
@@ -80,9 +80,6 @@ where &lt;path&gt; is the path to the <b>mkdirhier</b> script or program.
 
 <p>
 <dd><img src="images/redball.gif" align=bottom alt="-">
-To enable JPEG support, uncomment `<tt>#define USEJPEG</tt>' (this is the default)
-and modify the definition of <tt>USEINSTALLEDJPEG</tt> and <tt>JPEGLIBDIR</tt> 
-if necessary.
 To use JPEG, you must have <a href="#jpeg">JPEG library</a> (Version 5b or later).
 If you already has the JPEG library installed in your system area then make
 sure the <tt>USEINSTALLEDJPEG</tt> variable is uncommented (the default).
@@ -96,11 +93,8 @@ where source of JPEG library is stored.
 ** Make sure you delete or rename any older version of the JPEG
 library you might have on your system.  Some Linux systems come
 with an older version which is incompatible with xfig.
-
 <p>
-<dd><img src="images/redball.gif" align=bottom alt="-">
-If you don't want JPEG support,
-comment out `<tt>#define USEJPEG</tt>'.
+If you don't want JPEG support, comment out `<tt>#define USEJPEG</tt>'
 using the <tt>XCOMM</tt> comment directive (e.g. <tt>XCOMM #define USEJPEG</tt>).
 
 <p>
@@ -108,13 +102,6 @@ using the <tt>XCOMM</tt> comment directive (e.g. <tt>XCOMM #define USEJPEG</tt>)
 To enable XPM support, uncomment `<tt>#define USEXPM</tt>'
 and modify the definition of <tt>XPMLIBDIR</tt> if necessary.
 To use XPM, you must have <a href="#xpm">XPM3 package</a> (Version 3.4c or later).
-
-<p>
-<dd><img src="images/redball.gif" align=bottom alt="-">
-If you don't want XPM support,
-comment out `<tt>#define USEXPM</tt>',
-using the <tt>XCOMM</tt> comment directive (e.g. <tt>XCOMM #define USEXPM</tt>).
-This is the default.
 
 <p>
 <dd><img src="images/redball.gif" align=bottom alt="-">
@@ -130,6 +117,29 @@ The <b>Xaw3d</b> library should be compiled without <tt>-DARROW_SCROLLBAR</tt>.
 If you have a small screen (e.g. 800x600 or so) you may want to use the small 
 mode panel buttons for <b>xfig</b>.  
 If so, uncomment the `<tt>#define USESMALLICONS</tt>' line.
+
+<p>
+<dd><img src="images/redball.gif" align=bottom alt="-">
+If your system doesn't have <tt>strcasecmp()</tt> 
+and/or <tt>strncasecmp()</tt>, uncomment 
+<dl>
+<dd>`<tt>HAVE_NO_STRCASECMP = -DHAVE_NO_STRCASECMP</tt>' 
+</dl>
+and/or
+<dl>
+<dd>`<tt>HAVE_NO_STRNCASECMP = -DHAVE_NO_STRNCASECMP</tt>'.
+</dl>
+
+<p>
+<dd><img src="images/redball.gif" align=bottom alt="-">
+If your system doesn't have <tt>strstr()</tt>,
+uncomment `<tt>#define NOSTRSTR</tt>'.
+
+<p>
+<dd><img src="images/redball.gif" align=bottom alt="-">
+If your system doesn't have <tt>strerror()</tt> 
+(but supports <tt>sys_errlist</tt>),
+uncomment `<tt>NEED_STRERROR = -DNEED_STRERROR</tt>'.
 
 <p>
 <dd><img src="images/redball.gif" align=bottom alt="-">
@@ -191,7 +201,7 @@ of <b>fig2dev</b>,
 see also <a href="i18n.html">Internationalization</a>.
 <p>
 <ol>
-<li>Get the source of <b>TransFig</b> (<tt>transfig.3.2.3a.tar.gz</tt>),
+<li>Get the source of <b>TransFig</b> (<tt>transfig.3.2.3b.tar.gz</tt>),
 and <i>untar</i> the file.
 It should be available at the same site as <a href="#install-xfig"><b>xfig</b></a>.
 
@@ -214,9 +224,6 @@ options; users of LaTeX 2.09 will probably want to include neither.
 
 <p>
 <dd><img src="images/redball.gif" align=bottom alt="-">
-To enable JPEG support, uncomment `<tt>#define USEJPEG</tt>' (this is the default)
-and modify the definition of <tt>USEINSTALLEDJPEG</tt> and <tt>JPEGLIBDIR</tt> 
-if necessary.
 To use JPEG,
 you must have <a href="#jpeg">JPEG library</a> (Version 5b or later).
 If you already if the JPEG library installed in your system area then make
@@ -225,9 +232,7 @@ If you don't have JPEG installed, get the source from
 <a href="ftp://ftp.uu.net/graphics/jpeg">ftp://ftp.uu.net/graphics/jpeg</a>
 or <a href="ftp://ftp.x.org/contrib/libraries">ftp://ftp.x.org/contrib/libraries</a>
 <p>
-<dd><img src="images/redball.gif" align=bottom alt="-">
-If you don't want JPEG support,
-comment out `<tt>#define USEJPEG</tt>'.
+If you don't want JPEG support, comment out `<tt>#define USEJPEG</tt>'
 using the <tt>XCOMM</tt> comment directive (e.g. <tt>XCOMM #define USEJPEG</tt>).
 
 <p>
@@ -236,26 +241,6 @@ To enable XPM support, uncomment `<tt>#define USEXPM</tt>'
 and change <tt>XPMLIBDIR</tt> if necessary.
 To use this facility,
 you must have <a href="#xpm">XPM3 package</a> (Version 3.4c or later).
-<p>
-<dd><img src="images/redball.gif" align=bottom alt="-">
-If you don't want XPM support, comment out `<tt>#define USEXPM</tt>'.
-This is the default.
-
-<p>
-<dd><img src="images/redball.gif" align=bottom alt="-">
-If your system DBM routines are in a separate library,
-uncomment `<tt>DBMLIB = -lgdbm</tt>'.
-<dl>
-<dd><img src="images/blueballdot.gif" align=bottom alt="-">
-For the Redhat distributions of Linux you may have to change
-it to `<tt>DBMLIB = -ldb</tt>'.
-<br>
-<dd><img src="images/blueballdot.gif" align=bottom alt="-">
-For some Linuxes you may need to change it to `<tt>DBMLIB = -ldbm</tt>'.
-<br>
-<dd><img src="images/blueballdot.gif" align=bottom alt="-">
-Slackware Linuxes use <tt>-lgdbm</tt>.
-</dl>
 
 <p>
 <dd><img src="images/redball.gif" align=bottom alt="-">
@@ -277,7 +262,7 @@ uncomment `<tt>#define NOSTRSTR</tt>'.
 <p>
 <dd><img src="images/redball.gif" align=bottom alt="-">
 If your system doesn't have <tt>strerror()</tt> 
-(but support <tt>sys_errlist</tt>),
+(but supports <tt>sys_errlist</tt>),
 uncomment `<tt>NEED_STRERROR = -DNEED_STRERROR</tt>'.
 
 <p>

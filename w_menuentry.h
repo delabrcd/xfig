@@ -9,8 +9,13 @@
 
 #include <X11/Xmu/Converters.h>
 
+#ifdef XAW3D
+#include <X11/Xaw3d/Sme.h>
+#include <X11/Xaw3d/SmeBSB.h>
+#else
 #include <X11/Xaw/Sme.h>
 #include <X11/Xaw/SmeBSB.h>
+#endif
 
 /****************************************************************
  *

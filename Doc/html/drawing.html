@@ -59,7 +59,7 @@ after selecting a drawing mode.
 
 <dt><a href="#arc"><img src="images/arc-button.gif"
     align="middle" alt="[Arc]">
-  Arcs &nbsp (with a <img src="images/pict-new.gif" alt="New"> way to draw them)</a>
+  Arcs</a>
 
 <dt><a href="#picture"><img src="images/pict-button.gif"
     align="middle" alt="[Picture]">
@@ -70,8 +70,8 @@ after selecting a drawing mode.
   Texts</a>
 
 <dt><a href="#library"><img src="images/library-button.gif"
-    align="middle" alt="[Libraries]">
-  Libraries</a>
+    align="middle" alt="[Object Libraries]">
+  Object Libraries</a>
 </dl>
 
 <p>
@@ -328,7 +328,7 @@ will cancel entered points one by one.
 <p>
 <img src="images/pict-info.gif" alt="">
 When entering lines, splines or polygons, the number of points entered and the
-distance from last point (length, dx, and dy) 
+distance from last point (length, dx and dy) 
 is displayed on the
 <a href="introduction.html#message-panel">Message Panel</a> dynamically.
 <p>
@@ -482,7 +482,6 @@ There are two ways to draw arcs in <b>xfig</b>:
 <li>Click mouse button 1 (`final point') again at the end-point
 </ol>
 <dt><img src="images/redballdot.gif" alt="-">The "New and Improved" Way 
-  <img src="images/pict-new.gif" alt="New">
 <dd>
 <ol>
 <li>Click mouse button 2 (`center point') at the center of the arc radius
@@ -560,7 +559,7 @@ It is possible to read image files in the following image formats.
 <p>
 Although it is possible to 
 <a href="editing.html#move">move</a>,
-<a href="editing.html#scale">scale</a>, and
+<a href="editing.html#scale">scale</a> and
 <a href="editing.html#rotate">rotate</a> 
 an imported image,
 it is not possible to edit the image itself using <b>xfig</b>.
@@ -641,6 +640,38 @@ In <a href="i18n.html">international-<b>xfig</b></a>, it is possible to
 <a href="i18n.html#input-japanese">enter local text such as Japanese</a> 
 with this.
 <p>
+<img src="images/pict-new.gif" alt="New">
+A simplistic superscript/subscript facility is provided.  While entering
+text, if <b>Ctrl-^</b> (control caret) is pressed, a new, smaller
+string is started above the baseline
+of the current string, which acts as a superscript.  
+Conversely, if <b>Ctrl-_</b>
+(control underscore) is typed, a new, smaller string is started below
+the baseline of the current string.  
+These may be nested to create super-superscripted or sub-subscripted text to
+four levels.
+<br>
+Here are some examples:
+<blockquote>
+<img src="images/super_subscript.gif" alt="super/subscript example">
+</blockquote>
+There are several caveats:
+<dl>
+<dd><img src="images/blueballdot.gif" align=bottom alt="-">
+Since separate strings are created each
+time a super- or sub-script is initiated,
+if you want to move them together,
+you must glue all the strings into a 
+<a href="editing.html#glue-compound">compound</a> first. 
+<dd><img src="images/blueballdot.gif" align=bottom alt="-">
+Editing one of the
+strings may be problematic because the other strings will not move if
+characters are added or deleted to/from the string being edited.
+<dd><img src="images/blueballdot.gif" align=bottom alt="-">
+This doesn't work for right justified or centered text.
+</dl>
+
+<p>
 The following editing facilities are available:
 <dl>
 <dt><dd>
@@ -699,7 +730,7 @@ all the text in the figure.
 <p>
 <dt>
 <img src="images/library-button.gif" alt="">
-  <a name="library">(LIBRARIES)</a>
+  <a name="library">(OBJECT LIBRARIES)</a>
 <dd>
 Pick objects from libraries to place on the canvas.
 <p>
@@ -708,25 +739,36 @@ a library of <b>Fig</b> objects.  From there, you may select an object
 and place copies of it on the canvas by clicking
 on the canvas where you want it placed.
 <blockquote>
-  <img src="images/library-panel.gif" alt="[Library Panel]">
+  <img src="images/library-icon-view.gif" alt="[Library Panel]">
 </blockquote>
 <p>
 In the panel there is a pull-down menu of the
 <a href="#availablelibraries">available libraries</a>.  Select
 one and the library will automatically be loaded.  The status window will show
 how many objects it contains after it loads the library,
-and the names of the library objects will appear in a list box.  Pressing
-mouse button 1 once on an object name will generate a preview in the 
-small canvas on the right.  After selecting the desired object, press
-`Select object' and the panel will pop down, or double-click on an 
-object name to perform the select and popdown in one step.
+and the icons of the library objects will appear in a view box.
+Double clicking on an icon or single clicking and pressing the <b>Select Object</b>
+button will select that object and pop down the panel.
+<p>
+The size of the icons may be chosen from a pulldown menu.
+The options are 40, 60, 80, 100 and 120 pixels.
 <p>
 As you move the mouse around the canvas you will see the object you
 chose from the library appear under the curser.  Simply click mouse
 button 1 (`place object') to place it anywhere on the canvas.
 This may be repeated for the same object.
 <p>
-<img src="images/pict-new.gif" alt="New">
+There is an alternate list view of the library objects, which may be selected
+by choosing <b>List View</b> from the pulldown menu next the <b>View:</b> label.
+<blockquote>
+  <img src="images/library-list-view.gif" alt="[Library Panel]">
+</blockquote>
+In this mode, you will see the object names in a list area.
+Single clicking on an object name will generate a preview in the 
+small canvas on the right.  After selecting the desired object, press
+`Select object' and the panel will pop down, or double-click on the 
+object name to perform the select and popdown in one step.
+<p>
 If the shift key is pressed when mouse button 1 (`place and edit')
 is clicked to place the object,
 the <a href="editing.html#edit-panel">Edit panel</a> is popped up
@@ -770,13 +812,25 @@ Physical Electrical - electrical objects, e.g. connectors
 Schematic Electrical - symbols for creating electronic schematics
 <br>
 <dd><img src="images/redballdot.gif" alt="-">
-Flags of Europe, Japan, and U.S.A.
+ERD (Chen's model of Entity Relations)
+<img src="images/pict-new.gif" alt="New">
+<br>
+<dd><img src="images/redballdot.gif" alt="-">
+Flags of Europe, Japan and U.S.A.
 <br>
 <dd><img src="images/redballdot.gif" alt="-">
 Flowchart symbols
 <br>
 <dd><img src="images/redballdot.gif" alt="-">
+GUI widgets (buttons, sliders, etc.)
+<img src="images/pict-new.gif" alt="New">
+<br>
+<dd><img src="images/redballdot.gif" alt="-">
 Hospital equipment
+<br>
+<dd><img src="images/redballdot.gif" alt="-">
+Knitting symbols
+<img src="images/pict-new.gif" alt="New">
 <br>
 <dd><img src="images/redballdot.gif" alt="-">
 Logic symbols
@@ -789,6 +843,9 @@ Music symbols
 <br>
 <dd><img src="images/redballdot.gif" alt="-">
 Networking devices
+There are a few
+<img src="images/pict-new.gif" alt="New">
+ones since the last version
 <br>
 <dd><img src="images/redballdot.gif" alt="-">
 Optics symbols
@@ -985,7 +1042,7 @@ press and release the COMPOSE key (or META or ALT key),
 enter the character `<tt>a</tt>',
 and then the character `<tt>"</tt>' (double quote).
 To enter `<img src="images/c-cedilla.gif" alt="c cedilla">',
-enter COMPOSE, `<tt>c</tt>', and `<tt>,</tt>'.
+enter COMPOSE, `<tt>c</tt>' and `<tt>,</tt>'.
 <p>
 <blockquote>
   <img src="images/latin1-chars.gif" alt="[Latin-1 Charactors]"><br>

@@ -1895,18 +1895,11 @@ draw_arrow(obj, arrow, points, npoints, op)
 ****************************************************************/
 
 void
-curve(window, xstart, ystart, xend, yend, draw_points, draw_center,
-	direction, a, b, xoff, yoff, op, thick,
-	style, style_val, fill_style, pen_color, fill_color, cap_style)
-    Window	    window;
-    int		    xstart, ystart, xend, yend;
-    Boolean	    draw_points, draw_center;
-    int		    direction, a, b, xoff, yoff;
-    int		    op, thick, style;
-    float	    style_val;
-    int		    fill_style;
-    Color	    pen_color, fill_color;
-    int		    cap_style;
+curve(Window window, int xstart, int ystart, int xend, int yend, 
+	Boolean draw_points, Boolean draw_center, int direction,
+	int a, int b, int xoff, int yoff, int op, int thick, int style,
+	float style_val, int fill_style, 
+	Color pen_color, Color fill_color, int cap_style)
 {
     register int    x, y;
     register double deltax, deltay, dfx, dfy;

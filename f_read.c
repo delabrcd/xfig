@@ -34,6 +34,24 @@
 #include "w_util.h"
 #include "w_zoom.h"
 
+/* EXPORTS */
+
+Boolean		 update_layers_ok = True; /* if false, update_layers() doesn't update */
+int		 line_no;		/* current input line number */
+int		 num_object;		/* current number of objects */
+char		*read_file_name;	/* current input file name */
+
+/* LOCAL */
+
+/* EXPORTS */
+
+int		 defer_update_layers = 0; /* if != 0, update_layers() doesn't update */
+int		 line_no;		/* current input line number */
+int		 num_object;		/* current number of objects */
+char		*read_file_name;	/* current input file name */
+
+/* LOCAL */
+
 static char	Err_incomp[] = "Incomplete %s object at line %d.";
 
 static void        read_colordef();
@@ -45,6 +63,7 @@ static F_arc      *read_arcobject();
 static F_compound *read_compoundobject();
 static char	  *attach_comments();
 static void	   count_lines_correctly();
+static int	   read_return();
 
 #define FILL_CONVERT(f) \
 	   ((proto >= 22) ? (f): \
@@ -59,10 +78,7 @@ static void	   count_lines_correctly();
 /* input buffer length */
 #define	BUF_SIZE	1024
 
-char		*read_file_name;	/* current input file name */
 char		 buf[BUF_SIZE];		/* input buffer */
-int		 line_no;		/* current input line number */
-int		 num_object;		/* current number of objects */
 char		*comments[MAXCOMMENTS];	/* comments saved for current object */
 int		 numcom;		/* current comment index */
 Boolean		 com_alloc = False;	/* whether or not the comment array has been init. */
@@ -89,14 +105,15 @@ read_fail_message(file, err)
 	file_msg("Read access to file \"%s\" is blocked.", file);
     else if (err == EISDIR)
 	file_msg("File \"%s\" is a directory.", file);
-    else if (err == -3)
+    else if (err == NO_VERSION)
 	file_msg("File \"%s\" has no version number in header.", file);
-    else if (err == -2)
+    else if (err == EMPTY_FILE)
 	file_msg("File \"%s\" is empty.", file);
-    /* else if (err == -1) */
+    else if (err == BAD_FORMAT)
 	/* Format error; relevant error message is already delivered */
+	;
     else
-	file_msg("File \"%s\" is not accessable; %s.", file, sys_errlist[err]);
+	file_msg("File \"%s\" is not accessable; %s.", file, strerror(err));
 }
 
 /* initialize the user color counter - then read figure file. 
@@ -144,11 +161,12 @@ read_figc(file_name, obj, merge, remapimages, xoff, yoff, settings)
 /**********************************************************
 Read_fig returns :
 
-     0 : successful read.
-    -1 : File is in incorrect format
-    -2 : File is empty
-err_no : if file can not be read for various reasons
-	(from /usr/include/sys/errno.h)
+           0 : successful read.
+  BAD_FORMAT : File is in incorrect format
+  EMPTY_FILE : File is empty
+  NO_VERSION : No version was found in "#FIG" header
+      err_no : if file can not be read for various reasons
+		(from /usr/include/sys/errno.h)
 
 The resolution (ppi) is stored in resolution.
 The coordinate system is 1 for lower left at 0,0 and
@@ -184,7 +202,7 @@ read_fig(file_name, obj, merge, xoff, yoff, settings)
     if (uncompress_file(file_name) == False)
 	return ENOENT;		/* doesn't exist */
     if ((fp = fopen(file_name, "r")) == NULL)
-	return (errno);
+	return errno;
     else {
 	if (!update_figs)
 	    put_msg("Reading objects from \"%s\" ...", file_name);
@@ -208,6 +226,10 @@ readfp_fig(fp, obj, merge, xoff, yoff, settings)
     int		    resolution;
     char	    versstring[10];
 
+    update_layers_ok = False;		/* prevent update_layers() from updating */
+
+    defer_update_layers = 1;		/* prevent update_layers() from updating */
+
     /* initialize settings structure in case we read an older Fig format */
     settings->landscape = appres.landscape;
     settings->flushleft = appres.flushleft;
@@ -229,10 +251,11 @@ readfp_fig(fp, obj, merge, xoff, yoff, settings)
     line_no = 1;
     /* read the version header line (e.g. #FIG 3.2) */
     if (fgets(buf, BUF_SIZE, fp) == 0)
-	return -2;
-    if (strncmp(buf, "#FIG", 4) == 0) {	/* versions 1.4/later have #FIG in first line */
-	if (strlen(buf) <= 6) 
-	    return -3;		/* Short line - say corrupt */
+	return read_return(EMPTY_FILE);
+    if (strncmp(buf, "#FIG", 4) == 0) {		/* versions 1.4/later have #FIG in first line */
+	if (strlen(buf) <= 6) {
+	    return read_return(NO_VERSION);	/* Short line - say corrupt */
+	}
 	if ((sscanf((char*)(strchr(buf, ' ') + 1), "%f", &fproto)) == 0)  /* assume 1.4 */
 	    proto = 14;
 	else
@@ -246,7 +269,7 @@ readfp_fig(fp, obj, merge, xoff, yoff, settings)
 	} else if (fproto > xfigproto) {
 	    file_msg("You must have a NEWER version of Xfig to load this figure (%.1f).",
 			fproto);
-	    return -1;
+	    return read_return(BAD_FORMAT);
 	}
 	/* Protocol 2.2 was only beta test - 3.0 is the release (and is identical) */
 	if (proto == 22)
@@ -260,14 +283,14 @@ readfp_fig(fp, obj, merge, xoff, yoff, settings)
 	    /* read Portrait/Landscape indicator now */
 	    if (read_line(fp) < 0) {
 		file_msg("No Portrait/Landscape specification");
-		return -1;		/* error */
+		return read_return(BAD_FORMAT);		/* error */
 	    }
 	    settings->landscape = (strncasecmp(buf,"landscape",9) == 0);
 
 	    /* read Centering indicator now */
 	    if (read_line(fp) < 0) {
 		file_msg("No Center/Flushleft specification");
-		return -1;		/* error */
+		return read_return(BAD_FORMAT);		/* error */
 	    }
 	    if ((strncasecmp(buf,"center",6) == 0) || 
 		(strncasecmp(buf,"flush",5) == 0)) {
@@ -276,7 +299,7 @@ readfp_fig(fp, obj, merge, xoff, yoff, settings)
 		    /* NOW read metric/inches indicator */
 		    if (read_line(fp) < 0) {
 			file_msg("No Metric/Inches specification");
-			return -1;		/* error*/
+			return read_return(BAD_FORMAT);		/* error*/
 		    }
 	    }
 	    /* set metric/inches mode appropriately */
@@ -288,7 +311,7 @@ readfp_fig(fp, obj, merge, xoff, yoff, settings)
 		/* read paper size now */
 		if (read_line(fp) < 0) {
 		    file_msg("No Paper size specification");
-		    return -1;		/* error */
+		    return read_return(BAD_FORMAT);		/* error */
 		}
 		/* parse the paper size */
 		settings->papersize = parse_papersize(buf);
@@ -296,26 +319,26 @@ readfp_fig(fp, obj, merge, xoff, yoff, settings)
 		/* read magnification now */
 		if (read_line(fp) < 0) {
 		    file_msg("No Magnification specification");
-		    return -1;		/* error */
+		    return read_return(BAD_FORMAT);		/* error */
 		}
 		settings->magnification = atoi(buf);
 
 		/* read multiple page flag now */
 		if (read_line(fp) < 0) {
 		    file_msg("No Multiple page flag specification");
-		    return -1;		/* error */
+		    return read_return(BAD_FORMAT);		/* error */
 		}
 		if (strncasecmp(buf,"multiple",8) != 0 &&
 		    strncasecmp(buf,"single",6) != 0) {
 		    file_msg("No Multiple page flag specification");
-		    return -1;
+		    return read_return(BAD_FORMAT);
 		}
 		settings->multiple = (strncasecmp(buf,"multiple",8) == 0);
 
 		/* read transparent color now */
 		if (read_line(fp) < 0) {
 		    file_msg("No Transparent color specification");
-		    return -1;		/* error */
+		    return read_return(BAD_FORMAT);		/* error */
 		}
 		settings->transparent = atoi(buf);
 	    }
@@ -331,8 +354,9 @@ readfp_fig(fp, obj, merge, xoff, yoff, settings)
     }
     fclose(fp);
     /* don't go any further if there was an error in reading the figure */
-    if (status != 0)
-	return (status);
+    if (status != 0) {
+	return read_return(status);
+    }
 
     n_num_usr_cols++;	/* number of user colors = max index + 1 */
     /*******************************************************************************
@@ -376,7 +400,18 @@ readfp_fig(fp, obj, merge, xoff, yoff, settings)
     if (!update_figs)
 	shift_figure(obj);
 
-    return (status);
+    return read_return(status);
+}
+
+/* set update_layers_ok flag, update the layer buttons and return status */
+
+int
+read_return(status)
+    int		    status;
+{
+    update_layers_ok = True;
+    update_layers();
+    return status;
 }
 
 read_objects(fp, obj, res)
@@ -394,13 +429,13 @@ read_objects(fp, obj, res)
 
     if (read_line(fp) < 0) {
 	file_msg("No Resolution specification; figure is empty");
-	return (-1);
+	return BAD_FORMAT;
     }
 
     /* read the resolution (ppi) and the coordinate system used (upper-left or lower-left) */
     if (sscanf(buf, "%d%d\n", &ppi, &coord_sys) != 2) {
 	file_msg("Figure resolution or coordinate specifier missing in line %d.", line_no);
-	return (-1);
+	return BAD_FORMAT;
     }
 
     /* attach any comments found thus far to the whole figure */
@@ -412,7 +447,7 @@ read_objects(fp, obj, res)
     while (read_line(fp) > 0) {
 	if (sscanf(buf, "%d", &object) != 1) {
 	    file_msg("Incorrect format at line %d.", line_no);
-	    return (num_object != 0? 0: -1);		/* ok if any objects have been read */
+	    return (num_object != 0? 0: BAD_FORMAT);		/* ok if any objects have been read */
 	}
 	switch (object) {
 	case O_COLOR_DEF:
@@ -420,12 +455,12 @@ read_objects(fp, obj, res)
 	    if (num_object) {
 		file_msg("Color definitions must come before other objects (line %d).",
 			line_no);
-		return (num_object != 0? 0: -1);	/* ok if any objects have been read */
+		return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
 	    }
 	    break;
 	case O_POLYLINE:
 	    if ((l = read_lineobject(fp)) == NULL)
-		return (num_object != 0? 0: -1);	/* ok if any objects have been read */
+		return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
 	    if (ll)
 		ll = (ll->next = l);
 	    else
@@ -434,7 +469,7 @@ read_objects(fp, obj, res)
 	    break;
 	case O_SPLINE:
 	    if ((s = read_splineobject(fp)) == NULL)
-		return (num_object != 0? 0: -1);	/* ok if any objects have been read */
+		return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
 	    if (ls)
 		ls = (ls->next = s);
 	    else
@@ -443,7 +478,7 @@ read_objects(fp, obj, res)
 	    break;
 	case O_ELLIPSE:
 	    if ((e = read_ellipseobject()) == NULL)
-		return (num_object != 0? 0: -1);	/* ok if any objects have been read */
+		return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
 	    if (le)
 		le = (le->next = e);
 	    else
@@ -452,7 +487,7 @@ read_objects(fp, obj, res)
 	    break;
 	case O_ARC:
 	    if ((a = read_arcobject(fp)) == NULL)
-		return (num_object != 0? 0: -1);	/* ok if any objects have been read */
+		return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
 	    if (la)
 		la = (la->next = a);
 	    else
@@ -461,7 +496,7 @@ read_objects(fp, obj, res)
 	    break;
 	case O_TEXT:
 	    if ((t = read_textobject(fp)) == NULL)
-		return (num_object != 0? 0: -1);	/* ok if any objects have been read */
+		return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
 	    if (lt)
 		lt = (lt->next = t);
 	    else
@@ -470,7 +505,7 @@ read_objects(fp, obj, res)
 	    break;
 	case O_COMPOUND:
 	    if ((c = read_compoundobject(fp)) == NULL)
-		return (num_object != 0? 0: -1);	/* ok if any objects have been read */
+		return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
 	    if (lc)
 		lc = (lc->next = c);
 	    else
@@ -479,15 +514,15 @@ read_objects(fp, obj, res)
 	    break;
 	default:
 	    file_msg("Incorrect object code at line %d.", line_no);
-	    return (num_object != 0? 0: -1);	/* ok if any objects have been read */
+	    return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
 	} /* switch */
 	
     } /* while */
 
     if (feof(fp))
-	return (0);
+	return 0;
     else
-	return (errno);
+	return errno;
 }				/* read_objects */
 
 parse_papersize(size)
@@ -511,8 +546,9 @@ parse_papersize(size)
 	if (strncasecmp(size,paper_sizes[i].sname,len) == 0)
 	    break;
     }
+    /* return entry 0 for bad papersize */
     if (i >= NUMPAPERSIZES)
-	return -1;
+	return 0;
     return i;
 }
 
@@ -523,10 +559,11 @@ read_colordef(fp)
     int		    c,r,g,b;
 
     if ((sscanf(buf, "%*d %d #%02x%02x%02x", &c, &r, &g, &b) != 4) ||
-		(c < NUM_STD_COLS)) {
+		(c < NUM_STD_COLS) || (c >= MAX_USR_COLS+NUM_STD_COLS)) {
 	buf[strlen(buf)-1]='\0';	/* remove the newline */
 	file_msg("Invalid color definition: %s, setting to black (#00000).",buf);
 	r=g=b=0;
+	c = NUM_STD_COLS;
     }
     /* make in the range 0...MAX_USR_COLS */
     c -= NUM_STD_COLS;
@@ -548,7 +585,7 @@ read_arcobject(fp)
     float	    thickness, wd, ht;
 
     if ((a = create_arc()) == NULL)
-	return (NULL);
+	return NULL;
 
     a->next = NULL;
     a->for_arrow = a->back_arrow = NULL;
@@ -580,7 +617,7 @@ read_arcobject(fp)
     if (((proto < 22) && (n != 19)) || ((proto >= 30) && (n != 21))) {
 	file_msg(Err_incomp, "arc", line_no);
 	free((char *) a);
-	return (NULL);
+	return NULL;
     }
     a->fill_style = FILL_CONVERT(a->fill_style);
     fix_depth(&a->depth);
@@ -594,7 +631,7 @@ read_arcobject(fp)
 	    return NULL;
 	if (sscanf(buf, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    file_msg(Err_incomp, "arc", line_no);
-	    return (NULL);
+	    return NULL;
 	}
 	/* throw away any arrow heads on pie-wedge arcs */
 	if (a->type == T_OPEN_ARC) {
@@ -609,7 +646,7 @@ read_arcobject(fp)
 	    return NULL;
 	if (sscanf(buf, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    file_msg(Err_incomp, "arc", line_no);
-	    return (NULL);
+	    return NULL;
 	}
 	/* throw away any arrow heads on pie-wedge arcs */
 	if (a->type == T_OPEN_ARC) {
@@ -618,7 +655,7 @@ read_arcobject(fp)
 	}
     }
     a->comments = attach_comments();		/* attach any comments */
-    return (a);
+    return a;
 }
 
 static F_compound *
@@ -634,7 +671,7 @@ read_compoundobject(fp)
     int		    n, object;
 
     if ((com = create_compound()) == NULL)
-	return (NULL);
+	return NULL;
 
     com->arcs = NULL;
     com->ellipses = NULL;
@@ -651,19 +688,19 @@ read_compoundobject(fp)
     if (n != 4) {
 	file_msg(Err_incomp, "compound", line_no);
 	free((char *) com);
-	return (NULL);
+	return NULL;
     }
     while (read_line(fp) > 0) {
 	if (sscanf(buf, "%d", &object) != 1) {
 	    file_msg(Err_incomp, "compound", line_no);
 	    free_compound(&com);
-	    return (NULL);
+	    return NULL;
 	}
 	switch (object) {
 	case O_POLYLINE:
 	    if ((l = read_lineobject(fp)) == NULL) {
 		free_line(&l);
-		return (NULL);
+		return NULL;
 	    }
 	    if (ll)
 		ll = (ll->next = l);
@@ -673,7 +710,7 @@ read_compoundobject(fp)
 	case O_SPLINE:
 	    if ((s = read_splineobject(fp)) == NULL) {
 		free_spline(&s);
-		return (NULL);
+		return NULL;
 	    }
 	    if (ls)
 		ls = (ls->next = s);
@@ -683,7 +720,7 @@ read_compoundobject(fp)
 	case O_ELLIPSE:
 	    if ((e = read_ellipseobject()) == NULL) {
 		free_ellipse(&e);
-		return (NULL);
+		return NULL;
 	    }
 	    if (le)
 		le = (le->next = e);
@@ -693,7 +730,7 @@ read_compoundobject(fp)
 	case O_ARC:
 	    if ((a = read_arcobject(fp)) == NULL) {
 		free_arc(&a);
-		return (NULL);
+		return NULL;
 	    }
 	    if (la)
 		la = (la->next = a);
@@ -703,7 +740,7 @@ read_compoundobject(fp)
 	case O_TEXT:
 	    if ((t = read_textobject(fp)) == NULL) {
 		free_text(&t);
-		return (NULL);
+		return NULL;
 	    }
 	    if (lt)
 		lt = (lt->next = t);
@@ -713,7 +750,7 @@ read_compoundobject(fp)
 	case O_COMPOUND:
 	    if ((c = read_compoundobject(fp)) == NULL) {
 		free_compound(&c);
-		return (NULL);
+		return NULL;
 	    }
 	    if (lc)
 		lc = (lc->next = c);
@@ -721,16 +758,16 @@ read_compoundobject(fp)
 		lc = com->compounds = c;
 	    break;
 	case O_END_COMPOUND:
-	    return (com);
+	    return com;
 	default:
 	    file_msg("Incorrect object code at line %d.", line_no);
-	    return (NULL);
+	    return NULL;
 	}			/* switch */
     }
     if (feof(fp))
-	return (com);
+	return com;
     else
-	return (NULL);
+	return NULL;
 }
 
 static F_ellipse *
@@ -740,7 +777,7 @@ read_ellipseobject()
     int		    n;
 
     if ((e = create_ellipse()) == NULL)
-	return (NULL);
+	return NULL;
 
     e->next = NULL;
     if (proto >= 30) {
@@ -767,7 +804,7 @@ read_ellipseobject()
     if (((proto < 22) && (n != 18)) || ((proto >= 30) && (n != 19))) {
 	file_msg(Err_incomp, "ellipse", line_no);
 	free((char *) e);
-	return (NULL);
+	return NULL;
     }
     e->fill_style = FILL_CONVERT(e->fill_style);
     fix_angle(&e->angle);	/* make sure angle is 0 to 2PI */
@@ -776,7 +813,7 @@ read_ellipseobject()
     check_color(&e->fill_color);
     fix_fillstyle(e);	/* make sure that black/white have legal fill styles */
     e->comments = attach_comments();		/* attach any comments */
-    return (e);
+    return e;
 }
 
 static F_line  *
@@ -785,13 +822,13 @@ read_lineobject(fp)
 {
     F_line	   *l;
     F_point	   *p, *q;
-    int		    n, x, y, fa, ba, npts;
+    int		    n, x, y, fa, ba, npts, cnpts;
     int		    type, style, radius_flag;
     float	    thickness, wd, ht;
     int		    ox, oy;
 
     if ((l = create_line()) == NULL)
-	return (NULL);
+	return NULL;
 
     l->points = NULL;
     l->for_arrow = l->back_arrow = NULL;
@@ -833,7 +870,7 @@ read_lineobject(fp)
 			((proto >= 30) && n != 15)))) {
 	    file_msg(Err_incomp, "line", line_no);
 	    free((char *) l);
-	    return (NULL);
+	    return NULL;
     }
     l->fill_style = FILL_CONVERT(l->fill_style);
     fix_depth(&l->depth);
@@ -846,7 +883,7 @@ read_lineobject(fp)
 	    return NULL;
 	if (sscanf(buf, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    file_msg(Err_incomp, "line", line_no);
-	    return (NULL);
+	    return NULL;
 	}
 	convert_arrow(&wd, &ht);
 	l->for_arrow = new_arrow(type, style, thickness, wd, ht);
@@ -857,7 +894,7 @@ read_lineobject(fp)
 	    return NULL;
 	if (sscanf(buf, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    file_msg(Err_incomp, "line", line_no);
-	    return (NULL);
+	    return NULL;
 	}
 	convert_arrow(&wd, &ht);
 	l->back_arrow = new_arrow(type, style, thickness, wd, ht);
@@ -869,15 +906,15 @@ read_lineobject(fp)
 	    return NULL;
 	if ((l->pic = create_pic()) == NULL) {
 	    free((char *) l);
-	    return (NULL);
+	    return NULL;
 	}
 	if (sscanf(buf, "%d %s", &l->pic->flipped, s1) != 2) {
 	    file_msg(Err_incomp, "Picture Object", line_no);
-	    return (NULL);
+	    return NULL;
 	}
 	/* if path is relative, convert it to absolute path */
 	if (s1[0] != '/')
-	    sprintf(l->pic->file, "%s/%s", cur_dir, s1);
+	    sprintf(l->pic->file, "%s/%s", cur_file_dir, s1);
 	else
 	    strcpy(l->pic->file, s1);
 
@@ -892,7 +929,7 @@ read_lineobject(fp)
 	l->pic = NULL;
 
     if ((p = create_point()) == NULL)
-	return (NULL);
+	return NULL;
 
     l->points = p;
     p->next = NULL;
@@ -902,19 +939,20 @@ read_lineobject(fp)
     if (fscanf(fp, "%d%d", &p->x, &p->y) != 2) {
 	file_msg(Err_incomp, "line", line_no);
 	free_linestorage(l);
-	return (NULL);
+	return NULL;
     }
     ox = p->x;
     oy = p->y;
     /* read subsequent points */
     if (proto < 22)
 	npts = 1000000;	/* loop until we find 9999 9999 for previous fig files */
+    cnpts = 1;		/* keep track of actual number of points read */
     for (--npts; npts > 0; npts--) {
 	count_lines_correctly(fp);
 	if (fscanf(fp, "%d%d", &x, &y) != 2) {
 	    file_msg(Err_incomp, "line", line_no);
 	    free_linestorage(l);
-	    return (NULL);
+	    return NULL;
 	}
 	if (proto < 22 && x == 9999)
 	    break;
@@ -925,13 +963,26 @@ read_lineobject(fp)
 	oy = y;
 	if ((q = create_point()) == NULL) {
 	    free_linestorage(l);
-	    return (NULL);
+	    return NULL;
 	}
 	q->x = x;
 	q->y = y;
 	q->next = NULL;
 	p->next = q;
 	p = q;
+	cnpts++;
+    }
+    /* also, if it has fewer than 5 points and is a box, picture, or arcbox, 
+       or if it has fewer than 3 points and it is a polygon remove it */
+    if ((cnpts < 5 && (l->type == T_BOX || l->type == T_ARC_BOX || l->type == T_PICTURE)) ||
+	(cnpts < 3 && l->type == T_POLYGON)) {
+	    if (l->type == T_POLYGON) {
+		file_msg("Deleting polygon containing fewer than 3 points");
+	    } else {
+		file_msg("Deleting box, arcbox or picture containing fewer than 4 points");
+	    }
+	    free_linestorage(l);
+	    return NULL;
     }
     /* if the line has only one point, delete any arrowheads it might have now */
     if (l->points->next == NULL) {
@@ -947,7 +998,7 @@ read_lineobject(fp)
     l->comments = attach_comments();		/* attach any comments */
     /* skip to the next line */
     skip_line(fp);
-    return (l);
+    return l;
 }
 
 static F_spline *
@@ -964,7 +1015,7 @@ read_splineobject(fp)
     float	    lx, ly, rx, ry;
 
     if ((s = create_spline()) == NULL)
-	return (NULL);
+	return NULL;
 
     s->points = NULL;
     s->sfactors = NULL;
@@ -988,7 +1039,7 @@ read_splineobject(fp)
     if (((proto < 22) && (n != 10)) || ((proto >= 30) && n != 13)) {
 	file_msg(Err_incomp, "spline", line_no);
 	free((char *) s);
-	return (NULL);
+	return NULL;
     }
     s->fill_style = FILL_CONVERT(s->fill_style);
     fix_depth(&s->depth);
@@ -1001,7 +1052,7 @@ read_splineobject(fp)
 	    return NULL;
 	if (sscanf(buf, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    file_msg(Err_incomp, "spline", line_no);
-	    return (NULL);
+	    return NULL;
 	}
 	convert_arrow(&wd, &ht);
 	s->for_arrow = new_arrow(type, style, thickness, wd, ht);
@@ -1012,7 +1063,7 @@ read_splineobject(fp)
 	    return NULL;
 	if (sscanf(buf, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    file_msg(Err_incomp, "spline", line_no);
-	    return (NULL);
+	    return NULL;
 	}
 	convert_arrow(&wd, &ht);
 	s->back_arrow = new_arrow(type, style, thickness, wd, ht);
@@ -1023,11 +1074,11 @@ read_splineobject(fp)
     if ((n = fscanf(fp, "%d%d", &x, &y)) != 2) {
 	file_msg(Err_incomp, "spline", line_no);
 	free_splinestorage(s);
-	return (NULL);
+	return NULL;
     };
     if ((p = create_point()) == NULL) {
 	free_splinestorage(s);
-	return (NULL);
+	return NULL;
     }
     s->points = p;
     p->x = x;
@@ -1042,13 +1093,13 @@ read_splineobject(fp)
 	    file_msg(Err_incomp, "spline", line_no);
 	    p->next = NULL;
 	    free_splinestorage(s);
-	    return (NULL);
+	    return NULL;
 	};
 	if (proto < 22 && x == 9999)
 	    break;
 	if ((q = create_point()) == NULL) {
 	    free_splinestorage(s);
-	    return (NULL);
+	    return NULL;
 	}
 	q->x = x;
 	q->y = y;
@@ -1066,7 +1117,7 @@ read_splineobject(fp)
             count_lines_correctly(fp);
             if (fscanf(fp, "%f%f%f%f", &lx, &ly, &rx, &ry) != 4) {
               file_msg(Err_incomp, "spline", line_no);
-              return (NULL);
+              return NULL;
             }
           }
         }
@@ -1077,9 +1128,9 @@ read_splineobject(fp)
 	}
 	if (! make_sfactors(s)) {
 	    free_splinestorage(s);
-	    return (NULL);
+	    return NULL;
 	}
-	return(s);
+	return s;
     }
 
     /* Read sfactors - the s parameter for splines */
@@ -1088,11 +1139,11 @@ read_splineobject(fp)
     if ((n = fscanf(fp, "%lf", &s_param)) != 1) {
 	file_msg(Err_incomp, "spline", line_no);
 	free_splinestorage(s);
-	return (NULL);
+	return NULL;
     };
     if ((cp = create_sfactor()) == NULL) {
 	free_splinestorage(s);
-	return (NULL);
+	return NULL;
     }
     s->sfactors = cp;
     cp->s = s_param;
@@ -1102,12 +1153,12 @@ read_splineobject(fp)
 	    file_msg(Err_incomp, "spline", line_no);
 	    cp->next = NULL;
 	    free_splinestorage(s);
-	    return (NULL);
+	    return NULL;
 	};
 	if ((cq = create_sfactor()) == NULL) {
 	    cp->next = NULL;
 	    free_splinestorage(s);
-	    return (NULL);
+	    return NULL;
 	}
 	cq->s=s_param;
 	cp->next = cq;
@@ -1118,7 +1169,7 @@ read_splineobject(fp)
 
     /* skip to the end of the line */
     skip_line(fp);
-    return (s);
+    return s;
 }
 
 static F_text  *
@@ -1135,7 +1186,7 @@ read_textobject(fp)
     PR_SIZE	    tx_dim;
 
     if ((t = create_text()) == NULL)
-	return (NULL);
+	return NULL;
 
     t->next = NULL;
     /*
@@ -1183,7 +1234,7 @@ read_textobject(fp)
     if (n < 11) {
 	file_msg(Err_incomp, "text", line_no);
 	free((char *) t);
-	return (NULL);
+	return NULL;
     }
 
     /* now round size to int */
@@ -1195,10 +1246,10 @@ read_textobject(fp)
 	t->size = round(tx_size);
 
     /* set some limits */
-    if (t->size < 4)
-	t->size = 4;
-    else if (t->size > 1000)
-	t->size = 1000;
+    if (t->size < MIN_FONT_SIZE)
+	t->size = MIN_FONT_SIZE;
+    else if (t->size > MAX_FONT_SIZE)
+	t->size = MAX_FONT_SIZE;
 
     /* make sure angle is 0 to 2PI */
     fix_angle(&t->angle);
@@ -1285,7 +1336,7 @@ read_textobject(fp)
 			    /* allow exactly 3 digits following the \ for the octal value */
 			    if (sscanf(&s[l+1],"%3o",&num)!=1) {
 				file_msg("Error in parsing text string on line.",line_no);
-				return(NULL);
+				return NULL;
 			    }
 			    buf[n++]= (unsigned char) num;	/* put char in */
 			    l += 3;			/* skip over digits */
@@ -1313,7 +1364,7 @@ read_textobject(fp)
     /* skip first blank from input file by starting at s[1] */
     if ((t->cstring = new_string(strlen(&s[1]))) == NULL) {
 	free((char *) t);
-	return (NULL);
+	return NULL;
     }
     /* copy string to text object */
     (void) strcpy(t->cstring, &s[1]);
@@ -1332,7 +1383,7 @@ read_textobject(fp)
     }
 
     t->comments = attach_comments();		/* attach any comments */
-    return (t);
+    return t;
 }
 
 /* akm 28/2/95 - count consecutive backslashes backwards */
@@ -1388,14 +1439,14 @@ read_line(fp)
 {
     while (1) {
 	if (NULL == fgets(buf, BUF_SIZE, fp)) {
-	    return (-1);
+	    return -1;
 	}
 	line_no++;
 	if (*buf == '#') {		/* save any comments */
 	    if (save_comment(fp) < 0)
 		return -1;
 	} else if (*buf != '\n')	/* Skip empty lines */
-	    return (1);
+	    return 1;
     }
 }
 
@@ -1427,8 +1478,7 @@ save_comment(fp)
 skip_line(fp)
     FILE	   *fp;
 {
-    char c;
-    while ((c=fgetc(fp)) != '\n') {
+    while (fgetc(fp) != '\n') {
 	if (feof(fp))
 	    return;
     }
@@ -1621,13 +1671,12 @@ static int    renum[MAX_USR_COLS];
 merge_colors(objects)
     F_compound	   *objects;
 {
-    Boolean	    renum_flag,found_exist;
+    Boolean	    found_exist;
     int		    i,j,newval;
 
     if (n_num_usr_cols == 0)
 	return;
 
-    renum_flag = False;
     newval = -1;
 
     /* look for the first free color number */

@@ -70,7 +70,10 @@ load_file(file, xoff, yoff)
     clearallcounts();
 
     s = read_figc(file, &c, False, True, xoff, yoff, &settings);
+    defer_update_layers = 1;	/* so update_layers() won't update for each object */
     add_compound_depth(&c);	/* count objects at each depth */
+    defer_update_layers = 0;
+    update_layers();
 
     if (s == 0) {		/* Successful read */
 	clean_up();
@@ -94,9 +97,8 @@ load_file(file, xoff, yoff)
 	reset_modifiedflag();
 	/* update the recent list */
 	update_recent_list(file);
-	update_layers();  /* update depth buttons */
 	return 0;
-    } else if (s == ENOENT) {
+    } else if (s == ENOENT || s == EMPTY_FILE) {
 	char fname[PATH_MAX];
 
 	clean_up();
@@ -114,7 +116,6 @@ load_file(file, xoff, yoff)
 	set_action(F_LOAD);
 	reset_cursor();
 	reset_modifiedflag();
-	update_layers();  /* update depth buttons */
 	return 0;
     }
     read_fail_message(file, s);

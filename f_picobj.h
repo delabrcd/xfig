@@ -16,5 +16,8 @@
  *
  */
 
-extern FILE	*open_picfile();
-extern void	 close_picfile();
+extern FILE		*open_picfile();
+extern void		 close_picfile();
+
+#define PIPEOK		True
+#define PIPE_NOTOK	False

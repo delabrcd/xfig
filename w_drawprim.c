@@ -973,15 +973,9 @@ pw_point(w, x, y, line_width, op, color, cap_style)
 }
 
 void
-pw_arcbox(w, xmin, ymin, xmax, ymax, radius, op,
-	  line_width, line_style, style_val, fill_style,
-	  pen_color, fill_color)
-    Window	    w;
-    int		    xmin, ymin, xmax, ymax, radius;
-    int		    op, line_width, line_style;
-    float	    style_val;
-    int		    fill_style;
-    Color	    pen_color, fill_color;
+pw_arcbox(Window w, int xmin, int ymin, int xmax, int ymax, int radius, int op,
+               int line_width, int line_style, float style_val, int fill_style,
+	       Color pen_color, Color fill_color)
 {
     GC		    gc;
     int		    diam = 2 * radius;

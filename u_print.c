@@ -166,7 +166,7 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
     int		    border;
     Boolean	    smooth;
 {
-    char	    prcmd[2*PATH_MAX+200];
+    char	    prcmd[2*PATH_MAX+200], tmpcmd[PATH_MAX];
     char	    tmp_name[PATH_MAX];
     char	    tmp_fig_file[PATH_MAX];
     char	   *outfile;
@@ -190,20 +190,26 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
     put_msg("Exporting to file \"%s\" in %s mode ...     ",
 	    file, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     app_flush();		/* make sure message gets displayed */
+   
+    /* change "hpl" to "ibmgl" */
+    if (!strcmp(lang, "hpl"))
+	lang = "ibmgl";
+
+    /* start with the command, language and internationalization, if applicable */
+#ifdef I18N
+    sprintf(prcmd, "fig2dev %s -L %s -m %f ", 
+		appres.international ? appres.fig2dev_localize_option : "", lang, mag/100.0);
+#else
+    sprintf(prcmd, "fig2dev -L %s -m %f ", lang, mag/100.0);
+#endif  /* I18N */
 
     /* PostScript or PDF output */
     if (!strcmp(lang, "ps") || !strcmp(lang, "pdf")) {
-
-#ifdef I18N
-	sprintf(prcmd, "fig2dev %s -L %s -z %s -m %f %s -n %s -x %d -y %d", 
-		appres.international ? appres.fig2dev_localize_option : "",
-#else
-	sprintf(prcmd, "fig2dev -L %s -z %s -m %f %s -n %s -x %d -y %d", 
-#endif  /* I18N */
-		!strcmp(lang, "ps")? "ps": "pdf",
+	sprintf(tmpcmd, "-z %s %s -n %s -x %d -y %d", 
 		paper_sizes[appres.papersize].sname,
-		mag/100.0, appres.landscape ? "-l xxx" : "-p xxx", 
+		appres.landscape ? "-l xxx" : "-p xxx", 
 		outfile, xoff, yoff);
+	strcat(prcmd, tmpcmd);
 
 	if (!appres.multiple && !appres.flushleft)
 	    strcat(prcmd," -c ");
@@ -221,14 +227,8 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
 
     /* EPS (Encapsulated PostScript) output */
     } else if (!strcmp(lang, "eps")) {
-
-#ifdef I18N
-	sprintf(prcmd, "fig2dev %s -L eps -b %d -n %s",
-		appres.international ? appres.fig2dev_localize_option : "",
-#else
-	sprintf(prcmd, "fig2dev -L eps -b %d -n %s",
-#endif  /* I18N */
-		border, outfile);
+	sprintf(tmpcmd, "-b %d -n %s", border, outfile);
+	strcat(prcmd, tmpcmd);
 
 	if (backgrnd[0]) {
 	    strcat(prcmd," -g \\");	/* must escape the #rrggbb color spec */
@@ -239,28 +239,20 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
 	strcat(prcmd," ");
 	strcat(prcmd,outfile);
 
-    /* HPL */
-    } else if (!strcmp(lang, "hpl")) {
-#ifdef I18N
-	sprintf(prcmd, "fig2dev %s -L ibmgl -m %f %s %s %s",
-		appres.international ? appres.fig2dev_localize_option : "",
-#else
-	sprintf(prcmd, "fig2dev -Libmgl -m %f %s %s %s",
-#endif  /* I18N */
-		mag/100.0, appres.landscape ? "" : "-P", tmp_fig_file,
-		outfile);
+    /* IBMGL (we know it as "hpl" but it was changed above) */
+    } else if (!strcmp(lang, "ibmgl")) {
+	sprintf(tmpcmd, "%s %s %s",
+		appres.landscape ? "" : "-P",
+		tmp_fig_file, outfile);
+	strcat(prcmd, tmpcmd);
 
     /* PSTEX */
     } else if (!strcmp(lang, "pstex")) {
 	/* do both PostScript part and text part */
 	/* first the postscript part */
-#ifdef I18N
-	sprintf(prcmd, "fig2dev %s -L %s -m %f -n %s", 
-		appres.international ? appres.fig2dev_localize_option : "",
-#else
-	sprintf(prcmd, "fig2dev -L %s -m %f -n %s", 
-#endif  /* I18N */
-		lang, mag/100.0, outfile);
+	sprintf(tmpcmd, "-n %s", outfile);
+	strcat(prcmd, tmpcmd);
+
 	if (backgrnd[0]) {
 	    strcat(prcmd," -g \\");	/* must escape the #rrggbb color spec */
 	    strcat(prcmd,backgrnd);
@@ -285,18 +277,13 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
 #endif  /* I18N */
 		outfile, mag/100.0, tmp_fig_file, tmp_name);
 
-
     /* JPEG */
     } else if (!strcmp(lang, "jpeg")) {
 	/* set the image quality for JPEG export */
-#ifdef I18N
-	sprintf(prcmd, "fig2dev %s -L %s -b %d -q %d -m %f %s", 
-		appres.international ? appres.fig2dev_localize_option : "",
-#else
-	sprintf(prcmd, "fig2dev -L %s -b %d -q %d -m %f %s", 
-#endif  /* I18N */
-		lang, border, appres.jpeg_quality, mag/100.0,
-		smooth ? "-S 2" : "");
+	sprintf(tmpcmd, "-b %d -q %d -S %d", 
+		border, appres.jpeg_quality, smooth);
+	strcat(prcmd, tmpcmd);
+
 	strcat(prcmd," ");
 	strcat(prcmd,tmp_fig_file);
 	strcat(prcmd," ");
@@ -308,23 +295,18 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
 
     /* GIF */
     } else if (!strcmp(lang, "gif")) {
+	sprintf(tmpcmd, "-b %d -S %d",
+		border, smooth);
+	strcat(prcmd, tmpcmd);
+
 	/* select the transparent color, if any */
-#ifdef I18N
-	    sprintf(prcmd, "fig2dev %s -L %s -b %d -m %f %s",
-		appres.international ? appres.fig2dev_localize_option : "",
-#else
-	    sprintf(prcmd, "fig2dev -L %s -b %d -m %f %s",
-#endif  /* I18N */
-		     lang, border, mag/100.0, smooth ? "-S 2" : "");
 	if (transparent) {
-	    char *backg;
-	    /* if user wants background transparent, set the background to the transp color */
+	    /* if user wants background transparent, set the background
+	        to the transparrent color */
 	    if (use_transp_backg)
-		backg = transparent;
-	    else
-		backg = backgrnd; /* otherwise use user selection */
+		backgrnd = transparent;
 	    strcat(prcmd," -t \\");	/* must escape the #rrggbb color spec */
-	    strcat(prcmd,backg);
+	    strcat(prcmd,transparent);
 	}
 	if (backgrnd[0]) {
 	    strcat(prcmd," -g \\");	/* must escape the #rrggbb color spec */
@@ -338,26 +320,18 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
     /* MAP */
     } else if (!strcmp(lang, "map")) {
         /* HTML map needs border option */
-#ifdef I18N
-	sprintf(prcmd, "fig2dev %s -L %s -b %d -m %f %s %s",
-		appres.international ? appres.fig2dev_localize_option : "",
-#else
-	sprintf(prcmd, "fig2dev -L %s -b %d -m %f %s %s",
-#endif  /* I18N */
-		lang, border, mag/100.0, tmp_fig_file, outfile);
-
+	sprintf(tmpcmd, "-b %d %s %s",
+		border, tmp_fig_file, outfile);
+	strcat(prcmd, tmpcmd);
 
     /* PCX, PNG, TIFF, XBM, XPM, and PPM */
     } else if (!strcmp(lang, "pcx") || !strcmp(lang, "png") || !strcmp(lang, "tiff") ||
 		!strcmp(lang, "xbm") || !strcmp(lang, "xpm") || !strcmp(lang, "ppm")) {
         /* bitmap formats need border option */
-#ifdef I18N
-	sprintf(prcmd, "fig2dev %s -L %s -b %d -m %f %s",
-		appres.international ? appres.fig2dev_localize_option : "",
-#else
-	sprintf(prcmd, "fig2dev -L %s -b %d -m %f %s",
-#endif  /* I18N */
-		lang, border, mag/100.0, smooth ? "-S 2" : "");
+	sprintf(tmpcmd, "-b %d -S %d",
+		border, smooth);
+	strcat(prcmd, tmpcmd);
+
 	if (backgrnd[0]) {
 	    strcat(prcmd," -g \\");	/* must escape the #rrggbb color spec */
 	    strcat(prcmd,backgrnd);
@@ -370,13 +344,9 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
 
     /* Everything else */
     } else {
-#ifdef I18N
-	sprintf(prcmd, "fig2dev %s -L %s -m %f %s %s",
-		appres.international ? appres.fig2dev_localize_option : "",
-#else
-	sprintf(prcmd, "fig2dev -L %s -m %f %s %s",
-#endif  /* I18N */
-		lang, mag/100.0, tmp_fig_file, outfile);
+	sprintf(tmpcmd, "%s %s",
+		tmp_fig_file, outfile);
+	strcat(prcmd, tmpcmd);
     }
 
     /* make a busy cursor */

@@ -9,11 +9,23 @@
 
 #include <X11/Xmu/Drawing.h>
 
+#ifdef XAW3D
+#include <X11/Xaw3d/XawInit.h>
+#include <X11/Xaw3d/SimpleMenu.h>
+#include <X11/Xaw3d/SmeBSB.h>
+#else
 #include <X11/Xaw/XawInit.h>
 #include <X11/Xaw/SimpleMenu.h>
 #include <X11/Xaw/SmeBSB.h>
+#endif
+
 #include "w_menuentryP.h"
+
+#ifdef XAW3D
+#include <X11/Xaw3d/Cardinals.h>
+#else
 #include <X11/Xaw/Cardinals.h>
+#endif
 
 #include <stdio.h>
 

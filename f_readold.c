@@ -276,7 +276,7 @@ read_1_3_compoundobject(fp)
     if (feof(fp))
 	return (com);
     else {
-	file_msg("Format error: %s", sys_errlist[errno]);
+	file_msg("Format error: %s", strerror(errno));
 	return (NULL);
     }
 }

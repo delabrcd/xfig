@@ -493,7 +493,7 @@ SHIFT キーを押した状態で
 </ol>
 
 <p>
-<li>新しい方法 <img src="../images/pict-new.gif" alt="NEW!">
+<li>新しい方法
 <ol>
 <li>円弧の中心で
   マウスボタン2 (`center point') をクリックします
@@ -700,6 +700,15 @@ Latin-1 キャラクタを入力することができます。
 </dl>
 </dl>
 <p>
+<img src="../images/pict-new.gif" alt="[ NEW! (3.2.3b) ]">
+<tt>Control-^</tt> によって上付き添字を、
+<tt>Control-_</tt> によって下付き添字を入力することが可能です。
+これは、添字のために適切な大きさと位置の新しい文字列を生成します。
+添字は入れ子にすることも可能です。
+この機能は、centered、あるいは right-justified された
+テキストに対しては使用できません。
+
+<p>
 テキストに対して、
 <a href="miscellaneous.html#search-replace">検索や置換</a>、
 あるいは<a href="miscellaneous.html#spell-check">スペルチェック</a> 
@@ -733,23 +742,42 @@ Latin-1 キャラクタを入力することができます。
   <img src="../images/library-panel.gif" alt="[Library Panel]">
 </blockquote>
 <p>
+<img src="../images/pict-new.gif" alt="[ New! (3.2.3b) ]">
 このパネルには<a href="#availablelibraries">使用可能なライブラリ</a>
 のリストを示す <i>Library</i> メニューが置かれています。
 その中からいずれかのライブラリを選択するとそのライブラリがロードされ、
 いくつのオブジェクトが含まれているかがステータス・ウィンドウに、
-またライブラリに含まれているオブジェクトの一覧がリスト・ボックスに表示されます。
-このリストの中のオブジェクトの名前をマウスボタン1でクリックすると、
-そのオブジェクトのイメージが右側の小さいキャンバスに表示されます。
+またライブラリに含まれているオブジェクトのアイコンが
+表示ボックスに表示されます。
+いずれかのアイコンをダブル・クリックするか、
+あるいはクリックした後に <i>Select Object</i> ボタンを押すと、
+そのオブジェクトが選択されてパネルが閉じられます。
 <p>
-入力したいオブジェクトを選択した後に <i>Select Object</i> ボタンを押す 
-(あるいはリストの中のオブジェクトの名前をダブル・クリックする) 
-とパネルが閉じられ、
+オブジェクトを選択すると、
 選択したオブジェクトがカーソルの位置に追従して表示されるようになりますので、
 キャンバス上の任意の位置でマウスボタン1 (`place object') をクリックして
 その位置にそのオブジェクトを入力します。
 これは、同一のオブジェクトに対して繰り返して行なうことができます。
 <p>
-<img src="../images/pict-new.gif" alt="New">
+オブジェクトのアイコンの大きさは、プルダウン・メニューによって
+40、60、80、100、及び 120ピクセルの中から選択することができます。
+<p>
+ライブラリ・オブジェクトのリスト表示も可能であり、
+これは <i>View:</i> ラベルの次のプルダウン・メニューから 
+<i>List View</i> を選択することによって選ぶことができます。
+<p>
+<blockquote>
+  <img src="../images/library-list-view.gif" alt="[Library Panel]">
+</blockquote>
+<p>
+このモードでは、リスト領域にオブジェクトの名前が表示されます。
+オブジェクトの名前を１回クリックすると右側の小さいキャンバスに
+プレビューが表示されます。
+入力したいオブジェクトを選択した後に <i>Select Object</i> ボタンを押すと、
+パネルが閉じられます。
+あるいは、オブジェクトの名前をダブル・クリックすることにより、
+これを１回の操作で行なうこともできます。
+<p>
 SHIFT キーを押した状態でマウスボタン1 (`place and edit') を
 クリックした場合には、オブジェクトに付けられたコメントを編集できるように 
 <a href="editing.html#edit-panel">Edit パネル</a>が開かれます。
@@ -788,9 +816,15 @@ SHIFT キーを押した状態でマウスボタン2 (`change draw mode') を
 <li>Various computers
 <li>Physical Electrical - electrical objects, e.g. connectors
 <li>Schematic Electrical - symbols for creating electronic schematics
+<li>ERD (Chen's model of Entity Relations)
+  <img src="../images/pict-new.gif" alt="[ New! ]">
 <li>Flags of Europe, Japan, and U.S.A.
 <li>Flowchart symbols
+<li>GUI widgets (buttons, sliders, etc.)
+  <img src="../images/pict-new.gif" alt="[ New! ]">
 <li>Hospital equipment
+<li>Knitting symbols
+  <img src="../images/pict-new.gif" alt="[ New! ]">
 <li>Logic symbols
 <li>DIN Mechanical symbols
 <li>Music symbols

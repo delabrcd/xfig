@@ -86,7 +86,7 @@ char *filename;
 
 	app_flush();
 
-	if ((pcxfile = fopen(filename,"w"))==0) {
+	if ((pcxfile = fopen(filename,"wb"))==0) {
 	    file_msg("Cannot open PCX file %s for writing",filename);
 	    put_msg("Cannot open PCX file %s for writing",filename);
 	    captured = False;

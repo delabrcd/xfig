@@ -718,15 +718,14 @@ topruler_selected(tool, event, params, nparams)
 	XDefineCursor(tool_d, topruler_win, lr_arrow_cursor);
 	break;
     case MotionNotify:
-	if (event->x != last_drag_x)
-	    if ((zoomxoff != 0) || (event->x < last_drag_x)) {
-		zoomxoff -= ((event->x - last_drag_x)/zoomscale*
-					(event->state&ShiftMask?5.0:1.0));
-		if (!appres.allow_neg_coords && (zoomxoff < 0))
-		    zoomxoff = 0;
-		reset_topruler();
-		redisplay_topruler();
-	    }
+	if (event->x != last_drag_x) {
+	    zoomxoff -= ((event->x - last_drag_x)/zoomscale*
+				(event->state&ShiftMask?5.0:1.0));
+	    if (!appres.allow_neg_coords && (zoomxoff < 0))
+		zoomxoff = 0;
+	    reset_topruler();
+	    redisplay_topruler();
+	}
 	last_drag_x = event->x;
 	break;
     }
@@ -1099,15 +1098,14 @@ sideruler_selected(tool, event, params, nparams)
 	XDefineCursor(tool_d, sideruler_win, ud_arrow_cursor);
 	break;
     case MotionNotify:
-	if (event->y != last_drag_y)
-	    if ((zoomyoff != 0) || (event->y < last_drag_y)) {
-		zoomyoff -= ((event->y - last_drag_y)/zoomscale*
-					(event->state&ShiftMask?5.0:1.0));
-		if (!appres.allow_neg_coords && (zoomxoff < 0))
-		    zoomyoff = 0;
-		reset_sideruler();
-		redisplay_sideruler();
-	    }
+	if (event->y != last_drag_y) {
+	    zoomyoff -= ((event->y - last_drag_y)/zoomscale*
+				(event->state&ShiftMask?5.0:1.0));
+	    if (!appres.allow_neg_coords && (zoomyoff < 0))
+		zoomyoff = 0;
+	    reset_sideruler();
+	    redisplay_sideruler();
+	}
 	last_drag_y = event->y;
 	break;
     }

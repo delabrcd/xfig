@@ -266,6 +266,14 @@ fix_linepoint_adding(x, y)
 {
     F_point	   *p;
 
+    /* if this point is coincident with the point being added to, return */
+    if (((left_point == NULL) && 
+	   (cur_x == cur_l->points[0].x) && (cur_y == cur_l->points[0].y)) ||
+	   ((left_point != NULL) && 
+	   (left_point->x == cur_x) && (left_point->y == cur_y))) {
+	return;
+    }
+
     (*canvas_locmove_proc) (x, y);
     if ((p = create_point()) == NULL) {
 	wrapup_pointadding();
@@ -274,10 +282,10 @@ fix_linepoint_adding(x, y)
     p->x = cur_x;
     p->y = cur_y;
     elastic_linelink();
+    wrapup_pointadding();
     linepoint_adding(cur_l, left_point, p);
     /* turn back on all relevant markers */
     update_markers(new_objmask);
-    wrapup_pointadding();
 }
 
 void

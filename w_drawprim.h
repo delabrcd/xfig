@@ -61,6 +61,7 @@ extern unsigned char	shade_images[NUMSHADEPATS][128];
 #define set_x_color(gc,col) XSetForeground(tool_d,gc,\
 	(!all_colors_available? colors[BLACK]: \
 		(col<0||col>=NUM_STD_COLS+num_usr_cols)? x_fg_color.pixel:colors[col]))
-void pw_arcbox(Window, int, int, int, int, int, int,
-               int, int, float, int, Color, Color);
+void pw_arcbox(Window w, int xmin, int ymin, int xmax, int ymax, int radius, int op,
+               int line_width, int line_style, float style_val, int fill_style,
+	       Color pen_color, Color fill_color);
 #endif /* W_DRAWPRIM_H */

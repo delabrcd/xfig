@@ -38,7 +38,6 @@
 static Boolean	ReadColorMap();
 static Boolean	DoGIFextension();
 static int	GetDataBlock();
-static int	GetCode();
 
 #define LOCALCOLORMAP		0x80
 #define	ReadOK(file,buffer,len)	(fread(buffer, len, 1, file) != 0)
@@ -168,7 +167,7 @@ read_gif(file,filetype,pic)
 
 	/* close it and open it again (it may be a pipe so we can't just rewind) */
 	close_picfile(file,filetype);
-	file = open_picfile(pic->file, &filetype, True, pcxname);
+	file = open_picfile(pic->file, &filetype, PIPEOK, pcxname);
 	
 	/* now call giftopnm and ppmtopcx */
 
@@ -177,7 +176,7 @@ read_gif(file,filetype,pic)
 	/* make command to convert gif to pcx into temp file */
 	sprintf(buf, "giftopnm | ppmtopcx > %s 2> /dev/null", pcxname);
 	if ((giftopcx = popen(buf,"w" )) == 0) {
-	    file_msg("Cannot open pipe to giftoppm\n");
+	    file_msg("Cannot open pipe to giftopnm or ppmtopcx\n");
 	    return FileInvalid;
 	}
 	while ((size=fread(buf, 1, BUFLEN, file)) != 0) {
@@ -185,7 +184,7 @@ read_gif(file,filetype,pic)
 	}
 	/* close pipe */
 	pclose(giftopcx);
-	if ((giftopcx = fopen(pcxname, "r")) == NULL) {
+	if ((giftopcx = fopen(pcxname, "rb")) == NULL) {
 	    file_msg("Can't open temp output file\n");
 	    return FileInvalid;
 	}
@@ -312,47 +311,4 @@ unsigned char 	*buf;
 	}
 
 	return count;
-}
-
-static int
-GetCode(fd, code_size, flag)
-FILE	*fd;
-int	code_size;
-int	flag;
-{
-	static unsigned char	buf[280];
-	static int		curbit, lastbit, done, last_byte;
-	int			i, j, ret;
-	unsigned char		count;
-
-	if (flag) {
-		curbit = 0;
-		lastbit = 0;
-		done = False;
-		return 0;
-	}
-
-	if ( (curbit+code_size) >= lastbit) {
-		if (done) {
-			/* if (curbit >= lastbit) then ran off the end of bits */
-			return -1;
-		}
-		buf[0] = buf[last_byte-2];
-		buf[1] = buf[last_byte-1];
-
-		if ((count = GetDataBlock(fd, &buf[2])) == 0)
-			done = True;
-
-		last_byte = 2 + count;
-		curbit = (curbit - lastbit) + 16;
-		lastbit = (2+count)*8 ;
-	}
-
-	ret = 0;
-	for (i = curbit, j = 0; j < code_size; ++i, ++j)
-		ret |= ((buf[ i / 8 ] & (1 << (i % 8))) != 0) << j;
-
-	curbit += code_size;
-
-	return ret;
 }

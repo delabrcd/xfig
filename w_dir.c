@@ -182,8 +182,18 @@ GoHome(w, client_data, ret_val)
     XtPointer	    client_data;
     XtPointer	    ret_val;
 {
-     parseuserpath("~",cur_dir);
-     DoChangeDir(cur_dir);
+    char	    dir[PATH_MAX];
+
+    parseuserpath("~",dir);
+    if (browse_up) {
+	strcpy(cur_browse_dir,dir);
+    } else if (file_up) {
+	strcpy(cur_file_dir,dir);
+	strcpy(cur_export_dir,dir);	/* set export directory to file directory */
+    } else if (export_up) {
+	strcpy(cur_export_dir,dir);
+    }
+    DoChangeDir(dir);
 }
 
 /*
@@ -211,12 +221,14 @@ SetDir(widget, event, params, num_params)
     FirstArg(XtNstring, &ndir);
     if (browse_up) {
 	GetValues(browse_dir);
-	strcpy(browse_cur_dir,ndir);
+	strcpy(cur_browse_dir,ndir);	/* save in global var */
     } else if (file_up) {
 	GetValues(file_dir);
+	strcpy(cur_file_dir,ndir);	/* save in global var */
+	strcpy(cur_export_dir,ndir);	/* set export directory to file directory */
     } else if (export_up) {
 	GetValues(exp_dir);
-	strcpy(export_cur_dir,ndir);	/* save in global var */
+	strcpy(cur_export_dir,ndir);	/* save in global var */
     }
     /* if there is a ~ in the directory, parse the username */
     if (ndir[0]=='~') {
@@ -229,7 +241,7 @@ SetDir(widget, event, params, num_params)
 
 /* make the full path from ~/partialpath */
 parseuserpath(path,longpath)
-char *path,*longpath;
+    char *path, *longpath;
 {
     char	  *p;
     struct passwd *who;
@@ -279,13 +291,23 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     Widget	    dir_viewport;
     XFontStruct	   *temp_font;
     int		    char_ht,char_wd;
+    char	   *dir;
 
     dir_entry_cnt = NENTRIES;
     file_entry_cnt = NENTRIES;
     filelist = (char **) calloc(file_entry_cnt, sizeof(char *));
     dirlist = (char **) calloc(dir_entry_cnt, sizeof(char *));
 
-    get_directory(cur_dir);
+    if (browse_up) {
+	get_directory(cur_browse_dir);
+	dir = cur_browse_dir;
+    } else if (file_up) {
+	get_directory(cur_file_dir);
+	dir = cur_file_dir;
+    } else if (export_up) {
+	get_directory(cur_export_dir);
+	dir = cur_export_dir;
+    }
 
     if (file_panel) {
 	FirstArg(XtNlabel, "Fig files");
@@ -361,7 +383,7 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
 
     FirstArg(XtNstring, &dirmask);
     GetValues(*mask_w);
-    if (MakeFileList(cur_dir, dirmask, &dir_list, &file_list) == False)
+    if (MakeFileList(dir, dirmask, &dir_list, &file_list) == False)
 	file_msg("No files in directory?");
 
     FirstArg(XtNlabel, "  Current Dir");
@@ -374,8 +396,8 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     w = XtCreateManagedWidget("dir_label", labelWidgetClass,
 			      parent, Args, ArgCount);
 
-    FirstArg(XtNstring, cur_dir);
-    NextArg(XtNinsertPosition, strlen(cur_dir));
+    FirstArg(XtNstring, dir);
+    NextArg(XtNinsertPosition, strlen(dir));
     NextArg(XtNheight, char_ht * 2);
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
@@ -639,11 +661,17 @@ DoChangeDir(dir)
     char	    ndir[PATH_MAX], tmpdir[PATH_MAX];
 
     
-    strcpy(ndir, cur_dir);
+    if (browse_up) {
+	strcpy(ndir, cur_browse_dir);
+    } else if (file_up) {
+	strcpy(ndir, cur_file_dir);
+    } else if (export_up) {
+	strcpy(ndir, cur_export_dir);
+    }
     if (dir != NULL && dir[0] != '/') { /* relative path, prepend current dir */
 	if (dir[strlen(dir) - 1] == '/')
 	    dir[strlen(dir) - 1] = '\0';
-	if (!strcmp(dir, "..")) {	/* Parent directory. */
+	if (strcmp(dir, "..")==0) {	/* Parent directory. */
 	    if (*ndir == '\0')
 		return;			/* no current directory, */
 					/* can't do anything unless absolute path */
@@ -651,7 +679,7 @@ DoChangeDir(dir)
 	    *p = EOS;
 	    if (ndir[0] == EOS)
 		strcpy(ndir, "/");
-	} else {
+	} else if (strcmp(dir, ".")!=0) {
 	    if (strcmp(ndir, "/"))	/* At the root already */
 		strcat(ndir, "/");
 	    strcat(ndir, dir);
@@ -659,34 +687,32 @@ DoChangeDir(dir)
     } else {
 	strcpy(ndir, dir);		/* abs path copy to ndir */
     }
-    strcpy(tmpdir, cur_dir);		/* save cur_dir in case ndir is bad */
-    strcpy(cur_dir, ndir);
-    if (change_directory(cur_dir) != 0 ) {
-	strcpy(cur_dir, tmpdir);	/* can't go there */
-	return;
+    if (change_directory(ndir) != 0 ) {
+	return;				/* some problem, return */
     } else if (MakeFileList(ndir, dirmask, &dirlist, &filelist) == False) {
 	file_msg("Unable to list directory %s", ndir);
-	strcpy(cur_dir, tmpdir);
 	return;
     }
 
-    FirstArg(XtNstring, cur_dir);
+    FirstArg(XtNstring, ndir);
     /* update the current directory and file/dir list widgets */
     if (browse_up) {
 	SetValues(browse_dir);
-	strcpy(browse_cur_dir,cur_dir);	/* save in global var */
-	XawTextSetInsertionPoint(browse_dir, strlen(cur_dir));
+	strcpy(cur_browse_dir,ndir);	/* update global var */
+	XawTextSetInsertionPoint(browse_dir, strlen(ndir));
 	NewList(browse_flist, filelist);
 	NewList(browse_dlist, dirlist);
     } else if (file_up) {
 	SetValues(file_dir);
-	XawTextSetInsertionPoint(file_dir, strlen(cur_dir));
+	strcpy(cur_file_dir,ndir);	/* update global var */
+	strcpy(cur_export_dir,ndir);	/* set export directory to file directory */
+	XawTextSetInsertionPoint(file_dir, strlen(ndir));
 	NewList(file_flist,filelist);
 	NewList(file_dlist,dirlist);
     } else if (export_up) {
 	SetValues(exp_dir);
-	strcpy(export_cur_dir,cur_dir);	/* save in global var */
-	XawTextSetInsertionPoint(exp_dir, strlen(cur_dir));
+	strcpy(cur_export_dir,ndir);	/* update global var */
+	XawTextSetInsertionPoint(exp_dir, strlen(ndir));
 	NewList(exp_flist, filelist);
 	NewList(exp_dlist, dirlist);
     }
@@ -722,7 +748,7 @@ Rescan(widget, event, params, num_params)
 	GetValues(browse_dir);
 	if (change_directory(dir))	/* make sure we are there */
 	    return;
-	strcpy(browse_cur_dir,dir);	/* save in global var */
+	strcpy(cur_browse_dir,dir);	/* save in global var */
 	(void) MakeFileList(dir, dirmask, &dir_list, &file_list);
 	NewList(browse_flist, file_list);
 	NewList(browse_dlist, dir_list);
@@ -733,6 +759,8 @@ Rescan(widget, event, params, num_params)
 	GetValues(file_dir);
 	if (change_directory(dir))	/* make sure we are there */
 	    return;
+	strcpy(cur_file_dir,dir);	/* save in global var */
+	strcpy(cur_export_dir,dir);	/* set export directory to file directory */
 	(void) MakeFileList(dir, dirmask, &dir_list, &file_list);
 	NewList(file_flist,file_list);
 	NewList(file_dlist,dir_list);
@@ -743,7 +771,7 @@ Rescan(widget, event, params, num_params)
 	GetValues(exp_dir);
 	if (change_directory(dir))	/* make sure we are there */
 	    return;
-	strcpy(export_cur_dir,dir);	/* save in global var */
+	strcpy(cur_export_dir,dir);	/* save in global var */
 	(void) MakeFileList(dir, dirmask, &dir_list, &file_list);
 	NewList(exp_flist, file_list);
 	NewList(exp_dlist, dir_list);

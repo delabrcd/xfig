@@ -15,6 +15,8 @@
  *
  */
 
+#define DEF_ICON_SIZE	  60		/* size (square) of object icon */
+
 extern F_compound **lib_compounds;
 
 extern void	popup_library_panel();
