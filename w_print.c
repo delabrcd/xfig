@@ -18,8 +18,8 @@
 
 #include "fig.h"
 #include "figx.h"
-#include "mode.h"
 #include "resources.h"
+#include "mode.h"
 #include "w_icons.h"
 #include "w_setup.h"
 #include "w_util.h"
@@ -83,7 +83,8 @@ do_print(w)
 	float	    mag;
 	char	   *printer_val;
 	char	   *param_val;
-	char	    cmd[100];
+	char	    cmd[255],cmd2[255];
+	char	   *c1, *c2;
 
 	if (emptyfigure_msg(print_msg) && !batch_exists)
 		return;
@@ -100,56 +101,24 @@ do_print(w)
 	GetValues(printer_text);
 	FirstArg(XtNstring, &param_val);
 	GetValues(param_text);
-	if (batch_exists)
-	    {
+	if (batch_exists) {
 	    gen_print_cmd(cmd,batch_file,printer_val,param_val);
 	    if (system(cmd) != 0)
 		file_msg("Error during PRINT");
 	    /* clear the batch file and the count */
 	    do_clear_batch(w);
+	} else {
+	    strcpy(cmd, param_val);
+	    /* see if the user wants the filename in the param list (%f) */
+	    if (!strstr(cur_filename,"%f")) {	/* don't substitute if the filename has a %f */
+		while (c1=strstr(cmd,"%f")) {
+		    strcpy(cmd2, c1+2);		/* save tail */
+		    strcpy(c1, cur_filename);	/* change %f to filename */
+		    strcat(c1, cmd2);		/* append tail */
+		}
 	    }
-	else
-	    {
-	    print_to_printer(printer_val, mag, appres.flushleft, param_val);
-	    }
-}
-
-gen_print_cmd(cmd,file,printer,pr_params)
-    char	   *cmd;
-    char	   *file;
-    char	   *printer;
-    char	   *pr_params;
-{
-    if (emptyname(printer)) {	/* send to default printer */
-#if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
-	sprintf(cmd, "lp %s %s", 
-		pr_params,
-		shell_protect_string(file));
-#else
-	sprintf(cmd, "lpr %s -J %s %s",
-		pr_params,
-		shell_protect_string(file),
-		shell_protect_string(file));
-#endif
-	put_msg("Printing figure on default printer in %s mode ...     ",
-		appres.landscape ? "LANDSCAPE" : "PORTRAIT");
-    } else {
-#if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
-	sprintf(cmd, "lp %s, -d%s %s",
-		pr_params,
-		printer, 
-		shell_protect_string(file));
-#else
-	sprintf(cmd, "lpr %s -J %s -P%s %s", 
-		pr_params,
-		shell_protect_string(file),
-		printer,
-		shell_protect_string(file));
-#endif
-	put_msg("Printing figure on printer %s in %s mode ...     ",
-		printer, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
-    }
-    app_flush();		/* make sure message gets displayed */
+	    print_to_printer(printer_val, mag, appres.flushleft, cmd);
+	}
 }
 
 static int num_batch_figures=0;
@@ -331,7 +300,7 @@ create_print_panel(w)
 	NextArg(XtNbackground, &bg);
 	GetValues(image);
 	p = XCreatePixmapFromBitmapData(tool_d, XtWindow(canvas_sw),
-		      (char *) printer_ic.data, printer_ic.width, printer_ic.height,
+		      printer_ic.bits, printer_ic.width, printer_ic.height,
 		      fg, bg, DefaultDepthOfScreen(tool_s));
 	FirstArg(XtNbitmap, p);
 	SetValues(image);

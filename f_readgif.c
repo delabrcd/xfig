@@ -33,9 +33,6 @@
 #include "object.h"
 #include "w_setup.h"
 
-extern FILE	*open_picfile();
-extern void	close_picfile();
-
 #define	MAX_LWZ_BITS		12
 
 #define INTERLACE		0x40
@@ -73,31 +70,28 @@ static int GetCode();
 static int LWZReadByte();
 static Boolean ReadGIFImage();
 
-/* return codes:  FileInvalid (-2) : invalid file
-		  Ok (1) : success */
+/* return codes:  PicSuccess (1) : success
+		  FileInvalid (-2) : invalid file
+*/
+
 int
-read_gif(pic)
-  F_pic *pic;
+read_gif(file,filetype,pic)
+    FILE	   *file;
+    int		    filetype;
+    F_pic	   *pic;
 {
-	FILE		*fd;
 	unsigned char	buf[16];
 	unsigned char	c;
 	struct Cmap 	localColorMap[MAXCOLORMAPSIZE];
 	int		useGlobalColormap;
 	unsigned int	bitPixel;
 	char		version[4];
-	int		filtype;		/* file (0) or pipe (1) */
 
-	if ((fd=open_picfile(pic->file, &filtype)) == NULL)
-	    return FileInvalid;
-
-	if (! ReadOK(fd,buf,6)) {
-		close_picfile(fd,filtype);
+	if (! ReadOK(file,buf,6)) {
 		return FileInvalid;
 	}
 
 	if (strncmp((char*)buf,"GIF",3) != 0) {
-		close_picfile(fd,filtype);
 		return FileInvalid;
 	}
 
@@ -106,12 +100,10 @@ read_gif(pic)
 
 	if ((strcmp(version, "87a") != 0) && (strcmp(version, "89a") != 0)) {
 		file_msg("Unknown GIF version %s",version);
-		close_picfile(fd,filtype);
 		return FileInvalid;
 	}
 
-	if (! ReadOK(fd,buf,7)) {
-		close_picfile(fd,filtype);
+	if (! ReadOK(file,buf,7)) {
 		return FileInvalid;		/* failed to read screen descriptor */
 	}
 
@@ -127,9 +119,8 @@ read_gif(pic)
 	pic->bit_size.y = GifScreen.Height;
 
 	if (BitSet(buf[4], LOCALCOLORMAP)) {	/* Global Colormap */
-		if (!ReadColorMap(fd,GifScreen.BitPixel,GifScreen.ColorMap)) {
-			close_picfile(fd,filtype);
-			return 1;		/* error reading global colormap */
+		if (!ReadColorMap(file,GifScreen.BitPixel,GifScreen.ColorMap)) {
+			return FileInvalid;	/* error reading global colormap */
 		}
 	}
 
@@ -139,20 +130,18 @@ read_gif(pic)
 	}
 
 	for (;;) {
-		if (! ReadOK(fd,&c,1)) {
-			close_picfile(fd,filtype); /* EOF / read error on image data */
-			return FileInvalid;
+		if (! ReadOK(file,&c,1)) {
+			return FileInvalid;	/* EOF / read error on image data */
 		}
 
 		if (c == ';') {			/* GIF terminator, finish up */
-			close_picfile(fd,filtype);
-			return 1;		/* all done */
+			return PicSuccess;	/* all done */
 		}
 
 		if (c == '!') { 		/* Extension */
-			if (! ReadOK(fd,&c,1))
+			if (! ReadOK(file,&c,1))
 				file_msg("GIF read error on extention function code");
-			(void) DoExtension(fd, c);
+			(void) DoExtension(file, c);
 			continue;
 		}
 
@@ -160,8 +149,7 @@ read_gif(pic)
 			continue;
 		}
 
-		if (! ReadOK(fd,buf,9)) {
-			close_picfile(fd,filtype);
+		if (! ReadOK(file,buf,9)) {
 			return FileInvalid;	/* couldn't read left/top/width/height */
 		}
 
@@ -170,21 +158,20 @@ read_gif(pic)
 		bitPixel = 1<<((buf[8]&0x07)+1);
 
 		if (! useGlobalColormap) {
-			if (!ReadColorMap(fd, bitPixel, localColorMap)) {
-				close_picfile(fd,filtype);
-				file_msg("error reading local GIF colormap" );
-				return 1;
-			}
-			if (!ReadGIFImage(pic, fd, LM_to_uint(buf[4],buf[5]),
-				  LM_to_uint(buf[6],buf[7]), localColorMap, bitPixel,
-				  BitSet(buf[8], INTERLACE)))
-			    return FileInvalid;
+		    if (!ReadColorMap(file, bitPixel, localColorMap)) {
+			file_msg("error reading local GIF colormap" );
+			return PicSuccess;
+		    }
+		    if (!ReadGIFImage(pic, file, LM_to_uint(buf[4],buf[5]),
+			     LM_to_uint(buf[6],buf[7]), localColorMap, bitPixel,
+			     BitSet(buf[8], INTERLACE)))
+		        return FileInvalid;
 		} else {
-			if (!ReadGIFImage(pic, fd, LM_to_uint(buf[4],buf[5]),
-				  LM_to_uint(buf[6],buf[7]),
-				  GifScreen.ColorMap, GifScreen.BitPixel,
-				  BitSet(buf[8], INTERLACE)))
-			    return FileInvalid;
+		    if (!ReadGIFImage(pic, file, LM_to_uint(buf[4],buf[5]),
+			     LM_to_uint(buf[6],buf[7]),
+			     GifScreen.ColorMap, GifScreen.BitPixel,
+			     BitSet(buf[8], INTERLACE)))
+		        return FileInvalid;
 		}
 	}
 }

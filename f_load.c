@@ -34,6 +34,7 @@ load_file(file, xoff, yoff)
     int		    s;
     F_compound	    c;
 
+    put_msg("Loading file %s...",file);
     c.arcs = NULL;
     c.compounds = NULL;
     c.ellipses = NULL;

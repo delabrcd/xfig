@@ -30,15 +30,11 @@
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
-#include <varargs.h>
 
 /* EXPORTS */
 char    *read_file_name;
 
 /* IMPORTS */
-
-/* file popup information */
-extern Boolean	file_up;
 
 /* from w_msgpanel.c */
 extern Boolean	first_file_msg;
@@ -152,9 +148,10 @@ readfp_fig(fp, obj, merge, xoff, yoff)
     int		    fig_orient;
     int		    fig_units;
     int		    i;
+    char	    versstring[10];
 
     num_object = 0;
-    n_num_usr_cols = 0;
+    n_num_usr_cols = -1;
     for (i=0; i<MAX_USR_COLS; i++)
 	n_colorFree[i] = True;
 
@@ -168,7 +165,8 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 	else
 	    proto = (fproto + .01) * 10;	/* protocol version*10 */
 	/* if file protocol != current protocol, give message */
-	sscanf(PROTOCOL_VERSION,"%f",&xfigproto);
+	strcpy(versstring, PROTOCOL_VERSION);	/* copy string because gcc doesn't allow writing */
+	sscanf(versstring,"%f",&xfigproto);	/* to const strings. sscanf does ungetc */
 	if (fproto < xfigproto)
 	    file_msg("Converting figure from %.1f format to %.1f.",fproto,xfigproto);
 	else if (fproto > xfigproto) {
@@ -186,8 +184,10 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 
 	if (proto >= 30) {
 	    /* read Portrait/Landscape indicator now */
-	    if (fgets(buf, BUF_SIZE, fp) == 0)
+	    if (fgets(buf, BUF_SIZE, fp) == 0) {
+		file_msg("No Portrait/Landscape specification");
 		return -1;		/* error */
+	    }
 	    line_no++;
 	    /* set landscape flag oppositely and change_orient() will toggle it */
 	    if (!merge) {
@@ -200,8 +200,10 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 	    }
 
 	    /* read metric/inches OR Centering indicator now */
-	    if (fgets(buf, BUF_SIZE, fp) == 0)
+	    if (fgets(buf, BUF_SIZE, fp) == 0) {
+		file_msg("No Center/Flushleft specification");
 		return -1;		/* error */
+	    }
 	    line_no++;
 	    if ((strncasecmp(buf,"center",6) == 0) || 
 		(strncasecmp(buf,"flush",5) == 0)) {
@@ -214,8 +216,10 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 		    if (export_just_panel)
 			SetValues(export_just_panel);
 		    /* NOW read metric/inches indicator */
-		    if (fgets(buf, BUF_SIZE, fp) == 0)
-		    return -1;		/* error*/
+		    if (fgets(buf, BUF_SIZE, fp) == 0) {
+			file_msg("No Metric/Inches specification");
+			return -1;		/* error*/
+		    }
 		    line_no++;
 	    }
 	    /* set appres mode appropriately */
@@ -242,7 +246,7 @@ readfp_fig(fp, obj, merge, xoff, yoff)
     }
     fclose(fp);
     /* don't go any further if there was an error in reading the figure */
-    if (status < 0)
+    if (status != 0)
 	return (status);
 
     n_num_usr_cols++;	/* number of user colors = max index + 1 */
@@ -306,7 +310,7 @@ read_objects(fp, obj)
 
     line_no++;
     if (read_line(fp) < 0) {
-	file_msg("File is truncated.");
+	file_msg("No Resolution specification; figure is empty");
 	return (-1);
     }
     /* read the resolution in ppi and the coordinate system used
@@ -321,7 +325,7 @@ read_objects(fp, obj)
     while (read_line(fp) > 0) {
 	if (sscanf(buf, "%d", &object) != 1) {
 	    file_msg("Incorrect format at line %d.", line_no);
-	    return (num_object==0);	/* ok if any objects have been read */
+	    return (num_object != 0? 0: -1);	/* ok if any objects have been read */
 	}
 	switch (object) {
 	case O_COLOR_DEF:
@@ -329,12 +333,12 @@ read_objects(fp, obj)
 	    if (num_object) {
 		file_msg("Color definitions must come before other objects (line %d).",
 			line_no);
-		return (num_object==0);	/* ok if any objects have been read */
+		return (num_object != 0? 0: -1);	/* ok if any objects have been read */
 	    }
 	    break;
 	case O_POLYLINE:
 	    if ((l = read_lineobject(fp)) == NULL)
-		return (num_object==0);	/* ok if any objects have been read */
+		return (num_object != 0? 0: -1);	/* ok if any objects have been read */
 	    if (ll)
 		ll = (ll->next = l);
 	    else
@@ -343,7 +347,7 @@ read_objects(fp, obj)
 	    break;
 	case O_SPLINE:
 	    if ((s = read_splineobject(fp)) == NULL)
-		return (num_object==0);	/* ok if any objects have been read */
+		return (num_object != 0? 0: -1);	/* ok if any objects have been read */
 	    if (ls)
 		ls = (ls->next = s);
 	    else
@@ -352,7 +356,7 @@ read_objects(fp, obj)
 	    break;
 	case O_ELLIPSE:
 	    if ((e = read_ellipseobject()) == NULL)
-		return (num_object==0);	/* ok if any objects have been read */
+		return (num_object != 0? 0: -1);	/* ok if any objects have been read */
 	    if (le)
 		le = (le->next = e);
 	    else
@@ -361,7 +365,7 @@ read_objects(fp, obj)
 	    break;
 	case O_ARC:
 	    if ((a = read_arcobject(fp)) == NULL)
-		return (num_object==0);	/* ok if any objects have been read */
+		return (num_object != 0? 0: -1);	/* ok if any objects have been read */
 	    if (la)
 		la = (la->next = a);
 	    else
@@ -370,7 +374,7 @@ read_objects(fp, obj)
 	    break;
 	case O_TEXT:
 	    if ((t = read_textobject(fp)) == NULL)
-		return (num_object==0);	/* ok if any objects have been read */
+		return (num_object != 0? 0: -1);	/* ok if any objects have been read */
 	    if (lt)
 		lt = (lt->next = t);
 	    else
@@ -379,7 +383,7 @@ read_objects(fp, obj)
 	    break;
 	case O_COMPOUND:
 	    if ((c = read_compoundobject(fp)) == NULL)
-		return (num_object==0);	/* ok if any objects have been read */
+		return (num_object != 0? 0: -1);	/* ok if any objects have been read */
 	    if (lc)
 		lc = (lc->next = c);
 	    else
@@ -388,7 +392,7 @@ read_objects(fp, obj)
 	    break;
 	default:
 	    file_msg("Incorrect object code at line %d.", line_no);
-	    return (num_object==0);	/* ok if any objects have been read */
+	    return (num_object != 0? 0: -1);	/* ok if any objects have been read */
 	} /* switch */
     } /* while */
 
@@ -689,7 +693,7 @@ read_lineobject(fp)
 		l->radius = l->pen_style;
 		l->pen_style = 0;
 	    } else
-		l->radius = 0;
+		l->radius = DEFAULT;
 	}
 	l->fill_color = l->pen_color;
 	l->join_style = JOIN_MITER;	/* miter joint */
@@ -778,6 +782,17 @@ read_lineobject(fp)
 	q->next = NULL;
 	p->next = q;
 	p = q;
+    }
+    /* if the line has only one point, delete any arrowheads it might have now */
+    if (l->points->next == NULL) {
+	if (l->for_arrow) {
+	    free((char *) l->for_arrow);
+	    l->for_arrow = (F_arrow *) NULL;
+	}
+	if (l->back_arrow) {
+	    free((char *) l->back_arrow);
+	    l->back_arrow = (F_arrow *) NULL;
+	}
     }
     skip_line(fp);
     return (l);
@@ -971,6 +986,7 @@ read_textobject(fp)
      */
 
 /* linux can't read 8-bit characters */
+
 #ifdef linux
     {
 	char replaced;
@@ -1012,7 +1028,7 @@ read_textobject(fp)
 	    }
 	}
     }
-#else
+#else	/* not linux */
 
     if (proto >= 30) {	/* order of parms is more like other objects now;
 			   string is now terminated with the literal '\001',
@@ -1035,17 +1051,33 @@ read_textobject(fp)
 #endif
 
     /* now round size to int */
-    if ((int) tx_size == DEFAULT)	/* just copy DEFAULT */
-	t->size = DEFAULT;
+
+    /* change DEFAULT (-1) or 0 size to default size */
+    if ((int) tx_size == DEFAULT || (int) tx_size == 0)
+	t->size = DEF_FONTSIZE;
     else
 	t->size = round(tx_size);
+
+    /* set some limits */
+    if (t->size < 4)
+	t->size = 4;
+    else if (t->size > 1000)
+	t->size = 1000;
 
     /* make sure angle is 0 to 2PI */
     fix_angle(&t->angle);
 
-    /* get the font struct */
-    t->fontstruct = lookfont(x_fontnum(psfont_text(t), t->font),
-			round(t->size*display_zoomscale));
+    /* convert all pre-2.1 NON-TFX text flags (used to be font_style) to PostScript
+       and all pre-2.1 TFX flags to PostScript + Special */
+    if (proto <= 20) {
+	t->flags = PSFONT_TEXT;
+	if (TFX)
+		t->flags |= SPECIAL_TEXT;
+    }
+
+    /* get the UNZOOMED font struct */
+    t->fontstruct = lookfont(x_fontnum(psfont_text(t), t->font), t->size);
+
     fix_depth(&t->depth);
     check_color(&t->color);
     more = False;
@@ -1054,7 +1086,7 @@ read_textobject(fp)
     else if (proto >= 30) { /* in 3.0(2.2) there is more if \001 wasn't found */
 	len = strlen(s);
 	if ((strcmp(&s[len-4],"\\001") == 0) &&	/* if we find '\000' */
-	    (len >= 4 && s[len-5] != '\\')) {	/* and not '\\000' */
+	    !(backslash_count(s, len-5) % 2)) { /* and not '\\000' */
 		more = False;			/* then there are no more lines */
 		s[len-4]='\0';			/* and get rid of the '\001' */
 	} else {
@@ -1080,7 +1112,7 @@ read_textobject(fp)
 		    break;
 		len = strlen(s_temp)-1;
 		if ((strncmp(&s_temp[len-4],"\\001",4) == 0) &&
-		    (len >= 4 && s_temp[len-5] != '\\')) {
+		    !(backslash_count(s, len-5) % 2)) {
 			n=0;			/* found the '\001', set n to stop */
 			s_temp[len-4]='\0';	/* and get rid of the '\001' */
 		} else {
@@ -1107,7 +1139,8 @@ read_textobject(fp)
 		for (l=0,n=0; l < len; l++) {
 		    if (s[l]=='\\') {
 			if (l < len && s[l+1] != '\\') {
-			    if (sscanf(&s[l+1],"%o",&num)!=1) {
+			    /* allow exactly 3 digits following the \ for the octal value */
+			    if (sscanf(&s[l+1],"%3o",&num)!=1) {
 				file_msg("Error in parsing text string on line.",line_no);
 				return(NULL);
 			    }
@@ -1129,15 +1162,6 @@ read_textobject(fp)
 	file_msg("Invalid text justification at line %d, setting to LEFT.", line_no);
 	t->type = T_LEFT_JUSTIFIED;
     }
-
-    /* convert all pre-2.1 NON-TFX text flags (used to be font_style) to PostScript
-       and all pre-2.1 TFX flags to PostScript + Special */
-    if (proto <= 20)
-	{
-	t->flags = PSFONT_TEXT;
-	if (TFX)
-		t->flags |= SPECIAL_TEXT;
-	}
 
     if (t->font >= MAXFONT(t)) {
 	file_msg("Invalid text font (%d) at line %d, setting to DEFAULT.",
@@ -1162,8 +1186,30 @@ read_textobject(fp)
     t->length = round(tx_dim.length);
     t->ascent = round(tx_dim.ascent);
     t->descent = round(tx_dim.descent);
+    /* now get the zoomed font struct */
+    t->zoom = zoomscale;
+    if (display_zoomscale != 1.0)
+	t->fontstruct = lookfont(x_fontnum(psfont_text(t), t->font),
+			round(t->size*display_zoomscale));
 
     return (t);
+}
+
+/* akm 28/2/95 - count consecutive backslashes backwards */
+int
+backslash_count(cp, start)
+char cp[];
+int start;
+{
+  int i, count = 0;
+
+  for(i=start; i>=0; i--) {
+    if (cp[i] == '\\')
+	count++;
+    else
+	break;
+  }
+  return count;
 }
 
 read_line(fp)

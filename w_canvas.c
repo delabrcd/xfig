@@ -85,7 +85,7 @@ null_proc()
 
 static void
 canvas_exposed(tool, event, params, nparams)
-    TOOL	    tool;
+    Widget	    tool;
     XButtonEvent   *event;
     String	   *params;
     Cardinal	   *nparams;
@@ -138,7 +138,7 @@ static String	canvas_translations =
     <Expose>:ExposeCanv()\n";
 
 init_canvas(tool)
-    TOOL	   tool;
+    Widget	   tool;
 {
     XColor	   fixcolors[2];
 
@@ -203,7 +203,7 @@ setup_canvas()
 
 static
 canvas_selected(tool, event, params, nparams)
-    TOOL	    tool;
+    Widget	    tool;
     XButtonEvent   *event;
     String	   *params;
     Cardinal	   *nparams;
@@ -333,6 +333,8 @@ canvas_selected(tool, event, params, nparams)
 		/* show the shift-key function, but only if an edit mode */
 		if (cur_mode >= FIRST_EDIT_MODE)
 		    draw_mousefun("Locate object", "Locate object", "");
+		else
+		    draw_shift_mousefun_canvas();
 	} else {
 	    if (canvas_kbd_proc != null_proc) {
 		switch (compose_key) {
@@ -341,13 +343,11 @@ canvas_selected(tool, event, params, nparams)
 			(*canvas_kbd_proc) ((unsigned char) buf[0]);
 		    break;
 		case 1:
-		    if (XLookupString(ke, &compose_buf[0], 1, NULL, NULL)
-			> 0)
+		    if (XLookupString(ke, &compose_buf[0], 1, NULL, NULL) > 0)
 			compose_key = 2;
 		    break;
 		case 2:
-		    if (XLookupString(ke, &compose_buf[1], 1, NULL, NULL)
-			> 0) {
+		    if (XLookupString(ke, &compose_buf[1], 1, NULL, NULL) > 0) {
 			if ((c = getComposeKey(compose_buf)) != '\0')
 			    (*canvas_kbd_proc) (c);
 			else {

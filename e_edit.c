@@ -29,24 +29,27 @@
 #include "u_search.h"
 #include "u_list.h"
 #include "u_create.h"
+#include "u_undo.h"
 #include "w_canvas.h"
 #include "w_drawprim.h"
-#include "w_icons.h"
 #include "w_util.h"
 #include "w_indpanel.h"
 #include "w_mousefun.h"
 #include "w_setup.h"
+
+/* IMPORTS */
 
 /* for message panel server grab negotiation */
 
 extern Boolean	file_msg_is_popped;
 extern Widget	file_msg_popup;
 
-Boolean		edit_up=False;
+extern Boolean	popup_up;
 
 extern choice_info arrowtype_choices[];
 extern char    *panel_get_value();
 extern PIX_FONT lookfont();
+
 Widget		make_popup_menu();
 static Widget	make_popup_menu_images();
 static Widget	make_color_popup_menu();
@@ -59,6 +62,7 @@ extern F_arrow *create_arrow();
 
 static void	new_generic_values();
 static void	new_arrow_values();
+static		get_new_line_values();
 static		generic_window();
 static		font_image_panel();
 static		pen_color_selection_panel();
@@ -77,6 +81,7 @@ static		get_points();
 int		panel_set_value();
 static XtCallbackProc done_button(), apply_button(), cancel_button();
 static XtCallbackProc toggle_for_arrow(), toggle_back_arrow();
+static XtCallbackProc grab_button(), browse_button(), image_edit_button();
 static void	arc_type_select();
 static void	cap_style_select();
 static void	join_style_select();
@@ -135,7 +140,7 @@ static Widget	back_thick_val,back_height_val,back_width_val;
 static Boolean	for_arrow, back_arrow;
 
 static Widget	text_panel;
-static Widget	pic_name_panel;
+       Widget	pic_name_panel;  	/* global to be visible in w_browse */
 static Widget	x1_panel, y1_panel;
 static Widget	x2_panel, y2_panel;
 static Widget	x3_panel, y3_panel;
@@ -151,7 +156,7 @@ static Widget	special_text_menu, rigid_text_menu;
 static Widget	but1;
 
 /* for PIC object type */
-static Widget	pic_size, pic_type, pic_colors;
+static Widget	pic_size, pic_type_box[NUM_PIC_TYPES], pic_colors;
 
 static Widget	pen_color_panel;
 static Widget	fill_color_panel;
@@ -162,7 +167,11 @@ static char	buf[64];
 static Widget	px_panel[MAXNUMPTS];
 static Widget	py_panel[MAXNUMPTS];
 
-static char	*pic_names[] = {"--","EPS","XBM","XPM","GIF"};
+static char	*pic_names[] = {"--","EPS","GIF","JPEG","XBM"
+#ifdef USE_XPM
+			,"XPM"
+#endif
+		};
 
 static int	ellipse_flag;
 static int	fill_flag;
@@ -316,8 +325,8 @@ get_generic_arrows(x)
 		x->for_arrow->ht = generic_vals.for_arrow.ht;
 	} else {
 		if (x->for_arrow)
-			free(x->for_arrow);
-		x->for_arrow = NULL;
+			free((char *) x->for_arrow);
+		x->for_arrow = (F_arrow *) NULL;
 	}
 	if (back_arrow) {
 		if (!x->back_arrow)
@@ -329,8 +338,8 @@ get_generic_arrows(x)
 		x->back_arrow->ht = generic_vals.back_arrow.ht;
 	} else {
 		if (x->back_arrow)
-			free(x->back_arrow);
-		x->back_arrow = NULL;
+			free((char *) x->back_arrow);
+		x->back_arrow = (F_arrow *) NULL;
 	}
 }
 
@@ -338,7 +347,7 @@ int		edit_item();
 
 edit_item_selected()
 {
-    set_mousefun("edit object", "", "");
+    set_mousefun("edit object", "", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(edit_item);
@@ -379,7 +388,7 @@ edit_item(p, type, x, y)
     }
 
     XtPopup(popup, XtGrabNonexclusive);
-    edit_up = True;
+    popup_up = True;
     if (file_msg_is_popped)
 	XtAddGrab(file_msg_popup, False, False);
 
@@ -388,6 +397,19 @@ edit_item(p, type, x, y)
     (void) XSetWMProtocols(XtDisplay(popup), XtWindow(popup),
 	  		   &wm_delete_window, 1);
 
+}
+
+static		XtCallbackProc
+read_picfile(panel_local, item, event)
+    Widget	    panel_local;
+    Widget	   *item;
+    int		   *event;
+{
+    /* very simple - just change the filename in the existing object
+       and call get_new_line_values */
+    /* erase the "current" filename */
+    new_l->pic->file[0] = '\0';
+    get_new_line_values();
 }
 
 static void
@@ -525,12 +547,13 @@ make_window_compound(c)
 {
     set_temp_cursor(panel_cursor);
     mask_toggle_compoundmarker(c);
-    new_c = copy_compound(c);
-    new_c->next = c;
+    old_c = copy_compound(c);
+    new_c = c;
+
     generic_window("COMPOUND", "", &glue_ic, done_compound, 0, False);
     f_pos_panel(&c->nwcorner, "Top Left Corner", &x1_panel, &y1_panel);
     f_pos_panel(&c->secorner, "Bottom Right Corner", &x2_panel, &y2_panel);
-    int_label(object_count(c), "Num Objects ", &num_objects);
+    int_label(object_count(c), "Num Objects", &num_objects);
 }
 
 static
@@ -566,32 +589,37 @@ get_new_compound_values()
 static
 done_compound()
 {
-    old_c = new_c->next;
     switch (button_result) {
     case APPLY:
-	draw_compoundelements(new_c, ERASE);
 	changed = 1;
+	list_delete_compound(&objects.compounds, new_c);
+	redisplay_compound(new_c);
 	get_new_compound_values();
-	draw_compoundelements(new_c, PAINT);
+	list_add_compound(&objects.compounds, new_c);
+	redisplay_compound(new_c);
 	break;
     case DONE:
-	draw_compoundelements(new_c, ERASE);
 	get_new_compound_values();
-	new_c->next = NULL;
-	change_compound(old_c, new_c);
-	draw_compoundelements(new_c, PAINT);
-	toggle_compoundmarker(new_c);
+	redisplay_compounds(new_c, old_c);
+	clean_up();
+	old_c->next = new_c;
+	set_latestcompound(old_c);
+	set_action_object(F_CHANGE, O_COMPOUND);
+	set_modifiedflag();
 	reset_cursor();
 	break;
     case CANCEL:
-	if (changed) {
-	    draw_compoundelements(new_c, ERASE);
-	    draw_compoundelements(old_c, PAINT);
-	}
-	new_c->next = NULL;
+	list_delete_compound(&objects.compounds, new_c);
+	list_add_compound(&objects.compounds, old_c);
+	if (saved_objects.compounds && saved_objects.compounds->next &&
+	    saved_objects.compounds->next == new_c)
+		saved_objects.compounds->next = old_c;
+	else if (saved_objects.compounds == new_c)
+		saved_objects.compounds = old_c;
+	if (changed)
+	    redisplay_compounds(old_c, new_c);
 	free_compound(&new_c);
 	toggle_compoundmarker(old_c);
-	new_c = old_c;
 	reset_cursor();
 	break;
     }
@@ -603,21 +631,32 @@ make_window_line(l)
     struct f_point  p1, p2;
     int		    dx, dy, rotation;
     float	    ratio;
+    int		    i;
 
     set_temp_cursor(panel_cursor);
     mask_toggle_linemarker(l);
-    new_l = copy_line(l);
-    old_l = l;
+    old_l = copy_line(l);
+    new_l = l;
 
     put_generic_vals(new_l);
     put_cap_style(new_l);
     put_join_style(new_l);
     pen_color = new_l->pen_color;
     fill_color = new_l->fill_color;
+    /* single-point lines don't get arrows - delete any that might already exist */
+    if (new_l->points->next == NULL) {
+	if (new_l->for_arrow)
+		free((char *) new_l->for_arrow);
+	if (new_l->back_arrow)
+		free((char *) new_l->back_arrow);
+	new_l->for_arrow = new_l->back_arrow = (F_arrow *) NULL;
+    }
     switch (new_l->type) {
     case T_POLYLINE:
 	put_generic_arrows(new_l);
-	generic_window("POLYLINE", "Polyline", &line_ic, done_line, True, True);
+	/* don't make arrow panels if single-point line */
+	generic_window("POLYLINE", "Polyline", &line_ic, done_line, 
+		True, new_l->points->next != NULL);
 	points_panel(new_l->points, 0);
 	break;
     case T_POLYGON:
@@ -642,37 +681,80 @@ make_window_line(l)
     case T_PIC_BOX:
 	old_l->type = T_BOX;	/* so colors of old won't be included in new */
 	generic_window("POLYLINE", "Picture Object", &picobj_ic, done_line, False, False);
+
 	pen_color_selection_panel();
 	int_panel(new_l->depth, form, "Depth =", &depth_panel);
 	if (!strcmp(new_l->pic->file, EMPTY_PIC))
 	    new_l->pic->file[0] = '\0';
-	str_panel(new_l->pic->file, "Filename =", &pic_name_panel);
-	FirstArg(XtNfromVert, below);
-	NextArg(XtNborderWidth, 0);
-	beside = XtCreateManagedWidget("Type =", labelWidgetClass,
+	str_panel(new_l->pic->file, "Picture Filename =", &pic_name_panel);
+
+	/* make a button to reread the picture file */
+	FirstArg(XtNfromVert, beside);
+	NextArg(XtNhorizDistance, 10);
+	NextArg(XtNlabel, "Reread");
+	below = XtCreateManagedWidget("reread", commandWidgetClass,
 				       form, Args, ArgCount);
-	if (new_l->pic != 0)
-	    strcpy(buf,pic_names[new_l->pic->subtype]);
-	else
-	    strcpy(buf,"--");
+	XtAddCallback(below, XtNcallback, (XtCallbackProc)read_picfile, (XtPointer) NULL);
+
+	/* add browse button for image files */
+	FirstArg(XtNlabel, "Browse");
+	NextArg(XtNfromHoriz, below);
+	NextArg(XtNfromVert, beside);
+	NextArg(XtNhorizDistance, 10);
+        but1 = XtCreateManagedWidget("browse", commandWidgetClass, 
+			form, Args, ArgCount);
+        XtAddCallback(but1, XtNcallback,
+		(XtCallbackProc)browse_button, (XtPointer) NULL);
+
 	FirstArg(XtNfromVert, below);
-	NextArg(XtNfromHoriz, beside);
-	NextArg(XtNresizable, True);
 	NextArg(XtNborderWidth, 0);
-	NextArg(XtNlabel, buf);
-	beside = pic_type = XtCreateManagedWidget("pic_type", labelWidgetClass,
+	NextArg(XtNlabel, "Type:");
+	beside = XtCreateManagedWidget("pic_type_label", labelWidgetClass,
 				       form, Args, ArgCount);
+	FirstArg(XtNfromHoriz, beside);
+	NextArg(XtNfromVert, below);
+	NextArg(XtNborderWidth, 1);
+	NextArg(XtNwidth, 13);
+	NextArg(XtNheight, 13);
+	NextArg(XtNhorizDistance, 10);
+	for (i=0; i<NUM_PIC_TYPES; i++) {
+	    /* make box black indicating this type of picture file */
+	    if (new_l->pic != 0 && new_l->pic->subtype == i+1) {
+		NextArg(XtNbackground, appres.INVERSE?colors[WHITE]:colors[BLACK]);
+	    } else {
+		NextArg(XtNbackground, appres.INVERSE?colors[BLACK]:colors[WHITE]);
+	    }
+	    NextArg(XtNlabel, " ");
+	    pic_type_box[i] = XtCreateManagedWidget("pic_type_box", 
+					labelWidgetClass, form, Args, ArgCount);
+	    FirstArg(XtNfromHoriz, pic_type_box[i]);
+	    NextArg(XtNhorizDistance, 0);
+	    NextArg(XtNfromVert, below);
+	    NextArg(XtNborderWidth, 0);
+	    NextArg(XtNlabel, pic_names[i+1]);
+	    beside = XtCreateManagedWidget("pic_type_name", labelWidgetClass,
+				       form, Args, ArgCount);
+	    /* setup for next box in loop */
+	    FirstArg(XtNfromHoriz, beside);
+	    NextArg(XtNfromVert, below);
+	    NextArg(XtNborderWidth, 1);
+	    NextArg(XtNwidth, 13);
+	    NextArg(XtNheight, 13);
+	    NextArg(XtNhorizDistance, 10);
+	}
+
+	below = beside;
 	FirstArg(XtNfromVert, below);
-	NextArg(XtNfromHoriz, beside);
-	NextArg(XtNhorizDistance, 20);
 	NextArg(XtNborderWidth, 0);
-	beside = XtCreateManagedWidget("Size =", labelWidgetClass,
+	NextArg(XtNlabel, "Size:");
+	beside = XtCreateManagedWidget("pic_size_label", labelWidgetClass,
 				       form, Args, ArgCount);
 
 	if (new_l->pic != 0 && new_l->pic->subtype != 0)
 	    sprintf(buf,"%d x %d",new_l->pic->bit_size.x,new_l->pic->bit_size.y);
 	else
 	    strcpy(buf,"--");
+
 	FirstArg(XtNfromVert, below);
 	NextArg(XtNfromHoriz, beside);
 	NextArg(XtNresizable, True);
@@ -680,17 +762,26 @@ make_window_line(l)
 	NextArg(XtNlabel, buf);
 	pic_size = XtCreateManagedWidget("pic_size", labelWidgetClass,
 				       form, Args, ArgCount);
-	below = pic_type;
+
 	FirstArg(XtNfromVert, below);
 	NextArg(XtNborderWidth, 0);
-	beside = XtCreateManagedWidget("Number of colors =", labelWidgetClass,
+	NextArg(XtNfromHoriz, pic_size);
+	NextArg(XtNhorizDistance, 20);
+	NextArg(XtNlabel, "Number of colors:");
+	beside = XtCreateManagedWidget("pic_colors_label", labelWidgetClass,
 				       form, Args, ArgCount);
+  
 	/* although the EPS may have colors, the actual number is not known */
 	if (new_l->pic != 0 && 
-	    (new_l->pic->subtype == T_PIC_PIXMAP || new_l->pic->subtype == T_PIC_GIF))
+	    (new_l->pic->subtype == T_PIC_GIF ||
+#ifdef USE_XPM
+	     new_l->pic->subtype == T_PIC_PIXMAP ||
+#endif
+	     new_l->pic->subtype == T_PIC_JPEG))
 		sprintf(buf,"%d",new_l->pic->numcols);
 	else
 		strcpy(buf,"--");
+
 	FirstArg(XtNfromVert, below);
 	NextArg(XtNfromHoriz, beside);
 	NextArg(XtNresizable, True);
@@ -777,9 +868,11 @@ static
 get_new_line_values()
 {
     struct f_point  p1, p2, *p;
-    char	   *s;
+    char	   *string;
+    char	    longname[PATH_MAX];
     int		    dx, dy, rotation;
     float	    ratio;
+    int		    i;
 
     switch (new_l->type) {
     case T_POLYLINE:
@@ -805,6 +898,7 @@ get_new_line_values()
 	p2.y = atoi(panel_get_value(y2_panel));
 	break;
     case T_PIC_BOX:
+	check_depth();
 	new_l->pen_color = pen_color;
 	new_l->fill_color = fill_color;
 	new_l->depth = atoi(panel_get_value(depth_panel));
@@ -837,25 +931,24 @@ get_new_line_values()
 	sprintf(buf, "%1.1f", ratio);
 	FirstArg(XtNlabel, buf);
 	SetValues(hw_ratio_panel);
-	s = panel_get_value(pic_name_panel);
-	if (s[0] == '\0')
-	    s = EMPTY_PIC;
+	string = panel_get_value(pic_name_panel);
+	if (string[0] == '\0')
+	    string = EMPTY_PIC;
 	/* if user typed tilde, parse user path and put in string panel */
-	if (s[0] == '~') {
-	    char longdir[PATH_MAX];
-	    parseuserpath(s,longdir);
-	    panel_set_value(pic_name_panel, longdir);
-	    strcpy(s,longdir);
+	if (string[0] == '~') {
+	    parseuserpath(string,longname);
+	    panel_set_value(pic_name_panel, longname);
+	    string = longname;
 	}
 	file_changed = False;
 	/* if the filename changed */
-	if (strcmp(s, new_l->pic->file)) {
+	if (strcmp(string, new_l->pic->file)) {
 	    file_changed = True;
 	    if (new_l->pic->bitmap) {
-		free((unsigned char *) new_l->pic->bitmap);
+		free((char *) new_l->pic->bitmap);
 		new_l->pic->bitmap = NULL;
 	    }
-	    strcpy(new_l->pic->file, s);
+	    strcpy(new_l->pic->file, string);
 	    new_l->pic->hw_ratio = 0.0;
 	    if (strcmp(new_l->pic->file, EMPTY_PIC))
 		read_picobj(new_l->pic,new_l->pen_color);
@@ -868,14 +961,23 @@ get_new_line_values()
 	FirstArg(XtNlabel, buf);
 	SetValues(pic_size);
 
-	/* pic type */
-	strcpy(buf,pic_names[new_l->pic->subtype]);
-	FirstArg(XtNlabel, buf);
-	SetValues(pic_type);
+	/* make box black indicating this type of picture file */
+	for (i=0; i<NUM_PIC_TYPES; i++) {
+	    if (new_l->pic->subtype == i+1) {
+		FirstArg(XtNbackground, appres.INVERSE?colors[WHITE]:colors[BLACK]);
+	    } else {
+		FirstArg(XtNbackground, appres.INVERSE?colors[BLACK]:colors[WHITE]);
+	    }
+	    SetValues(pic_type_box[i]);
+	}
 
 	/* number of colors */
 	/* although the EPS may have colors, the actual number is not known */
-	if (new_l->pic->subtype == T_PIC_PIXMAP || new_l->pic->subtype == T_PIC_GIF)
+	if ((new_l->pic->subtype == T_PIC_GIF ||
+#ifdef USE_XPM
+	     new_l->pic->subtype == T_PIC_PIXMAP ||
+#endif
+	     new_l->pic->subtype == T_PIC_JPEG))
 		sprintf(buf,"%d",new_l->pic->numcols);
 	else
 		strcpy(buf,"--");
@@ -888,17 +990,21 @@ get_new_line_values()
 	SetValues(orig_hw_panel);
 	app_flush();
 
-	/* recolor and redraw all GIFs/XPMs if this is one */
+	/* recolor and redraw all picturess if this is one */
 	if (file_changed && !appres.monochrome &&
 	   (new_l->pic->numcols > 0) && (new_l->pic->bitmap != 0)) {
-		/* reallocate the colors for this GIF and all on the canvas */
+		/* reallocate the colors for this picture and all on the canvas */
 		remap_image_two(&objects, new_l);
-		/* and redraw all of the EPS/XPM and GIFs already on the canvas */
+		/* and redraw all of the pictures already on the canvas */
 		redraw_images(&objects);
 		put_msg("Read %s image of %dx%d pixels OK",
-			new_l->pic->subtype == T_PIC_PIXMAP? "XPM":
-			    new_l->pic->subtype == T_PIC_GIF? "GIF":
-				new_l->pic->subtype == T_PIC_EPS? "EPS":
+			new_l->pic->subtype == T_PIC_EPS? "EPS":
+			  new_l->pic->subtype == T_PIC_GIF? "GIF":
+			    new_l->pic->subtype == T_PIC_JPEG? "JPEG":
+			      new_l->pic->subtype == T_PIC_BITMAP? "XBM":
+#ifdef USE_XPM
+				new_l->pic->subtype == T_PIC_PIXMAP? "XPM":
+#endif
 				    "Unknown",
 			new_l->pic->bit_size.x, new_l->pic->bit_size.y);
 		app_flush();
@@ -926,27 +1032,38 @@ get_new_line_values()
     p->x = p1.x;
     p->y = p1.y;
 }
-
 static
 done_line()
 {
     switch (button_result) {
     case APPLY:
 	changed = 1;
-	draw_line(new_l, ERASE);
+	list_delete_line(&objects.lines, new_l);
+	redisplay_line(new_l);
 	get_new_line_values();
-	draw_line(new_l, PAINT);
+	list_add_line(&objects.lines, new_l);
+	redisplay_line(new_l);
 	break;
     case DONE:
 	get_new_line_values();
-	new_l->next = NULL;
+	redisplay_lines(new_l, old_l);
 	if (new_l->type == T_PIC_BOX)
 	    old_l->type = T_PIC_BOX;		/* restore type */
-	change_line(old_l, new_l);
-	redisplay_lines(old_l, new_l);
+	clean_up();
+	old_l->next = new_l;
+	set_latestline(old_l);
+	set_action_object(F_CHANGE, O_POLYLINE);
+	set_modifiedflag();
 	reset_cursor();
 	break;
     case CANCEL:
+	list_delete_line(&objects.lines, new_l);
+	list_add_line(&objects.lines, old_l);
+	if (saved_objects.lines && saved_objects.lines->next &&
+	    saved_objects.lines->next == new_l)
+		saved_objects.lines->next = old_l;
+	else if (saved_objects.lines == new_l)
+		saved_objects.lines = old_l;
 	if (new_l->type == T_PIC_BOX) {
 	    old_l->type = T_PIC_BOX;		/* restore type */
 	    if (file_changed) {
@@ -954,13 +1071,10 @@ done_line()
 		redraw_images(&objects);	/* and refresh them */
 	    }
 	}
-	if (changed) {
-	    redisplay_lines(old_l, new_l);
-	} else {
-	    mask_toggle_linemarker(old_l);
-	}
-	new_l->next = NULL;
+	if (changed)
+	    redisplay_lines(new_l, old_l);
 	free_line(&new_l);
+	toggle_linemarker(old_l);
 	reset_cursor();
 	break;
     }
@@ -981,8 +1095,8 @@ make_window_text(t)
 
     set_temp_cursor(panel_cursor);
     toggle_textmarker(t);
-    new_t = copy_text(t);
-    new_t->next = t;
+    old_t = copy_text(t);
+    new_t = t;
 
     textjust = new_t->type;	/* get current justification */
     hidden_text_flag = hidden_text(new_t) ? 1 : 0;
@@ -1086,6 +1200,7 @@ get_new_text_values()
     char	   *s;
     PR_SIZE	    size;
 
+    check_depth();
     new_t->type = textjust;
     new_t->flags =
 	(rigid_text_flag ? RIGID_TEXT : 0)
@@ -1128,36 +1243,37 @@ done_text()
 {
     int		    xmin, ymin, xmax, ymax, dum;
 
-    old_t = new_t->next;
     switch (button_result) {
     case APPLY:
-	draw_text(new_t, ERASE);
 	changed = 1;
+	list_delete_text(&objects.texts, new_t);
+	redisplay_text(new_t);
 	get_new_text_values();
-	draw_text(new_t, PAINT);
+	list_add_text(&objects.texts, new_t);
+	redisplay_text(new_t);
 	break;
     case DONE:
-	draw_text(old_t, ERASE);
 	get_new_text_values();
-	new_t->next = NULL;
-	change_text(old_t, new_t);
-	text_bound(new_t, &xmin, &ymin, &xmax, &ymax,
-		   &dum, &dum, &dum, &dum, &dum, &dum, &dum, &dum);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
+	redisplay_texts(new_t, old_t);
+	clean_up();
+	old_t->next = new_t;
+	set_latesttext(old_t);
+	set_action_object(F_CHANGE, O_TEXT);
+	set_modifiedflag();
 	reset_cursor();
 	break;
     case CANCEL:
-	if (changed) {
-	    draw_text(new_t, ERASE);
-	    text_bound(old_t, &xmin, &ymin, &xmax, &ymax,
-		   &dum, &dum, &dum, &dum, &dum, &dum, &dum, &dum);
-	    redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-	} else {
-	    toggle_textmarker(old_t);
-	}
-	new_t->next = NULL;
+	list_delete_text(&objects.texts, new_t);
+	list_add_text(&objects.texts, old_t);
+	if (saved_objects.texts && saved_objects.texts->next &&
+	    saved_objects.texts->next == new_t)
+		saved_objects.texts->next = old_t;
+	else if (saved_objects.texts == new_t)
+		saved_objects.texts = old_t;
+	if (changed)
+	    redisplay_texts(new_t, old_t);
 	free_text(&new_t);
-	new_t = old_t;
+	toggle_textmarker(old_t);
 	reset_cursor();
 	break;
     }
@@ -1167,12 +1283,13 @@ make_window_ellipse(e)
     F_ellipse	   *e;
 {
     char	   *s1, *s2;
-    PIXRECT	    image;
+    icon_struct	   *image;
 
     set_temp_cursor(panel_cursor);
     toggle_ellipsemarker(e);
-    new_e = copy_ellipse(e);
-    new_e->next = e;
+    old_e = copy_ellipse(e);
+    new_e = e;
+
     pen_color = new_e->pen_color;
     fill_color = new_e->fill_color;
     switch (new_e->type) {
@@ -1245,29 +1362,35 @@ get_new_ellipse_values()
 static
 done_ellipse()
 {
-    old_e = new_e->next;
     switch (button_result) {
     case APPLY:
-	draw_ellipse(new_e, ERASE);
 	changed = 1;
+	list_delete_ellipse(&objects.ellipses, new_e);
+	redisplay_ellipse(new_e);
 	get_new_ellipse_values();
-	draw_ellipse(new_e, PAINT);
+	list_add_ellipse(&objects.ellipses, new_e);
+	redisplay_ellipse(new_e);
 	break;
     case DONE:
-	draw_ellipse(new_e, ERASE);
 	get_new_ellipse_values();
-	new_e->next = NULL;
-	change_ellipse(old_e, new_e);
-	draw_ellipse(new_e, PAINT);
-	toggle_ellipsemarker(new_e);
+	redisplay_ellipses(new_e, old_e);
+	clean_up();
+	old_e->next = new_e;
+	set_latestellipse(old_e);
+	set_action_object(F_CHANGE, O_ELLIPSE);
+	set_modifiedflag();
 	reset_cursor();
 	break;
     case CANCEL:
-	if (changed) {
-	    draw_ellipse(new_e, ERASE);
-	    draw_ellipse(old_e, PAINT);
-	}
-	new_e->next = NULL;
+	list_delete_ellipse(&objects.ellipses, new_e);
+	list_add_ellipse(&objects.ellipses, old_e);
+	if (saved_objects.ellipses && saved_objects.ellipses->next &&
+	    saved_objects.ellipses->next == new_e)
+		saved_objects.ellipses->next = old_e;
+	else if (saved_objects.ellipses == new_e)
+		saved_objects.ellipses = old_e;
+	if (changed)
+	    redisplay_ellipses(new_e, old_e);
 	free_ellipse(&new_e);
 	toggle_ellipsemarker(old_e);
 	reset_cursor();
@@ -1281,8 +1404,9 @@ make_window_arc(a)
 {
     set_temp_cursor(panel_cursor);
     toggle_arcmarker(a);
-    new_a = copy_arc(a);
-    new_a->next = a;
+    old_a = copy_arc(a);
+    new_a = a;
+
     pen_color = new_a->pen_color;
     fill_color = new_a->fill_color;
     put_generic_vals(new_a);
@@ -1322,29 +1446,35 @@ get_new_arc_values()
 static
 done_arc()
 {
-    old_a = new_a->next;
     switch (button_result) {
     case APPLY:
-	draw_arc(new_a, ERASE);
 	changed = 1;
+	list_delete_arc(&objects.arcs, new_a);
+	redisplay_arc(new_a);
 	get_new_arc_values();
-	draw_arc(new_a, PAINT);
+	list_add_arc(&objects.arcs, new_a);
+	redisplay_arc(new_a);
 	break;
     case DONE:
-	draw_arc(new_a, ERASE);
 	get_new_arc_values();
-	new_a->next = NULL;
-	change_arc(old_a, new_a);
-	draw_arc(new_a, PAINT);
-	toggle_arcmarker(new_a);
+	redisplay_arcs(new_a, old_a);
+	clean_up();
+	old_a->next = new_a;
+	set_latestarc(old_a);
+	set_action_object(F_CHANGE, O_ARC);
+	set_modifiedflag();
 	reset_cursor();
 	break;
     case CANCEL:
-	if (changed) {
-	    draw_arc(new_a, ERASE);
-	    draw_arc(old_a, PAINT);
-	}
-	new_a->next = NULL;
+	list_delete_arc(&objects.arcs, new_a);
+	list_add_arc(&objects.arcs, old_a);
+	if (saved_objects.arcs && saved_objects.arcs->next &&
+	    saved_objects.arcs->next == new_a)
+		saved_objects.arcs->next = old_a;
+	else if (saved_objects.arcs == new_a)
+		saved_objects.arcs = old_a;
+	if (changed)
+	    redisplay_arcs(new_a, old_a);
 	free_arc(&new_a);
 	toggle_arcmarker(old_a);
 	reset_cursor();
@@ -1358,8 +1488,9 @@ make_window_spline(s)
 {
     set_temp_cursor(panel_cursor);
     toggle_splinemarker(s);
-    new_s = copy_spline(s);
-    new_s->next = s;
+    old_s = copy_spline(s);
+    new_s = s;
+
     pen_color = new_s->pen_color;
     fill_color = new_s->fill_color;
     put_generic_vals(new_s);
@@ -1392,39 +1523,45 @@ make_window_spline(s)
 static
 done_spline()
 {
-    old_s = new_s->next;
     switch (button_result) {
     case APPLY:
-	draw_spline(new_s, ERASE);
 	changed = 1;
+	list_delete_spline(&objects.splines, new_s);
+	redisplay_spline(new_s);
 	get_generic_vals(new_s);
 	get_generic_arrows((F_line *) new_s);
 	get_cap_style(new_s);
 	get_points(new_s->points, closed_spline(new_s));
 	if (int_spline(new_s))
 	    remake_control_points(new_s);
-	draw_spline(new_s, PAINT);
+	list_add_spline(&objects.splines, new_s);
+	redisplay_spline(new_s);
 	break;
     case DONE:
-	draw_spline(new_s, ERASE);
 	get_generic_vals(new_s);
 	get_generic_arrows((F_line *) new_s);
 	get_cap_style(new_s);
 	get_points(new_s->points, closed_spline(new_s));
 	if (int_spline(new_s))
 	    remake_control_points(new_s);
-	new_s->next = NULL;
-	change_spline(old_s, new_s);
-	draw_spline(new_s, PAINT);
-	toggle_splinemarker(new_s);
+	redisplay_splines(new_s, old_s);
+	clean_up();
+	old_s->next = new_s;
+	set_latestspline(old_s);
+	set_action_object(F_CHANGE, O_SPLINE);
+	set_modifiedflag();
 	reset_cursor();
 	break;
     case CANCEL:
-	if (changed) {
-	    draw_spline(new_s, ERASE);
-	    draw_spline(old_s, PAINT);
-	}
-	new_s->next = NULL;
+	list_delete_spline(&objects.splines, new_s);
+	list_add_spline(&objects.splines, old_s);
+	if (saved_objects.splines && saved_objects.splines->next &&
+	    saved_objects.splines->next == new_s)
+		saved_objects.splines->next = old_s;
+	else if (saved_objects.splines == new_s)
+		saved_objects.splines = old_s;
+	if (changed)
+	    redisplay_splines(new_s, old_s);
 	free_spline(&new_s);
 	toggle_splinemarker(old_s);
 	reset_cursor();
@@ -1441,6 +1578,8 @@ new_generic_values()
     generic_vals.thickness = atoi(panel_get_value(thickness_panel));
     generic_vals.pen_color = pen_color;
     generic_vals.fill_color = fill_color;
+    check_thick();
+    check_depth();
     generic_vals.depth = atoi(panel_get_value(depth_panel));
     /* include dash length in panel, too */
     generic_vals.style_val = (float) atof(panel_get_value(style_val_panel));
@@ -1545,7 +1684,7 @@ edit_cancel(w, ev)
  */
 
 static struct {
-    PIXRECT	    image;
+    icon_struct	   *image;
     Pixmap	    image_pm;
 }		pix_table[NUM_IMAGES];
 
@@ -1554,7 +1693,7 @@ static Pixmap	    arrow_table[NUM_ARROW_TYPES];
 static
 generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
     char	   *object_type, *sub_type;
-    PIXRECT	    icon;
+    icon_struct	   *icon;
     int		    (*d_proc) ();
     Boolean	    generics;
     Boolean	    arrows;
@@ -1625,7 +1764,7 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
     /* doesn't already exist, create a pixmap from the data (ala panel.c) */
     /* OpenWindows bug doesn't handle a 1-plane bitmap on a n-plane display */
     /* so we use CreatePixmap.... */
-    if (!image_pm) {
+    if (image_pm == 0) {
 	Pixel	    fg, bg;
 	/* get the foreground/background of the widget */
 	FirstArg(XtNforeground, &fg);
@@ -1633,7 +1772,7 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
 	GetValues(image);
 
 	image_pm = XCreatePixmapFromBitmapData(tool_d, canvas_win,
-				     (char *) icon->data, icon->width, icon->height,
+				     icon->bits, icon->width, icon->height,
 				     fg, bg, XDefaultDepthOfScreen(tool_s));
 	pix_table[i].image_pm = image_pm;
 	pix_table[i].image = icon;
@@ -1653,23 +1792,52 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
 	dist = image_height - label_height + button_distance;
     else
 	dist = button_distance;
-    FirstArg(XtNfromVert, label);
+
+    FirstArg(XtNlabel, " Done ");
+    NextArg(XtNfromVert, label);
     NextArg(XtNvertDistance, dist);
     but1 = XtCreateManagedWidget("done", commandWidgetClass, form, Args, ArgCount);
     XtAddCallback(but1, XtNcallback, (XtCallbackProc)done_button, (XtPointer) NULL);
 
     below = but1;
-    FirstArg(XtNfromHoriz, but1);
+    FirstArg(XtNlabel, "Apply ");
+    NextArg(XtNfromHoriz, but1);
     NextArg(XtNfromVert, label);
     NextArg(XtNvertDistance, dist);
     but1 = XtCreateManagedWidget("apply", commandWidgetClass, form, Args, ArgCount);
     XtAddCallback(but1, XtNcallback, (XtCallbackProc)apply_button, (XtPointer) NULL);
 
-    FirstArg(XtNfromHoriz, but1);
+    FirstArg(XtNlabel, "Cancel");
+    NextArg(XtNfromHoriz, but1);
     NextArg(XtNfromVert, label);
     NextArg(XtNvertDistance, dist);
     but1 = XtCreateManagedWidget("cancel", commandWidgetClass, form, Args, ArgCount);
     XtAddCallback(but1, XtNcallback, (XtCallbackProc)cancel_button, (XtPointer) NULL);
+
+    /* add "Screen Capture" and "Edit Image" buttons if picture object */
+    if (!strcmp(sub_type,"Picture Object")) {
+	if ( canHandleCapture( tool_d )  == True ) {
+	    FirstArg(XtNlabel,"Screen Capture");
+	    NextArg(XtNfromHoriz, but1);
+	    NextArg(XtNfromVert, label);
+	    NextArg(XtNvertDistance, dist);
+	    but1 = XtCreateManagedWidget("screen_capture",
+		commandWidgetClass, form, Args, ArgCount);
+	    XtAddCallback(but1, XtNcallback,
+		(XtCallbackProc)grab_button, (XtPointer) NULL);
+	}
+
+	if ( appres.image_editor != NULL && *appres.image_editor != (char) NULL) {
+	    FirstArg(XtNlabel,"Edit Image");
+	    NextArg(XtNfromHoriz, but1);
+	    NextArg(XtNfromVert, label);
+	    NextArg(XtNvertDistance, dist);
+	    but1 = XtCreateManagedWidget("edit_image",
+		commandWidgetClass, form, Args, ArgCount);
+	    XtAddCallback(but1, XtNcallback,
+		(XtCallbackProc)image_edit_button, (XtPointer) NULL);
+	}
+    }
 
     FirstArg(XtNborderWidth, 0);
     NextArg(XtNfromVert, below);
@@ -1762,20 +1930,20 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
 	    /* create the 1-plane bitmaps of the arrow images */
 	    /* these will go in the "left bitmap" part of the menu */
 	    if (arrow_table[0] == 0) {
-		char *image;
+		unsigned char *bits;
 		for (i=0; i<NUM_ARROW_TYPES; i++) {
-		    if (i==0) image = (char*) arrow0_image;
-		    else if (i==1) image = (char*) arrow1_image;
-		    else if (i==2) image = (char*) arrow2_image;
-		    else if (i==3) image = (char*) arrow3_image;
-		    else if (i==4) image = (char*) arrow4_image;
-		    else if (i==5) image = (char*) arrow5_image;
-		    else if (i==6) image = (char*) arrow6_image;
+		    if (i==0) bits = arrow0_bits;
+		    else if (i==1) bits = arrow1_bits;
+		    else if (i==2) bits = arrow2_bits;
+		    else if (i==3) bits = arrow3_bits;
+		    else if (i==4) bits = arrow4_bits;
+		    else if (i==5) bits = arrow5_bits;
+		    else if (i==6) bits = arrow6_bits;
 		    arrow_table[i] = XCreateBitmapFromData(tool_d,canvas_win,
-					image, 32, 32); 
+					bits, 32, 32); 
 		}
 	    }
-		
+
 	    FirstArg(XtNfromVert, below);
 	    NextArg(XtNborderWidth, 0);
 	    arrow_label = XtCreateManagedWidget("Arrows", labelWidgetClass,
@@ -2061,7 +2229,7 @@ static XtCallbackRec f_sel_callback[] =
 };
 
 set_font_image(widget)
-    TOOL	    widget;
+    Widget	    widget;
 {
     FirstArg(XtNbitmap, new_psflag ?
 	     psfont_menu_bitmaps[new_ps_font + 1] :
@@ -2160,14 +2328,14 @@ make_popup_menu_images(entries, nent, images, parent, callback)
 static
 pen_color_selection_panel()
 {
-    color_selection_panel("Pen color  = ","border_colors", &pen_color_panel,
+    color_selection_panel("Pen color  =","border_colors", &pen_color_panel,
 			generic_vals.pen_color, pen_color_select);
 }
 
 static
 fill_color_selection_panel()
 {
-    color_selection_panel("Fill color = ","fill_colors", &fill_color_panel,
+    color_selection_panel("Fill color =","fill_colors", &fill_color_panel,
 			generic_vals.fill_color, fill_color_select);
 }
 
@@ -2212,6 +2380,8 @@ make_color_popup_menu(parent, callback)
 				  NULL, ZERO);
 
     for (i = 0; i < NUM_STD_COLS+num_usr_cols; i++) {
+	if (i >= NUM_STD_COLS && colorFree[i-NUM_STD_COLS])
+	    continue;
 	set_color_name(i);
 	if (all_colors_available)
 	    FirstArg(XtNforeground, colors[i])
@@ -2333,12 +2503,12 @@ str_panel(string, name, pi_x)
     PIX_FONT	    temp_font;
     char	   *labelname, *textname;
 
-    /* make the labels of the widgets xxx_lab for the label part and xxx_text for
+    /* make the labels of the widgets xxx_label for the label part and xxx_text for
 	the asciiwidget part */
     labelname = (char *) malloc(strlen(name)+5);
     textname = (char *) malloc(strlen(name)+6);
     strcpy(labelname,name);
-    strcat(labelname,"_lab");
+    strcat(labelname,"_label");
     strcpy(textname,name);
     strcat(textname,"_text");
 
@@ -2352,8 +2522,8 @@ str_panel(string, name, pi_x)
     NextArg(XtNwidth, &pwidth);
     GetValues(beside);
     /* make panel as wide as image pane above less the label widget's width */
-    /* but at least 200 pixels wide */
-    width = max2(PS_FONTPANE_WD - pwidth + 2, 200);
+    /* but at least 220 pixels wide */
+    width = max2(PS_FONTPANE_WD - pwidth + 2, 220);
 
     /* count number of lines in this text string */
     nlines = 1;			/* number of lines in string */
@@ -2588,7 +2758,7 @@ Quit(widget, client_data, call_data)
     Widget	    widget;
     XtPointer	    client_data, call_data;
 {
-    edit_up = False;
+    popup_up = False;
     XtDestroyWidget(popup);
 }
 
@@ -2982,4 +3152,185 @@ Widget w;
 
 	/* enable mousefun kbd display */
 	XtAugmentTranslations(w, XtParseTranslationTable(kbd_translations));
+}
+
+check_depth()
+{
+    int depth;
+    depth = atoi(panel_get_value(depth_panel));
+    if (depth >= 0 && depth <= MAXDEPTH)
+	return;
+    if (depth < 0)
+	depth = 0;
+    else if (depth > MAXDEPTH)
+	depth = MAXDEPTH;
+    sprintf(buf, "%d", depth);
+    panel_set_value(depth_panel, buf);
+}
+
+check_thick()
+{
+    int thick;
+    thick = atoi(panel_get_value(thickness_panel));
+    if (thick >= 0 && thick <= MAXLINEWIDTH)
+	return;
+    if (thick < 0)
+	thick = 0;
+    else if (thick > MAXLINEWIDTH)
+	thick = MAXLINEWIDTH;
+    sprintf(buf, "%d", thick);
+    panel_set_value(thickness_panel, buf);
+}
+
+/*
+ these functions  push_apply_button, grab_button,
+                       popup_browse_panel & image_edit_button
+      implement gif screen capture facility
+   note push_apply_button also called from w_browse.c
+*/
+
+void
+push_apply_button()
+{
+extern int ignore_exp_cnt;
+   /* above int is used as kludge in canvas_exposed
+        to skip early exposes events - we take advantage to
+        stop the overall expose event zapping our just drawn image  */
+
+    /* get rid of anything that ought to be done - X wise */
+    app_flush();
+
+    button_result = APPLY;
+    done_proc();
+
+    /* ask canvas_expose to skip at least one expose event */
+    ignore_exp_cnt++;
+}
+
+
+static          XtCallbackProc
+grab_button(panel_local, item, event)
+    Widget          panel_local;
+    Widget         *item;
+    int            *event;
+{
+    time_t	    tim;
+    uid_t	    uid;
+    pid_t	    pid;
+    int		    captured;
+    char	    tmpfile[32];
+    struct passwd  *who;
+
+/*  build up a temporary file name from the user login name and
+	the current time */
+    who = getpwuid(getuid());
+    tim = time( (time_t*)0);
+    sprintf(tmpfile,"%s_%d.gif",who->pw_name,tim);
+                                                
+    /* unmap the xfig windows, capture a gif into our tmpfile, 
+        then remap our windows!    */
+
+    XtUnmapWidget(tool);
+    XtUnmapWidget(popup);
+    XSync(tool_d, False);
+    captured = captureGif( tmpfile );
+    XtMapWidget(tool);
+    XtMapWidget(popup);
+
+    if ( captured == True ) {
+      panel_set_value( pic_name_panel, tmpfile);
+      push_apply_button();
+    }
+}
+
+/* 
+  If edit button has been created we
+   can get here - just invoke an editor on the current file 
+*/
+
+	char	*strtok();
+static	int	argc=0;
+static	char	*argv[20];
+static	char	*imageEditor;
+
+static          XtCallbackProc
+image_edit_button(panel_local, item, event)
+    Widget          panel_local;
+    Widget         *item;
+    int            *event;
+{
+    time_t tim;
+    uid_t uid;
+    pid_t pid;
+    char tmpfile[32];
+    char *s;
+    struct stat original_stat;
+    int err;
+
+    /* get the filename for the picture object */
+    s = panel_get_value(pic_name_panel);
+    if (s == NULL || *s == '\0')	/* no name, return */
+	return;
+
+    if (stat( s, &original_stat ) != 0 ) /* failed! no point in continuing */
+        return;
+
+    button_result = APPLY;
+
+    if (argc==0) {
+	/* get first word from string as the program */
+	imageEditor = strtok(appres.image_editor," \t");
+
+	/* if there is more than one word, separate args */
+	while ((argv[argc]=strtok((char*) NULL," \t")) && argc < 20)
+	    argc++;
+    }
+    argv[argc]=s;		/* put the filename last */
+    argv[argc+1]='\0';		/* terminate the list */
+    pid = fork();
+    if ( pid == 0 ) {
+	err = execvp( imageEditor, argv);
+	/* should only come here if an error in the execlp */
+	fprintf(stderr,"Error in exec'ing image editor (%s): %s\n",
+			imageEditor, sys_errlist[errno]);
+        exit(-1);
+    }
+
+    if ( pid > 0 ) { /* wait for the lad to finish */
+        int status;
+        struct stat new_stat;
+
+    	/*  disappear xfig windows */
+    	XtUnmapWidget(tool);
+	XtUnmapWidget(popup);
+    	XSync(tool_d, False);
+
+        waitpid( pid, &status, 0 );
+
+        XtMapWidget(tool);  /* bring back the xfig windows */
+        XtMapWidget(popup);
+
+        /* if file modification time has changed zap the new-line
+           filename - causes a reread of the file as it thinks
+           the name has changed  */
+        stat( s, &new_stat );
+        if ( original_stat.st_mtime != new_stat.st_mtime )
+           {
+           new_l->pic->file[0] = '\0';
+           push_apply_button();
+           }
+
+    } else
+        fprintf(stderr,"Unable to fork to exec image editor (%s): %s\n",
+		imageEditor, sys_errlist[errno]);
+}
+
+extern void popup_browse_panel();
+static          XtCallbackProc
+browse_button(panel_local, item, event)
+    Widget          panel_local;
+    Widget         *item;
+    int            *event;
+{
+    popup_browse_panel( form );
 }

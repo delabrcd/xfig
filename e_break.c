@@ -32,7 +32,7 @@ static int	init_break(), init_break_only(), init_break_tag();
 
 break_selected()
 {
-    set_mousefun("break compound", "break and tag", "");
+    set_mousefun("break compound", "break and tag", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_break_only);

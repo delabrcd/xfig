@@ -167,7 +167,6 @@ constrainedangle_line(x, y)
 {
     double	    angle, dx, dy;
 
-    length_msg(MSG_LENGTH);
     if (x == cur_x && y == cur_y)
 	return;
 
@@ -209,6 +208,7 @@ constrainedangle_line(x, y)
 	    angle45_line(x, y);
     }
     elastic_line();
+    length_msg(MSG_LENGTH);
 }
 
 angle0_line(x, y)

@@ -18,22 +18,51 @@ Please refer any questions/bug fixes/contributions etc. about TransFig or
 xfig to me.
 
 Brian Smith
-Lawrence Berkeley Laboratory
+Lawrence Berkeley National Laboratory
 bvsmith@lbl.gov
 ***************************************************************************
 
-Note that although I work at Lawrence Berkeley Laboratory (LBL) I don't speak 
-for LBL nor do I represent LBL with respect to my work on TransFig and xfig,
-nor does LBL make any representations about the suitability of this software 
-for any purpose.
+Note that although I work at Lawrence Berkeley National Laboratory (LBNL)
+I don't speak for LBNL nor do I represent LBNL with respect to my work on
+TransFig and xfig, nor does LBL make any representations about the suitability
+of this software for any purpose.
+
 Here is the legal part:
 
-THE LAWRENCE BERKELEY LABORATORY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS 
-SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
-EVENT SHALL THE AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL 
-DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, 
-WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING 
-OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+THE LAWRENCE BERKELEY NATIONAL LABORATORY DISCLAIMS ALL WARRANTIES WITH REGARD
+TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS, IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+SOFTWARE.
+______________________________________________________________________________
+
+NOTE 1: Because Unisys has stated that they will not charge royalties for the
+	use of the LZW compression algorithm in FREE programs, xfig will
+	continue to support importing and exporting of GIF images.
+	However, be aware that if you sell xfig, for example as part of
+	a CD-ROM package with freeware, you may be liable for paying royalties
+	to Unisys.
+	The authors of xfig and the Lawrence Berkeley Laboratory cannot be held
+	responsible in any case.
+
+NOTE 2: Because of the patent/licensing issue with Unisys and the LZW compression
+	algorithm used in GIF files, the author of Ghostscript has decided to
+	remove GIF support from that program.
+	xfig will now use PCX output from Ghostscript when importing EPS files.
+	This means that you must compile Ghostscript with the pcx256 and pbmraw
+	drivers.
+	Additionally, there is a bug in the pcx driver in Aladdin Ghostscript
+	versions prior to 3.32, which writes an incorrect pcx file for images
+	with odd width (not even).  There is a compile-time flag called PCXBUG
+	set (the default) in the Imakefile to make xfig add one pixel to the
+	width of an odd-width image when it reads in the pcx output from
+	Ghostscript.
+	If you have Aladdin Ghostscript 3.32 or newer (which wasn't released
+	as of this writing) you may comment out that flag and your images will
+	have the proper width.  However, one pixel extra in width shouldn't
+	matter for most imported eps files.
 
 ++++++++++++++++++++++
 NOTE about version 3.0
@@ -54,39 +83,55 @@ NOTE about version 3.0
 INSTALLATION NOTES:
 ===================
 
-1. Edit the Imakefile if you need to customize it (see following notes)
-2. Type "xmkmf" to create the Makefile from the Imakefile
-   2a. For a 3D look, see NOTE below
-3. Type "make install" (if you don't do this step, be sure to install resources)
-4. Type "make install.man"
-5. For X11R5 color implementations, specify "*customization: -color" in your 
-	.Xdefaults or .Xresources file.
-	NOTE: this only works under X11R5.
+1. Edit the Imakefile if you need to customize it (see following notes).
+	For a 3D look, see NOTE below.
+	If you already have the jpeg library on your system uncomment
+	the "#define USEINSTALLEDJPEG" line in the Imakefile.
+	You must have version 5b or newer of the jpeg library.
+2. Type "xmkmf" to create the Makefile from the Imakefile.
+3. Type "make"         (**** This MUST be done before "make install" ****).
+	Note: The "configure" script will be automatically run in the jpeg
+	directory if you are using the jpeg library supplied with xfig.
+	This will create the Makefile in that directory from your system
+	configuration.  
+4. Type "make install"
+	If you don't do this step, be sure to install the app-defaults files
+	Fig.ad and Fig-color.ad and the CompKeyDB file in the directory
+	specified by XFIGLIBDIR (default: /usr/local/lib/X11/xfig).
+5. Type "make install.man".
+6. For X11R5 and later color implementations, specify "*customization: -color"
+	in your .Xdefaults or .Xresources file.
+	NOTE: this only works under X11R5 and later.
 
 If you have the XPM3 package (X11 color pixmaps) you can export your figures
    in that format.  Also, you can import xpm files as picture objects.
    Uncomment the XPMDEFINES and related variables in the Imakefile in that case.
    You need version 3.4c or newer.  This is available from ftp.x.org in
    /contrib/libraries.
-If you have ghostscript, enable the -DGSBIT flag in the Imakefile and xfig will
+If you have Ghostscript, enable the -DGSBIT flag in the Imakefile and xfig will
    attempt to use it to interpret any encapsulated Postscript (EPS) files you
-   import.  Ghostscript must be compiled with with the "gif8" and "pbmraw"
+   import.  Ghostscript must be compiled with with the "pcx256" and "pbmraw"
    drivers.  The pbm driver is used when you run xfig on a monochrome display
-   and the gif8 driver is used on a color display.
+   and the pcx256 driver is used on a color display.
+   See NOTE 2 above about the pcx driver in Ghostscript.
 If your system doesn't have strstr(), add the flag -DNOSTRSTR in the Imakefile
    in the DEFINES line.
-If you are running on an IBM RS/6000 with AIX 3.2 or a Sun with Solaris 2.3,
-   uncomment the lines that define DPSLIB and DPSDEF in the Imakefile and you
-   will see the full PostScript object when using EPS objects.
+If your system doesn't have strcasecmp() and/or strncasecmp(), uncomment the
+   lines in the Imakefile with HAVE_NO_STRCASECMP and HAVE_NO_STRNCASECMP.
 If you have an input tablet and your X server supports the XInputExtension
    uncomment the lines that define TABLIB and USETAB in the Imakefile.
    Start xfig with -tablet or define the resource Fig.Tablet to use it.
  
-NOTE: For a 3D look, I recommend using Kaleb Keithley's 3D Athena Widget set,
-a direct replacement for the Xaw library.  After you compile and install that
-package, and after step 1 above, just uncomment the definition of XAWLIB in
-the Imakefile and it will use the 3D widget set.
-This set is available from ftp.x.org.
+NOTE:	For a 3D look, I recommend using Kaleb Keithley's 3D Athena Widget set,
+	a direct replacement for the Xaw library.  After you compile and install that
+	package, and after step 1 above, just uncomment the definition of XAWLIB in
+	the Imakefile and it will use the 3D widget set.
+	This set is available from ftp.x.org.
+
+NOTE:	The Display PostScript code is not supported anymore until some kind
+	user can debug it for me, as I have no access to a server with DPS
+	extensions.  Use Ghostscript for rendering your EPS files.  It gives
+	a color image on the xfig canvas now anyway.
 
 The maximum width of the top ruler is set to 1020 pixels and the height of the
 side ruler to 860 pixels.  If your server can handle pixmaps larger than this
@@ -108,6 +153,15 @@ call is quite slow.
 The SMOOTHMOTION flag MIGHT be necessary for older versions of OpenWindows on
 certain machines if the performance is slow when moving or drawing objects.
 
+The pattern shading (e.g. bricks, shingles, etc.) only work for PostScript,
+GIF, JPEG, XPM and X11 Bitmap output.
+
+Unless you have an image (picture object) in your figure, you may not gain
+very much by exporting in JPEG over GIF because of the nature of compression
+used in both methods.  GIF is usually better for line drawings or drawings
+with large blocks of continuous color (e.g. filled polygons).  JPEG is usually
+better for compressing images.
+
 ----------------------
 Printing your figures:
 ----------------------
@@ -124,11 +178,11 @@ must define -DBSDLPR in the Imakefile/Makefile.
 You may also need to uncomment the following string in the Fig.ad
 app-defaults file:
 
-!Fig*job_params*string:		-oPS
+!Fig*job_params*string:		-T PS
 
------------------
+-------------
 Solaris users
------------------
+-------------
 
 You should have:
 
@@ -144,6 +198,12 @@ Add "-lc" to the LOCAL_LIBRARIES variable in the Imakefile to link with
 Some people have had trouble with the Sun cc 3.0.1 compiler and optimization.
 You may need to shut off optimization.
 A common symptom is that xfig just core dumps when starting.
+
+-------------
+XFree86 Users
+-------------
+
+Version 3.1 of XFree86 causes problems.  Get version 3.1.1 or newer.
 
 ----------------------------------------------
 Possible problems encountered installing xfig:
@@ -242,7 +302,7 @@ POSSIBLE CAUSE AND SOLUTION:
 >>>	    last_action = last_action;
 	    tail(&objects, &object_tails);
 ________________________________________________________________________________
-PROBLEMS:
+PROBLEM:
 	On HP machines, the capitalization of some letters in the text window 
 	in the edit popup for text objects are wrong.
 
@@ -251,10 +311,18 @@ POSSIBLE CAUSE AND SOLUTION:
 	BEFORE the uppercase definitions.  This should be the case for the 
 	CompKeyDB file shipped with xfig 2.1.5 and later.
 ________________________________________________________________________________
-PROBLEMS:
-	On HP computers using cc compiler version A.09.61 there is a problem with
-	level 3 optimization.  Use +O2 instead of +O3.
+PROBLEM:
+	On some HP computers using native cc compiler there is a problem with
+	level 3 optimization.
 
 POSSIBLE CAUSE AND SOLUTION:
-	Use level 2 instead.
+	Use +O2 instead of +O3 or get patch from HP for the compiler from
+	http://support.mayfield.hp.com/
+	Choose: Patch Browsing and Downloading
 
+________________________________________________________________________________
+PROBLEM:
+	On Linux machines xfig crashes.
+
+POSSIBLE CAUSE AND SOLUTION:
+	On linux you need to have gcc version 2.6.2 or newer.

@@ -36,7 +36,7 @@ static		init_regpoly_drawing(), create_regpoly(), cancel_regpoly();
 
 regpoly_drawing_selected()
 {
-    set_mousefun("center point", "", "");
+    set_mousefun("center point", "", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     canvas_leftbut_proc = init_regpoly_drawing;
@@ -53,7 +53,7 @@ init_regpoly_drawing(x, y)
     cur_x = fix_x = x;
     cur_y = fix_y = y;
     work_numsides = cur_numsides;
-    set_mousefun("final point", "", "cancel");
+    set_mousefun("final point", "", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_locmove_proc = resizing_poly;
     canvas_leftbut_proc = create_regpoly;
@@ -129,8 +129,9 @@ create_regpoly(x, y)
     }
     append_point(x, y, &point);
 
-    draw_line(poly, PAINT);
     add_line(poly);
+    /* draw it and anything on top of it */
+    redisplay_line(poly);
     regpoly_drawing_selected();
     draw_mousefun_canvas();
 }

@@ -23,11 +23,20 @@
 #include "object.h"
 #include "paintop.h"
 #include "w_drawprim.h"
-#include "w_icons.h"
 #include "w_indpanel.h"
 #include "w_util.h"
 #include "w_mousefun.h"
 #include "w_setup.h"
+
+/* from e_rotate.c */
+extern int	setcenter;
+extern int	setcenter_x;
+extern int	setcenter_y;
+
+/* from e_flip.c */
+extern int	setanchor;
+extern int	setanchor_x;
+extern int	setanchor_y;
 
 extern          finish_text_input();
 extern          erase_objecthighlight();
@@ -103,14 +112,14 @@ static void stub_enter_mode_btn();
 
 #define MAX_MODEMSG_LEN 80
 typedef struct mode_switch_struct {
-    PIXRECT         icon;
-    int             mode;
-    int             (*setmode_func) ();
-    int             objmask;
-    int             indmask;
-    char            modemsg[MAX_MODEMSG_LEN];
-    TOOL            widget;
-    Pixmap          normalPM, reversePM;
+    icon_struct	   *icon;
+    int		    mode;
+    int		    (*setmode_func) ();
+    int		    objmask;
+    int		    indmask;
+    char	    modemsg[MAX_MODEMSG_LEN];
+    Widget	    widget;
+    Pixmap	    normalPM, reversePM;
 }               mode_sw_info;
 
 #define		setmode_action(z)    (z->setmode_func)(z)
@@ -178,19 +187,18 @@ static mode_sw_info mode_switches[] = {
     I_MIN1, "DELETE objects",},
     {&update_ic, F_UPDATE, update_selected, M_ALL,
     I_OBJECT, "UPDATE object <-> current settings",},
-    {&change_ic, F_EDIT, edit_item_selected, M_ALL,
+    {&edit_ic, F_EDIT, edit_item_selected, M_ALL,
     I_MIN1, "CHANGE OBJECT via EDIT pane",},
     {&flip_x_ic, F_FLIP, flip_ud_selected, M_NO_TEXT,
-    I_MIN1, "FLIP objects up or down",},
+    I_MIN2, "FLIP objects up or down",},
     {&flip_y_ic, F_FLIP, flip_lr_selected, M_NO_TEXT,
-    I_MIN1, "FLIP objects left or right",},
+    I_MIN2, "FLIP objects left or right",},
     {&rotCW_ic, F_ROTATE, rotate_cw_selected, M_ALL,
     I_ROTATE, "ROTATE objects clockwise",},
     {&rotCCW_ic, F_ROTATE, rotate_ccw_selected, M_ALL,
     I_ROTATE, "ROTATE objects counter-clockwise",},
-    {&convert_ic, F_CONVERT, convert_selected,
-	(M_POLYLINE_LINE | M_POLYLINE_POLYGON | M_SPLINE_INTERP), I_MIN1,
-    "CONVERT lines (polygons) into splines (closed-splines) or vice versa",},
+    {&convert_ic, F_CONVERT, convert_selected, (M_POLYLINE | M_SPLINE_INTERP),
+    I_MIN1, "CONVERT lines into splines, boxes into arc-boxes or vice versa",},
     {&autoarrow_ic, F_AUTOARROW, arrow_head_selected, M_OPEN_OBJECT,
     I_MIN1 | I_LINEWIDTH | I_ARROWTYPE, "ADD/DELETE ARROWs",},
 };
@@ -218,8 +226,6 @@ stub_enter_mode_btn(widget, closure, event, continue_to_dispatch)
     XEvent*       event;
     Boolean*      continue_to_dispatch;
 {
-    FirstArg(XtNhighlightThickness, 2);
-    SetValues(widget);
     draw_mousefun_mode();
 }
 
@@ -279,7 +285,7 @@ static String   mode_translations =
 
 int
 init_mode_panel(tool)
-    TOOL            tool;
+    Widget           tool;
 {
     register int    i;
     register mode_sw_info *sw;
@@ -359,18 +365,20 @@ setup_mode_panel()
     SetValues(d_label);
     SetValues(e_label);
 
+    /*
     if (appres.INVERSE) {
 	FirstArg(XtNbackground, WhitePixelOfScreen(tool_s));
     } else {
 	FirstArg(XtNbackground, BlackPixelOfScreen(tool_s));
     }
     SetValues(mode_panel);
+    */
 
     for (i = 0; i < NUM_MODE_SW; ++i) {
 	msw = &mode_switches[i];
 	/* create normal bitmaps */
 	msw->normalPM = XCreatePixmapFromBitmapData(d, XtWindow(msw->widget),
-		       (char *) msw->icon->data, msw->icon->width, msw->icon->height,
+		       msw->icon->bits, msw->icon->width, msw->icon->height,
 				   but_fg, but_bg, DefaultDepthOfScreen(s));
 
 	FirstArg(XtNbackgroundPixmap, msw->normalPM);
@@ -378,7 +386,7 @@ setup_mode_panel()
 
 	/* create reverse bitmaps */
 	msw->reversePM = XCreatePixmapFromBitmapData(d, XtWindow(msw->widget),
-		       (char *) msw->icon->data, msw->icon->width, msw->icon->height,
+		       msw->icon->bits, msw->icon->width, msw->icon->height,
 				   but_bg, but_fg, DefaultDepthOfScreen(s));
     }
 
@@ -399,6 +407,15 @@ sel_mode_but(widget, closure, event, continue_to_dispatch)
     XButtonEvent    xbutton;
     mode_sw_info    *msw = (mode_sw_info *) closure;
     int             new_objmask;
+
+    /* erase any existing anchor for flips */
+    if (setanchor)
+	center_marker(setanchor_x, setanchor_y);
+    /* and any center for rotations */
+    if (setcenter)
+	center_marker(setcenter_x, setcenter_y);
+    setcenter = 0;
+    setanchor = 0;
 
     xbutton = event->xbutton;
     if (action_on) {
@@ -517,7 +534,7 @@ turn_off_current()
 }
 
 change_mode(icon)
-PIXRECT icon;
+icon_struct *icon;
 {
     int i;
     XButtonEvent ev; /* To fake an event with */
@@ -528,6 +545,8 @@ PIXRECT icon;
 	    sel_mode_but(0,&mode_switches[i],&ev,0);
 	    break;
 	}
+    /* force update of mouse function window */
+    draw_mousefun_canvas();
 }
 
 static stub_circlebyradius_drawing_selected()
@@ -692,7 +711,7 @@ static stub_arrow_head_selected()
 
 static stub_edit_item_selected()
 {
-	change_mode(&change_ic);
+	change_mode(&edit_ic);
 }
 
 static stub_update_selected()

@@ -25,12 +25,13 @@
 #include "object.h"
 #include "mode.h"
 #include "u_fonts.h"
+#include "w_color.h"
 #include "w_drawprim.h"
 #include "w_mousefun.h"
 #include "w_setup.h"
 #include "w_util.h"
 #ifdef USE_XPM_ICON
-#include <X11/xpm.h>
+#include <xpm.h>
 #endif /* USE_XPM_ICON */
 
 /* input extensions for an input tablet */
@@ -44,7 +45,6 @@ extern void	quit(), undo(), paste(), redisplay_canvas(), delete_all_cmd();
 extern void	popup_print_panel(), popup_file_panel(), popup_export_panel();
 extern void	do_load(), do_save(), popup_unit_panel();
 extern void	inc_zoom(), dec_zoom();
-extern Boolean	switch_colormap();
 
 extern void	setup_cmd_panel();
 extern		X_error_handler();
@@ -70,6 +70,7 @@ static int	Idefault = DEFAULT;
 static int	Izero = 0;
 static int	Ione = 1;
 static int	Itwo = 2;
+static float	Fzero = 0.0;
 static float	Fone = 1.0;
 
 /* actions so that we may install accelerators at the top level */
@@ -100,9 +101,9 @@ static XtResource application_resources[] = {
     {"debug", "Debug", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, DEBUG), XtRBoolean, (caddr_t) & false},
     {"pwidth", XtCWidth, XtRFloat, sizeof(float),
-    XtOffset(appresPtr, tmp_width), XtRInt, (caddr_t) & Izero},
+    XtOffset(appresPtr, tmp_width), XtRFloat, (caddr_t) & Fzero},
     {"pheight", XtCHeight, XtRFloat, sizeof(float),
-    XtOffset(appresPtr, tmp_height), XtRInt, (caddr_t) & Izero},
+    XtOffset(appresPtr, tmp_height), XtRFloat, (caddr_t) & Fzero},
     {XtNreverseVideo, XtCReverseVideo, XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, INVERSE), XtRBoolean, (caddr_t) & false},
     {"trackCursor", "Track", XtRBoolean, sizeof(Boolean),
@@ -120,11 +121,11 @@ static XtResource application_resources[] = {
     {"startpsFont", "StartpsFont", XtRString, sizeof(char *),
     XtOffset(appresPtr, startpsFont), XtRString, (caddr_t) NULL},
     {"startfontsize", "StartFontSize", XtRFloat, sizeof(float),
-    XtOffset(appresPtr, startfontsize), XtRInt, (caddr_t) & Izero},
+    XtOffset(appresPtr, startfontsize), XtRFloat, (caddr_t) & Fzero},
     {"internalborderwidth", "InternalBorderWidth", XtRInt, sizeof(int),
     XtOffset(appresPtr, internalborderwidth), XtRInt, (caddr_t) & Izero},
     {"starttextstep", "StartTextStep", XtRFloat, sizeof(float),
-    XtOffset(appresPtr, starttextstep), XtRInt, (caddr_t) & Izero},
+    XtOffset(appresPtr, starttextstep), XtRFloat, (caddr_t) & Fzero},
     {"startfillstyle", "StartFillStyle", XtRInt, sizeof(int),
     XtOffset(appresPtr, startfillstyle), XtRInt, (caddr_t) & Idefault},
     {"startlinewidth", "StartLineWidth", XtRInt, sizeof(int),
@@ -147,8 +148,6 @@ static XtResource application_resources[] = {
     XtOffset(appresPtr, exportLanguage), XtRString, (caddr_t) "eps"},
     {"flushleft", "FlushLeft", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, flushleft), XtRBoolean, (caddr_t) & false},
-    {"textoutline", "TextOutline", XtRBoolean, sizeof(Boolean),
-    XtOffset(appresPtr, textoutline), XtRBoolean, (caddr_t) & false},
     {"userscale", "UserScale", XtRFloat, sizeof(float),
     XtOffset(appresPtr, user_scale), XtRFloat, (caddr_t) & Fone},
     {"userunit", "UserUnit", XtRString, sizeof(char *),
@@ -159,11 +158,15 @@ static XtResource application_resources[] = {
     XtOffset(appresPtr, max_image_colors), XtRInt, (caddr_t) & Izero},
     {"dont_switch_cmap", "Dont_switch_cmap", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, dont_switch_cmap), XtRBoolean, (caddr_t) & false},
-#ifdef USE_TAB
     {"tablet", "Tablet", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, tablet), XtRBoolean, (caddr_t) & false},
-#endif
+    {"rulerthick", "RulerThick", XtRInt, sizeof(int),
+    XtOffset(appresPtr, rulerthick), XtRInt, (caddr_t) & Izero},
+    {"image_editor", "ImageEditor", XtRString, sizeof(char *),
+    XtOffset(appresPtr, image_editor), XtRString, (caddr_t) NULL},
 };
+
+/* BE SURE TO UPDATE THE -help COMMAND OPTION LIST IF ANY CHANGES ARE MADE HERE */
 
 static XrmOptionDescRec options[] =
 {
@@ -202,7 +205,7 @@ static XrmOptionDescRec options[] =
     {"-keyFile", ".keyFile", XrmoptionSepArg, 0},
     {"-exportLanguage", ".exportLanguage", XrmoptionSepArg, 0},
     {"-flushleft", ".flushleft", XrmoptionNoArg, "True"},
-    {"-textoutline", ".textoutline", XrmoptionNoArg, "True"},
+    {"-center", ".flushleft", XrmoptionNoArg, "False"},
     {"-userscale", ".userscale", XrmoptionSepArg, 0},
     {"-userunit", ".userunit", XrmoptionSepArg, 0},
     {"-but_per_row", ".but_per_row", XrmoptionSepArg, 0},
@@ -210,14 +213,76 @@ static XrmOptionDescRec options[] =
     {"-startfillstyle", ".startfillstyle", XrmoptionSepArg, 0},
     {"-startlinewidth", ".startlinewidth", XrmoptionSepArg, 0},
     {"-startgridmode", ".startgridmode",  XrmoptionSepArg, 0},
-    {"-maximagecolors", ".max_image_colors", XrmoptionSepArg, 0},
+    {"-max_image_colors", ".max_image_colors", XrmoptionSepArg, 0},
     {"-dontswitchcmap", ".dont_switch_cmap", XrmoptionNoArg, "True"},
-#ifdef USE_TAB
     {"-tablet", ".tablet", XrmoptionNoArg, "True"},
-#endif
+    {"-rulerthick", ".rulerthick", XrmoptionSepArg, 0},
+    {"-image_editor", ".image_editor", XrmoptionSepArg, 0},
 };
 
-Atom wm_delete_window;
+char *help_list =
+    "Usage:\n\
+xfig [-help] \
+[-boldFont <font>] \
+[-but_per_row <number>] \
+[-buttonFont <font>] \
+\n     \
+[-center] \
+[-centimeters] \
+[-flushleft] \
+[-debug] \
+[-dontswitchcmap] \
+\n     \
+[-exportLanguage <language>] \
+[-iconGeometry <geom>] \
+[-image_editor <editor>] \
+\n     \
+[-imperial] \
+[-inches] \
+[-internalBW <width>] \
+[-internalBorderWidth <width>] \
+\n     \
+[-inverse] \
+[-keyFile <file>] \
+[-landscape] \
+[-latexfonts] \
+[-left] \
+\n     \
+[-max_image_colors <number>] \
+[-metric] \
+[-monochrome] \
+[-normalFont <font>] \
+\n     \
+[-noscalablefonts] \
+[-notrack] \
+[-pheight <height>] \
+[-portrait] \
+\n     \
+[-pwidth <width>] \
+[-right] \
+[-rulerwidth <width>] \
+[-scalablefonts] \
+\n     \
+[-showallbuttons] \
+[-specialtext]\
+[-startfillstyle <style>] \
+\n     \
+[-startfontsize <size>] \
+[-startgridmode <number>] \
+[-startlatexFont <font>] \
+\n     \
+[-startlinewidth <width>] \
+[-startpsFont <font>] \
+[-starttextstep <number>] \
+\n     \
+[-tablet (if installed)] \
+[-track] \
+[-userscale <scale>] \
+\n     \
+[-userunit <units>] \
+[file]\n";
+
+Atom wm_protocols[2];
 
 static void	check_for_resize();
 static void	check_colors();
@@ -241,14 +306,14 @@ static String	tool_translations =
 			"<Message>WM_PROTOCOLS:Quit()\n";
 
 #define NCHILDREN	9
-static TOOL	form;
+static Widget	form;
 
 main(argc, argv)
     int		    argc;
     char	   *argv[];
 
 {
-    TOOL	    children[NCHILDREN];
+    Widget	    children[NCHILDREN];
     int		    ichild;
     int		    init_canv_wd, init_canv_ht;
     XWMHints	   *wmhints;
@@ -259,8 +324,16 @@ main(argc, argv)
 
     DeclareArgs(5);
 
+    if (argc > 1 && strcmp(argv[1],"-help")==0) {
+	fprintf(stderr,"%s",help_list);
+	exit(0);
+    }
+
     /* we are not writing the figure to the bitmap */
     writing_bitmap = False;
+
+    /* get the current directory so we can go back here on abort */
+    get_directory(orig_dir);
 
     /* get the TMPDIR environment variable for temporary files */
     if ((TMPDIR = getenv("XFIGTMPDIR"))==NULL)
@@ -325,6 +398,37 @@ main(argc, argv)
         NextArg(XtNiconY, y);
         SetValues(tool);
     }
+
+    /* setup the defaults or the user preferences */
+
+    if (appres.max_image_colors == 0)
+	appres.max_image_colors = DEF_MAX_IMAGE_COLS;
+
+    if (appres.startfontsize >= 1.0)
+	cur_fontsize = round(appres.startfontsize);
+
+    /* allow "Modern" for "Sans Serif" and allow "SansSerif" (no space) */
+    if (appres.startlatexFont) {
+        if (strcmp(appres.startlatexFont,"Modern")==0 ||
+	    strcmp(appres.startlatexFont,"SansSerif")==0)
+	      cur_latex_font = latexfontnum ("Sans Serif");
+    } else {
+	    cur_latex_font = latexfontnum (appres.startlatexFont);
+    }
+
+    cur_ps_font = psfontnum (appres.startpsFont);
+
+    if (appres.starttextstep > 0.0)
+	cur_textstep = appres.starttextstep;
+
+    if (appres.startfillstyle >= 0)
+	cur_fillstyle = min2(appres.startfillstyle,NUMFILLPATS-1);
+
+    if (appres.startlinewidth >= 0)
+	cur_linewidth = min2(appres.startlinewidth,MAXLINEWIDTH);
+
+    if (appres.startgridmode >= 0)
+	cur_gridmode = min2(appres.startgridmode,GRID_3);
 
     /* turn off PSFONT_TEXT flag if user specified -latexfonts */
     if (appres.latexfonts)
@@ -399,32 +503,6 @@ main(argc, argv)
     form = XtCreateManagedWidget("form", formWidgetClass, tool,
 				 Args, ArgCount);
 
-    if (appres.max_image_colors == 0)
-	appres.max_image_colors = DEF_MAX_IMAGE_COLS;
-
-    if (cur_fontsize == 0)
-	cur_fontsize = (int) appres.startfontsize;
-    if (cur_fontsize == 0)
-	cur_fontsize = DEF_FONTSIZE;
-
-    if (cur_latex_font == 0)
-	cur_latex_font = latexfontnum (appres.startlatexFont);
-
-    if (cur_ps_font == 0)
-	cur_ps_font = psfontnum (appres.startpsFont);
-
-    if (appres.starttextstep > 0.0)
-	cur_textstep = appres.starttextstep;
-
-    if (appres.startfillstyle >= 0)
-	cur_fillstyle = min2(appres.startfillstyle,NUMFILLPATS-1);
-
-    if (appres.startlinewidth >= 0)
-	cur_linewidth = min2(appres.startlinewidth,MAXLINEWIDTH);
-
-    if (appres.startgridmode >= 0)
-	cur_gridmode = min2(appres.startgridmode,GRID_3);
-
     if (INTERNAL_BW == 0)
 	INTERNAL_BW = appres.internalborderwidth;
     if (INTERNAL_BW <= 0)
@@ -442,13 +520,17 @@ main(argc, argv)
     init_canv_ht = appres.tmp_height *
 	(appres.INCHES ? PIX_PER_INCH : PIX_PER_CM)/ZOOM_FACTOR;
 
+    RULER_WD = appres.rulerthick;
+    if (RULER_WD < DEF_RULER_WD)
+	RULER_WD = DEF_RULER_WD;
+
     if (init_canv_wd == 0)
 	init_canv_wd = appres.landscape ? DEF_CANVAS_WD_LAND :
 	    DEF_CANVAS_WD_PORT;
 
     if (init_canv_ht == 0)
 	init_canv_ht = appres.landscape ? DEF_CANVAS_HT_LAND :
-	    DEF_CANVAS_HT_PORT;
+	    DEF_CANVAS_HT_PORT;;
 
     setup_sizes(init_canv_wd, init_canv_ht);
     (void) init_cmd_panel(form);
@@ -485,8 +567,13 @@ main(argc, argv)
     /* make sure we have the most current colormap */
     set_cmap(tool_w);
 
+    /* get this one for other sub windows too */
     wm_delete_window = XInternAtom(XtDisplay(tool), "WM_DELETE_WINDOW", False);
-    (void) XSetWMProtocols(XtDisplay(tool), tool_w, &wm_delete_window, 1);
+
+    /* for the main window trap delete window and save_yourself (my_quit) is called */
+    wm_protocols[0] = wm_delete_window;
+    wm_protocols[1] = XInternAtom(XtDisplay(tool), "WM_SAVE_YOURSELF", False);
+    (void) XSetWMProtocols(XtDisplay(tool), tool_w, wm_protocols, 2);
 
     /* use the XPM color icon for color display */
 #ifdef USE_XPM_ICON
@@ -570,6 +657,14 @@ main(argc, argv)
     }
 
     init_gc();
+
+    /* get the size of the whole shebang */
+    FirstArg(XtNwidth, &w);
+    NextArg(XtNheight, &h);
+    GetValues(tool);
+    TOOL_WD = (int) w;
+    TOOL_HT = (int) h;
+
     setup_cmd_panel();
     setup_msg();
     setup_canvas();
@@ -602,11 +697,6 @@ main(argc, argv)
     XtInstallAllAccelerators(ind_panel, tool);
     XtInstallAllAccelerators(mode_panel, tool);
 
-    FirstArg(XtNwidth, &w);
-    NextArg(XtNheight, &h);
-    GetValues(tool);
-    TOOL_WD = (int) w;
-    TOOL_HT = (int) h;
     XtAppAddActions(tool_app, form_actions, XtNumber(form_actions));
     XtAppAddActions(tool_app, text_panel_actions, XtNumber(text_panel_actions));
     XtOverrideTranslations(tool, XtParseTranslationTable(tool_translations));
@@ -623,8 +713,7 @@ main(argc, argv)
     (void) signal(SIGBUS, error_handler);
 #endif
     (void) signal(SIGSEGV, error_handler);
-    (void) signal(SIGINT, SIG_IGN);	/* in case user accidentally types
-					 * ctrl-c */
+    (void) signal(SIGINT, SIG_IGN);	/* in case user accidentally types ctrl-c */
 
     put_msg("READY, please select a mode or load a file");
 
@@ -649,11 +738,17 @@ main(argc, argv)
 
     app_flush();
 
-#ifdef USE_TAB
     /* If the user requests a tablet then do the set up for it */
     /*   and handle the tablet XInput extension events */
     /*   in a custom XtAppMainLoop gjl */
+
     if (appres.tablet) {
+
+#ifndef USE_TAB
+	file_msg("Input tablet not compiled in xfig - option ignored");
+	appres.tablet = False;
+#else
+
 #define TABLETINCHES 11.7
 #define SETBUTEVT(d, e) ((d).serial = (e)->serial, \
 	(d).window 	= (e)->window, (d).root = (e)->root, \
@@ -798,18 +893,19 @@ main(argc, argv)
 	}
 notablet:
 	file_msg("No input tablet present");
+
+#endif /* USE_TAB */
+
 	XtAppMainLoop(tool_app);
     }
     else
-#endif /* USE_TAB */
-
 	XtAppMainLoop(tool_app);
     return 0;
 }
 
 static void
 check_for_resize(tool, event, params, nparams)
-    TOOL	    tool;
+    Widget	    tool;
     XButtonEvent   *event;
     String	   *params;
     Cardinal	   *nparams;
@@ -933,24 +1029,10 @@ XSyncOff()
 	XFlush(tool_d);
 }
 
-#ifdef NOSTRSTR
-
-char *strstr(s1, s2)
-    char *s1, *s2;
-{
-    int len2;
-    char *stmp;
-
-    len2 = strlen(s2);
-    for (stmp = s1; *stmp != NULL; stmp++)
-	if (strncmp(stmp, s2, len2)==0)
-	    return stmp;
-    return NULL;
-}
-#endif
-
-/* This will parse the hexadecimal form of the named colors in the standard color
-/* names.  Some servers can't parse the hex form for XAllocNamedColor() */
+/* 
+ * This will parse the hexadecimal form of the named colors in the standard color
+ * names.  Some servers can't parse the hex form for XAllocNamedColor()
+ */
 
 int
 xallncol(name,color,exact)
@@ -958,13 +1040,17 @@ xallncol(name,color,exact)
     XColor	*color,*exact;
 {
     unsigned	short r,g,b;
+    char	nam[30];
 
     if (*name != '#')
 	return XAllocNamedColor(tool_d,tool_cm,name,color,exact);
 
-    if (sscanf(name,"#%2hx%2hx%2hx",&r,&g,&b) != 3 || name[7] != '\0') {
+    /* gcc doesn't allow writing on constant strings without the -fwritable_strings
+       option, and apparently some versions of sscanf need to write a char back */
+    strcpy(nam,name);
+    if (sscanf(nam,"#%2hx%2hx%2hx",&r,&g,&b) != 3 || nam[7] != '\0') {
 	fprintf(stderr,
-	  "Malformed color specification %s in resources.c must be 6 hex digits",name);
+	  "Malformed color specification %s in resources.c must be 6 hex digits",nam);
 	exit(1);
     }
 

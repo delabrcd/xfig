@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1992 by Brian V. Smith
+ * Copyright (c) 1995 by Brian V. Smith
  *
  * The X Consortium, and any party obtaining a copy of these files from
  * the X Consortium, directly or indirectly, is granted, free of charge, a
@@ -24,15 +24,15 @@
 #include "w_drawprim.h"
 #include "w_zoom.h"
 
-static int	create_n_write_xbm();
+static Boolean	create_n_write_xbm();
 
-int
+Boolean
 write_xbm(file_name,mag)
     char	   *file_name;
     float	    mag;
 {
     if (!ok_to_write(file_name, "EXPORT"))
-	return (1);
+	return False;
 
     return (create_n_write_xbm(file_name,mag));  /* write the xbm file */
 }
@@ -42,7 +42,7 @@ static GC	sav_fill_gc[NUMFILLPATS];
 static unsigned long save_fg_color;
 static unsigned long save_bg_color;
 
-static int
+static Boolean
 create_n_write_xbm(filename,mag)
     char	   *filename;
     float	    mag;
@@ -52,7 +52,6 @@ create_n_write_xbm(filename,mag)
     Window	    sav_canvas;
     int		    sav_objmask;
     Pixmap	    largepm, bitmap;
-    extern F_compound objects;
     int		    i;
     float	    savezoom;
     int		    savexoff, saveyoff;
@@ -133,6 +132,8 @@ create_n_write_xbm(filename,mag)
     reload_text_fstructs();
     /* clear the fill patterns */
     clear_patterns();
+    /* clear any picture pixmaps so they will be re-rendered in monochrome */
+    clear_pic_pixmaps();
 
     /* create pixmap from (0,0) to (xmax,ymax) */
     largepm = XCreatePixmap(tool_d, canvas_win, xmax + 1, ymax + 1,
@@ -176,10 +177,10 @@ create_n_write_xbm(filename,mag)
     if (XWriteBitmapFile(tool_d, filename, bitmap, width, height, -1, -1)
 	!= BitmapSuccess) {
 	put_msg("Couldn't write xbm file");
-	status = 1;
+	status = False;
     } else {
 	put_msg("Bitmap written to \"%s\"", filename);
-	status = 0;
+	status = True;
     }
     XFreePixmap(tool_d, largepm);
     XFreePixmap(tool_d, bitmap);
@@ -191,12 +192,54 @@ create_n_write_xbm(filename,mag)
     zoomxoff = savexoff;
     zoomyoff = saveyoff;
 
-    /* resize text */
-    reload_text_fstructs();
-    /* clear the fill patterns */
-    clear_patterns();
+    if (zoomchanged) {
+	reload_text_fstructs();	/* resize text */
+	clear_patterns();	/* clear the fill patterns */
+	clear_pic_pixmaps();	/* clear any picture pixmaps */
+    }
 
     /* reset the clipping to the canvas */
     reset_clip_window();
-    return (status);
+    return status;
+}
+
+
+/* clear any picture pixmaps so they will be re-rendered in monochrome */
+/* called from create_n_write_xbm() */
+
+clear_pic_pixmaps()
+{
+    F_line	   *line;
+
+    /* reload the compound objects' line */
+    clear_compound_pic(objects.compounds);
+    /* and the separate lines */
+    for (line=objects.lines; line != NULL; line = line->next)
+	clear_pic_pixmap(line);
+}
+
+/*
+ * clear pixmaps in lines in compounds
+ */
+
+clear_compound_pic(compounds)
+    F_compound	   *compounds;
+{
+    F_compound	   *c;
+    F_line	   *line;
+
+    for (c = compounds; c != NULL; c = c->next) {
+	clear_compound_pic(c->compounds);
+	for (line=c->lines; line != NULL; line = line->next)
+	    clear_pic_pixmap(line);
+    }
+}
+
+clear_pic_pixmap(line)
+    F_line	   *line;
+{
+    if (line->type == T_PIC_BOX && line->pic->pixmap != 0) {
+	free((char *) line->pic->pixmap);
+	line->pic->pixmap = 0;
+    }
 }

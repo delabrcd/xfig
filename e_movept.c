@@ -67,7 +67,7 @@ static int	cancel_movedlinepoint();
 
 move_point_selected()
 {
-    set_mousefun("move point", "horiz/vert move", "");
+    set_mousefun("move point", "horiz/vert move", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_arb_move_point);
@@ -87,7 +87,7 @@ init_arb_move_point(obj, type, x, y, p, q)
 {
     constrained = MOVE_ARB;
     init_move_point(obj, type, x, y, p, q);
-    set_mousefun("new posn", "", "cancel");
+    set_mousefun("new posn", "", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_middlebut_proc = null_proc;
 }
@@ -100,7 +100,7 @@ init_stretch_move_point(obj, type, x, y, p, q)
 {
     constrained = MOVE_HORIZ_VERT;
     init_move_point(obj, type, x, y, p, q);
-    set_mousefun("", "new posn", "cancel");
+    set_mousefun("", "new posn", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_middlebut_proc = canvas_leftbut_proc;
     canvas_leftbut_proc = null_proc;
@@ -200,7 +200,6 @@ init_ellipsepointmoving()
     cur_angle = cur_e->angle;
     set_action_on();
     toggle_ellipsemarker(cur_e);
-    draw_ellipse(cur_e, ERASE);
     switch (cur_e->type) {
     case T_ELLIPSE_BY_RAD:
 	canvas_locmove_proc = constrained_resizing_ebr;
@@ -246,7 +245,6 @@ cancel_movedellipsepoint()
 	elastic_cbd();
 	break;
     }
-    draw_ellipse(cur_e, PAINT);
     toggle_ellipsemarker(cur_e);
     wrapup_movepoint();
 }
@@ -275,6 +273,8 @@ fix_movedellipsepoint(x, y)
     change_ellipse(cur_e, new_e);
     /* redraw anything under the old ellipse */
     redisplay_ellipse(cur_e);
+    /* and the new one */
+    redisplay_ellipse(new_e);
     wrapup_movepoint();
 }
 
@@ -286,7 +286,6 @@ relocate_ellipsepoint(ellipse, x, y, point_num)
     double	    dx, dy;
 
     set_temp_cursor(wait_cursor);
-    draw_ellipse(ellipse, ERASE);
     if (point_num == 0) {	/* starting point is selected  */
 	fix_x = ellipse->end.x;
 	fix_y = ellipse->end.y;
@@ -330,7 +329,6 @@ relocate_ellipsepoint(ellipse, x, y, point_num)
 	if (ellipse->radiuses.x == ellipse->radiuses.y)
 	    ellipse->type += 2;
     }
-    draw_ellipse(ellipse, PAINT);
     reset_cursor();
 }
 
@@ -373,6 +371,8 @@ fix_movedarcpoint(x, y)
     change_arc(cur_a, new_a);
     /* redraw anything under the old arc */
     redisplay_arc(cur_a);
+    /* and the new one */
+    redisplay_arc(new_a);
     wrapup_movepoint();
 }
 
@@ -391,13 +391,11 @@ relocate_arcpoint(arc, x, y, movedpoint_num)
     p[movedpoint_num].y = y;
     if (compute_arccenter(p[0], p[1], p[2], &xx, &yy)) {
 	set_temp_cursor(wait_cursor);
-	draw_arc(arc, ERASE);	/* erase old arc */
 	arc->point[movedpoint_num].x = x;
 	arc->point[movedpoint_num].y = y;
 	arc->center.x = xx;
 	arc->center.y = yy;
 	arc->direction = compute_direction(p[0], p[1], p[2]);
-	draw_arc(arc, PAINT);	/* draw new arc */
 	reset_cursor();
     }
 }
@@ -476,6 +474,8 @@ fix_movedsplinepoint(x, y)
     relocate_splinepoint(cur_s, cur_x, cur_y, moved_point);
     /* redraw anything under the old spline */
     redisplay_spline(old_s);
+    /* and the new one */
+    redisplay_spline(cur_s);
     wrapup_movepoint();
 }
 
@@ -486,7 +486,6 @@ relocate_splinepoint(s, x, y, moved_point)
     F_point	   *moved_point;
 {
     set_temp_cursor(wait_cursor);
-    draw_spline(s, ERASE);	/* erase old spline */
     moved_point->x = x;
     moved_point->y = y;
     if (closed_spline(s)) {
@@ -495,14 +494,13 @@ relocate_splinepoint(s, x, y, moved_point)
     }
     if (int_spline(s))
 	remake_control_points(s);
-    draw_spline(s, PAINT);	/* draw spline with moved point */
     set_modifiedflag();
     reset_cursor();
 }
 
 /***************************  compound	********************************/
 
-static		prescale_compound(), cancel_compound();
+static		fix_movedcompoundpoint(), cancel_compound();
 
 static
 init_compoundpointmoving()
@@ -521,7 +519,6 @@ init_compoundpointmoving()
     from_x = cur_x;
     from_y = cur_y;
     toggle_compoundmarker(cur_c);
-    draw_compoundelements(cur_c, ERASE);
     set_temp_cursor(crosshair_cursor);
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     if (constrained) {
@@ -532,7 +529,7 @@ init_compoundpointmoving()
 	sina = fabs(dy / l);
     }
     canvas_locmove_proc = constrained_resizing_box;
-    canvas_leftbut_proc = prescale_compound;
+    canvas_leftbut_proc = fix_movedcompoundpoint;
     canvas_rightbut_proc = cancel_compound;
     /* show current length(s) */
     (canvas_locmove_proc)(cur_x, cur_y);
@@ -542,7 +539,6 @@ static
 cancel_compound()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
-    draw_compoundelements(cur_c, PAINT);
     toggle_compoundmarker(cur_c);
     wrapup_movepoint();
 }
@@ -550,7 +546,7 @@ cancel_compound()
 extern		scale_compound();
 
 static
-prescale_compound(x, y)
+fix_movedcompoundpoint(x, y)
     int		    x, y;
 {
     float	    scalex, scaley;
@@ -558,17 +554,26 @@ prescale_compound(x, y)
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     adjust_box_pos(x, y, from_x, from_y, &cur_x, &cur_y);
 
+    /* delete it temporarily */
+    list_delete_compound(&objects.compounds, cur_c);
+    /* redraw anything under the old compound */
+    redisplay_compound(cur_c);
+    /* put it back in the list */
+    list_add_compound(&objects.compounds, cur_c);
+
     scalex = ((float) (cur_x - fix_x)) / (from_x - fix_x);
     scaley = ((float) (cur_y - fix_y)) / (from_y - fix_y);
+    /* scale the compound */
     scale_compound(cur_c, scalex, scaley, fix_x, fix_y);
 
-    draw_compoundelements(cur_c, PAINT);
+    /* redraw anything under the new compound */
+    redisplay_compound(cur_c);
+
     set_lastposition(from_x, from_y);
     set_newposition(cur_x, cur_y);
     clean_up();
     set_action_object(F_SCALE, O_COMPOUND);
     set_latestcompound(cur_c);
-    toggle_compoundmarker(cur_c);
     set_modifiedflag();
     reset_cursor();
     wrapup_movepoint();
@@ -606,8 +611,6 @@ init_linepointmoving()
 	    fix_x = right_point->next->x;
 	    fix_y = right_point->next->y;
 	}
-	draw_line(cur_l, ERASE);
-
 	if (constrained) {
 	    double		dx, dy, l;
 
@@ -628,27 +631,6 @@ init_linepointmoving()
 	return;
 
     case T_POLYLINE:
-	if (left_point != NULL) {
-	    if (left_point == cur_l->points) {
-		if (cur_l->back_arrow)	/* backward arrow  */
-		    draw_arrow(cur_x, cur_y,
-			       left_point->x, left_point->y,
-			       cur_l->back_arrow, ERASE,
-			       cur_l->pen_color);
-	    }
-	} else if (cur_l->back_arrow)	/* backward arrow  */
-	    draw_arrow(right_point->x, right_point->y,
-		       cur_x, cur_y, cur_l->back_arrow, ERASE,
-		       cur_l->pen_color);
-	if (right_point != NULL) {
-	    if (cur_l->for_arrow && right_point->next == NULL)
-		draw_arrow(cur_x, cur_y, right_point->x, right_point->y,
-			   cur_l->for_arrow, ERASE,
-			   cur_l->pen_color);
-	} else if (cur_l->for_arrow)	/* f arrow */
-	    draw_arrow(left_point->x, left_point->y,
-		       cur_x, cur_y, cur_l->for_arrow, ERASE,
-		       cur_l->pen_color);
 	if (left_point == NULL || right_point == NULL) {
 	    if (left_point != NULL) {
 		fix_x = left_point->x;
@@ -684,7 +666,6 @@ static
 cancel_box()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
-    draw_line(cur_l, PAINT);
     toggle_linemarker(cur_l);
     wrapup_movepoint();
 }
@@ -696,7 +677,6 @@ fix_box(x, y)
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     adjust_box_pos(x, y, from_x, from_y, &x, &y);
     new_l = copy_line(cur_l);
-    draw_line(cur_l, ERASE);
     if (new_l->type == T_PIC_BOX) {
 	if (signof(fix_x - from_x) != signof(fix_x - x))
 	    new_l->pic->flipped = 1 - new_l->pic->flipped;
@@ -709,8 +689,8 @@ fix_box(x, y)
     change_line(cur_l, new_l);
     /* redraw anything under the old line */
     redisplay_line(cur_l);
-    draw_line(new_l, PAINT);
-    toggle_linemarker(new_l);
+    /* and the new line */
+    redisplay_line(new_l);
     wrapup_movepoint();
 }
 
@@ -773,6 +753,8 @@ fix_movedlinepoint(x, y)
     relocate_linepoint(cur_l, cur_x, cur_y, moved_point, left_point);
     /* redraw anything under the old line */
     redisplay_line(old_l);
+    /* and the new line */
+    redisplay_line(cur_l);
     wrapup_movepoint();
 }
 
@@ -782,7 +764,6 @@ relocate_linepoint(line, x, y, moved_point, left_point)
     int		    x, y;
     F_point	   *moved_point, *left_point;
 {
-    draw_line(line, ERASE);
     if (line->type == T_POLYGON)
 	if (line->points == moved_point) {
 	    left_point->next->x = x;
@@ -791,5 +772,4 @@ relocate_linepoint(line, x, y, moved_point, left_point)
     moved_point->x = x;
     moved_point->y = y;
     set_modifiedflag();
-    draw_line(line, PAINT);
 }

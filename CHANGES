@@ -2,6 +2,187 @@
 Version 3.1
 =============================================================================
 
+Patchlevel 4 (Aug, 16, 1995)
+
+NOTE 1: The Display PostScript code is not supported anymore until some kind
+	user can debug it for me, as I have no access to a server with DPS
+	extensions.  Use ghostscript for rendering your EPS files.  It gives
+	a color image on the xfig canvas now anyway.
+
+NOTE 2: Because Unisys has stated that they will not charge royalties for the
+	use of the LZW compression algorithm in *FREE* programs, xfig will
+	continue to support importing and exporting of GIF images.
+	However, be aware that if you sell xfig, for example as part of a CD-ROM
+	package with freeware, you may be liable for paying royalties to Unisys.
+	The authors of xfig and the Lawrence Berkeley National Laboratory cannot
+	be held responsible in any case.
+
+NOTE 3: Because of the patent/licensing issue with Unisys and the LZW compression
+	algorithm used in GIF files, the author of ghostscript has decided to
+	remove GIF support from that program.
+	xfig will now use PCX output from ghostscript when importing EPS files.
+	This means that you must compile ghostscript with the pcx256 and pbmraw
+	drivers.
+	Additionally, there is a bug in the pcx driver in Aladdin Ghostscript
+	versions prior to 3.32, which writes an incorrect pcx file for images
+	with odd width (not even).  There is a compile-time flag set (the
+	default) to make xfig add one pixel to the width of an odd-width image
+	when it reads in the pcx output from Ghostscript.
+	If you have Aladdin Ghostscript 3.32 or newer (which wasn't released
+	as of this writing) you may comment out that flag and your images will
+	have the proper width.  However, one pixel extra in width shouldn't
+	matter for most imported eps files.
+
+NOTE 4: The -textoutline (resource textoutline) option has been moved into the 
+	-debug option.  This makes xfig draw a red box around text objects for
+	debugging purposes.
+
+NEW FEATURES:
+
+o JPEG (JFIF) images can be imported and exported - see Examples/pictures.fig
+	Unless you have an image (picture object) in your figure, you may not
+	gain very much by exporting in JPEG over GIF because of the nature of
+	compression used in both methods.  GIF is usually better for line
+	drawings or drawings with large blocks of continuous color (e.g. filled
+	polygons).  JPEG is usually better for compressing images.
+	The quality factor for exporting JPEG is fixed at 75.  This seems to be
+	fine for figures containing only solid objects (no images) and adequate
+	for figures containing imported images (GIF, JPEG, etc.).
+o New features in the Picture Object edit popup:
+	1) Capture a screen image to a GIF file to use for importing.
+	2) Call an image editor (e.g. xv) to edit an imported image. New
+	   resource for the editor: "Fig.image_editor: xv" (default)
+	3) Popup a file browser to look for images to import.
+	all from Jim Daley (jdaley@cix.compulink.co.uk)
+o the points of arrow heads don't protrude past the endpoints of the object
+o when drawing polyline/polygon or spline you can delete newly created points
+	by pressing shift-mouse button 1
+o when saving figure, original is first renamed to file.bak to make backup file
+o smartlinks improved - lines touching boxes inside compound object will be
+	moved when compound is moved with smart links mode on
+	From Ian Brown
+o -help option to print all command-line options to xfig
+o can now change boxes to arc-boxes and vice versa with same button that
+	converts lines <-> splines.
+o label in fill style panel added to separate shaded fill from pattern fill
+	(if the pen and fill colors are both black or white it was impossible
+	to distinguish the patterns from the 100% shade fill)
+o when adding a new user-defined color, it is automatically selected for
+	modification without having to click on the cell.
+o point positioning now has five resolutions: arbitrary, 1/16" (1mm),
+	1/4" (5mm), 1/2" (10mm) and 1" (20mm)
+o increased resolution of dimensions in message window when drawing/moving
+	objects from 2 to 4 decimal places
+o new meta sequence "%f" in print parameters is replaced with current filename
+	for printing. Can be used for job name to printer.
+	(e.g. lpr ... -J %f ...)
+o version/patchlevel added to error handler messages to identify version of xfig
+o new export option for MetaFont language
+o new resources for ruler and unit box fonts: *topruler.font, *sideruler.font
+	and *unitbox.font.  See Fig.ad.
+o new resource (Fig.rulerthick:) and command-line arg (-rulerthick) to set
+	thickness of rulers (height of top ruler and width of side ruler)
+o note about patch for HP compilers in README file (see "Possible problems...")
+o on abort, xfig does a cd to the original directory where it was started so
+	that any core dump will be in the original directory
+o strncasecmp and strcasecmp routines provided for those systems that don't have
+	them.  See the Imakefile . From Fred Appelman (Fred.Appelman@cv.ruu.nl)
+
+BUG FIXES:
+
+o fig.h includes sys/types.h for BSD and Mips systems and excludes errno,
+	sys_nerr and sys_errlist for BSD
+	from Kurt J. Lidl (lidl@va.pubnix.com)
+o error in path for xpm.h in resources.h
+o reversed #elif conditions in fig.h for linux/osf defs of random() and srandom()
+o text size problem when reading file with text when zoom != 1.0 fixed
+o deleted user colors still showed up in color menu in "edit object" panel
+o when rotating or flipping an object, the new position wasn't kept on the
+	point positioning grid
+o selecting drawing mode using keyboard accelerators now updates mouse
+	indicator window
+o undo of multiple copy (array place) now undos all objects
+o undo of "figure load" properly sets "current filename" in File popup and
+	"default filename" in Export popup back to original values
+o undo of "figure load" does not set "figure modified" flag now
+o changing the figure orientation to/from Landscape/Portrait is considered a
+	figure modification for quitting/saving
+o GIF export was not available if XPM not installed - rearranged order
+o misplaced fclose() in f_readeps.c
+o misdeclared function close_picfile() in f_readeps.c
+o infinite loop when copying a line after scaling a compound using the move
+	point mode
+o bitmap image of Latex "Italic" font was mis-named "Italics"
+o no more hard-wired setting of background for mode and indicator panels
+	see Fig-color for more details
+o font size for text objects adjusted if < 4 points or > 1000 when reading file
+o update settings from object wasn't setting PostScript vs LaTeX flag when Font
+	update indicator was enabled
+o more checking done in popup edit panel for illegal line thickness or depth
+o flip or rotate anchor/center point crosshair turned off when selecting new
+	drawing mode
+o seg fault in import/edit of picture object due to filename string corruption
+o segfault sometimes on file load - gcc sometimes produces code which segfaults
+	when doing ungetc on const string. Constant string copied for sscanf
+o bug in computing the center of an arc when scaling
+o smarter redrawing of objects in correct depth order when creating or modifying
+	any object
+o changed bestd = ~(((int) 1)<<31); to bestd = INT_MAX in f_neuclrtab.c due to
+	temporary integer overflow inside the parentheses
+o if -textoutline was specified, boxes appeared around text when exporting to
+	bitmap-type format (e.g. GIF, XBM, etc)
+o if the file message window popped up before canvas translations were installed
+	a warning about the PasteCanv action not being found resulted.  This was
+	fixed by narrowing the specification for the translation in the
+	app-defaults file.
+o bounding box for text objects was incorrect when loading file with zoom != 1.0
+o bounding box for ellipses was incorrect with thick lines
+o bug in handling text objects with \ at end
+	patch from Andrew McParland (akm@rd.bbc.co.uk)
+o mis-named character "acute" removed from the multi-key sequence list in man
+	pages
+o LaTeX font "Modern" changed to correct name "Sans Serif"
+	new menu bitmap from Volker Kuhlmann  (kuhlmav@elec.canterbury.ac.nz)
+o bounds calculation of objects didn't take line thickness into account
+	correctly
+o drawing very small arcs (e.g. when zoom is small) resulted in strange lines
+	being drawn
+o importing XPM images with undefined colors resulted in an X error.  Now xfig
+	uses white for null color entries.
+o problems with XFree86-3.1.  Get XFree86-3.1.1.
+o some picture objects without filenames would be saved incorrectly and
+	couldn't be re-read
+o extraneous error message about inaccessible file when it contains bad Fig
+	object
+o bug in bounding box calculation created compound objects off by one unit
+o added #include <sys/types.h> for ultrix file stat structure
+o bug in scanning 8-bit character followed by a number in text object
+	(e.g. \24355 should be the British Pound Sterling character followed
+	by 55, not character (octal) 24355)
+o in older Fig files (2.1) text at 90 degree angle was slightly jagged due to
+	rounding error
+o xfig doesn't coredump when delete window operation is done on xfig window or
+	user logs out without quitting xfig
+o bug in redefining user colors when merging figures
+o single-point lines with arrowheads caused segfault - xfig now takes more
+	steps to not allow arrowheads for those
+o undo of delete arrowhead created arrowhead with current line thickness etc.
+	instead of restoring original
+o removed extraneous comma (,) from lp command for SYSV/SVR4 systems.
+o changed the "-oPS" command-line option (used for SYSV systems) to "-T PS"
+	in the Fid.ad app-defaults file.
+o typo in FORMAT3.1 file - line and arrowhead thicknesses units are 1/80 inch,
+	not Fig units.  Also, dash/dotted size/spacing are in 1/80 inch units.
+o some compilers don't like empty .c files (e.g. when XPM is not compiled in)
+	static dum_function() placed in f_readxpm.c and f_wrxpm.c for that case
+o bug in #include for xpm.h - X11/xpm.h was appended to XPMINCDIR - removed X11/
+o added #ifdef ultrix to include <sys/types.h> which is needed for <sys/stat.h>
+o black and white colors in colorpanel were set to fore/background colors
+	instead of black and white (problem when -bg and/or -fg used)
+	from Matthias Braun (browny@ise.fhg.de)
+o length of line reported when drawing in Mountain or Mountain/Manhattan mode
+	was behind by one point positioning unit until new point was established
+-----------------------------------------------------------------------------
 Patchlevel 3 (Jan, 24, 1995)
 
 BUG FIXES:
@@ -17,6 +198,7 @@ o LaTeX text with special flag had wrong style (Roman became Italic etc.)
 o cap style implicitly set to ROUND for ellipses and closed splines with
 	dotted lines
 o some cleanup of pointer/data type casts
+	from Randy MacLeod
 o incorrect parameter for ibmgl export mode - incorrectly used -L for landscape
 o more #ifndef/#endif surrounding random, srandom and frandom in fig.h
 o removed the -oPS command-line option for SYSV systems because it is printer
@@ -164,14 +346,14 @@ o EPS objects have been changed to "picture objects" to include GIF images,
 	A Floyd-Steinberg dithering is applied to color images for monochrome
 	displays.
 
-	For EPS files, if ghostscript is used to generate the preview, an 8-bit
+	For EPS files, if Ghostscript is used to generate the preview, an 8-bit
 	color preview is generated if xfig is running on an color display.
 	The command-line option -dSAFER is used when calling ghostscript which
 	prevents any files being written by the postscript code.
 
 	The color quantization algorithm to minimize the number of colors
 	needed for the color images uses a neural network scheme written by
-	Anthony Dekker (dekker@ozemail.com.au).  
+	Anthony Dekker (dekker@ACM.org).  
 	[NEUQUANT Neural-Net quantization algorithm by Anthony Dekker, 1994.
 	See "Kohonen neural networks for optimal colour quantization"
 	in "Network: Computation in Neural Systems" Vol. 5 (1994) pp 351-367.
@@ -227,8 +409,8 @@ o two new Example files: illusion.fig and recycle.fig
 o four new clip-art files (Examples directory): clp_bldgs.fig, clp_network.fig,
 	clp_computer.fig and clipart.fig
 	from William J. Chimiak (chim@relito.medeng.wfu.edu)
-o new export languages - X11 Pixmap (color X pixmaps) and GIF output
-	- must have the XPM3 package.
+o new export languages - GIF and X11 Pixmap (XPM, color X pixmaps) output
+	- must have the XPM3 package for XPM output.
 	XPM3 code from Karel van Houten (K.H.C.vanHouten@research.ptt.nl)
 	GIF code from E. Chernyaev (chernaev@mx.decnet.ihep.su)
 o can handle eps files with %%BoundingBox: (atend)
@@ -249,8 +431,8 @@ o more sanity checks on starting values (e.g. -startfillstyle < 0 etc)
 o changes in dot/dash spacing were sometimes delayed in effect.  Fixed.
 o if printer name came from env variable, it didn't show up in print panel until
 	first figure was printed
-o smarter redraw of underlying objects when rotating objects or moving, adding
-	or deleting points of an object
+o smarter redraw of underlying objects when updating or rotating objects or
+	moving, adding or deleting points of an object
 o metric scale is now correct size when printing
 	from Hans Werner Strube (strube@swing.physik3.gwdg.de)
 o temporary file for importing EPS objects wasn't honoring XFIGTMPDIR
@@ -897,9 +1079,9 @@ o bug fixed which caused erroneous large values to occur after box scale of
 	0-width or 0-height objects.  You can no longer box scale such objects
 ------------------------------------------------------------------------------
 
-VERSION 2.1
 Patchlevel 0 (Sep 1991)
 Changes to Version 2.0 Patchlevel 10:
+
 Implemented by Paul King (king@cs.uq.oz.au) and
 Brian Smith (envbvs@epb7.lbl.gov) with help from
 Micah Beck (beck@cs.cornell.edu) and

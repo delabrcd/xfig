@@ -94,9 +94,16 @@ add_point(x, y)
     return True;
 }
 
+/*
+   although the "pnts" array is usually just the global "points" array,
+   draw_arc() and possibly others call this procedure with a pointer to
+   other than the first point in that array.
+   The real array points is freed at the end of this procedure
+*/
+
 static void
-draw_point_array(w, op, line_width, line_style, style_val, join_style,
-	cap_style, fill_style, pen_color, fill_color)
+draw_point_array(w, op, line_width, line_style, style_val, 
+	join_style, cap_style, fill_style, pen_color, fill_color)
     Window	    w;
     int		    op;
     int		    line_width, line_style, cap_style;
@@ -106,8 +113,12 @@ draw_point_array(w, op, line_width, line_style, style_val, join_style,
 {
     pw_lines(w, points, npoints, op, line_width, line_style, style_val,
 		join_style, cap_style, fill_style, pen_color, fill_color);
-    free(points);
+    free((char *) points);
 }
+
+/* these are for the arrowheads */
+static zXPoint	    farpts[6],barpts[6];
+static int	    nfpts, nbpts;
 
 /*********************** ARC ***************************/
 
@@ -118,6 +129,7 @@ draw_arc(a, op)
     double	    rx, ry;
     int		    radius;
     int		    xmin, ymin, xmax, ymax;
+    int		    x, y;
 
     arc_bound(a, &xmin, &ymin, &xmax, &ymax);
     if (!overlapping(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax),
@@ -128,18 +140,40 @@ draw_arc(a, op)
     ry = a->center.y - a->point[0].y;
     radius = round(sqrt(rx * rx + ry * ry));
 
+    /* fill points array but don't display the points yet */
+
     curve(canvas_win, round(a->point[0].x - a->center.x),
 	  round(a->center.y - a->point[0].y),
 	  round(a->point[2].x - a->center.x),
 	  round(a->center.y - a->point[2].y),
+	  False,
 	  (a->type == T_PIE_WEDGE_ARC),
 	  a->direction, 500, radius, radius,
 	  round(a->center.x), round(a->center.y), op,
 	  a->thickness, a->style, a->style_val, a->fill_style,
 	  a->pen_color, a->fill_color, a->cap_style);
 
-    if (a->type != T_PIE_WEDGE_ARC)
-	draw_arcarrows(a, op);
+    /* setup clipping so that spline doesn't protrude beyond arrowhead */
+    /* also create the arrowheads */
+    clip_arrows(a,O_ARC,op);
+
+    /* draw the arc itself */
+    draw_point_array(canvas_win, op, a->thickness,
+		     a->style, a->style_val, JOIN_BEVEL,
+		     a->cap_style, a->fill_style,
+		     a->pen_color, a->fill_color);
+
+    /* restore clipping */
+    set_clip_window(clip_xmin, clip_ymin, clip_xmax, clip_ymax);
+
+    /* draw the arrowheads, if any */
+    if (a->type != T_PIE_WEDGE_ARC) {
+      if (a->for_arrow)
+	    draw_arrow(a, a->for_arrow, farpts, nfpts, op);
+      if (a->back_arrow)
+	    draw_arrow(a, a->back_arrow, barpts, nbpts, op);
+    }
+
 }
 
 /*********************** ELLIPSE ***************************/
@@ -164,7 +198,7 @@ draw_ellipse(e, op)
     } else if (op != ERASE && (e->style == DOTTED_LINE || e->style == DASH_LINE)) {
 	a = e->radiuses.x;
 	b = e->radiuses.y;
-	curve(canvas_win, a, 0, a, 0, False, e->direction,
+	curve(canvas_win, a, 0, a, 0, True, False, e->direction,
 		(int)(7*max2(a,b)*zoomscale), (b * b), (a * a),
 		e->center.x, e->center.y, op,
 		e->thickness, e->style, e->style_val, e->fill_style,
@@ -392,7 +426,7 @@ angle_ellipse(center_x, center_y, radius_x, radius_y, angle,
 	if (!add_point(ipnts->x,ipnts->y))
 		too_many_points();
 	draw_point_array(canvas_win, op, thickness, style, style_val,
-		 JOIN_MITER, CAP_ROUND, fill_style, pen_color, fill_color);
+		 JOIN_BEVEL, CAP_ROUND, fill_style, pen_color, fill_color);
 
 	zoomscale = savezoom;
 	zoomxoff = savexoff;
@@ -499,22 +533,28 @@ draw_line(line, op)
 	x = point->x;
 	y = point->y;
 	if (!add_point(x, y)) {
-		too_many_points();
-		break;
+	    too_many_points();
+	    break;
 	}
     }
+
+    /* setup clipping so that spline doesn't protrude beyond arrowhead */
+    /* also create the arrowheads */
+    clip_arrows(line,O_POLYLINE,op);
 
     draw_point_array(canvas_win, op, line->thickness, line->style,
 		     line->style_val, line->join_style,
 		     line->cap_style, line->fill_style,
 		     line->pen_color, line->fill_color);
 
-    if (line->back_arrow)	/* backward arrow  */
-	draw_arrow(line->points->next->x, line->points->next->y,
-		   line->points->x, line->points->y,
-		   line->back_arrow, op, line->pen_color);
+    /* restore clipping */
+    set_clip_window(clip_xmin, clip_ymin, clip_xmax, clip_ymax);
+
+    /* draw the arrowheads, if any */
     if (line->for_arrow)
-	draw_arrow(xx, yy, x, y, line->for_arrow, op, line->pen_color);
+	draw_arrow(line, line->for_arrow, farpts, nfpts, op);
+    if (line->back_arrow)
+	draw_arrow(line, line->back_arrow, barpts, nbpts, op);
 }
 
 draw_arcbox(line, op)
@@ -628,7 +668,7 @@ create_pic_pixmap(box, rotation, width, height, flipped)
     cheight = box->pic->bit_size.y;
 
     /* create a new bitmap at the specified size (requires interpolation) */
-    /* XBM style *OR* EPS, XPM or GIF on monochrome display */
+    /* XBM style *OR* EPS, XPM, GIF or JPEG on monochrome display */
     if (box->pic->numcols == 0) {
 	    nbytes = (width + 7) / 8;
 	    bbytes = (cwidth + 7) / 8;
@@ -679,7 +719,10 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 		    bcopy(tdata, data + (height - j - 1) * nbytes, nbytes);
 		}
 
-	    if (box->pic->subtype == T_PIC_BITMAP) {
+	    if (writing_bitmap) {
+		fg = x_fg_color.pixel;			/* writing xbm, 1 and 0 */
+		bg = x_bg_color.pixel;
+	    } else if (box->pic->subtype == T_PIC_BITMAP) {
 		fg = x_color(box->pen_color);		/* xbm, use object pen color */
 		bg = x_bg_color.pixel;
 	    } else if (box->pic->subtype == T_PIC_EPS) {
@@ -695,7 +738,7 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 					DefaultDepthOfScreen(tool_s));
 	    free(data);
 
-      /* EPS, XPM or GIF on color display */
+      /* EPS, XPM, GIF or JPEG on color display */
       } else {
 	    struct Cmap	*cmap = box->pic->cmap;
 	    nbytes = width;
@@ -787,15 +830,76 @@ draw_spline(spline, op)
 	draw_open_spline(spline, op);
 }
 
-draw_intspline(s, op)
-    F_spline	   *s;
+/***************************************************************************
+   I have to include the Xlib procedure XSetRegion here because the original
+   calls XSetClipRectangles with YXBanded, which doesn't always work.
+   This is apparently due to a bug in XSubtractRegion which, under certain
+   conditions produces a list of rectangles which isn't YXBanded in order,
+   This produces a BadMatch error when XSetRegion calls XSetClipRectangles
+   with the YXBanded mode.
+   This kludge to call XSetClipRectangles with Unsorted doesn't fix the problem
+   it just prevents the BadMatch error.  There is some real problem with the
+   list of rectangles generated by XSubtractRegion so in those cases there
+   is no clipping and the line part of the object will cover the arrowhead.
+
+   Here is the copyright for the original XSetRegion from the X library:
+***************************************************************************/
+
+/***************************************************************************
+Copyright 1987, 1988 by Digital Equipment Corporation, Maynard, Massachusetts,
+and the Massachusetts Institute of Technology, Cambridge, Massachusetts.
+
+                        All Rights Reserved
+
+Permission to use, copy, modify, and distribute this software and its 
+documentation for any purpose and without fee is hereby granted, 
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in 
+supporting documentation, and that the names of Digital or MIT not be
+used in advertising or publicity pertaining to distribution of the
+software without specific, written prior permission.  
+
+DIGITAL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
+DIGITAL BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
+ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+SOFTWARE.
+***************************************************************************/
+
+#include "region.h"
+
+XfigSetRegion( dpy, gc, r )
+    Display *dpy;
+    GC gc;
+    register Region r;
+{
+    register int i;
+    register XRectangle *xr, *pr;
+    register BOX *pb;
+    if (xr = (XRectangle *)
+	_XAllocScratch(dpy, (unsigned long) (r->numRects * sizeof (XRectangle)))) {
+	for (pr = xr, pb = r->rects, i = r->numRects; --i >= 0; pr++, pb++) {
+	    pr->x = pb->x1;
+	    pr->y = pb->y1;
+	    pr->width = pb->x2 - pb->x1;
+	    pr->height = pb->y2 - pb->y1;
+	}
+    }
+    if (xr || !r->numRects)
+	XSetClipRectangles(dpy, gc, 0, 0, xr, r->numRects, Unsorted /*YXBanded*/ );
+}
+
+draw_intspline(spline, op)
+    F_spline	   *spline;
     int		    op;
 {
     F_point	   *p1, *p2;
     F_control	   *cp1, *cp2;
 
-    p1 = s->points;
-    cp1 = s->controls;
+    p1 = spline->points;
+    cp1 = spline->controls;
     cp2 = cp1->next;
 
     if (!init_point_array(300, 200))
@@ -810,18 +914,23 @@ draw_intspline(s, op)
     if (!add_point(p1->x, p1->y))
 	too_many_points();
 
-    draw_point_array(canvas_win, op, s->thickness, s->style, s->style_val,
-			JOIN_MITER, s->type==T_CLOSED_INTERP? CAP_ROUND: s->cap_style,
-			s->fill_style, s->pen_color, s->fill_color);
+    /* setup clipping so that spline doesn't protrude beyond arrowhead */
+    /* also create the arrowheads */
+    clip_arrows(spline,O_SPLINE,op);
 
+    /* draw the spline */
+    draw_point_array(canvas_win, op, spline->thickness, 
+			spline->style, spline->style_val, JOIN_BEVEL,
+			spline->type==T_CLOSED_INTERP? CAP_ROUND: spline->cap_style,
+			spline->fill_style, spline->pen_color, spline->fill_color);
 
-    if (s->back_arrow)
-	draw_arrow(round(s->controls->next->lx), round(s->controls->next->ly),
-		   s->points->x, s->points->y,
-		   s->back_arrow, op, s->pen_color);
-    if (s->for_arrow)
-	draw_arrow(round(cp1->lx), round(cp1->ly), p1->x, p1->y,
-		   s->for_arrow, op, s->pen_color);
+    /* restore clipping */
+    set_clip_window(clip_xmin, clip_ymin, clip_xmax, clip_ymax);
+
+    if (spline->back_arrow)
+	draw_arrow(spline, spline->back_arrow, barpts, nbpts, op);
+    if (spline->for_arrow)
+	draw_arrow(spline, spline->for_arrow, farpts, nfpts, op);
 }
 
 draw_open_spline(spline, op)
@@ -869,17 +978,21 @@ draw_open_spline(spline, op)
     if (!add_point(round(x2), round(y2)))
 	too_many_points();
 
+    /* setup clipping so that spline doesn't protrude beyond arrowhead */
+    /* also create the arrowheads */
+    clip_arrows(spline,O_SPLINE,op);
+
     draw_point_array(canvas_win, op, spline->thickness, spline->style,
-		     spline->style_val, JOIN_MITER, spline->cap_style,
+		     spline->style_val, JOIN_BEVEL, spline->cap_style,
 		     spline->fill_style, spline->pen_color, spline->fill_color);
 
+    /* restore clipping */
+    set_clip_window(clip_xmin, clip_ymin, clip_xmax, clip_ymax);
+
     if (spline->back_arrow)	/* backward arrow  */
-	draw_arrow(round(spline->points->next->x), round(spline->points->next->y),
-		   round(spline->points->x), round(spline->points->y),
-		   spline->back_arrow, op, spline->pen_color);
+	draw_arrow(spline, spline->back_arrow, barpts, nbpts, op);
     if (spline->for_arrow)	/* forward arrow  */
-	draw_arrow(round(x1), round(y1), round(x2), round(y2),
-		   spline->for_arrow, op, spline->pen_color);
+	draw_arrow(spline, spline->for_arrow, farpts, nfpts, op);
 }
 
 draw_closed_spline(spline, op)
@@ -934,7 +1047,7 @@ draw_closed_spline(spline, op)
 	too_many_points();
 
     draw_point_array(canvas_win, op, spline->thickness, spline->style,
-		     spline->style_val, JOIN_MITER, 
+		     spline->style_val, JOIN_BEVEL, 
 		     spline->style==DOTTED_LINE? CAP_ROUND: CAP_BUTT,
 		     spline->fill_style, spline->pen_color, spline->fill_color);
 }
@@ -953,6 +1066,8 @@ draw_text(text, op)
     int		    xmin, ymin, xmax, ymax;
     int		    x1,y1, x2,y2, x3,y3, x4,y4;
 
+    if (text->zoom != zoomscale)
+	reload_text_fstruct(text);
     text_bound(text, &xmin, &ymin, &xmax, &ymax,
 	       &x1,&y1, &x2,&y2, &x3,&y3, &x4,&y4);
 
@@ -960,8 +1075,8 @@ draw_text(text, op)
 		     clip_xmin, clip_ymin, clip_xmax, clip_ymax))
 	return;
 
-    /* outline the text bounds in red if textoutline resource is set */
-    if (appres.textoutline && !hidden_text(text)) {
+    /* outline the text bounds in red if debug resource is set */
+    if (appres.DEBUG) {
 	pw_vector(canvas_win, x1, y1, x2, y2, op, 1, RUBBER_LINE, 0.0, RED);
 	pw_vector(canvas_win, x2, y2, x3, y3, op, 1, RUBBER_LINE, 0.0, RED);
 	pw_vector(canvas_win, x3, y3, x4, y4, op, 1, RUBBER_LINE, 0.0, RED);
@@ -1029,91 +1144,324 @@ draw_compoundelements(c, op)
     }
 }
 
-/*************************** ARROWS ****************************
+/*************************** ARROWS *****************************
 
- draw arrow heading from (x1, y1) to (x2, y2)
+ compute_arcarrow_angle - Computes a point on a line which is a chord
+	to the arc specified by center (x1,y1) and endpoint (x2,y2),
+	where the chord intersects the arc arrow->ht from the endpoint.
+
+ May give strange values if the arrow.ht is larger than about 1/4 of
+ the circumference of a circle on which the arc lies.
 
 ****************************************************************/
 
-draw_arrow(x1, y1, x2, y2, arrow, op, color)
-    int		    x1, y1, x2, y2, op;
+compute_arcarrow_angle(x1, y1, x2, y2, direction, arrow, x, y)
+    float x1, y1;
+    int x2, y2, direction, *x, *y;
+    F_arrow *arrow;
+{
+    double	r, alpha, beta, dy, dx;
+    double	lpt,h;
+
+    dy=y2-y1;
+    dx=x2-x1;
+    r=sqrt(dx*dx+dy*dy);
+    if (arrow->ht>2*r) {
+	compute_normal(x1,y1,x2,y2,direction,x,y);
+	return;
+    }
+
+    h = (double) arrow->ht;
+    /* lpt is the amount the arrowhead extends beyond the end of the line */
+    lpt = arrow->thickness*15/2.0/(arrow->wid/h/2.0);
+    /* add this to the length */
+    h += lpt;
+
+    beta=atan2(dy,dx);
+    if (direction) {
+	alpha=2*asin(h/2.0/r);
+    } else {
+	alpha=-2*asin(h/2.0/r);
+    }
+
+    *x=round(x1+r*cos(beta+alpha));
+    *y=round(y1+r*sin(beta+alpha));
+}
+
+/****************************************************************
+
+ clip_arrows - calculate a clipping region which is the current 
+	clipping area minus the polygons at the arrowheads.
+
+ This will prevent the object (line, spline etc.) from protruding
+ on either side of the arrowhead Also calculate the arrowheads
+ themselves and put the polygons in farpts[nfpts] for forward
+ arrow and barpts[nbpts] for backward arrow.
+
+****************************************************************/
+
+clip_arrows(obj, objtype, op)
+    F_line	   *obj;
+    int		    objtype;
+    int		    op;
+{
+    Region	    mainregion, newregion;
+    Region	    region;
+    XPoint	    xpts[5];
+    int		    fcx1, fcy1, fcx2, fcy2;
+    int		    bcx1, bcy1, bcx2, bcy2;
+    int		    x, y;
+    int		    i, j;
+
+    if (obj->for_arrow || obj->back_arrow) {
+	/* start with current clipping area - maybe we won't have to draw anything */
+	xpts[0].x = clip_xmin;
+	xpts[0].y = clip_ymin;
+	xpts[1].x = clip_xmax;
+	xpts[1].y = clip_ymin;
+	xpts[2].x = clip_xmax;
+	xpts[2].y = clip_ymax;
+	xpts[3].x = clip_xmin;
+	xpts[3].y = clip_ymax;
+	mainregion = XPolygonRegion(xpts, 4, WindingRule);
+    }
+
+    /* get points for any forward arrowhead */
+    if (obj->for_arrow) {
+	x = points[npoints-2].x;
+	y = points[npoints-2].y;
+	if (objtype == O_ARC) {
+	    F_arc  *a = (F_arc *) obj;
+	    compute_arcarrow_angle(a->center.x, a->center.y, a->point[2].x,
+				a->point[2].y, a->direction,
+				a->for_arrow, &x, &y);
+	}
+	calc_arrow(x, y, points[npoints-1].x, points[npoints-1].y,
+		   &fcx1, &fcy1, &fcx2, &fcy2,
+		   obj->thickness, obj->for_arrow, farpts, &nfpts);
+	/* set clipping to the first three points of the arrowhead and
+	   the box surrounding it */
+	for (i=0; i<3; i++) {
+	    xpts[i].x = ZOOMX(farpts[i].x);
+	    xpts[i].y = ZOOMY(farpts[i].y);
+	}
+	xpts[3].x = ZOOMX(fcx2);
+	xpts[3].y = ZOOMY(fcy2);
+	xpts[4].x = ZOOMX(fcx1);
+	xpts[4].y = ZOOMY(fcy1);
+	if (appres.DEBUG) {
+	  for (i=0; i<5; i++) {
+	    if (i==4)
+		j=0;
+	    else
+		j=i+1;
+	    pw_vector(canvas_win,xpts[i].x,xpts[i].y,xpts[j].x,xpts[j].y,op,1,
+		PANEL_LINE,0.0,RED);
+	  }
+	}
+	region = XPolygonRegion(xpts, 5, WindingRule);
+	newregion = XCreateRegion();
+	XSubtractRegion(mainregion, region, newregion);
+	XDestroyRegion(region);
+	XDestroyRegion(mainregion);
+	mainregion=newregion;
+    }
+	
+    /* get points for any backward arrowhead */
+    if (obj->back_arrow) {
+	x = points[1].x;
+	y = points[1].y;
+	if (objtype == O_ARC) {
+	    F_arc  *a = (F_arc *) obj;
+	    compute_arcarrow_angle(a->center.x, a->center.y, a->point[0].x,
+			       a->point[0].y, a->direction ^ 1,
+			       a->back_arrow, &x, &y);
+	}
+	calc_arrow(x, y, points[0].x, points[0].y,
+		   &bcx1, &bcy1, &bcx2, &bcy2,
+		    obj->thickness, obj->back_arrow, barpts,&nbpts);
+	/* set clipping to the first three points of the arrowhead and
+	   the box surrounding it */
+	for (i=0; i<3; i++) {
+	    xpts[i].x = ZOOMX(barpts[i].x);
+	    xpts[i].y = ZOOMY(barpts[i].y);
+	}
+	xpts[3].x = ZOOMX(bcx2);
+	xpts[3].y = ZOOMY(bcy2);
+	xpts[4].x = ZOOMX(bcx1);
+	xpts[4].y = ZOOMY(bcy1);
+	if (appres.DEBUG) {
+	  int j;
+	  for (i=0; i<5; i++) {
+	    if (i==4)
+		j=0;
+	    else
+		j=i+1;
+	    pw_vector(canvas_win,xpts[i].x,xpts[i].y,xpts[j].x,xpts[j].y,op,1,
+		PANEL_LINE,0.0,RED);
+	  }
+	}
+	region = XPolygonRegion(xpts, 5, WindingRule);
+	newregion = XCreateRegion();
+	XSubtractRegion(mainregion, region, newregion);
+	XDestroyRegion(region);
+	XDestroyRegion(mainregion);
+	mainregion=newregion;
+    }
+    /* now set the clipping region for the subsequent drawing of the object */
+    if (obj->for_arrow || obj->back_arrow) {
+	XfigSetRegion(tool_d, gccache[op], mainregion);
+	XDestroyRegion(mainregion);
+    }
+}
+
+/****************************************************************
+
+ calc_arrow - calculate points heading from (x1, y1) to (x2, y2)
+
+ Must pass POINTER to npoints for return value and for c1x, c1y,
+ c2x, c2y, which are two points at the end of the arrowhead such
+ that xc, yc, c1x, c1y, c2x, c2y and xd, yd form the bounding
+ rectangle of the arrowhead.
+
+ Fills points array with npoints arrowhead coordinates
+
+****************************************************************/
+
+calc_arrow(x1, y1, x2, y2, c1x, c1y, c2x, c2y, objthick, arrow, points, npoints)
+    int		    x1, y1, x2, y2;
+    int		   *c1x, *c1y, *c2x, *c2y;
+    int		    objthick;
     F_arrow	   *arrow;
-    Color	    color;
+    zXPoint	    points[];
+    int		   *npoints;
 {
     double	    x, y, xb, yb, dx, dy, l, sina, cosa;
+    double	    xxb;
+    double	    mx, my;
+    double	    ddx, ddy, lpt;
+    double	    alpha;
     int		    xc, yc, xd, yd, xs, ys;
+    int		    xg, yg, xh, yh;
     float	    wid = arrow->wid;
     float	    ht = arrow->ht;
-    zXPoint	    points[5];
     int		    type = arrow->type;
     int		    style = arrow->style;
-    int		    fill, n;
 
+    *npoints = 0;
     dx = x2 - x1;
     dy = y1 - y2;
-    l = sqrt(dx * dx + dy * dy);
-    if (l == 0)
+    if (dx==0 && dy==0)
 	return;
+
+    /* lpt is the amount the arrowhead extends beyond the end of the
+       line because of the sharp point (miter join) */
+    lpt = arrow->thickness*15/2.0/(wid/ht/2.0);
+
+    /* alpha is the angle the line is relative to horizontal */
+    alpha = atan2(dy,-dx);
+
+    /* ddx, ddy is amount to move end of line back so that arrowhead point
+       ends where line used to */
+    ddx = lpt*0.9 * cos(alpha);
+    ddy = lpt*0.9 * sin(alpha);
+
+    /* move endpoint of line back */
+    mx = x2 + ddx;
+    my = y2 + ddy;
+
+    l = sqrt(dx * dx + dy * dy);
     sina = dy / l;
     cosa = dx / l;
-    xb = x2 * cosa - y2 * sina;
-    yb = x2 * sina + y2 * cosa;
-    /* lengthen the "height" if type 2 */
+    xb = mx * cosa - my * sina;
+    yb = mx * sina + my * cosa;
+
+    /* (xs,ys) are a point the length (height) of the arrowhead from
+       the end of the shaft */
+    xs =  (xb-ht) * cosa + yb * sina + .5;
+    ys = -(xb-ht) * sina + yb * cosa + .5;
+
+    /* lengthen the tail if type 2 */
     if (type == 2)
 	x = xb - ht * 1.2;
-    /* shorten the "height" if type 3*/
+    /* shorten the tail if type 3 */
     else if (type == 3)
 	x = xb - ht * 0.8;
     else
 	x = xb - ht;
+
+    /* half the width of the arrowhead */
     y = yb - wid / 2;
+
+    /* xc,yc is one point of arrowhead tail */
     xc =  x * cosa + y * sina + .5;
     yc = -x * sina + y * cosa + .5;
+
+    /* the x component of the endpoint of the line */
+    xxb = x2 * cosa - y2 * sina;
+
+    /* xg,yg is one corner of the box enclosing the arrowhead */
+    /* allow extra for a round line cap */
+    xxb = xxb+objthick*ZOOM_FACTOR;
+
+    xg =  xxb * cosa + y * sina + .5;
+    yg = -xxb * sina + y * cosa + .5;
+
     y = yb + wid / 2;
+    /* xd,yd is other point of arrowhead tail */
     xd =  x * cosa + y * sina + .5;
     yd = -x * sina + y * cosa + .5;
 
-    /* a point "length" from the end of the shaft */
-    xs =  (xb-ht) * cosa + yb * sina + .5;
-    ys = -(xb-ht) * sina + yb * cosa + .5;
+    /* xh,yh is the other corner of the box enclosing the arrowhead */
+    /* allow extra for a round line cap */
+    xh =  xxb * cosa + y * sina + .5;
+    yh = -xxb * sina + y * cosa + .5;
 
-    n = 0;
-    points[n].x = xc; points[n++].y = yc;
-    points[n].x = x2; points[n++].y = y2;
-    points[n].x = xd; points[n++].y = yd;
-    if (type != 0) {
-	points[n].x = xs; points[n++].y = ys;	/* add point on shaft */
-	points[n].x = xc; points[n++].y = yc;	/* connect back to first point */
+    /* pass back these two corners to the caller */
+    *c1x = xg;
+    *c1y = yg;
+    *c2x = xh;
+    *c2y = yh;
+
+    /* draw the box surrounding the arrowhead */
+    if (appres.DEBUG) {
+	pw_vector(canvas_win, xc, yc, xg, yg, PAINT, 1, RUBBER_LINE, 0.0, GREEN);
+	pw_vector(canvas_win, xg, yg, xh, yh, PAINT, 1, RUBBER_LINE, 0.0, GREEN);
+	pw_vector(canvas_win, xh, yh, xd, yd, PAINT, 1, RUBBER_LINE, 0.0, GREEN);
+	pw_vector(canvas_win, xd, yd, xc, yc, PAINT, 1, RUBBER_LINE, 0.0, GREEN);
     }
-    if (type == 0)
+
+    points[*npoints].x = xc; points[(*npoints)++].y = yc;
+    points[*npoints].x = mx; points[(*npoints)++].y = my;
+    points[*npoints].x = xd; points[(*npoints)++].y = yd;
+    if (type != 0) {
+	points[*npoints].x = xs; points[(*npoints)++].y = ys; /* add point on shaft */
+	points[*npoints].x = xc; points[(*npoints)++].y = yc; /* connect back to first point */
+    }
+}
+
+/* draw the arrowhead resulting from the call to calc_arrow() */
+
+draw_arrow(obj, arrow, points, npoints, op)
+    F_line	   *obj;
+    F_arrow	   *arrow;
+    zXPoint	    points[];
+    int		    npoints;
+    int		    op;
+{
+    int		    fill;
+
+    if (obj->thickness == 0)
+	return;
+    if (arrow->type == 0)
 	fill = UNFILLED;			/* old, boring arrow head */
-    else if (style == 0)
+    else if (arrow->style == 0)
 	fill = NUMTINTPATS+NUMSHADEPATS-1;	/* "hollow", fill with white */
     else
 	fill = NUMSHADEPATS-1;			/* "solid", fill with solid color */
-    pw_lines(canvas_win, points, n, op, round(arrow->thickness),
+    pw_lines(canvas_win, points, npoints, op, round(arrow->thickness),
 		SOLID_LINE, 0.0, JOIN_MITER, CAP_BUTT,
-		fill, color, color);
-}
-
-draw_arcarrows(a, op)
-    F_arc	   *a;
-    int		    op;
-{
-    int		    x, y;
-
-    if (a->for_arrow) {
-	compute_normal(a->center.x, a->center.y, a->point[2].x,
-		       a->point[2].y, a->direction, &x, &y);
-	draw_arrow(x, y, a->point[2].x, a->point[2].y, a->for_arrow,
-		   op, a->pen_color);
-    }
-    if (a->back_arrow) {
-	compute_normal(a->center.x, a->center.y, a->point[0].x,
-		       a->point[0].y, a->direction ^ 1, &x, &y);
-	draw_arrow(x, y, a->point[0].x, a->point[0].y, a->back_arrow,
-		   op, a->pen_color);
-    }
+		fill, obj->pen_color, obj->pen_color);
 }
 
 /********************* CURVES FOR ARCS AND ELLIPSES ***************
@@ -1134,17 +1482,20 @@ draw_arcarrows(a, op)
  For all other angles angle_ellipse() is called.
 
  Will fill the curve if fill_style is != UNFILLED (-1)
+ Call with draw_points = True to display the points using draw_point_array
+	Otherwise global points array is filled with npoints values but
+	not displayed.
  Call with draw_center = True and center_x, center_y set to draw endpoints
 	to center point (xoff,yoff) (arc type 2, i.e. pie wedge)
 
 ****************************************************************/
 
-curve(window, xstart, ystart, xend, yend, draw_center,
+curve(window, xstart, ystart, xend, yend, draw_points, draw_center,
 	direction, estnpts, a, b, xoff, yoff, op, thick,
 	style, style_val, fill_style, pen_color, fill_color, cap_style)
     Window	    window;
     int		    xstart, ystart, xend, yend, a, b, xoff, yoff;
-    Boolean	    draw_center;
+    Boolean	    draw_points, draw_center;
     int		    direction, estnpts, op, thick, style, fill_style;
     float	    style_val;
     Color	    pen_color, fill_color;
@@ -1156,9 +1507,6 @@ curve(window, xstart, ystart, xend, yend, draw_center,
     double	    falpha, fx, fy, fxy, absfx, absfy, absfxy;
     int		    margin, test_succeed, inc, dec;
     float	    zoom;
-
-    if (a == 0 || b == 0)
-	return;
 
     zoom = 1.0;
     /* if drawing on canvas (not in indicator button) adjust values by zoomscale */
@@ -1173,6 +1521,9 @@ curve(window, xstart, ystart, xend, yend, draw_center,
 	xoff = round(xoff * zoom);
 	yoff = round(yoff * zoom);
     }
+
+    if (a == 0 || b == 0)
+	return;
 
     if (!init_point_array(estnpts,estnpts/2)) /* estimate of number of points */
 	return;
@@ -1245,7 +1596,8 @@ curve(window, xstart, ystart, xend, yend, draw_center,
 		too_many_points();
     }
 	
-    draw_point_array(window, op, thick, style, style_val, JOIN_MITER,
+    if (draw_points)
+	draw_point_array(window, op, thick, style, style_val, JOIN_BEVEL,
 			cap_style, fill_style, pen_color, fill_color);
 }
 
@@ -1394,7 +1746,7 @@ pop(x1, y1, x2, y2, x3, y3, x4, y4)
     return (1);
 }
 
-/* redraw all the GIF objects */
+/* redraw all the picture objects */
 
 redraw_images(obj)
     F_compound	   *obj;
@@ -1410,3 +1762,4 @@ redraw_images(obj)
 		redisplay_line(l);
     }
 }
+

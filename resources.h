@@ -19,32 +19,6 @@
 
 #include "paintop.h"
 
-typedef struct {
-    unsigned int    x, y, z;
-    caddr_t	   *m;
-}		MprData;
-
-#define mpr_static(name,x,y,z,pix)	\
-XImage name	= \
-{ \
-(x),		/* width */ \
-(y),		/* height */ \
-0,		/* offset */ \
-XYBitmap,	/* format */ \
-(char *)(pix),	/* data pointer */ \
-MSBFirst,	/* data byte order LSB or MSB first */ \
-8,		/* quant of scanline */ \
-LSBFirst,	/* bitmap bit order LSB or MSBFirst */ \
-8,		/* bitmap pad */ \
-(z),		/* depth */ \
-(x+7)/8,	/* bytes-per-line */ \
-1,		/* bits per pizel */ \
-0,		/* red_mask */ \
-0,		/* z arrangement green_mask */ \
-0,		/* z arrangement blue_mask */ \
-NULL		/* object data pointer for extension */ \
-}
-
 #define NUMSHADEPATS	21
 #define NUMTINTPATS	20
 #define NUMPATTERNS	22
@@ -52,6 +26,8 @@ NULL		/* object data pointer for extension */ \
 
 #define NUM_STD_COLS	32
 #define MAX_USR_COLS	512
+
+#define	Color		int
 
 /* default number of colors to use for GIF/XPM */
 /* this can be overridden in resources or command-line arg */
@@ -70,8 +46,11 @@ typedef struct {
 		     *rgb;
 		} fig_colors ;
 
+/* original directory where xfig started */
+extern char		 orig_dir[PATH_MAX+2];
+
 #ifdef USE_XPM
-#include <X11/xpm.h>
+#include <xpm.h>
 extern XpmAttributes	 xfig_icon_attr;
 #endif
 extern fig_colors	 colorNames[NUM_STD_COLS + 1];
@@ -125,12 +104,13 @@ typedef struct _appres {
     char	   *keyFile;
     char	   *exportLanguage;
     Boolean	    flushleft;		/* center/flush-left printing */
-    Boolean	    textoutline;	/* draw text bounding box if true */
     float	    user_scale;		/* scale screen units to user units */
     char	   *user_unit;		/* user defined unit name */
     Boolean	    tablet;		/* input tablet extension */
     int		    max_image_colors;	/* max colors to use for GIF/XPM images */
     Boolean	    dont_switch_cmap;	/* don't allow switching of colormap */
+    int		    rulerthick;		/* thickness of rulers */
+    char	   *image_editor;	/* image editor (xv, etc) */
 }		appresStruct, *appresPtr;
 extern appresStruct appres;
 
@@ -161,12 +141,8 @@ struct Menu {
 
 typedef struct Menu MenuRec;
 
-typedef XImage	PIXRECTREC;
 typedef XImage *PIXRECT;
 typedef XFontStruct *PIX_FONT;
-typedef MprData MPR_DATA;
-typedef Widget	TOOL;
-typedef Widget	TOOLSW;
 typedef pr_size PR_SIZE;
 typedef RectRec RECT;
 
@@ -179,10 +155,10 @@ extern Cursor	arrow_cursor, bull_cursor, buster_cursor, crosshair_cursor,
 		u_arrow_cursor, ud_arrow_cursor, d_arrow_cursor, wait_cursor,
 		magnify_cursor;
 
-extern TOOL	tool;
+extern Widget	tool;
 extern XtAppContext tool_app;
 
-extern TOOLSW	canvas_sw, ps_fontmenu, /* printer font menu tool */
+extern Widget	canvas_sw, ps_fontmenu, /* printer font menu tool */
 		latex_fontmenu, 	/* printer font menu tool */
 		msg_form, msg_panel, name_panel, cmd_panel, mode_panel, 
 		d_label, e_label, mousefun,
@@ -196,6 +172,7 @@ extern int	tool_sn;
 extern int	tool_cells;
 extern Colormap	tool_cm, newcmap;
 extern Boolean	swapped_cmap;
+extern Atom	wm_delete_window;
 
 extern GC	gc, button_gc, ind_button_gc, mouse_button_gc,
 		fill_color_gc, pen_color_gc, blank_gc, ind_blank_gc, 
@@ -207,31 +184,13 @@ extern GC	gc, button_gc, ind_button_gc, mouse_button_gc,
 extern Pixmap	fill_pm[NUMFILLPATS],fill_but_pm[NUMPATTERNS];
 extern XColor	x_fg_color, x_bg_color;
 extern Boolean	writing_bitmap;
+extern Boolean	writing_pixmap;
 extern unsigned long but_fg, but_bg;
 extern unsigned long ind_but_fg, ind_but_bg;
 extern unsigned long mouse_but_fg, mouse_but_bg;
 
 /* will be filled in with environment variable XFIGTMPDIR */
 extern char    *TMPDIR;
-
-struct icon {
-    short	    ic_width, ic_height;	/* overall icon dimensions */
-    PIXRECT	    ic_background;	/* background pattern (mem pixrect) */
-    RECT	    ic_gfxrect; /* where the graphic goes */
-    PIXRECT	    ic_mpr;	/* the graphic (a memory pixrect) */
-    RECT	    ic_textrect;/* where text goes */
-    char	   *ic_text;	/* the text */
-    PIX_FONT	    ic_font;	/* Font with which to display text */
-    int		    ic_flags;
-};
-
-/* flag values */
-#define ICON_BKGRDPAT	0x02	/* use ic_background to prepare image */
-#define ICON_BKGRDGRY	0x04	/* use std gray to prepare image */
-#define ICON_BKGRDCLR	0x08	/* clear to prepare image */
-#define ICON_BKGRDSET	0x10	/* set to prepare image */
-#define ICON_FIRSTPRIV	0x0100	/* start of private flags range */
-#define ICON_LASTPRIV	0x8000	/* end of private flags range */
 
 extern char *text_translations;
 
@@ -243,3 +202,9 @@ extern char    *just_items[2];
 /* for w_file.c and w_export.c */
 
 extern char    *offset_unit_items[3];
+
+extern int	RULER_WD;
+
+/* environment variable name definition for image editor used for screen capture */
+
+#define XFIG_ENV_GIF_EDITOR    getenv("XFIG_GIF_EDITOR")

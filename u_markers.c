@@ -28,13 +28,6 @@
 	XDrawRectangle(tool_d,(win),gccache[INV_PAINT], \
 	     ZOOMX(x)-((w-1)/2),ZOOMY(y)-((w-1)/2),(w),(h))
 
-#ifdef notdef
-/* not used in present implementation */
-static u_int	marker_pattern[3] = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
-
-mpr_static(pmarker, 5, 5, 1, marker_pattern);
-#endif
-
 center_marker(x, y)
     int		    x, y;
 {

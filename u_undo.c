@@ -46,6 +46,9 @@ F_compound	saved_objects = {0, 0, { 0, 0 }, { 0, 0 },
 				NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 F_compound	object_tails = {0, 0, { 0, 0 }, { 0, 0 }, 
 				NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+F_arrow		*saved_for_arrow = (F_arrow *) NULL;
+F_arrow		*saved_back_arrow = (F_arrow *) NULL;
+
 int		last_action = F_NULL;
 
 /*************** LOCAL *****************/
@@ -187,15 +190,25 @@ undo_delete_arrowhead()
 {
     switch (last_object) {
     case O_POLYLINE:
-	add_linearrow(saved_objects.lines,
-		      last_prev_point, last_selected_point);
+	if (saved_for_arrow)
+	    saved_objects.lines->for_arrow = saved_for_arrow;
+	if (saved_back_arrow)
+	    saved_objects.lines->back_arrow = saved_back_arrow;
+	redisplay_line(saved_objects.lines);
 	break;
     case O_SPLINE:
-	add_splinearrow(saved_objects.splines,
-			last_prev_point, last_selected_point);
+	if (saved_for_arrow)
+	    saved_objects.splines->for_arrow = saved_for_arrow;
+	if (saved_back_arrow)
+	    saved_objects.splines->back_arrow = saved_back_arrow;
+	redisplay_spline(saved_objects.splines);
 	break;
     case O_ARC:
-	add_arcarrow(saved_objects.arcs, last_arcpointnum);
+	if (saved_for_arrow)
+	    saved_objects.arcs->for_arrow = saved_for_arrow;
+	if (saved_back_arrow)
+	    saved_objects.arcs->back_arrow = saved_back_arrow;
+	redisplay_arc(saved_objects.arcs);
 	break;
     default:
 	return;
@@ -345,6 +358,7 @@ undo_delete()
 	redisplay_compound(saved_objects.compounds);
 	break;
     case O_ALL_OBJECT:
+	saved_objects.next = NULL;
 	compound_bound(&saved_objects, &xmin, &ymin, &xmax, &ymax);
 	append_objects(&objects, &saved_objects, &object_tails);
 	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
@@ -424,7 +438,6 @@ undo_load()
     update_cur_filename(save_filename);
     strcpy(save_filename, ctemp);
     redisplay_canvas();
-    set_modifiedflag();
     swap_colors();
     last_action = F_LOAD;
 }
@@ -432,14 +445,16 @@ undo_load()
 undo_scale()
 {
     float	    scalex, scaley;
+    int		    xmin1, ymin1, xmax1, ymax1;
+    int		    xmin2, ymin2, xmax2, ymax2;
 
-    mask_toggle_compoundmarker(saved_objects.compounds);
-    draw_compoundelements(saved_objects.compounds, ERASE);
+    compound_bound(saved_objects.compounds, &xmin1, &ymin1, &xmax1, &ymax1);
     scalex = ((float) (last_position.x - fix_x)) / (new_position.x - fix_x);
     scaley = ((float) (last_position.y - fix_y)) / (new_position.y - fix_y);
     scale_compound(saved_objects.compounds, scalex, scaley, fix_x, fix_y);
-    draw_compoundelements(saved_objects.compounds, PAINT);
-    mask_toggle_compoundmarker(saved_objects.compounds);
+    compound_bound(saved_objects.compounds, &xmin2, &ymin2, &xmax2, &ymax2);
+    redisplay_regions(xmin1, ymin1, xmax1, ymax1,
+			  xmin2, ymin2, xmax2, ymax2);
     swap_newp_lastp();
 }
 

@@ -82,7 +82,7 @@ rotate_ccw_selected()
 static
 rotate_selected()
 {
-    set_mousefun("rotate object", "copy & rotate", "set center");
+    set_mousefun("rotate object", "copy & rotate", "set center", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_rotate);
@@ -98,14 +98,14 @@ set_unset_center(x, y)
     int		    x, y;
 {
     if (setcenter) {
-      set_mousefun("rotate object", "copy & rotate", "set center");
+      set_mousefun("rotate object", "copy & rotate", "set center", "", "", "");
       draw_mousefun_canvas();
       setcenter = 0;
       center_marker(setcenter_x,setcenter_y);
       /* second call to center_mark on same position deletes */
     }
     else {
-      set_mousefun("rotate object", "copy & rotate", "unset center");
+      set_mousefun("rotate object", "copy & rotate", "unset center", "", "", "");
       draw_mousefun_canvas();
       setcenter = 1;
       setcenter_x = x;
@@ -206,8 +206,8 @@ init_rotateline(l, px, py)
     }
     /* redisplay objects under this object before it was rotated */
     redisplay_line(l);
-    draw_line(line, PAINT);
-    toggle_linemarker(line);
+    /* and this line and any other objects on top */
+    redisplay_line(line);
     reset_cursor();
 }
 
@@ -230,8 +230,8 @@ init_rotatetext(t, px, py)
     }
     /* redisplay objects under this object before it was rotated */
     redisplay_text(t);
-    draw_text(text, PAINT);
-    toggle_textmarker(text);
+    /* and this text and any other objects on top */
+    redisplay_text(text);
     reset_cursor();
 }
 
@@ -253,8 +253,8 @@ init_rotateellipse(e, px, py)
     }
     /* redisplay objects under this object before it was rotated */
     redisplay_ellipse(e);
-    draw_ellipse(ellipse, PAINT);
-    toggle_ellipsemarker(ellipse);
+    /* and this ellipse and any other objects on top */
+    redisplay_ellipse(ellipse);
     reset_cursor();
 }
 
@@ -276,8 +276,8 @@ init_rotatearc(a, px, py)
     }
     /* redisplay objects under this object before it was rotated */
     redisplay_arc(a);
-    draw_arc(arc, PAINT);
-    toggle_arcmarker(arc);
+    /* and this arc and any other objects on top */
+    redisplay_arc(arc);
     reset_cursor();
 }
 
@@ -299,8 +299,8 @@ init_rotatespline(s, px, py)
     }
     /* redisplay objects under this object before it was rotated */
     redisplay_spline(s);
-    draw_spline(spline, PAINT);
-    toggle_splinemarker(spline);
+    /* and this spline and any other objects on top */
+    redisplay_spline(spline);
     reset_cursor();
 }
 
@@ -326,8 +326,8 @@ init_rotatecompound(c, px, py)
     }
     /* redisplay objects under this object before it was rotated */
     redisplay_compound(c);
-    draw_compoundelements(compound, PAINT);
-    toggle_compoundmarker(compound);
+    /* and this compound and any other objects on top */
+    redisplay_compound(compound);
     reset_cursor();
 }
 

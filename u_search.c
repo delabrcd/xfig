@@ -124,8 +124,8 @@ next_ellipse_found(x, y, tolerance, px, py, shift)
 	else
 	    r = a * b * dis / sqrt(1.0 * b * b * dx * dx + 1.0 * a * a * dy * dy);
 	if (fabs(dis - r) <= tol) {
-	    *px = round(r * dx / dis + e->center.x);
-	    *py = round(r * dy / dis + e->center.y);
+	    *px = round(r * dx / dis + (double)e->center.x);
+	    *py = round(r * dy / dis + (double)e->center.y);
 	    return (1);
 	}
     }

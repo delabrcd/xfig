@@ -18,9 +18,10 @@
  */
 
 #include "fig.h"
-#include "mode.h"
 #include "resources.h"
+#include "mode.h"
 #include "object.h"
+#include "u_fonts.h"
 #include "w_indpanel.h"
 
 int		cur_mode = F_NULL;
@@ -34,8 +35,8 @@ int		autoforwardarrow_mode = 0;
 int		autobackwardarrow_mode = 0;
 int		cur_gridmode = GRID_0;
 int		cur_pointposn = P_MAGNET;
-int		posn_rnd[P_GRID2 + 1];
-int		posn_hlf[P_GRID2 + 1];
+int		posn_rnd[P_GRID3 + 1];
+int		posn_hlf[P_GRID3 + 1];
 int		grid_fine[GRID_3 + 1];
 int		grid_coarse[GRID_3 + 1];
 char	       *grid_name[GRID_3 + 1];
@@ -69,11 +70,11 @@ char		batch_file[32];
 char	       *lang_items[] = {
     "box",     "latex",  "epic", "eepic", "eepicemu",
     "pictex",  "ibmgl",  "eps",  "ps",    "pstex", 
-    "pstex_t", "textyl", "tpic", "pic",   "xbm",
+    "pstex_t", "textyl", "tpic", "pic",   "mf",
+    "gif",     "jpg",    "xbm",
 #ifdef USE_XPM
     "xpm",
 #endif
-    "gif",
 	};
 
 char	       *lang_texts[] = {
@@ -91,11 +92,13 @@ char	       *lang_texts[] = {
     "Textyl \\special commands       ",
     "TPIC                           ",
     "PIC                            ",
+    "MF (MetaFont)                  ",
+    "GIF                            ",
+    "JPEG                           ",
     "X11 Bitmap                     ",
 #ifdef USE_XPM
     "X11 Pixmap (XPM)               ",
 #endif
-    "GIF",
 	};
 
 /***************************  Mode Settings  ****************************/
@@ -104,10 +107,37 @@ int		cur_objmask = M_NONE;
 int		cur_updatemask = I_UPDATEMASK;
 int		cur_depth = 0;
 
-/***************************  Text Settings  ****************************/
+/***************************  Texts ****************************/
 
 int		hidden_text_length;
-float		cur_textstep = 1.2;
+float		cur_textstep = 1.0;
+int		cur_fontsize = DEF_FONTSIZE;
+int		cur_latex_font	= 0;
+int		cur_ps_font	= 0;
+int		cur_textjust	= T_LEFT_JUSTIFIED;
+int		cur_textflags	= PSFONT_TEXT;
+
+/***************************  Lines ****************************/
+
+int		cur_linewidth	= 1;
+int		cur_linestyle	= SOLID_LINE;
+int		cur_joinstyle	= JOIN_MITER;
+int		cur_capstyle	= CAP_BUTT;
+float		cur_dashlength	= DEF_DASHLENGTH;
+float		cur_dotgap	= DEF_DOTGAP;
+float		cur_styleval	= 0.0;
+Color		cur_pencolor	= DEFAULT;
+Color		cur_fillcolor	= WHITE;
+int		cur_boxradius	= DEF_BOXRADIUS;
+int		cur_fillstyle	= UNFILLED;
+int		cur_penstyle	= NUMSHADEPATS;	/* solid color */
+int		cur_arrowmode	= L_NOARROWS;
+int		cur_arrowtype	= 0;
+int		cur_arctype	= T_OPEN_ARC;
+char		EMPTY_PIC[8]	= "<empty>";
+
+/* Misc */
+float		cur_elltextangle = 0.0;	/* text/ellipse input angle */
 
 /***************************  File Settings  ****************************/
 

@@ -1,13 +1,24 @@
 The following are applications which can produce Fig files as their output:
 
 ************************************************************************
+pstoedit - converts Postscript(TM) files to a simple vector graphic format,
+	that can be edited. Currently tgif, xfig, and Framemaker(TM) (MIF-
+	format) and flat PostScript are supported.
+	Available from:
+	  ftp://ftp.x.org/contrib/applications/tgif/pstoedit/pstoedit.2.3.1.tar.gz
+	  ftp://ftp.cs.ucla.edu/pub/tgif/pstoedit/pstoedit.2.3.1.tar.gz
+	  ftp://bourbon.cs.ucla.edu/pub/pstoedit/pstoedit.2.3.1.tar.gz
+
+************************************************************************
 xgraph - plotting package for X - version on iworks.ecn.uiowa.edu in
 	comp.hp has version that can output Fig files
+
 ************************************************************************
 gnuplot - Plotting package; can output in Fig format.
 
 ************************************************************************
-pic2fig - converts PIC (used with troff/ditroff/etc) to Fig
+pic2fig - converts PIC (used with troff/ditroff/etc) to Fig.
+	May be found at ftp.cs.orst.edu in /localsrc/graphics.
 
 ************************************************************************
 plot2fig - converts Unix PLOT language to Fig

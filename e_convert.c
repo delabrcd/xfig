@@ -32,7 +32,7 @@ static int	init_convert();
 
 convert_selected()
 {
-    set_mousefun("spline<->line", "", "");
+    set_mousefun("spline<->line", "", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_convert);
@@ -52,8 +52,10 @@ init_convert(p, type, x, y, px, py)
     switch (type) {
     case O_POLYLINE:
 	cur_l = (F_line *) p;
-	/* the search routine will ensure that we don't have a box */
-	line_2_spline(cur_l);
+	if (cur_l->type == T_ARC_BOX || cur_l->type == T_BOX)
+	    box_2_box(cur_l);
+	else
+	    line_2_spline(cur_l);
 	break;
     case O_SPLINE:
 	cur_s = (F_spline *) p;
@@ -65,6 +67,41 @@ init_convert(p, type, x, y, px, py)
     }
 }
 
+/* handle conversion of box to arc_box and arc_box to box */
+
+box_2_box(l)
+    F_line	   *l;
+{
+    F_line	   *newl;
+
+    newl = copy_line(l);
+    switch (l->type) {
+      case T_BOX:
+	newl->type = T_ARC_BOX;
+	if (newl->radius == DEFAULT || newl->radius == 0)
+	    newl->radius = cur_boxradius;
+	break;
+      case T_ARC_BOX:
+	newl->type = T_BOX;
+	break;
+    }
+
+    /* now we have finished creating the new one, we can get rid of the old one */
+    /* first off the screen */
+    mask_toggle_linemarker(l);
+    draw_line(l, ERASE);
+    list_delete_line(&objects.lines, l);
+
+    /* now put back the new line */
+    draw_line(newl, PAINT);
+    mask_toggle_linemarker(newl);
+    list_add_line(&objects.lines, newl);
+    clean_up();
+    set_action_object(F_CONVERT, O_POLYLINE);
+    set_latestline(newl);
+    return;
+}
+
 line_2_spline(l)
     F_line	   *l;
 {
@@ -74,9 +111,9 @@ line_2_spline(l)
 	put_msg("Can't CONVERT this line into a spline: insufficient points");
 	return;
     }
-    if ((s = create_spline()) == NULL)
-	return;
 
+    if ((s = create_spline()) == NULL)
+        return;
     if (l->type == T_POLYGON)
 	s->type = T_CLOSED_INTERP;
     else
@@ -107,7 +144,7 @@ line_2_spline(l)
     mask_toggle_linemarker(l);
     draw_line(l, ERASE);
     list_delete_line(&objects.lines, l);
-    /* we reuse the arrows and points, so `detach' them from the line */
+    /* for spline wwe reuse the arrows and points, so 'detach' them from the line */
     l->for_arrow = l->back_arrow = NULL;
     l->points = NULL;
     /* now get rid of the rest */
@@ -145,7 +182,7 @@ spline_2_line(s)
     l->cap_style = s->cap_style;
     l->join_style = cur_joinstyle;
     l->pen_style = s->pen_style;
-    l->radius = DEF_BOXRADIUS;
+    l->radius = DEFAULT;
     l->fill_style = s->fill_style;
     l->for_arrow = s->for_arrow;
     l->back_arrow = s->back_arrow;

@@ -14,8 +14,8 @@
 	Fig*sideruler.background:		grey95
 	Fig*sideruler.foreground:		black
 ! Filename panel
-	Fig*file_name.background:		lightskyblue
-	Fig*file_name.foreground:		black
+	Fig*msg_form.file_name.background:	lightskyblue
+	Fig*msg_form.file_name.foreground:	black
 ! Message panel
 	Fig*message*background:			lavender
 	Fig*message*foreground:			black
@@ -25,17 +25,20 @@
 ! Indicator (lower) panel
 	Fig*ind_panel.horizontal.background:	lightskyblue
 	Fig*ind_panel.horizontal.foreground:	black
-	Fig*ind_box.background:			dodgerblue
-	Fig*ind_box.foreground:			black
-	Fig*ind_box.button_form.button*background: dodgerblue
-	Fig*ind_box.button_form.button*foreground: black
-	Fig*ind_box.button_form.update*foreground: red
-	Fig*ind_box.button_form.update*background: white
+	Fig*ind_panel.ind_box.button_form.button*background: dodgerblue
+	Fig*ind_panel.ind_box.button_form.button*foreground: black
+	Fig*ind_panel.ind_box.button_form.update*foreground: red
+	Fig*ind_panel.ind_box.button_form.update*background: white
+!   The box that contains the buttons and the horiz. scrollbar
+	Fig*ind_panel.ind_box.background:	dodgerblue
+!   The border color of the buttons themselves
+	Fig*ind_panel.ind_box.button_form.borderColor: black
 ! Control panel for updating
 	Fig*upd_ctrl_btns.foreground:		red
 	Fig*upd_ctrl_btns.background:		white
 ! Mode (left-hand) panel
-	Fig*mode_panel.background:		lightskyblue
+!  This background resource shows between the buttons like a border
+	Fig*mode_panel.background:		black
 	Fig*mode_panel.foreground:		black
 	Fig*mode_panel.label.background:	lavender
 	Fig*mode_panel.label.foreground:	black
@@ -48,8 +51,37 @@
 	Fig*edit_panel.form.done.background:	green
 	Fig*edit_panel.form.apply.background:	yellow
 	Fig*edit_panel.form.cancel.background:	red
+	Fig*edit_panel.form.screen_capture.background:	lightskyblue
+	Fig*edit_panel.form.edit_image.background: lavender
+! Button to reread picture file
+	Fig*edit_panel.form.reread.background:	lightskyblue
+! Button to browse for picture files
+	Fig*edit_panel.form.browse.background:	lavender
+! Image of object in edit panel
+	Fig*edit_panel.form.image.background:	grey90
+	Fig*edit_panel.form.image.foreground:	blue
 ! make a light grey background so you can see the color "white" in the edit menu
 	Fig*edit_panel.form*menu.background:	grey80
+! Browser popup for picture import
+	Fig*browse_panel*background:		lightskyblue
+	Fig*browse_panel*Text*background:	white
+	Fig*browse_panel*Text*foreground:	black
+	Fig*browse_panel*List*background:	white
+	Fig*browse_panel*List*foreground:	black
+	Fig*browse_panel*Scrollbar*background:	dodgerblue
+	Fig*browse_panel*Scrollbar*foreground:	red
+	Fig*browse_panel*file_name*Scrollbar*background: dodgerblue
+	Fig*browse_panel*file_name*Scrollbar*foreground: red
+	Fig*browse_panel*dir_name*Scrollbar*background:	dodgerblue
+	Fig*browse_panel*dir_name*Scrollbar*foreground:	red
+	Fig*browse_panel*home.foreground:	black
+	Fig*browse_panel*home.background:	dodgerblue
+	Fig*browse_panel.rescan.foreground:	black
+	Fig*browse_panel.rescan.background:	dodgerblue
+	Fig*browse_panel.close.foreground:	black
+	Fig*browse_panel.close.background:	red2
+	Fig*browse_panel.apply.foreground:	black
+	Fig*browse_panel.apply.background:	green2
 ! File popup
 	Fig*file_panel*background:		lightskyblue
 	Fig*file_panel*Text*background:		white

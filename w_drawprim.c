@@ -40,7 +40,6 @@
 #include "u_fonts.h"
 #include "w_canvas.h"
 #include "w_drawprim.h"
-#include "w_icons.h"		/* for none_ic in init_fill_pm */
 #include "w_indpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
@@ -355,7 +354,7 @@ pwx_text(w, x, y, op, fstruct, angle, string, color)
 		color = 1;
 	}
     if (writing_bitmap? color != gc_color[op] : x_color(color) != gc_color[op]) {
-	if (op == PAINT) {
+	if (op == PAINT) {	/* don't change the foreground for ERASE or INV_PAINT */
 	    if (writing_bitmap)
 		XSetForeground(tool_d,gccache[op],color);
 	    else
@@ -865,7 +864,7 @@ init_fill_pm()
     /* use same colors for "NONE" indicator for black and color */
     fillstyle_choices[0].normalPM =
 	fillstyle_choices[0].blackPM = XCreatePixmapFromBitmapData(tool_d,
-			XtWindow(ind_panel), none_ic.data, none_ic.width,
+			XtWindow(ind_panel), none_ic.bits, none_ic.width,
 			none_ic.height, x_fg_color.pixel, x_bg_color.pixel,
 			DefaultDepthOfScreen(tool_s));
 
@@ -1052,7 +1051,7 @@ pw_lines(w, points, npoints, op, line_width, line_style,
     Color	    pen_color, fill_color;
 {
     register int i;
-    register XPoint *p=(XPoint *) malloc(npoints * sizeof(XPoint));
+    register XPoint *p;
 
     /* if the line has only one point or it has two points and those points are
        coincident AND we are drawing a DOTTED line, this kills Xsun and hangs
@@ -1066,18 +1065,22 @@ pw_lines(w, points, npoints, op, line_width, line_style,
     }
 	
     if (line_style == PANEL_LINE) {
+	/* must use XPoint, not our zXPoint */
+	p = (XPoint *) malloc(npoints * sizeof(XPoint));
 	for (i=0; i<npoints; i++) {
-	    p[i].x = points[i].x;
-	    p[i].y = points[i].y;
+	    p[i].x = (short) points[i].x;
+	    p[i].y = (short) points[i].y;
 	}
     }
 
     /* if it's a fill pat we know about */
     if (fill_style >= 0 && fill_style < NUMFILLPATS) {
 	int xmin=100000, ymin=100000, i;
-	for (i=0; i<npoints; i++) {
-	    xmin = min2(xmin,points[i].x);
-	    ymin = min2(ymin,points[i].y);
+	if (fill_style >= NUMTINTPATS+NUMSHADEPATS) {
+	    for (i=0; i<npoints; i++) {
+		xmin = min2(xmin,points[i].x);
+		ymin = min2(ymin,points[i].y);
+	    }
 	}
 	set_fill_gc(fill_style, op, pen_color, fill_color, xmin, ymin);
 	if (line_style == PANEL_LINE) {
@@ -1092,11 +1095,12 @@ pw_lines(w, points, npoints, op, line_width, line_style,
 	return;
     set_line_stuff(line_width, line_style, style_val, join_style, cap_style,
 			op, pen_color);
-    if (line_style == PANEL_LINE)
+    if (line_style == PANEL_LINE) {
 	XDrawLines(tool_d, w, gccache[op], p, npoints, CoordModeOrigin);
-    else
+	free((char *) p);
+    } else {
 	zXDrawLines(tool_d, w, gccache[op], points, npoints, CoordModeOrigin);
-    free(p);
+    }
 }
 
 set_clip_window(xmin, ymin, xmax, ymax)
@@ -1148,15 +1152,15 @@ set_fill_gc(fill_style, op, pencolor, fillcolor, xorg, yorg)
 		pencolor = 0;
 	    else
 		pencolor = 1;
-	    XSetForeground(tool_d,fillgc,pencolor);
-	    XSetBackground(tool_d,fillgc,fillcolor);
+	    fg = pencolor;
+	    bg = fillcolor;
 	} else {
 	    if (fillcolor == WHITE)
 		fillcolor = 0;
 	    else
 		fillcolor = 1;
-	    XSetForeground(tool_d,fillgc,fillcolor);
-	    XSetBackground(tool_d,fillgc,1-fillcolor);
+	    fg = fillcolor;
+	    bg = 1-fillcolor;
 	}
     } else {
 	if (op == PAINT) {
@@ -1184,13 +1188,13 @@ set_fill_gc(fill_style, op, pencolor, fillcolor, xorg, yorg)
 		bg = (fill_style < NUMSHADEPATS? x_fg_color.pixel: x_bg_color.pixel);
 	    }
 	  }
-	  XSetForeground(tool_d, fillgc, fg);			/* fill */
-	  XSetBackground(tool_d, fillgc, bg);
 	} else {
-	    XSetForeground(tool_d, fillgc, x_bg_color.pixel);	/* un-fill */
-	    XSetBackground(tool_d, fillgc, x_bg_color.pixel);
+	    fg = x_bg_color.pixel;   /* un-fill */
+	    bg = x_bg_color.pixel;
 	}
     }
+    XSetForeground(tool_d,fillgc,fg);
+    XSetBackground(tool_d,fillgc,bg);
     /* set stipple from the fill_pm array */
     XSetStipple(tool_d, fillgc, fill_pm[fill_style]);
     /* set origin of pattern relative to object itself */
@@ -1271,7 +1275,11 @@ set_line_stuff(width, style, style_val, join_style, cap_style, op, color)
     if (style == DASH_LINE || style == DOTTED_LINE) {
 	if (style_val > 0.0) {	/* style_val of 0.0 causes problems */
 	    /* length of ON/OFF pixels */
-	    dash_list[op][0] = dash_list[op][1] = (char) round(style_val * display_zoomscale);
+	    if (style_val * display_zoomscale > 255.0)
+		dash_list[op][0] = dash_list[op][1] = (char) 255;	/* too large for X! */
+	    else
+	        dash_list[op][0] = dash_list[op][1] = 
+				(char) round(style_val * display_zoomscale);
 	    /* length of ON pixels for dotted */
 	    if (style == DOTTED_LINE)
 		dash_list[op][0] = (char)display_zoomscale;
@@ -1296,9 +1304,11 @@ int	col;
 	if (col < 0)
 		col = DEFAULT;
 	if (col==WHITE) {
-		pix = x_bg_color.pixel;
-	} else if (col==DEFAULT || col==BLACK) {
+		pix = colors[WHITE];
+	} else if (col==DEFAULT) {
 		pix = x_fg_color.pixel;
+	} else if (col==BLACK) {
+		pix = colors[BLACK];
 	} else {
 	   if (col >= NUM_STD_COLS+num_usr_cols)
 	       pix = x_fg_color.pixel;
@@ -1317,9 +1327,6 @@ int	patnum;
 	int		j;
 	XGCValues	gcv;
 
-	if (appres.DEBUG)
-		fprintf(stderr,"rescale pattern %d to x%.1f\n",
-			patnum,display_zoomscale);
 	/* this make a few seconds (depending on the machine) */
 	set_temp_cursor(wait_cursor);
 	j = patnum-(NUMSHADEPATS+NUMTINTPATS);
@@ -1415,8 +1422,6 @@ int	indx;
 clear_patterns()
 {
 	int	i;
-	if (appres.DEBUG)
-		fprintf(stderr,"clear patterns\n");
 	for (i=NUMSHADEPATS+NUMTINTPATS; i<NUMFILLPATS; i++) {
 	    if (fill_pm[i])
 		XFreePixmap(tool_d,fill_pm[i]);

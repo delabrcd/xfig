@@ -24,6 +24,7 @@
 #include "paintop.h"
 #include "u_create.h"
 #include "u_search.h"
+#include "u_undo.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
@@ -32,7 +33,7 @@ static		delete_arrow_head();
 
 arrow_head_selected()
 {
-    set_mousefun("add arrow", "delete arrow", "");
+    set_mousefun("add arrow", "delete arrow", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(add_arrow_head);
@@ -100,20 +101,12 @@ add_linearrow(line, prev_point, selected_point)
 	if (line->back_arrow)
 	    return;
 	line->back_arrow = backward_arrow();
-	mask_toggle_linemarker(line);
-	draw_arrow(selected_point->next->x, selected_point->next->y,
-		   selected_point->x, selected_point->y, line->back_arrow,
-		   PAINT, line->pen_color);
-	mask_toggle_linemarker(line);
+	redisplay_line(line);
     } else if (selected_point->next == NULL) {	/* forward arrow */
 	if (line->for_arrow)
 	    return;
 	line->for_arrow = forward_arrow();
-	mask_toggle_linemarker(line);
-	draw_arrow(prev_point->x, prev_point->y, selected_point->x,
-		   selected_point->y, line->for_arrow, 
-		   PAINT, line->pen_color);
-	mask_toggle_linemarker(line);
+	redisplay_line(line);
     } else
 	return;
     clean_up();
@@ -135,16 +128,12 @@ add_arcarrow(arc, point_num)
 	if (arc->back_arrow)
 	    return;
 	arc->back_arrow = backward_arrow();
-	mask_toggle_arcmarker(arc);
-	draw_arcarrows(arc, PAINT);
-	mask_toggle_arcmarker(arc);
+	redisplay_arc(arc);
     } else if (point_num == 2) {/* for_arrow  */
 	if (arc->for_arrow)
 	    return;
 	arc->for_arrow = forward_arrow();
-	mask_toggle_arcmarker(arc);
-	draw_arcarrows(arc, PAINT);
-	mask_toggle_arcmarker(arc);
+	redisplay_arc(arc);
     } else
 	return;
     clean_up();
@@ -166,35 +155,12 @@ add_splinearrow(spline, prev_point, selected_point)
 	    return;
 	p = selected_point->next;
 	spline->back_arrow = backward_arrow();
-	mask_toggle_splinemarker(spline);
-	if (normal_spline(spline)) {
-	    draw_arrow(p->x, p->y, selected_point->x,
-		       selected_point->y, spline->back_arrow, PAINT,
-		       spline->pen_color);
-	} else {
-	    c = spline->controls;
-	    draw_arrow(round(c->rx), round(c->ry), selected_point->x,
-		       selected_point->y, spline->back_arrow, PAINT,
-		       spline->pen_color);
-	}
-	mask_toggle_splinemarker(spline);
+	redisplay_spline(spline);
     } else if (selected_point->next == NULL) {	/* add forward arrow */
 	if (spline->for_arrow)
 	    return;
 	spline->for_arrow = forward_arrow();
-	mask_toggle_splinemarker(spline);
-	if (normal_spline(spline)) {
-	    draw_arrow(prev_point->x, prev_point->y,
-		       selected_point->x, selected_point->y,
-		       spline->for_arrow, PAINT,
-		       spline->pen_color);
-	} else {
-	    for (c = spline->controls; c->next != NULL; c = c->next);
-	    draw_arrow(round(c->lx), round(c->ly), selected_point->x,
-		       selected_point->y, spline->for_arrow, PAINT,
-		       spline->pen_color);
-	}
-	mask_toggle_splinemarker(spline);
+	redisplay_spline(spline);
     }
     clean_up();
     set_last_prevpoint(prev_point);
@@ -214,25 +180,23 @@ delete_linearrow(line, prev_point, selected_point)
     if (prev_point == NULL) {	/* selected_point is the first point */
 	if (!line->back_arrow)
 	    return;
-	mask_toggle_linemarker(line);
-	draw_arrow(selected_point->next->x, selected_point->next->y,
-	      selected_point->x, selected_point->y, line->back_arrow, ERASE,
-		   line->pen_color);
-	free((char *) line->back_arrow);
+	draw_line(line, ERASE);
+	saved_back_arrow=line->back_arrow;
+	if (saved_for_arrow && saved_for_arrow != line->for_arrow)
+	    free((char *) saved_for_arrow);
+	saved_for_arrow = NULL;
 	line->back_arrow = NULL;
-	draw_line(line, PAINT);
-	mask_toggle_linemarker(line);
+	redisplay_line(line);
     } else if (selected_point->next == NULL) {	/* forward arrow */
 	if (!line->for_arrow)
 	    return;
-	mask_toggle_linemarker(line);
-	draw_arrow(prev_point->x, prev_point->y, selected_point->x,
-		   selected_point->y, line->for_arrow, ERASE,
-		   line->pen_color);
-	free((char *) line->for_arrow);
+	draw_line(line, ERASE);
+	saved_for_arrow=line->for_arrow;
+	if (saved_back_arrow && saved_back_arrow != line->back_arrow)
+	    free((char *) saved_back_arrow);
+	saved_back_arrow = NULL;
 	line->for_arrow = NULL;
-	draw_line(line, PAINT);
-	mask_toggle_linemarker(line);
+	redisplay_line(line);
     } else
 	return;
     clean_up();
@@ -252,21 +216,23 @@ delete_arcarrow(arc, point_num)
     if (point_num == 0) {	/* backward arrow  */
 	if (!arc->back_arrow)
 	    return;
-	mask_toggle_arcmarker(arc);
-	draw_arcarrows(arc, ERASE);
-	free((char *) arc->back_arrow);
+	draw_arc(arc, ERASE);
+	saved_back_arrow=arc->back_arrow;
+	if (saved_for_arrow && saved_for_arrow != arc->for_arrow)
+	    free((char *) saved_for_arrow);
+	saved_for_arrow = NULL;
 	arc->back_arrow = NULL;
-	draw_arc(arc, PAINT);
-	mask_toggle_arcmarker(arc);
+	redisplay_arc(arc);
     } else if (point_num == 2) {/* for_arrow  */
 	if (!arc->for_arrow)
 	    return;
-	mask_toggle_arcmarker(arc);
-	draw_arcarrows(arc, ERASE);
-	free((char *) arc->for_arrow);
+	draw_arc(arc, ERASE);
+	saved_for_arrow=arc->for_arrow;
+	if (saved_back_arrow && saved_back_arrow != arc->back_arrow)
+	    free((char *) saved_back_arrow);
+	saved_back_arrow = NULL;
 	arc->for_arrow = NULL;
-	draw_arc(arc, PAINT);
-	mask_toggle_arcmarker(arc);
+	redisplay_arc(arc);
     } else
 	return;
     clean_up();
@@ -287,52 +253,23 @@ delete_splinearrow(spline, prev_point, selected_point)
     if (prev_point == NULL) {	/* selected_point is the first point */
 	if (!spline->back_arrow)
 	    return;
-	mask_toggle_splinemarker(spline);
-	p = selected_point->next;
-	if (normal_spline(spline)) {
-	    draw_arrow(p->x, p->y, selected_point->x,
-		       selected_point->y, spline->back_arrow, ERASE,
-		       spline->pen_color);
-	    free((char *) spline->back_arrow);
-	    spline->back_arrow = NULL;
-	    draw_spline(spline, PAINT);
-	} else {
-	    F_control	   *a;
-
-	    a = spline->controls;
-	    draw_arrow(round(a->rx), round(a->ry), selected_point->x,
-		       selected_point->y, spline->back_arrow, ERASE,
-		       spline->pen_color);
-	    free((char *) spline->back_arrow);
-	    spline->back_arrow = NULL;
-	    draw_spline(spline, PAINT);
-	}
-	mask_toggle_splinemarker(spline);
+	draw_spline(spline, ERASE);
+	saved_back_arrow=spline->back_arrow;
+	if (saved_for_arrow && saved_for_arrow != spline->for_arrow)
+	    free((char *) saved_for_arrow);
+	saved_for_arrow = NULL;
+	spline->back_arrow = NULL;
+	redisplay_spline(spline);
     } else if (selected_point->next == NULL) {	/* forward arrow */
 	if (!spline->for_arrow)
 	    return;
-	mask_toggle_splinemarker(spline);
-	if (normal_spline(spline)) {
-	    draw_arrow(prev_point->x, prev_point->y,
-		       selected_point->x, selected_point->y,
-		       spline->for_arrow, ERASE,
-		       spline->pen_color);
-	    free((char *) spline->for_arrow);
-	    spline->for_arrow = NULL;
-	    draw_spline(spline, PAINT);
-	} else {
-	    F_control	   *a, *b;
-
-	    a = spline->controls;
-	    for (b = a->next; b->next != NULL; a = b, b = b->next);
-	    draw_arrow(round(b->lx), round(b->ly), selected_point->x,
-		       selected_point->y, spline->for_arrow, ERASE,
-		       spline->pen_color);
-	    free((char *) spline->for_arrow);
-	    spline->for_arrow = NULL;
-	    draw_spline(spline, PAINT);
-	}
-	mask_toggle_splinemarker(spline);
+	draw_spline(spline, ERASE);
+	saved_for_arrow=spline->for_arrow;
+	if (saved_back_arrow && saved_back_arrow != spline->back_arrow)
+	    free((char *) saved_back_arrow);
+	saved_back_arrow = NULL;
+	spline->for_arrow = NULL;
+	redisplay_spline(spline);
     } else
 	return;
     clean_up();

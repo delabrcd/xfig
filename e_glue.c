@@ -43,7 +43,7 @@ static		get_text(), sel_text();
 
 compound_selected()
 {
-    set_mousefun("tag object", "tag region", "compound tagged");
+    set_mousefun("tag object", "tag region", "compound tagged", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(tag_object);
@@ -102,7 +102,7 @@ init_tag_region(x, y)
     int		    x, y;
 {
     init_box_drawing(x, y);
-    set_mousefun("", "final corner", "cancel");
+    set_mousefun("", "final corner", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_leftbut_proc = null_proc;
     canvas_middlebut_proc = tag_region;

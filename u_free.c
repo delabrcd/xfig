@@ -144,7 +144,7 @@ free_linestorage(l)
 	free((char *) l->back_arrow);
     if (l->pic) {
 	if (l->pic->bitmap)
-	    free((unsigned char *) l->pic->bitmap);
+	    free((char *) l->pic->bitmap);
 	if (l->pic->pixmap != 0)
 	    XFreePixmap(tool_d, l->pic->pixmap);
 	free((char *) l->pic);

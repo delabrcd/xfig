@@ -230,9 +230,9 @@ static String	mask_text_translations =
 		Ctrl<Key>M: rescan()\n";
 
 static XtActionsRec actionTable[] = {
-    {"ParentDir", ParentDir},
-    {"SetDir", SetDir},
-    {"rescan", Rescan},
+    {"ParentDir", (XtActionProc)ParentDir},
+    {"SetDir", (XtActionProc)SetDir},
+    {"rescan", (XtActionProc)Rescan},
 };
 
 static int      actions_added=0;
@@ -539,9 +539,11 @@ DoChangeDir(dir)
     if (change_directory(cur_dir) != 0 ) {
 	file_msg("Can't change to directory %s", cur_dir);
 	strcpy(cur_dir, tmpdir);
+	return;
     } else if (MakeFileList(ndir, dirmask, &dirlist, &filelist) == False) {
 	file_msg("Unable to list directory %s", ndir);
 	strcpy(cur_dir, tmpdir);
+	return;
     }
 
     FirstArg(XtNstring, cur_dir);

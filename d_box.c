@@ -35,7 +35,7 @@ static		create_boxobject(), cancel_box();
 
 box_drawing_selected()
 {
-    set_mousefun("corner point", "", "");
+    set_mousefun("corner point", "", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     canvas_leftbut_proc = init_box_drawing;
@@ -50,7 +50,7 @@ init_box_drawing(x, y)
 {
     cur_x = fix_x = x;
     cur_y = fix_y = y;
-    set_mousefun("final point", "", "cancel");
+    set_mousefun("final point", "", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_locmove_proc = resizing_box;
     canvas_leftbut_proc = create_boxobject;
@@ -101,14 +101,14 @@ create_boxobject(x, y)
     box->fill_style = cur_fillstyle;
     /* scale dash length by line thickness */
     box->style_val = cur_styleval * (cur_linewidth + 1) / 2;
-    box->radius = 0;
     box->points = point;
     append_point(x, fix_y, &point);
     append_point(x, y, &point);
     append_point(fix_x, y, &point);
     append_point(fix_x, fix_y, &point);
-    draw_line(box, PAINT);
     add_line(box);
+    /* draw it and anything on top of it */
+    redisplay_line(box);
     box_drawing_selected();
     draw_mousefun_canvas();
 }

@@ -19,8 +19,8 @@
 
 #include <X11/keysym.h>
 #include "fig.h"
-#include "mode.h"
 #include "resources.h"
+#include "mode.h"
 #include "object.h"
 #include "paintop.h"
 #include "u_create.h"
@@ -38,8 +38,6 @@ extern		pan_origin();
 
 Boolean	zoom_in_progress = False;
 
-/* extern int		   gc_thickness[NUMOPS]; */
-
 static		do_zoom(), cancel_zoom();
 static		init_zoombox_drawing();
 
@@ -50,6 +48,7 @@ static int	(*save_middlebut_proc) ();
 static int	(*save_rightbut_proc) ();
 static int	save_action_on;
 
+float		display_zoomscale=1.0;
 float		zoomscale = 1.0/ZOOM_FACTOR;
 int		zoomxoff = 0;
 int		zoomyoff = 0;

@@ -63,6 +63,9 @@ char		*short_clrNames[] = {
 			"Mg4", "Mg3", "Mg2", "Br4", "Br3", "Br2",
 			"Pk4", "Pk3", "Pk2", "Pnk", "Gld" };
 
+/* original directory where xfig started */
+char	orig_dir[PATH_MAX+2];
+
 #ifdef USE_XPM
 XpmAttributes	xfig_icon_attr;
 #endif
@@ -79,10 +82,12 @@ Boolean		colorFree[MAX_USR_COLS];
 Boolean		n_colorFree[MAX_USR_COLS];
 Boolean		all_colors_available;
 
-/* number of colors we want to use for GIF/XPM images */
-/* this will be determined when the first GIF/XPM image is
-   used.  We will take min(number_of_free_colorcells, 100, appres.maximagecolors) */
+/* number of colors we want to use for pictures */
+/* this will be determined when the first picture is used.  We will take
+   min(number_of_free_colorcells, 100, appres.maximagecolors) */
+
 int		avail_image_cols = -1;
+
 /* colormap used for same */
 XColor		image_cells[MAXCOLORMAPSIZE];
 
@@ -96,10 +101,10 @@ Cursor		arrow_cursor, bull_cursor, buster_cursor, crosshair_cursor,
 		u_arrow_cursor, ud_arrow_cursor, d_arrow_cursor, wait_cursor,
 		magnify_cursor;
 
-TOOL		tool;
+Widget		tool;
 XtAppContext	tool_app;
 
-TOOLSW		canvas_sw, ps_fontmenu, /* printer font menu tool */
+Widget		canvas_sw, ps_fontmenu, /* printer font menu tool */
 		latex_fontmenu,		/* printer font menu tool */
 		msg_form, msg_panel, name_panel, cmd_panel, mode_panel, 
 		d_label, e_label, mousefun,
@@ -113,6 +118,7 @@ int		tool_sn;
 int		tool_cells;
 Colormap	tool_cm, newcmap;
 Boolean		swapped_cmap = False;
+Atom		wm_delete_window;
 
 GC		gc, button_gc, ind_button_gc, mouse_button_gc,
 		fill_color_gc, pen_color_gc, blank_gc, ind_blank_gc, 
@@ -123,7 +129,8 @@ GC		gc, button_gc, ind_button_gc, mouse_button_gc,
 
 Pixmap		fill_pm[NUMFILLPATS],fill_but_pm[NUMPATTERNS];
 XColor		x_fg_color, x_bg_color;
-Boolean		writing_bitmap;
+Boolean		writing_bitmap;		/* set when exporting to monochrome bitmap */
+Boolean		writing_pixmap;		/* set when exporting to other pixmap formats */
 unsigned long	but_fg, but_bg;
 unsigned long	ind_but_fg, ind_but_bg;
 unsigned long	mouse_but_fg, mouse_but_bg;
@@ -154,3 +161,5 @@ char    *just_items[] = {
 
 char    *offset_unit_items[] = {
         " Inches  ", " Centim. ", "Fig Units" };
+
+int	RULER_WD;

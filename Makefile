@@ -295,49 +295,45 @@ PICFLAGS = -pic
 # Uncomment the following if needed for DECstations running older X11R4
 # INCROOT=/usr/include/mit
 
-# Uncomment the XPMDEFINES variable if you have the XPM (color pixmap)
+# Uncomment the following XPM variable if you have the XPM (color pixmap)
 # package and you would like to use the following:
 # USE_XPM will allow import/export of XPM files
-# USE_XPM_ICON uses a color xpm icon for xfig itself
-#   You need XPM version 3.4c or newer.  This is available from ftp.x.org
+# USE_XPM_ICON uses a color xpm icon for xfig itself (USE_XPM must be
+#	defined if you use USE_XPM_ICON)
+# You need XPM version 3.4c or newer.  This is available from ftp.x.org
 #   in /contrib/libraries.
 
 # XPMDEFINES = -DUSE_XPM -DUSE_XPM_ICON
+# XPMLIBDIR = /usr/lib
+# XPMINCDIR = /usr/include/X11
+# XPMLIB = -L$(XPMLIBDIR) -lXpm
 
-# If you want to use the XPM library change the following for your paths
-# and uncomment them:
+# If you have installed the jpeg libraries on your system, uncomment the
+# USEINSTALLEDJPEG variable, change the JPEGLIBDIR variable to the directory
+# where your jpeg library resides and change the JPEGINCDIR to the
+# directory where your jpeg header files (include) reside.
+# If you want to use xfig's jpeg library leave the XCOMM comment in and
+# leave JPEGLIBDIR=../jpeg
 
-# XPMLIBDIR = -L/usr/local/X11/lib
-# XPMINCDIR = -I/usr/local/X11/include/xpm
-# XPMLIB = $(XPMLIBDIR) -lXpm
+# #define USEINSTALLEDJPEG
 
-EXTRA_INCLUDES = $(XPMINCDIR)
-
-SYS_LIBRARIES= 		-lm
-DEPLIBS = 		$(DEPXAWLIB) $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
+JPEGLIBDIR = ../jpeg
+JPEGINCDIR = $(JPEGLIBDIR)
+LIBJPEG = $(JPEGLIBDIR)/libjpeg.a
+DEPLIBJPEG = $(LIBJPEG)
 
 # For Solaris: add "-lc" to the LOCAL_LIBRARIES variable in the Imakefile
 # to link with /usr/lib/libc for the directory operations.
 
-# uncomment the following if using DPS (Display PostScript)
-# NOTE: This is only guaranteed to work on an IBM RS/6000 running AIX 3.2
-#       and Suns running Solaris 2.3
-
-# DPSLIB = -ldps
-# DPSDEF = -DDPS
-
-# comment out the following if using DPS (Display PostScript) on
-# an IBM RS/6000 or Sun Solaris 2.3
-
-DPSLIB =
-DPSDEF =
+# The Display PostScript code is not supported anymore until some kind
+# user can debug it for me, as I have no access to a server with DPS
+# extensions.  Use Ghostscript for rendering your EPS files.  It gives
+# a color image on the xfig canvas now anyway.
 
 # If using an input tablet uncomment the following
 
 # TABLIB = $(XILIB)
 # USETAB = -DUSE_TAB
-
-LOCAL_LIBRARIES = 	$(DPSLIB) $(XPMLIB) $(TABLIB) $(XAWLIB) $(XMULIB) $(XTOOLLIB) $(XLIB)
 
 # use (and change) the following if you want the multi-key data base file
 # somewhere other than the standard X11 library directory
@@ -348,13 +344,16 @@ XFIGLIBDIR =		$(LIBDIR)/xfig
 
 DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
 
-# remove -DGSBIT from the DEFINES if you DON'T want to have gs (ghostscript)
-# generate a preview bitmap for Encapsulated PostScript objects if they
-# don't have one.  If you do use ghostscript you will need version 2.4 or
-# later, and it must have the 'gif8' and 'pbmraw' devices compiled in
-# besides any other device drivers you already use with it.
-# See the Ghostscript Makefile for details.
-#
+# If your system doesn't have strcasecmp and/or strncasecmp
+# undefine the following two definitions
+
+# HAVE_NO_STRCASECMP = -DNOSTRCASECMP
+# HAVE_NO_STRNCASECMP = -DNOSTRNCASECMP
+
+STRDEFINES = $(HAVE_NO_NOSTRSTR) \
+		$(HAVE_NO_STRNCASECMP) \
+		$(HAVE_NO_STRCASECMP)
+
 # For the rotated text code:
 #   Add one of `-DCACHE_XIMAGES' or `-DCACHE_BITMAPS' to decide what is
 #   cached.  If you are converned about memory usage in your X server (e.g.
@@ -364,7 +363,9 @@ DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
 #   instead.
 #   Add `-DCACHE_SIZE_LIMIT=xxxx' where xxxx is the cache size in kilobytes.
 #   A cache size of zero turns caching off.
-#
+
+CACHE = -DCACHE_BITMAPS -DCACHE_SIZE_LIMIT=300
+
 # For SYSV systems with BSD-style printer command which use lpr instead of
 # lp (SGI is one such machine), add -DBSDLPR to the DEFINES variable
 #
@@ -374,9 +375,28 @@ DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
 # adding -DMAXNUMPTS=xxxx to the DEFINES line, where xxxx is the maximum
 # number of vertices.
 
-CACHE = -DCACHE_BITMAPS -DCACHE_SIZE_LIMIT=300
+# remove -DGSBIT from the DEFINES if you DON'T want to have gs (Ghostscript)
+# generate a preview bitmap for Encapsulated PostScript objects if they
+# don't have one.  If you do use Ghostscript you will need version 2.4 or
+# later, and it must have the 'pcx256' and 'pbmraw' devices compiled in
+# besides any other device drivers you already use with it.
+# See the Ghostscript Makefile for details.
 
-DEFINES =             $(STRSTRDEFINES) -DGSBIT $(XPMDEFINES) $(DPSDEF)
+# Additionally, there is a bug in the pcx driver in Aladdin Ghostscript
+# versions prior to 3.32, which writes an incorrect pcx file for images
+# with odd width (not even).  The following compile-time flag PCXBUG is
+# set to make xfig add one pixel to the width of an odd-width image
+# it reads in the pcx output from Ghostscript.
+# If you have Aladdin Ghostscript 3.32 or newer (which wasn't released
+# as of this writing) you may comment out PCXBUG and your images will
+# have the proper width.  However, one pixel extra in width shouldn't
+# matter for most imported eps files.
+
+PCXBUG = -DPCXBUG
+
+# *** You shouldn't have to change anything below this point. ***
+
+DEFINES =             $(STRDEFINES) -DGSBIT $(XPMDEFINES)
 
 XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
 		d_intspline.c d_line.c d_regpoly.c d_spline.c d_text.c \
@@ -384,14 +404,16 @@ XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
 		e_convert.c e_copy.c e_delete.c e_deletept.c \
 		e_edit.c e_flip.c e_glue.c e_move.c \
 		e_movept.c e_rotate.c e_scale.c e_update.c \
-		f_load.c f_neuclrtab.c f_read.c \
-		f_picobj.c f_readeps.c f_readxbm.c f_readxpm.c f_readgif.c \
-		f_readold.c f_save.c f_util.c f_wrgif.c f_wrxbm.c f_wrxpm.c \
+		f_load.c f_neuclrtab.c f_picobj.c f_read.c f_readold.c \
+		f_readeps.c f_readxbm.c f_readxpm.c f_readgif.c f_readjpg.c \
+		f_save.c f_util.c \
+		f_wrcom.c f_wrjpg.c f_wrgif.c f_wrxbm.c f_wrxpm.c \
 		main.c mode.c object.c resources.c \
 		u_bound.c u_create.c u_drag.c u_draw.c \
 		u_elastic.c u_error.c u_fonts.c u_free.c u_geom.c \
 		u_list.c u_markers.c u_pan.c u_print.c \
 		u_redraw.c u_scale.c u_search.c u_translate.c u_undo.c \
+		w_browse.c w_capture.c \
 		w_canvas.c w_cmdpanel.c w_color.c w_cursor.c w_dir.c w_drawprim.c \
 		w_export.c w_file.c w_fontbits.c w_fontpanel.c w_grid.c \
 		w_icons.c w_indpanel.c w_modepanel.c w_mousefun.c w_msgpanel.c \
@@ -403,23 +425,47 @@ XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
 		e_convert.o e_copy.o e_delete.o e_deletept.o \
 		e_edit.o e_flip.o e_glue.o e_move.o \
 		e_movept.o e_rotate.o e_scale.o e_update.o \
-		f_load.o f_neuclrtab.o f_read.o \
-		f_picobj.o f_readeps.o f_readxbm.o f_readxpm.o f_readgif.o \
-		f_readold.o f_save.o f_util.o f_wrgif.o f_wrxbm.o f_wrxpm.o \
+		f_load.o f_neuclrtab.o f_picobj.o f_read.o f_readold.o \
+		f_readeps.o f_readxbm.o f_readxpm.o f_readgif.o f_readjpg.o \
+		f_save.o f_util.o \
+		f_wrcom.o f_wrjpg.o f_wrgif.o f_wrxbm.o f_wrxpm.o \
 		main.o mode.o object.o resources.o \
 		u_bound.o u_create.o u_drag.o u_draw.o \
 		u_elastic.o u_error.o u_fonts.o u_free.o u_geom.o \
 		u_list.o u_markers.o u_pan.o u_print.o \
 		u_redraw.o u_scale.o u_search.o u_translate.o u_undo.o \
+		w_browse.o w_capture.o \
 		w_canvas.o w_cmdpanel.o w_color.o w_cursor.o w_dir.o w_drawprim.o \
 		w_export.o w_file.o w_fontbits.o w_fontpanel.o w_grid.o \
 		w_icons.o w_indpanel.o w_modepanel.o w_mousefun.o w_msgpanel.o \
 		w_print.o w_rottext.o w_rulers.o w_setup.o w_util.o w_zoom.o
 
-ICONXFIGFILES =  fig.icon.X
+# Other dependencies should be handled by "make depend"
+
+MAINDEPFILES =  fig.icon.X patchlevel.h version.h
 
 SRCS = $(XFIGSRC)
 OBJS = $(XFIGOBJ)
+
+EXTRA_INCLUDES = -I$(XPMINCDIR) -I$(JPEGINCDIR)
+DEPLIBS = $(DEPXAWLIB) $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
+
+LOCAL_LIBRARIES = 	$(LIBJPEG)
+SYS_LIBRARIES= 		-lm $(DPSLIB) $(XPMLIB) $(TABLIB) $(XAWLIB) $(XMULIB) $(XTOOLLIB) $(XLIB)
+
+xfig: $(DEPLIBJPEG)
+
+# only compile our jpeg if the use doesn't have one installed
+
+$(LIBJPEG): $(JPEGLIBDIR)/jconfig.h
+	cd $(JPEGLIBDIR); $(MAKE) libjpeg.a
+
+$(JPEGLIBDIR)/jconfig.h:
+	cd $(JPEGLIBDIR) ; ./configure CC='$(CC)'
+
+PROGRAM = xfig
+
+all:: xfig
 
  PROGRAM = xfig
 
@@ -475,9 +521,13 @@ install:: Fig-color.ad
 	else (set -x; $(MKDIRHIER) $(DESTDIR)$(XAPPLOADDIR)); fi
 	$(INSTALL) -c $(INSTAPPFLAGS) Fig-color.ad $(DESTDIR)$(XAPPLOADDIR)/Fig-color
 
-main.o:  $(ICONXFIGFILES)
+main.o:  $(MAINDEPFILES)
 	$(RM) $@
 	$(CC) -c $(CFLAGS)  $(USETAB)  $*.c
+
+f_readjpg.o:  $(JPEGLIBDIR)/jconfig.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)  $(PCXBUG) $*.c
 
 w_canvas.o:
 	$(RM) $@

@@ -104,9 +104,9 @@ extern int	autobackwardarrow_mode;
 #define		GRID_3			3
 
 extern int	cur_gridmode;
-extern int	grid_fine[GRID_3 + 1];
-extern int	grid_coarse[GRID_3 + 1];
-extern char    *grid_name[GRID_3 + 1];
+extern int	grid_fine[];
+extern int	grid_coarse[];
+extern char    *grid_name[];
 
 /* point position */
 #define		P_ANY			0
@@ -116,8 +116,8 @@ extern char    *grid_name[GRID_3 + 1];
 #define		P_GRID3			4
 
 extern int	cur_pointposn;
-extern int	posn_rnd[P_GRID2 + 1];
-extern int	posn_hlf[P_GRID2 + 1];
+extern int	posn_rnd[];
+extern int	posn_hlf[];
 
 /* rotn axis */
 #define		UD_FLIP			1
@@ -160,17 +160,19 @@ extern int	min_num_points;
 extern Boolean	export_flushleft;	/* flush left (true) or center (false) */
 
 #ifdef USE_XPM
-#define NUM_EXP_LANG	17	/* number of export languages */
+#define NUM_EXP_LANG	19	/* number of export languages */
 #else
-#define NUM_EXP_LANG	16	/* number of export languages */
+#define NUM_EXP_LANG	18	/* number of export languages */
 #endif
+
 #define LANG_EPS	7	/* position of eps starting from 0 */
-#define LANG_PS		8	/* position of ps starting from 0 */
-#define LANG_XBITMAP	14	/* position of xbm starting from 0 */
+#define LANG_PS		8
+#define LANG_GIF	15
+#define LANG_JPEG	16
+#define LANG_XBITMAP	17
 #ifdef USE_XPM
-#define LANG_XPIXMAP	15	/* position of xpm starting from 0 */
+#define LANG_XPIXMAP	18
 #endif
-#define LANG_GIF	16	/* position of gif starting from 0 */
 
 extern int	cur_exp_lang;
 extern char    *lang_items[NUM_EXP_LANG];
@@ -188,11 +190,39 @@ extern int	cur_depth;
 
 extern int	hidden_text_length;
 extern float	cur_textstep;
+extern int	cur_fontsize;
+extern int	cur_latex_font;
+extern int	cur_ps_font;
+extern int	cur_textjust;
+extern int	cur_textflags;
+
+/***************************  Lines ****************************/
+
+extern int	cur_linewidth;
+extern int	cur_linestyle;
+extern int	cur_joinstyle;
+extern int	cur_capstyle;
+extern float	cur_dashlength;
+extern float	cur_dotgap;
+extern float	cur_styleval;
+extern Color	cur_pencolor;
+extern Color	cur_fillcolor;
+extern int	cur_boxradius;
+extern int	cur_fillstyle;
+extern int	cur_penstyle;
+extern int	cur_arrowmode;
+extern int	cur_arrowtype;
+extern int	cur_arctype;
+extern char	EMPTY_PIC[8];
+
+/* Misc */
+extern float	cur_elltextangle;	/* text/ellipse input angle */
+
 
 /***************************  File Settings  ****************************/
 
 extern char	cur_dir[];
 extern char	cur_filename[];
-extern char	save_filename[];  /* to undo load */
+extern char	save_filename[];	/* to undo load */
 extern char	file_header[];
 extern char	cut_buf_name[];

@@ -31,7 +31,9 @@
 #define		DEF_CANVAS_HT_LAND	8*DISPLAY_PIX_PER_INCH
 #define		DEF_CANVAS_WD_LAND	10.5*DISPLAY_PIX_PER_INCH
 
-#define		RULER_WD		24
+#define		DEF_RULER_WD		24
+/*#define		RULER_WD		24*/
+
 #ifndef MAX_TOPRULER_WD
 #define		MAX_TOPRULER_WD		1152
 #endif

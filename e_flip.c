@@ -82,7 +82,7 @@ flip_lr_selected()
 static
 flip_selected()
 {
-    set_mousefun("flip", "copy & flip", "set anchor");
+    set_mousefun("flip", "copy & flip", "set anchor", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_flip);
@@ -98,14 +98,14 @@ set_unset_anchor(x, y)
     int		    x, y;
 {
     if (setanchor) {
-      set_mousefun("flip", "copy & flip", "set anchor");
+      set_mousefun("flip", "copy & flip", "set anchor", "", "", "");
       draw_mousefun_canvas();
       setanchor = 0;
       center_marker(setanchor_x,setanchor_y);
       /* second call to center_mark on same position deletes */
     }
     else {
-      set_mousefun("flip", "copy & flip", "unset anchor");
+      set_mousefun("flip", "copy & flip", "unset anchor", "", "", "");
       draw_mousefun_canvas();
       setanchor = 1;
       setanchor_x = x;

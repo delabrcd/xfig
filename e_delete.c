@@ -38,7 +38,7 @@ static int	init_delete_to_scrap();
 
 delete_selected()
 {
-    set_mousefun("delete object", "delete region", "del to cut buf");
+    set_mousefun("delete object", "delete region", "del to cut buf", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_delete);
@@ -98,7 +98,7 @@ init_delete_region(x, y)
     int		    x, y;
 {
     init_box_drawing(x, y);
-    set_mousefun("", "final corner", "cancel");
+    set_mousefun("", "final corner", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_leftbut_proc = null_proc;
     canvas_middlebut_proc = delete_region;

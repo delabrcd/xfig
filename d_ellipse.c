@@ -51,7 +51,7 @@ ellipsebyradius_drawing_selected()
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
     set_cursor(arrow_cursor);
-    set_mousefun("center point", "", "");
+    set_mousefun("center point", "", "", "", "", "");
     reset_action_on();
 }
 
@@ -63,7 +63,7 @@ init_ellipsebyradius_drawing(x, y)
     cur_y = fix_y = y;
     cur_angle = cur_elltextangle/180.0*M_PI;
     center_marker(fix_x, fix_y);
-    set_mousefun("corner point", "", "cancel");
+    set_mousefun("corner point", "", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_locmove_proc = resizing_ebr;
     canvas_rightbut_proc = cancel_ellipsebyrad;
@@ -113,15 +113,16 @@ create_ellipsebyrad(x, y)
     ellipse->end.x = x;
     ellipse->end.y = y;
     ellipse->next = NULL;
-    draw_ellipse(ellipse, PAINT);
     add_ellipse(ellipse);
+    /* draw it and anything on top of it */
+    redisplay_ellipse(ellipse);
     ellipsebyradius_drawing_selected();
     draw_mousefun_canvas();
 }
 
 ellipsebydiameter_drawing_selected()
 {
-    set_mousefun("first corner", "", "");
+    set_mousefun("first corner", "", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     canvas_leftbut_proc = init_ellipsebydiameter_drawing;
@@ -139,7 +140,7 @@ init_ellipsebydiameter_drawing(x, y)
     cur_y = fix_y = y;
     cur_angle = cur_elltextangle/180.0*M_PI;
     center_marker(fix_x, fix_y);
-    set_mousefun("final corner", "", "cancel");
+    set_mousefun("final corner", "", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_locmove_proc = resizing_ebd;
     canvas_rightbut_proc = cancel_ellipsebydia;
@@ -189,8 +190,9 @@ create_ellipsebydia(x, y)
     ellipse->end.x = x;
     ellipse->end.y = y;
     ellipse->next = NULL;
-    draw_ellipse(ellipse, PAINT);
     add_ellipse(ellipse);
+    /* draw it and anything on top of it */
+    redisplay_ellipse(ellipse);
     ellipsebydiameter_drawing_selected();
     draw_mousefun_canvas();
 }
@@ -199,7 +201,7 @@ create_ellipsebydia(x, y)
 
 circlebyradius_drawing_selected()
 {
-    set_mousefun("center point", "", "");
+    set_mousefun("center point", "", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     canvas_leftbut_proc = init_circlebyradius_drawing;
@@ -216,7 +218,7 @@ init_circlebyradius_drawing(x, y)
     cur_x = fix_x = x;
     cur_y = fix_y = y;
     center_marker(fix_x, fix_y);
-    set_mousefun("set radius", "", "cancel");
+    set_mousefun("set radius", "", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_locmove_proc = resizing_cbr;
     canvas_rightbut_proc = cancel_circlebyrad;
@@ -268,15 +270,16 @@ create_circlebyrad(x, y)
     c->end.x = x;
     c->end.y = y;
     c->next = NULL;
-    draw_ellipse(c, PAINT);
     add_ellipse(c);
+    /* draw it and anything on top of it */
+    redisplay_ellipse(c);
     circlebyradius_drawing_selected();
     draw_mousefun_canvas();
 }
 
 circlebydiameter_drawing_selected()
 {
-    set_mousefun("diameter point", "", "");
+    set_mousefun("diameter point", "", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     canvas_leftbut_proc = init_circlebydiameter_drawing;
@@ -293,7 +296,7 @@ init_circlebydiameter_drawing(x, y)
     cur_x = fix_x = x;
     cur_y = fix_y = y;
     center_marker(fix_x, fix_y);
-    set_mousefun("final point", "", "cancel");
+    set_mousefun("final point", "", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_locmove_proc = resizing_cbd;
     canvas_leftbut_proc = create_circlebydia;
@@ -345,8 +348,9 @@ create_circlebydia(x, y)
     c->end.x = x;
     c->end.y = y;
     c->next = NULL;
-    draw_ellipse(c, PAINT);
     add_ellipse(c);
+    /* draw it and anything on top of it */
+    redisplay_ellipse(c);
     circlebydiameter_drawing_selected();
     draw_mousefun_canvas();
 }

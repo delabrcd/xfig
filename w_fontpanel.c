@@ -37,7 +37,7 @@ extern struct _fstruct latex_fontinfo[];  /* LaTeX font names */
 static int     *font_ps_sel;	/* ptr to store selected ps font in */
 static int     *font_latex_sel; /* ptr to store selected latex font */
 static int     *flag_sel;	/* pointer to store ps/latex flag */
-static TOOL	font_widget;	/* widget adr to store font image in */
+static Widget	font_widget;	/* widget adr to store font image in */
 static int	(*font_setimage) ();
 
 /********************  local variables	***************************/
@@ -62,16 +62,16 @@ static XtActionsRec	fontpane_actions[] =
     {"FontPaneCancel", (XtActionProc) fontpane_cancel},
 };
 
-static TOOL	ps_fontpanes, ps_buttons;
-static TOOL	latex_fontpanes, latex_buttons;
-static TOOL	ps_fontpane[NUM_FONTS+1];
-static TOOL	latex_fontpane[NUM_LATEX_FONTS];
+static Widget	ps_fontpanes, ps_buttons;
+static Widget	latex_fontpanes, latex_buttons;
+static Widget	ps_fontpane[NUM_FONTS+1];
+static Widget	latex_fontpane[NUM_LATEX_FONTS];
 static Boolean	first_fontmenu;
 
 init_fontmenu(tool)
-    TOOL	    tool;
+    Widget	    tool;
 {
-    TOOL	    tmp_but;
+    Widget	    tmp_but;
     register int    i;
     register MenuItemRec *mi;
     XtTranslations  pane_actions;

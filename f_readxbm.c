@@ -20,19 +20,23 @@
 #include "object.h"
 #include "w_setup.h"
 
-extern FILE	*open_picfile();
-extern void	close_picfile();
+/* attempt to read a bitmap file */
+
+/* return codes:  PicSuccess (1) : success
+		  FileInvalid (-2) : invalid file
+*/
 
 int
-read_bitmap(pic)
-/* attempt to read a bitmap for the item given -- return 1 if success */
-  F_pic *pic;
+read_xbm(file,filetype,pic)
+    FILE	   *file;
+    int		    filetype;
+    F_pic	   *pic;
 {
   int status;
   unsigned int x, y;
 
     /* first try for a X Bitmap file format */
-    status = ReadDataFromBitmapFile(pic->file, &x, &y, &pic->bitmap);
+    status = ReadDataFromBitmapFile(file, &x, &y, &pic->bitmap);
     if (status == BitmapSuccess) {
 	pic->subtype = T_PIC_BITMAP;
 	pic->hw_ratio = (float) y / x;
@@ -42,7 +46,7 @@ read_bitmap(pic)
 	pic->size_x = x * ZOOM_FACTOR;
 	pic->size_y = y * ZOOM_FACTOR;
 	put_msg("XBitmap object of size %dx%d read OK", x, y);
-	return 1;
+	return PicSuccess;
     }
   /* Non Bitmap file */
   return FileInvalid;
@@ -127,7 +131,7 @@ static void initHexTable()
 /*
  *	read next hex value in the input stream, return -1 if EOF
  */
-static NextInt (fstream)
+static NextInt(fstream)
     FILE *fstream;
 {
     int	ch;
@@ -177,12 +181,11 @@ static NextInt (fstream)
 }
 
 int
-ReadDataFromBitmapFile (filename, width, height, data_ret)
-    char *filename;
+ReadDataFromBitmapFile(file, width, height, data_ret)
+    FILE *file;
     unsigned int *width, *height;	/* RETURNED */
     char **data_ret;			/* RETURNED */
 {
-    FILE *fstream;			/* handle on file  */
     char *data = NULL;			/* working variable */
     char line[MAX_SIZE];		/* input line from file */
     int size;				/* number of bytes of data */
@@ -194,21 +197,16 @@ ReadDataFromBitmapFile (filename, width, height, data_ret)
     int bytes_per_line;			/* per scanline of data */
     unsigned int ww = 0;		/* width */
     unsigned int hh = 0;		/* height */
-    int filtype;			/* file (0) or pipe (1) */
 
     /* first time initialization */
     if (initialized == False)
 	initHexTable();
 
-    if ((fstream=open_picfile(filename, &filtype)) == NULL)
-	return BitmapOpenFailed;
-
     /* error cleanup and return macro	*/
 #define	RETURN(code)  { if (data) free (data); \
-			  close_picfile(fstream,filtype); \
 			return code; }
 
-    while (fgets(line, MAX_SIZE, fstream)) {
+    while (fgets(line, MAX_SIZE, file)) {
 	if (strlen(line) == MAX_SIZE-1) {
 	    RETURN (BitmapFileInvalid);
 	}
@@ -262,7 +260,7 @@ ReadDataFromBitmapFile (filename, width, height, data_ret)
 	    int bytes;
 
 	    for (bytes=0, ptr=data; bytes<size; (bytes += 2)) {
-		if ((value = NextInt(fstream)) < 0)
+		if ((value = NextInt(file)) < 0)
 		  RETURN (BitmapFileInvalid);
 		*(ptr++) = value;
 		if (!padding || ((bytes+2) % bytes_per_line))
@@ -273,7 +271,7 @@ ReadDataFromBitmapFile (filename, width, height, data_ret)
 	    int bytes;
 
 	    for (bytes=0, ptr=data; bytes<size; bytes++, ptr++) {
-		if ((value = NextInt(fstream)) < 0)
+		if ((value = NextInt(file)) < 0)
 		  RETURN (BitmapFileInvalid);
 		*ptr=value;
 	    }

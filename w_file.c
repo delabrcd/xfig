@@ -26,10 +26,18 @@
 #include "w_util.h"
 #include "w_setup.h"
 
+/* IMPORTS */
+
 extern Boolean	file_msg_is_popped;
 extern Widget	file_msg_popup;
 extern Widget	make_popup_menu();
 extern char    *panel_get_value();
+extern Boolean	popup_up;
+
+/* EXPORTS */
+
+Boolean		file_up = False;	/* whether the file panel is up (or the export panel) */
+Widget		cfile_text;		/* widget for the current filename */
 
 /* these are in fig units */
 
@@ -40,7 +48,7 @@ static char	buf[40];
 
 DeclareStaticArgs(12);
 static Widget	file_status, num_objects;
-static Widget	cfile_lab, cfile_text;
+static Widget	cfile_lab;
 static Widget	cancel, save, merge, load;
 static Widget	file_w;
 static Widget	fig_offset_x, fig_offset_y;
@@ -80,9 +88,6 @@ Widget		file_panel,	/* so w_dir can access the scrollbars */
 		file_dir,	/* current directory widget */
 		file_flist,	/* file list wiget */
 		file_dlist;	/* dir list wiget */
-
-Boolean		file_up = False;
-
 static void
 file_panel_dismiss()
 {
@@ -90,7 +95,7 @@ file_panel_dismiss()
     SetValues(file_selfile);	/* clear Filename string */
     XtPopdown(file_popup);
     XtSetSensitive(file_w, True);
-    file_up = False;
+    file_up = popup_up = False;
 }
 
 /* get x/y offsets from panel */
@@ -212,6 +217,7 @@ do_save(w)
 
 	if (change_directory(dval) == 0) {
 	    XtSetSensitive(save, False);
+	    (void) renamefile(fval);
 	    if (write_file(fval) == 0) {
 		FirstArg(XtNlabel, fval);
 		SetValues(cfile_text);
@@ -227,9 +233,24 @@ do_save(w)
     } else {
 	/* not using popup => filename not changed so ok to write existing file */
 	warnexist = False;			
+	(void) renamefile(cur_filename);
 	if (write_file(cur_filename) == 0)
 	    reset_modifiedflag();
     }
+}
+
+/* try to rename current to current.bak */
+
+renamefile(file)
+    char	   *file;
+{
+    char	    bak_name[PATH_MAX];
+
+    strcpy(bak_name,file);
+    strcat(bak_name,".bak");
+    if (rename(file,bak_name) < 0)
+	return (-1);
+    return 0;
 }
 
 Boolean
@@ -269,7 +290,7 @@ popup_file_panel(w)
 
 	set_temp_cursor(wait_cursor);
 	XtSetSensitive(w, False);
-	file_up = True;
+	file_up = popup_up = True;
 
 	if (!file_popup)
 	    create_file_panel(w);
@@ -452,7 +473,7 @@ create_file_panel(w)
 	XtAddEventHandler(load, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler)do_load, (XtPointer) NULL);
 
-	FirstArg(XtNlabel, "Merge");
+	FirstArg(XtNlabel, "Merge ");
 	NextArg(XtNfromHoriz, load);
 	NextArg(XtNhorizDistance, 25);
 	NextArg(XtNfromVert, below);

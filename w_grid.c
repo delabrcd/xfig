@@ -53,13 +53,15 @@ init_grid()
     }
 
     if (appres.INCHES) {
-	posn_rnd[P_MAGNET] = 5*ZOOM_FACTOR; /* 1 x 1/8" */
+	posn_rnd[P_MAGNET] = 5*ZOOM_FACTOR;	/*  1/16" */
 	posn_hlf[P_MAGNET] = 3*ZOOM_FACTOR;
-	posn_rnd[P_GRID1] = 20*ZOOM_FACTOR; /* 4 x 1/8" */
+	posn_rnd[P_GRID1] = 20*ZOOM_FACTOR;	/*  1/4" */
 	posn_hlf[P_GRID1] = 10*ZOOM_FACTOR;
-	posn_rnd[P_GRID2] = 40*ZOOM_FACTOR; /* 8 x 1/8" */
+	posn_rnd[P_GRID2] = 40*ZOOM_FACTOR;	/*  1/2" */
 	posn_hlf[P_GRID2] = 20*ZOOM_FACTOR;
-	grid_name[P_MAGNET] = "1/16 in";	/* only used for points positioning */
+	posn_rnd[P_GRID3] = 80*ZOOM_FACTOR;	/*  1" */
+	posn_hlf[P_GRID3] = 40*ZOOM_FACTOR;
+	grid_name[0]      = "1/16 in";		/* only used for points positioning */
 	grid_name[GRID_1] = "1/4 in";
 	grid_name[GRID_2] = "1/2 in";
 	grid_name[GRID_3] = "1 in";
@@ -70,13 +72,15 @@ init_grid()
 	grid_fine[GRID_3] = 2 * IN16TOPIX;	/* 2 x 1/16" */
 	grid_coarse[GRID_3] = 16 * IN16TOPIX;	/* 16 x 1/16" */
     } else {
-	posn_rnd[P_MAGNET] = 3*ZOOM_FACTOR; /* 1 mm */
+	posn_rnd[P_MAGNET] = 3*ZOOM_FACTOR;	/* 1 mm */
 	posn_hlf[P_MAGNET] = 2*ZOOM_FACTOR;
-	posn_rnd[P_GRID1] = 15*ZOOM_FACTOR; /* 5 mm */
+	posn_rnd[P_GRID1] = 15*ZOOM_FACTOR;	/* 5 mm */
 	posn_hlf[P_GRID1] = 7*ZOOM_FACTOR;
-	posn_rnd[P_GRID2] = 30*ZOOM_FACTOR; /* 10 mm */
+	posn_rnd[P_GRID2] = 30*ZOOM_FACTOR;	/* 10 mm */
 	posn_hlf[P_GRID2] = 15*ZOOM_FACTOR;
-	grid_name[P_MAGNET] = "1 mm";		/* only used for points positioning */
+	posn_rnd[P_GRID3] = 60*ZOOM_FACTOR;	/* 20 mm */
+	posn_hlf[P_GRID3] = 30*ZOOM_FACTOR;
+	grid_name[0]      = "1 mm";		/* only used for points positioning */
 	grid_name[GRID_1] = "5 mm";
 	grid_name[GRID_2] = "10 mm";
 	grid_name[GRID_3] = "20 mm";

@@ -1,9 +1,52 @@
 This file contains some possible things to do in future versions of xfig.
 
+--------------------------------------------------------------------
+The following items would require a change to the Fig file protocol:
+--------------------------------------------------------------------
+
+Allow different arrow head points (miter, round, bevel)
+Enhance all objects to have cap_style type for dotted lines
+Allow selecting linecap type for dotted lines for closed splines, boxes
+	and ellipses
+Allow user to set the tension in splines (change to compute_cp() in
+	d_intspline.c)
+Rotatable boxes - store width, height, upper-left corner and angle only?
+Allow multiple pages of figures
+Store page size with file
+Super/subscripts for text objects
+
+----------------------------------------------------------
+The following DON'T require a change to the file protocol:
+----------------------------------------------------------
+
+Automatic pan of canvas when drawing at an edge.
+Make a simple way to create quarter-circle and half-circle using arc
+Possibly use already allocated colors when importing GIF/XPM figures
+	(e.g. black, red, etc)
+Re-render EPS file (using gs) at new resolution when zooming LARGER
+Moving object when point_posn mode is on should first move object to closest
+	positioning grid position then allow movement from there.
+	Cancel should restore original coords.
+Confirm Delete All/Save Figure so user doesn't save over old file
+  e.g.	1) Work on existing file
+	2) save file
+	3) delete all to start new figure (filename is old one however)
+	4) save new figure should confirm save on old name
+Look in ../AppPlusS/XCC.c for code to allocate colors using any
+	valid visual/depth/colormap.
+When deleting (or adding) an arrowhead the object should be deleted
+	from the objects list so the redisplay can be done properly then
+	added back in to the list with the arrowhead deleted (or added)
+Bug: -pwidth/-pheight values ignored when switching Landscape/Portrait
+	This is hard to fix - what if the user wants -pwidth 11 and -pheight 5
+	and switches to Portrait mode.  Should the window be made 11 inches tall?
+	That is very tall for most displays.
+Use already allocated colors when importing GIF/XPM figures (e.g. black, red, etc)
+Option for smaller icons for mode panel for smaller screens
+Make <Shift>middle mouse button DELETE previous points just created during
+	create POLYobject/ARC/Ellipse etc.  That way, one may backup when
+	creating objects.
 Undo should undo multiple copy, rotate/copy etc.
-Arrowheads should not go past endpoint of line
-Allow rotated boxes (not just polygons).  This would allow compound objects
-	containing boxes to be rotated by all angles.
 Should arrow size change in update mode when linewidth changes?
 	Easier method to set/change arrow size
 Mode to rotate objects using only the mouse (requires new mode button)
@@ -19,17 +62,16 @@ Make it smart about duplicate GIFs:
 	o Thus, they all share the same colors
 Have "freehand" line drawing mode (draws points as long as mouse button
 	is down)
-Allow printing of grid in figure
+Allow printing of grid in figure (actually fig2dev option)
 Make the rulers understand the real screen resolution according to the server
 Add the concept of "layers" for each depth.  That way a user may work on
 	certain layers at one time, masking out or overlaying the other layers
 	as desired.
-Make <Shift>middle mouse button DELETE previous points just created during
-	create POLYobject/ARC/Ellipse etc.  That way, one may backup when
-	creating objects.
 Create resource for "print" command (e.g. lp, lpr, whatever) which uses meta-
 	notation to place filename (e.g.  print_command: "lpr -P%p %f" where %p
 	is the printer string and %f is the filename)
+Allow option of vertically centering text either using the ascenders/descenders
+	(the current method) or not
 Allow vertically-aligned text
   "top" would mean the insertion point specifies the line over the top of the
         text
@@ -112,17 +154,23 @@ Make xfig understand depth better:
 	What about support for negative depth values?
 Honor fractional text sizes (float).  Currently, xfig reads the size as float
 	but converts to integer internally.
-
---------------------------------------------------------------------
-The following items would require a change to the Fig file protocol:
---------------------------------------------------------------------
-
-Allow user to set the tension in splines (change to compute_cp() in
-	d_intspline.c)
-Rotatable boxes - store width, height, upper-left corner and angle only?
-Allow multiple pages of figures
-Store page size with file
-Super/subscripts for text objects
+A 'gravity' mode whereby points placed by aiming and clicking are brought not
+	to the closest fiducial point of a figure, but to the closest continuous
+	point on the figure (applies only to circles, arcs, and straight lines),
+	taking into account constraints of angle (like manhattan constraint).
+	Example 1:  I click near the circumference of a circle.  The point is
+	placed exactly on the circumference, closest to where I clicked.
+	This is very useful for getting lines to touch circles exactly in points
+	other than the E, W, S, or N extreme.  Example 2:  I am in manhattan
+	constraint, and I click near a random-slope line.  The point is placed
+	on the line in the one place consistent with the manhattan constraint.
+Clean up array-place copy:
+	If y copies is set to 0, then xfig treats the x direction as the direction
+	of the copies.
+	If both are non-zero, the x and y are e-w and n-s, but the number of copies
+	can be fewer than x*y if the first copy is in a strange place.
+	If only y is set, it is like x, but the first copy (when y is 2) is not
+	drawn properly.
 
 --------------------------------------------------------------------
 --------------------------------------------------------------------

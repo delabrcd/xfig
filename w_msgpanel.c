@@ -37,13 +37,14 @@
 /********************* IMPORTS *******************/
 
 extern char    *basname();
-extern Boolean	file_up, export_up, edit_up;
 extern char    *read_file_name;
+extern Widget	cfile_text;		/* widget for the current filename */
 
 /********************* EXPORTS *******************/
 
 int		put_msg();
 int		init_msgreceiving();
+Boolean		popup_up = False;
 
 /* so w_file.c can access */
 Boolean	file_msg_is_popped=False;
@@ -79,7 +80,7 @@ static XtActionsRec	file_msg_actions[] =
 
 int
 init_msg(tool, filename)
-    TOOL	    tool;
+    Widget	    tool;
     char	   *filename;
 {
     /* first make a form to put the two widgets in */
@@ -140,7 +141,8 @@ setup_msg()
  * Update the current filename in the name_panel widget (it will resize
  * automatically) and resize the msg_panel widget to fit in the remaining 
  * space, by getting the width of the command panel and subtract the new 
- * width of the name_panel to get the new width of the message panel
+ * width of the name_panel to get the new width of the message panel.
+ * Also update the current filename in the File popup (if it has been created).
  */
 
 update_cur_filename(newname)
@@ -156,6 +158,9 @@ update_cur_filename(newname)
 	/* store the new filename in the name_panel widget */
 	FirstArg(XtNlabel, newname);
 	SetValues(name_panel);
+	if (cfile_text)			/* if the name widget in the file popup exists... */
+	    SetValues(cfile_text);
+
 	/* get the new size of the name_panel */
 	FirstArg(XtNwidth, &namwid);
 	GetValues(name_panel);
@@ -177,6 +182,8 @@ update_cur_filename(newname)
 	XtManageChild(msg_form);
 	/* put the filename being edited in the icon */
 	XSetIconName(tool_d, tool_w, basname(cur_filename));
+
+	update_def_filename();		/* update default filename in export panel */
 }
 
 /* VARARGS1 */
@@ -203,14 +210,15 @@ clear_message()
 boxsize_msg(fact)
     int fact;
 {
-    float dx, dy;
+    float	dx, dy;
 
     dx = (float) fact * abs(cur_x - fix_x) /
 		(float)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
     dy = (float) fact * abs(cur_y - fix_y) /
 		(float)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
-    put_msg("Width = %.2f, Length = %.2f %s",
-		dx*appres.user_scale, dy*appres.user_scale, cur_fig_units);
+    put_msg("Width = %.3lf %s, Length = %.3lf, %s",
+		dx*appres.user_scale, cur_fig_units,
+		dy*appres.user_scale, cur_fig_units);
 }
 
 length_msg(type)
@@ -233,7 +241,7 @@ int type;
     dx = (cur_x - fx)/(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
     dy = (cur_y - fy)/(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
     len = (float)sqrt(dx*dx + dy*dy);
-    put_msg("%s = %.2f %s, x = %.2f %s, y = %.2f %s",
+    put_msg("%s = %.3f %s, dx = %.3lf %s, dy = %.3lf, %s",
 		(type==MSG_RADIUS? "Radius":
                   (type==MSG_DIAM? "Diameter":
 		  (type==MSG_LENGTH? "Length": "Distance"))),
@@ -267,7 +275,7 @@ int x1,y1,x2,y2,x3,y3;
 	    len2 = (float)(sqrt(dx2*dx2 + dy2*dy2)/
 		(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM));
     }
-    put_msg("Length 1 = %.2f, Length 2 = %.2f %s",
+    put_msg("Length 1 = %.3f, Length 2 = %.3f %s",
 		len1*appres.user_scale, len2*appres.user_scale, cur_fig_units);
 }
 
@@ -356,7 +364,7 @@ file_msg_panel_dismiss(w, ev)
     Widget	    w;
     XButtonEvent   *ev;
 {
-	if ((grabbed) && (!file_up))
+	if ((grabbed) && (!popup_up))
 		XtAddGrab(file_msg_popup, False, False);
 	XtPopdown(file_msg_popup);
 	file_msg_is_popped=False;
@@ -368,7 +376,7 @@ popup_file_msg()
 
 	if (file_msg_popup) {
 	    if (!file_msg_is_popped) {
-		if (edit_up || export_up || file_up) {
+		if (popup_up) {
 		    XtPopup(file_msg_popup, XtGrabNonexclusive);
 		    XSetWMProtocols(XtDisplay(file_msg_popup),
 				    XtWindow(file_msg_popup),
@@ -392,7 +400,7 @@ popup_file_msg()
 	FirstArg(XtNx, 0);
 	NextArg(XtNy, 0);
 	NextArg(XtNcolormap, tool_cm);
-	NextArg(XtNtitle, "Xfig: File error messages");
+	NextArg(XtNtitle, "Xfig: Error messages");
 	file_msg_popup = XtCreatePopupShell("file_msg",
 					transientShellWidgetClass,
 					tool, Args, ArgCount);
@@ -431,7 +439,7 @@ popup_file_msg()
 	XtAddEventHandler(file_msg_dismiss, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler)clear_file_message, (XtPointer) NULL);
 
-	if (edit_up || export_up || file_up)
+	if (popup_up)
 		{
 		XtPopup(file_msg_popup, XtGrabNonexclusive);
     		XSetWMProtocols(XtDisplay(file_msg_popup),

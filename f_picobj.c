@@ -32,21 +32,25 @@
 #include "w_setup.h"
 #include "mode.h"
 #ifdef USE_XPM
-#include <X11/xpm.h>
+#include <xpm.h>
 #endif /* USE_XPM */
 
-extern Boolean	switch_colormap();
+extern	int	read_xbm();
+extern	int	read_xpm();
+extern	int	read_epsf();
+extern	int	read_gif();
 
-extern int	read_bitmap();
-extern int	read_xpm();
-extern int	read_epsf();
-extern int	read_gif();
+FILE	*open_picfile();
+void	 close_picfile();
 
 read_picobj(pic,color)
     F_pic	   *pic;
     Color	    color;
 {
+    FILE	   *fd;
+    int		    type;
     int		    stat;
+
     pic->color = color;
     /* don't touch the flipped flag - caller has already set it */
     pic->subtype = 0;
@@ -65,32 +69,59 @@ read_picobj(pic,color)
 
     put_msg("Reading Picture object file...");
     app_flush();
-    /* see if GIF file */
-    if ((stat=read_gif(pic)) != FileInvalid) {
+
+    /* open the file */
+    if ((fd=open_picfile(pic->file, &type)) == NULL) {
+	file_msg("No such picture file: %s",pic->file);
 	return;
     }
 
-    /* see if X11 Bitmap */
-    if ((stat=read_bitmap(pic)) != FileInvalid) {
+    /* see if GIF file */
+    if ((stat=read_gif(fd,type,pic)) != FileInvalid) {
+	close_picfile(fd,type);
 	return;
     }
+    close_picfile(fd,type);
+    fd=open_picfile(pic->file, &type);
+
+    /* see if JPEG file */
+    if ((stat=read_jpg(fd,type,pic)) != FileInvalid) {
+	close_picfile(fd,type);
+	return;
+    }
+    close_picfile(fd,type);
+    fd=open_picfile(pic->file, &type);
+
+    /* see if X11 Bitmap */
+    if ((stat=read_xbm(fd,type,pic)) != FileInvalid) {
+	close_picfile(fd,type);
+	return;
+    }
+    close_picfile(fd,type);
+    fd=open_picfile(pic->file, &type);
 
 #ifdef USE_XPM
     /* no, try XPM */
-    if ((stat=read_xpm(pic)) != XpmFileInvalid) {
+    if ((stat=read_xpm(fd,type,pic)) != XpmFileInvalid) {
+	close_picfile(fd,type);
 	return;
     }
+    close_picfile(fd,type);
+    fd=open_picfile(pic->file, &type);
 #endif /* USE_XPM */
 
     /* neither, try EPS */
-    if ((stat=read_epsf(pic)) != FileInvalid) {
+    if ((stat=read_epsf(fd,type,pic)) != FileInvalid) {
 	pic->subtype = T_PIC_EPS;
+	close_picfile(fd,type);
 	return;
     }
+
     /* none of the above */
-    file_msg("Unknown image format");
+    file_msg("%s: Unknown image format",pic->file);
     put_msg("Reading Picture object file...Failed");
     app_flush();
+    close_picfile(fd,type);
 }
 
 FILE *

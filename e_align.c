@@ -46,7 +46,7 @@ static int	distribute_vertically();
 
 align_selected()
 {
-    set_mousefun("align compound", "align canvas", "");
+    set_mousefun("align compound", "align canvas", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_align);

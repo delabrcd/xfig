@@ -39,7 +39,7 @@ static int	find_endpoints();
 
 point_adding_selected()
 {
-    set_mousefun("break/add here", "", "");
+    set_mousefun("break/add here", "", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_point_adding);
@@ -60,7 +60,7 @@ init_point_adding(p, type, x, y, px, py)
     int		    px, py;
 {
     set_action_on();
-    set_mousefun("place new point", "", "cancel");
+    set_mousefun("place new point", "", "cancel", "", "", "");
     draw_mousefun_canvas();
     set_temp_cursor(null_cursor);
     win_setmouseposition(canvas_win, px, py);
@@ -197,8 +197,8 @@ splinepoint_adding(spline, left_point, added_point, right_point)
     }
     /* put it back in the list and draw the new spline */
     list_add_spline(&objects.splines, spline);
-    draw_spline(spline, PAINT); /* draw the modified spline */
-    mask_toggle_splinemarker(spline);
+    /* redraw it and anything on top of it */
+    redisplay_spline(spline);
     clean_up();
     set_modifiedflag();
     set_last_prevpoint(left_point);
@@ -269,9 +269,9 @@ linepoint_adding(line, left_point, added_point)
     }
     /* put it back in the list and draw the new line */
     list_add_line(&objects.lines, line);
-    draw_line(line, PAINT);
+    /* redraw it and anything on top of it */
+    redisplay_line(line);
     clean_up();
-    mask_toggle_linemarker(line);
     set_action_object(F_ADD_POINT, O_POLYLINE);
     set_latestline(line);
     set_last_prevpoint(left_point);

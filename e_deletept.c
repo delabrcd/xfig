@@ -30,7 +30,7 @@ static int	init_delete_point();
 
 delete_point_selected()
 {
-    set_mousefun("delete point", "", "");
+    set_mousefun("delete point", "", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_delete_point);
@@ -99,7 +99,6 @@ splinepoint_deleting(spline, prev_point, selected_point)
 
     next_point = selected_point->next;
     set_temp_cursor(wait_cursor);
-    mask_toggle_splinemarker(spline);
     /* delete it and redraw underlying objects */
     list_delete_spline(&objects.splines, spline);
     redisplay_spline(spline);
@@ -142,8 +141,8 @@ splinepoint_deleting(spline, prev_point, selected_point)
     }
     /* put it back in the list and draw the new spline */
     list_add_spline(&objects.splines, spline);
-    draw_spline(spline, PAINT);
-    mask_toggle_splinemarker(spline);
+    /* redraw it and anything on top of it */
+    redisplay_spline(spline);
     clean_up();
     set_action_object(F_DELETE_POINT, O_SPLINE);
     set_latestspline(spline);
@@ -169,7 +168,6 @@ linepoint_deleting(line, prev_point, selected_point)
     F_point	   *p, *next_point;
 
     next_point = selected_point->next;
-    mask_toggle_linemarker(line);
     /* delete it and redraw underlying objects */
     list_delete_line(&objects.lines, line);
     redisplay_line(line);
@@ -201,10 +199,20 @@ linepoint_deleting(line, prev_point, selected_point)
 	else
 	    prev_point->next = next_point;
     }
+    /* if there is only one point remaining and there are any arrowheads,
+       delete the arrowheads */
+    if (line->points->next == NULL) {
+	if (line->for_arrow)
+		free((char *) line->for_arrow);
+	line->for_arrow = (F_arrow *) NULL;
+	if (line->back_arrow)
+		free((char *) line->back_arrow);
+	line->back_arrow = (F_arrow *) NULL;
+    }
     /* put it back in the list and draw the new line */
     list_add_line(&objects.lines, line);
-    draw_line(line, PAINT);
-    mask_toggle_linemarker(line);
+    /* redraw it and anything on top of it */
+    redisplay_line(line);
     clean_up();
     set_modifiedflag();
     set_action_object(F_DELETE_POINT, O_POLYLINE);

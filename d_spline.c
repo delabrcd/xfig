@@ -33,7 +33,7 @@ static int	init_spline_drawing();
 
 spline_drawing_selected()
 {
-    set_mousefun("first point", "", "");
+    set_mousefun("first point", "", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     canvas_leftbut_proc = init_spline_drawing;
@@ -66,7 +66,7 @@ create_splineobject(x, y)
     F_spline	   *spline;
 
     if (x != fix_x || y != fix_y || num_point < min_num_points) {
-	get_intermediatepoint(x, y);
+	get_intermediatepoint(x, y, 0);
     }
     elastic_line();
     if ((spline = create_spline()) == NULL)
@@ -97,16 +97,16 @@ create_splineobject(x, y)
 	spline->type = T_CLOSED_NORMAL;
 	num_point++;
 	append_point(first_point->x, first_point->y, &cur_point);
-	draw_closed_spline(spline, PAINT);
     } else {			/* It must be F_SPLINE */
 	if (autoforwardarrow_mode)
 	    spline->for_arrow = forward_arrow();
 	if (autobackwardarrow_mode)
 	    spline->back_arrow = backward_arrow();
 	spline->type = T_OPEN_NORMAL;
-	draw_open_spline(spline, PAINT);
     }
     add_spline(spline);
+    /* draw it and anything on top of it */
+    redisplay_spline(spline);
     spline_drawing_selected();
     draw_mousefun_canvas();
 }

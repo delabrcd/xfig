@@ -1,5 +1,8 @@
 ! some sample settings you may want to change
 
+! Image editor - can edit imported image
+Fig.image_editor:		xv -rw
+! Spacing between buttons
 Fig.internalborderwidth:	2
 ! font for the buttons
 Fig.buttonFont:			6x13
@@ -7,6 +10,11 @@ Fig.buttonFont:			6x13
 Fig.normalFont:			6x13
 ! font for the file name and popup query widgets
 Fig.boldFont:			8x13bold
+! font for the ruler numbers
+Fig*topruler.font:		6x13
+Fig*sideruler.font:		6x13
+! font for the units box in the corner where the rulers meet
+Fig*unitbox.font:		6x13
 
 ! the following should fix the problem that some have had with
 ! their window manager fighting with xfig over the geometry
@@ -21,44 +29,63 @@ Fig.exportLanguage:		eps
 ! filename mask for the export popup browser
 Fig*export_panel*mask*string:	*ps
 
+! filename mask for the image popup browser
+Fig*browse_panel*mask*string:	*.[gjxe][ipb][fgms]*
+
 ! printer name
 ! If the following resource is NOT set, xfig will use the PRINTER 
 ! shell environment variable for the printer name
 !Fig*printer*string:		ps
 
 ! printer job parameters
-! If you are running Solaris your print command may need -oPS.  If so,
+! If you are running a SYSV system your print command may need -T PS.  If so,
 ! uncomment the following.  You may want to add any print params here anyway.
-!Fig*job_params*string:		-oPS
+! If you want the filename to be sent to the printer for the "Job" parameter
+! you may add -J %f to the job_params string.
+
+!Fig*job_params*string:		-T PS
+
 
 ! Set the maximum number of colors to use for color images (EPS,GIF,XPM)
 ! xfig will try to install a private colormap if needed to get this
 ! nubmer of colors UNLESS -dontswitchcmap (resource Fig.dont_switch_cmap)
 ! is set.
-Fig.max_image_colors:		64
+Fig.max_image_colors:		80
 
 ! If you are using the 3d Athena widget set (which looks very nice)
 ! and you want the scrollbars to be 3d (even though they look funny)
-! then comment out the following four resources.
-Fig*horizontal.shadowWidth: 0
-Fig*horizontal.topShadow: black
-Fig*horizontal.bottomShadow: white
+! then comment out the following three resources.
+	Fig*horizontal.shadowWidth: 0
+	Fig*horizontal.topShadow: black
+	Fig*horizontal.bottomShadow: white
 ! the following is done so the widget set doesn't try to make shades of
 ! the scrollbar shadows (even though the width is 0 it takes more colors)
-Fig*Scrollbar.shadowWidth: 0
-Fig*Scrollbar.topShadow: black
-Fig*Scrollbar.bottomShadow: white
+	Fig*Scrollbar.shadowWidth: 0
+	Fig*Scrollbar.topShadow: black
+	Fig*Scrollbar.bottomShadow: white
 ! this is for the standard color buttons in the color panel
-Fig*stdColor.shadowWidth: 0
-Fig*stdColor.topShadow: black
-Fig*stdColor.bottomShadow: white
-! this is for the user color buttons in the color panel
-Fig*colorMemory.shadowWidth: 0
-Fig*colorMemory.topShadow: black
-Fig*colorMemory.bottomShadow: white
+	Fig*stdColor.shadowWidth: 0
+	Fig*stdColor.topShadow: black
+	Fig*stdColor.bottomShadow: white
+! You may need or want to adjust the highlight thickness for the mode
+! and indicator panels depending on the results.  If it is too thick
+! it will erase part of the button graphics.
+	Fig*mode_panel*highlightThickness: 1
+	Fig*ind_panel.ind_box.button_form.button.highlightThickness: 1
+! The following is for the update marker in the upper-right corner of the
+! indicator buttons.  You may not want any highlight thickness because
+! the boxes are so small.
+	Fig*ind_panel.ind_box.button_form.update.highlightThickness: 0
+
+!if on monochrome server, or no Fig-color app-defaults file
+#ifndef COLOR
+!  This background resource shows between the buttons like a border
+	Fig*mode_panel.background:	black
+	Fig*mode_panel.foreground:	black
+#endif
 
 ! make the F20 key paste text in the canvas
-Fig*translations: #override \n\
+Fig*canvas.translations: #override \n\
 			<Key>F20: PasteCanv()\n
 
 ! Specify a private Compose key database file.  If this resource contains a "/"

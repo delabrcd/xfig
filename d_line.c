@@ -48,11 +48,11 @@ line_drawing_selected()
     set_cursor(arrow_cursor);
     reset_action_on();
     if (cur_mode == F_POLYGON) {
-	set_mousefun("first point", "", "");
+	set_mousefun("first point", "", "", "", "", "");
 	min_num_points = 3;
 	canvas_middlebut_proc = null_proc;
     } else {
-	set_mousefun("first point", "single point", "");
+	set_mousefun("first point", "single point", "", "", "", "");
 	min_num_points = 1;
 	num_point = 0;
 	fix_x = fix_y = -1;
@@ -103,9 +103,9 @@ init_trace_drawing(x, y)
     canvas_rightbut_proc = cancel_line_drawing;
     return_proc = line_drawing_selected;
     num_point = 1;
-    set_mousefun("next point", "", "cancel");
+    set_mousefun("next point", "", "cancel", "del point", "", "");
     if (num_point >= min_num_points - 1) {
-	set_mousefun("next point", "final point", "cancel");
+	set_mousefun("next point", "final point", "cancel", "del point", "", "");
 	canvas_middlebut_proc = canvas_middlebut_save;
     }
     draw_mousefun_canvas();
@@ -114,8 +114,9 @@ init_trace_drawing(x, y)
     elastic_line();
 }
 
-get_intermediatepoint(x, y)
+get_intermediatepoint(x, y, shift)
     int		    x, y;
+    int		    shift;
 {
     (*canvas_locmove_proc) (x, y);
     num_point++;
@@ -127,9 +128,30 @@ get_intermediatepoint(x, y)
 	cur_cursor = null_cursor;
     }
     win_setmouseposition(canvas_win, cur_x, cur_y);
-    append_point(fix_x, fix_y, &cur_point);
+    if (shift != 0 && num_point > 2) {
+	F_point	*p;
+
+	num_point -= 2;
+	p = prev_point(first_point, cur_point);
+	p->next = NULL;
+	/* erase the newest segment */
+	pw_vector(canvas_win, fix_x, fix_y, cur_point->x, cur_point->y,
+		  INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
+	/* and segment drawn before */
+	pw_vector(canvas_win, p->x, p->y, cur_point->x, cur_point->y,
+		  INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
+	/* and draw new elastic segment */
+	pw_vector(canvas_win, fix_x, fix_y, p->x, p->y,
+		  PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
+	fix_x = p->x;
+	fix_y = p->y;
+	free_points(cur_point);
+	cur_point = p;
+    } else {
+	append_point(fix_x, fix_y, &cur_point);
+    }
     if (num_point == min_num_points - 1) {
-	set_mousefun("next point", "final point", "cancel");
+	set_mousefun("next point", "final point", "cancel", "del point", "", "");
 	draw_mousefun_canvas();
 	canvas_middlebut_proc = canvas_middlebut_save;
     }
@@ -155,7 +177,7 @@ create_lineobject(x, y)
 	first_point->next = NULL;
 	num_point++;
     } else if (x != fix_x || y != fix_y) {
-	get_intermediatepoint(x, y);
+	get_intermediatepoint(x, y, 0);
     }
     dot = (num_point == 1);
     elastic_line();
@@ -197,8 +219,9 @@ create_lineobject(x, y)
 	cur_y = fix_y;
 	elastic_moveline(first_point);	/* erase temporary outline */
     }
-    draw_line(line, PAINT);	/* draw final */
     add_line(line);
+    /* draw it and anything on top of it */
+    redisplay_line(line);
     line_drawing_selected();
     draw_mousefun_canvas();
 }

@@ -15,6 +15,8 @@
  * the party supplying this software to the X Consortium.
  */
 
+#include "w_icons.h"
+
 /* size of update control panel */
 #define		UPD_BITS	10	/* bits wide and high */
 #define		UPD_BORD	1	/* border width for update squares */
@@ -89,14 +91,14 @@ extern	Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 #define I_OBJECT	(I_MIN1 | I_TEXT0 | I_LINE1 | I_ARROWMODE | I_ARROWTYPE | \
 				I_BOXRADIUS | I_DEPTH | I_ARCTYPE)
 #define I_ALIGN		(I_MIN1 | I_HALIGN | I_VALIGN)
-#define I_ROTATE	(I_MIN1 | I_ROTNANGLE | I_NUMCOPIES)
+#define I_ROTATE	(I_MIN2 | I_ROTNANGLE | I_NUMCOPIES)
 #define I_COPY   	(I_MIN3 | I_NUMXCOPIES | I_NUMYCOPIES)
 /* for checking which parts to update */
 #define I_UPDATEMASK	(I_OBJECT & ~I_GRIDMODE & ~I_ZOOM)
 
 typedef struct choice_struct {
     int		    value;
-    PIXRECT	    icon;
+    icon_struct	   *icon;
     Pixmap	    normalPM,blackPM;
 }		choice_info;
 
@@ -114,12 +116,15 @@ typedef struct ind_sw_struct {
     int		    numchoices; /* specific to I_CHOICE */
     int		    sw_per_row; /* specific to I_CHOICE */
     Bool	    update;	/* whether this object component is updated by update */
-    TOOL	    button;
-    TOOL	    formw;
-    TOOL	    updbut;
+    Widget	    button;
+    Widget	    formw;
+    Widget	    updbut;
     Pixmap	    normalPM;
     Widget	    panel;	/* to keep track if already created */
 }		ind_sw_info;
 
 #define ZOOM_SWITCH_INDEX	0	/* used by w_zoom.c */
 extern ind_sw_info ind_switches[];
+
+extern unsigned char	arrow0_bits[], arrow1_bits[], arrow2_bits[], arrow3_bits[];
+extern unsigned char	arrow4_bits[], arrow5_bits[], arrow6_bits[];

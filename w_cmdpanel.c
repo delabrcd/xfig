@@ -232,11 +232,11 @@ quit(w)
 	XtSetSensitive(w, True);
 	return;		/* cancel, do not quit */
     }
-    aborting = 0;
-    goodbye();		/* finish up and exit */
+    goodbye(False);	/* finish up and exit */
 }
 
-goodbye()
+goodbye(abortflag)
+    Boolean	    abortflag;
 {
     /* delete the cut buffer only if it is in a temporary directory */
     if (strncmp(cut_buf_name, TMPDIR, strlen(TMPDIR)) == 0)
@@ -253,8 +253,10 @@ goodbye()
 
     XtDestroyWidget(tool);
     /* generate a fault to cause core dump */
-    if (aborting)
+    if (abortflag) {
+	chdir(orig_dir);	/* change to original directory first */
 	abort();
+    }
     exit(0);
 }
 
@@ -312,4 +314,7 @@ change_orient()
 	SetValues(print_orient_panel);
     if (export_orient_panel)
 	SetValues(export_orient_panel);
+
+    /* the figure has been modified */
+    set_modifiedflag();
 }

@@ -43,7 +43,7 @@ static int	cancel_arc();
 
 arc_drawing_selected()
 {
-    set_mousefun("first point", "", "");
+    set_mousefun("first point", "", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     canvas_leftbut_proc = init_arc_drawing;
@@ -57,7 +57,7 @@ static
 init_arc_drawing(x, y)
     int		    x, y;
 {
-    set_mousefun("mid point", "", "cancel");
+    set_mousefun("mid point", "", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_rightbut_proc = cancel_arc;
     num_point = 0;
@@ -93,7 +93,7 @@ get_arcpoint(x, y)
 	return;
 
     if (num_point == 1) {
-	set_mousefun("final point", "", "cancel");
+	set_mousefun("final point", "", "cancel", "", "", "");
 	draw_mousefun_canvas();
     }
     if (num_point == 2) {
@@ -172,14 +172,9 @@ create_arcobject(lx, ly)
     arc->point[2].x = point[2].x;
     arc->point[2].y = point[2].y;
     arc->next = NULL;
-    draw_arc(arc, PAINT);
-    if (appres.DEBUG) {
-	int		xmin, ymin, xmax, ymax;
-
-	arc_bound(arc, &xmin, &ymin, &xmax, &ymax);
-	elastic_box(xmin, ymin, xmax, ymax);
-    }
     add_arc(arc);
+    /* draw it and anything on top of it */
+    redisplay_arc(arc);
     arc_drawing_selected();
     draw_mousefun_canvas();
 }

@@ -20,6 +20,7 @@
 #include "object.h"
 #include "mode.h"
 #include "u_create.h"
+#include "w_color.h"
 #include "w_util.h"
 #include "f_neuclrtab.h"
 
@@ -90,9 +91,10 @@ change_directory(path)
 	return (1);
     }
     if (get_directory(cur_dir)) /* get cwd */
-	return (0);
+	return 0;
     else
-	return (1);
+	return 1;
+
 }
 
 get_directory(direct)
@@ -107,7 +109,7 @@ get_directory(direct)
 #endif
 
 #if defined(SYSV) || defined(SVR4)
-    if (getcwd(direct, 1024) == NULL) {	/* get current working dir */
+    if (getcwd(direct, PATH_MAX) == NULL) {	/* get current working dir */
 	put_msg("Can't get current directory");
 #else
     if (getwd(direct) == NULL) {/* get current working dir */
@@ -185,7 +187,7 @@ basname(filename)
     }
 }
 
-/* remap the colors for all the EPS/XPM and GIFs in the compound passed */
+/* remap the colors for all the pictures in the compound passed */
 
 static	npixels;
 /* the colortable produced by the neural network code */
@@ -204,11 +206,11 @@ remap_image_two(obj, l)
     c->compounds = obj;
     c->lines = l;
     remap_imagecolors(c);
-    free(c);
+    free((char *) c);
 }
 
 static int	   scol, ncolors;
-static int	   num_oldcolors=-1;
+static int	   num_oldcolors = -1;
 static Boolean	   usenet;
 
 remap_imagecolors(obj)
@@ -233,14 +235,14 @@ remap_imagecolors(obj)
     if (ncolors == 0)
 	return;
 
-    put_msg("Remapping EPS/GIF/XPM colors...");
+    put_msg("Remapping picture colors...");
     app_flush();
     if (ncolors > appres.max_image_colors) {
-	ncolors = appres.max_image_colors;
-	usenet = True;
 	if (appres.DEBUG) 
 		fprintf(stderr,"More colors (%d) than allowed (%d), using neural net\n",
 				ncolors,appres.max_image_colors);
+	ncolors = appres.max_image_colors;
+	usenet = True;
     }
 
     /* if this is the first image, allocate the number of colorcells we need */
@@ -261,11 +263,11 @@ remap_imagecolors(obj)
 	}
 	num_oldcolors = avail_image_cols;
 	if (avail_image_cols < 2 && ncolors >= 2) {
-	    file_msg("Cannot allocate even 2 colors for EPS/GIF/XPM");
+	    file_msg("Cannot allocate even 2 colors for pictures");
 	    reset_cursor();
 	    num_oldcolors = -1;
 	    reset_cursor();
-	    put_msg("Remapping EPS/GIF/XPM colors...Done");
+	    put_msg("Remapping picture colors...Done");
 	    app_flush();
 	    return;
 	}
@@ -275,7 +277,7 @@ remap_imagecolors(obj)
 	int	stat;
 	int	mult = 1;
 
-	/* count total number of pixels in all the EPSs, GIFs and XPMs */
+	/* count total number of pixels in all the pictures */
 	count_pixels(obj);
 	/* initialize the neural network */
 	/* -1 means can't alloc memory, -2 or more means must have that many times
@@ -290,7 +292,7 @@ remap_imagecolors(obj)
 	    /* couldn't alloc memory for network */
 	    fprintf(stderr,"Can't alloc memory for neural network\n");
 	    reset_cursor();
-	    put_msg("Remapping EPS/GIF/XPM colors...Done");
+	    put_msg("Remapping picture colors...Done");
 	    app_flush();
 	    return;
 	}
@@ -319,7 +321,7 @@ remap_imagecolors(obj)
 	    fprintf(stderr,"Able to use %d colors without neural net\n",scol);
     }
     reset_cursor();
-    put_msg("Remapping EPS/GIF/XPM colors...Done");
+    put_msg("Remapping picture colors...Done");
     app_flush();
 }
 
@@ -339,7 +341,7 @@ count_colors(obj)
     }
 }
 
-/* allocate the color cells for the EPS/GIF/XPM images */
+/* allocate the color cells for the pictures */
 
 alloc_imagecolors(num)
     int		    num;
@@ -351,13 +353,8 @@ alloc_imagecolors(num)
     avail_image_cols = num;
     for (i=0; i<avail_image_cols; i++) {
 	image_cells[i].flags = DoRed|DoGreen|DoBlue;
-	if (!XAllocColorCells(tool_d, tool_cm, 
-		False, &plane_masks, 0, &image_cells[i].pixel, 1)) {
-	    if (!switch_colormap() ||
-		(!XAllocColorCells(tool_d, tool_cm,
-		   False, &plane_masks, 0, &image_cells[i].pixel, 1))) {
-			break;
-	    }
+	if (!alloc_color(&image_cells[i].pixel, 1)) {
+	    break;
 	}
     }
     avail_image_cols = i;
@@ -573,12 +570,75 @@ F_pic	*pic;
 	    nexterr = temperr;
 	    fs_direction = ! fs_direction;
 	}
-	free(pic->bitmap);
-	free(thiserr);
-	free(nexterr);
+	free((char *) pic->bitmap);
+	free((char *) thiserr);
+	free((char *) nexterr);
 	pic->bitmap = bptr;
 	/* monochrome */
 	pic->numcols = 0;
 		
 	return;
 }
+
+#ifdef HAVE_NO_NOSTRSTR
+
+char *strstr(s1, s2)
+    char *s1, *s2;
+{
+    int len2;
+    char *stmp;
+
+    len2 = strlen(s2);
+    for (stmp = s1; *stmp != NULL; stmp++)
+	if (strncmp(stmp, s2, len2)==0)
+	    return stmp;
+    return NULL;
+}
+#endif
+
+/* strncasecmp and strcasecmp by Fred Appelman (Fred.Appelman@cv.ruu.nl) */
+
+#ifdef HAVE_NO_STRNCASECMP
+int strncasecmp(const char* s1, const char* s2, int n)
+{
+   char c1,c2;
+
+   while (--n>=0)
+   {
+	  /* Check for end of string, if either of the strings
+	   * is ended, we can terminate the test
+	   */
+	  if (*s1=='\0' && s2!='\0') return -1; /* s1 ended premature */
+	  if (*s1!='\0' && s2=='\0') return +1; /* s2 ended premature */
+
+	  c1=toupper(*s1++);
+	  c2=toupper(*s2++);
+	  if (c1<c2) return -1; /* s1 is "smaller" */
+	  if (c1>c2) return +1; /* s2 is "smaller" */
+   }
+   return 0;
+}
+
+#endif
+
+#ifdef HAVE_NO_STRCASECMP
+int strcasecmp(const char* s1, const char* s2)
+{
+   char c1,c2;
+
+   while (*s1 && *s2)
+   {
+	  c1=toupper(*s1++);
+	  c2=toupper(*s2++);
+	  if (c1<c2) return -1; /* s1 is "smaller" */
+	  if (c1>c2) return +1; /* s2 is "smaller" */
+   }
+   /* Check for end of string, if not both the strings ended they are 
+    * not the same. 
+	*/
+   if (*s1=='\0' && s2!='\0') return -1; /* s1 ended premature */
+   if (*s1!='\0' && s2=='\0') return +1; /* s2 ended premature */
+   return 0;
+}
+
+#endif

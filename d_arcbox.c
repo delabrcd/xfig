@@ -35,7 +35,7 @@ static int	init_arc_box_drawing();
 
 arcbox_drawing_selected()
 {
-    set_mousefun("corner point", "", "");
+    set_mousefun("corner point", "", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     canvas_leftbut_proc = init_arc_box_drawing;
@@ -51,7 +51,7 @@ init_arc_box_drawing(x, y)
 {
     cur_x = fix_x = x;
     cur_y = fix_y = y;
-    set_mousefun("final point", "", "cancel");
+    set_mousefun("final point", "", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_locmove_proc = resizing_box;
     canvas_leftbut_proc = create_arc_boxobject;
@@ -108,8 +108,9 @@ create_arc_boxobject(x, y)
     append_point(fix_x, fix_y, &point);
     append_point(fix_x, y, &point);
     append_point(x, y, &point);
-    draw_line(box, PAINT);
     add_line(box);
+    /* draw it and anything on top of it */
+    redisplay_line(box);
     arcbox_drawing_selected();
     draw_mousefun_canvas();
 }

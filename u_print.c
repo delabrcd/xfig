@@ -18,8 +18,8 @@
  */
 
 #include "fig.h"
-#include "mode.h"
 #include "resources.h"
+#include "mode.h"
 #include "w_setup.h"
 
 /*
@@ -75,26 +75,8 @@ print_to_printer(printer, mag, flushleft, params)
 	    appres.landscape ? "-l xxx" : "-p xxx",
 	    cur_filename);
 
-
-    if (emptyname(printer)) {	/* send to default printer */
-#if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
-	sprintf(syspr, "lp %s", params);
-#else
-	sprintf(syspr, "lpr %s -J %s", params, shell_protect_string(cur_filename));
-#endif
-	put_msg("Printing figure on default printer in %s mode ...     ",
-		appres.landscape ? "LANDSCAPE" : "PORTRAIT");
-    } else {
-#if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
-	sprintf(syspr, "lp %s -d%s", params, printer);
-#else
-	sprintf(syspr, "lpr %s -J %s -P%s", params, shell_protect_string(cur_filename),
-		printer);
-#endif
-	put_msg("Printing figure on printer %s in %s mode ...     ",
-		printer, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
-    }
-    app_flush();		/* make sure message gets displayed */
+    /* make the print command with no filename (it will be in stdin) */
+    gen_print_cmd(syspr, "", printer, params);
 
     /* make up the whole translate/print command */
     sprintf(prcmd, "%s %s | %s", translator, tmpfile, syspr);
@@ -109,6 +91,42 @@ print_to_printer(printer, mag, flushleft, params)
 		    printer, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     }
     unlink(tmpfile);
+}
+
+gen_print_cmd(cmd,file,printer,pr_params)
+    char	   *cmd;
+    char	   *file;
+    char	   *printer;
+    char	   *pr_params;
+{
+    if (emptyname(printer)) {	/* send to default printer */
+#if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
+	sprintf(cmd, "lp %s %s", 
+		pr_params,
+		shell_protect_string(file));
+#else
+	sprintf(cmd, "lpr %s %s",
+		pr_params,
+		shell_protect_string(file));
+#endif
+	put_msg("Printing figure on default printer in %s mode ...     ",
+		appres.landscape ? "LANDSCAPE" : "PORTRAIT");
+    } else {
+#if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
+	sprintf(cmd, "lp %s -d%s %s",
+		pr_params,
+		printer, 
+		shell_protect_string(file));
+#else
+	sprintf(cmd, "lpr %s -P%s %s", 
+		pr_params,
+		printer,
+		shell_protect_string(file));
+#endif
+	put_msg("Printing figure on printer %s in %s mode ...     ",
+		printer, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
+    }
+    app_flush();		/* make sure message gets displayed */
 }
 
 /* xoff and yoff are in fig2dev print units (1/72 inch) */

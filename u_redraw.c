@@ -40,17 +40,17 @@ extern	setanchor, setanchor_x, setanchor_y;
  */
 
 struct counts {
-    unsigned	    num_arcs;	/* # arcs at this depth */
-    unsigned	    num_lines;	/* # lines at this depth */
+    unsigned	    num_arcs;		/* # arcs at this depth */
+    unsigned	    num_lines;		/* # lines at this depth */
     unsigned	    num_ellipses;	/* # ellipses at this depth */
-    unsigned	    num_splines;/* # splines at this depth */
-    unsigned	    num_texts;	/* # texts at this depth */
-    unsigned	    cnt_arcs;	/* count of arcs drawn at this depth */
-    unsigned	    cnt_lines;	/* count of lines drawn at this depth */
+    unsigned	    num_splines;	/* # splines at this depth */
+    unsigned	    num_texts;		/* # texts at this depth */
+    unsigned	    cnt_arcs;		/* count of arcs drawn at this depth */
+    unsigned	    cnt_lines;		/* count of lines drawn at this depth */
     unsigned	    cnt_ellipses;	/* count of ellipses drawn at this
 					 * depth */
-    unsigned	    cnt_splines;/* count of splines drawn at this depth */
-    unsigned	    cnt_texts;	/* count of texts drawn at this depth */
+    unsigned	    cnt_splines;	/* count of splines drawn at this depth */
+    unsigned	    cnt_texts;		/* count of texts drawn at this depth */
 };
 
 /*

@@ -24,6 +24,9 @@
  * Date:	Sun Dec 13 1987
  */
 
+Boolean switch_colormap();
+Boolean alloc_color();
+
 /*
  * $Log:	color.h,v $
  * Revision 1.2  90/06/30  14:33:12  rlh2

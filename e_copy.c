@@ -45,7 +45,7 @@ copy_selected()
     canvas_rightbut_proc = object_search_right;
     return_proc = copy_selected;
     set_cursor(pick15_cursor);
-    set_mousefun("copy object", "horiz/vert copy", "copy to cut buf");
+    set_mousefun("copy object", "horiz/vert copy", "copy to cut buf", "", "", "");
     reset_action_on();
 }
 
@@ -57,7 +57,7 @@ init_arb_copy(p, type, x, y, px, py)
 {
     constrained = MOVE_ARB;
     init_copy(p, type, x, y, px, py);
-    set_mousefun("place object", "array placement", "cancel");
+    set_mousefun("place object", "array placement", "cancel", "", "", "");
     draw_mousefun_canvas();
 }
 
@@ -71,7 +71,7 @@ init_constrained_copy(p, type, x, y, px, py)
     init_copy(p, type, x, y, px, py);
     canvas_middlebut_proc = canvas_leftbut_proc;
     canvas_leftbut_proc = null_proc;
-    set_mousefun("", "place object", "cancel");
+    set_mousefun("", "place object", "cancel", "", "", "");
     draw_mousefun_canvas();
 }
 

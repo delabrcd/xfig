@@ -26,8 +26,6 @@
 #define		RUBBER_LINE		3
 #define		PANEL_LINE		4
 
-#define		Color			int
-
 #define		BLACK			0
 #define		BLUE			1
 #define		GREEN			2
@@ -109,11 +107,16 @@ typedef struct f_arc {
     int		    fill_style;
     int		    depth;
     int		    pen_style;
+    float	    style_val;
     struct f_arrow *for_arrow;
     struct f_arrow *back_arrow;
-/* THE PRECEDING VARS MUST BE IN THE SAME ORDER IN f_arc, f_line and f_spline */
     int		    cap_style;
-    float	    style_val;
+#define					CAP_BUTT	0
+#define					CAP_ROUND	1
+#define					CAP_PROJECT	2
+
+/* THE PRECEDING VARS MUST BE IN THE SAME ORDER IN f_arc, f_line and f_spline */
+
     int		    direction;
     struct {
 	float		x, y;
@@ -132,14 +135,23 @@ typedef struct f_arc {
 typedef struct f_pic {
     char	    file[PATH_MAX];
     int		    subtype;
+/* be sure to update NUM_PIC_TYPES if you add types */
+#ifdef USE_XPM
+#define NUM_PIC_TYPES	5
+#define T_PIC_PIXMAP	5
+#else
+#define NUM_PIC_TYPES	4
+#endif
 #define T_PIC_EPS	1
-#define T_PIC_BITMAP	2
-#define T_PIC_PIXMAP	3
-#define T_PIC_GIF	4
-#define FileInvalid	-2
+#define T_PIC_GIF	2
+#define T_PIC_JPEG	3
+#define T_PIC_BITMAP	4
+
+#define PicSuccess	1
+#define FileInvalid    -2
     int		    flipped;
     unsigned char   *bitmap;
-    struct Cmap	    cmap[MAXCOLORMAPSIZE];  /* for GIF/XPM files */
+    struct Cmap	    cmap[MAXCOLORMAPSIZE];  /* for GIF/XPM/JPEG files */
     int		    numcols;		/* number of colors in cmap */
     float	    hw_ratio;
     int		    size_x, size_y;	/* picture size (fig units) */
@@ -173,20 +185,19 @@ typedef struct f_line {
     int		    fill_style;
     int		    depth;
     int		    pen_style;
+    float	    style_val;
     struct f_arrow *for_arrow;
     struct f_arrow *back_arrow;
+    int		    cap_style;	/* line cap style - Butt, Round, Bevel */
+
 /* THE PRECEDING VARS MUST BE IN THE SAME ORDER IN f_arc, f_line and f_spline */
-    int		    cap_style;		/* line cap style - Butt, Round, Bevel */
-#define					CAP_BUTT	0
-#define					CAP_ROUND	1
-#define					CAP_PROJECT	2
+
     struct f_point *points;	/* this must immediately follow cap_style */
     int		    join_style;		/* join style - Miter, Round, Bevel */
 #define					JOIN_MITER	0
 #define					JOIN_ROUND	1
 #define					JOIN_BEVEL	2
-    float	    style_val;
-    int		    radius;		/* corner radius for T_ARC_BOX */
+    int		    radius;	/* corner radius for T_ARC_BOX */
     struct f_pic   *pic;
     struct f_line  *next;
 }
@@ -201,6 +212,7 @@ typedef struct f_text {
 #define					T_RIGHT_JUSTIFIED	2
     int		    font;
     PIX_FONT	    fontstruct;
+    float	    zoom;	/* to keep track of when it needs rescaling */
     int		    size;	/* point size */
     Color	    color;
     int		    depth;
@@ -274,17 +286,19 @@ typedef struct f_spline {
     int		    fill_style;
     int		    depth;
     int		    pen_style;
+    float	    style_val;
     struct f_arrow *for_arrow;
     struct f_arrow *back_arrow;
-/* THE PRECEDING VARS MUST BE IN THE SAME ORDER IN f_arc, f_line and f_spline */
     int		    cap_style;
+
+/* THE PRECEDING VARS MUST BE IN THE SAME ORDER IN f_arc, f_line and f_spline */
+
     /*
      * For T_OPEN_NORMAL and T_CLOSED_NORMAL points are control points while
      * they are knots for T_OPEN_INTERP and T_CLOSED_INTERP whose control
      * points are stored in controls.
      */
     struct f_point *points;	/* this must immediately follow cap_style */
-    float	    style_val;
     struct f_control *controls;
     struct f_spline *next;
 }
@@ -387,30 +401,3 @@ extern F_spline		*cur_s, *new_s, *old_s;
 extern F_compound	*cur_c, *new_c, *old_c;
 extern F_point		*first_point, *cur_point;
 extern F_linkinfo	*cur_links;
-
-/*************** object attribute settings ***********/
-
-/*  Lines  */
-extern int	cur_linewidth;
-extern int	cur_linestyle;
-extern int	cur_joinstyle;
-extern int	cur_capstyle;
-extern float	cur_dashlength;
-extern float	cur_dotgap;
-extern float	cur_styleval;
-extern Color	cur_fillcolor, cur_pencolor;
-extern int	cur_fillstyle, cur_penstyle;
-extern int	cur_boxradius;
-extern int	cur_arrowmode;
-extern int	cur_arrowtype;
-extern int	cur_arctype;
-
-/* Text */
-extern int	cur_fontsize;	/* font size */
-extern int	cur_latex_font;
-extern int	cur_ps_font;
-extern int	cur_textjust;
-extern int	cur_textflags;
-
-/* Misc */
-extern float	cur_elltextangle;

@@ -411,7 +411,7 @@ register int b,g,r;
 	int bestpos,bestbiaspos,bestd,bestbiasd;
 	register int *p,*f, *n;
 
-	bestd = ~(((int) 1)<<31);
+	bestd = INT_MAX;
 	bestbiasd = bestd;
 	bestpos = -1;
 	bestbiaspos = bestpos;
@@ -466,7 +466,7 @@ register int b,g,r;
 	register int j,k,lo,hi,a;
 	register int *p, *q;
 
-	lo = i-rad;   if (lo<-1) lo=-1;
+	lo = i-rad;   if (lo<-1) lo = -1;
 	hi = i+rad;   if (hi>netsize) hi=netsize;
 
 	j = i+1;

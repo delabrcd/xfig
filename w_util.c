@@ -87,8 +87,8 @@ popup_query(query_type, message)
     int		    query_type;
     char	   *message;
 {
-    TOOL	    query_popup, query_form, query_message;
-    TOOL	    query_yes, query_no, query_cancel;
+    Widget	    query_popup, query_form, query_message;
+    Widget	    query_yes, query_no, query_cancel;
     int		    xposn, yposn;
     Window	    win;
     XEvent	    event;

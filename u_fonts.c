@@ -23,40 +23,40 @@
 /* printer font names for indicator window */
 
 struct _xfstruct x_fontinfo[NUM_FONTS] = {
-    {"-adobe-times-medium-r-*--", (struct xfont*) NULL},
-    {"-adobe-times-medium-i-*--", (struct xfont*) NULL},
-    {"-adobe-times-bold-r-*--", (struct xfont*) NULL},
-    {"-adobe-times-bold-i-*--", (struct xfont*) NULL},
-    {"-schumacher-clean-medium-r-*--", (struct xfont*) NULL},	/* closest to Avant-Garde */
-    {"-schumacher-clean-medium-i-*--", (struct xfont*) NULL},
-    {"-schumacher-clean-bold-r-*--", (struct xfont*) NULL},
-    {"-schumacher-clean-bold-i-*--", (struct xfont*) NULL},
-    {"-adobe-times-medium-r-*--", (struct xfont*) NULL},	/* closest to Bookman */
-    {"-adobe-times-medium-i-*--", (struct xfont*) NULL},
-    {"-adobe-times-bold-r-*--", (struct xfont*) NULL},
-    {"-adobe-times-bold-i-*--", (struct xfont*) NULL},
-    {"-adobe-courier-medium-r-*--", (struct xfont*) NULL},
-    {"-adobe-courier-medium-o-*--", (struct xfont*) NULL},
-    {"-adobe-courier-bold-r-*--", (struct xfont*) NULL},
-    {"-adobe-courier-bold-o-*--", (struct xfont*) NULL},
-    {"-adobe-helvetica-medium-r-*--", (struct xfont*) NULL},
-    {"-adobe-helvetica-medium-o-*--", (struct xfont*) NULL},
-    {"-adobe-helvetica-bold-r-*--", (struct xfont*) NULL},
-    {"-adobe-helvetica-bold-o-*--", (struct xfont*) NULL},
-    {"-adobe-helvetica-medium-r-*--", (struct xfont*) NULL},	/* closest to Helv-nar. */
-    {"-adobe-helvetica-medium-o-*--", (struct xfont*) NULL},
-    {"-adobe-helvetica-bold-r-*--", (struct xfont*) NULL},
-    {"-adobe-helvetica-bold-o-*--", (struct xfont*) NULL},
-    {"-adobe-new century schoolbook-medium-r-*--", (struct xfont*) NULL},
-    {"-adobe-new century schoolbook-medium-i-*--", (struct xfont*) NULL},
-    {"-adobe-new century schoolbook-bold-r-*--", (struct xfont*) NULL},
-    {"-adobe-new century schoolbook-bold-i-*--", (struct xfont*) NULL},
-    {"-*-lucidabright-medium-r-*--", (struct xfont*) NULL},	/* closest to Palatino */
-    {"-*-lucidabright-medium-i-*--", (struct xfont*) NULL},
-    {"-*-lucidabright-demibold-r-*--", (struct xfont*) NULL},
-    {"-*-lucidabright-demibold-i-*--", (struct xfont*) NULL},
-    {"-*-symbol-medium-r-*--", (struct xfont*) NULL},
-    {"-*-zapfchancery-medium-i-*--", (struct xfont*) NULL},
+    {"-adobe-times-medium-r-normal--", (struct xfont*) NULL},
+    {"-adobe-times-medium-i-normal--", (struct xfont*) NULL},
+    {"-adobe-times-bold-r-normal--", (struct xfont*) NULL},
+    {"-adobe-times-bold-i-normal--", (struct xfont*) NULL},
+    {"-schumacher-clean-medium-r-normal--", (struct xfont*) NULL},	/* closest to Avant-Garde */
+    {"-schumacher-clean-medium-i-normal--", (struct xfont*) NULL},
+    {"-schumacher-clean-bold-r-normal--", (struct xfont*) NULL},
+    {"-schumacher-clean-bold-i-normal--", (struct xfont*) NULL},
+    {"-adobe-times-medium-r-normal--", (struct xfont*) NULL},	/* closest to Bookman */
+    {"-adobe-times-medium-i-normal--", (struct xfont*) NULL},
+    {"-adobe-times-bold-r-normal--", (struct xfont*) NULL},
+    {"-adobe-times-bold-i-normal--", (struct xfont*) NULL},
+    {"-adobe-courier-medium-r-normal--", (struct xfont*) NULL},
+    {"-adobe-courier-medium-o-normal--", (struct xfont*) NULL},
+    {"-adobe-courier-bold-r-normal--", (struct xfont*) NULL},
+    {"-adobe-courier-bold-o-normal--", (struct xfont*) NULL},
+    {"-adobe-helvetica-medium-r-normal--", (struct xfont*) NULL},
+    {"-adobe-helvetica-medium-o-normal--", (struct xfont*) NULL},
+    {"-adobe-helvetica-bold-r-normal--", (struct xfont*) NULL},
+    {"-adobe-helvetica-bold-o-normal--", (struct xfont*) NULL},
+    {"-adobe-helvetica-medium-r-normal--", (struct xfont*) NULL},	/* closest to Helv-nar. */
+    {"-adobe-helvetica-medium-o-normal--", (struct xfont*) NULL},
+    {"-adobe-helvetica-bold-r-normal--", (struct xfont*) NULL},
+    {"-adobe-helvetica-bold-o-normal--", (struct xfont*) NULL},
+    {"-adobe-new century schoolbook-medium-r-normal--", (struct xfont*) NULL},
+    {"-adobe-new century schoolbook-medium-i-normal--", (struct xfont*) NULL},
+    {"-adobe-new century schoolbook-bold-r-normal--", (struct xfont*) NULL},
+    {"-adobe-new century schoolbook-bold-i-normal--", (struct xfont*) NULL},
+    {"-*-lucidabright-medium-r-normal--", (struct xfont*) NULL},	/* closest to Palatino */
+    {"-*-lucidabright-medium-i-normal--", (struct xfont*) NULL},
+    {"-*-lucidabright-demibold-r-normal--", (struct xfont*) NULL},
+    {"-*-lucidabright-demibold-i-normal--", (struct xfont*) NULL},
+    {"-*-symbol-medium-r-normal--", (struct xfont*) NULL},
+    {"-*-zapfchancery-medium-i-normal--", (struct xfont*) NULL},
     {"-*-zapfdingbats-*-*-*--", (struct xfont*) NULL},
 };
 
@@ -104,15 +104,18 @@ struct _fstruct latex_fontinfo[NUM_LATEX_FONTS] = {
     {"Roman",		0},
     {"Bold",		2},
     {"Italic",		1},
-    {"Modern",		16},
+    {"Sans Serif",	16},
     {"Typewriter",	12},
 };
 
 x_fontnum(psflag, fnum)
     int		    psflag, fnum;
 {
-    return (psflag ? ps_fontinfo[fnum + 1].xfontnum :
-	    latex_fontinfo[fnum].xfontnum);
+    int x_font;
+
+    x_font = (psflag ?  ps_fontinfo[fnum + 1].xfontnum :
+			latex_fontinfo[fnum].xfontnum);
+    return x_font;
 }
 
 psfontnum(font)

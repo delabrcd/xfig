@@ -18,8 +18,10 @@
  */
 
 #include "fig.h"
-#include "mode.h"
 #include "resources.h"
+#include "mode.h"
+#include "patchlevel.h"
+#include "version.h"
 
 #define MAXERRORS 6
 #define MAXERRMSGLEN 512
@@ -39,23 +41,27 @@ put_err(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
 error_handler(err_sig)
     int		    err_sig;
 {
+    fprintf(stderr,"\nxfig%s.%s: ",FIG_VERSION,PATCHLEVEL);
     switch (err_sig) {
     case SIGHUP:
-	fprintf(stderr, "\nxfig: SIGHUP signal trapped\n");
+	fprintf(stderr, "SIGHUP signal trapped\n");
 	break;
     case SIGFPE:
-	fprintf(stderr, "\nxfig: SIGFPE signal trapped\n");
+	fprintf(stderr, "SIGFPE signal trapped\n");
 	break;
 #ifdef SIGBUS
     case SIGBUS:
-	fprintf(stderr, "\nxfig: SIGBUS signal trapped\n");
+	fprintf(stderr, "SIGBUS signal trapped\n");
 	break;
 #endif
     case SIGSEGV:
-	fprintf(stderr, "\nxfig: SIGSEGV signal trapped\n");
+	fprintf(stderr, "SIGSEGV signal trapped\n");
+	break;
+    default:
+	fprintf(stderr, "Unknown signal (%d)\n", err_sig);
 	break;
     }
-    emergency_quit();
+    emergency_quit(True);
 }
 
 X_error_handler(d, err_ev)
@@ -63,14 +69,23 @@ X_error_handler(d, err_ev)
     XErrorEvent	   *err_ev;
 {
     char	    err_msg[MAXERRMSGLEN];
+    char	    ernum[10];
 
+    /* uninstall error handlers so we don't recurse if another error happens! */
+    XSetErrorHandler(NULL);
+    XSetIOErrorHandler((XIOErrorHandler) NULL);
     XGetErrorText(tool_d, (int) (err_ev->error_code), err_msg, MAXERRMSGLEN - 1);
     (void) fprintf(stderr,
-	   "xfig: X error trapped - error message follows:\n%s\n", err_msg);
-    emergency_quit();
+	   "xfig%s.%s: X error trapped - error message follows:\n%s\n", 
+		FIG_VERSION,PATCHLEVEL,err_msg);
+    (void) sprintf(ernum, "%d", (int)err_ev->request_code);
+    XGetErrorDatabaseText(tool_d, "XRequest", ernum, "<Unknown>", err_msg, MAXERRMSGLEN);
+    (void) fprintf(stderr, "Request code: %s\n",err_msg);
+    emergency_quit(True);
 }
 
-emergency_quit()
+emergency_quit(abortflag)
+    Boolean    abortflag;
 {
     if (++error_cnt > MAXERRORS) {
 	fprintf(stderr, "xfig: too many errors - giving up.\n");
@@ -83,7 +98,7 @@ emergency_quit()
 #endif
     signal(SIGSEGV, SIG_DFL);
 
-    aborting = 1;
+    aborting = abortflag;
     if (figure_modified && !emptyfigure()) {
 	fprintf(stderr, "xfig: attempting to save figure\n");
 	if (emergency_save("xfig.SAVE") == -1)
@@ -92,7 +107,7 @@ emergency_quit()
     } else
 	fprintf(stderr, "xfig: figure empty or not modified - exiting\n");
 
-    goodbye();	/* finish up and exit */
+    goodbye(abortflag);	/* finish up and exit */
 }
 
 /* ARGSUSED */
@@ -102,11 +117,12 @@ XEvent *event;
 String *params;
 Cardinal *num_params;
 {
-    extern Atom wm_delete_window;
+    extern Atom wm_protocols[];
     if (event && event->type == ClientMessage &&
-	event->xclient.data.l[0] != wm_delete_window)
+	((event->xclient.data.l[0] != wm_protocols[0]) &&
+	 (event->xclient.data.l[0] != wm_protocols[1])))
     {
 	return;
     }
-    emergency_quit();
+    emergency_quit(False);
 }

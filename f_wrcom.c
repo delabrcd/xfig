@@ -1,0 +1,144 @@
+/*
+ * FIG : Facility for Interactive Generation of figures
+ * This file is from GIFencode by Evgeni Chernyaev (chernaev@mx.decnet.ihep.su)
+ * Parts Copyright (c) 1995 by Brian V. Smith
+ *
+ * "Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
+ */
+
+/*
+ * Routines common writing to color image output files.
+ */
+
+#include "fig.h"
+#include "resources.h"
+#include "mode.h"
+#include "object.h"
+#include "w_setup.h"
+#include "w_drawprim.h"
+#include "w_zoom.h"
+
+static	int	xmin, ymin, xmax, ymax;
+static	int	width, height;
+static	Window	sav_canvas;
+static	int	sav_objmask;
+static	float	savezoom;
+static	int	savexoff, saveyoff;
+static	Boolean	zoomchanged;
+
+Pixmap
+init_write_color_image(maxsize, mag, uwidth, uheight)
+    int		  maxsize;
+    float	  mag;
+    int		 *uwidth, *uheight;
+{
+    Pixmap pixmap;
+
+    /* this may take a while */
+    put_msg("Capturing canvas image...");
+
+    writing_pixmap = True;		/* so text outlines won't be written to image */
+    set_temp_cursor(wait_cursor);
+
+    /* set the zoomscale to the export magnification and offset to origin */
+    zoomchanged = (zoomscale != mag/ZOOM_FACTOR);
+    savezoom = zoomscale;
+    savexoff = zoomxoff;
+    saveyoff = zoomyoff;
+    zoomscale = mag/ZOOM_FACTOR;  /* set to export magnification at screen resolution */
+    display_zoomscale = ZOOM_FACTOR*zoomscale;
+    zoomxoff = zoomyoff = 0;
+
+    /* Assume that there is at least one object */
+    compound_bound(&objects, &xmin, &ymin, &xmax, &ymax);
+
+    if (appres.DEBUG) {
+	elastic_box(xmin, ymin, xmax, ymax);
+    }
+
+    /* adjust limits for magnification */
+    xmin = round(xmin*zoomscale);
+    ymin = round(ymin*zoomscale);
+    xmax = round(xmax*zoomscale);
+    ymax = round(ymax*zoomscale);
+
+    /* don't add margin if image is near the max of maxsize by maxsize */
+    if ((ymax - ymin) <= maxsize-2 && (xmax - xmin) <= maxsize-2) {
+	/* provide a small margin (pixels) */
+	if ((xmin -= 10) < 0)
+	    xmin = 0;
+	if ((ymin -= 10) < 0)
+	    ymin = 0;
+	xmax += 10;
+	ymax += 10;
+    }
+
+    /* shift the figure */
+    zoomxoff = xmin/zoomscale;
+    zoomyoff = ymin/zoomscale;
+
+    *uwidth = width = xmax - xmin + 1;
+    *uheight = height = ymax - ymin + 1;
+
+    if (width > maxsize || height > maxsize) {
+	file_msg("Maximum size of image allowed is %d%d, your image is %dx%d",
+		maxsize,maxsize,width,height);
+	return 0;
+    }
+    /* set the clipping to include ALL objects */
+    set_clip_window(0, 0, width, height);
+
+    /* resize text */
+    reload_text_fstructs();
+    /* clear the fill patterns */
+    clear_patterns();
+
+    /* create pixmap from (0,0) to (xmax,ymax) */
+    if ((pixmap = XCreatePixmap(tool_d, canvas_win, width, height, 
+			DefaultDepthOfScreen(tool_s)))==0)
+	return 0;
+
+    /* clear it */
+    XFillRectangle(tool_d, pixmap, gccache[ERASE], 0, 0, width, height);
+
+    sav_canvas = canvas_win;	/* save current canvas window id */
+    canvas_win = pixmap;	/* make the canvas our pixmap */
+    sav_objmask = cur_objmask;	/* save the point marker */
+    cur_objmask = M_NONE;
+    redisplay_objects(&objects);/* draw the figure into the pixmap */
+
+    canvas_win = sav_canvas;	/* go back to the real canvas */
+    cur_objmask = sav_objmask;	/* restore point marker */
+    /* restore the zoom */
+    zoomscale = savezoom;
+    display_zoomscale = ZOOM_FACTOR*zoomscale;
+    zoomxoff = savexoff;
+    zoomyoff = saveyoff;
+
+    if (zoomchanged) {
+	reload_text_fstructs();	/* resize text */
+	clear_patterns();	/* clear the fill patterns */
+    }
+
+    writing_pixmap = False;
+
+    /* reset the clipping to the canvas */
+    reset_clip_window();
+
+    /* return the pixmap for the caller */
+    return pixmap;
+}
+
+/* free the pixmap and restore the cursor */
+
+finish_write_color_image(pixmap)
+    Pixmap pixmap;
+{
+    XFreePixmap(tool_d, pixmap);
+    reset_cursor();
+}

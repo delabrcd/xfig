@@ -23,7 +23,7 @@ extern int	overlapping();
 #define		floor_coords(x) \
     if (cur_pointposn != P_ANY) { \
 	    register int tmp_t; \
-	    tmp_t = ((x) + 1) % posn_rnd[cur_pointposn]; \
+	    tmp_t = (x) % posn_rnd[cur_pointposn]; \
 	    (x) = (x) - tmp_t; \
 	}
 
@@ -31,7 +31,7 @@ extern int	overlapping();
 #define		ceil_coords(x) \
     if (cur_pointposn != P_ANY) { \
 	    register int tmp_t; \
-	    (x) = (x) + posn_rnd[cur_pointposn]; \
+	    (x) = (x) + posn_rnd[cur_pointposn] - 1; \
 	    tmp_t = (x)%posn_rnd[cur_pointposn]; \
-	    (x) = (x) - tmp_t - 1; \
+	    (x) = (x) - tmp_t; \
 	}

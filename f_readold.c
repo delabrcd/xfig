@@ -499,6 +499,7 @@ read_1_3_textobject(fp)
     strcpy(t->cstring, buf);
 
     /* get the font struct */
+    t->zoom = zoomscale;
     t->fontstruct = lookfont(x_fontnum(psfont_text(t), t->font),
 			round(t->size*display_zoomscale));
 

@@ -41,7 +41,7 @@ static int	init_update_settings();
 
 update_selected()
 {
-    set_mousefun("update object", "update settings", "");
+    set_mousefun("update object", "update settings", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_update_object);
@@ -127,21 +127,20 @@ init_update_settings(p, type, x, y, px, py)
 	up_part(cur_pencolor, cur_t->color, I_PEN_COLOR);
 	up_part(cur_depth, cur_t->depth, I_DEPTH);
 	up_part(cur_elltextangle, cur_t->angle/M_PI*180.0, I_ELLTEXTANGLE);
-	old_psfont_flag = (cur_t->flags & PSFONT_TEXT);
-	new_psfont_flag = (cur_textflags & PSFONT_TEXT);
-	up_part(cur_textflags, cur_t->flags & ~PSFONT_TEXT, I_TEXTFLAGS);
+	old_psfont_flag = (cur_textflags & PSFONT_TEXT);
+	new_psfont_flag = (cur_t->flags & PSFONT_TEXT);
+	/* for the LaTeX/PostScript flag use I_FONT instead of I_TEXTFLAGS
+	   so the font type will change if necessary */
+	up_part(cur_textflags, cur_t->flags & ~PSFONT_TEXT, I_FONT);
 	if (cur_updatemask & I_FONT)
 	    cur_textflags |= new_psfont_flag;
 	else
 	    cur_textflags |= old_psfont_flag;
-	if (using_ps)
-	    {	/* must use {} because macro has 'if' */
+	if (using_ps) {	/* must use {} because macro has 'if' */
 	    up_part(cur_ps_font, cur_t->font, I_FONT);
-	    }
-	else
-	    {	/* must use {} because macro has 'if' */
+	} else {	/* must use {} because macro has 'if' */
 	    up_part(cur_latex_font, cur_t->font, I_FONT);
-	    }
+	}
 	up_part(cur_fontsize, cur_t->size, I_FONTSIZE);
 	break;
     case O_ELLIPSE:
@@ -201,56 +200,56 @@ init_update_object(p, type, x, y, px, py)
     case O_COMPOUND:
 	set_temp_cursor(wait_cursor);
 	cur_c = (F_compound *) p;
-	toggle_compoundmarker(cur_c);
 	new_c = copy_compound(cur_c);
 	update_compound(new_c);
 	change_compound(cur_c, new_c);
-	toggle_compoundmarker(new_c);
+	/* redraw anything over the old comound */
+	redisplay_compound(cur_c);
 	break;
     case O_POLYLINE:
 	set_temp_cursor(wait_cursor);
 	cur_l = (F_line *) p;
-	toggle_linemarker(cur_l);
 	new_l = copy_line(cur_l);
 	update_line(new_l);
 	change_line(cur_l, new_l);
-	toggle_linemarker(new_l);
+	/* redraw anything over the old line */
+	redisplay_line(cur_l);
 	break;
     case O_TEXT:
 	set_temp_cursor(wait_cursor);
 	cur_t = (F_text *) p;
-	toggle_textmarker(cur_t);
 	new_t = copy_text(cur_t);
 	update_text(new_t);
 	change_text(cur_t, new_t);
-	toggle_textmarker(new_t);
+	/* redraw anything over the old text */
+	redisplay_text(cur_t);
 	break;
     case O_ELLIPSE:
 	set_temp_cursor(wait_cursor);
 	cur_e = (F_ellipse *) p;
-	toggle_ellipsemarker(cur_e);
 	new_e = copy_ellipse(cur_e);
 	update_ellipse(new_e);
 	change_ellipse(cur_e, new_e);
-	toggle_ellipsemarker(new_e);
+	/* redraw anything over the old ellipse */
+	redisplay_ellipse(cur_e);
 	break;
     case O_ARC:
 	set_temp_cursor(wait_cursor);
 	cur_a = (F_arc *) p;
-	toggle_arcmarker(cur_a);
 	new_a = copy_arc(cur_a);
 	update_arc(new_a);
 	change_arc(cur_a, new_a);
-	toggle_arcmarker(new_a);
+	/* redraw anything over the old arc */
+	redisplay_arc(cur_a);
 	break;
     case O_SPLINE:
 	set_temp_cursor(wait_cursor);
 	cur_s = (F_spline *) p;
-	toggle_splinemarker(cur_s);
 	new_s = copy_spline(cur_s);
 	update_spline(new_s);
 	change_spline(cur_s, new_s);
-	toggle_splinemarker(new_s);
+	/* redraw anything over the old spline */
+	redisplay_spline(cur_s);
 	break;
     default:
 	return;
@@ -314,6 +313,7 @@ update_line(line)
     else if (line->pic->subtype != T_PIC_EPS)	/* pictures except eps have color */
 	up_part(line->pen_color, cur_pencolor, I_PEN_COLOR);
     up_part(line->depth, cur_depth, I_DEPTH);
+    /* only POLYLINES with more than one point may have arrow heads */
     if (line->type == T_POLYLINE && line->points->next != NULL)
 	up_arrow(line);
     fix_fillstyle(line);	/* make sure it has legal fill style if color changed */

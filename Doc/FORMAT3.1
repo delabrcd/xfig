@@ -18,15 +18,15 @@
  */
 
 The only difference from version 3.0 to version 3.1 is that the position
-of the "magnet" has been shifted by 14 fig units.
-In the 2.1 and older versions of xfig the grid was in multiples of 5 fig
+of the "magnet" has been shifted by 14 Fig units.
+In the 2.1 and older versions of xfig the grid was in multiples of 5 Fig
 units, but they were on intervals 4, 9, 14, 19, etc.
 When version 3.0 was created, coordinates were simply multiplied by the
 ratio of the resolutions (1200/80 = 15) so values like 4 became 60 instead
 of 74 ((4+1)*15 - 1).
 
 This means that figures converted from 2.1 and older files are offset by
-14 fig units but new objects entered with version 3.0 are correct.
+14 Fig units but new objects entered with version 3.0 are correct.
 
 In version 3.1 the magnet grid is at intervals 0, 75, 150, etc instead of 
 -1, 74, 149, etc.
@@ -67,8 +67,9 @@ Description of the Fig Format Follows
     upper-left corner.
 
     ** Coordinates are given in "fig_resolution" units.
-    ** Line thicknesses are given in 80-ths of an inch ("display units").
-    ** dash-lengths/dot-gaps are given in 80-ths of an inch.
+    ** Line thicknesses are given in 1/80 of an inch ("display units").  The
+       minimum line thickness is 0 (no line is drawn) and the maximum is 500.
+    ** dash-lengths/dot-gaps are given in 1/80 of an inch.
 
 
 (3) The rest of the file contains various objects.  An object can be one
@@ -82,9 +83,9 @@ Description of the Fig Format Follows
 	5)	Text.
 	6)	Compound object which is composed of one or more objects.
 
-    In the following elaboration on object formats, every value of fig
+    In the following elaboration on object formats, every value of Fig
     output are separated by blank characters or new line ('\n').  The
-    value of the not-used parameters will be -1.
+    value of the unused parameters will be -1.
 
     Some fields are described as "enumeration type" or "bit vector"; the
     values which these fields can take are defined in the header file object.h.
@@ -112,8 +113,8 @@ Description of the Fig Format Follows
 	 27-30 = four shades of pink (dark to lighter)
 	    31 = Gold
 
-	 values from 32 to 543 are user colors and are
-	 defined in color pseudo-objects (type 0)
+	 values from 32 to 543 (512 total) are user colors and
+	 are defined in color pseudo-objects (type 0)
 
     For WHITE color, the area fill field is defined as follows:
 	
@@ -121,6 +122,8 @@ Description of the Fig Format Follows
 	 0 = black
 	...  values from 1 to 19 are shades of grey, from darker to lighter
 	20 = white
+	21-40 not used
+	41-56 see patterns for colors, below
 
     For BLACK or DEFAULT color, the area fill field is defined as follows:
 	
@@ -170,8 +173,8 @@ Description of the Fig Format Follows
 	 1 = Dashed
 	 2 = Dotted
 
-    The style_val field is defined as the length, in Fig units, of the on/off
-    dashes for dashed lines, and the distance between the dots, in Fig units,
+    The style_val field is defined as the length, in 1/80 inches, of the on/off
+    dashes for dashed lines, and the distance between the dots, in 1/80 inches,
     for dotted lines.
 
     The join_style field is defined FOR LINES only as follows:
@@ -245,13 +248,13 @@ Description of the Fig Format Follows
 	int	sub_type		(0: pie-wedge (closed)
 					 1: open ended arc)
 	int	line_style		(enumeration type)
-	int	line_thickness		(Fig units)
+	int	line_thickness		(1/80 inch)
 	int	pen_color		(enumeration type, pen color)
 	int	fill_color		(enumeration type, fill color)
 	int	depth			(enumeration type)
 	int	pen_style		(pen style, not used)
 	int	area_fill		(enumeration type, -1 = no fill)
-	float	style_val		(Fig units)
+	float	style_val		(1/80 inch)
 	int	cap_style		(enumeration type)
 	int	direction		(0: clockwise, 1: counterclockwise)
 	int	forward_arrow		(0: no forward arrow, 1: on)
@@ -266,7 +269,7 @@ Description of the Fig Format Follows
 	----	----			-------------------
 	int	arrow_type		(enumeration type)
 	int	arrow_style		(enumeration type)
-	float	arrow_thickness		(Fig units)
+	float	arrow_thickness		(1/80 inch)
 	float 	arrow_width		(Fig units)
 	float	arrow_height		(Fig units)
 
@@ -275,7 +278,7 @@ Description of the Fig Format Follows
 	----	----			-------------------
 	int	arrow_type		(enumeration type)
 	int	arrow_style		(enumeration type)
-	float	arrow_thickness		(Fig units)
+	float	arrow_thickness		(1/80 inch)
 	float	arrow_width		(Fig units)
 	float	arrow_height		(Fig units)
 
@@ -315,13 +318,13 @@ Description of the Fig Format Follows
 					 3: circle defined by radius
 					 4: circle defined by diameter)
 	int	line_style		(enumeration type)
-	int	thickness		(Fig units)
+	int	thickness		(1/80 inch)
 	int	pen_color		(enumeration type, pen color)
 	int	fill_color		(enumeration type, fill color)
 	int	depth			(enumeration type)
 	int	pen_style		(pen style, not used)
 	int	area_fill		(enumeration type, -1 = no fill)
-	float	style_val		(Fig units)
+	float	style_val		(1/80 inch)
 	int	direction		(always 1)
 	float	angle			(radians, the angle of the x-axis)
 	int	center_x, center_y	(Fig units)
@@ -341,16 +344,16 @@ Description of the Fig Format Follows
 					 4: arc-box)
 					 5: imported-picture bounding-box)
 	int	line_style		(enumeration type)
-	int	thickness		(Fig units)
+	int	thickness		(1/80 inch)
 	int	pen_color		(enumeration type, pen color)
 	int	fill_color		(enumeration type, fill color)
 	int	depth			(enumeration type)
 	int	pen_style		(pen style, not used)
 	int	area_fill		(enumeration type, -1 = no fill)
-	float	style_val		(Fig units)
+	float	style_val		(1/80 inch)
 	int	join_style		(enumeration type)
 	int	cap_style		(enumeration type, only used for POLYLINE)
-	int	radius			(Fig units, radius of arc-boxes)
+	int	radius			(1/80 inch, radius of arc-boxes)
 	int	forward_arrow		(0: off, 1: on)
 	int	backward_arrow		(0: off, 1: on)
 	int	npoints			(number of points in line)
@@ -386,13 +389,13 @@ Description of the Fig Format Follows
 					 2: open interpolated spline
 					 3: closed interpolated spline)
 	int	line_style		(See the end of this section)
-	int	thickness		(Fig units)
+	int	thickness		(1/80 inch)
 	int	pen_color		(enumeration type, pen color)
 	int	fill_color		(enumeration type, fill color)
 	int	depth			(enumeration type)
 	int	pen_style		(pen style, not used)
 	int	area_fill		(enumeration type, -1 = no fill)
-	float	style_val		(Fig units)
+	float	style_val		(1/80 inch)
 	int	cap_style		(enumeration type, only used for open splines)
 	int	forward_arrow		(0: off, 1: on)
 	int	backward_arrow		(0: off, 1: on)
@@ -453,7 +456,7 @@ Description of the Fig Format Follows
 					 sequence is not part of the string.
 					 Characters above octal 177 are
 					 represented by \xxx where xxx is the
-					 octal value.  This permits fig files to
+					 octal value.  This permits Fig files to
 					 be edited with 7-bit editors and sent
 					 by e-mail without data loss.
 					 Note that the string may contain '\n'.)
@@ -469,13 +472,13 @@ Description of the Fig Format Follows
 
     The font field is defined as follows:
 
-	For font_flags bit 3 = 0 (LaTeX fonts):
+	For font_flags bit 2 = 0 (LaTeX fonts):
 
 	 0	Default font
 	 1	Roman
 	 2	Bold
 	 3	Italic
-	 4	Modern
+	 4	Sans Serif
 	 5	Typewriter
 
 	For font_flags bit 3 = 1 (PostScript fonts):

@@ -52,7 +52,8 @@ static int	base_x, base_y;
 static PIX_FONT canvas_zoomed_font;
 
 static int	is_newline;
-static int	work_font, work_fontsize, work_flags, work_psflag, work_textjust;
+static int	work_font, work_fontsize, work_flags,
+		work_textcolor, work_psflag, work_textjust;
 static PIX_FONT work_fontstruct;
 static float	work_angle;		/* in RADIANS */
 static double	sin_t, cos_t;		/* sin(work_angle) and cos(work_angle) */
@@ -79,7 +80,7 @@ text_drawing_selected()
     canvas_middlebut_proc = null_proc;
     canvas_leftbut_proc = init_text_input;
     canvas_rightbut_proc = null_proc;
-    set_mousefun("posn cursor", "", "");
+    set_mousefun("posn cursor", "", "", "", "", "");
     clear_mousefun_kbd();
     set_cursor(pencil_cursor);
     is_newline = 0;
@@ -105,8 +106,8 @@ cancel_text_input()
     erase_char_string();
     terminate_char_handler();
     if (cur_t != NULL) {
-	draw_text(cur_t, PAINT);
-	toggle_textmarker(cur_t);
+	/* draw it and any objects that are on top */
+	redisplay_text(cur_t);
     }
     text_drawing_selected();
     draw_mousefun_canvas();
@@ -151,8 +152,8 @@ wrap_up()
 	}
 	if (!strcmp(cur_t->cstring, prefix)) {
 	    /* we didn't change anything */
-	    draw_text(cur_t, PAINT);
-	    toggle_textmarker(cur_t);
+	    /* draw it and any objects that are on top */
+	    redisplay_text(cur_t);
 	    return;
 	}
 	new_t = copy_text(cur_t);
@@ -170,8 +171,8 @@ wrap_up()
 	new_t->length = size.length;
 	cur_t = new_t;
     }
-    draw_text(cur_t, PAINT);
-    mask_toggle_textmarker(cur_t);
+    /* draw it and any objects that are on top */
+    redisplay_text(cur_t);
 }
 
 static
@@ -186,7 +187,7 @@ init_text_input(x, y)
     cur_y = y;
 
     set_action_on();
-    set_mousefun("reposn cursor", "finish text", "cancel");
+    set_mousefun("reposn cursor", "finish text", "cancel", "", "", "");
     draw_mousefun_kbd();
     draw_mousefun_canvas();
     canvas_kbd_proc = char_handler;
@@ -211,6 +212,7 @@ init_text_input(x, y)
 	if (is_newline) {	/* working settings already set */
 	    is_newline = 0;
 	} else {		/* set working settings from ind panel */
+	    work_textcolor = cur_pencolor;
 	    work_fontsize = cur_fontsize;
 	    work_font     = using_ps ? cur_ps_font : cur_latex_font;
 	    work_psflag   = using_ps;
@@ -240,6 +242,7 @@ init_text_input(x, y)
 	    return;
 	}
 	/* update the working text parameters */
+	work_textcolor = cur_t->color;
 	work_font = cur_t->font;
 	work_fontstruct = canvas_zoomed_font = cur_t->fontstruct;
 	work_fontsize = cur_t->size;
@@ -312,6 +315,7 @@ new_text()
     text->type = work_textjust;
     text->font = work_font;	/* put in current font number */
     text->fontstruct = work_fontstruct;
+    text->zoom = zoomscale;
     text->size = work_fontsize;
     text->angle = work_angle;
     text->flags = work_flags;
@@ -436,30 +440,24 @@ terminate_char_handler()
     cr_proc = NULL;
 }
 
-/*
- * we use INV_PAINT below instead of ERASE and PAINT to avoid interactions
- * with the cursor.  It means that we need to do a ERASE before we start the
- * cursor and a PAINT after it is turned off.
- */
-
 static int
 erase_char_string()
 {
-    pw_text(pw, cbase_x, cbase_y, INV_PAINT, canvas_zoomed_font, 
-	    work_angle, prefix, DEFAULT);
+    pw_text(pw, cbase_x, cbase_y, ERASE, canvas_zoomed_font, 
+	    work_angle, prefix, work_textcolor);
     if (leng_suffix)
-	pw_text(pw, cur_x, cur_y, INV_PAINT, canvas_zoomed_font, 
-		work_angle, suffix, DEFAULT);
+	pw_text(pw, cur_x, cur_y, ERASE, canvas_zoomed_font, 
+		work_angle, suffix, work_textcolor);
 }
 
 static int
 draw_char_string()
 {
-    pw_text(pw, cbase_x, cbase_y, INV_PAINT, canvas_zoomed_font, 
-	    work_angle, prefix, DEFAULT);
+    pw_text(pw, cbase_x, cbase_y, PAINT, canvas_zoomed_font, 
+	    work_angle, prefix, work_textcolor);
     if (leng_suffix)
-	pw_text(pw, cur_x, cur_y, INV_PAINT, canvas_zoomed_font, 
-		work_angle, suffix, DEFAULT);
+	pw_text(pw, cur_x, cur_y, PAINT, canvas_zoomed_font, 
+		work_angle, suffix, work_textcolor);
     move_blinking_cursor(cur_x, cur_y);
 }
 
@@ -468,15 +466,15 @@ draw_suffix()
 {
     if (leng_suffix)
 	pw_text(pw, cur_x, cur_y, PAINT, canvas_zoomed_font, 
-		work_angle, suffix, DEFAULT);
+		work_angle, suffix, work_textcolor);
 }
 
 static int
 erase_suffix()
 {
     if (leng_suffix)
-	pw_text(pw, cur_x, cur_y, INV_PAINT, canvas_zoomed_font, 
-		work_angle, suffix, DEFAULT);
+	pw_text(pw, cur_x, cur_y, ERASE/*INV_PAINT*/, canvas_zoomed_font, 
+		work_angle, suffix, work_textcolor);
 }
 
 static int
@@ -486,8 +484,8 @@ char	c;
     char	s[2];
     s[0]=c;
     s[1]='\0';
-    pw_text(pw, cur_x, cur_y, INV_PAINT, canvas_zoomed_font, 
-	    work_angle, s, DEFAULT);
+    pw_text(pw, cur_x, cur_y, PAINT/*INV_PAINT*/, canvas_zoomed_font, 
+	    work_angle, s, work_textcolor);
 }
 
 char_handler(c)
@@ -577,7 +575,7 @@ char_handler(c)
 
     /* normal text character */
     } else {	
-	draw_char_string();	/* erase current string */
+	erase_char_string();/*draw_char_string();	/* erase current string */
 
 	cwidth = ZOOM_FACTOR * char_advance(canvas_font, (unsigned char) c);
 	cwsin = cwidth*sin_t;
@@ -709,12 +707,8 @@ reload_text_fstructs()
 
     /* reload the compound objects' texts */
     reload_compoundfont(objects.compounds);
-    reload_compoundfont(saved_objects.compounds);
     /* and the separate texts */
     for (t=objects.texts; t != NULL; t = t->next)
-	reload_text_fstruct(t);
-    /* also for the saved texts */
-    for (t=saved_objects.texts; t != NULL; t = t->next)
 	reload_text_fstruct(t);
 }
 
@@ -740,4 +734,5 @@ reload_text_fstruct(t)
 {
     t->fontstruct = lookfont(x_fontnum(psfont_text(t), t->font), 
 			round(t->size*display_zoomscale));
+    t->zoom = zoomscale;
 }

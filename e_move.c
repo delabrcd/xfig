@@ -32,7 +32,7 @@ static		init_move(), init_arb_move(), init_constrained_move();
 
 move_selected()
 {
-    set_mousefun("move object", "horiz/vert move", "");
+    set_mousefun("move object", "horiz/vert move", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_arb_move);
@@ -54,7 +54,7 @@ init_arb_move(p, type, x, y, px, py)
     constrained = MOVE_ARB;
     init_move(p, type, x, y, px, py);
     canvas_middlebut_proc = null_proc;
-    set_mousefun("place object", "", "cancel");
+    set_mousefun("place object", "", "cancel", "", "", "");
     draw_mousefun_canvas();
 }
 
@@ -68,7 +68,7 @@ init_constrained_move(p, type, x, y, px, py)
     init_move(p, type, x, y, px, py);
     canvas_middlebut_proc = canvas_leftbut_proc;
     canvas_leftbut_proc = null_proc;
-    set_mousefun("", "place object", "cancel");
+    set_mousefun("", "place object", "cancel", "", "", "");
     draw_mousefun_canvas();
 }
 

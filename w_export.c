@@ -19,26 +19,40 @@
 
 #include "fig.h"
 #include "figx.h"
-#include "mode.h"
 #include "resources.h"
+#include "mode.h"
 #include "w_dir.h"
 #include "w_drawprim.h"		/* for max_char_height */
 #include "w_setup.h"
 #include "w_util.h"
 
+/* IMPORTS */
+
+extern Boolean	file_msg_is_popped;
+extern Widget	file_msg_popup;
 extern Widget	make_popup_menu();
 extern char    *panel_get_value();
 extern Boolean	query_save();
 extern Widget	file_popup;
 extern Widget	file_dir;
+extern Boolean	popup_up;
+
+extern Boolean	write_gif();
+extern Boolean	write_jpg();
+extern Boolean	write_xbm();
+extern Boolean	write_xpm();
 
 /* from w_print.c */
 extern Widget		print_orient_panel;
 extern Widget		print_just_panel;
 
+/* EXPORTS */
+
 /* global so w_file.c can access it */
 char		default_export_file[PATH_MAX];
 char		export_dir[PATH_MAX];
+
+Boolean		export_up = False;
 
 /* global so w_cmdpanel.c and w_print.c can access it */
 Widget		export_orient_panel;
@@ -102,8 +116,6 @@ Widget		export_panel,	/* so w_dir can access the scrollbars */
 		exp_flist,	/* file list wiget */
 		exp_dlist;	/* dir list wiget */
 
-Boolean		export_up = False;
-
 static void
 export_panel_dismiss()
 {
@@ -113,7 +125,7 @@ export_panel_dismiss()
     SetValues(exp_selfile);		/* clear ascii widget string */
     XtPopdown(export_popup);
     XtSetSensitive(export_w, True);
-    export_up = False;
+    export_up = popup_up = False;
 }
 
 static void
@@ -185,36 +197,52 @@ do_export(w)
 		mag = 1.0;
 	XtSetSensitive(export_but, False);
 	app_flush();
-	/* check for XBitmap first */
-	if (cur_exp_lang == LANG_XBITMAP) {
-	    if (write_xbm(fval,mag) == 0) {
+
+	switch (cur_exp_lang) {
+	  case LANG_XBITMAP:
+	    if (write_xbm(fval,mag)) {
 		FirstArg(XtNlabel, fval);
 		SetValues(dfile_text);		/* set the default filename */
 		if (strcmp(fval,default_export_file) != 0)
 		    strcpy(default_export_file,fval); /* and copy to default */
 		export_panel_dismiss();
 	    }
+	    break;
+
+	  case LANG_GIF:
+	    if (write_gif(fval,mag)) {
+		FirstArg(XtNlabel, fval);
+		SetValues(dfile_text);		/* set the default filename */
+		if (strcmp(fval,default_export_file) != 0)
+			strcpy(default_export_file,fval); /* and copy to default */
+		    export_panel_dismiss();
+	    }
+	    break;
+
+	  case LANG_JPEG:
+	    if (write_jpg(fval,mag)) {
+		FirstArg(XtNlabel, fval);
+		SetValues(dfile_text);		/* set the default filename */
+		if (strcmp(fval,default_export_file) != 0)
+			strcpy(default_export_file,fval); /* and copy to default */
+		    export_panel_dismiss();
+	    }
+	    break;
+
 #ifdef USE_XPM
-	/* what about XPM? */
-	} else if (cur_exp_lang == LANG_XPIXMAP) {
-	    if (write_xpm(fval,mag) == 0) {
+	  case LANG_XPIXMAP:
+	    if (write_xpm(fval,mag)) {
 		FirstArg(XtNlabel, fval);
 		SetValues(dfile_text);		/* set the default filename */
 		if (strcmp(fval,default_export_file) != 0)
 			strcpy(default_export_file,fval); /* and copy to default */
 		    export_panel_dismiss();
 	    }
+	    break;
 #endif /* USE_XPM */
-	/* what about GIF? */
-	} else if (cur_exp_lang == LANG_GIF) {
-	    if (write_gif(fval,mag) == 0) {
-		FirstArg(XtNlabel, fval);
-		SetValues(dfile_text);		/* set the default filename */
-		if (strcmp(fval,default_export_file) != 0)
-			strcpy(default_export_file,fval); /* and copy to default */
-		    export_panel_dismiss();
-	    }
-	} else {
+
+	  /* must be one of the languages that fig2dev will handle */
+	  default:
 	    exp_getxyoff(&xoff,&yoff);	/* get x/y offsets from panel */
 	    if (print_to_file(fval, lang_items[cur_exp_lang],
 			      mag, appres.flushleft, xoff, yoff) == 0) {
@@ -224,7 +252,8 @@ do_export(w)
 		    strcpy(default_export_file,fval); /* and copy to default */
 		export_panel_dismiss();
 	    }
-	}
+	} /* switch */
+
 	XtSetSensitive(export_but, True);
 }
 
@@ -295,7 +324,7 @@ popup_export_panel(w)
 
 	set_temp_cursor(wait_cursor);
 	XtSetSensitive(w, False);
-	export_up = True;
+	export_up = popup_up = True;
 
 	if (!export_popup)
 		create_export_panel(w);
@@ -314,6 +343,8 @@ popup_export_panel(w)
 	set_cmap(XtWindow(export_popup));
     	(void) XSetWMProtocols(XtDisplay(export_popup), XtWindow(export_popup),
 			       &wm_delete_window, 1);
+	if (file_msg_is_popped)
+	    XtAddGrab(file_msg_popup, False, False);
 	reset_cursor();
 }
 

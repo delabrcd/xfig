@@ -20,6 +20,9 @@
 /* For the X stuff, include only Xlib.h and Intrinsic.h here - 
    use figx.h for widget stuff */
 
+#if defined(ultrix) || defined(__bsdi__) || defined(Mips)
+#include <sys/types.h>	/* for stat structure */
+#endif
 #include <sys/stat.h>
 
 #if defined(__convex__) && defined(__STDC__)
@@ -39,9 +42,12 @@
 #include <ctype.h>
 #include <errno.h>
 
+#ifndef __bsdi__
 extern int	errno;
 extern int	sys_nerr;
 extern char    *sys_errlist[];
+#endif
+
 extern char    *mktemp();
 
 #include <math.h>	/* for sin(), cos() etc */
@@ -322,26 +328,28 @@ extern char *strstr();
 #endif
 
 #if defined(SYSV) || defined(SVR4)
-
 extern	void		srand48();
 extern	long		lrand48();
 extern	double		drand48();
-
-#define	srandom(seed)	srand48(seed)
+#define	srandom(seed)	srand48((seed))
 #define	random()	lrand48()
 #define	frandom()	drand48()
 
-#else /* not SYSV */
+#elif defined(BSD)  /* not SYSV/SVR4, check for BSD */
+#define	srandom(seed)	srand48((long)(seed))
+#define	random()	lrand48()
+#define	frandom()	drand48()
 
-#ifndef random
+#elif defined(linux)
 extern	long		random();
-#endif
-#ifndef srandom
+extern	void		srandom(unsigned int);
+
+#elif !defined(__osf__)
+extern	long		random();
 extern	void		srandom();
+
 #endif
 
 #ifndef frandom
 #define	frandom()	(random()*(1./2147483648.))
 #endif
-
-#endif	/* not SYSV */

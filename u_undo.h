@@ -21,3 +21,5 @@
 
 extern F_compound saved_objects;
 extern F_compound object_tails;
+extern F_arrow *saved_for_arrow;
+extern F_arrow *saved_back_arrow;

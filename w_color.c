@@ -57,6 +57,7 @@
 #include "fig.h"
 #include "figx.h"
 #include "resources.h"
+#include "mode.h"
 #include "object.h"
 #include "w_util.h"
 #include "w_color.h"
@@ -71,11 +72,8 @@ extern Atom	wm_delete_window;
 extern Widget	choice_popup;
 extern ind_sw_info *fill_style_sw;
 
-Boolean switch_colormap();
-Boolean alloc_color();
-
 /* callback routines */
-       void cancel_color_popup();
+static void cancel_color_popup();
 static void Thumbed();
 static void Scrolled();
 static void Update_HSV();
@@ -337,9 +335,6 @@ ind_sw_info	*isw;
 		XtOverrideTranslations(tripleValue[i],
 				       XtParseTranslationTable(triple_translations));
 	}
-	/* initialize the two color cells to the current pen/fill colors */
-	restore_mixed_colors();
-
 	/* make pen and fill hex value insensitive to start */
 	/* (until user picks memory) */
 	XtSetSensitive(tripleValue[0], False);
@@ -695,14 +690,8 @@ ind_sw_info	*isw;
 	XtAddCallback(satScroll,    XtNjumpProc, Update_HSV, (XtPointer)S_SAT);
 	XtAddCallback(valScroll,    XtNjumpProc, Update_HSV, (XtPointer)S_VAL);
 
-	/* set the scrollbars to the initial mixed colour values */
-	do_change = False;
-	CHANGE_RED(edit_fill-2);
-	CHANGE_GREEN(edit_fill-2);
-	CHANGE_BLUE(edit_fill-2);
-	do_change = True;
-	update_scrl_triple((Widget)NULL, (XEvent *)NULL,
-					(String *)NULL, (Cardinal *)NULL);
+	/* initialize the two color cells to the current pen/fill colors */
+	restore_mixed_colors();
 
 	/* get the name of the scrollbar in the user color viewport so we can 
 	   make it solid instead of the default grey pixmap */
@@ -726,18 +715,28 @@ ind_sw_info	*isw;
 	XtSetSensitive(delColor, False);
 	/* and the undelete color button until user deletes a color */
 	XtSetSensitive(undelColor, False);
+
+	/* make sliders insensitive if the selected color (fill or pen)
+	   is not a user color */
+
+	set_slider_sensitivity();
 }
 
 pen_fill_activate(func)
 int	func;
 {
+	/* make sliders insensitive if the selected color (fill or pen)
+	   is not a user color */
+
+	set_slider_sensitivity();
+
 	/* activate the one the user pressed (pen or fill) */
 	XawToggleSetCurrent(mixedEdit[0],(XtPointer) (func==I_PEN_COLOR? 1:2));
 }
 
 restore_mixed_colors()
 {
-	int	save0,save1;
+	int	save0,save1,save_edit;
 
 	/* initialize the two color cells to the current pen/fill colors */
 	save0 = mixed_color[0].pixel;
@@ -765,6 +764,21 @@ restore_mixed_colors()
 	mixed_color[0].pixel = save0;
 	mixed_color[1].pixel = save1;
 	XStoreColors(tool_d, tool_cm, mixed_color, 2);
+
+	/* set the scrollbars to the initial mixed colour values */
+	do_change = False;
+	CHANGE_RED(edit_fill-2);
+	CHANGE_GREEN(edit_fill-2);
+	CHANGE_BLUE(edit_fill-2);
+	do_change = True;
+
+	/* and update the hex values */
+	save_edit = edit_fill;
+	edit_fill=0;
+	update_triple((Widget)NULL, (XEvent *)NULL, (String *)NULL, (Cardinal *)NULL);
+	edit_fill=1;
+	update_triple((Widget)NULL, (XEvent *)NULL, (String *)NULL, (Cardinal *)NULL);
+	edit_fill = save_edit;
 }
 
 /* change the label of the mixedColor widget[i] to the name of the color */
@@ -783,7 +797,7 @@ int	i,col;
 	else
 		fore = x_bg_color.pixel;
     } else {
-	sprintf(buf,"%d",col);
+	sprintf(buf,"User %d",col);
 	FirstArg(XtNlabel, buf);
 	fore = x_bg_color.pixel;
     }
@@ -795,7 +809,7 @@ int	i,col;
 /* come here when cancel is pressed.  This is in addition to the 
    cancel callback routine that gets called in w_indpanel.c */
 
-void
+static void
 cancel_color_popup(w, dum1, dum2)
 Widget	w;
 XtPointer dum1, dum2;
@@ -811,9 +825,14 @@ add_color(w, closure, ptr)
 Widget w;
 XtPointer closure, ptr;
 {
+	/* deselect any cell currently selected */
+	if (current_memory >= 0)
+	    draw_a_dotted_box(colorMemory[current_memory], unboxedGC);
 	/* add another widget to the user color panel */
-	if (add_color_cell(False, 0, 0, 0, 0) == -1)	/* using black */
-		file_msg("No more user colors allowed");
+	if ((current_memory = add_color_cell(False, 0, 0, 0, 0)) == -1)	/* using black */
+		put_msg("No more user colors allowed");
+	draw_a_dotted_box(colorMemory[current_memory], unboxedGC);
+	modified[edit_fill] = True;
 }
 
 /* add a widget to the user color list with color r,g,b */
@@ -835,7 +854,7 @@ int	r,g,b;
 	if (all_colors_available) {
 	    /* try to get a colorcell */
 	    if (!alloc_color(pixels,1)) {
-		file_msg("Can't allocate user color, not enough colorcells");
+		put_msg("Can't allocate user color, not enough colorcells");
 		return 0;
 	    }
 	}
@@ -923,7 +942,7 @@ int	n;
 	    /* try again with new colormap */
 	    if (!switch_colormap() ||
 	        (!XAllocColorCells(tool_d, tool_cm, 0, &plane_masks, 0, &pixels[i], 1))) {
-		    file_msg("Cannot define user colors.");
+		    put_msg("Cannot define user colors.");
 		    return False;
 	    }
         }
@@ -938,17 +957,18 @@ Boolean
 switch_colormap()
 {
 	if (swapped_cmap || appres.dont_switch_cmap) {
-		return False;
+	    return False;
 	}
 	if ((newcmap = XCopyColormapAndFree(tool_d, tool_cm)) == 0) {
-		file_msg("Cannot allocate new colormap.");
-		return False;
+	    file_msg("Cannot allocate new colormap.");
+	    return False;
 	}
 	/* swap colormaps */
 	tool_cm = newcmap;
 	swapped_cmap = True;
 	/* and tell the window manager to install it */
-	if (pen_color_button && pen_color_button->panel && XtWindow(pen_color_button->panel) != 0)
+	if (pen_color_button && pen_color_button->panel &&
+	    XtWindow(pen_color_button->panel) != 0)
 		set_cmap(XtWindow(pen_color_button->panel));
 	if (tool_w)
 	    set_cmap(tool_w);
@@ -972,7 +992,7 @@ XtPointer closure, ptr;
 	}
 	/* only allow deletion of this color of no object in the figure uses it */
 	if (color_used(current_memory+NUM_STD_COLS, &objects)) {
-		file_msg("That color is in use by an object in the figure");
+		put_msg("That color is in use by an object in the figure");
 		XBell(tool_d,0);
 		return;
 	}
@@ -1012,7 +1032,7 @@ XtPointer closure, ptr;
 	if ((indx=add_color_cell(False, 0, undel_user_color.red/256,
 		undel_user_color.green/256,
 		undel_user_color.blue/256)) == -1) {
-		    file_msg("Can't allocate more than %d user colors, not enough colormap entries",
+		    put_msg("Can't allocate more than %d user colors, not enough colormap entries",
 				num_usr_cols);
 		    return;
 		}
@@ -1089,8 +1109,35 @@ XtPointer client_data, call_data;
 	   toggle hasn't been set manually */
  	if (edit_fill == -1)
  		edit_fill = 1;
-	XtSetSensitive(tripleValue[edit_fill], True);
-	XtSetSensitive(tripleValue[1-edit_fill], False);
+	/* only make triple value sensitive if a user color */
+	if (mixed_color_indx[edit_fill] >= NUM_STD_COLS) {
+	    XtSetSensitive(tripleValue[edit_fill], True);
+	    XtSetSensitive(tripleValue[1-edit_fill], False);
+	} else {
+	    XtSetSensitive(tripleValue[edit_fill], False);
+	    XtSetSensitive(tripleValue[1-edit_fill], False);
+	}
+
+	/* set the scrollbars to the current mixed colour values */
+	do_change = False;
+	CHANGE_RED(edit_fill-2);
+	CHANGE_GREEN(edit_fill-2);
+	CHANGE_BLUE(edit_fill-2);
+	do_change = True;
+
+	/* but make them insensitive if the color is not a user defined color */
+	set_slider_sensitivity();
+}
+
+/* if the color for the current mode (fill or pen) IS a user-defined color then
+   make the color sliders sensitive, otherwise make them insensitive */
+
+set_slider_sensitivity()
+{
+	if (mixed_color_indx[edit_fill] < NUM_STD_COLS)
+		XtSetSensitive(mixingForm, False);
+	else
+		XtSetSensitive(mixingForm, True);
 }
 
 /* ok button */
@@ -1126,6 +1173,9 @@ XButtonEvent	*ev;
 {
 	Pixel	save;
 	int	color;
+
+	/* make sliders insensitive */
+	XtSetSensitive(mixingForm, False);
 
 	/* set flag saying we've modified either the pen or fill color */
 	modified[edit_fill] = True;
@@ -1197,6 +1247,9 @@ Cardinal *num_params;
 {
 	int	i;
 
+	/* make sliders sensitive */
+	XtSetSensitive(mixingForm, True);
+
 	modified[edit_fill] = True;
 	for (i = 0; i < num_usr_cols; i++) {
 	    if (w == colorMemory[i]) {
@@ -1210,7 +1263,7 @@ Cardinal *num_params;
 
 		/* put the color number in the mixed index */
 		mixed_color_indx[edit_fill] = current_memory+NUM_STD_COLS;
-		/* put the color number in the indicator */
+		/* put the color name in the indicator */
 		set_mixed_name(edit_fill,mixed_color_indx[edit_fill]);
 
 		if (colorUsed[current_memory]) {
@@ -1806,10 +1859,8 @@ show_pen_color()
     if (cur_pencolor < DEFAULT || cur_pencolor >= NUM_STD_COLS+num_usr_cols ||
 	cur_pencolor >= NUM_STD_COLS && colorFree[cur_pencolor-NUM_STD_COLS])
 	    cur_pencolor = DEFAULT;
-    if (cur_pencolor == DEFAULT || cur_pencolor == BLACK)
+    if (cur_pencolor == DEFAULT)
 	color = x_fg_color.pixel;
-    else if (cur_pencolor == WHITE)
-	color = x_bg_color.pixel;
     else
 	color = all_colors_available ? colors[cur_pencolor] :
 			(cur_pencolor == WHITE? x_bg_color.pixel: x_fg_color.pixel);
@@ -1875,10 +1926,8 @@ show_fill_color()
     if (cur_fillcolor < DEFAULT || cur_fillcolor >= NUM_STD_COLS+num_usr_cols ||
 	cur_fillcolor >= NUM_STD_COLS && colorFree[cur_fillcolor-NUM_STD_COLS])
 	    cur_fillcolor = DEFAULT;
-    if (cur_fillcolor == DEFAULT || cur_fillcolor == BLACK)
+    if (cur_fillcolor == DEFAULT)
 	color = x_fg_color.pixel;
-    else if (cur_fillcolor == WHITE)
-	color = x_bg_color.pixel;
     else
 	color = all_colors_available ? colors[cur_fillcolor] :
 			(cur_fillcolor == WHITE? x_bg_color.pixel: x_fg_color.pixel);
@@ -1958,47 +2007,6 @@ Window window;
 
 RGB	RGBWhite = { MAX_INTENSITY, MAX_INTENSITY, MAX_INTENSITY };
 RGB	RGBBlack = { 0, 0, 0 };
-
-/*
- * Mix two RGBs, with scale factors alpha and beta, in RGB space.
- */
-
-RGB
-MixRGB(r, alpha, s, beta)
-RGB	r, s;
-float	alpha, beta;
-{
-	RGB	t;
-
-	t.r = max2(0, min2(MAX_INTENSITY, (int)(alpha*(r.r) + beta*(s.r))));
-	t.g = max2(0, min2(MAX_INTENSITY, (int)(alpha*(r.g) + beta*(s.g))));
-	t.b = max2(0, min2(MAX_INTENSITY, (int)(alpha*(r.b) + beta*(s.b))));
-	return t;
-}
-
-/*
- * Mix two RGBs with scale factors alpha and beta, in HSV space.
- */
-
-RGB
-MixHSV(r, alpha, s, beta)
-RGB	r, s;
-float	alpha, beta;
-{
-	HSV	rr, ss, tt;
-
-	rr = RGBToHSV(r);
-	ss = RGBToHSV(s);
-	tt.h = alpha*rr.h + beta*ss.h;
-	if (ABS(rr.h - ss.h) > 0.5) {
-		tt.h = tt.h + 0.5;
-		if (tt.h >= 1.0)
-			tt.h = tt.h - 1.0;
-	}
-	tt.s = alpha*rr.s + beta*ss.s;
-	tt.v = alpha*rr.v + beta*ss.v;
-	return HSVToRGB(tt);
-}
 
 /*
  * Convert an HSV to an RGB.
@@ -2111,89 +2119,4 @@ float	rr, gg, bb;
 	rgb.g = (int)(0.5 + gg * MAX_INTENSITY);
 	rgb.b = (int)(0.5 + bb * MAX_INTENSITY);
 	return rgb;
-}
-
-/*
- * Intensity percentages to HSV.
- */
-
-HSV
-PctToHSV(hh, ss, vv)
-float	hh, ss, vv;
-{
-	HSV	hsv;
-
-	if (hh > 1.0)
-		hh = 1.0;
-	if (ss > 1.0)
-		ss = 1.0;
-	if (vv > 1.0)
-		vv = 1.0;
-
-	hsv.h = hh;
-	hsv.s = ss;
-	hsv.v = vv;
-	return hsv;
-}
-
-/*
- * The Manhattan distance between two colors, between 0.0 and 3.0.
- */
-
-float
-RGBDist(r, s)
-RGB	r, s;
-{
-	return (
-	    ABS((float)(r.r - s.r)) +
-	    ABS((float)(r.g - s.g)) +
-	    ABS((float)(r.b - s.b))) / (float)MAX_INTENSITY;
-}
-
-/*
- * Load an XColor with an RGB.
- */
-
-RGBToXColor(r, x)
-RGB	r;
-XColor	*x;
-{
-	x->red = r.r;
-	x->green = r.g;
-	x->blue = r.b;
-	x->flags = DoRed | DoGreen | DoBlue;
-}
-
-/*
- * Convert a CMY to RGB.
- */
-
-RGB
-CMYToRGB(cmy)
-CMY	cmy;
-
-{
-	RGB	rgb;
-
-	rgb.r = MAX_INTENSITY - cmy.c;
-	rgb.g = MAX_INTENSITY - cmy.m;
-	rgb.b = MAX_INTENSITY - cmy.y;
-	return rgb;
-}
-
-/*
- * Convert an RGB to CMY.
- */
-
-CMY
-RGBToCMY(rgb)
-RGB	rgb;
-
-{
-	CMY	cmy;
-
-	cmy.c = MAX_INTENSITY - rgb.r;
-	cmy.m = MAX_INTENSITY - rgb.g;
-	cmy.y = MAX_INTENSITY - rgb.b;
-	return cmy;
 }

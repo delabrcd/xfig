@@ -36,7 +36,7 @@ static
 
 picobj_drawing_selected()
 {
-    set_mousefun("corner point", "", "");
+    set_mousefun("corner point", "", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     canvas_leftbut_proc = init_picobj_drawing;
@@ -95,7 +95,6 @@ create_picobj(x, y)
     box->cap_style = 0;		/* not used */
     box->fill_style = UNFILLED;
     box->style_val = 0;
-    box->radius = 0;
 
     if ((box->pic = create_pic()) == NULL) {
 	free((char *) point);
@@ -121,8 +120,9 @@ create_picobj(x, y)
     append_point(x, y, &point);
     append_point(x, fix_y, &point);
     append_point(fix_x, fix_y, &point);
-    draw_line(box, PAINT);
     add_line(box);
+    /* draw it and anything on top of it */
+    redisplay_line(box);
     put_msg("Please enter name of Picture Object file in EDIT window");
     edit_item((char *) box, O_POLYLINE, 0, 0);
     picobj_drawing_selected();

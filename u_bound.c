@@ -24,6 +24,7 @@
 #include "paintop.h"
 #include "u_bound.h"
 #include "w_setup.h"
+#include "w_zoom.h"
 
 #define		Ninety_deg		M_PI_2
 #define		One_eighty_deg		M_PI
@@ -46,7 +47,11 @@ arc_bound(arc, xmin, ymin, xmax, ymax)
 
     dx = arc->point[0].x - arc->center.x;
     dy = arc->center.y - arc->point[0].y;
-    alpha = atan2(dy, dx);
+    if (dx==0.0)
+	alpha = (dy > 0? Ninety_deg: -Ninety_deg);
+    else
+	alpha = atan2(dy, dx);
+
     if (alpha < 0.0)
 	alpha += Three_sixty_deg;
 
@@ -54,7 +59,11 @@ arc_bound(arc, xmin, ymin, xmax, ymax)
 
     dx = arc->point[2].x - arc->center.x;
     dy = arc->center.y - arc->point[2].y;
-    beta = atan2(dy, dx);
+    if (dx==0.0)
+	beta = (dy > 0? Ninety_deg: -Ninety_deg);
+    else
+	beta = atan2(dy, dx);
+
     if (beta < 0.0)
 	beta += Three_sixty_deg;
 
@@ -108,11 +117,19 @@ arc_bound(arc, xmin, ymin, xmax, ymax)
 		by = (int) (arc->center.y + radius + 1.0);
 	}
     }
-    half_wd = arc->thickness / 2;
+    half_wd = arc->thickness / 2 * ZOOM_FACTOR;
     *xmax = bx + half_wd;
     *ymax = by + half_wd;
     *xmin = sx - half_wd;
     *ymin = sy - half_wd;
+
+    /* show the boundaries */
+    if (appres.DEBUG) {
+	pw_vector(canvas_win, *xmin, *ymin, *xmax, *ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
+	pw_vector(canvas_win, *xmax, *ymin, *xmax, *ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
+	pw_vector(canvas_win, *xmax, *ymax, *xmin, *ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
+	pw_vector(canvas_win, *xmin, *ymax, *xmin, *ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
+    }
 
     /* now add in the arrow (if any) boundaries */
     arrow_bound(O_ARC, (F_line *)arc, xmin, ymin, xmax, ymax);
@@ -241,6 +258,13 @@ compound_bound(compound, xmin, ymin, xmax, ymax)
     *ymin = lly;
     *xmax = urx;
     *ymax = ury;
+    /* show the boundaries */
+    if (appres.DEBUG) {
+	pw_vector(canvas_win, *xmin, *ymin, *xmax, *ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
+	pw_vector(canvas_win, *xmax, *ymin, *xmax, *ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
+	pw_vector(canvas_win, *xmax, *ymax, *xmin, *ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
+	pw_vector(canvas_win, *xmin, *ymax, *xmin, *ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
+    }
 }
 
 /* basically, use the code for drawing the ellipse to find its bounds */
@@ -269,10 +293,18 @@ ellipse_bound(e, xmin, ymin, xmax, ymax)
 	}
 	/* angle of 0 is easy */
 	if (e->angle == 0) {
-	    *xmin = xcen - a;
-	    *xmax = xcen + a;
-	    *ymin = ycen - b;
-	    *ymax = ycen + b;
+	    half_wd = e->thickness/2*ZOOM_FACTOR;
+	    *xmin = xcen - a - half_wd;
+	    *xmax = xcen + a + half_wd;
+	    *ymin = ycen - b - half_wd;
+	    *ymax = ycen + b + half_wd;
+	    /* show the boundaries */
+	    if (appres.DEBUG) {
+		pw_vector(canvas_win, *xmin, *ymin, *xmax, *ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
+		pw_vector(canvas_win, *xmax, *ymin, *xmax, *ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
+		pw_vector(canvas_win, *xmax, *ymax, *xmin, *ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
+		pw_vector(canvas_win, *xmin, *ymax, *xmin, *ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
+	    }
 	    return;
 	}
 
@@ -345,6 +377,13 @@ ellipse_bound(e, xmin, ymin, xmax, ymax)
 	*ymax = max2(*ymax*ZOOM_FACTOR, max2(e->start.y, e->end.y)+3);
 	*xmin = min2(*xmin*ZOOM_FACTOR, min2(e->start.x, e->end.x)-3);
 	*ymin = min2(*ymin*ZOOM_FACTOR, min2(e->start.y, e->end.y)-3);
+	/* show the boundaries */
+	if (appres.DEBUG) {
+	    pw_vector(canvas_win, *xmin, *ymin, *xmax, *ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
+	    pw_vector(canvas_win, *xmax, *ymin, *xmax, *ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
+	    pw_vector(canvas_win, *xmax, *ymax, *xmin, *ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
+	    pw_vector(canvas_win, *xmin, *ymax, *xmin, *ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
+	}
 }
 
 line_bound(l, xmin, ymin, xmax, ymax)
@@ -365,6 +404,7 @@ spline_bound(s, xmin, ymin, xmax, ymax)
     } else {
 	normal_spline_bound(s, xmin, ymin, xmax, ymax);
     }
+
     /* now add in the arrow (if any) boundaries */
     arrow_bound(O_SPLINE, (F_line *)s, xmin, ymin, xmax, ymax);
 }
@@ -432,7 +472,7 @@ int_spline_bound(s, xmin, ymin, xmax, ymax)
 	bx = max2(x3, bx);
 	by = max2(y3, by);
     }
-    half_wd = s->thickness / 2;
+    half_wd = s->thickness / 2 * ZOOM_FACTOR;
     *xmin = round(sx) - half_wd;
     *ymin = round(sy) - half_wd;
     *xmax = round(bx) + half_wd;
@@ -491,7 +531,7 @@ normal_spline_bound(s, xmin, ymin, xmax, ymax)
 	bx = max2(bx, qx);
 	by = max2(by, qy);
     }
-    half_wd = s->thickness / 2;
+    half_wd = s->thickness / 2 * ZOOM_FACTOR;
     if (closed_spline(s)) {
 	*xmin = round(sx) - half_wd;
 	*ymin = round(sy) - half_wd;
@@ -581,6 +621,7 @@ points_bound(points, half_wd, xmin, ymin, xmax, ymax)
 	bx = max2(bx, p->x);
 	by = max2(by, p->y);
     }
+    half_wd *= ZOOM_FACTOR;
     *xmin = sx - half_wd;
     *ymin = sy - half_wd;
     *xmax = bx + half_wd;
@@ -613,13 +654,16 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
     int		    bxmin, bymin, bxmax, bymax;
     F_point	   *p, *q;
     F_arc	   *a;
-    int		    p1x, p1y, p2x, p2y;
+    int		    p1x, p1y, p2x, p2y, opx, opy;
+    int		    dum;
+    zXPoint	    arrowpts[6];
+    int		    npts, i, wd;
 
     if (obj->for_arrow) {
 	if (objtype == O_ARC) {
 	    a = (F_arc *) obj;
-	    compute_normal(a->center.x, a->center.y, a->point[2].x,
-		       a->point[2].y, a->direction, &p1x, &p1y);
+	    compute_arcarrow_angle(a->center.x, a->center.y, a->point[2].x,
+		       a->point[2].y, a->direction, a->for_arrow, &p1x, &p1y);
 	    p2x = a->point[2].x;	/* forward tip */
 	    p2y = a->point[2].y;
 	} else {
@@ -633,21 +677,40 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 	    p2x = p->x;
 	    p2y = p->y;
 	}
-	calc_arrow_width(obj->for_arrow->type,
-		obj->for_arrow->wid + obj->for_arrow->thickness*ZOOM_FACTOR/2.0,
-		obj->for_arrow->ht,
-		p1x, p1y, p2x, p2y,
-		&fxmin, &fymin, &fxmax, &fymax);
+	opx = p2x;
+	opy = p2y;
+	calc_arrow(p1x, p1y, p2x, p2y, &dum, &dum, &dum, &dum,
+			objtype, obj->for_arrow, arrowpts, &npts);
+	fxmin=fymin=100000;
+	fxmax=fymax=-100000;
+	for (i=0; i<npts; i++) {
+	    fxmin = min2(fxmin, arrowpts[i].x);
+	    fymin = min2(fymin, arrowpts[i].y);
+	    fxmax = max2(fxmax, arrowpts[i].x);
+	    fymax = max2(fymax, arrowpts[i].y);
+	}
+	/* the original endpoint of the line is further */
+	wd = obj->for_arrow->thickness*ZOOM_FACTOR;
+	fxmin = min2(fxmin, opx) - wd;
+	fxmax = max2(fxmax, opx) + wd;
+	fymin = min2(fymin, opy) - wd;
+	fymax = max2(fymax, opy) + wd;
 	*xmin = min2(*xmin, fxmin);
 	*xmax = max2(*xmax, fxmax);
 	*ymin = min2(*ymin, fymin);
 	*ymax = max2(*ymax, fymax);
+	if (appres.DEBUG) {
+	  pw_vector(canvas_win,fxmin,fymin,fxmax,fymin,PAINT,1,RUBBER_LINE,0.0,MAGENTA);
+	  pw_vector(canvas_win,fxmax,fymin,fxmax,fymax,PAINT,1,RUBBER_LINE,0.0,MAGENTA);
+	  pw_vector(canvas_win,fxmax,fymax,fxmin,fymax,PAINT,1,RUBBER_LINE,0.0,MAGENTA);
+	  pw_vector(canvas_win,fxmin,fymax,fxmin,fymin,PAINT,1,RUBBER_LINE,0.0,MAGENTA);
+	}
     }
     if (obj->back_arrow) {
 	if (objtype == O_ARC) {
 	    a = (F_arc *) obj;
-	    compute_normal(a->center.x, a->center.y, a->point[0].x,
-		       a->point[0].y, a->direction ^ 1, &p1x, &p1y);
+	    compute_arcarrow_angle(a->center.x, a->center.y, a->point[0].x,
+		       a->point[0].y, a->direction ^ 1, a->back_arrow, &p1x, &p1y);
 	    p2x = a->point[0].x;	/* backward tip */
 	    p2y = a->point[0].y;
 	} else {
@@ -656,15 +719,34 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 	    p2x = obj->points->x;	/* first point (forward tip) */
 	    p2y = obj->points->y;
 	}
-	calc_arrow_width(obj->back_arrow->type,
-		obj->back_arrow->wid + obj->back_arrow->thickness*ZOOM_FACTOR/2.0,
-		obj->back_arrow->ht,
-		p1x, p1y, p2x, p2y,
-		&bxmin, &bymin, &bxmax, &bymax);
+	opx = p2x;
+	opy = p2y;
+	calc_arrow(p1x, p1y, p2x, p2y, &dum, &dum, &dum, &dum,
+			objtype, obj->back_arrow, arrowpts, &npts);
+	bxmin=bymin=100000;
+	bxmax=bymax=-100000;
+	for (i=0; i<npts; i++) {
+	    bxmin = min2(bxmin, arrowpts[i].x);
+	    bymin = min2(bymin, arrowpts[i].y);
+	    bxmax = max2(bxmax, arrowpts[i].x);
+	    bymax = max2(bymax, arrowpts[i].y);
+	}
+	/* the original endpoint of the line is further */
+	wd = obj->back_arrow->thickness*ZOOM_FACTOR;
+	bxmin = min2(bxmin, opx) - wd;
+	bxmax = max2(bxmax, opx) + wd;
+	bymin = min2(bymin, opy) - wd;
+	bymax = max2(bymax, opy) + wd;
 	*xmin = min2(*xmin, bxmin);
 	*xmax = max2(*xmax, bxmax);
 	*ymin = min2(*ymin, bymin);
 	*ymax = max2(*ymax, bymax);
+	if (appres.DEBUG) {
+	  pw_vector(canvas_win,bxmin,bymin,bxmax,bymin,PAINT,1,RUBBER_LINE,0.0,MAGENTA);
+	  pw_vector(canvas_win,bxmax,bymin,bxmax,bymax,PAINT,1,RUBBER_LINE,0.0,MAGENTA);
+	  pw_vector(canvas_win,bxmax,bymax,bxmin,bymax,PAINT,1,RUBBER_LINE,0.0,MAGENTA);
+	  pw_vector(canvas_win,bxmin,bymax,bxmin,bymin,PAINT,1,RUBBER_LINE,0.0,MAGENTA);
+	}
     }
 }
 
@@ -702,8 +784,8 @@ calc_arrow_width(type, wid, ht, x1, y1, x2, y2, xmin, ymin, xmax, ymax)
     xd = round( x * cosa + y * sina);
     yd = round(-x * sina + y * cosa);
 
-    *xmin = min2(xc, xd);
-    *xmax = max2(xc, xd);
-    *ymin = min2(yc, yd);
-    *ymax = max2(yc, yd);
+    *xmin = min3(xc, xd, x2);
+    *xmax = max3(xc, xd, x2);
+    *ymin = min3(yc, yd, y2);
+    *ymax = max3(yc, yd, y2);
 }

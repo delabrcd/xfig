@@ -19,6 +19,7 @@
 
 #include "fig.h"
 #include "resources.h"
+#include "mode.h"
 #include "object.h"
 #include "u_create.h"
 #include "w_setup.h"
@@ -49,7 +50,7 @@ forward_arrow()
 
     a->type = ARROW_TYPE(cur_arrowtype);
     a->style = ARROW_STYLE(cur_arrowtype);
-    a->thickness = (float) cur_linewidth;
+    a->thickness = (float) (max2(1,cur_linewidth));
     a->wid = a->thickness * DEF_ARROW_WID;
     a->ht = a->thickness * DEF_ARROW_HT;
     return (a);
@@ -65,7 +66,7 @@ backward_arrow()
 
     a->type = ARROW_TYPE(cur_arrowtype);
     a->style = ARROW_STYLE(cur_arrowtype);
-    a->thickness = (float) cur_linewidth;
+    a->thickness = (float) (max2(1,cur_linewidth));
     a->wid = a->thickness * DEF_ARROW_WID;
     a->ht = a->thickness * DEF_ARROW_HT;
     return (a);

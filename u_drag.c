@@ -80,7 +80,11 @@ static
 array_place_ellipse(x, y)
     int		    x, y;
 {
-int i, j, delta_x, delta_y, start_x, start_y;
+   int		    i, j, delta_x, delta_y, start_x, start_y;
+   F_ellipse	   *save_ellipse;
+
+   tail(&objects, &object_tails);
+   save_ellipse = new_e;
 
    if ((!cur_numxcopies) && (!cur_numycopies)) {
      place_ellipse(x, y);
@@ -106,6 +110,9 @@ int i, j, delta_x, delta_y, start_x, start_y;
        }
      }
    }
+   /* put all new ellipses in the saved objects structure for undo */
+   saved_objects.ellipses = save_ellipse;
+   set_action_object(F_ADD, O_ALL_OBJECT);
 }
 
 static
@@ -113,6 +120,9 @@ place_ellipse(x, y)
     int		    x, y;
 {
     elastic_moveellipse();
+    canvas_leftbut_proc = null_proc;
+    canvas_middlebut_proc = null_proc;
+    canvas_rightbut_proc = null_proc;
     canvas_locmove_proc = null_proc;
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
     translate_ellipse(new_e, x - fix_x, y - fix_y);
@@ -167,7 +177,11 @@ static
 array_place_arc(x, y)
     int		    x, y;
 {
-int i, j, delta_x, delta_y, start_x, start_y;
+   int		    i, j, delta_x, delta_y, start_x, start_y;
+   F_arc	   *save_arc;
+
+   tail(&objects, &object_tails);
+   save_arc = new_a;
 
    if ((!cur_numxcopies) && (!cur_numycopies)) {
      place_arc(x, y);
@@ -193,6 +207,9 @@ int i, j, delta_x, delta_y, start_x, start_y;
        }
      }
    }
+   /* put all new arcs in the saved objects structure for undo */
+   saved_objects.arcs = save_arc;
+   set_action_object(F_ADD, O_ALL_OBJECT);
 }
 
 static
@@ -200,6 +217,9 @@ place_arc(x, y)
     int		    x, y;
 {
     elastic_movearc(new_a);
+    canvas_leftbut_proc = null_proc;
+    canvas_middlebut_proc = null_proc;
+    canvas_rightbut_proc = null_proc;
     canvas_locmove_proc = null_proc;
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
     translate_arc(new_a, x - fix_x, y - fix_y);
@@ -259,17 +279,20 @@ cancel_line()
 
 static
 array_place_line(x, y)
-    int		    x, y;
+   int		    x, y;
 {
-int i, j, delta_x, delta_y, start_x, start_y;
+   int		    i, j, delta_x, delta_y, start_x, start_y;
+   F_line	   *save_line;
 
-   if ((!cur_numxcopies) && (!cur_numycopies)) {
+   tail(&objects, &object_tails);
+   save_line = new_l;
+   if ((cur_numxcopies==0) && (cur_numycopies==0)) {
      place_line(x, y);
    }
    else {
      delta_x = x - fix_x;
      delta_y = y - fix_y;
-     if ((!cur_numxcopies) || (! cur_numycopies))  /* special cases */
+     if ((cur_numxcopies==0) || (cur_numycopies==0))  /* special cases */
        for ( i=1; i <= cur_numxcopies+cur_numycopies; i++, x += delta_x, y += delta_y)
 	 {
 	   place_line(x, y);
@@ -287,6 +310,9 @@ int i, j, delta_x, delta_y, start_x, start_y;
        }
      }
    }
+   /* put all new lines in the saved objects structure for undo */
+   saved_objects.lines = save_line;
+   set_action_object(F_ADD, O_ALL_OBJECT);
 }
 
 static
@@ -296,6 +322,9 @@ place_line(x, y)
     int		    dx, dy;
 
     elastic_moveline(new_l->points);
+    canvas_leftbut_proc = null_proc;
+    canvas_middlebut_proc = null_proc;
+    canvas_rightbut_proc = null_proc;
     canvas_locmove_proc = null_proc;
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
     dx = x - fix_x;
@@ -304,10 +333,8 @@ place_line(x, y)
     clean_up();
     set_latestline(new_l);
     if (return_proc == copy_selected) {
+	add_line(new_l);
 	adjust_links(cur_linkmode, cur_links, dx, dy, 0, 0, 1.0, 1.0, 1);
-	tail(&objects, &object_tails);
-	append_objects(&objects, &saved_objects, &object_tails);
-	set_action_object(F_ADD, O_ALL_OBJECT);
 	free_linkinfo(&cur_links);
     } else {
 	list_add_line(&objects.lines, new_l);
@@ -335,8 +362,6 @@ init_textdragging(t, x, y)
     float	   cw,cw2;
 
     new_t = t;
-    /* adjust in case text was off positioning grid and positioning is now on */
-    round_coords(new_t->base_x,new_t->base_y);
     fix_x = cur_x = x;
     fix_y = cur_y = y;
     x1off = new_t->base_x - x;
@@ -365,7 +390,11 @@ static
 array_place_text(x, y)
     int		    x, y;
 {
-int i, j, delta_x, delta_y, start_x, start_y;
+   int		    i, j, delta_x, delta_y, start_x, start_y;
+   F_text	   *save_text;
+
+   tail(&objects, &object_tails);
+   save_text = new_t;
 
    if ((!cur_numxcopies) && (!cur_numycopies)) {
      place_text(x, y);
@@ -391,6 +420,9 @@ int i, j, delta_x, delta_y, start_x, start_y;
        }
      }
    }
+   /* put all new texts in the saved objects structure for undo */
+   saved_objects.texts = save_text;
+   set_action_object(F_ADD, O_ALL_OBJECT);
 }
 
 static
@@ -412,6 +444,9 @@ place_text(x, y)
     int		    x, y;
 {
     elastic_movetext();
+    canvas_leftbut_proc = null_proc;
+    canvas_middlebut_proc = null_proc;
+    canvas_rightbut_proc = null_proc;
     canvas_locmove_proc = null_proc;
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
     translate_text(new_t, x - fix_x, y - fix_y);
@@ -466,7 +501,11 @@ static
 array_place_spline(x, y)
     int		    x, y;
 {
-int i, j, delta_x, delta_y, start_x, start_y;
+   int		    i, j, delta_x, delta_y, start_x, start_y;
+   F_spline	   *save_spline;
+
+   tail(&objects, &object_tails);
+   save_spline = new_s;
 
    if ((!cur_numxcopies) && (!cur_numycopies)) {
      place_spline(x, y);
@@ -492,6 +531,9 @@ int i, j, delta_x, delta_y, start_x, start_y;
        }
      }
    }
+   /* put all new splines in the saved objects structure for undo */
+   saved_objects.splines = save_spline;
+   set_action_object(F_ADD, O_ALL_OBJECT);
 }
 
 static
@@ -499,6 +541,9 @@ place_spline(x, y)
     int		    x, y;
 {
     elastic_moveline(new_s->points);
+    canvas_leftbut_proc = null_proc;
+    canvas_middlebut_proc = null_proc;
+    canvas_rightbut_proc = null_proc;
     canvas_locmove_proc = null_proc;
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
     translate_spline(new_s, x - fix_x, y - fix_y);
@@ -536,7 +581,7 @@ init_compounddragging(c, x, y)
     canvas_middlebut_proc = array_place_compound;
     canvas_rightbut_proc = cancel_compound;
     set_action_on();
-    get_links(c->nwcorner.x, c->nwcorner.y, c->secorner.x, c->secorner.y);
+    get_interior_links(c->nwcorner.x, c->nwcorner.y, c->secorner.x, c->secorner.y);
     elastic_movebox();
 }
 
@@ -559,7 +604,11 @@ static
 array_place_compound(x, y)
     int		    x, y;
 {
-int i, j, delta_x, delta_y, start_x, start_y;
+   int		    i, j, delta_x, delta_y, start_x, start_y;
+   F_compound	   *save_compound;
+
+   tail(&objects, &object_tails);
+   save_compound = new_c;
 
    if ((!cur_numxcopies) && (!cur_numycopies)) {
      place_compound(x, y);
@@ -585,6 +634,9 @@ int i, j, delta_x, delta_y, start_x, start_y;
        }
      }
    }
+   /* put all new compounds in the saved objects structure for undo */
+   saved_objects.compounds = save_compound;
+   set_action_object(F_ADD, O_ALL_OBJECT);
 }
 
 static
@@ -594,6 +646,9 @@ place_compound(x, y)
     int		    dx, dy;
 
     elastic_movebox();
+    canvas_leftbut_proc = null_proc;
+    canvas_middlebut_proc = null_proc;
+    canvas_rightbut_proc = null_proc;
     canvas_locmove_proc = null_proc;
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
     dx = x - fix_x;
@@ -602,10 +657,8 @@ place_compound(x, y)
     clean_up();
     set_latestcompound(new_c);
     if (return_proc == copy_selected) {
+	add_compound(new_c);
 	adjust_links(cur_linkmode, cur_links, dx, dy, 0, 0, 1.0, 1.0, 1);
-	tail(&objects, &object_tails);
-	append_objects(&objects, &saved_objects, &object_tails);
-	set_action_object(F_ADD, O_ALL_OBJECT);
 	free_linkinfo(&cur_links);
     } else {
 	list_add_compound(&objects.compounds, new_c);

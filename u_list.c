@@ -18,8 +18,8 @@
  */
 
 #include "fig.h"
-#include "mode.h"
 #include "resources.h"
+#include "mode.h"
 #include "object.h"
 #include "paintop.h"
 #include "u_create.h"
@@ -879,6 +879,64 @@ point_on_perim(p, llx, lly, urx, ury)
 	     && p->x <= urx + LINK_TOL) ||
 	    (abs(p->y - ury) <= LINK_TOL && p->x >= llx - LINK_TOL
 	     && p->x <= urx + LINK_TOL));
+}
+/*
+** get_interior_links and point_on_inside, added by Ian Brown Feb 1995.
+** This is to allow links within compound objects.
+*/
+
+void
+get_interior_links(llx, lly, urx, ury)
+    int		    llx, lly, urx, ury;
+{
+    F_line	   *l;
+    F_point	   *a;
+    F_linkinfo	   *j, *k;
+
+    j = NULL;
+    for (l = objects.lines; l != NULL; l = l->next)
+	if (l->type == T_POLYLINE) {
+	    a = l->points;
+	    if (point_on_inside(a, llx, lly, urx, ury)) {
+		if ((k = new_link(l, a, a->next)) == NULL)
+		    return;
+		if (j == NULL)
+		    cur_links = k;
+		else
+		    j->next = k;
+		j = k;
+		if (k->prevpt != NULL)
+		    k->two_pts = (k->prevpt->next == NULL);
+		continue;
+	    }
+	    if (a->next == NULL)/* single point, no need to check further */
+		continue;
+	    a = last_point(l->points);
+	    if (point_on_inside(a, llx, lly, urx, ury)) {
+		if ((k = new_link(l, a, prev_point(l->points, a))) == NULL)
+		    return;
+		if (j == NULL)
+		    cur_links = k;
+		else
+		    j->next = k;
+		j = k;
+		if (k->prevpt != NULL)
+		    k->two_pts = (prev_point(l->points, k->prevpt) == NULL);
+		continue;
+	    }
+	}
+}
+
+#define LINK_TOL 3
+
+int
+point_on_inside(p, llx, lly, urx, ury)
+    F_point	   *p;
+    int		    llx, lly, urx, ury;
+{
+    return ((p->x >= llx) && (p->x <= urx) &&
+	    (p->y >= lly) && (p->y <= ury));
+	    
 }
 
 void

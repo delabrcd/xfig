@@ -33,7 +33,7 @@ static int	init_intspline_drawing();
 
 intspline_drawing_selected()
 {
-    set_mousefun("first point", "", "");
+    set_mousefun("first point", "", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     canvas_leftbut_proc = init_intspline_drawing;
@@ -60,7 +60,7 @@ create_intsplineobject(x, y)
     F_spline	   *spline;
 
     if (x != fix_x || y != fix_y || num_point < min_num_points) {
-	get_intermediatepoint(x, y);
+	get_intermediatepoint(x, y, 0);
     }
     elastic_line();
     if ((spline = create_spline()) == NULL) {
@@ -105,8 +105,9 @@ create_intsplineobject(x, y)
 	    spline->back_arrow = backward_arrow();
     }
     make_control_points(spline);
-    draw_intspline(spline, PAINT);
     add_spline(spline);
+    /* draw it and anything on top of it */
+    redisplay_spline(spline);
     intspline_drawing_selected();
     draw_mousefun_canvas();
 }

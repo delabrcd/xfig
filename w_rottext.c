@@ -59,11 +59,11 @@
 
 /* Debugging macros */
 
-#define DEBUG_PRINT1(a) if (appres.DEBUG) printf (a)
-#define DEBUG_PRINT2(a, b) if (appres.DEBUG) printf (a, b)
-#define DEBUG_PRINT3(a, b, c) if (appres.DEBUG) printf (a, b, c)
-#define DEBUG_PRINT4(a, b, c, d) if (appres.DEBUG) printf (a, b, c, d)
-#define DEBUG_PRINT5(a, b, c, d, e) if (appres.DEBUG) printf (a, b, c, d, e)
+#define DEBUG_PRINT1(a) /* if (appres.DEBUG) printf (a) */
+#define DEBUG_PRINT2(a, b) /* if (appres.DEBUG) printf (a, b) */
+#define DEBUG_PRINT3(a, b, c) /* if (appres.DEBUG) printf (a, b, c) */
+#define DEBUG_PRINT4(a, b, c, d) /* if (appres.DEBUG) printf (a, b, c, d) */
+#define DEBUG_PRINT5(a, b, c, d, e) /* if (appres.DEBUG) printf (a, b, c, d, e) */
 
 
 /* ---------------------------------------------------------------------- */
@@ -459,8 +459,8 @@ static int XRotPaintAlignedString(dpy, font, angle, drawable, gc, x, y, text,
         hot_x=(float)item->max_width/2*style.magnify;
     
     /* pre-calculate sin and cos */
-    sin_angle=sin(angle);
-    cos_angle=cos(angle);
+    sin_angle = (float) round(sin((double) angle)*1000.0) / 1000.0;
+    cos_angle = (float) round(cos((double) angle)*1000.0) / 1000.0;
     
     /* rotate hot_x and hot_y around bitmap centre */
     hot_xp= hot_x*cos_angle - hot_y*sin_angle;
@@ -771,14 +771,14 @@ static RotatedTextItem *XRotRetrieveFromCache(dpy, font, angle, text, align)
     /* matching formula:
        identical text;
        identical fontname (if defined, font ID's if not);
-       angles close enough (<0.00001 here, could be smaller);
+       angles close enough (<0.0001 here, could be smaller);
        HORIZONTAL alignment matches, OR it's a one line string;
        magnifications the same */
 
     while(i1 && !item) {
 	/* match everything EXCEPT fontname/ID */
 	if(strcmp(text, i1->text)==0 &&
-	   fabs(angle-i1->angle)<0.00001 &&
+	   fabs(angle-i1->angle)<0.0001 &&
 	   style.magnify==i1->magnify &&
 	   (i1->nl==1 ||
 	    ((align==0)?9:(align-1))%3==
@@ -976,8 +976,8 @@ static RotatedTextItem *XRotCreateTextItem(dpy, font, angle, text, align)
     XSetForeground(dpy, font_gc, 1);
     
     /* pre-calculate sin and cos */
-    sin_angle=sin(angle);
-    cos_angle=cos(angle);
+    sin_angle = (float) round(sin((double) angle)*1000.0) / 1000.0;
+    cos_angle = (float) round(cos((double) angle)*1000.0) / 1000.0;
     
     /* text background will be drawn using XFillPolygon */
     item->corners_x=
@@ -1504,8 +1504,8 @@ XPoint *XRotTextExtents(font, angle, x, y, text, align)
     rows_in=nl*height;
     
     /* pre-calculate sin and cos */
-    sin_angle=sin(angle);
-    cos_angle=cos(angle);
+    sin_angle = (float) round(sin((double) angle)*1000.0) / 1000.0;
+    cos_angle = (float) round(cos((double) angle)*1000.0) / 1000.0;
     
     /* y position */
     if(align==TLEFT || align==TCENTRE || align==TRIGHT)

@@ -23,6 +23,7 @@
 #include "mode.h"
 #include "paintop.h"
 #include "w_drawprim.h"
+#include "w_icons.h"
 #include "w_mousefun.h"
 #include "w_setup.h"
 #include "w_util.h"
@@ -53,7 +54,7 @@ static int	lasty = -100, lastx = -100;
 static int	troffx = -8, troffy = -10;
 static int	orig_zoomoff;
 static int	last_drag_x, last_drag_y;
-static unsigned char	tr_marker_image[16] = {
+static unsigned char	tr_marker_bits[] = {
     0xFE, 0xFF,		/* ***************  */
     0x04, 0x40,		/*  *           *  */
     0x08, 0x20,		/*   *         *  */
@@ -63,9 +64,10 @@ static unsigned char	tr_marker_image[16] = {
     0x80, 0x02,		/*       * *  */
     0x00, 0x01,		/*        *  */
 };
-static		mpr_static(trm_pr, TRM_WID, TRM_HT, 1, tr_marker_image);
+icon_struct trm_pr = {TRM_WID, TRM_HT, tr_marker_bits};
+
 static int	srroffx = 2, srroffy = -7;
-static unsigned char	srr_marker_image[16] = {
+static unsigned char	srr_marker_bits[] = {
     0x80,		/*        *  */
     0xC0,		/*       **  */
     0xA0,		/*      * *  */
@@ -83,10 +85,10 @@ static unsigned char	srr_marker_image[16] = {
     0x80,		/*        *  */
     0x00
 };
-static		mpr_static(srrm_pr, SRM_WID, SRM_HT, 1, srr_marker_image);
+icon_struct srrm_pr = {SRM_WID, SRM_HT, srr_marker_bits};
 
 static int	srloffx = -10, srloffy = -7;
-static unsigned char	srl_marker_image[16] = {
+static unsigned char	srl_marker_bits[] = {
     0x01,		/* *	      */
     0x03,		/* **	      */
     0x05,		/* * *	      */
@@ -104,7 +106,7 @@ static unsigned char	srl_marker_image[16] = {
     0x01,		/* *	      */
     0x00
 };
-static		mpr_static(srlm_pr, SRM_WID, SRM_HT, 1, srl_marker_image);
+icon_struct srlm_pr = {SRM_WID, SRM_HT, srl_marker_bits};
 
 static Pixmap	toparrow_pm = 0, sidearrow_pm = 0;
 static Pixmap	topruler_pm = 0, sideruler_pm = 0;
@@ -186,12 +188,11 @@ static String	unitbox_translations =
 
 int
 init_unitbox(tool)
-    TOOL	    tool;
+    Widget	    tool;
 {
     FirstArg(XtNwidth, SIDERULER_WD);
     NextArg(XtNheight, RULER_WD);
     NextArg(XtNlabel, appres.INCHES ? "in" : "cm");
-    NextArg(XtNfont, button_font);
     NextArg(XtNfromHoriz, canvas_sw);
     NextArg(XtNhorizDistance, -INTERNAL_BW);
     NextArg(XtNfromVert, msg_form);
@@ -267,13 +268,13 @@ unit_panel_set(w, ev)
         strncpy(cur_fig_units,
 	    panel_get_value(user_unit_panel),
 	    sizeof(cur_fig_units));
-	put_msg("Ruler scale: %s,  Figure scale: 1 %s = %.2f %s",
+	put_msg("Ruler scale: %s,  Figure scale: 1 %s = %.4f %s",
 		appres.INCHES ? "in" : "cm",
 		appres.INCHES ? "in" : "cm",
 		appres.user_scale, cur_fig_units);
     } else {
 	strcpy(cur_fig_units, appres.INCHES ? "in" : "cm");
-	put_msg("Ruler scale: %s,  Figure scale = 1:%.2f",
+	put_msg("Ruler scale: %s,  Figure scale = 1:%.4f",
 		appres.INCHES ? "in" : "cm", appres.user_scale);
     }
 
@@ -446,7 +447,7 @@ popup_unit_panel()
     scale_factor_lab = XtCreateManagedWidget("scale_factor",
                                 labelWidgetClass, form, Args, ArgCount);
 
-    sprintf(buf, "%1.2f", appres.user_scale);
+    sprintf(buf, "%1.4f", appres.user_scale);
     FirstArg(XtNfromVert, below);
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNfromHoriz, label);
@@ -514,7 +515,7 @@ static String	topruler_translations =
 
 static
 topruler_selected(tool, event, params, nparams)
-    TOOL	    tool;
+    Widget	    tool;
     XButtonEvent   *event;
     String	   *params;
     Cardinal	   *nparams;
@@ -594,7 +595,7 @@ set_toprulermark(x)
 
 static
 topruler_exposed(tool, event, params, nparams)
-    TOOL	    tool;
+    Widget	    tool;
     XButtonEvent   *event;
     String	   *params;
     Cardinal	   *nparams;
@@ -611,7 +612,7 @@ redisplay_topruler()
 
 int
 init_topruler(tool)
-    TOOL	    tool;
+    Widget	    tool;
 {
     FirstArg(XtNwidth, TOPRULER_WD);
     NextArg(XtNheight, TOPRULER_HT);
@@ -641,16 +642,18 @@ setup_topruler()
     unsigned long   bg, fg;
     XGCValues	    gcv;
     unsigned long   gcmask;
+    PIX_FONT	    font;
 
     topruler_win = XtWindow(topruler_sw);
-    gcv.font = roman_font->fid;
     gcmask = GCFunction | GCForeground | GCBackground | GCFont;
 
     /* set up the GCs */
     FirstArg(XtNbackground, &bg);
     NextArg(XtNforeground, &fg);
+    NextArg(XtNfont, &font);
     GetValues(topruler_sw);
 
+    gcv.font = font->fid;
     gcv.foreground = bg;
     gcv.background = bg;
     gcv.function = GXcopy;
@@ -665,18 +668,12 @@ setup_topruler()
      * with bg, and bg when XOR'ed with bg. If the source pixel is zero, it
      * produces fg when XOR'ed with fg, and bg when XOR'ed with bg.
      */
-    /* first make a temporary xor gc */
-    gcv.foreground = fg ^ bg;
-    gcv.background = (unsigned long) 0;
-    gcv.function = GXcopy;
-    tr_xor_gc = XCreateGC(tool_d, topruler_win, gcmask, &gcv);
 
     /* make pixmaps for top ruler arrow */
-    toparrow_pm = XCreatePixmap(tool_d, topruler_win, trm_pr.width,
-				trm_pr.height, DefaultDepthOfScreen(tool_s));
-    XPutImage(tool_d, toparrow_pm, tr_xor_gc, &trm_pr, 0, 0, 0, 0,
-	      trm_pr.width, trm_pr.height);
-    XFreeGC(tool_d, tr_xor_gc);
+    toparrow_pm = XCreatePixmapFromBitmapData(tool_d, topruler_win, 
+				trm_pr.bits, trm_pr.width, trm_pr.height, 
+				fg^bg, (unsigned long) 0,
+				DefaultDepthOfScreen(tool_s));
 
     /* now make the real xor gc */
     gcv.background = bg;
@@ -802,7 +799,7 @@ static String	sideruler_translations =
 
 static
 sideruler_selected(tool, event, params, nparams)
-    TOOL	    tool;
+    Widget	    tool;
     XButtonEvent   *event;
     String	   *params;
     Cardinal	   *nparams;
@@ -863,7 +860,7 @@ sideruler_selected(tool, event, params, nparams)
 
 static
 sideruler_exposed(tool, event, params, nparams)
-    TOOL	    tool;
+    Widget	    tool;
     XButtonEvent   *event;
     String	   *params;
     Cardinal	   *nparams;
@@ -875,7 +872,7 @@ sideruler_exposed(tool, event, params, nparams)
 
 int
 init_sideruler(tool)
-    TOOL	    tool;
+    Widget	    tool;
 {
     FirstArg(XtNwidth, SIDERULER_WD);
     NextArg(XtNheight, SIDERULER_HT);
@@ -910,16 +907,18 @@ setup_sideruler()
     unsigned long   bg, fg;
     XGCValues	    gcv;
     unsigned long   gcmask;
+    PIX_FONT	    font;
 
     sideruler_win = XtWindow(sideruler_sw);
-    gcv.font = roman_font->fid;
     gcmask = GCFunction | GCForeground | GCBackground | GCFont;
 
     /* set up the GCs */
     FirstArg(XtNbackground, &bg);
     NextArg(XtNforeground, &fg);
+    NextArg(XtNfont, &font);
     GetValues(sideruler_sw);
 
+    gcv.font = font->fid;
     gcv.foreground = bg;
     gcv.background = bg;
     gcv.function = GXcopy;
@@ -934,27 +933,19 @@ setup_sideruler()
      * with bg, and bg when XOR'ed with bg. If the source pixel is zero, it
      * produces fg when XOR'ed with fg, and bg when XOR'ed with bg.
      */
-    /* first make a temporary xor gc */
-    gcv.foreground = fg ^ bg;
-    gcv.background = (unsigned long) 0;
-    gcv.function = GXcopy;
-    sr_xor_gc = XCreateGC(tool_d, sideruler_win, gcmask, &gcv);
 
     /* make pixmaps for side ruler arrow */
     if (appres.RHS_PANEL) {
-	sidearrow_pm = XCreatePixmap(tool_d, sideruler_win,
-				     srlm_pr.width, srlm_pr.height,
-				     DefaultDepthOfScreen(tool_s));
-	XPutImage(tool_d, sidearrow_pm, sr_xor_gc, &srlm_pr, 0, 0, 0, 0,
-		  srlm_pr.width, srlm_pr.height);
+	sidearrow_pm = XCreatePixmapFromBitmapData(tool_d, sideruler_win, 
+				srlm_pr.bits, srlm_pr.width, srlm_pr.height, 
+				fg^bg, (unsigned long) 0,
+				DefaultDepthOfScreen(tool_s));
     } else {
-	sidearrow_pm = XCreatePixmap(tool_d, sideruler_win,
-				     srrm_pr.width, srrm_pr.height,
-				     DefaultDepthOfScreen(tool_s));
-	XPutImage(tool_d, sidearrow_pm, sr_xor_gc, &srrm_pr, 0, 0, 0, 0,
-		  srrm_pr.width, srrm_pr.height);
+	sidearrow_pm = XCreatePixmapFromBitmapData(tool_d, sideruler_win, 
+				srrm_pr.bits, srrm_pr.width, srrm_pr.height, 
+				fg^bg, (unsigned long) 0,
+				DefaultDepthOfScreen(tool_s));
     }
-    XFreeGC(tool_d, sr_xor_gc);
 
     /* now make the real xor gc */
     gcv.background = bg;

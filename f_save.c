@@ -183,7 +183,7 @@ write_ellipse(fp, e)
     if (e->radiuses.x == 0 || e->radiuses.y == 0)
 	return;
 
-    fprintf(fp, "%d %d %d %d %d %d %d %d %d %.7f %d %.3f %d %d %d %d %d %d %d %d\n",
+    fprintf(fp, "%d %d %d %d %d %d %d %d %d %.3f %d %.4f %d %d %d %d %d %d %d %d\n",
 	    O_ELLIPSE, e->type, e->style, e->thickness,
 	    e->pen_color, e->fill_color, e->depth, e->pen_style, e->fill_style,
 	    e->style_val, e->direction, e->angle,
@@ -219,7 +219,8 @@ write_line(fp, l)
 	fprintf(fp, "\t%d %d %.2f %.2f %.2f\n", b->type, b->style,
 		b->thickness, b->wid, b->ht);
     if (l->type == T_PIC_BOX)
-	fprintf(fp, "\t%d %s\n", l->pic->flipped, l->pic->file);
+	fprintf(fp, "\t%d %s\n", l->pic->flipped, 	/* prevent no filename */
+		((l->pic->file && *l->pic->file)? l->pic->file: "<empty>"));
 
     fprintf(fp, "\t");
     npts=0;
@@ -295,7 +296,7 @@ write_text(fp, t)
 
     if (t->length == 0)
 	return;
-    fprintf(fp, "%d %d %d %d %d %d %d %.7f %d %d %d %d %d ",
+    fprintf(fp, "%d %d %d %d %d %d %d %.4f %d %d %d %d %d ",
 	    O_TEXT, t->type, t->color, t->depth, t->pen_style,
 	    t->font, t->size, t->angle,
 	    t->flags, t->ascent+t->descent, t->length,

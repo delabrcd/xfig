@@ -38,6 +38,9 @@ DeclareStaticArgs(14);
 static char	mousefun_l[MOUSEFUN_MAX];
 static char	mousefun_m[MOUSEFUN_MAX];
 static char	mousefun_r[MOUSEFUN_MAX];
+static char	mousefun_sh_l[MOUSEFUN_MAX];
+static char	mousefun_sh_m[MOUSEFUN_MAX];
+static char	mousefun_sh_r[MOUSEFUN_MAX];
 
 /* labels for the left and right buttons have 15 chars max */
 static char	lr_blank[] = "               ";
@@ -45,10 +48,11 @@ static char	lr_blank[] = "               ";
 /* give the middle button label a bit more space - 18 chars max */
 static char	mid_blank[] = "                  ";
 static Pixmap	mousefun_pm;
+static Pixmap	keybd_pm;
 
 void
 init_mousefun(tool)
-    TOOL	    tool;
+    Widget	    tool;
 {
     FirstArg(XtNwidth, MOUSEFUN_WD);
     /* start with nominal height and adjust later */
@@ -94,14 +98,36 @@ reset_mousefun()
     XFillRectangle(tool_d, mousefun_pm, mouse_blank_gc, 0, 0,
 		   MOUSEFUN_WD, MOUSEFUN_HT);
 
+    /* draw the left button */
     XDrawRectangle(tool_d, mousefun_pm, mouse_button_gc, MOUSE_LEFT_SPACE,
 		   (int) (MOUSEFUN_HT * 0.45), MOUSE_BUT_WID, MOUSE_BUT_HGT);
+    /* draw a small line horizontally to the left of the left button */
+    XDrawLine(tool_d, mousefun_pm, mouse_button_gc, 
+		   MOUSE_LEFT_SPACE, (int) (MOUSEFUN_HT * 0.45 + MOUSE_BUT_HGT/2),
+		   MOUSE_LEFT_SPACE-5, (int) (MOUSEFUN_HT * 0.45 + MOUSE_BUT_HGT/2));
+
+    /* draw the middle button */
     XDrawRectangle(tool_d, mousefun_pm, mouse_button_gc,
 		   (int) (MOUSE_LEFT_SPACE + 1.5 * MOUSE_BUT_WID),
 		   (int) (MOUSEFUN_HT * 0.45), MOUSE_BUT_WID, MOUSE_BUT_HGT);
+    /* draw a small line vertically above the middle button */
+    XDrawLine(tool_d, mousefun_pm, mouse_button_gc, 
+		   (int) (MOUSE_LEFT_SPACE + 1.5 * MOUSE_BUT_WID + 0.5*MOUSE_BUT_WID),
+		   (int) (MOUSEFUN_HT * 0.45), 
+		   (int) (MOUSE_LEFT_SPACE + 1.5 * MOUSE_BUT_WID + 0.5*MOUSE_BUT_WID),
+		   (int) (MOUSEFUN_HT * 0.45 - 5)); 
+
+    /* draw the right button */
     XDrawRectangle(tool_d, mousefun_pm, mouse_button_gc,
 		   (int) (MOUSE_LEFT_SPACE + 3 * MOUSE_BUT_WID),
 		   (int) (MOUSEFUN_HT * 0.45), MOUSE_BUT_WID, MOUSE_BUT_HGT);
+    /* draw a small line horizontally to the right of the right button */
+    XDrawLine(tool_d, mousefun_pm, mouse_button_gc, 
+		   (int) (MOUSE_LEFT_SPACE + 4 * MOUSE_BUT_WID),
+		   (int) (MOUSEFUN_HT * 0.45 + MOUSE_BUT_HGT/2),
+		   (int) (MOUSE_LEFT_SPACE + 4 * MOUSE_BUT_WID)+5,
+		   (int) (MOUSEFUN_HT * 0.45 + MOUSE_BUT_HGT/2));
+
     FirstArg(XtNbackgroundPixmap, mousefun_pm);
     SetValues(mousefun);
     mouse_title();
@@ -134,7 +160,7 @@ setup_mousefun()
     SetValues(mousefun);
     XtManageChild(mousefun);
     reset_mousefun();
-    set_mousefun("", "", "");
+    set_mousefun("", "", "", "", "", "");
 }
 
 void
@@ -145,12 +171,16 @@ resize_mousefun()
 }
 
 void
-set_mousefun(left, middle, right)
+set_mousefun(left, middle, right, sh_left, sh_middle, sh_right)
     char	   *left, *middle, *right;
+    char	   *sh_left, *sh_middle, *sh_right;
 {
     strcpy(mousefun_l, left);
     strcpy(mousefun_m, middle);
     strcpy(mousefun_r, right);
+    strcpy(mousefun_sh_l, sh_left);
+    strcpy(mousefun_sh_m, sh_middle);
+    strcpy(mousefun_sh_r, sh_right);
 }
 
 #define KBD_POS_X 210
@@ -159,9 +189,17 @@ set_mousefun(left, middle, right)
 void
 draw_mousefun_kbd()
 {
-    XPutImage(tool_d, mousefun_pm, mouse_button_gc, &kbd_ic,
-              0, 0, MOUSEFUN_WD-10-kbd_ic.width, KBD_POS_Y, 
-	      kbd_ic.width, kbd_ic.height);
+    XGCValues	    values;
+    if (keybd_pm == 0) {
+	keybd_pm = XCreatePixmapFromBitmapData(tool_d, canvas_win, 
+				kbd_ic.bits, kbd_ic.width, kbd_ic.height, 
+				mouse_but_fg, mouse_but_bg,
+				DefaultDepthOfScreen(tool_s));
+    }
+    /* copy the keyboard image pixmap into the mouse function pixmap */
+    XCopyArea(tool_d, keybd_pm, mousefun_pm, mouse_button_gc,
+	      0, 0, kbd_ic.width, kbd_ic.height,
+	      MOUSEFUN_WD-10-kbd_ic.width, KBD_POS_Y);
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(mousefun);
     FirstArg(XtNbackgroundPixmap, mousefun_pm);
@@ -230,6 +268,12 @@ Cardinal *num_params;
 	    draw_mousefun("Pan Up x5", "Drag x5", "Pan Down x5");
     } else
 	draw_mousefun("Pan Up", "Drag", "Pan Down");
+}
+
+void
+draw_shift_mousefun_canvas()
+{
+    draw_mousefun(mousefun_sh_l, mousefun_sh_m, mousefun_sh_r);
 }
 
 void

@@ -1,5 +1,3 @@
-#ifdef USE_XPM
-
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1994 by Brian V. Smith
@@ -17,43 +15,47 @@
  * the party supplying this software to the X Consortium.
  */
 
+#ifdef USE_XPM
+
 #include "fig.h"
 #include "resources.h"
 #include "object.h"
+#include "w_color.h"
 #include "w_setup.h"
 
-extern FILE	*open_picfile();
-extern void	close_picfile();
+/* attempt to read a XPM (color pixmap) file */
 
-/* attempt to read a XPM (color pixmap) for the item given -- return status */
+/* return codes:  PicSuccess (1) : success
+		  FileInvalid (-2) : invalid file
+*/
 
 int
-read_xpm(pic)
-  F_pic *pic;
+read_xpm(file,filetype,pic)
+    FILE	   *file;
+    int		    filetype;
+    F_pic	   *pic;
 {
     int status;
     XpmImage		image;
-    FILE		*fd;
-    int			i, type;
+    int			i;
     char		*c;
     XColor		exact_def;
-
-    if ((fd=open_picfile(pic->file,&type))==NULL) {
-	return FileInvalid;
-    }
-    close_picfile(fd,type);
 
     status = XpmReadFileToXpmImage(pic->file, &image, NULL);
     /* if out of colors, try switching colormaps and reading again */
     if (status == XpmColorFailed) {
 	if (!switch_colormap())
-		return status;
+	    return PicSuccess;
 	status = XpmReadFileToXpmImage(pic->file, &image, NULL);
     }
     if (status == XpmSuccess) {
 	/* now look up the colors in the image and put them in the pic colormap */
 	for (i=0; i<image.ncolors; i++) {
 	    c = (image.colorTable + i)->c_color;
+	    if (c == NULL || *c == '\0') {	/* use white for null color */
+		c = "white";
+		file_msg("white used for *NULL color");
+	    }
 	    if (XParseColor(tool_d, tool_cm, c, &exact_def) == 0) {
 		file_msg("Error parsing color %s",c);
 		exact_def.red = exact_def.green = exact_def.blue = 255;
@@ -70,7 +72,7 @@ read_xpm(pic)
 	pic->bitmap = (unsigned char *) malloc(image.width*image.height*sizeof(unsigned char));
 	if (pic->bitmap == NULL) {
 	    file_msg("cannot allocate space for GIF/XPM image");
-	    return 0;
+	    return PicSuccess;
 	}
 	for (i=0; i<image.width*image.height; i++)
 	    pic->bitmap[i] = (unsigned char) image.data[i]; /* int to unsigned char */
@@ -83,7 +85,19 @@ read_xpm(pic)
 	/* if monochrome display map bitmap */
 	if (tool_cells <= 2 || appres.monochrome)
 	    map_to_mono(pic);
+	return PicSuccess;
     }
-    return status;
+    return FileInvalid;
 }
+
+#else /* USE_XPM */
+
+/* for those compilers that don't like empty .c files */
+
+static void
+dum_function()
+{
+  ;
+}
+
 #endif /* USE_XPM */
