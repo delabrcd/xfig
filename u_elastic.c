@@ -480,12 +480,22 @@ resizing_poly(x, y)
 
 elastic_ebr()
 {
+    register int    x1, y1, x2, y2;
     int		    rx, ry;
 
     rx = cur_x - fix_x;
     ry = cur_y - fix_y;
-    angle_ellipse(fix_x, fix_y, rx, ry, cur_angle,
+    if (cur_angle != 0.0) {
+	angle_ellipse(fix_x, fix_y, rx, ry, cur_angle,
 		  INV_PAINT, 1, RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+    } else {
+	x1 = fix_x + rx;
+	x2 = fix_x - rx;
+	y1 = fix_y + ry;
+	y2 = fix_y - ry;
+	pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, 1,
+	     RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+    }
 }
 
 resizing_ebr(x, y)
@@ -510,9 +520,14 @@ elastic_ebd()
     int		    centx,centy;
     centx = (fix_x+cur_x)/2;
     centy = (fix_y+cur_y)/2;
-    angle_ellipse(centx, centy, abs(cur_x-fix_x)/2, 
+    if (cur_angle != 0.0) {
+	angle_ellipse(centx, centy, abs(cur_x-fix_x)/2, 
 		  abs(cur_y-fix_y)/2, cur_angle,
 		  INV_PAINT, 1, RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+    } else {
+	pw_curve(canvas_win, fix_x, fix_y, cur_x, cur_y,
+	     INV_PAINT, 1, RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+    }
 }
 
 resizing_ebd(x, y)
@@ -597,8 +612,13 @@ elastic_moveellipse()
     x2 = cur_x + x2off;
     y1 = cur_y + y1off;
     y2 = cur_y + y2off;
-    angle_ellipse((x1+x2)/2, (y1+y2)/2, abs(x1-x2)/2, abs(y1-y2)/2, cur_angle,
+    if (cur_angle != 0.0) {
+	angle_ellipse((x1+x2)/2, (y1+y2)/2, abs(x1-x2)/2, abs(y1-y2)/2, cur_angle,
 		  INV_PAINT, 1, RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+    } else {
+	pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, 1,
+	     RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+    }
 }
 
 moving_ellipse(x, y)
@@ -612,6 +632,7 @@ moving_ellipse(x, y)
 elastic_scaleellipse(e)
     F_ellipse	   *e;
 {
+    register int    x1, y1, x2, y2;
     int		    rx, ry;
     int		    newx, newy, oldx, oldy;
     float	    newd, oldd, scalefact;
@@ -628,8 +649,17 @@ elastic_scaleellipse(e)
 
     rx = e->radiuses.x * scalefact;
     ry = e->radiuses.y * scalefact;
-    angle_ellipse(e->center.x, e->center.y, rx, ry, cur_angle,
+    if (cur_angle != 0.0) {
+	angle_ellipse(e->center.x, e->center.y, rx, ry, cur_angle,
 		  INV_PAINT, 1, RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+    } else {
+	x1 = fix_x + rx;
+	x2 = fix_x - rx;
+	y1 = fix_y + ry;
+	y2 = fix_y - ry;
+	pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, 1,
+	     RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+    }
 }
 
 scaling_ellipse(x, y)

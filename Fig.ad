@@ -63,7 +63,8 @@ Fig*xfig_export_menu*accelerators: \
 Fig*print*accelerators: \
 	Meta<Key>p: print()\n
 Fig*xfig_print_menu*accelerators: \
-	Meta<Key>c: cancel()\n\
+	Meta<Key>d: dismiss()\n\
 	Meta<Key>b: print_batch()\n\
-	Meta<Key>p: print()\n\
-	Meta<Key>x: clear_batch()\n
+	Meta<Key>x: clear_batch()\n\
+	<Key>Return: print()\n\
+	Meta<Key>p: print()\n

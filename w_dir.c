@@ -447,9 +447,9 @@ MakeFileList(dir_name, mask, dir_list, file_list)
     *cur_file = NULL;
     *cur_directory = NULL;
     if (cur_file != filelist)
-	qsort(filelist, cur_file - filelist, sizeof(char *), SPComp);
+	qsort(filelist, cur_file - filelist, sizeof(char *), (int(*)())SPComp);
     if (cur_directory != dirlist)
-	qsort(dirlist, cur_directory - dirlist, sizeof(char *), SPComp);
+	qsort(dirlist, cur_directory - dirlist, sizeof(char *), (int(*)())SPComp);
     *file_list = filelist;
     *dir_list = dirlist;
     reset_cursor();

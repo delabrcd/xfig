@@ -1,6 +1,20 @@
 Version 2.1
 ===========
 
+Patchlevel 6
+Changes to Patchlevel 5:
+
+NEW FEATURES:
+
+BUG FIXES:
+
+o typo in man pages with menu item "Textyl \special commands" in export menu
+o action changed from "cancel" to "dismiss" for print menu accelerator
+o bug in Intrinsics? on Sun Monochrome prevented side ruler from scrolling
+o was using ellipse routine to draw circles - was choppy for small circles
+o cast comparison function argument to qsort
+o rotated ellipses don't become coarse as they are zoomed 
+
 Patchlevel 5
 Changes to Patchlevel 4:
 

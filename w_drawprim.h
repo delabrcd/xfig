@@ -22,7 +22,7 @@ extern PIX_FONT canv_zoomed_font;
 extern PIX_FONT button_font;
 
 /* Maximum number of points for polygons etc */
-#define		MAXNUMPTS	5000
+#define		MAXNUMPTS	10000
 
 #define		NORMAL_FONT	"fixed"
 #define		BOLD_FONT	"8x13bold"

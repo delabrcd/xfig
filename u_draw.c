@@ -51,10 +51,8 @@ init_point_array(init_size, step_size)
     max_points = init_size;
     allocstep = step_size;
     if (max_points > MAXNUMPTS) {
-	fprintf(stderr, "xfig: warning: too many points in polyline\n");
-	fprintf(stderr, "  Only first %d points are displayed\n", MAXNUMPTS);
-	fprintf(stderr, "  Recompile with MAXNUMPTS > %d in %s\n",
-		init_size, __FILE__);
+	put_msg("Too many points, recompile with MAXNUMPTS > %d in w_drawprim.h",
+		MAXNUMPTS);
 	max_points = MAXNUMPTS;
     }
     if ((points = (XPoint *) malloc(max_points * sizeof(XPoint))) == 0) {
@@ -145,9 +143,25 @@ draw_ellipse(e, op)
 		     clip_xmin, clip_ymin, clip_xmax, clip_ymax))
 	return;
 
-    angle_ellipse(e->center.x, e->center.y, e->radiuses.x, e->radiuses.y, 
+    if (e->angle != 0.0) {
+	angle_ellipse(e->center.x, e->center.y, e->radiuses.x, e->radiuses.y, 
 		e->angle, op, e->thickness, e->style, 
 		e->style_val, e->fill_style, e->color);
+    } else if (op != ERASE && (e->style == DOTTED_LINE || e->style == DASH_LINE)) {
+	a = e->radiuses.x;
+	b = e->radiuses.y;
+	curve(canvas_win, a, 0, a, 0, e->direction, (b * b), (a * a),
+	      e->center.x, e->center.y, op,
+	      e->thickness, e->style, e->style_val, e->fill_style, e->color);
+    } else {
+	xmin = e->center.x - e->radiuses.x;
+	ymin = e->center.y - e->radiuses.y;
+	xmax = e->center.x + e->radiuses.x;
+	ymax = e->center.y + e->radiuses.y;
+	pw_curve(canvas_win, xmin, ymin, xmax, ymax, op,
+		 e->thickness, e->style, e->style_val, e->fill_style,
+		 e->color);
+    }
 }
 
 /*
@@ -284,16 +298,26 @@ angle_ellipse(center_x, center_y, radius_x, radius_y, angle,
 	double	c1, c2, c3, c4, c5, c6, v1, cphi, sphi, cphisqr, sphisqr;
 	double	xleft, xright, d, asqr, bsqr;
 	int	ymax, yy=0;
-	int	k,m,n,dir;
-	XPoint	*pnts,*ppnts;
+	int	k,m,dir;
+	float	savezoom;
+	int	zoomthick;
+	XPoint	*ipnts;
 
+	/* clear any previous error message */
+	put_msg("");
 	if (radius_x == 0 || radius_y == 0)
 		return;
 
-	xcen = center_x;
-	ycen = center_y;
-	a = radius_x;
-	b = radius_y;
+	/* adjust for zoomscale so we iterate over zoomed pixels */
+	xcen = ZOOMX(center_x);
+	ycen = ZOOMY(center_y);
+	a = radius_x*zoomscale;
+	b = radius_y*zoomscale;
+	zoomthick = round(zoomscale*thickness);
+	if (zoomthick == 0 && thickness != 0)
+		zoomthick=1;
+	savezoom = zoomscale;
+	zoomscale = 1.0;
 
 	cphi = cos((double)angle);
 	sphi = sin((double)angle);
@@ -336,40 +360,29 @@ angle_ellipse(center_x, center_y, radius_x, radius_y, angle,
 		c3-=v1;
 		yy=yy+1;
 	}
-	dir=0; n=0;
+	dir=0;
 	totpts++;	/* add another point to join with first */
-	pnts = (XPoint *) malloc(totpts * sizeof(XPoint));
-	ppnts = pnts;
+	init_point_array(totpts, 0);
+	ipnts = points;
 	/* now go down the 1st column, up the 2nd, down the 4th 
 	   and up the 3rd to get the points in the correct order */
-	for (k=0; k<=3; k++)
-	    {
+	for (k=0; k<=3; k++) {
 	    if (dir==0)
-		for (m=0; m<nump[k]; m++)
-		    {
-		    ppnts->x=x[m][order[k]];
-		    ppnts->y=y[m][order[k]];
-		    ppnts++;
-		    n++;
-		    }
+		for (m=0; m<nump[k]; m++) {
+		    add_point(x[m][order[k]],y[m][order[k]]);
+		}
 	    else
-		for (m=nump[k]-1; m>=0; m--)
-		    {
-		    ppnts->x=x[m][order[k]];
-		    ppnts->y=y[m][order[k]];
-		    ppnts++;
-		    n++;
-		    }
+		for (m=nump[k]-1; m>=0; m--) {
+		    add_point(x[m][order[k]],y[m][order[k]]);
+		}
 	    dir = 1-dir;
-	    } /* next k */
+	} /* next k */
 	/* add another point to join with first */
-	ppnts->x = pnts->x;
-	ppnts->y = pnts->y;
-	n++;
-	pw_lines(canvas_win, pnts, n, op, thickness, style, style_val, 
+	add_point(ipnts->x,ipnts->y);
+	draw_point_array(canvas_win, op, zoomthick, style, style_val, 
 		 fill_style, color);
 
-	free(pnts);
+	zoomscale = savezoom;
 	return;
 }
 
@@ -378,15 +391,22 @@ angle_ellipse(center_x, center_y, radius_x, radius_y, angle,
 newpoint(xp,yp)
     float	   xp,yp;
 {
+    if (totpts >= MAXNUMPTS/4) {
+	if (totpts == MAXNUMPTS/4) {
+	    put_msg("Too many points to fully display rotated ellipse. %d points max",
+		MAXNUMPTS);
+	    totpts++;
+	}
+	return;
+    }
     x[i][j]=round(xp);
     y[i][j]=round(yp);
     nump[j]++;
     totpts++;
-    if (++j > 3)
-	{
+    if (++j > 3) {
 	j=0; 
 	i++;
-	}
+    }
 }
 
 
@@ -397,7 +417,6 @@ draw_line(line, op)
     int		    op;
 {
     F_point	   *point;
-    int		    num_pts;
     int		    xx, yy, x, y;
     int		    xmin, ymin, xmax, ymax;
     char	   *string;
@@ -459,13 +478,8 @@ draw_line(line, op)
 	draw_arrow(point->next->x, point->next->y, x, y,
 		   line->back_arrow, op, line->color);
 
-    num_pts = 0;
-    /* count number of points in this object */
-    for (; point != NULL; point = point->next)
-	num_pts++;
-
-    /* accumulate the points in an array */
-    if (!init_point_array(num_pts, 0))
+    /* accumulate the points in an array - start with 50 */
+    if (!init_point_array(50, 50))
 	return;
 
     for (point = line->points; point != NULL; point = point->next) {

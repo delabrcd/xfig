@@ -1415,7 +1415,7 @@ Fig  xfig
 					SmeBSB  Postscript
 					SmeBSB  Combined PS/LaTeX (PS part)
 					SmeBSB  Combined PS/LaTeX (LaTeX part)
-					SmeBSB  Textyl \special commands
+					SmeBSB  Textyl \especial commands
 					SmeBSB  TPIC 
 					SmeBSB  PIC
 					SmeBSB  X11 Bitmap
@@ -1555,7 +1555,7 @@ during the middle of an operation (e.g. while drawing a line), the picture
 will be distorted.  This can be corrected using \fIRedraw\fP after the
 operation is complete.
 .PP
-Rotated text, circles and ellipses will be displayed horizontally on the screen.  
+Rotated text will be displayed horizontally on the screen.  
 They will be rotated only when printed on \fIPostScript\fP output.
 .PP
 Corners of object scaled with point positioning in one of the grid 

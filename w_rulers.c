@@ -454,6 +454,9 @@ reset_topruler()
 			  TOPRULER_HT - QUARTER_MARK - 1);
 	}
     }
+    /* change the pixmap ID to fool the intrinsics to actually set the pixmap */
+    FirstArg(XtNbackgroundPixmap, 0);
+    SetValues(topruler_sw);
     FirstArg(XtNbackgroundPixmap, p);
     SetValues(topruler_sw);
 }
@@ -614,7 +617,7 @@ setup_sideruler()
     gcv.foreground = fg ^ bg;
     gcv.background = (unsigned long) 0;
     gcv.function = GXcopy;
-    sr_xor_gc = XCreateGC(tool_d, topruler_win, gcmask, &gcv);
+    sr_xor_gc = XCreateGC(tool_d, sideruler_win, gcmask, &gcv);
 
     /* make pixmaps for side ruler arrow */
     if (appres.RHS_PANEL) {
@@ -743,6 +746,9 @@ reset_sideruler()
 	    }
 	}
     }
+    /* change the pixmap ID to fool the intrinsics to actually set the pixmap */
+    FirstArg(XtNbackgroundPixmap, 0);
+    SetValues(sideruler_sw);
     FirstArg(XtNbackgroundPixmap, p);
     SetValues(sideruler_sw);
 }

@@ -14,4 +14,4 @@
  *
  */
 
-#define PATCHLEVEL "5C"
+#define PATCHLEVEL "6"

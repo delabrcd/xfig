@@ -1,5 +1,8 @@
 This file contains some possible things to do in future versions of xfig.
 
+add the concept of "layers" for each depth.  That way a user may work on 
+	certain layers at one time, masking out or overlaying the other layers
+	as desired.
 make <Shift>middle mouse button DELETE previous points just created during
 	create POLYobject/ARC/Ellipse etc.  That way, one may backup when
 	creating objects.
