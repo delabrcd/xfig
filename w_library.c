@@ -38,6 +38,7 @@
 #include "w_setup.h"
 #include "w_icons.h"
 #include "w_zoom.h"
+#include "SmeCascade.h"
 
 #ifdef HAVE_NO_DIRENT
 #include <sys/dir.h>
@@ -45,9 +46,9 @@
 #include <dirent.h>
 #endif
 
-#define N_LIB_MAX	  50		/* max number of libraries */
+#define N_LIB_MAX	  100		/* max number of libraries */
 #define N_LIB_OBJECT_MAX  400		/* max number of objects in a library */
-#define N_LIB_NAME_MAX	  71		/* max length of library name + 1 */
+#define N_LIB_NAME_MAX	  81		/* max length of library name + 1 */
 #define N_LIB_LINE_MAX    300		/* one line in the file */
 
 #define MAIN_WIDTH	  435		/* width of main panel */
@@ -61,7 +62,8 @@ static void	put_object_sel(), set_cur_obj_name(), erase_pixmap();
 static void	sel_item_icon();
 static void	sel_icon(), unsel_icon();
 static void	sel_view(), change_icon_size();
-static void	set_preview_name(), preview_libobj(), update_preview();
+static void	set_preview_name(), update_preview();
+static Boolean	preview_libobj();
 static void	copy_icon_to_preview();
 
 DeclareStaticArgs(15);
@@ -81,22 +83,25 @@ static Widget	comment_label, object_comments;
 static Widget	cancel, selobj;
 static Widget	lib_buttons[N_LIB_OBJECT_MAX];
 
-static Boolean	MakeObjectLibrary(),MakeLibraryList(),MakeLibrary();
+static Boolean	MakeObjectLibrary(),MakeLibraryFileList();
+static int	MakeLibrary();
 static Boolean	ScanLibraryDirectory();
 static Boolean	PutLibraryEntry();
 static Boolean	lib_just_loaded, icons_made;
 static Boolean	load_lib_obj();
+static Widget	make_library_menu();
 
 static Pixmap	preview_lib_pixmap, cur_obj_preview;
 static Pixmap	lib_icons[N_LIB_OBJECT_MAX];
 static Pixel	sel_color, unsel_color;
-static int	num_library_name;
+static int	num_library_names;
 static int	num_list_items=0;
 static int	which_num;
 static int	char_ht,char_wd;
 static int	prev_icon_size;
 static char	*icon_sizes[] = { "40", "60", "80", "100", "120" };
 static int	num_icon_sizes = sizeof(icon_sizes)/sizeof(char *);
+static Boolean	loading_library = False;	/* lockout flag */
 
 static String	library_translations =
 			"<Message>WM_PROTOCOLS: DismissLibrary()\n\
@@ -120,29 +125,49 @@ static XtActionsRec	library_actions[] =
   {"put_object_sel",	(XtActionProc) put_object_sel},
 };
 
-static int	  cur_library=-1;
-static char	 *cur_library_name, **cur_objects_names;
+struct lib_rec {
+  char	  *name;		/* directory name with Fig library files */
+  char	  *longname;		/* longname (e.g. "Mechanical_Din / Holes / Through" */
+  char	  *path;		/* full path */
+  Boolean  figs_at_top;		/* whether or not there are Fig files in toplevel directory */
+  int	   nsubs;		/* number of sub-directories, if any */
+  struct lib_rec *subdirs[N_LIB_MAX+1];	/* array of lib_recs, one for each subdirectory */
+};
+
+static struct lib_rec	*cur_library=NULL;
+static char	 	*cur_library_name=NULL;
+static char	 	*cur_library_path=NULL, **cur_objects_names;
 
 /* types for view menu */
 static char	 *viewtypes[] = {"List View", "Icon View"};
 
-static struct LIBRARY_REC {
-  char *name;
-  char *path;
-} library_rec[N_LIB_MAX + 1];
+static struct lib_rec *library_rec[N_LIB_MAX + 1];
 
 static char	**library_objects_texts=NULL;
 F_compound	**lib_compounds=NULL;
 
 static Position xposn, yposn;
 
+/* comparison function for filename sorting using qsort() */
+
 static int
 SPComp(s1, s2)
      char	  **s1, **s2;
 {
-  return (strcmp(*s1, *s2));
+  return (strcasecmp(*s1, *s2));
 }
 
+/* comparison function for librec sorting using qsort() */
+
+static int
+LRComp(r1, r2)
+    struct lib_rec **r1, **r2;
+{
+    struct lib_rec *name1, *name2;
+    name1 = *r1;
+    name2 = *r2;
+    return (strcasecmp(name1->name, name2->name));
+}
 
 Boolean	put_select_requested = False;
 
@@ -225,19 +250,32 @@ load_library(w, new_library, garbage)
      Widget	    w;
      XtPointer	    new_library, garbage;
 {
-    int		    new = (int) new_library;
+    struct lib_rec *librec = (struct lib_rec *) new_library;
     Dimension	    vwidth, vheight;
     Dimension	    vawidth, vaheight;
     Dimension	    lwidth, lheight;
     Dimension	    lawidth, laheight;
 
+    /* if already in the middle of loading a library, return */
+    if (loading_library) {
+	return;
+    }
+
+    /* set lockout flag */
+    loading_library = True;
+
+    /* no object selected yet */
+    old_library_object = cur_library_object = -1;
+
     /* only set current library if the load is successful */
-    if (MakeObjectLibrary(library_rec[new].path,
+    if (MakeObjectLibrary(librec->path,
 		  library_objects_texts, lib_compounds) == True) {
 	/* flag to say we just loaded the library but haven't picked anything yet */
 	lib_just_loaded = True;
 	/* set new */
-	cur_library = new;
+	cur_library = librec;
+	cur_library_name = librec->name;
+	cur_library_path = librec->path;
 	/* erase the preview and preview backup */
 	erase_pixmap(preview_lib_pixmap);
 	erase_pixmap(cur_obj_preview);
@@ -250,12 +288,9 @@ load_library(w, new_library, garbage)
 	/* and the current object name */
 	set_cur_obj_name(-1);
 
-	/* put library name in button */
-	FirstArg(XtNlabel, library_rec[cur_library].name);
+	/* put long library name in button */
+	FirstArg(XtNlabel, librec->longname);
 	SetValues(library_menu_button);
-
-	/* no object selected yet */
-	old_library_object = cur_library_object = -1;
 
 	/* put the objects in the list */
 	FirstArg(XtNwidth, &lwidth);
@@ -277,6 +312,8 @@ load_library(w, new_library, garbage)
 	FirstArg(XtNsensitive, False);
 	SetValues(selobj);
     }
+    /* clear lockout flag */
+    loading_library = False;
 }
 
 /* come here when the user double clicks on object or
@@ -310,8 +347,9 @@ static Boolean
 load_lib_obj(obj)
     int		obj;
 {
-	char		name[100];
 	fig_settings    settings;
+	char		fname[PATH_MAX];
+	char		save_file_dir[PATH_MAX];
 
 	/* if already loaded, return */
 	if (lib_compounds[obj] != 0)
@@ -319,24 +357,36 @@ load_lib_obj(obj)
 
 	libraryStatus("Loading %s",cur_objects_names[obj]);
 
-	/* make up the Fig file name */
-	sprintf(name,"%s/%s.fig",cur_library_name,cur_objects_names[obj]);
+	/* go to the library directory in case there are picture files to load */
+	strcpy(save_file_dir, cur_file_dir);
+	strcpy(cur_file_dir, cur_library_path);
+	change_directory(cur_file_dir);
 
 	lib_compounds[obj]=create_compound();
 
 	/* read in the object file */
 	/* we'll ignore the stuff returned in "settings" */
-	if (read_figc(name,lib_compounds[obj],True,True,0,0,&settings)==0) {
-		translate_compound(lib_compounds[obj],-lib_compounds[obj]->nwcorner.x,
-				 -lib_compounds[obj]->nwcorner.y);
+	sprintf(fname,"%s%s",cur_objects_names[obj],".fig");
+
+	/* call with abspath = True to use absolute path of imported pictures */
+	if (read_figc(fname,lib_compounds[obj], True, True, True, 0, 0, &settings)==0) {
+		translate_compound(lib_compounds[obj],
+			 -lib_compounds[obj]->nwcorner.x,
+			 -lib_compounds[obj]->nwcorner.y);
 	} else {
 		/* an error reading a .fig file */
 		file_msg("Error reading %s.fig",cur_objects_names[obj]);
 		/* delete the compound we just created */
 		delete_compound(lib_compounds[obj]);
 		lib_compounds[obj] = (F_compound *) NULL;
+		/* go back to the file directory */
+		strcpy(cur_file_dir, save_file_dir);
+		change_directory(cur_file_dir);
 		return False;
 	}
+	/* go back to the file directory */
+	strcpy(cur_file_dir, save_file_dir);
+	change_directory(cur_file_dir);
 	return True;
 }
 
@@ -371,8 +421,9 @@ NewObjectSel(w, closure, call_data)
     lib_just_loaded = False;
 
     /* show a preview of the figure in the preview canvas */
-    preview_libobj(cur_library_object, preview_lib_pixmap,
-			LIB_PREVIEW_SIZE, 20);
+    if (preview_libobj(cur_library_object, preview_lib_pixmap,
+			LIB_PREVIEW_SIZE, 20) == False)
+	return;
 
     /* change label in preview label */
     FirstArg(XtNlabel,library_objects_texts[cur_library_object]);
@@ -410,12 +461,12 @@ popup_library_panel()
 
     /* now put in the current (first) library name */
     /* if no libraries, indicate so */
-    if (num_library_name == 0) {
+    if (num_library_names == 0) {
 	FirstArg(XtNlabel, "No libraries");
-    } else if (cur_library < 0) {
-	FirstArg(XtNlabel, "Not Loaded");
+    } else if (cur_library_name == NULL ) {
+	FirstArg(XtNlabel, "None Loaded");
     } else {
-	FirstArg(XtNlabel, library_rec[cur_library].name);
+	FirstArg(XtNlabel, cur_library->longname);
     }
     SetValues(library_menu_button);
 
@@ -431,7 +482,6 @@ create_library_panel()
 {
   Widget	 status_label;
   int		 i;
-  int		 maxlen, maxindex;
 
   XFontStruct	*temp_font;
   static Boolean actions_added=False;
@@ -447,15 +497,17 @@ create_library_panel()
 
   prev_icon_size = appres.library_icon_size;
 
-  library_objects_texts = (char **) calloc(N_LIB_OBJECT_MAX,sizeof(char *));
-   for (i=0;i<N_LIB_OBJECT_MAX;i++)
+  library_objects_texts = (char **) malloc(N_LIB_OBJECT_MAX*sizeof(char *));
+  for (i=0;i<N_LIB_OBJECT_MAX;i++)
      library_objects_texts[i]=NULL;
 
-  lib_compounds = (F_compound **) calloc(N_LIB_OBJECT_MAX,sizeof(F_compound *));
+  lib_compounds = (F_compound **) malloc(N_LIB_OBJECT_MAX*sizeof(F_compound *));
   for (i=0;i<N_LIB_OBJECT_MAX;i++)
     lib_compounds[i]=NULL;
 
-  num_library_name=MakeLibrary();
+  /* get all the library directory names into library_rec[] */
+  /* return value is number of directories at the top level only */
+  num_library_names = MakeLibrary();
 
   XtTranslateCoords(tool, (Position) 200, (Position) 50, &xposn, &yposn);
 
@@ -493,21 +545,14 @@ create_library_panel()
 				      library_form, Args, ArgCount);
 
   /* pulldown menu for Library */
-  maxlen = 0;
-  maxindex = 0;
-  for (i = 0; i < num_library_name; i++) {
-    if (maxlen < strlen(library_rec[i].name)) {
-      maxlen = strlen(library_rec[i].name);
-      maxindex = i;
-    }
-  }
-  if (num_library_name == 0) {
+
+  if (num_library_names == 0) {
 	/* if no libraries, make menu button insensitive */
 	FirstArg(XtNlabel, "No libraries");
 	NextArg(XtNsensitive, False);
   } else {
-	/* choose longest library name so button will be wide enough */
-	FirstArg(XtNlabel, library_rec[maxindex].name);
+	/* make long label to fill out panel */
+	FirstArg(XtNlabel, "000000000000000000000000000000000000000000000000");
   }
   NextArg(XtNfromHoriz, library_label);
   NextArg(XtNfromVert, title);
@@ -522,11 +567,8 @@ create_library_panel()
 					    library_form, Args, ArgCount);
 
   /* make the menu and attach it to the button */
-
-  for (i = 0; i < num_library_name; i++)
-    library_names[i] = library_rec[i].name;
-  library_menu = make_popup_menu(library_names, num_library_name, -1, "",
-				 library_menu_button, load_library);
+  (void) make_library_menu(library_menu_button, 
+    					library_rec, num_library_names);
 
   if (!actions_added) {
 	XtAppAddActions(tool_app, library_actions, XtNumber(library_actions));
@@ -859,7 +901,7 @@ create_library_panel()
   NextArg(XtNright, XtChainLeft);
   selobj = XtCreateManagedWidget("select", commandWidgetClass,
 				 library_form, Args, ArgCount);
-  XtAddEventHandler(selobj, ButtonReleaseMask, (Boolean) 0,
+  XtAddEventHandler(selobj, ButtonReleaseMask, False,
 		    (XtEventHandler) put_object_sel, (XtPointer) NULL);
 
   FirstArg(XtNlabel, "   Cancel    ");
@@ -876,8 +918,53 @@ create_library_panel()
   NextArg(XtNright, XtChainLeft);
   cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
 				 library_form, Args, ArgCount);
-  XtAddEventHandler(cancel, ButtonReleaseMask, (Boolean) 0,
+  XtAddEventHandler(cancel, ButtonReleaseMask, False,
 		    (XtEventHandler) library_cancel, (XtPointer) NULL);
+}
+
+extern void popdown_subs();
+
+static Widget
+make_library_menu(parent, librec, num)
+    Widget	     parent;
+    struct lib_rec  *librec[];
+    int		     num;
+{
+    Widget	     menu, entry, submenu;
+    char	     name[200];
+    int		     i;
+
+    menu = XtCreatePopupShell("menu", simpleMenuWidgetClass, 
+				parent, NULL, ZERO);
+    /* if this is the toplevel menu, add a callback to popdown any submenus if
+       the user releases the pointer button outside a submenu */
+    if (XtIsSubclass(parent, menuButtonWidgetClass))
+	XtAddCallback(menu, XtNpopdownCallback, popdown_subs, (XtPointer) NULL);
+    
+    for (i = 0; i < num; i++) {
+	if (librec[i]->nsubs) {
+	    submenu = make_library_menu(menu, librec[i]->subdirs, 
+	    					librec[i]->nsubs);
+	    FirstArg(XtNsubMenu, submenu);
+	    NextArg(XtNrightBitmap, menu_cascade_arrow); /* use arrow to indicate cascade */
+	    NextArg(XtNrightMargin, 9);			/* room to the right of the arrow */
+	    if (librec[i]->figs_at_top)
+		NextArg(XtNselectCascade, True);	/* if there are fig files, make the */
+							/* cascade selectable */
+	    /* add one blank to name to allow space for arrow */
+	    sprintf(name,"%s ",librec[i]->name);
+	    entry = XtCreateManagedWidget(name, smeCascadeObjectClass, menu, 
+				Args, ArgCount);
+	    /* if there are fig files at this level, make the dir name selectable */
+	    if (librec[i]->figs_at_top)
+		XtAddCallback(entry, XtNcallback, load_library, (XtPointer) librec[i]);
+	} else {
+	    entry = XtCreateManagedWidget(librec[i]->name, smeCascadeObjectClass, menu, 
+				NULL, ZERO);
+	    XtAddCallback(entry, XtNcallback, load_library, (XtPointer) librec[i]);
+	  }
+    }
+    return menu;
 }
 
 /* user has chosen view from pulldown menu */
@@ -905,7 +992,7 @@ sel_view(w, new_view, garbage)
 	XRaiseWindow(tool_d, XtWindow(icon_form));
 
 	/* if the icons haven't been made for this library yet, do it now */
-	if (!icons_made && cur_library != -1) {
+	if (!icons_made && cur_library_name != NULL) {
 	    int save_obj;
 	    /* save current object number because load_library clears it */
 	    save_obj = cur_library_object;
@@ -922,7 +1009,7 @@ sel_view(w, new_view, garbage)
 
 	/* make sure preview is current */
 	if (cur_library_object != -1)
-	    preview_libobj(cur_library_object, preview_lib_pixmap,
+	    (void) preview_libobj(cur_library_object, preview_lib_pixmap,
 			LIB_PREVIEW_SIZE, 20);
 
 	/* raise the list stuff */
@@ -945,8 +1032,8 @@ change_icon_size(w, menu_entry, garbage)
     /* save the new size */
     appres.library_icon_size = atoi(new_size);
     /* remake pixmaps */
-    if (cur_library != -1)
-	(void) MakeObjectLibrary(library_rec[cur_library].path,
+    if (cur_library_name != NULL)
+	(void) MakeObjectLibrary(cur_library_path,
 		  library_objects_texts, lib_compounds);
 }
 
@@ -979,17 +1066,12 @@ erase_pixmap(pixmap)
 }
 
 static Boolean
-PutLibraryEntry(np, path, name)
-    int *np;
-    char *path, *name;
+PutLibraryEntry(librec, path, lname, name)
+    struct lib_rec *librec;		
+    char	*path, *lname, *name;
 {
     int i;
 
-    if (*np > N_LIB_MAX - 1) {
-        file_msg("Too many libraries (max %d); library %s ignored",
-                 N_LIB_MAX, name);
-        return False;
-    }
     /* strip any trailing whitespace */
     for (i=strlen(name)-1; i>0; i--) {
 	if ((name[i] != ' ') && (name[i] != '\t'))
@@ -998,144 +1080,176 @@ PutLibraryEntry(np, path, name)
     if ((i>0) && (i<strlen(name)-1))
 	name[i+1] = '\0';
 
-    library_rec[*np].name = (char *) malloc(strlen(name) + 1);
-    strcpy(library_rec[*np].name, name);
+    librec->longname = (char *) new_string(strlen(lname));
+    strcpy(librec->longname, lname);
 
-    library_rec[*np].path = (char *) malloc(strlen(path) + 1);
-    strcpy(library_rec[*np].path, path);
+    librec->name = (char *) new_string(strlen(name));
+    strcpy(librec->name, name);
 
-    *np = *np + 1;
-    library_rec[*np].name = NULL;
-    library_rec[*np].path = NULL;
+    librec->path = (char *) new_string(strlen(path));
+    strcpy(librec->path, path);
+
+    librec->nsubs = 0;
+    librec->subdirs[0] = (struct lib_rec *) NULL;
+
     /* all OK */
     return True;
 }
 
+/* scan a library directory and its sub-directories */
+/* Inputs:
+	librec	- pointer to lib_rec record to put entry
+	path	- absolute path of library entry
+	longname - name with parents prepended (e.g. Electrical / Physical)
+	name	- name of library
+   Outputs:
+	figs_at_top - whether or not there are Fig files in toplevel
+	nentries - number of directories found (including subdirectories)
+*/
+
 static Boolean
-ScanLibraryDirectory(np, path, name)
-    int *np;
-    char *path, *name;
+ScanLibraryDirectory(librec, path, longname, name, figs_at_top, nentries)
+    struct lib_rec *librec[];		
+    char	*path, *longname, *name;
+    Boolean	*figs_at_top;
+    int		*nentries;
 {
-    DIR *dirp;
-    DIRSTRUCT *dp;
-    struct stat st;
-    Boolean registered = FALSE;
-    char path2[PATH_MAX], name2[N_LIB_NAME_MAX], *cname;
+    DIR		*dirp;
+    DIRSTRUCT	*dp;
+    struct lib_rec *lp;
+    struct stat	 st;
+    char	 path2[PATH_MAX], lname[N_LIB_NAME_MAX];
+    int		 recnum;
+    Boolean	 toplevel_figs;
 
     dirp = opendir(path);
     if (dirp == NULL) {
-        file_msg("Can't open directory: %s", path);
-    } else {
-	/* read the directory */
-        for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
-          if (sizeof(path2) <= strlen(path) + strlen(dp->d_name) + 2) {
+	file_msg("Can't open directory: %s", path);
+	*nentries = 0;
+	return False;
+    }
+
+    /* read the directory to see if there are any .fig files at this level */
+    *figs_at_top = False;
+    for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
+	if (strstr(dp->d_name,".fig") != NULL && !IsDirectory(path, dp->d_name)) {
+	    /* is a file with .fig in the name */
+	    *figs_at_top = True;
+	    break;
+	}
+    }
+
+    recnum = 0;
+
+    /* now read the directory for the subdirectories */
+    rewinddir(dirp);
+    for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
+	if (sizeof(path2) <= strlen(path) + strlen(dp->d_name) + 2) {
             file_msg("Library path too long: %s/%s", path, dp->d_name);
-          } else {
-            sprintf(path2, "%s/%s", path, dp->d_name);
-	    /* check if directory or file */
-            if (stat(path2, &st) == 0) {
-              if (S_ISDIR(st.st_mode)) {
-		/* directory */
-                if (dp->d_name[0] != '.') {
-                  if (sizeof(name2) <= strlen(name) + strlen(dp->d_name) + 4) {
-		    file_msg("Library name too long: %s - %s", name, dp->d_name);
-                  } else {  /* scan the sub-directory recursively */
-                    if (strlen(name) == 0)
-			sprintf(name2, "%s", dp->d_name);
-                    else
-			sprintf(name2, "%s - %s", name, dp->d_name);
-                    if (!ScanLibraryDirectory(np, path2, name2)) {
+	    continue;
+	}
+	sprintf(path2, "%s/%s", path, dp->d_name);
+	/* check if directory or file */
+	if (stat(path2, &st) == 0) {
+	    if (S_ISDIR(st.st_mode)) {
+		/* directory, scan any sub-directories recursively */
+		if (dp->d_name[0] != '.') {
+		    /* allocate an entry for this subdir name */
+		    librec[recnum] = (struct lib_rec *) malloc(sizeof(struct lib_rec));
+		    lp = librec[recnum];
+		    if (strlen(longname) == 0)
+			strcpy(lname, dp->d_name);
+		    else
+			sprintf(lname, "%s / %s",longname, dp->d_name);
+		    PutLibraryEntry(lp, path2, lname, dp->d_name);
+		    recnum++;
+		    /* and recurse */
+		    if (!ScanLibraryDirectory(lp->subdirs, path2, lname, dp->d_name,
+				&lp->figs_at_top, &lp->nsubs)) {
 			return False;
 		    }
-                  }
-                }
-              } else if (!registered &&
-			strstr(dp->d_name, ".fig") != NULL &&
-			strstr(dp->d_name, ".fig.bak") == NULL) {
-		/* file with .fig* suffix but not .fig.bak*  */
-		cname = name;
-		if (strlen(name)==0) {
-		    /* scanning parent directory, get its name from path */
-		    cname = strrchr(path,'/');
-		    if (cname == (char*) NULL)
-			cname = path;		/* no / in path, use whole path */
-		    else
-			cname++;
 		}
-                if (!PutLibraryEntry(np, path, cname)) {
-		    closedir(dirp);
-		    return False;	/* probably exceeded limit, break now */
-		}
-                registered = TRUE;
-              }
-            }
-          }
-        }
-        closedir(dirp);
+	    } 
+	}
+    }
+    closedir(dirp);
+    if (recnum > 0) {
+	/* sort them since the order of files in directories is not necessarily alphabetical */
+	qsort(&librec[0], recnum, sizeof(struct lib_rec *), (int (*)())*LRComp);
     }
     /* all OK */
+    *nentries = recnum;
     return True;
 }
 
-static int
-LRComp(r1, r2)
-     struct LIBRARY_REC *r1, *r2;
-{
-  return (strcmp(r1->name, r2->name));
-}
+/*
+ * Read the Fig library directory/subdirectory names into library_rec[] structure.
+ * Return the number of directories at the top level.
+ */
 
-static Boolean
+static int
 MakeLibrary()
 {
-    FILE *file;
-    struct stat st;
-    char *base,name[200];
-    char s[N_LIB_LINE_MAX], s1[N_LIB_LINE_MAX], s2[N_LIB_LINE_MAX];
-    int n;
+    FILE	*file;
+    struct stat	 st;
+    char	*base, path[PATH_MAX];
+    char	 *c, s[N_LIB_LINE_MAX], name[N_LIB_NAME_MAX];
+    int		 num, numlibs;
+    Boolean	 dum;
 
     base = getenv("HOME");
     if (appres.library_dir[0] == '~' && base != NULL) {
-        sprintf(name, "%s%s", base, &appres.library_dir[1]);
+	sprintf(path, "%s%s", base, &appres.library_dir[1]);
     } else {
-        sprintf(name, "%s", appres.library_dir);
+	sprintf(path, "%s", appres.library_dir);
     }
 
-    if (stat(name, &st) != 0) {       /* no such file */
-        file_msg("Can't find %s, no libraries available", name);
-        return 0;
+    if (stat(path, &st) != 0) {       /* no such file */
+	file_msg("Can't find %s, no libraries available", path);
+	return 0;
     } else if (S_ISDIR(st.st_mode)) {
-        /* if it is directory, scan the sub-directories and search libraries */
-        n = 0;
-        (void) ScanLibraryDirectory(&n, name, "");
-	qsort(library_rec, n, sizeof(*library_rec), (int (*)())*LRComp);
-        return n;
+	/* if it is directory, scan the sub-directories and search libraries */
+	(void) ScanLibraryDirectory(&library_rec, path, "", "", &dum, &numlibs);
+	return numlibs;
     } else {
-        /* if it is a file, it must contain list of libraries */
-        if ((file = fopen(name, "r")) == NULL) {
-          file_msg("Can't find %s, no libraries available", name);
-          return 0;
+	/* if it is a file, it must contain list of libraries */
+	if ((file = fopen(path, "r")) == NULL) {
+            file_msg("Can't find %s, no libraries available", path);
+            return 0;
+	}
+	numlibs = 0;
+	while (fgets(s, N_LIB_LINE_MAX, file) != NULL) {
+	    if (s[0] != '#') {
+		if (sscanf(s, "%s %[^\n]", path, name) == 1) {
+		    if (strrchr(path, '/') != NULL)
+			strcpy(name, strrchr(path, '/') + 1);
+		    else {
+			/* use the last dir in the path for the name */
+			if (c=strrchr(path,'/'))
+			    strcpy(name,c);
+			else
+			    strcpy(name, path);
+		    }
+		}
+		/* allocate an entry for the Library name */
+		library_rec[numlibs] = (struct lib_rec *) malloc(sizeof(struct lib_rec));
+		PutLibraryEntry(library_rec[numlibs], path, name, name);
+		/* and attach its subdirectories */
+		(void) ScanLibraryDirectory(library_rec[numlibs]->subdirs, path, name, "",
+					&library_rec[numlibs]->figs_at_top, &num);
+		library_rec[numlibs]->nsubs = num;
+	    }
+	    numlibs++;
         }
-        n = 0;
-        while (fgets(s, N_LIB_LINE_MAX, file) != NULL) {
-          if (s[0] != '#') {
-            switch (sscanf(s, "%s %[^\n]", s1, s2)) {
-            case 1:
-              if (strrchr(s1, '/') != NULL)
-		  strcpy(s2, strrchr(s1, '/') + 1);
-              else
-		  strcpy(s2, s1);
-              (void) PutLibraryEntry(&n, s1, s2);
-              break;
-            case 2:
-              (void) PutLibraryEntry(&n, s1, s2);
-              break;
-            }
-          }
-        }
-        fclose(file);
-        return n;
+	fclose(file);
+	return numlibs;
     }
 }
+
+/*
+ * Given a library path and object names, populate the library panel with
+ * icons of the library objects.
+ */
 
 static Boolean
 MakeObjectLibrary(library_dir,objects_names,compound)
@@ -1143,10 +1257,9 @@ MakeObjectLibrary(library_dir,objects_names,compound)
      char **objects_names;
      F_compound **compound;
 {
-    int		i=0;
-    int		j;
+    int		i, j;
     int		num_old_items;
-    Boolean	flag;
+    Boolean	flag, status;
 
     flag = True;
     /* we don't yet have the new icons */
@@ -1182,11 +1295,13 @@ MakeObjectLibrary(library_dir,objects_names,compound)
 	prev_icon_size = appres.library_icon_size;
 	XtManageChild(icon_box);
     }
-    if (MakeLibraryList(library_dir,objects_names)==True) {
+
+    /* now get the list of files in the selected library */
+
+    if (MakeLibraryFileList(library_dir,objects_names)==True) {
         /* save current library name */
-        cur_library_name = library_dir;
+        cur_library_path = library_dir;
         cur_objects_names = objects_names;
-        i=0;
 	if (appres.icon_view) {
 	    /* disable library and icon size menu buttons so user can't
 	       change them while we're building pixmaps */
@@ -1194,6 +1309,7 @@ MakeObjectLibrary(library_dir,objects_names,compound)
 	    SetValues(library_menu_button);
 	    SetValues(icon_size_button);
 	}
+        i = 0;
         while ((objects_names[i]!=NULL) && (flag==True)) {
 	    /* free any previous compound objects */
 	    if (compound[i]!=NULL) {
@@ -1207,20 +1323,28 @@ MakeObjectLibrary(library_dir,objects_names,compound)
 					appres.library_icon_size, appres.library_icon_size, 
 					tool_dpth);
 		/* preview the object into this pixmap */
-		preview_libobj(i, lib_icons[i], appres.library_icon_size, 4);
+		status = preview_libobj(i, lib_icons[i], appres.library_icon_size, 4);
 		/* finally, make the "button" */
 		if (!lib_buttons[i]) {
 		    FirstArg(XtNborderWidth, 1);
 		    NextArg(XtNborderColor, unsel_color); /* border color same as box bg */
-		    NextArg(XtNbitmap, lib_icons[i]);
+		    NextArg(XtNbitmap, status? lib_icons[i]: (Pixmap) 0);
 		    NextArg(XtNinternalHeight, 0);
 		    NextArg(XtNinternalWidth, 0);
 		    lib_buttons[i]=XtCreateManagedWidget(objects_names[i], labelWidgetClass,
 					      icon_box, Args, ArgCount);
 		    /* translations for user to click on label as a button */
-		    XtAugmentTranslations(lib_buttons[i],
-			XtParseTranslationTable(object_icon_translations));
+		    /* but only if the object was read successfully */
+		    if (status)
+			XtAugmentTranslations(lib_buttons[i],
+				XtParseTranslationTable(object_icon_translations));
 		} else {
+		    /* button exists from previous load, set the pixmap and manage it */
+		    FirstArg(XtNbitmap, status? lib_icons[i]: (Pixmap) 0);
+		    SetValues(lib_buttons[i]);
+		    if (status)
+			XtAugmentTranslations(lib_buttons[i],
+				XtParseTranslationTable(object_icon_translations));
 		    XtManageChild(lib_buttons[i]);
 		}
 		/* let the user see it right away */
@@ -1257,8 +1381,10 @@ MakeObjectLibrary(library_dir,objects_names,compound)
     return flag;
 }
 
+/* get the list of files in the library dir_name and put in obj_list[] */
+
 static Boolean
-MakeLibraryList(dir_name,obj_list)
+MakeLibraryFileList(dir_name,obj_list)
      char	   *dir_name;
      char	   **obj_list;
 {
@@ -1275,7 +1401,7 @@ MakeLibraryList(dir_name,obj_list)
 
   for (i=0;i<N_LIB_OBJECT_MAX;i++)
     if (library_objects_texts[i]==NULL)
-      library_objects_texts[i] = calloc(N_LIB_NAME_MAX,sizeof(char));
+      library_objects_texts[i] = malloc(N_LIB_NAME_MAX*sizeof(char));
   library_objects_texts[N_LIB_OBJECT_MAX-1]=NULL;
   numobj=0;
   for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
@@ -1317,7 +1443,7 @@ libraryStatus(char *format,...)
     app_flush();
 }
 
-static void
+static Boolean
 preview_libobj(objnum, pixmap, pixsize, margin)
     int		 objnum;
     Pixmap	 pixmap;
@@ -1333,10 +1459,11 @@ preview_libobj(objnum, pixmap, pixsize, margin)
     Boolean	 save_layers[MAX_DEPTH+1];
     int		 save_min_depth, save_max_depth, depths[MAX_DEPTH +1];
     struct counts obj_counts[MAX_DEPTH+1];
+    Boolean	 status;
 
     /* if already previewing file, return */
     if (preview_in_progress == True)
-	return;
+	return False;
 
     /* say we are in progress */
     preview_in_progress = True;
@@ -1365,7 +1492,7 @@ preview_libobj(objnum, pixmap, pixsize, margin)
     XDefineCursor(tool_d, XtWindow(library_form), wait_cursor);
     app_flush();
 
-    if (load_lib_obj(objnum) == True) {
+    if ((status=load_lib_obj(objnum)) == True) {
 	compound = lib_compounds[objnum];
 	add_compound_depth(compound);	/* count objects at each depth */
 	/* put any comments in the comment window */
@@ -1438,6 +1565,7 @@ preview_libobj(objnum, pixmap, pixsize, margin)
 	cancel_preview = False;
 	put_selected();
     }
+    return status;
 }
 
 /* fool the toolkit into drawing the new pixmap */

@@ -67,6 +67,12 @@
 #include "w_indpanel.h"
 #include "w_setup.h"
 
+/* EXPORTS */
+
+Widget	delunusedColors;
+
+/* LOCALS */
+
 DeclareStaticArgs(20);
 
 /* callback routines */
@@ -172,7 +178,7 @@ static Widget	hueScroll, satScroll, valScroll;
 static Widget	hueLabel, satLabel, valLabel;
 static Widget	ok_button;
 static Widget	addColor, delColor, undelColor, lookupColor;
-static Widget	colorCount, delunusedColors;
+static Widget	colorCount;
 static Widget	userLabel, userForm, userViewport, userBox;
 static Widget	colorMemory[MAX_USR_COLS];
 

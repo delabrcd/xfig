@@ -46,6 +46,9 @@ extern	int	read_xbm();
 #ifdef USE_JPEG
 extern	int	read_jpg();
 #endif
+#ifdef USE_PNG
+extern	int	read_png();
+#endif
 #ifdef USE_XPM
 extern	int	read_xpm();
 #endif
@@ -73,6 +76,9 @@ static	 struct hdr {
 #ifdef USE_JPEG
 			{"JPEG", "\377\330\377\340", 4, read_jpg,	True},
 			{"JPEG", "\377\330\377\341", 4, read_jpg,       True},
+#endif
+#ifdef USE_PNG
+			{"PNG", "\211\120\116\107\015\012\032\012", 8, read_png, True},
 #endif
 #ifdef USE_XPM
 			{"XPM", "/* XPM */",	    9, read_xpm,	False},

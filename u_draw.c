@@ -940,7 +940,7 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 		return;
 	    }
 	    /* allocate mask for any transparency information */
-	    if (box->pic->transp != -1) {
+	    if (box->pic->transp != TRANSP_NONE) {
 		if ((mask = (unsigned char *) malloc((width+7)/8 * height)) == NULL) {
 		    file_msg(ALLOC_PIC_ERR,box->pic->file);
 		    free(data);
@@ -989,7 +989,8 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 			    cpixel = src + (i * cheight / width * cbpl);
 		    }
 		    /* if this pixel is the transparent color then clear the mask pixel */
-		    if (box->pic->transp != -1 && (*cpixel==(unsigned char) box->pic->transp)) {
+		    if (box->pic->transp != TRANSP_NONE && 
+		       (*cpixel==(unsigned char) box->pic->transp)) {
 			if (type1) {
 			    if (hswap) {
 				if (vswap)

@@ -202,7 +202,7 @@ GoHome(w, client_data, ret_val)
    Also, copy the dir to the current directory widget in the file popup
 */
 
-/* Function:  SetDir() changes to the parent directory.
+/* Function:  SetDir() changes to the directory specified in the widget.
  * Arguments: Standard Xt action arguments.
  * Returns:   Nothing.
  * Notes:
@@ -567,7 +567,7 @@ MakeFileList(dir_name, mask, dir_list, file_list)
     app_flush();
 
     /* make copy of mask */
-    cmask = strdup(mask);
+    cmask = my_strdup(mask);
     if ((cmask == NULL) || (*cmask == '\0'))
 	strcpy(cmask,"*");
     wild[0] = strtok(cmask," \t");
@@ -583,7 +583,7 @@ MakeFileList(dir_name, mask, dir_list, file_list)
 	    continue;
 
 	if (IsDirectory(dir_name, dp->d_name)) {
-	    *cur_directory++ = strdup(dp->d_name);
+	    *cur_directory++ = my_strdup(dp->d_name);
 	    if (cur_directory == last_dir) {	/* out of space, make more */
 		dirlist = (char **) realloc(dirlist,
 					2 * dir_entry_cnt * sizeof(char *));
@@ -604,7 +604,7 @@ MakeFileList(dir_name, mask, dir_list, file_list)
 		continue;	/* no, do next */
 	    if (wild[i][0] == '*' && dp->d_name[0] == '.')
 		continue;	/* skip files with leading . */
-	    *cur_file++ = strdup(dp->d_name);
+	    *cur_file++ = my_strdup(dp->d_name);
 	    if (cur_file == last_file) {	/* out of space, make more */
 		filelist = (char **) realloc(filelist,
 				       2 * file_entry_cnt * sizeof(char *));

@@ -122,7 +122,7 @@ read_gif(file,filetype,pic)
 	}
 
 	/* assume no transparent color for now */
-	Gif89.transparent =  -1;
+	Gif89.transparent =  TRANSP_NONE;
 
 	/* read the full header to get any transparency information */
 	for (;;) {
@@ -192,12 +192,13 @@ read_gif(file,filetype,pic)
 	stat = read_pcx(giftopcx, filetype, pic);
 	pic->subtype = T_PIC_GIF;
 
-	/* remove temp file */
+	/* remove temp file after closing it */
+	fclose(giftopcx);
 	unlink(pcxname);
 
 	/* now match original transparent colortable index with possibly new 
 	   colortable from ppmtopcx */
-	if (pic->transp != -1) {
+	if (pic->transp != TRANSP_NONE) {
 	    if (useGlobalColormap) {
 		red = GifScreen.ColorMap[pic->transp].red;
 		green = GifScreen.ColorMap[pic->transp].green;

@@ -65,7 +65,7 @@ extern	Pixmap	sm_check_pm, sm_null_check_pm;
 #define sm_check_height 10
 extern	Pixmap	balloons_on_bitmap;
 extern	Pixmap	balloons_off_bitmap;
-extern	Pixmap	menu_arrow;
+extern	Pixmap	menu_arrow, menu_cascade_arrow;
 extern	char    *panel_get_value();
 extern	void	panel_set_value();
 extern	void	save_active_layers(), restore_active_layers();

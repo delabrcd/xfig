@@ -1,6 +1,14 @@
 The following are applications which can produce Fig files as their output:
 
 ************************************************************************
+There is a version of xfig which will run under Windows, but still needs
+an X server (e.g. Hummingbird Exceed, etc) to run.
+The URL is:
+http://aquarius.franken.de/software/develop/gnuwin32/cygwin/porters/Hirmke_Michael/GNUWin32-links.html
+************************************************************************
+JavaFIG - Java applet which is based on xfig. See:
+	http://tech-www.informatik.uni-hamburg.de/applets/javafig/applet.html
+************************************************************************
 figbuild - figbuild reads xfig files (Version 3.x, tested with 3.1, 3.2) plus
 	its own config file for heights, and generates a Radiance input
 	file. Written by Peter Apian-Bennewitz at Fraunhofer ISE, Germany
@@ -160,3 +168,12 @@ As well, there are pointers to other FIG and Xfig related items at:
 http://duke.usask.ca/~macphed/soft/fig/
 
 ************************************************************************
+
+NOTE: If you get an error like:
+
+! Undefined control sequence.
+<argument> ... }{\bfdefault }{\updefault }{\color
+
+fig2dev outputs figures in color (yes, black and white are colors).
+insert \usepackage{color} or \usepackage[dvips]{color} or whatever is
+appropriate in your preamble ...

@@ -21,11 +21,18 @@ XCOMM directory, uncomment the following "BINDIR" line and change the path
 XCOMM to the full path of the directory where you want xfig to be installed.
 XCOMM Also, you may have to uncomment and redefine MKDIRHIER because "make" looks
 XCOMM for it relative to the BINDIR variable.
+XCOMM
+XCOMM Finally, uncomment and change XAPPLOADDIR to the directory where you want the
+XCOMM app-defaults resource files to go.  You will have to use the environment
+XCOMM variable XAPPLRESDIR to point to this directory.
 
 XCOMM BINDIR = /usr/bin/X11
-XCOMM MKDIRHIER = "/bin/sh /usr/bin/X11/mkdirhier"
+XCOMM MKDIRHIER = /bin/sh /usr/bin/X11/mkdirhier
+XCOMM XAPPLOADDIR = /home/user/xfig
 
-XCOMM If don't want to use JPEG, comment out the following line
+XCOMM If don't want JPEG support, comment out the #define USEJPEG line
+XCOMM Uncomment the #define for USEJPEG if you want to be able to import
+XCOMM JPEG (Joint Photographic Experts Group) files.
 
 #define USEJPEG
 
@@ -47,6 +54,12 @@ JPEGLIBDIR = ../jpeg
 JPEGINCDIR = $(JPEGLIBDIR)
 #endif
 #endif /* USEJPEG */
+
+XCOMM Comment out the following #define USEPNG if you don't want PNG support
+XCOMM Uncomment the #define for USEPNG if you want to be able to import
+XCOMM PNG (Portable Network Graphics) files.
+
+#define USEPNG
 
 XCOMM Uncomment the #define for USEXPM if you want to use the XPM
 XCOMM (color pixmap) package.
@@ -84,6 +97,9 @@ XAW3DINC = -I/usr/include/X11/Xaw3d
 DUSEXAW3D = -DXAW3D
 XAWLIB = -lXaw3d
 #endif
+
+XCOMM Change the location of your printcap file if necessary
+PRINTCAP = -DPRINTCAP=\"/etc/printcap\"
 
 XCOMM Uncomment the following if needed for DECstations running older X11R4
 XCOMM INCROOT=/usr/include/mit
@@ -125,6 +141,10 @@ XCOMM XFIGLIBDIR = /usr/local/lib/xfig
 XCOMM use this if you want the multi-key data base file in the standard X11 tree
 XFIGLIBDIR = $(LIBDIR)/xfig
 
+XCOMM now you can configure where the documentation should be located
+XFIGDOCDIR = $(LIBDIR)/xfig
+XCOMM XFIGDOCDIR = /usr/share/doc/xfig-doc
+
 XCOMM If your system doesn't have strstr undefine the following definition
 XCOMM HAVE_NO_NOSTRSTR = -DNOSTRSTR
 
@@ -137,7 +157,7 @@ XCOMM HAVE_NO_STRNCASECMP = -DHAVE_NO_STRNCASECMP
 XCOMM If your system has the strerror() function (doesn't have sys_errlist) then
 XCOMM comment out NEED_STRERROR with an XCOMM comment.
 
-NEED_STRERROR = -DNEED_STRERROR
+XCOMM NEED_STRERROR = -DNEED_STRERROR
 
 XCOMM If your system doesn't have dirent.h undefine the following definition
 
@@ -205,7 +225,8 @@ I18N_SRC = w_i18n.c
 I18N_OBJ = w_i18n.o
 #endif
 
-DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
+DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\" \
+			-DXFIGDOCDIR=\"$(XFIGDOCDIR)\" $(PRINTCAP)
 
 XCOMM location of Fig object libraries
 OBJLIBDIR =		$(XFIGLIBDIR)/Libraries
@@ -232,6 +253,13 @@ READJPEGS = f_readjpg.c
 READJPEGO = f_readjpg.o
 #endif
 
+#ifdef USEPNG
+DUSEPNG = -DUSE_PNG
+PNGLIBS = -lpng -lz
+READPNGS = f_readpng.c
+READPNGO = f_readpng.o
+#endif /* USEPNG */
+
 #ifdef USEXPM
 DUSEXPM = -DUSE_XPM
 XPMLIBS = -L$(XPMLIBDIR) -lXpm
@@ -243,7 +271,7 @@ DUSEXPMICON = -DUSE_XPM_ICON
 #endif
 
 DEFINES =             $(STRDEFINES) $(USEINLINE) $(DUSEXPM) $(DUSEXAW3D) \
-			$(DUSEJPEG) $(I18N_DEFS) \
+			$(DUSEJPEG) $(DUSEPNG) $(I18N_DEFS) \
 			$(HAVE_NO_DIRENT) 
 
 XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
@@ -254,7 +282,7 @@ XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
 		e_movept.c e_placelib.c e_rotate.c e_scale.c e_update.c \
 		f_load.c f_neuclrtab.c f_picobj.c f_read.c f_readold.c \
 		f_readppm.c f_readtif.c f_readeps.c \
-		f_readxbm.c f_readgif.c $(READJPEGS) f_readpcx.c $(READXPMS) \
+		f_readxbm.c f_readgif.c $(READJPEGS) f_readpcx.c $(READXPMS) $(READPNGS) \
 		f_save.c f_util.c f_wrpcx.c \
 		main.c mode.c object.c resources.c \
 		u_bound.c u_create.c u_drag.c u_draw.c \
@@ -266,7 +294,7 @@ XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
 		w_export.c w_file.c w_fontbits.c w_fontpanel.c w_grid.c w_icons.c \
 		w_indpanel.c w_library.c w_modepanel.c w_mousefun.c w_msgpanel.c \
 		w_print.c w_rottext.c w_rulers.c w_setup.c w_util.c w_zoom.c \
-		$(I18N_SRC)
+		$(I18N_SRC) SmeCascade.c
 
 XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
 		d_subspline.o d_line.o d_regpoly.o d_spline.o d_text.o \
@@ -276,7 +304,7 @@ XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
 		e_movept.o e_placelib.o e_rotate.o e_scale.o e_update.o \
 		f_load.o f_neuclrtab.o f_picobj.o f_read.o f_readold.o \
 		f_readppm.o f_readtif.o f_readeps.o \
-		f_readxbm.o f_readgif.o $(READJPEGO) f_readpcx.o $(READXPMO) \
+		f_readxbm.o f_readgif.o $(READJPEGO) f_readpcx.o $(READXPMO) $(READPNGO) \
 		f_save.o f_util.o f_wrpcx.o \
 		main.o mode.o object.o resources.o \
 		u_bound.o u_create.o u_drag.o u_draw.o \
@@ -288,7 +316,7 @@ XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
 		w_export.o w_file.o w_fontbits.o w_fontpanel.o w_grid.o w_icons.o \
 		w_indpanel.o w_library.o w_modepanel.o w_mousefun.o w_msgpanel.o \
 		w_print.o w_rottext.o w_rulers.o w_setup.o w_util.o w_zoom.o \
-		$(I18N_OBJ)
+		$(I18N_OBJ) SmeCascade.o
 
 XCOMM Other dependencies should be handled by "make depend"
 
@@ -301,7 +329,7 @@ EXTRA_INCLUDES = $(JPEGINC) $(XPMINC) $(XAW3DINC)
 DEPLIBS = XawClientDepLibs
 
 LOCAL_LIBRARIES = 	$(JPEGLIB)
-SYS_LIBRARIES= 		-lm $(XPMLIBS) $(TABLIB) XawClientLibs
+SYS_LIBRARIES= 		$(XPMLIBS) $(PNGLIBS) $(TABLIB) XawClientLibs -lm
 
 #define PassCDebugFlags
 
@@ -329,7 +357,7 @@ ComplexProgramTarget(xfig)
 InstallAppDefaults(Fig)
 InstallAppDefaults(Fig-color)
 
-XCOMM Install the compose key database, object libraries and documentation
+XCOMM Install the compose key database and object libraries
 XCOMM here with "make install"
 
 install::
@@ -337,6 +365,9 @@ install::
 		else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGLIBDIR) ; set +x; ); fi
 	chmod a+x,u+w $(DESTDIR)$(XFIGLIBDIR)
 	$(INSTALL) -m 644 -c CompKeyDB $(DESTDIR)$(XFIGLIBDIR)
+
+XCOMM Install program, libraries and documentation with "make install.all"
+install.all::
 	$(MAKE) install.libs
 	$(MAKE) install.doc
 
@@ -344,25 +375,29 @@ XCOMM Install the documentation here with "make install.doc"
 install.doc::
 	@echo Installing man pages to $(DESTDIR)$(MANDIR)
 	@$(MAKE) install.man
+	@$(MAKE) install.html
+
+XCOMM Install the HTML documentation here with "make install.html"
+install.html::
 #ifdef I18N
 	@$(MAKE) install.jhtml
 #endif
 	@(cd Doc ; \
-	echo Copying pdf and html files to $(DESTDIR)$(XFIGLIBDIR) ; \
-	$(INSTALL) -m 644 -c xfig.html $(DESTDIR)$(XFIGLIBDIR) ; \
-	$(INSTALL) -m 644 -c xfig-howto.pdf $(DESTDIR)$(XFIGLIBDIR) ; \
-	if [ -d $(DESTDIR)$(XFIGLIBDIR)/html ]; then set +x; \
-	   else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGLIBDIR)/html ); fi ; \
+	echo Copying pdf and html files to $(DESTDIR)$(XFIGDOCDIR) ; \
+	$(INSTALL) -m 644 -c xfig.html $(DESTDIR)$(XFIGDOCDIR) ; \
+	$(INSTALL) -m 644 -c xfig-howto.pdf $(DESTDIR)$(XFIGDOCDIR) ; \
+	if [ -d $(DESTDIR)$(XFIGDOCDIR)/html ]; then set +x; \
+	   else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGDOCDIR)/html ); fi ; \
 	(cd html ; \
 	   for f in *.* ; do \
-	      $(INSTALL) -m 644 -c $$f $(DESTDIR)$(XFIGLIBDIR)/html ; \
+	      $(INSTALL) -m 644 -c $$f $(DESTDIR)$(XFIGDOCDIR)/html ; \
 	   done) ; \
 	echo "  Copying image files for html" ; \
-	if [ -d $(DESTDIR)$(XFIGLIBDIR)/html/images ]; then set +x; \
-	   else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGLIBDIR)/html/images ); fi ; \
+	if [ -d $(DESTDIR)$(XFIGDOCDIR)/html/images ]; then set +x; \
+	   else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGDOCDIR)/html/images ); fi ; \
 	(cd html/images ; \
 	   for f in * ; do \
-	       $(INSTALL) -m 644 -c $$f $(DESTDIR)$(XFIGLIBDIR)/html/images ; \
+	       $(INSTALL) -m 644 -c $$f $(DESTDIR)$(XFIGDOCDIR)/html/images ; \
 	   done) ; \
 	) ;
 
@@ -370,10 +405,10 @@ install.doc::
 install.jhtml::
 	@echo "Copying japanese html files"
 	@(cd Doc/html/japanese ; \
-	if [ -d $(DESTDIR)$(XFIGLIBDIR)/html/japanese ]; then set +x; \
-	   else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGLIBDIR)/html/japanese ); fi ; \
+	if [ -d $(DESTDIR)$(XFIGDOCDIR)/html/japanese ]; then set +x; \
+	   else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGDOCDIR)/html/japanese ); fi ; \
 	for f in * ; do \
-	      $(INSTALL) -m 644 -c $$f $(DESTDIR)$(XFIGLIBDIR)/html/japanese ; \
+	      $(INSTALL) -m 644 -c $$f $(DESTDIR)$(XFIGDOCDIR)/html/japanese ; \
 	done) ;
 #endif
 
@@ -427,7 +462,7 @@ SpecialObjectRule(w_capture.o, w_capture.c  w_capture.h, )
 SpecialObjectRule(w_help.o, w_help.c, $(DIR_DEFS) )
 SpecialObjectRule(w_canvas.o, w_canvas.c mode.h, $(DIR_DEFS) $(COMP_LED) $(NO_COMPKEYDB) )
 SpecialObjectRule(w_icons.o, w_icons.c w_icons.h, $(DUSESMALLICONS) $(DUSEXPMICON) )
-SpecialObjectRule(w_print.o, w_print.c w_print.h, )
+SpecialObjectRule(w_print.o, w_print.c w_print.h, $(DIR_DEFS) )
 SpecialObjectRule(w_setup.o, w_setup.c w_setup.h w_icons.h, $(DUSESMALLICONS) )
 SpecialObjectRule(w_rottext.o, w_rottext.c, $(CACHE) )
 SpecialObjectRule(d_arc.o, d_arc.c  mode.h, )

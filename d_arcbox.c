@@ -80,6 +80,16 @@ create_arc_boxobject(x, y)
     F_point	   *point;
 
     elastic_box(fix_x, fix_y, cur_x, cur_y);
+    /* erase last lengths if appres.showlengths is true */
+    erase_box_lengths();
+
+    if (fix_x == x || fix_y == y) {
+	beep();
+	put_msg("Arc box must have area");
+	arcbox_drawing_selected();
+	draw_mousefun_canvas();
+	return;
+    }
 
     if ((point = create_point()) == NULL)
 	return;

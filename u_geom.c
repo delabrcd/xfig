@@ -131,6 +131,8 @@ close_to_vector(x1, y1, x2, y2, xp, yp, d, dd, px, py)
 
 /********************* COMPUTE ARC CENTER ******************
 
+New routine 12/11/00 from Thomas Henlich - better at finding center
+
 Input arguments :
 	p1, p2, p3 : 3 points on the arc
 Output arguments :
@@ -146,7 +148,7 @@ compute_arccenter(p1, p2, p3, x, y)
     F_pos	    p1, p2, p3;
     float	   *x, *y;
 {
-    double	    s12, s13, len1, len2, len3, dx12, dy12, dx13, dy13;
+    double	    a, b, c, d, e, f, g, h, i, j;
     double	    resx, resy;
 
     if ((p1.x == p3.x && p1.y == p3.y) ||
@@ -155,25 +157,30 @@ compute_arccenter(p1, p2, p3, x, y)
 	    return 0;
     }
 
-    dx12 = p1.x - p2.x;
-    dy12 = p1.y - p2.y;
-    dx13 = p1.x - p3.x;
-    dy13 = p1.y - p3.y;
+    a = (double)p1.x - (double)p2.x;
+    b = (double)p1.x + (double)p2.x;
+    c = (double)p1.y - (double)p2.y;
+    d = (double)p1.y + (double)p2.y;
+    e = (a*b + c*d)/2.0;
 
-    s12 = asin(dy12 / sqrt(dx12 * dx12 + dy12 * dy12));
-    s13 = asin(dy13 / sqrt(dx13 * dx13 + dy13 * dy13));
-    if (fabs(s12 - s13) < .01)
+    f = (double)p2.x - (double)p3.x;
+    g = (double)p2.x + (double)p3.x;
+    h = (double)p2.y - (double)p3.y;
+    i = (double)p2.y + (double)p3.y;
+    j = (f*g + h*i)/2.0;
+
+    if (a*h - c*f != 0.0)
+	resy = (a*j - e*f)/(a*h - c*f);
+    else {
 	return 0;
-
-    len1 = (double)p1.x * (double)p1.x + (double)p1.y * (double)p1.y;
-    len2 = (double)p2.x * (double)p2.x + (double)p2.y * (double)p2.y;
-    len3 = (double)p3.x * (double)p3.x + (double)p3.y * (double)p3.y;
-    resy = (dx12 * (len3 - len1) - dx13 * (len2 - len1)) /
-	(2 * (dx13 * dy12 - dx12 * dy13));
-    if (p1.x != p3.x)
-	resx = (len3 + 2 * (resy) * dy13 - len1) / (2 * (-dx13));
-    else
-	resx = (len2 + 2 * (resy) * dy12 - len1) / (2 * (-dx12));
+    }
+    if (a != 0.0)
+	resx = (e - resy*c)/a;
+    else if (f != 0.0)
+	resx = (j - resy*h)/f;
+    else {
+	return 0;
+    }
     *x = (float) resx;
     *y = (float) resy;
     return 1;

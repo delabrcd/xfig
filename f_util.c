@@ -890,78 +890,70 @@ safe_strcpy(p1,p2)
 
 Boolean
 uncompress_file(name)
-    char	   *name;
+    char	   *name; 
 {
-    char	    compname[PATH_MAX];
+    char	    plainname[PATH_MAX];
+    char	    dirname[PATH_MAX];
+    char	    tmpfile[PATH_MAX];
     char	    unc[PATH_MAX+20];	/* temp buffer for uncompress/gunzip command */
     char	   *c;
-    Boolean	    compr=False;
     struct stat	    status;
-    int		    fstat;
 
-    /* first see if file exists AS NAMED */
-
-    if (fstat = stat(name, &status)) {
-	strcpy(compname,name);
-	/* no, see if it has a compression suffix (.gz, .Z etc) and remove it and try that */
-	if ((strlen(name) > 3 && !strcmp(".gz", name + (strlen(name)-3))) ||
-	    (strlen(name) > 2 && !strcmp(".Z", name + (strlen(name)-2))) ||
-	    (strlen(name) > 2 && !strcmp(".z", name + (strlen(name)-2)))) {
-		c = strrchr(compname,'.');
-		if (c) {
-		    *c= '\0';
-		    if (stat(compname, &status)) {
-			file_msg("%s File doesn't exist",compname);
-			return False;
-		    }
-		    /* file doesn't have .gz etc suffix anymore, return modified name */
-		    strcpy(name,compname);
-		    return True;
-		}
-	}
+    strcpy(tmpfile, name);		/* save original name */
+    strcpy(plainname, name);
+    c = strrchr(plainname, '.');
+    if (c) {
+      if (strcmp(c, ".gz") == 0 || strcmp(c, ".Z") == 0 || strcmp(c, ".z") == 0)
+	*c = '\0';
     }
 
-    /* see if the filename ends with .Z or with .z or .gz */
-    /* if so, generate gunzip command and use pipe (filetype = 1) */
-    if ((strlen(name) > 3 && !strcmp(".gz", name + (strlen(name)-3))) ||
-	(strlen(name) > 2 && !strcmp(".Z", name + (strlen(name)-2))) ||
-	(strlen(name) > 2 && !strcmp(".z", name + (strlen(name)-2)))) {
-	    sprintf(unc,"gunzip -q %s",name);
-	    compr = True;
-    /* none of the above, see if the file with .Z or .gz or .z appended exists */
-    } else if (fstat != 0) {
-	strcpy(compname, name);
-	strcat(compname, ".gz");
-	if (!stat(compname, &status)) {
-	    sprintf(unc, "gunzip -q %s",compname);
-	    compr = True;
-	    strcpy(name,compname);
-	} else {
-	    strcpy(compname, name);
-	    strcat(compname, ".z");
-	    if (!stat(compname, &status)) {
-		sprintf(unc, "gunzip -q %s",compname);
-		compr = True;
-		strcpy(name,compname);
-	    } else {
-		strcpy(compname, name);
-		strcat(compname, ".Z");
-		if (!stat(compname, &status)) {
-		    sprintf(unc, "gunzip -q %s",compname);
-		    compr = True;
-		    strcpy(name,compname);
-		}
+    if (stat(name, &status)) {    /* first see if file exists AS NAMED */
+      /* no, try without .gz etc suffix */
+      strcpy(name, plainname);
+      if (stat(name, &status)) {
+	/* no, try with a .z */
+	sprintf(name, "%s.z", plainname);
+	if (stat(name, &status)) {
+	  /* no, try with .Z suffix */
+	  sprintf(name, "%s.Z", plainname);
+	  if (stat(name, &status)) {
+	    /* no, try .gz */
+	    sprintf(name, "%s.gz", plainname);
+	    if (stat(name, &status)) {
+	      /* none of the above, return original name and False status */
+	      strcpy(name, tmpfile);
+	      return False;
 	    }
+	  }
 	}
+      }
     }
-	
+    /* file doesn't have .gz etc suffix anymore, return modified name */
+    if (strcmp(name, plainname) == 0) return True;
 
-    /* do the uncompression/unzip if needed */
-    if (compr) {
-	system(unc);
-	/* strip off the trailing .Z, .z or .gz */
-	c = strrchr(name,'.');
-	*c= '\0';
+    strcpy(dirname, name);
+    c = strrchr(dirname, '/');
+    if (c) *c = '\0';
+    else strcpy(dirname, ".");
+
+    if (access(dirname, W_OK) == 0) {  /* OK - the directory is writable */
+      sprintf(unc, "gunzip -q %s", name);
+      if (system(unc) != 0)
+	file_msg("Couldn't uncompress the file: \"%s\"", unc);
+      strcpy(name, plainname);
+    } else {  /* the directory is not writable */
+      /* create a path to TMPDIR in case we need to uncompress a read-only file to there */
+      c = strrchr(plainname, '/');
+      if (c)
+	  sprintf(tmpfile, "%s%s", TMPDIR, c);
+      else
+	  sprintf(tmpfile, "%s/%s", TMPDIR, plainname);
+      sprintf(unc, "gunzip -q -c %s > %s", name, tmpfile);
+      if (system(unc) != 0)
+	  file_msg("Couldn't uncompress the file: \"%s\"", unc);
+      file_msg ("Uncompressing file %s in %s because it is in a read-only directory",
+		name, TMPDIR);
+      strcpy(name, tmpfile);
     }
     return True;
 }
@@ -989,6 +981,8 @@ read_xfigrc()
     while (fgets(line, 199, xfigrc) != NULL) {
 	word = strtok(line, ": \t");
 	opnd = strtok(NULL, " \t\n");		/* parse operand and remove newline */
+	if (!word || !opnd)
+	    continue;
 	if (strcmp(opnd,":")==0)
 	    opnd = strtok(NULL, " \t\n");	/* one or more white spaces before : */
 	if (strcasecmp(word, "max_recent_files") == 0)
@@ -1010,7 +1004,7 @@ add_recent_file(file)
 	return;
     if (num_recent_files >= MAX_RECENT_FILES || num_recent_files >= max_recent_files)
 	return;
-    name = malloc(strlen(file)+3);	/* allow for file number (1), blank (1) and NUL */
+    name = new_string(strlen(file)+3);	/* allow for file number (1), blank (1) and NUL */
     sprintf(name,"%1d %s",num_recent_files+1,file);
     recent_files[num_recent_files].name = name;
     num_recent_files++;
@@ -1083,7 +1077,7 @@ strain_out(name)
     }
     while (fgets(line, 199, xfigrc) != NULL) {
 	/* make copy of line to look for token because strtok modifies the line */
-	tok = strdup(line);
+	tok = my_strdup(line);
 	if (strcasecmp(strtok(tok, ": \t"), name) == 0)
 	    continue;			/* match, skip */
 	fputs(line, tmpf);
@@ -1243,7 +1237,7 @@ char *
 build_command(program, filename)
     char	*program, *filename;
 {
-    char *cmd = malloc(PATH_MAX*2);
+    char *cmd = new_string(PATH_MAX*2);
     char  cmd2[PATH_MAX*2];
     char *c1;
     Boolean repl = False;
@@ -1279,3 +1273,88 @@ strerror(e)
 	}
 #endif
 
+/**************************************************************************/
+/* Routine to mimic `my_strdup()' (some machines don't have it)           */
+/**************************************************************************/
+
+char
+*my_strdup(str)
+    char *str;
+{
+    char *s;
+    
+    if(str==NULL)
+	return NULL;
+    
+    s = new_string(strlen(str)+1);
+    if (s!=NULL) 
+	strcpy(s, str);
+    
+    return s;
+}
+
+/* for images with no palette, we'll use neural net to reduce to 256 colors with palette */
+
+Boolean
+map_to_palette(pic)
+    F_pic	*pic;
+{
+	int	 w,h,x,y;
+	int	 mult, neu_stat, numcols, size;
+	unsigned char *old;
+	BYTE	 col[3];
+
+	w = pic->bit_size.x;
+	h = pic->bit_size.y;
+
+	mult = 1;
+	if ((neu_stat=neu_init(w*h)) <= -2) {
+	    mult = -neu_stat;
+	    /* try again with more pixels */
+	    neu_stat = neu_init2(w*h*mult);
+	}
+	if (neu_stat == -1) {
+	    /* couldn't alloc memory for network */
+	    fprintf(stderr,"Can't alloc memory for neural network\n");
+	    free(pic->bitmap);
+	    return False;
+	}
+	/* now add all pixels to the samples */
+	size = w*h*3;
+	for (x=0; x<size;) {
+	    col[N_BLU] = pic->bitmap[x++];
+	    col[N_GRN] = pic->bitmap[x++];
+	    col[N_RED] = pic->bitmap[x++];
+	    for (y=0; y<mult; y++) {
+		neu_pixel(col);
+	    }
+	}
+
+	/* make a new colortable with the optimal colors */
+	pic->numcols = neu_clrtab(256);
+
+	/* now change the color cells with the new colors */
+	/* clrtab[][] is the colormap produced by neu_clrtab */
+	for (x=0; x<pic->numcols; x++) {
+	    pic->cmap[x].red   = (unsigned short) clrtab[x][N_RED];
+	    pic->cmap[x].green = (unsigned short) clrtab[x][N_GRN];
+	    pic->cmap[x].blue  = (unsigned short) clrtab[x][N_BLU];
+	}
+
+	/* now alloc a 1-byte/per/pixel array for the final colormapped image */
+	/* save orig */
+	old = pic->bitmap;
+	if ((pic->bitmap=malloc(w*(h+2)))==NULL)
+	    return False;
+
+	/* and change the 3-byte pixels to the 1-byte */
+	for (x=0, y=0; x<size; x+=3, y++) {
+	    col[N_BLU] = old[x];
+	    col[N_GRN] = old[x+1];
+	    col[N_RED] = old[x+2];
+	    pic->bitmap[y] = neu_map_pixel(col);
+	}
+	/* free 3-byte/pixel array */
+	free(old);
+	return True;
+}

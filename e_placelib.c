@@ -112,7 +112,7 @@ transform_lib_obj(kpe, c, keysym)
     put_draw(PAINT);
 }
 
-void
+static void
 sel_place_lib_obj_proc(x, y, shift)
     int		    x, y;
     int		    shift;

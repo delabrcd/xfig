@@ -295,7 +295,7 @@ ind_sw_info	*fill_style_sw;
 
 ind_sw_info	ind_switches[] = {
     {I_FVAL, 0, "Zoom", "", NARROW_IND_SW_WD,	/* always show zoom button */
-	NULL, &display_zoomscale, inc_zoom, dec_zoom, show_zoom, 0, MAX_ZOOM, 1.0},
+	NULL, &display_zoomscale, inc_zoom, dec_zoom, show_zoom, MIN_ZOOM, MAX_ZOOM, 1.0},
     {I_CHOICE, 0, "Grid", "Mode", DEF_IND_SW_WD,	/* and grid button */
 	&cur_gridmode, NULL, inc_choice, dec_choice, show_gridmode, 0, 0, 0.0,
 	gridmode_choices, NUM_GRIDMODE_CHOICES, NUM_GRIDMODE_CHOICES},
@@ -1256,7 +1256,7 @@ popup_arrowsize_panel(isw)
     FirstArg(XtNborderWidth, 0);
     NextArg(XtNfromVert, label);
     NextArg(XtNfromHoriz, abslabel);
-    NextArg(XtNhorizDistance, 16);
+    NextArg(XtNhorizDistance, 6);
     NextArg(XtNresizable, True);
     NextArg(XtNlabel, "Multiple of\nLine Width");
     NextArg(XtNleft, XtChainRight);	/* make it stay on right side */
@@ -1294,7 +1294,7 @@ popup_arrowsize_panel(isw)
     FirstArg(XtNfromHoriz, beside);
     NextArg(XtNfromVert, abslabel);
     NextArg(XtNborderWidth, 0);
-    beside = XtCreateManagedWidget("    Thickness    ", labelWidgetClass, form, Args, ArgCount);
+    beside = XtCreateManagedWidget("  Thickness   ", labelWidgetClass, form, Args, ArgCount);
 
     /* make a spinner for Thickness = Multiple of line width */
     sprintf(buf,"%.1f",cur_arrow_multthick);
@@ -1316,7 +1316,7 @@ popup_arrowsize_panel(isw)
     FirstArg(XtNfromHoriz, beside);
     NextArg(XtNfromVert, below);
     NextArg(XtNborderWidth, 0);
-    beside = XtCreateManagedWidget("      Width      ", labelWidgetClass, form, Args, ArgCount);
+    beside = XtCreateManagedWidget("    Width     ", labelWidgetClass, form, Args, ArgCount);
 
     /* make a spinner for Width = Multiple of line width */
     sprintf(buf,"%.1f",cur_arrow_multwidth);
@@ -1333,7 +1333,7 @@ popup_arrowsize_panel(isw)
     FirstArg(XtNfromHoriz, beside);
     NextArg(XtNfromVert, below);
     NextArg(XtNborderWidth, 0);
-    beside = XtCreateManagedWidget("      Height     ", labelWidgetClass, form, Args, ArgCount);
+    beside = XtCreateManagedWidget("    Height    ", labelWidgetClass, form, Args, ArgCount);
 
     /* make a spinner for Height = Multiple of line width */
     sprintf(buf,"%.1f",cur_arrow_multheight);
@@ -1464,6 +1464,11 @@ popup_choice_panel(isw)
 		count_user_colors();
 		/* and color the color cell borders */
 		color_borders();
+		/* make the "delete unused colors" button sensitive if there are user colors */
+		if (num_usr_cols != 0)
+		    XtSetSensitive(delunusedColors, True);
+		else
+		    XtSetSensitive(delunusedColors, False);
 	} else if (isw->func == I_LINESTYLE) {
 		/* update current dash length/dot gap indicators */
 		sprintf(buf, "%.1f", cur_dashlength);
@@ -1990,7 +1995,7 @@ popup_nval_panel(isw)
     } else {
 	sprintf(buf, "%.2f", (*isw->f_varadr));
 	below = MakeFloatSpinnerEntry(form, &newvalue, "value", label, newvalue, 
-		(XtCallbackRec *) 0, buf, (float)isw->min, (float)isw->max, isw->inc, 45);
+		(XtCallbackRec *) 0, buf, (float)isw->min, (float)isw->max, isw->inc, 55);
     }
 
     /* set value on carriage return */
@@ -2162,7 +2167,7 @@ dec_arrowsize(sw)
     ind_sw_info	   *sw;
 {
     if (--cur_arrowsizeshown < 0)
-	cur_arrowsizeshown = MAX_FLAGS;
+	cur_arrowsizeshown = MAX_FLAGS-1;
     show_arrowsize(sw);
 }
 
@@ -2187,7 +2192,7 @@ show_arrowsize(sw)
     put_msg("Arrows: Thickness=%.1f, Width=%.1f, Height=%.1f (Button 1 to change)",
 		thick, width, height);
 
-    /* write the text/ellipse angle in the background pixmap */
+    /* write the current setting in the background pixmap */
     switch(cur_arrowsizeshown) {
 	case 0:
 	    sprintf(indbuf, "Thk=%.1f %c  ",thick,c);
@@ -2273,11 +2278,15 @@ show_linewidth(sw)
      * the modified one again.	Otherwise, it sees that the pixmap ID is not
      * changed and doesn't actually draw it into the widget window
      */
+    if (sw->updbut && update_buts_managed)
+	XtUnmanageChild(sw->updbut);
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(sw->button);
     /* put the pixmap in the widget background */
     FirstArg(XtNbackgroundPixmap, sw->pixmap);
     SetValues(sw->button);
+    if (sw->updbut && update_buts_managed)
+	XtManageChild(sw->updbut);
 
     /* restore indicator button gc colors and function */
     gcv.foreground = ind_but_fg;
@@ -2759,7 +2768,7 @@ dec_flags(sw)
     ind_sw_info	   *sw;
 {
     if (--cur_flagshown < 0)
-	cur_flagshown = MAX_FLAGS;
+	cur_flagshown = MAX_FLAGS-1;
     show_flags(sw);
 }
 
@@ -3025,8 +3034,8 @@ static void
 show_rotnangle(sw)
     ind_sw_info	   *sw;
 {
-    if (cur_rotnangle < 0.1)
-	cur_rotnangle = 0.1;
+    if (cur_rotnangle < -360.0)
+	cur_rotnangle = -360.0;
     else if (cur_rotnangle > 360.0)
 	cur_rotnangle = 360.0;
 
@@ -3039,11 +3048,11 @@ show_rotnangle(sw)
     sprintf(indbuf, "%3.1f", cur_rotnangle);
     update_string_pixmap(sw, indbuf, sw->sw_width - 36, 20);
 
-    /* change markers if we changed to or from 90 degrees (except at start)  */
+    /* change markers if we changed to or from 90/180 degrees (except at start)  */
     if (old_rotnangle != -1) {
-	if (cur_rotnangle == 90.0)
+	if (fabs(cur_rotnangle) == 90.0 || fabs(cur_rotnangle) == 180.0)
 	    update_markers(M_ALL);
-	else if (old_rotnangle == 90.0)
+	else if (fabs(old_rotnangle) == 90.0 || fabs(old_rotnangle) == 180.0)
 	    update_markers(M_ROTATE_ANGLE);
     }
     old_rotnangle = cur_rotnangle;
@@ -3280,10 +3289,14 @@ fit_zoom(sw)
 	zoomy = 1e6;
     zoomx = min2(zoomx, zoomy);
     zoomx = min2(zoomx, MAX_ZOOM);
+    if (zoomx < MIN_ZOOM)
+	zoomx = MIN_ZOOM;
     if (integral_zoom && zoomx > 1.0)
 	zoomx = (double) ((int) zoomx);
     /* round to 2 decimal places */
     display_zoomscale = (double) ((int) (zoomx*100.0))/100.0;
+    if (display_zoomscale < MIN_ZOOM)
+	display_zoomscale = MIN_ZOOM;
 
     /* keep it on the canvas */
     zoomxoff = objects.nwcorner.x - 100/display_zoomscale;
@@ -3294,8 +3307,16 @@ fit_zoom(sw)
 	if (zoomyoff < 0)
 	    zoomyoff = 0;
     }
-    /* update the zoom indicator */
-    show_zoom(zoom_sw);
+    if (display_zoomscale == old_display_zoomscale) {
+	/* if the zoom hasn't changed, just make sure it's centered */
+	/* fix up the rulers and grid */
+	reset_rulers();
+	redisplay_rulers();
+	redisplay_canvas();
+    } else {
+	/* update the zoom indicator */
+	show_zoom(zoom_sw);
+    }
 }
 
 
@@ -3307,8 +3328,8 @@ show_zoom(sw)
     if (preview_in_progress || check_action_on())
 	return;
     
-    if (display_zoomscale < 0.01)
-	display_zoomscale = 0.01;
+    if (display_zoomscale < MIN_ZOOM)
+	display_zoomscale = MIN_ZOOM;
     else if (display_zoomscale > MAX_ZOOM)
 	display_zoomscale = MAX_ZOOM;
 

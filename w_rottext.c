@@ -127,7 +127,6 @@ static struct style_template {
 /* ---------------------------------------------------------------------- */
 
 
-static char            *my_strdup();
 static char            *my_strtok();
 
 float                   XRotVersion();
@@ -151,29 +150,6 @@ static XImage          *XRotMagnifyImage();
 
 /* ---------------------------------------------------------------------- */
 
-
-/**************************************************************************/
-/* Routine to mimic `strdup()' (some machines don't have it)              */
-/**************************************************************************/
-
-static char
-*my_strdup(str)
-    char *str;
-{
-    char *s;
-    
-    if(str==NULL)
-	return NULL;
-    
-    s=(char *)malloc((unsigned)(strlen(str)+1));
-    if(s!=NULL) 
-	strcpy(s, str);
-    
-    return s;
-}
-
-
-/* ---------------------------------------------------------------------- */
 
 
 /**************************************************************************/

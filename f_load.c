@@ -69,7 +69,7 @@ load_file(file, xoff, yoff)
     /* object counters for depths */
     clearallcounts();
 
-    s = read_figc(file, &c, False, True, xoff, yoff, &settings);
+    s = read_figc(file, &c, False, True, False, xoff, yoff, &settings);
     defer_update_layers = 1;	/* so update_layers() won't update for each object */
     add_compound_depth(&c);	/* count objects at each depth */
     defer_update_layers = 0;
@@ -229,7 +229,7 @@ merge_file(file, xoff, yoff)
     /* clear picture object read flag */
     pic_obj_read = False;
 
-    s = read_figc(file, c, True, False, xoff, yoff, &settings);	/* merging */
+    s = read_figc(file, c, True, False, False, xoff, yoff, &settings);	/* merging */
 
     if (s == 0) {			/* Successful read */
 	compound_bound(c, &c->nwcorner.x, &c->nwcorner.y,

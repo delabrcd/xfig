@@ -41,16 +41,14 @@ launch_refman(w, closure, call_data)
     XtPointer closure;
     XtPointer call_data;
 {
-	int pid;
-
 	/* first check if at least the index file is installed */
-	sprintf(filename, "%s/html/index.html", XFIGLIBDIR);
+	sprintf(filename, "%s/html/index.html", XFIGDOCDIR);
 #ifdef I18N
 	if (appres.international && getenv("LANG")) {
-	  /* check localized file ($XFIGLIBDIR/html/$LANG/index.html) first */
-	  sprintf(filename, "%s/html/%s/index.html", XFIGLIBDIR, getenv("LANG"));
+	  /* check localized file ($XFIGDOCDIR/html/$LANG/index.html) first */
+	  sprintf(filename, "%s/html/%s/index.html", XFIGDOCDIR, getenv("LANG"));
 	  if (!check_docfile(filename))
-	    sprintf(filename, "%s/html/index.html", XFIGLIBDIR);
+	    sprintf(filename, "%s/html/index.html", XFIGDOCDIR);
 	}
 #endif
 	if (!check_docfile(filename))
@@ -64,7 +62,7 @@ launch_howto(w, closure, call_data)
     XtPointer closure;
     XtPointer call_data;
 {
-	sprintf(filename,"%s/xfig-howto.pdf",XFIGLIBDIR);
+	sprintf(filename,"%s/xfig-howto.pdf",XFIGDOCDIR);
 	launch_viewer(filename,"Launching PDF viewer for How-to Tutorial", appres.pdf_viewer);
 }
 
@@ -74,15 +72,13 @@ launch_man(w, closure, call_data)
     XtPointer closure;
     XtPointer call_data;
 {
-	sprintf(filename,"%s/xfig.html",XFIGLIBDIR);
+	sprintf(filename,"%s/xfig.html",XFIGDOCDIR);
 	launch_viewer(filename,"Launching Web browser for man pages", appres.browser);
 }
 
 launch_viewer(filename, message, viewer)
     char     *filename, *message, *viewer;
 {
-	int pid;
-
 	/* first check if the file is installed */
 	if (!check_docfile(filename))
 		return;
@@ -100,7 +96,7 @@ check_docfile(name)
 	struct	stat file_status;
 	if (stat(name, &file_status) != 0) {	/* something wrong */
 	    if (errno == ENOENT) {
-		file_msg("%s is not installed, please see README file",name);
+		file_msg("%s is not installed, please install package xfig-doc.",name);
 	    } else {
 		file_msg("System error: %s on file %s",strerror(errno),name);
 	    }

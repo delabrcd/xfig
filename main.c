@@ -214,7 +214,7 @@ static XtResource application_resources[] = {
     {"jpeg_quality", "Quality", XtRInt, sizeof(int),
       XtOffset(appresPtr, jpeg_quality), XtRImmediate, (caddr_t) 0},
     {"transparent", "Transparent", XtRInt, sizeof(int),
-      XtOffset(appresPtr, transparent), XtRImmediate, (caddr_t) -2 },
+      XtOffset(appresPtr, transparent), XtRImmediate, (caddr_t) TRANSP_NONE },
     {"library_dir", "Directory", XtRString, sizeof(char *),
       XtOffset(appresPtr, library_dir), XtRString, (caddr_t) OBJLIBDIR},
     {"debug", "Debug",   XtRBoolean, sizeof(Boolean),

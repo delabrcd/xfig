@@ -54,7 +54,8 @@ read_ppm(file,filetype,pic)
 	/* now call read_pcx to read the pcx file */
 	stat = read_pcx(giftopcx, filetype, pic);
 	pic->subtype = T_PIC_PPM;
-	/* remove temp file */
+	/* remove temp file after closing it */
+	fclose(giftopcx);
 	unlink(pcxname);
 	return stat;
 }

@@ -460,13 +460,20 @@ fig_scale_select(w, new_scale, garbage)
 }
 
 static void
-rul_unit_select(w, new_unit, garbage)
+rul_unit_select(w, closure, garbage)
     Widget          w;
-    XtPointer       new_unit, garbage;
+    XtPointer       closure, garbage;
 {
+    int		    new_unit = (int) closure;
+
+    /* return if no change */
+    if (new_unit == rul_unit_setting)
+	return;
+
     FirstArg(XtNlabel, XtName(w));
     SetValues(rul_unit_panel);
-    rul_unit_setting = ((int)new_unit)==1? True: False;
+
+    rul_unit_setting = new_unit==1? True: False;
     if (rul_unit_setting)
 	put_msg("ruler scale : inches");
     else

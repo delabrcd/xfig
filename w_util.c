@@ -42,6 +42,12 @@ DeclareStaticArgs(14);
 static Pixmap	spinup_bm=0;
 static Pixmap	spindown_bm=0;
 
+/* pixmap to indicate a pulldown menu */
+Pixmap		menu_arrow;
+
+/* pixmap for menu cascade arrow */
+Pixmap	  	menu_cascade_arrow;
+
 /* for internal consumption only */
 static Widget	MakeSpinnerEntry();
 
@@ -116,7 +122,14 @@ static unsigned char menu_arrow_bits[] = {
   0xf8,0x00,0xd8,0x00,0xa8,0x00,0xd8,0x00,0xa8,0x00,0xd8,0x00,
   0xaf,0x07,0x55,0x05,0xaa,0x02,0x54,0x01,0xa8,0x00,0x50,0x00,
   0x20,0x00};
-Pixmap		menu_arrow;
+
+/* arrow for cascade menu entries */
+
+#define menu_cascade_arrow_width 10
+#define menu_cascade_arrow_height 12
+static unsigned char menu_cascade_arrow_bits[] = {
+   0x00, 0x00, 0x02, 0x00, 0x0e, 0x00, 0x3e, 0x00, 0xfe, 0x00, 0xfe, 0x01,
+   0xfe, 0x01, 0xfe, 0x00, 0x3e, 0x00, 0x0e, 0x00, 0x02, 0x00, 0x00, 0x00};
 
 /* popup a confirmation window */
 
@@ -1105,6 +1118,10 @@ create_bitmaps()
 	/* make an arrow for any pull-down menu buttons */
 	menu_arrow = XCreateBitmapFromData(tool_d, tool_w, 
 			(char *) menu_arrow_bits, menu_arrow_width, menu_arrow_height);
+	/* make a right-arrow for any cascade menu entries */
+	menu_cascade_arrow = XCreateBitmapFromData(tool_d, tool_w, 
+			(char *) menu_cascade_arrow_bits, 
+			menu_cascade_arrow_width, menu_cascade_arrow_height);
 	/* make pixmap for red checkmark */
 	check_pm = XCreatePixmapFromBitmapData(tool_d, XtWindow(ind_panel),
 		    (char *) check_bits, check_width, check_height,
@@ -1275,7 +1292,7 @@ save_active_layers(save_layers)
     Boolean	 save_layers[];
 {
     int		 i;
-    for (i=0; i<MAX_DEPTH; i++)
+    for (i=0; i<=MAX_DEPTH; i++)
 	save_layers[i] = active_layers[i];
 }
 
@@ -1284,7 +1301,7 @@ save_depths(depths)
     int		 depths[];
 {
     int		 i;
-    for (i=0; i<MAX_DEPTH; i++)
+    for (i=0; i<=MAX_DEPTH; i++)
 	depths[i] = object_depths[i];
 }
 
@@ -1293,7 +1310,7 @@ save_counts(cts)
     struct counts cts[];
 {
     int		 i;
-    for (i=0; i<MAX_DEPTH; i++)
+    for (i=0; i<=MAX_DEPTH; i++)
 	cts[i] = counts[i];
     clearallcounts();
 }
@@ -1303,7 +1320,7 @@ restore_active_layers(save_layers)
     Boolean	 save_layers[];
 {
     int		 i;
-    for (i=0; i<MAX_DEPTH; i++)
+    for (i=0; i<=MAX_DEPTH; i++)
 	active_layers[i] = save_layers[i];
 }
 
@@ -1312,7 +1329,7 @@ restore_depths(depths)
     int		 depths[];
 {
     int		 i;
-    for (i=0; i<MAX_DEPTH; i++)
+    for (i=0; i<=MAX_DEPTH; i++)
 	 object_depths[i] = depths[i];
 }
 
@@ -1321,7 +1338,7 @@ restore_counts(cts)
     struct counts cts[];
 {
     int		 i;
-    for (i=0; i<MAX_DEPTH; i++)
+    for (i=0; i<=MAX_DEPTH; i++)
 	 counts[i] = cts[i];
 }
 

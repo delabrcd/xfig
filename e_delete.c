@@ -131,6 +131,10 @@ delete_region(x, y)
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     /* erase last lengths if appres.showlengths is true */
     erase_lengths();
+    /* save the current depths and counts for undo */
+    save_depths(saved_depths);
+    save_counts(&saved_counts[0]);
+
     c->nwcorner.x = min2(fix_x, x);
     c->nwcorner.y = min2(fix_y, y);
     c->secorner.x = max2(fix_x, x);

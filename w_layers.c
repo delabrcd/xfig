@@ -83,7 +83,7 @@ void
 reset_layers()
 {
   int i;
-  for (i=0; i<MAX_DEPTH+1;  i++) {
+  for (i=0; i<=MAX_DEPTH;  i++) {
      active_layers[i] = True;
   }
 }
@@ -92,7 +92,7 @@ void
 reset_depths()
 {
   int i;
-  for (i=0; i<MAX_DEPTH+1;  i++) {
+  for (i=0; i<=MAX_DEPTH;  i++) {
      object_depths[i] = 0;
   }
 }

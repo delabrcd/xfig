@@ -932,9 +932,15 @@ scale_text(t, sx, sy, refx, refy)
     float	    sx, sy;
     int		    refx, refy;
 {
+    int newsize;
     t->base_x = round(refx + (t->base_x - refx) * sx);
     t->base_y = round(refy + (t->base_y - refy) * sy);
     if (!rigid_text(t)) {
+        newsize = round(t->size * sx);
+	if (newsize < MIN_FONT_SIZE) 
+	    sx = (float) MIN_FONT_SIZE / t->size;
+	else if (MAX_FONT_SIZE < newsize)
+	    sx = (float) MAX_FONT_SIZE / t->size;
 	t->size = round(t->size * sx);
 	t->ascent = round(t->ascent * sx);
 	t->descent = round(t->descent * sx);
@@ -1238,7 +1244,9 @@ scale_arrow(arrow,sx,sy)
 {
     if (arrow == 0)
 	return;
-    sx = (sx+sy)/2.0;
+
+    /* scale the thickness by the average of the horizontal and vertical scale factors */
+    sx = ((float)fabs(sx)+(float)fabs(sy))/2.0;
     arrow->ht *= sx;
     arrow->wd *= sx;
     return;
@@ -1255,7 +1263,7 @@ scale_linewidth(l,sx,sy)
 	return;
 
     /* scale the thickness by the average of the horizontal and vertical scale factors */
-    sx = (sx+sy)/2.0;
+    sx = ((float)fabs(sx)+(float)fabs(sy))/2.0;
     l->thickness *= sx;
     /* don't allow underflow */
     if (l->thickness == 0)

@@ -225,7 +225,7 @@ replace_text_in_compound(com, pattern, dst)
 	new_t = copy_text(t);
 	free(new_t->cstring);
 	/* put in new string */
-	new_t->cstring = strdup(str);
+	new_t->cstring = my_strdup(str);
         size = textsize(lookfont(x_fontnum(psfont_text(t), new_t->font),
                                  new_t->size), strlen(new_t->cstring), new_t->cstring);
         new_t->ascent = size.ascent;
@@ -322,7 +322,6 @@ static void
 show_search_msg(char *format,...)
 {
   va_list ap;
-  XawTextBlock block;
   static char tmpstr[300];
 
   va_start(ap, format);
@@ -810,7 +809,7 @@ spell_check()
         if (str[len - 1] == '\n') 
 	    str[len - 1] = '\0';
 	/* save the word in the list */
-        miss_word_list[lines] = strdup(str);
+        miss_word_list[lines] = my_strdup(str);
         lines++;
 	if (lines >= MAX_MISSPELLED_WORDS)
 	    break;
@@ -905,7 +904,6 @@ static void
 show_spell_msg(char *format,...)
 {
   va_list ap;
-  XawTextBlock block;
   static char tmpstr[300];
 
   va_start(ap, format);

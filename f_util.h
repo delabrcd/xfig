@@ -23,3 +23,4 @@ extern		 emptyfigure();
 extern char	*safe_strcpy();
 extern Boolean	 uncompress_file();
 extern char	*build_command();
+extern Boolean	 map_to_palette();

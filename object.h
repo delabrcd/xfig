@@ -164,19 +164,22 @@ enum pictypes {
 	T_PIC_NONE,
 #ifdef V4_0
 	T_PIC_FIG,
-#endif
+#endif /* V4_0 */
 	T_PIC_EPS,
 	T_PIC_GIF,
 #ifdef USE_JPEG
 	T_PIC_JPEG,
-#endif
+#endif /* USE_JPEG */
 	T_PIC_PCX,
+#ifdef USE_PNG
+	T_PIC_PNG,
+#endif /* USE_PNG */
 	T_PIC_PPM,
 	T_PIC_TIF,
 	T_PIC_XBM,
 #ifdef USE_XPM
 	T_PIC_XPM,
-#endif
+#endif /* USE_XPM */
 	LAST_PIC
      } ;
 
@@ -195,7 +198,7 @@ typedef struct f_pic {
     Pixmap	    mask;
     struct Cmap	    cmap[MAX_COLORMAP_SIZE];  /* for GIF/XPM/JPEG files */
     int		    numcols;		/* number of colors in cmap */
-    int		    transp;		/* transparent color (-1 if none) for GIFs */
+    int		    transp;		/* transparent color (TRANSP_NONE if none) for GIFs */
     float	    hw_ratio;
     int		    size_x, size_y;	/* picture size (fig units) */
     struct f_pos    bit_size;		/* size of bitmap in pixels */

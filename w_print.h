@@ -22,8 +22,10 @@ extern Widget	print_papersize_panel;
 extern Widget	print_multiple_panel;
 extern Widget	print_mag_text;
 extern Widget	print_background_panel;
+extern Widget	make_layer_choice();
 
 extern void	print_update_figure_size();
 extern void	popup_print_panel();
 extern void	do_print();
 extern void	do_print_batch();
+extern Boolean	print_all_layers;

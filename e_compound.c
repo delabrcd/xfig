@@ -31,6 +31,7 @@
 #include "resources.h"
 #include "mode.h"
 #include "object.h"
+#include "u_create.h"
 #include "u_search.h"
 #include "w_canvas.h"
 #include "w_icons.h"
@@ -63,7 +64,7 @@ open_this_compound(c)
 
   mask_toggle_compoundmarker(c);
 
-  c->parent = d = malloc(sizeof(F_compound));
+  c->parent = d = create_compound();
   *d = objects;			/* Preserve the parent, it points to c */
   objects = *c;
   objects.GABPtr = c;		/* Where original compound came from */

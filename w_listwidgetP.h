@@ -12,7 +12,11 @@
 #define _FigListP_h
 
 /* get the superclass private header */
+#ifdef XAW3D
+#include <X11/Xaw3d/ListP.h>
+#else /* XAW3d */
 #include <X11/Xaw/ListP.h>
+#endif /* XAW3d */
 
 /* our header file */
 #include "w_listwidget.h"

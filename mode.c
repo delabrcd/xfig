@@ -21,6 +21,7 @@
 #include "object.h"
 #include "u_fonts.h"
 #include "w_indpanel.h"
+#include "w_msgpanel.h"
 
 int		cur_mode = F_NULL;
 int		cur_halign = ALIGN_NONE;
@@ -73,8 +74,9 @@ char		batch_file[32];
 
 char	       *lang_items[] = {
 	"box",  "latex", "epic", "eepic", "eepicemu", "pictex",
-	"hpl",  "eps",   "ps",   "pdf",   "pstex", "textyl",
-	"tpic", "pic",   "mf",   "cgm",   "tk",    "map",
+	"hpl",  "eps",   "ps",   "pdf",   "pstex",    "textyl",
+	"tpic", "pic",   "mf",   "mp",    "mmp",      "cgm",
+	"tk",   "map",
 /* bitmap formats start here */
 	"gif",  
 #ifdef USE_JPEG
@@ -102,6 +104,8 @@ char	       *lang_texts[] = {
 	"TPIC                              ",
 	"PIC                               ",
 	"MF  (MetaFont)                    ",
+	"MP  (MetaPost)                    ",
+	"MMP (Multi MetaPost)              ",
 	"CGM (Computer Graphics Metafile)  ",
 	"Tk  (Tcl/Tk toolkit)              ",
 	"HTML Image Map                    ",
@@ -206,4 +210,6 @@ void
 reset_action_on()
 {
     action_on = 0;
+    /* reset this so next show_linelengths will work properly */
+    first_lenmsg = True;
 }

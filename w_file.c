@@ -1170,7 +1170,7 @@ preview_figure(filename, parent, canvas, size_widget, pixmap)
     char	figsize[50];
     Pixel	pb;
     Boolean	save_layers[MAX_DEPTH+1];
-    int		save_min_depth, save_max_depth, depths[MAX_DEPTH +1];
+    int		save_min_depth, save_max_depth, depths[MAX_DEPTH+1];
     struct counts obj_counts[MAX_DEPTH+1];
 
     /* alloc a compound object - we must do it this way so free_compound()
@@ -1263,7 +1263,7 @@ preview_figure(filename, parent, canvas, size_widget, pixmap)
     /* read the figure into the local F_compound "figure" */
 
     /* we'll ignore the stuff returned in "settings" */
-    if ((status = read_figc(filename, figure, False, True, 0, 0, &settings)) != 0) {
+    if ((status = read_figc(filename, figure, False, True, False, 0, 0, &settings)) != 0) {
 	switch (status) {
 	   case -1: file_msg("Bad format");
 		   break;

@@ -344,7 +344,7 @@ rotate_line(l, x, y)
     int		    dx;
 
     /* for speed we treat 90 degrees as a special case */
-    if (act_rotnangle == 90) {
+    if (act_rotnangle == 90.0) {
 	for (p = l->points; p != NULL; p = p->next) {
 	    dx = p->x - x;
 	    p->x = x + rotn_dirn * (y - p->y);
@@ -366,7 +366,7 @@ rotate_figure(f, x, y)
   old_rotn_dirn= rotn_dirn;
   old_act_rotnangle= act_rotnangle;
   rotn_dirn= -1;
-  act_rotnangle=90;
+  act_rotnangle=90.0;
   rotate_compound(f,x,y);
   rotn_dirn=old_rotn_dirn;
   act_rotnangle=old_act_rotnangle;
@@ -380,7 +380,7 @@ rotate_spline(s, x, y)
     int		    dx;
 
     /* for speed we treat 90 degrees as a special case */
-    if (act_rotnangle == 90) {
+    if (act_rotnangle == 90.0) {
 	for (p = s->points; p != NULL; p = p->next) {
 	    dx = p->x - x;
 	    p->x = x + rotn_dirn * (y - p->y);
@@ -398,7 +398,7 @@ rotate_text(t, x, y)
 {
     int		    dx;
 
-    if (act_rotnangle == 90) { /* treat 90 degs as special case for speed */
+    if (act_rotnangle == 90.0) { /* treat 90 degs as special case for speed */
 	dx = t->base_x - x;
 	t->base_x = x + rotn_dirn * (y - t->base_y);
 	t->base_y = y + rotn_dirn * dx;
@@ -419,7 +419,7 @@ rotate_ellipse(e, x, y)
 {
     int		    dxc,dxs,dxe;
 
-    if (act_rotnangle == 90) { /* treat 90 degs as special case for speed */
+    if (act_rotnangle == 90.0) { /* treat 90 degs as special case for speed */
 	dxc = e->center.x - x;
 	dxs = e->start.x - x;
 	dxe = e->end.x - x;
@@ -434,7 +434,7 @@ rotate_ellipse(e, x, y)
 	rotate_point((F_point *)&e->start, x, y);
 	rotate_point((F_point *)&e->end, x, y);
     }
-    e->angle -= (float) (rotn_dirn * act_rotnangle * M_PI / 180);
+    e->angle -= (float) (rotn_dirn * act_rotnangle * M_PI / 180.0);
     if (e->angle < 0.0)
 	e->angle += M_2PI;
     else if (e->angle >= M_2PI - 0.001)
@@ -450,7 +450,7 @@ rotate_arc(a, x, y)
     float	    xx, yy;
 
     /* for speed we treat 90 degrees as a special case */
-    if (act_rotnangle == 90) {
+    if (act_rotnangle == 90.0) {
 	dx = a->center.x - x;
 	a->center.x = x + rotn_dirn * (y - a->center.y);
 	a->center.y = y + rotn_dirn * dx;
@@ -492,7 +492,7 @@ valid_rot_angle(c)
     F_line         *l;
     F_compound     *c1;
 
-    if (act_rotnangle == 90)
+    if (fabs(act_rotnangle) == 90.0 || fabs(act_rotnangle == 180.0))
 	return 1; /* always valid */
     for (l = c->lines; l != NULL; l = l->next)
 	if (l->type == T_ARC_BOX || l->type == T_BOX)

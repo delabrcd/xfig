@@ -83,6 +83,14 @@ create_boxobject(x, y)
     /* erase last lengths if appres.showlengths is true */
     erase_box_lengths();
 
+    if (fix_x == x || fix_y == y) {
+	beep();
+	put_msg("Box must have area");
+	box_drawing_selected();
+	draw_mousefun_canvas();
+	return;
+    }
+
     if ((point = create_point()) == NULL)
 	return;
 

@@ -24,9 +24,8 @@
 #include "w_setup.h"
 #include "w_zoom.h"
 
-#define TOLERANCE (display_zoomscale > 1 ? \
-		5*PIX_PER_INCH/DISPLAY_PIX_PER_INCH : \
-		(int)(5*PIX_PER_INCH/DISPLAY_PIX_PER_INCH/display_zoomscale))
+#define TOLERANCE ((int)((display_zoomscale < 20.0? 4: 14) * \
+			PIX_PER_INCH/DISPLAY_PIX_PER_INCH/display_zoomscale))
 
 static		(*manipulate) ();
 static		(*handlerproc_left) ();
@@ -504,8 +503,8 @@ object_search_right(x, y, shift)
 
 Boolean
 next_ellipse_point_found(x, y, tol, point_num, shift)
-    int		    x, y, tol, shift, *point_num;
-
+    int		    x, y, tol, shift;
+    size_t         *point_num;
 /* dirty trick - point_num is called as a `F_point *point_num' */
 {
 
@@ -533,8 +532,8 @@ next_ellipse_point_found(x, y, tol, point_num, shift)
 
 Boolean
 next_arc_point_found(x, y, tol, point_num, shift)
-    int		    x, y, tol, shift, *point_num;
-
+    int		    x, y, tol, shift;
+    size_t          *point_num;
 /* dirty trick - point_num is called as a `F_point *point_num' */
 {
     int		    i;
@@ -620,7 +619,8 @@ next_line_point_found(x, y, tol, p, q, shift)
 
 Boolean
 next_compound_point_found(x, y, tol, p, q, shift)
-    int		    x, y, tol, shift, *p, *q;
+    int		    x, y, tol, shift;
+    size_t         *p, *q;
 
 /* dirty trick - p and q are called with type `F_point' */
 {

@@ -22,6 +22,8 @@
 #include "w_msgpanel.h"
 #include "w_setup.h"
 
+/* This is based on: */
+
 /* pcx2ppm 1.2 - convert pcx to ppm
  * based on zgv's readpcx.c
  * public domain by RJM
@@ -50,7 +52,6 @@ struct pcxhed
 /* prototypes */
 void dispbyte(unsigned char *ptr,int *xp,int *yp,int c,int w,int h,
               int real_bpp,int byteline,int *planep,int *pmaskp);
-
 
 int	_read_pcx();
 
@@ -94,15 +95,13 @@ _read_pcx(pcxfile,pic)
     FILE	*pcxfile;
     F_pic	*pic;
 {
-	int		 w,h,bytepp,x,y,yy,byteline,plane,pmask;
-	unsigned char	*pal, *old;
+	int		 i,w,h,bytepp,x,y,yy,byteline,plane,pmask;
+	unsigned char	*pal;
 	struct pcxhed	 header;
-	int		 count,waste;
+	int		 count;
 	long		 bytemax,bytesdone;
 	byte		 inbyte,inbyte2;
 	int		 real_bpp;		/* how many bpp file really is */
-	int		 mult, neu_stat, numcols, size, x3;
-	BYTE		 col[3];
 
 	pic->bitmap=NULL;
 
@@ -188,6 +187,9 @@ _read_pcx(pcxfile,pic)
 	  }
 	}
 
+	pic->bit_size.x = w;
+	pic->bit_size.y = h;
+
 	/* read palette */
 	switch(real_bpp) {
 	    case 1:
@@ -210,73 +212,31 @@ _read_pcx(pcxfile,pic)
 
 	    case 8:
 		/* 8-bit */
-		waste=fgetc(pcxfile);                    /* ditch splitter byte */
+		fseek(pcxfile, -768L, SEEK_END);/* locate colormap in last 768 bytes of file */
 		for (x=0; x<256; x++) {
 		    pic->cmap[x].red   = fgetc(pcxfile);
 		    pic->cmap[x].green = fgetc(pcxfile);
 		    pic->cmap[x].blue  = fgetc(pcxfile);
 		}
+		/* start with 256 */
 		pic->numcols = 256;
+		/* ignore duplicate white entries after real colors */
+		for (i = pic->numcols-1; i >=0 ; i--) {
+		if (pic->cmap[i].red != 255 ||
+		    pic->cmap[i].green != 255 ||
+		    pic->cmap[i].blue != 255)
+			break;
+		}
+		if (i < pic->numcols-2)
+		    pic->numcols = i+2;
 		break;
 	  
 	    case 24:
-	    /* no palette, must use neural net to reduce to 256 colors with palette */
-		pic->numcols = 256;
-		mult = 1;
-		if ((neu_stat=neu_init(w*h)) <= -2) {
-		    mult = -neu_stat;
-		    /* try again with more pixels */
-		    neu_stat = neu_init2(w*h*mult);
-		}
-		if (neu_stat == -1) {
-		    /* couldn't alloc memory for network */
-		    fprintf(stderr,"Can't alloc memory for neural network\n");
-		    free(pic->bitmap);
-		    return FileInvalid;
-		}
-		/* now add all pixels to the samples */
-		size = w*h*3;
-		for (x=0; x<size;) {
-		    col[N_BLU] = pic->bitmap[x++];
-		    col[N_GRN] = pic->bitmap[x++];
-		    col[N_RED] = pic->bitmap[x++];
-		    for (y=0; y<mult; y++) {
-			neu_pixel(col);
-		    }
-		}
-
-		/* make a new colortable with the optimal colors */
-		numcols = neu_clrtab(256);
-
-		/* now change the color cells with the new colors */
-		/* clrtab[][] is the colormap produced by neu_clrtab */
-		for (x=0; x<256; x++) {
-		    pic->cmap[x].red   = (unsigned short) clrtab[x][N_RED];
-		    pic->cmap[x].green = (unsigned short) clrtab[x][N_GRN];
-		    pic->cmap[x].blue  = (unsigned short) clrtab[x][N_BLU];
-		}
-
-		/* now alloc a 1-byte/per/pixel array for the final colormapped image */
-		/* save orig */
-		old = pic->bitmap;
-		if ((pic->bitmap=malloc(w*(h+2)))==NULL)
-		    return FileInvalid;
-
-		/* and change the 3-byte pixels to the 1-byte */
-		for (x=0, y=0; x<size; x+=3, y++) {
-		    col[N_BLU] = old[x];
-		    col[N_GRN] = old[x+1];
-		    col[N_RED] = old[x+2];
-		    pic->bitmap[y] = neu_map_pixel(col);
-		}
-		/* free 3-byte/pixel array */
-		free(old);
+		/* no palette, must use neural net to reduce to 256 colors with palette */
+		if (!map_to_palette(pic))
+		    return FileInvalid;		/* out of memory or something */
 		break;
 	}
-
-	pic->bit_size.x = w;
-	pic->bit_size.y = h;
-
 	return PicSuccess;  
 }
 

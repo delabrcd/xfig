@@ -194,13 +194,13 @@ cancel_text_input()
     supersub = 0;
     erase_char_string();
     terminate_char_handler();
+    reset_action_on();
     if (cur_t != NULL) {
 	/* draw it and any objects that are on top */
 	redisplay_text(cur_t);
     }
     text_drawing_selected();
     draw_mousefun_canvas();
-    reset_action_on();
 }
 
 static void
@@ -420,7 +420,11 @@ init_text_input(x, y)
      * through
      */
 
-    if ((cur_t = text_search(cur_x, cur_y, &posn)) == NULL) {	/* new text input */
+    /******************/
+    /* new text input */
+    /******************/
+
+    if ((cur_t = text_search(cur_x, cur_y, &posn)) == NULL) {
 	leng_prefix = leng_suffix = 0;
 	*suffix = 0;
 	prefix[leng_prefix] = '\0';
@@ -457,7 +461,11 @@ init_text_input(x, y)
 	/* save the working font structure */
 	work_fontstruct = canvas_zoomed_font;
 
-    } else {			/* clicked on existing text */
+    } else {
+	/*****************/
+	/* existing text */
+	/*****************/
+
 	if (hidden_text(cur_t)) {
 	    put_msg("Can't edit hidden text");
 	    reset_action_on();
@@ -500,13 +508,17 @@ init_text_input(x, y)
 	save_base_y = base_y;
 #endif
 
+	/* set origin to base of this text so newline will go there */
+	orig_x = base_x;
+	orig_y = base_y;
+
 	switch (cur_t->type) {
-	case T_CENTER_JUSTIFIED:
+	  case T_CENTER_JUSTIFIED:
 	    base_x = round(base_x - lencos/2.0);
 	    base_y = round(base_y + lensin/2.0);
 	    break;
 
-	case T_RIGHT_JUSTIFIED:
+	  case T_RIGHT_JUSTIFIED:
 	    base_x = round(base_x - lencos);
 	    base_y = round(base_y + lensin);
 	    break;
@@ -520,10 +532,6 @@ init_text_input(x, y)
 	prefix[leng_prefix]='\0';
 	strcpy(suffix, &cur_t->cstring[leng_prefix]);
 	tsize = textsize(canvas_font, leng_prefix, prefix);
-
-	/* set origin to base of this text so newline will go there */
-	orig_x = base_x;
-	orig_y = base_y;
 
 	/* set current to character position of mouse click */
 	cur_x = round(base_x + tsize.length * cos_t);

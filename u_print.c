@@ -18,12 +18,15 @@
 #include "fig.h"
 #include "resources.h"
 #include "mode.h"
+#include "w_layers.h"
 #include "w_msgpanel.h"
+#include "w_print.h"
 #include "w_setup.h"
 
 extern void	init_write_tmpfile();
 extern void	end_write_tmpfile();
 static int	exec_prcmd();
+static char	layers[PATH_MAX];
 
 /*
  * Beware!  The string returned by this function is static and is
@@ -57,10 +60,11 @@ char *shell_protect_string(string)
     return(buf);
 }
 
-print_to_printer(printer, backgrnd, mag,  params)
+print_to_printer(printer, backgrnd, mag, print_all_layers, params)
     char	    printer[];
     char	   *backgrnd;
     float	    mag;
+    Boolean	    print_all_layers;
     char	    params[];
 {
     char	    prcmd[2*PATH_MAX+200], translator[255];
@@ -76,6 +80,9 @@ print_to_printer(printer, backgrnd, mag,  params)
       return;
     }
     end_write_tmpfile();
+
+    /* if the user only wants the active layers, build that list */
+    build_layer_list(layers);
 
     outfile = shell_protect_string(cur_filename);
     if (!outfile || outfile[0] == '\0')
@@ -97,6 +104,9 @@ print_to_printer(printer, backgrnd, mag,  params)
 	strcat(translator," -g \\");	/* must escape the #rrggbb color spec */
 	strcat(translator,backgrnd);
     }
+    /* add the -D +list if user doesn't want all layers printed */
+    if (!print_all_layers)
+	strcat(translator, layers);
 
     /* make the print command with no filename (it will be in stdin) */
     gen_print_cmd(syspr, "", printer, params);
@@ -157,12 +167,13 @@ gen_print_cmd(cmd,file,printer,pr_params)
 /* xoff and yoff are in fig2dev print units (1/72 inch) */
 
 print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent, 
-		use_transp_backg, border, smooth)
+		use_transp_backg, print_all_layers, border, smooth)
     char	   *file, *lang;
     float	    mag;
     int		    xoff, yoff;
     char	   *backgrnd, *transparent;
     Boolean	    use_transp_backg;
+    Boolean	    print_all_layers;
     int		    border;
     Boolean	    smooth;
 {
@@ -185,6 +196,9 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
     }
     end_write_tmpfile();
 
+    /* if the user only wants the active layers, build that list */
+    build_layer_list(layers);
+
     outfile = shell_protect_string(file);
 
     put_msg("Exporting to file \"%s\" in %s mode ...     ",
@@ -202,6 +216,10 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
 #else
     sprintf(prcmd, "fig2dev -L %s -m %f ", lang, mag/100.0);
 #endif  /* I18N */
+
+    /* add the -D +list if user doesn't want all layers printed */
+    if (!print_all_layers)
+	strcat(prcmd, layers);
 
     /* PostScript or PDF output */
     if (!strcmp(lang, "ps") || !strcmp(lang, "pdf")) {
@@ -379,12 +397,12 @@ exec_prcmd(command, msg)
     strcat(command, " 2> "); 
     strcat(command, errfname); 
     if (appres.DEBUG)
-	fprintf(stderr,"execing: %s\n",command);
+	fprintf(stderr,"Execing: %s\n",command);
     status=system(command);
     /* check if error file has anything in it */
     if ((errfile = fopen(errfname, "r")) == NULL) {
 	if (status != 0)
-	    file_msg("Error during %s. No messages available.");
+	    file_msg("Error during %s. No messages available.",msg);
     } else {
 	if (fgets(str,sizeof(str)-1,errfile) != NULL) {
 	    rewind(errfile);
@@ -421,4 +439,93 @@ make_rgb_string(color, rgb_string)
 	} else {
 	    rgb_string[0] = '\0';	/* no background wanted by user */
 	}
+}
+
+/* make up the -D option to fig2dev if user wants to print only active layers */
+
+build_layer_list(layers)
+    char	*layers;
+{
+    char	 list[PATH_MAX], notlist[PATH_MAX], num[10];
+    int		 layer, len, notlen;
+    int		 firstyes, lastyes, firstno, lastno;
+
+    layers[0] = '\0';
+
+    if (print_all_layers)
+	return;
+
+    list[0] = notlist[0] = '\0';
+    len = notlen = 0;
+
+    /* build up two lists - layers TO print and layers to NOT print */
+    /* use the smaller of the two in the final command */
+
+    firstyes = firstno = -1;
+    for (layer=min_depth; layer<=max_depth; layer++) {
+	if (active_layers[layer] && object_depths[layer]) {
+	    if (firstyes == -1)
+		firstyes = lastyes = layer;
+	    /* see if there is a contiguous set */
+	    if (layer-lastyes <= 1) {
+		lastyes = layer;	/* so far, yes */
+		continue;
+	    }
+	    append_group(list, num, firstyes, lastyes);
+	    firstyes = lastyes = layer;
+	    if (len+strlen(list) >= PATH_MAX-5)
+		continue;		/* list is too long, don't append */
+	    strcat(list,num);
+	    len += strlen(list)+1;
+	} else if (object_depths[layer]) {
+	    if (firstno == -1)
+		firstno = lastno = layer;
+	    /* see if there is a contiguous set */
+	    if (layer-lastno <= 1) {
+		lastno = layer;		/* so far, yes */
+		continue;
+	    }
+	    if (firstno == -1)
+		firstno = layer;
+	    append_group(notlist, num, firstno, lastno);
+	    firstno = lastno = layer;
+	    if (notlen+strlen(notlist) >= PATH_MAX-5)
+		continue;		/* list is too long, don't append */
+	    strcat(notlist,num);
+	    notlen += strlen(notlist)+1;
+	}
+    }
+    if (firstyes != -1) {
+	append_group(list, num, firstyes, lastyes);
+	if (len+strlen(list) < PATH_MAX-5) {
+	    strcat(list,num);
+	    len += strlen(list)+1;
+	}
+    }
+    if (firstno != -1) {
+	append_group(notlist, num, firstno, lastno);
+	if (notlen+strlen(notlist) < PATH_MAX-5) {
+	    strcat(notlist,num);
+	    notlen += strlen(notlist)+1;
+	}
+    }
+    if (len < notlen && firstyes != -1) {
+	/* use list of layers TO print */
+	sprintf(layers," -D +%s ",list);
+    } else if (firstno != -1){
+	/* use list of layers to NOT print */
+	sprintf(layers," -D -%s ",notlist);
+    }
+}
+
+append_group(list, num, first, last)
+    char    *list, *num;
+    int	     first, last;
+{
+    if (list[0])
+	strcat(list,",");
+    if (first==last)
+	sprintf(num,"%0d",first);
+    else
+	sprintf(num,"%0d:%d",first,last);
 }

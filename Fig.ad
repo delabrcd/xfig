@@ -1,7 +1,7 @@
 !Don't change the following string - xfig uses it to determine
 ! if you have the newest app-defaults files installed
 
-Fig.version:			3.2.3c
+Fig.version:			3.2.3d
 
 ! some sample settings you may want to change
 
@@ -54,7 +54,7 @@ Fig*file_panel*mask*string:	*.fig *.fig.gz *.fig.[Zz]
 Fig.exportLanguage:		eps
 
 ! filename mask for the image popup browser
-Fig*browse_panel*mask*string:	*.gif* *.jpg* *.pcx* *.ppm* *.tif* *.xpm* *.xbm* *.ps* *.eps*
+Fig*browse_panel*mask*string:	*.gif* *.jpg* *.pcx* *.png* *.ppm* *.tif* *.xpm* *.xbm* *.ps* *.eps*
 
 ! printer name
 ! If the following resource is NOT set, xfig will use the PRINTER 

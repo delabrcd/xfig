@@ -219,34 +219,17 @@ undo_glue()
 
 undo_convert()
 {
-    F_line	    swp_l;
-    F_spline	    swp_s;
-    if (last_object == O_POLYLINE) {
-	new_l = saved_objects.lines;		/* the original */
-	old_l = latest_line;			/* the changed object */
-	/* swap old with new */
-	bcopy((char*)old_l, (char*)&swp_l, sizeof(F_line));
-	bcopy((char*)new_l, (char*)old_l, sizeof(F_line));
-	bcopy((char*)&swp_l, (char*)new_l, sizeof(F_line));
-	/* but keep the next pointers unchanged */
-	swp_l.next = old_l->next;
-	old_l->next = new_l->next;
-	new_l->next = swp_l.next;
-	set_action_object(F_CONVERT, O_POLYLINE);
-	redisplay_lines(new_l, old_l);
-    } else {
-	new_s = saved_objects.splines;		/* the original */
-	old_s = latest_spline;			/* the changed object */
-	/* swap old with new */
-	bcopy((char*)old_s, (char*)&swp_s, sizeof(F_spline));
-	bcopy((char*)new_s, (char*)old_s, sizeof(F_spline));
-	bcopy((char*)&swp_s, (char*)new_s, sizeof(F_spline));
-	/* but keep the next pointers unchanged */
-	swp_s.next = old_s->next;
-	old_s->next = new_s->next;
-	new_s->next = swp_s.next;
-	set_action_object(F_CONVERT, O_SPLINE);
-	redisplay_splines(new_s, old_s);
+    switch (last_object) {
+      case O_POLYLINE:
+	if (saved_objects.lines->type == T_BOX ||
+	    saved_objects.lines->type == T_ARC_BOX)
+		box_2_box(latest_line);
+	else
+		spline_line(saved_objects.splines);
+	break;
+      case O_SPLINE:
+	line_spline(saved_objects.lines, saved_objects.splines->type);
+	break;
     }
 }
 

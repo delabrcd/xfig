@@ -31,7 +31,8 @@
 #define A4_WIDTH	 9921
 #define A4_HEIGHT	14031
 
-/* max zoom allowed */
+/* min,max zoom allowed */
+#define	MIN_ZOOM	0.01
 #define	MAX_ZOOM	100
 
 /* starting, min, max depth of objects on canvas */

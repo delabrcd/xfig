@@ -20,6 +20,7 @@
 #include "object.h"
 #include "mode.h"
 #include "e_edit.h"
+#include "u_create.h"
 #include "u_print.h"
 #include "w_export.h"
 #include "w_print.h"
@@ -39,12 +40,14 @@ Widget		printer_menu_button;
 Widget		print_mag_text;
 Widget		print_background_panel;
 void		print_update_figure_size();
+Boolean		print_all_layers=True;
 
 /* LOCAL */
 
 DeclareStaticArgs(15);
 
-static char    *printer_names[200];	/* allow 200 printers */
+#define MAX_PRINTERS 1000		/* for those systems using lprng :-) */
+static char    *printer_names[MAX_PRINTERS];
 static int	parse_printcap();
 static int	numprinters;
 
@@ -69,7 +72,8 @@ static Widget	printer_menu;
 static Widget	print_panel, dismiss, print, 
 		printer_text, param_text, printer_lab, param_lab,
 		clear_batch, print_batch, 
-		num_batch_lab, num_batch;
+		num_batch_lab, num_batch,
+		printalltoggle, printactivetoggle;
 
 static Widget	mag_lab;
 static Widget	size_lab;
@@ -85,6 +89,7 @@ static void     print_panel_dismiss(), do_clear_batch();
 static void	get_magnif();
 static void update_mag();
 void		do_print(), do_print_batch();
+static XtCallbackProc switch_print_layers();
 
 /* callback list to keep track of magnification window */
 
@@ -175,7 +180,7 @@ do_print(w)
 	    }
 	    /* make a #rrggbb string from the background color */
 	    make_rgb_string(export_background_color, backgrnd);
-	    print_to_printer(printer_val, backgrnd, appres.magnification, cmd);
+	    print_to_printer(printer_val, backgrnd, appres.magnification, print_all_layers, cmd);
 	}
 }
 
@@ -310,7 +315,7 @@ do_print_batch(w)
 	make_rgb_string(export_background_color, backgrnd);
 
 	print_to_file(tmp_exp_file, "ps", appres.magnification, 0, 0, backgrnd,
-				NULL, FALSE, 0, FALSE);
+				NULL, FALSE, print_all_layers, 0, FALSE);
 	put_msg("Appending to batch file \"%s\" (%s mode) ... done",
 		    batch_file, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
 	app_flush();		/* make sure message gets displayed */
@@ -549,6 +554,7 @@ create_print_panel(w)
 {
 	Widget	    image;
 	Widget	    entry,mag_spinner;
+	Widget	    beside;
 	Pixmap	    p;
 	unsigned    long fg, bg;
 	char	   *printer_val;
@@ -888,9 +894,16 @@ create_print_panel(w)
 	XtAddEventHandler(dismiss, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler)print_panel_dismiss, (XtPointer) NULL);
 
+	/* radio for printing all layers */
+
+	beside = make_layer_choice("Print all layers ", "Print only active",
+				print_panel, num_batch, dismiss, 6, 6);
+
+	/* print buttons */
+
 	FirstArg(XtNlabel, "Print FIGURE\nto Printer");
 	NextArg(XtNfromVert, num_batch);
-	NextArg(XtNfromHoriz, dismiss);
+	NextArg(XtNfromHoriz, beside);
 	NextArg(XtNresize, False);	/* must not allow resize because the label changes */
 	NextArg(XtNheight, 35);
 	NextArg(XtNborderWidth, INTERNAL_BW);
@@ -950,6 +963,47 @@ create_print_panel(w)
 	}
 }
 
+/* when user toggles between printing all or only active layers */
+
+static XtCallbackProc
+switch_print_layers(w, closure, call_data)
+    Widget	    w;
+    XtPointer       closure, call_data;
+{
+    Boolean	    state;
+    int		    which;
+
+    /* check state of the toggle and set/remove checkmark */
+    FirstArg(XtNstate, &state);
+    GetValues(w);
+    
+    if (state ) {
+	FirstArg(XtNbitmap, sm_check_pm);
+    } else {
+	FirstArg(XtNbitmap, sm_null_check_pm);
+    }
+    SetValues(w);
+
+    /* set the sensitivity of the toggle button to the opposite of its state
+       so that the user must press the other one now */
+    XtSetSensitive(w, !state);
+    /* and make the *other* button the opposite state */
+    if (w == printalltoggle) {
+	XtSetSensitive(printactivetoggle, state);
+    } else {
+	XtSetSensitive(printalltoggle, state);
+    }
+    /* which button */
+    which = (int) XawToggleGetCurrent(w);
+    if (which == 0)		/* no buttons on, in transition so return now */
+	return;
+    if (which == 2)		/* "blank" button, invert state */
+	state = !state;
+
+    /* set global state */
+    print_all_layers = state;
+}
+
 /* if the users's sytem doesn't have an /etc/printcap file, this will return 0 */
 
 static int
@@ -958,16 +1012,17 @@ char *names[];
 {
     FILE   *printcap;
     char    str[300];
-    int     i,j,len;
+    int     i,j,k,len;
     int     printers;
     Boolean comment;
+    Boolean dudprinter;
 
-    if ((printcap=fopen("/etc/printcap","r"))==NULL)
+    if ((printcap=fopen(PRINTCAP,"r"))==NULL)
 	return 0;
     printers = 0;
     while (!feof(printcap)) {
 	if (fgets(str, sizeof(str), printcap) == NULL)
-		return printers;
+	    break;
 	len = strlen(str);
 	comment = False;
 	/* get rid of newline */
@@ -988,13 +1043,34 @@ char *names[];
 	if (i==len)
 	    continue;
 	/* get printer name */
-	for (j=0; j<len; j++) {
-	    if (str[j] == '|' || str[j] == ':')
+	for (j=i; j<len; j++) {
+	    if (str[j] == '|' || str[j] == ':' || str[j] == ' ')
 		break;
 	}
 	str[j] = '\0';
-	if ((names[printers] = malloc(j-i+1)) == NULL)
-	    return printers;
+        /* Check for empty printer name or duplicate name */
+        dudprinter = True;
+        for (k=0; k<j; k++) {
+            if(str[k] !=' ' && str[k] != '\t')
+               dudprinter = False;
+        }
+        if(printers > 0) {
+            for (k=0; k<printers; k++) {
+                if(strncmp(names[k],&str[i],j-i+1) == 0)
+                    dudprinter = True;
+            }
+        }
+        if (dudprinter == True)
+            continue;
+	if (printers >= MAX_PRINTERS) {
+	    file_msg("Maximum number of printers (%d) exceeded in %s",MAX_PRINTERS,PRINTCAP);
+	    break;
+	}
+	if ((names[printers] = new_string(j-i)) == NULL) {
+	    file_msg("Out of memory while getting printer names");
+	    fclose(printcap);
+	    break;
+	}
 	strncpy(names[printers],&str[i],j-i+1);
 	printers++;
 	for (j=len-1; j>0; j--) {
@@ -1012,5 +1088,86 @@ char *names[];
 	    j=len;
 	}
     }
+    fclose(printcap);
     return printers;
+}
+
+Widget
+make_layer_choice(label_all, label_active, parent, below, beside, hdist, vdist)
+    char	*label_all, *label_active;
+    Widget	 parent, below, beside;
+    int		 hdist, vdist;
+{
+	Widget	 form;
+
+	FirstArg(XtNborderWidth, 0);
+	NextArg(XtNfromVert, below);
+	NextArg(XtNvertDistance, vdist);
+	NextArg(XtNfromHoriz, beside);
+	NextArg(XtNhorizDistance, hdist);
+	form = XtCreateManagedWidget("layer_choice_form", formWidgetClass,
+				parent, Args, ArgCount);
+
+	FirstArg(XtNbitmap, (print_all_layers? sm_check_pm : sm_null_check_pm));
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);	/* make it stay on left side */
+	NextArg(XtNright, XtChainLeft);
+	NextArg(XtNinternalWidth, 1);
+	NextArg(XtNinternalHeight, 1);
+	NextArg(XtNlabel, "  ");
+	NextArg(XtNsensitive, (print_all_layers? False : True)); /* make opposite button sens */
+	NextArg(XtNstate, print_all_layers); 	/* initial state */
+	NextArg(XtNradioData, 1);		/* when this is pressed the value is 1 */
+	printalltoggle = XtCreateManagedWidget("printalltoggle", toggleWidgetClass,
+				form, Args, ArgCount);
+	XtAddCallback(printalltoggle, XtNcallback, (XtCallbackProc) switch_print_layers,
+					(XtPointer) NULL);
+
+	/* label - " XXXX all layers" */
+
+	FirstArg(XtNlabel, label_all);
+	NextArg(XtNborderWidth, 0);
+	NextArg(XtNfromHoriz, printalltoggle);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainRight);	/* make it stay on right side */
+	NextArg(XtNright, XtChainRight);
+	below = XtCreateManagedWidget("print_all_layers", labelWidgetClass,
+				form, Args, ArgCount);
+
+	/* radio for printing only active layers */
+
+	FirstArg(XtNbitmap, (print_all_layers? sm_null_check_pm : sm_check_pm));
+	NextArg(XtNfromVert, printalltoggle);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);	/* make it stay on left side */
+	NextArg(XtNright, XtChainLeft);
+	NextArg(XtNinternalWidth, 1);
+	NextArg(XtNinternalHeight, 1);
+	NextArg(XtNlabel, "  ");
+	NextArg(XtNsensitive, (print_all_layers? True : False)); /* make opposite button sens */
+	NextArg(XtNstate, !print_all_layers);	/* initial state */
+	NextArg(XtNradioData, 2);		/* when this is pressed the value is 2 */
+	NextArg(XtNradioGroup, printalltoggle);	/* this is the other radio button in the group */
+	printactivetoggle = XtCreateManagedWidget("printactivetoggle", toggleWidgetClass,
+				form, Args, ArgCount);
+	XtAddCallback(printactivetoggle, XtNcallback, (XtCallbackProc) switch_print_layers,
+					(XtPointer) NULL);
+
+	/* label - "XXXX only active" */
+
+	FirstArg(XtNlabel, label_active);
+	NextArg(XtNborderWidth, 0);
+	NextArg(XtNfromVert, printalltoggle);
+	NextArg(XtNfromHoriz, printactivetoggle);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainRight);	/* make it stay on right side */
+	NextArg(XtNright, XtChainRight);
+	below = XtCreateManagedWidget("print_active_layers", labelWidgetClass,
+				form, Args, ArgCount);
+
+	return form;
 }

@@ -117,10 +117,17 @@ init_font()
 		    x_fontinfo[f].template = ps_fontinfo[f+1].name;
 	} else {
 	    strcpy(template,x_fontinfo[0].template);  /* nope, check for font size 0 */
-	    strcat(template,"0-0-*-*-*-*-*-*");
+	    strcat(template,"0-0-*-*-*-*-");
+	    /* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
+	    if (strstr(template,"symbol") == NULL &&
+		strstr(template,"zapf dingbats") == NULL)
+		    strcat(template,"ISO8859-*");
+	    else
+		strcat(template,"*-*");
 	    if ((fontlist = XListFonts(tool_d, template, 1, &count))==0)
 		appres.scalablefonts = False;	/* none, turn off request for them */
 	}
+	XFreeFontNames(fontlist); 
     }
 
     /* no scalable fonts - query the server for all the font
@@ -130,7 +137,13 @@ init_font()
 	for (f = 0; f < NUM_FONTS; f++) {
 	    nf = NULL;
 	    strcpy(template,x_fontinfo[f].template);
-	    strcat(template,"*-*-*-*-*-*-*-*");
+	    strcat(template,"*-*-*-*-*-*-");
+	    /* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
+	    if (strstr(template,"symbol") == NULL &&
+		strstr(template,"zapf dingbats") == NULL)
+		    strcat(template,"ISO8859-*");
+	    else
+		strcat(template,"*-*");
 	    /* don't free the Fontlist because we keep pointers into it */
 	    p = 0;
 	    if ((fontlist = XListFonts(tool_d, template, MAXNAMES, &count))==0) {
@@ -167,7 +180,6 @@ init_font()
 	    } /* next size */
 	} /* next font, f */
     } /* !appres.scalablefonts */
-    XFreeFontNames(fontlist); 
 }
 
 /* parse the point size of font 'name' */
@@ -269,13 +281,25 @@ lookfont(fnum, size)
 		/* X11 fonts, create a full XLFD font name */
 		strcpy(template,x_fontinfo[fnum].template);
 		/* attach pointsize to font name */
-		strcat(template,"%d-*-*-*-*-*-*-*");
+		strcat(template,"%d-*-*-*-*-*-");
+		/* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
+		if (strstr(template,"symbol") == NULL &&
+		    strstr(template,"zapf dingbats") == NULL)
+			strcat(template,"ISO8859-*");
+	        else
+			strcat(template,"*-*");
 		/* use the pixel field instead of points in the fontname so that the
 		font scales with screen size */
 		sprintf(fn, template, size);
 		/* do same process with backup font name in case first doesn't exist */
 		strcpy(template,x_backup_fontinfo[fnum].template);
-		strcat(template,"%d-*-*-*-*-*-*-*");
+		strcat(template,"%d-*-*-*-*-*-");
+		/* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
+		if (strstr(template,"symbol") == NULL &&
+		    strstr(template,"zapf dingbats") == NULL)
+			strcat(template,"ISO8859-*");
+	        else
+			strcat(template,"*-*");
 		sprintf(back_fn, template, size);
 	    }
 	    /* allocate space for the name and put it in the structure */
@@ -337,8 +361,12 @@ pw_text(w, x, y, op, fstruct, angle, string, color)
     }
 
     if (x_color(color) != gc_color[op]) {
-	if (op == PAINT) {	/* don't change the foreground for ERASE or INV_PAINT */
-	    set_x_color(gccache[op], color);
+	/* don't change the colors for ERASE */
+	if (op == PAINT || op == INV_PAINT) {
+	    if (op == PAINT)
+		set_x_color(gccache[op], color);
+	    else
+		XSetForeground(tool_d, gccache[op], x_color(color) ^ x_bg_color.pixel);
 	    gc_color[op] = x_color(color);
 	}
     }

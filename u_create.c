@@ -294,8 +294,10 @@ create_arc()
 {
     F_arc	   *a;
 
-    if ((a = (F_arc *) malloc(ARCOBJ_SIZE)) == NULL)
+    if ((a = (F_arc *) malloc(ARCOBJ_SIZE)) == NULL) {
 	put_msg(Err_mem);
+	return NULL;
+    }
     a->tagged = 0;
     a->next = NULL;
     a->type = 0;
@@ -357,8 +359,10 @@ create_ellipse()
 {
     F_ellipse	   *e;
 
-    if ((e = (F_ellipse *) malloc(ELLOBJ_SIZE)) == NULL)
+    if ((e = (F_ellipse *) malloc(ELLOBJ_SIZE)) == NULL) {
 	put_msg(Err_mem);
+	return NULL;
+    }
     e->tagged = 0;
     e->comments = NULL;
     return (e);
@@ -390,8 +394,10 @@ create_line()
 {
     F_line	   *l;
 
-    if ((l = (F_line *) malloc(LINOBJ_SIZE)) == NULL)
+    if ((l = (F_line *) malloc(LINOBJ_SIZE)) == NULL) {
 	put_msg(Err_mem);
+	return NULL;
+    }
     l->tagged = 0;
     l->pic = NULL;
     l->next = NULL;
@@ -408,10 +414,12 @@ create_pic()
 {
     F_pic	   *e;
 
-    if ((e = (F_pic *) malloc(PIC_SIZE)) == NULL)
+    if ((e = (F_pic *) malloc(PIC_SIZE)) == NULL) {
 	put_msg(Err_mem);
+	return NULL;
+    }
     e->subtype = 0;
-    e->transp = -1;
+    e->transp = TRANSP_NONE;
     e->mask = (Pixmap) 0;
     return (e);
 }
@@ -497,8 +505,10 @@ create_spline()
 {
     F_spline	   *s;
 
-    if ((s = (F_spline *) malloc(SPLOBJ_SIZE)) == NULL)
+    if ((s = (F_spline *) malloc(SPLOBJ_SIZE)) == NULL) {
 	put_msg(Err_mem);
+	return NULL;
+	}
     s->tagged = 0;
     s->comments = NULL;
     return (s);
@@ -563,8 +573,10 @@ create_text()
 {
     F_text	   *t;
 
-    if ((t = (F_text *) malloc(TEXOBJ_SIZE)) == NULL)
+    if ((t = (F_text *) malloc(TEXOBJ_SIZE)) == NULL) {
 	put_msg(Err_mem);
+	return NULL;
+    }
     t->tagged = 0;
     t->comments = NULL;
     return (t);
@@ -614,8 +626,10 @@ create_compound()
 {
     F_compound	   *c;
 
-    if ((c = (F_compound *) malloc(COMOBJ_SIZE)) == NULL)
+    if ((c = (F_compound *) malloc(COMOBJ_SIZE)) == NULL) {
 	put_msg(Err_mem);
+	return 0;
+    }
     c->nwcorner.x = 0;
     c->nwcorner.y = 0;
     c->secorner.x = 0;

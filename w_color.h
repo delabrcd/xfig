@@ -20,6 +20,7 @@
 extern	void	show_pencolor(), next_pencolor(), prev_pencolor();
 extern	void	show_fillcolor(), next_fillcolor(), prev_fillcolor();
 extern	void	count_user_colors();
+extern	Widget	delunusedColors;
 
 /* 
  * color.h - color definitions

@@ -59,6 +59,7 @@ Widget	pic_name_panel;  	/* global to be visible in w_browse */
 /* LOCAL */
 
 #define NUM_IMAGES	16
+#define	MAXDISPTS	100	/* maximum number of points to display for line, spline, etc */
 
 #define XY_WIDTH	50	/* width of text widgets for x/y points */
 
@@ -182,8 +183,8 @@ static Widget	fill_color_panel, fill_color_popup=0;
 DeclareStaticArgs(20);
 static char	buf[64];
 
-static Widget	px_panel[MAXNUMPTS];
-static Widget	py_panel[MAXNUMPTS];
+static Widget	px_panel[MAXDISPTS];
+static Widget	py_panel[MAXDISPTS];
 
 /* for our own fill % and fill pattern pixmap in the popup */
 
@@ -214,8 +215,12 @@ static char	*pic_names[] = {
 			"EPS/PS", "GIF", 
 #ifdef USE_JPEG
 			"JPEG",
-#endif
-			"PCX", "PPM", "TIFF", "XBM",
+#endif /* USE_JPEG */
+			"PCX",
+#ifdef USE_PNG
+			"PNG",
+#endif /* USE_PNG */
+			"PPM", "TIFF", "XBM",
 #ifdef USE_XPM
 			"XPM",
 #endif /* USE_XPM */
@@ -799,9 +804,9 @@ expand_pic(w, ev, params, num_params)
     p1.y = panel_get_dim_value(y1_panel);
     p2.x = panel_get_dim_value(x2_panel);
     p2.y = panel_get_dim_value(y2_panel);
-    /* size is upper-lower+1 */
-    dx = p2.x - p1.x + PIC_FACTOR;
-    dy = p2.y - p1.y + PIC_FACTOR;
+    /* size is upper-lower */
+    dx = p2.x - p1.x;
+    dy = p2.y - p1.y;
     rotation = 0;
     if (dx < 0 && dy < 0)
 	rotation = 180;
@@ -848,9 +853,9 @@ shrink_pic(w, ev, params, num_params)
     p1.y = panel_get_dim_value(y1_panel);
     p2.x = panel_get_dim_value(x2_panel);
     p2.y = panel_get_dim_value(y2_panel);
-    /* size is upper-lower+1 */
-    dx = p2.x - p1.x + PIC_FACTOR;
-    dy = p2.y - p1.y + PIC_FACTOR;
+    /* size is upper-lower */
+    dx = p2.x - p1.x;
+    dy = p2.y - p1.y;
     rotation = 0;
     if (dx < 0 && dy < 0)
 	rotation = 180;
@@ -863,17 +868,17 @@ shrink_pic(w, ev, params, num_params)
     if (((rotation == 0 || rotation == 180) && !flip_pic_flag) ||
 	(rotation != 0 && rotation != 180 && flip_pic_flag)) {
 	ratio = (float) fabs((double) dy / (double) dx);
-	/* upper coord is lower+size-1 */
+	/* upper coord is lower+size */
 	if (ratio > orig_ratio)
-	    p2.y = p1.y + signof(dy) * (int) (fabs((double) dx) * orig_ratio) - PIC_FACTOR;
+	    p2.y = p1.y + signof(dy) * (int) (fabs((double) dx) * orig_ratio);
 	else
-	    p2.x = p1.x + signof(dx) * (int) (fabs((double) dy) / orig_ratio) - PIC_FACTOR;
+	    p2.x = p1.x + signof(dx) * (int) (fabs((double) dy) / orig_ratio);
     } else {
 	ratio = (float) fabs((double) dx / (double) dy);
 	if (ratio > orig_ratio)
-	    p2.x = p1.x + signof(dx) * (int) (fabs((double) dy) * orig_ratio) - PIC_FACTOR;
+	    p2.x = p1.x + signof(dx) * (int) (fabs((double) dy) * orig_ratio);
 	else
-	    p2.y = p1.y + signof(dy) * (int) (fabs((double) dx) / orig_ratio) - PIC_FACTOR;
+	    p2.y = p1.y + signof(dy) * (int) (fabs((double) dx) / orig_ratio);
     }
     panel_set_int(x2_panel, p2.x);
     panel_set_int(y2_panel, p2.y);
@@ -898,16 +903,16 @@ origsize_pic(w, ev, params, num_params)
     p2.x = panel_get_dim_value(x2_panel);
     p2.y = panel_get_dim_value(y2_panel);
 
-    /* size is upper-lower+1 */
-    dx = p2.x - p1.x + PIC_FACTOR;
-    dy = p2.y - p1.y + PIC_FACTOR;
+    /* size is upper-lower */
+    dx = p2.x - p1.x;
+    dy = p2.y - p1.y;
 
     if (dx == 0 || dy == 0 || orig_ratio == 0.0)
 	return;
 
-    /* upper coord is lower+size-1 */
-    p2.x = p1.x + signof(dx) * new_l->pic->size_x - PIC_FACTOR;
-    p2.y = p1.y + signof(dy) * new_l->pic->size_y - PIC_FACTOR;
+    /* upper coord is lower+size */
+    p2.x = p1.x + signof(dx) * new_l->pic->size_x;
+    p2.y = p1.y + signof(dy) * new_l->pic->size_y;
     panel_set_int(x2_panel, p2.x);
     panel_set_int(y2_panel, p2.y);
     sprintf(buf, "%1.1f", orig_ratio);
@@ -942,13 +947,13 @@ scale_percent_pic(w, ev, params, num_params)
 	pct = 0.001;
     }
 
-    /* find direction of corners - size is upper-lower+1 */
-    dx = p2.x - p1.x + PIC_FACTOR;
-    dy = p2.y - p1.y + PIC_FACTOR;
+    /* find direction of corners - size is upper-lower */
+    dx = p2.x - p1.x;
+    dy = p2.y - p1.y;
 
-    /* upper coord is lower+size-1 */
-    p2.x = p1.x + (signof(dx) * new_l->pic->size_x * pct/100.0) - PIC_FACTOR;
-    p2.y = p1.y + (signof(dy) * new_l->pic->size_y * pct/100.0) - PIC_FACTOR;
+    /* upper coord is lower+size */
+    p2.x = p1.x + (signof(dx) * new_l->pic->size_x * pct/100.0);
+    p2.y = p1.y + (signof(dy) * new_l->pic->size_y * pct/100.0);
     panel_set_int(x2_panel, p2.x);
     panel_set_int(y2_panel, p2.y);
     sprintf(buf, "%1.1f", orig_ratio);
@@ -1057,21 +1062,29 @@ get_new_compound_values()
     se_y = panel_get_dim_value(y2_panel);
     dx = nw_x - new_c->nwcorner.x;
     dy = nw_y - new_c->nwcorner.y;
-    scalex = (float) (nw_x - se_x) /
-	(float) (new_c->nwcorner.x - new_c->secorner.x);
-    scaley = (float) (nw_y - se_y) /
-	(float) (new_c->nwcorner.y - new_c->secorner.y);
+    if (new_c->nwcorner.x - new_c->secorner.x == 0)
+	scalex = 0.0;
+    else
+	scalex = (float) (nw_x - se_x) /
+		(float) (new_c->nwcorner.x - new_c->secorner.x);
+    if (new_c->nwcorner.y - new_c->secorner.y == 0)
+	scaley = 0.0;
+    else
+	scaley = (float) (nw_y - se_y) /
+		(float) (new_c->nwcorner.y - new_c->secorner.y);
 
     /* get any comments */
-    new_c->comments = strdup(panel_get_value(comments_panel));
+    new_c->comments = my_strdup(panel_get_value(comments_panel));
 
     /* get any new text object values */
     for (t=new_c->texts,i=0; t ;t=t->next,i++) {
 	if (t->cstring)
 	    free(t->cstring);
-	t->cstring = strdup(panel_get_value(compound_text_panels[i]));
+	t->cstring = my_strdup(panel_get_value(compound_text_panels[i]));
 	/* calculate new size */
-	size = textsize(t->fontstruct, strlen(t->cstring), t->cstring);
+	/* get the fontstruct for zoom = 1 to get the size of the string */
+	canvas_font = lookfont(x_fontnum(psfont_text(t), t->font), t->size);
+	size = textsize(canvas_font, strlen(t->cstring), t->cstring);
 	t->length = size.length;
 	t->ascent = size.ascent;
 	t->descent = size.descent;
@@ -1312,6 +1325,9 @@ make_window_line(l)
   
 	/* although the EPS may have colors, the actual number is not known */
 	if (new_l->pic != 0 && (
+#ifdef USE_PNG
+	     new_l->pic->subtype == T_PIC_PNG ||
+#endif /* USE_PNG */
 #ifdef USE_XPM
 	     new_l->pic->subtype == T_PIC_XPM ||
 #endif /* USE_XPM */
@@ -1349,7 +1365,7 @@ make_window_line(l)
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNfromHoriz, beside);
 	if (new_l->pic->subtype == T_PIC_GIF) {
-	    if (new_l->pic->transp == -1)
+	    if (new_l->pic->transp == TRANSP_NONE)
 		sprintf(buf,"None");
 	    else
 		sprintf(buf,"%4d",(unsigned int) new_l->pic->transp);
@@ -1381,9 +1397,9 @@ make_window_line(l)
 	menu = make_popup_menu(flip_pic_items, XtNumber(flip_pic_items), -1, "",
 			       flip_pic_panel, flip_pic_select);
 
-	/* size is upper-lower+1 */
-	dx = p2.x - p1.x + PIC_FACTOR;
-	dy = p2.y - p1.y + PIC_FACTOR;
+	/* size is upper-lower */
+	dx = p2.x - p1.x;
+	dy = p2.y - p1.y;
 	rotation = 0;
 	if (dx < 0 && dy < 0)
 	    rotation = 180;
@@ -1488,15 +1504,15 @@ get_new_line_values()
 	new_l->fill_color = fill_color;
 	new_l->depth = atoi(panel_get_value(depth_panel));
 	/* get any comments (this is done in get_generic_vals for other line types) */
-	new_l->comments = strdup(panel_get_value(comments_panel));
+	new_l->comments = my_strdup(panel_get_value(comments_panel));
 	p1.x = panel_get_dim_value(x1_panel);
 	p1.y = panel_get_dim_value(y1_panel);
 	p2.x = panel_get_dim_value(x2_panel);
 	p2.y = panel_get_dim_value(y2_panel);
 
-	/* size is upper-lower+1 */
-	dx = p2.x - p1.x + PIC_FACTOR;
-	dy = p2.y - p1.y + PIC_FACTOR;
+	/* size is upper-lower */
+	dx = p2.x - p1.x;
+	dy = p2.y - p1.y;
 	rotation = 0;
 	if (dx < 0 && dy < 0)
 	    rotation = 180;
@@ -1526,13 +1542,6 @@ get_new_line_values()
 	if (string[0] == '~') {
 	    parseuserpath(string,longname);
 	    panel_set_value(pic_name_panel, longname);
-	    string = longname;
-	}
-	/* if no '/' at the front of the path, make absolute */
-	if (string[0] != '/') {
-	    get_directory(longname);
-	    strcat(longname,"/");
-	    strcat(longname,string);
 	    string = longname;
 	}
 	    
@@ -1582,6 +1591,9 @@ get_new_line_values()
 	     new_l->pic->subtype == T_PIC_PCX ||
 	     new_l->pic->subtype == T_PIC_PPM ||
 	     new_l->pic->subtype == T_PIC_TIF ||
+#ifdef USE_PNG
+	     new_l->pic->subtype == T_PIC_PNG ||
+#endif /* USE_PNG */
 #ifdef USE_XPM
 	     new_l->pic->subtype == T_PIC_XPM ||
 #endif /* USE_XPM */
@@ -1596,7 +1608,7 @@ get_new_line_values()
 
 	/* now transparent color if GIF file */
 	if (new_l->pic->subtype == T_PIC_GIF) {
-	    if (new_l->pic->transp == -1)
+	    if (new_l->pic->transp == TRANSP_NONE)
 		sprintf(buf,"None");
 	    else
 		sprintf(buf,"%4d",(unsigned int) new_l->pic->transp);
@@ -1634,8 +1646,11 @@ get_new_line_values()
 				new_l->pic->subtype == T_PIC_PCX? "PCX":
 				  new_l->pic->subtype == T_PIC_PPM? "PPM":
 				    new_l->pic->subtype == T_PIC_TIF? "TIFF":
+#ifdef USE_PNG
+				      new_l->pic->subtype == T_PIC_PNG? "PNG":
+#endif /* USE_PNG */
 #ifdef USE_XPM
-				      new_l->pic->subtype == T_PIC_XPM? "XPM":
+				        new_l->pic->subtype == T_PIC_XPM? "XPM":
 #endif /* USE_XPM */
 					"Unknown",
 			new_l->pic->bit_size.x, new_l->pic->bit_size.y,
@@ -1671,6 +1686,7 @@ get_new_line_values()
 static void
 done_line()
 {
+    int		prev_depth;
     switch (button_result) {
       case APPLY:
 	changed = 1;
@@ -1681,9 +1697,11 @@ done_line()
 	redisplay_line(new_l);
 	break;
       case DONE:
+	/* save in case user changed depth */
+	prev_depth = new_l->depth;
 	get_new_line_values();
-	if (old_l->depth != new_l->depth && !changed) {
-	    remove_depth(O_POLYLINE, old_l->depth);
+	if (prev_depth != new_l->depth) {
+	    remove_depth(O_POLYLINE, prev_depth);
 	    add_depth(O_POLYLINE, new_l->depth);
 	}
 	redisplay_lines(new_l, old_l);
@@ -1869,9 +1887,9 @@ get_new_text_values()
     if (new_t->cstring)
 	free(new_t->cstring);
     /* get the text string itself */
-    new_t->cstring = strdup(panel_get_value(text_panel));
+    new_t->cstring = my_strdup(panel_get_value(text_panel));
     /* get any comments */
-    new_t->comments = strdup(panel_get_value(comments_panel));
+    new_t->comments = my_strdup(panel_get_value(comments_panel));
     /* get the fontstruct for zoom = 1 to get the size of the string */
     canvas_font = lookfont(x_fontnum(psfont_text(new_t), new_t->font), new_t->size);
     size = textsize(canvas_font, strlen(new_t->cstring), new_t->cstring);
@@ -1885,6 +1903,7 @@ get_new_text_values()
 static void
 done_text()
 {
+    int		prev_depth;
     switch (button_result) {
       case APPLY:
 	changed = 1;
@@ -1895,9 +1914,11 @@ done_text()
 	redisplay_text(new_t);
 	break;
       case DONE:
+	/* save in case user changed depth */
+	prev_depth = new_t->depth;
 	get_new_text_values();
-	if (old_t->depth != new_t->depth && !changed) {
-	    remove_depth(O_TEXT, old_t->depth);
+	if (prev_depth != new_t->depth) {
+	    remove_depth(O_TEXT, prev_depth);
 	    add_depth(O_TEXT, new_t->depth);
 	}
 	redisplay_texts(new_t, old_t);
@@ -1968,10 +1989,8 @@ make_window_ellipse(e)
 	      &angle_panel, -360, 360, 1);
 
     if (ellipse_flag) {
-	f_pos_panel(&new_e->center, "Center",
-		    &x1_panel, &y1_panel);
-	f_pos_panel(&new_e->radiuses, "Radii",
-		    &x2_panel, &y2_panel);
+	f_pos_panel(&new_e->center, "Center", &x1_panel, &y1_panel);
+	f_pos_panel(&new_e->radiuses, "Radii", &x2_panel, &y2_panel);
     } else {
 	f_pos_panel(&new_e->center, "Center", &x1_panel, &y1_panel);
 	(void) int_panel(new_e->radiuses.x, form, "Radius", &x2_panel, 10, 10000, 1);
@@ -2004,6 +2023,7 @@ get_new_ellipse_values()
 static void
 done_ellipse()
 {
+    int		prev_depth;
     switch (button_result) {
       case APPLY:
 	changed = 1;
@@ -2014,9 +2034,11 @@ done_ellipse()
 	redisplay_ellipse(new_e);
 	break;
       case DONE:
+	/* save in case user changed depth */
+	prev_depth = new_e->depth;
 	get_new_ellipse_values();
-	if (old_e->depth != new_e->depth && !changed) {
-	    remove_depth(O_ELLIPSE, old_e->depth);
+	if (prev_depth != new_e->depth) {
+	    remove_depth(O_ELLIPSE, prev_depth);
 	    add_depth(O_ELLIPSE, new_e->depth);
 	}
 	redisplay_ellipses(new_e, old_e);
@@ -2120,6 +2142,7 @@ get_new_arc_values()
 static void
 done_arc()
 {
+    int		prev_depth;
     switch (button_result) {
       case APPLY:
 	changed = 1;
@@ -2130,9 +2153,11 @@ done_arc()
 	redisplay_arc(new_a);
 	break;
       case DONE:
+	/* save in case user changed depth */
+	prev_depth = new_a->depth;
 	get_new_arc_values();
-	if (old_a->depth != new_a->depth && !changed) {
-	    remove_depth(O_ARC, old_a->depth);
+	if (prev_depth != new_a->depth) {
+	    remove_depth(O_ARC, prev_depth);
 	    add_depth(O_ARC, new_a->depth);
 	}
 	redisplay_arcs(new_a, old_a);
@@ -2210,6 +2235,7 @@ make_window_spline(s)
 static void
 done_spline()
 {
+    int		prev_depth;
     switch (button_result) {
       case APPLY:
 	changed = 1;
@@ -2223,12 +2249,14 @@ done_spline()
 	redisplay_spline(new_s);
 	break;
       case DONE:
+	/* save in case user changed depth */
+	prev_depth = new_s->depth;
 	get_generic_vals(new_s);
 	get_generic_arrows((F_line *) new_s);
 	get_cap_style(new_s);
 	get_points(new_s->points);
-	if (old_s->depth != new_s->depth && !changed) {
-	    remove_depth(O_SPLINE, old_s->depth);
+	if (prev_depth != new_s->depth) {
+	    remove_depth(O_SPLINE, prev_depth);
 	    add_depth(O_SPLINE, new_s->depth);
 	}
 	redisplay_splines(new_s, old_s);
@@ -2331,7 +2359,7 @@ new_generic_values()
     check_depth();
     generic_vals.depth = atoi(panel_get_value(depth_panel));
     /* get the comments */
-    generic_vals.comments = strdup(panel_get_value(comments_panel));
+    generic_vals.comments = my_strdup(panel_get_value(comments_panel));
     /* include dash length in panel, too */
     generic_vals.style_val = (float) atof(panel_get_value(style_val_panel));
     if (generic_vals.style == DASH_LINE || generic_vals.style == DOTTED_LINE ||
@@ -2731,8 +2759,8 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows, comments)
 	cjbeside = 0;
 
 	if (!strcmp(object_type,"ARC") || 
-	    (!strcmp(object_type,"SPLINE")&&strstr(sub_type,"open")) ||
-	    (!strcmp(object_type,"POLYLINE")&&!strcmp(sub_type,"Polyline"))) {
+	    (!strcmp(object_type,"SPLINE") && strstr(sub_type,"Open")) ||
+	    (!strcmp(object_type,"POLYLINE") && !strcmp(sub_type,"Polyline"))) {
 		cap_style_panel_menu();
 		lbelow = below;
 		cjbeside = cap_style_panel;
@@ -3864,7 +3892,7 @@ points_panel(p)
     struct f_point *pts;
     char	    buf[32];
     char	    bufxy[32];
-    int		    i;
+    int		    npts, j;
     Widget	    viewp,formw,beside,npoints;
 
     FirstArg(XtNfromVert, below);
@@ -3882,22 +3910,25 @@ points_panel(p)
     NextArg(XtNvertDistance, 2);
     NextArg(XtNhorizDistance, 20);
     pts = p;
-    for (i = 0; pts != NULL; i++)
+    for (npts = 0; pts != NULL; npts++)
 	pts = pts->next;
     /* limit size of points panel and scroll if more than 150 pixels */
-    if (i>8)
+    if (npts > 8)
 	    NextArg(XtNheight, 150);
-    viewp = XtCreateManagedWidget("Pointspanel", viewportWidgetClass, form,
-				  Args, ArgCount);
-    formw = XtCreateManagedWidget("pointsform", formWidgetClass, viewp,
-				  NULL, 0);
-    below = 0;
-    for (i = 0; p != NULL; i++) {
-	if (i >= MAXNUMPTS)
+    viewp = XtCreateManagedWidget("pointspanel", viewportWidgetClass, form, Args, ArgCount);
+    formw = XtCreateManagedWidget("pointsform", formWidgetClass, viewp, NULL, 0);
+    below = (Widget) 0;
+    for (j = 0; j < npts; j++) {
+	/* limit number of points displayed to prevent system failure :-) */
+	if (j >= MAXDISPTS) {
+	    FirstArg(XtNfromVert, below);
+	    XtCreateManagedWidget("Too many points to display  ", labelWidgetClass,
+						formw, Args, ArgCount);
 	    break;
+	}
 	FirstArg(XtNfromVert, below);
 	NextArg(XtNborderWidth, 0);
-	sprintf(buf, "X%d =", i);
+	sprintf(buf, "X%d =", j);
 	beside = XtCreateManagedWidget(buf, labelWidgetClass, formw,
 				       Args, ArgCount);
 	sprintf(bufxy, "%d", p->x);
@@ -3907,13 +3938,13 @@ points_panel(p)
 	NextArg(XtNinsertPosition, strlen(bufxy));
 	NextArg(XtNeditType, XawtextEdit);
 	NextArg(XtNwidth, XY_WIDTH);
-	px_panel[i] = XtCreateManagedWidget("xy", asciiTextWidgetClass,
+	px_panel[j] = XtCreateManagedWidget("xy", asciiTextWidgetClass,
 					    formw, Args, ArgCount);
-	text_transl(px_panel[i]);
+	text_transl(px_panel[j]);
 
-	sprintf(buf, "Y%d =", i);
+	sprintf(buf, "Y%d =", j);
 	ArgCount = 1;
-	NextArg(XtNfromHoriz, px_panel[i]);
+	NextArg(XtNfromHoriz, px_panel[j]);
 	NextArg(XtNborderWidth, 0);
 	beside = XtCreateManagedWidget(buf, labelWidgetClass,
 				       formw, Args, ArgCount);
@@ -3926,15 +3957,15 @@ points_panel(p)
 	NextArg(XtNeditType, XawtextEdit);
 	NextArg(XtNwidth, XY_WIDTH);
 
-	py_panel[i] = XtCreateManagedWidget("xy", asciiTextWidgetClass,
+	py_panel[j] = XtCreateManagedWidget("xy", asciiTextWidgetClass,
 					    formw, Args, ArgCount);
-	text_transl(py_panel[i]);
-	below = px_panel[i];
+	text_transl(py_panel[j]);
+	below = px_panel[j];
 
 	p = p->next;
     }
-    /* now put the number of points in */
-    sprintf(buf, "%d", i);
+    /* now put the (actual) number of points in */
+    sprintf(buf, "%d", npts);
     FirstArg(XtNlabel, buf);
     SetValues(npoints);
 }
@@ -3947,7 +3978,7 @@ get_points(p)
     int		    i;
 
     for (q = p, i = 0; q != NULL; i++) {
-	if (i >= MAXNUMPTS)
+	if (i >= MAXDISPTS)
 	    break;
 	q->x = panel_get_dim_value(px_panel[i]);
 	q->y = panel_get_dim_value(py_panel[i]);
@@ -4283,9 +4314,9 @@ flip_pic_select(w, new_flipflag, call_data)
     p2.x = panel_get_dim_value(x2_panel);
     p2.y = panel_get_dim_value(y2_panel);
 
-    /* size is upper-lower+1 */
-    dx = p2.x - p1.x + PIC_FACTOR;
-    dy = p2.y - p1.y + PIC_FACTOR;
+    /* size is upper-lower */
+    dx = p2.x - p1.x;
+    dy = p2.y - p1.y;
     rotation = 0;
     if (dx < 0 && dy < 0)
 	rotation = 180;

@@ -99,7 +99,7 @@ zXFillPolygon(d,w,gc,p,n,m,o)
 
 /* convert each point to short */
 
-void
+static void
 convert_sh(p,n)
     zXPoint	*p;
     int		 n;
@@ -154,12 +154,12 @@ chkalloc(n)
 	/* get either what we need +50 points or 500, whichever is larger */
 	i = max2(n+50, 500);	
 	if (_npp_ == 0) {
-	    if ((tpp = malloc(i * sizeof(XPoint))) == 0) {
+	    if ((tpp = (XPoint *) malloc(i * sizeof(XPoint))) == 0) {
 		fprintf(stderr,"\007Can't alloc memory for %d point array, exiting\n",i);
 		exit(1);
 	    }
 	} else {
-	    if ((tpp = realloc(_pp_, i * sizeof(XPoint))) == 0) {
+	    if ((tpp = (XPoint *) realloc(_pp_, i * sizeof(XPoint))) == 0) {
 		file_msg("Can't alloc memory for %d point array",i);
 		_noalloc_ = True;
 		return False;

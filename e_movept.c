@@ -697,7 +697,7 @@ fix_box(x, y)
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     /* erase last lengths if appres.showlengths is true */
-    erase_lengths();
+    erase_box_lengths();
     adjust_box_pos(x, y, from_x, from_y, &x, &y);
     new_l = copy_line(cur_l);
     if (new_l->type == T_PICTURE) {

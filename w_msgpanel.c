@@ -44,6 +44,7 @@ Boolean		popup_up = False;
 Boolean		file_msg_is_popped=False;
 Widget		file_msg_popup;
 Boolean		first_file_msg;
+Boolean		first_lenmsg = True;
 
 /************************  LOCAL ******************/
 
@@ -138,13 +139,22 @@ boxsize_msg(fact)
     int		sdx, sdy;
     int		t1x, t1y, t2x, t2y;
     PR_SIZE	sizex, sizey;
+    char	*comment;
 
     dx = (float) fact * (cur_x - fix_x) /
 		(float)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM)*appres.user_scale;
     dy = (float) fact * (cur_y - fix_y) /
 		(float)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM)*appres.user_scale;
-    put_msg("Width = %.3lf %s, Height = %.3lf %s", 
-		fabs(dx), cur_fig_units, fabs(dy), cur_fig_units);
+
+    comment = "";
+    if (cur_mode == F_PICOBJ) {
+      if (fix_x > cur_x && fix_y > cur_y) comment = "(rotated 180 degree)";
+      else if (fix_x > cur_x && fix_y <= cur_y) comment = "(rotated 270 degrees)";
+      else if (fix_x <= cur_x && fix_y > cur_y) comment = "(rotated 90 degrees)";
+      else comment = "(normal direction)";
+    }
+    put_msg("Width = %.3lf %s, Height = %.3lf %s  %s", 
+		fabs(dx), cur_fig_units, fabs(dy), cur_fig_units, comment);
     /* if showing line lengths */
     if (appres.showlengths && !freehand_line) {
 	if (dx < 0)
@@ -157,8 +167,11 @@ boxsize_msg(fact)
 	    sdy = -2.0/zoomscale;
 
 	/* erase old text */
-	pw_text(canvas_win, ot1x, ot1y, ERASE, roman_font, 0.0, bufx, RED);
-	pw_text(canvas_win, ot2x, ot2y, ERASE, roman_font, 0.0, bufy, RED);
+	if (!first_lenmsg) {
+	    pw_text(canvas_win, ot1x, ot1y, INV_PAINT, roman_font, 0.0, bufx, RED);
+	    pw_text(canvas_win, ot2x, ot2y, INV_PAINT, roman_font, 0.0, bufy, RED);
+	}
+	first_lenmsg = False;
 
 	/* draw new text */
 
@@ -195,10 +208,10 @@ boxsize_msg(fact)
 
 erase_box_lengths()
 {
-    if (appres.showlengths && !freehand_line) {
+    if (!first_lenmsg && appres.showlengths && !freehand_line) {
 	/* erase old text */
-	pw_text(canvas_win, ot1x, ot1y, ERASE,roman_font,0.0,bufx,RED);
-	pw_text(canvas_win, ot2x, ot2y, ERASE,roman_font,0.0,bufy,RED);
+	pw_text(canvas_win, ot1x, ot1y, INV_PAINT,roman_font,0.0,bufx,RED);
+	pw_text(canvas_win, ot2x, ot2y, INV_PAINT,roman_font,0.0,bufy,RED);
     }
 }
 
@@ -211,15 +224,15 @@ length_msg(type)
 
 erase_lengths()
 {
-    if (appres.showlengths && !freehand_line) {
+    if (!first_lenmsg && appres.showlengths && !freehand_line) {
 	/* erase old lines first */
-	pw_vector(canvas_win,  ox, oy, ofx,  oy, ERASE, 1, RUBBER_LINE, 0.0, RED);
-	pw_vector(canvas_win, ofx, oy, ofx, ofy, ERASE, 1, RUBBER_LINE, 0.0, RED);
+	pw_vector(canvas_win,  ox, oy, ofx,  oy, INV_PAINT, 1, RUBBER_LINE, 0.0, RED);
+	pw_vector(canvas_win, ofx, oy, ofx, ofy, INV_PAINT, 1, RUBBER_LINE, 0.0, RED);
 
 	/* erase old text */
-	pw_text(canvas_win, ot1x, ot1y, ERASE,roman_font,0.0,bufx,RED);
-	pw_text(canvas_win, ot2x, ot2y, ERASE,roman_font,0.0,bufy,RED);
-	pw_text(canvas_win, ot3x, ot3y, ERASE,roman_font,0.0,bufhyp,RED);
+	pw_text(canvas_win, ot1x, ot1y, INV_PAINT,roman_font,0.0,bufx,RED);
+	pw_text(canvas_win, ot2x, ot2y, INV_PAINT,roman_font,0.0,bufy,RED);
+	pw_text(canvas_win, ot3x, ot3y, INV_PAINT,roman_font,0.0,bufhyp,RED);
     }
 }
 
@@ -233,21 +246,21 @@ altlength_msg(type, fx, fy)
     int type;
 {
   double	dx,dy;
-  float		len, rlen;
+  float		len, ulen;
   float		udx, udy;
   float		ang;
   int		sdx, sdy;
   int		t1x, t1y, t2x, t2y, t3x, t3y;
   PR_SIZE	sizex, sizey, sizehyp;
 
-  dx = (cur_x - fx)/(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
-  dy = (cur_y - fy)/(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
-  rlen = (float)sqrt(dx*dx + dy*dy);
+  dx = (cur_x - fx);
+  dy = (cur_y - fy);
+  len = (float)sqrt(dx*dx + dy*dy);
 
   /* in user units */
-  udx = dx*appres.user_scale;
-  udy = dy*appres.user_scale;
-  len = rlen*appres.user_scale;
+  udx = dx*appres.user_scale /(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
+  udy = dy*appres.user_scale /(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
+  ulen = len*appres.user_scale /(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
 
   if (dy != 0.0 || dx != 0.0) {
 	ang = (float) - atan2(dy,dx) * 180.0/M_PI;
@@ -259,7 +272,7 @@ altlength_msg(type, fx, fy)
     case MSG_DIAM:
 	put_msg("%s = %.3f %s, dx = %.3lf %s, dy = %.3lf %s",
                 (type==MSG_RADIUS? "Radius": "Diameter"),
-		len, cur_fig_units,
+		ulen, cur_fig_units,
 		udx, cur_fig_units, udy, cur_fig_units);
 	break;
     case MSG_RADIUS2:
@@ -269,7 +282,7 @@ altlength_msg(type, fx, fy)
     case MSG_PNTS_LENGTH:
 	put_msg("%d point%s, Length = %.3f %s, dx = %.3lf %s, dy = %.3lf %s (%.1f deg)",
 		num_point, ((num_point != 1)? "s": ""),
-		len, cur_fig_units,
+		ulen, cur_fig_units,
 		udx, cur_fig_units, udy, cur_fig_units, ang );
 	break;
     case MSG_RADIUS_ANGLE:
@@ -277,7 +290,7 @@ altlength_msg(type, fx, fy)
 	if (num_point == 0)
 	  put_msg("%s = %.3f %s, Angle = %.1f deg",
 		  (type==MSG_RADIUS_ANGLE? "Radius":"Diameter"),
-		  len, cur_fig_units, ang );
+		  ulen, cur_fig_units, ang );
 	else
 	  put_msg("%d point%s, Angle = %.1f deg",
 		  num_point, ((num_point != 1)? "s": ""),
@@ -286,7 +299,7 @@ altlength_msg(type, fx, fy)
     default:
 	put_msg("%s = %.3f %s, dx = %.3lf %s, dy = %.3lf %s (%.1f) deg",
 		(type==MSG_LENGTH? "Length": "Distance"),
-		len, cur_fig_units,
+		ulen, cur_fig_units,
 		udx, cur_fig_units, udy, cur_fig_units,
 		ang );
 	break;
@@ -319,13 +332,17 @@ altlength_msg(type, fx, fy)
 	case MSG_LENGTH:
 	case MSG_DIST:
 		/* erase old lines first */
-		pw_vector(canvas_win, ox, oy, ofx, oy, ERASE, 1, RUBBER_LINE, 0.0, RED);
-		pw_vector(canvas_win, ofx, oy, ofx, ofy, ERASE, 1, RUBBER_LINE, 0.0, RED);
+		if (!first_lenmsg) {
+		    pw_vector(canvas_win, ox, oy, ofx, oy, INV_PAINT, 1,
+				RUBBER_LINE, 0.0, RED);
+		    pw_vector(canvas_win, ofx, oy, ofx, ofy, INV_PAINT, 1,
+				RUBBER_LINE, 0.0, RED);
 
-		/* erase old text */
-		pw_text(canvas_win, ot1x, ot1y, ERASE,roman_font,0.0,bufx,RED);
-		pw_text(canvas_win, ot2x, ot2y, ERASE,roman_font,0.0,bufy,RED);
-		pw_text(canvas_win, ot3x, ot3y, ERASE,roman_font,0.0,bufhyp,RED);
+		    /* erase old text */
+		    pw_text(canvas_win, ot1x, ot1y, INV_PAINT,roman_font,0.0,bufx,RED);
+		    pw_text(canvas_win, ot2x, ot2y, INV_PAINT,roman_font,0.0,bufy,RED);
+		    pw_text(canvas_win, ot3x, ot3y, INV_PAINT,roman_font,0.0,bufhyp,RED);
+		}
 
 		/* draw new lines */
 		/* horizontal (dx) */
@@ -342,7 +359,7 @@ altlength_msg(type, fx, fy)
 		sizex = textsize(roman_font, strlen(bufx), bufx);
 		sprintf(bufy,"%.3f", fabs(udy));
 		sizey = textsize(roman_font, strlen(bufy), bufy);
-		sprintf(bufhyp,"%.3f", len);
+		sprintf(bufhyp,"%.3f", ulen);
 		sizehyp = textsize(roman_font, strlen(bufhyp), bufhyp);
 
 		/* dx first */
@@ -351,9 +368,7 @@ altlength_msg(type, fx, fy)
 		    t1y = cur_y + sdy - 3.0/zoomscale;			/* above the line */
 		else
 		    t1y = cur_y + sdy + sizey.ascent + 3.0/zoomscale;	/* below the line */
-		if (fabs(dx) > 0.01) {
-		    pw_text(canvas_win, t1x, t1y, PAINT, roman_font, 0.0, bufx, RED);
-		}
+		pw_text(canvas_win, t1x, t1y, PAINT, roman_font, 0.0, bufx, RED);
 
 		t2y = (cur_y+fy)/2+sdy;
 		/* now dy */
@@ -361,9 +376,7 @@ altlength_msg(type, fx, fy)
 		    t2x = fx + sdx + 4.0/zoomscale;			/* right of the line */
 		else
 		    t2x = fx + sdx - sizex.length - 4.0/zoomscale;	/* left of the line */
-		if (fabs(dy) > 0.01) {
-		    pw_text(canvas_win, t2x, t2y, PAINT, roman_font, 0.0, bufy, RED);
-		}
+		pw_text(canvas_win, t2x, t2y, PAINT, roman_font, 0.0, bufy, RED);
 
 		/* finally, the hypotenuse */
 		if (dx > 0)
@@ -374,15 +387,14 @@ altlength_msg(type, fx, fy)
 		    t3y = t2y + sizehyp.ascent + 3.0/zoomscale;	/* below the hyp */
 		else
 		    t3y = t2y - 3.0/zoomscale;			/* above the hyp */
-		if (rlen > 0.01 && fabs(rlen-fabs(dx)) > 0.001 && fabs(rlen-fabs(dy)) > 0.001) {
-		    pw_text(canvas_win, t3x, t3y, PAINT, roman_font, 0.0, bufhyp, RED);
-		}
+		pw_text(canvas_win, t3x, t3y, PAINT, roman_font, 0.0, bufhyp, RED);
 
 		break;
 
 	default:
 		break;
     }
+    first_lenmsg = False;
   }
 
   ot1x = t1x;

@@ -18,6 +18,8 @@
 #ifndef FIG_H
 #define FIG_H
 
+extern	char	*my_strdup();
+
 /* For the X stuff, include only Xlib.h and Intrinsic.h here - 
    use figx.h for widget stuff */
 
@@ -44,6 +46,7 @@
 #include <errno.h>
 
 #ifdef NEED_STRERROR
+extern char	*strerror();
 #  if !defined(__bsdi__) && !defined(__NetBSD__) && !defined(__GNU_LIBRARY__)
       extern int	errno;
       extern int	sys_nerr;

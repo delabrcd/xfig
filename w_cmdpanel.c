@@ -236,7 +236,7 @@ init_main_menus(tool, filename)
     refresh_view_menu();
 }
 
-Widget
+static Widget
 create_main_menu(i, beside)
 	int    i;
 	Widget beside;
@@ -290,7 +290,7 @@ rebuild_file_menu(menu)
 	    FirstArg(XtNvertSpace, 10);
 	    NextArg(XtNunderline, 0); /* underline # digit */
 	    entry = XtCreateWidget(id, figSmeBSBObjectClass, menu, Args, ArgCount);
-	    XtAddCallback(entry, XtNcallback, load_recent_file, (XtPointer) strdup(id));
+	    XtAddCallback(entry, XtNcallback, load_recent_file, (XtPointer) my_strdup(id));
 	    if (j < max_recent_files)
 		XtManageChild(entry);
 	}
@@ -551,7 +551,8 @@ paste(w, closure, call_data)
 	cur_c->next = NULL;
 
 	/* read in the cut buf file */
-	if (read_figc(cut_buf_name,cur_c,True,False,0,0,&settings)==0) {  
+	/* call with abspath = True to use absolute path of imported pictures */
+	if (read_figc(cut_buf_name,cur_c, True, False, True, 0, 0, &settings)==0) {  
 		compound_bound(cur_c,
 			     &cur_c->nwcorner.x,
 			     &cur_c->nwcorner.y,
@@ -573,16 +574,7 @@ paste(w, closure, call_data)
 		free_compound(&cur_c);
 		return;
 	}
-	/* remap the image colors in the new object and existing on canvas */
-	/* first attach the new object as the "next" compound off the "objects" */
-	old_c = &objects;
-	while (old_c->next != NULL) 
-	    old_c = old_c->next;
-	old_c->next = cur_c;
-	remap_imagecolors(&objects);
-	/* now remove that object from the main set */
-	old_c->next = (F_compound *) NULL;
-	/* and redraw all of the pictures already on the canvas */
+	/* redraw all of the pictures already on the canvas */
 	redraw_images(&objects);
 
 	put_msg("Reading objects from \"%s\" ...Done", cut_buf_name);
@@ -850,15 +842,39 @@ show_global_settings(w)
 	popup_global_panel(w);
 }
 
-void
+static Widget show_bal, delay_label;
+
+static void
 popup_global_panel(w)
     Widget	    w;
 {
+	Dimension	 ht;
+
+	if (global_popup == 0) {
+	    create_global_panel(w);
+	    XtPopup(global_popup, XtGrabNonexclusive);
+	    (void) XSetWMProtocols(tool_d, XtWindow(global_popup), &wm_delete_window, 1);
+	    XtUnmanageChild(delay_label);
+	    /* make the balloon delay label as tall as the checkbutton */
+	    FirstArg(XtNheight, &ht);
+	    GetValues(show_bal);
+	    FirstArg(XtNheight, ht);
+	    SetValues(delay_label);
+	    /* remanage the label */
+	    XtManageChild(delay_label);
+	    return;
+	}
+	XtPopup(global_popup, XtGrabNonexclusive);
+}
+
+create_global_panel(w)
+    Widget	    w;
+{
 	DeclareArgs(10);
-	Widget	    	 beside, below, show_bal, b_delay, n_recent, recent, form;
+	Widget	    	 beside, below, n_recent, recent;
+	Widget		 delay_form, delay_spinner;
 	Position	 xposn, yposn;
 	char		 buf[80];
-	Dimension	 ht;
 
 	XtTranslateCoords(tool, (Position) 0, (Position) 0, &xposn, &yposn);
 
@@ -889,9 +905,7 @@ popup_global_panel(w)
 	FirstArg(XtNdefaultDistance, 1);
 	NextArg(XtNfromHoriz, show_bal);
 	NextArg(XtNfromVert, below);
-	/* don't manage it yet until we can resize it to the height
-	   of the checkbutton widget */
-	form = XtCreateWidget("bal_del_form", formWidgetClass, global_panel,
+	delay_form = XtCreateManagedWidget("bal_del_form", formWidgetClass, global_panel,
 			Args, ArgCount);
 
 	FirstArg(XtNlabel,"Delay (ms):");
@@ -899,16 +913,16 @@ popup_global_panel(w)
 	NextArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainBottom);
 	NextArg(XtNleft, XtChainLeft);
-	beside = XtCreateManagedWidget("balloon_delay", labelWidgetClass, 
-				form, Args, ArgCount);
+	delay_label = beside = XtCreateManagedWidget("balloon_delay", labelWidgetClass, 
+				delay_form, Args, ArgCount);
 	sprintf(buf, "%d", appres.balloon_delay);
-	b_delay = MakeIntSpinnerEntry(form, &bal_delay, "balloon_delay", 
+	delay_spinner = MakeIntSpinnerEntry(delay_form, &bal_delay, "balloon_delay", 
 			NULL, beside, (XtCallbackRec *) NULL, buf, 0, 100000, 1, 40);
 	/* make the spinner resize with the form */
 	FirstArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainBottom);
 	NextArg(XtNright, XtChainRight);
-	SetValues(b_delay);
+	SetValues(delay_spinner);
 
 	below = CreateCheckbutton("Show line lengths     ", "show_lengths", 
 			global_panel, show_bal, NULL, True, True, &global.showlengths, 0, 0);
@@ -969,19 +983,9 @@ popup_global_panel(w)
 					   global_panel, Args, ArgCount);
 	XtAddEventHandler(below, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler)global_panel_cancel, (XtPointer) NULL);
-	XtPopup(global_popup, XtGrabNonexclusive);
-    	(void) XSetWMProtocols(tool_d, XtWindow(global_popup), &wm_delete_window, 1);
 
 	/* install accelerators for the following functions */
 	XtInstallAccelerators(global_panel, below);
-
-	/* make the balloon form as tall as the checkbutton */
-	FirstArg(XtNheight, &ht);
-	GetValues(show_bal);
-	FirstArg(XtNheight, ht);
-	SetValues(form);
-	/* remanage the balloon delay form */
-	XtManageChild(form);
 }
 
 Widget
@@ -1103,7 +1107,7 @@ global_panel_done(w, ev)
 	strcpy(cur_browser, panel_get_value(browser));
 	strcpy(cur_pdfviewer, panel_get_value(pdfview));
 
-	XtDestroyWidget(global_popup);
+	XtPopdown(global_popup);
 
 	refresh_view_menu();
 }
@@ -1114,6 +1118,7 @@ global_panel_cancel(w, ev)
     XButtonEvent   *ev;
 {
 	XtDestroyWidget(global_popup);
+	global_popup = (Widget) 0;
 }
 
 /* come here when the mouse passes over the filename window */
@@ -1292,8 +1297,10 @@ load_recent_file(w, client_data, call_data)
     /* go to the directory where the figure is in case it has imported pictures */
     strcpy(dir,filename);
     if (c=strrchr(dir,'/')) {
-	*c = '\0';		/* terminate dir at last '/' */
+	*c = '\0';			/* terminate dir at last '/' */
 	change_directory(dir);
+	strcpy(cur_file_dir, dir);	/* update current file directory */
+	strcpy(cur_export_dir, dir);	/* and export current directory */
     }
     /* load the file */
     (void) load_file(filename, 0, 0);

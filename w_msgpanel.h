@@ -19,6 +19,7 @@ extern Boolean	popup_up;
 extern Boolean	first_file_msg;
 extern Boolean	file_msg_is_popped;
 extern Widget	file_msg_popup;
+extern Boolean	first_lenmsg;
 
 extern void	put_msg(char *format, ...);
 extern void	file_msg(char *format, ...);

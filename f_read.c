@@ -24,6 +24,7 @@
 #include "u_fonts.h"
 #include "u_create.h"
 #include "version.h"
+#include "w_color.h"
 #include "w_drawprim.h"
 #include "w_export.h"
 #include "w_file.h"
@@ -33,15 +34,6 @@
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
-
-/* EXPORTS */
-
-Boolean		 update_layers_ok = True; /* if false, update_layers() doesn't update */
-int		 line_no;		/* current input line number */
-int		 num_object;		/* current number of objects */
-char		*read_file_name;	/* current input file name */
-
-/* LOCAL */
 
 /* EXPORTS */
 
@@ -64,6 +56,7 @@ static F_compound *read_compoundobject();
 static char	  *attach_comments();
 static void	   count_lines_correctly();
 static int	   read_return();
+static Boolean	   contains_picture();
 
 #define FILL_CONVERT(f) \
 	   ((proto >= 22) ? (f): \
@@ -73,8 +66,6 @@ static int	   read_return();
 
 /* max number of comments that can be stored with each object */
 #define MAXCOMMENTS	50
-/* max length of any comment */
-#define MAXCOMMLEN	200
 /* input buffer length */
 #define	BUF_SIZE	1024
 
@@ -120,15 +111,20 @@ read_fail_message(file, err)
    Called from load_file(), merge_file(), preview_figure(), load_lib_obj(),
    and paste(), but NOT from read_figure() (import Fig as picture) */
 
+static use_abspath = False;
+
 int
-read_figc(file_name, obj, merge, remapimages, xoff, yoff, settings)
+read_figc(file_name, obj, merge, remapimages, abspath, xoff, yoff, settings)
     char	   *file_name;
     F_compound	   *obj;
-    Boolean	    merge, remapimages;
+    Boolean	    merge, remapimages, abspath;
     int		    xoff, yoff;
     fig_settings   *settings;
 {
     int i,status;
+
+    /* if we're loading a library object, use absolute path of imported images */
+    use_abspath = abspath;
 
     n_num_usr_cols = -1;
     for (i=0; i<MAX_USR_COLS; i++)
@@ -152,10 +148,29 @@ read_figc(file_name, obj, merge, remapimages, xoff, yoff, settings)
     }
 
     /* and reallocate the colors for all EPS/XPM and GIFs in the object */
-    if (remapimages)
+    /* but only if a picture object is in the new file */
+    if (remapimages && contains_picture(obj))
 	remap_imagecolors(obj);
 
     return status;
+}
+
+static Boolean
+contains_picture(compound)
+    F_compound	   *compound;
+{
+    F_line	   *l;
+    F_compound	   *c;
+    /* traverse the compounds in this compound */
+    for (c = compound->compounds; c != NULL; c = c->next) {
+	if (contains_picture(c))
+	    return True;
+    }
+    for (l = compound->lines; l != NULL; l = l->next) {
+	if (l->type == T_PICTURE)
+	    return True;
+    }
+    return False;
 }
 
 /**********************************************************
@@ -207,6 +222,7 @@ read_fig(file_name, obj, merge, xoff, yoff, settings)
 	if (!update_figs)
 	    put_msg("Reading objects from \"%s\" ...", file_name);
 	status = readfp_fig(fp, obj, merge, xoff, yoff, settings);
+	fclose(fp);
 	/* so subsequent file_msg() calls don't print wrong file name */
 	first_file_msg = False;
 	return status;
@@ -225,8 +241,6 @@ readfp_fig(fp, obj, merge, xoff, yoff, settings)
     int		    i;
     int		    resolution;
     char	    versstring[10];
-
-    update_layers_ok = False;		/* prevent update_layers() from updating */
 
     defer_update_layers = 1;		/* prevent update_layers() from updating */
 
@@ -352,7 +366,6 @@ readfp_fig(fp, obj, merge, xoff, yoff, settings)
 	proto = 13;
 	status = read_1_3_objects(fp, buf, obj, &resolution);
     }
-    fclose(fp);
     /* don't go any further if there was an error in reading the figure */
     if (status != 0) {
 	return read_return(status);
@@ -385,9 +398,9 @@ readfp_fig(fp, obj, merge, xoff, yoff, settings)
     /* if merging a figure with different units, rescale for mixed units, HWS */
     if (merge && (proto >= 30)) {		
        if (!appres.INCHES && settings->units)
-	   read_scale_compound(obj,((float)PIX_PER_INCH)/(2.54*PIX_PER_CM),0);
-       if (appres.INCHES && !settings->units)
 	   read_scale_compound(obj,(2.54*PIX_PER_CM)/((float)PIX_PER_INCH),0);
+       if (appres.INCHES && !settings->units)
+	   read_scale_compound(obj,((float)PIX_PER_INCH)/(2.54*PIX_PER_CM),0);
     }
 
     /* shift the figure by the amount in the x and y offsets from the file panel */
@@ -403,14 +416,15 @@ readfp_fig(fp, obj, merge, xoff, yoff, settings)
     return read_return(status);
 }
 
-/* set update_layers_ok flag, update the layer buttons and return status */
+/* clear defer_update_layers counter, update the layer buttons and return status */
 
-int
+static int
 read_return(status)
     int		    status;
 {
-    update_layers_ok = True;
-    update_layers();
+    defer_update_layers = 0;
+    if (!update_figs)
+	update_layers();
     return status;
 }
 
@@ -447,7 +461,7 @@ read_objects(fp, obj, res)
     while (read_line(fp) > 0) {
 	if (sscanf(buf, "%d", &object) != 1) {
 	    file_msg("Incorrect format at line %d.", line_no);
-	    return (num_object != 0? 0: BAD_FORMAT);		/* ok if any objects have been read */
+	    return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
 	}
 	switch (object) {
 	case O_COLOR_DEF:
@@ -455,12 +469,11 @@ read_objects(fp, obj, res)
 	    if (num_object) {
 		file_msg("Color definitions must come before other objects (line %d).",
 			line_no);
-		return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
 	    }
 	    break;
 	case O_POLYLINE:
 	    if ((l = read_lineobject(fp)) == NULL)
-		return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
+		continue;
 	    if (ll)
 		ll = (ll->next = l);
 	    else
@@ -469,7 +482,7 @@ read_objects(fp, obj, res)
 	    break;
 	case O_SPLINE:
 	    if ((s = read_splineobject(fp)) == NULL)
-		return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
+		continue;
 	    if (ls)
 		ls = (ls->next = s);
 	    else
@@ -478,7 +491,7 @@ read_objects(fp, obj, res)
 	    break;
 	case O_ELLIPSE:
 	    if ((e = read_ellipseobject()) == NULL)
-		return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
+		continue;
 	    if (le)
 		le = (le->next = e);
 	    else
@@ -487,7 +500,7 @@ read_objects(fp, obj, res)
 	    break;
 	case O_ARC:
 	    if ((a = read_arcobject(fp)) == NULL)
-		return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
+		continue;
 	    if (la)
 		la = (la->next = a);
 	    else
@@ -496,7 +509,7 @@ read_objects(fp, obj, res)
 	    break;
 	case O_TEXT:
 	    if ((t = read_textobject(fp)) == NULL)
-		return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
+		continue;
 	    if (lt)
 		lt = (lt->next = t);
 	    else
@@ -505,7 +518,7 @@ read_objects(fp, obj, res)
 	    break;
 	case O_COMPOUND:
 	    if ((c = read_compoundobject(fp)) == NULL)
-		return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
+		continue;
 	    if (lc)
 		lc = (lc->next = c);
 	    else
@@ -514,7 +527,7 @@ read_objects(fp, obj, res)
 	    break;
 	default:
 	    file_msg("Incorrect object code at line %d.", line_no);
-	    return (num_object != 0? 0: BAD_FORMAT);	/* ok if any objects have been read */
+	    continue;
 	} /* switch */
 	
     } /* while */
@@ -625,13 +638,15 @@ read_arcobject(fp)
     check_color(&a->fill_color);
     fix_fillstyle(a);	/* make sure that black/white have legal fill styles */
 
+    a->comments = attach_comments();		/* attach any comments */
+
     /* forward arrow */
     if (fa) {
 	if (read_line(fp) == -1)
-	    return NULL;
+	    return a;
 	if (sscanf(buf, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    file_msg(Err_incomp, "arc", line_no);
-	    return NULL;
+	    return a;
 	}
 	/* throw away any arrow heads on pie-wedge arcs */
 	if (a->type == T_OPEN_ARC) {
@@ -643,10 +658,10 @@ read_arcobject(fp)
     /* backward arrow */
     if (ba) {
 	if (read_line(fp) == -1)
-	    return NULL;
+	    return a;
 	if (sscanf(buf, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    file_msg(Err_incomp, "arc", line_no);
-	    return NULL;
+	    return a;
 	}
 	/* throw away any arrow heads on pie-wedge arcs */
 	if (a->type == T_OPEN_ARC) {
@@ -654,7 +669,6 @@ read_arcobject(fp)
 	    a->back_arrow = new_arrow(type, style, thickness, wd, ht);
 	}
     }
-    a->comments = attach_comments();		/* attach any comments */
     return a;
 }
 
@@ -693,81 +707,75 @@ read_compoundobject(fp)
     while (read_line(fp) > 0) {
 	if (sscanf(buf, "%d", &object) != 1) {
 	    file_msg(Err_incomp, "compound", line_no);
-	    free_compound(&com);
+	    free((char *) com);
 	    return NULL;
 	}
 	switch (object) {
 	case O_POLYLINE:
-	    if ((l = read_lineobject(fp)) == NULL) {
-		free_line(&l);
-		return NULL;
-	    }
+	    if ((l = read_lineobject(fp)) == NULL)
+		continue;
 	    if (ll)
 		ll = (ll->next = l);
 	    else
 		ll = com->lines = l;
 	    break;
 	case O_SPLINE:
-	    if ((s = read_splineobject(fp)) == NULL) {
-		free_spline(&s);
-		return NULL;
-	    }
+	    if ((s = read_splineobject(fp)) == NULL)
+		continue;
 	    if (ls)
 		ls = (ls->next = s);
 	    else
 		ls = com->splines = s;
 	    break;
 	case O_ELLIPSE:
-	    if ((e = read_ellipseobject()) == NULL) {
-		free_ellipse(&e);
-		return NULL;
-	    }
+	    if ((e = read_ellipseobject()) == NULL)
+		continue;
 	    if (le)
 		le = (le->next = e);
 	    else
 		le = com->ellipses = e;
 	    break;
 	case O_ARC:
-	    if ((a = read_arcobject(fp)) == NULL) {
-		free_arc(&a);
-		return NULL;
-	    }
+	    if ((a = read_arcobject(fp)) == NULL)
+		continue;
 	    if (la)
 		la = (la->next = a);
 	    else
 		la = com->arcs = a;
 	    break;
 	case O_TEXT:
-	    if ((t = read_textobject(fp)) == NULL) {
-		free_text(&t);
-		return NULL;
-	    }
+	    if ((t = read_textobject(fp)) == NULL)
+		continue;
 	    if (lt)
 		lt = (lt->next = t);
 	    else
 		lt = com->texts = t;
 	    break;
 	case O_COMPOUND:
-	    if ((c = read_compoundobject(fp)) == NULL) {
-		free_compound(&c);
-		return NULL;
-	    }
+	    if ((c = read_compoundobject(fp)) == NULL)
+		continue;
 	    if (lc)
 		lc = (lc->next = c);
 	    else
 		lc = com->compounds = c;
 	    break;
 	case O_END_COMPOUND:
+	    compound_bound(com, &com->nwcorner.x, &com->nwcorner.y,
+	           &com->secorner.x, &com->secorner.y);
 	    return com;
 	default:
 	    file_msg("Incorrect object code at line %d.", line_no);
-	    return NULL;
+	    continue;
 	}			/* switch */
-    }
-    if (feof(fp))
+    } /* while (read_line(fp) > 0) */
+
+    if (feof(fp)) {
+	compound_bound(com, &com->nwcorner.x, &com->nwcorner.y,
+	           &com->secorner.x, &com->secorner.y);
 	return com;
-    else
+    } else {
 	return NULL;
+    }
 }
 
 static F_ellipse *
@@ -902,18 +910,23 @@ read_lineobject(fp)
     if (l->type == T_PICTURE) {
 	char s1[PATH_MAX];
 
-	if (read_line(fp) == -1)
+	if (read_line(fp) == -1) {
+	    free((char *) l);
 	    return NULL;
+	}
 	if ((l->pic = create_pic()) == NULL) {
 	    free((char *) l);
 	    return NULL;
 	}
 	if (sscanf(buf, "%d %s", &l->pic->flipped, s1) != 2) {
 	    file_msg(Err_incomp, "Picture Object", line_no);
+	    free((char *) l);
 	    return NULL;
 	}
-	/* if path is relative, convert it to absolute path */
-	if (s1[0] != '/')
+
+	/* if path is relative, or we're loading a library object (use_abspath = True),
+	   convert it to absolute path */
+	if (s1[0] != '/' || use_abspath)
 	    sprintf(l->pic->file, "%s/%s", cur_file_dir, s1);
 	else
 	    strcpy(l->pic->file, s1);
@@ -928,8 +941,10 @@ read_lineobject(fp)
     } else
 	l->pic = NULL;
 
-    if ((p = create_point()) == NULL)
+    if ((p = create_point()) == NULL) {
+	free((char *) l);
 	return NULL;
+    }
 
     l->points = p;
     p->next = NULL;
@@ -977,9 +992,10 @@ read_lineobject(fp)
     if ((cnpts < 5 && (l->type == T_BOX || l->type == T_ARC_BOX || l->type == T_PICTURE)) ||
 	(cnpts < 3 && l->type == T_POLYGON)) {
 	    if (l->type == T_POLYGON) {
-		file_msg("Deleting polygon containing fewer than 3 points");
+		file_msg("Deleting polygon containing fewer than 3 points at line %d", line_no);
 	    } else {
-		file_msg("Deleting box, arcbox or picture containing fewer than 4 points");
+		file_msg("Deleting zero-size %s at line %d",
+			l->type==T_BOX? "box" : l->type==T_ARC_BOX? "arcbox" : "picture", line_no);
 	    }
 	    free_linestorage(l);
 	    return NULL;
@@ -1117,6 +1133,7 @@ read_splineobject(fp)
             count_lines_correctly(fp);
             if (fscanf(fp, "%f%f%f%f", &lx, &ly, &rx, &ry) != 4) {
               file_msg(Err_incomp, "spline", line_no);
+	      free_splinestorage(s);
               return NULL;
             }
           }
@@ -1336,6 +1353,7 @@ read_textobject(fp)
 			    /* allow exactly 3 digits following the \ for the octal value */
 			    if (sscanf(&s[l+1],"%3o",&num)!=1) {
 				file_msg("Error in parsing text string on line.",line_no);
+				free((char *) t);
 				return NULL;
 			    }
 			    buf[n++]= (unsigned char) num;	/* put char in */
@@ -1357,10 +1375,9 @@ read_textobject(fp)
 	t->type = T_LEFT_JUSTIFIED;
     }
 
-    if (strlen(s) <= 1)
-	{
+    if (strlen(s) <= 1) {
 	s[0]=' ';s[1]=0;
-	}
+    }
     /* skip first blank from input file by starting at s[1] */
     if ((t->cstring = new_string(strlen(&s[1]))) == NULL) {
 	free((char *) t);
@@ -1427,7 +1444,9 @@ attach_comments()
 	if (appres.DEBUG)
 	    fprintf(stderr,"%2d: %s\n",i,comments[i]);
 	strcat(comp, comments[i]);
-	strcat(comp,"\n");
+	/* don't put trailing newline for last comment line */
+	if (i<numcom-1)
+	    strcat(comp,"\n");
     }
     /* reset comment number */
     numcom = 0;
@@ -1457,11 +1476,12 @@ save_comment(fp)
 {
     int		    i;
 
-    /* see if we've allocated space for this comment */
-    if (comments[numcom] == 0)
-	if ((comments[numcom] = (char*) new_string(MAXCOMMLEN)) == NULL)
-	    return -1;
     i=strlen(buf);
+    /* see if we've allocated space for this comment */
+    if (comments[numcom])
+	free(comments[numcom]);
+    if ((comments[numcom] = (char*) new_string(i+1)) == NULL)
+	    return -1;
     /* remove any newline */
     if (buf[i-1] == '\n')
 	buf[i-1] = '\0';
@@ -1673,6 +1693,7 @@ merge_colors(objects)
 {
     Boolean	    found_exist;
     int		    i,j,newval;
+    int		    x_colorFree[MAX_USR_COLS];
 
     if (n_num_usr_cols == 0)
 	return;
@@ -1683,18 +1704,25 @@ merge_colors(objects)
     for (i=0; i<MAX_USR_COLS; i++)
 	if (colorFree[i])
 	    break;
+
     if (i<MAX_USR_COLS)
 	newval = i;
 
-    for (i=0; i<n_num_usr_cols; i++)
-	if (!n_colorFree[i]) {
-		n_colorFree[i] = True;	/* we're not using this number anymore */
+    /* we need a tri-state value for n_colorFree[] so make local copy */
+    for (i=0; i<MAX_USR_COLS; i++)
+	x_colorFree[i] = (int) n_colorFree[i];
+
+    for (i=0; i<n_num_usr_cols; i++) {
+	renum[i] = -1;
+	if (x_colorFree[i] == 0) {
+		x_colorFree[i] = 1;	/* we're not using this number anymore */
 		/* see if it is identical to an existing color */
 		found_exist = False;
 		for (j=0; j<num_usr_cols; j++)
-		    if (user_colors[j].red == n_user_colors[i].red &&
-			user_colors[j].green == n_user_colors[i].green &&
-			user_colors[j].blue == n_user_colors[i].blue) {
+		    if (colorUsed[j] && 
+			 (user_colors[j].red>>8 == n_user_colors[i].red>>8) &&
+			 (user_colors[j].green>>8 == n_user_colors[i].green>>8) &&
+			 (user_colors[j].blue>>8 == n_user_colors[i].blue>>8)) {
 			    renum[i] = j;	/* yes, use it */
 			    found_exist=True;
 			    break;		/* skip to next */
@@ -1713,10 +1741,11 @@ merge_colors(objects)
 			if (newval >= MAX_USR_COLS)
 			    newval = -1;
 		    }
-		    n_colorFree[renum[i]] = False; /* we are using this number now */
+		    x_colorFree[renum[i]] = -1;	/* we are using this number now */
 		    n_user_colors[renum[i]] = n_user_colors[i];	/* copy rgb values */
 		}
 	}
+    }
 
     /* renumber them now */
     n_num_usr_cols = max2(newval,num_usr_cols);	/* new upper limit on color number */
@@ -1724,7 +1753,7 @@ merge_colors(objects)
 
     /* now create colorcells for the new colors */
     for (i=0; i<n_num_usr_cols; i++) {
-	if (!n_colorFree[i]) {
+	if (x_colorFree[i] != 1) {
 	    user_colors[i] = n_user_colors[i];
 	    /* and add a widget and colormap entry */
 	    if (add_color_cell(True, i,

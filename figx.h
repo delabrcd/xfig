@@ -21,6 +21,26 @@
 #include <X11/Shell.h>
 #include <X11/Xatom.h>
 
+#ifdef XAW3d
+#include <X11/Xaw3d/Command.h>
+#include <X11/Xaw3d/Label.h>
+#include <X11/Xaw3d/Dialog.h>
+#include <X11/Xaw3d/Box.h>
+#include <X11/Xaw3d/Form.h>
+#include <X11/Xaw3d/Cardinals.h>
+#include <X11/Xaw3d/Text.h>
+#include <X11/Xaw3d/AsciiText.h>
+#include <X11/Xaw3d/MenuButton.h>
+#include <X11/Xaw3d/SimpleMenu.h>
+#include <X11/Xaw3d/Scrollbar.h>
+#include <X11/Xaw3d/Sme.h>
+#include <X11/Xaw3d/SmeBSB.h>
+#include <X11/Xaw3d/SmeLine.h>
+#include <X11/Xaw3d/Toggle.h>
+#include <X11/Xaw3d/Paned.h>
+#include <X11/Xaw3d/Viewport.h>
+#include <X11/Xaw3d/List.h>
+#else /* XAW3d */
 #include <X11/Xaw/Command.h>
 #include <X11/Xaw/Label.h>
 #include <X11/Xaw/Dialog.h>
@@ -39,4 +59,6 @@
 #include <X11/Xaw/Paned.h>
 #include <X11/Xaw/Viewport.h>
 #include <X11/Xaw/List.h>
+#endif /* XAW3d */
+
 #endif /* FIGX_H */

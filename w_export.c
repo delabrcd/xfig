@@ -117,6 +117,8 @@ static Widget	orient_menu;
 static void	lang_select();
 static Widget	lang_panel, lang_menu, lang_lab;
 
+static Widget	layer_choice;
+
 static Widget	border_lab, border_width;
 
 static void	background_select();
@@ -332,7 +334,7 @@ do_export(w)
 	if (print_to_file(fval, lang_items[cur_exp_lang],
 			      appres.magnification, xoff, yoff, backgrnd,
 			      (transp == TRANSP_NONE? NULL: transparent),
-			      use_transp_backg,
+			      use_transp_backg, print_all_layers,
 			      border, smooth) == 0) {
 		FirstArg(XtNlabel, fval);
 		SetValues(dfile_text);		/* set the default filename */
@@ -423,7 +425,7 @@ set_sensitivity()
 {
     /* enable or disable features available for PostScript or other languages */
 
-    if (cur_exp_lang == LANG_PS || cur_exp_lang == LANG_PDF) {
+    if (cur_exp_lang == LANG_PS) {
 	XtSetSensitive(export_orient_panel, True);
 	XtSetSensitive(papersize_lab, True);
 	XtSetSensitive(fitpage, True);
@@ -1330,10 +1332,15 @@ create_export_panel(w)
 	NextArg(XtNright, XtChainLeft);
 	SetValues(quality_spinner);
 
+	/* make radiobuttons to all user to export all or only active layers */
+
+	layer_choice = make_layer_choice("Export all layers ", "Export only active",
+				export_panel, export_transp_panel, NULL, 2, 0);
+
 	/* next the default file name */
 
 	FirstArg(XtNlabel, " Default File");
-	NextArg(XtNfromVert, export_transp_panel);
+	NextArg(XtNfromVert, layer_choice);
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNtop, XtChainTop);
@@ -1344,7 +1351,7 @@ create_export_panel(w)
 					  export_panel, Args, ArgCount);
 
 	FirstArg(XtNlabel, default_export_file);
-	NextArg(XtNfromVert, export_transp_panel);
+	NextArg(XtNfromVert, layer_choice);
 	NextArg(XtNfromHoriz, dfile_lab);
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);

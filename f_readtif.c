@@ -58,7 +58,8 @@ read_tif(filename,filetype,pic)
 	/* now call read_pcx to read the pcx file */
 	stat = read_pcx(tiftopcx, filetype, pic);
 	pic->subtype = T_PIC_TIF;
-	/* remove temp file */
+	/* remove temp file after closing it */
+	fclose(tiftopcx);
 	unlink(pcxname);
 	return stat;
 }

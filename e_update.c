@@ -34,13 +34,14 @@
 static void	init_update_object();
 static void	init_update_settings();
 static int	seek_smallest_depth();
+static int	seek_largest_depth();
 
 static Boolean	keep_depth = False;
 static int	delta_depth;
 
 #define up_part(lv,rv,mask) \
 		if (cur_updatemask & (mask)) \
-		    (lv) = (keep_depth && mask == I_DEPTH) ? (lv+delta_depth) : (rv)
+		    (lv) = (keep_depth && mask == I_DEPTH) ? ((lv)+delta_depth) : (rv)
 
 
 void
@@ -104,10 +105,10 @@ init_update_settings(p, type, x, y, px, py)
     int		old_psfont_flag, new_psfont_flag;
 
     switch (type) {
-    case O_COMPOUND:
+      case O_COMPOUND:
 	put_msg("There is no support for updating settings from a compound object");
 	return;
-    case O_POLYLINE:
+      case O_POLYLINE:
 	cur_l = (F_line *) p;
 	if (cur_l->type != T_PICTURE) {
 		up_part(cur_linewidth, cur_l->thickness, I_LINEWIDTH);
@@ -132,7 +133,7 @@ init_update_settings(p, type, x, y, px, py)
 	if (cur_l->type == T_ARC_BOX)
 	    up_part(cur_boxradius, cur_l->radius, I_BOXRADIUS);
 	break;
-    case O_TEXT:
+      case O_TEXT:
 	cur_t = (F_text *) p;
 	up_part(cur_textjust, cur_t->type, I_TEXTJUST);
 	up_part(cur_pencolor, cur_t->color, I_PEN_COLOR);
@@ -154,7 +155,7 @@ init_update_settings(p, type, x, y, px, py)
 	}
 	up_part(cur_fontsize, cur_t->size, I_FONTSIZE);
 	break;
-    case O_ELLIPSE:
+      case O_ELLIPSE:
 	cur_e = (F_ellipse *) p;
 	up_part(cur_linewidth, cur_e->thickness, I_LINEWIDTH);
 	up_part(cur_elltextangle, cur_e->angle/M_PI*180.0, I_ELLTEXTANGLE);
@@ -167,7 +168,7 @@ init_update_settings(p, type, x, y, px, py)
 	up_dashdot(cur_styleval, cur_e->style, I_LINESTYLE);
 	up_part(cur_depth, cur_e->depth, I_DEPTH);
 	break;
-    case O_ARC:
+      case O_ARC:
 	cur_a = (F_arc *) p;
 	up_part(cur_linewidth, cur_a->thickness, I_LINEWIDTH);
 	up_part(cur_fillstyle, cur_a->fill_style, I_FILLSTYLE);
@@ -187,7 +188,7 @@ init_update_settings(p, type, x, y, px, py)
 	if (cur_a->for_arrow)
 		up_from_arrow(cur_a->for_arrow,cur_a->thickness);
 	break;
-    case O_SPLINE:
+      case O_SPLINE:
 	cur_s = (F_spline *) p;
 	up_part(cur_linewidth, cur_s->thickness, I_LINEWIDTH);
 	up_part(cur_fillstyle, cur_s->fill_style, I_FILLSTYLE);
@@ -241,8 +242,13 @@ init_update_object(p, type, x, y, px, py)
     int		    x, y;
     int		    px, py;
 {
+    int		    largest;
+    Boolean	    dontupdate;
+
+    dontupdate = False;
+
     switch (type) {
-    case O_COMPOUND:
+      case O_COMPOUND:
 	set_temp_cursor(wait_cursor);
 	cur_c = (F_compound *) p;
 	new_c = copy_compound(cur_c);
@@ -251,64 +257,88 @@ init_update_object(p, type, x, y, px, py)
 	   relative to each other, setting the depth of the *most shallow*
 	   to the desired depth */
 	keep_depth = True;
+	largest = seek_largest_depth(cur_c);
+	/* find delta */
 	delta_depth = cur_depth - seek_smallest_depth(cur_c);
+	/* if renumbering would make depths too large don't allow it */
+	if ((delta_depth + largest > MAX_DEPTH) && (cur_updatemask & I_DEPTH)) {
+	    delta_depth = 0;
+	    dontupdate = True;
+	}
 	update_compound(new_c);
 	keep_depth = False;
 
 	change_compound(cur_c, new_c);
-	/* redraw anything over the old comound */
+	if (dontupdate) {
+	    put_msg("Depths not updated - would put some objects past maximum depth");
+	    beep();
+	}
+	/* redraw anything near the old comound */
 	redisplay_compound(cur_c);
+	/* draw the new compound */
+	redisplay_compound(new_c);
 	break;
-    case O_POLYLINE:
+      case O_POLYLINE:
 	set_temp_cursor(wait_cursor);
 	cur_l = (F_line *) p;
 	new_l = copy_line(cur_l);
 	update_line(new_l);
 	change_line(cur_l, new_l);
-	/* redraw anything over the old line */
+	/* redraw anything near the old line */
 	redisplay_line(cur_l);
+	/* draw the new line */
+	redisplay_line(new_l);
 	break;
-    case O_TEXT:
+      case O_TEXT:
 	set_temp_cursor(wait_cursor);
 	cur_t = (F_text *) p;
 	new_t = copy_text(cur_t);
 	update_text(new_t);
 	change_text(cur_t, new_t);
-	/* redraw anything over the old text */
+	/* redraw anything near the old text */
 	redisplay_text(cur_t);
+	/* draw the new text */
+	redisplay_text(new_t);
 	break;
-    case O_ELLIPSE:
+      case O_ELLIPSE:
 	set_temp_cursor(wait_cursor);
 	cur_e = (F_ellipse *) p;
 	new_e = copy_ellipse(cur_e);
 	update_ellipse(new_e);
 	change_ellipse(cur_e, new_e);
-	/* redraw anything over the old ellipse */
+	/* redraw anything near the old ellipse */
 	redisplay_ellipse(cur_e);
+	/* draw the new ellipse */
+	redisplay_ellipse(new_e);
 	break;
-    case O_ARC:
+      case O_ARC:
 	set_temp_cursor(wait_cursor);
 	cur_a = (F_arc *) p;
 	new_a = copy_arc(cur_a);
 	update_arc(new_a);
 	change_arc(cur_a, new_a);
-	/* redraw anything over the old arc */
+	/* redraw anything near the old arc */
 	redisplay_arc(cur_a);
+	/* draw the new arc */
+	redisplay_arc(new_a);
 	break;
-    case O_SPLINE:
+      case O_SPLINE:
 	set_temp_cursor(wait_cursor);
 	cur_s = (F_spline *) p;
 	new_s = copy_spline(cur_s);
 	update_spline(new_s);
 	change_spline(cur_s, new_s);
-	/* redraw anything over the old spline */
+	/* redraw anything near the old spline */
 	redisplay_spline(cur_s);
+	/* draw the new spline */
+	redisplay_spline(new_s);
 	break;
     default:
 	return;
     }
     reset_cursor();
-    put_msg("Object(s) UPDATED");
+    if (!dontupdate)
+	put_msg("Object(s) UPDATED");
 }
 
 static int
@@ -323,7 +353,7 @@ seek_smallest_depth(compound)
 	F_compound *c;
 	int	  smallest, d1;
 
-	smallest = 100;
+	smallest = MAX_DEPTH;
 	for (l = compound->lines; l != NULL; l = l->next) {
 	    if (l->depth < smallest) smallest = l->depth;
 	}
@@ -345,6 +375,42 @@ seek_smallest_depth(compound)
 		smallest = d1;
 	}
 	return smallest;
+}
+
+static int
+seek_largest_depth(compound)
+    F_compound	   *compound;
+{
+	F_line	 *l;
+	F_spline	 *s;
+	F_ellipse	 *e;
+	F_arc	 *a;
+	F_text	 *t;
+	F_compound *c;
+	int	  largest, d1;
+
+	largest = MIN_DEPTH;
+	for (l = compound->lines; l != NULL; l = l->next) {
+	    if (l->depth > largest) largest = l->depth;
+	}
+	for (s = compound->splines; s != NULL; s = s->next) {
+	    if (s->depth > largest) largest = s->depth;
+	}
+	for (e = compound->ellipses; e != NULL; e = e->next) {
+	    if (e->depth > largest) largest = e->depth;
+	}
+	for (a = compound->arcs; a != NULL; a = a->next) {
+	    if (a->depth > largest) largest = a->depth;
+	}
+	for (t = compound->texts; t != NULL; t = t->next) {
+	    if (t->depth > largest) largest = t->depth;
+	}
+	for (c = compound->compounds; c != NULL; c = c->next) {
+	    d1 = seek_largest_depth(c);
+	    if (d1 > largest)
+		largest = d1;
+	}
+	return largest;
 }
 
 update_ellipse(ellipse)

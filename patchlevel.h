@@ -18,5 +18,5 @@
 #ifndef PATCHLEVEL_H
 #define PATCHLEVEL_H
 
-#define PATCHLEVEL "3c"
+#define PATCHLEVEL "3d"
 #endif /* PATCHLEVEL_H */

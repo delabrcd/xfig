@@ -11,7 +11,11 @@
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xmu/Drawing.h>
+#ifdef XAW3D
+#include <X11/Xaw3d/XawInit.h>
+#else /* XAW3d */
 #include <X11/Xaw/XawInit.h>
+#endif /* XAW3d */
 
 #include "w_listwidgetP.h"
 

@@ -145,15 +145,15 @@ setup_grid()
 	XSetForeground(tool_d, gc, bg);
 	XFillRectangle(tool_d, grid_pm, gc, 0, 0, dim, dim);
 	XSetForeground(tool_d, gc, fg);
-	x0c = -fmod(zoomscale * zoomxoff, coarse);
-	y0c = -fmod(zoomscale * zoomyoff, coarse);
+	x0c = -fmod((double) zoomscale * zoomxoff, (double) coarse);
+	y0c = -fmod((double) zoomscale * zoomyoff, (double) coarse);
 	if (coarse - x0c < 0.5)
 		x0c = 0.0;
 	if (coarse - y0c < 0.5)
 		y0c = 0.0;
 	if (fine != 0.0) {
-	    x0f = -fmod(zoomxoff, fine/ZOOM_FACTOR);
-	    y0f = -fmod(zoomyoff, fine/ZOOM_FACTOR);
+	    x0f = -fmod((double) zoomxoff, (double) fine / ZOOM_FACTOR);
+	    y0f = -fmod((double) zoomyoff, (double) fine / ZOOM_FACTOR);
 	    for (x = x0c; x < dim; x += coarse)
 		for (y = y0f; y < dim; y += fine) {
 		    XDrawPoint(tool_d, grid_pm, gc, round(x), round(y));

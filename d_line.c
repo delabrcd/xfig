@@ -104,7 +104,6 @@ init_trace_drawing(x, y)
     cur_point->x = fix_x = cur_x = x;
     cur_point->y = fix_y = cur_y = y;
     cur_point->next = NULL;
-    length_msg(MSG_LENGTH);
     if (freehand_line) {
 	canvas_locmove_proc = freehand_get_intermediatepoint;
     } else {
@@ -154,6 +153,10 @@ get_intermediatepoint(x, y, shift)
 	/* otherwise call the (possibly) constrained movement procedure */
 	(*canvas_locmove_proc) (x, y);
     }
+
+    /* don't allow coincident consecutive points */
+    if (fix_x == cur_x && fix_y == cur_y)
+	return;
 
     num_point++;
     fix_x = cur_x;

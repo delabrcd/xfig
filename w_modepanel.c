@@ -280,11 +280,11 @@ static mode_sw_info mode_switches[] = {
        False},
     {&flip_y_ic, F_FLIP, flip_ud_selected, M_NO_TEXT,
        I_MIN2,
-       "FLIP objects up or down   (Shift-f)",
+       "FLIP objects up or down   (f)",
        False},
     {&flip_x_ic, F_FLIP, flip_lr_selected, M_NO_TEXT,
        I_MIN2,
-       "FLIP objects left or right   (f)",
+       "FLIP objects left or right   (Shift-f)",
        False},
     {&rotCW_ic, F_ROTATE, rotate_cw_selected, M_ALL,
        I_ROTATE,
@@ -659,10 +659,13 @@ sel_mode_but(widget, closure, event, continue_to_dispatch)
 	cur_mode = msw->mode;
 	anypointposn = !(msw->indmask & I_POINTPOSN);
 	new_objmask = msw->objmask;
-	if (cur_mode == F_ROTATE && cur_rotnangle != 90)
-	    new_objmask = M_ROTATE_ANGLE;
+	if ((cur_mode == F_ROTATE) && 
+	    fabs(cur_rotnangle) != 90.0 && fabs(cur_rotnangle) != 180.0)
+		new_objmask = M_ROTATE_ANGLE;
 	update_markers(new_objmask);
 	current = msw;
+	/* reset the "first length message" flag in case show_length is on */
+	first_lenmsg = True;
 	/* call the mode function */
 	msw->setmode_func();
     }
