@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1998 Georg Stemmer
- * Parts Copyright (c) 1994-1998 by Brian V. Smith
+ * Parts Copyright (c) 1994-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -78,7 +78,7 @@ read_figure(file,filetype,pic)
 
     /* read the figure file itself */
 
-    if (read_fig(pic->file,pic->figure,True,0,0,&settings) != 0) {
+    if (read_fig(pic->file,pic->figure,True,0,0,&settings,True) != 0) {
 	free((char *) pic->figure);
 	pic->figure = NULL;
 	return FileInvalid;

@@ -2,7 +2,7 @@
 
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-1998 by Brian V. Smith
+ * Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -59,7 +59,8 @@ char	       *re_comp();
 #define EOS	'\0'		/* End-of-string. */
 
 #define NENTRIES	100	/* chunk size for allocating filename space */
-#define FILE_WIDTH	370	/* width of filename, directory etc widgets */
+#define F_FILE_WIDTH	413	/* width of filename, etc widgets for FILE panel */
+#define E_FILE_WIDTH	400	/* width of filename, etc widgets for EXPORT panel */
 
 /* Useful macros. */
 

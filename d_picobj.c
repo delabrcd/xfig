@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -70,6 +70,8 @@ create_picobj(x, y)
     F_line	   *box;
     F_point	   *point;
 
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     canvas_locmove_proc = null_proc;
 
@@ -114,7 +116,9 @@ create_picobj(x, y)
     box->pic->pix_height = 0;
     box->pic->pix_rotation = 0;
     box->pic->pix_flipped = 0;
+#ifdef V4_0
     box->pic->figure= (struct f_compound*) NULL;
+#endif
     box->points = point;
     append_point(fix_x, y, &point);
     append_point(x, y, &point);

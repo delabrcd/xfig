@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -341,6 +341,11 @@ flip_text(t, x, y, flip_axis)
 	break;
     case LR_FLIP:		/* y axis  */
 	t->base_x = x + (x - t->base_x);
+	/* must flip right/left justification too */
+	if (t->type == T_LEFT_JUSTIFIED)
+	    t->type =T_RIGHT_JUSTIFIED;
+	else if (t->type == T_RIGHT_JUSTIFIED)
+	    t->type =T_LEFT_JUSTIFIED;
 	break;
     }
 }

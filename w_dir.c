@@ -1,8 +1,7 @@
-/* This file is part of xdir, an X-based directory browser.
-
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-1998 by Brian V. Smith
+ * Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1990 by Digital Equipment Corporation. All Rights Reserved.
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1990 by Digital Equipment Corporation
  *
@@ -23,8 +22,6 @@
  *	Cambridge Research Lab
  *	Digital Equipment Corporation
  *	treese@crl.dec.com
- *
- *	$Source: /a/aliboron/krakatoa/home/feuille/XFIG/xfig/RCS/w_dir.c,v $
  *
  *	    COPYRIGHT 1990
  *	  DIGITAL EQUIPMENT CORPORATION
@@ -61,23 +58,14 @@
 #include "w_drawprim.h"		/* for max_char_height */
 #include "w_export.h"
 #include "w_file.h"
+#include "w_listwidget.h"
 #include "w_setup.h"
 #include "w_util.h"
-#ifdef USE_DIRENT
-#include <dirent.h>
-#else
+#ifdef HAVE_NO_DIRENT
 #include <sys/dir.h>
+#else
+#include <dirent.h>
 #endif
-
-/* Static variables */
-
-DeclareStaticArgs(15);
-static String	dir_translations =
-	"<Key>Return: SetDir()\n\
-	Ctrl<Key>X: EmptyTextKey()\n\
-	<Key>F18: PastePanelKey()\n";
-static String	list_panel_translations =
-	"<Btn3Up>: ParentDir()\n";
 
 static char	CurrentSelectionName[PATH_MAX];
 static int	file_entry_cnt, dir_entry_cnt;
@@ -97,6 +85,28 @@ void		DoChangeDir(),
 
 static void	ParentDir();
 
+/* Static variables */
+
+DeclareStaticArgs(15);
+static String	dir_translations =
+		    "<Key>Return: SetDir()\n\
+		    Ctrl<Key>X: EmptyTextKey()\n\
+		    <Key>F18: PastePanelKey()";
+
+static String	list_panel_translations =
+		    "<Btn3Up>: ParentDir()";
+
+static String	mask_text_translations =
+		    "<Key>Return: Rescan()\n\
+		    Ctrl<Key>J: Rescan()\n\
+		    Ctrl<Key>M: Rescan()";
+
+static XtActionsRec actionTable[] = {
+    {"ParentDir", (XtActionProc)ParentDir},
+    {"SetDir", (XtActionProc)SetDir},
+    {"Rescan", (XtActionProc)Rescan},
+};
+
 /* Function:	FileSelected() is called when the user selects a file.
  *		Set the global variable "CurrentSelectionName"
  *		and set either the export or file panel file name, whichever is popped up
@@ -107,16 +117,19 @@ static void	ParentDir();
  */
 
 void
-FileSelected(w, client_data, ret_val)
+FileSelected(w, client_data, call_data)
     Widget	    w;
     XtPointer	    client_data;
-    XtPointer	    ret_val;
+    XtPointer	    call_data;
 {
-    XawListReturnStruct *ret_struct = (XawListReturnStruct *) ret_val;
+    XawListReturnStruct *ret_struct = (XawListReturnStruct *) call_data;
 
     strcpy(CurrentSelectionName, ret_struct->string);
     FirstArg(XtNstring, CurrentSelectionName);
-    if (file_up) {
+    if (browse_up) {
+	SetValues(browse_selfile);
+		XawTextSetInsertionPoint(browse_selfile, strlen(CurrentSelectionName));
+    } else if (file_up) {
 	SetValues(file_selfile);
 		XawTextSetInsertionPoint(file_selfile, strlen(CurrentSelectionName));
 	/* and show a preview of the figure in the preview canvas */
@@ -125,10 +138,8 @@ FileSelected(w, client_data, ret_val)
     } else if (export_up) {
 	SetValues(exp_selfile);
 		XawTextSetInsertionPoint(exp_selfile, strlen(CurrentSelectionName));
-    } else if (browse_up) {
-	SetValues(browse_selfile);
-		XawTextSetInsertionPoint(browse_selfile, strlen(CurrentSelectionName));
-    } /* if nothing is selected it probably means that the user was impatient and
+    }
+    /* if nothing is selected it probably means that the user was impatient and
 	double clicked the file name again while it was still loading the first */
 }
 
@@ -140,12 +151,12 @@ FileSelected(w, client_data, ret_val)
  */
 
 void
-DirSelected(w, client_data, ret_val)
+DirSelected(w, client_data, call_data)
     Widget	    w;
     XtPointer	    client_data;
-    XtPointer	    ret_val;
+    XtPointer	    call_data;
 {
-    XawListReturnStruct *ret_struct = (XawListReturnStruct *) ret_val;
+    XawListReturnStruct *ret_struct = (XawListReturnStruct *) call_data;
 
     strcpy(CurrentSelectionName, ret_struct->string);
     DoChangeDir(CurrentSelectionName);
@@ -197,22 +208,21 @@ SetDir(widget, event, params, num_params)
 
     /* get the string from the widget */
     FirstArg(XtNstring, &ndir);
-    if (file_up) {
+    if (browse_up) {
+	GetValues(browse_dir);
+	strcpy(browse_cur_dir,ndir);
+    } else if (file_up) {
 	GetValues(file_dir);
     } else if (export_up) {
 	GetValues(exp_dir);
 	strcpy(export_cur_dir,ndir);	/* save in global var */
-    } else {	/* must be image browser */
-	GetValues(browse_dir);
-	strcpy(browse_cur_dir,ndir);
     }
     /* if there is a ~ in the directory, parse the username */
-    if (ndir[0]=='~')
-	{
+    if (ndir[0]=='~') {
 	char longdir[PATH_MAX];
 	parseuserpath(ndir,longdir);
 	ndir=longdir;
-	}
+    }
     DoChangeDir(ndir);
 }
 
@@ -248,18 +258,7 @@ char *path,*longpath;
     }
 }
 
-static String	mask_text_translations =
-		"<Key>Return: rescan()\n\
-		Ctrl<Key>J: rescan()\n\
-		Ctrl<Key>M: rescan()\n";
-
-static XtActionsRec actionTable[] = {
-    {"ParentDir", (XtActionProc)ParentDir},
-    {"SetDir", (XtActionProc)SetDir},
-    {"rescan", (XtActionProc)Rescan},
-};
-
-static int      actions_added=0;
+static Boolean      actions_added=False;
 
 /* the file_exp parm just changes the vertical offset for the Rescan button */
 /* make the filename list file_width wide */
@@ -287,7 +286,11 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
 
     get_directory(cur_dir);
 
-    FirstArg(XtNlabel, " Alternatives");
+    if (file_panel) {
+	FirstArg(XtNlabel, "Fig files");
+    } else {
+	FirstArg(XtNlabel, " Alternatives");
+    }
     NextArg(XtNfromVert, below);
     NextArg(XtNborderWidth, 0);
     NextArg(XtNtop, XtChainTop);
@@ -304,11 +307,18 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
 
     /* make a viewport to hold the list widget of filenames */
     FirstArg(XtNallowVert, True);
-    NextArg(XtNfromHoriz, w);
-    NextArg(XtNfromVert, below);
+    if (file_panel) {
+	/* for the file panel, put the viewport below the Alternatives label */
+	NextArg(XtNfromVert, w);
+	NextArg(XtNheight, char_ht * 15);	/* show first 15 filenames */
+    } else {
+	/* for the export or browse panel, put the viewport beside the Alternatives label */
+	NextArg(XtNfromVert, below);
+	NextArg(XtNfromHoriz, w);
+	NextArg(XtNheight, char_ht * 10);	/* show 10 lines */
+    }
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNwidth, file_width);
-    NextArg(XtNheight, char_ht * 14);	/* show first 14 filenames */
     NextArg(XtNtop, XtChainTop);	/* chain the viewport resizes fully */
     NextArg(XtNbottom, XtChainBottom);
     NextArg(XtNleft, XtChainLeft);
@@ -335,7 +345,7 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNscrollVertical, XawtextScrollNever);
     NextArg(XtNresize, XawtextResizeWidth);
-    NextArg(XtNwidth, FILE_WIDTH);
+    NextArg(XtNwidth, file_panel? F_FILE_WIDTH: E_FILE_WIDTH);
     NextArg(XtNfromHoriz, w);
     NextArg(XtNfromVert, file_viewport);
     NextArg(XtNtop, XtChainBottom);
@@ -371,7 +381,7 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     NextArg(XtNeditType, XawtextEdit);
     NextArg(XtNfromVert, *mask_w);
     NextArg(XtNfromHoriz, w);
-    NextArg(XtNwidth, FILE_WIDTH);
+    NextArg(XtNwidth, file_panel? F_FILE_WIDTH: E_FILE_WIDTH);
     NextArg(XtNtop, XtChainBottom);
     NextArg(XtNbottom, XtChainBottom);
     NextArg(XtNleft, XtChainLeft);
@@ -383,7 +393,7 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
 
     /* directory alternatives */
 
-    FirstArg(XtNlabel, " Alternatives");
+    FirstArg(XtNlabel, "  Directories");
     NextArg(XtNborderWidth, 0);
     NextArg(XtNfromVert, *dir_w);
     NextArg(XtNtop, XtChainBottom);
@@ -425,7 +435,7 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     NextArg(XtNfromHoriz, dir_alt);
     NextArg(XtNfromVert, *dir_w);
     NextArg(XtNborderWidth, INTERNAL_BW);
-    NextArg(XtNwidth, FILE_WIDTH);
+    NextArg(XtNwidth, file_panel? F_FILE_WIDTH: E_FILE_WIDTH);
     NextArg(XtNheight, char_ht * 5);
     NextArg(XtNtop, XtChainBottom);
     NextArg(XtNbottom, XtChainBottom);
@@ -440,14 +450,14 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
 	NextArg(XtNforceColumns, True);
 	NextArg(XtNdefaultColumns, 1);
     }
-    *flist_w = XtCreateManagedWidget("file_list_panel", listWidgetClass,
+    *flist_w = XtCreateManagedWidget("file_list_panel", figListWidgetClass,
 				     file_viewport, Args, ArgCount);
     XtAddCallback(*flist_w, XtNcallback, FileSelected, (XtPointer) NULL);
     XtOverrideTranslations(*flist_w,
 			   XtParseTranslationTable(list_panel_translations));
 
     FirstArg(XtNlist, dir_list);
-    *dlist_w = XtCreateManagedWidget("dir_list_panel", listWidgetClass,
+    *dlist_w = XtCreateManagedWidget("dir_list_panel", figListWidgetClass,
 				     dir_viewport, Args, ArgCount);
 
     XtOverrideTranslations(*dlist_w,
@@ -456,7 +466,7 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
 
     if (!actions_added) {
 	XtAppAddActions(tool_app, actionTable, XtNumber(actionTable));
-	actions_added = 1;
+	actions_added = True;
     }
 
     FirstArg(XtNlabel, "Rescan");
@@ -471,9 +481,10 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     NextArg(XtNright, XtChainLeft);
     w = XtCreateManagedWidget("rescan", commandWidgetClass, parent,
 			      Args, ArgCount);
-    XtAddCallback(w, XtNcallback, CallbackRescan, NULL);
+    XtAddCallback(w, XtNcallback, CallbackRescan, (XtPointer) NULL);
 
     /* install accelerators so they can be used from each window */
+    XtInstallAccelerators(parent, w);
     XtInstallAccelerators(*flist_w, parent);
     XtInstallAccelerators(*dlist_w, parent);
 
@@ -495,15 +506,20 @@ SPComp(s1, s2)
     return (strcmp(*s1, *s2));
 }
 
+#define MAX_MASKS 20
+
 Boolean
 MakeFileList(dir_name, mask, dir_list, file_list)
     char	   *dir_name;
     char	   *mask, ***dir_list, ***file_list;
 {
-    DIR		   *dirp;
+    DIR		  *dirp;
     DIRSTRUCT	  *dp;
-    char	  **cur_file, **cur_directory;
-    char	  **last_file, **last_dir;
+    char	 **cur_file, **cur_directory;
+    char	 **last_file, **last_dir;
+    int		   nmasks,i;
+    char	  *wild[MAX_MASKS],*cmask;
+    Boolean	   match;
 
     set_temp_cursor(wait_cursor);
     cur_file = filelist;
@@ -527,8 +543,14 @@ MakeFileList(dir_name, mask, dir_list, file_list)
      */
     app_flush();
 
-    if ((mask == NULL) || (*mask == '\0'))
-	mask = "*";
+    /* make copy of mask */
+    cmask = strdup(mask);
+    if ((cmask == NULL) || (*cmask == '\0'))
+	strcpy(cmask,"*");
+    wild[0] = strtok(cmask," \t");
+    nmasks = 1;
+    while ((wild[nmasks]=strtok((char*) NULL, " \t")) && nmasks < MAX_MASKS)
+	nmasks++;
     for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
 	/* skip over '.' (current dir) */
 	if (!strcmp(dp->d_name, "."))
@@ -538,7 +560,7 @@ MakeFileList(dir_name, mask, dir_list, file_list)
 	    continue;
 
 	if (IsDirectory(dir_name, dp->d_name)) {
-	    *cur_directory++ = SaveString(dp->d_name);
+	    *cur_directory++ = strdup(dp->d_name);
 	    if (cur_directory == last_dir) {	/* out of space, make more */
 		dirlist = (char **) realloc(dirlist,
 					2 * dir_entry_cnt * sizeof(char *));
@@ -548,11 +570,18 @@ MakeFileList(dir_name, mask, dir_list, file_list)
 	    }
 	} else {
 	    /* check if matches regular expression */
-	    if (wild_match(dp->d_name, mask) == 0)
+	    match=False;
+	    for (i=0; i<nmasks; i++) {
+		if (wild_match(dp->d_name, wild[i])) {
+		    match = True;
+		    break;
+		}
+	    }
+	    if (!match)
 		continue;	/* no, do next */
-	    if (mask[0] == '*' && dp->d_name[0] == '.')
+	    if (wild[i][0] == '*' && dp->d_name[0] == '.')
 		continue;	/* skip files with leading . */
-	    *cur_file++ = SaveString(dp->d_name);
+	    *cur_file++ = strdup(dp->d_name);
 	    if (cur_file == last_file) {	/* out of space, make more */
 		filelist = (char **) realloc(filelist,
 				       2 * file_entry_cnt * sizeof(char *));
@@ -572,6 +601,7 @@ MakeFileList(dir_name, mask, dir_list, file_list)
     *dir_list = dirlist;
     reset_cursor();
     closedir(dirp);
+    free(cmask);	/* free copy of mask */
     return True;
 }
 
@@ -640,11 +670,14 @@ DoChangeDir(dir)
     }
 
     FirstArg(XtNstring, cur_dir);
-    /* I don't know why this doesn't work? */
-    /* NextArg(XtNinsertPosition, strlen(cur_dir));*/
     /* update the current directory and file/dir list widgets */
-    if (file_up) 
-	{
+    if (browse_up) {
+	SetValues(browse_dir);
+	strcpy(browse_cur_dir,cur_dir);	/* save in global var */
+	XawTextSetInsertionPoint(browse_dir, strlen(cur_dir));
+	NewList(browse_flist, filelist);
+	NewList(browse_dlist, dirlist);
+    } else if (file_up) {
 	SetValues(file_dir);
 	XawTextSetInsertionPoint(file_dir, strlen(cur_dir));
 	NewList(file_flist,filelist);
@@ -655,12 +688,6 @@ DoChangeDir(dir)
 	XawTextSetInsertionPoint(exp_dir, strlen(cur_dir));
 	NewList(exp_flist, filelist);
 	NewList(exp_dlist, dirlist);
-    } else {	/* must be image browser */
-	SetValues(browse_dir);
-	strcpy(browse_cur_dir,cur_dir);	/* save in global var */
-	XawTextSetInsertionPoint(browse_dir, strlen(cur_dir));
-	NewList(browse_flist, filelist);
-	NewList(browse_dlist, dirlist);
     }
     CurrentSelectionName[0] = '\0';
 }
@@ -687,7 +714,18 @@ Rescan(widget, event, params, num_params)
      * get the mask string from the File or Export mask widget and put in
      * dirmask
      */
-    if (file_up) {
+    if (browse_up) {
+	FirstArg(XtNstring, &dirmask);
+	GetValues(browse_mask);
+	FirstArg(XtNstring, &dir);
+	GetValues(browse_dir);
+	if (change_directory(dir))	/* make sure we are there */
+	    return;
+	strcpy(browse_cur_dir,dir);	/* save in global var */
+	(void) MakeFileList(dir, dirmask, &dir_list, &file_list);
+	NewList(browse_flist, file_list);
+	NewList(browse_dlist, dir_list);
+    } else if (file_up) {
 	FirstArg(XtNstring, &dirmask);
 	GetValues(file_mask);
 	FirstArg(XtNstring, &dir);
@@ -708,17 +746,6 @@ Rescan(widget, event, params, num_params)
 	(void) MakeFileList(dir, dirmask, &dir_list, &file_list);
 	NewList(exp_flist, file_list);
 	NewList(exp_dlist, dir_list);
-    } else {	/* must be image browser */
-	FirstArg(XtNstring, &dirmask);
-	GetValues(browse_mask);
-	FirstArg(XtNstring, &dir);
-	GetValues(browse_dir);
-	if (change_directory(dir))	/* make sure we are there */
-	    return;
-	strcpy(browse_cur_dir,dir);	/* save in global var */
-	(void) MakeFileList(dir, dirmask, &dir_list, &file_list);
-	NewList(browse_flist, file_list);
-	NewList(browse_dlist, dir_list);
     }
 }
 
@@ -743,42 +770,25 @@ NewList(listwidget, list)
 	XawListChange(listwidget, list, 0, 0, True);
 }
 
-/* Function:	SaveString() creates a copy of a string.
- * Arguments:	string: String to save.
- * Returns:	A pointer to the new copy (char *).
- * Notes:
- */
-
-char	       *
-SaveString(string)
-    char	   *string;
-{
-    char	   *new;
-
-    new = (char *) malloc(strlen(string) + 1);
-    strcpy(new, string);
-    return (new);
-}
-
 /* Function:	IsDirectory() tests to see if a pathname is a directory.
  * Arguments:	path:	Pathname of file to test.
+ *		file:	Filename in path.
  * Returns:	True or False.
  * Notes:	False is returned if the directory is not accessible.
  */
 
 Boolean
-IsDirectory(root, path)
-    char	   *root;
+IsDirectory(path, file)
     char	   *path;
+    char	   *file;
 {
     char	    fullpath[PATH_MAX];
     struct stat	    statbuf;
 
-    if (path == NULL)
+    if (file == NULL)
 	return (False);
-    MakeFullPath(root, path, fullpath);
-    if (stat(fullpath, &statbuf))	/* some error, report that it is not
-					 * a directory */
+    MakeFullPath(path, file, fullpath);
+    if (stat(fullpath, &statbuf))	/* error, report that it is not a directory */
 	return (False);
     if (statbuf.st_mode & S_IFDIR)
 	return (True);

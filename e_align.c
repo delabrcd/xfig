@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -70,17 +70,26 @@ init_align_canvas(x, y, shift)
     int		    x, y;
     unsigned int    shift;	/* Shift Key Status from XEvent */
 {
+    int		    ux;
+
     cur_c = &objects;
     toggle_all_compoundmarkers();
     draw_compoundelements(cur_c, ERASE);
     old_c = copy_compound(&objects);
     xcmin=ycmin=0;
-    if (appres.INCHES) {
-	xcmax=(appres.landscape? 11*PIX_PER_INCH : 8.5*PIX_PER_INCH);
-	ycmax=(appres.landscape? 8.5*PIX_PER_INCH : 11*PIX_PER_INCH);
-    } else {
-	xcmax=(appres.landscape? 29.7*PIX_PER_CM : 21*PIX_PER_CM);
-	ycmax=(appres.landscape? 21*PIX_PER_CM : 29.7*PIX_PER_CM);
+
+    /* get the current page size */
+    xcmax = paper_sizes[appres.papersize].width;
+    ycmax = paper_sizes[appres.papersize].height;
+    if (!appres.INCHES) {
+	xcmax = (int)(xcmax*2.54*PIX_PER_CM/PIX_PER_INCH);
+	ycmax = (int)(ycmax*2.54*PIX_PER_CM/PIX_PER_INCH);
+    }
+    /* swap height and width if landscape */
+    if (appres.landscape) {
+	ux = xcmax;
+	xcmax = ycmax;
+	ycmax = ux;
     }
     align_ellipse();
     align_arc();
@@ -106,7 +115,7 @@ init_align_canvas(x, y, shift)
     toggle_all_compoundmarkers();
     clean_up();
     set_latestobjects(old_c);
-    set_action_object(F_CHANGE, O_ALL_OBJECT);
+    set_action_object(F_EDIT, O_ALL_OBJECT);
     set_modifiedflag();
 }
 
@@ -151,7 +160,7 @@ init_align(p, type, x, y, px, py)
     clean_up();
     old_c->next = cur_c;
     set_latestcompound(old_c);
-    set_action_object(F_CHANGE, O_COMPOUND);
+    set_action_object(F_EDIT, O_COMPOUND);
     set_modifiedflag();
 }
 
@@ -161,6 +170,8 @@ align_ellipse()
     F_ellipse	   *e;
 
     for (e = cur_c->ellipses; e != NULL; e = e->next) {
+	if (!active_layer(e->depth))
+	    continue;
 	ellipse_bound(e, &llx, &lly, &urx, &ury);
 	get_dx_dy();
 	translate_ellipse(e, dx, dy);
@@ -173,6 +184,8 @@ align_arc()
     F_arc	   *a;
 
     for (a = cur_c->arcs; a != NULL; a = a->next) {
+	if (!active_layer(a->depth))
+	    continue;
 	arc_bound(a, &llx, &lly, &urx, &ury);
 	get_dx_dy();
 	translate_arc(a, dx, dy);
@@ -185,6 +198,8 @@ align_line()
     F_line	   *l;
 
     for (l = cur_c->lines; l != NULL; l = l->next) {
+	if (!active_layer(l->depth))
+	    continue;
 	line_bound(l, &llx, &lly, &urx, &ury);
 	get_dx_dy();
 	translate_line(l, dx, dy);
@@ -197,6 +212,8 @@ align_spline()
     F_spline	   *s;
 
     for (s = cur_c->splines; s != NULL; s = s->next) {
+	if (!active_layer(s->depth))
+	    continue;
 	spline_bound(s, &llx, &lly, &urx, &ury);
 	get_dx_dy();
 	translate_spline(s, dx, dy);
@@ -209,6 +226,8 @@ align_compound()
     F_compound	   *c;
 
     for (c = cur_c->compounds; c != NULL; c = c->next) {
+	if (!any_active_in_compound(c))
+	    continue;
 	compound_bound(c, &llx, &lly, &urx, &ury);
 	get_dx_dy();
 	translate_compound(c, dx, dy);
@@ -219,9 +238,11 @@ static void
 align_text()
 {
     F_text	   *t;
+    int		    dum;
 
     for (t = cur_c->texts; t != NULL; t = t->next) {
-	int   dum;
+	if (!active_layer(t->depth))
+	    continue;
 	text_bound(t, &llx, &lly, &urx, &ury,
 		   &dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
 	get_dx_dy();

@@ -5,7 +5,9 @@ Inches
 Letter 
 100.00
 Single
-0
+-2
+# Make sure you are comparing the
+# same things
 1200 2
 0 32 #f1e41a
 0 33 #887dc2

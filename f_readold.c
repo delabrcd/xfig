@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -197,6 +197,7 @@ read_1_3_compoundobject(fp)
     com->lines = NULL;
     com->splines = NULL;
     com->texts = NULL;
+    com->comments = NULL;
     com->compounds = NULL;
     com->next = NULL;
     n = fscanf(fp, " %d %d %d %d\n", &com->nwcorner.x, &com->nwcorner.y,
@@ -495,7 +496,7 @@ read_1_3_textobject(fp)
 	free((char *) t);
 	return (NULL);
     }
-    if ((t->cstring = new_string(strlen(buf) + 1)) == NULL) {
+    if ((t->cstring = new_string(strlen(buf))) == NULL) {
 	free((char *) t);
 	file_msg("Empty text string at line %d.", line_no);
 	return (NULL);

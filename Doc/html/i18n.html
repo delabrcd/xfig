@@ -2,52 +2,55 @@
 <html>
 <head>
 <title>XFIG User Manual - Japanese Support</title>
-<link rev="made" href="http://www-epb.lbl.gov/BVSmith">
+<link rev="made" href="mailto:VEF00200@nifty.ne.jp">
 </head>
 
 <body>
-<img src="images/xfig-title.gif" alt="XFIG Users Manual">
+<a href="contents.html"><img src="images/xfig-title.gif"
+  alt="XFIG Users Manual" border=0></a>
+
+<hr>
+
+<h1>Internationalization (Using Japanese, Korean, etc.)</h1>
+
+<b>xfig 3.2</b> and <b>fig2dev 3.2</b> include code for internationalization,
+and it is possible to put characters of Japanese
+and some another languages in texts.
+At now, it is known to worked under Japanese and Korean.
 <p>
-[ <b>English Version</b>
- | <a href="japanese/index.html">Japanese Version</a> ]
-<p>
-[ <a href="index.html">Contents</a>
- | <a href="introduction.html">Operating Manual</a>
- | <a href="features_bugs.html">New Features and Bugs Fixed</a><br>
- | <b>Technical Information</b>
- | <a href="authors.html">Authors</a> ]
-<p>
-[ <a href="options.html">Options and Resources</a>
- | <a href="installation.html">Installation</a>
- | <a href="faq.html">FAQ</a><br>
- | <b>Japanese Support (or Internationalization?)</b>
- | <a href="fig-format.html">Fig Format 3.2</a> ]
+Additional informations about this may available at
+<a href="http://member.nifty.ne.jp/tsato/xfig/">
+<i>http://member.nifty.ne.jp/tsato/xfig/</i></a>.
+Send any questions or comments about this internationalization facility to 
+<a href="mailto:VEF00200@nifty.ne.jp"><i>VEF00200@nifty.ne.jp (T.Sato)</i></a>.
 
 <p>
 <hr>
 
-<h1>Japanese Support (or Internationalization?)</h1>
+<ul>
+<li><a href="#environment">Environment</a>
+<li><a href="#install">Installation</a>
+<ul>
+<li><a href="#install-xfig">Install <b>xfig</b></a>
+<li><a href="#install-fig2dev">Install <b>fig2dev</b></a>
+</ul>
+<li><a href="#startup">Startup</a>
+<li><a href="#input-text">Entering Text</a>
+<li><a href="#customize">Customization</a>
+<ul>
+<li><a href="#screen-font">Changing Display Fonts</a>
+<li><a href="#printer-font">Changing Fonts on PostScript Output</a>
+<li><a href="#resource">Setting Resources</a>
+</ul>
+<li><a href="#notes">Notes</a>
+<li><a href="#worked">Tested Environments</a>
+</ul>
 
-<b>xfig 3.2</b> and <b>fig2dev 3.2</b> include code to
-make it possible to use Japanese text in <b>xfig</b>.
-Although it is not tested for languages other than Japanese,
-it uses the standard internationalization (I18N) mechanism of X11R5,
-and it may work for
-<a href="i18n.html#i18n">other languages</a> with little or no change.
-<p>
-Send any questions about this Japanese support facility to 
-<a href="mailto:VEF00200@niftyserve.or.jp"><i>VEF00200@niftyserve.or.jp</i></a>.
+<hr>
 
+<h2><a name="environment">Environment</a></h2>
 
-<h2>Japanese Support</h2>
-
-Using this Japanese support facility, you may enter Japanese text
-(and maybe <a href="#i18n">other languages</a>) on <b>xfig</b> 
-in the manner described in <a href="#input-japanese">Entering Japanese Text</a>.
-
-<h3>Environment</h3>
-
-To use this Japanese support facility, you must have following environment:
+To use this internationalization facility, you must have following environment:
 <p>
 <ul>
 <li>Library and X Server of X11R5 or X11R6.
@@ -60,27 +63,30 @@ Use of X11R6 is recommended.)
 <li>Appropriate <i>conversion server</i> 
 (<b>Canna</b> or <b>Wnn</b>, for example),
 and an <i>input method</i> (<b>kinput2</b> or <b>htt</b>, for example).
+These facilities may be implemented as a single program.
 
 <p>
-<li>Japanese font (<tt>jiskan16</tt>, for example)
+<li>Fonts for the language (<tt>jiskan16</tt> for Japanese, for example)
 </ul>
 
-<h3>Installation</h3>
 
-<h4>Install Japanese-xfig</h4>
+<h2><a name="install">Installation</a></h2>
+
+<h3><a name="install-xfig">Install <b>xfig</b></a></h3>
 
 <ol>
-<li>Get <a href="installation.html"><b>xfig.3.2.1.tar.gz</b></a> 
+<li>Get <a href="installation.html"><b>xfig.3.2.3.tar.gz</b></a> 
 and <i>gunzip</i> and <i>untar</i> it.
 
 <p>
 <li>Uncomment ``<tt>#define I18N</tt>''
-in <tt>xfig.3.2.1/Imakefile</tt> (remove the <tt>XCOMM</tt> comment).
+in <tt>xfig.3.2.3/Imakefile</tt> (remove the <tt>XCOMM</tt> comment).
 
 <p>
-<li>If your C library supports Japanese locale,
-remove <tt>-DSETLOCALE</tt> from the definition of <tt>I18N_DEFS</tt>.
-If your C library doesn't support the Japanese locale,
+<li>If your C library supports the required locale,
+remove <tt>-DSETLOCALE</tt> from the definition of <tt>I18N_DEFS</tt> 
+in the <tt>Imakefile</tt>.
+If your C library doesn't support the required locale,
 make sure that <tt>-DSETLOCALE</tt> is specified.
 
 <p>
@@ -88,61 +94,33 @@ make sure that <tt>-DSETLOCALE</tt> is specified.
 <b>xfig</b> in the usual way.
 </ol>
 
-<h4>Install Japanese-fig2dev</h4>
+<h3><a name="install-fig2dev">Install <b>fig2dev</b></a></h3>
 
 <ol>
-<li>Get <a href="installation.html"><b>transfig.3.2.1.tar.gz</b></a> 
+<li>Get <a href="installation.html"><b>transfig.3.2.3.tar.gz</b></a> 
 and <i>gunzip</i> and <i>untar</i> it.
 
 <p>
 <li>Uncomment ``<tt>#define I18N</tt>''
-in <tt>transfig.3.2.1/fig2dev/Imakefile</tt> (remove the <tt>XCOMM</tt> comment).
+in <tt>transfig.3.2.3/fig2dev/Imakefile</tt> (remove the <tt>XCOMM</tt> comment).
 
 <p>
-<li>If you want to install <tt>japanese.ps</tt> (described below)
+<li>If you want to install files like <tt>japanese.ps</tt> 
 to a directory other than <tt>/usr/local/lib/fig2dev</tt>,
-modify the definition of <tt>-DFIG2DEV_LIBDIR</tt>.
+modify the definition of <tt>FIG2DEV_LIBDIR</tt> and <tt>I18N_DEV_DEFS</tt> 
+in the <tt>Imakefile</tt>.
 
 <p>
 <li><a href="installation.html">Compile and install</a>
 <b>TransFig</b> (<b>fig2dev</b>) in the usual way.
-
-<p>
-<li><a name="japanese-ps">Put the following lines</a>
-to the file <tt><i>locale</i>.ps</tt>
-(<tt>japanese.ps</tt> or <tt>ja_JP.eucJP.ps</tt>, for example)
-in the directory specified by <tt>-DFIG2DEV_LIBDIR</tt> 
-(usually <tt>/usr/local/lib/fig2dev</tt>).
-<p>
-<pre>
-    % japanese.ps for fig2dev 3.2
-    16 dict begin
-      /FontName /CompositeRoman def    /FontType 0 def
-      /WMode 0 def    /FMapType 3 def    /FontMatrix matrix def
-      /Encoding [0 1] def
-      /FDepVector [ /Times-Roman findfont
-        /Ryumin-Light-EUC-H findfont ] def
-      FontName currentdict
-      end
-    definefont pop
-    16 dict begin
-      /FontName /CompositeBold def    /FontType 0 def
-      /WMode 0 def    /FMapType 3 def    /FontMatrix matrix def
-      /Encoding [0 1] def
-      /FDepVector [ /Times-Bold findfont
-        /GothicBBB-Medium-EUC-H findfont ] def
-      FontName currentdict
-      end
-    definefont pop
-    % end of japanese.ps
-</pre>
 </ol>
 
-<h3>Startup</h3>
+
+<h2><a name="startup">Startup</a></h2>
 
 <ol>
-<li>Set the locale name for Japanese
-(such as <tt>japanese</tt> or <tt>ja_JP.eucJP</tt>) 
+<li>Set the locale name for the language to be used 
+(such as <tt>ja_JP.eucJP</tt> or <tt>ko_KR.eucKR</tt>, for example) 
 to the environment variable <tt>LANG</tt>.
 
 <p>
@@ -159,26 +137,30 @@ is available.
 <li>Type ``<kbd>xfig -international</kbd>''.
 <p>
 Without the <tt>-international</tt> option,
-<b>xfig</b> will work as normal (no Japanese).
-If you put ``<tt>Fig.international: true</tt>'' into your resource file,
+<b>xfig</b> will work as normal (no internationalization).
+If you put ``<tt>Fig.international: true</tt>'' 
+into your <a href="#resource">resource file</a>,
 <tt>-international</tt> option may omitted.
 </ol>
 
 
-<h3><a name="input-japanese">Entering Japanese Text</a></h3>
+<h2><a name="input-text">Entering Text</a></h2>
 
-Using this Japanese support facility, you may enter Japanese text
-with the <a href="drawing-mode.html#text">TEXT</a> facility.
-When entering Japanese characters in text,
-``<i>Times-Roman + Mincho</i>'' or ``<i>Times-Bold + Gothic</i>'' 
-must be selected as <a href="indicator-panel.html#text-font">TEXT FONT</a>.
+Using this internationalization facility,
+you may enter text in Japanese or some another languages 
+(henceforce, call ``international text'') 
+with the <a href="drawing.html#text">TEXT</a> facility.
+When entering international text,
+``<i>Times-Roman</i>'' or ``<i>Times-Bold</i>'' 
+(may be displayed as ``<i>Times-Roman + Mincho</i>'' 
+and ``<i>Times-Bold + Gothic</i>'' in Japanese environment) 
+must be selected as <a href="attributes.html#text-font">TEXT FONT</a>.
 <p>
-Input of Japanese text will be started
-by typing a key to switch to Japanese-input-mode
+Input of international text will be started
+by typing a key to switch the input mode
 when it is ready to input text from the keyboard
-in <a href="drawing-mode.html#text">TEXT</a> mode.
-It depend on the environment
-as to which key will switch to the Japanese-input-mode,
+in <a href="drawing.html#text">TEXT</a> mode.
+It depend on the environment as to which key will switch the input mode,
 but keys such as <tt>Shift-SPACE</tt>, <tt>Control-SPACE</tt>,
 <tt>Control-O</tt>, or <tt>Control-\</tt> may be used in many cases.
 Operations for conversion also depend on the environment,
@@ -195,7 +177,6 @@ will select <i>Over the Spot</i> as the input style.
 <dl>
 <dt><b>Off the Spot</b>:
 <dd>The text under conversion will be displayed at the bottom of the canvas.
-This may be reasonable in most cases.
 <p>
 <blockquote>
   <img src="images/xim-off-the-spot.gif" alt="[Input Style: Off-the-Spot]">
@@ -224,9 +205,9 @@ or the display on the canvas may get confused.
 </dl>
 
 
-<h3>Additional Informations</h3>
+<h2><a name="customize">Customization</a></h2>
 
-<h4>Changing Display Fonts</h4>
+<h3><a name="screen-font">Changing Display Fonts</a></h3>
 
 By default, fonts to be used on the display (hardcoded in the program)
 is very loosely specified so that those fonts can found on any systems:
@@ -244,7 +225,7 @@ With this default specification, non-desirable fonts may loaded
 (bad appearance of texts or long delay when starting of <b>xfig</b>
 may caused as the result, for example) on some systems.
 In such case, you may need to specify those fonts more definitive
-in the resource file (<tt>app-defaults/Fig</tt>)
+in the <a href="#resource">resource file</a> (<tt>app-defaults/Fig</tt>) 
 and force the system to load the specified font:
 <p>
 <pre>
@@ -253,10 +234,12 @@ and force the system to load the specified font:
         -misc-fixed-medium-r-normal--14-*-*-*-*-*-*-*
     Fig.boldFontSet: -*-times-bold-r-normal--14-*-*-*-*-*-*-*,\
         -misc-fixed-medium-r-normal--14-*-*-*-*-*-*-*
-    Fig.fontSetSize: 14
 </pre>
 <p>
-If scalable Japanese fonts are available,
+If scalable fonts are available 
+(when X server which support scalable fonts 
+like <a href="http://X-TT.dsl.gr.jp/index.html">X-TrueType Server</a> 
+is in use, for example)
 appearance of text may improved by specifying large fonts, as:
 <p>
 <pre>
@@ -266,51 +249,88 @@ appearance of text may improved by specifying large fonts, as:
         -foobar-mincho-medium-r-normal--64-*-*-*-*-*-*-*
     Fig.boldFontSet: -*-times-bold-r-normal--64-*-*-*-*-*-*-*,\
         -foobar-gothic-medium-r-normal--64-*-*-*-*-*-*-*
-    Fig.fontSetSize: 64
 </pre>
-<p>
-Note that you must set same size font for
-<tt>normalFontSet</tt> and <tt>boldFontSet</tt>,
-and size of those font to <tt>fontSetSize</tt>.
 
-<h4>Changing Fonts on PostScript Output</h4>
+<h3><a name="printer-font">Changing Fonts on PostScript Output</a></h3>
+
+Fonts used when generating PostScript output are specified
+in the files like <tt>japanese.ps</tt> in <b>fig2dev</b> package,
+and it is possible to change them by modifying those files.
+
+<h4>Japanese</h4>
 
 By default, <tt>Ryumin-Light</tt> and <tt>GothicBBB-Medium</tt> 
-will used when generating PostScript output.
+will used if they are available,
+and <tt>HeiseiMin-W3</tt> and <tt>HeiseiKakuGo-W5</tt> otherwise.
 <p>
-They are specified in the 
-<a href="#japanese-ps"><tt>japanese.ps</tt> file</a> above,
-and it is possible to change those fonts by modifying the file.
-<p>
-For example, if you modify 
-<tt>/Ryumin-Light-EUC-H</tt> to <tt>/HeiseiMin-W3-EUC-H</tt> 
-and <tt>/GothicBBB-Medium-EUC-H</tt> to <tt>/HeiseiKakuGo-W5-EUC-H</tt>,
-then <tt>HeiseiMin-W3</tt> font will used for <i>Times-Roman + Mincho</i>,
-and <tt>HeiseiKakuGo-W5</tt> font will used for <i>Times-Bold + Gothic</i>.
+Locale name can one of <tt>japanese</tt>, <tt>ja</tt>, <tt>ja_JP</tt>, 
+<tt>ja_JP.ujis</tt>, <tt>ja_JP.eucJP</tt> and <tt>ja_JP.EUC</tt>.
 
-<h4>Note</h4>
+<h4>Korean</h4>
+
+By default, <tt>Munhwa-Regular</tt> and <tt>MunhwaGothic-Bold</tt> 
+will used if they are available,
+and <tt>HLaTeX-Myoungjo-Regular</tt> and <tt>HLaTeX-Gothic-Regular</tt> otherwise.
+<p>
+Locale name can one of <tt>korean</tt>, <tt>ko</tt>, <tt>ko_KR</tt>, 
+<tt>ko_KR.ujis</tt>, <tt>ko_KR.eucKR</tt> and <tt>ko_KR.EUC</tt>.
+
+<h4>Another Languages</h4>
+
+Because configuration file for languages other than Japanese and Korean 
+is not prepared,
+you must make the file for the language and available fonts.
+<p>
+The file must installed into the directory 
+specified when <b>fig2dev</b> is installed.
+The filename must locale name followed by ``<tt>.ps</tt>''.
+For example, if locale name is <tt>zh_CN.eucCN</tt>, 
+the filename must <tt>zh_CN.eucCN.ps</tt>.
+
+<h3><a name="resource">Setting Resources</a></h3>
+
+X Window System has mechanism to load locale-specific resource file
+to support internationalization (localization) of applications.
+With this mechanism, it is possible to make suitable settings for the language
+without specifying options when executing the application.
+To make <b>xfig</b> works properly for multiple languages,
+it may be necessary to make suitable settings using this mechanism.
+<p>
+In the default configuration of X11R6, 
+if there is a resource file like 
+<tt>/usr/X11R6/lib/X11/<i>locale</i>/app-defaults/Fig</tt> 
+(here, <tt><i>locale</i></tt> is locale name or its ``language part''), 
+it will be loaded instead of
+<tt>/usr/X11R6/lib/X11/app-defaults/Fig</tt>.
+Therefore, if you wrote setting for Japanese environment in 
+<tt>/usr/X11R6/lib/X11/ja/app-defaults/Fig</tt>,
+the setting for Japanese environment will be used when 
+environment variable <tt>LANG</tt> is set to <tt>ja_JP.eucJP</tt> or so,
+and default setting in <tt>/usr/X11R6/lib/X11/app-defaults/Fig</tt> 
+will be used otherwise.
+
+<h2><a name="notes">Notes</a></h2>
 
 <ul>
-<li>It is not possible to edit Japanese text
-in the <a href="editing-mode.html#edit-text-panel">Edit Panel</a>.
-But it is possible to edit text on the canvas
-in <a href="drawing-mode.html#text">TEXT</a> mode.
-
-<p>
-<li>To put Japanese in text, you must select
-``<i>Times-Roman + Mincho</i>'' or ``<i>Times-Bold + Gothic</i>''
-as the <a href="indicator-panel.html#text-font">TEXT FONT</a>.
+<li>When entering international text, you must select
+``<i>Times-Roman</i>'' or ``<i>Times-Bold</i>'' 
+(may be displayed as ``<i>Times-Roman + Mincho</i>'' 
+and ``<i>Times-Bold + Gothic</i>'' in Japanese environment)
+as the <a href="attributes.html#text-font">TEXT FONT</a>.
 If any other font is selected,
-<a href="drawing-mode.html#compose-char">Latin-1 characters</a> 
+<a href="drawing.html#compose-char">Latin-1 characters</a> 
 will be available as in normal <b>xfig</b>.
 
 <p>
-<li>Text may include only ASCII and JIS-X-0208 characters.
-If the environment supports it,
-it may be possible to enter characters
-of JIS-X-0201 <i>kana</i> characters
-or JIS-X-0212 (supplement <i>kanji</i>),
-but <b>fig2dev</b> will not accept those characters.
+<li>It is not possible to edit international text
+in the <a href="editing.html#edit-text-panel">Edit Panel</a>.
+But it is possible to edit text on the canvas
+in <a href="drawing.html#text">TEXT</a> mode.
+
+<p>
+<li>When specifying <tt>international</tt> resource,
+you should specify as ``<tt>Fig.international: true</tt>'' 
+but not ``<tt>Fig*international: true</tt>''.
 
 <p>
 <li>Use EUC for encoding of multi-byte text.
@@ -319,30 +339,44 @@ appropriately for your system.
 On some systems, <tt>japanese</tt> may select non-EUC encoding.
 
 <p>
+<li>In Japanese environments,
+text may include only ASCII and JIS-X-0208 characters.
+If the environment supports it,
+it may be possible to enter characters
+of JIS-X-0201 <i>kana</i> characters
+or JIS-X-0212 (supplement <i>kanji</i>),
+but <b>fig2dev</b> will not accept those characters.
+
+<p>
 <li>Regrettably, making <b>xfig 3.2</b>'s Japanese entering feature
 available may difficult on many X11R5 systems.
-It is known to work on Solaris 2's OpenWindows and Solaris CDE,
+It is known to work on Japanese Solaris 2's OpenWindows and Solaris CDE,
 but unknown about another X11R5-based systems.
 </ul>
 
-<h4>Tested Environments</h4>
 
-At this time, Japanese-<b>xfig</b> has been tested on the following environments:
-<p>
-<pre>
-  --------------------------------------------------
-<i>     Operating System     X           Input Method</i>
-  --------------------------------------------------
-   SunOS 4.1            X11R6            kinput2
-   Solaris 2.5          X11R6            kinput2
-   Solaris 2.5-2.6      OpenWindows/CDE  htt/ATOK
-   HP-UX 10.20          X11R6            kinput2
-   IRIX 6.3*            X11R6            kinput2
-   FreeBSD 2.2          X11R6            kinput2
-   Slackware Linux 3.1  X11R6            kinput2
-   RedHat Linux 4.2     X11R6            kinput2
-  --------------------------------------------------
-</pre>
+<h2><a name="worked">Tested Environments</a></h2>
+
+At this time, <b>xfig</b>'s international facility 
+has been successfully worked on the following environments.
+
+<h3>Japanese</h3>
+
+<center>
+<table border=1 width="90%">
+<tr><th>Operating System        <th>X                <th>Input Method
+<tr>
+<tr><td>SunOS 4.1               <td>X11R6            <td>kinput2
+<tr><td>Solaris 2.5             <td>X11R6            <td>kinput2
+<tr><td>Solaris 2.5-2.6         <td>OpenWindows, CDE <td>htt, ATOK
+<tr><td>HP-UX 10.20             <td>X11R6            <td>kinput2
+<tr><td>IRIX 6.3*               <td>X11R6            <td>kinput2
+<tr><td>FreeBSD 2.2             <td>XFree86          <td>kinput2
+<tr><td>Slackware Linux 3.1     <td>XFree86          <td>kinput2
+<tr><td>RedHat Linux 4.2, 5.2   <td>XFree86          <td>kinput2
+<tr><td>Debian GNU/Linux 2.x    <td>XFree86          <td>kinput2, skkinput
+</table>
+</center>
 <p>
 <blockquote>
 * On IRIX 6.3, you may need to compile <b>xfig</b> 
@@ -352,41 +386,29 @@ Also, you may need to get source of JPEG library and compile it yourself,
 to avoid using JPEG library distributed with IRIX.
 </blockquote>
 
-<blockquote>
-</blockquote>
+<h3>Korean</h3>
+
+<center>
+<table border=1 width="90%">
+<tr><th>Operating System        <th>X                <th>Input Method
+<tr>
+<tr><td>RedHat Linux 5.2, 6.0   <td>XFree86          <td>hanIM, ami
+</table>
+</center>
+
+<p>
+<dl>
+<dt>SEE ALSO:
+<dd><a href="http://pantheon.yale.edu/~jshin/faq/">Hangul and Internet in Korea FAQ</a><br>
+<a href="http://nuclina.hoseo.ac.kr/ps/">Hungle and Printing</a>
+</dl>
 
 <p>
 <hr>
 
-<h2><a name="i18n">Internationalization?</a></h2>
-
-Although this Japanese support facility for <b>xfig 3.2</b> 
-is not tested for languages other than Japanese,
-it uses the standard internationalization (I18N) mechanism of X11R5/X11R6
-and it may work for another languages with little or no change.
-Actually, it is tested that it can <i>display</i> text in
-Chinese (<tt>zh_CN.eucCN</tt>) and Korean (<tt>ko_KR.eucKR</tt>).
-<p>
-<blockquote>
-  <img src="images/korean-text.gif" alt="[Korean Text]">
-</blockquote>
-<p>
-<b>fig2dev</b> is different,
-but it may possible to support those languages
-if there are LaTeX and/or PostScript printers that support the language.
-<p>
-Please contact to
-<a href="mailto:VEF00200@niftyserve.or.jp"><i>VEF00200@niftyserve.or.jp</i></a> 
-if you wish to try to make it available to use languages other than Japanese,
-or if you found that it does work for other languages.
-
-<p>
-<hr>
-
-Goto <a href="index.html">TOP</a>
-
-<p>
-<a href="authors.html#manual"><i>written by us</i></a>
+[ <a href="contents.html">Contents</a> |
+ <a href="introduction.html">Introduction</a> |
+ <a href="authors.html">Credits</a> ]
 
 </body>
 </html>

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -24,6 +24,19 @@ extern XFontStruct *roman_font;
 extern XFontStruct *button_font;
 extern XFontStruct *canvas_font;
 extern XFontStruct *lookfont();
+extern GC	    makegc();
+
+/* patterns like bricks, etc */
+typedef struct _patrn_strct {
+	  int	 owidth,oheight;	/* original width/height */
+	  char	*odata;			/* original bytes */
+	  int	 cwidth,cheight;	/* current width/height */
+	  char	*cdata;			/* bytes at current zoom */
+    } patrn_strct;
+
+#define SHADE_IM_SIZE	32		/* fixed by literal patterns in w_drawprim.c */
+extern patrn_strct	pattern_images[NUMPATTERNS];
+extern unsigned char	shade_images[NUMSHADEPATS][128];
 
 /* Maximum number of points for polygons etc */
 /* This may be overridden by adding -DMAXNUMPTS=xxxx in the Imakefile/Makefile */

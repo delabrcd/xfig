@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-1998 by Brian V. Smith
+ * Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -18,18 +18,63 @@
 #include "u_fonts.h"
 #include "object.h"
 
-/* printer font names for indicator window */
+/* X11 font names */
 
 struct _xfstruct x_fontinfo[NUM_FONTS] = {
     {"-adobe-times-medium-r-normal--", (struct xfont*) NULL},
     {"-adobe-times-medium-i-normal--", (struct xfont*) NULL},
     {"-adobe-times-bold-r-normal--", (struct xfont*) NULL},
     {"-adobe-times-bold-i-normal--", (struct xfont*) NULL},
-    {"-schumacher-clean-medium-r-normal--", (struct xfont*) NULL}, /* closest to Avant-Garde */
-    {"-schumacher-clean-medium-i-normal--", (struct xfont*) NULL},
-    {"-schumacher-clean-bold-r-normal--", (struct xfont*) NULL},
-    {"-schumacher-clean-bold-i-normal--", (struct xfont*) NULL},
-    {"-adobe-times-medium-r-normal--", (struct xfont*) NULL},	/* closest to Bookman */
+    {"-adobe-avantgarde-book-r-normal--", (struct xfont*) NULL},
+    {"-adobe-avantgarde-book-o-normal--", (struct xfont*) NULL},
+    {"-adobe-avantgarde-demi-r-normal--", (struct xfont*) NULL},
+    {"-adobe-avantgarde-demi-o-normal--", (struct xfont*) NULL},
+    {"-adobe-bookman-light-r-normal--", (struct xfont*) NULL},
+    {"-adobe-bookman-light-i-normal--", (struct xfont*) NULL},
+    {"-adobe-bookman-demi-r-normal--", (struct xfont*) NULL},
+    {"-adobe-bookman-demi-i-normal--", (struct xfont*) NULL},
+    {"-adobe-courier-medium-r-normal--", (struct xfont*) NULL},
+    {"-adobe-courier-medium-o-normal--", (struct xfont*) NULL},
+    {"-adobe-courier-bold-r-normal--", (struct xfont*) NULL},
+    {"-adobe-courier-bold-o-normal--", (struct xfont*) NULL},
+    {"-adobe-helvetica-medium-r-normal--", (struct xfont*) NULL},
+    {"-adobe-helvetica-medium-o-normal--", (struct xfont*) NULL},
+    {"-adobe-helvetica-bold-r-normal--", (struct xfont*) NULL},
+    {"-adobe-helvetica-bold-o-normal--", (struct xfont*) NULL},
+    {"-adobe-helvetica-medium-r-narrow--", (struct xfont*) NULL},
+    {"-adobe-helvetica-medium-o-narrow--", (struct xfont*) NULL},
+    {"-adobe-helvetica-bold-r-narrow--", (struct xfont*) NULL},
+    {"-adobe-helvetica-bold-o-narrow--", (struct xfont*) NULL},
+    {"-adobe-new century schoolbook-medium-r-normal--", (struct xfont*) NULL},
+    {"-adobe-new century schoolbook-medium-i-normal--", (struct xfont*) NULL},
+    {"-adobe-new century schoolbook-bold-r-normal--", (struct xfont*) NULL},
+    {"-adobe-new century schoolbook-bold-i-normal--", (struct xfont*) NULL},
+    {"-adobe-palatino-medium-r-normal--", (struct xfont*) NULL},
+    {"-adobe-palatino-medium-i-normal--", (struct xfont*) NULL},
+    {"-adobe-palatino-bold-r-normal--", (struct xfont*) NULL},
+    {"-adobe-palatino-bold-i-normal--", (struct xfont*) NULL},
+    {"-*-symbol-medium-r-normal--", (struct xfont*) NULL},
+    {"-*-itc zapf chancery-medium-i-normal--", (struct xfont*) NULL},
+    {"-*-itc zapf dingbats-*-*-*--", (struct xfont*) NULL},
+};
+
+/* Use the following font names for any font that doesn't exist in the table above.
+ * These come with the Open Group X distribution so they should be a common set.
+ *
+ * The XFontStruct * slot is also used to store a 12 point (or closest size) font
+ * structure when needed by draw_text() to scale text down below MIN_FONT_SIZE points.
+*/
+
+struct _xfstruct x_backup_fontinfo[NUM_FONTS] = {
+    {"-adobe-times-medium-r-normal--", (struct xfont*) NULL},
+    {"-adobe-times-medium-i-normal--", (struct xfont*) NULL},
+    {"-adobe-times-bold-r-normal--", (struct xfont*) NULL},
+    {"-adobe-times-bold-i-normal--", (struct xfont*) NULL},
+    {"-b&h-lucida-medium-r-normal-sans-", (struct xfont*) NULL}, /* closest to Avant-Garde */
+    {"-b&h-lucida-medium-i-normal-sans-", (struct xfont*) NULL},
+    {"-b&h-lucida-bold-r-normal-sans-", (struct xfont*) NULL},
+    {"-b&h-lucida-bold-i-normal-sans-", (struct xfont*) NULL},
+    {"-adobe-times-medium-r-normal--", (struct xfont*) NULL},      /* closest to Bookman */
     {"-adobe-times-medium-i-normal--", (struct xfont*) NULL},
     {"-adobe-times-bold-r-normal--", (struct xfont*) NULL},
     {"-adobe-times-bold-i-normal--", (struct xfont*) NULL},
@@ -41,7 +86,7 @@ struct _xfstruct x_fontinfo[NUM_FONTS] = {
     {"-adobe-helvetica-medium-o-normal--", (struct xfont*) NULL},
     {"-adobe-helvetica-bold-r-normal--", (struct xfont*) NULL},
     {"-adobe-helvetica-bold-o-normal--", (struct xfont*) NULL},
-    {"-adobe-helvetica-medium-r-normal--", (struct xfont*) NULL},	/* closest to Helv-nar. */
+    {"-adobe-helvetica-medium-r-normal--", (struct xfont*) NULL},  /* closest to Helv-nar. */
     {"-adobe-helvetica-medium-o-normal--", (struct xfont*) NULL},
     {"-adobe-helvetica-bold-r-normal--", (struct xfont*) NULL},
     {"-adobe-helvetica-bold-o-normal--", (struct xfont*) NULL},
@@ -49,7 +94,7 @@ struct _xfstruct x_fontinfo[NUM_FONTS] = {
     {"-adobe-new century schoolbook-medium-i-normal--", (struct xfont*) NULL},
     {"-adobe-new century schoolbook-bold-r-normal--", (struct xfont*) NULL},
     {"-adobe-new century schoolbook-bold-i-normal--", (struct xfont*) NULL},
-    {"-*-lucidabright-medium-r-normal--", (struct xfont*) NULL},	/* closest to Palatino */
+    {"-*-lucidabright-medium-r-normal--", (struct xfont*) NULL},   /* closest to Palatino */
     {"-*-lucidabright-medium-i-normal--", (struct xfont*) NULL},
     {"-*-lucidabright-demibold-r-normal--", (struct xfont*) NULL},
     {"-*-lucidabright-demibold-i-normal--", (struct xfont*) NULL},
@@ -57,6 +102,8 @@ struct _xfstruct x_fontinfo[NUM_FONTS] = {
     {"-*-itc zapf chancery-medium-i-normal--", (struct xfont*) NULL},
     {"-*-itc zapf dingbats-*-*-*--", (struct xfont*) NULL},
 };
+
+/* PostScript font names matched with X11 font names in x_fontinfo */
 
 struct _fstruct ps_fontinfo[NUM_FONTS + 1] = {
     {"Default", -1},
@@ -96,6 +143,8 @@ struct _fstruct ps_fontinfo[NUM_FONTS + 1] = {
     {"ZapfChancery-MediumItalic",	33},
     {"ZapfDingbats",			34},
 };
+
+/* LaTeX font names and the corresponding PostScript font index into ps_fontinfo */
 
 struct _fstruct latex_fontinfo[NUM_LATEX_FONTS] = {
     {"Default",		0},

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -35,7 +35,6 @@ static void	fix_linepoint_adding();
 static void	fix_splinepoint_adding();
 static void	init_linepointadding();
 static void	init_splinepointadding();
-static void	find_endpoints();
 
 void
 point_adding_selected()
@@ -313,12 +312,12 @@ linepoint_adding(line, left_point, added_point)
 /*******************************************************************/
 
 /*
- * If (x,y) is close to a point, q, fp points to q and sp points to q->next
+ * If (x,y) is close to a point q, fp points to q and sp points to q->next
  * (right).  However if q is the first point, fp contains NULL and sp points
  * to q.
  */
 
-static void
+void
 find_endpoints(p, x, y, fp, sp)
     F_point	   *p, **fp, **sp;
     int		    x, y;

@@ -1,18 +1,5 @@
 This file contains some possible things to do in future versions of xfig.
 
-Ideas for next version (4.0):
-
-o New command panel:
-
-  File            Edit          View          Help
-    New		    Undo	  Landscape	Xfig HTML Reference
-    Load/Merge      Paste	  Portrait	Xfig tutorial in pdf
-    Save	    Find	  Redraw	Xfig man pages in pdf
-    Save As	    Replace			About Xfig
-    Export	    Spell Check
-    Print
-    Exit
-
 ------------------
 FORMAT 4.0 example
 ------------------
@@ -55,11 +42,9 @@ Compound ...
 ...
 ENDCompound
 
-o look for #ifdef V4_0 and remove the #ifdefs
-
 ********* NOTES about FORMAT 4.0 *********
 
-
+Change line thickness to float for finer precision
 Separate dash/dot length from the gap
 New arrowhead type  ----<>  diamond point for UML diagrams
 Allow different arrow head tips (miter, round, bevel)
@@ -78,28 +63,14 @@ No need for duplicating first point at end for polygon in file itself
 Use PIX_PER_CM = 470 instead of 450 (w_setup.h)
 	Need to rescale older (3.2.0 and older) metric figures by difference
 Add canvas background color to Fig file
-	Also add option to fig2dev to override this
 	add option to specify default color in fig2dev
 Add elliptical arcs
-Split/join two objects together (e.g. end of one line attached to the beginning
-	of another line to make single, new line).  
-fig2dev - user colors aren't working on imported Fig files as pictures
+Importing of Fig files as pictures
 
 Add new font choices done by Ian Cameron Smith (clint@hermit.org http://www.hermit.org/)
 
 Some kind of color pallette which is global (remains around between drawings)
    o Also library of color pallettes? 
-
-Add these items to a popup global settings panel:
-	checkbutton	mouse tracking (ruler arrows)
-	checkbutton	show balloons
-	entry		  balloon delay
-	checkbutton	show lengths of lines
-	checkbutton	show point numbers above polyline points
-	int entry	max image colors
-	str entry	image editor
-	str entry	spelling checker
-	checkbutton	debug flag
 
 *** END OF V4.0 IDEAS ***
 
@@ -123,6 +94,7 @@ Text that is connected to objects which appears in popup near object
 The following DON'T require a change to the file protocol:
 ----------------------------------------------------------
 
+Ability to "lock" depths so that they are displayed but may not be edited
 "File watch" feature so that xfig will re-read figure file when time-stamp
 	changes (file has been updated by external program).  Probably should
 	add "end of file"  marker so we know when it is complete.
@@ -133,16 +105,13 @@ Have "static objects" which aren't erased when new figure is loaded.  This way
 	in the directory, loading that filename into the Filename slot.
 	Credit Alec Muffett (Alec.Muffett@UK.Sun.COM) for the idea.
 Option for grid to be constant screen-size (independent of zooming)
-Allow define arc by center and two points on radius
 Allow picking of points that aren't on the positioning grid
 Recursively uncompound objects with one click
 Show position of mouse in Fig coordinates in new indicator window
-Make CGM export option for fig2dev
 Automatic pan of canvas when drawing at an edge.
-Make a simple way to create quarter-circle and half-circle using arc
 Possibly use already allocated colors when importing GIF/XPM figures
 	(e.g. black, red, etc)
-Re-render EPS file (using gs) at new resolution when zooming LARGER
+Re-render imported EPS files (using gs) at new resolution when zooming LARGER
 Moving object when point_posn mode is on should first move object to closest
 	positioning grid position then allow movement from there.
 	Cancel should restore original coords.
@@ -204,13 +173,6 @@ Generalize align mode (like glue mode) to allow arbitrary tagged objects to be
 	aligned rather than just compounds.
 Make a raise/lower depth feature:
 	the raise_ic icon is already in w_icons.c
-Make xfig understand depth better:
-	If you set the depth using the object edit panels, xfig will redraw
-	them correctly, however it would be nice if as you entered new filled
-	objects that they were automatically given an appropriate depth.
-	This would involve finding the depth of all overlapping (filled?)
-	objects and setting the depth to be one less.
-	What about support for negative depth values?
 Allow direct modification of the tension of a X-spline point from the Edit
 	Object window, or at least, allow to copy the tension value from
 	one point to another.

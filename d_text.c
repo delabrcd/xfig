@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -108,12 +108,12 @@ xfig-i18n will prepare for G2 and G3 here, too.
 static int i18n_prefix_tail(), i18n_suffix_head();
 extern Boolean is_i18n_font();
 
-#ifndef I18N_NO_PREEDIT
+#ifdef I18N_USE_PREEDIT
 static pid_t preedit_pid = -1;
 static char preedit_filename[PATH_MAX] = "";
 static open_preedit_proc(), close_preedit_proc(), paste_preedit_proc();
 static Boolean is_preedit_running();
-#endif  /* I18N_NO_PREEDIT */
+#endif  /* I18N_USE_PREEDIT */
 #endif  /* I18N */
 
 void
@@ -126,7 +126,7 @@ text_drawing_selected()
     canvas_rightbut_proc = null_proc;
     set_mousefun("position cursor", "", "", "", "", "");
 #ifdef I18N
-#ifndef I18N_NO_PREEDIT
+#ifdef I18N_USE_PREEDIT
     if (appres.international && strlen(appres.text_preedit) != 0) {
       if (is_preedit_running()) {
 	canvas_middlebut_proc = paste_preedit_proc;
@@ -137,8 +137,9 @@ text_drawing_selected()
 	set_mousefun("position cursor", "", "open pre-edit", "", "", "");
       }
     }
-#endif  /* I18N_NO_PREEDIT */
+#endif  /* I18N_USE_PREEDIT */
 #endif  /* I18N */
+    reset_action_on();
     clear_mousefun_kbd();
     set_cursor(pencil_cursor);
     is_newline = 0;
@@ -223,7 +224,7 @@ create_textobject()
 	    strcpy(new_t->cstring, prefix);
 	} else {		/* free old and allocate new */
 	    free(new_t->cstring);
-	    if ((new_t->cstring = new_string(leng_prefix + 1)) != NULL)
+	    if ((new_t->cstring = new_string(leng_prefix)) != NULL)
 		strcpy(new_t->cstring, prefix);
 	}
 	size = textsize(canvas_font, leng_prefix, prefix);
@@ -377,7 +378,7 @@ new_text()
     if ((text = create_text()) == NULL)
 	return (NULL);
 
-    if ((text->cstring = new_string(leng_prefix + 1)) == NULL) {
+    if ((text->cstring = new_string(leng_prefix)) == NULL) {
 	free((char *) text);
 	return (NULL);
     }
@@ -505,7 +506,7 @@ initialize_char_handler(p, cr, bx, by)
     turn_on_blinking_cursor(draw_cursor, draw_cursor,
 			    cur_x, cur_y, (long) BLINK_INTERVAL);
 #ifdef I18N
-    if (xim_ic != NULL && is_i18n_font(canvas_font)) {
+    if (xim_ic != NULL && (appres.latin_keyboard || is_i18n_font(canvas_font))) {
       put_msg("Ready for text input (from keyboard with input-method)");
       XSetICFocus(xim_ic);
       xim_active = True;
@@ -1074,10 +1075,11 @@ xim_set_ic_geometry(ic, width, height)
   if (xim_style & XIMStatusArea) {
     GetPreferredGeomerty(ic, XNStatusAttributes, &status_area_ptr);
     status_area.width = status_area_ptr->width;
+    if (width / 2 < status_area.width) status_area.width = width / 2;
     status_area.height = status_area_ptr->height;
     status_area.x = 0;
     status_area.y = height - status_area.height;
-    SetGeometry(ic, XNStatusAttributes, &status_area);
+    SetGeometry(xim_ic, XNStatusAttributes, &status_area);
     if (appres.DEBUG) fprintf(stderr, "status geometry: %dx%d+%d+%d\n",
 			      status_area.width, status_area.height,
 			      status_area.x, status_area.y);
@@ -1085,10 +1087,14 @@ xim_set_ic_geometry(ic, width, height)
   if (xim_style & XIMPreeditArea) {
     GetPreferredGeomerty(ic, XNPreeditAttributes, &preedit_area_ptr);
     preedit_area.width = preedit_area_ptr->width;
+    if (preedit_area.width < width - status_area.width)
+      preedit_area.width = width - status_area.width;
+    if (width < preedit_area.width)
+      preedit_area.width = width;
     preedit_area.height = preedit_area_ptr->height;
     preedit_area.x = width - preedit_area.width;
     preedit_area.y = height - preedit_area.height;
-    SetGeometry(ic, XNPreeditAttributes, &preedit_area);
+    SetGeometry(xim_ic, XNPreeditAttributes, &preedit_area);
     if (appres.DEBUG) fprintf(stderr, "preedit geometry: %dx%d+%d+%d\n",
 			      preedit_area.width, preedit_area.height,
 			      preedit_area.x, preedit_area.y);
@@ -1099,7 +1105,8 @@ Boolean xim_initialize(w)
      Widget w;
 {
   const XIMStyle style_notuseful = 0;
-  const XIMStyle style_over_the_spot = XIMPreeditPosition | XIMStatusNothing;
+  const XIMStyle style_over_the_spot = XIMPreeditPosition | XIMStatusArea;
+  const XIMStyle style_old_over_the_spot = XIMPreeditPosition | XIMStatusNothing;
   const XIMStyle style_off_the_spot = XIMPreeditArea | XIMStatusArea;
   const XIMStyle style_root = XIMPreeditNothing | XIMStatusNothing;
   static long int im_event_mask = 0;
@@ -1112,6 +1119,8 @@ Boolean xim_initialize(w)
   preferred_style = style_notuseful;
   if (strncasecmp(appres.xim_input_style, "OverTheSpot", 3) == 0)
     preferred_style = style_over_the_spot;
+  else if (strncasecmp(appres.xim_input_style, "OldOverTheSpot", 6) == 0)
+    preferred_style = style_old_over_the_spot;
   else if (strncasecmp(appres.xim_input_style, "OffTheSpot", 3) == 0)
     preferred_style = style_off_the_spot;
   else if (strncasecmp(appres.xim_input_style, "Root", 3) == 0)
@@ -1196,12 +1205,6 @@ xim_set_spot(x, y)
       y1 = ZOOMY(y);
       if (x1 < 0) x1 = 0;
       if (y1 < 0) y1 = 0;
-      if (x1 == spot.x && y1 == spot.y) {
-	/* XSetICValues() may be ignored if spot.x/y is not changed */
-	spot.x = 0;
-	spot.y = 0;
-	XSetICValues(xim_ic, XNPreeditAttributes, preedit_att, NULL);
-      }
       spot.x = x1;
       spot.y = y1;
       XSetICValues(xim_ic, XNPreeditAttributes, preedit_att, NULL);
@@ -1255,14 +1258,22 @@ i18n_char_handler(str)
 {
   int i;
   erase_char_string();	/* erase current string */
-  for (i = 0; str[i] != '\0'; i++) {
-    prefix[leng_prefix++] = str[i];
-    prefix[leng_prefix] = '\0';
-  }
+  for (i = 0; str[i] != '\0'; i++) prefix_append_char(str[i]);
   draw_char_string();	/* draw new string */
 }
 
-#ifndef I18N_NO_PREEDIT
+prefix_append_char(ch)
+     char ch;
+{
+  if (leng_prefix + leng_suffix < BUF_SIZE) {
+    prefix[leng_prefix++] = ch;
+    prefix[leng_prefix] = '\0';
+  } else {
+    put_msg("Text buffer is full, character is ignored");
+  }
+}
+
+#ifdef I18N_USE_PREEDIT
 static Boolean is_preedit_running()
 {
   pid_t pid;
@@ -1348,6 +1359,6 @@ static paste_preedit_proc(x, y)
   text_drawing_selected();
   draw_mousefun_canvas();
 }
-#endif  /* I18N_NO_PREEDIT */
+#endif  /* I18N_USE_PREEDIT */
 
 #endif /* I18N */

@@ -2,7 +2,7 @@
  * FIG : Facility for Interactive Generation of figures
  * This software is copyright (C) 1991-1996, Thomas G. Lane.
  * All Rights Reserved except as specified below.
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -86,7 +86,7 @@ read_jpg(file,filetype,pic)
 	if (!read_JPEG_file(file))
 	    return FileInvalid;
 
-	/* number of colors is put in by put_colormap() */
+	/* number of colors is put in by read_JPEG_file() */
 	pic->subtype = T_PIC_JPEG;
 	pic->pixmap = None;
 	pic->size_x = pic->bit_size.x * scale;

@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-1998 by Brian V. Smith
+ * Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -18,19 +18,29 @@
 #include "resources.h"
 #include "object.h"
 #include "mode.h"
+#include "f_util.h"
 #include "w_util.h"
 
-char	cmd[400];
-Boolean check_docfile();
+char	*browsecommand;
+Boolean  check_docfile();
+char	 filename[PATH_MAX];
+
+void	help_ok();
+
+static String	about_translations =
+	"<Message>WM_PROTOCOLS: DismissAbout()\n";
+static XtActionsRec	about_actions[] =
+{
+    {"DismissAbout", (XtActionProc) help_ok},
+};
 
 void
-launch_html(w, closure, call_data)
+launch_refman(w, closure, call_data)
     Widget    w;
     XtPointer closure;
     XtPointer call_data;
 {
 	int pid;
-	char filename[PATH_MAX];
 
 	/* first check if at least the index file is installed */
 	sprintf(filename, "%s/html/index.html", XFIGLIBDIR);
@@ -44,14 +54,7 @@ launch_html(w, closure, call_data)
 #endif
 	if (!check_docfile(filename))
 		return;
-	put_msg("Launching %s for html pages",appres.browser);
-	pid = fork();
-	if (pid == 0) {
-	    /* child process launches browser */
-	    sprintf(cmd,"%s %s &", appres.browser, filename);
-	    system(cmd);
-	    exit(0);
-	}
+	launch_viewer(filename, "Launching Web browser for html pages", appres.browser);
 }
 
 void
@@ -60,19 +63,8 @@ launch_howto(w, closure, call_data)
     XtPointer closure;
     XtPointer call_data;
 {
-	int pid;
-
-	/* first check if the file is installed */
-	sprintf(cmd,"%s/xfig-howto.pdf",XFIGLIBDIR);
-	if (!check_docfile(cmd))
-		return;
-	pid = fork();
-	if (pid == 0) {
-	    /* child process launches pdf viewer */
-	    sprintf(cmd,"%s %s/xfig-howto.pdf &",appres.pdf_viewer,XFIGLIBDIR);
-	    system(cmd);
-	    exit(0);
-	}
+	sprintf(filename,"%s/xfig-howto.pdf",XFIGLIBDIR);
+	launch_viewer(filename,"Launching PDF viewer for How-to Tutorial", appres.pdf_viewer);
 }
 
 void
@@ -81,20 +73,23 @@ launch_man(w, closure, call_data)
     XtPointer closure;
     XtPointer call_data;
 {
+	sprintf(filename,"%s/xfig.html",XFIGLIBDIR);
+	launch_viewer(filename,"Launching Web browser for man pages", appres.browser);
+}
+
+launch_viewer(filename, message, viewer)
+    char     *filename, *message, *viewer;
+{
 	int pid;
 
 	/* first check if the file is installed */
-	sprintf(cmd,"%s/xfig.pdf",XFIGLIBDIR);
-	if (!check_docfile(cmd))
+	if (!check_docfile(filename))
 		return;
-	put_msg("Launching %s for man pages",appres.pdf_viewer);
-	pid = fork();
-	if (pid == 0) {
-	    /* child process launches pdf viewer */
-	    sprintf(cmd,"%s %s/xfig.pdf &",appres.pdf_viewer,XFIGLIBDIR);
-	    system(cmd);
-	    exit(0);
-	}
+	/* now replace the %f in the browser command with the filename and add the "&" */
+	browsecommand = build_command(viewer, filename);
+	put_msg(message);
+	system(browsecommand);
+	free(browsecommand);
 }
 
 Boolean
@@ -104,9 +99,11 @@ check_docfile(name)
 	struct	stat file_status;
 	if (stat(name, &file_status) != 0) {	/* something wrong */
 	    if (errno == ENOENT) {
-		put_msg("%s is not installed, please see README file",name);
-		beep();
+		file_msg("%s is not installed, please see README file",name);
+	    } else {
+		file_msg("System error: %s on file %s",sys_errlist[errno],name);
 	    }
+	    beep();
 	    return False;
 	}
 	return True;
@@ -124,7 +121,7 @@ help_ok(w, closure, call_data)
 }
 
 void 
-help_xfig(w, closure, call_data)
+launch_about(w, closure, call_data)
     Widget    w;
     XtPointer closure;
     XtPointer call_data;
@@ -143,6 +140,10 @@ help_xfig(w, closure, call_data)
 	NextArg(XtNy, y);
 	help_popup = XtCreatePopupShell("About Xfig",transientShellWidgetClass,
 				tool, Args, ArgCount);
+	XtOverrideTranslations(help_popup,
+			   XtParseTranslationTable(about_translations));
+	XtAppAddActions(tool_app, about_actions, XtNumber(about_actions));
+
 	FirstArg(XtNborderWidth, 0);
 	form = XtCreateManagedWidget("help_form", formWidgetClass, help_popup,
 				Args, ArgCount);
@@ -156,7 +157,7 @@ help_xfig(w, closure, call_data)
 	/* make up some information */
 	strcpy(info,xfig_version);
 	strcat(info,"\n  Copyright \251 1985-1988 by Supoj Sutanthavibul");
-	strcat(info,"\n  Parts Copyright \251 1989-1998 by Brian V. Smith");
+	strcat(info,"\n  Parts Copyright \251 1989-2000 by Brian V. Smith (BVSmith@lbl.gov)");
 	strcat(info,"\n  Parts Copyright \251 1991 by Paul King");
 	strcat(info,"\n  See source files and man pages for other copyrights");
 
@@ -175,4 +176,5 @@ help_xfig(w, closure, call_data)
 	XtAddCallback(ok, XtNcallback, help_ok, (XtPointer) NULL);
     }
     XtPopup(help_popup,XtGrabNone);
+    (void) XSetWMProtocols(tool_d, XtWindow(help_popup), &wm_delete_window, 1);
 }

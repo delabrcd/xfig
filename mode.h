@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -37,6 +37,7 @@
 #define		F_REGPOLY		15
 #define		F_PICOBJ		16
 #define		F_PLACE_LIB_OBJ		17
+#define		F_PASTE			18
 
 #define	    FIRST_EDIT_MODE	    F_GLUE
 #define		F_GLUE			30
@@ -55,16 +56,17 @@
 #define		F_ROTATE		43
 #define		F_AUTOARROW		44
 #define		F_CONVERT		45
-#define		F_CHANGE		46
+#define		F_EDIT			46
 #define		F_UPDATE		47
 #define		F_ALIGN			48
 #define		F_ZOOM			49
 #define		F_LOAD			50
-#define		F_EDIT			50
 #define		F_ENTER_COMP		51
 #define		F_EXIT_COMP		52
 #define		F_EXIT_ALL_COMP		53
 #define		F_OPEN_CLOSE		54
+#define		F_SPLIT			55
+#define		F_JOIN			56
 
 extern int	cur_mode;
 
@@ -132,7 +134,7 @@ extern int	posn_hlf[];
 #define		UD_FLIP			1
 #define		LR_FLIP			2
 
-extern int	cur_rotnangle;
+extern float	cur_rotnangle;
 
 /* smart link mode */
 #define		SMART_OFF		0
@@ -151,7 +153,12 @@ extern int	cur_numsides;
 extern int	cur_numcopies;
 extern int	cur_numxcopies;
 extern int	cur_numycopies;
-extern char	cur_fig_units[32];
+extern char	cur_fig_units[200];
+extern char	cur_library_dir[PATH_MAX];
+extern char	cur_image_editor[PATH_MAX];
+extern char	cur_spellchk[PATH_MAX];
+extern char	cur_browser[PATH_MAX];
+extern char	cur_pdfviewer[PATH_MAX];
 extern Boolean	warnexist;
 extern Boolean  warninput;
 
@@ -180,27 +187,34 @@ enum {
 	LANG_IBMGL,
 	LANG_EPS,
 	LANG_PS,
+	LANG_PDF,
 	LANG_PSTEX,
 	LANG_TEXTYL,
 	LANG_TPIC,
 	LANG_PIC,
 	LANG_MF,
-	LANG_ACAD,
-	LANG_PCX,
-	LANG_PNG,
+	LANG_CGM,
+	LANG_TK,
+	LANG_MAP,
+/* bitmap formats should follow here, starting with GIF */
 	LANG_GIF,
 #ifdef USE_JPEG
 	LANG_JPEG,
 #endif
+	LANG_PCX,
+	LANG_PNG,
+	LANG_PPM,
+	LANG_SLD,
 	LANG_TIFF,
-	LANG_TK,
 	LANG_XBM,
 #ifdef USE_XPM
 	LANG_XPM,
 #endif
-	LANG_PPM,
 	END_OF_LANGS
 };
+
+/* important for the menu dividing line */
+#define FIRST_BITMAP_LANG LANG_GIF
 
 /* number of export languages */
 
@@ -265,5 +279,6 @@ extern char	cur_dir[];
 extern char	cur_filename[];
 extern char	save_filename[];	/* to undo load or "new" command */
 extern char	file_header[];
-extern char	cut_buf_name[];
+extern char	cut_buf_name[];		/* path of .xfig cut buffer file */
+extern char	xfigrc_name[];		/* path of .xfigrc file */
 #endif /* MODE_H */

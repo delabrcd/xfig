@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -50,6 +50,7 @@ extern void	align_selected();
 extern void	compound_selected();
 extern void	open_compound();
 extern void	break_selected();
+extern void	join_split_selected();
 extern void	scale_selected();
 extern void	point_adding_selected();
 extern void	delete_point_selected();
@@ -89,6 +90,7 @@ static void	stub_align_selected();
 static void	stub_compound_selected();
 static void	stub_break_selected();
 static void	stub_open_compound_selected();
+static void	stub_join_split_selected();
 static void	stub_scale_selected();
 static void	stub_point_adding_selected();
 static void	stub_delete_point_selected();
@@ -115,14 +117,12 @@ typedef struct mode_switch_struct {
     int		    mode;
     void	    (*setmode_func) ();
     int		    objmask;
-    int		    indmask;		/* mask to display indicators for this func */
+    unsigned long   indmask;		/* mask to display indicators for this func */
     char	    modemsg[MAX_MODEMSG_LEN];
     Boolean	    popup;		/* true for commands that popup something */
     Widget	    widget;
     Pixmap	    pixmap, reversePM;
 }               mode_sw_info;
-
-#define		setmode_action(z)    (z->setmode_func)(z)
 
 DeclareStaticArgs(13);
 /* pointer to current mode switch */
@@ -151,80 +151,156 @@ static mode_sw_info mode_switches[] = {
     /* DRAWING MODES */
 
     {&cirrad_ic, F_CIRCLE_BY_RAD, circlebyradius_drawing_selected, M_NONE,
-      I_CIRCLE, "CIRCLE drawing: specify RADIUS", False},
+       I_CIRCLE,
+       "CIRCLE drawing: specify RADIUS   (c)",
+       False},
     {&cirdia_ic, F_CIRCLE_BY_DIA, circlebydiameter_drawing_selected, M_NONE,
-      I_CIRCLE, "CIRCLE drawing: specify DIAMETER", False},
+       I_CIRCLE,
+       "CIRCLE drawing: specify DIAMETER   (Shift-c)",
+       False},
     {&ellrad_ic, F_ELLIPSE_BY_RAD, ellipsebyradius_drawing_selected, M_NONE,
-      I_ELLIPSE, "ELLIPSE drawing: specify RADII", False},
+       I_ELLIPSE,
+       "ELLIPSE drawing: specify RADII   (e)",
+       False},
     {&elldia_ic, F_ELLIPSE_BY_DIA, ellipsebydiameter_drawing_selected, M_NONE,
-      I_ELLIPSE, "ELLIPSE drawing: specify DIAMETERS", False},
+       I_ELLIPSE,
+       "ELLIPSE drawing: specify DIAMETERS   (Shift-e)",
+       False},
     {&c_spl_ic, F_CLOSED_APPROX_SPLINE, spline_drawing_selected, M_NONE,
-      I_CLOSED, "CLOSED APPROXIMATED SPLINE drawing: specify control points", False},
+       I_CLOSED,
+       "CLOSED APPROXIMATED SPLINE drawing: specify control points   (Shift-s)",
+       False},
     {&spl_ic, F_APPROX_SPLINE, spline_drawing_selected, M_NONE,
-      I_OPEN, "APPROXIMATED SPLINE drawing: specify control points", False},
+       I_OPEN,
+       "APPROXIMATED SPLINE drawing: specify control points   (s)",
+       False},
     {&c_intspl_ic, F_CLOSED_INTERP_SPLINE, spline_drawing_selected, M_NONE,
-      I_CLOSED, "CLOSED INTERPOLATED SPLINE drawing: specify control points", False},
+       I_CLOSED,
+       "CLOSED INTERPOLATED SPLINE drawing: specify control points   (Shift-i)",
+       False},
     {&intspl_ic, F_INTERP_SPLINE, spline_drawing_selected, M_NONE,
-      I_OPEN, "INTERPOLATED SPLINE drawing: specify control points", False},
+       I_OPEN,
+       "INTERPOLATED SPLINE drawing: specify control points   (i)",
+       False},
     {&polygon_ic, F_POLYGON, line_drawing_selected, M_NONE,
-      I_CLOSED, "POLYGON drawing", False},
+       I_CLOSED,
+       "POLYGON drawing   (p)",
+       False},
     {&line_ic, F_POLYLINE, line_drawing_selected, M_NONE,
-      I_LINE, "POLYLINE drawing", False},
+       I_LINE,
+       "POLYLINE drawing   (l)",
+       False},
     {&box_ic, F_BOX, box_drawing_selected, M_NONE,
-      I_BOX, "Rectangular BOX drawing", False},
+       I_BOX,
+       "Rectangular BOX drawing   (b)",
+       False},
     {&arc_box_ic, F_ARC_BOX, arcbox_drawing_selected, M_NONE,
-      I_ARCBOX, "Rectangular BOX drawing with ROUNDED CORNERS", False},
+       I_ARCBOX,
+       "Rectangular BOX drawing with ROUNDED CORNERS   (Shift-b)",
+       False},
     {&regpoly_ic, F_REGPOLY, regpoly_drawing_selected, M_NONE,
-      I_REGPOLY, "Regular Polygon", False},
+       I_REGPOLY,
+       "Regular Polygon   (Shift-p)",
+       False},
     {&arc_ic, F_CIRCULAR_ARC, arc_drawing_selected, M_NONE,
-      I_ARC, "ARC drawing: specify three points on the arc", False},
+       I_ARC,
+       "ARC drawing: specify three points on the arc   (r)",
+       False},
     {&picobj_ic, F_PICOBJ, picobj_drawing_selected, M_NONE,
-      I_PICOBJ, "Picture Object", True},		/* popups a panel */
+       I_PICOBJ,
+       "Picture Object   (Ctrl-p)",
+       True},		/* popups a panel */
     {&text_ic, F_TEXT, text_drawing_selected, M_TEXT_NORMAL,
-      I_TEXT, "TEXT input (from keyboard)", False},
+       I_TEXT,
+       "TEXT input from keyboard   (t)",
+       False},
     {&library_ic, F_PLACE_LIB_OBJ, sel_place_lib_obj, M_NONE,
-      I_MIN2, "PLACE a library element", True},		/* popups a panel */
+       I_MIN2,
+       "PLACE a library element   (Shift-l)",
+       True},		/* popups a panel */
 
-    /* EDITING MODES FOLLOW */
+      /* EDITING MODES FOLLOW */
 
     {&glue_ic, F_GLUE, compound_selected, M_ALL,
-      I_MIN2, "GLUE objects into COMPOUND object", False},
+       I_MIN2,
+       "GLUE objects into COMPOUND object   (g)",
+       False},
     {&break_ic, F_BREAK, break_selected, M_COMPOUND,
-      0, "BREAK COMPOUND object", False},
+       0,
+       "BREAK COMPOUND object   (Shift-g)",
+       False},
     {&open_comp_ic, F_ENTER_COMP, open_compound, M_COMPOUND,
-      0, "OPEN COMPOUND object", False},
+       0,
+       "OPEN COMPOUND object   (o)",
+       False},
+    {&join_split_ic, F_JOIN, join_split_selected, M_POLYLINE | M_SPLINE_O |M_SPLINE_C,
+       0,
+       "Join or Split lines/splines   (j)",
+       False},
     {&scale_ic, F_SCALE, scale_selected, M_NO_TEXT,
-      I_MIN2, "SCALE objects", False},
+       I_MIN2,
+       "SCALE objects   (Ctrl-s)",
+       False},
     {&align_ic, F_ALIGN, align_selected, M_COMPOUND,
-      I_ALIGN, "ALIGN objects within a COMPOUND or to CANVAS", False},
+       I_ALIGN,
+       "ALIGN objects within a COMPOUND or to CANVAS   (a)",
+       False},
     {&movept_ic, F_MOVE_POINT, move_point_selected, M_NO_TEXT,
-      I_ADDMOVPT, "MOVE POINTs", False},
+       I_ADDMOVPT,
+       "MOVE POINTs   (Shift-m)",
+       False},
     {&move_ic, F_MOVE, move_selected, M_ALL,
-      I_MIN3, "MOVE objects", False},
+       I_MIN3,
+       "MOVE objects   (m)",
+       False},
     {&addpt_ic, F_ADD_POINT, point_adding_selected, M_VARPTS_OBJECT,
-      I_ADDMOVPT, "ADD POINTs (to lines, polygons and splines)", False},
+       I_ADDMOVPT,
+       "ADD POINTs to lines, polygons and splines   (Ctrl-a)",
+       False},
     {&copy_ic, F_COPY, copy_selected, M_ALL,
-      I_COPY, "COPY objects", False},
+       I_COPY,
+       "COPY objects  (Ctrl-c)",
+       False},
     {&deletept_ic, F_DELETE_POINT, delete_point_selected, M_VARPTS_OBJECT,
-      0, "DELETE POINTs (from lines, polygons and splines)", False},
+       0,
+       "DELETE POINTs from lines, polygons and splines   (Shift-d)",
+       False},
     {&delete_ic, F_DELETE, delete_selected, M_ALL,
-      0, "DELETE objects", False},
+       0,
+       "DELETE objects   (d)",
+       False},
     {&update_ic, F_UPDATE, update_selected, M_ALL,
-      I_OBJECT, "UPDATE object <-> current settings", False},
+       I_OBJECT,
+       "UPDATE object <-> current settings   (u)",
+       False},
     {&edit_ic, F_EDIT, edit_item_selected, M_ALL,
-      0, "CHANGE OBJECT via EDIT panel", False},
-    {&flip_x_ic, F_FLIP, flip_ud_selected, M_NO_TEXT,
-      I_MIN2, "FLIP objects up or down", False},
-    {&flip_y_ic, F_FLIP, flip_lr_selected, M_NO_TEXT,
-      I_MIN2, "FLIP objects left or right", False},
+       0,
+       "CHANGE OBJECT via EDIT panel   (Ctrl-e)",
+       False},
+    {&flip_y_ic, F_FLIP, flip_ud_selected, M_NO_TEXT,
+       I_MIN2,
+       "FLIP objects up or down   (Shift-f)",
+       False},
+    {&flip_x_ic, F_FLIP, flip_lr_selected, M_NO_TEXT,
+       I_MIN2,
+       "FLIP objects left or right   (f)",
+       False},
     {&rotCW_ic, F_ROTATE, rotate_cw_selected, M_ALL,
-      I_ROTATE, "ROTATE objects clockwise", False},
+       I_ROTATE,
+       "ROTATE objects clockwise   (Ctrl-r)",
+       False},
     {&rotCCW_ic, F_ROTATE, rotate_ccw_selected, M_ALL,
-      I_ROTATE, "ROTATE objects counter-clockwise", False},
+       I_ROTATE,
+       "ROTATE objects counter-clockwise   (Shift-r)",
+       False},
     {&convert_ic, F_CONVERT, convert_selected, M_VARPTS_OBJECT | M_POLYLINE_BOX, 
-      0, "CONVERSION between lines, polygons and splines", False},
+       0,
+       "CONVERSION between lines, polygons and splines   (v)",
+       False},
     {&autoarrow_ic, F_AUTOARROW, arrow_head_selected, M_OPEN_OBJECT,
-      I_ADD_DEL_ARROW, "ADD/DELETE ARROWs", False},
+       I_ADD_DEL_ARROW,
+       "ADD/DELETE ARROWHEADS   (Shift-a)",
+       False},
 };
 
 int	NUM_MODE_SW = (sizeof(mode_switches) / sizeof(mode_sw_info));
@@ -281,6 +357,7 @@ static XtActionsRec mode_actions[] =
     {"ModeCompound", (XtActionProc) stub_compound_selected},
     {"ModeBreakCompound", (XtActionProc) stub_break_selected},
     {"ModeOpenCompound", (XtActionProc) stub_open_compound_selected},
+    {"ModeJoinSplit", (XtActionProc) stub_join_split_selected},
     {"ModeScale", (XtActionProc) stub_scale_selected},
     {"ModeAddPoint", (XtActionProc) stub_point_adding_selected},
     {"ModeDeletePoint", (XtActionProc) stub_delete_point_selected},
@@ -321,7 +398,7 @@ init_mode_panel(tool)
     NextArg(XtNvSpace, INTERNAL_BW);
     NextArg(XtNtop, XtChainTop);
     NextArg(XtNbottom, XtChainTop);
-    NextArg(XtNfromVert, msg_form);
+    NextArg(XtNfromVert, msg_panel);
     NextArg(XtNvertDistance, -INTERNAL_BW);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainLeft);
@@ -382,7 +459,6 @@ setup_mode_panel()
     register mode_sw_info *msw;
 
     blank_gc = XCreateGC(tool_d, XtWindow(mode_panel), (unsigned long) 0, NULL);
-    button_gc = XCreateGC(tool_d, XtWindow(mode_panel), (unsigned long) 0, NULL);
     FirstArg(XtNforeground, &but_fg);
     NextArg(XtNbackground, &but_bg);
     GetValues(mode_switches[0].widget);
@@ -422,7 +498,7 @@ static	XtIntervalId balloon_id = (XtIntervalId) 0;
 static	Widget balloon_w;
 static	XtPointer clos;
 
-XtTimerCallbackProc mode_balloon();
+static void mode_balloon();
 
 static void
 mode_balloon_trigger(widget, closure, event, continue_to_dispatch)
@@ -443,7 +519,7 @@ mode_balloon_trigger(widget, closure, event, continue_to_dispatch)
 			(XtTimerCallbackProc) mode_balloon, (XtPointer) NULL);
 }
 
-XtTimerCallbackProc
+static void
 mode_balloon()
 {
 	Position  x, y;
@@ -549,10 +625,6 @@ sel_mode_but(widget, closure, event, continue_to_dispatch)
 		XtUnmanageChild(ind_panel);
 		XtManageChild(upd_ctrl);
 		/* get the width of the update control panel */
-		if (UPD_CTRL_WD == 0) {
-		    FirstArg(XtNwidth, &UPD_CTRL_WD);
-		    GetValues(upd_ctrl);
-		}
 		/* now put the ind_panel to our right */
 		FirstArg(XtNfromHoriz, upd_ctrl);
 		NextArg(XtNwidth, INDPANEL_WD-UPD_CTRL_WD-2*INTERNAL_BW); /* resize it */
@@ -590,7 +662,8 @@ sel_mode_but(widget, closure, event, continue_to_dispatch)
 	    new_objmask = M_ROTATE_ANGLE;
 	update_markers(new_objmask);
 	current = msw;
-	setmode_action(msw);
+	/* call the mode function */
+	msw->setmode_func();
     }
 }
 
@@ -772,6 +845,12 @@ static void
 stub_break_selected()
 {
 	change_mode(&break_ic);
+}
+
+static void
+stub_join_split_selected()
+{
+	change_mode(&join_split_ic);
 }
 
 static void

@@ -6,6 +6,7 @@ figbuild - figbuild reads xfig files (Version 3.x, tested with 3.1, 3.2) plus
 	file. Written by Peter Apian-Bennewitz at Fraunhofer ISE, Germany
 	see:
 	http://www.ise.fhg.de/radiance/pabs-toolbox/figbuild/figbuild.html
+
 ************************************************************************
 xfigbar and xfigpie - Two C programs to produce bar and pie charts as Fig
 	files.  Written by John Conover <john@johncon.johncon.com>,
@@ -15,11 +16,13 @@ xfigbar and xfigpie - Two C programs to produce bar and pie charts as Fig
 	Subject: archive
 
 	get xfigutilities.shar
+
 ************************************************************************
 mifXfig - MIF to XFig and XFig to MIF Converter 
 	see http://www.ida.liu.se/~vaden/teaching/m2f/ for details, but it
 	basically converts to and from MIF and Fig files
 	From Vadim Engelson (vaden@ida.liu.se)
+
 ************************************************************************
 pstoedit - converts Postscript(TM) files to other vector graphic formats
 	that can be edited. Besides Fig output, tgif, Framemaker(TM) (MIF-
@@ -33,8 +36,13 @@ pstoedit - converts Postscript(TM) files to other vector graphic formats
 
 ************************************************************************
 hp2xx - converts HPGL to EPS, LaTex, Fig or simplified HPGL converter
-	From Ian MacPhedran <macphed@engr.USask.Ca> in 
-	http://duke.usask.ca/~macphed/soft/fig/hp2xx/
+	Now maintained by Martin Kroeker (mk@daveg.com)
+	available from ftp.gnu.org and the usual mirror sites
+
+************************************************************************
+chemtool - Chemical structure editor for X11 available from
+	http://www.uni-ulm.de/~s_tvolk/chemtool that writes Fig
+	output (and relies on transfig for anything more fancy than xbm)
 
 ************************************************************************
 xgraph - plotting package for X - version on iworks.ecn.uiowa.edu in
@@ -81,12 +89,14 @@ pic2fig - converts PIC (used with troff/ditroff/etc) to Fig.
 	at ftp.x.org in /contrib/utilities.
 
 ************************************************************************
-plotutils - includes a graphing application (graph-fig),
-	a plot filter (plot2fig), and a library for drawing 2-D vector
-	graphics (libplotfig), all of which produce output in xfig format.
-
-	Available from any GNU mirror site.
-	by Robert S. Maier
+GNU plotutils - includes an application for XY plotting (graph),
+	a plot filter (plot), a Tektronix translator (tek2plot),
+	a program for displaying font character maps (plotfont),
+	and a library for drawing 2-D vector graphics (libplot), 
+	all of which produce output in xfig format.
+	
+	http://www.gnu.org/software/plotutils/plotutils.html
+	by Robert S. Maier <rsm@math.arizona.edu>
 
 ************************************************************************
 cdraw2fig - converts cdraw to Fig
@@ -120,6 +130,29 @@ cdraw2fig - converts cdraw to Fig
 
 	Cheap Draw 2.0 was written by Bob Pratt and is available from the UNIXPC
 	archives at osu-cis.  
+
+************************************************************************
+Msphinx - a friendly package to handle satellite images.
+
+      Main features:
+      	Msphinx includes two types of analysis and processing functions:
+	   - Functions to process the basic data geometry and
+			projection planes.
+	   - Functions to manipulate and modify the graphic display and print.
+
+       Communication capabilities:
+	   - Data writes from external user programs
+		(C or Fortran) into the memory planes.
+	   - User-to-user data exchange (text or images).
+	   - User image data base visualisation.
+	   - Direct links to other packages:
+		- Mgraph (2d and contouring plotting)
+		- HDFLook (HDF read write files)
+>>>		- Xfig (Facility for Interactive Generation of figures)
+		- mpeg_encode (mpeg format nimations)
+
+	Find it at:
+	http://loasys.univ-lille1.fr/Msphinx/Msphinx_gb.html
 
 ************************************************************************
 

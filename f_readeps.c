@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1992 by Brian Boyter
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -23,7 +23,18 @@
 
 int	_read_pcx();
 
-/* attempt to read an EPS file */
+/* read a PDF file */
+
+int
+read_pdf(file,filetype,pic)
+    FILE	   *file;
+    int		    filetype;
+    F_pic	   *pic;
+{
+    return read_epsf_pdf(file,filetype,pic,True);
+}
+
+/* read an EPS file */
 
 /* return codes:  PicSuccess (1) : success
 		  FileInvalid (-2) : invalid file
@@ -35,10 +46,20 @@ read_epsf(file,filetype,pic)
     int		    filetype;
     F_pic	   *pic;
 {
+    return read_epsf_pdf(file,filetype,pic,False);
+}
+
+int
+read_epsf_pdf(file,filetype,pic,pdf_flag)
+    FILE	   *file;
+    int		    filetype;
+    F_pic	   *pic;
+    Boolean	    pdf_flag;
+{
     int		    nbitmap;
     Boolean	    bitmapz;
     Boolean	    foundbbx;
-    Boolean	    nested;
+    int		    nested;
     char	   *cp;
     unsigned char   *mp;
     unsigned int    hexnib;
@@ -54,15 +75,28 @@ read_epsf(file,filetype,pic)
     Boolean	    useGS;
     useGS = False;
 
-    /* check if empty or no valid PostScript start */
-    if (fgets(buf, 300, file) == NULL || strncasecmp(buf,"%!",2))
-	return FileInvalid;
-
     llx=lly=urx=ury=0;
-    foundbbx = nested = False;
+    foundbbx = False;
+    nested = 0;
     while (fgets(buf, 300, file) != NULL) {
 
-	if (!nested && !strncmp(buf, "%%BoundingBox:", 14)) {	/* look for the bounding box */
+	/* look for /MediaBox for pdf file */
+	if (pdf_flag) {
+	    if (!strncmp(buf, "/MediaBox", 8)) {	/* look for the MediaBox spec */
+		char *c;
+		c = strchr(buf,'[')+1;
+		if (c && sscanf(c,"%d %d %d %d",&llx,&lly,&urx,&ury) < 4) {
+		    llx = lly = 0;
+		    urx = paper_sizes[0].width*72/PIX_PER_INCH;
+		    ury = paper_sizes[0].height*72/PIX_PER_INCH;
+		    file_msg("Bad MediaBox in header, assuming %s size", 
+			appres.INCHES? "Letter": "A4");
+		    app_flush();
+		}
+	    }
+
+	/* look for bounding box */
+	} else if (!nested && !strncmp(buf, "%%BoundingBox:", 14)) {
 	   if (!strstr(buf,"(atend)")) {		/* make sure doesn't say (atend) */
 		float rllx, rlly, rurx, rury;
 
@@ -75,14 +109,6 @@ read_epsf(file,filetype,pic)
 	    	lly = round(rlly);
 	    	urx = round(rurx);
 		ury = round(rury);
-#ifdef EPS_ROT_FIXED
-		/* swap notion of lower-left/upper-right when in landscape mode */
-		if (appres.landscape) {
-		    register int tmp;
-		    tmp = llx; llx = lly ; lly = tmp;
-		    tmp = urx; urx = ury ; ury = tmp;
-		}
-#endif
 		break;
 	    }
 	} else if (!strncmp(buf, "%%Begin", 7)) {
@@ -91,14 +117,19 @@ read_epsf(file,filetype,pic)
 	    --nested;
 	}
     }
-    if (!foundbbx) {
+    if (!pdf_flag && !foundbbx) {
 	file_msg("No bounding box found in EPS file");
 	return FileInvalid;
     }
 
     if ((urx - llx) == 0) {
-	file_msg("Bad or missing EPS bounding box in file: %s", pic->file);
-	return FileInvalid;
+	llx = lly = 0;
+	urx = (appres.INCHES? LETTER_WIDTH: A4_WIDTH)*72/PIX_PER_INCH;
+	ury = (appres.INCHES? LETTER_HEIGHT: A4_HEIGHT)*72/PIX_PER_INCH;
+	file_msg("Bad %s, assuming %s size", 
+		pdf_flag? "/MediaBox" : "EPS bounding box",
+		appres.INCHES? "Letter": "A4");
+	app_flush();
     }
     pic->hw_ratio = (float) (ury - lly) / (float) (urx - llx);
 
@@ -110,19 +141,22 @@ read_epsf(file,filetype,pic)
     pic->numcols = 0;
 
     if ( bad_bbox = ( urx <= llx || ury <= lly ) ) {
-	file_msg("Bad values in EPS bounding box");
+	file_msg("Bad values in %s",
+		pdf_flag? "/MediaBox" : "EPS bounding box" );
 	return FileInvalid;
     }
     bitmapz = False;
 
     /* look for a preview bitmap */
-    while (fgets(buf, 300, file) != NULL) {
-	lower(buf);
-	if (!strncmp(buf, "%%beginpreview", 14)) {
-	    sscanf(buf, "%%%%beginpreview: %d %d %*d",
-		   &pic->bit_size.x, &pic->bit_size.y);
-	    bitmapz = True;
-	    break;
+    if (!pdf_flag) {
+	while (fgets(buf, 300, file) != NULL) {
+	    lower(buf);
+	    if (!strncmp(buf, "%%beginpreview", 14)) {
+		sscanf(buf, "%%%%beginpreview: %d %d %*d",
+				&pic->bit_size.x, &pic->bit_size.y);
+		bitmapz = True;
+		break;
+	    }
 	}
     }
 #ifdef GSBIT
@@ -185,8 +219,8 @@ read_epsf(file,filetype,pic)
 	nbitmap = (pic->bit_size.x + 7) / 8 * pic->bit_size.y;
 	pic->bitmap = (unsigned char *) malloc(nbitmap);
 	if (pic->bitmap == NULL) {
-	    file_msg("Could not allocate %d bytes of memory for EPS bitmap\n",
-		     nbitmap);
+	    file_msg("Could not allocate %d bytes of memory for %s bitmap\n",
+		     pdf_flag? "PDF": "EPS", nbitmap);
 #ifdef GSBIT
 	    if ( useGS )
 		pclose( gsfile );
@@ -207,7 +241,7 @@ read_epsf(file,filetype,pic)
 	if (filetype == 1) {	/* yes, now we have to uncompress the file into a temp file */
 	    /* re-open the pipe */
 	    close_picfile(file, filetype);
-	    file = open_picfile(psnam, &filetype, realname);
+	    file = open_picfile(psnam, &filetype, True, realname);
 	    sprintf(tmpfile, "%s/%s%06d", TMPDIR, "xfig-eps", getpid());
 	    if ((tmpfp = fopen(tmpfile, "w")) == NULL) {
 		file_msg("Couldn't open tmp file %s, %s", tmpfile, sys_errlist[errno]);
@@ -262,8 +296,8 @@ read_epsf(file,filetype,pic)
 	/* error return from ghostscript, look in error file */
 	if (status != 0 || ( pixfile = fopen(pixnam,"r") ) == NULL ) {
 	    FILE *errfile = fopen(errnam,"r");
-	    file_msg("Could not parse EPS file with ghostscript: %s", pic->file);
-	    file_msg("Look in %s for errors", errnam);
+	    file_msg("Could not parse %s file with ghostscript: %s", 
+			pdf_flag? "PDF": "EPS", pic->file);
 	    if (errfile) {
 		file_msg("ERROR from ghostscript:");
 		while (fgets(buf, 300, errfile) != NULL) {
@@ -271,6 +305,7 @@ read_epsf(file,filetype,pic)
 		    file_msg("%s",buf);
 		}
 		fclose(errfile);
+		unlink(errnam);
 	    }
 	    free((char *) pic->bitmap);
 	    pic->bitmap = NULL;
@@ -286,7 +321,8 @@ read_epsf(file,filetype,pic)
 		    fgets(buf, 300, pixfile);
 		while (buf[0] == '#');
 		if ( fread(pic->bitmap,nbitmap,1,pixfile) != 1 ) {
-		    file_msg("Error reading output (EPS problems?): %s", pixnam);
+		    file_msg("Error reading output (%s problems?): %s", 
+				pdf_flag? "PDF": "EPS", pixnam);
 		    file_msg("Look in %s for errors", errnam);
 		    fclose(pixfile);
 		    unlink(pixnam);
@@ -306,8 +342,8 @@ read_epsf(file,filetype,pic)
 		/* save picture width/height because read_pcx will overwrite it */
 		wid = pic->size_x;
 		ht  = pic->size_y;
-		pcxfile = open_picfile(pixnam, &filtyp, realname);
-		status = _read_pcx(pcxfile,filtyp,pic);
+		pcxfile = open_picfile(pixnam, &filtyp, True, realname);
+		status = _read_pcx(pcxfile,pic);
 		close_picfile(pcxfile, filtyp);
 		/* restore width/height */
 		pic->size_x = wid;
@@ -315,8 +351,8 @@ read_epsf(file,filetype,pic)
 		/* and type */
 		pic->subtype = T_PIC_EPS;
 		if (status != 1) {
-		    file_msg("Error reading output from ghostscript (EPS problems?): %s",
-			pixnam);
+		    file_msg("Error reading output from ghostscript (%s problems?): %s",
+			pdf_flag? "PDF": "EPS", pixnam);
 		    file_msg("Look in %s for errors", errnam);
 		    unlink(pixnam);
 		    if (pic->bitmap)

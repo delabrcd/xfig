@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -83,6 +83,8 @@ init_break(p, type, x, y, px, py, loc_tag)
     list_delete_compound(&objects.compounds, cur_c);
     tail(&objects, &object_tails);
     append_objects(&objects, cur_c, &object_tails);
+    /* add the depths from this compound */
+    add_compound_depth(cur_c);
     toggle_markers_in_compound(cur_c);
     set_tags(cur_c, loc_tag);
     set_action(F_BREAK);

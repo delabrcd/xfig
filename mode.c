@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -38,7 +38,7 @@ int		posn_hlf[P_GRID4 + 1];
 int		grid_fine[GRID_4 + 1];
 int		grid_coarse[GRID_4 + 1];
 char	       *grid_name[GRID_4 + 1];
-int		cur_rotnangle = 90;
+float		cur_rotnangle = 90.0;
 int		cur_linkmode = 0;
 int		cur_numsides = 6;
 int		cur_numcopies = 1;
@@ -49,7 +49,12 @@ int		highlighting = 0;
 int		aborting = 0;
 int		anypointposn = 0;
 int		figure_modified = 0;
-char		cur_fig_units[32];
+char		cur_fig_units[200];
+char		cur_library_dir[PATH_MAX];
+char		cur_image_editor[PATH_MAX];
+char		cur_spellchk[PATH_MAX];
+char		cur_browser[PATH_MAX];
+char		cur_pdfviewer[PATH_MAX];
 Boolean		warnexist = False;
 Boolean		warninput = False;
 
@@ -62,53 +67,61 @@ int		min_num_points;
 
 Boolean		export_flushleft;	/* flush left (true) or center (false) */
 
-int		cur_exp_lang = LANG_EPS; /* actually gets set up in main.c */
+int		cur_exp_lang;		/* gets initialized in main.c */
 Boolean		batch_exists = False;
 char		batch_file[32];
 
 char	       *lang_items[] = {
 	"box",  "latex", "epic", "eepic", "eepicemu", "pictex",
-	"hpl",  "eps",   "ps",   "pstex", "textyl",   "tpic",
-	"pic",  "mf",    "acad", "pcx",   "png",      "gif",
+	"hpl",  "eps",   "ps",   "pdf",   "pstex", "textyl",
+	"tpic", "pic",   "mf",   "cgm",   "tk",    "map",
+/* bitmap formats start here */
+	"gif",  
 #ifdef USE_JPEG
 	"jpeg",
 #endif /* USE_JPEG */
-	"tiff",  "tk", "xbm",
+	"pcx",  "png",   "ppm", "sld", "tiff", "xbm", 
 #ifdef USE_XPM
 	"xpm",
 #endif /* USE_XPM */
-	"ppm"
     };
 
 char	       *lang_texts[] = {
-	"LaTeX box (figure boundary)    ",
-	"LaTeX picture                  ",
-	"LaTeX picture + epic macros    ",
-	"LaTeX picture + eepic macros   ",
-	"LaTeX picture + eepicemu macros",
-	"PiCTeX macros                  ",
-	"IBMGL (or HPGL)                ",
-	"Encapsulated Postscript        ",
-	"Postscript                     ",
-	"Combined PS/LaTeX (both parts) ",
-	"Textyl \\special commands       ",
-	"TPIC                           ",
-	"PIC                            ",
-	"MF   (MetaFont)                ",
-	"ACAD (AutoCad Slide)           ",
-	"PCX  (PC Paintbrush)           ",
-	"PNG                            ",
-	"GIF                            ",
+	"LaTeX box (figure boundary)       ",
+	"LaTeX picture                     ",
+	"LaTeX picture + epic macros       ",
+	"LaTeX picture + eepic macros      ",
+	"LaTeX picture + eepicemu macros   ",
+	"PiCTeX macros                     ",
+	"IBMGL (or HPGL)                   ",
+	"Encapsulated Postscript           ",
+	"Postscript                        ",
+	"PDF (Portable Document Format)    ",
+	"Combined PS/LaTeX (both parts)    ",
+	"Textyl \\special commands          ",
+	"TPIC                              ",
+	"PIC                               ",
+	"MF  (MetaFont)                    ",
+	"CGM (Computer Graphics Metafile)  ",
+	"Tk  (Tcl/Tk toolkit)              ",
+	"HTML Image Map                    ",
+
+	/*** bitmap formats follow ***/
+	/* if you move GIF, change FIRST_BITMAP_LANG in mode.h */
+
+	"GIF  (Graphics Interchange Format)",
 #ifdef USE_JPEG
-	"JPEG                           ",
+	"JPEG (Joint Photo. Expert Group   ",
 #endif /* USE_JPEG */
-	"TIFF (no compression)          ",
-	"Tk (Tcl/Tk toolkit)            ",
-	"X11 Bitmap (XBM)               ",
+	"PCX  (PC Paintbrush)              ",
+	"PNG  (Portable Network Graphics)  ",
+	"PPM  (Portable Pixmap)            ",
+	"SLD  (AutoCad Slide)              ",
+	"TIFF (no compression)             ",
+	"XBM  (X11 Bitmap)                 ",
 #ifdef USE_XPM
-	"X11 Pixmap (XPM)               ",
+	"XPM  (X11 Pixmap)                 ",
 #endif /* USE_XPM */
-	"Portable Pixmap (PPM)          ",
     };
 
 /***************************  Mode Settings  ****************************/
@@ -116,9 +129,9 @@ char	       *lang_texts[] = {
 int		cur_objmask = M_NONE;
 int		cur_updatemask = I_UPDATEMASK;
 int		new_objmask = M_NONE;
-/* start depth at 100 to make it easier to put new objects on top without
+/* start depth at 50 to make it easier to put new objects on top without
    having to remember to increase the depth at startup */
-int		cur_depth = 100;
+int		cur_depth = DEF_DEPTH;
 
 /***************************  Texts ****************************/
 
@@ -149,10 +162,10 @@ int		cur_arrowtype	= 0;
 float		cur_arrowthick	= 1.0;			/* pixels */
 float		cur_arrowwidth	= DEF_ARROW_WID;	/* pixels */
 float		cur_arrowheight	= DEF_ARROW_HT;		/* pixels */
-float		cur_arrow_multthick = 1.0;		/* values when using multiple of */
-float		cur_arrow_multwidth = DEF_ARROW_WID;		/* line width */
+float		cur_arrow_multthick = 1.0;		/* when using multiple of width */
+float		cur_arrow_multwidth = DEF_ARROW_WID;
 float		cur_arrow_multheight = DEF_ARROW_HT;
-Boolean		use_abs_arrowvals = True;		/* start by using absolute values */
+Boolean		use_abs_arrowvals = False;		/* start with values prop. to width */
 int		cur_arctype	= T_OPEN_ARC;
 char		EMPTY_PIC[8]	= "<empty>";
 
@@ -161,11 +174,12 @@ float		cur_elltextangle = 0.0;	/* text/ellipse input angle */
 
 /***************************  File Settings  ****************************/
 
-char		cur_dir[1024];
+char		cur_dir[PATH_MAX];
 char		cur_filename[PATH_MAX] = "";
 char		save_filename[PATH_MAX] = "";	/* to undo load */
-char		cut_buf_name[100];
 char		file_header[32] = "#FIG ";
+char		cut_buf_name[PATH_MAX];		/* path of .xfig cut buffer file */
+char		xfigrc_name[PATH_MAX];		/* path of .xfigrc file */
 
 /*************************** routines ***********************/
 

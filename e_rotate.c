@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -35,7 +35,7 @@ int		setcenter;
 int		setcenter_x;
 int		setcenter_y;
 int		rotn_dirn;
-int		act_rotnangle;
+float		act_rotnangle;
 
 /* LOCAL */
 
@@ -360,7 +360,7 @@ rotate_figure(f, x, y)
      F_compound *f;
      int x, y;
 {
-  int old_rotn_dirn, old_act_rotnangle;
+  float old_rotn_dirn, old_act_rotnangle;
 
   old_rotn_dirn= rotn_dirn;
   old_act_rotnangle= act_rotnangle;

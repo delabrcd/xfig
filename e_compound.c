@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1994 by Bill Taylor
  *       "Enter Compound" written by Bill Taylor (bill@mainstream.com) 1994
@@ -33,11 +33,14 @@
 #include "object.h"
 #include "u_search.h"
 #include "w_canvas.h"
+#include "w_icons.h"
 #include "w_setup.h"
 #include "w_util.h"
+#include "w_zoom.h"
 
 Widget	close_compound_popup;
 Boolean	close_popup_isup = False;
+void	open_this_compound();
 
 static void
 init_open_compound(c, type, x, y, px, py, loc_tag)
@@ -47,10 +50,16 @@ init_open_compound(c, type, x, y, px, py, loc_tag)
     int		    px, py;
     int 	    loc_tag;
 {
-  F_compound *d;
-
   if (type != O_COMPOUND)
     return;
+	open_this_compound(c);
+}
+
+void
+open_this_compound(c)
+ F_compound *c;
+{
+  F_compound *d;
 
   mask_toggle_compoundmarker(c);
 
@@ -109,6 +118,8 @@ close_compound()
 	close_popup_isup = False;
     }
     redisplay_canvas();
+    /* re-select open compound mode */
+    change_mode(&open_comp_ic);
   }
 }
 
@@ -142,6 +153,8 @@ close_all_compounds()
     XtDestroyWidget(close_compound_popup);
     close_popup_isup = False;
     redisplay_canvas();
+    /* re-select open compound mode */
+    change_mode(&open_comp_ic);
   }
 }
 
@@ -149,17 +162,26 @@ popup_close_compound()
 {
     Widget	    close_compound_form;
     Widget	    close_compoundw, close_compound_allw;
-    int		    xposn, yposn;
+    Position	    xposn, yposn;
     Window	    win;
+    XtWidgetGeometry xtgeom,comp;
+    int		     llx, lly, urx, ury, dum;
 
     DeclareArgs(10);
 
-    /* put the window in the upper-left corner of the canvas */
-    XTranslateCoordinates(tool_d, main_canvas, XDefaultRootWindow(tool_d),
-			  20, 20, &xposn, &yposn, &win);
+    /* position the popup above the compound we're opening */
+    compound_bound(&objects, &llx, &lly, &urx, &ury);
+
+    /* translate object coords to screen coords relative to the canvas */
+    llx = ZOOMX(llx);
+    lly = ZOOMY(lly);
+
+    /* translate those to absolute screen coords */
+    XtTranslateCoords(canvas_sw, llx, lly, &xposn, &yposn);
+
     FirstArg(XtNallowShellResize, True);
-    NextArg(XtNx, xposn);
-    NextArg(XtNy, yposn);
+    NextArg(XtNx, xposn-40);
+    NextArg(XtNy, yposn-65);
     NextArg(XtNtitle, "Xfig: Close Compound");
     NextArg(XtNcolormap, tool_cm);
     close_compound_popup = XtCreatePopupShell("close_compound_popup", transientShellWidgetClass,
@@ -180,10 +202,12 @@ popup_close_compound()
     XtAddEventHandler(close_compound_allw, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler)close_all_compounds, (XtPointer) NULL);
 
+    /* now pop it up */
     XtPopup(close_compound_popup, XtGrabNone);
+
     /* insure that the most recent colormap is installed */
     set_cmap(XtWindow(close_compound_popup));
-    (void) XSetWMProtocols(XtDisplay(close_compound_popup), XtWindow(close_compound_popup),
+    (void) XSetWMProtocols(tool_d, XtWindow(close_compound_popup),
                            &wm_delete_window, 1);
     XDefineCursor(tool_d, XtWindow(close_compound_popup), arrow_cursor);
     close_popup_isup = True;

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1998 by Stephane Mancini
- * Parts Copyright (c) 1998 by Brian V. Smith
+ * Parts Copyright (c) 1999-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -16,52 +16,59 @@
 
 /* This is where the library popup is created */
 
-#include <string.h>
-#include <varargs.h>
 #include "fig.h"
 #include "figx.h"
+#include <stdarg.h>
 #include "resources.h"
 #include "object.h"
 #include "mode.h"
 #include "e_placelib.h"
 #include "f_read.h"
 #include "u_create.h"
+#include "u_redraw.h"
 #include "w_canvas.h"
 #include "w_drawprim.h"		/* for max_char_height */
 #include "w_dir.h"
+#include "w_file.h"
+#include "w_listwidget.h"
+#include "w_layers.h"
 #include "w_util.h"
 #include "w_setup.h"
 #include "w_icons.h"
 #include "w_zoom.h"
 
-#ifdef USE_DIRENT
-#include <dirent.h>
-#else
+#ifdef HAVE_NO_DIRENT
 #include <sys/dir.h>
+#else
+#include <dirent.h>
 #endif
 
-#define LIB_PREVIEW_CANVAS_SIZE	120	/* size (square) of preview canvas */
+#define LIB_PREVIEW_CANVAS_SIZE	260	/* size (square) of preview canvas */
 #define LIB_FILE_WIDTH		300	/* size of object list panel */
 
 /* STATICS */
 static void	library_cancel(), library_load();
-static void	create_library_panel(), libraryStatus();
+static void	create_library_panel(), libraryStatus(char *format,...);
 static void	put_new_object_sel(), set_cur_obj_name(), erase_pixmap();
+static void	set_item(), select_next_object(), select_prev_object();
 static void	set_preview_name(), preview_libobj(), update_preview();
 
 DeclareStaticArgs(15);
 
 static Widget	library_popup=0;
-static Widget	put_cur_obj,put_cur_lib;
+static Widget	put_cur_obj;
 static Widget	object_list,new_object_viewport;
 
 static Widget	lib_obj_label,library_label,library_menu,sel_library_panel;
 static Widget	cancel,intro;
 static Widget	library_panel,library_status,selobj;
-static Widget	preview_widget;
+static Widget	preview_widget, preview_comments;
 static Pixmap	preview_pixmap, cur_obj_preview;
 static int	num_library_name;
+static int	num_list_items, which_num;
 static Boolean	MakeObjectLibrary(),MakeLibraryList(),MakeLibrary();
+static Boolean	ScanLibraryDirectory();
+static Boolean	PutLibraryEntry();
 static Boolean	lib_just_loaded;
 static Boolean	load_lib_obj();
 static String	library_translations =
@@ -69,21 +76,22 @@ static String	library_translations =
 			 <Btn1Up>(2): put_new_object_sel()\n\
 			 <Key>Return: put_new_object_sel()\n";
 static String	object_list_translations =
-	"<Btn1Down>,<Btn1Up>: Set()Notify()\n\
+	"<Btn1Down>,<Btn1Up>: Set()Notify()set_item()\n\
 	 <Btn1Up>(2): put_new_object_sel()\n\
 	 <Key>Return: put_new_object_sel()\n";
 
 static XtActionsRec	library_actions[] =
 {
-  {"DismissLibrary", (XtActionProc) library_cancel},
-  {"library_cancel", (XtActionProc) library_cancel},
-  {"library_load",(XtActionProc)  library_load},
-  {"put_new_object_sel",(XtActionProc) put_new_object_sel},
+  {"DismissLibrary",     (XtActionProc) library_cancel},
+  {"library_cancel",     (XtActionProc) library_cancel},
+  {"library_load",       (XtActionProc) library_load},
+  {"set_item",           (XtActionProc) set_item},
+  {"put_new_object_sel", (XtActionProc) put_new_object_sel},
 };
 
 #define N_LIB_MAX	   50		/* max number of libraries */
 #define N_LIB_OBJECT_MAX   400		/* max number of objects in a library */
-#define N_LIB_NAME_MAX	   41		/* max length of library name + 1 */
+#define N_LIB_NAME_MAX	   71		/* max length of library name + 1 */
 #define N_LIB_LINE_MAX     300		/* one line in the file */
 
 static int	  cur_library=-1;
@@ -107,12 +115,25 @@ SPComp(s1, s2)
 }
 
 
+Boolean	put_select_requested = False;
+
+put_selected_request()
+{
+    if (preview_in_progress == True) {
+	put_select_requested = True;
+	/* request to cancel the preview */
+	cancel_preview = True;
+    } else {
+	put_selected();
+    }
+}
+
 static void
 library_dismiss()
 {
   set_cur_obj_name(cur_library_object);
   XtPopdown(library_popup);
-  put_selected();
+  put_selected_request();
 }
 
 static void
@@ -120,8 +141,6 @@ library_cancel(w, ev)
      Widget	    w;
      XButtonEvent   *ev;
 {
-    canvas_kbd_proc = null_proc;
-
     /* unhighlight the selected item */
     XawListUnhighlight(object_list);
 
@@ -131,11 +150,14 @@ library_cancel(w, ev)
 
     /* if we didn't just load a new library, restore some stuff */
     if (!lib_just_loaded) {
-	/* restore previous object */
+	/* clear current object */
 	cur_library_object = old_library_object;
 
 	/* restore old label in preview label */
 	set_preview_name(cur_library_object);
+
+	/* restore old comments /
+	set_comments(cur_library_object->comments);
 
 	/* copy current object preview back to main preview pixmap */
 	XCopyArea(tool_d, cur_obj_preview, preview_pixmap, gccache[PAINT], 0, 0, 
@@ -145,13 +167,19 @@ library_cancel(w, ev)
     /* get rid of the popup */
     XtPopdown(library_popup);
 
-    /* if there was a library already loaded, continue with old put */
-    if (library_objects_texts[0]) {
-	/* anything to place? */
-	if (cur_library_object >= 0)
-	    put_selected();		/* yes */
-	else
-	    put_noobj_selected();	/* no */
+    /* if user was in the library mode when he popped this up AND there is a 
+       library loaded, continue with old place */
+    if (action_on && library_objects_texts[0] && cur_library_object >= 0) {
+	put_selected_request();
+    } else {
+	/* otherwise, cancel all library operations */
+	reset_action_on();
+	canvas_kbd_proc = null_proc;
+	canvas_locmove_proc = null_proc;
+	canvas_leftbut_proc = null_proc;
+	canvas_middlebut_proc = null_proc;
+	canvas_rightbut_proc = null_proc;
+	set_mousefun("","","","","","");
     }
 }
 
@@ -163,8 +191,8 @@ library_load(w, new_library, garbage)
     int new = (int) new_library;
 
     /* only set current library if the load is successful */
-    if ( MakeObjectLibrary(library_rec[new].path,
-		  library_objects_texts,lib_compounds) == True) {
+    if (MakeObjectLibrary(library_rec[new].path,
+		  library_objects_texts, lib_compounds) == True) {
 	/* flag to say we just loaded the library but haven't picked anything yet */
 	lib_just_loaded = True;
 	/* set new */
@@ -174,6 +202,8 @@ library_load(w, new_library, garbage)
 	erase_pixmap(cur_obj_preview);
 	/* force the toolkit to refresh it */
 	update_preview();
+	/* erase the comment window */
+	set_comments("");
 	/* erase the preview name */
 	set_preview_name(-1);
 	/* and the current object name */
@@ -222,7 +252,7 @@ put_new_object_sel(w, ev)
 
 /* read the library object file and put into a compound */
 
-Boolean
+static Boolean
 load_lib_obj(obj)
     int		obj;
 {
@@ -237,29 +267,18 @@ load_lib_obj(obj)
 		return True;
 
 	lib_compounds[obj]=create_compound();
-	lib_compounds[obj]->parent = NULL;
-	lib_compounds[obj]->GABPtr = NULL;
-	lib_compounds[obj]->arcs = NULL;
-	lib_compounds[obj]->compounds = NULL;
-	lib_compounds[obj]->ellipses = NULL;
-	lib_compounds[obj]->lines = NULL;
-	lib_compounds[obj]->splines = NULL;
-	lib_compounds[obj]->texts = NULL;
-	lib_compounds[obj]->next = NULL;
 
 	/* read in the object file */
 	/* we'll ignore the stuff returned in "settings" */
 	if (read_figc(name,lib_compounds[obj],True,True,0,0,&settings)==0) {  
-		compound_bound(lib_compounds[obj],&(lib_compounds[obj]->nwcorner.x),
-			     &(lib_compounds[obj]->nwcorner.y),
-			     &(lib_compounds[obj]->secorner.x),
-			     &(lib_compounds[obj]->secorner.y));
-	
 		translate_compound(lib_compounds[obj],-lib_compounds[obj]->nwcorner.x,
 				 -lib_compounds[obj]->nwcorner.y);
 	} else {
 		/* an error reading a .fig file */
 		file_msg("Error reading %s.fig",cur_objects_names[obj]);
+		/* delete the compound we just created */
+		delete_compound(lib_compounds[obj]);
+		lib_compounds[obj] = (F_compound *) NULL;
 		return False;
 	}
 	return True;
@@ -268,12 +287,12 @@ load_lib_obj(obj)
 /* come here when user clicks on library object name */
 
 static void
-NewObjectSel(w, client_data, ret_val)
+NewObjectSel(w, closure, call_data)
     Widget	    w;
-    XtPointer	    client_data;
-    XtPointer	    ret_val;
+    XtPointer	    closure;
+    XtPointer	    call_data;
 {
-    XawListReturnStruct *ret_struct = (XawListReturnStruct *) ret_val;
+    XawListReturnStruct *ret_struct = (XawListReturnStruct *) call_data;
     cur_library_object = ret_struct->list_index;
     /* we have picked an object */
     lib_just_loaded = False;
@@ -292,10 +311,10 @@ popup_library_panel()
 
     old_library_object = cur_library_object;
     XtPopup(library_popup, XtGrabNonexclusive);
+
     /* if the file message window is up add it to the grab */
     file_msg_add_grab();
-    /* insure that the most recent colormap is installed */
-    set_cmap(XtWindow(library_popup));
+
     /* now put in the current (first) library name */
     /* if no libraries, indicate so */
     if (num_library_name == 0) {
@@ -307,8 +326,9 @@ popup_library_panel()
     }
     SetValues(sel_library_panel);
 
-    (void) XSetWMProtocols(XtDisplay(library_popup), XtWindow(library_popup),
-			 &wm_delete_window, 1);
+    /* insure that the most recent colormap is installed */
+    set_cmap(XtWindow(library_popup));
+    (void) XSetWMProtocols(tool_d, XtWindow(library_popup), &wm_delete_window, 1);
   
     reset_cursor();
 }
@@ -322,16 +342,16 @@ create_library_panel()
 
   int		 char_ht,char_wd;
   XFontStruct	*temp_font;
-  static int	 actions_added=0;
-  Widget	 widg,lib_preview_label;
+  static Boolean actions_added=False;
+  Widget	 widg, lib_preview_label, below;
   char		*library_names[N_LIB_MAX + 1];
 
   library_objects_texts=(char **)calloc(N_LIB_OBJECT_MAX,sizeof(char *));
-   for(i=0;i<N_LIB_OBJECT_MAX;i++)
+   for (i=0;i<N_LIB_OBJECT_MAX;i++)
      library_objects_texts[i]=NULL;
   
   lib_compounds=(F_compound **)calloc(N_LIB_OBJECT_MAX,sizeof(F_compound *));
-  for(i=0;i<N_LIB_OBJECT_MAX;i++)   
+  for (i=0;i<N_LIB_OBJECT_MAX;i++)   
     lib_compounds[i]=NULL;
     
   num_library_name=MakeLibrary();
@@ -349,7 +369,7 @@ create_library_panel()
   library_panel = XtCreateManagedWidget("library_panel", formWidgetClass,
 					library_popup, NULL, ZERO);
 	
-  FirstArg(XtNlabel, "Load a Library Directory");
+  FirstArg(XtNlabel, "Load a Library");
   NextArg(XtNwidth, LIB_FILE_WIDTH + LIB_PREVIEW_CANVAS_SIZE+6);
   NextArg(XtNborderWidth, 0);
   NextArg(XtNtop, XtChainTop);
@@ -401,14 +421,14 @@ create_library_panel()
   /* make the menu and attach it to the button */
   for (i = 0; i < num_library_name; i++)
     library_names[i] = library_rec[i].name;
-  library_menu = make_popup_menu(library_names, num_library_name,
+  library_menu = make_popup_menu(library_names, num_library_name, -1, "",
 				 sel_library_panel, library_load);
 
   XtOverrideTranslations(library_panel,
 			 XtParseTranslationTable(library_translations));
   if (!actions_added) {
-      XtAppAddActions(tool_app, library_actions, XtNumber(library_actions));
-      actions_added = 1;
+	XtAppAddActions(tool_app, library_actions, XtNumber(library_actions));
+	actions_added = True;
   }		 
 
   /* Status indicator label */
@@ -470,7 +490,7 @@ create_library_panel()
   FirstArg(XtNallowVert, True);
   NextArg(XtNfromVert,put_cur_obj);
   NextArg(XtNborderWidth, INTERNAL_BW);
-  NextArg(XtNheight, 10*char_ht);
+  NextArg(XtNheight, 24*char_ht);
   NextArg(XtNwidth, LIB_FILE_WIDTH);
   NextArg(XtNtop, XtChainTop);
   NextArg(XtNbottom, XtChainBottom);
@@ -479,8 +499,16 @@ create_library_panel()
   new_object_viewport = XtCreateManagedWidget("object_vport", viewportWidgetClass,
 					  library_panel, Args, ArgCount);
 					 
-
-  object_list = XtCreateManagedWidget("object_list_panel", listWidgetClass,
+  /* make a list widget with entries going down the column then right */
+  FirstArg(XtNverticalList,True);
+  NextArg(XtNborderWidth, INTERNAL_BW);
+  NextArg(XtNheight, 24*char_ht);
+  NextArg(XtNwidth, LIB_FILE_WIDTH);
+  NextArg(XtNtop, XtChainTop);
+  NextArg(XtNbottom, XtChainBottom);
+  NextArg(XtNleft, XtChainLeft);
+  NextArg(XtNright, XtChainRight);
+  object_list = XtCreateManagedWidget("object_list_panel", figListWidgetClass,
 					new_object_viewport, Args, ArgCount);
   /* install the empty list */
   NewList(object_list,library_objects_texts);
@@ -494,7 +522,8 @@ create_library_panel()
 
   FirstArg(XtNfromHoriz, new_object_viewport);
   NextArg(XtNfromVert, library_status);
-  NextArg(XtNlabel, " Object Preview ");
+  NextArg(XtNlabel, "Object Preview");
+  NextArg(XtNwidth, LIB_PREVIEW_CANVAS_SIZE);
   NextArg(XtNborderWidth, 0);
   NextArg(XtNtop, XtChainTop);
   NextArg(XtNbottom, XtChainTop);
@@ -507,8 +536,7 @@ create_library_panel()
 
   FirstArg(XtNfromHoriz, new_object_viewport);
   NextArg(XtNfromVert,lib_preview_label);
-  /* make label same length as "Object Preview" label */
-  NextArg(XtNlabel, "                ");
+  NextArg(XtNwidth, LIB_PREVIEW_CANVAS_SIZE);
   NextArg(XtNborderWidth, 0);
   NextArg(XtNtop, XtChainTop);
   NextArg(XtNbottom, XtChainTop);
@@ -543,10 +571,27 @@ create_library_panel()
   preview_widget = XtCreateManagedWidget("library_preview_widget", labelWidgetClass,
 					  library_panel, Args, ArgCount);
 
+  /* now a place for the library object comments */
+  FirstArg(XtNlabel, "Object comments:");
+  NextArg(XtNwidth, LIB_PREVIEW_CANVAS_SIZE);
+  NextArg(XtNfromVert, preview_widget)
+  NextArg(XtNfromHoriz, new_object_viewport);
+  below = XtCreateManagedWidget("comment_label", labelWidgetClass,
+					  library_panel, Args, ArgCount);
+  FirstArg(XtNfromVert, below)
+  NextArg(XtNvertDistance, 1);
+  NextArg(XtNfromHoriz, new_object_viewport);
+  NextArg(XtNwidth, LIB_PREVIEW_CANVAS_SIZE);
+  NextArg(XtNheight, 50);
+  NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
+  NextArg(XtNscrollVertical, XawtextScrollWhenNeeded);
+  preview_comments = XtCreateManagedWidget("preview_comments", asciiTextWidgetClass,
+					  library_panel, Args, ArgCount);
+
   FirstArg(XtNlabel, "Select object"); 
   NextArg(XtNsensitive, False);			/* no library loaded yet */
-  NextArg(XtNfromVert,new_object_viewport);
-  NextArg(XtNvertDistance, 15);
+  NextArg(XtNfromVert, new_object_viewport);  
+  NextArg(XtNvertDistance, 10);
   NextArg(XtNheight, 25);
   NextArg(XtNborderWidth, INTERNAL_BW);
   NextArg(XtNtop, XtChainBottom);
@@ -558,9 +603,9 @@ create_library_panel()
   XtAddEventHandler(selobj, ButtonReleaseMask, (Boolean) 0,
 		    (XtEventHandler)put_new_object_sel, (XtPointer) NULL);
   
-  FirstArg(XtNlabel, "Cancel");
-  NextArg(XtNfromVert,new_object_viewport);  
-  NextArg(XtNvertDistance, 15);
+  FirstArg(XtNlabel, "   Cancel    ");
+  NextArg(XtNfromVert, new_object_viewport);  
+  NextArg(XtNvertDistance, 10);
   NextArg(XtNfromHoriz, selobj);  
   NextArg(XtNhorizDistance, 25);
   NextArg(XtNheight, 25);
@@ -603,17 +648,17 @@ erase_pixmap(pixmap)
 			LIB_PREVIEW_CANVAS_SIZE, LIB_PREVIEW_CANVAS_SIZE);
 }
 
-static void
+static Boolean
 PutLibraryEntry(np, path, name)
     int *np;
     char *path, *name;
 {
     int i;
 
-    if (N_LIB_MAX - 1 <= *np) {
+    if (*np > N_LIB_MAX - 1) {
         file_msg("Too many libraries (max %d); library %s ignored",
-                 N_LIB_MAX - 1, name);
-        return;
+                 N_LIB_MAX, name);
+        return False;
     }
     /* strip any trailing whitespace */
     for (i=strlen(name)-1; i>0; i--) {
@@ -622,9 +667,6 @@ PutLibraryEntry(np, path, name)
     }
     if ((i>0) && (i<strlen(name)-1))
 	name[i+1] = '\0';
-
-    if (appres.DEBUG)
-	fprintf(stderr, "%d: %s [%s]\n", *np, path, name);
 
     library_rec[*np].name = (char *)malloc(strlen(name) + 1);
     strcpy(library_rec[*np].name, name);
@@ -635,9 +677,11 @@ PutLibraryEntry(np, path, name)
     *np = *np + 1;
     library_rec[*np].name = NULL;
     library_rec[*np].path = NULL;
+    /* all OK */
+    return True;
 }
 
-static void
+static Boolean
 ScanLibraryDirectory(np, path, name)
     int *np;
     char *path, *name;
@@ -648,30 +692,37 @@ ScanLibraryDirectory(np, path, name)
     Boolean registered = FALSE;
     char path2[PATH_MAX], name2[N_LIB_NAME_MAX], *cname;
 
-    if (appres.DEBUG) 
-	fprintf(stderr, "Scanning directory: %s\n", path);
-
     dirp = opendir(path);
     if (dirp == NULL) {
         file_msg("Can't open directory: %s", path);
     } else {
+	/* read the directory */
         for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
           if (sizeof(path2) <= strlen(path) + strlen(dp->d_name) + 2) {
             file_msg("Library path too long: %s/%s", path, dp->d_name);
           } else {
             sprintf(path2, "%s/%s", path, dp->d_name);
+	    /* check if directory or file */
             if (stat(path2, &st) == 0) {
-              if (S_ISDIR(st.st_mode)) {  /* directory */
+              if (S_ISDIR(st.st_mode)) {
+		/* directory */
                 if (dp->d_name[0] != '.') {
                   if (sizeof(name2) <= strlen(name) + strlen(dp->d_name) + 4) {
 		    file_msg("Library name too long: %s - %s", name, dp->d_name);
                   } else {  /* scan the sub-directory recursively */
-                    if (strlen(name) == 0) sprintf(name2, "%s", dp->d_name);
-                    else sprintf(name2, "%s - %s", name, dp->d_name);
-                    ScanLibraryDirectory(np, path2, name2);
+                    if (strlen(name) == 0)
+			sprintf(name2, "%s", dp->d_name);
+                    else
+			sprintf(name2, "%s - %s", name, dp->d_name);
+                    if (!ScanLibraryDirectory(np, path2, name2)) {
+			return False;
+		    }
                   }
                 }
-              } else if (!registered && strstr(dp->d_name, ".fig") != NULL) {
+              } else if (!registered &&
+			strstr(dp->d_name, ".fig") != NULL &&
+			strstr(dp->d_name, ".fig.bak") == NULL) {
+		/* file with .fig* suffix but not .fig.bak*  */
 		cname = name;
 		if (strlen(name)==0) {
 		    /* scanning parent directory, get its name from path */
@@ -681,7 +732,10 @@ ScanLibraryDirectory(np, path, name)
 		    else
 			cname++;
 		}
-                PutLibraryEntry(np, path, cname);
+                if (!PutLibraryEntry(np, path, cname)) {
+		    closedir(dirp);
+		    return False;	/* probably exceeded limit, break now */
+		}
                 registered = TRUE;
               }
             }
@@ -689,6 +743,8 @@ ScanLibraryDirectory(np, path, name)
         }
         closedir(dirp);
     }
+    /* all OK */
+    return True;
 }
 
 static int
@@ -719,15 +775,12 @@ MakeLibrary()
         return 0;
     } else if (S_ISDIR(st.st_mode)) {
         /* if it is directory, scan the sub-directories and search libraries */
-        if (appres.DEBUG)
-		fprintf(stderr, "Scanning library directory: %s\n", name);
         n = 0;
-        ScanLibraryDirectory(&n, name, "");
+        (void) ScanLibraryDirectory(&n, name, "");
 	qsort(library_rec, n, sizeof(*library_rec), (int (*)())*LRComp);
         return n;
     } else {
-        /* if it is file, it must contain list of libraries */
-        if (appres.DEBUG) fprintf(stderr, "Reading library index file: %s\n", name);
+        /* if it is a file, it must contain list of libraries */
         if ((file = fopen(name, "r")) == NULL) {
           file_msg("Can't find %s, no libraries available", name);
           return 0;
@@ -741,10 +794,10 @@ MakeLibrary()
 		  strcpy(s2, strrchr(s1, '/') + 1);
               else
 		  strcpy(s2, s1);
-              PutLibraryEntry(&n, s1, s2);
+              (void) PutLibraryEntry(&n, s1, s2);
               break;
             case 2:
-              PutLibraryEntry(&n, s1, s2);
+              (void) PutLibraryEntry(&n, s1, s2);
               break;
             }
           }
@@ -771,8 +824,6 @@ MakeObjectLibrary(library_dir,objects_names,compound)
        while ((objects_names[i]!=NULL) && (flag==True)) {
 	  /* free any previous compound objects */
 	  if (compound[i]!=NULL) {
-		if (appres.DEBUG)
-		    fprintf(stderr,"Freeing library object %d\n",i);
 		free_compound(&compound[i]);
 	  }
 	  compound[i] = (F_compound *) 0;
@@ -810,22 +861,28 @@ MakeLibraryList(dir_name,object_list)
     return False;	
   }
     
-  for(i=0;i<N_LIB_OBJECT_MAX;i++)
+  for (i=0;i<N_LIB_OBJECT_MAX;i++)
     if (library_objects_texts[i]==NULL)
-      library_objects_texts[i]=(char *)calloc(N_LIB_NAME_MAX,sizeof(char));
+      library_objects_texts[i] = calloc(N_LIB_NAME_MAX,sizeof(char));
   library_objects_texts[N_LIB_OBJECT_MAX-1]=NULL;
   numobj=0;
   for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
-
     if ((numobj+1<N_LIB_OBJECT_MAX) && (dp->d_name[0]!='.') &&
-	((c=strstr(dp->d_name,".fig"))!=NULL) && (!strcmp(c,".fig"))) {	
-	    *c='\0';
-	    strcpy(object_list[numobj],dp->d_name);
-	    numobj++;
+	((c=strstr(dp->d_name,".fig")) != NULL) &&
+	(strstr(dp->d_name,".fig.bak") == NULL)) {
+	    if (!IsDirectory(dir_name, dp->d_name)) {
+		*c='\0';
+		strcpy(object_list[numobj],dp->d_name);
+		numobj++;
+	    }
     }
   }
   free(object_list[numobj]);
   object_list[numobj]=NULL;   
+  /* save global number of list items for up/down arrow callbacks */
+  num_list_items = numobj;
+  /* signals up/down arrows to start at 0 if user doesn't press mouse in list first */
+  which_num = -1;
   qsort(object_list,numobj,sizeof(char*),(int (*)())*SPComp);
   closedir(dirp);
   return True;
@@ -836,14 +893,11 @@ MakeLibraryList(dir_name,object_list)
 static char statstr[100];
 
 static void
-libraryStatus(va_alist)
-    va_dcl
+libraryStatus(char *format,...)
 {
     va_list ap;
-    char *format;
 
-    va_start(ap);
-    format = va_arg(ap, char *);
+    va_start(ap, format);
     vsprintf(statstr, format, ap );
     va_end(ap);
     FirstArg(XtNstring, statstr);
@@ -855,20 +909,43 @@ static void
 preview_libobj(objnum)
     int		objnum;
 {
-    int		xmin, xmax, ymin, ymax;
-    float	width, height, size;
-    int		save_zoomxoff, save_zoomyoff;
-    float	save_zoomscale;
+    int		 xmin, xmax, ymin, ymax;
+    float	 width, height, size;
+    int		 save_zoomxoff, save_zoomyoff;
+    float	 save_zoomscale;
+    Boolean	save_shownums;
     F_compound	*compound;
+    Boolean	 save_layers[MAX_DEPTH+1];
+    int		save_min_depth, save_max_depth, depths[MAX_DEPTH +1];
+    struct counts obj_counts[MAX_DEPTH+1];
+
+    /* if already previewing file, return */
+    if (preview_in_progress == True)
+	return;
 
     /* change label in preview label */
     FirstArg(XtNlabel,library_objects_texts[cur_library_object]);
     SetValues(lib_obj_label);
 
+    /* say we are in progress */
+    preview_in_progress = True;
+
     /* first, save current zoom settings */
     save_zoomscale	= display_zoomscale;
     save_zoomxoff	= zoomxoff;
     save_zoomyoff	= zoomyoff;
+
+    /* save and turn off showing vertex numbers */
+    save_shownums	= appres.shownums;
+    appres.shownums	= False;
+
+    /* save active layer array and set all to True */
+    save_active_layers(save_layers);
+    reset_layers();
+    save_depths(depths);
+    save_min_depth = min_depth;
+    save_max_depth = max_depth;
+    save_counts(&obj_counts[0]);
 
     /* now switch the drawing canvas to our preview window */
     canvas_win = (Window) preview_pixmap;
@@ -877,38 +954,50 @@ preview_libobj(objnum)
     XDefineCursor(tool_d, XtWindow(library_panel), wait_cursor);
     app_flush();
      
-    if (load_lib_obj(objnum) == False)
-	return;		/* problem loading object */
-    compound = lib_compounds[objnum];
-    xmin = compound->nwcorner.x;
-    ymin = compound->nwcorner.y;
-    xmax = compound->secorner.x;
-    ymax = compound->secorner.y;
-    width = xmax - xmin;
-    height = ymax - ymin;
-    size = max2(width,height)/ZOOM_FACTOR;
+    if (load_lib_obj(objnum) == True) {
+	compound = lib_compounds[objnum];
+	add_compound_depth(compound);	/* count objects at each depth */
+	/* put any comments in the comment window */
+	set_comments(compound->comments);
 
-    /* scale to fit the preview canvas */
-    display_zoomscale = (float) (LIB_PREVIEW_CANVAS_SIZE-20) / size;
-    /* lets not get too magnified */
-    if (display_zoomscale > 2.0)
-	display_zoomscale = 2.0;
-    zoomscale = display_zoomscale/ZOOM_FACTOR;
-    /* center the figure in the canvas */
-    zoomxoff = -(LIB_PREVIEW_CANVAS_SIZE/zoomscale - width)/2.0 + xmin;
-    zoomyoff = -(LIB_PREVIEW_CANVAS_SIZE/zoomscale - height)/2.0 + ymin;
+	xmin = compound->nwcorner.x;
+	ymin = compound->nwcorner.y;
+	xmax = compound->secorner.x;
+	ymax = compound->secorner.y;
+	width = xmax - xmin;
+	height = ymax - ymin;
+	size = max2(width,height)/ZOOM_FACTOR;
 
-    /* clear pixmap */
-    XFillRectangle(tool_d, preview_pixmap, gccache[ERASE], 0, 0, 
-			LIB_PREVIEW_CANVAS_SIZE, LIB_PREVIEW_CANVAS_SIZE);
+	/* scale to fit the preview canvas */
+	display_zoomscale = (float) (LIB_PREVIEW_CANVAS_SIZE-20) / size;
+	/* lets not get too magnified */
+	if (display_zoomscale > 2.0)
+	    display_zoomscale = 2.0;
+	zoomscale = display_zoomscale/ZOOM_FACTOR;
+	/* center the figure in the canvas */
+	zoomxoff = -(LIB_PREVIEW_CANVAS_SIZE/zoomscale - width)/2.0 + xmin;
+	zoomyoff = -(LIB_PREVIEW_CANVAS_SIZE/zoomscale - height)/2.0 + ymin;
 
-    /* draw the preview into the pixmap */
-    redisplay_objects(compound);
-    /* fool the toolkit into drawing the new pixmap */
-    update_preview();
+	/* clear pixmap */
+	XFillRectangle(tool_d, preview_pixmap, gccache[ERASE], 0, 0, 
+				LIB_PREVIEW_CANVAS_SIZE, LIB_PREVIEW_CANVAS_SIZE);
+
+	/* draw the preview into the pixmap */
+	redisplay_objects(compound);
+	/* fool the toolkit into drawing the new pixmap */
+	update_preview();
+    }
 
     /* switch canvas back */
     canvas_win = main_canvas;
+
+    /* restore active layer array */
+    restore_active_layers(save_layers);
+    /* and depth and counts */
+    restore_depths(depths);
+    min_depth = save_min_depth;
+    max_depth = save_max_depth;
+    restore_counts(&obj_counts[0]);
 
     /* now restore settings for main canvas/figure */
     display_zoomscale	= save_zoomscale;
@@ -916,9 +1005,27 @@ preview_libobj(objnum)
     zoomyoff		= save_zoomyoff;
     zoomscale		= display_zoomscale/ZOOM_FACTOR;
 
+    /* restore shownums */
+    appres.shownums	= save_shownums;
+
     /* reset cursor */
     XUndefineCursor(tool_d, XtWindow(library_panel));
     app_flush();
+
+    /* say we are finished */
+    preview_in_progress = False;
+
+    /* if user requested a canvas redraw while preview was being generated
+       do that now for full canvas */
+    if (request_redraw) {
+	redisplay_region(0, 0, CANVAS_WD, CANVAS_HT);
+	request_redraw = False;
+    }
+    if (put_select_requested) {
+	put_select_requested = False;
+	cancel_preview = False;
+	put_selected();
+    }
 }
 
 /* fool the toolkit into drawing the new pixmap */
@@ -932,3 +1039,23 @@ update_preview()
     SetValues(preview_widget);
 }
 
+set_comments(comments)
+    char	 *comments;
+{
+	FirstArg(XtNstring, comments);
+	SetValues(preview_comments);
+}
+
+/* save item under mouse when user clicks on entry */
+
+static	XawListReturnStruct *which_obj;
+
+static void
+set_item(w, ev)
+    Widget	    w;
+    XButtonEvent   *ev;
+{ 	
+    /* get structure having current entry */
+    which_obj = XawListShowCurrent(w);
+    which_num = which_obj->list_index;
+}

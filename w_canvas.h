@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -28,8 +28,13 @@ extern void	(*canvas_middlebut_save) ();
 extern void	(*canvas_rightbut_proc) ();
 extern void	(*return_proc) ();
 extern void	null_proc();
+extern void	toggle_show_balloons();
+extern void	toggle_show_lengths();
+extern void	toggle_show_vertexnums();
+extern void	toggle_show_borders();
 
 extern		canvas_selected();
+extern void	paste_primary_selection();
 
 extern int	clip_xmin, clip_ymin, clip_xmax, clip_ymax;
 extern int	clip_width, clip_height;

@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Copyright (c) 1995 Jim Daley (jdaley@cix.compulink.co.uk)
  *
  * Any party obtaining a copy of these files is granted, free of charge, a

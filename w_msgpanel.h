@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -20,10 +20,9 @@ extern Boolean	first_file_msg;
 extern Boolean	file_msg_is_popped;
 extern Widget	file_msg_popup;
 
-extern void	put_msg();
+extern void	put_msg(char*,...);
 extern void	boxsize_msg();
 extern void	length_msg();
 extern void	altlength_msg();
 extern void	length_msg2();
 extern void	popup_file_msg();
-extern void	toggle_show_lengths();

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -64,8 +64,8 @@ read_scale_line(line, mul, offset)
 	point->y = point->y * mul + offset;
     }
     if (line->type == T_PICTURE) {
-	line->pic->size_x = line->pic->size_x * mul + offset;
-	line->pic->size_y = line->pic->size_y * mul + offset;
+	line->pic->size_x = line->pic->size_x * mul;
+	line->pic->size_y = line->pic->size_y * mul;
     }
 
     read_scale_arrow(line->for_arrow, mul);

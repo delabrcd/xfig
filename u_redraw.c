@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -24,10 +24,19 @@
 #include "e_flip.h"
 #include "e_rotate.h"
 #include "u_draw.h"
+#include "u_redraw.h"
 #include "w_canvas.h"
+#include "w_drawprim.h"
+#include "w_file.h"
+#include "w_layers.h"
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
+
+/* EXPORTS */
+
+/* set in redisplay_region if called when preview_in_progress is true */
+Boolean	request_redraw = False;
 
 /*
  * Support for rendering based on correct object depth.	 A simple depth based
@@ -40,33 +49,19 @@
  * down on search loop overhead.
  */
 
-struct counts {
-    unsigned	    num_arcs;		/* # arcs at this depth */
-    unsigned	    num_lines;		/* # lines at this depth */
-    unsigned	    num_ellipses;	/* # ellipses at this depth */
-    unsigned	    num_splines;	/* # splines at this depth */
-    unsigned	    num_texts;		/* # texts at this depth */
-    unsigned	    cnt_arcs;		/* count of arcs drawn at this depth */
-    unsigned	    cnt_lines;		/* count of lines drawn at this depth */
-    unsigned	    cnt_ellipses;	/* count of ellipses drawn at this
-					 * depth */
-    unsigned	    cnt_splines;	/* count of splines drawn at this depth */
-    unsigned	    cnt_texts;		/* count of texts drawn at this depth */
-};
-
 /*
  * The array of ``counts'' structures.	All objects at depth >= MAX_DEPTH are
  * accounted for in the counts[MAX_DEPTH] entry.
  */
 
-struct counts	counts[MAX_DEPTH + 1];
+struct counts	counts[MAX_DEPTH + 1], saved_counts[MAX_DEPTH + 1];
 
 /*
- * Function to clear the array of object counts prior to each redraw.
+ * Function to clear the array of object counts with file load or new command.
  */
 
-static void
-clearcounts()
+void
+clearallcounts()
 {
     register struct counts *cp;
 
@@ -76,6 +71,20 @@ clearcounts()
 	cp->num_ellipses = 0;
 	cp->num_splines = 0;
 	cp->num_texts = 0;
+    }
+    clearcounts();
+}
+
+/*
+ * Clear count of objects drawn at each depth
+ */
+
+void
+clearcounts()
+{
+    register struct counts *cp;
+
+    for (cp = &counts[0]; cp <= &counts[MAX_DEPTH]; ++cp) {
 	cp->cnt_arcs = 0;
 	cp->cnt_lines = 0;
 	cp->cnt_ellipses = 0;
@@ -83,8 +92,6 @@ clearcounts()
 	cp->cnt_texts = 0;
     }
 }
-
-unsigned int	max_depth;
 
 redisplay_objects(objects)
     F_compound	   *objects;
@@ -94,33 +101,22 @@ redisplay_objects(objects)
     if (objects == NULL)
 	return;
 
-    /*
-     * Clear object counts, and then get the max. depth of any object from
-     * the max. depths of each object type in the top level compound.
-     */
-
     clearcounts();
-    max_depth = max2(compound_depths(objects->compounds),
-		  max2(text_depths(objects->texts),
-		       spline_depths(objects->splines)));
-    max_depth = max2(arc_depths(objects->arcs),
-		     max2(line_depths(objects->lines),
-			  max2(ellipse_depths(objects->ellipses),
-			       max_depth)));
-
     /*
      * A new outer loop, executing once per depth level from max_depth down
-     * to 0 (negative depths are not supported).  The code inside the loop is
-     * the original code for redisplay_objects.
+     * to min_depth (negative depths are not supported).  The code inside the
+     * loop is the original code for redisplay_objects.
      */
 
-    for (depth = max_depth; depth >= 0; --depth) {
-	redisplay_arcobject(objects->arcs, depth);
-	redisplay_compoundobject(objects->compounds, depth);
-	redisplay_ellipseobject(objects->ellipses, depth);
-	redisplay_lineobject(objects->lines, depth);
-	redisplay_splineobject(objects->splines, depth);
-	redisplay_textobject(objects->texts, depth);
+    for (depth = max_depth; depth >= min_depth; --depth) {
+	if (active_layer(depth)) {
+	    redisplay_arcobject(objects->arcs, depth);
+	    redisplay_compoundobject(objects->compounds, depth);
+	    redisplay_ellipseobject(objects->ellipses, depth);
+	    redisplay_lineobject(objects->lines, depth);
+	    redisplay_splineobject(objects->splines, depth);
+	    redisplay_textobject(objects->texts, depth);
+	}
     }
 
     /*
@@ -137,135 +133,6 @@ redisplay_objects(objects)
 }
 
 /*
- * Find the maximum depth of any arc, recording the number of arcs per each
- * level along the way.
- */
-
-int
-arc_depths(arcs)
-    F_arc	   *arcs;
-{
-    int		    maxdepth = 0;
-    F_arc	   *fp;
-
-    for (fp = arcs; fp != NULL; fp = fp->next) {
-	if (maxdepth < fp->depth)
-	    maxdepth = fp->depth;
-
-	++counts[min2(fp->depth, MAX_DEPTH)].num_arcs;
-    }
-    return maxdepth;
-}
-
-/*
- * Find the maximum depth of any line, recording the number of lines per each
- * level along the way.
- */
-
-int
-line_depths(lines)
-    F_line	   *lines;
-{
-    int		    maxdepth = 0;
-    F_line	   *fp;
-
-    for (fp = lines; fp != NULL; fp = fp->next) {
-	if (maxdepth < fp->depth)
-	    maxdepth = fp->depth;
-
-	++counts[min2(fp->depth, MAX_DEPTH)].num_lines;
-    }
-    return maxdepth;
-}
-
-/*
- * Find the maximum depth of any ellipse, recording the number of ellipses
- * per each level along the way.
- */
-
-int
-ellipse_depths(ellipses)
-    F_ellipse	   *ellipses;
-{
-    int		    maxdepth = 0;
-    F_ellipse	   *fp;
-
-    for (fp = ellipses; fp != NULL; fp = fp->next) {
-	if (maxdepth < fp->depth)
-	    maxdepth = fp->depth;
-
-	++counts[min2(fp->depth, MAX_DEPTH)].num_ellipses;
-    }
-    return maxdepth;
-}
-
-/*
- * Find the maximum depth of any spline, recording the number of splines per
- * each level along the way.
- */
-
-int
-spline_depths(splines)
-    F_spline	   *splines;
-{
-    int		    maxdepth = 0;
-    F_spline	   *fp;
-
-    for (fp = splines; fp != NULL; fp = fp->next) {
-	if (maxdepth < fp->depth)
-	    maxdepth = fp->depth;
-
-	++counts[min2(fp->depth, MAX_DEPTH)].num_splines;
-    }
-    return maxdepth;
-}
-
-/*
- * Find the maximum depth of any text, recording the number of texts per each
- * level along the way.
- */
-
-int
-text_depths(texts)
-    F_text	   *texts;
-{
-    int		    maxdepth = 0;
-    F_text	   *fp;
-
-    for (fp = texts; fp != NULL; fp = fp->next) {
-	if (maxdepth < fp->depth)
-	    maxdepth = fp->depth;
-
-	++counts[min2(fp->depth, MAX_DEPTH)].num_texts;
-    }
-    return maxdepth;
-}
-
-/*
- * Find the maximum depth of any of the objects contained in the compound.
- */
-
-int
-compound_depths(compounds)
-    F_compound	   *compounds;
-{
-    int		    maxdepth = 0;
-    F_compound	   *fp;
-
-    for (fp = compounds; fp != NULL; fp = fp->next) {
-	maxdepth = max2(compound_depths(fp->compounds),
-		      max2(text_depths(fp->texts),
-			   max2(spline_depths(fp->splines),
-				maxdepth)));
-	maxdepth = max2(arc_depths(fp->arcs),
-			max2(line_depths(fp->lines),
-			     max2(ellipse_depths(fp->ellipses),
-				  maxdepth)));
-    }
-    return maxdepth;
-}
-
-/*
  * Redisplay a list of arcs.  Only display arcs of the correct depth.
  * For each arc drawn, update the count for the appropriate depth in
  * the counts array.
@@ -276,7 +143,11 @@ redisplay_arcobject(arcs, depth)
     int		    depth;
 {
     F_arc	   *arc;
-    struct counts  *cp = &counts[min2(depth, MAX_DEPTH)];
+    struct counts  *cp;
+    
+    if (arcs == NULL)
+	return;
+    cp = &counts[min2(depth, MAX_DEPTH)];
 
     arc = arcs;
     while (arc != NULL && cp->cnt_arcs < cp->num_arcs) {
@@ -299,7 +170,11 @@ redisplay_ellipseobject(ellipses, depth)
     int		    depth;
 {
     F_ellipse	   *ep;
-    struct counts  *cp = &counts[min2(depth, MAX_DEPTH)];
+    struct counts  *cp;
+    
+    if (ellipses == NULL)
+	return;
+    cp = &counts[min2(depth, MAX_DEPTH)];
 
 
     ep = ellipses;
@@ -323,7 +198,11 @@ redisplay_lineobject(lines, depth)
     int		    depth;
 {
     F_line	   *lp;
-    struct counts  *cp = &counts[min2(depth, MAX_DEPTH)];
+    struct counts  *cp;
+    
+    if (lines == NULL)
+	return;
+    cp = &counts[min2(depth, MAX_DEPTH)];
 
 
     lp = lines;
@@ -347,7 +226,11 @@ redisplay_splineobject(splines, depth)
     int		    depth;
 {
     F_spline	   *spline;
-    struct counts  *cp = &counts[min2(depth, MAX_DEPTH)];
+    struct counts  *cp;
+    
+    if (splines == NULL)
+	return;
+    cp = &counts[min2(depth, MAX_DEPTH)];
 
     spline = splines;
     while (spline != NULL && cp->cnt_splines < cp->num_splines) {
@@ -370,7 +253,11 @@ redisplay_textobject(texts, depth)
     int		    depth;
 {
     F_text	   *text;
-    struct counts  *cp = &counts[min2(depth, MAX_DEPTH)];
+    struct counts  *cp;
+    
+    if (texts == NULL)
+	return;
+    cp = &counts[min2(depth, MAX_DEPTH)];
 
     text = texts;
     while (text != NULL && cp->cnt_texts < cp->num_texts) {
@@ -406,6 +293,7 @@ redisplay_compoundobject(compounds, depth)
 /*
  * Redisplay the entire drawing.
  */
+void
 redisplay_canvas()
 {
     redisplay_region(0, 0, CANVAS_WD, CANVAS_HT);
@@ -424,9 +312,7 @@ redisplay_curobj()
 
     /* find which type of object we need to refresh */
 
-    if (cur_mode >= FIRST_EDIT_MODE && canvas_locmove_proc != null_proc) {
-	(*canvas_locmove_proc)(last_x, last_y);
-    } else {
+    if (cur_mode < FIRST_EDIT_MODE) {
       switch (cur_mode) {
 	case F_PICOBJ:
 	case F_ARC_BOX:
@@ -495,6 +381,15 @@ redisplay_curobj()
 redisplay_region(xmin, ymin, xmax, ymax)
     int		    xmin, ymin, xmax, ymax;
 {
+    /* if we're generating a preview, don't redisplay the canvas 
+       but set request flag so preview will call us with full canvas 
+       after it is done generating the preview */
+
+    if (preview_in_progress) {
+	request_redraw = True;
+	return;
+    }
+
     set_temp_cursor(wait_cursor);
     /* kludge so that markers are redrawn */
     xmin -= 10;
@@ -503,10 +398,83 @@ redisplay_region(xmin, ymin, xmax, ymax)
     ymax += 10;
     set_clip_window(xmin, ymin, xmax, ymax);
     clear_canvas();
+    redisplay_pageborder();
     redisplay_objects(&objects);
     redisplay_curobj();
     reset_clip_window();
     reset_cursor();
+}
+
+/* update page border with new page size */
+
+update_pageborder()
+{
+    if (appres.show_pageborder) {
+	clear_canvas();
+	redisplay_canvas();		
+	redisplay_pageborder();
+    }
+}
+
+/* make a light blue line showing the right and bottom edge of the current page size */
+/* also make light blue lines vertically and horizontally through 0,0 if
+   draw_zero_lines is true */
+
+redisplay_pageborder()
+{
+    int		   pwd, pht, ux;
+    int		   x, y;
+    char	   pname[80];
+
+    /* set the color */
+    XSetForeground(tool_d, gc, pageborder_color);
+
+    /* first the lines through 0,0 */
+    if (appres.draw_zero_lines) {
+	XDrawLine(tool_d, canvas_win, gc, round(-zoomxoff*zoomscale), 0, 
+					  round(-zoomxoff*zoomscale), CANVAS_HT);
+	XDrawLine(tool_d, canvas_win, gc, 0, round(-zoomyoff*zoomscale), CANVAS_WD, 
+					  round(-zoomyoff*zoomscale));
+    }
+    if (!appres.show_pageborder) 
+	return;
+
+    pwd = paper_sizes[appres.papersize].width;
+    pht = paper_sizes[appres.papersize].height;
+    if (!appres.INCHES) {
+	pwd = (int)(pwd*2.54*PIX_PER_CM/PIX_PER_INCH);
+	pht = (int)(pht*2.54*PIX_PER_CM/PIX_PER_INCH);
+    }
+    /* swap height and width if landscape */
+    if (appres.landscape) {
+	ux = pwd;
+	pwd = pht;
+	pht = ux;
+    }
+#ifdef CENTER_PAGE
+    if (appres.flushleft) {
+	x = 0;
+	y = 0;
+    } else {
+	/* get current bounding box of figure to center pageborder around figure */
+	compound_bound(&objects, &objects.nwcorner.x, &objects.nwcorner.y,
+		&objects.secorner.x, &objects.secorner.y);
+	x = objects.nwcorner.x-(pwd-(objects.secorner.x-objects.nwcorner.x))/2;
+	y = objects.nwcorner.y-(pht-(objects.secorner.y-objects.nwcorner.y))/2;
+    }
+#else  /* not CENTER_PAGE */
+    x = 0;
+    y = 0;
+#endif  /* CENTER_PAGE */
+    zXDrawLine(tool_d, canvas_win, gc, x,     y,     x+pwd, y);
+    zXDrawLine(tool_d, canvas_win, gc, x+pwd, y,     x+pwd, y+pht);
+    zXDrawLine(tool_d, canvas_win, gc, x+pwd, y+pht, x,     y+pht);
+    zXDrawLine(tool_d, canvas_win, gc, x,     y+pht, x,     y);
+    /* Now put the paper size in the lower-right corner just outside the page border.
+       We want the full name except for the size in parenthesis */
+    strcpy(pname,paper_sizes[appres.papersize].fname);
+    *(strchr(pname, '('))= '\0';
+    XDrawString(tool_d,canvas_win,gc,ZOOMX(x+pwd)+3,ZOOMY(y+pht),pname,strlen(pname));
 }
 
 redisplay_zoomed_region(xmin, ymin, xmax, ymax)
@@ -653,3 +621,4 @@ redisplay_regions(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2)
 	redisplay_zoomed_region(xmin2, ymin2, xmax2, ymax2);
     }
 }
+

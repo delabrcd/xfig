@@ -5,7 +5,10 @@ Inches
 Letter 
 100.00
 Single
-0
+-2
+# This shows black to white shading,
+# black to red shading and red to
+# white *Tinting*
 1200 2
 6 1200 1200 10650 3600
 2 2 0 1 0 7 0 0 0 0.000 0 0 7 0 0 5

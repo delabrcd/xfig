@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Change function implemented by Frank Schmuck (schmuck@svax.cs.cornell.edu)
  * X version by Jon Tombs <jon@uk.ac.oxford.robots>
@@ -18,6 +18,8 @@
  *
  */
 
-extern char	*basname();
+extern char	*xf_basename();
 extern		 emptyfigure();
 extern char	*safe_strcpy();
+extern Boolean	 uncompress_file();
+extern char	*build_command();

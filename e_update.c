@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -32,10 +32,15 @@
 
 static void	init_update_object();
 static void	init_update_settings();
+static int	seek_smallest_depth();
 
-#define	up_part(lv,rv,mask) \
+static Boolean	keep_depth = False;
+static int	delta_depth;
+
+#define up_part(lv,rv,mask) \
 		if (cur_updatemask & (mask)) \
-		    (lv) = (rv)
+		    (lv) = (keep_depth && mask == I_DEPTH) ? (lv+delta_depth) : (rv)
+
 
 void
 update_selected()
@@ -134,9 +139,9 @@ init_update_settings(p, type, x, y, px, py)
 	up_part(cur_elltextangle, cur_t->angle/M_PI*180.0, I_ELLTEXTANGLE);
 	old_psfont_flag = (cur_textflags & PSFONT_TEXT);
 	new_psfont_flag = (cur_t->flags & PSFONT_TEXT);
+	up_part(cur_textflags, cur_t->flags & ~PSFONT_TEXT, I_TEXTFLAGS);
 	/* for the LaTeX/PostScript flag use I_FONT instead of I_TEXTFLAGS
 	   so the font type will change if necessary */
-	up_part(cur_textflags, cur_t->flags & ~PSFONT_TEXT, I_FONT);
 	if (cur_updatemask & I_FONT)
 	    cur_textflags |= new_psfont_flag;
 	else
@@ -238,7 +243,15 @@ init_update_object(p, type, x, y, px, py)
 	set_temp_cursor(wait_cursor);
 	cur_c = (F_compound *) p;
 	new_c = copy_compound(cur_c);
+
+	/* keep the depths of the objects inside the compound the same
+	   relative to each other, setting the depth of the *most shallow*
+	   to the desired depth */
+	keep_depth = True;
+	delta_depth = cur_depth - seek_smallest_depth(cur_c);
 	update_compound(new_c);
+	keep_depth = False;
+
 	change_compound(cur_c, new_c);
 	/* redraw anything over the old comound */
 	redisplay_compound(cur_c);
@@ -295,6 +308,42 @@ init_update_object(p, type, x, y, px, py)
     put_msg("Object(s) UPDATED");
 }
 
+static int
+seek_smallest_depth(compound)
+    F_compound	   *compound;
+{
+	F_line	 *l;
+	F_spline	 *s;
+	F_ellipse	 *e;
+	F_arc	 *a;
+	F_text	 *t;
+	F_compound *c;
+	int	  smallest, d1;
+
+	smallest = 100;
+	for (l = compound->lines; l != NULL; l = l->next) {
+	    if (l->depth < smallest) smallest = l->depth;
+	}
+	for (s = compound->splines; s != NULL; s = s->next) {
+	    if (s->depth < smallest) smallest = s->depth;
+	}
+	for (e = compound->ellipses; e != NULL; e = e->next) {
+	    if (e->depth < smallest) smallest = e->depth;
+	}
+	for (a = compound->arcs; a != NULL; a = a->next) {
+	    if (a->depth < smallest) smallest = a->depth;
+	}
+	for (t = compound->texts; t != NULL; t = t->next) {
+	    if (t->depth < smallest) smallest = t->depth;
+	}
+	for (c = compound->compounds; c != NULL; c = c->next) {
+	    d1 = seek_smallest_depth(c);
+	    if (d1 < smallest)
+		smallest = d1;
+	}
+	return smallest;
+}
+
 update_ellipse(ellipse)
     F_ellipse	   *ellipse;
 {
@@ -326,7 +375,20 @@ update_arc(arc)
     up_part(arc->pen_color, cur_pencolor, I_PEN_COLOR);
     up_part(arc->fill_color, cur_fillcolor, I_FILL_COLOR);
     up_part(arc->depth, cur_depth, I_DEPTH);
-    up_arrow((F_line *)arc);
+    /* check new type - if pie-wedge and there are any arrows, delete them */
+    if (arc->type == T_PIE_WEDGE_ARC) {
+	if (arc->for_arrow) {
+	    free((char *) arc->for_arrow);
+	    arc->for_arrow = NULL;
+	}
+	if (arc->back_arrow) {
+	    free((char *) arc->back_arrow);
+	    arc->back_arrow = NULL;
+	}
+    } else {
+	/* if not wedge type, update any arrow settings */
+	up_arrow((F_line *)arc);
+    }
     fix_fillstyle((F_line *)arc);	/* make sure it has legal fill style if color changed */
     /* updated object will be redisplayed by init_update_xxx() */
 }
@@ -347,7 +409,7 @@ update_line(line)
 	up_part(line->radius, cur_boxradius, I_BOXRADIUS);
 	up_part(line->fill_style, cur_fillstyle, I_FILLSTYLE);
 	}
-    else if (line->pic->subtype != T_PIC_EPS)	/* pictures except eps have color */
+    else if (line->pic->subtype = T_PIC_XBM)	/* only xbm images have pen color */
 	up_part(line->pen_color, cur_pencolor, I_PEN_COLOR);
     up_part(line->depth, cur_depth, I_DEPTH);
     /* only POLYLINES with more than one point may have arrow heads */
@@ -368,7 +430,13 @@ update_text(text)
     up_part(text->font, using_ps ? cur_ps_font : cur_latex_font, I_FONT);
     old_psfont_flag = (text->flags & PSFONT_TEXT);
     new_psfont_flag = (cur_textflags & PSFONT_TEXT);
-    up_part(text->flags, cur_textflags & ~PSFONT_TEXT, I_TEXTFLAGS);
+    /* turn off any postscript flags */
+    text->flags &= ~PSFONT_TEXT;
+    /* set text flags to current settings */
+    up_part(text->flags, cur_textflags, I_TEXTFLAGS);
+    /* for the LaTeX/PostScript flag use I_FONT instead of I_TEXTFLAGS
+	so the font type will change if necessary */
+    /* and update with new font type */
     if (cur_updatemask & I_FONT)
 	text->flags |= new_psfont_flag;
     else

@@ -108,7 +108,7 @@
 .PD
 ..
 .\"-------
-.TH XFIG 1 "Version 3.2 Patchlevel 2 (Protocol 3.2, July 2, 1998)"
+.TH XFIG 1 "Xfig 3.2.3 (Jan 14, 2000)"
 .SH NAME
 xfig - Facility for Interactive Generation of figures under X11
 .SH SYNOPSIS
@@ -127,17 +127,19 @@ specifies the name of a file to be edited.
 The objects in the file will be read at the start of
 .IR xfig .
 .PP
-For a HTML-based
+The bulk of the documentation fori
 .IR xfig
-reference guide, see the Help menu in
+is in an HTML-based reference guide.
+See the Help menu in
 .IR xfig
-or
-.IR index.html
-provided with the
+or point your browser at 
+.IR Doc/html/index.html
+(provided with the
 .IR xfig
 distribution, usually in the 
 .IR Doc/www
-directory.  There are both English and Japanese versions.
+directory).
+There are both English and Japanese versions.
 .PP
 When using a two-button mouse use the
 .I <Meta>
@@ -145,9 +147,9 @@ key and the right button at the same time to effect
 the action of the middle button.
 .PP
 .I Xfig
-is available via anonymous ftp from
-ftp://ftp.x.org/contrib/applications/drawing_tools/xfig
-and usually from ftp://epb1.lbl.gov/xfig .
+is available from
+ftp://www-epb.lbl.gov/xfig
+and usually from ftp://ftp.x.org/contrib/applications/drawing_tools/xfig .
 .PP
 The
 .I TransFig
@@ -160,78 +162,33 @@ program from the
 package is automatically called by
 .IR xfig
 as a back-end processor to produce various types of output:
-.nr n \w'PostScript\0\0\0\0'+1n-1/1n
-.IP LaTeX \nn
-.I "fig2dev \-L latex"
-translates
-.I xfig
-to
-.I LaTeX
-picture environment commands which can be processed along with other
-.I LaTeX
-commands.
-.IP Metafont
-.I "fig2dev \-L mf"
-produces
-.I Metafont
-output.
-.IP PostScript
-.I "fig2dev \-L ps"
-produces an
-.I "Encapsulated PostScript"
-output.
-.I "fig2dev \-L tk"
-produces a
-.I "tk"
-output.  This is for the tcl/tk tool command language/tool kit package.
-Canvas objects are generated from the Fig primitives and a toplevel 
-canvas is created.
-.IP Bitmaps
-.I fig2dev
-can also convert Fig to GIF, JPEG, PCX, PNG, PPM, TIFF (no compression),
-XBM, XPM, and AutoCAD Slide.
-.IP IBM-GL
-.I "fig2dev \-L ibmgl"
-produces a
-.I IBM-GL (HP/GL)
-output.
-.IP Pic
-.I "fig2dev \-L pic"
-produces a
-.I pic
-output.
-.IP PiCTeX
-.I "fig2dev \-L pictex"
-produces
-.I PiCTeX
-output.
-This contains macros that can be used with the
-.I PiCTeX
-environment under
-.I TeX
-or
-.I LaTeX.
-.IP Others
-.I fig2dev
-has options for these other languages:
-.IR box ,
-.IR epic ,
-.IR eepic ,
-and
-.IR eepicemu .
+.PP
+LaTeX, Metafont, PostScript or Encapsulated PostScript,
+tk (tcl/tk tool command language/tool kit package),
+GIF, JPEG, PCX, PNG, PPM, TIFF,
+XBM, XPM, AutoCAD Slide, IBM-GL (HP/GL), Pic
+PiCTeX, box, epic, eepic, and eepicemu.
+.PP
+See man fig2dev for all options.
 .PP
 The
 .I TransFig
-package is available via anonymous ftp from
-.I ftp.x.org
-in
-.BI /contrib/applications/drawing_tools/transfig .
+package is available from
+ftp://www-epb.lbl.gov/xfig and
+ftp://ftp.x.org/contrib/applications/drawing_tools/transfig .
 .SH OPTIONS
 .\"-------
 .At
 .BR \-help
 .Ap
 Print all command-line options for xfig and quit.
+.\"-------
+.At
+.BR \-a [ llow_neg_coords ]
+.Ap
+Allow panning into the negative region of the canvas.
+This is the default
+.\"-------
 .At
 .BR \-bal [ loon_delay ]
 .I msec
@@ -267,7 +224,7 @@ This is useful in conjunction with the
 parameter to reduce the canvas height for small screens.
 .\"-------
 .At
-.BI \-cbg " color"
+.BR \-cbg " color"
 .Ap
 Use
 .I color
@@ -287,7 +244,7 @@ This is the default.
 Make centimeters the unit of choice.  See also -metric.
 .\"-------
 .At
-.BI \-cfg " color"
+.BR \-cfg " color"
 .Ap
 Use
 .I color
@@ -314,10 +271,28 @@ See also the
 option.
 .\"-------
 .At
-.BR \-dontsh [ owballoons ]
+.BR \-dont_a [ llow_neg_coords ]
+.Ap
+Don't allow panning into the negative region of the canvas.
+The default is to allow panning in the negative region.
+.\"-------
+.At
+.BR \-dontshowb [ alloons ]
 .Ap
 Prevents xfig from popping up the information balloons.
 See also -showballoons.
+.\"-------
+.At
+.BR \-dontshowl [ engths ]
+.Ap
+Don't show lengths of lines as they are being drawn.
+This is the default.
+.\"-------
+.At
+.BR \-dont_s [ how_zero_lines ]
+.Ap
+Don't show axis zero lines on the canvas.
+The default is to show them.
 .\"-------
 .At
 .BR \-dontsw [ itchcmap ]
@@ -327,10 +302,10 @@ enough colors available in the default colormap.  See also
 .BR \-max_image_colors.
 .\"-------
 .At
-.BR \-e [ xportLanguage ]
+.BR \-exportL [ anguage ]
 .I language
 .Ap
-Specifies the language to be used for when exporting a fig file.
+Specifies the default language to be used for when exporting a fig file.
 Choices are:
 .Sp
 .\"--------------------------------------------------------------------
@@ -351,33 +326,33 @@ Name	Language
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
 .\" DATA
-box\&\&\&	LaTeX box (figure boundary)
-latex\&\&	LaTeX picture
-epic\&\&	LaTeX picture + epic macros
-eepic\&\&	LaTeX picture + eepic macros
+box	LaTeX box (figure boundary)
+latex	LaTeX picture
+epic	LaTeX picture + epic macros
+eepic	LaTeX picture + eepic macros
 eepicemu	LaTeX picture + eepicemu macros
-pictex\&	PiCTeX macros
-ibmgl\&\&	IBMGL (or HPGL)
-eps\&\&\&	Encapuslated PostScript
-ps\&\&\&	PostScript
-pstex\&\&	Combined PS/LaTeX (both PS and LaTeX parts)
-textyl\&	Textyl special commands
-tpic\&\&	TPIC
-pic\&\&\&	PIC
-mf\&\&\&\&	MF (MetaFont)
-acad\&\&	ACAD (AutoCad slide)
-pcx\&\&\&	PCX
-png\&\&\&	PNG
-gif\&\&\&	GIF*
-jpeg\&\&	JPEG (JFIF)
-tiff\&\&	TIFF
-tk\&\&\&	TK
-ppm\&\&\&	PPM (portable pixmap package)
-xbm\&\&\&	X11 Bitmap
-xpm\&\&\&	X11 Pixmap (XPM3 package)
+pictex	PiCTeX macros
+ibmgl	IBMGL (or HPGL)
+eps	Encapuslated PostScript
+ps	PostScript
+pdf	PDF (Portable Document Format)
+pstex	Combined PS/LaTeX (both PS and LaTeX parts)
+textyl	Textyl special commands
+tpic	TPIC
+pic	PIC
+mf	MF (MetaFont)
+cgm	CGM (Computer MetaGraphics)
+tk	Tk (of the tcl/tk fame)
+sld	(AutoCad slide)
+pcx	PCX
+png	PNG
+gif	GIF
+jpeg	JPEG (JFIF)
+tiff	TIFF
+ppm	PPM (portable pixmap package)
+xbm	X11 Bitmap
+xpm	X11 Pixmap (XPM3 package)
 
-*xfig must be compiled with USEGIF to have GIF export.
-See README file for patent warning.
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
 .DT
@@ -386,8 +361,25 @@ See README file for patent warning.
 .\" Table End
 .\"--------------------------------------------------------------------
 .\"-------
+
 .At
-.BR \-fl [ ushleft ]
+.BR \-export_m [ argin ]
+.I width
+.Ap
+Set the size of the border margin around the figure for exporting
+to bitmap, PostScript, Encapsulated PostScript, or HTML MAP formats.
+This is in units of pixels (1/80th inch).
+The default is 0.
+.\"-------
+.At
+.BR \-fli [ pvisualhints ]
+.Ap
+Flip left/right mouse indicator messages for mice whose buttons
+have been switched.
+The default is to NOT flip the messages.
+.\"-------
+.At
+.BR \-flu [ shleft ]
 .Ap
 Set the print option to print the figure flush left.
 The default is to center the figure on the page.
@@ -400,6 +392,38 @@ You may use the -geometry option or resource to
 .I size and/or position the xfig window,
 or you may use -pwidth and/or -pheight
 to specify the canvas size in inches or centimeters.
+If you use the -geom option to make the xfig window smaller
+than the default, you may have to use the -but_per_row option to 
+tell xfig to put 3 or 4 buttons per row on the left mode panel.
+.\"-------
+.At
+.BR \-hidd [ entext ]
+.Ap
+Start
+.I xfig
+with the
+.I "hidden text"
+mode for text objects.
+The
+.I Hidden
+attribute is used for figures that will be used with
+.I LaTeX
+and is applicable only to the display of the document in
+.IR xfig .
+It means that the text itself is not shown onscreen, but only the string
+``<text>''.  This is to keep long sequences of
+.I LaTeX
+formatting commands from making the screen messy and hard to read.
+The default for the
+.I Hidden
+flag is
+.IR off .
+.\"-------
+.At
+.BR \-hide [ depthmanager ]
+.Ap
+Hide the depth manager panel.
+The default is to show the panel.
 .\"-------
 .At
 .BR \-iconG [ eometry ]
@@ -415,16 +439,25 @@ Specify bitmap editor to use when ``Edit Image'' button is pressed
 in Picture Object panel.
 .\"-------
 .At
-.BR \-inc [ hes ]
+.BR \-inc [ hes ] 
+.BR (or -imperial)
 .Ap
-Make inches the unit of choice (default).
+Make inches the unit of choice.
+This is the default.
 .\"-------
 .At
-.BI \-internalBW " width"
+.BR \-internalBW " width"
 .Ap
 Use lines of width
 .I width
 between all buttons and panels (default = 1).
+.\"-------
+.At
+.BR \-jpeg [ _quality ]
+.I quality
+.Ap
+Set the quality factor for exporting to the jpeg format.
+The default is 75.
 .\"-------
 .At
 .BR \-k [ eyFile ]
@@ -502,7 +535,7 @@ Set export and print magnification in %.
 .BR \-max [ _image_colors ]
 .I numcols
 .Ap
-Limit the number of colors used for EPS, GIF, JPEG, PCX or XPM images to
+Limit the number of colors used for imported images to
 .I numcols (default 64).
 .\"-------
 .At
@@ -550,7 +583,17 @@ You might want to use this for debugging.
 Turn off cursor (mouse) tracking arrows.
 .\"-------
 .At
-.BR \-pa [ per_size ]
+.BR \-pag [ eborder ]
+.I color
+.Ap
+Draw the page border on the canvas in this color (default light blue).
+The page border is turned on by the -showpageborder (resource Fig.showpageborder) option,
+and shows the edges of the current 
+.I export
+paper size.
+.\"-------
+.At
+.BR \-pap [ er_size ]
 .I size
 .Ap
 Set the initial paper size for Export and Print.  Choices are
@@ -609,10 +652,31 @@ wide (where
 is either cm or in, depending on the -metric setting).
 .\"-------
 .At
-.BR \-ri [ ght ]
+.BR \-righ [ t ]
 .Ap
 Change the position of the side panel window to the right of the canvas window
 (default: left).
+.\"-------
+.At
+.BR \-rigi [ d ]
+.Ap
+Start
+.I xfig
+with the
+.I "rigid text"
+mode for text objects.
+The
+.I Rigid
+attribute forces text to remain the same size even if
+inside a compound object that is scaled up or down.
+The default is
+.IR off .
+.\"-------
+.At
+.BR \-ru [ lerthick ]
+.Ap
+Set the thickness of the top and side rulers in pixels.
+The default (and minimum) is 24.
 .\"-------
 .At
 .BR \-sc [ alablefonts ]
@@ -646,13 +710,24 @@ but allows the user to see all settable parameters.
 .At
 .BR \-showb [ alloons ]
 .Ap
-Forces xfig to pop up the information balloons when the mouse
+Forces 
+.I xfig
+to pop up the information balloons when the mouse
 passws over a button. This is the default. See also -dontshowballoons.
+.\"-------
+.At
+.BR \-showd [ epthmanager ]
+.Ap
+Show the depth manager panel.  This panel lets one show or hide
+objects at various depths.
+This is the default.
 .\"-------
 .At
 .BR \-showl [ engths ]
 .Ap
-Makes xfig show the lengths of lines being drawn, in red text near the
+Makes 
+.I xfig 
+show the lengths of lines being drawn, in red text near the
 line itself.  Also, when points are moved or added.  In addition, imagine
 a triangle formed with the line segment as the hypotenuse,
 and a vertical and horizontal line forming the other two sides.  These
@@ -660,6 +735,20 @@ lines and their lengths are also drawn in red as the point is moved or added.
 This mode is ignored when drawing in freehand mode.
 .br
 This flag may be toggled by pressing <Meta>i (default).
+.\"-------
+.At
+.BR \-showp [ ageborder ]
+.Ap
+Makes 
+.I xfig 
+show the border of the current paper size in the color specified
+by the -pageborder option (default light blue).
+.\"-------
+.At
+.BR \-show_ [ zero_lines ]
+.Ap
+Show axis zero lines on the canvas.
+This is the default
 .\"-------
 .At
 .BR \-si [ ngle ]
@@ -695,6 +784,23 @@ The string
 .I command
 should include the string ``%s'' which is replaced by a temporary filename.
 Default is ``spell %s''.
+.\"-------
+.At
+.BR \-spinner_d [ elay ]
+.I msec
+.Ap
+The delay (in milliseconds) before the spinner will automatically count up 
+or down when the button is pressed.
+Spinners are the (numeric) text widgets with an up- and down-arrow, which when 
+clicked, cause the value to be incremented/decremented.
+The default is 500 milliseconds.
+.\"-------
+.At
+.BR \-spinner_r [ rate ]
+.I msec
+.Ap
+The rate (in milliseconds) at which the spinner will count
+when the up- or down-arrow is pressed.
 .\"-------
 .At
 .BR \-startfi [ llstyle ]
@@ -765,9 +871,33 @@ an input tablet for this to work.  Also, you must modify the Imakefile
 to include the USETAB and TABLIB variables.
 .\"-------
 .At
-.BR \-tr [ ack ]
+.BR \-track
 .Ap
 Turn on cursor (mouse) tracking arrows (default).
+.\"-------
+.At
+.BR \-tran [ sparent_color ]
+.I color_number
+.Ap
+Make the transparent color for GIF export
+.I color_number.
+This number is the color number according to the 
+.B xfig
+color panel, starting at 0 (black) and ending at 31 (gold),
+or may be a user-defined color number, which is 32 or higher.
+.\"-------
+.At
+.BR \-up [ date ]
+.I file [ file ... ]
+.Ap
+Run xfig in an "update" mode, where it will read each Fig file specified
+on the command line and write it out to the original file,
+in the current file format for the version of xfig being run.
+The original Fig file will be preserved with
+the suffix \fI.bak\fR attached to the name.
+.br
+In this mode, xfig doesn't connect the X server, so no window is opened,
+and it exits when finished.
 .\"-------
 .At
 .BR \-users [ cale ]
@@ -829,2311 +959,8 @@ option.
 .I zoomscale
 .Ap
 Set the starting zoom scale.
-.SH "GRAPHICAL OBJECTS"
-The objects in
-.I xfig
-are divided into
-.B "primitive objects"
-and
-.BR "compound objects" .
-The primitive objects are:
-.IR ARC ,
-.IR CIRCLE ,
-.IR ELLIPSE ,
-.IR POLYLINE ,
-.IR POLYGON ,
-.IR PICTURE ,
-.IR BOX ,
-.IR ARC-BOX ,
-.IR "CLOSED SPLINE" ,
-.IR "OPEN SPLINE" ,
-and
-.IR TEXT .
-.PP
-A primitive object can be moved, rotated, flipped vertically or horizontally,
-scaled, copied, aligned within a compound object or erased.
-The
-.I TEXT
-primitive may not be flipped.
-The attributes of any primitive object can be edited using a popup
-panel (discussed below), so you can, for instance, set the position
-of an object manually.
-.PP
-A compound object is composed of primitive objects.
-The primitive objects
-that constitute a compound can not be individually modified,
-but they can be manipulated as an entity;
-a compound can be moved, rotated, flipped
-vertically or horizontally, scaled, copied or erased.
-A compound that contains any boxes or arc-boxes
-may only be rotated by 90 degrees.
-.PP
-Objects may overlap other objects according to their ``depth''.
-Objects with larger depth number are obscured by objects with smaller depth.
-.PP
-.I Regular
-polygons may be created using a special drawing mode, but a
-general
-.I POLYGON
-is created as a result, which may then be modified, i.e.
-the individual vertices may be moved if desired. Conversions between
-.I POLYLINE
-, 
-.I POLYGON
-,
-.I OPENSPLINE
-and
-.I CLOSEDSPLINE
-are achieved by the 
-.I CONVERT
-tool. 
-.SH "DISPLAY REGIONS"
-There are ten regions in the
-.IR xfig
-window: the command region, top ruler, side ruler, drawing mode,
-editing mode, filename, message,
-mouse function indicator, canvas (drawing area),
-and indicator region with buttons to show and change settings such 
-as line thickness, line style, color, etc.
-(The mouse function indicator region was inspired by the UPS
-debugger from the University of Kent.)
-The drawing and editing mode regions may be placed (together) to the left or
-right of the the canvas region (default: left).
-.Sp
-In addition, when the mouse passes over certain buttons or regions there are 
-``balloons'' (messages) which popup to indicate the function of the area under
-the mouse.  These may be turned on and off by clicking on the button
-labelled ``Balloons'', to the right of the message region.
-There is a check mark indicating their state.
-.SH "COMMAND PANEL FUNCTIONS"
-.TP
-.I Quit
-Exit from
-.IR xfig ,
-discarding the figure.
-If the figure has been modified and
-not saved, the user will be asked to
-confirm the action, by clicking mouse button 1 on a confirm/cancel popup menu.
-The accelerator
-.I <Meta>q
-will also perform this function.
-This and all other accelerators are defined in the
-.I app-defaults
-file and may be changed if desired.
-.TP
-.I "Port/Land"
-Change shape of xfig canvas from/to portrait/landscape.  Note:  the canvas
-will automatically change to the portrait/landscape configuration
-specified in Fig files of version 3.0 or higher when loading those files.
-.TP
-.I "New"
-Delete all objects from the canvas window and erase current file name
-to make a new drawing (may be undone).
-The accelerator
-.I <Meta>n
-will also perform this function.
-If you attempt to save the new figure using the keyboard accelerator
-.I <Meta>s
-or with mouse button 3 on the
-.I "File"
-button the popup file menu will appear for you to enter a file name.
-.sp
-You may use the accelerator
-.I <Meta>d
-to delete all the objects from the canvas and retain the current file name.
-.TP
-.I Undo
-Undo the last object creation, deletion or modification.
-The accelerator
-.I <Meta>u
-will also perform this function.
-If an undo of a
-.I Paste
-or file
-.I Merge
-is done, any user-defined colors in the figure pasted in or the
-file just merged will NOT be undefined.
-.TP
-.I Redraw
-Redraw the canvas.
-There are also two accelerators which do a redraw \(em
-.I <Meta>r
-and
-.I <Ctrl>l.
-.TP
-.I Paste
-Paste the object previously copied into the cut/paste file into the current figure.
-The object will appear on the canvas under or near the mouse
-where it may then be moved and placed by pressing mouse button 1.
-The accelerator
-.I <Meta>t
-will also perform this function.
-.TP
-.I File
-Pressing mouse button 3 on this button invokes
-.I Save
-function without popping up the file panel.
-Before the figure is saved the original file is first renamed with the
-suffix ``.bak'' appended.  This provides a backup file.
-.sp
-Mouse button 1 or
-.I <Meta>f
-pops up a panel which contains several file-related functions.
-Do not use this function for importing images (picture objects).
-See the ``IMPORTING PICTURE OBJECTS'' section.
-.PP
-.po +.5i
-.nr LL 6i
-.TP
-.I "Current Filename"
-This is read-only AsciiTextWidget which contains the filename that will be used
-to write output to a file
-.I "if there is no name specified in"
-the
-.I Filename
-panel.
-.TP
-.I Filename
-This is an editable AsciiTextWidget which contains the filename selected
-either by clicking on a filename from the
-.I Alternatives
-list or by typing a name in directly.
-Pressing return in the Filename window will
-.I Load
-the file and copy the name to the
-.I "Current Filename"
-widget.
-.IP \&
-Note that xfig will automatically uncompress or gunzip any
-files that have .Z, .z or .gz as the suffix.
-.TP
-.I "(File) Alternatives"
-Pressing mouse button 1 on a filename in the file alternatives
-window will copy the filename into
-.I Filename
-window and show a preview of the figure in the file.  It also shows
-the size of the figure in its drawing units (in or cm).
-Pressing return in this window will
-.I Load
-the file specified in the
-.I Filename
-window (if any) or the
-.I "Current Filename"
-widget.
-.TP
-.I "Filename Mask"
-A wildcard mask may be typed into this editable AsciiTextWidget to restrict
-the search of filenames to a subset ala the
-.I ls
-command.
-Pressing return in this window will automatically
-rescan the current directory.
-This string may be set by setting the X toolkit resource
-.BR Fig*file_panel*mask*string .
-.TP
-.I "Current Directory"
-This is an editable AsciiTextWidget which shows the current directory.
-It may be modified by the user to manually set a directory name.
-When return is pressed in this window the directory specified is scanned for
-files matching the
-.IR Filenamemask ,
-if any.
-.IP \&
-The
-.B ~
-(tilde) character may be used to specify a user's home directory, ala
-unix shell tilde expansion.
-.TP
-.I "(Directory) Alternatives"
-Pressing mouse button 1 on a directory name in the directory
-alternatives list will do a ``change directory'' to that directory.
-.IP \&
-Pressing mouse button 3 in either the file or
-.I "Directory Alternatives"
-window will do a ``change directory'' to the parent directory.
-.TP
-.I "Load/Merge figure offset"
-These two editable AsciiTextWidgets allow one to load or merge
-a figure with an offset on the canvas.
-The figure will be offset by the amounts specified (in Fig units)
-in the X and Y panels.  A negative value in the X offset will shift
-the figure to the left, and a negative value in the Y offset will
-shift the figure up.
-.TP
-.I Home
-Pressing this button will change the directory to the
-.I $HOME
-directory of the user.
-.TP
-.I Rescan
-Pressing this button or
-.I <Meta>r
-will rescan the current directory.
-.TP
-.I Cancel
-Pressing this button or
-.I <Meta>c
-will pop down the
-.I File
-panel without making any changes to the directory or file name.
-.TP
-.I Save
-Pressing this button or
-.I <Meta>s
-will save the current contents of the
-canvas in the file specified in the
-.I Filename
-window
-.IR "if any" ,
-or the name specified in the
-.I "Current Filename"
-if the former is empty.
-If the filename being saved is different from the current figure name
-and that file already exists a confirmation popup menu will appear
-asking the user to confirm or cancel the save.
-If there is a filename in the
-.I Filename
-window it is copied to the
-.I "Current Filename"
-window.
-.IP \&
-The current Export directory is updated to the current File directory when
-Save is pressed.
-.IP \&
-Before the figure is saved the original file is first renamed with the
-suffix ``.bak'' appended.  This provides a backup file.
-.TP
-.I Load
-Pressing this button or
-.I <Meta>l
-will clear the canvas of any
-current figure and read the figure from the filename specified
-in the
-.I Filename
-menu item
-.IR "if any" ,
-or the name specified in the
-.I "Current Filename"
-if the former is empty.
-The figure will be offset by the amounts specified (Fig units)
-in the X and Y load/merge offset widgets.
-If there is a figure currently on the canvas and any modifications
-have been made to it and not saved, a popup query
-window will first appear asking if the user wishes to discard the current
-figure or cancel the
-.I Load
-operation.
-.IP \&
-The current Export directory is updated to the current File directory when
-Load is pressed.
-.IP \&
-Note that xfig will automatically uncompress or gunzip any
-files that have .Z, .z or .gz as the suffix.
-.IP \&
-A popup message window will appear and diagnostic messages
-will be written if
-.I xfig
-changes any ``illegal'' object values to legal values.
-For example,
-older versions of
-.I xfig
-were lax about initializing unused parts such as
-.IR depth ,
-and would produce very large, random values.
-.I Xfig
-now will ``clean up'' bad values and inform you when it does so.
-Also, if you read in an older file format,
-.I xfig
-will inform you that
-it is converting it to the current format for that version of
-.IR xfig .
-.br
-This window can be popped down by clicking the mouse button on the
-.I Dismiss
-button.
-.TP
-.I "Merge"
-Pressing this button or
-.I <Meta>r
-will read the figure from the filename
-specified in the
-.I Filename
-window
-.IR "if any" ,
-or the name
-specified in the
-.I "Current Filename"
-if the former is empty,
-and merge it with the figure already on the canvas.
-It is first made into a compound object so it may be easily moved later.
-The figure will be offset by the amounts specified (Fig units)
-in the X and Y load/merge offset widgets.
-Any user-defined colors in the file being merged will be renumbered
-if necessary to unique values so as not to conflict with any user-defined
-colors already defined.  There is
-.I no
-comparison of the color values of the existing user-defined colors with
-the colors being merged in so there may be identical colors with different
-numbers.
-.IP \&
-See
-.I Load
-above for a description of the popup message window.
-.PP
-.po -.5i
-.nr LL 6.5i
-.TP
-.I Export
-Will let you export the figure to an output file in one of several formats.
-Pressing mouse button 3 on this button invokes
-.I Export
-function without popping up the export panel.
-.br
-Mouse button 1 or
-.I <Meta>e
-pops up a directory browser widget and
-a menu with several export-related functions:
-.PP
-.po +.5i
-.nr LL 6i
-.TP
-.I Magnification
-This is an editable AsciiTextWidget which contains the magnification to use
-when translating figure to the output language.
-The default is 100%.
-.TP
-.I "Fit to Page"
-Pressing this button will set the magnification so that the figure
-will just fit the current paper size with no less than a 1/2 inch margin.
-.TP 
-.I "Fig Size:"
-This label shows the figure size at the current magnification.  
-It is updated when the panel is popped up and when the user changes
-the magnification and shows the size in inches or cm depending on the
-current units.
-.TP
-.I "Paper Size"
-This is a pulldown menu which allows you to select the paper size for printing.
-The choices are:
-.in +.5i
-.nf
-Letter (8.5" x 11"),
-Legal (8.5" x 14"),
-Ledger ( 17" x 11"),
-Tabloid ( 11" x 17"),
-A (8.5" x 11"),
-B ( 11" x 17"),
-C ( 17" x 22"),
-D ( 22" x 34"),
-E ( 34" x 44"),
-A4 (21 cm x 29.7cm),
-A3 (29.7cm x 42 cm),
-A2 (42 cm x 59.4cm),
-A1 (59.4cm x 84.1 cm),
-A0 (84.1 cm x 118.9cm),
-B5 (18.2cm x 25.7cm)
-.fi
-.in
-.TP
-.I Orientation
-This button will toggle the output orientation between Landscape (horizontal)
-and Portrait (vertical).
-The default orientation is the same as the mode that
-.I xfig
-was started with, or the orientation in the Fig file when loading a Fig
-file of version 3.0 or higher.
-.TP
-.I Justification
-This window will only be sensitive when the language selected is ``ps''
-.RI ( PostScript ).
-You may choose that the figure is
-.I "flush left"
-or
-.I centered
-in the
-output file.
-.TP
-.I Pages
-With this pulldown menu you can select whether the figure should be
-exported as a single page or multiple pages.  The multiple page
-option would only be useful if the figure is larger than the current
-physical paper size.
-.TP
-.I "Export Offset"
-These two editable AsciiTextWidgets allow one to export
-a figure with an offset.
-The figure will be offset by the amounts specified (in inches or cm)
-in the X and Y panels.  A negative value in the X offset will shift
-the figure to the left, and a negative value in the Y offset will
-shift the figure up.
-These offsets are in addition to any centering done with the
-centering option.
-.TP
-.I Language
-The translation language to use for
-.I xfig
-output.
-The default is specified in the resource Fig.exportLanguage and is
-Encapsulated PostScript as xfig is distributed.
-.br
-Several languages are available; PostScript, Encapsulated PostScript,
-LaTeX, TPIC, PIC, Textyl, IBM/GL (HP/GL), MetaFont, and serveral bitmap
-formats; GIF, JPEG (JFIF), PNG, PCX (PC Paintbrush), ACAD (AutoCad slide),
-TIFF (no compression), tk (tcl/tk), PPM (Portable Pixmap package),
-XBM (X11 monochrome bitmap) and XPM (XPM3 package,
-producing color pixmaps).
-.br
-.TP
-.I "Image quality (%)"
-For JPEG(JFIF) export, this entry will appear, and you may select the 
-quality factor for the JPEG image. Valid values are 1 to 100%.
-The default quality of 75% seems to be
-fine for figures containing only solid objects (no images) and adequate
-for figures containing imported images (GIF, JPEG, etc.).
-.TP
-.I "Transparent Color"
-For GIF export, this menu button will appear and 
-you may choose that one of the colors in the figure is
-``transparent'', meaning that for those GIF viewers that support
-transparent color (Netscape, for example) that color will not appear
-in the figure. Instead, the background of the viewer will show through
-in place of that color
-.br
-The default is ``None'' (no transparent color).
-.TP
-.I "Default Output Filename"
-This is read-only AsciiTextWidget which contains the filename that will be used
-to write output to a file
-.I "if there is no name specified in"
-Output File.
-The default is the figure name plus an extension that reflects the output
-language used, e.g.
-.B myfigure.ps
-if
-.I PostScript
-is the current language used.
-If the file already exists a confirmation popup menu will appear
-asking the user to confirm or cancel the save.
-.TP
-.I "Output Filename"
-This is an editable AsciiTextWidget which contains the filename to use
-to write output to a file.
-Pressing return in this window will
-.I Export
-the file and copy the name to the
-.I "Default Output Filename"
-widget.
-If the file already exists a confirmation popup menu will appear
-asking the user to confirm or cancel the save.
-.TP
-.I "(File) Alternatives"
-Pressing mouse button 1 on a filename in the file alternatives
-window will select that file by copying the filename into
-.I Filename
-window.
-Pressing return in this window will
-.I Export
-the file and copy
-the name to the
-.I "Default Output Filename"
-widget.
-.TP
-.I "Filename Mask"
-A wildcard mask may be typed into this editable AsciiTextWidget to restrict
-the search of filenames to a subset ala the
-.I ls
-command.
-Pressing return in this window will automatically
-rescan the current directory.
-This string may be set by setting the X toolkit resource
-.BR Fig*export_panel*mask*string .
-.TP
-.I "Current Directory"
-This is an editable AsciiTextWidget which shows the current directory.
-It may be modified by the user to manually set a directory name.
-When
-return is pressed in this window the directory specified is scanned for
-files matching the
-.IR Filenamemask ,
-if any.
-.IP \&
-It is automatically updated
-to follow the current File directory when a File Load or Save is done.
-.IP \&
-The
-.B ~
-(tilde) character may be used to specify a user's home directory, ala
-unix shell tilde expansion.
-.TP
-.I "(Directory) Alternatives"
-Pressing mouse button 1 on a directory name in the directory
-alternatives list will do a ``change directory'' to that directory.
-.IP \&
-Pressing mouse button 3 in either the file or
-.I "Directory Alternatives"
-window will do a ``change directory'' to the
-parent directory.
-.TP
-.I Home
-Pressing this button will change the directory to the
-.I $HOME
-directory of the user.
-.TP
-.I Rescan
-Pressing this button or
-.I <Meta>r
-will rescan the current directory.
-.TP
-.I Cancel
-Pressing this button or
-.I <Meta>c
-will pop down the
-.I Export
-menu without doing any print operation.
-.TP
-.I Export
-Pressing this button or
-.I <Meta>e
-will write (export) the figure
-to the file using the selected language.
-If the file already exists, a confirmation window will popup to ask the
-user to confirm the write or cancel.
-Pressing return in the Output Filename window will also Export the file.
-.PP
-.po -.5i
-.nr LL 6.5i
-.TP
-.I Print
-Pressing mouse button 3 on this button invokes
-.I "Print to Printer"
-function without popping up the print panel.
-Pressing the
-.I Shift
-key and mouse button 3 invokes the
-.I "Print to Batch"
-function.
-Pressing mouse button 1 or
-.I <Meta>p
-pops up a menu with several
-print-related functions:
-.PP
-.po +.5i
-.nr LL 6i
-.TP
-.I Magnification
-This is an AsciiTextWidget which contains the magnification to use
-when translating figure to the output language.
-.TP
-.I "Fit to Page"
-Pressing this button will set the magnification so that the figure
-will just fit the current paper size with no less than a 1/2 inch margin.
-.TP 
-.I "Fig Size:"
-This label shows the figure size at the current magnification.  
-It is updated when the panel is popped up and when the user changes
-the magnification and shows the size in inches or cm depending on the
-current units.
-.TP
-.I "Paper Size"
-This is a pulldown menu which allows you to select the paper size for printing.
-See the Export menu for the paper sizes.
-.TP
-.I Orientation
-This button will toggle the output orientation between Landscape (horizontal)
-and Portrait (vertical).
-The default orientation is the same as the mode that
-.I xfig
-was started with, or the orientation in the Fig file when loading a Fig
-file of version 3.0 or higher.
-.TP
-.I Justification
-This button will bring up a sub-menu from which you may choose
-.I center
-or
-.I "flush left"
-to justify the figure on the page.
-The default is
-.IR "flush left" .
-.TP
-.I Pages
-With this pulldown menu you can select whether the figure should be
-printed as a single page or multiple pages.  The multiple page
-option would only be useful if the figure is larger than the current
-physical paper size.
-.TP
-.I Printer
-This is an AsciiTextWidget which contains the printer to
-use if output is directed to a printer.
-The name of the printer may be set setting the X toolkit resource
-.BR Fig*printer*string .
-If no resource is set, the environment variable
-.I PRINTER
-is used.
-.TP
-.I "Print Job Params"
-This is an AsciiTextWidget which into which you may put any extra
-command-line parameters that your lpr or lp program needs for printing.
-If the meta sequence
-.I %f
-appears in the string the current figure name will be substituted.
-It may appear more than once.
-This may be set using the resource
-.BR Fig*job_params*string .
-.TP
-.I "Figures in batch"
-This indicator shows how many figures have been put in the batch file
-for printing
-.TP
-.I Dismiss
-Pressing this button or
-.I <Meta>c
-will pop down the
-.I Print
-menu.
-.TP
-.I "Print FIGURE/BATCH to Printer"
-Pressing this button or
-.I <Meta>p
-will send the current figure
-(or the batch file if it is has any figures in it) to the printer,
-by passing it through
-.I fig2dev
-to convert it to
-.I PostScript
-then to the unix
-.I lpr
-(on BSD equivalent Unixes)
-or
-.I lp
-(on SYSV systems) program.
-If the batch file is printed by this
-button then it is removed after printing.
-The message in the button changes to reflect whether the batch file
-will be printed (when there are any figures in the batch file)
-or the current figure.
-.IP \&
-Note that the figure that is printed is what you see on the canvas,
-not necessarily the figure file.
-I.e., if you haven't saved the figure
-since the last changes, the figure from the canvas is printed.
-.I Xfig
-writes the figure to a temporary file to do this.
-The name of the file is
-.IB XFIGTMPDIR /xfig-print\c
-.IR PID ,
-where
-.I XFIGTMPDIR
-is the value of the environment variable by that name and
-.I PID
-is the process ID of
-.IR xfig .
-If the environment variable
-.I XFIGTMPDIR
-is empty or not set, the
-.B /tmp
-directory is used.
-.I "Print FIGURE to Batch"
-Pressing this button or
-.I <Meta>b
-will append the figure (in
-.I PostScript
-form)
-to a batch file.
-The
-.I "Print to Printer"
-button will send the batch file to the printer.
-.TP
-.I "Clear Batch"
-Pressing this button or
-.I <Meta>x
-will erase the accumulated figures from the batch file.
-.PP
-.po -.5i
 
-.nr LL 6.5i
-.TP
-.I Help
-The 
-.I Help
-button pulls down a menu to view various help information.
-.PP
-The first entry will launch an external 
-.I HTML
-browser specified by the Fig.browser resource to view
-the xfig html reference manual written by T. Sato.
-.I netscape
-is the default browser.
-.PP
-The next entry will launch an external 
-.I PDF
-viewer specified by the Fig.pdfviewer resource to view the
-.I Xfig How-to Guide
-written by Peter Hiscocks.
-.I acroread
-is the default viewer.
-.PP
-The third entry will launch an external 
-.I PDF
-viewer to view
-the xfig pdf man pages.  However, the HTML pages are much better.
-.PP
-The last entry will popup a window showing the xfig version and copyright 
-information.
 
-.po -.5i
-
-.nr LL 6.5i
-.SH "INDICATOR PANEL COMMAND DESCRIPTIONS"
-.PP
-The indicator panel contains buttons to set certain drawing parameters
-such as line thickness, canvas grid, rotation angle etc.
-All of the buttons use the same mouse buttons for setting values.
-Pressing mouse button 1 on the indicator will pop up a panel
-in which either a value may be typed (e.g. for a line thickness) or the
-mouse may be clicked on one of several buttons (e.g. for grid style or
-font name).
-For those that expect a value, pressing return in the value
-part of the window will set the new value and pop down the menu.
-.PP
-Pressing mouse button 2 on an indicator will decrement the value
-(e.g. for line thickness)
-or cycle through the options in one direction (e.g. font names), while pressing
-mouse button 3 will increment the value or cycle through the options
-in the other direction.
-.TP
-.I "ZOOM SCALE"
-The canvas zoom scale may be set/increased/decreased with this button.
-The zoom scale is displayed within the zoom button.
-Ruler, grid and linewidth are scaled, too.
-.br
-Pressing mouse button 1 will popup a panel where the zoom amount may
-be entered manually.  There is also a checkbox that if checked, will force
-zooming with the mouse to use integral zoom values (e.g. 2, 3, 4).
-.br
-Pressing mouse button 2 will decrease the zoom factor by 1.0 unless it
-is less than 1.0 already in which case it will reduce to the nearest 0.25.
-.br
-Pressing mouse button 3 will increase the zoom factor by 1.0 unless it
-is less than 1.0 in which case it will increase it to the nearest 0.25.
-.br
-Pressing the control key and mouse button 3 together will
-set the zoom scale to 1.
-.Sp
-The figure may also be zoomed by defining a zoom rectangle on the canvas
-by pressing the Control key and mouse button 1 together.
-This will define one corner of the zoom rectangle.
-Move the mouse and click mouse button 1 again to
-define the opposite corner of the zoom rectangle.
-If the ``Integral area zoom'' checkbox in the zoom popup is checked,
-the area will be zoomed by an integral value (e.g. 2, 3, 4).
-.TP
-.I "GRID MODE"
-With this button the user may select no grid,
-1/4 inch (5mm in metric mode) grid 1/2 inch (10mm) grid, or 1 inch (20mm).
-.TP
-.I "POINT POSITION"
-This button controls the coarseness of object placement on the canvas.
-The options are exact (on pixel) placement, 1/16 inch (1mm in metric mode), 1/4
-inch (5mm), 1/2 inch (10mm) or 1 inch (20mm).
-This allows the user to easily place objects
-in horizontal or vertical alignment.
-.IP \&
-This also restricts which objects may be ``picked up'' by the mouse when editing.
-If a corner of an object is not positioned on the canvas on a multiple
-of the point positioning resolution you may not be able to pick it.
-If this happens, a black square will temporarily appear above the mouse cursor.
-This square will also appear anytime the user tries to pick a nonexistent
-object.
-.TP
-.I "ROTATION ANGLE"
-The rotation angle for rotating objects may be set/increased/decreased
-with this button.
-Note that not all objects may be rotated, and certain objects
-may only be rotated by certain angles.
-Pressing mouse button 2 will decrease the angle in steps of 15 degrees,
-while mouse button 3 will increase the angle the same amount.
-To select other angles, press mouse button 1 and
-enter the angle in the popup menu.
-.TP
-.I DEPTH
-The depth at which new objects will be created may be set/increased/decreased
-with this button.
-.TP
-.I "NUMBER OF POLYGON SIDES"
-The number of sides used in creating a
-.I "REGULAR POLYGON"
-is set with this button.
-.TP
-.I "NUMBER OF COPIES"
-The number of copies to make when doing a
-.I "COPY & ROTATE"
-function on an object.  Each copy will be rotated an additional
-.I "ROTATION ANGLE"
-angle from the previous.
-.TP
-.I "NUMBER OF X (or Y) COPIES"
-The number of copies to make in the X (or Y) direction when doing a
-.I COPY
-function on an object.
-.TP
-.I "SMART-LINKS MODE"
-This button controls the smart-links mode.
-When turned on, lines which
-link box-like objects together (henceforth called
-.IR links )
-are treated
-specially when one of the box-like objects is moved or copied.
-For a copy, the link is also copied.
-When set to
-.I MOVE
-mode, the end point of the link which touches
-(or is very near) the perimeter of the box is moved with the
-box so that the box and the end point remain linked.
-When set to
-.I SLIDE
-mode, the end segment of the link slides so
-that the box remains linked and the angle of the end segment is maintained.
-This is useful for keeping the last segment of a link horizontal or vertical.
-.IP \&
-(At the moment, smart-links only work for the
-.I MOVE
-and
-.I COPY
-functions and only works for
-.I POLYLINE
-links and box-like objects.
-Another limitation at the moment is that if both ends of a link touch
-the box being operated on, only one end of the link will be adjusted.)
-.TP
-.I "VERTICAL ALIGN"
-This sets the vertical alignment mode for the
-.I ALIGN
-button in the editing mode panel.
-The choices are no vertical alignment, align to top edge,
-middle or bottom edge of compound, distribute the centres or edges
-evenly, or abut the vertical edges together.
-The
-.I "HORIZONTAL ALIGN"
-and
-.I "VERTICAL ALIGN"
-indicator settings are
-used together to align objects inside a compound or in canvas.
-.TP
-.I "HORIZONTAL ALIGN"
-This sets the horizontal alignment mode for the
-.I ALIGN
-button in the editing mode panel.
-The choices are no horizontal alignment, align to left edge,
-middle or right edge of compound, distribute the centres or edges
-evenly, or abut the horizontal edges together.
-The
-.I "HORIZONTAL ALIGN"
-and
-.I "VERTICAL ALIGN"
-indicator settings are used together to align objects
-inside a compound or in canvas.
-.TP
-.I "ANGLE GEOMETRY"
-The following settings are available to restrict the drawing angle of line
-segments in
-.IR POLYLINES ,
-.I POLYGONS
-and
-.IR SPLINES .
-.po +.5i
-.nr LL 6i
-.TP
-.I UNRESTRICTED
-Allow lines to be drawn with any slope.
-This is the default setting.
-.TP
-.I "LATEX LINE"
-Allow lines to be drawn only at slopes which can be handled by
-.I LaTeX
-picture environment lines: slope =
-.IR x / y ,
-where
-.RI x , y
-are integers in the range [\-6,6].
-.TP
-.I "LATEX VECTOR"
-Allow lines to be drawn only at slopes which can be handled by
-.I LaTeX
-picture
-environment vectors: slope =
-.IR x / y ,
-where
-.RI x , y
-are integers in the range [\-4,4].
-.TP
-.I MANHATTAN-MOUNTAIN
-Allow lines to be drawn in the horizontal, vertical or diagonal direction only.
-.TP
-.I MANHATTAN
-Enforce drawing of lines in the horizontal and vertical direction only.
-The name
-.I Manhattan
-comes from the horizontal/vertical look of the Manhattan
-(New York City) skyline.
-.TP
-.I MOUNTAIN
-Enforce drawing of only diagonal lines.
-The name comes from the pointed shape of mountains.
-.PP
-.po -.5i
-.nr LL 6.5i
-.TP
-.I "FILL STYLE"
-This button allows the user to select the area fill darkness (grey scale
-or color intensity) or fill patterns for all objects except
-.I TEXT
-and
-.IR PICTURE ,
-or to turn off area fill altogether.
-.sp
-There are 21 ``shades'' going from black to full saturation of the fill color,
-and 21 more ``tints'' from full saturation + 1 to white.
-In addition, there are 16 patterns (currently only available for PostScript,
-GIF, JPEG, PNG, PCX, ACAD, TIFF, TK, PPM, XPM and XBM output):
-.in +.5i
-.nf
-30 degree left-leaning diagonal lines,
-30 degree right-leaning diagonal lines,
-30 degree crosshatch,
-45 degree left-leaning diagonal lines,
-45 degree right-leaning diagonal lines,
-45 degree crosshatch,
-bricks,
-circles
-horizontal lines,
-vertical lines,
-90 degree crosshatch,
-fishscales,
-small fishscales,
-octagons,
-horizontal ``sawtooth'' and
-vertical ``sawtooth''.
-.fi
-.in
-.TP
-.I "PEN COLOR"
-This button is used to select one of 32 standard colors for the borders
-of objects, or one of the user-defined colors
-.TP
-.I "FILL COLOR"
-This button is used to select one of 32 standard colors or user-defined
-color to fill objects with if they have a fill style.
-.sp
-Pressing mouse button 1 on either the fill or pen color buttons will popup
-an extended color panel, allowing the user to select either a standard
-color or a user-defined color from menus.
-.sp
-The 32 standard colors are black, yellow, white, gold,
-five shades of blue, four shades of green,
-four shades of cyan, four shades of red, five shades of magenta,
-four shades of brown, and four shades of pink.
-.sp
-To select one of the standard colors either click mouse button 1 on the
-desired color and either press Return or click mouse button 1 on the ``Ok'' button.
-The latter step will pop down the color panel.
-You may also double click mouse button 1 on the desired color to select
-it and pop down the color panel in one step.
-.sp
-To add a user-defined color press mouse button on the ``Add Color'' button
-in the ``User Defined Colors'' section.  User defined colors are assigned
-values sequentially starting from 32 for a maximum of 512 colors.
-.sp
-A user color may be deleted by pressing mouse button 1 on the color box to
-select it and then pressing the ``Del Color'' button.
-.sp
-The last color deleted may be undeleted by pressing the ``UnDel Color'' button.
-.sp
-To edit a user color first select the color square by pressing mouse button 1
-on the desired square. A solid or dashed line will be drawn around the box to show
-that it is selected.  Then choose the color either by
-using the RGB (red, green, blue) or the HSV (hue, saturation, value) sliders
-or by typing a hexadecimal value into the window under the pen or fill
-color boxes representing the red,
-green and blue components (00 to FF).  If the latter is used, typing carriage
-return in the hexadecimal window will set the color.
-.sp
-Additionally, there is a button above each of the RGB sliders which when
-activated will ``lock'' two or more sliders together at their current setting
-and allow you to increase or decrease their values together with the ``lock''
-slider.
-.sp
-If the user color being edited was just created, a dashed line will be drawn
-around the box instead of a solid line to indicate that it is new.  The color
-that is currently in the pen or fill boxes will be copied into the user color
-cell for modification.  In this way you may start with a standard color or other
-user color and modify it from there.
-.sp
-The user color is said to be ``defined'' when any of the sliders is moved or
-a carriage return is typed into the hexadecimal window.  This will be shown
-by a solid line being drawn around the square instead of dashed.
-.sp
-The pen or fill color choice is activated when the panel is popped up by
-the respective button in the indicator panel, but you may switch to editing the
-other color by pressing either the ``Edit Pen'' or ``Edit Fill'' button.
-.sp
-Note that
-.I TransFig
-supports color output for
-.IR PostScript .
-On monochrome screens the objects are created with the selected color,
-but black (or white) is used to draw the objects on the canvas.
-.TP
-.I "LINE WIDTH"
-The width of lines may be selected with this button.
-Zero width lines may be
-drawn for the purpose of having filled areas without outlines.
-.TP
-.I "LINE STYLE"
-The choices for line style are solid, dash, dot, dash-dot, dash-dot-dot
-and dash-dot-dot-dot.
-Once created, a dashed or dotted line may be edited
-to change the length of dashes or the spacing of dots respectively.
-The dash length and dot gap can be changed from the default
-using the popup menu.
-.TP
-.I "JOIN STYLE"
-Lines may be joined with a
-.IR miter ,
-.I rounded
-or
-.I bevel
-joint.  This is only used for
-.I POLYLINE
-or
-.I POLYGON
-objects.
-.TP
-.I "CAP STYLE"
-The ends of lines may be capped with
-.IR butt ,
-.I round
-or
-.I projecting
-cap.  This is only used for
-.IR POLYLINE ,
-.I SPLINE
-or
-.I "OPEN ARC"
-objects.
-.TP
-.I "ARROW MODE"
-This button selects the auto-arrow mode for drawing lines.
-The options are no arrow heads, backward-pointing arrow head,
-forward-pointing arrow head or both.
-If one or both arrow head modes are turned on, then
-arrow heads are automatically drawn when drawing
-.IR POLYLINE ,
-.I OPEN SPLINE
-or
-.I "OPEN ARC"
-objects.
-.TP
-.I "ARROW TYPE"
-There are four types of arrows which may be filled with
-white or the object color.
-.TP
-.I "ARROW SIZE"
-Clicking mouse button 1 here will popup a panel 
-where you may set the arrow head
-thickness, width and height (length) either as absolute
-values or as multiples of the current line thickness.
-Check the box labelled ``Absolute Values'' to use absolute values (the default)
-or the box labelled ``Multiple of Line Width'' to use that feature.
-The values to change are under their respective check boxes.
-The arrow measurements are in the same units as line widths (1/80 inch).
-This has changed from earlier versions where the width and height were
-in Fig units.
-Clicking on mouse buttons 2 or 3 here will cycle through displaying
-the current thickness, width, and height settings.
-.TP
-.I "BOX CURVE"
-The radius of the corners on
-.I ARC-BOX
-objects may be set with this button.
-.TP
-.I "TEXT JUSTIFICATION"
-The adjustment of text may be set to
-.IR left ,
-.I center
-or
-.IR "right justification" .
-.TP
-.I "TEXT SIZE"
-The text size may be set/increased/decreased with this button.
-The default is 12 points.
-.TP
-.I "TEXT STEP"
-The interline spacing of text may be set/increased/decreased with this button.
-The number displayed gives the multiple of the font height
-that will be placed between lines on hitting
-.IR <return> .
-The default is a factor of 1.2 times the current font size.
-.TP
-.I "TEXT FONT"
-This button allows a selection of 35 fonts available for most Apple
-.I PostScript
-printers.
-There are two buttons at the top of the menu.
-The
-.I cancel
-button pops down the menu without changing the current font.
-The
-.I "use latex fonts"
-will switch the menu to the
-.I LaTeX
-font choices.
-When the
-.I LaTeX
-font menu is up, besides a
-.I cancel
-button there is a button to switch back to the
-.I PostScript
-fonts.
-.IP \&
-The name of the font is printed in the font itself so that one may see
-what that font looks like.
-If a corresponding X11 font exists, new text is created
-on the canvas using that font.
-.I xfig
-uses the size of X11 font closest to that selected
-by the font size button.
-If the X11 font doesn't exist,
-.I xfig
-uses the font selected by the
-.B \-normal
-option.
-To abort selection of a font, click mouse button 1 on
-.IR cancel .
-.TP
-.I "TEXT FLAGS"
-This button displays the current setting of the text flags.
-You may use mouse buttons 2 and 3 to step back and forth
-through the three flag settings:
-.IR Hidden ,
-.I Rigid
-and
-.IR Special .
-To change any of the flags
-you must use mouse button 1 to popup a menu from which you may change any
-or all of the flags.
-.IP \&
-The
-.I Hidden
-flag is used for figures that will be used with
-.I LaTeX
-and is applicable only to the display of the document in
-.IR xfig .
-It means that the text itself is not shown onscreen, but only the string
-``<text>''.  This is to keep long sequences of
-.I LaTeX
-formatting commands from making the screen messy and hard to read.
-The default for the
-.I Hidden
-flag is
-.IR off .
-.sp
-The
-.I Special
-Special flag means that special characters in the string are not specially
-processed but are passed directly to
-.IR LaTeX .
-If this flag is not set, then the backslash character '\\' is changed
-to the \\backslash command, a brace '{' is turned into a brace command \\{, etc.
-The default for the
-.I Special
-flag is
-.I off
-unless
-.I xfig
-is started
-with the command-line parameter
-.B \-specialtext
-(resource specialtext).
-.IP \&
-The
-.I Rigid
-attribute forces text to remain the same size even if
-inside a compound object that is scaled up or down.
-The default is
-.IR off .
-.SH "DRAWING AND EDITING MODE PANELS"
-Icons in the drawing and editing mode panel windows represent
-object manipulation functions,
-modes and other drawing or modification aids.
-Manipulation functions are selected by positioning the cursor over the icon
-representing the desired drawing/editing function and
-clicking mouse button 1.
-The selected icon is highlighted, and
-a message describing its function appears in the message window.
-The hilighting remains on until another function is selected.
-.SH "DRAWING MODE PANEL COMMAND DESCRIPTIONS"
-.PP
-The drawing mode panel contains buttons used to create the various
-.I xfig
-objects.
-Once the drawing mode is selected, the object is created by moving
-the mouse to the point on the canvas where the object is to be placed
-and pressing and releasing mouse button 1.
-After that the mouse is moved to the second point and
-mouse button 1 is again pressed for the next point.
-For those objects which may have more than two points (e.g. a line),
-mouse button 1 may be pressed for each successive point, and
-mouse button 2 must be pressed to finish the object.
-If the cap style is rounded, the point object will be a filled circle.
-Newly created points may be deleted by pressing the shift key and mouse button 1.
-For the
-.I ARC
-object, which requires exactly three
-points mouse button 1 is used for all three points.
-.PP
-At any time mouse button 3 may be pressed to cancel the
-creation of the object.
-.TP
-.I ARC
-Create an arc.
-Specify three points using mouse button 1.
-The first and last points will form the endpoints of the arc
-and the second specifies any point on the arc.
-There are two types of arcs, open and pie-wedge.
-.TP
-.I BOX
-Create rectangular boxes.
-Start by clicking mouse button 1 on any corner of the desired box and
-finish with the same mouse button on the diagonally opposite corner of
-the box.
-.TP
-.I ARC-BOX
-Create rectangular boxes with rounded corners.
-Start and finish with mouse button 1 in the same way as
-.IR BOX .
-The radius of the corners is selected by the
-.I "BOX CURVE"
-button.
-.TP
-.I CIRCLE
-Create circles by specifying their radii or diameters.
-Click mouse button 1 on the center of the circle and drag the mouse
-until the desired radius or diameter is attained.
-Click mouse button 1 again to finish the circle.
-.TP
-.I ELLIPSE
-Create ellipses using the same procedure as for the drawing of circles.
-.TP
-\fIIMPORTING PICTURE OBJECTS\fR
-.br
-.nf
-The following picture types may be imported into a figure:
-
-\(bu Encapsulated PostScript files
-\(bu GIF files
-\(bu JPEG (JFIF) files
-\(bu PCX (PC Paintbrush)
-\(bu X11 bitmap (monochrome) files
-\(bu X11 pixmap (XPM3) color files
-.fi
-.Sp
-Compressed (.Z) and gzipped (.z or .gz) files are also handled.
-You must have the XPM3 libraries installed to use the XPM import/export
-features.  See the README and Imakefile files.
-.Sp
-As it says, you may now import Fig (xfig) files as picture objects.  These may not
-be edited, but may be scaled and rotated.
-.Sp
-Import is by reference for all picture types.  This means that the picture
-file is not copied into the Fig file, only the picture file name is stored with
-the Fig file.
-.Sp
-A Floyd-Steinberg dithering is applied to color images for monochrome displays.
-.Sp
-For EPS files, xfig will attempt to use
-.I Ghostscript
-to generate a
-color image if xfig is running on an color display.
-.I Ghostscript
-must be compiled with with the ``pcx256'' and ``pbmraw'' drivers.
-The pbm driver is used when you run xfig on a monochrome display and the pcx256
-driver is used on a color display.
-.Sp
-.I Ghostscript
-is available from
-.IR prep.ai.mit.edu .
-.Sp
-A neural network color allocation scheme is used when the number of colors
-for all the color images on the canvas exceeds the lesser of
-the number of free colorcells or the value in the resource Max_image_colors
-(command-line parameter -max_image_colors).  Whenever a new color image
-is added to the canvas, the colors for all the images on the canvas are
-reallocated and the images are redrawn.  No reallocation is done when
-images are deleted from the canvas.
-.Sp
-Click mouse button 1 on any corner for the
-.I PIC
-object and finish by clicking mouse button 1
-again on the diagonally opposite corner.
-The
-.I EDIT
-popup panel will appear and the file name of the
-.I PIC
-object may be entered.
-After pressing
-.I DONE
-or
-.I APPLY
-(see the description of the
-.I EDIT
-panel for the difference between the
-.I DONE
-and
-.I APPLY
-buttons) the bitmap part of the
-.I PIC
-object will appear in the box just created.
-If no
-.I PIC
-file is available yet or no name is entered or
-in the case of an Encapsulated PostScript file
-there is no
-.I "preview bitmap"
-pressing
-.I DONE
-will pop down the edit panel and the word
-.I <empty>
-or the
-.I PIC
-file name will remain in the
-.I PIC
-box.  Later, when the name of the
-.I PIC
-file is known or the file is available,
-you may re-read the
-.I PIC
-file using the popup edit panel and the bitmap part of the
-.I PIC
-file will replace the name in the box.
-.Sp
-If you want the original size of the
-.I PIC
-object, press the
-``Use orig size'' button and the eps bitmap will enlarge or shrink to
-the size specified in the preview bitmap of the
-.I PIC
-file.
-Or, to scale as a percentage of the original size, enter a percentage
-value and press the ``Scale by %'' button.
-.Sp
-If you want the
-.I PIC
-object to be approximately the size of
-the rectangle specified with the mouse but want the aspect ratio
-to be same as the original, press either ``Shrink to orig'' or
-``Enlarge to orig'' buttons.
-You must press the
-.I APPLY
-button to see these effects.
-.Sp
-The
-.I Screen Capture
-button will unmap the xfig windows, allowing you to capture either the contents
-of a window or a rectangular section of the screen to a GIF* file,
-which becomes the current import file.
-After pressing the
-.I Screen Capture
-button, if you press and release mouse button 1 on a window (or the root window)
-it will capture that window (without any window manager frame).
-To capture a rectangular area of the screen, you press and release mouse button 2
-at one corner of the area 
-you want to capture, drag out the rectangle and press and release
-mouse button 2 to finish.  You may cancel the operation by pressing
-either of the two other mouse buttons (1 or 3).  The filename given to the capture
-file is the base of the figure name plus the time in seconds since 00:00:00 GMT,
-Jan 1, 1970 (from the Unix time() call), e.g. myfigure_828065129.gif.
-.Sp
-*If xfig was compiled without the USEGIF symbol then the capture
-file is in PCX format (PC Paintbrush) with the suffix ``.pcx''.
-.Sp
-The
-.I Edit Image
-button will call an external image viewer/editor (see resource Fig.image_editor:
-in the Fig.ad file) to allow you to edit the current image.  The file
-is reimported automatically after exiting the editor.
-The xfig windows are automatically unmapped during the call of the editor.
-.Sp
-The
-.I Reread
-button will cause xfig to re-read the image file in case it has
-changed.  This is useful (e.g.) when you have made changes to the image
-file in a program external to xfig and you wish to update the imported
-image.
-.Sp
-The
-.I Browse
-button which will popup a file browser to allow
-you to search directories for image files.  The default search mask
-will match *.gif*, *.jpg*, *.pcx*, *.xpm*, *.xbm*, *.ps*  and *.eps*.
-This mask is in the Fig.ad application defaults file.
-.TP
-.I POLYLINE
-Create polylines (line segments connecting a sequence of points).
-Enter points by clicking mouse button 1 at the desired positions on the
-canvas window.
-Click mouse button 2 to finish.
-.Sp
-To create a freehand line press mouse button 2 to start drawing.  As the
-mouse is moved points will be added to the line without having to click
-the mouse buttons.  
-To finish the freehand line press mouse button 2 again.
-.Sp
-For both modes, newly created points may be deleted by pressing the Shift
-key and mouse button 1 before pressing mouse button 2.
-The message window shows how many points have been
-created as you add points to the line.
-.Sp
-A single point object may be created by simply pressing mouse button 3.
-If the cap style is rounded, the point object will be a filled circle.
-.TP
-.I POLYGON
-The function is similar to
-.I POLYLINE
-except that a line segment is drawn connecting the first and last
-points entered.
-.TP
-.I "REGULAR POLYGON"
-The number of sides is first selected with the
-.I "NUM SIDES"
-button in the indicator panel.
-Then mouse button 1 is clicked on
-the center and the mouse dragged to the desired size.
-The object may be rotated as it is being created
-by moving the mouse up or down relative to the starting point.
-Click mouse button 1 to finish.
-.TP
-.I "INTERPOLATED SPLINE"
-The function is similar to
-.I POLYLINE
-except that an open interpolated spline (a spline curve that passes through
-the control points) is drawn. At least two points must be entered.
-.TP
-.I "CLOSED INTERPOLATED SPLINE"
-The function is similar to
-.I POLYGON
-except that a closed interpolated spline is drawn. At least three points 
-must be entered.
-.TP
-.I "APPROXIMATED SPLINE"
-The function is similar to
-.I POLYLINE
-except that an open approximated spline (a spline curve that passes through
-the two boundary points and approximates the shape of the other points)
-is drawn. At least two points must be entered.
-.TP
-.I "CLOSED APPROXIMATED SPLINE"
-The function is similar to
-.I POLYGON
-except that a closed approximated spline is drawn.
-At least three points must be entered. 
-.Sp
-Note: xfig provides conversion tools to switch between any two of the
-following objects: polylines, polygones, open interpolated spline,
-closed interpolated spline, open approximated spline, closed
-approximated spline. This conversion can be done either globally for the
-whole object (see LINE<->SPLINE and OPEN<->CLOSED) or locally for each
-individual point (see EDIT POINT).
-.TP
-.I TEXT
-Create text strings.
-Click mouse button 1 at the desired position on
-the canvas window, then enter text from the keyboard.
-Text may be pasted
-from the PRIMARY cut buffer
-.RI ( xterm
-cut/paste buffer) by pressing the
-.I F18
-function key (the
-.I Paste
-key on Sun keyboards) or any key/button defined in the translation
-table for the canvas.
-See the default
-.B Fig.ad
-file for example.
-Text is drawn using the current font, font size and justification settings.
-.Sp
-A Control-H (backspace) will delete a character to the left of the cursor, while the
-Delete key or Control-D will delete the character to the right of the cursor.
-A Control-X will erase all the text to the left of the cursor, while a
-Control-K will erase all the text to the right of the cursor.
-The Home key or Control-A will move the cursor to the start of the text,
-while the End key or Control-E move the cursor to the end of the text.
-The left arrow key or Control-B move the cursor left one character
-and the right arrow or Control-F move the cursor right one character.
-Finish entering/editing text by clicking mouse button 2 or typing the
-.I <return>
-key.
-If
-.I <return>
-is used, the text pointer automatically moves to the next ``line'',
-a distance of the font height times the value in the
-.I "TEXT STEP"
-button,
-and text input mode is re-entered.
-To finish text fully, click
-mouse button 2 or choose any panel button that changes
-modes (e.g. box, save, etc).
-To edit text, click on an existing text string with mouse button 1.
-Insertion of characters will take place at that point.
-Or, use the popup
-.I EDIT
-mode to modify the text.
-.Sp
-Eight-bit (8-bit) characters may be entered using the meta (compose) key.
-For example, to create an ``a umlaut'', press and release either the Meta key,
-the Alt key or the Compose key, then the letter ``a'', then " (quote).
-To create a ``c cedilla'', use <meta>c followed by comma.
-.Sp
-When modifying text in the popup edit panel, only the Compose key will work.
-.Sp
-The following is a list of all special characters available using the Meta,
-Alt or Compose keys:
-.Sp
-.\"--------------------------------------------------------------------
-.\" Table Begin
-.\"--------------------------------------------------------------------
-.nr t0 \w'Keys\0\0\0\0'u
-.ta \n(t0u
-.nf
-.\" set n to length of longest line
-.di xx
-!!	upside-down exclamation point
-.nr n \n(.nu
-.di
-.rm xx
-.\" HEADER
-Keys	Character Name
-.if n \l'\nnu\&-'
-.if t \l'\nnu'
-.\" BODY
-!!	upside-down exclamation point
-??	upside-down question mark
-C/	cent sign
-L\-	British pound
-OX	currency
-Y\-	yen
-__	broken vertical bar
-SO	section
-""	dieresis
-CO	copyright
-RO	registered trademark
-_a	ordfeminine
-_o	ordmasculine
-<<	guillemotleft
->>	guillemotright
-\-|	notsign
-\-\-	hyphen
-+\-	plusminus
-^\-	macron
-^*	degree
-^.	periodcentered
-^1	onesuperior
-^2	twosuperior
-^3	threesuperior
-14	onequarter
-12	onehalf
-34	threequarters
-**	multiply
-\-:	division
-/u	mu
-P!	paragraph
-A`	A accent grave
-A'	A accent acute
-A^	A accent circumflex
-A~	A accent tilde
-A"	A dieresis
-A*	A ring
-AE	AE
-a`	a accent grave
-a'	a accent acute
-a^	a accent circumflex
-a~	a accent tilde
-a"	a dieresis
-a*	a ring
-ae	ae
-C,	C cedilla
-c,	c cedilla
-D\-	Eth
-d\-	eth
-E`	E accent grave
-E'	E accent acute
-E^	E accent circumflex
-E"	E dieresis
-e`	e accent grave
-e'	e accent acute
-e^	e accent circumflex
-e"	e dieresis
-I`	I accent grave
-I'	I accent acute
-I^	I accent circumflex
-I"	I accent dieresis
-i`	i accent grave
-i'	i accent acute
-i^	i accent circumflex
-i"	i dieresis
-N~	N tilde
-n~	n tilde
-O`	O accent grave
-O'	O accent acute
-O^	O accent circumflex
-O~	O accent tilde
-O"	O dieresis
-O/	O slash
-OE	OE
-o`	o accent grave
-o/	o accent acute
-o^	o accent circumflex
-o~	o accent tilde
-o"	o dieresis
-o/	o slash
-oe	oe
-P|	Thorn
-p|	thorn
-ss	German ss (s-zed)
-U`	U accent grave
-U'	U accent acute
-U^	U accent circumflex
-U"	U dieresis
-u`	u accent grave
-u'	u accent acute
-u^	u accent circumflex
-u"	u dieresis
-Y'	Y accent acute
-y'	y accent acute
-y"	y dieresis
-.if n \l'\nnu\&-'
-.if t \l'\nnu'
-.DT
-.fi
-.sp
-Note: the two special characters OE and oe are not displayed
-on the screen, but they are printed by fig2dev.
-.\"--------------------------------------------------------------------
-.\" Table End
-.\"--------------------------------------------------------------------
-.sp
-.SH "Spell Checking and String Search in Text Objects"
-By pressing <Meta>h in the canvas area a popup panel will appear
-which lets you search for strings in the text objects and/or do
-string replacement and spell checking.
-.sp
-The external spell checking program can be specified by the -spellcheckcommand
-command-line argument (resource Fig.spellCheckCommand).  The default
-is the ``spell'' program.  See the -spellcheckcommand description 
-for usage details.
-.sp
-The ``Search/Replace/Update'' button will search all text objects for the
-pattern given in the ``Search:'' entry.  A panel pops up showing any
-matching text objects.  
-If the ``Replace'' button is pressed, the 
-matched pattern in the text objects will be replaced by the string
-in the ``Replace with:'' entry.
-If the ``Update'' button is pressed, the matching
-text objects' attributes will be updated from the current settings in
-the bottom indicator panel.
-.sp
-If the search pattern is empty all text objects will be listed.
-If the Update button is pressed in that case,
-all text objects will be updated.
-
-.SH "EDITING MODE PANEL COMMAND DESCRIPTIONS"
-When a button in the editing mode panel is pressed, any
-objects that may be affected by that editing operation will show their
-corner markers.
-Only those objects may be affected by the particular edit mode.
-In cases where two edit modes exist for one button, it
-may be that the corner markers will appear for objects that may be
-affected by one button but not the other.
-.SH "SELECTING OBJECTS"
-When multiple objects have points in common, e.g. two boxes that
-touch at one corner, only one object can be selected by clicking on
-that point.
-To select other objects, hold down the shift key while
-pressing mouse button 1: the markers of one object will be
-temporarily highlighted.
-By repeatedly clicking mouse button 1 while
-holding down the shift key, it is possible to cycle through all candidates for
-selection at that point.
-To perform the selected action, e.g.
-deleting one box, click on the point without holding down the shift key.
-The operation will be performed on the highlighted object.
-.PP
-.B Note:
-If the mouse is not clicked near enough to an object marker
-or for whatever reason
-.I xfig
-cannot ``find'' the object the user is trying to select,
-a black square will temporarily appear above the mouse cursor.
-.TP
-.I "GLUE COMPOUND"
-Compound objects are created by first tagging the objects to be compounded
-and then pressing mouse button 3 to group the tagged
-objects into a compound object.
-Single objects are tagged by clicking on them with mouse button 1.
-A number of objects can be tagged at once by using mouse button 2
-to define the upper-left and lower-right corners of a region
-enclosing the objects.
-Tagged objects are shown with highlighted markers.
-Tagged objects which are selected (see the
-.B "SELECTING OBJECTS"
-section above)
-will be temporarily unhighlighted.
-There is currently no special command to tag or untag all of the objects
-within a figure.
-You can untag all of the objects by changing from
-.I GLUE
-mode to some other mode (apart from
-.IR BREAK )
-and back again.
-.TP
-.I "BREAK COMPOUND"
-Break a compound object into separate component parts.
-Click mouse button 1 on one of the corner markers of the compound
-object or along one of the imaginary lines defining the compound box.
-Clicking with mouse button 2 will achieve the same effect
-but will also tag the component parts for re-gluing into a compound later
-(although you will not see the tags until you change to the
-.I GLUE
-mode).
-.TP
-.I "OPEN COMPOUND"
-Open a compound object temporarily for editing of its components.
-The compound object selected will be opened, and all other objects in
-the figure that are not part of the compound will disappear.
-You can make any changes to objects in the open compound including
-adding and deleting objects.  If you delete all the objects in the compound,
-the compound will be removed entirely.
-.Sp
-A popup panel with two buttons appears which lets you close the
-compound again.  The first, labeled ``Close This Compound'' will close the
-currently open compound.
-If you open a compound within a compound, you may close all the compounds
-with one step by clicking on the second button labelled ``Close All Compounds''.
-.Sp
-After all compounds are closed, the rest of the original figure will reappear.
-.Sp
-IMPORTANT NOTE:  A side effect occurs when you open a compound, delete an object
-in that compound, close the compound and ``undo'' the delete operation.  The
-object you deleted will reappear but it will not be part of the original
-compound anymore.  You may use this to remove objects from a compound.
-.Sp
-Conversely, if you delete an object from the canvas, open a compound then
-undo the delete of the original object, it will now be part of the open compound.
-.TP
-.I "PLACE LIBRARY OBJECT"
-Pressing this button will popup a library panel where you may load
-a library from a list of libraries.  The default library directory is
-.I XFIGLIBDIR/Libraries
-which is defined in the Imakefile.  This directory contains libraries which
-are defined by sub-directories.
-The command-line argument 
-.I -library_dir 
-(resource 
-.I Fig.library_dir
-) may be used to specify a different directory.
-The choice of libraries is presented in a pull-down menu. After choosing
-the library, the objects from the library will be loaded.  The status line
-shows how many objects or any error messages that may occur.
-Once a library is loaded if you single-click on an object name
-in the listbox area it will show a preview of the object in the right side preview window.
-If you double-click on one of the object names or single-click on one and press the
-.I "Select object"
-button, this will pop down the library panel and you will immediately see the
-chosen object appear under the mouse on the canvas, where it may be dragged
-around and placed by pressing mouse button 1 at the desired location.
-You may place as many of these objects as you wish by simply moving to the
-new location and pressing mouse button 1 each time.
-.Sp
-If mouse button 2 is pressed, the library panel pops up again where either
-a different object or library may be selected.
-.Sp
-Pressing moust button 3 will cancel the library mode altogether.
-.Sp
-Pressing Shift and mouse button 1 at the same time
-will switch from drawing the object itself as it is
-dragged, to only drawing the outline of the bounding box of the object.
-This second mode is desirable on slow machines or with complex objects.
-.Sp
-A library is simply a directory with .fig files, each containing one library
-object.  When xfig loads the .fig files as library objects, it makes each 
-one into a compound object so it may be moved, scaled, etc. as a unit.
-.Sp
-There are two ways to create your own libraries in xfig.
-For the first method, create the file 
-.I xfiglib
-in your home directory (~/xfiglib).  Each line of the
-.I xfiglib
-file contains the absolute path of the
-directory containing the .fig files in that library,
-followed by the name of the library, which may be multiple words with whitespace.
-There may be at most 50 libraries.  The length of the library name (not the path)
-may be at most 40 characters long, and any library may have no more than 400 objects,
-each of whose name (the name of the .fig file) may not be more than 40 characters.
-.Sp
-You must then either start xfig with ``
-.I -library_dir 
-~/xfiglib'', or set the resource ``Fig.library_dir: ~/xfiglib''.
-.Sp
-Here is an example:
-.Sp
-.nf
-/xfig/Examples/Libraries/Electrical/Physical	Electrical Parts
-/xfig/Examples/Libraries/Electrical/Schematic	Electrical Schematic Components
-/xfig/Examples/Libraries/Logic		Logic Symbols
-/xfig/Examples/Libraries/Flowchart		Flowchart Elements
-/xfig/Examples/Libraries/Buildings		Buildings
-.fi
-.Sp
-The other method is to use the X resource
-.I Fig.library_dir
-or command-line argument
-.I -library_dir
-to point to a directory which may contain Fig files (.fig) and sub-directories, each
-of which may also contain .fig files and sub-directories if desired.
-.Sp
-To link your libraries with the ones that come with xfig, simply make a symlink
-for each xfig library in your library directory or make one symlink to the top-level
-xfig library directory in your library directory.
-.Sp
-This is more versatile than using the xfiglib file because you can add more directories
-in the top-level directory (or sub-directories) and there is no need to edit the xfiglib file.
-Using this method, the names of the libraries are simply the names of the directories,
-e.g. if the resource 
-.I "Fig.library_dir: /xfig/Examples/Libraries"
-is defined, the 
-.I /xfig/Examples/Libraries/Electrical
-directory will result in the library name 
-.I Electrical.
-.Sp
-It is hoped that users will contribute Fig objects to the libraries to
-expand and enhance them for all xfig users.
-If you wish to contribute any Fig objects to existing or new libraries, please send
-them to me at xfigmail@epb1.lbl.gov.  You may restrict their usage by users if you
-wish, but all will benefit if you allow free usage, i.e. copying, using them
-in published reports, etc.
-.TP
-.I "SCALE OBJECT"
-Any object may be scaled.
-If mouse button 1 is pressed on any corner of a
-.I BOX
-or
-.I ARC-BOX
-object, then that object will be scaled
-proportionally to its aspect ratio.  If pressed on an edge
-then that dimension will be scaled.
-For other objects only mouse button 2 may be used for scaling;
-said object will be scaled larger or smaller about its center.
-Mouse button 2 may be used on boxes too.
-Text may only be scaled if inside a compound object and then only if its
-.I RIGID
-flag is set to
-.I NORMAL
-(using the popup edit panel).
-See the
-.I TransFig
-manual for description of text options.
-.TP
-.I ALIGN
-Align objects.
-Click mouse button 1 to align objects inside a compound object
-or mouse button 2 to align all objects on canvas according to the
-setting in the
-.I "VERTICAL ALIGN"
-and
-.I "HORIZONTAL ALIGN"
-indicators.
-Note that alignment with respect to the canvas doesn't work for
-distributing or abutting.
-The choices are the cumulative effect
-of vertically aligning the objects to the
-.IR TOP ,
-.I MIDDLE
-or
-.I BOTTOM
-edge and horizontally aligning to the
-.IR LEFT ,
-.I MIDDLE
-or
-.I RIGHT
-edge of the compound, along with distributing or abutting the objects
-vertically or horizontally.
-.TP
-.I "MOVE POINT"
-Modify the position of a point of any object except
-.I TEXT
-and
-.I COMPOUND
-objects.
-For unrestrained movement, click mouse button 1 over the desired
-point, reposition the point, and click the
-.I left
-button again.
-For horizontally or vertically constrained move, click mouse button 2
-on the desired point and move either horizontally or vertically.
-Notice that once you choose the direction (horizontal or vertical),
-movement is constrained in that direction.
-If, after moving the mouse initially, it
-is moved in the other direction a greater distance than the current position
-of the mouse relative to the starting point, then that will be the new
-constraint direction.
-In other words if you first move the mouse
-.I horizontally
-one inch (say) then move it
-.I vertically
-1.3 inches, the direction will switch to
-.I vertical
-until any
-.I horizontal
-motion exceeds 1.3 inches.
-When the object is positioned where desired, click mouse button 1 to
-place it if that button was used to start the move (unconstrained),
-or mouse button 2 (constrained) if that button was used.
-.TP
-.I "ADD POINTS"
-Add points to
-.IR POLYLINE ,
-.IR POLYGON ,
-.IR "OPEN SPLINE" ,
-or
-.I "CLOSED SPLINE"
-objects (points of a
-.I BOX
-can not be added or deleted).
-Note that a
-.I "REGULAR POLYGON"
-is really an ordinary
-.IR POLYGON ,
-so adding points to this object is allowed and does NOT keep
-the polygon regular.
-.TP
-.I "MODIFY SHAPE"
-This tool is activated by holding down the Control and Shift keys in any of the 
-.I EDIT
-modes. Clicking on a control point of a spline object with mouse button 1
-(resp. 3) decreases (resp. increases) the shape factor of the spline at
-this point, while clicking with mouse button 2 allows the user to cycle
-quickly between the three basic status of a control point (i.e.
-approximation, sharp interpolation, smooth interpolation).
-.TP
-.I MOVE
-Move object.
-Click mouse button 1 (unconstrained move) or mouse button 2
-(constrained move) on any corner marker of the object to be moved.
-The horizontal/vertical constrained movement (mouse button 2) works
-exactly as described for
-.IR "MOVE POINT" .
-.TP
-.I "COPY / CUT TO CUT BUFFER"
-Copy object to canvas or cut buffer.
-Click mouse button 1 (unconstrained copy)
-or mouse button 2 (constrained copy) on any corner marker of
-the object to be copied (for
-.I CIRCLE
-and
-.I ELLIPSE
-objects, mouse may also be clicked on their circumferences).
-The object will be duplicated and then moved exactly as in
-.IR MOVE .
-.sp
-If the number of X or Y copies is non-zero (from the bottom panel)
-then that many copies will be made in each respective direction,
-spaced evenly by the amount of the distance the object is placed
-from the original object.
-.sp
-If mouse button 3 is clicked on an object, that object is copied
-to the cut buffer for pasting into this or another figure.
-The file used for the cut buffer is called
-.B .xfig
-in the user's
-.I $HOME
-directory.
-This allows a user to run two or more
-.I xfig
-processes and cut/paste objects between them.
-If there is no
-.IR $HOME ,
-a file is created in a temporary directory called
-.BI xfig PID
-where
-.I PID
-is the
-.I xfig
-process ID.
-The temporary directory used is specified in the environment variable
-.IR XFIGTMPDIR .
-If that variable is empty or not set then
-.B /tmp
-is used.
-.TP
-.I "DELETE POINTS"
-Delete points from
-.IR POLYLINE ,
-.IR POLYGON ,
-.IR "OPEN SPLINE" ,
-or
-.IR "CLOSED SPLINE" .
-Objects (points of a
-.I BOX
-or
-.I ARC-BOX
-can not be added or deleted).
-Note that a
-.I "REGULAR POLYGON"
-is really an ordinary
-.IR POLYGON ,
-so deleting points from this object is allowed and does NOT
-keep the polygon regular.
-.TP
-.I DELETE
-Click mouse button 1 on an object to delete the object.
-Delete a
-.I region
-of the canvas by clicking mouse button 2
-and dragging the mouse to define an area of objects to delete.
-Clicking mouse button 3 on an object will copy the object
-to the cut buffer (see
-.I "COPY/CUT TO CUT BUFFER"
-above).
-.TP
-.I "EDIT OBJECT"
-Edit settings for an existing object.
-Click mouse button 1 on the object and a pop-up menu will appear
-showing existing settings for the object.
-Some of the menu entries
-may be changed by typing new values in the appropriate windows.
-These are editable Ascii\%TextWidgets and allow cut and paste.
-Others pop up a sub-menu of multiple choices when pressed and held.
-Yet others are buttons which toggle a setting on or off (e.g. arrow
-heads on lines).
-For the coordinates of an object's points, you may enter either 
-Fig units (1/1200 inch) or inches or centimeters by following the
-value with an ``i'' or ``c'' respectively.
-.IP \&
-Press the ``done'' button to apply the changes to the object and finish.
-Press the ``apply'' button to apply the changes but keep the menu up for
-further changes.
-Press the ``cancel'' button to cancel the changes and pop down the menu.
-.IP \&
-The following table shows which settings are used for the different objects.
-.Sp
-.\"--------------------------------------------------------------------
-.\" Table Begin
-.\"--------------------------------------------------------------------
-.nr t0 \w'Polygon\0\0\0'u
-.nr t1 \n(t0+\w'Angle\0'u
-.nr t2 \n(t1+\w'Style\0\0'u
-.nr t3 \n(t2+\w'Width\0'u
-.nr t4 \n(t3+\w'Style\0'u
-.nr t5 \n(t4+\w'Style\0'u
-.nr t6 \n(t5+\w'Style\0'u
-.nr t7 \n(t6+\w'Curve\0'u
-.nr t8 \n(t7+\w'Color\0'u
-.nr t9 \n(t8+\w'Color\0'u
-.nr ta \n(t9+\w'Radius\0'u
-.ta \n(t0u \n(t1u \n(t2u \n(t3u \n(t4u \n(t5u \n(t6u \n(t7u \n(t8u \n(t9u \n(tau
-.ds Bu \0\0\(bu
-.if n .RS -1i
-.if t .RS
-.nf
-.ne 14
-Object	Angle\&\&\&	Fill	Line	Line	Cap	Join	Box	Pen	Fill	Radius
-.nr n \n(.nu
-	\&\&\&\&	Style	Width	Style	Style	Style	Curve	Color	Color
-.if n \l'\nnu\&-'
-.if t \l'\nnu'
-Arc	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\*(Bu	\&	\&	\*(Bu	\*(Bu
-.if n \l'\nnu\&-'
-.if t \l'\nnu'
-Arc-Box	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\&	\&	\*(Bu	\*(Bu	\*(Bu
-.if n \l'\nnu\&-'
-.if t \l'\nnu'
-Circle	\&\&\&\*(Bu	\*(Bu	\*(Bu	\*(Bu	\&	\&	\&	\*(Bu	\*(Bu	\*(Bu
-.if n \l'\nnu\&-'
-.if t \l'\nnu'
-Ellipse	\&\&\&\*(Bu	\*(Bu	\*(Bu	\*(Bu	\&	\&	\&	\*(Bu	\*(Bu	\*(Bu
-.if n \l'\nnu\&-'
-.if t \l'\nnu'
-PIC*	\&\&\&\&	\&	\&	\&	\&	\&	\&	\*(Bu	\&
-.if n \l'\nnu\&-'
-.if t \l'\nnu'
-Box	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\&	\*(Bu	\&	\*(Bu	\*(Bu
-.if n \l'\nnu\&-'
-.if t \l'\nnu'
-Polygon	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\&	\*(Bu	\&	\*(Bu	\*(Bu
-.if n \l'\nnu\&-'
-.if t \l'\nnu'
-Line	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\*(Bu	\*(Bu	\&	\*(Bu	\*(Bu
-.if n \l'\nnu\&-'
-.if t \l'\nnu'
-Spline	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\*(Bu	\&	\&	\*(Bu	\*(Bu
-.if n \l'\nnu\&-'
-.if t \l'\nnu'
-Text	\&\&\&\*(Bu	\&	\&	\&	\&	\&	\&	\*(Bu
-.if n \l'\nnu\&-'
-.if t \l'\nnu'
-.DT
-.fi
-.if n .RE
-.if t .RE
-.IP \&
-* Only the X11 bitmap picture type uses the pen color for coloring the bitmap image.
-The other picture types don't use any of these settings.
-.\"--------------------------------------------------------------------
-.\" Table End
-.\"--------------------------------------------------------------------
-.TP
-.I EDIT POINT
-In the
-.I EDIT OBJECT
-mode, click on a control point of a spline with mouse button 3 to call the
-.I EDIT POINT
-window. Set the shape factor either with the scrollbar for arbitrary
-values, or with the buttons for preset values. Modifications are
-displayed interactively (the fill pattern, if any, will be temporally
-removed during the edition, to provide interactive rates). 
-.TP
-.I UPDATE
-By pressing mouse button 1 on an object, the current settings for
-the indicator buttons (line width, line style, area fill etc.) which
-have been selected for update are copied into that object.
-When
-.I xfig
-is started, all indicator buttons which are components of objects
-are selected for update.
-To unselect an indicator, click on the update button
-and click mouse button 1 on the small button in the upper-right
-corner of the indicator.
-When that indicator is selected the foreground color
-(default black) shows.
-When it is unselected the background color (default white) shows.
-.IP \&
-If mouse button 2 is clicked on an object, the settings in the object
-that are selected by the indicator buttons are copied into those indicator button
-settings.
-Thus, one may copy selected attributes of one object to another.
-.TP
-.I "FLIP VERTICALLY"
-Flip the object up/down (mouse button 1) or copy the object and flip it
-(mouse button 2).
-Point to part of the object, click the appropriate button.
-That object will be flipped vertically about that point.
-.sp
-Optionally, mouse button 3 may be pressed on the canvas to
-set an anchor point about which the object will be flipped.
-A crosshair indicates the anchor point on the canvas.
-Pressing this button again will unset the anchor point.
-.TP
-.I "FLIP HORIZONTALLY"
-Flip the object left/right (mouse button 1) or copy the object and flip it
-(mouse button 2).
-Point to part of the object, click the appropriate button.
-That object will be flipped horizontally about that point.
-.sp
-Optionally, mouse button 3 may be pressed on the canvas to
-set an anchor point about which the object will be flipped.
-A crosshair indicates the anchor point on the canvas.
-Pressing this button again will unset the anchor point.
-.TP
-.I "ROTATE CLOCKWISE"
-Rotate the object (mouse button 1) or copy and rotate it
-(mouse button 2)
-.RI \- N
-degrees (clockwise), where
-.I N
-is the amount set in the rotation indicator button.
-The object is rotated about the chosen point.
-.sp
-Optionally, mouse button 3 may be pressed on the canvas to
-set a rotation point about which the object will be rotated.
-A crosshair indicates the rotation point on the canvas.
-Pressing this button again will unset the rotation point.
-.sp
-Not all objects can be rotated,
-and not all can be rotated at arbitrary angles.
-For example,
-.IR BOX ,
-.I ARC-BOX
-and
-.I PIC
-objects may only be rotated by 90 degrees.
-Text objects may be rotated and to any angle.
-.TP
-.I "ROTATE COUNTER-CLOCKWISE"
-Rotate the object (mouse button 1) or copy (mouse button 2)
-.RI + N
-degrees (counter-clockwise), where
-.I N
-is the amount set in the rotation indicator button.
-The object is rotated about the chosen point.
-.sp
-Optionally, mouse button 3 may be pressed on the canvas to
-set a rotation point about which the object will be rotated.
-A crosshair indicates the rotation point on the canvas.
-Pressing this button again will unset the rotation point.
-.TP
-.I "SPLINE <\-> LINE"
-Click on mouse button 1 to cycle between polyline, open interpolated
-spline and open approximated spline when the selected object is open,
-or between polygon, closed interpolated spline and closed approximated
-spline when the selected object is closed.
-.br
-Click on mouse button 3 to turn an open object (polyline or open spline) into
-its corresponding closed object (polygon or closed spline) and vice
-versa. The closed object is opened at the selected point.
-.TP
-.I "ADD/DELETE ARROWS"
-Add or delete arrow heads of
-.IR "OPEN SPLINE" ,
-.I POLYLINE
-or
-.I ARC
-objects.
-Add an arrow head by clicking mouse button 1 on the endpoint of the object.
-Delete an arrow head by clicking mouse button 2 on the endpoint or arrow head.
-The length and thickness of the arrowheads may be set using the arrow size 
-button in the indicator panel.
-.SH PANNING
-The figure may be panned by clicking mouse button 1, 2 or 3 in the rulers.
-Clicking mouse button 1 in the top ruler will pan the image to the left
-by 1/2 inch (1cm in metric mode), adjusted for zoom factor.
-Clicking mouse button 3 in the top ruler
-will pan the image right by the same amount.
-By pressing and
-.I holding
-mouse button 2 the user may drag the ruler by the amount desired,
-thus panning the image by that amount.
-.PP
-If the Shift key is held down while panning the movement is five (5)
-times the normal rate.
-.PP
-The figure is panned up and down in the same way by clicking the mouse
-in the ruler on the right of the canvas.
-.PP
-If the Shift key is held down while panning the movement is five (5)
-times the normal rate.
-.PP
-The figure can be returned to its origin
-by clicking mouse button 1 in the units
-(e.g.
-.I cm
-or
-.IR in )
-box.
-.PP
-The arrow keys may also be used to pan the image and the home key to
-return the figure to the origin.
-Also, pressing the Control Key and mouse button 2
-will pan the figure to the origin.
 .bp
 .SH "X RESOURCES and DEFAULTS"
 The overall widget name(Class) is xfig(Fig).
@@ -3167,16 +994,20 @@ Name\&\&\&\&\&\&	Class\&\&\&\&\&\&	Type	Default\&\&\&\&\&	Command-line
 .\"-------
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
-balloon_delay\&\&	Balloon_delay\&\&	integer	500msec\&\&\&\&\&	\-balloon_delay
-boldFont\&\&\&\&	Font\&\&\&	string	8x13bold\&\&\&\&	\-bold
+allow_neg_coords\&	NegativeCoordinates	boolean	on\&\&\&\&\&\&\&	\-allow_neg_coords,
+\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-dont_allow_neg_coords,
+balloon_delay\&\&	balloonDelay\&\&	integer	500 (ms)\&\&\&\&	\-balloon_delay
+boldFont\&\&\&\&	Font\&\&\&\&\&\&	string	8x13bold\&\&\&\&	\-bold
 but_per_row\&\&\&	But_per_row\&\&\&	int	2\&\&\&\&\&\&\&\&	\-but_per_row
-buttonFont\&\&\&\&	Font\&\&\&	string	6x13\&\&\&\&	\-button
+buttonFont\&\&\&\&	Font\&\&\&\&\&\&	string	6x13\&\&\&\&	\-button
 canvasBackground	Background\&\&\&	string	white\&\&\&\&\&\&	\-cbg
 canvasForeground	Foreground\&\&\&	string	black\&\&\&\&\&\&	\-cfg
 debug\&\&\&\&\&\&	Debug\&\&\&\&\&\&	boolean	off\&\&\&\&\&\&\&	\-debug
 depth\&\&\&\&\&\&	Depth\&\&\&\&\&\&	integer	*\&\&\&\&\&\&\&\&	\-depth
 dont_switch_cmap	Dont_switch_cmap	boolean	false\&\&\&\&\&\&	\-dontswitchcmap
 exportLanguage\&	ExportLanguage\&	string	eps\&\&\&\&\&\&\&	\-exportLanguage
+export_margin\&\&	Margin\&\&\&\&\&	integer	0\&\&\&\&\&\&\&\&	\-export_margin
+flipvisualhints\&	Hints\&\&\&\&\&\&	boolean	false\&\&\&\&\&\&	\-flipvisualhints
 flushleft\&\&\&\&	FlushLeft\&\&\&\&	boolean	false\&\&\&\&\&\&	\-flushleft
 image_editor\&\&	ImageEditor\&\&\&	string	xv\&\&\&\&\&\&\&	\-image_editor
 inches\&\&\&\&\&	Inches\&\&\&\&\&	boolean	true\&\&\&\&\&\&	\-inches,
@@ -3186,6 +1017,7 @@ inches\&\&\&\&\&	Inches\&\&\&\&\&	boolean	true\&\&\&\&\&\&	\-inches,
 internalborderwidth	InternalBorderWidth	integer	1\&\&\&\&\&\&\&\&	\-internalBW
 justify\&\&\&\&\&	Justify\&\&\&\&\&	boolean	false\&\&\&\&\&\&	\-left (false),
 \&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-right (true)
+jpeg_quality\&\&	Quality\&\&\&\&\&	integer	75\&\&\&\&\&\&\&	\-jpeg_quality
 keyFile\&\&\&\&\&	KeyFile\&\&\&\&\&	string	CompKeyDB\&\&\&\&	\-keyFile
 landscape\&\&\&\&	Orientation\&\&\&	boolean	true\&\&\&\&\&\&	\-Landscape,
 \&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-Portrait
@@ -3195,19 +1027,29 @@ magnification\&\&	Magnification\&\&	float	100\&\&\&\&\&\&\&	\-magnification
 max_image_colors\&	Max_image_colors	integer	64\&\&\&\&\&\&\&	\-max_image_colors
 monochrome\&\&\&\&	Monochrome\&\&\&	boolean	false\&\&\&\&\&\&	\-monochrome
 multiple\&\&\&\&	Multiple\&\&\&\&	boolean	false\&\&\&\&\&\&\&	\-multiple
-normalFont\&\&\&	Font\&\&\&	string	6x13\&\&\&\&\&\&	\-normal
-page_size\&\&\&\&	Pagesize	string	Letter/A4\&\&\&\&	\-page_size
+normalFont\&\&\&	Font\&\&\&\&\&\&	string	6x13\&\&\&\&\&\&	\-normal
+pageborder\&\&\&	Color\&\&\&\&\&\&	string	color\&\&\&\&\&\&	\-pageborder
+page_size\&\&\&\&	Pagesize\&\&\&\&	string	Letter/A4\&\&\&\&	\-page_size
 pheight\&\&\&\&\&	Height\&\&\&\&\&	float	8(9.5)\&\&\&\&\&	\-pheight
 pwidth\&\&\&\&\&	Width\&\&\&\&\&\&	float	10(8)\&\&\&\&\&\&	\-pwidth
 rulerthick\&\&\&	RulerThick\&\&\&	integer	24\&\&\&\&\&\&\&	\-rulerthick
 scalablefonts\&\&	ScalableFonts\&\&	boolean	true\&\&\&\&\&\&	\-scalablefonts
 showallbuttons\&	ShowAllButtons\&	boolean	false\&\&\&\&\&\&	\-showallbuttons
-showballoons\&\&	ShowBalloons\&\&	boolean	true\&\&\&\&\&\&	\-showballoons
-showlengths\&\&\&	ShowLengths\&\&\&	boolean	false\&\&\&\&\&\&	\-showlengths
+showballoons\&\&	ShowBalloons\&\&	boolean	true\&\&\&\&\&\&	\-showballoons,
 \&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-dontshowballoons
+showdepthmanager	Hints\&\&\&\&\&\&	boolean	true\&\&\&\&\&\&	\-showdepthmanager,
+\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-dontshowdepthmanager
+showpageborder\&\&	Debug\&\&\&\&\&\&	boolean	true\&\&\&\&\&\&	\-showpageborder,
+\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-dontshowpageborder
+showlengths\&\&\&	ShowLengths\&\&\&	boolean	false\&\&\&\&\&\&	\-showlengths,
+\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-dontshowlengths
+show_zero_lines\&	Axis\&\&\&\&\&\&	boolean	true\&\&\&\&\&\&	\-show_zero_lines,
+\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-dont_show_zero_lines
 single\&\&\&\&\&	Single\&\&\&\&\&	boolean	true\&\&\&\&\&\&\&	\-single
 specialtext\&\&\&	SpecialText\&\&\&	boolean	false\&\&\&\&\&\&	\-specialtext
 spellcheckcommand	spellCheckCommand	string	spell %s\&\&\&\&\&	\-spellcheckcommand
+spinner_delay\&\&	spinnerDelay\&\&	integer	500 (ms)\&\&\&\&\&\&\&	\-spinner_delay
+spinner_rate\&\&	spinnerRate\&\&\&	integer	100 (ms)\&\&\&\&\&\&\&	\-spinner_rate
 startfillstyle\&\&	StartFillStyle\&	integer	0\&\&\&\&\&\&\&\&	\-startfillstyle
 startfontsize\&\&	StartFontSize\&\&	float	12\&\&\&\&\&\&\&	\-startfontsize
 startgridmode\&\&	StartGridMode\&\&	integer	0\&\&\&\&\&\&\&\&	\-startgridmode
@@ -3218,6 +1060,7 @@ startpsFont\&\&\&	StartpsFont\&\&\&	string	Times\-Roman\&\&\&	\-startpsFont
 starttextstep\&\&	StartTextStep\&\&	float	1.2\&\&\&\&\&\&\&	\-starttextstep
 trackCursor\&\&\&\&	Track\&\&\&\&\&\&	boolean	on\&\&\&\&\&\&\&	\-track,
 \&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-notrack
+transparent_color	Transparent\&\&\&	integer	-2 (none)\&\&\&\&	\-transparent_color
 userscale\&\&\&\&	UserScale\&\&\&\&	float	1.0\&\&\&\&\&\&\&	\-userscale
 userunit\&\&\&\&	UserUnit\&\&\&\&	string	in(cm)\&\&\&\&\&	\-userunit
 visual\&\&\&\&\&	Visual\&\&\&\&\&	string	*\&\&\&\&\&\&\&\&	\-visual
@@ -3234,747 +1077,24 @@ and depths are supported.
 .\"--------------------------------------------------------------------
 .\" Table End
 .\"--------------------------------------------------------------------
-.PP
-The following are the default keyboard accelerators as distributed
-in the
-.B Fig.ad
-app-defaults file:
-.PP
-.\"--------------------------------------------------------------------
-.\" Table Begin
-.\"--------------------------------------------------------------------
-.nf
-.nr t0 8m
-.\" set tab stop 1 to length of longest entry in column 1
-.nr t1 \n(t0u+\w'<Shift>m\0\0\0\0'u
-.ta \n(t0u \n(t1u
-.\" set n to length of longest line
-.di xx
-	<Meta>l	(re)Load figure from current file
-.nr n \n(.nu
-.di
-.rm xx
-.\" HEADER
-(Context)
-	Keys	Function
-.if n \l'\nnu\&-'
-.if t \l'\nnu'
-.\" DATA
-(Main xfig panels)
-	<Meta>q	Quit xfig
-	<Meta>n	make New drawing by deleting all objects from canvas
-	<Meta>d	Delete all objects from canvas but keep current filename
-	<Meta>u	Undo
-	<Meta>r	Redraw
-	<Ctrl>l	Redraw
-	<Meta>t	pasTe xfig cutbuffer onto canvas
-	<Meta>f	popup File menu
-	<Meta>e	popup Export menu
-	<Meta>p	popup Print menu
-	<Meta>l	(re)Load figure from current file
-	<Meta>s	Save figure to current file
-.Sp
-(Popup units panel in corner of rulers)
-	<Meta>c	Cancel popup unit panel
-	<Meta>s	Set units
-.Sp
-(Popup file panel)
-	<Meta>r	Rescan current directory
-	<Meta>c	Cancel
-	<Meta>l	Load figure
-	<Meta>s	Save figure
-	<Meta>m	Merge read into current figure
-.Sp
-(Popup export panel)
-	<Meta>r	Rescan current directory
-	<Meta>c	Cancel
-	<Meta>e	Export figure
-.Sp
-(Popup print panel)
-	<Meta>c	Cancel
-	<Meta>b	print to Batch file
-	<Meta>p	Print to printer
-	<Meta>x	clear batch file
-.Sp
-(Canvas)
-	<None>c	Draw circle by radius
-	<Shift>c	Draw circle by diameter
-	<None>e	Draw ellipse by radius
-	<Shift>e	Draw ellipse by diameter
-	<Shift>s	Draw closed approximated spline
-	<None>s	Draw open approximated spline
-	<Shift>i	Draw closed interpolated spline
-	<None>i	Draw open interpolated spline
-	<None>p	Draw polygon
-	<None>l	Draw line
-	<None>b	Draw box
-	<Shift>b	Draw arcbox
-	<Shift>p	Draw regular polygon
-	<None>r	Draw arc
-	<Ctrl>p	Draw picture object
-	<None>t	Draw text
 
-	<None>g	Glue compound
-	<Shift>g	Break compound
-	<None>o	Open compound
-	<Shift>l	Place library object
-	<Ctrl>s	Scale object
-	<None>a	Align object in compound
-	<Shift>m	Move point
-	<None>m	Move object
-	<Ctrl>a	Add point to object
-	<Ctrl>c	Copy object
-	<Shift>d	Delete point from object
-	<None>d	Delete object
-	<None>u	Update object or indicator panel
-	<Ctrl>e	Edit object
-	<None>f	Flip object up/down
-	<Shift>f	Flip object left/right
-	<Ctrl>r	Rotate object clockwise
-	<Shift>r	Rotate object counter-clockwise
-	<None>v	Convert object to/from line/spline or box/arc-box
-	<Shift>a	Add/delete arrowhead
-.<if>n \l'\nnu\&-'
-.if t \l'\nnu'
-.DT
-.fi
-.\"--------------------------------------------------------------------
-.\" Table End
-.\"--------------------------------------------------------------------
-.SH WIDGET TREE
-Below is the widget structure of
-.IR xfig .
-The widget class name is given first, followed by the widget instance name.
-.nf
-.if t .ta .5i +.5i +.5i +.5i +.5i +.5i +.5i +.5i +.5i
-.if n .ta 3n  +3n  +3n  +3n  +3n  +3n  +3n  +3n  +3n
-.Sp
-Fig  xfig
-.Sp
-	Form  form
-		Form  commands
-			Command  quit
-			Command  new
-			Command  orient
-			Command  undo
-			Command  redraw
-			Command  paste
-			Command  file
-			Command  export
-			Command  library
-			Command  print
-			MenuButton  help
-				SimpleMenu  menu
-					SmeBSB  Xfig Reference (HTML)
-					SmeBSB  How-To Guide (PDF)
-					SmeBSB  Man pages (PDF)
-					SmeBSB  About Xfig
-		Form msg_form
-			Text  message
-			Label  file_name
-			Toggle  balloon_toggle
-		Label  mouse_panel
-		Box  mode_panel
-			Label  label
-			Command  button (one for each of the 17 drawing mode buttons)
-			Label  label
-			Command  button (one for each of the 19 editing mode buttons)
-		Label  topruler
-		Label  canvas
-		Label  unitbox
-		Label  sideruler
-		Box  upd_ctrl_form
-			Label upd_ctrl_label
-			Box   upd_ctrl_btns
-				Command  set_upd
-				Command  clr_upd
-				Command  tog_upd
-		Viewport ind_panel
-			Core  clip
-			Scrollbar  horizontal
-			Box  ind_box
-				Form  button_form (one for each of the 22 indicator buttons)
-					Command  button
-					Toggle  update (only those indicators that affect creation
-							of objects have update toggles)
-.Sp
-		TransientShell  ps_font_menu
-			Box  menu
-				Form  ps_buttons
-					Command  cancel
-					Command  use_latex_fonts
-				Command  pane (one for each of the 35 PostScript font panes)
-.Sp
-		TransientShell  latex_font_menu
-			Box  menu
-				Form  latex_buttons
-					Command  cancel
-					Command  use_postscript_fonts
-				Command  pane (one for each of the 6 LaTeX font panes)
-.Sp
-	TransientShell  file_menu
-		VendorShellExt  shellext
-		Form  file_panel
-			Label  file_status_label
-			Label  file_status
-			Label  num_objects_label
-			Label  num_objects
-			Label  fig_offset_label
-			Label  fig_offset_lbl_x
-			Text  fig_offset_x
-			MenuButton   Inches
-				SimpleMenu  menu
-					SmeBSB   Inches
-					SmeBSB   Centim.
-					SmeBSB  Fig Units
-			Label  fig_offset_lbl_y
-			Text  fig_offset_y
-			MenuButton   Inches
-				SimpleMenu  menu
-					SmeBSB   Inches
-					SmeBSB   Centim.
-					SmeBSB  Fig Units
-			Label  cur_file_label
-			Label  cur_file_name
-			Label  file_label
-			Text  file_name
-			Label file_alt_label
-			Viewport  vport
-				Core  clip
-				Scrollbar  vertical
-				List  file_list_panel
-			Label  mask_label
-			Text  mask
-			Label  dir_label
-			Text  dir_name
-			Label  dir_alt_label
-			Command home
-			Command hidden
-			Viewport  dirvport
-				Core  clip
-				Scrollbar  vertical
-				List  dir_list_panel
-			Form  preview_form
-				Label  preview_label
-				Label  preview_size
-				Label  preview_name
-				Label  preview_widget
-			Command  rescan
-			Command  cancel
-			Command  save
-			Command  load
-			Command  merge
-.Sp
-	TransientShell  export_menu
-		VendorShellExt  shellext
-		Form  export_panel
-			Label  mag_label
-			Box  spinner_box
-				Text  magnification
-				Box  spinner_frame
-					Command  spinup
-					Command  spindown
-			Command  fitpage
-			Label  size_label
-			Label  papersize_label
-			MenuButton  papersize
-				SimpleMenu  menu
-					SmeBSB  Letter  (8.5" x 11")
-					SmeBSB  Legal   (8.5" x 14")
-					SmeBSB  Ledger  ( 17" x 11")
-					SmeBSB  Tabloid ( 11" x 17")
-					SmeBSB  A       (8.5" x 11")
-					SmeBSB  B       ( 11" x 17")
-					SmeBSB  C       ( 17" x 22")
-					SmeBSB  D       ( 22" x 34")
-					SmeBSB  E       ( 34" x 44")
-					SmeBSB  A4      (210mm x  297mm)
-					SmeBSB  A3      (297mm x  420mm)
-					SmeBSB  A2      (420mm x  594mm)
-					SmeBSB  A1      (594mm x  841mm)
-					SmeBSB  A0      (841mm x 1189mm)
-					SmeBSB  B5(JIS) (182mm x  257mm)
-			Label  orient_label
-			MenuButton  orientation
-				SimpleMenu  menu
-					SmeBSB  portrait
-					SmeBSB  landscape
-			Label  just_label
-			MenuButton  justify
-				SimpleMenu  menu
-					SmeBSB  Flush left
-					SmeBSB  Centered
-			Label  multiple_label
-			MenuButton  multiple_pages
-				SimpleMenu  menu
-					SmeBSB  Single  
-					SmeBSB  Multiple
-			Label  export_offset_label
-			Label  export_offset_lbl_x
-			Text  export_offset_x
-			MenuButton   Inches
-				SimpleMenu  menu
-					SmeBSB   Inches
-					SmeBSB   Centim.
-					SmeBSB  Fig Units
-			Label  export_offset_lbl_y
-			Text  export_offset_y
-			MenuButton   Inches
-				SimpleMenu  menu
-					SmeBSB   Inches
-					SmeBSB   Centim.
-					SmeBSB  Fig Units
-			Label  lang_label
-			MenuButton  language
-				SimpleMenu  menu
-					SmeBSB  LaTeX box (figure boundary)
-					SmeBSB  LaTeX picture
-					SmeBSB  LaTeX picture + epic macros
-					SmeBSB  LaTeX picture + eepic macros
-					SmeBSB  LaTeX picture + eepicemu macros
-					SmeBSB  PiCTeX macros
-					SmeBSB  IBMGL (or HPGL)
-					SmeBSB  Encapsulated PostScript
-					SmeBSB  PostScript
-					SmeBSB  Combined PS/LaTeX (both parts)
-					SmeBSB  Textyl \especial commands
-					SmeBSB  TPIC
-					SmeBSB  PIC
-					SmeBSB  MF   (MetaFont)
-					SmeBSB	ACAD (AutoCAD Slide)
-					SmeBSB  PCX  (PC Paintbrush)
-					SmeBSB  PNG
-					SmeBSB  GIF
-					SmeBSB  JPEG
-					SmeBSB  TIFF (no compression)
-					SmeBSB  TK
-					SmeBSB  X11 Bitmap (XBM)
-					SmeBSB  X11 Pixmap (XPM)
-					SmeBSB  Portable Pixmap (PPM)
-			Label  transp_label
-			MenuButton  transparent
-				SimpleMenu  menu
-					SmeBSB  Background
-					SmeBSB  None
-					SmeLine  None
-					SmeBSB  Black
-					SmeBSB  Blue
-					SmeBSB  Green
-					SmeBSB  Cyan
-					[more colors here]
-					SmeBSB  Gold
-					SmeBSB  Default
-			Label  quality_label
-			Box  spinner_box
-				Text quality_text
-				Box spinner_frame
-					Command  spinup
-					Command  spindown
-			Text  quality_text
-			Label  def_file_label
-			Label  def_file_name
-			Label  out_file_name
-			Text  file
-			Label  file_alt_label
-			Viewport  vport
-				Core  clip
-				Scrollbar  vertical
-				Scrollbar  horizontal
-				List  file_list_panel
-			Label  mask_label
-			Text  mask
-			Label  dir_label
-			Text  dir_name
-			Label  dir_alt_label
-			Command home
-			Command hidden
-			Viewport  dirvport
-				Core  clip
-				Scrollbar  vertical
-				List  dir_list_panel
-			Command  rescan
-			Command  cancel
-			Command  export
-.Sp
-	TransientShell  print_menu
-		VendorShellExt  shellext
-		Form  print_panel
-			Label  printer_image
-			Label  print_label
-			Label  mag_label
-			Box  spinner_box
-				Text  magnification
-				Box  spinner_frame
-					Command  spinup
-					Command  spindown
-			Command  fitpage
-			Label  size_label
-			Label  papersize_label
-			MenuButton  papersize
-				SimpleMenu  menu
-					SmeBSB  Letter  (8.5" x 11")
-					SmeBSB  Legal   (8.5" x 14")
-					SmeBSB  Ledger  ( 17" x 11")
-					SmeBSB  Tabloid ( 11" x 17")
-					SmeBSB  A       (8.5" x 11")
-					SmeBSB  B       ( 11" x 17")
-					SmeBSB  C       ( 17" x 22")
-					SmeBSB  D       ( 22" x 34")
-					SmeBSB  E       ( 34" x 44")
-					SmeBSB  A4      (210mm x  297mm)
-					SmeBSB  A3      (297mm x  420mm)
-					SmeBSB  A2      (420mm x  594mm)
-					SmeBSB  A1      (594mm x  841mm)
-					SmeBSB  A0      (841mm x 1189mm)
-					SmeBSB  B5(JIS) (182mm x  257mm)
-			Label  orient_label
-			MenuButton  landscape
-				SimpleMenu  menu
-					SmeBSB  portrait 
-					SmeBSB  landscape
-			Label  just_label
-			MenuButton  justify
-				SimpleMenu  menu
-					SmeBSB  Centered  
-					SmeBSB  Flush left
-			Label  multiple_label
-			MenuButton  multiple_pages
-				SimpleMenu  menu
-					SmeBSB  Single  
-					SmeBSB  Multiple
-			Label  printer_label
-			Text  printer
-			Label  job_params_label
-			Text  job_params
-			Label  num_batch_label
-			Label  num_batch
-			Command  dismiss
-			Command  print
-			Command  print_batch
-			Command  clear_batch
-.Sp
-	TransientShell  file_msg
-		VendorShellExt  shellext
-		Form  file_msg_panel
-			Text  file_msg_win
-			Command  dismiss
-			Command  clear
-.Sp
-	TransientShell  query_popup
-		Form  query_form
-			Label  message
-			Command  yes
-			Command  no
-			Command  cancel
-.Sp
-	TransientShell  set_unit_panel
-		Form  form
-			Label        Unit/Scale settings
-			Label  Ruler Units  =
-			MenuButton  Imperial (in)
-				SimpleMenu  menu
-					SmeBSB  Metric (cm)
-					SmeBSB  Imperial (in)
-			Label  Figure units =
-			MenuButton  Ruler units
-				SimpleMenu  menu
-					SmeBSB  Ruler units
-					SmeBSB  User defined
-			Label  user_units
-			Text        Unit/Scale settings
-			Label  Figure scale =
-			MenuButton  User defined
-				SimpleMenu  menu
-					SmeBSB  Unity
-					SmeBSB  User defined
-			Label  scale_factor
-			Text  1.0000
-			Command  cancel
-			Command  set
-.Sp
-Library panel:
-	TransientShell  library_menu
-		VendorShellExt  shellext
-		Form  library_panel
-			Label  library_intro
-			Label  library_label
-			MenuButton  library
-				SimpleMenu  menu
-					SmeBSB  Electrical - Physical
-					SmeBSB  Electrical - Schematic
-					SmeBSB  Logic
-					SmeBSB  Flowchart
-					[ one for each library ]
-			Label  status_label
-			Text  status
-			Label  cur_library_label
-			Label  cur_library)
-			Label  cur_lib_object_label
-			Label  cur_lib_object
-			Viewport  object_vport
-				Core  clip
-				List  object_list_panel
-				Scrollbar  horizontal
-				Scrollbar  vertical
-			Label  library_preview_label
-			Label  library_object_label
-			Label  library_preview_widget
-			Command  select
-			Command  cancel
-.Sp
-Popup color panel:
-	VendorShellExt  shellext
-	TransientShell  set_indicator_panel
-		Form  form
-			Label  Colors
-			Command  cancel
-			Command  set_color_ok
-			Form  mixedForm (for Pen Color)
-				Toggle  mixedEdit
-				Label  mixedColor
-				Text  tripleValue
-			Form  mixedForm (for Fill Color)
-				Toggle  mixedEdit
-				Label  mixedColor
-				Text  tripleValue
-			Label  stdLabel
-			Form  stdForm
-				Command  stdColor (one for each of 33 std colors)
-			Label  userLabel
-			Form  userForm
-				Viewport  userViewport
-					Core  clip
-					Scrollbar  horizontal
-					Box  userBox
-					   Label  colorMemory (one for each user color)
-				Command  addColor
-				Command  delColor
-				Command  lookupColor
-				Command  undelColor
-				Form  mixingForm
-					Label  redLocked
-					Label  greenLocked
-					Label  blueLocked
-					Label  lockedLabel
-					Scrollbar  redScroll
-					Scrollbar  greenScroll
-					Scrollbar  blueScroll
-					Scrollbar  lockedScroll
-					Label  hueLabel
-					Label  satLabel
-					Label  valLabel
-					Scrollbar  hueScroll
-					Scrollbar  satScroll
-					Scrollbar  valScroll
-.Sp
-Close compound popup:
-	TransientShell  close_compound_popup
-		VendorShellExt  shellext
-		Form  close_compound_form
-			Command  close_compound
-			Command  close_all_compounds
-.Sp
-	TransientShell  cmd_balloon_popup
-		VendorShellExt  shellext
-		Box  box
-			Label  l_label
-			Label  r_label
-.Sp
-	TransientShell  mode_balloon_popup
-		VendorShellExt  shellext
-		Box  box
-			Label  label
-.Sp
-	TransientShell  unit_balloon_popup
-		VendorShellExt  shellext
-		Box  box
-			Label  label
-.Sp
-	TransientShell  mouse_balloon_popup
-		VendorShellExt  shellext
-		Box  box
-			Label  label
-.Sp
-	TransientShell  toggle_balloon_popup
-		VendorShellExt  shellext
-		Box  box
-			Label  label
-.Sp
-	TransientShell  search_panel
-		VendorShellExt  shellext
-		Form  form
-			Label  search_lab
-			Text  search_text
-			Toggle  case_sensitive
-			Label  replace_lab
-			Text  replace_text
-			Command  dismiss
-			Command  search
-			Command  replace
-			Command  spell_button
-.Sp
-	TransientShell  found_text
-		VendorShellExt  shellext
-		Form  form
-			Text  found_msg_win
-			Command  dismiss
-			Command  do_replace
-			Command  dismiss
-.fi
-.Sp
-NOTE:  The following is a
-.I typical
-popup edit panel (for
-.IR ARC-BOX )
-The panel will be different for other objects.
-.Sp
-.nf
-	TransientShell  edit_panel
-		VendorShellExt  shellext
-		Form  form
-			Label  POLYLINE:ArcBox
-			Label  image
-			Command  done
-			Command  apply
-			Command  cancel
-			Label
-			Label  Width
-			Box  spinner_box
-				Text       Width
-				Box  spinner_frame
-					Command  spinup
-					Command  spindown
-			Label       Depth
-			Box  spinner_box
-				Text       Depth
-				Box  spinner_frame
-					Command  spinup
-					Command  spindown
-			Label  Pen color
-			MenuButton  pen_colors
-				SimpleMenu  menu
-					SmeBSB  Black
-					SmeBSB  Blue
-					SmeBSB  Green
-					SmeBSB  Cyan
-					SmeBSB  Red
-					SmeBSB  Magenta
-					SmeBSB  Yellow
-					SmeBSB  White
-					SmeBSB  Blue4
-					[22 more colors]
-					SmeBSB  Default
-			Label  Fill color
-			MenuButton  fill_colors
-				SimpleMenu  menu
-					SmeBSB  Black
-					SmeBSB  Blue
-					SmeBSB  Green
-					SmeBSB  Cyan
-					SmeBSB  Red
-					SmeBSB  Magenta
-					SmeBSB  Yellow
-					SmeBSB  White
-					SmeBSB  Blue4
-					[22 more colors]
-					SmeBSB  Default
-			Label  Fill style
-			MenuButton  No fill
-				SimpleMenu  menu
-					SmeBSB  No fill
-					SmeBSB  Filled
-					SmeBSB  Pattern
-			Label  Fill intensity %
-			Box  spinner_box
-				Text  Fill intensity %
-				Box  spinner_frame
-					Command  spinup
-					Command  spindown
-			Label  Fill pattern    
-			Box  spinner_box
-				Text  Fill pattern    
-				Box  spinner_frame
-					Command  spinup
-					Command  spindown
-			Label  Line style
-			MenuButton  Solid Line
-				SimpleMenu  menu
-					SmeBSB  Solid Line
-					SmeBSB  Dashed Line
-					SmeBSB  Dotted Line
-			Label  Dash length/Dot gap
-			Box  spinner_box
-				Text  Dash length/Dot gap
-				Box  spinner_frame
-					Command  spinup
-					Command  spindown
-			Label  Corner Radius
-			Box  spinner_box
-				Text  Corner Radius
-				Box  spinner_frame
-					Command  spinup
-					Command  spindown
-			Label  First Corner
-			Label  First Corner
-			Text  First Corner
-			Label  First Corner
-			Text  First Corner
-			Label  Opposite Corner
-			Label  Opposite Corner
-			Text  Opposite Corner
-			Label  Opposite Corner
-			Text  Opposite Corner
-
-.Sp
-Popup edit spline point panel:
-	TransientShell  edit_spline_point_panel
-		VendorShellExt  shellext
-		Form  form
-			ScrollBar control_bar
-			Label    Use scrollbar to modify tension
-			Command  done
-			Command  cancel
-			Command  Approximated
-			Command  Angular
-			Command  Interpolated
-.fi
-The following is the widget structure for the popup browser available
-for the
-.I Picture Object
-edit popup.
-.Sp
-.nf
-	TransientShell  xfig_browse_menu
-		VendorShellExt  shellext
-		Form  browse_panel
-			Label  file_label
-			Text  file_name
-			Label  file_alt_label
-			Viewport  vport
-				Core  clip
-				List  file_list_panel
-				Scrollbar  vertical
-				Scrollbar  horizontal
-			Label  mask_label
-			Text  mask
-			Label  dir_label
-			Text  dir_name
-			Label  dir_alt_label
-			Command  home
-			Command  hidden
-			Viewport  dirvport
-				Core  clip
-				List  dir_list_panel
-			Command  rescan
-			Command  close
-			Command  apply
-.fi
 .bp
 .SH BUGS and RESTRICTIONS
 Please send bug reports, fixes, new features etc. to:
 .br
 xfig-bugs@epb1.lbl.gov
 (Brian V. Smith)
+.PP
+When reporting a bug, please first check if the problem is mentioned in
+the FAQ section of the HTML files (xfig Help menu).  
+.PP
+If it is not mentioned there, be sure to report the operating system you
+are using (e.g. SunOS 4.1.3), type of X server and version (OpenWindows 3, X11R6.4,
+XFree86 3.2.2, etc) and color depth (e.g. 8bpp, 16bpp), and most
+importantly the version of xfig or fig2dev that is having the problem.
+.PP
+It is also VERY useful to me if you can provide a stack trace from a debugger
+such as gdb, dbx, ups, etc, if the bug causes xfig to crash.
 .PP
 Because of the difference of some fonts in some X servers and the PostScript
 fonts on printers, text alignment can be problematic.
@@ -4013,16 +1133,13 @@ This can be corrected using
 .I Redraw
 after the operation is complete.
 .PP
-Corners of object scaled with point positioning in one of the grid
-modes will not always fall on the grid line, but to the closest pixel.
-.PP
 When zoomed very large, the length of dashes in dashed lines will top out
 at 255 pixels long.  This is due to a restriction in X
 that the dash list is defined by char (255 pixels maximum for a dash).
 The figure will print correctly, however.
 .PP
-When you do a copy/rotate or array place when making multiple copies
-of objects, only the creation of the last object can be undone with the Undo button.
+When you do a copy/rotate with multiple copies,
+only the creation of the last object can be undone with the Undo button.
 .PP
 Modifications to text using the popup search/update/replace/spell check panel 
 cannot be undone.
@@ -4031,8 +1148,6 @@ See the
 .B README
 file for troubleshooting.
 .SH "SEE ALSO"
-Brian W. Kernighan
-.I "PIC \(em A Graphics Language for Typesetting User Manual"
 .PP
 fig2dev(1)
 .RI ( TransFig
@@ -4042,33 +1157,47 @@ gs(1)
 .RI ( Ghostscript
 PostScript previewer)
 .SH ACKNOWLEDGEMENT
+(From the original author, Supoj Sutanthavibul):
 Many thanks goes to Professor Donald E. Fussell who inspired the
 creation of this tool.
+.PP
+(From current maintainer Brian Smith):
+Thanks to all the users who have contributed to xfig, especially
+Paul King who, besides adding many features,
+revamped the look and feel which became version 2.1.
 .SH COPYRIGHT
 .nf
 Original Copyright (c) 1985 by Supoj Sutanthavibul
-Parts Copyright (c) 1994 by Brian V. Smith
+Parts Copyright (c) 1994-1999 by Brian V. Smith
 Parts Copyright (c) 1991 by Paul King
 Other Copyrights may be found in various files
 .Sp
 .fi
 .PP
-The X Consortium, and any party obtaining a copy of these files from
-the X Consortium, directly or indirectly, is granted, free of charge, a
+Any party obtaining a copy of these files is granted, free of charge, a
 full and unrestricted irrevocable, world-wide, paid up, royalty-free,
 nonexclusive right and license to deal in this software and
-documentation files (the ``Software''), including without limitation the
+documentation files (the "Software"), including without limitation the
 rights to use, copy, modify, merge, publish, distribute, sublicense,
 and/or sell copies of the Software, and to permit persons who receive
 copies from any such party to do so, with the only requirement being
-that this copyright notice remain intact.  This license includes without
-limitation a license to do the foregoing actions under any patents of
-the party supplying this software to the X Consortium.
-.br
-No representations are made about suitability of this
-software for any purpose.
-It is provided ``as is'' without express or
-implied warranty.
+that this copyright notice remain intact.
+.PP
+Note that although I work at Lawrence Berkeley National Laboratory (LBNL)
+I don't speak for LBNL nor do I represent LBNL with respect to my work on
+TransFig and xfig, nor does LBL make any representations about the suitability
+of this software for any purpose.
+.PP
+Here is the legal part:
+.PP
+THE LAWRENCE BERKELEY NATIONAL LABORATORY DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS, IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY SPECIAL,
+INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+
 .PP
 .I PostScript
 is a trademark of Adobe Systems Incorporated.
@@ -4088,9 +1217,8 @@ express or implied warranty.
 .br
 .SH FILES
 .ft B
-.nr n \w'DOC/FORMAT3.2\0\0\0\0'+1n-1/1n
 .ft P
-.TP \nn
+.TP 8
 .B CompKeyDB
 Data base of compose (meta) key sequences for 8-bit characters.
 Must be installed in
@@ -4102,11 +1230,10 @@ or X toolkit resource keyFile.
 See the
 .IR Imakefile .
 .TP
-.B ~/xfiglib
-This file must be in the login directory of the user or must be a symbolic
-link to a file containing the library definitions.
-See "PLACE LIBRARY OBJECT" in the "EDITING MODE PANEL COMMAND DESCRIPTIONS" section
-for the format of this file.
+/usr/lib/X11/xfig
+This directory contains the html documentation, the above mentioned
+CompKeyDB file, and a directory of libraries containing Fig objects
+such as electrical symbols, logic symbols, etc.
 .TP
 .B Fig.ad and Fig-color.ad
 Application defaults files which are automatically installed
@@ -4114,8 +1241,11 @@ in the system app-defaults directory with the
 .I make install
 command.
 .TP
-.B Doc/FORMAT3.1
+.B Doc/FORMAT3.2
 Description of Fig file format.
+.TP
+.B README
+Installation instructions and troubleshooting.
 .TP
 .B CHANGES
 Description of bug fixes/new features.
@@ -4268,13 +1398,8 @@ Brian Smith
 .I xcoloredit
 by Richard Hesketh)
 .sp
-GIF output code by:
-.br
-.nf
-E. Chernyaev (chernaev@mx.decnet.ihep.su)                  *
-.fi
 .sp
-GIF import code by:
+GIF header reading code by:
 .br
 David Koblas from the giftoppm part of the pbmplus package
 .sp
@@ -4345,7 +1470,7 @@ is neither an interpolated spline nor an approximated one, it is BOTH
 (the behaviour of each point is controlled by one single parameter
 called ``shape factor''). For additional information about X-splines, see:
 .sp
-  ``X-Splines: A Spline Model Designed for the End User''
+  "X-Splines: A Spline Model Designed for the End User"
   by C. Blanc and C. Schlick, Proceedings of SIGGRAPH'95
   http://dept-info.labri.u-bordeaux.fr/~schlick/DOC/sig1.html
 .sp
@@ -4366,34 +1491,32 @@ Christophe Schlick (schlick@labri.u\-bordeaux.fr)
 Note: the initial implementation was done by C. Feuille, S. Grosbois, L.
 Maziere and L. Minihot as a student practice (Universite Bordeaux, France).
 .sp
-.br
 Open/close compound feature written by
 .br
 Bill Taylor (bill@mainstream.com)
 .sp
-.br
 Library feature written by 
 .br
 Stephane Mancini (mancini@elecsrv.enst.fr)
 (object preview by Brian V. Smith)
 .sp
-.br
 The library objects in the Electrical and Logic libraries were done by
 .br
 Peter Hiscocks (phiscock@ee.ryerson.ca)
 .sp
-.br
 The library objects in the Computer, Networks, and Hospital-Equipment
 libraries were extracted from the clipart example files by
 .br
 Bill Chimiak (chim@bgsm.edu)
 .sp
-Importing of Fig files as picture objects by
-.br
-Georg Stemmer, with supervision and discussion by 
-Ruediger Bess (bess@informatik.uni-erlangen.de)
+.in -4
+.sp
+.B "Version 3.2.3:"
+.sp 2
+.in +4
+Please see the CHANGES file for credits for version 3.2.3 features.
+.in -4
 .SH NOTES
-.nf
 Many bug fixes/cleanups etc. by a host of faithful users
 .sp
 See the

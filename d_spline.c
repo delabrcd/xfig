@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
@@ -141,7 +141,7 @@ create_splineobject(x, y)
 	spline->type = (cur_mode == F_APPROX_SPLINE) ? T_OPEN_APPROX : T_OPEN_INTERP;
     }
     if (!make_sfactors(spline)) {
-	free_spline(spline);
+	free_spline(&spline);
     } else {
 	add_spline(spline);
     }

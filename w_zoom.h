@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Henning Spruth
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -23,48 +23,40 @@ extern int	zoomxoff;
 extern int	zoomyoff;
 extern Boolean	zoom_in_progress;
 extern Boolean	integral_zoom;
+extern void	unzoom();
 
 typedef struct { int x,y; } zXPoint ;
 
 /* convert Fig units to pixels at current zoom */
+/* warning: if you need to convert these to short, use SHZOOMX/Y */
+
 #define ZOOMX(x) round(zoomscale*((x)-zoomxoff))
 #define ZOOMY(y) round(zoomscale*((y)-zoomyoff))
+
+extern short	SHZOOMX();
+extern short	SHZOOMY();
 
 /* convert pixels to Fig units at current zoom */
 #define BACKX(x) round(x/zoomscale+zoomxoff)
 #define BACKY(y) round(y/zoomscale+zoomyoff)
 
-#define zXDrawArc(d,w,gc,x,y,d1,d2,a1,a2)\
-    XDrawArc(d,w,gc,(short)ZOOMX(x),(short)ZOOMY(y), \
+#define zXDrawArc(disp,win,gc,x,y,d1,d2,a1,a2)\
+    XDrawArc(disp,win,gc,SHZOOMX(x),SHZOOMY(y), \
 	     (short)round(zoomscale*(d1)),(short)round(zoomscale*(d2)),\
 	     a1,a2)
-#define zXFillArc(d,w,gc,x,y,d1,d2,a1,a2)\
-    XFillArc(d,w,gc,(short)ZOOMX(x),(short)ZOOMY(y), \
+#define zXFillArc(disp,win,gc,x,y,d1,d2,a1,a2)\
+    XFillArc(disp,win,gc,SHZOOMX(x),SHZOOMY(y), \
 	     (short)round(zoomscale*(d1)),(short)round(zoomscale*(d2)),\
 	     a1,a2)
-#define zXDrawLine(d,w,gc,x1,y1,x2,y2)\
-    XDrawLine(d,w,gc,(short)ZOOMX(x1),(short)ZOOMY(y1), \
-	      (short)ZOOMX(x2),(short)ZOOMY(y2))
-#define zXRotDrawString(d,font,ang,w,gc,x,y,s)\
-    XRotDrawString(d,font,ang,w,gc,(short)ZOOMX(x),(short)ZOOMY(y),s)
-#define zXFillRectangle(d,w,gc,x1,y1,x2,y2)\
-    XFillRectangle(d,w,gc,(short)ZOOMX(x1),(short)ZOOMY(y1),\
+#define zXDrawLine(disp,win,gc,x1,y1,x2,y2)\
+    XDrawLine(disp,win,gc,SHZOOMX(x1),SHZOOMY(y1), \
+	      SHZOOMX(x2),SHZOOMY(y2))
+#define zXRotDrawString(disp,font,ang,win,gc,x,y,s)\
+    XRotDrawString(disp,font,ang,win,gc,SHZOOMX(x),SHZOOMY(y),s)
+#define zXFillRectangle(disp,win,gc,x1,y1,x2,y2)\
+    XFillRectangle(disp,win,gc,SHZOOMX(x1),SHZOOMY(y1),\
 		(short)round(zoomscale*(x2)),(short)round(zoomscale*(y2)))
-#define zXDrawRectangle(d,w,gc,x1,y1,x2,y2)\
-    XDrawRectangle(d,w,gc,(short)ZOOMX(x1),(short)ZOOMY(y1),\
-		(short)round(zoomscale*(x2)),(short)round(zoomscale*(y2)))
-#define zXDrawLines(d,w,gc,p,n,m)\
-    {int i;\
-     XPoint *pp=(XPoint *) malloc(n * sizeof(XPoint)); \
-     for(i=0;i<n;i++){pp[i].x=ZOOMX(p[i].x);pp[i].y=ZOOMY(p[i].y);}\
-     XDrawLines(d,w,gc,pp,n,m);\
-     free(pp); \
-    }
-#define zXFillPolygon(d,w,gc,p,n,m,o)\
-    {int i;\
-     XPoint *pp=(XPoint *) malloc(n * sizeof(XPoint)); \
-     for(i=0;i<n;i++){pp[i].x=ZOOMX(p[i].x);pp[i].y=ZOOMY(p[i].y);}\
-     XFillPolygon(d,w,gc,pp,n,m,o);\
-     free(pp); \
-    }
+#define zXDrawRectangle(disp,win,gc,x1,y1,w,h)\
+    XDrawRectangle(disp,win,gc,SHZOOMX(x1),SHZOOMY(y1),\
+		(short)round(zoomscale*(w)),(short)round(zoomscale*(h)))
 #endif /* W_ZOOM_H */

@@ -5,7 +5,9 @@ Inches
 Letter 
 100.00
 Single
-0
+-2
+# How to create matter
+# (using gold as an example)
 1200 2
 0 32 #dab800
 2 2 0 1 -1 -1 0 0 -1 0.000 0 0 0 0 0 5

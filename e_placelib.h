@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1998 by Stephane Mancini
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -18,7 +18,6 @@
 extern int	cur_library_object;
 extern int	old_library_object;
 
-extern void	finish_place_lib_obj();
-extern void	finish_place_lib_noobj();
+extern void	cancel_place_lib_obj();
 extern void	sel_place_lib_obj();
 extern void	put_noobj_selected();

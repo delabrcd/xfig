@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -36,8 +36,9 @@ end_write_tmpfile()
   write_tmpfile=0;
 }
 
-write_file(file_name)
+write_file(file_name, update_recent)
     char	   *file_name;
+    Boolean	    update_recent;
 {
     FILE	   *fp;
 
@@ -56,7 +57,13 @@ write_file(file_name)
 	exit (2);
 	return (-1);
     }
-    put_msg("%d object(s) saved in \"%s\"", num_object, file_name);
+    if (!update_figs)
+	put_msg("%d object(s) saved in \"%s\"", num_object, file_name);
+
+    /* update the recent list if caller desires */
+    if (update_recent)
+	update_recent_list(file_name);
+
     return (0);
 }
 
@@ -80,7 +87,8 @@ write_objects(fp)
      * left corner of the screen (2nd quadrant).
      */
 
-    put_msg("Writing . . .");
+    if (!update_figs)
+	put_msg("Writing . . .");
     write_file_header(fp);
     for (a = objects.arcs; a != NULL; a = a->next) {
 	num_object++;
@@ -128,6 +136,9 @@ write_file_header(fp)
     fprintf(fp, "%.2f\n", appres.magnification);
     fprintf(fp, "%s\n", appres.multiple? "Multiple": "Single");
     fprintf(fp, "%d\n", appres.transparent);
+    /* figure comments before resolution */
+    write_comments(fp, objects.comments);
+    /* resolution */
     fprintf(fp, "%d %d\n", PIX_PER_INCH, 2);
     /* write the user color definitions (if any) */
     write_colordefs(fp);
@@ -154,6 +165,8 @@ write_arc(fp, a)
 {
     F_arrow	   *f, *b;
 
+    /* any comments first */
+    write_comments(fp, a->comments);
     /* externally, type 1=open arc, 2=pie wedge */
     fprintf(fp, "%d %d %d %d %d %d %d %d %d %.3f %d %d %d %d %.3f %.3f %d %d %d %d %d %d\n",
 	    O_ARC, a->type+1, a->style, a->thickness,
@@ -183,6 +196,8 @@ write_compound(fp, com)
     F_spline	   *s;
     F_text	   *t;
 
+    /* any comments first */
+    write_comments(fp, com->comments);
     fprintf(fp, "%d %d %d %d %d\n", O_COMPOUND, com->nwcorner.x,
 	    com->nwcorner.y, com->secorner.x, com->secorner.y);
     for (a = com->arcs; a != NULL; a = a->next)
@@ -204,9 +219,12 @@ write_ellipse(fp, e)
     FILE	   *fp;
     F_ellipse	   *e;
 {
+    /* get rid of any evil ellipses which have either radius = 0 */
     if (e->radiuses.x == 0 || e->radiuses.y == 0)
 	return;
 
+    /* any comments first */
+    write_comments(fp, e->comments);
     fprintf(fp, "%d %d %d %d %d %d %d %d %d %.3f %d %.4f %d %d %d %d %d %d %d %d\n",
 	    O_ELLIPSE, e->type, e->style, e->thickness,
 	    e->pen_color, e->fill_color, e->depth, e->pen_style, e->fill_style,
@@ -227,6 +245,10 @@ write_line(fp, l)
 
     if (l->points == NULL)
 	return;
+
+    /* any comments first */
+    write_comments(fp, l->comments);
+
 #ifdef V4_0
     if ( (write_tmpfile) && (l->type == T_PICTURE) && (l->pic!=NULL)) {
 	if ((l->pic->subtype==T_PIC_FIG) && (l->pic->figure!=NULL)) {
@@ -292,6 +314,10 @@ write_spline(fp, s)
 
     if (s->points == NULL)
 	return;
+
+    /* any comments first */
+    write_comments(fp, s->comments);
+
     /* count number of points and put it in the object */
     for (npts=0, p = s->points; p != NULL; p = p->next)
 	npts++;
@@ -338,30 +364,55 @@ write_spline(fp, s)
 
 
 write_text(fp, t)
-        FILE           *fp;
-        F_text         *t;
+    FILE           *fp;
+    F_text         *t;
 {
-	int		l, len;
-	unsigned char   c;
+    int		    l, len;
+    unsigned char   c;
 
-	if (t->length == 0)
+    if (t->length == 0)
 	    return;
-	fprintf(fp, "%d %d %d %d %d %d %d %.4f %d %d %d %d %d ",
+
+    /* any comments first */
+    write_comments(fp, t->comments);
+
+    fprintf(fp, "%d %d %d %d %d %d %d %.4f %d %d %d %d %d ",
 			O_TEXT, t->type, t->color, t->depth, t->pen_style,
 			t->font, t->size, t->angle,
 			t->flags, t->ascent+t->descent, t->length,
 			t->base_x, t->base_y);
-	len = strlen(t->cstring);
-	for (l=0; l<len; l++) {
-	    c = t->cstring[l];
-	    if (c == '\\')
-		fprintf(fp,"\\\\");	 /* escape a '\' with another one */
-	    else if (c < 0x80)
-		putc(c,fp);  /* normal 7-bit ASCII */
-	    else
-		fprintf(fp, "\\%o", c);  /* 8-bit, make \xxx (octal) */
-	}
-	fprintf(fp,"\\001\n");		      /* finish off with '\001' string */
+    len = strlen(t->cstring);
+    for (l=0; l<len; l++) {
+	c = t->cstring[l];
+	if (c == '\\')
+	    fprintf(fp,"\\\\");	 /* escape a '\' with another one */
+	else if (c < 0x80)
+	    putc(c,fp);  /* normal 7-bit ASCII */
+	else
+	    fprintf(fp, "\\%o", c);  /* 8-bit, make \xxx (octal) */
+    }
+    fprintf(fp,"\\001\n");	      /* finish off with '\001' string */
+}
+
+write_comments(fp, com)
+    FILE	   *fp;
+    char	   *com;
+{
+    char	   last;
+
+    if (!com || !*com)
+	return;
+    fprintf(fp,"# ");
+    while (*com) {
+	last = *com;
+	fputc(*com,fp);
+	if (*com == '\n' && *(com+1) != '\0')
+	    fprintf(fp,"# ");
+	com++;
+    }
+    /* add newline if last line of comment didn't have one */
+    if (last != '\n')
+	fputc('\n',fp);
 }
 
 emergency_save(file_name)

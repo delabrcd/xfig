@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -427,6 +427,8 @@ static void
 cancel_scale_arc()
 {
     elastic_scalearc(cur_a);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     toggle_arcmarker(cur_a);
     wrapup_scale();
 }
@@ -557,7 +559,7 @@ fix_scale_spline(x, y)
     old_s = copy_spline(cur_s);
     clean_up();
     set_latestspline(old_s);
-    set_action_object(F_CHANGE, O_SPLINE);
+    set_action_object(F_EDIT, O_SPLINE);
     old_s->next = cur_s;
     /* now change the original to become the new object */
     rescale_points(cur_s, x, y);
@@ -649,8 +651,8 @@ init_boxscale_compound(x, y)
 	cosa = fabs(dx / l);
 	sina = fabs(dy / l);
     }
-    elastic_box(fix_x, fix_y, cur_x, cur_y);
     boxsize_msg(1);
+    elastic_box(fix_x, fix_y, cur_x, cur_y);
     canvas_locmove_proc = constrained_resizing_box;
     canvas_leftbut_proc = fix_boxscale_compound;
     canvas_rightbut_proc = cancel_boxscale_compound;
@@ -661,6 +663,8 @@ static void
 cancel_boxscale_compound()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     toggle_compoundmarker(cur_c);
     wrapup_scale();
 }
@@ -672,6 +676,8 @@ fix_boxscale_compound(x, y)
     double	    scalex, scaley;
 
     elastic_box(fix_x, fix_y, cur_x, cur_y);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     adjust_box_pos(x, y, from_x, from_y, &x, &y);
     new_c = copy_compound(cur_c);
     scalex = (double) (x - fix_x) / (from_x - fix_x);
@@ -703,6 +709,8 @@ static void
 cancel_scale_compound()
 {
     elastic_scalecompound(cur_c);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     toggle_compoundmarker(cur_c);
     wrapup_scale();
 }
@@ -712,12 +720,14 @@ fix_scale_compound(x, y)
     int		    x, y;
 {
     elastic_scalecompound(cur_c);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     adjust_box_pos(x, y, from_x, from_y, &cur_x, &cur_y);
     /* make a copy of the original and save as unchanged object */
     old_c = copy_compound(cur_c);
     clean_up();
     set_latestcompound(old_c);
-    set_action_object(F_CHANGE, O_COMPOUND);
+    set_action_object(F_EDIT, O_COMPOUND);
     old_c->next = cur_c;
     /* now change the original to become the new object */
     prescale_compound(cur_c, cur_x, cur_y);
@@ -789,7 +799,7 @@ scale_compound(c, sx, sy, refx, refy)
     }
 }
 
-void
+static void
 scale_line(l, sx, sy, refx, refy)
     F_line	   *l;
     float	    sx, sy;
@@ -822,7 +832,7 @@ scale_line(l, sx, sy, refx, refy)
     scale_linewidth(l,sx,sy);
 }
 
-void
+static void
 scale_spline(s, sx, sy, refx, refy)
     F_spline	   *s;
     float	    sx, sy;
@@ -840,7 +850,7 @@ scale_spline(s, sx, sy, refx, refy)
     scale_linewidth(s,sx,sy);
 }
 
-void
+static void
 scale_arc(a, sx, sy, refx, refy)
     F_arc	   *a;
     float	    sx, sy;
@@ -887,7 +897,7 @@ scale_arc(a, sx, sy, refx, refy)
     scale_linewidth(a,sx,sy);
 }
 
-void
+static void
 scale_ellipse(e, sx, sy, refx, refy)
     F_ellipse	   *e;
     float	    sx, sy;
@@ -915,7 +925,7 @@ scale_ellipse(e, sx, sy, refx, refy)
     scale_linewidth(e,sx,sy);
 }
 
-void
+static void
 scale_text(t, sx, sy, refx, refy)
     F_text	   *t;
     float	    sx, sy;
@@ -1038,6 +1048,8 @@ static void
 cancel_boxscale_line()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     toggle_linemarker(cur_l);
     wrapup_scale();
 }
@@ -1050,6 +1062,8 @@ fix_boxscale_line(x, y)
     float	scalex, scaley;
 
     elastic_box(fix_x, fix_y, cur_x, cur_y);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     adjust_box_pos(x, y, from_x, from_y, &x, &y);
     new_l = copy_line(cur_l);
     draw_line(cur_l, ERASE);
@@ -1134,6 +1148,8 @@ static void
 cancel_scale_line()
 {
     elastic_scalepts(cur_l->points);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     toggle_linemarker(cur_l);
     wrapup_scale();
 }
@@ -1145,12 +1161,14 @@ fix_scale_line(x, y)
     int		owd,oht, nwd, nht;
 
     elastic_scalepts(cur_l->points);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     adjust_box_pos(x, y, from_x, from_y, &x, &y);
     /* make a copy of the original and save as unchanged object */
     old_l = copy_line(cur_l);
     clean_up();
     set_latestline(old_l);
-    set_action_object(F_CHANGE, O_POLYLINE);
+    set_action_object(F_EDIT, O_POLYLINE);
     old_l->next = cur_l;
     /* now change the original to become the new object */
     rescale_points(cur_l, x, y);
@@ -1200,7 +1218,7 @@ rescale_points(obj, x, y)
 
 /* scale arrowheads on passed object by sx,sy */
 
-void
+static void
 scale_arrows(obj,sx,sy)
     F_line	 *obj;
     float	  sx,sy;
@@ -1212,7 +1230,7 @@ scale_arrows(obj,sx,sy)
 /* scale arrowhead by sx,sy - for now just use average
    of sx,sy for scale factor */
 
-void
+static void
 scale_arrow(arrow,sx,sy)
     F_arrow	 *arrow;
     float	  sx,sy;

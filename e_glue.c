@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -114,6 +114,8 @@ static void
 cancel_tag_region()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     compound_selected();
     draw_mousefun_canvas();
 }
@@ -125,6 +127,8 @@ tag_region(x, y)
     int		    xmin, ymin, xmax, ymax;
 
     elastic_box(fix_x, fix_y, cur_x, cur_y);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     xmin = min2(fix_x, x);
     ymin = min2(fix_y, y);
     xmax = max2(fix_x, x);
@@ -202,6 +206,7 @@ compose_compound(c)
     c->texts = NULL;
     c->splines = NULL;
     c->arcs = NULL;
+    c->comments = NULL;
     c->compounds = NULL;
     get_ellipse(&c->ellipses);
     get_line(&c->lines);
@@ -231,6 +236,8 @@ sel_ellipse(xmin, ymin, xmax, ymax)
     F_ellipse	   *e;
 
     for (e = objects.ellipses; e != NULL; e = e->next) {
+	if (!active_layer(e->depth))
+	    continue;
 	if (xmin > e->center.x - e->radiuses.x)
 	    continue;
 	if (xmax < e->center.x + e->radiuses.x)
@@ -256,6 +263,7 @@ get_ellipse(list)
 	    e = e->next;
 	    continue;
 	}
+	remove_depth(O_ELLIPSE, e->depth);
 	if (*list == NULL)
 	    *list = e;
 	else
@@ -278,6 +286,8 @@ sel_arc(xmin, ymin, xmax, ymax)
     int		    urx, ury, llx, lly;
 
     for (a = objects.arcs; a != NULL; a = a->next) {
+	if (!active_layer(a->depth))
+	    continue;
 	arc_bound(a, &llx, &lly, &urx, &ury);
 	if (xmin > llx)
 	    continue;
@@ -304,6 +314,7 @@ get_arc(list)
 	    a = a->next;
 	    continue;
 	}
+	remove_depth(O_ARC, a->depth);
 	if (*list == NULL)
 	    *list = a;
 	else
@@ -326,6 +337,8 @@ sel_line(xmin, ymin, xmax, ymax)
     int		    inbound;
 
     for (l = objects.lines; l != NULL; l = l->next) {
+	if (!active_layer(l->depth))
+	    continue;
 	for (inbound = 1, p = l->points; p != NULL && inbound;
 	     p = p->next) {
 	    inbound = 0;
@@ -358,6 +371,7 @@ get_line(list)
 	    l = l->next;
 	    continue;
 	}
+	remove_depth(O_POLYLINE, l->depth);
 	if (*list == NULL)
 	    *list = l;
 	else
@@ -379,6 +393,8 @@ sel_spline(xmin, ymin, xmax, ymax)
     int		    urx, ury, llx, lly;
 
     for (s = objects.splines; s != NULL; s = s->next) {
+	if (!active_layer(s->depth))
+	    continue;
 	spline_bound(s, &llx, &lly, &urx, &ury);
 	if (xmin > llx)
 	    continue;
@@ -405,6 +421,7 @@ get_spline(list)
 	    s = s->next;
 	    continue;
 	}
+	remove_depth(O_SPLINE, s->depth);
 	if (*list == NULL)
 	    *list = s;
 	else
@@ -427,6 +444,8 @@ sel_text(xmin, ymin, xmax, ymax)
     int		    dum;
 
     for (t = objects.texts; t != NULL; t = t->next) {
+	if (!active_layer(t->depth))
+	    continue;
 	text_bound(t, &txmin, &tymin, &txmax, &tymax,
 			&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
 	if (xmin > txmin || xmax < txmax ||
@@ -449,6 +468,7 @@ get_text(list)
 	    t = t->next;
 	    continue;
 	}
+	remove_depth(O_TEXT, t->depth);
 	if (*list == NULL)
 	    *list = t;
 	else
@@ -469,6 +489,8 @@ sel_compound(xmin, ymin, xmax, ymax)
     F_compound	   *c;
 
     for (c = objects.compounds; c != NULL; c = c->next) {
+	if (!any_active_in_compound(c))
+	    continue;
 	if (xmin > c->nwcorner.x)
 	    continue;
 	if (xmax < c->secorner.x)
@@ -494,6 +516,7 @@ get_compound(list)
 	    c = c->next;
 	    continue;
 	}
+	remove_compound_depth(c);
 	if (*list == NULL)
 	    *list = c;
 	else

@@ -21,6 +21,9 @@ Fig.unit_report_popup.box.label.foreground:	black
 Fig.mouse_report_popup.box.label.background:	yellow
 Fig.mouse_report_popup.box.label.foreground:	black
 
+! Layer on/off/toggle buttons
+Fig*layer_form*Command.background:		lightskyblue
+
 ! Unit box in corner of rulers
 	Fig*unitbox.background:			grey95
 	Fig*unitbox.foreground:			black
@@ -260,3 +263,8 @@ Fig.mouse_report_popup.box.label.foreground:	black
 !   rbg/hsv scrollbar form in color panel
 	Fig*set_indicator_panel.form*mixingForm.background:	grey95
 	Fig*set_indicator_panel.form*mixingForm.foreground:	black
+
+! "Updating" label in layer button area - this makes the
+!		label look inactive
+Fig*updating_layers.foreground:		gray70
+

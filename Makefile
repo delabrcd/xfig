@@ -97,6 +97,7 @@
     INSTKMEMFLAGS = -g kmem -m 2755
 
       CDEBUGFLAGS = -O
+      CDEBUGFLAGS = -g
         CCOPTIONS =
 
       ALLINCLUDES = $(INCLUDES) $(EXTRA_INCLUDES) $(TOP_INCLUDES) $(STD_INCLUDES)
@@ -230,10 +231,10 @@ PICFLAGS = -pic
            XILIB = -lXi
 
         SOXLIBREV = 4.10
-          SOXTREV = 4.10
-         SOXAWREV = 5.0
+          SOXTREV = 4.20
+         SOXAWREV = 6.0
         SOOLDXREV = 4.10
-         SOXMUREV = 4.10
+         SOXMUREV = 4.20
         SOXEXTREV = 4.10
       SOXINPUTREV = 4.10
 
@@ -271,7 +272,7 @@ PICFLAGS = -pic
 
 # FIG : Facility for Interactive Generation of figures
 # Copyright (c) 1985-1988 by Supoj Sutanthavibul
-# Parts Copyright (c) 1989-1998 by Brian V. Smith
+# Parts Copyright (c) 1989-2000 by Brian V. Smith
 # Parts Copyright (c) 1991 by Paul King
 #
 # Any party obtaining a copy of these files is granted, free of charge, a
@@ -282,37 +283,27 @@ PICFLAGS = -pic
 # and/or sell copies of the Software, and to permit persons who receive
 # copies from any such party to do so, with the only requirement being
 # that this copyright notice remain intact.
-#
-# Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
-# be included if xfig is to be sold, due to the patent held by Unisys Corp.
-# on the LZW compression algorithm.
-# If you wish to sell xfig, you must comment out the USEGIF symbol below
-# by putting the word "XCOMM" in front of it.  Be sure to make a new
-# Makefile after that ("make Makefile").
+
+# If you want to install xfig in a directory other than the default X11 binary
+# directory, uncomment the following "BINDIR" line and change the path
+# to the full path of the directory where you want xfig to be installed.
+# Also, you may have to uncomment and redefine MKDIRHIER because "make" looks
+# for it relative to the BINDIR variable.
+
+# BINDIR = /usr/bin/X11
+# MKDIRHIER = "/bin/sh /usr/bin/X11/mkdirhier"
 
 # If don't want to use JPEG, comment out the following line
 
-# If you don't have the jpeg library in your system library area, comment
-# out the USEINSTALLEDJPEG variable (using #), change the JPEGLIBDIR
-# variable to the directory where your jpeg library resides and change
-# the JPEGINCDIR to the directory where your jpeg header files (include)
-# reside.
+# If you don't have the jpeg library in your system library area (meaning
+# that it must be compiled first), comment out the USEINSTALLEDJPEG variable
+# (using #), change the JPEGLIBDIR variable to the directory where your
+# jpeg library resides and change the JPEGINCDIR to the directory where your
+# jpeg header files (include) reside.
 # You must have version 5b or newer of the jpeg library.
 
 JPEGLIBDIR = /usr/local/lib
-
-# Uncomment the following definiton if you want to use the small icons
-# for the panel buttons.  Use this if you have a 800x600 or smaller screen.
-
-# #define USESMALLICONS
-
-# Uncomment the following definition for XAWLIB if you want to use
-# the 3d Athena Widget Set (highly recommended!)
-
-# XAWLIB = -lXaw3d
-
-# Uncomment the following if needed for DECstations running older X11R4
-# INCROOT=/usr/include/mit
+JPEGINCDIR = /usr/include/X11
 
 # Uncomment the #define for USEXPM if you want to use the XPM
 # (color pixmap) package.
@@ -322,29 +313,47 @@ JPEGLIBDIR = /usr/local/lib
 #	defined if you use USEXPM_ICON)
 # You need XPM version 3.4c or newer.  This is available from ftp.x.org
 #   in /contrib/libraries.
-# Change XPMLIBS if necessary to point to the xpm library (libXpm)
+# Change XPMLIBDIR if necessary to point to the xpm library (libXpm)
 # Change XPMINC if necessary to point to the include file for xpm (xpm.h)
 
-# #define USEXPM
-# #define USEXPM_ICON
+XPMLIBDIR = $(USRLIBDIR)
+XPMINC = -I/usr/include/X11
 
-# Uncomment the next line if you have a Sun Sparc and you would like the
-# Compose LED (light) turned on when you are entering multi-key characters
-# (like a-umlaut, c-cedilla, etc).  You may have to change the value from 2
+# Uncomment the following definiton if you want to use the small icons
+# for the panel buttons.  Use this if you have a 800x600 or smaller screen.
+
+# #define USESMALLICONS
+
+# Uncomment the following definition for XAW3D if you want to use
+# the 3d Athena Widget Set (highly recommended!)
+
+DUSEXAW3D = -DXAW3D
+XAWLIB = -lXaw3d
+
+# Uncomment the following if needed for DECstations running older X11R4
+# INCROOT=/usr/include/mit
+
+# If you do not want to use the CompKeyDB but the standard behavior of
+# the Compose key, uncomment the next line
+
+# NO_COMPKEYDB = -DNO_COMPKEYDB
+
+# If you have a Compose indicator LED and you would it turned on when you
+# are entering multi-key characters (like a-umlaut, c-cedilla, etc)
+# uncomment the next line.  You may have to change the value from 2
 # to 1, 3, or 4 depending on your workstation model and X libraries.
 
-# COMP_LED = -DCOMP_LED=2
+COMP_LED = -DCOMP_LED=3
 
 # Uncomment the next line if you want use Japanese (i18n) on xfig.
 # If your setlocale() dosen't support the locale, you should
 # add -DSETLOCALE to I18N_DEFS.
-
 # #define I18N
 
 # If using an input tablet uncomment the following
 
-# TABLIB = $(XILIB)
-# USETAB = -DUSE_TAB
+TABLIB = $(XILIB)
+USETAB = -DUSE_TAB
 
 # uncomment the following line if your compiler supports
 # inline functions. With the "INLINE" keyword, you should notice that
@@ -354,7 +363,7 @@ JPEGLIBDIR = /usr/local/lib
 
 # use (and change) the following if you want the multi-key data base file
 # somewhere other than the standard X11 library directory
-# XFIGLIBDIR = /usr/local/lib/X11/xfig
+# XFIGLIBDIR = /usr/local/lib/xfig
 
 # use this if you want the multi-key data base file in the standard X11 tree
 XFIGLIBDIR = $(LIBDIR)/xfig
@@ -367,6 +376,10 @@ XFIGLIBDIR = $(LIBDIR)/xfig
 
 # HAVE_NO_STRCASECMP = -DHAVE_NO_STRCASECMP
 # HAVE_NO_STRNCASECMP = -DHAVE_NO_STRNCASECMP
+
+# If your system doesn't have dirent.h undefine the following definition
+
+# HAVE_NO_DIRENT = -DHAVE_NO_DIRENT
 
 # For the rotated text code:
 #   Add one of `-DCACHE_XIMAGES' or `-DCACHE_BITMAPS' to decide what is
@@ -389,13 +402,6 @@ CACHE = -DCACHE_BITMAPS -DCACHE_SIZE_LIMIT=300
 # adding -DMAXNUMPTS=xxxx to the DEFINES line, where xxxx is the maximum
 # number of vertices.
 
-# remove -DGSBIT from the DEFINES if you DON'T want to have gs (Ghostscript)
-# generate a preview bitmap for Encapsulated PostScript objects if they
-# don't have one.  If you do use Ghostscript you will need version 2.4 or
-# later, and it must have the 'pcx256' and 'pbmraw' devices compiled in
-# besides any other device drivers you already use with it.
-# See the Ghostscript Makefile for details.
-
 # Additionally, there is a bug in the pcx driver in Aladdin Ghostscript
 # versions prior to 3.32, which writes an incorrect pcx file for images
 # with odd width (not even).  Uncomment the following compile-time flag
@@ -408,13 +414,18 @@ CACHE = -DCACHE_BITMAPS -DCACHE_SIZE_LIMIT=300
 
 # PCXBUG = -DPCXBUG
 
+# If you want a compiler other than "cc", define it here
+
+# CC = /opt/SUNWspro/bin/cc
+
 # *****************************************************
 # *****************************************************
 # You shouldn't have to change anything below this line
 # *****************************************************
 # *****************************************************
 
-JPEGINCDIR = -I/usr/include/X11
+JPEGINC = -I$(JPEGINCDIR)
+
 JPEGLIB = -L$(JPEGLIBDIR) -ljpeg
 
 DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
@@ -427,32 +438,37 @@ STRDEFINES = $(HAVE_NO_NOSTRSTR) \
 		$(HAVE_NO_STRNCASECMP) \
 		$(HAVE_NO_STRCASECMP)
 
-DUSEGIF = -DUSE_GIF
-WRGIFS = f_wrgif.c
-WRGIFO = f_wrgif.o
-
 DUSEJPEG = -DUSE_JPEG
 READJPEGS = f_readjpg.c
 READJPEGO = f_readjpg.o
 
-DEFINES =             $(STRDEFINES) -DGSBIT $(USEINLINE) $(DUSEXPM) \
-			$(DUSEXPMICON) $(DUSEGIF) $(DUSEJPEG) $(I18N_DEFS)
+DUSEXPM = -DUSE_XPM
+XPMLIBS = -L$(XPMLIBDIR) -lXpm
+READXPMS = f_readxpm.c
+READXPMO = f_readxpm.o
+
+DUSEXPMICON = -DUSE_XPM_ICON
+
+DEFINES =             $(STRDEFINES) $(USEINLINE) $(DUSEXPM) $(DUSEXAW3D) \
+			$(DUSEJPEG) $(I18N_DEFS) \
+			$(HAVE_NO_DIRENT)
 
 XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
 		d_subspline.c d_line.c d_regpoly.c d_spline.c d_text.c \
 		e_addpt.c e_align.c e_arrow.c e_break.c e_compound.c \
 		e_convert.c e_copy.c e_delete.c e_deletept.c \
-		e_edit.c e_flip.c e_glue.c e_move.c \
+		e_edit.c e_flip.c e_glue.c e_joinsplit.c e_move.c \
 		e_movept.c e_placelib.c e_rotate.c e_scale.c e_update.c \
 		f_load.c f_neuclrtab.c f_picobj.c f_read.c f_readold.c \
-		f_readeps.c f_readxbm.c f_readgif.c $(READJPEGS) f_readpcx.c $(READXPMS) \
-		f_save.c f_util.c f_wrpcx.c $(WRGIFS) \
+		f_readppm.c f_readtif.c f_readeps.c \
+		f_readxbm.c f_readgif.c $(READJPEGS) f_readpcx.c $(READXPMS) \
+		f_save.c f_util.c f_wrpcx.c \
 		main.c mode.c object.c resources.c \
 		u_bound.c u_create.c u_drag.c u_draw.c \
 		u_elastic.c u_error.c u_fonts.c u_free.c u_geom.c \
 		u_list.c u_markers.c u_pan.c u_print.c \
-		u_redraw.c u_scale.c u_search.c u_translate.c u_undo.c \
-		w_browse.c w_capture.c w_srchrepl.c w_help.c \
+		u_redraw.c u_scale.c u_search.c u_translate.c u_undo.c w_listwidget.c \
+		w_browse.c w_capture.c w_srchrepl.c w_help.c w_layers.c w_menuentry.c \
 		w_canvas.c w_cmdpanel.c w_color.c w_cursor.c w_dir.c w_drawprim.c \
 		w_export.c w_file.c w_fontbits.c w_fontpanel.c w_grid.c w_icons.c \
 		w_indpanel.c w_library.c w_modepanel.c w_mousefun.c w_msgpanel.c \
@@ -463,17 +479,18 @@ XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
 		d_subspline.o d_line.o d_regpoly.o d_spline.o d_text.o \
 		e_addpt.o e_align.o e_arrow.o e_break.o e_compound.o \
 		e_convert.o e_copy.o e_delete.o e_deletept.o \
-		e_edit.o e_flip.o e_glue.o e_move.o \
+		e_edit.o e_flip.o e_glue.o e_joinsplit.o e_move.o \
 		e_movept.o e_placelib.o e_rotate.o e_scale.o e_update.o \
 		f_load.o f_neuclrtab.o f_picobj.o f_read.o f_readold.o \
-		f_readeps.o f_readxbm.o f_readgif.o $(READJPEGO) f_readpcx.o $(READXPMO) \
-		f_save.o f_util.o f_wrpcx.o $(WRGIFO) \
+		f_readppm.o f_readtif.o f_readeps.o \
+		f_readxbm.o f_readgif.o $(READJPEGO) f_readpcx.o $(READXPMO) \
+		f_save.o f_util.o f_wrpcx.o \
 		main.o mode.o object.o resources.o \
 		u_bound.o u_create.o u_drag.o u_draw.o \
 		u_elastic.o u_error.o u_fonts.o u_free.o u_geom.o \
 		u_list.o u_markers.o u_pan.o u_print.o \
-		u_redraw.o u_scale.o u_search.o u_translate.o u_undo.o \
-		w_browse.o w_capture.o w_srchrepl.o w_help.o \
+		u_redraw.o u_scale.o u_search.o u_translate.o u_undo.o w_listwidget.o \
+		w_browse.o w_capture.o w_srchrepl.o w_help.o w_layers.o w_menuentry.o \
 		w_canvas.o w_cmdpanel.o w_color.o w_cursor.o w_dir.o w_drawprim.o \
 		w_export.o w_file.o w_fontbits.o w_fontpanel.o w_grid.o w_icons.o \
 		w_indpanel.o w_library.o w_modepanel.o w_mousefun.o w_msgpanel.o \
@@ -482,12 +499,12 @@ XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
 
 # Other dependencies should be handled by "make depend"
 
-MAINDEPFILES =  fig.icon.X patchlevel.h version.h
+MAINDEPFILES =  patchlevel.h version.h
 
 SRCS = $(XFIGSRC)
 OBJS = $(XFIGOBJ)
 
-EXTRA_INCLUDES = $(JPEGINCDIR) $(XPMINC)
+EXTRA_INCLUDES = $(JPEGINC) $(XPMINC)
 DEPLIBS = $(DEPXAWLIB) $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
 
 LOCAL_LIBRARIES = 	$(JPEGLIB)
@@ -536,15 +553,6 @@ lint1:
 clean::
 	$(RM) $(PROGRAM)
 
-install::
-	@case '${MFLAGS}' in *[i]*) set +e;; esac;
-	@for i in $(XFIGLIBDIR) $(OBJLIBDIR); do if [ -d $(DESTDIR)$$i ]; then \
-	set +x; else (set -x; $(MKDIRHIER) $(DESTDIR)$$i); fi \
-	done
-
-install:: CompKeyDB
-	$(INSTALL) -c $(INSTDATFLAGS) CompKeyDB $(DESTDIR)$(XFIGLIBDIR)
-
 install:: Fig.ad
 	@if [ -d $(DESTDIR)$(XAPPLOADDIR) ]; then set +x; \
 	else (set -x; $(MKDIRHIER) $(DESTDIR)$(XAPPLOADDIR)); fi
@@ -555,27 +563,48 @@ install:: Fig-color.ad
 	else (set -x; $(MKDIRHIER) $(DESTDIR)$(XAPPLOADDIR)); fi
 	$(INSTALL) -c $(INSTAPPFLAGS) Fig-color.ad $(DESTDIR)$(XAPPLOADDIR)/Fig-color
 
-# Install the object libraries here
+# Install the compose key database, object libraries and documentation
+# here with "make install"
+
 install::
-	@echo Copying PDF documentation to $(XFIGLIBDIR)
+	@if [ -d $(XFIGLIBDIR) ]; then set +x; \
+		else (set -x; $(MKDIRHIER) $(XFIGLIBDIR) ; set +x; ); fi
+	chmod a+x,u+w $(XFIGLIBDIR)
+	$(INSTALL) -c CompKeyDB $(XFIGLIBDIR)
+	make install.libs
+	make install.doc
+
+# Install the documentation here with "make install.doc"
+install.doc::
+	@echo Installing man pages to $(MANDIR)
+	@make install.man
+
 	@(cd Doc ; \
+	echo Copying pdf and html files to $(XFIGLIBDIR) ; \
+	$(INSTALL) -c xfig.html $(XFIGLIBDIR) ; \
 	$(INSTALL) -c xfig-howto.pdf $(XFIGLIBDIR) ; \
-	$(INSTALL) -c xfig.pdf $(XFIGLIBDIR) ; \
-	echo Copying html files to $(XFIGLIBDIR)/html ; \
 	if [ -d $(XFIGLIBDIR)/html ]; then set +x; \
 	   else (set -x; $(MKDIRHIER) $(XFIGLIBDIR)/html ); fi ; \
-	(cd html ; $(INSTALL) -c *.* $(XFIGLIBDIR)/html ; ) ;\
-	echo "  Copying japanese html files" ; \
-	if [ -d $(XFIGLIBDIR)/html/japanese ]; then set +x; \
-	   else (set -x; $(MKDIRHIER) $(XFIGLIBDIR)/html/japanese ); fi ; \
-	(cd html/japanese ; $(INSTALL) -c * $(XFIGLIBDIR)/html/japanese ; ) ; \
+	(cd html ; \
+	   for f in *.* ; do \
+	      $(INSTALL) -c $$f $(XFIGLIBDIR)/html ; \
+	   done) ; \
 	echo "  Copying image files for html" ; \
 	if [ -d $(XFIGLIBDIR)/html/images ]; then set +x; \
 	   else (set -x; $(MKDIRHIER) $(XFIGLIBDIR)/html/images ); fi ; \
-	(cd html/images ; $(INSTALL) -c * $(XFIGLIBDIR)/html/images ; ) ; \
+	(cd html/images ; \
+	   for f in * ; do \
+	       $(INSTALL) -c $$f $(XFIGLIBDIR)/html/images ; \
+	   done) ; \
 	) ;
+
+# Install the object libraries here with "make install.libs"
+install.libs::
 	@echo "Copying Fig Object Libraries"
-	@(cd Examples/Libraries ; \
+	@if [ -d $(OBJLIBDIR) ]; then set +x; \
+		else (set -x; $(MKDIRHIER) $(OBJLIBDIR) ; set +x; ); fi
+	@if [ -d Examples/Libraries ]; then \
+	(cd Examples/Libraries ; \
 	for d in * ;  do \
 	    (cd $$d ; \
 	    if [ -d $(OBJLIBDIR)/$$d ]; then set +x; \
@@ -583,21 +612,39 @@ install::
 	    echo "  Copying $$d library files to $(OBJLIBDIR)/$$d" ; \
 	    for f in * ;  do \
 		if [ -d $$f ]; then ( \
-		    echo "    Copying files to $(OBJLIBDIR)/$$d/$$f" ; \
 		    if [ -d $(OBJLIBDIR)/$$d/$$f ]; then set +x; \
 			else (set -x; $(MKDIRHIER) $(OBJLIBDIR)/$$d/$$f ); fi ; \
-		    cd $$f ; $(INSTALL) -c * $(OBJLIBDIR)/$$d/$$f ); \
-	        else ($(INSTALL) -c $$f $(OBJLIBDIR)/$$d ) ; fi ; \
+			(cd $$f ; \
+			for dd in * ; do \
+			    if [ -d $$dd ]; then ( \
+				if [ -d $(OBJLIBDIR)/$$d/$$f/$$dd ]; then set +x; \
+				    else (set -x; $(MKDIRHIER) $(OBJLIBDIR)/$$d/$$f/$$dd ); fi ; \
+				    (cd $$dd ; \
+				    for l in * ; do \
+					if [ -d $$l ]; then ( \
+					    if [ -d $(OBJLIBDIR)/$$d/$$f/$$dd/$$l ]; then set +x; \
+						else (set -x; $(MKDIRHIER) $(OBJLIBDIR)/$$d/$$f/$$dd/$$l ); fi ; \
+					    (cd $$l ; \
+						for m in * ; do \
+						    $(INSTALL) -c $$m $(OBJLIBDIR)/$$d/$$f/$$dd/$$l ; \
+						done ) ) ; \
+					else ( $(INSTALL) -c $$l $(OBJLIBDIR)/$$d/$$f/$$dd ) ; fi ; \
+				done) ) ; \
+			    else ( $(INSTALL) -c $$dd $(OBJLIBDIR)/$$d/$$f ) ; fi ; \
+			done) ); \
+		else ($(INSTALL) -c $$f $(OBJLIBDIR)/$$d ) ; fi ; \
 	    done ) ; \
-	done ; ) ;
+	done ; ) ; \
+	else echo No Object Libraries to install ; \
+	fi;
 
 main.o:  main.c $(MAINDEPFILES) mode.h
 	$(RM) $@
-	$(CC) -c $(CFLAGS)  $(USETAB) $(OBJLIB)  $*.c
+	$(CC) -c $(CFLAGS)  $(USETAB) $(OBJLIB) $(DUSEXPMICON)  $*.c
 
 f_read.o:  f_read.c $(MAINDEPFILES) mode.h
 	$(RM) $@
-	$(CC) -c $(CFLAGS)    $*.c
+	$(CC) -c $(CFLAGS)   $*.c
 
 u_error.o:  u_error.c $(MAINDEPFILES) mode.h
 	$(RM) $@
@@ -607,9 +654,17 @@ resources.o:  resources.c resources.h
 	$(RM) $@
 	$(CC) -c $(CFLAGS)    $*.c
 
+e_edit.o:  e_edit.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
 f_readeps.o:  f_readeps.c
 	$(RM) $@
-	$(CC) -c $(CFLAGS)  $(PCXBUG)  $*.c
+	$(CC) -c $(CFLAGS)  $(PCXBUG) -DGSBIT  $*.c
+
+w_capture.o:  w_capture.c  w_capture.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
 
 w_help.o:  w_help.c
 	$(RM) $@
@@ -617,11 +672,15 @@ w_help.o:  w_help.c
 
 w_canvas.o:  w_canvas.c mode.h
 	$(RM) $@
-	$(CC) -c $(CFLAGS)  $(DIR_DEFS) $(COMP_LED)  $*.c
+	$(CC) -c $(CFLAGS)  $(DIR_DEFS) $(COMP_LED) $(NO_COMPKEYDB)  $*.c
 
 w_icons.o:  w_icons.c w_icons.h
 	$(RM) $@
-	$(CC) -c $(CFLAGS)  $(DUSESMALLICONS)  $*.c
+	$(CC) -c $(CFLAGS)  $(DUSESMALLICONS) $(DUSEXPMICON)  $*.c
+
+w_print.o:  w_print.c w_print.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
 
 w_setup.o:  w_setup.c w_setup.h w_icons.h
 	$(RM) $@
@@ -700,10 +759,6 @@ e_delete.o:  e_delete.c  mode.h
 	$(CC) -c $(CFLAGS)   $*.c
 
 e_deletept.o:  e_deletept.c  mode.h
-	$(RM) $@
-	$(CC) -c $(CFLAGS)   $*.c
-
-e_edit.o:  e_edit.c  mode.h
 	$(RM) $@
 	$(CC) -c $(CFLAGS)   $*.c
 
@@ -844,10 +899,6 @@ w_modepanel.o:  w_modepanel.c  mode.h w_icons.h
 	$(CC) -c $(CFLAGS)  $(DUSESMALLICONS) $*.c
 
 w_msgpanel.o:  w_msgpanel.c  mode.h
-	$(RM) $@
-	$(CC) -c $(CFLAGS)   $*.c
-
-w_print.o:  w_print.c  mode.h
 	$(RM) $@
 	$(CC) -c $(CFLAGS)   $*.c
 

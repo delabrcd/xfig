@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1989-1999 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
@@ -49,7 +49,12 @@ Description of the Fig Format Follows
 	#FIG 3.2
 
     The character # at the first column of a line indicates that the line
-    is a comment line which will be ignored.
+    is a comment line which will be preserved when the Fig file is read in.
+    The user may edit them with the popup editor.  
+
+    The comment line(s) must immediately precede the object to which they
+    are associated.  In the case of the "whole figure comments" mentioned
+    below, they immediately precede the (resolution,coord_system) line.
 
 (2) The first non-comment line consists of the following:
 
@@ -64,6 +69,8 @@ Description of the Fig Format Follows
 	int	transparent color	(color number for transparent color for GIF
 					 export. -2=None, -1=background, 0-31 for
 					 standard colors or 32- for user colors)
+	# optional comment		(An optional set of comments may be here,
+					 which are associated with the whole figure)
 	int	resolution coord_system	(Fig units/inch and coordinate system:
 					   1: origin at lower left corner (NOT USED)
 					   2: upper left)
@@ -211,31 +218,44 @@ Description of the Fig Format Follows
     only as follows:
 
 	 0 = Stick-type (the default in xfig 2.1 and earlier)
+
+		 \
+		    \
+	_______________\
+		       /
+		    /
+		 /
+
 	 1 = Closed triangle:
+
 		|\
 		|   \
-		|      \
+	________|      \
 		|      /
 		|   /
 		|/
+
 	 2 = Closed with "indented" butt:
+
 		|\
 		\   \
 		 \     \
-		  \       \
+	__________\       \
 		  /       /
 		 /     /
 		/   /
 		|/
+
 	 3 = Closed with "pointed" butt:
-		   |\
+
+		   /\
 		  /    \
 		 /        \
-		/            \
+	________/            \
 		\            /
 		 \        /
 		  \    /
-		   |/
+		   \/
 
     The arrow_style field is defined for LINES, ARCS and OPEN SPLINES
     only as follows:
@@ -304,7 +324,7 @@ Description of the Fig Format Follows
 
     A line with object code 6 signifies the start of a compound.
     There are four more numbers on this line which indicate the
-    upper right corner and the lower left corner of the bounding
+    upper left corner and the lower right corner of the bounding
     box of this compound.  A line with object code -6 signifies
     the end of the compound.  Compound may be nested.
 
@@ -312,10 +332,10 @@ Description of the Fig Format Follows
 	type	name			(brief description)
 	----	----			-------------------
 	int	object_code		(always 6)
-	int	upperright_corner_x	(Fig units)
-	int	upperright_corner_y	(Fig units)
-	int	lowerleft_corner_x	(Fig units)
-	int	lowerleft_corner_y	(Fig units)
+	int	upperleft_corner_x	(Fig units)
+	int	upperleft_corner_y	(Fig units)
+	int	lowerright_corner_x	(Fig units)
+	int	lowerright_corner_y	(Fig units)
 
     Subsequent lines:
 	objects

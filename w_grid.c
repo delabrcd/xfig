@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -104,15 +104,17 @@ init_grid()
 
 /* grid in X11 is simply the background of the canvas */
 
-setup_grid(grid)
-    int		    grid;
+setup_grid()
 {
     float	    coarse, fine;
     float	    x, x0c, x0f, y, y0c, y0f;
+    int		    grid;
     int		    dim;
     static	    prev_grid = -1;
 
-    DeclareArgs(1);
+    DeclareArgs(2);
+
+    grid = cur_gridmode;
 
     if (grid == GRID_0) {
 	FirstArg(XtNbackgroundPixmap, null_pm);
@@ -145,25 +147,26 @@ setup_grid(grid)
 	XSetForeground(tool_d, gc, fg);
 	x0c = -fmod(zoomscale * zoomxoff, coarse);
 	y0c = -fmod(zoomscale * zoomyoff, coarse);
+	if (coarse - x0c < 0.5)
+		x0c = 0.0;
+	if (coarse - y0c < 0.5)
+		y0c = 0.0;
 	if (fine != 0.0) {
 	    x0f = -fmod(zoomxoff, fine/ZOOM_FACTOR);
 	    y0f = -fmod(zoomyoff, fine/ZOOM_FACTOR);
 	    for (x = x0c; x < dim; x += coarse)
-		for (y = y0f; y < dim; y += fine)
-		    {
+		for (y = y0f; y < dim; y += fine) {
 		    XDrawPoint(tool_d, grid_pm, gc, round(x), round(y));
-		    }
+		}
 	    for (y = y0c; y < dim; y += coarse)
-		for (x = x0f; x < dim; x += fine)
-		    {
+		for (x = x0f; x < dim; x += fine) {
 		    XDrawPoint(tool_d, grid_pm, gc, round(x), round(y));
-		    }
+		}
 	} else {
 	    for (x = x0c; x < dim; x += coarse)
-		for (y = y0c; y < dim; y += coarse)
-		    {
+		for (y = y0c; y < dim; y += coarse) {
 		    XDrawPoint(tool_d, grid_pm, gc, round(x), round(y));
-		    }
+		}
 	}
 
 	FirstArg(XtNbackgroundPixmap, grid_pm);

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -68,8 +68,7 @@ static void	cancel_movedlinepoint();
 
 move_point_selected()
 {
-    set_mousefun("move point", "horiz/vert move", LOC_OBJ,
-			LOC_OBJ, LOC_OBJ, LOC_OBJ);
+    set_mousefun("move point", "horiz/vert move", "", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_arb_move_point);
@@ -364,6 +363,8 @@ static void
 cancel_movedarcpoint()
 {
     elastic_arclink();
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     /* turn back on all relevant markers */
     update_markers(new_objmask);
     wrapup_movepoint();
@@ -374,6 +375,8 @@ fix_movedarcpoint(x, y)
     int		    x, y;
 {
     elastic_arclink();
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     adjust_pos(x, y, cur_a->point[movedpoint_num].x,
 	       cur_a->point[movedpoint_num].y, &x, &y);
     new_a = copy_arc(cur_a);
@@ -468,6 +471,8 @@ static void
 cancel_movedsplinepoint()
 {
     elastic_linelink();
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     /* turn back on all relevant markers */
     update_markers(new_objmask);
     wrapup_movepoint();
@@ -479,10 +484,12 @@ fix_movedsplinepoint(x, y)
 {
     (*canvas_locmove_proc) (x, y);
     elastic_linelink();
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     old_s = copy_spline(cur_s);
     clean_up();
     set_latestspline(old_s);
-    set_action_object(F_CHANGE, O_SPLINE);
+    set_action_object(F_EDIT, O_SPLINE);
     old_s->next = cur_s;
     relocate_splinepoint(cur_s, cur_x, cur_y, moved_point);
     /* redraw anything under the old spline */
@@ -545,6 +552,8 @@ static void
 cancel_compound()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     /* turn back on all relevant markers */
     update_markers(new_objmask);
     wrapup_movepoint();
@@ -557,6 +566,8 @@ fix_movedcompoundpoint(x, y)
     float	    scalex, scaley;
 
     elastic_box(fix_x, fix_y, cur_x, cur_y);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     adjust_box_pos(x, y, from_x, from_y, &cur_x, &cur_y);
 
     /* make a copy of the original and save as unchanged object */
@@ -564,7 +575,7 @@ fix_movedcompoundpoint(x, y)
     clean_up();
     old_c->next = cur_c;
     set_latestcompound(old_c);
-    set_action_object(F_CHANGE, O_COMPOUND);
+    set_action_object(F_EDIT, O_COMPOUND);
 
     scalex = ((float) (cur_x - fix_x)) / (from_x - fix_x);
     scaley = ((float) (cur_y - fix_y)) / (from_y - fix_y);
@@ -672,6 +683,8 @@ static void
 cancel_movept_box()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     /* turn back on all relevant markers */
     update_markers(new_objmask);
     wrapup_movepoint();
@@ -682,6 +695,8 @@ fix_box(x, y)
     int		    x, y;
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     adjust_box_pos(x, y, from_x, from_y, &x, &y);
     new_l = copy_line(cur_l);
     if (new_l->type == T_PICTURE) {
@@ -738,6 +753,8 @@ static void
 cancel_movedlinepoint()
 {
     elastic_linelink();
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     /* turn back on all relevant markers */
     update_markers(new_objmask);
     wrapup_movepoint();
@@ -749,13 +766,15 @@ fix_movedlinepoint(x, y)
 {
     (*canvas_locmove_proc) (x, y);
     elastic_linelink();
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     if (cur_latexcursor != crosshair_cursor)
 	set_cursor(crosshair_cursor);
     /* make a copy of the original and save as unchanged object */
     old_l = copy_line(cur_l);
     clean_up();
     set_latestline(old_l);
-    set_action_object(F_CHANGE, O_POLYLINE);
+    set_action_object(F_EDIT, O_POLYLINE);
     old_l->next = cur_l;
     /* now change the original to become the new object */
     relocate_linepoint(cur_l, cur_x, cur_y, moved_point, left_point);

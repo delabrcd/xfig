@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1992 by James Tough
  * Parts Copyright (c) 1998 by Georg Stemmer
@@ -29,11 +29,14 @@
 #include "u_create.h"
 #include "u_draw.h"
 #include "u_fonts.h"
+#include "u_geom.h"
 #include "u_error.h"
 #include "u_list.h"
 #include "w_canvas.h"
 #include "w_drawprim.h"
 #include "w_file.h"
+#include "w_indpanel.h"
+#include "w_layers.h"
 #include "w_setup.h"
 #include "w_zoom.h"
 
@@ -80,12 +83,79 @@ static INLINE double f_blend();
 static INLINE double g_blend();
 static INLINE double h_blend();
 
+/************** ARRAY FOR ARROW SHAPES **************/ 
+
+struct _fpnt { 
+		double x,y;
+	};
+struct _arrow_shape {
+		int numpts;
+		int tipno;
+		double tipmv;
+		struct _fpnt points[6];
+	};
+
+static struct _arrow_shape arrow_shapes[NUM_ARROW_TYPES+1] = {
+		   /* number of points, index of tip, {datapairs} */
+		   /* first point must be upper-left point of tail, then tip */
+
+		   /* type 0 */
+		   { 3, 1, 2.15, {{-1,0.5}, {0,0}, {-1,-0.5}}},
+		   /* place holder for what would be type 0 filled */
+		   { 0 },
+		   /* type 1 simple triangle */
+		   { 4, 1, 2.1, {{-1.0,0.5}, {0,0}, {-1.0,-0.5}, {-1.0,0.5}}},
+		   /* type 1 filled simple triangle*/
+		   { 4, 1, 2.1, {{-1.0,0.5}, {0,0}, {-1.0,-0.5}, {-1.0,0.5}}},
+		   /* type 2 concave spearhead */
+		   { 5, 1, 2.6, {{-1.25,0.5},{0,0},{-1.25,-0.5},{-1.0,0},{-1.25,0.5}}},
+		   /* type 2 filled concave spearhead */
+		   { 5, 1, 2.6, {{-1.25,0.5},{0,0},{-1.25,-0.5},{-1.0,0},{-1.25,0.5}}},
+		   /* type 3 convex spearhead */
+		   { 5, 1, 1.5, {{-0.75,0.5},{0,0},{-0.75,-0.5},{-1.0,0},{-0.75,0.5}}},
+		   /* type 3 filled convex spearhead */
+		   { 5, 1, 1.5, {{-0.75,0.5},{0,0},{-0.75,-0.5},{-1.0,0},{-0.75,0.5}}},
+#ifdef NEWARROWTYPES
+		   /* type 4 diamond */
+		   { 5, 1, 1.15, {{-0.5,0.5},{0,0},{-0.5,-0.5},{-1.0,0},{-0.5,0.5}}},
+		   /* type 4 filled diamond */
+		   { 5, 1, 1.15, {{-0.5,0.5},{0,0},{-0.5,-0.5},{-1.0,0},{-0.5,0.5}}},
+		   /* type 5 circle - handled in code */
+		   { 0, 0, 0.0 }, { 0, 0, 0.0 },
+		   /* type 6 half circle - handled in code */
+		   { 0, 0, -1.0 }, { 0, 0, -1.0 },
+		   /* type 7 square */
+		   { 5, 1, 0.0, {{-1.0,0.5},{0,0.5},{0,-0.5},{-1.0,-0.5},{-1.0,0.5}}},
+		   /* type 7 filled square */
+		   { 5, 1, 0.0, {{-1.0,0.5},{0,0.5},{0,-0.5},{-1.0,-0.5},{-1.0,0.5}}},
+		   /* type 8 reverse triangle */
+		   { 4, 1, 0.0, {{-1.0,0},{0,0.5},{0,-0.5},{-1.0,0}}},
+		   /* type 8 filled reverse triangle */
+		   { 4, 1, 0.0, {{-1.0,0},{0,0.5},{0,-0.5},{-1.0,0}}},
+		   /* type 9a "wye" */
+		   { 3, 0, -1.0, {{0,0.5},{-1.0,0},{0,-0.5}}},
+		   /* type 9b bar */
+		   { 2, 1, 0.0, {{0,0.5},{0,-0.5}}},
+		   /* type 10a two-prong fork */
+		   { 4, 0, -1.0, {{0,0.5},{-1.0,0.5},{-1.0,-0.5},{0,-0.5}}},
+		   /* type 10b backward two-prong fork */
+		   { 4, 1, 0.0, {{-1.0,0.5,},{0,0.5},{0,-0.5},{-1.0,-0.5}}},
+#endif /* NEWARROWTYPES */
+		};
+
 /************** POLYGON/CURVE DRAWING FACILITIES ****************/
 
 static int	npoints;
 static zXPoint *points = NULL;
 static int	max_points = 0;
 static int	allocstep = 200;
+static char     bufx[10];	/* for appres.shownums */
+
+/* these are for the arrowheads */
+static zXPoint	    farpts[50],barpts[50];
+static int	    nfpts, nbpts;
+
+/************* Code begins here *************/
 
 static void
 init_point_array()
@@ -147,10 +217,6 @@ draw_point_array(w, op, line_width, line_style, style_val,
 		    join_style, cap_style, fill_style, pen_color, fill_color);
 }
 
-/* these are for the arrowheads */
-static zXPoint	    farpts[6],barpts[6];
-static int	    nfpts, nbpts;
-
 /*********************** ARC ***************************/
 
 draw_arc(a, op)
@@ -160,6 +226,7 @@ draw_arc(a, op)
     double	    rx, ry;
     int		    radius;
     int		    xmin, ymin, xmax, ymax;
+    int		    i;
 
     arc_bound(a, &xmin, &ymin, &xmax, &ymax);
     if (!overlapping(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax),
@@ -170,6 +237,15 @@ draw_arc(a, op)
     ry = a->center.y - a->point[0].y;
     radius = round(sqrt(rx * rx + ry * ry));
 
+    /* show point numbers if requested */
+    if (appres.shownums) {
+	for (i=1; i<=3; i++) {
+	    /* label the point number above the point */
+	    sprintf(bufx,"%d",i);
+	    pw_text(canvas_win, a->point[i-1].x, round(a->point[i-1].y-3.0/zoomscale), 
+		PAINT, roman_font, 0.0, bufx, RED);
+	}
+    }
     /* fill points array but don't display the points yet */
 
     curve(canvas_win, 
@@ -206,7 +282,8 @@ draw_arc(a, op)
 	    draw_arrow(a, a->back_arrow, barpts, nbpts, op);
       }
     }
-
+    /* write the depth on the object */
+    debug_depth(a->depth,a->point[0].x,a->point[0].y);
 }
 
 /*********************** ELLIPSE ***************************/
@@ -246,6 +323,8 @@ draw_ellipse(e, op)
 		 e->thickness, e->style, e->style_val, e->fill_style,
 		 e->pen_color, e->fill_color, CAP_ROUND);
     }
+    /* write the depth on the object */
+    debug_depth(e->depth,e->center.x,e->center.y);
 }
 
 /*
@@ -438,7 +517,7 @@ angle_ellipse(center_x, center_y, radius_x, radius_y, angle,
 	}
 	dir=0;
 	totpts++;	/* add another point to join with first */
-	init_point_array(totpts, 0);
+	init_point_array();
 	ipnts = points;
 	/* now go down the 1st column, up the 2nd, down the 4th
 	   and up the 3rd to get the points in the correct order */
@@ -503,7 +582,6 @@ draw_line(line, op)
     char	   *string;
     F_point	   *p0, *p1, *p2;
     PR_SIZE	    txt;
-    char	    bufx[10];
 
     line_bound(line, &xmin, &ymin, &xmax, &ymax);
     if (!overlapping(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax),
@@ -530,7 +608,7 @@ draw_line(line, op)
 	    if (line->pic->file[0] == '\0')
 		string = EMPTY_PIC;
 	    else {
-		string = basname(line->pic->file);
+		string = xf_basename(line->pic->file);
 	    }
 	    p0 = line->points;
 	    p1 = p0->next;
@@ -558,8 +636,8 @@ draw_line(line, op)
 		 op, line->pen_color, line->cap_style);
 	/* label the point number above the point */
 	if (appres.shownums) {
-	    sprintf(bufx,"1");
-	    pw_text(canvas_win, x, round(y-3.0/zoomscale), PAINT, roman_font, 0.0, bufx, RED);
+	    pw_text(canvas_win, x, round(y-3.0/zoomscale), PAINT, 
+			roman_font, 0.0, "1", RED);
 	}
 	return;
     }
@@ -575,8 +653,13 @@ draw_line(line, op)
 	y = point->y;
 	/* label the point number above the point */
 	if (appres.shownums) {
-	    sprintf(bufx,"%d",i++);
-	    pw_text(canvas_win, x, round(y-3.0/zoomscale), PAINT, roman_font, 0.0, bufx, RED);
+	    /* if BOX or POLYGON, don't label last point (which is same as first) */
+	    if (((line->type == T_BOX || line->type == T_POLYGON) && point->next != NULL) ||
+		(line->type != T_BOX && line->type != T_POLYGON)) {
+		sprintf(bufx,"%d",i++);
+		pw_text(canvas_win, x, round(y-3.0/zoomscale), PAINT, 
+			roman_font, 0.0, bufx, RED);
+	    }
 	}
 	if (!add_point(x, y)) {
 	    too_many_points();
@@ -601,6 +684,8 @@ draw_line(line, op)
 	draw_arrow(line, line->for_arrow, farpts, nfpts, op);
     if (line->back_arrow)
 	draw_arrow(line, line->back_arrow, barpts, nbpts, op);
+    /* write the depth on the object */
+    debug_depth(line->depth,line->points->x,line->points->y);
 }
 
 draw_arcbox(line, op)
@@ -609,10 +694,12 @@ draw_arcbox(line, op)
 {
     F_point	   *point;
     int		    xmin, xmax, ymin, ymax;
+    int		    i;
 
     point = line->points;
     xmin = xmax = point->x;
     ymin = ymax = point->y;
+    i = 1;
     while (point->next) {	/* find lower left (upper-left on screen) */
 	/* and upper right (lower right on screen) */
 	point = point->next;
@@ -624,10 +711,18 @@ draw_arcbox(line, op)
 	    ymin = point->y;
 	else if (point->y > ymax)
 	    ymax = point->y;
+	/* label the point number above the point */
+	if (appres.shownums) {
+	    sprintf(bufx,"%d",i++);
+	    pw_text(canvas_win, point->x, round(point->y-3.0/zoomscale), PAINT, 
+			roman_font, 0.0, bufx, RED);
+	}
     }
     pw_arcbox(canvas_win, xmin, ymin, xmax, ymax, round(line->radius*ZOOM_FACTOR),
 	      op, line->thickness, line->style, line->style_val, line->fill_style,
 	      line->pen_color, line->fill_color);
+    /* write the depth on the object */
+    debug_depth(line->depth,xmin,ymin);
 }
 
 draw_pic_pixmap(box, op)
@@ -639,6 +734,7 @@ draw_pic_pixmap(box, op)
     int		    width, height, rotation;
     F_pos	    origin;
     F_pos	    opposite;
+    XGCValues	    gcv;
 
     origin.x = ZOOMX(box->points->x);
     origin.y = ZOOMY(box->points->y);
@@ -673,41 +769,53 @@ draw_pic_pixmap(box, op)
 	box->pic->pix_flipped != box->pic->flipped)
 	    create_pic_pixmap(box, rotation, width, height, box->pic->flipped);
 
+    if (box->pic->mask) {
+	gcv.clip_mask = box->pic->mask;
+	gcv.clip_x_origin = xmin;
+	gcv.clip_y_origin = ymin;
+	XChangeGC(tool_d, gccache[op], GCClipMask|GCClipXOrigin|GCClipYOrigin, &gcv);
+    }
     XCopyArea(tool_d, box->pic->pixmap, canvas_win, gccache[op],
 	      0, 0, width, height, xmin, ymin);
+    if (box->pic->mask) {
+	gcv.clip_mask = 0;
+	XChangeGC(tool_d, gccache[op], GCClipMask, &gcv);
+    }
     XFlush(tool_d);
 }
 
 /*
- * The input to this routine is the bitmap which is the "preview"
- * section of an encapsulated postscript file. That input bitmap
- * has an arbitrary number of rows and columns. This routine
- * re-samples the input bitmap creating an output bitmap of dimensions
- * width-by-height. This output bitmap is made into a Pixmap
- * for display purposes.
+ * The input to this routine is the bitmap read from the source
+ * image file. That input bitmap has an arbitrary number of rows
+ * and columns. This routine re-samples the input bitmap creating
+ * an output bitmap of dimensions width-by-height. This output
+ * bitmap is made into a Pixmap for display purposes.
  */
+
+#define	ALLOC_PIC_ERR "Can't alloc memory for image: %s"
 
 create_pic_pixmap(box, rotation, width, height, flipped)
     F_line	   *box;
     int		    rotation, width, height, flipped;
 {
     int		    cwidth, cheight;
-    int		    i;
-    int		    j;
-    int		    k;
-    unsigned char  *data;
-    unsigned char  *tdata;
+    int		    i,j,k;
+    int		    bwidth;
+    unsigned char  *data, *tdata, *mask;
     int		    nbytes;
     int		    bbytes;
     int		    ibit, jbit, jnb;
     int		    wbit;
     int		    fg, bg;
     XImage	   *image;
+    Boolean	    type1,hswap,vswap;
 
     /* this could take a while */
     set_temp_cursor(wait_cursor);
     if (box->pic->pixmap != 0)
 	XFreePixmap(tool_d, box->pic->pixmap);
+    if (box->pic->mask != 0)
+	XFreePixmap(tool_d, box->pic->mask);
 
     if (appres.DEBUG)
 	fprintf(stderr,"Scaling pic pixmap to %dx%d pixels\n",width,height);
@@ -715,13 +823,31 @@ create_pic_pixmap(box, rotation, width, height, flipped)
     cwidth = box->pic->bit_size.x;	/* current width, height */
     cheight = box->pic->bit_size.y;
 
+    box->pic->color = box->pen_color;
+    box->pic->pix_rotation = rotation;
+    box->pic->pix_width = width;
+    box->pic->pix_height = height;
+    box->pic->pix_flipped = flipped;
+    box->pic->pixmap = (Pixmap) 0;
+    box->pic->mask = (Pixmap) 0;
+
+    mask = (unsigned char *) 0;
+
     /* create a new bitmap at the specified size (requires interpolation) */
-    /* XBM style *OR* EPS, PCX, XPM, GIF or JPEG on monochrome display */
+
+    /* MONOCHROME display OR XBM */
     if (box->pic->numcols == 0) {
 	    nbytes = (width + 7) / 8;
 	    bbytes = (cwidth + 7) / 8;
-	    data = (unsigned char *) malloc(nbytes * height);
-	    tdata = (unsigned char *) malloc(nbytes);
+	    if ((data = (unsigned char *) malloc(nbytes * height)) == NULL) {
+		file_msg(ALLOC_PIC_ERR, box->pic->file);
+		return;
+	    }
+	    if ((tdata = (unsigned char *) malloc(nbytes)) == NULL) {
+		file_msg(ALLOC_PIC_ERR, box->pic->file);
+		free(data);
+		return;
+	    }
 	    bzero((char*)data, nbytes * height);	/* clear memory */
 	    if ((!flipped && (rotation == 0 || rotation == 180)) ||
 		(flipped && !(rotation == 0 || rotation == 180))) {
@@ -777,10 +903,7 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 		}
 	    }
 
-	    if (writing_bitmap) {
-		fg = x_fg_color.pixel;			/* writing xbm, 1 and 0 */
-		bg = x_bg_color.pixel;
-	    } else if (box->pic->subtype == T_PIC_XBM) {
+	    if (box->pic->subtype == T_PIC_XBM) {
 		fg = x_color(box->pen_color);		/* xbm, use object pen color */
 		bg = x_bg_color.pixel;
 	    } else if (box->pic->subtype == T_PIC_EPS) {
@@ -792,16 +915,17 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 	    }
 		
 	    box->pic->pixmap = XCreatePixmapFromBitmapData(tool_d, canvas_win,
-					data, width, height, fg,bg, tool_dpth);
+					(char *)data, width, height, fg,bg, tool_dpth);
 	    free(data);
 	    free(tdata);
 
-      /* EPS, PCX, XPM, GIF or JPEG on color display */
+      /* EPS, PCX, XPM, GIF or JPEG on *COLOR* display */
       /* It is important to note that the Cmap pixels are unsigned long. */
       /* Therefore all manipulation of the image data should be as unsigned long. */
       /* bpl = bytes per line */
+
       } else {
-	    unsigned char	*pixel, *cpixel, *p1, *p2, tmp;
+	    unsigned char	*pixel, *cpixel, *dst, *src, tmp;
 	    int			 bpl, cbpp, cbpl;
 	    unsigned int	*Lpixel;
 	    unsigned short	*Spixel;
@@ -811,58 +935,97 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 	    cbpp = 1;
 	    cbpl = cwidth * cbpp;
 	    bpl = width * image_bpp;
-	    data = (unsigned char *) malloc(bpl * height);
-	    bzero((char*)data, bpl * height);
-	    if ((!flipped && (rotation == 0 || rotation == 180)) ||
-		(flipped && !(rotation == 0 || rotation == 180))) {
-		for( j=0; j<height; j++ ){
-		  /* check if user pressed cancel button */
-		  if (check_cancel())
-			break;
-		  p1 = data + (j * bpl);
-		  p2 = box->pic->bitmap + (j * cheight / height * cbpl);
-		  for( i=0; i<width; i++ ){
-		    pixel = p1 + (i * image_bpp);
-		    cpixel = p2 + (i * cbpl / width );
-		    if (image_bpp == 4) {
-			Lpixel = (unsigned int *) pixel;
-			*Lpixel = (unsigned int)(cmap[*cpixel].pixel);
-		    } else if (image_bpp == 3) {
-		       unsigned char *p;
-		       Cpixel = (unsigned char *) pixel;
-		       p = (unsigned char *)&(cmap[*cpixel].pixel);
-		       *Cpixel++ = *p++;
-		       *Cpixel++ = *p++;
-		       *Cpixel++ = *p++;
-		    } else if (image_bpp == 2) {
-			Spixel = (unsigned short *) pixel;
-			*Spixel = (unsigned short)cmap[*cpixel].pixel;
-		    } else {
-			Cpixel = (unsigned char *) pixel;
-			*Cpixel = (unsigned char)cmap[*cpixel].pixel;
-		    }
-		  }
+	    if ((data = (unsigned char *) malloc(bpl * height)) == NULL) {
+		file_msg(ALLOC_PIC_ERR,box->pic->file);
+		return;
+	    }
+	    /* allocate mask for any transparency information */
+	    if (box->pic->transp != -1) {
+		if ((mask = (unsigned char *) malloc((width+7)/8 * height)) == NULL) {
+		    file_msg(ALLOC_PIC_ERR,box->pic->file);
+		    free(data);
+		    return;
 		}
-	    } else {
-		for( j=0; j<height; j++ ){
+		/* set all bits in mask */
+		for (i = (width+7)/8 * height - 1; i >= 0; i--)
+			*(mask+i)=  (unsigned char) 255;
+	    }
+	    bwidth = (width+7)/8;
+	    bzero((char*)data, bpl * height);
+
+	    type1 = False;
+	    hswap = False;
+	    vswap = False;
+
+	    if ((!flipped && (rotation == 0 || rotation == 180)) ||
+		(flipped && !(rotation == 0 || rotation == 180)))
+			type1 = True;
+	    /* horizontal swap */
+	    if (rotation == 180 || rotation == 270)
+		hswap = True;
+	    /* vertical swap */
+	    if ((!flipped && (rotation == 90 || rotation == 180)) ||
+		( flipped && (rotation == 90 || rotation == 180)))
+			vswap = True;
+
+	    for( j=0; j<height; j++ ) {
 		  /* check if user pressed cancel button */
 		  if (check_cancel())
 			break;
-		  p1 = data + (j * bpl);
-		  p2 = box->pic->bitmap + (j * cbpl / height);
-		  for( i=0; i<width; i++ ){
-		    pixel = p1 + (i * image_bpp);
-		    cpixel = p2 + (i * cheight / width * cbpl);
+
+		if (type1) {
+			src = box->pic->bitmap + (j * cheight / height * cbpl);
+			dst = data + (j * bpl);
+		} else {
+			src = box->pic->bitmap + (j * cbpl / height);
+			dst = data + (j * bpl);
+		}
+
+		for( i=0; i<width; i++ ) {
+		    pixel = dst + (i * image_bpp);
+		    if (type1) {
+			    cpixel = src + (i * cbpl / width );
+		    } else {
+			    cpixel = src + (i * cheight / width * cbpl);
+		    }
+		    /* if this pixel is the transparent color then clear the mask pixel */
+		    if (box->pic->transp != -1 && (*cpixel==(unsigned char) box->pic->transp)) {
+			if (type1) {
+			    if (hswap) {
+				if (vswap)
+				    clr_mask_bit(height-j-1,width-i-1,bwidth,mask);
+				else
+				    clr_mask_bit(j,width-i-1,bwidth,mask);
+			    } else {
+				if (vswap)
+				    clr_mask_bit(height-j-1,i,bwidth,mask);
+				else
+				    clr_mask_bit(j,i,bwidth,mask);
+			    }
+			} else {
+			    if (!vswap) {
+				if (hswap)
+				    clr_mask_bit(j,width-i-1,bwidth,mask);
+				else
+				    clr_mask_bit(j,i,bwidth,mask);
+			    } else {
+				if (hswap)
+				    clr_mask_bit(height-j-1,width-i-1,bwidth,mask);
+				else
+				    clr_mask_bit(height-j-1,i,bwidth,mask);
+			    }
+			}
+		    }
 		    if (image_bpp == 4) {
 			Lpixel = (unsigned int *) pixel;
-			*Lpixel = (unsigned int)cmap[*cpixel].pixel;
+			*Lpixel = (unsigned int) cmap[*cpixel].pixel;
 		    } else if (image_bpp == 3) {
-		       unsigned char *p;
-		       Cpixel = (unsigned char *) pixel;
-		       p = (unsigned char *)&(cmap[*cpixel].pixel);
-		       *Cpixel++ = *p++;
-		       *Cpixel++ = *p++;
-		       *Cpixel++ = *p++;
+			unsigned char *p;
+			Cpixel = (unsigned char *) pixel;
+			p = (unsigned char *)&(cmap[*cpixel].pixel);
+			*Cpixel++ = *p++;
+			*Cpixel++ = *p++;
+			*Cpixel++ = *p++;
 		    } else if (image_bpp == 2) {
 			Spixel = (unsigned short *) pixel;
 			*Spixel = (unsigned short)cmap[*cpixel].pixel;
@@ -870,63 +1033,77 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 			Cpixel = (unsigned char *) pixel;
 			*Cpixel = (unsigned char)cmap[*cpixel].pixel;
 		    }
-		  }
 		}
 	    }
 
 	    /* horizontal swap */
-	    if (rotation == 180 || rotation == 270){
-		for( j=0; j<height; j++ ){
+	    if (hswap) {
+		for( j=0; j<height; j++ ) {
 		  /* check if user pressed cancel button */
 		  if (check_cancel())
 			break;
-		  p1 = data + (j * bpl);
-		  p2 = p1 + ((width - 1) * image_bpp);
-		  for( i=0; i<width/2; i++, p2 -= 2*image_bpp ){
-		    for( k=0; k<image_bpp; k++, p1++, p2++ ){
-		      tmp = *p1;
-		      *p1 = *p2;
-		      *p2 = tmp;
+		  dst = data + (j * bpl);
+		  src = dst + ((width - 1) * image_bpp);
+		  for( i=0; i<width/2; i++, src -= 2*image_bpp ) {
+		    for( k=0; k<image_bpp; k++, dst++, src++ ) {
+		      tmp = *dst;
+		      *dst = *src;
+		      *src = tmp;
 		    }
 		  }
 		}
 	    }
 
 	    /* vertical swap */
-	    if ((!flipped && (rotation == 90 || rotation == 180)) ||
-		( flipped && (rotation == 90 || rotation == 180))){
-		for( i=0; i<width; i++ ){
-		  p1 = data + (i * image_bpp);
-		  p2 = p1 + ((height - 1) * bpl);
-		  for( j=0; j<height/2; j++, p1 += (width-1)*image_bpp, p2 -= (width+1)*image_bpp ){
-		    for( k=0; k<image_bpp; k++, p1++, p2++ ){
-		      tmp = *p1;
-		      *p1 = *p2;
-		      *p2 = tmp;
+	    if (vswap) {
+		for( i=0; i<width; i++ ) {
+		  dst = data + (i * image_bpp);
+		  src = dst + ((height - 1) * bpl);
+		  for( j=0; j<height/2; j++, dst += (width-1)*image_bpp, src -= (width+1)*image_bpp ) {
+		    for( k=0; k<image_bpp; k++, dst++, src++ ) {
+		      tmp = *dst;
+		      *dst = *src;
+		      *src = tmp;
 		    }
 		  }
 		}
 	    }
 
 	    image = XCreateImage(tool_d, tool_v, tool_dpth,
-				ZPixmap, 0, data, width, height, 8, 0);
+				ZPixmap, 0, (char *)data, width, height, 8, 0);
 	    box->pic->pixmap = XCreatePixmap(tool_d, canvas_win,
 				width, height, tool_dpth);
 	    XPutImage(tool_d, box->pic->pixmap, gc, image, 0, 0, 0, 0, width, height);
 	    XDestroyImage(image);
+	    if (mask) {
+		box->pic->mask = XCreateBitmapFromData(tool_d, tool_w, mask, width, height);
+		free(mask);
+	    }
     }
-
-    box->pic->color = box->pen_color;
-    box->pic->pix_rotation = rotation;
-    box->pic->pix_width = width;
-    box->pic->pix_height = height;
-    box->pic->pix_flipped = flipped;
     reset_cursor();
 }
 
+/* clear bit at row "r", column "c" in array "mask" of width "width" */
+
+static unsigned char bits[8] = { 1,2,4,8,16,32,64,128 };
+
+clr_mask_bit(r,c,bwidth,mask)
+    int    r,c,bwidth;
+    unsigned char   *mask;
+{
+    int		    byte;
+    unsigned char   bit;
+
+    byte = r*bwidth + c/8;
+    bit  = c % 8;
+    mask[byte] &= ~bits[bit];
+}
+
+#ifdef V4_0
+
 draw_figure(line, op)
-     F_line *line;
-     int op;
+    F_line *line;
+    int op;
 {
 
   F_pos origin;
@@ -1021,6 +1198,7 @@ draw_figure(line, op)
   
   return;
 }
+#endif /* V4_0 */
 
 /*********************** SPLINE ***************************/
 
@@ -1031,6 +1209,8 @@ draw_spline(spline, op)
 {
     Boolean         success;
     int		    xmin, ymin, xmax, ymax;
+    int		    i;
+    F_point	   *p;
     float           precision;
 
     spline_bound(spline, &xmin, &ymin, &xmax, &ymax);
@@ -1041,6 +1221,14 @@ draw_spline(spline, op)
     precision = (display_zoomscale < ZOOM_PRECISION) ? LOW_PRECISION 
                                                      : HIGH_PRECISION;
 
+    if (appres.shownums) {
+	for (i=1, p=spline->points; p; p=p->next) {
+	    /* label the point number above the point */
+	    sprintf(bufx,"%d",i++);
+	    pw_text(canvas_win, p->x, round(p->y-3.0/zoomscale), PAINT, 
+		roman_font, 0.0, bufx, RED);
+	}
+    }
     if (open_spline(spline))
 	success = compute_open_spline(spline, precision);
     else
@@ -1061,6 +1249,8 @@ draw_spline(spline, op)
 	    draw_arrow(spline, spline->back_arrow, barpts, nbpts, op);
 	if (spline->for_arrow)	/* backward arrow  */
 	    draw_arrow(spline, spline->for_arrow, farpts, nfpts, op);
+	/* write the depth on the object */
+	debug_depth(spline->depth,spline->points->x,spline->points->y);
     }
 }
 
@@ -1216,6 +1406,8 @@ draw_text(text, op)
     else
 	pw_text(canvas_win, x, y, op, text->fontstruct,
 		text->angle, text->cstring, text->color);
+    /* write the depth on the object */
+    debug_depth(text->depth,x,y);
 }
 
 /*********************** COMPOUND ***************************/
@@ -1238,22 +1430,28 @@ draw_compoundelements(c, op)
 	return;
 
     for (l = c->lines; l != NULL; l = l->next) {
-	draw_line(l, op);
+	if (active_layer(l->depth))
+	    draw_line(l, op);
     }
     for (s = c->splines; s != NULL; s = s->next) {
-	draw_spline(s, op);
+	if (active_layer(s->depth))
+	    draw_spline(s, op);
     }
     for (a = c->arcs; a != NULL; a = a->next) {
-	draw_arc(a, op);
+	if (active_layer(a->depth))
+	    draw_arc(a, op);
     }
     for (e = c->ellipses; e != NULL; e = e->next) {
-	draw_ellipse(e, op);
+	if (active_layer(e->depth))
+	    draw_ellipse(e, op);
     }
     for (t = c->texts; t != NULL; t = t->next) {
-	draw_text(t, op);
+	if (active_layer(t->depth))
+	    draw_text(t, op);
     }
     for (c1 = c->compounds; c1 != NULL; c1 = c1->next) {
-	draw_compoundelements(c1, op);
+	if (any_active_in_compound(c1))
+	    draw_compoundelements(c1, op);
     }
 }
 
@@ -1280,7 +1478,7 @@ compute_arcarrow_angle(x1, y1, x2, y2, direction, arrow, x, y)
     dx=x2-x1;
     r=sqrt(dx*dx+dy*dy);
 
-    h = (double) arrow->ht;
+    h = (double) arrow->ht*ZOOM_FACTOR;
     /* lpt is the amount the arrowhead extends beyond the end of the line */
     lpt = arrow->thickness/2.0/(arrow->wd/h/2.0);
     /* add this to the length */
@@ -1337,11 +1535,11 @@ clip_arrows(obj, objtype, op, skip)
 {
     Region	    mainregion, newregion;
     Region	    region;
-    XPoint	    xpts[5];
+    XPoint	    xpts[50];
     int		    fcx1, fcy1, fcx2, fcy2;
     int		    bcx1, bcy1, bcx2, bcy2;
     int		    x, y;
-    int		    i, j;
+    int		    i, j, n, nboundpts;
 
 
     if (obj->for_arrow || obj->back_arrow) {
@@ -1372,21 +1570,24 @@ clip_arrows(obj, objtype, op, skip)
 	}
 	calc_arrow(x, y, points[npoints-1].x, points[npoints-1].y,
 		   &fcx1, &fcy1, &fcx2, &fcy2,
-		   obj->thickness, obj->for_arrow, farpts, &nfpts);
+		   obj->thickness, obj->for_arrow, farpts, &nfpts, &nboundpts);
 	/* set clipping to the first three points of the arrowhead and
 	   the box surrounding it */
-	for (i=0; i<3; i++) {
+	for (i=0; i < nboundpts; i++) {
 	    xpts[i].x = ZOOMX(farpts[i].x);
 	    xpts[i].y = ZOOMY(farpts[i].y);
 	}
-	xpts[3].x = ZOOMX(fcx2);
-	xpts[3].y = ZOOMY(fcy2);
-	xpts[4].x = ZOOMX(fcx1);
-	xpts[4].y = ZOOMY(fcy1);
+	n=i;
+	xpts[n].x = ZOOMX(fcx2);
+	xpts[n].y = ZOOMY(fcy2);
+	n++;
+	xpts[n].x = ZOOMX(fcx1);
+	xpts[n].y = ZOOMY(fcy1);
+	n++;
 	/* draw the clipping area for debugging */
 	if (appres.DEBUG) {
-	  for (i=0; i<5; i++) {
-	    if (i==4)
+	  for (i=0; i<n; i++) {
+	    if (i==n-1)
 		j=0;
 	    else
 		j=i+1;
@@ -1394,7 +1595,7 @@ clip_arrows(obj, objtype, op, skip)
 		PANEL_LINE,0.0,RED);
 	  }
 	}
-	region = XPolygonRegion(xpts, 5, WindingRule);
+	region = XPolygonRegion(xpts, n, WindingRule);
 	newregion = XCreateRegion();
 	XSubtractRegion(mainregion, region, newregion);
 	XDestroyRegion(region);
@@ -1414,22 +1615,25 @@ clip_arrows(obj, objtype, op, skip)
 	}
 	calc_arrow(x, y, points[0].x, points[0].y,
 		   &bcx1, &bcy1, &bcx2, &bcy2,
-		    obj->thickness, obj->back_arrow, barpts,&nbpts);
+		    obj->thickness, obj->back_arrow, barpts,&nbpts, &nboundpts);
 	/* set clipping to the first three points of the arrowhead and
 	   the box surrounding it */
-	for (i=0; i<3; i++) {
+	for (i=0; i < nboundpts; i++) {
 	    xpts[i].x = ZOOMX(barpts[i].x);
 	    xpts[i].y = ZOOMY(barpts[i].y);
 	}
-	xpts[3].x = ZOOMX(bcx2);
-	xpts[3].y = ZOOMY(bcy2);
-	xpts[4].x = ZOOMX(bcx1);
-	xpts[4].y = ZOOMY(bcy1);
+	n=i;
+	xpts[n].x = ZOOMX(bcx2);
+	xpts[n].y = ZOOMY(bcy2);
+	n++;
+	xpts[n].x = ZOOMX(bcx1);
+	xpts[n].y = ZOOMY(bcy1);
+	n++;
 	/* draw the clipping area for debugging */
 	if (appres.DEBUG) {
 	  int j;
-	  for (i=0; i<5; i++) {
-	    if (i==4)
+	  for (i=0; i<n; i++) {
+	    if (i==n-1)
 		j=0;
 	    else
 		j=i+1;
@@ -1437,7 +1641,7 @@ clip_arrows(obj, objtype, op, skip)
 		PANEL_LINE,0.0,RED);
 	  }
 	}
-	region = XPolygonRegion(xpts, 5, WindingRule);
+	region = XPolygonRegion(xpts, n, WindingRule);
 	newregion = XCreateRegion();
 	XSubtractRegion(mainregion, region, newregion);
 	XDestroyRegion(region);
@@ -1462,32 +1666,47 @@ clip_arrows(obj, objtype, op, skip)
  calc_arrow - calculate points heading from (x1, y1) to (x2, y2)
 
  Must pass POINTER to npoints for return value and for c1x, c1y,
- c2x, c2y, which are two points at the end of the arrowhead such
- that xc, yc, c1x, c1y, c2x, c2y and xd, yd form the bounding
- rectangle of the arrowhead.
+ c2x, c2y, which are two points at the end of the arrowhead so:
+
+		|\     + (c1x,c1y)
+		|  \
+		|    \
+ ---------------|      \
+		|      /
+		|    /
+		|  /
+		|/     + (c2x,c2y)
 
  Fills points array with npoints arrowhead coordinates
 
 ****************************************************************/
 
-calc_arrow(x1, y1, x2, y2, c1x, c1y, c2x, c2y, thick, arrow, points, npoints)
+calc_arrow(x1, y1, x2, y2, c1x, c1y, c2x, c2y, thick, arrow, points, npoints, nboundpts)
     int		    x1, y1, x2, y2;
     int		   *c1x, *c1y, *c2x, *c2y;
     int		    thick;
     F_arrow	   *arrow;
     zXPoint	    points[];
-    int		   *npoints;
+    int		   *npoints, *nboundpts;
 {
     double	    x, y, xb, yb, dx, dy, l, sina, cosa;
-    double	    xxb;
     double	    mx, my;
-    double	    ddx, ddy, lpt;
+    double	    ddx, ddy, lpt, tipmv;
     double	    alpha;
-    int		    xc, yc, xd, yd, xs, ys;
-    int		    xg, yg, xh, yh;
-    float	    wd = arrow->wd*ZOOM_FACTOR;
-    float	    ht = arrow->ht*ZOOM_FACTOR;
-    int		    type = arrow->type;
+    double	    miny, maxy;
+    int		    xa, ya, xs, ys;
+    double	    xt, yt;
+    double	    wd = (double) arrow->wd*ZOOM_FACTOR;
+    double	    ht = (double) arrow->ht*ZOOM_FACTOR;
+    int		    type, style, indx, tip;
+    int		    i, np;
+
+    /* types = 0...10 */
+    type = arrow->type;
+    /* style = 0 (unfilled) or 1 (filled) */
+    style = arrow->style;
+    /* index into shape array */
+    indx = 2*type + style;
 
     *npoints = 0;
     dx = x2 - x1;
@@ -1497,12 +1716,13 @@ calc_arrow(x1, y1, x2, y2, c1x, c1y, c2x, c2y, thick, arrow, points, npoints)
 
     /* lpt is the amount the arrowhead extends beyond the end of the
        line because of the sharp point (miter join) */
-    if (type == 2)
-      lpt = arrow->thickness*ZOOM_FACTOR / (2.0 * sin(atan(wd / (2.4 * ht))));
-    else if (type == 3)
-      lpt = arrow->thickness*ZOOM_FACTOR / (2.0 * sin(atan(wd / (1.6 * ht))));
-    else
-      lpt = arrow->thickness*ZOOM_FACTOR / (2.0 * sin(atan(wd / (2.0 * ht))));
+    tipmv = arrow_shapes[indx].tipmv;
+    lpt = 0.0;
+    if (tipmv > 0.0)
+	lpt = arrow->thickness*ZOOM_FACTOR / (2.0 * sin(atan(wd / (tipmv * ht))));
+    else if (tipmv == 0.0)
+	lpt = arrow->thickness*ZOOM_FACTOR/2.0;	 /* types which have blunt end */
+    /* (Don't adjust those with tipmv < 0) */
 
     /* alpha is the angle the line is relative to horizontal */
     alpha = atan2(dy,-dx);
@@ -1522,67 +1742,105 @@ calc_arrow(x1, y1, x2, y2, c1x, c1y, c2x, c2y, thick, arrow, points, npoints)
     xb = mx * cosa - my * sina;
     yb = mx * sina + my * cosa;
 
-    /* (xs,ys) are a point the length (height) of the arrowhead from
-       the end of the shaft */
-    xs =  (xb-ht) * cosa + yb * sina + .5;
-    ys = -(xb-ht) * sina + yb * cosa + .5;
+    /* (xa,ya) is the rotated endpoint */
+    xa =  xb * cosa + yb * sina + 0.5;
+    ya = -xb * sina + yb * cosa + 0.5;
 
-    /* lengthen the tail if type 2 */
-    if (type == 2)
-	x = xb - ht * 1.2;
-    /* shorten the tail if type 3 */
-    else if (type == 3)
-	x = xb - ht * 0.8;
-    else
-	x = xb - ht;
+    miny =  100000.0;
+    maxy = -100000.0;
 
-    /* half the width of the arrowhead */
-    y = yb - wd / 2;
+    /*
+     * We approximate circles with an octagon since, at small sizes,
+     * this is sufficient.  I haven't bothered to alter the bounding
+     * box calculations.
+     */
+    if (type == 5 || type == 6) {	/* also include half circle */
+	double mag;
+	double angle, init_angle, rads;
+	double fix_x, fix_y;
 
-    /* xc,yc is one point of arrowhead tail */
-    xc =  x * cosa + y * sina + .5;
-    yc = -x * sina + y * cosa + .5;
+	/* use original dx, dy to get starting angle */
+	init_angle = compute_angle(dx, dy);
 
-    /* the x component of the endpoint of the line */
-    xxb = x2 * cosa - y2 * sina;
+	/* (xs,ys) is a point the length (height) of the arrowhead BACK from
+	   the end of the shaft */
+	/* for the half circle, use 0.0 */
+	xs =  (xb-(type==5? ht: 0.0)) * cosa + yb * sina + 0.5;
+	ys = -(xb-(type==5? ht: 0.0)) * sina + yb * cosa + 0.5;
 
-    /* xg,yg is one corner of the box enclosing the arrowhead */
-    /* allow extra for a round line cap */
-    xxb = xxb+thick*ZOOM_FACTOR;
+	/* calc new (dx, dy) from moved endpoint to (xs, ys) */
+	dx = mx - xs;
+	dy = my - ys;
+	/* radius */
+	mag = ht/2.0;
+	fix_x = xs + (dx / (double) 2.0);
+	fix_y = ys + (dy / (double) 2.0);
+	/* choose number of points for circle - 40+zoom/4 points */
+	np = round(display_zoomscale/4.0) + 40;
 
-    xg =  xxb * cosa + y * sina + .5;
-    yg = -xxb * sina + y * cosa + .5;
+	if (type == 5) {
+	    init_angle = 5.0*M_PI_2 - init_angle;
+	    /* np/2 points in the forward part of the circle for the line clip area */
+	    *nboundpts = np/2;
+	    /* full circle */
+	    rads = M_2PI;
+	} else {
+	    init_angle = 3.0*M_PI_2 - init_angle;
+	    /* no points in the line clip area */
+	    *nboundpts = 0;
+	    /* half circle */
+	    rads = M_PI;
+	}
 
-    y = yb + wd / 2;
-    /* xd,yd is other point of arrowhead tail */
-    xd =  x * cosa + y * sina + .5;
-    yd = -x * sina + y * cosa + .5;
-
-    /* xh,yh is the other corner of the box enclosing the arrowhead */
-    /* allow extra for a round line cap */
-    xh =  xxb * cosa + y * sina + .5;
-    yh = -xxb * sina + y * cosa + .5;
-
-    /* pass back these two corners to the caller */
-    *c1x = xg;
-    *c1y = yg;
-    *c2x = xh;
-    *c2y = yh;
-
-    /* draw the box surrounding the arrowhead */
-    if (appres.DEBUG) {
-	pw_vector(canvas_win, xc, yc, xg, yg, PAINT, 1, RUBBER_LINE, 0.0, GREEN);
-	pw_vector(canvas_win, xg, yg, xh, yh, PAINT, 1, RUBBER_LINE, 0.0, GREEN);
-	pw_vector(canvas_win, xh, yh, xd, yd, PAINT, 1, RUBBER_LINE, 0.0, GREEN);
-	pw_vector(canvas_win, xd, yd, xc, yc, PAINT, 1, RUBBER_LINE, 0.0, GREEN);
-    }
-
-    points[*npoints].x = xc; points[(*npoints)++].y = yc;
-    points[*npoints].x = mx; points[(*npoints)++].y = my;
-    points[*npoints].x = xd; points[(*npoints)++].y = yd;
-    if (type != 0) {
-	points[*npoints].x = xs; points[(*npoints)++].y = ys; /* add point on shaft */
-	points[*npoints].x = xc; points[(*npoints)++].y = yc; /* connect back to first point */
+	/* draw the half or full circle */
+	for (i = 0; i < np; i++) {
+	    angle = init_angle - (rads * (double) i / (double) (np-1));
+	    x = fix_x + round(mag * cos(angle));
+	    points[*npoints].x = x;
+	    y = fix_y + round(mag * sin(angle));
+	    points[*npoints].y = y;
+	    miny = min2(y, miny);
+	    maxy = max2(y, maxy);
+	    (*npoints)++;
+	}
+	x = zoomscale;
+	y = mag;
+	xt =  x*cosa + y*sina + x2;
+	yt = -x*sina + y*cosa + y2;
+	*c1x = xt;
+	*c1y = yt;
+	y = -mag;
+	xt =  x*cosa + y*sina + x2;
+	yt = -x*sina + y*cosa + y2;
+	*c2x = xt;
+	*c2y = yt;
+    } else {
+	/* 3 points in the arrowhead that define the line clip part */
+	*nboundpts = 3;
+	np = arrow_shapes[indx].numpts;
+	for (i=0; i<np; i++) {
+	    x = arrow_shapes[indx].points[i].x * ht;
+	    y = arrow_shapes[indx].points[i].y * wd;
+	    miny = min2(y, miny);
+	    maxy = max2(y, maxy);
+	    xt =  x*cosa + y*sina + xa;
+	    yt = -x*sina + y*cosa + ya;
+	    points[*npoints].x = xt;
+	    points[*npoints].y = yt;
+	    (*npoints)++;
+	}
+	tip = arrow_shapes[indx].tipno;
+	x = arrow_shapes[indx].points[tip].x * ht;
+	y = maxy;
+	xt =  x*cosa + y*sina + x2;
+	yt = -x*sina + y*cosa + y2;
+	*c1x = xt;
+	*c1y = yt;
+	y = miny;
+	xt =  x*cosa + y*sina + x2;
+	yt = -x*sina + y*cosa + y2;
+	*c2x = xt;
+	*c2y = yt;
     }
 }
 
@@ -1599,8 +1857,8 @@ draw_arrow(obj, arrow, points, npoints, op)
 
     if (obj->thickness == 0)
 	return;
-    if (arrow->type == 0)
-	fill = UNFILLED;			/* old, boring arrow head */
+    if (arrow->type == 0 || arrow->type >= 9)
+	fill = UNFILLED;			/* old arrow head or new unfilled types */
     else if (arrow->style == 0)
 	fill = NUMTINTPATS+NUMSHADEPATS-1;	/* "hollow", fill with white */
     else
@@ -1884,71 +2142,51 @@ step_computing(k, p0, p1, p2, p3, s1, s2, precision)
     return(1.0);              /* only one step in case of linear segment */
 
   /* compute coordinates of the origin */
-  if (s1>0)
-    {
-      if (s2<0)
-	{
+  if (s1>0) {
+      if (s2<0) {
 	  positive_s1_influence(k, 0.0, s1, &A_blend[0], &A_blend[2]);
 	  negative_s2_influence(0.0, s2, &A_blend[1], &A_blend[3]); 
-	}
-      else
-	{
+      } else {
 	  positive_s1_influence(k, 0.0, s1, &A_blend[0], &A_blend[2]);
 	  positive_s2_influence(k, 0.0, s2, &A_blend[1], &A_blend[3]); 
-	}
+      }
       point_computing(A_blend, p0, p1, p2, p3, &xstart, &ystart);
-    }
-  else
-    {
+  } else {
       xstart = p1->x;
       ystart = p1->y;
-    }
+  }
   
   /* compute coordinates  of the extremity */
-  if (s2>0)
-    {
-      if (s1<0)
-	{
+  if (s2>0) {
+      if (s1<0) {
 	  negative_s1_influence(1.0, s1, &A_blend[0], &A_blend[2]);
 	  positive_s2_influence(k, 1.0, s2, &A_blend[1], &A_blend[3]);
-	}
-      else
-	{
+      } else {
 	  positive_s1_influence(k, 1.0, s1, &A_blend[0], &A_blend[2]);
 	  positive_s2_influence(k, 1.0, s2, &A_blend[1], &A_blend[3]); 
-	}
+      }
       point_computing(A_blend, p0, p1, p2, p3, &xend, &yend);
-    }
-  else
-    {
+  } else {
       xend = p2->x;
       yend = p2->y;
-    }
+  }
 
   /* compute coordinates  of the middle */
-  if (s2>0)
-    {
-      if (s1<0)
-	{
+  if (s2>0) {
+      if (s1<0) {
 	  negative_s1_influence(0.5, s1, &A_blend[0], &A_blend[2]);
 	  positive_s2_influence(k, 0.5, s2, &A_blend[1], &A_blend[3]);
-	}
-      else
-	{
+      } else {
 	  positive_s1_influence(k, 0.5, s1, &A_blend[0], &A_blend[2]);
 	  positive_s2_influence(k, 0.5, s2, &A_blend[1], &A_blend[3]); 
-	}
-    }
-  else if (s1<0)
-    {
+      }
+  } else if (s1<0) {
       negative_s1_influence(0.5, s1, &A_blend[0], &A_blend[2]);
       negative_s2_influence(0.5, s2, &A_blend[1], &A_blend[3]);
-    }
-  else
-    {
+  } else {
       positive_s1_influence(k, 0.5, s1, &A_blend[0], &A_blend[2]);
       negative_s2_influence(0.5, s2, &A_blend[1], &A_blend[3]);
-    }
+  }
   point_computing(A_blend, p0, p1, p2, p3, &xmid, &ymid);
 
   xv1 = xstart - xmid;
@@ -1998,49 +2236,37 @@ spline_segment_computing(step, k, p0, p1, p2, p3, s1, s2)
   double A_blend[4];
   double t;
   
-  if (s1<0)
-    {  
-     if (s2<0)
-       {
-	 for (t=0.0 ; t<1 ; t+=step)
-	   {
+  if (s1<0) {  
+     if (s2<0) {
+	 for (t=0.0 ; t<1 ; t+=step) {
 	     negative_s1_influence(t, s1, &A_blend[0], &A_blend[2]);
 	     negative_s2_influence(t, s2, &A_blend[1], &A_blend[3]);
 
 	     point_adding(A_blend, p0, p1, p2, p3);
-	   }
-       }
-     else
-       {
-	 for (t=0.0 ; t<1 ; t+=step)
-	   {
+	 }
+     } else {
+	 for (t=0.0 ; t<1 ; t+=step) {
 	     negative_s1_influence(t, s1, &A_blend[0], &A_blend[2]);
 	     positive_s2_influence(k, t, s2, &A_blend[1], &A_blend[3]);
 
 	     point_adding(A_blend, p0, p1, p2, p3);
-	   }
-       }
-   }
-  else if (s2<0)
-    {
-      for (t=0.0 ; t<1 ; t+=step)
-	   {
+	 }
+     }
+  } else if (s2<0) {
+      for (t=0.0 ; t<1 ; t+=step) {
 	     positive_s1_influence(k, t, s1, &A_blend[0], &A_blend[2]);
 	     negative_s2_influence(t, s2, &A_blend[1], &A_blend[3]);
 
 	     point_adding(A_blend, p0, p1, p2, p3);
-	   }
-    }
-  else
-    {
-      for (t=0.0 ; t<1 ; t+=step)
-	   {
+      }
+  } else {
+      for (t=0.0 ; t<1 ; t+=step) {
 	     positive_s1_influence(k, t, s1, &A_blend[0], &A_blend[2]);
 	     positive_s2_influence(k, t, s2, &A_blend[1], &A_blend[3]);
 
 	     point_adding(A_blend, p0, p1, p2, p3);
-	   } 
-    }
+      } 
+  }
 }
 
 
@@ -2064,8 +2290,19 @@ redraw_images(obj)
 
 too_many_points()
 {
-	put_msg("Too many points, recompile with MAXNUMPTS > %d in w_drawprim.h",
-		MAXNUMPTS);
+    put_msg("Too many points, recompile with MAXNUMPTS > %d in w_drawprim.h", MAXNUMPTS);
 }
 
+debug_depth(depth, x, y)
+int depth, x, y;
+{
+    char	str[10];
+    PR_SIZE	size;
 
+    if (appres.DEBUG) {
+	sprintf(str,"%d",depth);
+	size = textsize(roman_font, strlen(str), str);
+	pw_text(canvas_win, x-size.length-round(3.0/zoomscale), round(y-3.0/zoomscale),
+		PAINT, roman_font, 0.0, str, RED);
+    }
+}

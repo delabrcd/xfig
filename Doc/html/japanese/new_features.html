@@ -1,0 +1,439 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=EUC-JP">
+<title>XFIG User Manual - New Features</title>
+<link rev="made" href="mailto:VEF00200@nifty.ne.jp">
+</head>
+
+<body>
+<a href="contents.html"><img src="../images/xfig-title.gif"
+  alt="XFIG Users Manual" border=0></a>
+
+<h1>xfig 3.2.3 の新しい機能</h1>
+
+<h2>GIF サポートについて</h2>
+
+<b>Unisys が、たとえ<u>フリー</u>なプログラムであっても、
+LZW 圧縮アルゴリズムの使用に対してロイヤリティを<u>要求する</u>と
+言明したため、xfig から GIF LZW 圧縮アルゴリズムの
+全ての痕跡を取り除きました。
+xfig は GIF ファイルを取り込むために giftopnm、
+及び ppmtopcx を呼び出すようになりました。
+スクリーン・キャプチャは PCX ファイルを書き出します。
+エクスポートは、fig2dev から ppmtogif を呼ぶことによって扱われます。</b>
+
+<h2>新しい機能</h2>
+
+<ul>
+<li><a href="i18n.html">国際化 <b>xfig</b></a> を
+韓国語環境 (<tt>ko_KR.eucKR</tt>) で動かした場合に、
+<a href="attributes.html#font-panel">フォント・パネル</a>の 
+<i>Times-Roman</i>、及び <i>Times-Bold</i> に
+<a href="attributes.html#font-panel-i18n">韓国語を含める</a>ようにしました。
+<br>from Jeon Hyoung-Jo and T.Sato.
+
+<p>
+<li>韓国語 PostScript プリンタへの印刷を可能とするために、
+<b>fig2dev</b> に韓国語用の 
+<a href="i18n.html#printer-font">PostScript ヘッダ・ファイル</a> 
+<tt>korean.ps</tt> を追加しました。
+これは、Munhwa-Regular と MunhwaGothic-Bold、
+もしくは HLaTeX-Myoungjo-Regular と HLaTeX-Gothic-Regular 
+の使用可能な方を使って印刷を行なおうとしますが、
+環境によってはフォント名の書き換えなどが必要となるかも知れません。
+<br>from Jeon Hyoung-Jo and T.Sato.
+
+<p>
+<li><b>fig2dev</b> の日本語用の 
+<a href="i18n.html#printer-font">PostScript ヘッダ・ファイル</a> 
+(<tt>japanese.ps</tt>) を、Ryumin-Light と GothicBBB-Medium ではなく、
+HeiseiMin-W3 と HeiseiKakuGo-W5 を搭載した 
+PostScript プリンタへの出力も行なえるように変更しました。
+<br>from T.Sato.
+
+<p>
+<li>X サーバーがそれをサポートしている場合、
+<a href="i18n.html">国際化 <b>xfig</b></a> を
+<blockquote>
+<tt>Fig.international: true</tt><br>
+<tt>Fig.latinKeyboard: true</tt><br>
+<tt>Fig.encEncoding: false</tt>
+</blockquote>
+のように設定することにより、
+Latin-1 キャラクタを単純入力メソッド 
+(あるいはヨーロッパ向けキーボード) を用いて入力できるかも知れません。
+<br>from T.Sato, with suggestion from Carlos A M dos Santos.
+
+<p>
+<li>佐藤 (T.Sato) の e-mail アドレスは 
+<a href="mailto:VEF00200@nifty.ne.jp">VEF00200@nifty.ne.jp</a> 
+です。
+日本語のマニュアルや国際化機能に関する質問など、
+あるいは日本の方からの質問などは、
+<a href="mailto:VEF00200@nifty.ne.jp">VEF00200@nifty.ne.jp (T.Sato)</a> 
+宛に送って下さい。
+<p>
+<li><a href="layers.html#depth_panel">Depth マネージャ</a> の追加。
+それぞれの depth のオブジェクトを表示の対象とするかどうかを、
+個々に、あるいはまとめて切り替えて、図の一部を選択的に隠すことができます。
+
+<p>
+<li>負の x、及び y 座標へのスクロールを可能にしました。
+これがデフォルトであり、
+これは <tt>-dont_allow_neg_coord</tt> オプションや
+<a href="global_settings.html">Global Settings</a> パネルで
+禁止することができます。
+
+<p>
+<li><a href="main_menus.html">コマンド・パネル</a>に、
+<i>File</i>、<i>Edit</i>、<i>View</i>、及び <i>Help</i> の
+メニューを置くようにしました。
+これらのアクセラレータは、それぞれ 
+<tt>Meta-F</tt>、<tt>Meta-E</tt>、<tt>Meta-V</tt>、及び <tt>Meta-H</tt> です。
+<i>File</i> メニューには、最近ロードされたファイルのリストも含まれます。
+
+<p>
+<li>Fig ファイルに含まれるコメントをオブジェクトのコメントとして保持し、
+セーブに際して書き戻すようにしました。
+コメントの入力や編集は、
+オブジェクトに対する <a href="editing.html#edit-panel">Edit パネル</a> 
+で行なうことができます。
+
+<p>
+<li>ファイルの読み込みのための
+<a href="main_menus.html#file-panels">File パネル</a>から、
+Fig ファイルを開くために
+<a href="main_menus.html#new-xfig-process">別の <b>xfig</b> プロセス</a>
+を起動することができるようにしました。
+<br>from T. Sato.
+
+<p>
+<li>POLYLINE や SPLINE などを2つに分割し、
+あるいは2つの POLYLINE や SPLINE などを1つに結合するための、
+<a href="editing.html#join">JOIN/SPLIT 機能</a>を追加しました。
+また、2つの頂点のあいだを切断することによって BOX を POLYLINE に変換すること、
+2つの端点を接続することによって開いた POLYLINE や SPLINE を
+閉じることも可能です。
+
+<p>
+<li><a href="drawing.html#library">Library パネル</a>のリストを
+ブラウズするために矢印キー (上、及び下のみ) を使えるようにしました。
+
+<p>
+<li>EPS やビットマップ・フォーマットでのエクスポートのために、
+<a href="printing.html#border_margin"><i>Border Margin</i></a> 
+(<b>fig2dev</b> の <tt>-b</tt> オプション) を追加しました。
+ユーザーは、余白を (おおむね) ピクセルで指定することができます。
+これは、図の境界の周囲の背景の余白となります。
+
+<p>
+<li><a href="printing.html#print">プリンタへの出力</a>や
+<a href="printing.html#export">エクスポート</a>に際して、
+背景の色を指定できるようにしました。
+これは図の背景全体の色を設定するものであり、
+全てのビットマップ・フォーマット、PostScript、EPS、PSTEX、
+及び PDF に対して使用することができます。
+これは、<b>fig2dev</b> に <tt>-g</tt> オプションによって引き渡されます。
+
+<p>
+<li>複合オブジェクトの<a href="attributes.html#depth">深さ</a>の
+<a href="editing.html#update">更新</a>に際して、
+それに含まれるオブジェクトの相対的な深さを維持したままで、
+最も小さい深さを指定された値にするようにしました。
+例えば、ある複合オブジェクトが深さ 3、8、及び 11 のオブジェクトを含んでおり、
+この複合オブジェクトの深さが 2 に変更された場合には、
+それに含まれるオブジェクトの深さはそれぞれ 2、7、及び 10 となります。
+<br>from T. Sato.
+
+<p>
+<li>プリンタを定義するために <tt>/etc/printcap</tt> を使っている
+システムにおいては、<b>xfig</b> は 
+<a href="printing.html#print">Print パネル</a> でのプリンタの選択のために
+<a href="printing.html#printer">プルダウン・メニュー</a>を
+用意するようにしました。
+
+<p>
+<li><a href="printing.html#export">Export パネル</a>に、
+<a href="printing.html#smooth"><i>Smooth</i> ボタン</a>を追加しました。
+これは、フォントの描画品質を改善するために <b>fig2dev</b> に 
+GhostScript がイメージを2倍の大きさで生成させるようにさせ、
+その結果を <tt>pnmscale</tt> によって本来の大きさに縮小しますが、
+これは隣り合ったピクセルの色の平均を取ることによって
+イメージを滑らかにします。
+<br>from T. Sato.
+
+<p>
+<li>Export や Print に際してのエラーを、
+エラー・メッセージ・ウィンドウに表示するようにしました。
+
+<p>
+<li><a href="editing.html#edit-panel">Edit パネル</a>を、
+編集するオブジェクトの上ではなく、その近くに配置するようにしました。
+
+<p>
+<li>小さい画面に収めるために、<b>xfig</b> が必要に応じて 
+pwidth、pheight、及び but_per_row を自動的に設定するようにしました。
+また、ポップアップ・ウィンドウの大きさや位置も必要に応じて調整して、
+画面からのはみ出しをできる限り防ぐようにしました。
+ユーザーが pwidth などを明示的に指定した場合には、
+その自動的な設定はオーバーライドされます。
+<br>from T. Sato
+
+<p>
+<li><a href="printing.html#pdf_export">PDF export ドライバ</a>
+を追加しました。
+(GhostScript ディストリビューションの <tt>ps2pdf</tt> を使用)
+
+<p>
+<li><b>fig2dev</b> (そして <b>xfig</b> のメニュー) に、
+<a href="printing.html#cgm_export">CGM export ドライバ</a> 
+(Computer Graphics Metafile) を追加しました。
+<br>from Philippe Bekaert &lt;Philippe.Bekaert@cs.kuleuven.ac.be&gt;
+
+<p>
+<li>より多くの<a href="printing.html#paper-size">用紙サイズ</a>
+(JIS B0〜B10、及び ISO A0〜A9) をサポートするようしました。
+
+<p>
+<li><a href="main_menus.html#paste-object">Paste Object</a> で、
+マウスボタン2 (`place at orig posn') のクリックによって
+オブジェクトを元の位置 
+(それが <b>xfig</b> のカット・バッファに移された時の位置) 
+に置けるようにしました。
+
+<p>
+<li>値を増減する「スピナー」を、対象に応じて修正しました。
+例えば、<i>Fill intensity %</i> は
+スピナーの矢印をマウスでクリック毎に 5% づつ、
+<i>Text step</i> は 0.1 づつ増減するようになりました。
+<br>
+<img src="../images/spinner.gif" alt="Spinner">
+
+<p>
+<li>また、マウス・ボタンが増減のボタンの上で押し続けられた時には、
+<a href="options.html#spinner_delay">spinner_delay</a> ミリ秒後から、
+<a href="options.html#spinner_rate">spinner_rate</a> ミリ秒ごとに
+リピートを行なうようにしました。
+
+<p>
+<li><a href="editing.html#edit-panel">Edit パネル</a> で、
+<i>Fill Intensity</i>、及び <i>Fill Pattern</i> を
+イメージで表示するようにしました。
+
+<p>
+<li><a href="drawing.html#arc">ARC</a> を、
+<ol>
+<li>円弧の中心
+<li>円弧の一方の端点の角度と半径
+<li>円弧の方向を決定するための2つめの点
+<li>最後の角度
+</ol>
+の指定によって入力できるようにしました。
+このモードは、マウスボタン2 (`center point') によって開始されます。
+従来の方法も引続いて使用可能です。
+<br>from T. Sato
+
+<p>
+<li>新しい配色 
+―― <tt>Fig-color.bisque.ad</tt> を使うことによって古い色を、
+また <tt>Fig-color.classic.ad</tt> を使うことによってもっと古い色を
+使うことも可能です。
+
+<p>
+<li>Web ページを用意しました。
+<ul>
+<li>マスター・サイト:<br>
+<a href="http://www-epb.lbl.gov/xfig/index.html" target="_top">
+http://www-epb.lbl.gov/xfig/index.html</a>
+<li>ミラー (日本):<br>
+<a href="http://member.nifty.ne.jp/tsato/xfig/" target="_top">
+http://member.nifty.ne.jp/tsato/xfig/</a>
+</ul>
+
+<p>
+<li>以下のものを含む、
+<a href="global_settings.html">Global Settings パネル</a>
+を追加しました。
+<ul>
+<li>ルーラーにマウスの位置を表示するかどうかを設定するチェックボックス
+<li>用紙の境界を表示するかどうかを設定するチェックボックス
+<li>バルーン・メッセージを表示するかどうかを設定するチェックボックス
+<li>線の長さを表示するかどうかを設定するチェックボックス
+<li>頂点の番号を表示するかどうかを設定するチェックボックス
+<li>イメージの色の数の上限の指定
+<li>イメージ・エディタの指定
+<li>スペル・チェッカの指定
+<li>HTML ブラウザの指定
+<li>PDF ビューアの指定
+</ul>
+逆に、バルーンの ON/OFF のためのチェックボタンを
+メッセージ領域から取り除きました。
+
+<p>
+<li>2つの新しい "make" オプション：
+<ol>
+<li>"make install.doc"
+- 文書ファイル (すなわち、マニュアル・ページ、HTML、及び PDF ファイル) 
+のみをインストールする
+<li>"make install.libs"
+- <b>xfig</b> のオブジェクト・ライブラリのみをインストールする
+</ol>
+
+<p>
+<li><a href="main_menus.html#file-panel">File パネル</a>、
+及び <a href="printing.html#export">Export パネル</a>の
+<i>Filename Mask</i> に、空白で区切られた複数のワイルドカード・マスク 
+(例えば "*.fig *.fig.gz *.fig.[Zz]") を含められるようにしました。
+
+<p>
+<li><a href="printing.html#export">Export パネル</a>で 
+<i>Language</i> が選択された時に、
+<i>Filename Mask</i> をそれに応じて変更する 
+(例えば、GIF が選択されたならば <tt>*.gif</tt> に) 
+ようにしました。
+従って、<tt>Fig*export_panel*mask*string</tt> は過去のものとなりました。
+
+<p>
+<li>新しい形式の <tt>browser</tt> リソースでは、
+``<tt>%f</tt>'' を探し、それをファイル名で置き換えるようにしました。
+これと Netscape の <tt>-remote</tt> オプションを用いて、
+<b>xfig</b> はマニュアル (HTML) を表示するために実行中の Netscape を用い、
+それが実行中でなければ実行を開始することができるようになりました。
+
+<p>
+<li><tt>pdfviewer</tt> リソースの ``<tt>%f</tt>'' も
+ファイル名に置き換えられるようにしました。
+
+<p>
+<li><b>xfig</b> は、まず正しい PostScript フォント名 (例えば AvantGarde) を試し、
+それが失敗したならばバックアップのフォント名を試すようにしました。
+これも失敗したならば、<tt>6x13</tt> を使用します。
+AvantGarde、Bookman、HelveticaNarrow、及び Palatino フォントは 
+Open Group (そしてそれ以前の X Consortium) からの X ディストリビューション
+と共に配布されていなかかったため、以前の <b>xfig</b> は
+それらのフォントをそれに近いものに置き換えるようになっていました。
+現在は、<b>xfig</b> はまず正しいものを試し、
+それが存在しない場合にはバックアップに切り替えます。
+
+<p>
+<li>GNU plotutils の新しい情報のため、
+<a href="figapps.html">FIGAPPS</a> ファイルを更新しました。
+
+<p>
+<li>Zoom が小さい時、<a href="panning.html#rulers">ルーラー</a>に、
+より少ない目盛を表示するようにしました。
+
+<p>
+<li>Zoom が大きい時、<a href="panning.html#rulers">ルーラー</a>の
+主な目盛のあいだにより多くのラベルを表示するようにしました。
+
+<p>
+<li>新しいライブラリ・オブジェクト
+<ul>
+<li>Computers ライブラリのフロッピー・ディスク・ライブラリ・オブジェクト。
+<li>Networks ライブラリの "generic hardware" ライブラリ・オブジェクト。
+  <br>from Tomi Ollila &lt;Tomi.Ollila@tfi.net&gt;
+<li>ミラー、レンズ、光ファイバを含む、新しい Optics ライブラリ。
+  <br>from Kai-MartinKnaak &lt;kmk@abraxas.physik.uni-mainz.de&gt;
+<li>Computers ライブラリのコンピュータや端末、
+  Networks ライブラリのネットワーク・コンポーネント。
+  <br>from T. Sato
+<li>プレート、サポート、負荷、梁、座標系、及びトラスを含む、
+  新しい Structural Analysis ライブラリ。
+  <tt>Structural_Analysis/readme</tt> オブジェクト 
+  (<tt>Examples/Libraries/Structural_Analysis/readme.fig</tt>) 
+  に含まれる著作権情報もお読み下さい。
+  <br>from Roman Putanowicz &lt;putanowr@twins.pk.edu.pl&gt;
+</ul>
+
+<p>
+<li>app-defaults ファイルがない、あるいは古い場合の、
+より解説的なエラー・メッセージ。
+
+<p>
+<li>フォントが ISO8859-1 エンコーディングであるという制約の解除。
+これは、例えば ISO646.1991 
+(スケーラブルな Schumacher フォントがそうである) を使えるようにします。
+
+<p>
+<li>右、あるいは左揃えのテキストを含んだ複合オブジェクトの左右を反転する際、
+それらのテキスト・オブジェクトの揃えも反転するようにしました。
+(すなわち、右揃えのテキストは左揃えになり、その逆も同様となります。)
+
+<p>
+<li>ユーザーが <b>xfig</b> のメイン・ウィンドウの大きさを指定するために 
+<tt>Fig.geometry</tt> リソースを使用した場合、警告を出力するようにしました
+―― <tt>-geometry</tt> オプション、もしくは 
+<tt>pwidth</tt>/<tt>pheight</tt> オプションかリソースのみを使うべきです。
+
+<p>
+<li><tt>varargs.h</tt> の代わりに 
+ANSI の <tt>stdargs.h</tt> を使うようにしました。
+<br>from Roland Rosenfeld &lt;roland@spinnaker.de&gt;
+
+<p>
+<li>スペルチェック・コマンドの指定で、
+ファイル名のために "%s" ではなく "%f" を用いるようにしました。
+
+<p>
+<li><b>xfig</b> を任意のディレクトリにインストールするために 
+<tt>BINDIR</tt> を指定することができるようにしました。
+(<tt>README</tt> ファイルを参照)
+
+<p>
+<li>ユーザーが取り込んだイメージのファイルを編集するために 
+<i>Edit Image</i> ボタンを押した時に、
+<b>xfig</b> のウィンドウをアンマップしないようにしました。
+
+<p>
+<li>オブジェクトの回転角度を実数で指定できるようにしました。
+<br>from Marc Joosen &lt;marcj@historia.et.tudelft.nl&gt;
+
+<p>
+<li><a href="miscellaneous.html#spell-check">スペルチェッカ</a>と
+<a href="miscellaneous.html#search-replace">Search &amp; Replace パネル</a>を、
+より便利にしました。
+
+<p>
+<li>新しい <a href="panning.html#zooming">Zoom to fit canvas</a> 機能 ―
+キャンバス上でのアクセラレータ <tt>Ctrl-Z</tt> は、
+図がちょうどキャンバスに収まるようにズームします。
+<a href="attributes.html#zoom-scale">Zoom ダイアログ</a>の 
+<i>Fit to canvas</i> ボタンや、
+<a href="main_menus.html#view-menu">View メニュー</a> の 
+<i>Zoom to Fit canvas</i> も、同じ機能を持ちます。
+
+<p>
+<li>開かれた複合オブジェクトを閉じた際に、
+<a href="editing.html#open-compound">OPEN COMPOUND</a> が
+選択されるようにしました。
+
+<p>
+<li>SHIFT キーを押した状態でマウスボタン2でオブジェクトをクリックした場合、
+そのオブジェクトに付けられたコメントを
+<a href="editing.html#display-comments">ポップアップに表示する</a>
+ようにしました。
+
+<p>
+<li>左右のマウスボタンを入れ換えたマウスのために、
+<a href="miscellaneous.html#mouse-indicator">マウス機能インジケータ</a>
+のメッセージを反転させる、<tt>-flipvisualhints</tt> オプション 
+(<tt>Fig.flipvisualhints</tt> リソース) を追加しました。
+
+<p>
+<li>取り込めるイメージ・フォーマットの追加 ― TIFF、及び XPM。
+
+<p>
+<li><a href="attributes.html#text-flags">TEXT FLAGS</a> を設定するための、
+<tt>-hiddentext</tt>、及び <tt>-rigidtext</tt> オプションの追加。
+</ul>
+
+<hr>
+
+[ <a href="contents.html">Contents</a> |
+ <a href="introduction.html">Introduction</a> |
+ <a href="authors.html">Credits</a> ]
+
+</body>
+</html>

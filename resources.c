@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -17,6 +17,7 @@
 
 #include "fig.h"
 #include "resources.h"
+#include "object.h"
 
 fig_colors       colorNames[] = {
 			"Default",	"NULL",
@@ -61,6 +62,9 @@ char		*short_clrNames[] = {
 			"Mg4", "Mg3", "Mg2", "Br4", "Br3", "Br2",
 			"Pk4", "Pk3", "Pk2", "Pnk", "Gld" };
 
+/* current export/print background color */
+int		export_background_color = COLOR_NONE;
+
 /* these are allocated in main() in case we aren't using default colormap 
    (so we can't use BlackPixelOfScreen...) */
 
@@ -74,6 +78,9 @@ char		xfig_version[100];
 
 /* original directory where xfig started */
 char	orig_dir[PATH_MAX+2];
+
+/* whether user is updating Fig files or loading one to view */
+Boolean		update_figs = False;
 
 #ifdef USE_XPM
 XpmAttributes	xfig_icon_attr;
@@ -91,6 +98,11 @@ Boolean		colorFree[MAX_USR_COLS];
 Boolean		n_colorFree[MAX_USR_COLS];
 Boolean		all_colors_available;
 Pixel		dk_gray_color, lt_gray_color;
+Pixel		pageborder_color;
+int		max_depth=-1;
+int		min_depth=-1;
+char		tool_name[200];
+char		*userhome;		/* user's home directory */
 
 /* number of colors we want to use for pictures */
 /* this will be determined when the first picture is used.  We will take
@@ -116,25 +128,29 @@ Cursor		arrow_cursor, bull_cursor, buster_cursor, crosshair_cursor,
 Widget		tool;
 XtAppContext	tool_app;
 
-Widget		canvas_sw, ps_fontmenu, /* printer font menu tool */
-		latex_fontmenu,		/* printer font menu tool */
-		msg_form, msg_panel, name_panel, cmd_panel, mode_panel, 
+Widget		canvas_sw, ps_fontmenu,		/* printer font menu tool */
+		latex_fontmenu,			/* printer font menu tool */
+		msg_panel, name_panel, cmd_form, mode_panel, 
 		d_label, e_label, mousefun,
-		ind_panel, upd_ctrl,	/* indicator panel */
+		ind_panel, ind_box, upd_ctrl,	/* indicator panel */
 		unitbox_sw, sideruler_sw, topruler_sw;
 
 Display	       *tool_d;
 Screen	       *tool_s;
 Window		tool_w;
+Widget		tool_form;
 int		tool_sn;
 int		tool_vclass;
 Visual	       *tool_v;
 int		tool_dpth;
 int		tool_cells;
-int		image_bpp;	/* # of bytes-per-pixel for images at this visual */
+int		image_bpp;		/* # of bytes-per-pixel for images at this visual */
+int		screen_wd, screen_ht;	/* width and height of screen */
 Colormap	tool_cm, newcmap;
 Boolean		swapped_cmap = False;
 Atom		wm_delete_window;
+int		num_recent_files;	/* number of recent files in list */
+int		max_recent_files;	/* user max number of recent files */
 
 GC		gc, button_gc, ind_button_gc, mouse_button_gc,
 		fill_color_gc, pen_color_gc, blank_gc, ind_blank_gc, 
@@ -144,9 +160,8 @@ GC		gc, button_gc, ind_button_gc, mouse_button_gc,
 		sr_gc, sr_xor_gc, sr_erase_gc;
 
 Pixmap		fill_pm[NUMFILLPATS],fill_but_pm[NUMPATTERNS];
+float		fill_pm_zoom[NUMFILLPATS],fill_but_pm_zoom[NUMFILLPATS];
 XColor		x_fg_color, x_bg_color;
-Boolean		writing_bitmap;		/* set when exporting to monochrome bitmap */
-Boolean		writing_pixmap;		/* set when exporting to other pixmap formats */
 unsigned long	but_fg, but_bg;
 unsigned long	ind_but_fg, ind_but_bg;
 unsigned long	mouse_but_fg, mouse_but_bg;
@@ -170,8 +185,8 @@ String  text_translations =
 /* for w_export.c and w_print.c */
 
 char    *orient_items[] = {
-    "portrait ",
-    "landscape"};
+    " portrait ",
+    "landscape "};
 
 char    *just_items[] = {
     "Centered  ",
@@ -180,8 +195,8 @@ char    *just_items[] = {
 /* IMPORTANT:  if the number or order of this table is changed be sure
 		to change the PAPER_xx definitions in resources.h */
 
-struct	paper_def paper_sizes[] = {
-    {"Letter  ", "Letter  (8.5\" x 11\" / 216 x 279 mm)",   10200, 13200}, 
+struct	paper_def paper_sizes[NUMPAPERSIZES] = {
+    {"Letter  ", "Letter  (8.5\" x 11\" / 216 x 279 mm)", LETTER_WIDTH, LETTER_HEIGHT}, 
     {"Legal   ", "Legal   (8.5\" x 14\" / 216 x 356 mm)",   10200, 16800}, 
     {"Tabloid ", "Tabloid ( 11\" x 17\" / 279 x 432 mm)",   13200, 20400}, 
     {"A       ", "ANSI A  (8.5\" x 11\" / 216 x 279 mm)",   10200, 13200}, 
@@ -189,17 +204,32 @@ struct	paper_def paper_sizes[] = {
     {"C       ", "ANSI C  ( 17\" x 22\" / 432 x 559 mm)",   20400, 26400}, 
     {"D       ", "ANSI D  ( 22\" x 34\" / 559 x 864 mm)",   26400, 40800}, 
     {"E       ", "ANSI E  ( 34\" x 44\" / 864 x 1118 mm)",   40800, 52800}, 
-    {"A4      ", "ISO A4  (210mm x  297mm)",  9921, 14031}, 
-    {"A3      ", "ISO A3  (297mm x  420mm)", 14031, 19843}, 
-    {"A2      ", "ISO A2  (420mm x  594mm)", 19843, 28063}, 
-    {"A1      ", "ISO A1  (594mm x  841mm)", 28063, 39732}, 
-    {"A0      ", "ISO A0  (841mm x 1189mm)", 39732, 56173}, 
-    {"B5      ", "JIS B5  (182mm x  257mm)",  8598, 12142}, 
+    {"A9      ", "ISO A9  (  37mm x   52mm)",  1748,  2467},
+    {"A8      ", "ISO A8  (  52mm x   74mm)",  2457,  3500},
+    {"A7      ", "ISO A7  (  74mm x  105mm)",  3496,  4960},
+    {"A6      ", "ISO A6  ( 105mm x  148mm)",  4960,  6992}, 
+    {"A5      ", "ISO A5  ( 148mm x  210mm)",  6992,  9921},
+    {"A4      ", "ISO A4  ( 210mm x  297mm)",  A4_WIDTH, A4_HEIGHT}, 
+    {"A3      ", "ISO A3  ( 297mm x  420mm)", 14031, 19843}, 
+    {"A2      ", "ISO A2  ( 420mm x  594mm)", 19843, 28063}, 
+    {"A1      ", "ISO A1  ( 594mm x  841mm)", 28063, 39732}, 
+    {"A0      ", "ISO A0  ( 841mm x 1189mm)", 39732, 56173}, 
+    {"B10     ", "JIS B10 (  32mm x   45mm)",  1516,  2117},
+    {"B9      ", "JIS B9  (  45mm x   64mm)",  2117,  3017},
+    {"B8      ", "JIS B8  (  64mm x   91mm)",  3017,  4300},
+    {"B7      ", "JIS B7  (  91mm x  128mm)",  4300,  6050},
+    {"B6      ", "JIS B6  ( 128mm x  182mm)",  6050,  8598},
+    {"B5      ", "JIS B5  ( 182mm x  257mm)",  8598, 12150},
+    {"B4      ", "JIS B4  ( 257mm x  364mm)", 12150, 17200},
+    {"B3      ", "JIS B3  ( 364mm x  515mm)", 17200, 24333},
+    {"B2      ", "JIS B2  ( 515mm x  728mm)", 24333, 34400},
+    {"B1      ", "JIS B1  ( 728mm x 1030mm)", 34400, 48666},
+    {"B0      ", "JIS B0  (1030mm x 1456mm)", 48666, 68783},
     };
 
 char    *multiple_pages[] = {
-    "Single  ",
-    "Multiple"};
+    "  Single  ",
+    " Multiple "};
 
 /* for w_file.c and w_export.c */
 
@@ -212,3 +242,6 @@ int	RULER_WD;
    existing picture colors */
 
 Boolean	pic_obj_read;
+
+/* recent file structure/array */
+_recent_files recent_files[MAX_RECENT_FILES];

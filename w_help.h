@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-1998 by Brian V. Smith
+ * Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -13,8 +13,8 @@
  *
  */
 
-extern void	launch_html();
-extern void	launch_howto();
+extern void	launch_refman();
 extern void	launch_man();
-extern void	help_xfig();
+extern void	launch_howto();
+extern void	launch_about();
 

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -20,8 +20,9 @@
 #include "mode.h"
 #include "w_setup.h"
 
-extern void init_write_tmpfile();
-extern void end_write_tmpfile();
+extern void	init_write_tmpfile();
+extern void	end_write_tmpfile();
+static int	exec_prcmd();
 
 /*
  * Beware!  The string returned by this function is static and is
@@ -55,8 +56,9 @@ char *shell_protect_string(string)
     return(buf);
 }
 
-print_to_printer(printer, mag,  params)
+print_to_printer(printer, backgrnd, mag,  params)
     char	    printer[];
+    char	   *backgrnd;
     float	    mag;
     char	    params[];
 {
@@ -68,7 +70,7 @@ print_to_printer(printer, mag,  params)
     sprintf(tmpfile, "%s/%s%06d", TMPDIR, "xfig-print", getpid());
     warnexist = False;
     init_write_tmpfile();
-    if (write_file(tmpfile)) {
+    if (write_file(tmpfile, False)) {
       end_write_tmpfile();
       return;
     }
@@ -78,26 +80,29 @@ print_to_printer(printer, mag,  params)
     if (!outfile || outfile[0] == '\0')
 	outfile = "NoName";
 #ifdef I18N
-    sprintf(translator, "fig2dev -Lps %s %s -P -z %s %s -m %f %s -n %s",
+    sprintf(translator, "fig2dev %s -L ps -z %s -m %f %s -n %s",
 	    appres.international ? appres.fig2dev_localize_option : "",
 #else
-    sprintf(translator, "fig2dev -Lps %s -P -z %s %s -m %f %s -n %s",
+    sprintf(translator, "fig2dev -L ps -z %s -m %f %s -n %s",
 #endif /* I18N */
-	    (!appres.multiple && !appres.flushleft ? "-c" : "") ,
-	    paper_sizes[appres.papersize].sname,
-	    appres.multiple ? "-M" : "",
-	    mag/100.0,
-	    appres.landscape ? "-l xxx" : "-p xxx",
-	    outfile);
+	    paper_sizes[appres.papersize].sname, mag/100.0,
+	    appres.landscape ? "-l xxx" : "-p xxx", outfile);
+
+    if (!appres.multiple && !appres.flushleft)
+	strcat(translator," -c ");
+    if (appres.multiple)
+	strcat(translator," -M ");
+    if (backgrnd[0]) {
+	strcat(translator," -g \\");	/* must escape the #rrggbb color spec */
+	strcat(translator,backgrnd);
+    }
 
     /* make the print command with no filename (it will be in stdin) */
     gen_print_cmd(syspr, "", printer, params);
 
     /* make up the whole translate/print command */
     sprintf(prcmd, "%s %s | %s", translator, tmpfile, syspr);
-    if (system(prcmd) != 0)
-	file_msg("Error during PRINT (check standard error output)");
-    else {
+    if (exec_prcmd(prcmd, "PRINT") == 0) {
 	if (emptyname(printer))
 	    put_msg("Printing on default printer with %s paper size in %s mode ... done",
 		paper_sizes[appres.papersize].sname,
@@ -150,11 +155,15 @@ gen_print_cmd(cmd,file,printer,pr_params)
 
 /* xoff and yoff are in fig2dev print units (1/72 inch) */
 
-print_to_file(file, lang, mag, xoff, yoff, transparent)
+print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent, 
+		use_transp_backg, border, smooth)
     char	   *file, *lang;
     float	    mag;
     int		    xoff, yoff;
-    char	   *transparent;
+    char	   *backgrnd, *transparent;
+    Boolean	    use_transp_backg;
+    int		    border;
+    Boolean	    smooth;
 {
     char	    prcmd[2*PATH_MAX+200];
     char	    tmp_name[PATH_MAX];
@@ -169,7 +178,7 @@ print_to_file(file, lang, mag, xoff, yoff, transparent)
     /* write the fig objects to a temporary file */
     warnexist = False;
     init_write_tmpfile();
-    if (write_file(tmp_fig_file)) {
+    if (write_file(tmp_fig_file, False)) {
       end_write_tmpfile();
       return (1);
     }
@@ -181,122 +190,195 @@ print_to_file(file, lang, mag, xoff, yoff, transparent)
 	    file, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     app_flush();		/* make sure message gets displayed */
 
-    /* PostScript output */
-    if (!strcmp(lang, "ps"))
+    /* PostScript or PDF output */
+    if (!strcmp(lang, "ps") || !strcmp(lang, "pdf")) {
 
 #ifdef I18N
-	sprintf(prcmd, "fig2dev -Lps %s %s -P -z %s %s -m %f %s -n %s -x %d -y %d %s %s", 
+	sprintf(prcmd, "fig2dev %s -L %s -z %s -m %f %s -n %s -x %d -y %d", 
 		appres.international ? appres.fig2dev_localize_option : "",
 #else
-	sprintf(prcmd, "fig2dev -Lps %s -P -z %s %s -m %f %s -n %s -x %d -y %d %s %s", 
+	sprintf(prcmd, "fig2dev -L %s -z %s -m %f %s -n %s -x %d -y %d", 
 #endif  /* I18N */
-		(!appres.multiple && !appres.flushleft ? "-c" : "") ,
+		!strcmp(lang, "ps")? "ps": "pdf",
 		paper_sizes[appres.papersize].sname,
-		appres.multiple ? "-M" : "",
-		mag/100.0, appres.landscape ? "-l xxx" : "-p xxx", outfile,
-		xoff, yoff,
-		tmp_fig_file, outfile);
+		mag/100.0, appres.landscape ? "-l xxx" : "-p xxx", 
+		outfile, xoff, yoff);
 
-    /* Encapsulated PostScript output */
-    else if (!strcmp(lang, "eps"))
+	if (!appres.multiple && !appres.flushleft)
+	    strcat(prcmd," -c ");
+	if (appres.multiple)
+	    strcat(prcmd," -M ");
+	if (backgrnd[0]) {
+	    strcat(prcmd," -g \\");	/* must escape the #rrggbb color spec */
+	    strcat(prcmd,backgrnd);
+	}
+	strcat(prcmd," ");
+	strcat(prcmd,tmp_fig_file);
+	strcat(prcmd," ");
+	strcat(prcmd,outfile);
+
+
+    /* EPS (Encapsulated PostScript) output */
+    } else if (!strcmp(lang, "eps")) {
 
 #ifdef I18N
-	sprintf(prcmd, "fig2dev -Lps %s -z %s -m %f %s -n %s %s %s",
+	sprintf(prcmd, "fig2dev %s -L eps -b %d -n %s",
 		appres.international ? appres.fig2dev_localize_option : "",
 #else
-	sprintf(prcmd, "fig2dev -Lps -z %s -m %f %s -n %s %s %s",
+	sprintf(prcmd, "fig2dev -L eps -b %d -n %s",
 #endif  /* I18N */
-		paper_sizes[appres.papersize].sname,
-		mag/100.0, appres.landscape ? "-l xxx" : "-p xxx",
-		outfile, tmp_fig_file, outfile);
+		border, outfile);
+
+	if (backgrnd[0]) {
+	    strcat(prcmd," -g \\");	/* must escape the #rrggbb color spec */
+	    strcat(prcmd,backgrnd);
+	}
+	strcat(prcmd," ");
+	strcat(prcmd,tmp_fig_file);
+	strcat(prcmd," ");
+	strcat(prcmd,outfile);
+
     /* HPL */
-    else if (!strcmp(lang, "hpl"))
+    } else if (!strcmp(lang, "hpl")) {
 #ifdef I18N
-	sprintf(prcmd, "fig2dev -Libmgl %s -m %f %s %s %s",
+	sprintf(prcmd, "fig2dev %s -L ibmgl -m %f %s %s %s",
 		appres.international ? appres.fig2dev_localize_option : "",
 #else
 	sprintf(prcmd, "fig2dev -Libmgl -m %f %s %s %s",
 #endif  /* I18N */
 		mag/100.0, appres.landscape ? "" : "-P", tmp_fig_file,
 		outfile);
-    /* pstex */
-    else if (!strcmp(lang, "pstex")) {
+
+    /* PSTEX */
+    } else if (!strcmp(lang, "pstex")) {
 	/* do both PostScript part and text part */
 	/* first the postscript part */
 #ifdef I18N
-	sprintf(prcmd, "fig2dev -L%s %s -m %f -n %s %s %s", lang,
+	sprintf(prcmd, "fig2dev %s -L %s -m %f -n %s", 
 		appres.international ? appres.fig2dev_localize_option : "",
 #else
-	sprintf(prcmd, "fig2dev -L%s -m %f -n %s %s %s", lang,
+	sprintf(prcmd, "fig2dev -L %s -m %f -n %s", 
 #endif  /* I18N */
-		mag/100.0, outfile, tmp_fig_file, outfile);
-	if (appres.DEBUG)
-	    fprintf(stderr,"execing: %s\n",prcmd);
-	if (system(prcmd) != 0)
-	    file_msg("Error during EXPORT of PostScript part (check standard error output)");
+		lang, mag/100.0, outfile);
+	if (backgrnd[0]) {
+	    strcat(prcmd," -g \\");	/* must escape the #rrggbb color spec */
+	    strcat(prcmd,backgrnd);
+	}
+	strcat(prcmd," ");
+	strcat(prcmd,tmp_fig_file);
+	strcat(prcmd," ");
+	strcat(prcmd,outfile);
+
+	(void) exec_prcmd(prcmd, "EXPORT of PostScript part");
+
 	/* now the text part */
 	/* add "_t" to the output filename and put in tmp_name */
 	strcpy(tmp_name,outfile);
 	strcat(tmp_name,"_t");
 	/* make it automatically input the postscript part (-p option) */
 #ifdef I18N
-	sprintf(prcmd, "fig2dev -Lpstex_t %s -p %s -m %f %s %s",
+	sprintf(prcmd, "fig2dev %s -L pstex_t -p %s -m %f %s %s",
 		appres.international ? appres.fig2dev_localize_option : "",
 #else
-	sprintf(prcmd, "fig2dev -Lpstex_t -p %s -m %f %s %s",
+	sprintf(prcmd, "fig2dev -L pstex_t -p %s -m %f %s %s",
 #endif  /* I18N */
 		outfile, mag/100.0, tmp_fig_file, tmp_name);
-    /* jpeg */
+
+
+    /* JPEG */
     } else if (!strcmp(lang, "jpeg")) {
 	/* set the image quality for JPEG export */
 #ifdef I18N
-	sprintf(prcmd, "fig2dev -L%s %s -q %d -m %f %s %s", lang,
+	sprintf(prcmd, "fig2dev %s -L %s -b %d -q %d -m %f %s", 
 		appres.international ? appres.fig2dev_localize_option : "",
 #else
-	sprintf(prcmd, "fig2dev -L%s -q %d -m %f %s %s", lang,
+	sprintf(prcmd, "fig2dev -L %s -b %d -q %d -m %f %s", 
 #endif  /* I18N */
-		appres.jpeg_quality, mag/100.0, tmp_fig_file, outfile);
+		lang, border, appres.jpeg_quality, backgrnd, mag/100.0,
+		smooth ? "-S 2" : "");
+	strcat(prcmd," ");
+	strcat(prcmd,tmp_fig_file);
+	strcat(prcmd," ");
+	strcat(prcmd,outfile);
+	if (backgrnd[0]) {
+	    strcat(prcmd," -g \\");	/* must escape the #rrggbb color spec */
+	    strcat(prcmd,backgrnd);
+	}
+
     /* GIF */
     } else if (!strcmp(lang, "gif")) {
 	/* select the transparent color, if any */
+#ifdef I18N
+	    sprintf(prcmd, "fig2dev %s -L %s -b %d -m %f %s", lang,
+		appres.international ? appres.fig2dev_localize_option : "",
+#else
+	    sprintf(prcmd, "fig2dev -L %s -b %d -m %f %s", lang,
+#endif  /* I18N */
+			border, mag/100.0, smooth ? "-S 2" : "");
 	if (transparent) {
-	    /* escape the first character of the transparent color (#) for the shell */
-#ifdef I18N
-	    sprintf(prcmd, "fig2dev -L%s %s -t \\%s -m %f %s %s", 
-		appres.international ? appres.fig2dev_localize_option : "",
-#else
-	    sprintf(prcmd, "fig2dev -L%s -t \\%s -m %f %s %s", 
-#endif  /* I18N */
-			lang, transparent, mag/100.0, tmp_fig_file, outfile);
-	} else {
-#ifdef I18N
-	    sprintf(prcmd, "fig2dev -L%s %s -m %f %s %s", 
-		appres.international ? appres.fig2dev_localize_option : "",
-#else
-	    sprintf(prcmd, "fig2dev -L%s -m %f %s %s", 
-#endif  /* I18N */
-			lang, mag/100.0, tmp_fig_file, outfile);
+	    char *backg;
+	    /* if user wants background transparent, set the background to the transp color */
+	    if (use_transp_backg)
+		backg = transparent;
+	    else
+		backg = backgrnd; /* otherwise use user selection */
+	    strcat(prcmd," -t \\");	/* must escape the #rrggbb color spec */
+	    strcat(prcmd,backg);
 	}
+	if (backgrnd[0]) {
+	    strcat(prcmd," -g \\");	/* must escape the #rrggbb color spec */
+	    strcat(prcmd,backgrnd);
+	}
+	strcat(prcmd," ");
+	strcat(prcmd,tmp_fig_file);
+	strcat(prcmd," ");
+	strcat(prcmd,outfile);
 
-    /* everything else */
-    } else
+    /* MAP */
+    } else if (!strcmp(lang, "map")) {
+        /* HTML map needs border option */
 #ifdef I18N
-	sprintf(prcmd, "fig2dev -L%s %s -m %f %s %s", lang,
+	sprintf(prcmd, "fig2dev %s -L %s -b %d -m %f %s %s", lang,
 		appres.international ? appres.fig2dev_localize_option : "",
 #else
-	sprintf(prcmd, "fig2dev -L%s -m %f %s %s", lang,
+	sprintf(prcmd, "fig2dev -L %s -b %d -m %f %s %s", lang,
+#endif  /* I18N */
+		border, mag/100.0, tmp_fig_file, outfile);
+
+
+    /* PCX, PNG, TIFF, XBM, XPM, and PPM */
+    } else if (!strcmp(lang, "pcx") || !strcmp(lang, "png") || !strcmp(lang, "tiff") ||
+		!strcmp(lang, "xbm") || !strcmp(lang, "xpm") || !strcmp(lang, "ppm")) {
+        /* bitmap formats need border option */
+#ifdef I18N
+	sprintf(prcmd, "fig2dev %s -L %s -b %d -m %f %s", lang,
+		appres.international ? appres.fig2dev_localize_option : "",
+#else
+	sprintf(prcmd, "fig2dev -L %s -b %d -m %f %s", lang,
+#endif  /* I18N */
+		border, backgrnd, mag/100.0, smooth ? "-S 2" : "");
+	strcat(prcmd," ");
+	strcat(prcmd,tmp_fig_file);
+	strcat(prcmd," ");
+	strcat(prcmd,outfile);
+
+
+    /* Everything else */
+    } else {
+#ifdef I18N
+	sprintf(prcmd, "fig2dev %s -L %s -m %f %s %s", lang,
+		appres.international ? appres.fig2dev_localize_option : "",
+#else
+	sprintf(prcmd, "fig2dev -L %s -m %f %s %s", lang,
 #endif  /* I18N */
 		mag/100.0, tmp_fig_file, outfile);
+    }
+
+    /* make a busy cursor */
+    set_temp_cursor(wait_cursor);
 
     /* now execute fig2dev */
-    if (appres.DEBUG)
-	fprintf(stderr,"execing: %s\n",prcmd);
-
-    /* first make a busy cursor */
-    set_temp_cursor(wait_cursor);
-    if (system(prcmd) != 0)
-	file_msg("Error during EXPORT (check standard error output)");
-    else
+    if (exec_prcmd(prcmd, "EXPORT") == 0)
 	put_msg("Exporting to file \"%s\" in %s mode ... done",
 		file, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
 
@@ -305,4 +387,63 @@ print_to_file(file, lang, mag, xoff, yoff, transparent)
 
     unlink(tmp_fig_file);
     return (0);
+}
+
+int
+exec_prcmd(command, msg)
+    char  *command, *msg;
+{
+    char   errfname[PATH_MAX];
+    FILE  *errfile;
+    char   str[400];
+    int	   status;
+
+    /* make temp filename for any errors */
+    sprintf(errfname, "%s/xfig-export%06d.err", TMPDIR, getpid());
+    /* direct any output from fig2dev to this file */
+    strcat(command, " 2> "); 
+    strcat(command, errfname); 
+    if (appres.DEBUG)
+	fprintf(stderr,"execing: %s\n",command);
+    status=system(command);
+    /* check if error file has anything in it */
+    if ((errfile = fopen(errfname, "r")) == NULL) {
+	if (status != 0)
+	    file_msg("Error during %s. No messages available.");
+    } else {
+	if (fgets(str,sizeof(str)-1,errfile) != NULL) {
+	    rewind(errfile);
+	    file_msg("Error during %s.  Messages:",msg);
+	    while (fgets(str,sizeof(str)-1,errfile) != NULL) {
+		/* remove trailing newlines */
+		str[strlen(str)-1] = '\0';
+		file_msg(" %s",str);
+	    }
+	}
+	fclose(errfile);
+    }
+    unlink(errfname);
+    return status;
+}
+
+/* 
+   make an rgb string from color (e.g. #31ab12)
+   if the color is < 0, make empty string
+*/
+
+make_rgb_string(color, rgb_string)
+    int	   color;
+    char  *rgb_string;
+{
+	XColor xcolor;
+	if (color >= 0) {
+	    xcolor.pixel = x_color(color);
+	    XQueryColor(tool_d, tool_cm, &xcolor);
+	    sprintf(rgb_string,"#%02x%02x%02x",
+				xcolor.red>>8,
+				xcolor.green>>8,
+				xcolor.blue>>8);
+	} else {
+	    rgb_string[0] = '\0';	/* no background wanted by user */
+	}
 }

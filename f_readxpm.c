@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-1998 by Brian V. Smith
+ * Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -72,17 +72,17 @@ read_xpm(filename,filetype,pic)
 	pic->pixmap = None;
 	pic->bitmap = (unsigned char *) malloc(image.width*image.height*sizeof(unsigned char));
 	if (pic->bitmap == NULL) {
-	    file_msg("cannot allocate space for GIF/XPM image");
+	    file_msg("cannot allocate space for XPM image");
 	    return PicSuccess;
 	}
 	for (i=0; i<image.width*image.height; i++)
 	    pic->bitmap[i] = (unsigned char) image.data[i]; /* int to unsigned char */
-	XpmFreeXpmImage(&image);	/* get rid of the image */
 	pic->hw_ratio = (float) image.height / image.width;
 	pic->bit_size.x = image.width;
 	pic->size_x = image.width * scale;
 	pic->bit_size.y = image.height;
 	pic->size_y = image.height * scale;
+	XpmFreeXpmImage(&image);	/* get rid of the image */
 	/* if monochrome display map bitmap */
 	if (tool_cells <= 2 || appres.monochrome)
 	    map_to_mono(pic);

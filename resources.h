@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -25,7 +25,17 @@
 #define NUMPATTERNS	22
 #define NUMFILLPATS	NUMSHADEPATS+NUMTINTPATS+NUMPATTERNS
 
-/* min, max depth of objects on canvas */
+/* page sizes used when imported EPS has no bounding box or pdf has no /MediaBox */
+#define LETTER_WIDTH	10200
+#define LETTER_HEIGHT	13200
+#define A4_WIDTH	 9921
+#define A4_HEIGHT	14031
+
+/* max zoom allowed */
+#define	MAX_ZOOM	100
+
+/* starting, min, max depth of objects on canvas */
+#define DEF_DEPTH	50
 #define MIN_DEPTH	0
 #define MAX_DEPTH	999
 
@@ -54,10 +64,11 @@
 #define MAX_USR_COLS	512
 
 /* number of paper sizes (A4, B5, letter, etc. [see resources.c]) */
-#define NUMPAPERSIZES	14
+#define NUMPAPERSIZES	29
+
 /* define these positions so we can start with default paper size */
 #define PAPER_LETTER	0
-#define PAPER_A4	8
+#define PAPER_A4	13
 
 #define	Color		int
 
@@ -65,11 +76,18 @@
 /* this can be overridden in resources or command-line arg */
 #define DEF_MAX_IMAGE_COLS 64
 
+/* max and default number of recently used files for File menu */
+#define MAX_RECENT_FILES	9
+#define DEF_RECENT_FILES	5
+
 /* for GIF files */
 #define	MAX_COLORMAP_SIZE	256
 
 /* for JPEG export */
 #define	DEF_JPEG_QUALITY	75
+
+/* default border margin for export */
+#define DEF_EXPORT_MARGIN	0
 
 struct Cmap {
 	unsigned short red, green, blue;
@@ -95,6 +113,9 @@ extern XColor		 black_color, white_color;
 /* original directory where xfig started */
 extern char		 orig_dir[PATH_MAX+2];
 
+/* whether user is updating Fig files or loading one to view */
+extern Boolean		 update_figs;
+
 #ifdef USE_XPM
 #include <xpm.h>
 extern XpmAttributes	 xfig_icon_attr;
@@ -113,6 +134,12 @@ extern Boolean		 colorFree[MAX_USR_COLS];
 extern Boolean		 n_colorFree[MAX_USR_COLS];
 extern Boolean		 all_colors_available;
 extern Pixel		 dk_gray_color, lt_gray_color;
+extern Pixel		 pageborder_color;
+extern int		 max_depth, min_depth;
+extern char		 tool_name[200];
+extern int		 export_background_color; /* current export/print background color */
+
+extern char		*userhome;	/* user's home directory */
 
 /* number of colors we want to use for GIF/XPM images */
 extern int		avail_image_cols;
@@ -122,76 +149,92 @@ extern XColor		image_cells[MAX_COLORMAP_SIZE];
 /* resources structure */
 
 typedef struct _appres {
-    char	   *canvasBackground;
-    char	   *canvasForeground;
-    char	   *iconGeometry;
-    Boolean	    INCHES;
-    Boolean	    DEBUG;
-    Boolean	    RHS_PANEL;
-    Boolean	    INVERSE;
-    Boolean	    TRACKING;
-    Boolean	    landscape;
-    Boolean	    ShowAllButtons;
-    Boolean	    latexfonts;
-    Boolean	    specialtext;
-    Boolean	    SCALABLEFONTS;	/* hns 5 Nov 91 */
-    char	   *normalFont;
+    Boolean	    allow_neg_coords;	/* allow negative x/y coordinates for panning */
+    int		    balloon_delay;	/* delay (ms) before balloon pops up on */
     char	   *boldFont;
-    char	   *buttonFont;
-    char	   *startpsFont;	/* bab 11 Jan 92 */
-    char	   *startlatexFont;	/* bab 11 Jan 92 */
-    float	    tmp_width;
-    float	    tmp_height;
-    float	    startfontsize;	/* ges 6 Feb 91 */
-    int		    internalborderwidth;
-    float	    starttextstep;	/* starting multi-line text spacing */
-    int		    startfillstyle;	/* starting fill style */
-    int		    startlinewidth;	/* starting line width */
-    int		    startgridmode;	/* starting grid mode */
-    int		    startposnmode;	/* starting point position mode */
+    char	   *browser;		/* browser for viewing html docs */
     int		    but_per_row;	/* number of buttons wide for the mode panel */
-    Boolean	    monochrome;
-    char	   *keyFile;
+    char	   *buttonFont;
+    char	   *canvasbackground;
+    char	   *canvasforeground;
+    Boolean	    DEBUG;
+    Boolean	    dont_switch_cmap;	/* don't allow switching of colormap */
+    Boolean	    draw_zero_lines;	/* draw lines through 0,0 (useful w/allow_neg_coords) */
     char	   *exportLanguage;
     Boolean	    flushleft;		/* center/flush-left printing */
-    float	    user_scale;		/* scale screen units to user units */
-    char	   *user_unit;		/* user defined unit name */
-    Boolean	    tablet;		/* input tablet extension */
-    int		    max_image_colors;	/* max colors to use for GIF/XPM images */
-    Boolean	    dont_switch_cmap;	/* don't allow switching of colormap */
-    int		    rulerthick;		/* thickness of rulers */
+    char	   *geometry;
+    char	   *iconGeometry;
     char	   *image_editor;	/* image editor (xv, etc) */
-    float	    zoom;		/* starting zoom scale */
-    Boolean	    multiple;		/* multiple/single page for export/print */
-    int		    papersize;		/* size of paper */
-    char	   *paper_size;		/* ASCII size of paper (from command-line) */
-    int		    transparent;	/* transparent color for GIF export
-						(-2=none, -1=background) */
-    float	    magnification;	/* export/print magnification */
-    Boolean	    showballoons;	/* show popup messages when user passes over buttons */
-    char	   *spellcheckcommand;	/* spell check command e.g. 
-					   "spell %s" or  "ispell -l < %s | sort -u" */
-    char	   *version;		/* version of the app-defaults file (compared with
-					   the version/patchlevel of xfig when starting */
+    Boolean	    INCHES;
+    int		    internalborderwidth;
     int		    jpeg_quality;	/* jpeg image quality */
-    int		    balloon_delay;	/* delay (milliseconds) before balloon pops up on */
+    char	   *keyFile;
+    Boolean	    landscape;
+    Boolean	    latexfonts;
     char	   *library_dir;	/* for object library path */
+    float	    magnification;	/* export/print magnification */
+    int		    max_image_colors;	/* max colors to use for GIF/XPM images */
+    Boolean	    monochrome;
+    Boolean	    multiple;		/* multiple/single page for export/print */
+    char	   *normalFont;
+    char	   *pageborder;		/* color of page border */
+    char	   *paper_size;		/* ASCII size of paper (from command-line) */
+    int		    papersize;		/* size of paper */
+    Boolean	    RHS_PANEL;
+    char	   *pdf_viewer;		/* viewer for pdf docs */
+    int		    rulerthick;		/* thickness of rulers */
+    Boolean	    scalablefonts;	/* hns 5 Nov 91 */
+    Boolean	    ShowAllButtons;
+    Boolean	    showballoons;	/* show popup messages when user passes over buttons */
     Boolean	    showlengths;	/* length/width lines when drawing or moving */
     Boolean	    shownums;		/* print point numbers above polyline points */
-    char	   *browser;		/* browser for viewing html docs */
-    char	   *pdf_viewer;		/* viewer for pdf docs */
+    Boolean	    show_pageborder;	/* show page border in color on canvas */
+    Boolean	    specialtext;
+    char	   *spellcheckcommand;	/* spell check command e.g. 
+					   "spell %s" or  "ispell -l < %s | sort -u" */
+    int		    spinner_delay;	/* delay (ms) before spinner counts automatically */
+    int		    spinner_rate;	/* rate (ms) at which spinner counts */
+    int		    startfillstyle;	/* starting fill style */
+    float	    startfontsize;	/* ges 6 Feb 91 */
+    int		    startgridmode;	/* starting grid mode */
+    char	   *startlatexFont;	/* bab 11 Jan 92 */
+    int		    startlinewidth;	/* starting line width */
+    int		    startposnmode;	/* starting point position mode */
+    char	   *startpsFont;	/* bab 11 Jan 92 */
+    float	    starttextstep;	/* starting multi-line text spacing */
+    Boolean	    tablet;		/* input tablet extension */
+    float	    tmp_height;
+    float	    tmp_width;
+    Boolean	    tracking;		/* mouse tracking in rulers */
+    int		    transparent;	/* transparent color for GIF export
+						(-2=none, -1=background) */
+    float	    user_scale;		/* scale screen units to user units */
+    char	   *user_unit;		/* user defined unit name */
+    float	    zoom;		/* starting zoom scale */
+    char	   *version;		/* version of the app-defaults file (compared with
+					   the version/patchlevel of xfig when starting */
+    int		    export_margin;	/* size of border around figure for export */
+    Boolean	    flipvisualhints;	/* switch left/right mouse indicator messages */
+    Boolean	    rigidtext;
+    Boolean	    hiddentext;
+    Boolean	    showdepthmanager;	/* whether or not to display the depth manager */
 #ifdef I18N
     Boolean international;
-    Boolean japanese;
+    String font_menu_language;
     Boolean euc_encoding;
+    Boolean latin_keyboard;
+    Boolean always_use_fontset;
+    XFontSet fixed_fontset;
     XFontSet normal_fontset;
     XFontSet bold_fontset;
     int fontset_size;
-    String fig2dev_localize_option;
     String xim_input_style;
-    XFontSet fixed_fontset;
+    String fig2dev_localize_option;
+#ifdef I18N_USE_PREEDIT
     String text_preedit;
+#endif
 #endif  /* I18N */
+
 }		appresStruct, *appresPtr;
 extern appresStruct appres;
 
@@ -250,25 +293,29 @@ extern Cursor	arrow_cursor, bull_cursor, buster_cursor, crosshair_cursor,
 extern Widget	tool;
 extern XtAppContext tool_app;
 
-extern Widget	canvas_sw, ps_fontmenu, /* printer font menu tool */
-		latex_fontmenu, 	/* printer font menu tool */
-		msg_form, msg_panel, name_panel, cmd_panel, mode_panel, 
+extern Widget	canvas_sw, ps_fontmenu,		/* printer font menu tool */
+		latex_fontmenu, 		/* printer font menu tool */
+		msg_form, msg_panel, name_panel, cmd_form, mode_panel, 
 		d_label, e_label, mousefun,
-		ind_panel, upd_ctrl,	/* indicator panel */
+		ind_panel, ind_box, upd_ctrl,	/* indicator panel */
 		unitbox_sw, sideruler_sw, topruler_sw;
 
 extern Display *tool_d;
 extern Screen  *tool_s;
 extern Window	tool_w;
+extern Widget   tool_form;
 extern int	tool_sn;
 extern int	tool_vclass;
 extern Visual  *tool_v;
 extern int	tool_dpth;
 extern int	tool_cells;
-extern int	image_bpp;	/* # of bytes-per-pixel for images at this visual */
+extern int	image_bpp;		/* # of bytes-per-pixel for images at this visual */
+extern int	screen_wd, screen_ht;	/* width and height of screen */
 extern Colormap	tool_cm, newcmap;
 extern Boolean	swapped_cmap;
 extern Atom	wm_delete_window;
+extern int	num_recent_files;	/* number of recent files in list */
+extern int	max_recent_files;	/* user max number of recent files */
 
 extern GC	gc, button_gc, ind_button_gc, mouse_button_gc,
 		fill_color_gc, pen_color_gc, blank_gc, ind_blank_gc, 
@@ -278,9 +325,8 @@ extern GC	gc, button_gc, ind_button_gc, mouse_button_gc,
 		sr_gc, sr_xor_gc, sr_erase_gc;
 
 extern Pixmap	fill_pm[NUMFILLPATS],fill_but_pm[NUMPATTERNS];
+extern float	fill_pm_zoom[NUMFILLPATS],fill_but_pm_zoom[NUMFILLPATS];
 extern XColor	x_fg_color, x_bg_color;
-extern Boolean	writing_bitmap;
-extern Boolean	writing_pixmap;
 extern unsigned long but_fg, but_bg;
 extern unsigned long ind_but_fg, ind_but_bg;
 extern unsigned long mouse_but_fg, mouse_but_bg;
@@ -312,3 +358,11 @@ extern int	RULER_WD;
    existing picture colors */
 
 extern Boolean	pic_obj_read;
+
+typedef struct _recent_file_struct {
+	char	*name;
+	Widget	menu;
+} _recent_files;
+
+extern _recent_files recent_files[];
+

@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
 <html>
 <head>
 <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=EUC-JP">
@@ -7,25 +7,8 @@
 </head>
 
 <body>
-<img src="../images/xfig-title.gif" alt="XFIG Users Manual">
-<p>
-[ <a href="../index.html">English Version</a>
- | <b>Japanese Version</b> ]
-<p>
-[ <a href="index.html">Contents</a>
- | <a href="introduction.html">Operating Manual</a>
- | <a href="features_bugs.html">New Features and Bugs Fixed</a><br>
- | <b>Technical Information</b>
- | <a href="authors.html">Authors</a> ]
-<p>
-[ <a href="options.html">オプション、及びリソース</a>
- | <a href="installation.html">インストール</a>
- | <b>FAQ</b><br>
- | <a href="i18n.html">日本語への対応 (あるいは国際化?)</a>
- | <a href="fig-format.html">Fig Format 3.2</a> ]
-
-<p>
-<hr>
+<a href="contents.html"><img src="../images/xfig-title.gif"
+  alt="XFIG Users Manual" border=0></a>
 
 <h1>FAQ</h1>
 
@@ -79,16 +62,24 @@ Computer Modern フォントではなく PostScript フォントで出力される</a>
 GhostScript で表示させた際に、Arc-box が正しく表示されない</a>
 
 <p>
-<li><a href="#oscillates">モード・ボタンのクリックやウィンドウのリサイズの後、
-ウィンドウが脈動し、ウィンドウ・マネージャと競合する</a>
-
-<p>
 <li><a href="#openw_icon">OpenWindows が <b>xfig</b> のアイコンを見失うことがある</a>
 
 <p>
 <li><a href="#hp_cap">HP のマシンにおいて、
 テキスト・オブジェクトに対する Edit ポップアップ・パネル上で
 いくつかの文字の大文字と小文字が誤って処理される</a>
+
+<p>
+<li><a href="#sol_opt">PostScript でエクスポートしたファイルに
+  誤った %%BoundingBox が書かれる</a>
+
+<p>
+<li><a href="#gs550_pattern_bug">エクスポートした PostScript ファイルを 
+  GhostScript 5.50 で表示すると、パターンが全て黒くなる</a>
+
+<p>
+<li><a href="#grafbase">METAFONT フォーマットでエクスポートしたファイルが、
+  私が持っていない <tt>grafbase.mf</tt> ファイルを参照している</a>
 </ol>
 
 <h2><a name="faq-compile"><b>xfig</b> のコンパイルに際しての問題</a></h2>
@@ -157,7 +148,7 @@ GhostScript で表示させた際に、Arc-box が正しく表示されない</a>
 
 複数のオブジェクトが重なり合っており、描画の順序が重要である場合には、
 描画の順序に応じてそれぞれのオブジェクトの
-<a href="indicator-panel.html#depth"><i>depth</i></a>
+<a href="attributes.html#depth"><i>depth</i></a>
 を設定する必要があります。
 
 <hr>
@@ -313,9 +304,9 @@ Computer Modern フォントではなく PostScript フォントで出力される</a></h3>
 <dt>POSSIBLE CAUSE AND SOLUTION:
 <dd>PostScript での出力を行なう際にフォントを LaTeX の制御下に置くためには、
 そのテキスト・オブジェクトを 
-``<a href="indicator-panel.html#text-flags">special</a>'' に設定し、
+``<a href="attributes.html#text-flags">special</a>'' に設定し、
 また出力フォーマットとして 
-<a href="command-panel.html#export">Combined PostScript/LaTeX</a> (pstex) 
+<a href="printing.html#export">Combined PostScript/LaTeX</a> (pstex) 
 を指定する必要があります。
 このモードは、special に設定されたテキスト・オブジェクトを LaTeX に渡し、
 ユーザーが LaTeX の数式モード、Computer Modern フォント、その他の機能を
@@ -336,25 +327,6 @@ GhostScript で表示させた際に、Arc-box が正しく表示されない</a></h3>
 <dt>SOLUTION:
 <dd><a href="installation.html#ghostscript">GhostScript 4.03</a> 以降を
 入手して下さい。
-</dl>
-
-<hr>
-
-<h3><a name="oscillates">モード・ボタンのクリックやウィンドウのリサイズの後、
-ウィンドウが脈動し、ウィンドウ・マネージャと競合する</a></h3>
-
-<dl>
-<dt>POSSIBLE CAUSE:
-<dd>他のプログラムがその設定を必要とするため、
-リソース ``<tt>*allowShellResize: true</tt>'' が設定されているのでしょう。
-
-<p>
-<dt>SOLUTION:
-<dd><tt>allowShellResize</tt> リソースを
-それを必要とするプログラムに対してのみ設定するように変更するか、
-もしくはリソース ``<tt>Fig*allowShellResize: false</tt>'' を設定して下さい。
-<b>xfig</b> と共に配布されている <tt>Fig.ad</tt> ファイル 
-(<tt>make install</tt> によってインストールされる) にはこの指定が含まれています。
 </dl>
 
 <hr>
@@ -390,6 +362,41 @@ GhostScript で表示させた際に、Arc-box が正しく表示されない</a></h3>
 小文字の定義が大文字の定義の前に置くようにして下さい。
 この問題は、<b>xfig</b> 2.1.5 以降に含まれている 
 <tt>CompKeyDB</tt> ファイルで発生することがあります。
+</dl>
+
+<h3><a name="sol_opt">PostScript でエクスポートしたファイルに
+  誤った %%BoundingBox が書かれる</a></h3>
+
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd>Solaris の cc コンパイラ version 4.2 は、
+オプティマイザにバグがあるようです。
+<b>fig2dev</b> を、<tt>-O2</tt>、あるいは <tt>-O1</tt> の最適化レベルで
+再コンパイルして下さい。
+</dl>
+
+<hr>
+
+<h3><a name="gs550_pattern_bug">エクスポートした PostScript ファイルを 
+  GhostScript 5.50 で表示すると、パターンが全て黒くなる</a></h3>
+
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd>GhostScript Version 5.10〜5.50 には、これを引き起こすバグがあります。
+新しいバージョンの GhostScript を入手して下さい。
+</dl>
+
+<hr>
+
+<h3><a name="grafbase">METAFONT フォーマットでエクスポートしたファイルが、
+  私が持っていない <tt>grafbase.mf</tt> ファイルを参照している</a></h3>
+
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd><tt>grafbase.mf</tt> ファイルがないならば、
+<a href="ftp://ctan.tug.org/tex-archive/graphics/fig2mf/">
+ftp://ctan.tug.org/tex-archive/graphics/fig2mf/</a>
+から入手することがっできます。
 </dl>
 
 <hr>
@@ -539,10 +546,9 @@ HP からコンパイラのパッチを入手して下さい。
 <p>
 <hr>
 
-Goto <a href="index.html">TOP</a>
-
-<p>
-<a href="authors.html#manual"><i>written by us</i></a>
+[ <a href="contents.html">Contents</a> |
+ <a href="introduction.html">Introduction</a> |
+ <a href="authors.html">Credits</a> ]
 
 </body>
 </html>

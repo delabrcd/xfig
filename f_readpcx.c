@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-1998 by Brian V. Smith
+ * Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -36,7 +36,7 @@ read_pcx(file,filetype,pic)
 		    (float)PIX_PER_INCH :
 		    2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
     
-    status = _read_pcx(file,filetype,pic);
+    status = _read_pcx(file,pic);
     if (status != 1)
 	return FileInvalid;
 
@@ -57,14 +57,10 @@ read_pcx(file,filetype,pic)
    file (actually a pipe).
 */
 
-/* the filetype should always be 0 (file, not pipe) because we need to seek() */
-/* since this is from the output of ghostscript, it is not a problem */
-
 void pcx_decode();
 
-_read_pcx(pcxfile,filetype,pic)
+_read_pcx(pcxfile,pic)
     FILE	*pcxfile;
-    int		 filetype;
     F_pic	*pic;
 {
     pcxheadr	        pcxhead;	/* PCX header */
@@ -102,11 +98,10 @@ _read_pcx(pcxfile,filetype,pic)
     pic->bit_size.x = wid;
     pic->bit_size.y = ht;
 
-    /* allocate space for the image */
-    bufsize = pcxhead.bppl * (wid+sizeof(unsigned char)-1) * 
-		ht / sizeof(unsigned char);
+    /* allocate space for the image (allocate a little more than needed to be safe) */
+    bufsize = wid * (ht+1) + 16;
     if ((pic->bitmap = (unsigned char*) malloc(bufsize)) == NULL)
-		    return FileInvalid;	/* couldn't alloc space for image */
+	    return FileInvalid;		/* couldn't alloc space for image */
 
     buffer = pic->bitmap;
 
@@ -134,6 +129,15 @@ _read_pcx(pcxfile,filetype,pic)
 	    pic->numcols = 256;	/* for a VGA colormap */
 	}
     }
+    /* ignore duplicate white entries after real colors */
+    for (i = pic->numcols-1; i >=0 ; i--) {
+	if (pic->cmap[i].red != 255 ||
+	    pic->cmap[i].green != 255 ||
+	    pic->cmap[i].blue != 255)
+		break;
+    }
+    if (i < pic->numcols-2)
+	pic->numcols = i+2;
     return PicSuccess;
 }
 
@@ -193,6 +197,7 @@ pcx_decode(file, image, bufsize, planes, header, w, h)
     unsigned char mask, plane, pmsk;
     unsigned char *oimage;
 
+
     /* clear area first */
     bzero((char*)image,bufsize);
  
@@ -213,7 +218,6 @@ pcx_decode(file, image, bufsize, planes, header, w, h)
 	    cnt = b & 0x3F;
 	    b = getc(file);
 	    if (b == EOF) {
-		getc(file);
 		return; 
 	    }
 	} else

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -22,6 +22,7 @@
 
 #define		TRANSP_BACKGROUND	-3	/* use background of figure as transp color */
 #define		TRANSP_NONE		-2	/* no transp color */
+#define		COLOR_NONE		-2	/* no background color (exporting) */
 
 /* DEFAULT is used for many things - font, color etc */
 
@@ -45,6 +46,7 @@
 #define		MAGENTA			5
 #define		YELLOW			6
 #define		WHITE			7
+#define		GREEN4			12
 
 /** VERY IMPORTANT:  The f_line, f_spline and f_arc objects all must have the
 		components up to and including the arrows in the same order.
@@ -76,6 +78,8 @@ typedef struct f_arrow {
 }
 		F_arrow;
 
+/* Ellipse object */
+
 typedef struct f_ellipse {
     int		    tagged;
     int		    distrib;
@@ -99,11 +103,14 @@ typedef struct f_ellipse {
     struct f_pos    radiuses;
     struct f_pos    start;
     struct f_pos    end;
+    char	   *comments;
     struct f_ellipse *next;
 }
 		F_ellipse;
 
 /* SEE NOTE AT TOP BEFORE CHANGING ANYTHING IN THE f_arc STRUCTURE */
+
+/* Arc object */
 
 typedef struct f_arc {
     int		    tagged;
@@ -135,6 +142,7 @@ typedef struct f_arc {
 	float		x, y;
     }		    center;
     struct f_pos    point[3];
+    char	   *comments;
     struct f_arc   *next;
 }
 		F_arc;
@@ -163,6 +171,8 @@ enum pictypes {
 	T_PIC_JPEG,
 #endif
 	T_PIC_PCX,
+	T_PIC_PPM,
+	T_PIC_TIF,
 	T_PIC_XBM,
 #ifdef USE_XPM
 	T_PIC_XPM,
@@ -175,13 +185,17 @@ enum pictypes {
 #define PicSuccess	1
 #define FileInvalid    -2
 
+/* Picture sub-type */
+
 typedef struct f_pic {
     char	    file[PATH_MAX];
     enum pictypes   subtype;
     int		    flipped;
     unsigned char  *bitmap;
+    Pixmap	    mask;
     struct Cmap	    cmap[MAX_COLORMAP_SIZE];  /* for GIF/XPM/JPEG files */
     int		    numcols;		/* number of colors in cmap */
+    int		    transp;		/* transparent color (-1 if none) for GIFs */
     float	    hw_ratio;
     int		    size_x, size_y;	/* picture size (fig units) */
     struct f_pos    bit_size;		/* size of bitmap in pixels */
@@ -191,13 +205,17 @@ typedef struct f_pic {
 		    pix_width,		/* current width of pixmap (pixels) */
 		    pix_height,		/* current height of pixmap (pixels) */
 		    pix_flipped;
+#ifdef V4_0
     struct f_compound *figure;		/* Fig compound if picture type == T_PIC_FIG */
+#endif
 }
 		F_pic;
 
 extern char	EMPTY_PIC[];
 
 /* SEE NOTE AT TOP BEFORE CHANGING ANYTHING IN THE f_line STRUCTURE */
+
+/* Line object */
 
 typedef struct f_line {
     int		    tagged;
@@ -232,9 +250,12 @@ typedef struct f_line {
 #define					JOIN_BEVEL	2
     int		    radius;	/* corner radius for T_ARC_BOX */
     struct f_pic   *pic;
+    char	   *comments;
     struct f_line  *next;
 }
 		F_line;
+
+/* Text object */
 
 typedef struct f_text {
     int		    tagged;
@@ -264,6 +285,7 @@ typedef struct f_text {
     int		    base_y;
     int		    pen_style;
     char	   *cstring;
+    char	   *comments;
     struct f_text  *next;
 }
 		F_text;
@@ -341,6 +363,7 @@ typedef struct f_spline {
 /* THE PRECEDING VARS MUST BE IN THE SAME ORDER IN f_line and f_spline */
 
     struct f_shape *sfactors;
+    char	   *comments;
     struct f_spline *next;
 }
 		F_spline;
@@ -355,6 +378,7 @@ typedef struct f_compound {
     struct f_spline *splines;
     struct f_text  *texts;
     struct f_arc   *arcs;
+    char	   *comments;
     struct f_compound *parent;	/* for "enter/leave compound" */
     struct f_compound *GABPtr;	/* Where original compound came from */
     struct f_compound *compounds;
@@ -397,6 +421,8 @@ typedef struct f_linkinfo {
 #define		O_ARC		5
 #define		O_COMPOUND	6
 #define		O_END_COMPOUND	-O_COMPOUND
+/* pseudo-object O_FIGURE only for edit panel */
+#define		O_FIGURE	17777
 #define		O_ALL_OBJECT	99
 
 /********************* object masks for update  ************************/

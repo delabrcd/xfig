@@ -1,0 +1,27 @@
+#FIG 3.2
+Landscape
+Center
+Inches
+Letter  
+100.00
+Single
+-2
+1200 2
+4 0 0 50 0 0 14 0.0000 4 195 3615 600 750 Library of Structural Analysis Fig objects.\001
+4 0 0 50 0 0 14 0.0000 4 195 2970 600 1230 I divided this library into six parts:\001
+4 0 0 50 0 0 14 0.0000 4 195 4725 600 1710 1) Beams   (fixed, cantilever and free supported beams)\001
+4 0 0 50 0 0 14 0.0000 4 195 4245 600 1950 2) CoodrSystems (2D and 3D coordinate systems)\001
+4 0 0 50 0 0 14 0.0000 4 195 4260 600 2190 3) Loads   (thermal and mechanical load symbols)\001
+4 0 0 50 0 0 14 0.0000 4 195 3960 600 2430 4) Plates  (square plates with various supports)\001
+4 0 0 50 0 0 14 0.0000 4 195 6390 600 2670 5) Supports (various kinds of supports: rollers, hinges, fixed supports, etc.)\001
+4 0 0 50 0 0 14 0.0000 4 195 2700 600 2910 6) Trusses (various truss types) \001
+4 0 0 50 0 0 14 0.0000 4 195 5550 600 3630 For installation instructions please see the Xfig reference manual.\001
+4 0 0 50 0 0 14 0.0000 4 195 5760 600 4350 This library was prepared with xfig-3.2.2-5. All objects in figures \001
+4 0 0 50 0 0 14 0.0000 4 195 2220 600 4590 have depth value of 200.  \001
+4 0 0 50 0 0 14 0.0000 4 195 6855 600 5310 If you have any ideas of new symbols, modifications of existing ones or you just\001
+4 0 0 50 0 0 14 0.0000 4 195 6120 600 5550 found it useful please send me an e-mail: <putanowr@twins.pk.edu.pl>\001
+4 0 0 50 0 0 14 0.0000 4 195 5970 600 6270 Copyright (C) 1999 Roman Putanowicz <putanowr@twins.pk.edu.pl>\001
+4 0 0 50 0 0 14 0.0000 4 195 5715 600 6510 Permission is granted to copy and distribute this library and objects\001
+4 0 0 50 0 0 14 0.0000 4 195 6330 600 6750 from it  provided that  this copyright notice is distributed with all copies.  \001
+4 0 0 50 0 0 14 0.0000 4 195 5070 600 7230 Permission is granted to modify library and objects from it \001
+4 0 0 50 0 0 14 0.0000 4 195 4155 600 7470 and to use them in published reports, papers etc. \001

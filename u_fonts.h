@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-1998 by Brian V. Smith
+ * Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -32,7 +32,7 @@
 
 extern int		psfontnum();
 extern int		latexfontnum();
-extern struct _xfstruct	x_fontinfo[];
+extern struct _xfstruct	x_fontinfo[], x_backup_fontinfo[];
 extern struct _fstruct	ps_fontinfo[];
 extern struct _fstruct	latex_fontinfo[];
 
@@ -45,6 +45,7 @@ struct xfont {
     int		    size;	/* size in points */
     Font	    fid;	/* X font id */
     char	   *fname;	/* actual name of X font found */
+    char	   *bname;	/* name of backup X font to try if first doesn't exist */
     XFontStruct	   *fstruct;	/* X font structure */
     struct xfont   *next;	/* next in the list */
 };

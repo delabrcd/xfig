@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -30,6 +30,8 @@
 #define		MSG_LENGTH	3
 #define		MSG_DIST	4
 #define		MSG_PNTS_LENGTH	5
+#define		MSG_DIAM_ANGLE	6
+#define		MSG_RADIUS_ANGLE 7
 
 extern int	constrained;
 extern float	cur_angle;
@@ -73,6 +75,7 @@ extern void	elastic_linelink();
 extern void	elastic_scalepts();
 extern void	scaling_line();
 
+extern void	arc_point();
 extern void	moving_arc();
 extern void	elastic_movearc();
 extern void	reshaping_arc();

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -20,6 +20,7 @@
 #include "object.h"
 #include "mode.h"
 #include "u_list.h"
+#include "w_layers.h"
 #include "w_zoom.h"
 
 #define TOLERANCE (zoomscale>1?3:(int)(3/zoomscale))
@@ -43,14 +44,17 @@ static F_spline *s;
 static F_text  *t;
 static F_compound *c;
 
+/*
+ * (px, py) is the control point on the
+ * circumference of an arc which is the
+ * closest to (x, y)
+ */
+
 Boolean
 next_arc_found(x, y, tolerance, px, py, shift)
     int		    x, y, tolerance, *px, *py;
     int		    shift;
-{				/* (px, py) is the control point on the
-				 * circumference of an arc which is the
-				 * closest to (x, y)				 */
-
+{
     int		    i;
 
     if (!arc_in_mask())
@@ -61,26 +65,30 @@ next_arc_found(x, y, tolerance, px, py, shift)
 	a = prev_arc(objects.arcs, a);
 
     for (; a != NULL; a = prev_arc(objects.arcs, a), n++) {
-	for (i = 0; i < 3; i++)
+	if (!active_layer(a->depth))
+	    continue;
+	for (i = 0; i < 3; i++) {
 	    if ((abs(a->point[i].x - x) <= tolerance) &&
 		(abs(a->point[i].y - y) <= tolerance)) {
 		*px = a->point[i].x;
 		*py = a->point[i].y;
 		return (1);
 	    }
+	}
     }
     return (0);
 }
 
+/*
+ * (px, py) is the point on the circumference
+ * of an ellipse which is the closest to (x, y)
+ */
 
 Boolean
 next_ellipse_found(x, y, tolerance, px, py, shift)
     int		    x, y, tolerance, *px, *py;
     int		    shift;
-{				/* (px, py) is the point on the circumference
-				 * of an ellipse which is the closest to (x,
-				 * y)				 */
-
+{
     double	    a, b, dx, dy;
     double	    dis, r, tol;
 
@@ -93,6 +101,8 @@ next_ellipse_found(x, y, tolerance, px, py, shift)
 
     tol = (double) tolerance;
     for (; e != NULL; e = prev_ellipse(objects.ellipses, e), n++) {
+	if (!active_layer(e->depth))
+	    continue;
 	dx = x - e->center.x;
 	dy = y - e->center.y;
 	a = e->radiuses.x;
@@ -130,15 +140,17 @@ next_ellipse_found(x, y, tolerance, px, py, shift)
     return (0);
 }
 
+/* 
+ * Return the pointer to lines object if the
+ * search is successful otherwise return
+ * NULL.  The value returned via (px, py) is
+ * the closest point on the vector to point (x, y)
+ */
+
 Boolean
 next_line_found(x, y, tolerance, px, py, shift)
     int		    x, y, tolerance, *px, *py, shift;
-{				/* return the pointer to lines object if the
-				 * search is successful otherwise return
-				 * NULL.  The value returned via (px, py) is
-				 * the closest point on the vector to point
-				 * (x, y)					 */
-
+{
     F_point	   *point;
     int		    x1, y1, x2, y2;
     float	    tol2;
@@ -152,7 +164,9 @@ next_line_found(x, y, tolerance, px, py, shift)
     else if (shift)
 	l = prev_line(objects.lines, l);
 
-    for (; l != NULL; l = prev_line(objects.lines, l))
+    for (; l != NULL; l = prev_line(objects.lines, l)) {
+	if (!active_layer(l->depth))
+	    continue;
 	if (validline_in_mask(l)) {
 	    n++;
 	    point = l->points;
@@ -173,17 +187,20 @@ next_line_found(x, y, tolerance, px, py, shift)
 		y1 = y2;
 	    }
 	}
+    }
     return (0);
 }
+
+/*
+ * Return the pointer to lines object if the
+ * search is successful otherwise return NULL.
+ */
 
 Boolean
 next_spline_found(x, y, tolerance, px, py, shift)
     int		    x, y, tolerance, *px, *py;
     int		    shift;
-{				/* return the pointer to lines object if the
-				 * search is successful otherwise return
-				 * NULL.  */
-
+{
     F_point	   *point;
     int		    x1, y1, x2, y2;
     float	    tol2;
@@ -197,7 +214,9 @@ next_spline_found(x, y, tolerance, px, py, shift)
 
     tol2 = (float) tolerance *tolerance;
 
-    for (; s != NULL; s = prev_spline(objects.splines, s))
+    for (; s != NULL; s = prev_spline(objects.splines, s)) {
+	if (!active_layer(s->depth))
+	    continue;
 	if (validspline_in_mask(s)) {
 	    n++;
 	    point = s->points;
@@ -213,6 +232,7 @@ next_spline_found(x, y, tolerance, px, py, shift)
 		y1 = y2;
 	    }
 	}
+    }
     return (0);
 }
 
@@ -230,7 +250,9 @@ next_text_found(x, y, tolerance, px, py, shift)
     else if (shift)
 	t = prev_text(objects.texts, t);
 
-    for (; t != NULL; t = prev_text(objects.texts, t))
+    for (; t != NULL; t = prev_text(objects.texts, t)) {
+	if (!active_layer(t->depth))
+	    continue;
 	if (validtext_in_mask(t)) {
 	    n++;
 	    if (in_text_bound(t, x, y, &dum)) {
@@ -239,6 +261,7 @@ next_text_found(x, y, tolerance, px, py, shift)
 		return (1);
 	    }
 	}
+    }
     return (0);
 }
 
@@ -259,6 +282,8 @@ next_compound_found(x, y, tolerance, px, py, shift)
     tol2 = tolerance * tolerance;
 
     for (; c != NULL; c = prev_compound(objects.compounds, c), n++) {
+	if (!any_active_in_compound(c))
+		continue;
 	if (close_to_vector(c->nwcorner.x, c->nwcorner.y, c->nwcorner.x,
 			    c->secorner.y, x, y, tolerance, tol2, px, py))
 	    return (1);

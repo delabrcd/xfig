@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
@@ -29,9 +29,11 @@
 #include "u_draw.h"
 #include "u_elastic.h"
 #include "u_list.h"
+#include "u_redraw.h"
 #include "u_undo.h"
 #include "w_canvas.h"
 #include "w_file.h"
+#include "w_layers.h"
 #include "w_setup.h"
 #include "w_zoom.h"
 
@@ -53,6 +55,8 @@ F_compound	object_tails = {0, 0, { 0, 0 }, { 0, 0 },
 				NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 F_arrow		*saved_for_arrow = (F_arrow *) NULL;
 F_arrow		*saved_back_arrow = (F_arrow *) NULL;
+F_line		*latest_line;		/* for undo_join (line) */
+F_spline	*latest_spline;		/* for undo_join (spline) */
 
 int		last_action = F_NULL;
 
@@ -81,7 +85,7 @@ undo()
       case F_MOVE:
 	undo_move();
 	break;
-      case F_CHANGE:
+      case F_EDIT:
 	undo_change();
 	break;
       case F_GLUE:
@@ -114,11 +118,48 @@ undo()
       case F_OPEN_CLOSE:
 	undo_open_close();
 	break;
+      case F_JOIN:
+      case F_SPLIT:
+	undo_join_split();
+	break;
     default:
 	put_msg("Nothing to UNDO");
 	return;
     }
     put_msg("Undo complete");
+}
+
+undo_join_split()
+{
+    F_line	    swp_l;
+    F_spline	    swp_s;
+    if (last_object == O_POLYLINE) {
+	new_l = saved_objects.lines;		/* the original */
+	old_l = latest_line;			/* the changed object */
+	/* swap old with new */
+	bcopy((char*)old_l, (char*)&swp_l, sizeof(F_line));
+	bcopy((char*)new_l, (char*)old_l, sizeof(F_line));
+	bcopy((char*)&swp_l, (char*)new_l, sizeof(F_line));
+	/* but keep the next pointers unchanged */
+	swp_l.next = old_l->next;
+	old_l->next = new_l->next;
+	new_l->next = swp_l.next;
+	set_action_object(F_JOIN, O_POLYLINE);
+	redisplay_lines(new_l, old_l);
+    } else {
+	new_s = saved_objects.splines;		/* the original */
+	old_s = latest_spline;			/* the changed object */
+	/* swap old with new */
+	bcopy((char*)old_s, (char*)&swp_s, sizeof(F_spline));
+	bcopy((char*)new_s, (char*)old_s, sizeof(F_spline));
+	bcopy((char*)&swp_s, (char*)new_s, sizeof(F_spline));
+	/* but keep the next pointers unchanged */
+	swp_s.next = old_s->next;
+	old_s->next = new_s->next;
+	new_s->next = swp_s.next;
+	set_action_object(F_JOIN, O_SPLINE);
+	redisplay_splines(new_s, old_s);
+    }
 }
 
 undo_addpoint()
@@ -153,6 +194,8 @@ undo_deletepoint()
 undo_break()
 {
     cut_objects(&objects, &object_tails);
+    /* remove the depths from this compound because they'll be added in right after */
+    remove_compound_depth(saved_objects.compounds);
     list_add_compound(&objects.compounds, saved_objects.compounds);
     last_action = F_GLUE;
     toggle_markers_in_compound(saved_objects.compounds);
@@ -164,6 +207,8 @@ undo_glue()
     list_delete_compound(&objects.compounds, saved_objects.compounds);
     tail(&objects, &object_tails);
     append_objects(&objects, saved_objects.compounds, &object_tails);
+    /* add the depths from this compound because they weren't added by the append_objects() */
+    add_compound_depth(saved_objects.compounds);
     last_action = F_BREAK;
     mask_toggle_compoundmarker(saved_objects.compounds);
     toggle_markers_in_compound(saved_objects.compounds);
@@ -173,17 +218,34 @@ undo_glue()
 
 undo_convert()
 {
-    switch (last_object) {
-      case O_POLYLINE:
-	if (saved_objects.lines->type == T_BOX ||
-	    saved_objects.lines->type == T_ARC_BOX)
-		box_2_box(saved_objects.lines);
-	else
-		spline_line(saved_objects.splines);
-	break;
-      case O_SPLINE:
-	line_spline(saved_objects.lines, saved_objects.splines->type);
-	break;
+    F_line	    swp_l;
+    F_spline	    swp_s;
+    if (last_object == O_POLYLINE) {
+	new_l = saved_objects.lines;		/* the original */
+	old_l = latest_line;			/* the changed object */
+	/* swap old with new */
+	bcopy((char*)old_l, (char*)&swp_l, sizeof(F_line));
+	bcopy((char*)new_l, (char*)old_l, sizeof(F_line));
+	bcopy((char*)&swp_l, (char*)new_l, sizeof(F_line));
+	/* but keep the next pointers unchanged */
+	swp_l.next = old_l->next;
+	old_l->next = new_l->next;
+	new_l->next = swp_l.next;
+	set_action_object(F_CONVERT, O_POLYLINE);
+	redisplay_lines(new_l, old_l);
+    } else {
+	new_s = saved_objects.splines;		/* the original */
+	old_s = latest_spline;			/* the changed object */
+	/* swap old with new */
+	bcopy((char*)old_s, (char*)&swp_s, sizeof(F_spline));
+	bcopy((char*)new_s, (char*)old_s, sizeof(F_spline));
+	bcopy((char*)&swp_s, (char*)new_s, sizeof(F_spline));
+	/* but keep the next pointers unchanged */
+	swp_s.next = old_s->next;
+	old_s->next = new_s->next;
+	new_s->next = swp_s.next;
+	set_action_object(F_CONVERT, O_SPLINE);
+	redisplay_splines(new_s, old_s);
     }
 }
 
@@ -244,53 +306,135 @@ undo_delete_arrowhead()
 
 undo_change()
 {
-    F_compound	    swp_comp;
+    char	   *swp_comm;
+    F_compound	    swp_c;
+    F_line	    swp_l;
+    F_spline	    swp_s;
+    F_ellipse	    swp_e;
+    F_arc	    swp_a;
+    F_text	    swp_t;
 
     last_action = F_NULL;	/* to avoid a clean-up during "unchange" */
     switch (last_object) {
       case O_POLYLINE:
-	new_l = saved_objects.lines;	/* the original */
+	new_l = saved_objects.lines;		/* the original */
 	old_l = saved_objects.lines->next;	/* the changed object */
-	change_line(old_l, new_l);
+	/* account for depths */
+	remove_depth(O_POLYLINE, old_l->depth);
+	add_depth(O_POLYLINE, new_l->depth);
+	/* swap old with new */
+	bcopy((char*)old_l, (char*)&swp_l, sizeof(F_line));
+	bcopy((char*)new_l, (char*)old_l, sizeof(F_line));
+	bcopy((char*)&swp_l, (char*)new_l, sizeof(F_line));
+	/* but keep the next pointers unchanged */
+	swp_l.next = old_l->next;
+	old_l->next = new_l->next;
+	new_l->next = swp_l.next;
+	set_action_object(F_EDIT, O_POLYLINE);
 	redisplay_lines(new_l, old_l);
 	break;
       case O_ELLIPSE:
 	new_e = saved_objects.ellipses;
 	old_e = saved_objects.ellipses->next;
-	change_ellipse(old_e, new_e);
+	/* account for depths */
+	remove_depth(O_ELLIPSE, old_e->depth);
+	add_depth(O_ELLIPSE, new_e->depth);
+	/* swap old with new */
+	bcopy((char*)old_e, (char*)&swp_e, sizeof(F_ellipse));
+	bcopy((char*)new_e, (char*)old_e, sizeof(F_ellipse));
+	bcopy((char*)&swp_e, (char*)new_e, sizeof(F_ellipse));
+	/* but keep the next pointers unchanged */
+	swp_e.next = old_e->next;
+	old_e->next = new_e->next;
+	new_e->next = swp_e.next;
+	set_action_object(F_EDIT, O_ELLIPSE);
 	redisplay_ellipses(new_e, old_e);
 	break;
       case O_TEXT:
 	new_t = saved_objects.texts;
 	old_t = saved_objects.texts->next;
-	change_text(old_t, new_t);
+	/* account for depths */
+	remove_depth(O_TEXT, old_t->depth);
+	add_depth(O_TEXT, new_t->depth);
+	/* swap old with new */
+	bcopy((char*)old_t, (char*)&swp_t, sizeof(F_text));
+	bcopy((char*)new_t, (char*)old_t, sizeof(F_text));
+	bcopy((char*)&swp_t, (char*)new_t, sizeof(F_text));
+	/* but keep the next pointers unchanged */
+	swp_t.next = old_t->next;
+	old_t->next = new_t->next;
+	new_t->next = swp_t.next;
+	set_action_object(F_EDIT, O_TEXT);
 	redisplay_texts(new_t, old_t);
 	break;
       case O_SPLINE:
 	new_s = saved_objects.splines;
 	old_s = saved_objects.splines->next;
-	change_spline(old_s, new_s);
+	/* account for depths */
+	remove_depth(O_SPLINE, old_s->depth);
+	add_depth(O_SPLINE, new_s->depth);
+	/* swap old with new */
+	bcopy((char*)old_s, (char*)&swp_s, sizeof(F_spline));
+	bcopy((char*)new_s, (char*)old_s, sizeof(F_spline));
+	bcopy((char*)&swp_s, (char*)new_s, sizeof(F_spline));
+	/* but keep the next pointers unchanged */
+	swp_s.next = old_s->next;
+	old_s->next = new_s->next;
+	new_s->next = swp_s.next;
+	set_action_object(F_EDIT, O_SPLINE);
 	redisplay_splines(new_s, old_s);
 	break;
       case O_ARC:
 	new_a = saved_objects.arcs;
 	old_a = saved_objects.arcs->next;
-	change_arc(old_a, new_a);
+	/* account for depths */
+	remove_depth(O_ARC, old_a->depth);
+	add_depth(O_ARC, new_a->depth);
+	/* swap old with new */
+	bcopy((char*)old_a, (char*)&swp_a, sizeof(F_arc));
+	bcopy((char*)new_a, (char*)old_a, sizeof(F_arc));
+	bcopy((char*)&swp_a, (char*)new_a, sizeof(F_arc));
+	/* but keep the next pointers unchanged */
+	swp_a.next = old_a->next;
+	old_a->next = new_a->next;
+	new_a->next = swp_a.next;
+	set_action_object(F_EDIT, O_ARC);
 	redisplay_arcs(new_a, old_a);
 	break;
       case O_COMPOUND:
 	new_c = saved_objects.compounds;
 	old_c = saved_objects.compounds->next;
-	change_compound(old_c, new_c);
+	/* account for depths */
+	remove_compound_depth(old_c);
+	add_compound_depth(new_c);
+	/* swap old with new */
+	bcopy((char*)old_c, (char*)&swp_c, sizeof(F_compound));
+	bcopy((char*)new_c, (char*)old_c, sizeof(F_compound));
+	bcopy((char*)&swp_c, (char*)new_c, sizeof(F_compound));
+	/* but keep the next pointers unchanged */
+	swp_c.next = old_c->next;
+	old_c->next = new_c->next;
+	new_c->next = swp_c.next;
+	set_action_object(F_EDIT, O_COMPOUND);
 	redisplay_compounds(new_c, old_c);
 	break;
+      case O_FIGURE:
+	/* swap saved figure comments with current */
+	swp_comm = objects.comments;
+	objects.comments = saved_objects.comments;
+	saved_objects.comments = swp_comm;
+	set_action_object(F_EDIT, O_FIGURE);
+	break;
       case O_ALL_OBJECT:
-	swp_comp = objects;
+	swp_c = objects;
 	objects = saved_objects;
-	saved_objects = swp_comp;
+	saved_objects = swp_c;
 	new_c = &objects;
 	old_c = &saved_objects;
-	set_action_object(F_CHANGE, O_ALL_OBJECT);
+	/* account for depths */
+	remove_compound_depth(old_c);
+	add_compound_depth(new_c);
+	set_action_object(F_EDIT, O_ALL_OBJECT);
 	set_modifiedflag();
 	redisplay_zoomed_region(0, 0, BACKX(CANVAS_WD), BACKY(CANVAS_HT));
 	break;
@@ -391,6 +535,9 @@ undo_delete()
 	compound_bound(&saved_objects, &xmin, &ymin, &xmax, &ymax);
 	tail(&objects, &object_tails);
 	append_objects(&objects, &saved_objects, &object_tails);
+	/* restore depths and depth counters */
+	restore_depths(saved_depths);
+	restore_counts(&saved_counts[0]);
 	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
 	/* restore filename if necessary (from "New" command) */
 	if (save_filename[0] != '\0') {
@@ -416,7 +563,7 @@ undo_move()
 	line_bound(saved_objects.lines, &xmin1, &ymin1, &xmax1, &ymax1);
 	translate_line(saved_objects.lines, dx, dy);
 	line_bound(saved_objects.lines, &xmin2, &ymin2, &xmax2, &ymax2);
-	adjust_links(last_linkmode, last_links, dx, dy, 0, 0, 1.0, 1.0, 0);
+	adjust_links(last_linkmode, last_links, dx, dy, 0, 0, 1.0, 1.0, False);
 	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
 			  xmin2, ymin2, xmax2, ymax2);
 	break;
@@ -454,7 +601,7 @@ undo_move()
 	compound_bound(saved_objects.compounds, &xmin1, &ymin1, &xmax1, &ymax1);
 	translate_compound(saved_objects.compounds, dx, dy);
 	compound_bound(saved_objects.compounds, &xmin2, &ymin2, &xmax2, &ymax2);
-	adjust_links(last_linkmode, last_links, dx, dy, 0, 0, 1.0, 1.0, 0);
+	adjust_links(last_linkmode, last_links, dx, dy, 0, 0, 1.0, 1.0, False);
 	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
 			  xmin2, ymin2, xmax2, ymax2);
 	break;
@@ -507,40 +654,35 @@ undo_open_close()
 {
   switch (last_object) {
   case O_POLYLINE:
-    if (saved_objects.lines->type == T_POLYGON)
-      {
+    if (saved_objects.lines->type == T_POLYGON) {
 	saved_objects.lines->for_arrow = last_for_arrow;
 	saved_objects.lines->back_arrow = last_back_arrow;
 	last_for_arrow = last_back_arrow = NULL;
-      }
+    }
     toggle_polyline_polygon(saved_objects.lines, last_prev_point,
 			    last_selected_point);   
     break;
   case O_SPLINE:
-    if (saved_objects.splines->type == T_OPEN_XSPLINE)
-      {
+    if (saved_objects.splines->type == T_OPEN_XSPLINE) {
 	F_sfactor *c_tmp;
 
 	draw_spline(saved_objects.splines, ERASE);
 	saved_objects.splines->sfactors->s = last_origin_tension;
 	for (c_tmp=saved_objects.splines->sfactors ; c_tmp->next != NULL ;
 	    c_tmp=c_tmp->next)
-	  ;
+		;
 	c_tmp->s = last_extremity_tension;
 	saved_objects.splines->type = T_CLOSED_XSPLINE;
 	draw_spline(saved_objects.splines, PAINT);
-      }
-    else
-      {
-	if (closed_spline(saved_objects.splines))
-	  {
+    } else {
+	if (closed_spline(saved_objects.splines)) {
 	    saved_objects.splines->for_arrow = last_for_arrow;
 	    saved_objects.splines->back_arrow = last_back_arrow;
 	    last_for_arrow = last_back_arrow = NULL;
 	  }
 	toggle_open_closed_spline(saved_objects.splines, last_prev_point,
 				  last_selected_point);
-      }
+    }
     break;
   }   
 }
@@ -561,12 +703,13 @@ swap_newp_lastp()
  * Clean_up should be called before committing a user's request. Clean_up
  * will attempt to free all the allocated memories which resulted from
  * delete/remove action.  It will set the last_action to F_NULL.  Thus this
- * routine should be before set_action_object() and set_last_arrows().
- *  if they are to be called in the same routine.
+ * routine should be before set_action_object() and set_last_arrows(),
+ * if they are to be called in the same routine.
  */
+
 clean_up()
 {
-    if (last_action == F_CHANGE) {
+    if (last_action == F_EDIT) {
 	switch (last_object) {
 	  case O_ARC:
 	    saved_objects.arcs->next = NULL;
@@ -592,8 +735,11 @@ clean_up()
 	    saved_objects.texts->next = NULL;
 	    free_text(&saved_objects.texts);
 	    break;
+	  case O_FIGURE:
+	    free((char *) saved_objects.comments);
+	    break;
 	}
-    } else if (last_action == F_DELETE) {
+    } else if (last_action==F_DELETE || last_action==F_JOIN || last_action==F_SPLIT) {
 	switch (last_object) {
 	  case O_ARC:
 	    free_arc(&saved_objects.arcs);

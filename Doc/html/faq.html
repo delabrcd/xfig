@@ -2,33 +2,15 @@
 <html>
 <head>
 <title>XFIG User Manual - FAQ</title>
-<link rev="made" href="mailto:VEF00200@niftyserve.or.jp">
 </head>
 
 <body>
-<img src="images/xfig-title.gif" alt="XFIG Users Manual">
-<p>
-<h1>PRELIMINARY - NOT YET RELEASED</h1>
-<p>
-[ <b>English Version</b>
- | <a href="japanese/index.html">Japanese Version</a> ]
-<p>
-[ <a href="index.html">Contents</a>
- | <a href="introduction.html">Operating Manual</a>
- | <a href="features_bugs.html">New Features and Bugs Fixed</a><br>
- | <b>Technical Information</b>
- | <a href="authors.html">Authors</a> ]
-<p>
-[ <a href="options.html">Options and Resources</a>
- | <a href="installation.html">Installation</a>
- | <b>FAQ</b><br>
- | <a href="i18n.html">Japanese Support (or Internationalization)</a>
- | <a href="fig-format.html">Fig Format 3.2</a> ]
+<a href="contents.html"><img src="images/xfig-title.gif"
+  alt="XFIG Users Manual" border=0></a>
 
-<p>
 <hr>
 
-<h1>FAQ</h1>
+<h1><font color="#dd0066">FAQ</font></h1>
 
 <h2><a name="faq-general">General Questions</a></h2>
 
@@ -52,7 +34,9 @@
 <li><a href="#install_pers">How can I install <b>xfig</b> in a personal directory?</a>
 </ol>
 
-<h2><a name="faq-running">Problems when running <b>xfig</b></a></h2>
+
+<h2><a name="faq-running">Problems when running <b>xfig</b> or
+<b>TransFig (fig2dev)</b></a></h2>
 
 <ol>
 <li><a href="#nocolor">I don't get any color in <b>xfig</b>'s buttons</a>
@@ -77,16 +61,25 @@ I always end up with PostScript fonts</a>
 when viewing an exported PostScript file with GhostScript</a>
 
 <p>
-<li><a href="#oscillates">The window oscillates and fights with the window manager
-when I click on a mode button or try to resize the <b>xfig</b> window</a>
-
-<p>
 <li><a href="#openw_icon">OpenWindows sometimes loses track of <b>xfig</b>'s icon</a>
 
 <p>
 <li><a href="#hp_cap">On HP machines, the capitalization of some letters
 in the edit text window are wrong</a>
+
+<p>
+<li><a href="#sol_opt">I get a ridiculous %%BoundingBox in my exported PostScript file</a>
+
+<p>
+<li><a href="#gs550_pattern_bug">Patterns are coming out all black when viewing
+the exported PostScript file with ghostscript 5.50</a>
+
+<p>
+<li><a href="#grafbase">I am exporting to the MetaFont format and the generated
+file refers to the ``grafbase.mf'' file which I don't have</a>
+
 </ol>
+
 
 <h2><a name="faq-compile">Problems when compiling <b>xfig</b></a></h2>
 
@@ -117,7 +110,9 @@ there is a problem with +O3 optimization</a>
 ``undefined reference to `jpeg_write_scanlines' ''</a>
 </ol>
 
-<hr>
+<img src="images/blueramp.gif" alt="=========================">
+
+<h2><a name="faq-general">General Questions</a></h2>
 
 <h3><a name="get_xfig">Where can I get <b>xfig/TransFig</b>?</a></h3>
 
@@ -146,7 +141,7 @@ and then edit the <b>Fig</b> file using <b>xfig</b> in the usual way.
 
 <h3><a name="depth">I can't seem to control the drawing order of objects</a></h3>
 When you have two or more objects that overlap and the drawing order is
-important, you must set the <a href="indicator-panel.html#depth"><i>depth</i></a>
+important, you must set the <a href="attributes.html#depth"><i>depth</i></a>
 of each object to guarantee the drawing order.
 
 <hr>
@@ -201,7 +196,10 @@ where <tt>XFIGLIBDIR</tt> in the Imakefile points.
 
 </dl>
 
-<hr>
+<img src="images/blueramp.gif" alt="=========================">
+
+<h2><a name="faq-running">Problems when running <b>xfig</b> or
+<b>TransFig (fig2dev)</b></a></h2>
 
 <h3><a name="nocolor">I don't get any color in <b>xfig</b>'s buttons</a></h3>
 
@@ -307,8 +305,8 @@ I always end up with PostScript fonts</a></h3>
 <dt>POSSIBLE CAUSE AND SOLUTION:
 <dd>To put fonts under the control of LaTeX when generating PostScript output,
 you must tag the text object as 
-``<a href="indicator-panel.html#text-flags">special</a>'' and then use
-<a href="command-panel.html#export">Combined PostScript/LaTeX</a> (pstex) 
+``<a href="attributes.html#text-flags">special</a>'' and then use
+<a href="printing.html#export">Combined PostScript/LaTeX</a> (pstex) 
 output mode.
 This mode forces special text objects to be passed through to LaTeX,
 allowing the use of Math mode and Computer Modern fonts among other things.
@@ -326,25 +324,6 @@ when viewing an exported PostScript file with GhostScript</a></h3>
 <p>
 <dt>SOLUTION:
 <dd>Get <a href="installation.html#get_ghost">Ghostscript 4.03</a> or newer.
-</dl>
-
-<hr>
-
-<h3><a name="oscillates">The window oscillates and fights with the window manager
-when I click on a mode button or try to resize the <b>xfig</b> window</a></h3>
-
-<dl>
-<dt>POSSIBLE CAUSE:
-<dd>Perhaps the resource ``<tt>*allowShellResize: true</tt>'' has been set 
-because another program requires it to be true.
-
-<p>
-<dt>SOLUTION:
-<dd>Change the resource to be specific to the programs which need it,
-or set the resource ``<tt>Fig*allowShellResize: false</tt>''.
-<br>
-Note: this is in the <tt>Fig.ad</tt> file that comes with <b>xfig</b>,
-which is installed when you do a ``<tt>make install</tt>''.
 </dl>
 
 <hr>
@@ -381,6 +360,41 @@ shipped with <b>xfig</b> 2.1.5 and later.
 </dl>
 
 <hr>
+
+<h3><a name="sol_opt">I get a ridiculous %%BoundingBox in my exported PostScript file</a></h3>
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd>The Solaris cc compiler version 4.2 has a bug in the optimizer.  Recompile <b>fig2dev</b>
+with only <b>-O2</b> or <b>-O1</b> optimization.
+</dl>
+
+<hr>
+
+<h3><a name="gs550_pattern_bug">Patterns are coming out all black when viewing
+the exported PostScript file with ghostscript 5.50</a></h3>
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd>Ghostscript versions 5.10-5.50 have a bug which causes this to happen.
+<br>
+Get a newer version of Ghostscript.
+</dl>
+
+<hr>
+
+<h3><a name="grafbase">I am exporting to the MetaFont format and the generated
+file refers to the ``grafbase.mf'' file which I don't have</a></h3>
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd>The grafbase.mf file should be on your system if you have MetaFont, but if
+you don't have it you can get it from 
+<a href="ftp://ctan.tug.org/tex-archive/graphics/fig2mf/">
+ftp://ctan.tug.org/tex-archive/graphics/fig2mf/</a>
+</dl>
+
+<img src="images/blueramp.gif" alt="=========================">
+
+
+<h2><a name="faq-compile">Problems when compiling <b>xfig</b></a></h2>
 
 <h3><a name="alpha">On a DEC Alpha the compiler may complain about something 
 about something like ``.mask must have pcreg from .frame set if any 
@@ -519,11 +533,9 @@ and the header file (usually <tt>/usr/local/include/jpegdata.h</tt>).
 
 <hr>
 
-Goto <a href="index.html">TOP</a>
-
-<p>
-<a href="authors.html#manual"><i>written by us</i></a>
+[ <a href="contents.html">Contents</a> |
+ <a href="introduction.html">Introduction</a> |
+ <a href="authors.html">Credits</a> ]
 
 </body>
 </html>
-

@@ -4,7 +4,7 @@
 
 XCOMM FIG : Facility for Interactive Generation of figures
 XCOMM Copyright (c) 1985-1988 by Supoj Sutanthavibul
-XCOMM Parts Copyright (c) 1989-1998 by Brian V. Smith
+XCOMM Parts Copyright (c) 1989-2000 by Brian V. Smith
 XCOMM Parts Copyright (c) 1991 by Paul King
 XCOMM
 XCOMM Any party obtaining a copy of these files is granted, free of charge, a
@@ -15,25 +15,25 @@ XCOMM rights to use, copy, modify, merge, publish, distribute, sublicense,
 XCOMM and/or sell copies of the Software, and to permit persons who receive
 XCOMM copies from any such party to do so, with the only requirement being
 XCOMM that this copyright notice remain intact.
-XCOMM
-XCOMM Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
-XCOMM be included if xfig is to be sold, due to the patent held by Unisys Corp.
-XCOMM on the LZW compression algorithm.
-XCOMM If you wish to sell xfig, you must comment out the USEGIF symbol below
-XCOMM by putting the word "XCOMM" in front of it.  Be sure to make a new
-XCOMM Makefile after that ("make Makefile").
 
-#define USEGIF true
+XCOMM If you want to install xfig in a directory other than the default X11 binary
+XCOMM directory, uncomment the following "BINDIR" line and change the path
+XCOMM to the full path of the directory where you want xfig to be installed.
+XCOMM Also, you may have to uncomment and redefine MKDIRHIER because "make" looks
+XCOMM for it relative to the BINDIR variable.
+
+XCOMM BINDIR = /usr/bin/X11
+XCOMM MKDIRHIER = "/bin/sh /usr/bin/X11/mkdirhier"
 
 XCOMM If don't want to use JPEG, comment out the following line
 
 #define USEJPEG
 
-XCOMM If you don't have the jpeg library in your system library area, comment
-XCOMM out the USEINSTALLEDJPEG variable (using XCOMM), change the JPEGLIBDIR
-XCOMM variable to the directory where your jpeg library resides and change
-XCOMM the JPEGINCDIR to the directory where your jpeg header files (include)
-XCOMM reside.
+XCOMM If you don't have the jpeg library in your system library area (meaning
+XCOMM that it must be compiled first), comment out the USEINSTALLEDJPEG variable
+XCOMM (using XCOMM), change the JPEGLIBDIR variable to the directory where your
+XCOMM jpeg library resides and change the JPEGINCDIR to the directory where your
+XCOMM jpeg header files (include) reside.
 XCOMM You must have version 5b or newer of the jpeg library.
 
 #define USEINSTALLEDJPEG
@@ -41,23 +41,12 @@ XCOMM You must have version 5b or newer of the jpeg library.
 #ifdef USEJPEG
 #ifdef USEINSTALLEDJPEG
 JPEGLIBDIR = /usr/local/lib
+JPEGINCDIR = /usr/include/X11
 #else
 JPEGLIBDIR = ../jpeg
+JPEGINCDIR = $(JPEGLIBDIR)
 #endif
 #endif /* USEJPEG */
-
-XCOMM Uncomment the following definiton if you want to use the small icons
-XCOMM for the panel buttons.  Use this if you have a 800x600 or smaller screen.
-
-XCOMM #define USESMALLICONS
-
-XCOMM Uncomment the following definition for XAWLIB if you want to use
-XCOMM the 3d Athena Widget Set (highly recommended!)
-
-XCOMM XAWLIB = -lXaw3d
-
-XCOMM Uncomment the following if needed for DECstations running older X11R4
-XCOMM INCROOT=/usr/include/mit
 
 XCOMM Uncomment the #define for USEXPM if you want to use the XPM
 XCOMM (color pixmap) package.
@@ -67,7 +56,7 @@ XCOMM USEXPM_ICON uses a color xpm icon for xfig itself (USEXPM must be
 XCOMM	defined if you use USEXPM_ICON)
 XCOMM You need XPM version 3.4c or newer.  This is available from ftp.x.org
 XCOMM   in /contrib/libraries.
-XCOMM Change XPMLIBS if necessary to point to the xpm library (libXpm)
+XCOMM Change XPMLIBDIR if necessary to point to the xpm library (libXpm)
 XCOMM Change XPMINC if necessary to point to the include file for xpm (xpm.h)
 
 XCOMM #define USEXPM
@@ -75,27 +64,47 @@ XCOMM #define USEXPM_ICON
 
 #ifdef USEXPM
 XPMLIBDIR = $(USRLIBDIR)
-XPMINC = -I$(INCDIR)
-XPMLIBS = -L$(XPMLIBDIR) -lXpm
+XPMINC = -I/usr/include/X11
 #endif
 
-XCOMM Uncomment the next line if you have a Sun Sparc and you would like the
-XCOMM Compose LED (light) turned on when you are entering multi-key characters
-XCOMM (like a-umlaut, c-cedilla, etc).  You may have to change the value from 2
+XCOMM Uncomment the following definiton if you want to use the small icons
+XCOMM for the panel buttons.  Use this if you have a 800x600 or smaller screen.
+
+XCOMM #define USESMALLICONS
+
+XCOMM Uncomment the following definition for XAW3D if you want to use
+XCOMM the 3d Athena Widget Set (highly recommended!)
+
+#define XAW3D
+#ifdef XAW3D
+DUSEXAW3D = -DXAW3D
+XAWLIB = -lXaw3d
+#endif
+
+XCOMM Uncomment the following if needed for DECstations running older X11R4
+XCOMM INCROOT=/usr/include/mit
+
+XCOMM If you do not want to use the CompKeyDB but the standard behavior of
+XCOMM the Compose key, uncomment the next line 
+
+XCOMM NO_COMPKEYDB = -DNO_COMPKEYDB
+
+XCOMM If you have a Compose indicator LED and you would it turned on when you
+XCOMM are entering multi-key characters (like a-umlaut, c-cedilla, etc)
+XCOMM uncomment the next line.  You may have to change the value from 2
 XCOMM to 1, 3, or 4 depending on your workstation model and X libraries.
 
-XCOMM COMP_LED = -DCOMP_LED=2
+COMP_LED = -DCOMP_LED=3
 
 XCOMM Uncomment the next line if you want use Japanese (i18n) on xfig.
 XCOMM If your setlocale() dosen't support the locale, you should
 XCOMM add -DSETLOCALE to I18N_DEFS.
-
 XCOMM #define I18N
 
 XCOMM If using an input tablet uncomment the following
 
-XCOMM TABLIB = $(XILIB)
-XCOMM USETAB = -DUSE_TAB
+TABLIB = $(XILIB)
+USETAB = -DUSE_TAB
 
 XCOMM uncomment the following line if your compiler supports
 XCOMM inline functions. With the "INLINE" keyword, you should notice that
@@ -105,7 +114,7 @@ XCOMM USEINLINE = -DUSE_INLINE
 
 XCOMM use (and change) the following if you want the multi-key data base file
 XCOMM somewhere other than the standard X11 library directory
-XCOMM XFIGLIBDIR = /usr/local/lib/X11/xfig
+XCOMM XFIGLIBDIR = /usr/local/lib/xfig
 
 XCOMM use this if you want the multi-key data base file in the standard X11 tree
 XFIGLIBDIR = $(LIBDIR)/xfig
@@ -118,6 +127,10 @@ XCOMM undefine the following two definitions
 
 XCOMM HAVE_NO_STRCASECMP = -DHAVE_NO_STRCASECMP
 XCOMM HAVE_NO_STRNCASECMP = -DHAVE_NO_STRNCASECMP
+
+XCOMM If your system doesn't have dirent.h undefine the following definition
+
+XCOMM HAVE_NO_DIRENT = -DHAVE_NO_DIRENT
 
 XCOMM For the rotated text code:
 XCOMM   Add one of `-DCACHE_XIMAGES' or `-DCACHE_BITMAPS' to decide what is
@@ -140,13 +153,6 @@ XCOMM default can be found in w_drawprim.h.  This option may be specified by
 XCOMM adding -DMAXNUMPTS=xxxx to the DEFINES line, where xxxx is the maximum
 XCOMM number of vertices.
 
-XCOMM remove -DGSBIT from the DEFINES if you DON'T want to have gs (Ghostscript)
-XCOMM generate a preview bitmap for Encapsulated PostScript objects if they
-XCOMM don't have one.  If you do use Ghostscript you will need version 2.4 or
-XCOMM later, and it must have the 'pcx256' and 'pbmraw' devices compiled in
-XCOMM besides any other device drivers you already use with it.
-XCOMM See the Ghostscript Makefile for details.
-
 XCOMM Additionally, there is a bug in the pcx driver in Aladdin Ghostscript
 XCOMM versions prior to 3.32, which writes an incorrect pcx file for images
 XCOMM with odd width (not even).  Uncomment the following compile-time flag
@@ -159,7 +165,9 @@ XCOMM matter for most imported eps files.
 
 XCOMM PCXBUG = -DPCXBUG
 
+XCOMM If you want a compiler other than "cc", define it here
 
+XCOMM CC = /opt/SUNWspro/bin/cc
 
 XCOMM *****************************************************
 XCOMM *****************************************************
@@ -168,15 +176,16 @@ XCOMM *****************************************************
 XCOMM *****************************************************
 
 #ifdef USEJPEG
+JPEGINC = -I$(JPEGINCDIR)
+
 #ifdef USEINSTALLEDJPEG
-JPEGINCDIR = -I/usr/include/X11
 JPEGLIB = -L$(JPEGLIBDIR) -ljpeg
 #else
 JPEGCONF = configure
-JPEGINCDIR = -I$(JPEGLIBDIR)
 JPEGLIB = $(JPEGLIBDIR)/libjpeg.a
 DEPLIBJPEG = $(JPEGLIBDIR)/libjpeg.a
 #endif /* USEINSTALLEDJPEG */
+
 #endif /* USEJPEG */
 
 #ifdef I18N
@@ -205,12 +214,6 @@ InstallManPageLong(Doc/file,dest,file)
 DUSESMALLICONS = -DUSE_SMALL_ICONS
 #endif
 
-#ifdef USEGIF
-DUSEGIF = -DUSE_GIF
-WRGIFS = f_wrgif.c
-WRGIFO = f_wrgif.o
-#endif
-
 #ifdef USEJPEG
 DUSEJPEG = -DUSE_JPEG
 READJPEGS = f_readjpg.c
@@ -219,6 +222,7 @@ READJPEGO = f_readjpg.o
 
 #ifdef USEXPM
 DUSEXPM = -DUSE_XPM
+XPMLIBS = -L$(XPMLIBDIR) -lXpm
 READXPMS = f_readxpm.c
 READXPMO = f_readxpm.o
 #ifdef USEXPM_ICON
@@ -226,24 +230,26 @@ DUSEXPMICON = -DUSE_XPM_ICON
 #endif
 #endif
 
-DEFINES =             $(STRDEFINES) -DGSBIT $(USEINLINE) $(DUSEXPM) \
-			$(DUSEXPMICON) $(DUSEGIF) $(DUSEJPEG) $(I18N_DEFS)
+DEFINES =             $(STRDEFINES) $(USEINLINE) $(DUSEXPM) $(DUSEXAW3D) \
+			$(DUSEJPEG) $(I18N_DEFS) \
+			$(HAVE_NO_DIRENT) 
 
 XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
 		d_subspline.c d_line.c d_regpoly.c d_spline.c d_text.c \
 		e_addpt.c e_align.c e_arrow.c e_break.c e_compound.c \
 		e_convert.c e_copy.c e_delete.c e_deletept.c \
-		e_edit.c e_flip.c e_glue.c e_move.c \
+		e_edit.c e_flip.c e_glue.c e_joinsplit.c e_move.c \
 		e_movept.c e_placelib.c e_rotate.c e_scale.c e_update.c \
 		f_load.c f_neuclrtab.c f_picobj.c f_read.c f_readold.c \
-		f_readeps.c f_readxbm.c f_readgif.c $(READJPEGS) f_readpcx.c $(READXPMS) \
-		f_save.c f_util.c f_wrpcx.c $(WRGIFS) \
+		f_readppm.c f_readtif.c f_readeps.c \
+		f_readxbm.c f_readgif.c $(READJPEGS) f_readpcx.c $(READXPMS) \
+		f_save.c f_util.c f_wrpcx.c \
 		main.c mode.c object.c resources.c \
 		u_bound.c u_create.c u_drag.c u_draw.c \
 		u_elastic.c u_error.c u_fonts.c u_free.c u_geom.c \
 		u_list.c u_markers.c u_pan.c u_print.c \
-		u_redraw.c u_scale.c u_search.c u_translate.c u_undo.c \
-		w_browse.c w_capture.c w_srchrepl.c w_help.c \
+		u_redraw.c u_scale.c u_search.c u_translate.c u_undo.c w_listwidget.c \
+		w_browse.c w_capture.c w_srchrepl.c w_help.c w_layers.c w_menuentry.c \
 		w_canvas.c w_cmdpanel.c w_color.c w_cursor.c w_dir.c w_drawprim.c \
 		w_export.c w_file.c w_fontbits.c w_fontpanel.c w_grid.c w_icons.c \
 		w_indpanel.c w_library.c w_modepanel.c w_mousefun.c w_msgpanel.c \
@@ -254,17 +260,18 @@ XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
 		d_subspline.o d_line.o d_regpoly.o d_spline.o d_text.o \
 		e_addpt.o e_align.o e_arrow.o e_break.o e_compound.o \
 		e_convert.o e_copy.o e_delete.o e_deletept.o \
-		e_edit.o e_flip.o e_glue.o e_move.o \
+		e_edit.o e_flip.o e_glue.o e_joinsplit.o e_move.o \
 		e_movept.o e_placelib.o e_rotate.o e_scale.o e_update.o \
 		f_load.o f_neuclrtab.o f_picobj.o f_read.o f_readold.o \
-		f_readeps.o f_readxbm.o f_readgif.o $(READJPEGO) f_readpcx.o $(READXPMO) \
-		f_save.o f_util.o f_wrpcx.o $(WRGIFO) \
+		f_readppm.o f_readtif.o f_readeps.o \
+		f_readxbm.o f_readgif.o $(READJPEGO) f_readpcx.o $(READXPMO) \
+		f_save.o f_util.o f_wrpcx.o \
 		main.o mode.o object.o resources.o \
 		u_bound.o u_create.o u_drag.o u_draw.o \
 		u_elastic.o u_error.o u_fonts.o u_free.o u_geom.o \
 		u_list.o u_markers.o u_pan.o u_print.o \
-		u_redraw.o u_scale.o u_search.o u_translate.o u_undo.o \
-		w_browse.o w_capture.o w_srchrepl.o w_help.o \
+		u_redraw.o u_scale.o u_search.o u_translate.o u_undo.o w_listwidget.o \
+		w_browse.o w_capture.o w_srchrepl.o w_help.o w_layers.o w_menuentry.o \
 		w_canvas.o w_cmdpanel.o w_color.o w_cursor.o w_dir.o w_drawprim.o \
 		w_export.o w_file.o w_fontbits.o w_fontpanel.o w_grid.o w_icons.o \
 		w_indpanel.o w_library.o w_modepanel.o w_mousefun.o w_msgpanel.o \
@@ -273,12 +280,12 @@ XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
 
 XCOMM Other dependencies should be handled by "make depend"
 
-MAINDEPFILES =  fig.icon.X patchlevel.h version.h
+MAINDEPFILES =  patchlevel.h version.h
 
 SRCS = $(XFIGSRC)
 OBJS = $(XFIGOBJ)
 
-EXTRA_INCLUDES = $(JPEGINCDIR) $(XPMINC)
+EXTRA_INCLUDES = $(JPEGINC) $(XPMINC)
 DEPLIBS = XawClientDepLibs
 
 LOCAL_LIBRARIES = 	$(JPEGLIB)
@@ -306,33 +313,65 @@ PROGRAM = xfig
 AllTarget(xfig)
 
 ComplexProgramTarget(xfig)
-MakeDirectories(install,$(XFIGLIBDIR) $(OBJLIBDIR))
 
-InstallNonExec(CompKeyDB,$(XFIGLIBDIR))
 InstallAppDefaults(Fig)
 InstallAppDefaults(Fig-color)
 
-XCOMM Install the object libraries here
+XCOMM Install the compose key database, object libraries and documentation
+XCOMM here with "make install"
+
 install::
-	@echo Copying PDF documentation to $(XFIGLIBDIR)
+	@if [ -d $(XFIGLIBDIR) ]; then set +x; \
+		else (set -x; $(MKDIRHIER) $(XFIGLIBDIR) ; set +x; ); fi
+	chmod a+x,u+w $(XFIGLIBDIR)
+	$(INSTALL) -c CompKeyDB $(XFIGLIBDIR)
+	make install.libs
+	make install.doc
+
+XCOMM Install the documentation here with "make install.doc"
+install.doc::
+	@echo Installing man pages to $(MANDIR)
+	@make install.man
+#ifdef I18N
+	@make install.jhtml
+#endif
 	@(cd Doc ; \
+	echo Copying pdf and html files to $(XFIGLIBDIR) ; \
+	$(INSTALL) -c xfig.html $(XFIGLIBDIR) ; \
 	$(INSTALL) -c xfig-howto.pdf $(XFIGLIBDIR) ; \
-	$(INSTALL) -c xfig.pdf $(XFIGLIBDIR) ; \
-	echo Copying html files to $(XFIGLIBDIR)/html ; \
 	if [ -d $(XFIGLIBDIR)/html ]; then set +x; \
 	   else (set -x; $(MKDIRHIER) $(XFIGLIBDIR)/html ); fi ; \
-	(cd html ; $(INSTALL) -c *.* $(XFIGLIBDIR)/html ; ) ;\
-	echo "  Copying japanese html files" ; \
-	if [ -d $(XFIGLIBDIR)/html/japanese ]; then set +x; \
-	   else (set -x; $(MKDIRHIER) $(XFIGLIBDIR)/html/japanese ); fi ; \
-	(cd html/japanese ; $(INSTALL) -c * $(XFIGLIBDIR)/html/japanese ; ) ; \
+	(cd html ; \
+	   for f in *.* ; do \
+	      $(INSTALL) -c $$f $(XFIGLIBDIR)/html ; \
+	   done) ; \
 	echo "  Copying image files for html" ; \
 	if [ -d $(XFIGLIBDIR)/html/images ]; then set +x; \
 	   else (set -x; $(MKDIRHIER) $(XFIGLIBDIR)/html/images ); fi ; \
-	(cd html/images ; $(INSTALL) -c * $(XFIGLIBDIR)/html/images ; ) ; \
+	(cd html/images ; \
+	   for f in * ; do \
+	       $(INSTALL) -c $$f $(XFIGLIBDIR)/html/images ; \
+	   done) ; \
 	) ;
+
+#ifdef I18N
+install.jhtml::
+	@echo "Copying japanese html files"
+	@(cd Doc/html/japanese ; \
+	if [ -d $(XFIGLIBDIR)/html/japanese ]; then set +x; \
+	   else (set -x; $(MKDIRHIER) $(XFIGLIBDIR)/html/japanese ); fi ; \
+	for f in * ; do \
+	      $(INSTALL) -c $$f $(XFIGLIBDIR)/html/japanese ; \
+	done) ;
+#endif
+
+XCOMM Install the object libraries here with "make install.libs"
+install.libs::
 	@echo "Copying Fig Object Libraries"
-	@(cd Examples/Libraries ; \
+	@if [ -d $(OBJLIBDIR) ]; then set +x; \
+		else (set -x; $(MKDIRHIER) $(OBJLIBDIR) ; set +x; ); fi
+	@if [ -d Examples/Libraries ]; then \
+	(cd Examples/Libraries ; \
 	for d in * ;  do \
 	    (cd $$d ; \
 	    if [ -d $(OBJLIBDIR)/$$d ]; then set +x; \
@@ -340,85 +379,104 @@ install::
 	    echo "  Copying $$d library files to $(OBJLIBDIR)/$$d" ; \
 	    for f in * ;  do \
 		if [ -d $$f ]; then ( \
-		    echo "    Copying files to $(OBJLIBDIR)/$$d/$$f" ; \
 		    if [ -d $(OBJLIBDIR)/$$d/$$f ]; then set +x; \
 			else (set -x; $(MKDIRHIER) $(OBJLIBDIR)/$$d/$$f ); fi ; \
-		    cd $$f ; $(INSTALL) -c * $(OBJLIBDIR)/$$d/$$f ); \
-	        else ($(INSTALL) -c $$f $(OBJLIBDIR)/$$d ) ; fi ; \
+			(cd $$f ; \
+			for dd in * ; do \
+			    if [ -d $$dd ]; then ( \
+				if [ -d $(OBJLIBDIR)/$$d/$$f/$$dd ]; then set +x; \
+				    else (set -x; $(MKDIRHIER) $(OBJLIBDIR)/$$d/$$f/$$dd ); fi ; \
+				    (cd $$dd ; \
+				    for l in * ; do \
+					if [ -d $$l ]; then ( \
+					    if [ -d $(OBJLIBDIR)/$$d/$$f/$$dd/$$l ]; then set +x; \
+						else (set -x; $(MKDIRHIER) $(OBJLIBDIR)/$$d/$$f/$$dd/$$l ); fi ; \
+					    (cd $$l ; \
+						for m in * ; do \
+						    $(INSTALL) -c $$m $(OBJLIBDIR)/$$d/$$f/$$dd/$$l ; \
+						done ) ) ; \
+					else ( $(INSTALL) -c $$l $(OBJLIBDIR)/$$d/$$f/$$dd ) ; fi ; \
+				done) ) ; \
+			    else ( $(INSTALL) -c $$dd $(OBJLIBDIR)/$$d/$$f ) ; fi ; \
+			done) ); \
+		else ($(INSTALL) -c $$f $(OBJLIBDIR)/$$d ) ; fi ; \
 	    done ) ; \
-	done ; ) ;
+	done ; ) ; \
+	else echo No Object Libraries to install ; \
+	fi;
 
-SpecialObjectRule(main.o, main.c $(MAINDEPFILES) mode.h, $(USETAB) $(OBJLIB) )
-SpecialObjectRule(f_read.o, f_read.c $(MAINDEPFILES) mode.h, NullParameter )
-SpecialObjectRule(u_error.o, u_error.c $(MAINDEPFILES) mode.h, NullParameter )
-SpecialObjectRule(resources.o, resources.c resources.h, NullParameter )
-SpecialObjectRule(f_readeps.o, f_readeps.c, $(PCXBUG) )
+SpecialObjectRule(main.o, main.c $(MAINDEPFILES) mode.h, $(USETAB) $(OBJLIB) $(DUSEXPMICON) )
+SpecialObjectRule(f_read.o, f_read.c $(MAINDEPFILES) mode.h, )
+SpecialObjectRule(u_error.o, u_error.c $(MAINDEPFILES) mode.h,  )
+SpecialObjectRule(resources.o, resources.c resources.h,  )
+SpecialObjectRule(e_edit.o, e_edit.c  mode.h, )
+SpecialObjectRule(f_readeps.o, f_readeps.c, $(PCXBUG) -DGSBIT )
+SpecialObjectRule(w_capture.o, w_capture.c  w_capture.h, )
 SpecialObjectRule(w_help.o, w_help.c, $(DIR_DEFS) )
-SpecialObjectRule(w_canvas.o, w_canvas.c mode.h, $(DIR_DEFS) $(COMP_LED) )
-SpecialObjectRule(w_icons.o, w_icons.c w_icons.h, $(DUSESMALLICONS) )
+SpecialObjectRule(w_canvas.o, w_canvas.c mode.h, $(DIR_DEFS) $(COMP_LED) $(NO_COMPKEYDB) )
+SpecialObjectRule(w_icons.o, w_icons.c w_icons.h, $(DUSESMALLICONS) $(DUSEXPMICON) )
+SpecialObjectRule(w_print.o, w_print.c w_print.h, )
 SpecialObjectRule(w_setup.o, w_setup.c w_setup.h w_icons.h, $(DUSESMALLICONS) )
 SpecialObjectRule(w_rottext.o, w_rottext.c, $(CACHE) )
 
 #ifdef USEJPEG
 #ifndef USEINSTALLEDJPEG
-SpecialObjectRule(f_readjpg.o, f_readjpg.c $(JPEGLIBDIR)/jconfig.h, NullParameter )
+SpecialObjectRule(f_readjpg.o, f_readjpg.c $(JPEGLIBDIR)/jconfig.h,  )
 #endif /* USEINSTALLEDJPEG */
 #endif /* USEJPEG */
 
-SpecialObjectRule(d_arc.o, d_arc.c  mode.h, NullParameter)
-SpecialObjectRule(d_arcbox.o, d_arcbox.c  mode.h, NullParameter)
-SpecialObjectRule(d_box.o, d_box.c  mode.h, NullParameter)
-SpecialObjectRule(d_ellipse.o, d_ellipse.c  mode.h, NullParameter)
-SpecialObjectRule(d_line.o, d_line.c  mode.h, NullParameter)
-SpecialObjectRule(d_picobj.o, d_picobj.c  mode.h, NullParameter)
-SpecialObjectRule(d_regpoly.o, d_regpoly.c  mode.h, NullParameter)
-SpecialObjectRule(d_spline.o, d_spline.c  mode.h, NullParameter)
-SpecialObjectRule(d_text.o, d_text.c  mode.h, NullParameter)
-SpecialObjectRule(e_addpt.o, e_addpt.c  mode.h, NullParameter)
-SpecialObjectRule(e_align.o, e_align.c  mode.h, NullParameter)
-SpecialObjectRule(e_arrow.o, e_arrow.c  mode.h, NullParameter)
-SpecialObjectRule(e_break.o, e_break.c  mode.h, NullParameter)
-SpecialObjectRule(e_compound.o, e_compound.c  mode.h, NullParameter)
-SpecialObjectRule(e_convert.o, e_convert.c  mode.h, NullParameter)
-SpecialObjectRule(e_copy.o, e_copy.c  mode.h, NullParameter)
-SpecialObjectRule(e_delete.o, e_delete.c  mode.h, NullParameter)
-SpecialObjectRule(e_deletept.o, e_deletept.c  mode.h, NullParameter)
-SpecialObjectRule(e_edit.o, e_edit.c  mode.h, NullParameter)
-SpecialObjectRule(e_flip.o, e_flip.c  mode.h, NullParameter)
-SpecialObjectRule(e_glue.o, e_glue.c  mode.h, NullParameter)
-SpecialObjectRule(e_movept.o, e_movept.c  mode.h, NullParameter)
-SpecialObjectRule(e_placelib.o, e_placelib.c  mode.h, NullParameter)
-SpecialObjectRule(e_rotate.o, e_rotate.c  mode.h, NullParameter)
-SpecialObjectRule(e_scale.o, e_scale.c  mode.h, NullParameter)
-SpecialObjectRule(e_update.o, e_update.c  mode.h, NullParameter)
-SpecialObjectRule(f_load.o, f_load.c  mode.h, NullParameter)
-SpecialObjectRule(f_picobj.o, f_picobj.c  mode.h, NullParameter)
-SpecialObjectRule(f_save.o, f_save.c  mode.h, NullParameter)
-SpecialObjectRule(f_util.o, f_util.c  mode.h, NullParameter)
-SpecialObjectRule(mode.o, mode.c  mode.h, NullParameter)
-SpecialObjectRule(object.o, object.c  mode.h, NullParameter)
-SpecialObjectRule(u_bound.o, u_bound.c  mode.h, NullParameter)
-SpecialObjectRule(u_create.o, u_create.c  mode.h, NullParameter)
-SpecialObjectRule(u_drag.o, u_drag.c  mode.h, NullParameter)
-SpecialObjectRule(u_elastic.o, u_elastic.c  mode.h, NullParameter)
-SpecialObjectRule(u_list.o, u_list.c  mode.h, NullParameter)
-SpecialObjectRule(u_markers.o, u_markers.c  mode.h, NullParameter)
-SpecialObjectRule(u_pan.o, u_pan.c  mode.h, NullParameter)
-SpecialObjectRule(u_print.o, u_print.c  mode.h, NullParameter)
-SpecialObjectRule(u_search.o, u_search.c  mode.h, NullParameter)
-SpecialObjectRule(u_undo.o, u_undo.c  mode.h, NullParameter)
-SpecialObjectRule(w_browse.o, w_browse.c  mode.h, NullParameter)
-SpecialObjectRule(w_cmdpanel.o, w_cmdpanel.c  mode.h, NullParameter)
-SpecialObjectRule(w_color.o, w_color.c  mode.h w_indpanel.h, NullParameter)
-SpecialObjectRule(w_dir.o, w_dir.c  mode.h, NullParameter)
-SpecialObjectRule(w_drawprim.o, w_drawprim.c  mode.h, NullParameter)
-SpecialObjectRule(w_export.o, w_export.c  mode.h, NullParameter)
-SpecialObjectRule(w_file.o, w_file.c  mode.h, NullParameter)
-SpecialObjectRule(w_grid.o, w_grid.c  mode.h, NullParameter)
-SpecialObjectRule(w_indpanel.o, w_indpanel.c  mode.h w_indpanel.h, NullParameter)
-SpecialObjectRule(w_library.o, w_library.c  mode.h, NullParameter)
+SpecialObjectRule(d_arc.o, d_arc.c  mode.h, )
+SpecialObjectRule(d_arcbox.o, d_arcbox.c  mode.h, )
+SpecialObjectRule(d_box.o, d_box.c  mode.h, )
+SpecialObjectRule(d_ellipse.o, d_ellipse.c  mode.h, )
+SpecialObjectRule(d_line.o, d_line.c  mode.h, )
+SpecialObjectRule(d_picobj.o, d_picobj.c  mode.h, )
+SpecialObjectRule(d_regpoly.o, d_regpoly.c  mode.h, )
+SpecialObjectRule(d_spline.o, d_spline.c  mode.h, )
+SpecialObjectRule(d_text.o, d_text.c  mode.h, )
+SpecialObjectRule(e_addpt.o, e_addpt.c  mode.h, )
+SpecialObjectRule(e_align.o, e_align.c  mode.h, )
+SpecialObjectRule(e_arrow.o, e_arrow.c  mode.h, )
+SpecialObjectRule(e_break.o, e_break.c  mode.h, )
+SpecialObjectRule(e_compound.o, e_compound.c  mode.h, )
+SpecialObjectRule(e_convert.o, e_convert.c  mode.h, )
+SpecialObjectRule(e_copy.o, e_copy.c  mode.h, )
+SpecialObjectRule(e_delete.o, e_delete.c  mode.h, )
+SpecialObjectRule(e_deletept.o, e_deletept.c  mode.h, )
+SpecialObjectRule(e_flip.o, e_flip.c  mode.h, )
+SpecialObjectRule(e_glue.o, e_glue.c  mode.h, )
+SpecialObjectRule(e_movept.o, e_movept.c  mode.h, )
+SpecialObjectRule(e_placelib.o, e_placelib.c  mode.h, )
+SpecialObjectRule(e_rotate.o, e_rotate.c  mode.h, )
+SpecialObjectRule(e_scale.o, e_scale.c  mode.h, )
+SpecialObjectRule(e_update.o, e_update.c  mode.h, )
+SpecialObjectRule(f_load.o, f_load.c  mode.h, )
+SpecialObjectRule(f_picobj.o, f_picobj.c  mode.h, )
+SpecialObjectRule(f_save.o, f_save.c  mode.h, )
+SpecialObjectRule(f_util.o, f_util.c  mode.h, )
+SpecialObjectRule(mode.o, mode.c  mode.h, )
+SpecialObjectRule(object.o, object.c  mode.h, )
+SpecialObjectRule(u_bound.o, u_bound.c  mode.h, )
+SpecialObjectRule(u_create.o, u_create.c  mode.h, )
+SpecialObjectRule(u_drag.o, u_drag.c  mode.h, )
+SpecialObjectRule(u_elastic.o, u_elastic.c  mode.h, )
+SpecialObjectRule(u_list.o, u_list.c  mode.h, )
+SpecialObjectRule(u_markers.o, u_markers.c  mode.h, )
+SpecialObjectRule(u_pan.o, u_pan.c  mode.h, )
+SpecialObjectRule(u_print.o, u_print.c  mode.h, )
+SpecialObjectRule(u_search.o, u_search.c  mode.h, )
+SpecialObjectRule(u_undo.o, u_undo.c  mode.h, )
+SpecialObjectRule(w_browse.o, w_browse.c  mode.h, )
+SpecialObjectRule(w_cmdpanel.o, w_cmdpanel.c  mode.h, )
+SpecialObjectRule(w_color.o, w_color.c  mode.h w_indpanel.h, )
+SpecialObjectRule(w_dir.o, w_dir.c  mode.h, )
+SpecialObjectRule(w_drawprim.o, w_drawprim.c  mode.h, )
+SpecialObjectRule(w_export.o, w_export.c  mode.h, )
+SpecialObjectRule(w_file.o, w_file.c  mode.h, )
+SpecialObjectRule(w_grid.o, w_grid.c  mode.h, )
+SpecialObjectRule(w_indpanel.o, w_indpanel.c  mode.h w_indpanel.h, )
+SpecialObjectRule(w_library.o, w_library.c  mode.h, )
 SpecialObjectRule(w_modepanel.o, w_modepanel.c  mode.h w_icons.h, $(DUSESMALLICONS))
-SpecialObjectRule(w_msgpanel.o, w_msgpanel.c  mode.h, NullParameter)
-SpecialObjectRule(w_print.o, w_print.c  mode.h, NullParameter)
-SpecialObjectRule(w_rulers.o, w_rulers.c  mode.h, NullParameter)
-SpecialObjectRule(w_zoom.o, w_zoom.c  mode.h, NullParameter)
+SpecialObjectRule(w_msgpanel.o, w_msgpanel.c  mode.h, )
+SpecialObjectRule(w_rulers.o, w_rulers.c  mode.h, )
+SpecialObjectRule(w_zoom.o, w_zoom.c  mode.h, )

@@ -2,7 +2,7 @@
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1992 by Brian Boyter
  * DPS option Copyright 1992 by Dave Hale
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a

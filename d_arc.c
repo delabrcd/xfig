@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -32,6 +32,7 @@
 #include "w_cursor.h"
 #include "w_msgpanel.h"
 #include "w_mousefun.h"
+#include "u_geom.h"
 
 /* EXPORT */
 
@@ -43,15 +44,20 @@ static void	create_arcobject();
 static void	get_arcpoint();
 static void	init_arc_drawing();
 static void	cancel_arc();
+static void	init_arc_c_drawing();
+
+static Boolean	center_marked;
+F_pos	center_point;
 
 void
 arc_drawing_selected()
 {
-    set_mousefun("first point", "", "", "", "", "");
+    center_marked = FALSE;
+    set_mousefun("first point", "center point", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     canvas_leftbut_proc = init_arc_drawing;
-    canvas_middlebut_proc = null_proc;
+    canvas_middlebut_proc = init_arc_c_drawing;
     canvas_rightbut_proc = null_proc;
     set_cursor(arrow_cursor);
     reset_action_on();
@@ -61,13 +67,22 @@ static void
 init_arc_drawing(x, y)
     int		    x, y;
 {
-    set_mousefun("mid point", "", "cancel", "", "", "");
+    if (center_marked) {
+	elastic_line();
+	set_mousefun("mid angle", "", "cancel", "", "", "");
+	d_line(center_point.x, center_point.y, 
+		(int)(0.2*(x-center_point.x)+x),
+		(int)(0.2*(y-center_point.y)+y));
+    } else {
+	set_mousefun("mid point", "", "cancel", "", "", "");
+    }
     draw_mousefun_canvas();
     canvas_rightbut_proc = cancel_arc;
     num_point = 0;
     point[num_point].x = fix_x = cur_x = x;
     point[num_point++].y = fix_y = cur_y = y;
-    canvas_locmove_proc = unconstrained_line;
+    if (!center_marked)
+	canvas_locmove_proc = unconstrained_line;
     canvas_leftbut_proc = get_arcpoint;
     canvas_middlebut_proc = null_proc;
     elastic_line();
@@ -75,9 +90,35 @@ init_arc_drawing(x, y)
     set_action_on();
 }
 
+d_line(x1,y1,x2,y2)
+    int x1,y1,x2,y2;
+{
+    pw_vector(canvas_win, x1, y1, x2, y2, INV_PAINT, 1, RUBBER_LINE, 0.0, RED);
+}
+
+static void
+init_arc_c_drawing(x, y)
+    int		    x, y;
+{
+    set_mousefun("first point", "", "cancel", "", "", "");
+    draw_mousefun_canvas();
+    canvas_locmove_proc = arc_point;
+    canvas_middlebut_proc = null_proc;
+    canvas_rightbut_proc = cancel_arc;
+    center_point.x = fix_x = cur_x = x;
+    center_point.y = fix_y = cur_y = y;
+    center_marked = TRUE;
+    center_marker(center_point.x, center_point.y);
+    num_point = 0;
+}
+
 static void
 cancel_arc()
 {
+    if (center_marked) {
+      center_marked = FALSE;
+      center_marker(center_point.x, center_point.y);  /* clear center marker */
+    }
     elastic_line();
     /* erase any length info if appres.showlengths is true */
     erase_lengths();
@@ -99,7 +140,14 @@ get_arcpoint(x, y)
 	return;
 
     if (num_point == 1) {
-	set_mousefun("final point", "", "cancel", "", "", "");
+	if (center_marked) {
+  	    set_mousefun("final angle", "", "cancel", "", "", "");
+	    d_line(center_point.x, center_point.y,
+		(int)(0.2*(x-center_point.x)+x),
+		(int)(0.2*(y-center_point.y)+y));
+	} else {
+	    set_mousefun("final point", "", "cancel", "", "", "");
+	}
 	draw_mousefun_canvas();
     }
     if (num_point == 2) {
@@ -140,8 +188,36 @@ create_arcobject(lx, ly)
 	x = point[i].x;
 	y = point[i].y;
     }
+
+    if (center_marked) {
+	double theta, r;
+
+	center_marker(center_point.x, center_point.y);  /* clear center marker */
+	/* clear away the two guide lines */
+	d_line(center_point.x, center_point.y,
+		(int)(0.2*(point[0].x-center_point.x)+point[0].x),
+		(int)(0.2*(point[0].y-center_point.y)+point[0].y));
+	d_line(center_point.x, center_point.y,
+		(int)(0.2*(point[1].x-center_point.x)+point[1].x),
+		(int)(0.2*(point[1].y-center_point.y)+point[1].y));
+
+	r = sqrt((point[0].x - center_point.x) * (point[0].x - center_point.x)
+	       + (point[0].y - center_point.y) * (point[0].y - center_point.y));
+
+	theta = compute_angle((double)(point[1].x - center_point.x),
+			    (double)(point[1].y - center_point.y));
+	point[1].x = center_point.x + r * cos(theta);
+	point[1].y = center_point.y + r * sin(theta);
+      
+	theta = compute_angle((double)(point[2].x - center_point.x),
+			    (double)(point[2].y - center_point.y));
+	point[2].x = center_point.x + r * cos(theta);
+	point[2].y = center_point.y + r * sin(theta);
+    }
+
     if (!compute_arccenter(point[0], point[1], point[2], &xx, &yy)) {
 	put_msg("Invalid ARC geometry");
+	beep();
 	arc_drawing_selected();
 	draw_mousefun_canvas();
 	return;
@@ -163,14 +239,20 @@ create_arcobject(lx, ly)
     arc->cap_style = cur_capstyle;
     arc->depth = cur_depth;
     arc->direction = compute_direction(point[0], point[1], point[2]);
-    if (autoforwardarrow_mode)
-	arc->for_arrow = forward_arrow();
-    else
+    /* only allow arrowheads for open arc */
+    if (arc->type == T_PIE_WEDGE_ARC) {
 	arc->for_arrow = NULL;
-    if (autobackwardarrow_mode)
-	arc->back_arrow = backward_arrow();
-    else
 	arc->back_arrow = NULL;
+    } else {
+	if (autoforwardarrow_mode)
+	    arc->for_arrow = forward_arrow();
+	else
+	    arc->for_arrow = NULL;
+	if (autobackwardarrow_mode)
+	    arc->back_arrow = backward_arrow();
+	else
+	    arc->back_arrow = NULL;
+    }
     arc->center.x = xx;
     arc->center.y = yy;
     arc->point[0].x = point[0].x;
@@ -187,3 +269,4 @@ create_arcobject(lx, ly)
     arc_drawing_selected();
     draw_mousefun_canvas();
 }
+

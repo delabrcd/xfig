@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -14,8 +14,6 @@
  * that this copyright notice remain intact.
  *
  */
-
-#include <stdlib.h>
 
 #include "fig.h"
 #include "resources.h"
@@ -617,7 +615,7 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
     F_arc	   *a;
     int		    p1x, p1y, p2x, p2y;
     int		    dum;
-    zXPoint	    arrowpts[6];
+    zXPoint	    arrowpts[50];
     int		    npts, i;
 
     if (obj->for_arrow) {
@@ -639,7 +637,7 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 	    p2y = p->y;
 	}
 	calc_arrow(p1x, p1y, p2x, p2y, &dum, &dum, &dum, &dum,
-			obj->thickness, obj->for_arrow, arrowpts, &npts);
+			obj->thickness, obj->for_arrow, arrowpts, &npts, &dum);
 	fxmin=fymin=100000;
 	fxmax=fymax=-100000;
 	for (i=0; i<npts; i++) {
@@ -673,7 +671,7 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 	    p2y = obj->points->y;
 	}
 	calc_arrow(p1x, p1y, p2x, p2y, &dum, &dum, &dum, &dum,
-			obj->thickness, obj->back_arrow, arrowpts, &npts);
+			obj->thickness, obj->back_arrow, arrowpts, &npts, &dum);
 	bxmin=bymin=100000;
 	bxmax=bymax=-100000;
 	for (i=0; i<npts; i++) {

@@ -1,0 +1,250 @@
+This description was written by Eric Masson (ericm@kirk.ee.mcgill.ca)
+
+
+The following is a document on how to import xfig figures in latex along
+with a few tips to make your life easier. I wrote this quite a while
+back but it still applies. 
+
+Salut,
+
+Eric
+
+HOW TO IMPORT XFIG FIGURES IN YOUR LATEX FILES:
+--------------------------------------------------------------
+
+Getting Started
+---------------
+
+When you call xfig use the following command line:
+
+xfig -specialtext -latexfonts -startlatexFont default
+
+If you want ALL of your figures to be started with special text and
+latex fonts, you can set the following resources in your .Xresources
+or whatever resource file you use:
+
+Fig.latexfonts: true
+Fig.specialtext: true
+
+There are several formats to which xfig can generate output and 
+latex can read. I will only cover three cases:
+
+(A) Export Fig format directly into latex form
+(B) Export Fig in encapsulated postscript and import the
+    postscript in latex.
+(C) Save the figure partly in postscript and partly in latex
+    form and superimpose them in your document. 
+
+All three methods have their advantages and are equally simple
+to handle. In method (A) the advantage is that all your work 
+is in tex form and that your .dvi files will hold all the necessary
+information. In (B) you have all the power and fonts of postscript
+at your disposal. In (C) you get the drawing power of postscript
+and the typesetting of latex for your strings.
+
+---
+
+In your latex preamble (the part that preceeds your 
+\begin{document} statement) place the following lines:
+
+                \input{psfig}
+
+So your preamble could look like: 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LaTeX Preamble %%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+\documentstyle[12pt,bezier,amstex]{article}  % include bezier curves
+\renewcommand\baselinestretch{1.0}           % single space
+\pagestyle{empty}                            % no headers and page numbers
+\oddsidemargin -10 true pt      % Left margin on odd-numbered pages.
+\evensidemargin 10 true pt      % Left margin on even-numbered pages.
+\marginparwidth 0.75 true in    % Width of marginal notes.
+\oddsidemargin  0 true in       % Note that \oddsidemargin=\evensidemargin
+\evensidemargin 0 true in
+\topmargin -0.75 true in        % Nominal distance from top of page to top of
+\textheight 9.5 true in         % Height of text (including footnotes and figures)
+\textwidth 6.375 true in        % Width of text line.
+\parindent=0pt                  % Do not indent paragraphs
+\parskip=0.15 true in
+
+\input{psfig}           % Capability to place postscript drawings
+ 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Document Beginning %%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+\begin{document}
+\end{document}
+
+
+TYPE A - Exporting directly to latex form
+-----------------------------------------
+
+In terms of drawing capabilities this is the weakest form you can use.
+Lines in latex can only be drawn at multiples of 30 and 45 degrees. 
+And lines with arrows can only be drawn at multiples of 45 degrees.
+Several features such as ellipses, splines, etc. are not supported 
+(xfig does not take advantage of available LaTeX macro packages 
+such as bezier). When drawing lines for type A drawings make
+sure you restrict yourself to the proper angle geometry in xfig.
+Otherwise when you export your figures to latex format, xfig
+will approximate your lines to the nearest angle available in latex.
+Usually this has unpleasant results. 
+
+In this mode, you can type any LaTeX string on your 
+figure.  Once imported to LaTeX, the string  will be interpreted
+properly.  For example:
+ 
+                $\int_0^9 f(x) dx$
+
+would result in a integration from 0 to 9 of the function f(x).
+
+To create your LaTeX file just choose the export option off the
+xfig main menu. And then select LaTeX picture as the language
+to export. This will create a file with a .latex extension which
+you can then call directly into your latex document. For example
+this code would import the file yourfile.latex directly into latex
+format:
+ 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 1 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+\begin{figure}[htbp]
+\begin{center}
+
+\input{yourfile.latex} 
+
+\caption{The caption on your figure}
+\label{figure:yourreferencename}
+\end{center}
+\end{figure}
+
+
+TYPE B - Exporting to Encapsulated postscript
+---------------------------------------------
+
+There are no limitations in drawing figures of this type. Except that 
+one cannot use latex command strings in this format. However all
+of the many fonts of postscript are available when this format 
+is selected. Once you are done drawing your figure simply choose the 
+export menu off of the xfig main menu and select encapsulated postscript 
+as your output language. This will create a .eps file which you can then
+include into you latex ducument in the following way:
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 2 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{figure}[htbp]
+\begin{center}
+\ \psfig{file=yourfile.eps}
+\end{center}
+\caption{Your caption}
+\label{figure:yourreference}
+\end{figure}
+ 
+TYPE C - Postscript/Latex format 
+--------------------------------
+ 
+You can draw any lines or curves when using this format. 
+In this type of export, latex strings are permitted 
+you also have the postscript fonts available to you. Therefore
+you can type in strings such as
+
+                $\int_0^9 f(x) dx$
+
+and they will be processed by latex. You will need to export
+your file twice when using this format: once to the 
+combined ps/latex (ps part) language and once to the combined
+ps/latex (latex part) language. The first will create a .pstex
+file and the second will create a .pstex_t file. The .pstex_t
+file automatically calls the .pstex file and you do not need
+to include it explicitely in your tex file (users of the previous
+version please take note of this.) To include your figure
+just use something similar to this:
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 3 of Lecture %%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[htbp]
+\begin{center}
+ 
+\input{yourfigure.pstex_t}
+ 
+\caption{Your figure}
+\label{figure:example}
+\end{center}
+\end{figure}
+
+N.B. You might want to edit the .pstex_t files created by xfig.
+     When it refers to the other file (.pstex) it automatically 
+     gives the path specification to the .pstex file. This
+     can be an inconvenience if you move your files to another directory
+     because your latex processing will fail. I personally prefer to 
+     remove the full path specification and only keep the filename. 
+
+
+SOME OTHER NOTES
+----------------
+
+xfig
+----
+
+You can import encapsulated postcript files into your latex files.
+This is useful if you want to doodle on top of outputs from other
+programs. For example you could include a MATLAB drawing and identify
+points of interest with strings, lines, circles, etc. Starting from
+version 2.1.7 of xfig there is a hook to ghostscript which permits 
+you to view the postscript in your drawing. A neat feature. 
+
+Use ps2epsi in ghostscript to encapsulate your postscript if you only
+have .ps files.
+
+
+-- 
+=================================================================
+  Eric Masson - ericm@finnegan.ee.mcgill.ca - FAX: 514 398 4470
+=================================================================
+
+
+=================================================================
+Some more notes from Stephen Eglen <stephene@cogs.susx.ac.uk>
+
+* changing the size of pictures in pstex_t
+
+If you just include the picture using 
+\input{file.psttext_t}
+you have no way of specifying the size of the picture. There are two
+solutions to this.
+
+1. Draw it the right size in xfig to start with.  Or, when you are
+   exporting the figure, change the magnification of the picture by
+   using the magnification box in the export window.  Either way you
+   have to go back into xfig if you dont like the size of the image in
+   your latex document.
+
+2. Get latex to change the size of the picture, using either \scalebox
+   or \resizebox.  These are general functions for scaling text or
+   pictures from the graphics package:
+
+   \scalebox{factor}{object}
+   Will scale the object by any factor.  
+   Factor is just a number (<1 = reduction; >1 = enlargement)
+   Object is normally some text or graphics
+
+   eg: \scalebox{2}{ \input{file.pstex_t} }
+   will scale the picture by 2, dependent on driver (.ps works, but xdvi
+   wont).  Scaling bitmap fonts may produce ugly results, so try and
+   avoid them!
+
+   \resizebox{width}{ht} {stuff}
+
+   will resize "stuff" to be of size width x ht.  Using "!" as an argument
+   retains the aspect ratio of the box.
+   eg \resizebox{5cm}{!}{fat cat} will make "fat cat" appear 5 cm wide,
+   and suitably high.
+   (From p129, Lamport)
+

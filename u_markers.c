@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -170,38 +170,44 @@ toggle_markers_in_compound(cmpnd)
     mask = cur_objmask;
     if (mask & M_ELLIPSE)
 	for (e = cmpnd->ellipses; e != NULL; e = e->next)
-	    toggle_ellipsemarker(e);
+	    if (active_layer(e->depth))
+		toggle_ellipsemarker(e);
     if (mask & M_TEXT)
 	for (t = cmpnd->texts; t != NULL; t = t->next) {
-	    if ((hidden_text(t) && (mask & M_TEXT_HIDDEN)) ||
-		((!hidden_text(t)) && (mask & M_TEXT_NORMAL)))
-		toggle_textmarker(t);
+	    if (active_layer(t->depth) &&
+	        (((hidden_text(t) && (mask & M_TEXT_HIDDEN)) ||
+		((!hidden_text(t)) && (mask & M_TEXT_NORMAL)))))
+		    toggle_textmarker(t);
 	}
     if (mask & M_ARC)
 	for (a = cmpnd->arcs; a != NULL; a = a->next)
-	    toggle_arcmarker(a);
+	    if (active_layer(a->depth))
+		toggle_arcmarker(a);
     if (mask & M_POLYLINE)
 	for (l = cmpnd->lines; l != NULL; l = l->next) {
-	    if ((((l->type == T_BOX) ||
+	    if (active_layer(l->depth) &&
+	        ((((l->type == T_BOX) ||
 		  (l->type == T_ARC_BOX)) && (mask & M_POLYLINE_BOX)) ||
 		((l->type == T_PICTURE) && (mask & M_POLYLINE_BOX)) ||
 		((l->type == T_POLYLINE) && (mask & M_POLYLINE_LINE)) ||
-		((l->type == T_POLYGON) && (mask & M_POLYLINE_POLYGON)))
+		((l->type == T_POLYGON) && (mask & M_POLYLINE_POLYGON))))
 		toggle_linemarker(l);
 	}
     if (mask & M_SPLINE)
 	for (s = cmpnd->splines; s != NULL; s = s->next) {
-	    if (((s->type == T_OPEN_INTERP) && (mask & M_SPLINE_O_INTERP)) ||
+	    if (active_layer(s->depth) &&
+	       (((s->type == T_OPEN_INTERP) && (mask & M_SPLINE_O_INTERP)) ||
 		((s->type == T_OPEN_APPROX) && (mask & M_SPLINE_O_APPROX))   ||
 		((s->type == T_OPEN_XSPLINE) && (mask & M_SPLINE_O_XSPLINE)) ||
-	     ((s->type == T_CLOSED_INTERP) && (mask & M_SPLINE_C_INTERP)) ||
+	       ((s->type == T_CLOSED_INTERP) && (mask & M_SPLINE_C_INTERP)) ||
 		((s->type == T_CLOSED_APPROX) && (mask & M_SPLINE_C_APPROX)) ||
-		((s->type == T_CLOSED_XSPLINE) && (mask & M_SPLINE_C_XSPLINE)))
+		((s->type == T_CLOSED_XSPLINE) && (mask & M_SPLINE_C_XSPLINE))))
 		toggle_splinemarker(s);
 	}
     if (mask & M_COMPOUND)
 	for (c = cmpnd->compounds; c != NULL; c = c->next)
-	    toggle_compoundmarker(c);
+	    if (any_active_in_compound(c))
+		toggle_compoundmarker(c);
 }
 
 update_markers(mask)
@@ -219,42 +225,47 @@ update_markers(mask)
     newmask = mask;
     if (CHANGED_MASK(M_ELLIPSE))
 	for (e = objects.ellipses; e != NULL; e = e->next)
-	    toggle_ellipsemarker(e);
+	    if (active_layer(e->depth))
+		toggle_ellipsemarker(e);
     if (CHANGED_MASK(M_TEXT_NORMAL) || CHANGED_MASK(M_TEXT_HIDDEN))
 	for (t = objects.texts; t != NULL; t = t->next) {
-	    if ((hidden_text(t) && CHANGED_MASK(M_TEXT_HIDDEN))   ||
-		((!hidden_text(t)) && CHANGED_MASK(M_TEXT_NORMAL)))
-	      toggle_textmarker(t);
+	    if (active_layer(t->depth) && 
+		((hidden_text(t) && CHANGED_MASK(M_TEXT_HIDDEN))   ||
+		((!hidden_text(t)) && CHANGED_MASK(M_TEXT_NORMAL))))
+		    toggle_textmarker(t);
 	}
     if (CHANGED_MASK(M_ARC))
 	for (a = objects.arcs; a != NULL; a = a->next)
-	    toggle_arcmarker(a);
+	    if (active_layer(a->depth))
+		toggle_arcmarker(a);
     if (CHANGED_MASK(M_POLYLINE_LINE) ||
 	CHANGED_MASK(M_POLYLINE_POLYGON) ||
 	CHANGED_MASK(M_POLYLINE_BOX))
 	for (l = objects.lines; l != NULL; l = l->next) {
-	    if ((((l->type == T_BOX || l->type == T_ARC_BOX || 
-		   l->type == T_PICTURE)) &&
-		 CHANGED_MASK(M_POLYLINE_BOX)) ||
+	    if (active_layer(l->depth) &&
+		((((l->type == T_BOX || l->type == T_ARC_BOX || 
+		   l->type == T_PICTURE)) && CHANGED_MASK(M_POLYLINE_BOX)) ||
 		((l->type == T_POLYLINE) && CHANGED_MASK(M_POLYLINE_LINE)) ||
-		((l->type == T_POLYGON) && CHANGED_MASK(M_POLYLINE_POLYGON)))
-	      toggle_linemarker(l);
+		((l->type == T_POLYGON) && CHANGED_MASK(M_POLYLINE_POLYGON))))
+		    toggle_linemarker(l);
 	}
     if (CHANGED_MASK(M_SPLINE_O_APPROX) || CHANGED_MASK(M_SPLINE_C_APPROX) ||
 	CHANGED_MASK(M_SPLINE_O_INTERP) || CHANGED_MASK(M_SPLINE_C_INTERP) ||
 	CHANGED_MASK(M_SPLINE_O_XSPLINE) || CHANGED_MASK(M_SPLINE_C_XSPLINE))
 	for (s = objects.splines; s != NULL; s = s->next) {
-	  if (((s->type == T_OPEN_INTERP) && CHANGED_MASK(M_SPLINE_O_INTERP)) ||
-	      ((s->type == T_OPEN_APPROX) && CHANGED_MASK(M_SPLINE_O_APPROX)) ||
-	      ((s->type == T_OPEN_XSPLINE) && CHANGED_MASK(M_SPLINE_O_XSPLINE)) ||
-	      ((s->type == T_CLOSED_INTERP) && CHANGED_MASK(M_SPLINE_C_INTERP)) ||
-	      ((s->type == T_CLOSED_APPROX) && CHANGED_MASK(M_SPLINE_C_APPROX)) ||
-	      ((s->type == T_CLOSED_XSPLINE) && CHANGED_MASK(M_SPLINE_C_XSPLINE)))
-	    toggle_splinemarker(s);
+	    if (active_layer(s->depth) &&
+		(((s->type == T_OPEN_INTERP) && CHANGED_MASK(M_SPLINE_O_INTERP)) ||
+		((s->type == T_OPEN_APPROX) && CHANGED_MASK(M_SPLINE_O_APPROX)) ||
+		((s->type == T_OPEN_XSPLINE) && CHANGED_MASK(M_SPLINE_O_XSPLINE)) ||
+		((s->type == T_CLOSED_INTERP) && CHANGED_MASK(M_SPLINE_C_INTERP)) ||
+		((s->type == T_CLOSED_APPROX) && CHANGED_MASK(M_SPLINE_C_APPROX)) ||
+		((s->type == T_CLOSED_XSPLINE) && CHANGED_MASK(M_SPLINE_C_XSPLINE))))
+		    toggle_splinemarker(s);
 	  }
     if (CHANGED_MASK(M_COMPOUND))
 	for (c = objects.compounds; c != NULL; c = c->next)
-	    toggle_compoundmarker(c);
+	    if (any_active_in_compound(c))
+		toggle_compoundmarker(c);
     cur_objmask = newmask;
 }
 toggle_ellipsemarker(e)
@@ -310,7 +321,10 @@ toggle_textmarker(t)
     dy = (int) ((double) t->ascent * cos(t->angle));
     dx = (int) ((double) t->ascent * sin(t->angle));
     set_marker(canvas_win,t->base_x-dx-2,t->base_y-dy-2,MARK_SIZ,MARK_SIZ);
-    set_marker(canvas_win,t->base_x-2,t->base_y-2,MARK_SIZ,MARK_SIZ);
+    /* only draw second marker if not on top of first (e.g. string with only
+       spaces has no height) */
+    if (dx != 0 || dy != 0)
+	set_marker(canvas_win,t->base_x-2,t->base_y-2,MARK_SIZ,MARK_SIZ);
     if (t->tagged)
 	toggle_texthighlight(t);
 }
@@ -369,6 +383,7 @@ toggle_linemarker(l)
     F_point	   *p;
     int		    fx, fy, x, y;
 
+    x = y = INT_MIN;
     set_line_stuff(1, RUBBER_LINE, 0.0, JOIN_MITER, CAP_BUTT, INV_PAINT, DEFAULT);
     p = l->points;
     fx = p->x;
@@ -391,6 +406,7 @@ toggle_linehighlight(l)
     F_point	   *p;
     int		    fx, fy, x, y;
 
+    x = y = INT_MIN;
     set_line_stuff(1, RUBBER_LINE, 0.0, JOIN_MITER, CAP_BUTT, INV_PAINT, DEFAULT);
     p = l->points;
     fx = p->x;

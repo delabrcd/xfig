@@ -75,6 +75,17 @@ int
 neu_init(npixels)		/* initialize our sample array */
 long	npixels;
 {
+	if (npixels < MIN_NEU_SAMPLES)
+		samplefac = 1;
+	else
+		samplefac = DEFSMPFAC;
+	return neu_init2(npixels);
+}
+
+int
+neu_init2(npixels)		/* initialize our sample array */
+long	npixels;
+{
 	register int	nsleft;
 	register long	sv;
 	double	rval, cumprob;

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -24,6 +24,8 @@ extern F_compound	 saved_objects;
 extern F_compound	 object_tails;
 extern F_arrow		*saved_for_arrow;
 extern F_arrow		*saved_back_arrow;
+extern F_line		*latest_line;		/* for undo_join (line) */
+extern F_spline		*latest_spline;		/* for undo_join (spline) */
 extern void		 undo();
 
 #endif /* U_UNDO_H */

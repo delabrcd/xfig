@@ -1000,9 +1000,8 @@ static RotatedTextItem
     while(str3!=NULL);
     
     free(str1);
-#ifdef I18N
-    if (item->max_width <= 0) return NULL;
-#endif  /* I18N */
+    if (item->max_width <= 0)
+	return NULL;
     
     /* overall font height */
 #ifdef I18N

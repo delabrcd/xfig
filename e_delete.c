@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -24,10 +24,12 @@
 #include "u_create.h"
 #include "u_draw.h"
 #include "u_elastic.h"
+#include "u_redraw.h"
 #include "u_search.h"
 #include "u_list.h"
 #include "u_undo.h"
 #include "w_canvas.h"
+#include "w_layers.h"
 #include "w_mousefun.h"
 #include "w_setup.h"
 
@@ -110,6 +112,8 @@ static void
 cancel_delete_region()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     delete_selected();
     draw_mousefun_canvas();
 }
@@ -124,6 +128,8 @@ delete_region(x, y)
 	return;
 
     elastic_box(fix_x, fix_y, cur_x, cur_y);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     c->nwcorner.x = min2(fix_x, x);
     c->nwcorner.y = min2(fix_y, y);
     c->secorner.x = max2(fix_x, x);
@@ -245,6 +251,13 @@ delete_all()
     clean_up();
     set_action_object(F_DELETE, O_ALL_OBJECT);
 
+    /* initialize layer/depth info */
+    reset_layers();
+    save_depths(saved_depths);
+    save_counts(&saved_counts[0]);
+    reset_depths();
+    clearallcounts();
+
     /* in case the user is inside any compounds */
     close_all_compounds();
 
@@ -256,6 +269,7 @@ delete_all()
     objects.lines = NULL;
     objects.splines = NULL;
     objects.texts = NULL;
+    objects.comments = NULL;
 
     object_tails.arcs = NULL;
     object_tails.compounds = NULL;

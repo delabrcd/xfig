@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -36,6 +36,9 @@ extern icon_struct	addpt_ic;
 extern icon_struct	raise_ic;
 #endif
 
+extern icon_struct	figure_ic;
+extern char		*fig_c_icon_X[];
+
 extern icon_struct	smartoff_ic;
 extern icon_struct	smartmove_ic;
 extern icon_struct	smartslide_ic;
@@ -55,6 +58,7 @@ extern icon_struct	glue_ic;
 extern icon_struct	break_ic;
 extern icon_struct	library_ic;
 extern icon_struct	open_comp_ic;
+extern icon_struct	join_split_ic;
 extern icon_struct	joinmiter_ic;
 extern icon_struct	joinround_ic;
 extern icon_struct	joinbevel_ic;
@@ -125,11 +129,31 @@ extern icon_struct	pie_wedge_arc_ic;
 extern icon_struct	xspl_ic;
 
 /* misc icons */
-extern icon_struct	arrow0_ic, arrow1_ic, arrow2_ic, arrow3_ic;
-extern icon_struct	arrow4_ic, arrow5_ic, arrow6_ic;
-extern unsigned char	arrow0_bits[], arrow1_bits[], arrow2_bits[], arrow3_bits[];
-extern unsigned char	arrow4_bits[], arrow5_bits[], arrow6_bits[];
+
 extern icon_struct	kbd_ic;
 extern icon_struct	printer_ic;
+
+extern icon_struct	arrow0_ic;
+extern icon_struct	arrow1o_ic, arrow1f_ic;
+extern icon_struct	arrow2o_ic, arrow2f_ic;
+extern icon_struct	arrow3o_ic, arrow3f_ic;
+extern icon_struct	arrow4o_ic, arrow4f_ic;
+extern icon_struct	arrow5o_ic, arrow5f_ic;
+extern icon_struct	arrow6o_ic, arrow6f_ic;
+extern icon_struct	arrow7o_ic, arrow7f_ic;
+extern icon_struct	arrow8o_ic, arrow8f_ic;
+extern icon_struct	arrow9a_ic, arrow9b_ic;
+extern icon_struct	arrow10a_ic, arrow10b_ic;
+extern unsigned char	arrow0_bits[];
+extern unsigned char	arrow1o_bits[], arrow1f_bits[];
+extern unsigned char	arrow2o_bits[], arrow2f_bits[];
+extern unsigned char	arrow3o_bits[], arrow3f_bits[];
+extern unsigned char	arrow4o_bits[], arrow4f_bits[];
+extern unsigned char	arrow5o_bits[], arrow5f_bits[];
+extern unsigned char	arrow6o_bits[], arrow6f_bits[];
+extern unsigned char	arrow7o_bits[], arrow7f_bits[];
+extern unsigned char	arrow8o_bits[], arrow8f_bits[];
+extern unsigned char	arrow9a_bits[], arrow9b_bits[];
+extern unsigned char	arrow10a_bits[], arrow10b_bits[];
 
 #endif /* W_ICONS_H */

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -108,7 +108,7 @@ init_font()
     /* if the user hasn't disallowed off scalable fonts, check that the
        server really has them by checking for font of 0-0 size */
     openwinfonts = False;
-    if (appres.SCALABLEFONTS) {
+    if (appres.scalablefonts) {
 	/* first look for OpenWindow style font names (e.g. times-roman) */
 	if ((fontlist = XListFonts(tool_d, ps_fontinfo[1].name, 1, &count))!=0) {
 		openwinfonts = True;	/* yes, use them */
@@ -118,24 +118,18 @@ init_font()
 	    strcpy(template,x_fontinfo[0].template);  /* nope, check for font size 0 */
 	    strcat(template,"0-0-*-*-*-*-*-*");
 	    if ((fontlist = XListFonts(tool_d, template, 1, &count))==0)
-		appres.SCALABLEFONTS = False;	/* none, turn off request for them */
+		appres.scalablefonts = False;	/* none, turn off request for them */
 	}
     }
 
     /* no scalable fonts - query the server for all the font
        names and sizes and build a list of them */
 
-    if (!appres.SCALABLEFONTS) {
+    if (!appres.scalablefonts) {
 	for (f = 0; f < NUM_FONTS; f++) {
 	    nf = NULL;
 	    strcpy(template,x_fontinfo[f].template);
-	    strcat(template,"*-*-*-*-*-*-");
-	    /* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
-	    if (strstr(template,"symbol") == NULL &&
-		strstr(template,"dingbats") == NULL)
-		    strcat(template,"ISO8859-*");
-	    else
-		strcat(template,"*-*");
+	    strcat(template,"*-*-*-*-*-*-*-*");
 	    /* don't free the Fontlist because we keep pointers into it */
 	    p = 0;
 	    if ((fontlist = XListFonts(tool_d, template, MAXNAMES, &count))==0) {
@@ -171,7 +165,7 @@ init_font()
 		    }
 	    } /* next size */
 	} /* next font, f */
-    } /* !appres.SCALABLEFONTS */
+    } /* !appres.scalablefonts */
     XFreeFontNames(fontlist); 
 }
 
@@ -207,11 +201,10 @@ lookfont(fnum, size)
     int		    fnum, size;
 {
 	XFontStruct    *fontst;
-	char		fn[128];
+	char		fn[200],back_fn[200];
 	char		template[200];
 	Boolean		found;
 	struct xfont   *newfont, *nf, *oldnf;
-
 
 	if (fnum == DEFAULT)
 	    fnum = 0;			/* pass back the -normal font font */
@@ -233,11 +226,11 @@ lookfont(fnum, size)
 	nf = x_fontinfo[fnum].xfontlist;
 	oldnf = nf;
 	if (nf != NULL) {
-	    if (nf->size > size && !appres.SCALABLEFONTS)
+	    if (nf->size > size && !appres.scalablefonts)
 		found = True;
 	    else {
 		while (nf != NULL) {
-		    if (nf->size == size || (!appres.SCALABLEFONTS &&
+		    if (nf->size == size || (!appres.scalablefonts &&
 			   (nf->size >= size && oldnf->size <= size))) {
 			found = True;
 			break;
@@ -251,12 +244,12 @@ lookfont(fnum, size)
 	    strcpy(fn,nf->fname);  /* put the name in fn */
 	    if (size < nf->size)
 		put_msg("Font size %d not found, using larger %d point",size,nf->size);
-	} else if (!appres.SCALABLEFONTS) {	/* not found, use largest available */
+	} else if (!appres.scalablefonts) {	/* not found, use largest available */
 	    nf = oldnf;
 	    strcpy(fn,nf->fname);  		/* put the name in fn */
 	    if (size > nf->size)
 		put_msg("Font size %d not found, using smaller %d point",size,nf->size);
-	} else { /* SCALABLE; none yet of that size, alloc one and put it in the list */
+	} else { /* scalablefonts; none yet of that size, alloc one and put it in the list */
 	    newfont = (struct xfont *) malloc(sizeof(struct xfont));
 	    /* add it on to the end of the list */
 	    if (x_fontinfo[fnum].xfontlist == NULL)
@@ -275,20 +268,21 @@ lookfont(fnum, size)
 		/* X11 fonts, create a full XLFD font name */
 		strcpy(template,x_fontinfo[fnum].template);
 		/* attach pointsize to font name */
-		strcat(template,"%d-*-*-*-*-*-");
-		/* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
-		if (strstr(template,"symbol") == NULL &&
-		strstr(template,"dingbats") == NULL)
-		    strcat(template,"ISO8859-*");
-		else
-		    strcat(template,"*-*");
+		strcat(template,"%d-*-*-*-*-*-*-*");
 		/* use the pixel field instead of points in the fontname so that the
 		font scales with screen size */
 		sprintf(fn, template, size);
+		/* do same process with backup font name in case first doesn't exist */
+		strcpy(template,x_backup_fontinfo[fnum].template);
+		strcat(template,"%d-*-*-*-*-*-*-*");
+		sprintf(back_fn, template, size);
 	    }
 	    /* allocate space for the name and put it in the structure */
-	    nf->fname = (char *) malloc(strlen(fn)+1);
+	    nf->fname = (char *) malloc(max2(strlen(fn),strlen(back_fn))+1);
 	    strcpy(nf->fname, fn);
+	    /* save the backup name too */
+	    nf->bname = (char *) malloc(strlen(back_fn)+1);
+	    strcpy(nf->bname, back_fn);
 	} /* scalable */
 	if (nf->fstruct == NULL) {
 	    if (appres.DEBUG)
@@ -301,14 +295,22 @@ lookfont(fnum, size)
 	    fontst = XLoadQueryFont(tool_d, fn);
 	    reset_cursor();
 	    if (fontst == NULL) {
-		file_msg("xfig: Can't load font %s ?!, using %s\n",
-			fn, appres.normalFont);
-		fontst = XLoadQueryFont(tool_d, appres.normalFont);
-		if (nf->fname)
+		file_msg("Can't load font %s\n  trying %s", fn, nf->bname);
+		/* correct font doesn't exist, try backup font name */
+		fontst = XLoadQueryFont(tool_d, nf->bname);
+		if (fontst) {
+		    /* use this name instead */
+		    strcpy(nf->fname, nf->bname);
+		} else {
+		    /* even that font doesn't exist, use a plain one */
+		    file_msg("No good, using %s", appres.normalFont);
+		    fontst = XLoadQueryFont(tool_d, appres.normalFont);
+		    if (nf->fname)
 			free(nf->fname);
-		/* allocate space for the name and put it in the structure */
-		nf->fname = (char *) malloc(strlen(appres.normalFont)+1);
-		strcpy(nf->fname, appres.normalFont);  /* keep actual name */
+		    /* allocate space for the name and put it in the structure */
+		    nf->fname = (char *) malloc(strlen(appres.normalFont)+1);
+		    strcpy(nf->fname, appres.normalFont);  /* keep actual name */
+		}
 	    }
 	    /* put the structure in the list */
 	    nf->fstruct = fontst;
@@ -333,21 +335,10 @@ pw_text(w, x, y, op, fstruct, angle, string, color)
 	return;
     }
 
-    /* if we're drawing to the bitmap instead of the canvas
-       map colors white => white, all others => black */
-    if (writing_bitmap) {
-	if (color == WHITE)
-	    color = 0;
-	else
-	    color = 1;
-    }
-    if (writing_bitmap? color != gc_color[op] : x_color(color) != gc_color[op]) {
+    if (x_color(color) != gc_color[op]) {
 	if (op == PAINT) {	/* don't change the foreground for ERASE or INV_PAINT */
-	    if (writing_bitmap)
-		XSetForeground(tool_d,gccache[op],color);
-	    else
-		set_x_color(gccache[op], color);
-	    gc_color[op] = writing_bitmap? color : x_color(color);
+	    set_x_color(gccache[op], color);
+	    gc_color[op] = x_color(color);
 	}
     }
 
@@ -355,8 +346,7 @@ pw_text(w, x, y, op, fstruct, angle, string, color)
        a large font has to be rotated. */
     if (check_cancel())
 	return ;
-    zXRotDrawString(tool_d, fstruct, angle, w, gccache[op],
-		    x, y, string);
+    zXRotDrawString(tool_d, fstruct, angle, w, gccache[op], x, y, string);
 }
 
 PR_SIZE
@@ -379,8 +369,8 @@ textsize(fstruct, n, s)
       return (ret);
     }
 #endif  /* I18N */
-    ret.length = ZOOM_FACTOR * XTextWidth(fstruct, s, n);
     XTextExtents(fstruct, s, n, &dir, &asc, &desc, &overall);
+    ret.length = ZOOM_FACTOR * overall.width;
     ret.ascent = ZOOM_FACTOR * overall.ascent;
     ret.descent = ZOOM_FACTOR * overall.descent;
     return (ret);
@@ -393,7 +383,7 @@ static int	gc_thickness[NUMOPS],
 		gc_join_style[NUMOPS],
 		gc_cap_style[NUMOPS];
 
-static		GC
+GC
 makegc(op, fg, bg)
     int		    op;
     Pixel	    fg;
@@ -426,7 +416,7 @@ makegc(op, fg, bg)
 	break;
     }
 
-    ngc = XCreateGC(tool_d, XtWindow(canvas_sw), gcmask, &gcv);
+    ngc = XCreateGC(tool_d, tool_w, gcmask, &gcv);
     XCopyGC(tool_d, gc, ~(gcmask), ngc);	/* add main gc's values to
 						 * the new one */
     return (ngc);
@@ -475,7 +465,7 @@ init_fill_gc()
 /* SHADING */
 
 /* grey images for fill patterns (32x32) */
-static unsigned char shade_images[NUMSHADEPATS][128] = {
+unsigned char shade_images[NUMSHADEPATS][128] = {
  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -817,45 +807,30 @@ static unsigned char vert_saw_bits[] = {
    0x08, 0x04, 0x02, 0x01};
 
 /* patterns like bricks, etc */
-struct patrn_strct {
-	  int	 owidth,oheight;	/* original width/height */
-	  char	*odata;			/* original bytes */
-	  int	 cwidth,cheight;	/* current width/height */
-	  char	*cdata;			/* bytes at current zoom */
-	}
-
-	pattern_images[NUMPATTERNS] = {
-		{left30_width, left30_height, (char*)left30_bits},
-		{right30_width, right30_height, (char*)right30_bits},
-		{crosshatch30_width, crosshatch30_height, 
-		 (char*)crosshatch30_bits},
-		{left45_width, left45_height, (char*)left45_bits},
-		{right45_width, right45_height, (char*)right45_bits},
-		{crosshatch45_width, crosshatch45_height, 
-		 (char*)crosshatch45_bits},
-		{bricks_width, bricks_height, (char*)bricks_bits},
-		{vert_bricks_width, vert_bricks_height, 
-		 (char*)vert_bricks_bits},
-		{horizontal_width, horizontal_height, (char*)horizontal_bits},
-		{vertical_width, vertical_height, (char*)vertical_bits},
-		{crosshatch_width, crosshatch_height, (char*)crosshatch_bits},
-		{leftshingle_width, leftshingle_height, 
-		 (char*)leftshingle_bits},
-		{rightshingle_width, rightshingle_height, 
-		 (char*)rightshingle_bits},
-		{vert_leftshingle_width, vert_leftshingle_height, 
-		 (char*)vert_leftshingle_bits},
-		{vert_rightshingle_width, vert_rightshingle_height, 
-		 (char*)vert_rightshingle_bits},
-		{fishscales_width, fishscales_height, (char*)fishscales_bits},
-		{small_fishscales_width, small_fishscales_height, 
-		 (char*)small_fishscales_bits},
-		{circles_width, circles_height, (char*)circles_bits},
-		{hexagons_width, hexagons_height, (char*)hexagons_bits},
-		{octagons_width, octagons_height, (char*)octagons_bits},
-		{horiz_saw_width, horiz_saw_height, (char*)horiz_saw_bits},
-		{vert_saw_width, vert_saw_height, (char*)vert_saw_bits}
-				};
+patrn_strct pattern_images[NUMPATTERNS] = {
+    {left30_width,            left30_height,            (char*)left30_bits},
+    {right30_width,           right30_height,           (char*)right30_bits},
+    {crosshatch30_width,      crosshatch30_height,      (char*)crosshatch30_bits},
+    {left45_width,            left45_height,            (char*)left45_bits},
+    {right45_width,           right45_height,           (char*)right45_bits},
+    {crosshatch45_width,      crosshatch45_height,      (char*)crosshatch45_bits},
+    {bricks_width,            bricks_height,            (char*)bricks_bits},
+    {vert_bricks_width,       vert_bricks_height,       (char*)vert_bricks_bits},
+    {horizontal_width,        horizontal_height,        (char*)horizontal_bits},
+    {vertical_width,          vertical_height,          (char*)vertical_bits},
+    {crosshatch_width,        crosshatch_height,        (char*)crosshatch_bits},
+    {leftshingle_width,       leftshingle_height,       (char*)leftshingle_bits},
+    {rightshingle_width,      rightshingle_height,      (char*)rightshingle_bits},
+    {vert_leftshingle_width,  vert_leftshingle_height,  (char*)vert_leftshingle_bits},
+    {vert_rightshingle_width, vert_rightshingle_height, (char*)vert_rightshingle_bits},
+    {fishscales_width,        fishscales_height,        (char*)fishscales_bits},
+    {small_fishscales_width,  small_fishscales_height,  (char*)small_fishscales_bits},
+    {circles_width,           circles_height,           (char*)circles_bits},
+    {hexagons_width,          hexagons_height,          (char*)hexagons_bits},
+    {octagons_width,          octagons_height,          (char*)octagons_bits},
+    {horiz_saw_width,         horiz_saw_height,         (char*)horiz_saw_bits},
+    {vert_saw_width,          vert_saw_height,          (char*)vert_saw_bits}
+};
 
 /* generate the fill pixmaps */
 
@@ -874,30 +849,30 @@ init_fill_pm()
 
     /* use same colors for "NONE" indicator for black and color */
     fillstyle_choices[0].pixmap = XCreatePixmapFromBitmapData(tool_d,
-			XtWindow(ind_panel), none_ic.bits, none_ic.width,
+			tool_w, none_ic.bits, none_ic.width,
 			none_ic.height, x_fg_color.pixel, x_bg_color.pixel,
 			tool_dpth);
 
     /* Shade patterns go from full black to full saturation of the color */
     for (i = 0; i < NUMSHADEPATS; i++) {
-	fill_pm[i] = XCreateBitmapFromData(tool_d, XtWindow(canvas_sw),
-				   (char*)shade_images[i], 32, 32);
+	fill_pm[i] = XCreateBitmapFromData(tool_d, tool_w,
+				   (char*)shade_images[i], SHADE_IM_SIZE, SHADE_IM_SIZE);
 	/* create fill style pixmaps for indicator button */
 	/* The actual colors of fg/bg will be reset in recolor_fillstyles */
 	fillstyle_choices[i + 1].pixmap = XCreatePixmapFromBitmapData(tool_d,
-		 XtWindow(canvas_sw), (char*)shade_images[i], 32, 32,
+		 tool_w, (char*)shade_images[i], SHADE_IM_SIZE, SHADE_IM_SIZE,
 		 x_fg_color.pixel,x_bg_color.pixel,tool_dpth);
     }
     /* Tint patterns go from full saturation of the color to full white */
     /* Note that there are no fillstyle_choices for tints for black */
     for (i = NUMSHADEPATS; i < NUMSHADEPATS+NUMTINTPATS; i++) {
 	j = NUMSHADEPATS+NUMTINTPATS-i-1;	/* reverse the patterns */
-	fill_pm[i] = XCreateBitmapFromData(tool_d, XtWindow(canvas_sw),
-				   (char*)shade_images[j], 32, 32);
+	fill_pm[i] = XCreateBitmapFromData(tool_d, tool_w,
+				   (char*)shade_images[j], SHADE_IM_SIZE, SHADE_IM_SIZE);
 	/* create fill style pixmaps for indicator button */
 	/* The actual colors of fg/bg will be reset in recolor_fillstyles */
 	fillstyle_choices[i + 1].pixmap = XCreatePixmapFromBitmapData(tool_d,
-		 XtWindow(canvas_sw), (char*)shade_images[j], 32, 32,
+		 tool_w, (char*)shade_images[j], SHADE_IM_SIZE, SHADE_IM_SIZE,
 		 x_fg_color.pixel,x_bg_color.pixel,tool_dpth);
     }
     /* Now do the remaining patterns (bricks, shingles, etc) */
@@ -907,6 +882,7 @@ init_fill_pm()
 	j = i-(NUMSHADEPATS+NUMTINTPATS);
 	/* save these patterns at zoom = 1 for the fill button panel */
 	fill_but_pm[j] = fill_pm[i];
+	fill_but_pm_zoom[j] = fill_pm_zoom[i];
 	/* to force new pixmaps for canvas */
 	fill_pm[i] = (Pixmap) 0;
 	/* and create another one */
@@ -914,7 +890,7 @@ init_fill_pm()
 	/* create fill style pixmaps for indicator button */
 	/* The actual colors of fg/bg will be reset in recolor_fillstyles */
 	fillstyle_choices[i + 1].pixmap = XCreatePixmapFromBitmapData(tool_d,
-		 XtWindow(canvas_sw), pattern_images[j].odata,
+		 tool_w, pattern_images[j].odata,
 		 pattern_images[j].owidth, pattern_images[j].oheight,
 		 x_fg_color.pixel,x_bg_color.pixel,tool_dpth);
     }
@@ -1150,52 +1126,30 @@ set_fill_gc(fill_style, op, pencolor, fillcolor, xorg, yorg)
     /* see if we need to create this fill style if it is a pattern.
        This might have happened if there was a change of zoom. */
 
-    if (fill_style >= NUMSHADEPATS+NUMTINTPATS && fill_pm[fill_style] == 0)
-	rescale_pattern(fill_style);
+    if ((fill_style >= NUMSHADEPATS+NUMTINTPATS) &&
+	((fill_pm[fill_style] == 0) || (fill_pm_zoom[fill_style] != zoomscale)))
+	    rescale_pattern(fill_style);
     fillgc = fill_gc[fill_style];
-    if (writing_bitmap)	{	/* working with 1 plane */
-	/* if a pattern, reverse white/black */
+    if (op == PAINT) {
+	/* if a pattern, color the lines in the pen color and the field in fill color */
 	if (fill_style >= NUMSHADEPATS+NUMTINTPATS) {
-	    if (fillcolor == WHITE)
-		fillcolor = 0;
-	    else
-		fillcolor = 1;
-	    if (pencolor == WHITE)
-		pencolor = 0;
-	    else
-		pencolor = 1;
-	    fg = pencolor;
-	    bg = fillcolor;
+	    fg = x_color(pencolor);
+	    bg = x_color(fillcolor);
 	} else {
-	    if (fillcolor == WHITE)
-		fillcolor = 0;
-	    else
-		fillcolor = 1;
-	    fg = fillcolor;
-	    bg = 1-fillcolor;
-	}
-    } else {
-	if (op == PAINT) {
-	  /* if a pattern, color the lines in the pen color and the field in fill color */
-	  if (fill_style >= NUMSHADEPATS+NUMTINTPATS) {
-		fg = x_color(pencolor);
-		bg = x_color(fillcolor);
-	  } else {
-	      if (fillcolor == BLACK) {
+	    if (fillcolor == BLACK) {
 		fg = x_color(BLACK);
 		bg = x_color(WHITE);
-	      } else if (fillcolor == DEFAULT) {
+	    } else if (fillcolor == DEFAULT) {
 		fg = x_fg_color.pixel;
 		bg = x_bg_color.pixel;
-	      } else {
+	    } else {
 		fg = x_color(fillcolor);
 		bg = (fill_style < NUMSHADEPATS? x_color(BLACK): x_color(WHITE));
-	      }
-	  }
-	} else {
-	    fg = x_bg_color.pixel;   /* un-fill */
-	    bg = x_bg_color.pixel;
+	    }
 	}
+    } else {
+	fg = x_bg_color.pixel;   /* un-fill */
+	bg = x_bg_color.pixel;
     }
     XSetForeground(tool_d,fillgc,fg);
     XSetBackground(tool_d,fillgc,bg);
@@ -1236,12 +1190,12 @@ set_line_stuff(width, style, style_val, join_style, cap_style, op, color)
     unsigned long   mask;
 
     switch (style) {
-    case RUBBER_LINE:
+      case RUBBER_LINE:
 	width = 0;
 	break;
-    case PANEL_LINE:
+      case PANEL_LINE:
 	break;
-    default:
+      default:
 	width = round(display_zoomscale * width);
 	break;
     }
@@ -1251,23 +1205,16 @@ set_line_stuff(width, style, style_val, join_style, cap_style, op, color)
     /* required to draw dashes for zero-width lines */
     if (width == 1 && style == SOLID_LINE)
 	width = 0;
-
-    /* if we're drawing to the bitmap instead of the canvas
-       map colors white => white, all others => black */
-    if (writing_bitmap)
-	{
-	if (color == WHITE)
-		color = 0;
-	else
-		color = 1;
-	}
+    /* conversely, if the width is calculated to 0 and this is a dashed line, make width 1 */
+    if (width == 0 && style != SOLID_LINE)
+	width = 1;
 
     /* see if all gc stuff is already correct */
 
     if (width == gc_thickness[op] && style == gc_line_style[op] &&
 	join_style == gc_join_style[op] &&
 	cap_style == gc_cap_style[op] &&
-	(writing_bitmap? color == gc_color[op] : x_color(color) == gc_color[op]) &&
+	(x_color(color) == gc_color[op]) &&
 	((style != DASH_LINE && style != DOTTED_LINE &&
           style != DASH_DOT_LINE && style != DASH_2_DOTS_LINE &&
           style != DASH_3_DOTS_LINE) ||
@@ -1276,15 +1223,19 @@ set_line_stuff(width, style, style_val, join_style, cap_style, op, color)
 
     gcv.line_width = width;
     mask = GCLineWidth | GCLineStyle | GCCapStyle | GCJoinStyle;
-    if (op == PAINT)
+    if (op == PAINT) {
+	gcv.foreground = x_color(color);
 	mask |= GCForeground;
+    } else if (op == INV_PAINT) {
+	gcv.foreground = x_color(color) ^ x_bg_color.pixel;
+	mask |= GCForeground;
+    }
     gcv.join_style = join_styles[join_style];
     gcv.cap_style = cap_styles[cap_style];
     gcv.line_style = (style == DASH_LINE || style == DOTTED_LINE ||
              style == DASH_DOT_LINE || style == DASH_2_DOTS_LINE ||
              style == DASH_3_DOTS_LINE) ?
 	LineOnOffDash : LineSolid;
-    gcv.foreground = (writing_bitmap? color : x_color(color));
 
     XChangeGC(tool_d, gccache[op], mask, &gcv);
     if (style_val > 0.0) {	/* style_val of 0.0 causes problems */
@@ -1336,7 +1287,7 @@ set_line_stuff(width, style, style_val, join_style, cap_style, op, color)
     gc_line_style[op] = style;
     gc_join_style[op] = join_style;
     gc_cap_style[op] = cap_style;
-    gc_color[op] = writing_bitmap? color : x_color(color);
+    gc_color[op] = x_color(color);
 }
 
 int
@@ -1376,12 +1327,15 @@ int	patnum;
 	/* first rescale the data */
 	scale_pattern(j);
  	/* free any old pixmaps before creating new ones */
-	if (fill_pm[patnum])
+	if (fill_pm[patnum]) {
 		XFreePixmap(tool_d,fill_pm[patnum]);
-	fill_pm[patnum] = XCreateBitmapFromData(tool_d, XtWindow(canvas_sw),
+	}
+	fill_pm[patnum] = XCreateBitmapFromData(tool_d, tool_w,
 				   pattern_images[j].cdata,
 				   pattern_images[j].cwidth,
 				   pattern_images[j].cheight);
+	/* set the zoom value so we know what zoom it was generated for */
+	fill_pm_zoom[patnum] = zoomscale;
 	/* now update the gc to use the new pixmaps */
 	if (fill_gc[patnum]) {
 	    gcv.stipple = fill_pm[patnum];
@@ -1458,16 +1412,4 @@ int	indx;
     }
     pattern_images[indx].cwidth = nwidth;
     pattern_images[indx].cheight = nheight;
-}
-
-/* clear fill patterns */
-
-clear_patterns()
-{
-	int	i;
-	for (i=NUMSHADEPATS+NUMTINTPATS; i<NUMFILLPATS; i++) {
-	    if (fill_pm[i])
-		XFreePixmap(tool_d,fill_pm[i]);
-	    fill_pm[i]=0;
-	}
 }

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -19,5 +19,5 @@ extern int	setcenter;
 extern int	setcenter_x;
 extern int	setcenter_y;
 extern int	rotn_dirn;
-extern int	act_rotnangle;
+extern float	act_rotnangle;
 

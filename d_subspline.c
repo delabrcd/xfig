@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Copyright (c) 1992 by James Tough
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
@@ -152,7 +152,7 @@ extract_subspline(spline, point)
 
   if (!first_spline_point(prev2->x, prev2->y, sfactor_cursor->s, subspline))
     {
-      free_spline(subspline);
+      free_spline(&subspline);
       return NULL;
     }
   
@@ -162,7 +162,7 @@ extract_subspline(spline, point)
   if (!(add_subspline_point(spline, &last_point, &last_sfactor, prev1)
 	&&  add_subspline_point(spline, &last_point, &last_sfactor, cursor)))
     {
-      free_spline(subspline);
+      free_spline(&subspline);
       return NULL;
     }
 
@@ -175,7 +175,7 @@ extract_subspline(spline, point)
       
       if (!add_subspline_point(spline, &last_point, &last_sfactor, cursor))
 	{
-	  free_spline(subspline);
+	  free_spline(&subspline);
 	  subspline = NULL;
 	  break;
 	}

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -25,6 +25,7 @@
 #include "w_canvas.h"
 #include "w_setup.h"
 #include "w_zoom.h"
+#include "d_arc.h"
 
 /********************** EXPORTS **************/
 
@@ -91,8 +92,8 @@ resizing_box(x, y)
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     cur_x = x;
     cur_y = y;
-    elastic_box(fix_x, fix_y, cur_x, cur_y);
     boxsize_msg(1);
+    elastic_box(fix_x, fix_y, cur_x, cur_y);
 }
 
 void
@@ -101,8 +102,8 @@ constrained_resizing_box(x, y)
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     adjust_box_pos(x, y, from_x, from_y, &cur_x, &cur_y);
-    elastic_box(fix_x, fix_y, cur_x, cur_y);
     boxsize_msg(1);
+    elastic_box(fix_x, fix_y, cur_x, cur_y);
 }
 
 void
@@ -133,8 +134,8 @@ elastic_scalecompound(c)
     y1 = fix_y + round((c->secorner.y - fix_y) * scalefact);
     x2 = fix_x + round((c->nwcorner.x - fix_x) * scalefact);
     y2 = fix_y + round((c->nwcorner.y - fix_y) * scalefact);
-    elastic_box(x1, y1, x2, y2);
     boxsize_msg(2);
+    elastic_box(x1, y1, x2, y2);
 }
 
 /*************************** LINES *************************/
@@ -231,7 +232,7 @@ constrainedangle_line(x, y)
     elastic_line();
 }
 
-void
+static void
 angle0_line(x, y)
     int		    x, y;
 {
@@ -239,7 +240,7 @@ angle0_line(x, y)
     cur_y = fix_y;
 }
 
-void
+static void
 angle90_line(x, y)
     int		    x, y;
 {
@@ -247,7 +248,7 @@ angle90_line(x, y)
     cur_x = fix_x;
 }
 
-void
+static void
 angle45_line(x, y)
     int		    x, y;
 {
@@ -260,7 +261,7 @@ angle45_line(x, y)
     }
 }
 
-void
+static void
 angle135_line(x, y)
     int		    x, y;
 {
@@ -392,9 +393,9 @@ scaling_line(x, y)
 {
     elastic_scalepts(cur_l->points);
     adjust_box_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
-    elastic_scalepts(cur_l->points);
     if (cur_l->type == T_BOX || cur_l->type == T_PICTURE)
 	boxsize_msg(2);
+    elastic_scalepts(cur_l->points);
 }
 
 void
@@ -708,6 +709,17 @@ scaling_ellipse(x, y)
 }
 
 /*************************** ARCS *************************/
+
+void
+arc_point(x, y, numpoint)
+    int		    x, y, numpoint;
+{
+    elastic_line();
+    cur_x = x;
+    cur_y = y;
+    altlength_msg(MSG_RADIUS_ANGLE, center_point.x, center_point.y);
+    elastic_line();
+}
 
 void
 reshaping_arc(x, y)

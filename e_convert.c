@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
@@ -26,6 +26,7 @@
 #include "u_draw.h"
 #include "u_list.h"
 #include "u_search.h"
+#include "u_undo.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
 #include "d_spline.h"
@@ -100,35 +101,35 @@ init_convert_line_spline(p, type, x, y, px, py)
 /* handle conversion of box to arc_box and arc_box to box */
 
 void
-box_2_box(l)
-    F_line	   *l;
+box_2_box(old_l)
+    F_line	   *old_l;
 {
-    F_line	   *newl;
+    F_line	   *new_l;
 
-    newl = copy_line(l);
-    switch (l->type) {
+    new_l = copy_line(old_l);
+    switch (old_l->type) {
       case T_BOX:
-	newl->type = T_ARC_BOX;
-	if (newl->radius == DEFAULT || newl->radius == 0)
-	    newl->radius = cur_boxradius;
+	new_l->type = T_ARC_BOX;
+	if (new_l->radius == DEFAULT || new_l->radius == 0)
+	    new_l->radius = cur_boxradius;
 	break;
       case T_ARC_BOX:
-	newl->type = T_BOX;
+	new_l->type = T_BOX;
 	break;
     }
-
-    /* now we have finished creating the new one, we can get rid of the old one */
-    delete_line(l);
-
-    /* now put back the new line */
-    mask_toggle_linemarker(newl);
-    list_add_line(&objects.lines, newl);
-    redisplay_line(newl);
+    list_delete_line(&objects.lines, old_l);
+    list_add_line(&objects.lines, new_l);
+    clean_up();
+    old_l->next = new_l;
+    set_latestline(old_l);
     set_action_object(F_CONVERT, O_POLYLINE);
-    set_latestline(newl);
     set_modifiedflag();
+    /* save pointer to this line for undo */
+    latest_line = new_l;
+    redisplay_line(new_l);
     return;
 }
+
 void
 line_spline(l, type_value)
     F_line	   *l;
@@ -184,7 +185,7 @@ line_spline(l, type_value)
     }
     /* A spline must have an s parameter for each point */
     if (!make_sfactors(s)) {
-	free_spline(s);
+	free_spline(&s);
 	return;
     }
 

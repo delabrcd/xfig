@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-1998 by Brian V. Smith
+ * Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -20,6 +20,10 @@
 #include "w_fontbits.h"
 #include "w_setup.h"
 #include "w_util.h"
+
+#ifdef I18N
+#include <locale.h>
+#endif  /* I18N */
 
 /********************  local variables	***************************/
 
@@ -220,13 +224,25 @@ setup_fontmenu()
     /* Create the bitmaps */
 
 #ifdef I18N
-    if (appres.international && appres.japanese) {
-      extern unsigned char Times_Roman_and_Mincho_bits[], Roman_and_Mincho_bits[];
-      extern unsigned char Times_Bold_and_Gothic_bits[], Bold_and_Gothic_bits[];
-      psfont_menu_bits[1] = Times_Roman_and_Mincho_bits;
-      latexfont_menu_bits[1] = Roman_and_Mincho_bits;
-      psfont_menu_bits[3] = Times_Bold_and_Gothic_bits;
-      latexfont_menu_bits[2] = Bold_and_Gothic_bits;
+    if (appres.international) {
+      char *lang;
+      lang = appres.font_menu_language;
+      if (lang[0] == '\0') lang = setlocale(LC_CTYPE, NULL);
+      if (strncasecmp(lang, "japanese", 2) == 0) {
+	extern unsigned char Japanese_Times_Roman_bits[], Japanese_Roman_bits[];
+	extern unsigned char Japanese_Times_Bold_bits[], Japanese_Bold_bits[];
+	psfont_menu_bits[1] = Japanese_Times_Roman_bits;
+	latexfont_menu_bits[1] = Japanese_Roman_bits;
+	psfont_menu_bits[3] = Japanese_Times_Bold_bits;
+	latexfont_menu_bits[2] = Japanese_Bold_bits;
+      } else if (strncasecmp(lang, "korean", 2) == 0) {
+	extern unsigned char Korean_Times_Roman_bits[], Korean_Roman_bits[];
+	extern unsigned char Korean_Times_Bold_bits[], Korean_Bold_bits[];
+	psfont_menu_bits[1] = Korean_Times_Roman_bits;
+	latexfont_menu_bits[1] = Korean_Roman_bits;
+	psfont_menu_bits[3] = Korean_Times_Bold_bits;
+	latexfont_menu_bits[2] = Korean_Bold_bits;
+      }
     }
 #endif  /* I18N */
     for (i = 0; i < NUM_FONTS + 1; i++)
@@ -292,7 +308,7 @@ fontpane_popup(psfont_adr, latexfont_adr, psflag_adr, showfont_fn, show_widget)
     file_msg_add_grab();
     /* insure that the most recent colormap is installed */
     set_cmap(XtWindow(widg));
-    XSetWMProtocols(XtDisplay(widg), XtWindow(widg), &wm_delete_window, 1);
+    XSetWMProtocols(tool_d, XtWindow(widg), &wm_delete_window, 1);
 }
 
 static void
@@ -336,5 +352,5 @@ fontpane_swap()
     file_msg_add_grab();
     /* insure that the most recent colormap is installed */
     set_cmap(XtWindow(widg));
-    XSetWMProtocols(XtDisplay(widg), XtWindow(widg), &wm_delete_window, 1);
+    XSetWMProtocols(tool_d, XtWindow(widg), &wm_delete_window, 1);
 }

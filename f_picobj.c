@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1992 by Brian Boyter
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -23,6 +23,7 @@
 #include "resources.h"
 #include "object.h"
 #include "paintop.h"
+#include "f_picobj.h"
 #include "u_create.h"
 #include "u_elastic.h"
 #include "w_canvas.h"
@@ -38,33 +39,41 @@ extern	int	read_figure();
 extern	int	read_gif();
 extern	int	read_pcx();
 extern	int	read_epsf();
+extern	int	read_ppm();
+extern	int	read_tif();
 extern	int	read_xbm();
+#ifdef USE_JPEG
 extern	int	read_jpg();
+#endif
+#ifdef USE_XPM
 extern	int	read_xpm();
+#endif
 
 #define MAX_SIZE 255
-
-FILE	*open_picfile();
-void	 close_picfile();
 
 static	 struct hdr {
 	    char	*type;
 	    char	*bytes;
+	    int		 nbytes;
 	    int		(*readfunc)();
 	    Boolean	pipeok;
 	}
-	headers[]= {    {"GIF", "GIF",		    read_gif,	True},
+	headers[]= {    {"GIF", "GIF",		    3, read_gif,	True},
 #ifdef V4_0
-			{"FIG", "#FIG",		    read_figure, True},
+			{"FIG", "#FIG",		    4, read_figure, True},
 #endif /* V4_0 */
-			{"PCX", "\012\005\001",	    read_pcx,	True},
-			{"EPS", "%!",		    read_epsf,	True},
-			{"XBM", "#define",	    read_xbm,	True},
+			{"PCX", "\012\005\001",	    3, read_pcx,	True},
+			{"EPS", "%!",		    2, read_epsf,	True},
+			{"PPM", "P3",		    2, read_ppm,	True},
+			{"PPM", "P6",		    2, read_ppm,	True},
+			{"TIFF", "DD*\000",	    4, read_tif,	False},
+			{"TIFF", "MM\000*",	    4, read_tif,	False},
+			{"XBM", "#define",	    7, read_xbm,	True},
 #ifdef USE_JPEG
-			{"JPEG", "\377\330\377\340", read_jpg,	True},
+			{"JPEG", "\377\330\377\340", 4, read_jpg,	True},
 #endif
 #ifdef USE_XPM
-			{"XPM", "/* XPM */",	    read_xpm,	False},
+			{"XPM", "/* XPM */",	    9, read_xpm,	False},
 #endif
 			};
 
@@ -76,8 +85,10 @@ read_picobj(pic,color)
 {
     FILE	   *fd;
     int		    type;
-    int		    i,c;
+    int		    i,j,c;
     char	    buf[20],realname[PATH_MAX];
+    Boolean	    found;
+    int		    stat;
 
     pic->color = color;
     /* don't touch the flipped flag - caller has already set it */
@@ -94,7 +105,9 @@ read_picobj(pic,color)
     pic->pix_width = 0;
     pic->pix_height = 0;
     pic->pix_flipped = 0;
+#ifdef V4_0
     pic->figure = (struct f_compound*) NULL;
+#endif
 
     /* check if user pressed cancel button */
     if (check_cancel())
@@ -104,39 +117,43 @@ read_picobj(pic,color)
     app_flush();
 
     /* open the file and read a few bytes of the header to see what it is */
-    if ((fd=open_picfile(pic->file, &type, realname)) == NULL) {
+    if ((fd=open_picfile(pic->file, &type, True, realname)) == NULL) {
 	file_msg("No such picture file: %s",pic->file);
 	return;
     }
 
     /* read some bytes from the file */
-    buf[0]=buf[1]=buf[2]=0;
     for (i=0; i<15; i++) {
 	if ((c=getc(fd))==EOF)
 	    break;
 	buf[i]=(char) c;
     }
-    /* close it and open it again (it may be a pipe so we can't just rewind) */
     close_picfile(fd,type);
-    fd=open_picfile(pic->file, &type, realname);
 
+    /* now find which header it is */
     for (i=0; i<NUMHEADERS; i++) {
-	if (strncmp(buf,headers[i].bytes,strlen(headers[i].bytes))==0)
+	found = True;
+	for (j=headers[i].nbytes-1; j>=0; j--)
+	    if (buf[j] != headers[i].bytes[j]) {
+		found = False;
+		break;
+	    }
+	if (found)
 	    break;
     }
-    /* found it */
-    if (i<NUMHEADERS) {
+    if (found) {
+	/* open it again (it may be a pipe so we can't just rewind) */
+	fd=open_picfile(pic->file, &type, headers[i].pipeok, realname);
 	if (headers[i].pipeok) {
-	    if (((*headers[i].readfunc)(fd,type,pic)) == FileInvalid) {
+	    if ((stat=((*headers[i].readfunc)(fd,type,pic))) == FileInvalid) {
 		file_msg("%s: Bad %s format",pic->file, headers[i].type);
 	    }
 	} else {
 	    /* those routines that can't take a pipe (e.g. xpm) get the real filename */
-	    if (((*headers[i].readfunc)(realname,type,pic)) == FileInvalid) {
+	    if ((stat=((*headers[i].readfunc)(realname,type,pic))) == FileInvalid) {
 		file_msg("%s: Bad %s format",pic->file, headers[i].type);
 	    }
 	}
-	/* Successful read */
 	put_msg("Reading Picture object file...Done");
 	close_picfile(fd,type);
 	return;
@@ -146,7 +163,6 @@ read_picobj(pic,color)
     file_msg("%s: Unknown image format",pic->file);
     put_msg("Reading Picture object file...Failed");
     app_flush();
-    close_picfile(fd,type);
 }
 
 /* 
@@ -157,17 +173,24 @@ read_picobj(pic,color)
 */
 
 FILE *
-open_picfile(name, type, retname)
+open_picfile(name, type, pipeok, retname)
     char	*name;
     int		*type;
+    Boolean	 pipeok;
     char	*retname;
 {
-    char	unc[PATH_MAX+20];	/* temp buffer for uncompress/gunzip command */
+    char	 unc[PATH_MAX+20];	/* temp buffer for uncompress/gunzip command */
     FILE	*fstream;		/* handle on file  */
-    struct stat	status;
+    struct stat	 status;
+    char	*gzoption;
 
     *type = 0;
     *retname = '\0';
+    if (pipeok)
+	gzoption = "-c";		/* tell gunzip to output to stdout */
+    else
+	gzoption = "";
+
     /* see if the filename ends with .Z */
     /* if so, generate uncompress command and use pipe (filetype = 1) */
     if (strlen(name) > 2 && !strcmp(".Z", name + (strlen(name)-2))) {
@@ -176,34 +199,46 @@ open_picfile(name, type, retname)
     /* or with .z or .gz */
     } else if ((strlen(name) > 3 && !strcmp(".gz", name + (strlen(name)-3))) ||
 	      ((strlen(name) > 2 && !strcmp(".z", name + (strlen(name)-2))))) {
-	sprintf(unc,"gunzip -qc %s",name);
+	sprintf(unc,"gunzip -q %s %s",gzoption,name);
 	*type = 1;
     /* none of the above, see if the file with .Z or .gz or .z appended exists */
     } else {
 	strcpy(retname, name);
 	strcat(retname, ".Z");
 	if (!stat(retname, &status)) {
-	    sprintf(unc, "uncompress -c %s",retname);
+	    sprintf(unc, "uncompress %s %s",gzoption,retname);
 	    *type = 1;
 	    name = retname;
 	} else {
 	    strcpy(retname, name);
 	    strcat(retname, ".z");
 	    if (!stat(retname, &status)) {
-		sprintf(unc, "gunzip -c %s",retname);
+		sprintf(unc, "gunzip %s %s",gzoption,retname);
 		*type = 1;
 		name = retname;
 	    } else {
 		strcpy(retname, name);
 		strcat(retname, ".gz");
 		if (!stat(retname, &status)) {
-		    sprintf(unc, "gunzip -c %s",retname);
+		    sprintf(unc, "gunzip %s %s",gzoption,retname);
 		    *type = 1;
 		    name = retname;
 		}
 	    }
 	}
     }
+    /* if a pipe, but the caller needs a file, uncompress the file now */
+    if (*type == 1 && !pipeok) {
+	char *p;
+	system(unc);
+	if (p=strrchr(name,'.')) {
+	    *p = '\0';		/* terminate name before last .gz, .z or .Z */
+	}
+	strcpy(retname, name);
+	/* force to plain file now */
+	*type = 0;
+    }
+
     /* no appendages, just see if it exists */
     /* and restore the original name */
     strcpy(retname, name);
@@ -229,6 +264,8 @@ close_picfile(file,type)
 {
     char line[MAX_SIZE];
 
+    if (file == 0)
+	return;
     if (type == 0)
 	fclose(file);
     else{

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -33,6 +33,8 @@ free_arc(list)
 	    free((char *) arc->for_arrow);
 	if (arc->back_arrow)
 	    free((char *) arc->back_arrow);
+	if (arc->comments)
+	    free((char *) arc->comments);
 	free((char *) arc);
     }
     *list = NULL;
@@ -52,7 +54,12 @@ free_compound(list)
 	free_line(&compound->lines);
 	free_spline(&compound->splines);
 	free_text(&compound->texts);
+	if (compound->comments) {
+	    free((char *) compound->comments);
+	    compound->comments = NULL;
+	}
 	free((char *) compound);
+	compound = NULL;
     }
     *list = NULL;
 }
@@ -65,6 +72,8 @@ free_ellipse(list)
     for (e = *list; e != NULL;) {
 	ellipse = e;
 	e = e->next;
+	if (ellipse->comments)
+	    free((char *) ellipse->comments);
 	free((char *) ellipse);
     }
     *list = NULL;
@@ -92,6 +101,8 @@ free_text(list)
 	text = t;
 	t = t->next;
 	free(text->cstring);
+	if (text->comments)
+	    free((char *) text->comments);
 	free((char *) text);
     }
     *list = NULL;
@@ -113,17 +124,15 @@ free_spline(list)
 free_splinestorage(s)
     F_spline	   *s;
 {
-    F_sfactor	   *a, *b;
 
     free_points(s->points);
-    for (a = s->sfactors; a != NULL; a = b) {
-	b = a->next;
-	free((char *) a);
-    }
+    free_sfactors(s->sfactors);
     if (s->for_arrow)
 	free((char *) s->for_arrow);
     if (s->back_arrow)
 	free((char *) s->back_arrow);
+    if (s->comments)
+	free((char *) s->comments);
     free((char *) s);
 }
 
@@ -140,8 +149,14 @@ free_linestorage(l)
 	    free((char *) l->pic->bitmap);
 	if (l->pic->pixmap != 0)
 	    XFreePixmap(tool_d, l->pic->pixmap);
+	l->pic->pixmap = (Pixmap) 0;
+	if (l->pic->mask != 0)
+	    XFreePixmap(tool_d, l->pic->mask);
+	l->pic->mask = (Pixmap) 0;
 	free((char *) l->pic);
     }
+    if (l->comments)
+	free((char *) l->comments);
     free((char *) l);
 }
 
@@ -153,6 +168,16 @@ free_points(first_point)
     for (p = first_point; p != NULL; p = q) {
 	q = p->next;
 	free((char *) p);
+    }
+}
+
+free_sfactors(sf)
+    F_sfactor	   *sf;
+{
+    F_sfactor	   *a, *b;
+    for (a = sf; a != NULL; a = b) {
+	b = a->next;
+	free((char *) a);
     }
 }
 

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -21,13 +21,23 @@
 #include "mode.h"
 #include "object.h"
 #include "f_read.h"
+#include "f_util.h"
 #include "u_create.h"
 #include "u_undo.h"
+#include "w_cmdpanel.h"
 #include "w_export.h"
 #include "w_file.h"
+#include "w_layers.h"
 #include "w_print.h"
 #include "w_util.h"
 #include "w_setup.h"
+
+/* load Fig file.
+
+   Call with:
+	file		= name of Fig file
+	xoff, yoff	= offset from 0 (Fig units)
+*/
 
 int
 load_file(file, xoff, yoff)
@@ -47,10 +57,20 @@ load_file(file, xoff, yoff)
     c.lines = NULL;
     c.splines = NULL;
     c.texts = NULL;
+    c.comments = NULL;
     c.next = NULL;
     set_temp_cursor(wait_cursor);
 
+    /* initialize the active_layers array */
+    reset_layers();
+    /* and depth counters */
+    reset_depths();
+    /* object counters for depths */
+    clearallcounts();
+
     s = read_figc(file, &c, False, True, xoff, yoff, &settings);
+    add_compound_depth(&c);	/* count objects at each depth */
+
     if (s == 0) {		/* Successful read */
 	clean_up();
 	(void) strcpy(save_filename, cur_filename);
@@ -59,32 +79,47 @@ load_file(file, xoff, yoff)
 	close_all_compounds();
 	saved_objects = objects;
 	objects = c;
+
+	/* update the settings in appres.xxx from the settings struct returned from read_fig */
+	update_settings(&settings);
+
+	/* and draw the figure on the canvas*/
 	redisplay_canvas();
+
 	put_msg("Current figure \"%s\" (%d objects)", file, num_object);
 	set_action(F_LOAD);
 	reset_cursor();
-	/* update the settings in appres.xxx from the settings struct returned from read_fig */
-	update_settings(&settings);
 	/* reset modified flag in case any change in orientation set it */
 	reset_modifiedflag();
-	return (0);
+	/* update the recent list */
+	update_recent_list(file);
+	update_layers();  /* update depth buttons */
+	return 0;
     } else if (s == ENOENT) {
+	char fname[PATH_MAX];
+
 	clean_up();
 	saved_objects = objects;
 	objects = c;
 	redisplay_canvas();
 	put_msg("Current figure \"%s\" (new file)", file);
 	(void) strcpy(save_filename, cur_filename);
+	/* update current file name with null */
 	update_cur_filename(file);
+	/* update title bar with "(new file)" */
+	strcpy(fname,file);
+	strcat(fname," (new file)");
+	update_wm_title(fname);
 	set_action(F_LOAD);
 	reset_cursor();
 	reset_modifiedflag();
-	return (0);
+	update_layers();  /* update depth buttons */
+	return 0;
     }
     read_fail_message(file, s);
     reset_modifiedflag();
     reset_cursor();
-    return (1);
+    return 1;
 }
 
 update_settings(settings)
@@ -95,19 +130,20 @@ update_settings(settings)
 
 	/* set landscape flag oppositely and change_orient() will toggle it */
 	if (settings->landscape != (int) appres.landscape) {
-		/* change_orient toggles */
-		appres.landscape = ! ((Boolean) settings->landscape);
-		/* now change the orientation of the canvas */
-		change_orient();
-		/* and flush to let things settle out */
-		app_flush();
+	    /* change_orient toggles */
+	    appres.landscape = ! ((Boolean) settings->landscape);
+	    /* now change the orientation of the canvas */
+	    change_orient();
+	    /* and flush to let things settle out */
+	    app_flush();
 	}
 	/* set the printer and export justification labels */
+	appres.flushleft = settings->flushleft;
 	FirstArg(XtNlabel, just_items[settings->flushleft]);
 	if (export_popup)
-		SetValues(export_just_panel);
+	    SetValues(export_just_panel);
 	if (print_popup)
-		SetValues(print_just_panel);
+	    SetValues(print_just_panel);
 
 	/* set the units string for the length messages */
 	strcpy(cur_fig_units, settings->units ? "in" : "cm");
@@ -121,7 +157,7 @@ update_settings(settings)
 	    if (canvas_win == main_canvas) {
 		reset_rulers();
 		init_grid();
-		setup_grid(cur_gridmode);
+		setup_grid();
 		/* change the label in the units widget */
 		FirstArg(XtNlabel, appres.INCHES ? "in" : "cm");
 		SetValues(unitbox_sw);
@@ -183,17 +219,21 @@ merge_file(file, xoff, yoff)
     c->lines = NULL;
     c->splines = NULL;
     c->texts = NULL;
+    c->comments = NULL;
     c->next = NULL;
 
     set_temp_cursor(wait_cursor);
 
     /* clear picture object read flag */
     pic_obj_read = False;
+
     s = read_figc(file, c, True, False, xoff, yoff, &settings);	/* merging */
+
     if (s == 0) {			/* Successful read */
 	compound_bound(c, &c->nwcorner.x, &c->nwcorner.y,
 		   &c->secorner.x, &c->secorner.y);
 	clean_up();
+	/* add the depths of the objects besides adding the objects to the main list */
 	list_add_compound(&objects.compounds, c);
 	set_latestcompound(c);
 	/* must remap all EPS/GIF/XPMs now if any new pic objects were read */
@@ -209,4 +249,61 @@ merge_file(file, xoff, yoff)
     }
     read_fail_message(file, s);
     reset_cursor();
+}
+
+/* update the recent list */
+
+update_recent_list(file)
+    char  *file;
+{
+    int    i;
+    char   *name, path[PATH_MAX], num[3];
+
+    /* prepend path if not already in name */
+    if (file[0] != '/') {
+	/* prepend path if not already there */
+	get_directory(path);
+	strcat(path, "/");
+	strcat(path, file);
+	file = path;
+    }
+    /* if this name is already in the list, delete it and move list up */
+    for (i=0; i<num_recent_files; i++) {
+	if (strcmp(file,&recent_files[i].name[2])==0)	 /* point past number in menu entry */
+	    break;
+    }
+    /* already there? */
+    if (i < num_recent_files) {
+	/* yes, move others up */
+	for ( ; i < num_recent_files-1; i++)
+	    recent_files[i] = recent_files[i+1];
+	num_recent_files--;
+    }
+
+    /* first, push older entries down one slot */
+    for (i=num_recent_files; i>0; i--) {
+	if (i >= max_recent_files) {
+	    /* pushing one off the end, free it's name */
+	    free(recent_files[i-1].name);
+	    continue;
+	}
+	/* shift down */
+	recent_files[i] = recent_files[i-1];
+	/* renumber entry */
+	sprintf(num,"%1d",i+1);
+	strncpy(recent_files[i].name,num,1);
+    }
+
+    /* put new entry in first slot */
+    /* prepend with file number (1) */
+    name = malloc(strlen(file)+4);
+    sprintf(name,"1 %s",file);
+    recent_files[0].name = name;
+    if (num_recent_files < max_recent_files)
+	num_recent_files++;
+
+    /* now recreate the File menu with the new filenames */
+    rebuild_file_menu(None);
+    /* now update the user's .xfigrc file with the file list */
+    update_recent_files();
 }

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -21,6 +21,7 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "e_edit.h"
 #include "e_placelib.h"
 #include "e_rotate.h"
 #include "u_draw.h"
@@ -47,8 +48,9 @@ int	old_library_object = -1;
 static int	cur_library_x,cur_library_y,off_library_x,off_library_y;
 
 static void	init_move_object(),move_object(),change_draw_mode();
-static void	transform_lib_obj(),place_object();
+static void	transform_lib_obj(),place_lib_object();
 static void	put_draw();
+static void	sel_place_lib_obj_proc();
 
 static int draw_box=0;
 
@@ -57,37 +59,25 @@ put_selected()
 {
 	int x,y;
 	set_mousefun("place object","new object","cancel library",
-			"change draw mode", "new object", "cancel library");
+			"place and edit","change draw mode", "cancel library");
 	set_action_on();
 	cur_c = lib_compounds[cur_library_object];
 	new_c=copy_compound(cur_c);
+	/* add it to the depths so it is displayed */
+	add_compound_depth(new_c);
+	/* find lower-right corner for draw_box() */
 	off_library_x=new_c->secorner.x;
 	off_library_y=new_c->secorner.y;
 	canvas_locmove_proc = init_move_object;
-	canvas_leftbut_proc = place_object;
-	canvas_middlebut_proc = sel_place_lib_obj;
-	canvas_rightbut_proc = finish_place_lib_obj;
+	canvas_leftbut_proc = place_lib_object;
+	canvas_middlebut_proc = sel_place_lib_obj_proc;
+	canvas_rightbut_proc = cancel_place_lib_obj;
 	set_cursor(null_cursor);
 
 	/* get the pointer position */
 	get_pointer_win_xy(&x, &y);
 	/* draw the first image */
 	init_move_object(BACKX(x), BACKY(y));
-}
-
-/* use this one when the user has just loaded a different library,
-   but hasn't chosen a new object yet and cancelled the library popup.
-   We want all the motions but there is no object yet. */
-
-void
-put_noobj_selected()
-{
-	set_mousefun("","new object","cancel library",
-			"", "new object", "cancel library");
-	canvas_locmove_proc = null_proc;
-	canvas_leftbut_proc = null_proc;
-	canvas_middlebut_proc = sel_place_lib_obj;
-	canvas_rightbut_proc = finish_place_lib_noobj;
 }
 
 /* allow rotation or flipping of library object before placing on canvas */
@@ -117,22 +107,27 @@ transform_lib_obj(kpe, c, keysym)
 	flip_compound(new_c, x, y, LR_FLIP);
     } else if (c == 'v') {
 	flip_compound(new_c, x, y, UD_FLIP);
-    } else {
-	/* not any of the rotation/flip keys, put the event back on the stack */
-	kpe->window = XtWindow(mode_panel);
-	kpe->subwindow = 0;
-	XPutBackEvent(kpe->display,(XEvent *)kpe);
-	return;
-    }
+    } /* if not any of the above characters, ignore it */
     /* and draw the new image */
     put_draw(PAINT);
 }
 
 void
-sel_place_lib_obj(p, type, x, y, px, py)
-    F_line	   *p;
-    int		    type;
-    int		    x, y, px, py;
+sel_place_lib_obj_proc(x, y, shift)
+    int		    x, y;
+    int		    shift;
+{
+    /* if shift-left button, change drawing mode */
+    if (shift) {
+	change_draw_mode(x, y);
+	return;
+    }
+    /* else popup the library panel again */
+    sel_place_lib_obj();
+}
+
+void
+sel_place_lib_obj()
 {
     canvas_kbd_proc = transform_lib_obj;
     canvas_locmove_proc = null_proc;
@@ -141,7 +136,7 @@ sel_place_lib_obj(p, type, x, y, px, py)
     canvas_rightbut_proc = null_proc; 
   
     /* erase any object currently being dragged around the canvas */
-    if (lib_compounds && new_c)
+    if (lib_compounds && action_on && new_c)
 	put_draw(ERASE);
     popup_library_panel();
 }
@@ -180,15 +175,12 @@ change_draw_mode(x, y)
 }
 
 static void
-place_object(x, y, shift)
+place_lib_object(x, y, shift)
     int		    x, y;
     unsigned int    shift;
 {
-    /* if shift-left button, change drawing mode */
-    if (shift) {
-	change_draw_mode(x, y);
-	return;
-    }
+    F_compound *this_c;
+
     canvas_leftbut_proc = null_proc;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
@@ -197,10 +189,24 @@ place_object(x, y, shift)
     clean_up();
     if (draw_box) 
     	translate_compound(new_c,cur_library_x,cur_library_y);
+    /* remove it from the depths because it will be added when it is put in the main list */
+    remove_compound_depth(new_c);
     add_compound(new_c);
     set_modifiedflag();
     redisplay_compound(new_c);
-    put_selected();
+    if (shift) {
+	/* temporarily turn off library place mode so we can edit the object just placed */
+	canvas_kbd_proc = null_proc;
+	clear_mousefun();
+	set_mousefun("","","", "", "", "");
+	turn_off_current();
+	set_cursor(arrow_cursor);
+	edit_remember_lib_mode = True;
+	this_c = new_c;
+	edit_item(this_c,O_COMPOUND,0,0);
+    } else {
+	put_selected();
+    }
 }
 
 
@@ -233,8 +239,10 @@ init_move_object(x, y)
     canvas_locmove_proc = move_object;
 }
 
+/* cancel placing a library object */
+
 void
-finish_place_lib_obj()
+cancel_place_lib_obj()
 {
     reset_action_on();
     canvas_leftbut_proc = null_proc;
@@ -247,21 +255,7 @@ finish_place_lib_obj()
     turn_off_current();
     set_cursor(arrow_cursor);
     put_draw(ERASE);
+    /* remove it from the depths */
+    remove_compound_depth(new_c);
 }
 
-/* use this one when there was no object to place and
-   the user is cancelling the library place mode */
-
-void
-finish_place_lib_noobj()
-{
-    canvas_leftbut_proc = null_proc;
-    canvas_middlebut_proc = null_proc;
-    canvas_rightbut_proc = null_proc;
-    canvas_locmove_proc = null_proc;
-    canvas_kbd_proc = null_proc;
-    clear_mousefun();
-    set_mousefun("","","", "", "", "");
-    turn_off_current();
-    set_cursor(arrow_cursor);
-}

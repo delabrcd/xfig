@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
 <html>
 <head>
 <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=EUC-JP">
@@ -7,85 +7,84 @@
 </head>
 
 <body>
-<img src="../images/xfig-title.gif" alt="XFIG Users Manual">
-<p>
-[ <a href="../index.html">English Version</a>
- | <b>Japanese Version</b> ]
-<p>
-[ <a href="index.html">Contents</a>
- | <b>Operating Manual</b>
- | <a href="features_bugs.html">New Features and Bugs Fixed</a><br>
- | <a href="options.html">Technical Informations</a>
- | <a href="authors.html">Authors</a> ]
-<p>
-[ <b>概要</b>
- | <a href="command-panel.html">コマンド・パネル</a>
- | <a href="drawing-mode.html">描画モード・パネル</a>
- | <a href="editing-mode.html">編集モード・パネル</a><br>
- | <a href="indicator-panel.html">インジケータ・パネル</a>
- | <a href="misc-panel.html">その他のパネル</a>
- | <a href="accelerators.html">キーボード・アクセラレータ</a> ]
+<a href="contents.html"><img src="../images/xfig-title.gif"
+  alt="XFIG Users Manual" border=0></a>
 
-<p>
+<P>[ <a href="../index.html" target="_top">
+<img src="../images/usflag.gif" border=0 alt=""> English Version</a>
+ |  <img src="../images/japaneseflag.gif" alt=""> <b>Japanese Version</b> ]
+
 <hr>
 
 <h1>概要</h1>
 
-<blockquote>
-  <a href="../images/screen-image.gif"><img src="../images/screen-image-small.gif"
-    alt="[Screen image of xfig]"></a>
-</blockquote>
-
-<p>
 <b>xfig</b> は、
 大部分の UNIX 互換のプラットホーム上の、
 <a href="http://www.opengroup.org/tech/desktop/x">X Window System</a> 
 Version 11 Release 4 (X11R4) 以降の上で動作する、対話的な描画ツールです。
-これは<a href="authors.html">フリーウェア</a>であり、
+これは<a href="authors.html#xfig">フリーウェア</a>であり、
 <a href="installation.html">anonymous ftp</a> によって入手することができます。
-他のアプリケーションについては、
-<a href="installation.html#related-apps"><i>アプリケーション</i></a> 
-の章を参照して下さい。
-
 <p>
 <b>xfig</b> では、
-<a href="drawing-mode.html#circle">円</a>、
-<a href="drawing-mode.html#box">矩形</a>、
-<a href="drawing-mode.html#polyline">折れ線</a>、
-<a href="drawing-mode.html#spline">スプライン曲線</a>、
-<a href="drawing-mode.html#text">テキスト</a>などの
+<a href="drawing.html#circle">円</a>、
+<a href="drawing.html#box">矩形</a>、
+<a href="drawing.html#polyline">折れ線</a>、
+<a href="drawing.html#spline">スプライン曲線</a>、
+<a href="drawing.html#text">テキスト</a>などの
 オブジェクトを組み合わせることによって図を作成します。
 また、GIF、JPEG、EPSF (PostScript) などで表現された
-<a href="drawing-mode.html#picture">イメージを張り付ける</a>
+<a href="drawing.html#picture">イメージを張り付ける</a>
 ことも可能です。
 オブジェクトは、新たに
-<a href="drawing-mode.html">入力</a>したり、
-<a href="editing-mode.html#delete">削除</a>したり、
-<a href="editing-mode.html#move">移動</a>したり、
-<a href="editing-mode.html">変形</a>したりすることが可能です。
-<a href="indicator-panel.html">オブジェクトの色や線の形状など</a>は、
+<a href="drawing.html">入力</a>したり、
+<a href="editing.html#delete">削除</a>したり、
+<a href="editing.html#move">移動</a>したり、
+<a href="editing.html">変形</a>したりすることが可能です。
+<a href="attributes.html">オブジェクトの色や線の形状など</a>は、
 多数の選択肢の中から選択することができます。
-テキストには、<a href="indicator-panel.html#font-panel">種々のフォント</a>
+テキストには、<a href="attributes.html#font-panel">種々のフォント</a>
 を使用することができます。
 また、テキストに ``<img src="../images/a-umlaut.gif" alt="a umlaut">'' や 
 ``<img src="../images/c-cedilla.gif" alt="c cedilla">'' などの
-<a href="drawing-mode.html#compose-char">Latin-1 キャラクタ</a>
+<a href="drawing.html#compose-char">Latin-1 キャラクタ</a>
 を含めることもできます。
+<p>
+次に <B>xfig</B> の画面イメージを示します。
+イメージをクリックすると大きなものが表示されます。(77k)
+<p>
+<blockquote>
+  <a href="screen_image_map.html"><img src="../images/screen-image-small.gif"
+    alt="[Screen image of xfig]"></a>
+</blockquote>
+<p>
+また、次に <b>xfig</b> の配布から抜き出したいくつかの例を示します。
+イメージをクリックすると大きなものが表示されます。
+
+<blockquote>
+<a href="../images/window2.gif"><img src="../images/window2-small.gif"
+     alt="[window2]"></a>
+<a href="../images/3dhouse.gif"><img src="../images/3dhouse-small.gif"
+     alt="[3d house]"></a>
+<a href="../images/greenpig.gif"><img src="../images/greenpig_sm.gif"
+     alt="[greenpig.gif]"></a>
+<a href="../images/transit.gif"><img src="../images/transit_sm.gif"
+     alt="[transit.gif]"></a>
+</blockquote>
 
 <p>
 <b>xfig</b> は、図をその独自のフォーマットである 
 <a href="fig-format.html"><i>Fig format</i></a> でセーブしますが、
 PostScript、GIF、JPEG、HP-GL などの
-<a href="command-panel.html#export">種々のフォーマットに変換する</a>
+<a href="printing.html#export">種々のフォーマットに変換する</a>
 ことも可能です。
 また、<b>xfig</b> は
-<a href="command-panel.html#print">図を PostScript プリンタへ出力する</a>
+<a href="printing.html#print">図を PostScript プリンタへ出力する</a>
 ための機能も持っています。
 
 <p>
 図を <b>xfig</b> が読み込むことのできるファイル・フォーマットである 
 <i>Fig format</i> で出力することのできる
-<a href="installation.html#related-software">いくつかのアプリケーション</a>
+<a href="installation.html#related-apps">いくつかのアプリケーション</a>
 が存在します。
 例えば、<b>xfig</b> はグラフを作成するための機能を持っていませんが、
 <a href="installation.html#gnuplot"><b>gnuplot</b></a> 
@@ -97,9 +96,9 @@ PostScript、GIF、JPEG、HP-GL などの
 や <a href="installation.html#hp2xx"><b>hp2xx</b></a> などのツールを用いれば、
 それらの図を <b>xfig</b> で読み込み、編集することができるかも知れません。
 単にイメージを図の中に貼り付けたいが、図そのものを編集する必要がない 
-(<a href="../images/screen-image.gif">この例</a> のように) 
+(<a href="screen_image_map.html">この例</a> のように) 
 のであれば、GIF、JPEG、EPSF (PostScript) などの
-<a href="drawing-mode.html#picture">イメージを貼り付ける</a>ことも可能です。
+<a href="drawing.html#picture">イメージを貼り付ける</a>ことも可能です。
 
 <p>
 操作は主にマウスによって行ないますが、
@@ -113,14 +112,12 @@ X サーバーが3ボタン・マウスのエミュレーションを行なわない場合には、
 それぞれ左ボタン、中ボタン、及び右ボタンに割り当てられています。
 
 <p>
-<b>xfig 3.2</b>、及び <b>fig2dev 3.2</b> には
-日本語を含んだテキストを取り扱えるようにするためのコードが含まれています。
-これは日本語以外ではテストされていませんが、
-基本的には X11R5 の標準の国際化 (I18N) メカニズムを使用しており、
-僅かな変更で、もしくは変更を行なうことなく、
-<a href="i18n.html#i18n">他の言語</a>も取り扱えるようになるものと思われます。
+<b>xfig 3.2</b>、及び <b>fig2dev 3.2</b> には国際化のためのコードが含まれており、
+テキストに日本語などの文字を含めることが可能となっています。
+これは X11R5 の標準の国際化 (I18N) メカニズムを用いており、
+現時点では日本語、及び韓国語での動作が確認されています。
 これについては、
-<a href="i18n.html">日本語への対応 (あるいは国際化?)</a> を参照して下さい。
+<a href="i18n.html">国際化</a> を参照して下さい。
 
 <p>
 <hr>
@@ -137,7 +134,7 @@ X サーバーが3ボタン・マウスのエミュレーションを行なわない場合には、
 <a href="options.html">コマンド行オプション</a> であり、
 これを用いてある程度のカスタマイズを行なうことができます。
 また、<tt>xfig</tt> コマンドを実行する度にオプションを指定する代わりに、
-<a href="options.html#resource">リソース</a> を用いて
+<a href="options.html#resources">リソース</a> を用いて
 設定を行なうことも可能です。
 <p>
 <tt><i>filename</i></tt> を指定すると <b>xfig</b> は
@@ -146,61 +143,68 @@ X サーバーが3ボタン・マウスのエミュレーションを行なわない場合には、
 
 <h2><a name="display-windows">ウィンドウの構成</a></h2>
 
-<a href="../images/screen-image.gif"><b>xfig</b> のウィンドウ</a>は、
+<a href="screen_image_map.html"><b>xfig</b> のウィンドウ</a>は、
 大きく次のような部分に分けられます。
 <p>
 <dl>
-<dt><a href="command-panel.html">コマンド・パネル</a>:
-<dd><a href="command-panel.html#file">ファイルのロード/セーブ</a>、
-図の<a href="command-panel.html#print">印刷</a>や
-<a href="command-panel.html#export">エクスポート</a>、
-<a href="command-panel.html#quit"><b>xfig</b> の終了</a>
-などの操作のためのボタンが置かれています。
+<dt><a href="main_menus.html">メイン・メニュー</a>:
+<dd><a href="main_menus.html#file-menu">ファイルのロード/セーブ</a>、
+図の<a href="printing.html#print">印刷</a>や
+<a href="printing.html#export">エクスポート</a>、
+<a href="main_menus.html#exit"><b>xfig</b> の終了</a>
+などの操作のためのメニューが置かれています。
 
 <p>
-<dt><a href="drawing-mode.html">描画モード・パネル</a>:
-<dd><a href="drawing-mode.html#circle">円</a>、
-<a href="drawing-mode.html#box">矩形</a>、
-<a href="drawing-mode.html#polyline">折れ線</a>、
-<a href="drawing-mode.html#text">テキスト</a>
+<dt><a href="drawing.html">描画モード・パネル</a>:
+<dd><a href="drawing.html#circle">円</a>、
+<a href="drawing.html#box">矩形</a>、
+<a href="drawing.html#polyline">折れ線</a>、
+<a href="drawing.html#text">テキスト</a>
 など、オブジェクトの入力のためのボタンが置かれています。
 
 <p>
-<dt><a href="editing-mode.html">編集モード・パネル</a>:
-<dd><a href="editing-mode.html#move">移動</a>、
-<a href="editing-mode.html#copy">コピー</a>、
-<a href="editing-mode.html#delete">削除</a>、
-<a href="editing-mode.html#scale">拡大/縮小</a>、
-<a href="editing-mode.html#edit">属性の編集</a>
+<dt><a href="editing.html">編集モード・パネル</a>:
+<dd><a href="editing.html#move">移動</a>、
+<a href="editing.html#copy">コピー</a>、
+<a href="editing.html#delete">削除</a>、
+<a href="editing.html#scale">拡大/縮小</a>、
+<a href="editing.html#edit">属性の編集</a>
 など、編集操作のためのボタンが置かれています。
 
 <p>
-<dt><a href="indicator-panel.html">インジケーター・パネル</a>:
-<dd><a href="indicator-panel.html#pen-color">色</a>、
-<a href="indicator-panel.html#line-width">線の太さ</a>、
-<a href="indicator-panel.html#line-style">線の形状</a>、
-<a href="indicator-panel.html#text-font">フォント</a>、
-<a href="indicator-panel.html#text-justification">テキストの配置</a>
+<dt><a href="attributes.html">属性パネル</a>:
+<dd><a href="attributes.html#pen-color">色</a>、
+<a href="attributes.html#line-width">線の太さ</a>、
+<a href="attributes.html#line-style">線の形状</a>、
+<a href="attributes.html#text-font">フォント</a>、
+<a href="attributes.html#text-justification">テキストの配置</a>
 など、オブジェクトの属性などの設定のためのボタンが置かれています。
 ここには、
-<a href="indicator-panel.html#zoom-scale">表示の拡大率</a>や
-<a href="indicator-panel.html#grid-mode">グリッド</a>
+<a href="attributes.html#zoom-scale">表示の拡大率</a>や
+<a href="attributes.html#grid-mode">グリッド</a>
 など、大域的な設定のためのボタンも置かれています。
 
 <p>
-<dt><a href="misc-panel.html#mouse-indicator">マウス機能インジケーター</a>:
+<dt><a href="miscellaneous.html#mouse-indicator">マウス機能インジケーター</a>:
 <dd>それぞれのマウスボタンの機能が表示されます。
 この表示は、操作モードの切り替え (描画、編集、その他) に応じて、
 マウスボタンの機能を示すために変更されます。
 
 <p>
-<dt><a href="misc-panel.html#ruler">ルーラー (ものさし)</a>:
+<dt><a href="panning.html#rulers">ルーラー (ものさし)</a>:
 <dd>選択された単位での目盛が、
 上 (水平)、及び横 (垂直) のルーラーに表示されています。
 これはキャンバスの内容のスクロールのためにも用いられます。
 
 <p>
-<dt><a href="misc-panel.html#unit-box">UNIT ボックス</a>:
+<dt><a href="layers.html">Depth パネル</a>:
+<dd>これはキャンバス上の全てのオブジェクトの
+<a href="attributes.html#depth">深さ</a>を表示します。
+ユーザーは、深さに対応するチェック・ボックスをクリックすることによって、
+その深さのオブジェクトを隠し、あるいは表示させることができます。
+
+<p>
+<dt><a href="panning.html#units">UNIT ボックス</a>:
 <dd>寸法の単位が、例えば `1cm = 3m' のように表示されています。
 これは単位の変更などのためにも用いられます。
 
@@ -211,26 +215,18 @@ X サーバーが3ボタン・マウスのエミュレーションを行なわない場合には、
 そのオブジェクトの大きさが逐次表示されます。
 
 <p>
-<dt><a href="misc-panel.html#balloons">Balloons ボタン</a>:
-<dd>このボタンを <i>ON</i> にしておくと、
-カーソルがボタンなどの上にある時に、
-カーソルの位置に応じたバルーン・メッセージが
-カーソルの近くに表示されるようになります。
-
-<p>
-<dt>キャンバス:
+<dt><a name="canvas">キャンバス:</a>
 <dd>実際に図を描画する領域です。
-キャンバスは、<a href="misc-panel.html#ruler">上、及び横のルーラー</a> (ものさし) 
-やキーボードの矢印キーを用いてスクロールさせることができます。
+キャンバスは、<a href="panning.html#rulers">上、及び横のルーラー</a> 
+(ものさし) やキーボードの矢印キーを用いてスクロールさせることができます。
 </dl>
 
 <p>
 <hr>
 
-Goto <a href="index.html">TOP</a>
-
-<p>
-<a href="authors.html#manual"><i>written by us</i></a>
+[ <a href="contents.html">Contents</a> |
+ Introduction |
+ <a href="authors.html">Credits</a> ]
 
 </body>
 </html>

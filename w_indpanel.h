@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -30,7 +30,14 @@ extern Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 /* number of arrow types (need to declare because it is used in both
    w_indpanel.c and e_edit.c */
 
-#define NUM_ARROW_TYPES	7
+#ifdef NEWARROWTYPES
+#define NUM_ARROW_TYPES		21
+#else
+#define NUM_ARROW_TYPES		7
+#endif /* NEWARROWTYPES */
+
+#define NUM_CAPSTYLE_TYPES	3
+#define NUM_JOINSTYLE_TYPES	3
 
 /* indicator button selection */
 
@@ -68,7 +75,9 @@ extern Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 #define I_free3_____	0x80000000	/* same */
 
 #define I_NONE		0x00000000
-#define I_ALL		0x3fffffff	/* be sure to update I_ALL if more buttons are added */
+
+/* be sure to update I_ALL if more buttons are added */
+#define I_ALL		0xffffffff & ~I_free1_____ & ~I_free2_____ & ~I_free3_____
 
 #define I_MIN2		(I_POINTPOSN)
 #define I_MIN3		(I_MIN2 | I_LINKMODE)
@@ -110,10 +119,12 @@ typedef struct choice_struct {
 
 extern choice_info arrowtype_choices[];
 extern choice_info fillstyle_choices[];
+extern choice_info capstyle_choices[];
+extern choice_info joinstyle_choices[];
 
 typedef struct ind_sw_struct {
     int		    type;	/* one of I_CHOICE .. I_FVAL */
-    int		    func;
+    unsigned long   func;
     char	    line1[38], line2[8];
     int		    sw_width;
     int		   *i_varadr;
@@ -122,6 +133,7 @@ typedef struct ind_sw_struct {
     void	    (*dec_func) ();
     void	    (*show_func) ();
     int		    min, max;	/* min, max values allowable */
+    float	    inc;	/* increment for spinner */
     choice_info	   *choices;	/* specific to I_CHOICE */
     int		    numchoices; /* specific to I_CHOICE */
     int		    sw_per_row; /* specific to I_CHOICE */
@@ -146,5 +158,6 @@ extern Boolean	update_buts_managed;
 extern Widget	choice_popup;
 extern void	show_zoom();
 extern void	show_fillstyle();
+extern void	inc_zoom(), dec_zoom(), fit_zoom();
 
 #endif /* W_INDPANEL_H */

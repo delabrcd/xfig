@@ -12,10 +12,22 @@ This file contains some notes about installing xfig, the directory
 some further documentation including the manual in troff -man format
 and PostScript.
 
-Xfig and its postprocessor fig2dev (part of the TransFig package) are available
-from ftp.x.org in /contrib/applications/drawing_tools and from any CTAN machine
-(e.g. ftp.tex.ac.uk) in /pub/archive/graphics.
-The site ftp.cdrom.com also has it in /pub/X11/contrib/applications/drawing_tools
+Xfig and its postprocessor fig2dev (part of the TransFig package) are
+available from:
+	ftp://www-epb.lbl.gov/xfig
+	http://www.xfig.org/xfigdist
+	ftp://ftp.x.org/contrib/applications/drawing_tools
+	ftp://ftp.cdrom.com/pub/X11/contrib/applications/drawing_tools
+	from any CTAN machine, e.g. ftp://ftp.tex.ac.uk/pub/archive/graphics.
+
+The xfig distribution includes some library of Fig objects, which are available
+via the library object drawing mode.
+Included are libraries such as electrical parts, logic symbols, music symbols,
+computer clip art, flow charting symbols, network symbols, and some buildings.
+It is hoped that users will contribute to and enhance these libraries for the
+benefit of the xfig user community.
+
+Oh, and the $64,000 question: Yes, xfig is Year 2000 compliant.
 
 ***************************************************************************
 Please send email about any questions/bug fixes/contributions etc. about
@@ -41,11 +53,11 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
 OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 
-And here is the copyright notice that you will find on every source file:
+And here is the copyright notice that you will find in every source file:
 
  FIG : Facility for Interactive Generation of figures
  Copyright (c) 1985-1988 by Supoj Sutanthavibul
- Parts Copyright (c) 1989-1998 by Brian V. Smith
+ Parts Copyright (c) 1989-2000 by Brian V. Smith
  Parts Copyright (c) 1991 by Paul King
  
  Any party obtaining a copy of these files is granted, free of charge, a
@@ -59,17 +71,12 @@ And here is the copyright notice that you will find on every source file:
 
 ______________________________________________________________________________
 
-NOTE 1: Because Unisys has stated that they will not charge royalties for the
-	use of the LZW compression algorithm in FREE programs, xfig will
-	continue to support importing of GIF images (exporting is handled by
-	the ppmtogif program in the netpbm[pbmplus] package).
-	However, be aware that if you sell xfig, for example as part of
-	a CD-ROM package with freeware, you may be liable for paying royalties
-	to Unisys.
-	It is recommended that you comment out the "#define USEGIF" line in the
-	Imakefile before compiling and selling xfig.
-	*** The authors of xfig and the Lawrence Berkeley Laboratory cannot be
-	held responsible in any case. ***
+NOTE 1: Because Unisys has stated that they WILL charge royalties for the
+	use of the LZW compression algorithm even in FREE programs, I have
+	removed all traces of the GIF LZW compression/decompression code from
+	xfig.  Xfig now calls giftopnm and ppmtopcx to import GIF files.
+	Screen capture writes a PCX file.
+	Exporting is handled by calling the ppmtogif program from fig2dev.
 
 NOTE 2: For exporting Fig files to any of the bitmap formats (e.g. GIF, JPEG)
 	you will need to get a version of ghostscript that has jpeg, pcx256,
@@ -84,15 +91,59 @@ NOTE 2: For exporting Fig files to any of the bitmap formats (e.g. GIF, JPEG)
 	in the Imakefile to make xfig add one pixel to the width of an
 	odd-width image when it reads in the pcx output from Ghostscript.
 
+NOTE 3: It is highly recommended that you install the following ghostscript
+	fonts files into your X11 Type1 fonts directory (usually
+	/usr/lib/X11/fonts/Type1) for the best scalable on-screen fonts.  You
+	need to update the "fonts.dir" and "fonts.scale" files to reflect these
+	fonts.  Basically, if you copy the following lines into those two files
+	and update the count in the first line to include them, then do an
+	"xset fp rehash" the X Window System will know about them.
+	Of course, you will have to also copy the ghostscript font files
+	themselves (i.e. b018012l.pfb etc.) into the X11 fonts/Type1 directory.
+	You can get these fonts from ftp://ftp.cs.wisc.edu/pub/ghost/aladdin/fonts
+
+	n021003l.pfb -adobe-times-medium-r-normal--0-0-0-0-p-0-iso8859-1
+	n021004l.pfb -adobe-times-bold-r-normal--0-0-0-0-p-0-iso8859-1
+	n021023l.pfb -adobe-times-medium-i-normal--0-0-0-0-p-0-iso8859-1
+	n021024l.pfb -adobe-times-bold-i-normal--0-0-0-0-p-0-iso8859-1
+	a010013l.pfb -adobe-avantgarde-book-r-normal--0-0-0-0-p-0-iso8859-1
+	a010015l.pfb -adobe-avantgarde-demi-r-normal--0-0-0-0-p-0-iso8859-1
+	a010033l.pfb -adobe-avantgarde-book-o-normal--0-0-0-0-p-0-iso8859-1
+	a010035l.pfb -adobe-avantgarde-demi-o-normal--0-0-0-0-p-0-iso8859-1
+	b018012l.pfb -adobe-bookman-light-r-normal--0-0-0-0-p-0-iso8859-1
+	b018015l.pfb -adobe-bookman-demi-r-normal--0-0-0-0-p-0-iso8859-1
+	b018032l.pfb -adobe-bookman-light-i-normal--0-0-0-0-p-0-iso8859-1
+	b018035l.pfb -adobe-bookman-demi-i-normal--0-0-0-0-p-0-iso8859-1
+	n019003l.pfb -adobe-helvetica-medium-r-normal--0-0-0-0-p-0-iso8859-1
+	n019004l.pfb -adobe-helvetica-bold-r-normal--0-0-0-0-p-0-iso8859-1
+	n019023l.pfb -adobe-helvetica-medium-o-normal--0-0-0-0-p-0-iso8859-1
+	n019024l.pfb -adobe-helvetica-bold-o-normal--0-0-0-0-p-0-iso8859-1
+	n019043l.pfb -adobe-helvetica-medium-r-narrow--0-0-0-0-p-0-iso8859-1
+	n019044l.pfb -adobe-helvetica-bold-r-narrow--0-0-0-0-p-0-iso8859-1
+	n019063l.pfb -adobe-helvetica-medium-o-narrow--0-0-0-0-p-0-iso8859-1
+	n019064l.pfb -adobe-helvetica-bold-o-narrow--0-0-0-0-p-0-iso8859-1
+	c059013l.pfb -adobe-new century schoolbook-medium-r-normal--0-0-0-0-p-0-iso8859-1
+	c059033l.pfb -adobe-new century schoolbook-medium-i-normal--0-0-0-0-p-0-iso8859-1
+	c059016l.pfb -adobe-new century schoolbook-bold-r-normal--0-0-0-0-p-0-iso8859-1
+	c059036l.pfb -adobe-new century schoolbook-bold-i-normal--0-0-0-0-p-0-iso8859-1
+	p052003l.pfb -adobe-palatino-medium-r-normal--0-0-0-0-p-0-iso8859-1
+	p052004l.pfb -adobe-palatino-bold-r-normal--0-0-0-0-p-0-iso8859-1
+	p052023l.pfb -adobe-palatino-medium-i-normal--0-0-0-0-p-0-iso8859-1
+	p052024l.pfb -adobe-palatino-bold-i-normal--0-0-0-0-p-0-iso8859-1
+	z003034l.pfb -adobe-itc zapf chancery-medium-i-normal--0-0-0-0-p-0-iso8859-1
+
 ===================
 INSTALLATION NOTES:
 ===================
 
 1. Edit the Imakefile if you need to customize it (see following notes).
 	Specifically, if you want to install xfig in a directory other than
-	the default X11 binary directory, add "BINDIR=<directory>" at the
-	top of the Imakefile, where <directory> is the full path of the
-	directory in which you want xfig to be installed.
+	the default X11 binary directory, uncomment "BINDIR=<directory>" in the
+	Imakefile, and change <directory> to the full path of the
+	directory where you want xfig to be installed.  Also, you may
+	have to redefine MKDIRHIER because "make" looks for it relative to
+	the BINDIR variable.  Set it to: "MKDIRHIER = /bin/sh <path>/mkdirhier"
+	where <path> is the path to mkdirhier.
 
 2. Type "xmkmf" to create the Makefile from the Imakefile.  If you don't have
 	xmkmf you can do "make Makefile".  In either case you must have imake,
@@ -125,6 +176,10 @@ INSTALLATION NOTES:
 		http://home.netscape.com
 	and Acroread is available from Adobe at:
 		http://www.adobe.com/prodindex/acrobat/readstep.html
+	
+	If you only want to install the documentation files and/or the libraries
+	of Fig objects, you can do "make install.doc" and/or "make install.libs"
+	respectively.
 
    ****	If you don't do this step, be sure to install the app-defaults files
 	Fig.ad and Fig-color.ad in the system app-defaults directory (usually
@@ -164,6 +219,14 @@ NOTES on changes to Imakefile:
 o If you have a small screen (e.g. 800x600) you may want to uncomment
   the line with USESMALLICONS in the Imakefile to use smaller icons for the
   mode panel.
+  Also, when starting xfig use -pwidth 8 -pheight 5.5 -but_per_row 3
+  This will make it use 3 buttons per row on the left panel and size the canvas 
+  to fit in 800x600.
+  You can also use the X resources by putting the following in the app-defaults
+  files or your personal X defaults file:
+	Fig.pwidth: 8
+	Fig.pheight: 5.5
+	Fig.but_per_row: 3"
 
 o For a 3D look, I recommend using Kaleb Keithley's 3D Athena Widget set, a
   direct replacement for the Xaw library.  After you compile and install that
@@ -222,11 +285,12 @@ o If you have an input tablet and your X server supports the XInputExtension
   uncomment the lines that define TABLIB and USETAB in the Imakefile.
   Start xfig with -tablet or define the resource Fig.Tablet to use it.
 
-o The maximum width of the top ruler is set to 1020 pixels and the height of the
-  side ruler to 860 pixels.  If your server can handle pixmaps larger than this
+o The maximum width of the top ruler is set to 1600 pixels and the height of the
+  side ruler to 1280 pixels.  If your server can handle pixmaps larger than this
   and you need longer/taller rulers, you may set the maximum allowed in your
-  Imakefile with -DMAX_TOPRULER_WD=1160 (or whatever value you wish) and
-  -DMAX_SIDERULER_HT=1024 (or whatever value you wish).
+  Imakefile with -DMAX_TOPRULER_WD=2000 (or whatever value you wish) and
+  -DMAX_SIDERULER_HT=1600 (or whatever value you wish).
+  This limitation exists for VaxStation graphics hardware.
 
 o The SMOOTHMOTION option toggles between two methods for tracking the
   cursor.  The first way (SMOOTHMOTION) just uses the (x,y) information given
@@ -253,7 +317,7 @@ General NOTES:
 --------------
 
 The pattern shading (e.g. bricks, shingles, etc.) only work for PostScript,
-and the bitmap output formats (e.g. GIF, JPEG, etc.).
+tk (of the tcl/tk fame), and the bitmap output formats (e.g. GIF, JPEG, etc.).
 
 Unless you have an image (picture object) in your figure, you may not gain
 very much by exporting in JPEG over GIF because of the nature of compression
@@ -305,16 +369,13 @@ Some people have had trouble with the Sun cc 3.0.1 compiler and optimization.
 You may need to shut off optimization.
 A common symptom is that xfig just core dumps when starting.
 
---------------
-XFree86 Users:
---------------
-
-Version 3.1 of XFree86 causes problems.  Get version 3.1.1 or newer.
-
 ------------------------------------------------------
 Possible problems encountered installing/running xfig:
 ------------------------------------------------------
-
+Please see the FAQ in Doc/html/faq.html for an up-to-date FAQ.  This is 
+available from the Help/Xfig Reference menu entry while running xfig,
+or by viewing Doc/html/faq with your favorite web browser.
+________________________________________________________________________________
 PROBLEM:
 	icons in side and bottom panels appear then disappear
 
@@ -409,20 +470,6 @@ PROBLEM:
 	contrib/X11R4_sunos4.1.2_patch_version3.Z".
 
 	The other option is to use X11R5 or X11R6.
-________________________________________________________________________________
-PROBLEM:
-	The window oscillates and fights with the window manager when
-	I click on a mode button or try to resize the xfig window.
-
-POSSIBLE CAUSE AND SOLUTION:
- 	Perhaps the following resource has been set
- 		*allowShellResize: true
-	because another program requires it to be true.
-	Change the resource to be specific to the programs which need it,
-	or set the following resource:
- 		Fig*allowShellResize: false
-	Note: this is in the Fig.ad file that comes with xfig, which is
-	      installed when you do a "make install".
 ________________________________________________________________________________
 PROBLEM:
 	Openwindows sometimes loses track of xfig's icon.
@@ -528,7 +575,7 @@ flowchart.fig	flowchart building blocks	Tim P. Starrin (noid@cyborg.larc.nasa.go
 
 logo.fig	first fig file using imported	Bryan Boyter (original author of eps
 		eps object			import code for xfig)
-transit.fig	transit map of Saint John,	Robort Ford (rford@mailserv.mta.ca)
+transit.fig	transit map of Saint John,	Robert Ford (rford@mailserv.mta.ca)
 		New Brunswick (Canada)
 		** Don't use it for locating transit routes. It is only good
 		through July 1996 and only shows non-rush-hour routes **

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1995 Jim Daley (jdaley@cix.compulink.co.uk)
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -16,8 +16,7 @@
 
 /*
   Screen capture functions - let user draw rectangle on screen
-  & write gif or pcx file (if USE_GIF is NOT set) file of
-  contents of that area.
+  and write a pcx file of the contents of that area.
 */
 
 #include "fig.h"
@@ -54,13 +53,9 @@ char *filename;
     int      		width, height;
     Boolean		status;
 
-#ifdef USE_GIF
-    long		giflen;
-#else
     FILE		*pcxfile;
     char		*dptr;
     int			i,j;
-#endif /* USE_GIF */
 
     if (!ok_to_write(filename, "EXPORT") )
 	return(False);
@@ -69,13 +64,13 @@ char *filename;
 
     XtUnmapWidget(tool);
     XtUnmapWidget(window);
-    XSync(tool_d, False);
+    app_flush();
 
     /* capture the screen area */
     status = getImageData(&width, &height, &numcols, Red, Green, Blue);
 
     /* make sure server is ungrabbed if we're debugging */
-    XSync(tool_d, False);
+    app_flush();
     /* map our windows again */
     XtMapWidget(tool);
     XtMapWidget(window);
@@ -86,26 +81,10 @@ char *filename;
 	captured = False;
  } else {
 	/* encode the image and write to the file */
-#ifdef USE_GIF
-	put_msg("Writing GIF file...");
-#else
 	put_msg("Writing binary PCX file...");
-#endif /* USE_GIF */
 
 	app_flush();
 
-#ifdef USE_GIF
-	if ((giflen=GIFencode(filename, width, height, numcols, -1,
-	     Red, Green, Blue, data)) == (long) 0) {
-		file_msg("Couldn't write GIF file %s",filename);
-		put_msg("Couldn't write GIF file %s",filename);
-		captured = False;
-	} else {
-	    put_msg("%dx%d GIF written to \"%s\" (%ld bytes)",
-			width, height, filename,giflen);
-	    captured = True;
-	}
-#else	/* no GIF, write pcx file */
 	if ((pcxfile = fopen(filename,"w"))==0) {
 	    file_msg("Cannot open PCX file %s for writing",filename);
 	    put_msg("Cannot open PCX file %s for writing",filename);
@@ -116,7 +95,6 @@ char *filename;
 	    fclose(pcxfile);
 	    captured = True;
 	}
-#endif /* USE_GIF */
 
 	free(data);
    }
@@ -205,10 +183,11 @@ getImageData(w, h, nc, Red, Green, Blue) /* returns False on failure */
 		numcols++;
 	    }
 	}
-	dptr = data;
 	/* remap the pixels */
-	for (i=0; i < width*height; i++)
-	    *dptr++ = mapcols[*dptr];
+	for (i=0, dptr = data; i < width*height; i++, dptr++)
+	  {
+	    *dptr = mapcols[*dptr];
+	  }
 
   /* monochrome, copy bits to bytes */
   } else {
@@ -270,7 +249,8 @@ getImageData(w, h, nc, Red, Green, Blue) /* returns False on failure */
 
 static Boolean 
 selectedRootArea( x_r, y_r, w_r, h_r, cw )
-    int *x_r, *y_r, *w_r, *h_r;
+    int *x_r, *y_r;
+    unsigned int *w_r, *h_r;
     Window *cw;
 {
     int		x1, y1;			/* start point of user rect */
@@ -280,7 +260,7 @@ selectedRootArea( x_r, y_r, w_r, h_r, cw )
     int		root_x, root_y;
     int		last_x, last_y;
     int		win_x,  win_y;
-    int		dum;
+    unsigned	int dum;
     unsigned	int mask;
     XGCValues	gcv;
     unsigned long gcmask;
@@ -533,11 +513,21 @@ canHandleCapture( d )
  
     XGetWindowAttributes(d, XDefaultRootWindow(d), &xwa);
 
-    if (( !xwa.colormap )   ||
-        ( xwa.depth > 8 )    ||
-        ( xwa.visual->class == TrueColor)   || 
-        ( xwa.visual->map_entries > MAX_COLORMAP_SIZE ))
-		return False;
-    else
-		return True;
+    if (!xwa.colormap) {
+      file_msg("Can't capture screen because no colormap found");
+      return False;
+    } else if (8 < xwa.depth) {
+      file_msg("Can't capture screen because its depth (%d) is more than 8bpp",
+	       xwa.depth);
+      return False;
+    } else if (xwa.visual->class == TrueColor) {
+      file_msg("Can't capture screen because its visual class is TrueColor");
+      return False;
+    } else if (MAX_COLORMAP_SIZE < xwa.visual->map_entries) {
+      file_msg("Can't capture screen because colormap (%d) is larger than %d",
+	       xwa.visual->map_entries, MAX_COLORMAP_SIZE);
+      return False;
+    } else {
+      return True;
+    }
 }

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -26,5 +26,8 @@ extern void	reload_text_fstructs();
 extern XIC	xim_ic;
 extern Boolean	xim_active;
 extern		i18n_char_handler();
+extern		prefix_append_char();
+#ifdef I18N_USE_PREEDIT
 extern		kill_preedit();
+#endif  /* I18N_USE_PREEDIT */
 #endif  /* I18N */

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
@@ -21,6 +21,8 @@
 #include "mode.h"
 #include "object.h"
 #include "u_create.h"
+#include "w_indpanel.h"
+#include "w_layers.h"
 #include "w_setup.h"
 
 static char	Err_mem[] = "Running out of memory.";
@@ -91,6 +93,11 @@ new_arrow(type, style, thickness, wd, ht)
     if ((a = create_arrow()) == NULL)
 	return (NULL);
 
+    /* check arrow type for legality */
+    if (type > NUM_ARROW_TYPES/2) { /* type*2+style = NUM_ARROW_TYPES */
+	type = style = 0;
+    }
+
     /* if thickness or width are <= 0.0, make reasonable values */
     if (thickness <= 0.0)
 	thickness = cur_arrowthick;
@@ -102,6 +109,21 @@ new_arrow(type, style, thickness, wd, ht)
     a->wd = wd;
     a->ht = ht;
     return (a);
+}
+
+/************************ COMMENTS *************************/
+
+void
+copy_comments(source, dest)
+    char	   **source, **dest;
+{
+    if (*source == NULL) {
+	*dest = NULL;
+	return;
+    }
+    if ((*dest = (char*) new_string(strlen(*source))) == NULL)
+	return;
+    strcpy(*dest,*source);
 }
 
 /************************ SMART LINKS *************************/
@@ -172,6 +194,98 @@ copy_points(orig_pt)
     return (first_pt);
 }
 
+F_sfactor *
+copy_sfactors(orig_sf)
+    F_sfactor	 *orig_sf;
+{
+    F_sfactor	 *new_sf, *prev_sf, *first_sf;
+
+    if ((new_sf = create_sfactor()) == NULL) {
+	return (NULL);
+    }
+    first_sf = new_sf;
+    *new_sf = *orig_sf;
+    new_sf->next = NULL;
+    prev_sf = new_sf;
+    for (orig_sf = orig_sf->next; orig_sf != NULL; orig_sf = orig_sf->next) {
+	if ((new_sf = create_sfactor()) == NULL) {
+	    free_sfactors(first_sf);
+	    return (NULL);
+	}
+	prev_sf->next = new_sf;
+	*new_sf = *orig_sf;
+	new_sf->next = NULL;
+	prev_sf = new_sf;
+    }
+    return first_sf;
+}
+
+/* reverse points in list */
+
+void
+reverse_points(orig_pt)
+    F_point	   *orig_pt;
+{
+    F_point	   *cur_pt;
+    int		    npts,i;
+    F_point	   *tmp_pts;
+
+    /* count how many points are in the list */
+    cur_pt = orig_pt;
+    for (npts=0; cur_pt; cur_pt=cur_pt->next)
+	npts++;
+    /* make a temporary stack (array) */
+    tmp_pts = (F_point *) malloc(npts*sizeof(F_point));
+    cur_pt = orig_pt;
+    /* and put them on in reverse order */
+    for (i=npts-1; i>=0; i--) {
+	tmp_pts[i].x = cur_pt->x;
+	tmp_pts[i].y = cur_pt->y;
+	cur_pt = cur_pt->next;
+    }
+    /* now reverse them */
+    cur_pt = orig_pt;
+    for (i=0; i<npts; i++) {
+	cur_pt->x = tmp_pts[i].x;
+	cur_pt->y = tmp_pts[i].y;
+	cur_pt = cur_pt->next;
+    }
+    /* free the temp array */
+    free(tmp_pts);
+}
+
+/* reverse sfactors in list */
+
+void
+reverse_sfactors(orig_sf)
+    F_sfactor	   *orig_sf;
+{
+    F_sfactor	   *cur_sf;
+    int		    nsf,i;
+    F_sfactor	   *tmp_sf;
+
+    /* count how many sfactors are in the list */
+    cur_sf = orig_sf;
+    for (nsf=0; cur_sf; cur_sf=cur_sf->next)
+	nsf++;
+    /* make a temporary stack (array) */
+    tmp_sf = (F_sfactor *) malloc(nsf*sizeof(F_sfactor));
+    cur_sf = orig_sf;
+    /* and put them on in reverse order */
+    for (i=nsf-1; i>=0; i--) {
+	tmp_sf[i].s = cur_sf->s;
+	cur_sf = cur_sf->next;
+    }
+    /* now reverse them */
+    cur_sf = orig_sf;
+    for (i=0; i<nsf; i++) {
+	cur_sf->s = tmp_sf[i].s;
+	cur_sf = cur_sf->next;
+    }
+    /* free the temp array */
+    free(tmp_sf);
+}
+
 /************************ ARCS *************************/
 
 F_arc	       *
@@ -182,6 +296,7 @@ create_arc()
     if ((a = (F_arc *) malloc(ARCOBJ_SIZE)) == NULL)
 	put_msg(Err_mem);
     a->tagged = 0;
+    a->comments = NULL;
     return (a);
 }
 
@@ -195,8 +310,13 @@ copy_arc(a)
     if ((arc = create_arc()) == NULL)
 	return (NULL);
 
+    /* copy static items first */
     *arc = *a;
     arc->next = NULL;
+
+    /* do comments next */
+    copy_comments(&a->comments, &arc->comments);
+
     if (a->for_arrow) {
 	if ((arrow = create_arrow()) == NULL) {
 	    free((char *) arc);
@@ -226,6 +346,7 @@ create_ellipse()
     if ((e = (F_ellipse *) malloc(ELLOBJ_SIZE)) == NULL)
 	put_msg(Err_mem);
     e->tagged = 0;
+    e->comments = NULL;
     return (e);
 }
 
@@ -238,8 +359,13 @@ copy_ellipse(e)
     if ((ellipse = create_ellipse()) == NULL)
 	return (NULL);
 
+    /* copy static items first */
     *ellipse = *e;
     ellipse->next = NULL;
+
+    /* do comments next */
+    copy_comments(&e->comments, &ellipse->comments);
+
     return (ellipse);
 }
 
@@ -259,6 +385,7 @@ create_line()
     l->back_arrow = NULL;
     l->points = NULL;
     l->radius = DEFAULT;
+    l->comments = NULL;
     return (l);
 }
 
@@ -270,6 +397,8 @@ create_pic()
     if ((e = (F_pic *) malloc(PIC_SIZE)) == NULL)
 	put_msg(Err_mem);
     e->subtype = 0;
+    e->transp = -1;
+    e->mask = (Pixmap) 0;
     return (e);
 }
 
@@ -284,8 +413,13 @@ copy_line(l)
     if ((line = create_line()) == NULL)
 	return (NULL);
 
+    /* copy static items first */
     *line = *l;
     line->next = NULL;
+
+    /* do comments next */
+    copy_comments(&l->comments, &line->comments);
+
     if (l->for_arrow) {
 	if ((arrow = create_arrow()) == NULL) {
 	    free((char *) line);
@@ -308,7 +442,7 @@ copy_line(l)
 	free_linestorage(line);
 	return (NULL);
     }
-    if (l->pic != NULL) {
+    if (l->pic) {
 	if ((line->pic = create_pic()) == NULL) {
 	    free((char *) line);
 	    return (NULL);
@@ -327,16 +461,17 @@ copy_line(l)
 	    line->pic->pix_width = 0;
 	    line->pic->pix_height = 0;
 	    line->pic->pixmap = 0;
-	  }
-      
+	    line->pic->mask = 0;
+	}
     
+#ifdef V4_0
 	if (l->pic->figure != NULL) {
 	  if ((line->pic->figure = copy_compound(l->pic->figure)) == NULL) {
 	    free((char *) line);
 	    return (NULL);
 	  }
-	  
 	}
+#endif /* V4_0 */
     }
     return (line);
 }
@@ -351,6 +486,7 @@ create_spline()
     if ((s = (F_spline *) malloc(SPLOBJ_SIZE)) == NULL)
 	put_msg(Err_mem);
     s->tagged = 0;
+    s->comments = NULL;
     return (s);
 }
 
@@ -359,14 +495,18 @@ copy_spline(s)
     F_spline	   *s;
 {
     F_spline	   *spline;
-    F_sfactor	   *new_cp, *orig_cp, *last_cp;
     F_arrow	   *arrow;
 
     if ((spline = create_spline()) == NULL)
 	return (NULL);
 
+    /* copy static items first */
     *spline = *s;
     spline->next = NULL;
+
+    /* do comments next */
+    copy_comments(&s->comments, &spline->comments);
+
     if (s->for_arrow) {
 	if ((arrow = create_arrow()) == NULL) {
 	    free((char *) spline);
@@ -389,28 +529,16 @@ copy_spline(s)
 	free_splinestorage(spline);
 	return (NULL);
     }
-    spline->sfactors = NULL;
+
     if (s->sfactors == NULL)
 	return (spline);
-
-    if ((new_cp = create_sfactor()) == NULL) {
+    spline->sfactors = copy_sfactors(s->sfactors);
+    if (NULL == spline->sfactors) {
+	put_msg(Err_mem);
 	free_splinestorage(spline);
 	return (NULL);
     }
-    new_cp->next = NULL;
-    last_cp = spline->sfactors = new_cp;
-    orig_cp = s->sfactors;
-    *new_cp = *orig_cp;
-    for (orig_cp = orig_cp->next; orig_cp != NULL; orig_cp = orig_cp->next) {
-	if ((new_cp = create_sfactor()) == NULL) {
-	    free_splinestorage(spline);
-	    return (NULL);
-	}
-	last_cp->next = new_cp;
-	new_cp->next = NULL;
-	*new_cp = *orig_cp;
-	last_cp = new_cp;
-    }
+
     return (spline);
 }
 
@@ -424,8 +552,11 @@ create_text()
     if ((t = (F_text *) malloc(TEXOBJ_SIZE)) == NULL)
 	put_msg(Err_mem);
     t->tagged = 0;
+    t->comments = NULL;
     return (t);
 }
+
+/* allocate len+1 characters in a new string */
 
 char	       *
 new_string(len)
@@ -433,7 +564,7 @@ new_string(len)
 {
     char	   *c;
 
-    if ((c = (char *) calloc((unsigned) len, sizeof(char))) == NULL)
+    if ((c = (char *) calloc((unsigned) len + 1, sizeof(char))) == NULL)
 	put_msg(Err_mem);
     return (c);
 }
@@ -447,13 +578,18 @@ copy_text(t)
     if ((text = create_text()) == NULL)
 	return (NULL);
 
+    /* copy static items first */
     *text = *t;
-    if ((text->cstring = new_string(strlen(t->cstring) + 1)) == NULL) {
+    text->next = NULL;
+
+    /* do comments next */
+    copy_comments(&t->comments, &text->comments);
+
+    if ((text->cstring = new_string(strlen(t->cstring))) == NULL) {
 	free((char *) text);
 	return (NULL);
     }
     strcpy(text->cstring, t->cstring);
-    text->next = NULL;
     return (text);
 }
 
@@ -478,6 +614,7 @@ create_compound()
     c->lines = NULL;
     c->splines = NULL;
     c->texts = NULL;
+    c->comments = NULL;
     c->parent = NULL;
     c->GABPtr = NULL;
     c->next = NULL;
@@ -508,6 +645,10 @@ copy_compound(c)
     compound->texts = NULL;
     compound->compounds = NULL;
     compound->next = NULL;
+
+    /* do comments first */
+    copy_comments(&c->comments, &compound->comments);
+
     for (e = c->ellipses; e != NULL; e = e->next) {
 	if (NULL == (ee = copy_ellipse(e))) {
 	    put_msg(Err_mem);
@@ -552,3 +693,4 @@ copy_compound(c)
     }
     return (compound);
 }
+

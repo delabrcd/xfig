@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Henning Spruth
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -25,6 +25,7 @@
 #include "u_elastic.h"
 #include "u_pan.h"
 #include "w_canvas.h"
+#include "w_file.h"
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
@@ -42,7 +43,6 @@ static void	(*save_locmove_proc) ();
 static void	(*save_leftbut_proc) ();
 static void	(*save_middlebut_proc) ();
 static void	(*save_rightbut_proc) ();
-static int	save_action_on;
 
 float		display_zoomscale;	/* both zoomscales initialized in main() */
 float		zoomscale;
@@ -54,6 +54,123 @@ Boolean		integral_zoom = False;	/* integral zoom flag for area zoom (mouse) */
 static int	my_fix_x, my_fix_y;
 static int	my_cur_x, my_cur_y;
 
+
+/* storage for conversion of data points to screen coords (zXDrawLines and zXFillPolygon) */
+
+static XPoint	*_pp_ = (XPoint *) NULL;	/* data pointer itself */
+static int	 _npp_ = 0;			/* number of points currently allocated */
+static Boolean	 _noalloc_ = False;		/* signals previous failed alloc */
+static Boolean	 chkalloc();
+static void	 convert_sh();
+
+zXDrawLines(d,w,gc,p,n,m)
+    Display	*d;
+    Window	 w;
+    GC		 gc;
+    zXPoint	*p;
+    int		 n;
+{
+    /* make sure we have allocated data */
+    if (!chkalloc(n)) {
+	return;
+    }
+    /* now convert each point to short */
+    convert_sh(p,n);
+    XDrawLines(d,w,gc,_pp_,n,m);
+}
+
+zXFillPolygon(d,w,gc,p,n,m,o)
+    Display	*d;
+    Window	 w;
+    GC		 gc;
+    zXPoint	*p;
+    int		 n;
+    int		 m,o;
+{
+    /* make sure we have allocated data */
+    if (!chkalloc(n)) {
+	return;
+    }
+    /* now convert each point to short */
+    convert_sh(p,n);
+    XFillPolygon(d,w,gc,_pp_,n,m,o);
+}
+
+/* convert each point to short */
+
+void
+convert_sh(p,n)
+    zXPoint	*p;
+    int		 n;
+{
+    int 	 i;
+
+    for (i=0;i<n;i++) {
+	_pp_[i].x = SHZOOMX(p[i].x);
+	_pp_[i].y = SHZOOMY(p[i].y);
+    }
+}
+
+/* convert Fig units to pixels at current zoom AND convert to short, being
+   careful to convert large numbers (> 12000) to numbers the X library likes */
+
+/* One for X coordinates */
+
+short
+SHZOOMX(x)
+    int		 x;
+{
+    x = ZOOMX(x);
+    /* the X server or X11 Library doesn't like coords larger than about 12000 */
+    x = (x < -12000? -12000: (x > 12000? 12000: x));
+    return (short) x;
+}
+
+/* do the same using the ZOOMY transformation for a Y coordinate */
+
+short
+SHZOOMY(y)
+    int		 y;
+{
+    y = ZOOMY(y);
+    /* the X server or X11 Library doesn't like coords larger than about 12000 */
+    y = (y < -12000? -12000: (y > 12000? 12000: y));
+    return (short) y;
+}
+
+static Boolean
+chkalloc(n)
+    int		 n;
+{
+    int		 i;
+    XPoint	*tpp;
+
+    /* see if we need to allocate some (more) memory */
+    if (n > _npp_) {
+	/* if previous allocation failed, return now */
+	if (_noalloc_)
+	    return False;
+	/* get either what we need +50 points or 500, whichever is larger */
+	i = max2(n+50, 500);	
+	if (_npp_ == 0) {
+	    if ((tpp = malloc(i * sizeof(XPoint))) == 0) {
+		fprintf(stderr,"\007Can't alloc memory for %d point array, exiting\n",i);
+		exit(1);
+	    }
+	} else {
+	    if ((tpp = realloc(_pp_, i * sizeof(XPoint))) == 0) {
+		file_msg("Can't alloc memory for %d point array",i);
+		_noalloc_ = True;
+		return False;
+	    }
+	}
+	/* everything ok, set global pointer and count */
+	_pp_ = tpp;
+	_npp_ = i;
+    }
+    return True;
+}
+
 void
 zoom_selected(x, y, button)
     int		    x, y;
@@ -61,6 +178,9 @@ zoom_selected(x, y, button)
 {
     /* if trying to zoom while drawing an object, don't allow it */
     if ((button != Button2) && check_action_on()) /* panning is ok */
+	return;
+    /* don't allow zooming while previewing */
+    if (preview_in_progress)
 	return;
 
     if (!zoom_in_progress) {
@@ -73,8 +193,7 @@ zoom_selected(x, y, button)
 	    pan_origin();
 	    break;
 	case Button3:
-	    display_zoomscale = 1.0;
-	    show_zoom(&ind_switches[ZOOM_SWITCH_INDEX]);
+	    unzoom();
 	    break;
 	}
     } else if (button == Button1) {
@@ -83,6 +202,12 @@ zoom_selected(x, y, button)
     }
 }
 
+void
+unzoom()
+{
+    display_zoomscale = 1.0;
+    show_zoom(&ind_switches[ZOOM_SWITCH_INDEX]);
+}
 
 static void
 my_box(x, y)
@@ -118,6 +243,7 @@ init_zoombox_drawing(x, y)
     canvas_rightbut_proc = cancel_zoom;
     elastic_box(my_fix_x, my_fix_y, my_cur_x, my_cur_y);
     set_action_on();
+    cur_mode = F_ZOOM;
     zoom_in_progress = True;
 }
 
@@ -128,15 +254,20 @@ do_zoom(x, y)
     int		    dimx, dimy;
     float	    scalex, scaley;
 
+    /* don't allow zooming while previewing */
+    if (preview_in_progress)
+	return;
     elastic_box(my_fix_x, my_fix_y, my_cur_x, my_cur_y);
     zoomxoff = my_fix_x < x ? my_fix_x : x;
     zoomyoff = my_fix_y < y ? my_fix_y : y;
     dimx = abs(x - my_fix_x);
     dimy = abs(y - my_fix_y);
-    if (zoomxoff < 0)
-	zoomxoff = 0;
-    if (zoomyoff < 0)
-	zoomyoff = 0;
+    if (!appres.allow_neg_coords) {
+	if (zoomxoff < 0)
+	    zoomxoff = 0;
+	if (zoomyoff < 0)
+	    zoomyoff = 0;
+    }
     if (dimx && dimy) {
 	scalex = ZOOM_FACTOR * CANVAS_WD / (float) dimx;
 	scaley = ZOOM_FACTOR * CANVAS_HT / (float) dimy;
@@ -146,7 +277,7 @@ do_zoom(x, y)
 	    display_zoomscale = (int)((display_zoomscale+0.09)*10.0)/10.0 - 0.1;
 
 	/* round if integral zoom is on (indicator panel in zoom popup) */
-	if (integral_zoom)
+	if (integral_zoom && display_zoomscale > 1.0)
 	    display_zoomscale = round(display_zoomscale);
 	show_zoom(&ind_switches[ZOOM_SWITCH_INDEX]);
     }
@@ -157,7 +288,7 @@ do_zoom(x, y)
     canvas_middlebut_proc = save_middlebut_proc;
     canvas_rightbut_proc = save_rightbut_proc;
     canvas_kbd_proc = save_kbd_proc;
-    action_on = save_action_on;
+    reset_action_on();
     zoom_in_progress = False;
 }
 
@@ -173,6 +304,6 @@ cancel_zoom()
     canvas_rightbut_proc = save_rightbut_proc;
     canvas_kbd_proc = save_kbd_proc;
     reset_cursor();
-    action_on = save_action_on;
+    reset_action_on();
     zoom_in_progress = False;
 }

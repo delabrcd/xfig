@@ -5,7 +5,9 @@ Inches
 Letter 
 100.00
 Single
-0
+-2
+# A resistor network representing
+# air flow in a building
 1200 2
 1 4 0 1 -1 -1 0 0 20 0.000 1 0.0000 3750 3450 45 45 3720 3450 3795 3450
 1 4 0 1 -1 -1 0 0 20 0.000 1 0.0000 2400 3450 45 45 2370 3450 2445 3450

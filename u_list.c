@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
@@ -24,8 +24,14 @@
 #include "u_create.h"
 #include "u_list.h"
 #include "u_elastic.h"
+#include "u_redraw.h"
 #include "u_undo.h"
+#include "w_layers.h"
 #include "w_setup.h"
+
+/*************************************/
+/****** DELETE object from list ******/
+/*************************************/
 
 void
 list_delete_arc(arc_list, arc)
@@ -38,6 +44,8 @@ list_delete_arc(arc_list, arc)
     if (arc == NULL)
 	return;
 
+    if (arc_list == &objects.arcs)
+	remove_depth(O_ARC, arc->depth);
     for (a = aa = *arc_list; aa != NULL; a = aa, aa = aa->next) {
 	if (aa == arc) {
 	    if (aa == *arc_list)
@@ -61,6 +69,8 @@ list_delete_ellipse(ellipse_list, ellipse)
     if (ellipse == NULL)
 	return;
 
+    if (ellipse_list == &objects.ellipses)
+	remove_depth(O_ELLIPSE, ellipse->depth);
     for (q = r = *ellipse_list; r != NULL; q = r, r = r->next) {
 	if (r == ellipse) {
 	    if (r == *ellipse_list)
@@ -84,6 +94,8 @@ list_delete_line(line_list, line)
     if (line == NULL)
 	return;
 
+    if (line_list == &objects.lines)
+	remove_depth(O_POLYLINE, line->depth);
     for (q = r = *line_list; r != NULL; q = r, r = r->next) {
 	if (r == line) {
 	    if (r == *line_list)
@@ -107,6 +119,8 @@ list_delete_spline(spline_list, spline)
     if (spline == NULL)
 	return;
 
+    if (spline_list == &objects.splines)
+	remove_depth(O_SPLINE, spline->depth);
     for (q = r = *spline_list; r != NULL; q = r, r = r->next) {
 	if (r == spline) {
 	    if (r == *spline_list)
@@ -130,6 +144,8 @@ list_delete_text(text_list, text)
     if (text == NULL)
 	return;
 
+    if (text_list == &objects.texts)
+	remove_depth(O_TEXT, text->depth);
     for (q = r = *text_list; r != NULL; q = r, r = r->next)
 	if (r == text) {
 	    if (r == *text_list)
@@ -152,9 +168,12 @@ list_delete_compound(list, compound)
     if (compound == NULL)
 	return;
 
+    if (list == &objects.compounds)
+	remove_compound_depth(compound);
+
     for (cc = c = *list; c != NULL; cc = c, c = c->next) {
 	if (c == compound) {
-	    if (c == *list)
+	    if (c == *list) 
 		*list = (*list)->next;
 	    else
 		cc->next = c->next;
@@ -165,68 +184,189 @@ list_delete_compound(list, compound)
 }
 
 void
-list_add_arc(arc_list, a)
-    F_arc	  **arc_list, *a;
+remove_depth(type, depth)
+    int		    type;
+    int		    depth;
+{
+    int		    i;
+
+    object_depths[depth]--;
+    if (appres.DEBUG)
+	fprintf(stderr,"remove depth %d, count=%d\n",depth,object_depths[depth]);
+    /* now subtract one from the counter for this object type */
+    switch (type) {
+	case O_ARC:
+	    --counts[depth].num_arcs;
+	    if (appres.DEBUG)
+		fprintf(stderr,"Arc[%d] count=%d\n",depth,counts[depth].num_lines);
+	    break;
+	case O_POLYLINE:
+	    --counts[depth].num_lines;
+	    if (appres.DEBUG)
+		fprintf(stderr,"Line[%d] count=%d\n",depth,counts[depth].num_lines);
+	    break;
+	case O_ELLIPSE:
+	    --counts[depth].num_ellipses;
+	    if (appres.DEBUG)
+		fprintf(stderr,"Ellipse[%d] count=%d\n",depth,counts[depth].num_ellipses);
+	    break;
+	case O_SPLINE:
+	    --counts[depth].num_splines;
+	    if (appres.DEBUG)
+		fprintf(stderr,"Spline[%d] count=%d\n",depth,counts[depth].num_splines);
+	    break;
+	case O_TEXT:
+	    --counts[depth].num_texts;
+	    if (appres.DEBUG)
+		fprintf(stderr,"Text[%d] count=%d\n",depth,counts[depth].num_texts);
+	    break;
+    }
+    if (min_depth != -1 && (min_depth < depth && max_depth > depth) &&
+	object_depths[depth] != 0)
+	    return;
+    /* if no objects at this depth, find new min/max */
+    for (i=0; i<=MAX_DEPTH; i++)
+	if (object_depths[i])
+	    break;
+    if (i<=MAX_DEPTH) {
+	min_depth = i;
+	if (appres.DEBUG)
+	    fprintf(stderr,"New min = %d\n",min_depth);
+	for (i=MAX_DEPTH; i>=0; i--)
+	    if (object_depths[i])
+		break;
+	if (i>=0) {
+	    max_depth = i;
+	    if (appres.DEBUG)
+		fprintf(stderr,"New max = %d\n",max_depth);
+	}
+    } else {
+	min_depth = -1;
+	if (appres.DEBUG)
+	    fprintf(stderr,"No objects\n");
+    }
+    /* adjust the layer buttons */
+    update_layers();
+}
+
+void
+remove_compound_depth(comp)
+    F_compound	   *comp;
+{
+    F_arc	   *aa;
+    F_ellipse	   *ee;
+    F_line	   *ll;
+    F_spline	   *ss;
+    F_text	   *tt;
+    F_compound	   *cc;
+
+    for (aa=comp->arcs; aa; aa=aa->next)
+	remove_depth(O_ARC, aa->depth);
+    for (ee=comp->ellipses; ee; ee=ee->next)
+	remove_depth(O_ELLIPSE, ee->depth);
+    for (ll=comp->lines; ll; ll=ll->next)
+	remove_depth(O_POLYLINE, ll->depth);
+    for (ss=comp->splines; ss; ss=ss->next)
+	remove_depth(O_SPLINE, ss->depth);
+    for (tt=comp->texts; tt; tt=tt->next)
+	remove_depth(O_TEXT, tt->depth);
+    for (cc=comp->compounds; cc; cc=cc->next)
+	remove_compound_depth(cc);
+}
+
+
+/********************************/
+/****** ADD object to list ******/
+/********************************/
+
+void
+list_add_arc(list, a)
+    F_arc	  **list, *a;
 {
     F_arc	   *aa;
 
     a->next = NULL;
-    if ((aa = last_arc(*arc_list)) == NULL)
-	*arc_list = a;
+    if ((aa = last_arc(*list)) == NULL)
+	*list = a;
     else
 	aa->next = a;
+    if (list == &objects.arcs || list == &saved_objects.arcs)
+	while (a) {
+	    add_depth(O_ARC, a->depth);
+	    a = a->next;
+	}
 }
 
 void
-list_add_ellipse(ellipse_list, e)
-    F_ellipse	  **ellipse_list, *e;
+list_add_ellipse(list, e)
+    F_ellipse	  **list, *e;
 {
     F_ellipse	   *ee;
 
     e->next = NULL;
-    if ((ee = last_ellipse(*ellipse_list)) == NULL)
-	*ellipse_list = e;
+    if ((ee = last_ellipse(*list)) == NULL)
+	*list = e;
     else
 	ee->next = e;
+    if (list == &objects.ellipses || list == &saved_objects.ellipses)
+	while (e) {
+	    add_depth(O_ELLIPSE, e->depth);
+	    e = e->next;
+	}
 }
 
 void
-list_add_line(line_list, l)
-    F_line	  **line_list, *l;
+list_add_line(list, l)
+    F_line	  **list, *l;
 {
     F_line	   *ll;
 
     l->next = NULL;
-    if ((ll = last_line(*line_list)) == NULL)
-	*line_list = l;
+    if ((ll = last_line(*list)) == NULL)
+	*list = l;
     else
 	ll->next = l;
+    if (list == &objects.lines || list == &saved_objects.lines)
+	while (l) {
+	    add_depth(O_POLYLINE, l->depth);
+	    l = l->next;
+	}
 }
 
 void
-list_add_spline(spline_list, s)
-    F_spline	  **spline_list, *s;
+list_add_spline(list, s)
+    F_spline	  **list, *s;
 {
     F_spline	   *ss;
 
     s->next = NULL;
-    if ((ss = last_spline(*spline_list)) == NULL)
-	*spline_list = s;
+    if ((ss = last_spline(*list)) == NULL)
+	*list = s;
     else
 	ss->next = s;
+    if (list == &objects.splines || list == &saved_objects.splines)
+	while (s) {
+	    add_depth(O_SPLINE, s->depth);
+	    s = s->next;
+	}
 }
 
 void
-list_add_text(text_list, t)
-    F_text	  **text_list, *t;
+list_add_text(list, t)
+    F_text	  **list, *t;
 {
     F_text	   *tt;
 
     t->next = NULL;
-    if ((tt = last_text(*text_list)) == NULL)
-	*text_list = t;
+    if ((tt = last_text(*list)) == NULL)
+	*list = t;
     else
 	tt->next = t;
+    if (list == &objects.texts || list == &saved_objects.texts)
+	while (t) {
+	    add_depth(O_TEXT, t->depth);
+	    t = t->next;
+	}
 }
 
 void
@@ -240,7 +380,105 @@ list_add_compound(list, c)
 	*list = c;
     else
 	cc->next = c;
+    
+    if (list == &objects.compounds || list == &saved_objects.compounds)
+	while (c) {
+	    add_compound_depth(c);
+	    c = c->next;
+	}
 }
+
+/* increment objects_depth[depth] for a new object, and add to the 
+   counter for this "type" (line, arc, etc) */
+
+void
+add_depth(type, depth)
+    int		    type;
+    int		    depth;
+{
+    int		    i;
+
+    object_depths[depth]++;
+
+    if (appres.DEBUG)
+	fprintf(stderr,"add depth %d, count=%d\n",depth,object_depths[depth]);
+    /* add one to the counter for this object type */
+    switch (type) {
+	case O_ARC:
+	    ++counts[depth].num_arcs;
+	    if (appres.DEBUG)
+		fprintf(stderr,"Arc[%d] count=%d\n",depth,counts[depth].num_arcs);
+	    break;
+	case O_POLYLINE:
+	    ++counts[depth].num_lines;
+	    if (appres.DEBUG)
+		fprintf(stderr,"Line[%d] count=%d\n",depth,counts[depth].num_lines);
+	    break;
+	case O_ELLIPSE:
+	    ++counts[depth].num_ellipses;
+	    if (appres.DEBUG)
+		fprintf(stderr,"Ellipse[%d] count=%d\n",depth,counts[depth].num_ellipses);
+	    break;
+	case O_SPLINE:
+	    ++counts[depth].num_splines;
+	    if (appres.DEBUG)
+		fprintf(stderr,"Spline[%d] count=%d\n",depth,counts[depth].num_splines);
+	    break;
+	case O_TEXT:
+	    ++counts[depth].num_texts;
+	    if (appres.DEBUG)
+		fprintf(stderr,"Text[%d] count=%d\n",depth,counts[depth].num_texts);
+	    break;
+    }
+    if (object_depths[depth] != 1)
+	return;
+    /* if exactly one object at this depth, see if this is new min or max */
+    for (i=0; i<=MAX_DEPTH; i++)
+	if (object_depths[i])
+	    break;
+    min_depth = i;
+    if (appres.DEBUG)
+	fprintf(stderr,"New min = %d\n",min_depth);
+    for (i=MAX_DEPTH; i>=0; i--)
+	if (object_depths[i])
+	    break;
+    if (i>=0) {
+	max_depth = i;
+	if (appres.DEBUG)
+	    fprintf(stderr,"New max = %d\n",max_depth);
+    }
+    /* adjust the layer buttons */
+    update_layers();
+}
+
+void
+add_compound_depth(comp)
+    F_compound	   *comp;
+{
+    F_arc	   *aa;
+    F_ellipse	   *ee;
+    F_line	   *ll;
+    F_spline	   *ss;
+    F_text	   *tt;
+    F_compound	   *cc;
+
+    for (aa=comp->arcs; aa; aa=aa->next)
+	add_depth(O_ARC, aa->depth);
+    for (ee=comp->ellipses; ee; ee=ee->next)
+	add_depth(O_ELLIPSE, ee->depth);
+    for (ll=comp->lines; ll; ll=ll->next)
+	add_depth(O_POLYLINE, ll->depth);
+    for (ss=comp->splines; ss; ss=ss->next)
+	add_depth(O_SPLINE, ss->depth);
+    for (tt=comp->texts; tt; tt=tt->next)
+	add_depth(O_TEXT, tt->depth);
+    for (cc=comp->compounds; cc; cc=cc->next)
+	add_compound_depth(cc);
+}
+
+/**********************************/
+/* routines to delete the objects */
+/**********************************/
 
 void
 delete_line(old_l)
@@ -307,6 +545,10 @@ delete_compound(old_c)
     set_action_object(F_DELETE, O_COMPOUND);
     set_modifiedflag();
 }
+
+/*******************************/
+/* routines to add the objects */
+/*******************************/
 
 void
 add_line(new_l)
@@ -384,7 +626,7 @@ change_line(old_l, new_l)
     clean_up();
     old_l->next = new_l;
     set_latestline(old_l);
-    set_action_object(F_CHANGE, O_POLYLINE);
+    set_action_object(F_EDIT, O_POLYLINE);
     set_modifiedflag();
 }
 
@@ -397,7 +639,7 @@ change_arc(old_a, new_a)
     clean_up();
     old_a->next = new_a;
     set_latestarc(old_a);
-    set_action_object(F_CHANGE, O_ARC);
+    set_action_object(F_EDIT, O_ARC);
     set_modifiedflag();
 }
 
@@ -410,7 +652,7 @@ change_ellipse(old_e, new_e)
     clean_up();
     old_e->next = new_e;
     set_latestellipse(old_e);
-    set_action_object(F_CHANGE, O_ELLIPSE);
+    set_action_object(F_EDIT, O_ELLIPSE);
     set_modifiedflag();
 }
 
@@ -423,7 +665,7 @@ change_text(old_t, new_t)
     clean_up();
     old_t->next = new_t;
     set_latesttext(old_t);
-    set_action_object(F_CHANGE, O_TEXT);
+    set_action_object(F_EDIT, O_TEXT);
     set_modifiedflag();
 }
 
@@ -436,7 +678,7 @@ change_spline(old_s, new_s)
     clean_up();
     old_s->next = new_s;
     set_latestspline(old_s);
-    set_action_object(F_CHANGE, O_SPLINE);
+    set_action_object(F_EDIT, O_SPLINE);
     set_modifiedflag();
 }
 
@@ -449,7 +691,7 @@ change_compound(old_c, new_c)
     clean_up();
     old_c->next = new_c;
     set_latestcompound(old_c);
-    set_action_object(F_CHANGE, O_COMPOUND);
+    set_action_object(F_EDIT, O_COMPOUND);
     set_modifiedflag();
 }
 
@@ -491,6 +733,7 @@ tail(ob, tails)
  * Append the lists in l2 after those in l1. The tails pointers must be
  * defined prior to calling append.
  */
+
 append_objects(l1, l2, tails)
     F_compound	   *l1, *l2, *tails;
 {
@@ -738,6 +981,17 @@ last_sfactor(list)
     return tt;
 }
 
+F_point        *
+search_line_point(line, x, y)
+     F_line      *line;
+     int           x, y;
+{
+  F_point *point;
+
+  for (point = line->points ; 
+       point != NULL && (point->x != x || point->y != y); point = point->next);
+  return point;
+}
 
 F_point        *
 search_spline_point(spline, x, y)
@@ -1042,10 +1296,10 @@ void
 adjust_links(mode, links, dx, dy, cx, cy, sx, sy, copying)
     int		    mode;
     F_linkinfo	   *links;
-    int		dx, dy;		/* delta */
-    int		cx, cy;		/* center of scale - NOT USED YET */
-    float	sx, sy;		/* scale factor - NOT USED YET */
-    int		    copying;
+    int		    dx, dy;		/* delta */
+    int		    cx, cy;		/* center of scale - NOT USED YET */
+    float	    sx, sy;		/* scale factor - NOT USED YET */
+    Boolean	    copying;
 {
     F_linkinfo	   *k;
     F_line	   *l;
@@ -1054,8 +1308,6 @@ adjust_links(mode, links, dx, dy, cx, cy, sx, sy, copying)
 	for (k = links; k != NULL; k = k->next) {
 	    if (copying) {
 		l = copy_line(k->line);
-		list_delete_line(&objects.lines, k->line);
-		list_add_line(&saved_objects.lines, k->line);
 		list_add_line(&objects.lines, l);
 	    } else {
 		mask_toggle_linemarker(k->line);

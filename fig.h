@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -46,7 +46,8 @@
 #if !defined(__bsdi__) && !defined(__NetBSD__) && !defined(__GNU_LIBRARY__)
 extern int	errno;
 extern int	sys_nerr;
-#if ( !(defined(BSD) && (BSD >= 199306)) && !defined(__NetBSD__) && !defined(__FreeBSD__))
+#if ( !(defined(BSD) && (BSD >= 199306)) && !defined(__NetBSD__) && \
+	!defined(__GNU_LIBRARY__) && !defined(__FreeBSD__) && !defined(__GLIBC__))
 extern char    *sys_errlist[];
 #endif
 #endif
@@ -294,12 +295,19 @@ extern char *getenv();
 #endif /* X_NOT_STDC_ENV */
 #endif /* defined(SYSV) && defined(SYSV386) */
 
+/* 
 #if defined(SYSV) || defined(SVR4) || defined(__osf__) || defined(USE_DIRENT)
 #define u_int uint
 #define USE_DIRENT
 #define DIRSTRUCT	struct dirent
 #else
 #define DIRSTRUCT	struct direct
+#endif
+*/
+#ifdef HAVE_NO_DIRENT
+#define DIRSTRUCT struct direct
+#else
+#define DIRSTRUCT struct dirent
 #endif
 
 /* define PATH_MAX if not already defined */
@@ -341,7 +349,7 @@ extern char *getenv();
 #define		signof(a)	(((a) < 0) ? -1 : 1)
 
 #ifdef USE_INLINE
-#define INLINE inline
+#define INLINE __inline
 #else
 #define INLINE
 #endif /* USE_INLINE */
@@ -369,7 +377,7 @@ extern	double		drand48();
 extern	long		random();
 extern	void		srandom(unsigned int);
 
-#elif !defined(__osf__)
+#elif !defined(__osf__) && !defined(__CYGWIN__)
 extern	void		srandom();
 
 #endif

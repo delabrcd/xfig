@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-1998 by Brian V. Smith
+ * Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -17,12 +17,15 @@
 #include "resources.h"
 #include "object.h"
 #include "mode.h"
+#include "f_neuclrtab.h"
+#include "f_read.h"
+#include "f_util.h"
 #include "u_create.h"
 #include "w_color.h"
 #include "w_file.h"
 #include "w_util.h"
-#include "f_neuclrtab.h"
 #include "w_icons.h"
+#include "version.h"
 
 int
 emptyname(name)
@@ -75,8 +78,10 @@ emptyfigure_msg(msg)
 {
     int		    returnval;
 
-    if (returnval = emptyfigure())
+    if (returnval = emptyfigure()) {
 	put_msg("Empty figure, %s command ignored", msg);
+	beep();
+    }
     return (returnval);
 }
 
@@ -113,9 +118,11 @@ get_directory(direct)
 #if defined(SYSV) || defined(SVR4) || defined(_POSIX_SOURCE)
     if (getcwd(direct, PATH_MAX) == NULL) {	/* get current working dir */
 	put_msg("Can't get current directory");
+	beep();
 #else
-    if (getwd(direct) == NULL) {/* get current working dir */
-	put_msg("%s", direct);	/* err msg is in directory */
+    if (getwd(direct) == NULL) {		/* get current working dir */
+	put_msg("%s", direct);			/* err msg is in directory */
+	beep();
 #endif
 	*direct = '\0';
 	return 0;
@@ -143,22 +150,24 @@ ok_to_write(file_name, op_name)
     if (stat(file_name, &file_status) == 0) {	/* file exists */
 	if (file_status.st_mode & S_IFDIR) {
 	    put_msg("\"%s\" is a directory", file_name);
+	    beep();
 	    return (0);
 	}
 	if (file_status.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) {
 	    /* writing is permitted by SOMEONE */
 	    if (access(file_name, W_OK)) {
 		put_msg("Write permission for \"%s\" is denied", file_name);
+		beep();
 		return (0);
 	    } else {
 	       if (warninput) {
 		 sprintf(string, "\"%s\" is an input file.\nDo you want to choose a new filename ?", file_name);
-		 popup_query(QUERY_YESCAN, string);
+		 popup_query(QUERY_YESNO, string);
 	         return(0);
 		} else {
 		  if (warnexist) {
 		    sprintf(string, "\"%s\" already exists.\nDo you want to overwrite it?", file_name);
-		    if (popup_query(QUERY_YESCAN, string) != RESULT_YES) {
+		    if (popup_query(QUERY_YESNO, string) != RESULT_YES) {
 			put_msg("%s cancelled", op_name);
 			return(0);
 		    }
@@ -180,13 +189,15 @@ ok_to_write(file_name, op_name)
     return (1);
 }
 
+/* for systems without basename() (e.g. SunOS 4.1.3) */
+
 char *
-basname(filename)
+xf_basename(filename)
     char	   *filename;
 {
     char	   *p;
     if (filename == NULL || *filename == '\0')
-	return NULL;
+	return filename;
     if (p=strrchr(filename,'/')) {
 	return ++p;
     } else {
@@ -215,6 +226,9 @@ static int	  num_oldcolors = -1;
 static Boolean	  usenet;
 static int	  npixels;
 
+#define REMAP_MSG	"Remapping picture colors..."
+#define REMAP_MSG2	"Remapping picture colors...Done"
+
 /* remap the colors for all the pictures in the compound passed */
 
 remap_imagecolors(obj)
@@ -238,7 +252,7 @@ remap_imagecolors(obj)
 	return;
 
 
-    put_msg("Remapping picture colors...");
+    put_msg(REMAP_MSG);
     set_temp_cursor(wait_cursor);
     app_flush();
 
@@ -272,7 +286,7 @@ remap_imagecolors(obj)
 	    reset_cursor();
 	    num_oldcolors = -1;
 	    reset_cursor();
-	    put_msg("Remapping picture colors...Done");
+	    put_msg(REMAP_MSG2);
 	    app_flush();
 	    return;
 	}
@@ -283,7 +297,7 @@ remap_imagecolors(obj)
 	int	stat;
 	int	mult = 1;
 
-	/* check if user pressed cancel button */
+	/* check if user pressed cancel button (in file preview) */
 	if (check_cancel())
 	    return;
 
@@ -302,19 +316,19 @@ remap_imagecolors(obj)
 	    mult = -stat;
 	    npixels *= mult;
 	    /* try again with more pixels */
-	    stat = neu_init(npixels);
+	    stat = neu_init2(npixels);
 	}
 	if (stat == -1) {
 	    /* couldn't alloc memory for network */
 	    fprintf(stderr,"Can't alloc memory for neural network\n");
 	    reset_cursor();
-	    put_msg("Remapping picture colors...Done");
+	    put_msg(REMAP_MSG2);
 	    app_flush();
 	    return;
 	}
 	/* now add all pixels to the samples */
 	for (i=0; i<mult; i++)
-	    add_pixels(obj);
+	    add_all_pixels(obj);
 
 	/* make a new colortable with the optimal colors */
 	avail_image_cols = neu_clrtab(avail_image_cols);
@@ -353,7 +367,7 @@ remap_imagecolors(obj)
 	    fprintf(stderr,"Able to use %d colors without neural net\n",scol);
 	reset_cursor();
     }
-    put_msg("Remapping picture colors...Done");
+    put_msg(REMAP_MSG2);
     app_flush();
 }
 
@@ -374,6 +388,8 @@ alloc_imagecolors(num)
     }
     avail_image_cols = i;
 }
+
+/* count the number of colors in a picture object */
 
 count_colors(obj)
     F_compound	   *obj;
@@ -491,6 +507,9 @@ rjust_cmap(obj)
 		if (l->pic->pixmap)
 		    XFreePixmap(tool_d, l->pic->pixmap);
 		l->pic->pixmap = 0;		/* this will force regeneration of the pixmap */
+		if (l->pic->mask != 0)
+		    XFreePixmap(tool_d, l->pic->mask);
+		l->pic->mask = 0;
 	    }
 	}
     }
@@ -539,25 +558,28 @@ extr_cmap(obj)
 		if (l->pic->pixmap)
 		    XFreePixmap(tool_d, l->pic->pixmap);
 		l->pic->pixmap = 0;		/* this will force regeneration of the pixmap */
+		if (l->pic->mask != 0)
+		    XFreePixmap(tool_d, l->pic->mask);
+		l->pic->mask = 0;
 	    }
 	}
     }
 }
 
-add_pixels(obj)
+add_all_pixels(obj)
     F_compound	   *obj;
 {
     F_compound	   *c;
 
     /* add pixels from objects in main list */
-    a_pixels(obj);
+    add_pixels(obj);
     /* now any "next" compounds off the top of the list */
     for (c = obj->next; c != NULL; c = c->next) {
-	a_pixels(c);
+	add_pixels(c);
     }
 }
 
-a_pixels(obj)
+add_pixels(obj)
     F_compound	   *obj;
 {
     F_line	   *l;
@@ -568,13 +590,13 @@ a_pixels(obj)
 
     /* traverse the compounds in this compound */
     for (c = obj->compounds; c != NULL; c = c->next) {
-	a_pixels(c);
+	add_pixels(c);
     }
     for (l = obj->lines; l != NULL; l = l->next) {
 	if (l->type == T_PICTURE) {
 #ifdef V4_0
 	    if (l->pic->subtype == T_PIC_FIG) {
-		a_pixels(l->pic->figure);
+		add_pixels(l->pic->figure);
 	    } else if (l->pic->bitmap != NULL && l->pic->numcols > 0) {
 #else
 	    if (l->pic->bitmap != NULL && l->pic->numcols > 0) {
@@ -642,6 +664,9 @@ rmpimage_cmap(obj)
 		if (l->pic->pixmap)
 		    XFreePixmap(tool_d, l->pic->pixmap);
 		l->pic->pixmap = 0;		/* this will force regeneration of the pixmap */
+		if (l->pic->mask != 0)
+		    XFreePixmap(tool_d, l->pic->mask);
+		l->pic->mask = 0;
 	    }
 	}
     }
@@ -865,3 +890,386 @@ safe_strcpy(p1,p2)
     *p1 = '\0';
     return c1;
 }
+
+/* unzip/uncompress file if necessary */
+
+Boolean
+uncompress_file(name)
+    char	   *name;
+{
+    char	    compname[PATH_MAX];
+    char	    unc[PATH_MAX+20];	/* temp buffer for uncompress/gunzip command */
+    char	   *c;
+    Boolean	    compr=False;
+    struct stat	    status;
+
+    /* first see if file exists */
+    if (stat(name, &status)) {
+	strcpy(compname,name);
+	/* no, if it has a compression suffix (.Z .gz etc) remove it and try that */
+	if (strlen(name) > 2 && !strcmp(".Z", name + (strlen(name)-2)) ||
+	    (strlen(name) > 3 && !strcmp(".gz", name + (strlen(name)-3))) ||
+	    (strlen(name) > 2 && !strcmp(".z", name + (strlen(name)-2)))) {
+		c = strrchr(compname,'.');
+		if (c) {
+		    *c= '\0';
+		    if (stat(compname, &status)) {
+			file_msg("%s File doesn't exist",compname);
+			return False;
+		    }
+		    /* file doesn't have .gz etc suffix anymore, return modified name */
+		    strcpy(name,compname);
+		    return True;
+		}
+	}
+    }
+
+    /* see if the filename ends with .Z */
+    /* if so, generate uncompress command and use pipe (filetype = 1) */
+    if (strlen(name) > 2 && !strcmp(".Z", name + (strlen(name)-2))) {
+	sprintf(unc,"uncompress %s",name);
+	compr = True;
+    /* or with .z or .gz */
+    } else if ((strlen(name) > 3 && !strcmp(".gz", name + (strlen(name)-3))) ||
+	      ((strlen(name) > 2 && !strcmp(".z", name + (strlen(name)-2))))) {
+	sprintf(unc,"gunzip -q %s",name);
+	compr = True;
+    /* none of the above, see if the file with .Z or .gz or .z appended exists */
+    } else {
+	strcpy(compname, name);
+	strcat(compname, ".Z");
+	if (!stat(compname, &status)) {
+	    sprintf(unc, "uncompress %s",compname);
+	    compr = True;
+	    strcpy(name,compname);
+	} else {
+	    strcpy(compname, name);
+	    strcat(compname, ".z");
+	    if (!stat(compname, &status)) {
+		sprintf(unc, "gunzip -q %s",compname);
+		compr = True;
+		strcpy(name,compname);
+	    } else {
+		strcpy(compname, name);
+		strcat(compname, ".gz");
+		if (!stat(compname, &status)) {
+		    sprintf(unc, "gunzip -q %s",compname);
+		    compr = True;
+		    strcpy(name,compname);
+		}
+	    }
+	}
+    }
+	
+
+    /* do the uncompression/unzip if needed */
+    if (compr) {
+	system(unc);
+	/* strip off the trailing .Z, .z or .gz */
+	c = strrchr(name,'.');
+	*c= '\0';
+    }
+    return True;
+}
+
+/*************************************************************/
+/* Read the user's .xfigrc file in his home directory to get */
+/* settings from previous session.                           */
+/*************************************************************/
+
+read_xfigrc()
+{
+    char  line[200], *word, *opnd;
+    FILE *xfigrc;
+
+    num_recent_files = 0;
+    max_recent_files = DEF_RECENT_FILES;	/* default if none found in .xfigrc */
+
+    /* make the filename from the user's home path and ".xfigrc" */
+    strcpy(xfigrc_name,userhome);
+    strcat(xfigrc_name,"/.xfigrc");
+    xfigrc = fopen(xfigrc_name,"r");
+    if (xfigrc == 0)
+	return;		/* no .xfigrc file */
+    
+    while (fgets(line, 199, xfigrc) != NULL) {
+	word = strtok(line, ": \t");
+	opnd = strtok(NULL, " \t\n");		/* parse operand and remove newline */
+	if (strcmp(opnd,":")==0)
+	    opnd = strtok(NULL, " \t\n");	/* one or more white spaces before : */
+	if (strcasecmp(word, "max_recent_files") == 0)
+	    max_recent_files = min2(MAX_RECENT_FILES, atoi(opnd));
+	else if (strcasecmp(word, "file") == 0)
+	    add_recent_file(opnd);
+    }
+    fclose(xfigrc);
+}
+
+/* add next token from 'line' to recent file list */
+
+add_recent_file(file)
+    char  *file;
+{
+    char  *name;
+
+    if (file == NULL)
+	return;
+    if (num_recent_files >= MAX_RECENT_FILES || num_recent_files >= max_recent_files)
+	return;
+    name = malloc(strlen(file)+3);	/* allow for file number (1), blank (1) and NUL */
+    sprintf(name,"%1d %s",num_recent_files+1,file);
+    recent_files[num_recent_files].name = name;
+    num_recent_files++;
+}
+
+
+static FILE	*xfigrc, *tmpf;
+static char	tmpname[PATH_MAX];
+
+/* rewrite .xfigrc file with current list of recent files */
+
+update_recent_files()
+{
+    int	    i;
+
+    /* copy all lines without the "file" spec into a temp file */
+    if (strain_out("file") != 0) {
+	if (tmpf != 0)
+	    fclose(tmpf);
+	if (xfigrc != 0)
+	    fclose(xfigrc);
+	return;	/* problem creating temp file */
+    }
+
+    /* now append file list */
+    for (i=0; i<num_recent_files; i++)
+    	fprintf(tmpf, "file: %s\n",&recent_files[i].name[2]);  /* point past the number */
+    /* close and rename the files */
+    finish_update_xfigrc();
+}
+
+/* update a named entry in the user's .xfigrc file */
+
+update_xfigrc(name, string)
+    char	*name, *string;
+{
+    /* first copy all lines except the one we want to the temp file */
+    strain_out(name);
+    /* add the new name/string value to the file */
+    fprintf(tmpf, "%s: %s\n",name,string);
+    /* close and rename the files */
+    finish_update_xfigrc();
+}
+
+/* copy all lines from .xfigrc without the "name" spec into a temp file */
+/* files are left open after copy */
+
+strain_out(name)
+    char	*name;
+{
+    char    line[200], *tok;
+
+    /* make a temp filename in the user's home directory so we
+       can just rename it to .xfigrc after creating it */
+    sprintf(tmpname, "%s/%s%06d", userhome, "xfig-xfigrc", getpid());
+    tmpf = fopen(tmpname,"w");
+    if (tmpf == 0) {
+	file_msg("Can't make temporary file for .xfigrc - error: %s",sys_errlist[errno]);
+	return -1;	
+    }
+    /* read the .xfigrc file and write all to temp file except file names */
+    xfigrc = fopen(xfigrc_name,"r");
+    /* does the .xfigrc file exist? */
+    if (xfigrc == 0) {
+	/* no, create one */
+	xfigrc = fopen(xfigrc_name,"w");
+	fclose(xfigrc);
+	xfigrc = (FILE *) 0;
+	return 0;
+    }
+    while (fgets(line, 199, xfigrc) != NULL) {
+	/* make copy of line to look for token because strtok modifies the line */
+	tok = strdup(line);
+	if (strcasecmp(strtok(tok, ": \t"), name) == 0)
+	    continue;			/* match, skip */
+	fputs(line, tmpf);
+	free(tok);
+    }
+    return 0;
+}
+
+finish_update_xfigrc()
+{
+    fclose(tmpf);
+    if (xfigrc != 0)
+	fclose(xfigrc);
+    /* delete original .xfigrc and move temp file to .xfigrc */
+    if (unlink(xfigrc_name) != 0) {
+	file_msg("Can't update your .xfigrc file - error: %s",sys_errlist[errno]);
+	return;
+    }
+    if (rename(tmpname, xfigrc_name) != 0)
+	file_msg("Can't rename %s to .xfigrc - error: %s",tmpname, sys_errlist[errno]);
+}
+
+/************************************************/
+/* Copy initial appres settings to current vars */
+/************************************************/
+
+init_settings()
+{
+    if (appres.startfontsize >= 1.0)
+	cur_fontsize = round(appres.startfontsize);
+
+    /* allow "Modern" for "Sans Serif" and allow "SansSerif" (no space) */
+    if (appres.startlatexFont) {
+        if (strcmp(appres.startlatexFont,"Modern")==0 ||
+	    strcmp(appres.startlatexFont,"SansSerif")==0)
+	      cur_latex_font = latexfontnum ("Sans Serif");
+    } else {
+	    cur_latex_font = latexfontnum (appres.startlatexFont);
+    }
+
+    cur_ps_font = psfontnum (appres.startpsFont);
+
+    if (appres.starttextstep > 0.0)
+	cur_textstep = appres.starttextstep;
+
+    if (appres.startfillstyle >= 0)
+	cur_fillstyle = min2(appres.startfillstyle,NUMFILLPATS-1);
+
+    if (appres.startlinewidth >= 0)
+	cur_linewidth = min2(appres.startlinewidth,MAX_LINE_WIDTH);
+
+    if (appres.startgridmode >= 0)
+	cur_gridmode = min2(appres.startgridmode,GRID_4);
+
+    if (appres.startposnmode >= 0)
+	cur_pointposn = min2(appres.startposnmode,P_GRID4);
+
+    /* turn off PSFONT_TEXT flag if user specified -latexfonts */
+    if (appres.latexfonts)
+	cur_textflags = cur_textflags & (~PSFONT_TEXT);
+    if (appres.specialtext)
+	cur_textflags = cur_textflags | SPECIAL_TEXT;
+    if (appres.rigidtext)
+	cur_textflags = cur_textflags | RIGID_TEXT;
+    if (appres.hiddentext)
+	cur_textflags = cur_textflags | HIDDEN_TEXT;
+
+    /* turn off PSFONT_TEXT flag if user specified -latexfonts */
+    if (appres.latexfonts)
+	cur_textflags = cur_textflags & (~PSFONT_TEXT);
+
+    if (appres.user_unit)
+	strncpy(cur_fig_units, appres.user_unit, sizeof(cur_fig_units)-1);
+    else
+	cur_fig_units[0] = '\0';
+
+    strcpy(cur_library_dir, appres.library_dir);
+    strcpy(cur_spellchk, appres.spellcheckcommand);
+    strcpy(cur_image_editor, appres.image_editor);
+    strcpy(cur_browser, appres.browser);
+    strcpy(cur_pdfviewer, appres.pdf_viewer);
+
+    /* assume color to start */
+    all_colors_available = True;
+
+    /* check if monochrome screen */
+    if (tool_cells == 2 || appres.monochrome)
+	all_colors_available = False;
+
+} /* init_settings() */
+
+/* This is called to read a list of Fig files specified in the command line
+   and write them back (renaming the original to xxxx.fig.bak) so that they
+   are updated to the current version.
+   If the file is already in the current version it is untouched.
+*/
+
+int
+update_fig_files(argc, argv)
+    int		    argc;
+    char	   *argv[];
+{
+    fig_settings    settings;
+    char	   *file;
+    int		    i,col;
+    Boolean	    status;
+    int		    allstat;
+
+    /* overall status - if any one file can't be read, return status is 1 */
+    allstat = 0;
+
+    update_figs = True;
+
+    for (i=2; i<argc; i++) {
+	file = argv[i];
+	fprintf(stderr,"* Reading %s ... ",file);
+	/* reset user colors */
+	for (col=0; col<MAX_USR_COLS; col++)
+	    n_colorFree[col] = True;
+	/* read Fig file but don't import any images */
+	status = read_fig(file, &objects, False, 0, 0, &settings);
+	if (status != 0) {
+	    fprintf(stderr," *** Error in reading, not updating this file\n");
+	    allstat = 1;
+	} else {
+	    fprintf(stderr,"Ok. Renamed to %s.bak. ",file);
+	    /* now rename original file to file.bak */
+	    renamefile(file);
+	    fprintf(stderr,"Writing as protocol %s ... ",PROTOCOL_VERSION);
+	    /* first update the settings from appres */
+	    appres.landscape = settings.landscape;
+	    appres.flushleft = settings.flushleft;
+	    appres.INCHES = settings.units;
+	    appres.papersize = settings.papersize;
+	    appres.magnification = settings.magnification;
+	    appres.multiple = settings.multiple;
+	    appres.transparent = settings.transparent;
+	    /* copy user colors */
+	    for (col=0; col<MAX_USR_COLS; col++) {
+		colorUsed[col] = !n_colorFree[col];
+		user_colors[col].red = n_user_colors[col].red;
+		user_colors[col].green = n_user_colors[col].green;
+		user_colors[col].blue = n_user_colors[col].blue;
+	    }
+	    /* now write out the new one */
+	    num_usr_cols = MAX_USR_COLS;
+	    write_file(file, False);
+	    fprintf(stderr,"Ok\n");
+	}
+    }
+    return allstat;
+}
+
+/* replace all "%f" in "program" with value in filename */
+
+char *
+build_command(program, filename)
+    char	*program, *filename;
+{
+    char *cmd = malloc(PATH_MAX*2);
+    char  cmd2[PATH_MAX*2];
+    char *c1;
+    Boolean repl = False;
+
+    if (!cmd)
+	return (char *) NULL;
+    strcpy(cmd,program);
+    while (c1=strstr(cmd,"%f")) {
+	repl = True;
+	strcpy(cmd2, c1+2);		/* save tail */
+	strcpy(c1, filename);		/* change %f to filename */
+	strcat(c1, cmd2);		/* append tail */
+    }
+    /* if no %f was found in the resource, just append the filename to the command */
+    if (!repl) {
+	strcat(cmd," ");
+	strcat(cmd,filename);
+    }
+    /* append "2> /dev/null" to send stderr to /dev/null and "&" to run in background */
+    strcat(cmd," 2> /dev/null &");
+    return cmd;
+}
+

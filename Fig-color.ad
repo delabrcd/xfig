@@ -2,8 +2,6 @@
 
 Fig*beNiceToColormap: 			False
 
-Fig.internalborderwidth: 		0
-
 Fig*highlightThickness: 		2
 
 !##### Background, Foreground
@@ -48,26 +46,51 @@ Fig.unit_balloon_popup*Label.foreground:	blue
 Fig.mouse_balloon_popup*Label.background:	yellow
 Fig.mouse_balloon_popup*Label.foreground:	blue
 
+! balloon for depth panel
+Fig.layer_balloon_popup*Label.background:	yellow
+Fig.layer_balloon_popup*Label.foreground:	blue
+
 Fig*Text*background: 			linen
 
 ! file preview form background (looks like a border)
 Fig*preview_form.background:		gray70
+! file preview comments color
+Fig*preview_form.comments*foreground:	blue
 
-Fig*Command*background:			navajowhite2
-Fig*button.background: 			navajowhite2
-Fig*MenuButton*background: 		navajowhite2
-Fig*mixedEdit.background: 		navajowhite2
+! library object preview comment window
+Fig*library_panel.preview_comments*foreground: blue
+
+! "Updating" label in layer button area - this makes the
+!		label look inactive
+Fig*updating_layers.foreground:		gray70
+
+! just about every button in xfig 
+
+Fig*Command*background:			gray83
+! side mode panel buttons
+Fig*mode_panel.button.background: 	gray83
+! bottom indicator panel buttons
+Fig*ind_panel*button.background: 	gray83
+! most menu buttons
+Fig*MenuButton*background: 		gray83
+! in the color editor popup
+Fig*mixedEdit.background: 		gray83
+
+Fig*cancel.background: 			gray88
+Fig*dismiss.background: 		gray88
+Fig*commands*background: 		gray88
+Fig*horizontal.background: 		gray88
+
+! ruler colors
 
 Fig*topruler.background: 		gray95
 Fig*sideruler.background: 		gray95
+
+! file panel and scrollbar
+
+Fig*FigList*background: 		gray95
 Fig*List*background: 			gray95
 Fig*Scrollbar.background: 		gray95
-
-Fig*cancel.background: 			navajowhite1
-Fig*dismiss.background: 		navajowhite1
-Fig*button_form.button*background: 	navajowhite1
-Fig*commands*background: 		navajowhite1
-Fig*horizontal.background: 		navajowhite1
 
 Fig*Label.background: 			gray80
 Fig*ind_box.background:			gray80
@@ -104,3 +127,9 @@ Fig*pic_type_box.shadowWidth:		0
 
 Fig*color_box*bottomShadowPixel:	gray50
 Fig*color_box*topShadowPixel:		gray80
+
+! invert shadows for checkmarks in popup global settings so they
+! look depressed
+
+Fig*toggle*bottomShadowPixel:		gray80
+Fig*toggle*topShadowPixel:		gray50

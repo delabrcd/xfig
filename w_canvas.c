@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -20,13 +20,17 @@
 #include "fig.h"
 #include "figx.h"
 #include "resources.h"
+#include "object.h"
 #include "mode.h"
 #include "paintop.h"
 #include <X11/keysym.h>
 #include "d_text.h"
 #include "e_edit.h"
 #include "u_bound.h"
+#include "u_pan.h"
 #include "w_canvas.h"
+#include "w_cmdpanel.h"
+#include "w_layers.h"
 #include "w_mousefun.h"
 #include "w_rulers.h"
 #include "w_setup.h"
@@ -77,12 +81,11 @@ static CompKey *allCompKey = NULL;
 static unsigned char getComposeKey();
 static void	readComposeKey();
 #endif /* NO_COMPKEYDB */
-/* for Sun keyboard, define COMP_LED 2 */
-#ifdef COMP_LED
-static void setCompLED();
-#endif /* COMP_LED */
 
-int		ignore_exp_cnt = 2;	/* we get 2 expose events at startup */
+/* for Sun keyboard, define COMP_LED 2 */
+static void setCompLED();
+
+int		ignore_exp_cnt = 1;	/* we get 2 expose events at startup */
 
 void
 null_proc()
@@ -95,7 +98,7 @@ null_proc()
 static void
 canvas_exposed(tool, event, params, nparams)
     Widget	    tool;
-    XButtonEvent   *event;
+    XEvent	   *event;
     String	   *params;
     Cardinal	   *nparams;
 {
@@ -132,6 +135,13 @@ XtActionsRec	canvas_actions[] =
     {"PasteCanv", (XtActionProc) canvas_paste},
     {"LeaveCanv", (XtActionProc) clear_mousefun},
     {"EraseRulerMark", (XtActionProc) erase_rulermark},
+    {"Unzoom", (XtActionProc) unzoom},
+    {"PanOrigin", (XtActionProc) pan_origin},
+    {"ToggleShowDepths", (XtActionProc) toggle_show_depths},
+    {"ToggleShowBalloons", (XtActionProc) toggle_show_balloons},
+    {"ToggleShowLengths", (XtActionProc) toggle_show_lengths},
+    {"ToggleShowVertexnums", (XtActionProc) toggle_show_vertexnums},
+    {"ToggleShowBorders", (XtActionProc) toggle_show_borders},
 };
 
 /* need the ~Meta for the EventCanv action so that the accelerators still work 
@@ -351,29 +361,21 @@ canvas_selected(tool, event, params, nparams)
 	      key == XK_Escape) && action_on && cur_mode == F_TEXT) {
 			compose_key = 1;
 #endif /* NO_COMPKEYDB */
-#ifdef COMP_LED
 			setCompLED(kpe, 1);
-#endif /* COMP_LED */
 			break;
 	} else {
 	    if (canvas_kbd_proc != null_proc) {
 		if (key == XK_Left || key == XK_Right || key == XK_Home || key == XK_End) {
-#ifdef COMP_LED
 		    if (compose_key)
 			setCompLED(kpe, 0);
-#endif /* COMP_LED */
 		    (*canvas_kbd_proc) (kpe, (unsigned char) 0, key);
 		    compose_key = 0;	/* in case Meta was followed with cursor movement */
 		} else {
 #ifdef NO_COMPKEYDB
-#ifdef COMP_LED
 		    int oldstat = compose_key;
-#endif /* COMP_LED */
 		    if (XLookupString(kpe, &compose_buf[0], 1, NULL, &compstat) > 0) {
-#ifdef COMP_LED
 		    	if (oldstat)
 			    setCompLED(kpe, 0);
-#endif /* COMP_LED */
 			(*canvas_kbd_proc) (kpe, (unsigned char) compose_buf[0], (KeySym) 0);
 			compose_key = 0;
 		    }
@@ -434,9 +436,7 @@ canvas_selected(tool, event, params, nparams)
 				    (*canvas_kbd_proc) (kpe, (unsigned char) compose_buf[1],
 								(KeySym) 0);
 				}
-#ifdef COMP_LED
 				setCompLED(kpe, 0);	/* turn off the compose LED */
-#endif /* COMP_LED */
 				compose_key = 0;	/* back to state 0 */
 			    }
 			    break;
@@ -475,6 +475,12 @@ clear_region(xmin, ymin, xmax, ymax)
 
 static void get_canvas_clipboard();
 
+void
+paste_primary_selection()
+{
+  canvas_paste(canvas_sw, NULL);
+}
+
 static void
 canvas_paste(w, paste_event)
 Widget w;
@@ -487,8 +493,20 @@ XKeyEvent *paste_event;
 
 	if (paste_event != NULL)
 		event_time = paste_event->time;
-	   else
-		time((time_t *) &event_time);
+	else
+		event_time = CurrentTime;
+
+#ifdef I18N
+	if (appres.international) {
+	  Atom atom_compound_text = XInternAtom(XtDisplay(w), "COMPOUND_TEXT", False);
+	  if (atom_compound_text) {
+	    XtGetSelectionValue(w, XA_PRIMARY, atom_compound_text,
+				get_canvas_clipboard, NULL, event_time);
+	    return;
+	  }
+	}
+#endif  /* I18N */
+
 	XtGetSelectionValue(w, XA_PRIMARY,
 		XA_STRING, get_canvas_clipboard, NULL, event_time);
 }
@@ -505,6 +523,37 @@ int *format;
 {
 	unsigned char *c;
 	int i;
+#ifdef I18N
+	if (appres.international) {
+	  Atom atom_compound_text = XInternAtom(XtDisplay(w), "COMPOUND_TEXT", False);
+	  char **tmp;
+	  XTextProperty prop;
+	  int num_values;
+	  int ret_status;
+
+	  if (*type == atom_compound_text) {
+	    prop.value = buf;
+	    prop.encoding = *type;
+	    prop.format = *format;
+	    prop.nitems = *length;
+	    num_values = 0;
+	    ret_status = XmbTextPropertyToTextList(XtDisplay(w), &prop, &tmp, &num_values);
+	    if (ret_status == Success || 0 < num_values) {
+	      for (i = 0; i < num_values; i++) {
+		for (c = tmp[i]; *c; c++) {
+		  if (canvas_kbd_proc == char_handler && ' ' <= *c && *(c + 1)) {
+		    prefix_append_char(*c);
+		  } else {
+		    canvas_kbd_proc((XKeyEvent *) 0, *c, (KeySym) 0);
+		  }
+		}
+	      }
+	      XtFree(buf);
+	      return;
+	    }
+	  }
+	}
+#endif  /* I18N */
 
 	c = (unsigned char *) buf;
 	for (i=0; i<*length; i++) {
@@ -632,15 +681,78 @@ readComposeKey()
 }
 #endif /* !NO_COMPKEYDB */
 
-#ifdef COMP_LED
+/* check for COMP_LED here so we don't have to have tons of #ifdefs above */
+
 static void
 setCompLED(kpe, on)
 XKeyPressedEvent *kpe;
 int on;
 {
+#ifdef COMP_LED
 	XKeyboardControl values;
 	values.led = COMP_LED;
 	values.led_mode = on ? LedModeOn : LedModeOff;
 	XChangeKeyboardControl(kpe->display, KBLed|KBLedMode, &values);
-}
 #endif
+}
+
+/* toggle the length lines when drawing or moving points */
+
+void
+toggle_show_lengths()
+{
+	appres.showlengths = !appres.showlengths;
+	put_msg("%s lengths in red next to lines ",appres.showlengths? "Show": "Don't show");
+	refresh_view_menu();
+}
+
+/* toggle the drawing of vertex numbers on objects */
+
+void
+toggle_show_vertexnums()
+{
+	appres.shownums = !appres.shownums;
+	put_msg("%s vertex numbers on objects",appres.shownums? "Show": "Don't show");
+	refresh_view_menu();
+
+	/* if user just turned on the border, draw only it */
+	if (appres.shownums) {
+	    redisplay_pageborder();
+	} else {
+	    /* otherwise redraw whole canvas */
+	    clear_canvas();
+	    redisplay_objects(&objects);
+	}
+}
+
+/* toggle the drawing of page borders on the canvas */
+
+void
+toggle_show_borders()
+{
+	appres.show_pageborder = !appres.show_pageborder;
+	put_msg("%s page borders on canvas",
+		appres.show_pageborder? "Show": "Don't show");
+	refresh_view_menu();
+
+	/* if user just turned on the border, draw only it */
+	if (appres.show_pageborder) {
+	    redisplay_pageborder();
+	} else {
+	    /* otherwise redraw whole canvas */
+	    clear_canvas();
+	    redisplay_objects(&objects);
+	}
+}
+
+/* toggle the information balloons */
+
+void
+toggle_show_balloons()
+{
+    appres.showballoons = !appres.showballoons;
+    put_msg("%s information balloons",
+		appres.showballoons? "Show": "Don't show");
+    refresh_view_menu();
+}
+

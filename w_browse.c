@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1995 Jim Daley (jdaley@cix.compulink.co.uk)
- * Parts Copyright (c) 1995-1998 by Brian V. Smith
+ * Parts Copyright (c) 1995-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -73,9 +73,19 @@ static XtActionsRec	file_actions[] =
 static char browse_filename[PATH_MAX];
 static char local_dir[PATH_MAX];
 
+static char file_viewed[PATH_MAX];	/* name of file already previewed */
+
 static void
 browse_panel_dismiss()
 {
+    char	   *fval;
+
+    FirstArg(XtNstring, &fval);
+    GetValues(browse_selfile);	/* check the ascii widget for a filename */
+    if (strcmp(fval, file_viewed) != 0) {
+	/* apply any selected filename before closing panel */
+	got_browse(0, 0);
+    }
     FirstArg(XtNstring, "\0");
     SetValues( browse_selfile );   /* blank out name for next call */
     XtPopdown(browse_popup);
@@ -94,16 +104,16 @@ got_browse(w, ev)
 	FirstArg(XtNstring, &dval);
 	GetValues(browse_dir);
 	FirstArg(XtNstring, &fval);
-	GetValues(browse_selfile); /* check the ascii widget for a filename */
-	if (emptyname(fval))
-            {
-	    fval = browse_filename; /* Filename widget empty, use current filename */
-            }
+	GetValues(browse_selfile);	/* check the ascii widget for a filename */
+	if (emptyname(fval)) {
+	    fval = browse_filename;	/* Filename widget empty, use current filename */
+	}
+	strcpy(file_viewed, fval);	/* indicate name as viewed */
 
 	if (emptyname_msg(fval, "Apply"))
 	    return;
 
-	if (strcmp(dval, local_dir) == 0) { /* directory has not changed */
+	if (strcmp(dval, local_dir) == 0)	{ /* directory has not changed */
                 panel_set_value( pic_name_panel, fval );
 
         } else {
@@ -117,9 +127,7 @@ got_browse(w, ev)
                 free(path);
           }
         }
-        push_apply_button();  /* slightly iffy - assumes called from
-						eps_edit */
-
+        push_apply_button();  /* slightly iffy - assumes called from eps_edit */
     }
 }
 
@@ -140,6 +148,7 @@ popup_browse_panel(w)
     XtSetSensitive(w, False);
     browse_parent = w;
     browse_up = True;
+    file_viewed[0] = '\0';
 
     if (!browse_popup) {
 	get_directory( local_dir );
@@ -173,11 +182,10 @@ popup_browse_panel(w)
     Rescan(0, 0, 0, 0);
 
     XtPopup(browse_popup, XtGrabNonexclusive);
-    set_cmap(XtWindow(browse_popup));  /* ensure most recent cmap is installed */
-    (void) XSetWMProtocols(XtDisplay(browse_popup), XtWindow(browse_popup),
-			   &wm_delete_window, 1);
+    (void) XSetWMProtocols(tool_d, XtWindow(browse_popup), &wm_delete_window, 1);
     /* if the file message window is up add it to the grab */
     file_msg_add_grab();
+    set_cmap(XtWindow(browse_popup));  /* ensure most recent cmap is installed */
     reset_cursor();
 }
 
@@ -186,7 +194,7 @@ create_browse_panel(w)
 {
 	Widget		   file, beside, below;
 	XFontStruct	  *temp_font;
-	static int	   actions_added=0;
+	static Boolean	   actions_added=False;
 
 	XtTranslateCoords(w, (Position) 0, (Position) 0, &xposn, &yposn);
 
@@ -232,13 +240,13 @@ create_browse_panel(w)
 
 	if (!actions_added) {
 	    XtAppAddActions(tool_app, file_actions, XtNumber(file_actions));
-	    actions_added = 1;
+	    actions_added = True;
 	    /* add action to apply file */
 	    XtAppAddActions(tool_app, file_name_actions, XtNumber(file_name_actions));
 	}
 
 	create_dirinfo(False, browse_panel, browse_selfile, &beside, &below, &browse_mask,
-		       &browse_dir, &browse_flist, &browse_dlist, FILE_WIDTH, False);
+		       &browse_dir, &browse_flist, &browse_dlist, E_FILE_WIDTH, False);
 
 	/* make <return> in the filename window apply the file */
 	XtOverrideTranslations(browse_selfile,
@@ -275,8 +283,6 @@ create_browse_panel(w)
 				     browse_panel, Args, ArgCount);
 	XtAddEventHandler(apply, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler)got_browse, (XtPointer) NULL);
-
-
 	XtInstallAccelerators(browse_panel, closebtn);
 	XtInstallAccelerators(browse_panel, apply);
 }

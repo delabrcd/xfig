@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -30,9 +30,14 @@
 #define MOUSE_LEFT_CTR		(int) (MOUSE_LEFT_SPACE/2)
 #define MOUSE_MID_CTR		(int) (MOUSEFUN_WD / 2)
 #define MOUSE_RIGHT_CTR		(int) (MOUSEFUN_WD - MOUSE_LEFT_CTR)
+#define MOUSE_RIGHT		      (appres.flipvisualhints? MOUSE_LEFT_CTR: MOUSE_RIGHT_CTR)
+#define MOUSE_LEFT		      (appres.flipvisualhints? MOUSE_RIGHT_CTR: MOUSE_LEFT_CTR)
 #define MOUSEFUN_MAX		       20
 
-DeclareStaticArgs(14);
+/* Function Prototypes */
+static void	reset_mousefun();
+
+DeclareStaticArgs(18);
 static char	mousefun_l[MOUSEFUN_MAX];
 static char	mousefun_m[MOUSEFUN_MAX];
 static char	mousefun_r[MOUSEFUN_MAX];
@@ -40,11 +45,11 @@ static char	mousefun_sh_l[MOUSEFUN_MAX];
 static char	mousefun_sh_m[MOUSEFUN_MAX];
 static char	mousefun_sh_r[MOUSEFUN_MAX];
 
-/* labels for the left and right buttons have 17 chars max */
-static char	lr_blank[] = "                 ";
-
-/* give the middle button label a bit more space - 18 chars max */
+/* labels for the left and right buttons have 18 chars max */
+static char	lr_blank[]  = "                  ";
+/* give the middle button label the same */
 static char	mid_blank[] = "                  ";
+
 static Pixmap	mousefun_pm;
 static Pixmap	keybd_pm;
 
@@ -57,9 +62,10 @@ init_mousefun(tool)
     Widget	    tool;
 {
     /* start with nominal height and adjust later */
-    FirstArg(XtNheight, MSGFORM_HT);
+    FirstArg(XtNheight, MSGPANEL_HT);
     NextArg(XtNwidth, MOUSEFUN_WD);
-    NextArg(XtNfromHoriz, cmd_panel);
+    NextArg(XtNresizable, False);
+    NextArg(XtNfromHoriz, name_panel);
     NextArg(XtNhorizDistance, -INTERNAL_BW);
     NextArg(XtNfromVert, NULL);
     NextArg(XtNvertDistance, 0);
@@ -67,6 +73,10 @@ init_mousefun(tool)
     NextArg(XtNbackgroundPixmap, NULL);
     NextArg(XtNmappedWhenManaged, False);
     NextArg(XtNlabel, "");
+    NextArg(XtNleft, XtChainLeft);	/* chain so doesn't resize */
+    NextArg(XtNright, XtChainLeft);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
 
     mousefun = XtCreateManagedWidget("mouse_panel", labelWidgetClass,
 				     tool, Args, ArgCount);
@@ -77,6 +87,23 @@ init_mousefun(tool)
 		      mouse_unballoon, (XtPointer) mousefun);
 }
 
+/* widgets are realized and windows exist at this point */
+
+void
+setup_mousefun()
+{
+    XDefineCursor(tool_d, XtWindow(mousefun), arrow_cursor);
+    /* now that the message panel has the real height it needs (because of
+       the font size we can resize the mouse panel */
+    MOUSEFUN_HT = MSGPANEL_HT + CMDFORM_HT + INTERNAL_BW;
+    XtUnmanageChild(mousefun);
+    FirstArg(XtNheight, MOUSEFUN_HT);
+    SetValues(mousefun);
+    XtManageChild(mousefun);
+    reset_mousefun();
+    set_mousefun("", "", "", "", "", "");
+}
+
 /* come here when the mouse passes over a button in the mouse indicator panel */
 
 static	Widget mouse_balloon_popup = (Widget) 0;
@@ -84,7 +111,7 @@ static	Widget mouse_balloon_popup = (Widget) 0;
 static	XtIntervalId balloon_id = (XtIntervalId) 0;
 static	Widget balloon_w;
 
-XtTimerCallbackProc mouse_balloon();
+static void mouse_balloon();
 
 static void
 mouse_balloon_trigger(widget, closure, event, continue_to_dispatch)
@@ -100,7 +127,7 @@ mouse_balloon_trigger(widget, closure, event, continue_to_dispatch)
 			(XtTimerCallbackProc) mouse_balloon, (XtPointer) NULL);
 }
 
-XtTimerCallbackProc
+static void
 mouse_balloon()
 {
 	Position  x, y;
@@ -229,21 +256,6 @@ mouse_title()
     SetValues(mousefun);
     FirstArg(XtNbackgroundPixmap, mousefun_pm);
     SetValues(mousefun);
-}
-
-void
-setup_mousefun()
-{
-    XDefineCursor(tool_d, XtWindow(mousefun), arrow_cursor);
-    /* now that the message panel has the real height it needs (because of
-       the font size we can resize the mouse panel */
-    MOUSEFUN_HT = MSGFORM_HT + CMDPANEL_HT - INTERNAL_BW;
-    XtUnmanageChild(mousefun);
-    FirstArg(XtNheight, MOUSEFUN_HT);
-    SetValues(mousefun);
-    XtManageChild(mousefun);
-    reset_mousefun();
-    set_mousefun("", "", "", "", "", "");
 }
 
 void
@@ -403,9 +415,9 @@ draw_mousefn2(left, middle, right)
     strcpy(mousefun_cur_l, left);
     strcpy(mousefun_cur_m, middle);
     strcpy(mousefun_cur_r, right);
-    draw_mousefun_msg(left, MOUSE_LEFT_CTR, MOUSE_LR_Y);
+    draw_mousefun_msg(left, MOUSE_LEFT, MOUSE_LR_Y);
     draw_mousefun_msg(middle, MOUSE_MID_CTR, MOUSE_MID_Y);
-    draw_mousefun_msg(right, MOUSE_RIGHT_CTR, MOUSE_LR_Y);
+    draw_mousefun_msg(right, MOUSE_RIGHT, MOUSE_LR_Y);
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(mousefun);
     FirstArg(XtNbackgroundPixmap, mousefun_pm);
@@ -436,7 +448,7 @@ clear_middle()
 void
 notused_right()
 {
-    draw_mousefun_msg("Not Used", MOUSE_RIGHT_CTR, MOUSE_LR_Y);
+    draw_mousefun_msg("Not Used", MOUSE_RIGHT, MOUSE_LR_Y);
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(mousefun);
     FirstArg(XtNbackgroundPixmap, mousefun_pm);
@@ -446,7 +458,7 @@ notused_right()
 void
 clear_right()
 {
-    draw_mousefun_msg(mid_blank, MOUSE_RIGHT_CTR, MOUSE_LR_Y);
+    draw_mousefun_msg(mid_blank, MOUSE_RIGHT, MOUSE_LR_Y);
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(mousefun);
     FirstArg(XtNbackgroundPixmap, mousefun_pm);
@@ -471,13 +483,13 @@ String          kbd_translations =
 	"<EnterNotify>: DrawMousefunKbd()\n\
 	<LeaveNotify>: ClearMousefunKbd()\n";
 
-static int	actions_added=0;
+static Boolean	actions_added=False;
 
 void
 init_kbd_actions()
 {
     if (!actions_added) {
-	actions_added = 1;
+	actions_added = True;
 	XtAppAddActions(tool_app, kbd_actions, XtNumber(kbd_actions));
     }
 }
