@@ -281,7 +281,7 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
     } else if (!strcmp(lang, "jpeg")) {
 	/* set the image quality for JPEG export */
 	sprintf(tmpcmd, "-b %d -q %d -S %d", 
-		border, appres.jpeg_quality, smooth);
+		border, appres.jpeg_quality, smooth ? 2 : 0);
 	strcat(prcmd, tmpcmd);
 
 	strcat(prcmd," ");
@@ -296,7 +296,7 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
     /* GIF */
     } else if (!strcmp(lang, "gif")) {
 	sprintf(tmpcmd, "-b %d -S %d",
-		border, smooth);
+		border, smooth ? 2 : 0);
 	strcat(prcmd, tmpcmd);
 
 	/* select the transparent color, if any */
@@ -329,7 +329,7 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
 		!strcmp(lang, "xbm") || !strcmp(lang, "xpm") || !strcmp(lang, "ppm")) {
         /* bitmap formats need border option */
 	sprintf(tmpcmd, "-b %d -S %d",
-		border, smooth);
+		border, smooth ? 2 : 0);
 	strcat(prcmd, tmpcmd);
 
 	if (backgrnd[0]) {

@@ -336,7 +336,7 @@ install::
 	@if [ -d $(DESTDIR)$(XFIGLIBDIR) ]; then set +x; \
 		else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGLIBDIR) ; set +x; ); fi
 	chmod a+x,u+w $(DESTDIR)$(XFIGLIBDIR)
-	$(INSTALL) -c CompKeyDB $(DESTDIR)$(XFIGLIBDIR)
+	$(INSTALL) -m 644 -c CompKeyDB $(DESTDIR)$(XFIGLIBDIR)
 	$(MAKE) install.libs
 	$(MAKE) install.doc
 
@@ -349,20 +349,20 @@ install.doc::
 #endif
 	@(cd Doc ; \
 	echo Copying pdf and html files to $(DESTDIR)$(XFIGLIBDIR) ; \
-	$(INSTALL) -c xfig.html $(DESTDIR)$(XFIGLIBDIR) ; \
-	$(INSTALL) -c xfig-howto.pdf $(DESTDIR)$(XFIGLIBDIR) ; \
+	$(INSTALL) -m 644 -c xfig.html $(DESTDIR)$(XFIGLIBDIR) ; \
+	$(INSTALL) -m 644 -c xfig-howto.pdf $(DESTDIR)$(XFIGLIBDIR) ; \
 	if [ -d $(DESTDIR)$(XFIGLIBDIR)/html ]; then set +x; \
 	   else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGLIBDIR)/html ); fi ; \
 	(cd html ; \
 	   for f in *.* ; do \
-	      $(INSTALL) -c $$f $(DESTDIR)$(XFIGLIBDIR)/html ; \
+	      $(INSTALL) -m 644 -c $$f $(DESTDIR)$(XFIGLIBDIR)/html ; \
 	   done) ; \
 	echo "  Copying image files for html" ; \
 	if [ -d $(DESTDIR)$(XFIGLIBDIR)/html/images ]; then set +x; \
 	   else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGLIBDIR)/html/images ); fi ; \
 	(cd html/images ; \
 	   for f in * ; do \
-	       $(INSTALL) -c $$f $(DESTDIR)$(XFIGLIBDIR)/html/images ; \
+	       $(INSTALL) -m 644 -c $$f $(DESTDIR)$(XFIGLIBDIR)/html/images ; \
 	   done) ; \
 	) ;
 
@@ -373,7 +373,7 @@ install.jhtml::
 	if [ -d $(DESTDIR)$(XFIGLIBDIR)/html/japanese ]; then set +x; \
 	   else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGLIBDIR)/html/japanese ); fi ; \
 	for f in * ; do \
-	      $(INSTALL) -c $$f $(DESTDIR)$(XFIGLIBDIR)/html/japanese ; \
+	      $(INSTALL) -m 644 -c $$f $(DESTDIR)$(XFIGLIBDIR)/html/japanese ; \
 	done) ;
 #endif
 
@@ -405,13 +405,13 @@ install.libs::
 						else (set -x; $(MKDIRHIER) $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd/$$l ); fi ; \
 					    (cd $$l ; \
 						for m in * ; do \
-						    $(INSTALL) -c $$m $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd/$$l ; \
+						    $(INSTALL) -m 644 -c $$m $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd/$$l ; \
 						done ) ) ; \
-					else ( $(INSTALL) -c $$l $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd ) ; fi ; \
+					else ( $(INSTALL) -m 644 -c $$l $(DESTDIR)$(OBJLIBDIR)/$$d/$$f/$$dd ) ; fi ; \
 				done) ) ; \
-			    else ( $(INSTALL) -c $$dd $(DESTDIR)$(OBJLIBDIR)/$$d/$$f ) ; fi ; \
+			    else ( $(INSTALL) -m 644 -c $$dd $(DESTDIR)$(OBJLIBDIR)/$$d/$$f ) ; fi ; \
 			done) ); \
-		else ($(INSTALL) -c $$f $(DESTDIR)$(OBJLIBDIR)/$$d ) ; fi ; \
+		else ($(INSTALL) -m 644 -c $$f $(DESTDIR)$(OBJLIBDIR)/$$d ) ; fi ; \
 	    done ) ; \
 	done ; ) ; \
 	else echo No Object Libraries to install ; \

@@ -1,7 +1,7 @@
 !Don't change the following string - xfig uses it to determine
 ! if you have the newest app-defaults files installed
 
-Fig.version:			3.2.3b
+Fig.version:			3.2.3c
 
 ! some sample settings you may want to change
 
@@ -193,6 +193,10 @@ Fig*accelerators: \
 	Alt<Key>t:  Paste() \n\
 	Meta<Key>a: SaveAs() \n\
 	Alt<Key>a:  SaveAs() \n\
+	Shift Meta<Key>p: PrintFile() \n\
+	Shift Alt<Key>p:  PrintFile() \n\
+	Shift Meta<Key>x: ExportFile() \n\
+	Shift Alt<Key>x:  ExportFile() \n\
 	Meta<Key>s: SaveFile() \n\
 	Alt<Key>s:  SaveFile() \n\
 	Meta<Key>m: MergeFile() \n\

@@ -852,6 +852,7 @@ char_handler(kpe, c, keysym)
 	if (leng_prefix > 0
 	      && appres.international && is_i18n_font(canvas_font)) {
 	    int len;
+	    erase_char_string();
 	    len = i18n_prefix_tail(NULL);
 	    for (i=leng_suffix+len; i>0; i--)	/* copies null too */
 		suffix[i]=suffix[i-len];
@@ -860,6 +861,7 @@ char_handler(kpe, c, keysym)
 	    prefix[leng_prefix-len]='\0';
 	    leng_prefix-=len;
 	    leng_suffix+=len;
+	    draw_char_string();
 	} else
 #endif /* I18N */
 	if (leng_prefix > 0) {
@@ -881,6 +883,7 @@ char_handler(kpe, c, keysym)
 	if (leng_suffix > 0
 	      && appres.international && is_i18n_font(canvas_font)) {
 	    int len;
+	    erase_char_string();
 	    len = i18n_suffix_head(NULL);
 	    for (i=0; i<len; i++)
 	        prefix[leng_prefix+i]=suffix[i];
@@ -889,6 +892,7 @@ char_handler(kpe, c, keysym)
 		suffix[i]=suffix[i+len];
 	    leng_suffix-=len;
 	    leng_prefix+=len;
+	    draw_char_string();
 	} else
 #endif /* I18N */
 	if (leng_suffix > 0) {
@@ -908,7 +912,9 @@ char_handler(kpe, c, keysym)
     } else if (keysym == XK_Home || c == CTRL_A) {
 	if (leng_prefix > 0) {
 #ifdef I18N
-	    if (!appres.international || !is_i18n_font(canvas_font))
+	    if (appres.international && is_i18n_font(canvas_font))
+	      erase_char_string();
+	    else	      
 #endif  /* I18N */
 	    for (i=leng_prefix-1; i>=0; i--)
 		move_cur(-1, prefix[i], 1.0);
@@ -917,6 +923,10 @@ char_handler(kpe, c, keysym)
 	    prefix[0]='\0';
 	    leng_prefix=0;
 	    leng_suffix=strlen(suffix);
+#ifdef I18N
+	    if (appres.international && is_i18n_font(canvas_font))
+	      draw_char_string();
+#endif  /* I18N */
 	}
 
     /*********************************************************/
@@ -926,7 +936,9 @@ char_handler(kpe, c, keysym)
     } else if (keysym == XK_End || c == CTRL_E) {
 	if (leng_suffix > 0) {
 #ifdef I18N
-	    if (!appres.international || !is_i18n_font(canvas_font))
+	    if (appres.international && is_i18n_font(canvas_font))
+	      erase_char_string();
+	    else	      
 #endif  /* I18N */
 	    for (i=0; i<leng_suffix; i++)
 		move_cur(1, suffix[i], 1.0);
@@ -934,6 +946,10 @@ char_handler(kpe, c, keysym)
 	    suffix[0]='\0';
 	    leng_suffix=0;
 	    leng_prefix=strlen(prefix);
+#ifdef I18N
+	    if (appres.international && is_i18n_font(canvas_font))
+	      draw_char_string();
+#endif  /* I18N */
 	}
 
     /******************************************/
@@ -945,12 +961,12 @@ char_handler(kpe, c, keysym)
 	if (leng_prefix > 0
 	      && appres.international && is_i18n_font(canvas_font)) {
 	    int len;
+	    erase_char_string();
 	    len = i18n_prefix_tail(NULL);
-	    erase_suffix();
 	    leng_prefix-=len;
 	    erase_char(ch);
 	    prefix[leng_prefix]='\0';
-	    draw_suffix();
+	    draw_char_string();
 	} else
 #endif /* I18N */
 	if (leng_prefix > 0) {
@@ -996,12 +1012,12 @@ char_handler(kpe, c, keysym)
 	if (leng_suffix > 0
 	      && appres.international && is_i18n_font(canvas_font)) {
 	    int len;
+	    erase_char_string();
 	    len = i18n_suffix_head(NULL);
-	    erase_suffix();
 	    for (i=0; i<=leng_suffix-len; i++)	/* copies null too */
 		suffix[i]=suffix[i+len];
 	    leng_suffix-=len;
-	    draw_suffix();
+	    draw_char_string();
 	} else
 #endif /* I18N */
 	if (leng_suffix > 0) {
@@ -1045,7 +1061,9 @@ char_handler(kpe, c, keysym)
     } else if (c == CTRL_X) {
 	if (leng_prefix > 0) {
 #ifdef I18N
-	    if (!appres.international || !is_i18n_font(canvas_font))
+	    if (appres.international && is_i18n_font(canvas_font))
+	      erase_char_string();
+	    else
 #endif  /* I18N */
 	    switch (work_textjust) {
 	        case T_LEFT_JUSTIFIED:
@@ -1089,6 +1107,10 @@ char_handler(kpe, c, keysym)
 		    break;
 	    }
 	    move_blinking_cursor(cur_x, cur_y);
+#ifdef I18N
+	    if (appres.international && is_i18n_font(canvas_font))
+	      draw_char_string();
+#endif  /* I18N */
 	}
 
     /*************************/
@@ -1097,7 +1119,9 @@ char_handler(kpe, c, keysym)
     } else if (c == CTRL_K) {
 	if (leng_suffix > 0) {
 #ifdef I18N
-	    if (!appres.international || !is_i18n_font(canvas_font))
+	    if (appres.international && is_i18n_font(canvas_font))
+	      erase_char_string();
+	    else
 #endif  /* I18N */
 	    switch (work_textjust) {
 		case T_LEFT_JUSTIFIED:
@@ -1122,6 +1146,11 @@ char_handler(kpe, c, keysym)
 	    leng_suffix = 0;
 	    *suffix = '\0';
 	    /* redraw stuff */
+#ifdef I18N
+	    if (appres.international && is_i18n_font(canvas_font))
+	      draw_char_string();
+	    else
+#endif  /* I18N */
 	    switch (work_textjust) {
 		case T_LEFT_JUSTIFIED:
 		    break;
@@ -1143,6 +1172,11 @@ char_handler(kpe, c, keysym)
     /*************************/
     } else {	
 	/* move pointer */
+#ifdef I18N
+	if (appres.international && is_i18n_font(canvas_font))
+	  erase_char_string();
+	else
+#endif  /* I18N */
 	switch (work_textjust) {
 	    case T_LEFT_JUSTIFIED:
 		erase_suffix();		/* erase any string after cursor */
@@ -1163,6 +1197,11 @@ char_handler(kpe, c, keysym)
 	prefix[leng_prefix] = '\0';
 	move_blinking_cursor(cur_x, cur_y);
 	/* redraw stuff */
+#ifdef I18N
+	if (appres.international && is_i18n_font(canvas_font))
+	  draw_char_string();
+	else
+#endif  /* I18N */
 	switch (work_textjust) {
 	    case T_LEFT_JUSTIFIED:
 		draw_suffix();
@@ -1580,10 +1619,10 @@ i18n_char_handler(str)
      unsigned char *str;
 {
   int i;
-  erase_suffix();	/* erase chars after the cursor */
+  erase_char_string();	/* erase chars after the cursor */
   for (i = 0; str[i] != '\0'; i++)
 	prefix_append_char(str[i]);
-  draw_suffix();	/* draw new suffix */
+  draw_char_string();	/* draw new suffix */
 }
 
 prefix_append_char(ch)

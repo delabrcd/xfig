@@ -92,6 +92,7 @@ static XtActionsRec	main_actions[] =
     {"PopupExport",	(XtActionProc) popup_export_panel},
     {"ExportFile",	(XtActionProc) do_export},
     {"PopupPrint",	(XtActionProc) popup_print_panel},
+    {"PrintFile",	(XtActionProc) do_print},
     {"PopupGlobals",	(XtActionProc) show_global_settings},
     {"Undo",		(XtActionProc) undo},
     {"Paste",		(XtActionProc) paste},
@@ -1223,14 +1224,18 @@ main(argc, argv)
 	cur_filename[0] = '\0';
     else
 	strcpy(cur_filename, arg_filename);
-    /* strip off any preceding path */
+
+    /* save path if specified in filename */
     if (dval=strrchr(cur_filename, '/')) {
-	/* append it to the current directory */
-	*dval = '\0';  /* terminate string at the last "/" */
-	strcat(cur_file_dir,"/");
-	strcat(cur_file_dir,cur_filename);	/* append the path to the directory */
-	strcpy(cur_filename,++dval);		/* put the part after the last / in the name */
+	strcpy(cur_file_dir, cur_filename);
+	/* remove path from filename */
+	strcpy(cur_filename, dval+1);
+	if (dval=strrchr(cur_file_dir, '/'))
+	    *dval = '\0';  /* terminate path at the last "/" */
 	change_directory(cur_file_dir);		/* go there */
+	/* and get back the canonical (absolute) path */
+	get_directory(cur_file_dir);
+	get_directory(cur_export_dir);
     }
     /* update the name panel with the filename */
     update_cur_filename(cur_filename);

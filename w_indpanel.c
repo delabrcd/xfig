@@ -2929,8 +2929,8 @@ show_fontsize(sw)
 {
     if (cur_fontsize < MIN_FONT_SIZE)
 	cur_fontsize = MIN_FONT_SIZE;
-    else if (cur_fontsize > 1000)
-	cur_fontsize = 1000;
+    else if (cur_fontsize > MAX_FONT_SIZE)
+	cur_fontsize = MAX_FONT_SIZE;
 
     put_msg("Font size %d", cur_fontsize);
     /* write the font size in the background pixmap */

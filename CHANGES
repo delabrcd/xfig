@@ -3,6 +3,26 @@ Changes to Xfig
 Version 3.2
 =============================================================================
 
+Patchlevel 3c  (July 26, 2000)
+
+NEW FEATURES:
+	o New export shortcut Shift-Alt-x or Shift-Meta-x to export using
+	  current settings without popping up the panel
+	o New print shortcut Shift-Alt-p or Shift-Meta-p to print using current
+	  settings without popping up the panel
+
+BUGS FIXED:
+	o Added -m 644 to "install" directives in Imakefile to make updates
+	  easier in future (no read-only files)
+	o I18N text handling fixed (bug introduced in 3.2.3b)
+	o If a filename with an absolute path was given when starting xfig, it
+	  prepended the current path to the path given thus generating a path
+	  that didn't exist.
+	o "Film digitizer" in Fig object library of computers had an illegal
+	  Fig object
+	o Pixmap bits for sm_check_bits should be unsigned in w_util.c
+
+----------------------------
 Patchlevel 3b (Jul 19, 2000)
 
 NEW FEATURES:
@@ -108,7 +128,7 @@ BUGS FIXED:
 	o Certain files are now opened in binary mode ("wb" or "rb") for DOS
 	  compatibility
 
------------------------
+----------------------------
 Patchlevel 3a (Jan 19, 2000)
 
 NEW FEATURES:

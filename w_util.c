@@ -57,7 +57,7 @@ Pixmap check_pm, null_check_pm;
 
 /* smaller checkmark */
 /* sm_check_width and _height are defined in w_util.c so w_layers.c can use them */
-static char sm_check_bits[] = {
+static unsigned char sm_check_bits[] = {
    0x00, 0x00, 0x80, 0x01, 0xc0, 0x01, 0xe0, 0x01, 0x76, 0x00, 0x3e, 0x00,
    0x1c, 0x00, 0x18, 0x00, 0x08, 0x00, 0x00, 0x00};
 Pixmap sm_check_pm, sm_null_check_pm;
