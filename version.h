@@ -15,5 +15,5 @@
  * the party supplying this software to the X Consortium.
  */
 
-#define			FIG_VERSION		"3.0"
-#define			PROTOCOL_VERSION	"3.0"	/* file format */
+#define			FIG_VERSION		"3.1"
+#define			PROTOCOL_VERSION	"3.1"	/* file format */

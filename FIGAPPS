@@ -1,6 +1,9 @@
 The following are applications which can produce Fig files as their output:
 
 ************************************************************************
+xgraph - plotting package for X - version on iworks.ecn.uiowa.edu in
+	comp.hp has version that can output Fig files
+************************************************************************
 gnuplot - Plotting package; can output in Fig format.
 
 ************************************************************************

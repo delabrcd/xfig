@@ -96,7 +96,7 @@
 .PD
 ..
 .\"-------
-.TH XFIG 1 "Release 3.0(.0) (Protocol 3.0)"
+.TH XFIG 1 "Release 3.1(.0) (Protocol 3.1)"
 .SH NAME
 xfig - Facility for Interactive Generation of figures under X11
 .SH SYNOPSIS
@@ -3086,7 +3086,7 @@ implied warranty.
 is a trademark of Adobe Systems Incorporated.
 .SH FILES
 .ft B
-.nr n \w'DOC/FORMAT3.0\0\0\0\0'+1n-1/1n
+.nr n \w'DOC/FORMAT3.1\0\0\0\0'+1n-1/1n
 .ft P
 .TP \nn
 .B CompKeyDB
@@ -3100,7 +3100,7 @@ or X toolkit resource keyFile.
 See the
 .IR Imakefile .
 .TP
-.B Doc/FORMAT3.0
+.B Doc/FORMAT3.1
 Description of Fig file format.
 .TP
 .B CHANGES
@@ -3231,6 +3231,10 @@ Paul King (king@cs.uq.oz.au)
 Extensive man page formatting revisions by:
 .br
 David W. Sanderson
+.sp
+Display Postscript code for IBM RS/6000 by:
+.br
+Dave Hale (dhale@green.mines.colorado.edu)
 .in -4
 .sp
 .B "Version 3.0:"
@@ -3240,7 +3244,7 @@ David W. Sanderson
 New arrowhead types, separate pen/fill colors, new file protocol,
 more colors with extended color popup panel, new arc style,
 new fill patterns (bricks, etc), new line- join and cap styles,
-export offset and file load offset, XPM/GIF/XBM import and export
+export offset and file load offset, XPM import, XBM import and export
 (and anything else that wasn't written by the others) by:
 .br
 Brian Smith
@@ -3248,6 +3252,20 @@ Brian Smith
 (Note: the color popup panel was based on
 .I xcoloredit
 by Richard Hesketh)
+.sp
+GIF output code by:
+.br
+.nf
+E. Chernyaev (chernaev@mx.decnet.ihep.su)                  *
+.fi
+.sp
+GIF import code by:
+.br
+David Koblas from the giftoppm part of the pbmplus package
+.sp
+XPM export code (using XPM3 libraries) by:
+.br
+Karel van Houten (K.H.C.vanHouten@research.ptt.nl)
 .sp
 Higher figure resolution (1200dpi) by:
 .br
@@ -3269,6 +3287,19 @@ rotate/flip objects around/about selected anchor point and multiple
 copies of objects by:
 .br
 Uwe Bonnes (bon@lte.e-technik.uni-erlangen.de)
+.in -4
+.sp
+.B "Version 3.1:"
+.sp 2
+.in +4
+.br
+The only difference from version 3.0 to version 3.1 is that the position
+of the "magnet" has been shifted by 14 fig units.
+In the 2.1 and older versions of xfig the grid was in multiples of 5 fig
+units, but they were on intervals 4, 9, 14, 19, etc.
+When version 3.0 was created, coordinates were simply multiplied by the
+ratio of the resolutions (1200/80 = 15) so values like 4 became 60 instead
+of 74 ((4+1)*15 - 1).
 .in -4
 .sp
 Many bug fixes/cleanups etc. by a host of faithful users

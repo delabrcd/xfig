@@ -321,8 +321,8 @@ DEPLIBS = 		$(DEPXAWLIB) $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
 
 # uncomment the following if using DPS (Display PostScript)
 
-# DPSLIB = -ldps
-# DPSDEF = -DDPS
+#DPSLIB = -ldps
+#DPSDEF = -DDPS
 
 # uncomment the following if *NOT* using DPS (Display PostScript)
 
@@ -376,7 +376,7 @@ XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
 		e_movept.c e_rotate.c e_scale.c e_update.c \
 		f_load.c f_neuclrtab.c f_read.c \
 		f_picobj.c f_readeps.c f_readxbm.c f_readxpm.c f_readgif.c \
-		f_readold.c f_save.c f_util.c f_wrgif.o f_wrbitmap.c f_wrpixmap.c \
+		f_readold.c f_save.c f_util.c f_wrgif.o f_wrxbm.c f_wrxpm.c \
 		main.c mode.c object.c resources.c \
 		u_bound.c u_create.c u_drag.c u_draw.c \
 		u_elastic.c u_error.c u_fonts.c u_free.c u_geom.c \
@@ -395,7 +395,7 @@ XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
 		e_movept.o e_rotate.o e_scale.o e_update.o \
 		f_load.o f_neuclrtab.o f_read.o \
 		f_picobj.o f_readeps.o f_readxbm.o f_readxpm.o f_readgif.o \
-		f_readold.o f_save.o f_util.o f_wrgif.o f_wrbitmap.o f_wrpixmap.o \
+		f_readold.o f_save.o f_util.o f_wrgif.o f_wrxbm.o f_wrxpm.o \
 		main.o mode.o object.o resources.o \
 		u_bound.o u_create.o u_drag.o u_draw.o \
 		u_elastic.o u_error.o u_fonts.o u_free.o u_geom.o \

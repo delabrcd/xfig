@@ -32,7 +32,7 @@
 
 /********************* IMPORTS *******************/
 
-extern char    *basename();
+extern char    *basname();
 
 /********************* EXPORTS *******************/
 
@@ -145,7 +145,7 @@ update_cur_filename(newname)
 	SetValues(msg_form);
 	XtManageChild(msg_form);
 	/* put the filename being edited in the icon */
-	XSetIconName(tool_d, tool_w, basename(cur_filename));
+	XSetIconName(tool_d, tool_w, basname(cur_filename));
 }
 
 /* VARARGS1 */

@@ -214,7 +214,8 @@ free_Fonts()
   for (i=0; i<NUM_FONTS; i++) {
     for (nf = x_fontinfo[i].xfontlist; nf != NULL;) {
       XUnloadFont(tool_d, nf->fid);
-      XFreeFont(tool_d, nf->fstruct); 
+      if (nf->fstruct != NULL)
+	  XFreeFont(tool_d, nf->fstruct); 
       nf = nf->next;
     } 
   }

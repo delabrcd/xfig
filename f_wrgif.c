@@ -290,6 +290,13 @@ static void     put_short ();
 
 /***********************************************************************
  *                                                                     *
+ * The following code is included with explicit permission from the    *
+ *  author, E. Chernyaev (chernaev@mx.decnet.ihep.su)                  *
+ *                                                                     *
+ ***********************************************************************/
+
+/***********************************************************************
+ *                                                                     *
  * Name: GIFencode                                   Date:    02.10.92 *
  * Author: E.Chernyaev (IHEP/Protvino)               Revised:          *
  *                                                                     *

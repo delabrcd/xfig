@@ -327,6 +327,7 @@ canvas_selected(tool, event, params, nparams)
 		}
 	} else if (key == XK_Control_L || key == XK_Control_R) { 
 		/* show the control-key actions */
+		set_temp_cursor(magnify_cursor);
 		draw_mousefun("Zoom area", "Pan to origin", "Unzoom");
 	} else if (key == XK_Shift_L || key == XK_Shift_R) {
 		/* show the shift-key function, but only if an edit mode */
@@ -374,7 +375,11 @@ canvas_selected(tool, event, params, nparams)
 	key = XLookupKeysym(ke, 0);
 	    if (key == XK_Control_L || key == XK_Control_R ||
 		key == XK_Shift_L || key == XK_Shift_R)
-		draw_mousefun_canvas();
+		    draw_mousefun_canvas();
+	    /* if releasing Control key and not in zoom mode, reset from 
+		magnifying glass to previous cursor */
+	    if ((key == XK_Control_L || key == XK_Control_R) && !zoom_in_progress)
+		reset_cursor();
 	break;
     }
 }

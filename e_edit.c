@@ -938,8 +938,10 @@ done_line()
     case CANCEL:
 	if (new_l->type == T_PIC_BOX) {
 	    old_l->type = T_PIC_BOX;		/* restore type */
-	    if (file_changed)
+	    if (file_changed) {
 		remap_imagecolors(&objects);	/* and restore colors */
+		redraw_images(&objects);	/* and refresh them */
+	    }
 	}
 	if (changed) {
 	    redisplay_lines(old_l, new_l);

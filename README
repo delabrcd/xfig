@@ -17,6 +17,20 @@ Please report any bugs, fixes, contributions, etc. to:
 
 Brian V. Smith (bvsmith@lbl.gov)
 
+++++++++++++++++++++++
+NOTE FOR version 3.1.0
+
+  An error in version 3.0.0 incorrectly positioned objects on the canvas
+  when reading older fig files.  New objects entered with 3.0 are
+  correctly positioned.  A warning will popup when you load a version 3.0
+  file with version 3.1 that says you might need to offset your figure by
+  14 fig units in X and Y when you load it.  This is done by setting the
+  X and Y offset in the popup File panel.
+  I apologize for the inconvenience.
+
+  This is also why the file version number has changed.
+
+++++++++++++++++++++++
 
 ===================
 INSTALLATION NOTES:
@@ -43,9 +57,9 @@ If you have ghostscript, enable the -DGSBIT flag in the Imakefile and xfig will
    and the gif8 driver is used on a color display.
 If your system doesn't have strstr(), add the flag -DNOSTRSTR in the Imakefile
    in the DEFINES line.
-If you are running on an IBM RS/6000 with AIX 3.2, uncomment the lines that
-   define DPSLIB and DPSDEF in the Imakefile and you will see the full
-   PostScript object when using EPS objects.
+If you are running on an IBM RS/6000 with AIX 3.2 or a Sun with Solaris 2.3,
+   uncomment the lines that define DPSLIB and DPSDEF in the Imakefile and you
+   will see the full PostScript object when using EPS objects.
 If you have an input tablet and your X server supports the XInputExtension
    uncomment the lines that define TABLIB and USETAB in the Imakefile.
    Start xfig with -tablet or define the resource Fig.Tablet to use it.
@@ -96,6 +110,10 @@ Solaris users
 
 Add "-lc" to the LOCAL_LIBRARIES variable in the Imakefile to link with 
 /usr/lib/libc for the directory operations.
+
+Some people have had trouble with the Sun cc 3.0.1 compiler and optimization.
+You may need to shut off optimization.
+A common symptom is that xfig just core dumps when starting.
 
 -----------------
 OpenWindows users

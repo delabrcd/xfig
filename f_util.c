@@ -172,7 +172,7 @@ ok_to_write(file_name, op_name)
 }
 
 char *
-basename(filename)
+basname(filename)
     char	   *filename;
 {
     char	   *p;
@@ -389,13 +389,16 @@ straight_cmap(obj)
     }
     for (l = obj->lines; l != NULL; l = l->next) {
 	if (l->type == T_PIC_BOX && l->pic->numcols > 0) {
-		for (i=0; i<l->pic->numcols; i++) {
-		    image_cells[scol].red   = l->pic->cmap[i].red << 8;
-		    image_cells[scol].green = l->pic->cmap[i].green << 8;
-		    image_cells[scol].blue  = l->pic->cmap[i].blue << 8;
-		    l->pic->cmap[i].pixel = image_cells[scol].pixel;
-		    scol++;
-		}
+	    for (i=0; i<l->pic->numcols; i++) {
+		image_cells[scol].red   = l->pic->cmap[i].red << 8;
+		image_cells[scol].green = l->pic->cmap[i].green << 8;
+		image_cells[scol].blue  = l->pic->cmap[i].blue << 8;
+		l->pic->cmap[i].pixel = image_cells[scol].pixel;
+		scol++;
+	    }
+	    if (l->pic->pixmap)
+		XFreePixmap(tool_d, l->pic->pixmap);
+	    l->pic->pixmap = 0;		/* this will force regeneration of the pixmap */
 	}
     }
 }

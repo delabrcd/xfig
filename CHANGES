@@ -1,15 +1,62 @@
 =============================================================================
-Version 2.2
+Version 3.1
 =============================================================================
 
-Patchlevel 0 (XXX X, XXXX)
+Patchlevel 0 (Jan, 9, 1995)
+
+BUG FIXES:
+
+o NOTE:	An error in version 3.0.0 incorrectly positioned objects on the canvas
+	when reading older fig files.  New objects entered with 3.0 are
+	correctly positioned.  A warning will popup when you load a version 3.0
+	file with version 3.1 that says you might need to offset your figure by
+	14 fig units in X and Y when you load it.  This is done by setting the
+	X and Y offset in the popup File panel.
+	I apologize for the inconvenience.
+
+*****	This is also why the file version number has changed.
+
+o segfault in show_pen_color and show_fill_color under certain conditions when
+	switching colors
+o error in x/y load/merge offset when reading pre 3.0 files
+o bug in drawing large (6 inches diameter or larger) circles or ellipses with
+	dashed or dotted lines and angle of 0 degrees.
+o extra line was drawn to center of ellipse or circle when dashed or dotted
+	lines used and angle of 0 degrees.
+o bug in f_read.c which caused FPE errors when reading incomplete/incorrect
+	Fig file
+o declaration of count_lines_correctly() inconsistent in f_read.c
+o incorrect cast using malloc in f_readxpm.c()
+o setcenter, setcenter_x and setcenter_y should be extern in e_flip.c
+o setanchor, setanchor_x and setanchor_y should be extern in e_rotate.c
+o text following #endif non-ANSI in main.c
+o error in source file names in Imakefile - had f_wrgif.o instead of f_wrgif.c
+o error in freeing NULL font struct when quitting xfig (in u_free.c)
+o renamed basename() to basname() to avoid conflict with Linux libc function
+o error in LaTeX font numbering in Doc/FORMATx.x files
+o major errors in reading version 1.3 files
+o overriding translations in turn_on left black outlines around buttons in
+	mode panel when new mode button pressed
+o some servers drew black background in indicator panel buttons - caused by
+	fill mode being "tiled" for buttons other than the fill style button
+o images (GIF, XPM etc) weren't always recolored correctly when using popup
+	edit panel on picture object
+o DPS fixes for Solaris 2.3
+	from Pete A. Zaitcev (zaitcev@lab.ipmce.su)
+
+=============================================================================
+Version 3.0
+=============================================================================
+
+Patchlevel 0 (Dec 22, 1994)
 Changes to Version 2.1.8:
 
 NEW FEATURES:
 
-o changes to the file format (protocol).  See Doc/FORMAT2.2 for details.  This
-	means you must also get transfig 2.2.  Xfig will still read older Fig
+o changes to the file format (protocol).  See Doc/FORMAT3.0 for details.  This
+	means you must also get transfig 3.0.  Xfig will still read older Fig
 	format files but will always write the new format.
+
  These are the new features related to the new file format:
 -----------------------------------------------------------------------------
    o resolution is increased from 80 ppi to 1200 ppi.  This decreases jaggies.
@@ -51,6 +98,9 @@ o EPS objects have been changed to "picture objects" to include GIF images,
 	See the Examples/pictures.fig for examples of XPM, XBM and GIF.
 	You must have version 3.4c or newer of the XPM library.  This is
 	available from ftp.x.org in /contrib/libraries.
+
+	GIF input code from David Koblas' giftoppm code from the pbmplus
+	package.
 
 	A Floyd-Steinberg dithering is applied to color images for monochrome
 	displays.
@@ -118,9 +168,10 @@ o two new Example files: illusion.fig and recycle.fig
 o four new clip-art files (Examples directory): clp_bldgs.fig, clp_network.fig,
 	clp_computer.fig and clipart.fig
 	from William J. Chimiak (chim@relito.medeng.wfu.edu)
-o new export languages - X11 Pixmap (color X pixmaps) - must have the XPM3 package
-	and GIF output
+o new export languages - X11 Pixmap (color X pixmaps) and GIF output
+	- must have the XPM3 package.
 	XPM3 code from Karel van Houten (K.H.C.vanHouten@research.ptt.nl)
+	GIF code from E. Chernyaev (chernaev@mx.decnet.ihep.su)
 o can handle eps files with %%BoundingBox: (atend)
 	from Paul Hodgkinson (hodgkin@physchem.ox.ac.uk)
 o no need for the -DNOSTRTOL flag anymore if your system doesn't have strtol()

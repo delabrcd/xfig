@@ -277,17 +277,6 @@ static String   mode_translations =
     <Btn3Up>:ReleaseRight()\n\
     <LeaveWindow>:LeaveModeSw()unhighlight()\n";
 
-static String   active_mode_translations =
-"<EnterWindow>:EnterModeSw()unhighlight()\n\
-    <Btn1Down>:\n\
-    <Btn1Up>:unhighlight()\n\
-    <Btn2Down>:PressMiddle()\n\
-    <Btn2Up>:ReleaseMiddle()\n\
-    <Btn3Down>:PressRight()\n\
-    <Btn3Up>:ReleaseRight()\n\
-    <LeaveWindow>:LeaveModeSw()highlight()\n";
-
-
 int
 init_mode_panel(tool)
     TOOL            tool;
@@ -509,8 +498,6 @@ turn_on(msw)
 {
     FirstArg(XtNbackgroundPixmap, msw->reversePM);
     SetValues(msw->widget);
-    XtOverrideTranslations(msw->widget,
-		XtParseTranslationTable(active_mode_translations));
 }
 
 turn_on_current()

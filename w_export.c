@@ -189,7 +189,7 @@ do_export(w)
 	app_flush();
 	/* check for XBitmap first */
 	if (cur_exp_lang == LANG_XBITMAP) {
-	    if (write_bitmap(fval,mag) == 0) {
+	    if (write_xbm(fval,mag) == 0) {
 		FirstArg(XtNlabel, fval);
 		SetValues(dfile_text);		/* set the default filename */
 		if (strcmp(fval,default_export_file) != 0)
@@ -199,7 +199,7 @@ do_export(w)
 #ifdef USE_XPM
 	/* what about XPM? */
 	} else if (cur_exp_lang == LANG_XPIXMAP) {
-	    if (write_pixmap(fval,mag) == 0) {
+	    if (write_xpm(fval,mag) == 0) {
 		FirstArg(XtNlabel, fval);
 		SetValues(dfile_text);		/* set the default filename */
 		if (strcmp(fval,default_export_file) != 0)

@@ -24,17 +24,17 @@
 #include "w_drawprim.h"
 #include "w_zoom.h"
 
-static int	create_n_write_bitmap();
+static int	create_n_write_xbm();
 
 int
-write_bitmap(file_name,mag)
+write_xbm(file_name,mag)
     char	   *file_name;
     float	    mag;
 {
     if (!ok_to_write(file_name, "EXPORT"))
 	return (1);
 
-    return (create_n_write_bitmap(file_name,mag));  /* write the bitmap file */
+    return (create_n_write_xbm(file_name,mag));  /* write the xbm file */
 }
 
 static Boolean	havegcs = False;
@@ -43,7 +43,7 @@ static unsigned long save_fg_color;
 static unsigned long save_bg_color;
 
 static int
-create_n_write_bitmap(filename,mag)
+create_n_write_xbm(filename,mag)
     char	   *filename;
     float	    mag;
 {
@@ -144,7 +144,7 @@ create_n_write_bitmap(filename,mag)
     sav_objmask = cur_objmask;	/* save the point marker */
     cur_objmask = M_NONE;
     redisplay_objects(&objects);/* draw the figure into the pixmap */
-    put_msg("Writing bitmap file...");
+    put_msg("Writing xbm file...");
     app_flush();
 
     x_fg_color.pixel = save_fg_color;	/* put colors back to normal */
@@ -175,7 +175,7 @@ create_n_write_bitmap(filename,mag)
     }
     if (XWriteBitmapFile(tool_d, filename, bitmap, width, height, -1, -1)
 	!= BitmapSuccess) {
-	put_msg("Couldn't write bitmap file");
+	put_msg("Couldn't write xbm file");
 	status = 1;
     } else {
 	put_msg("Bitmap written to \"%s\"", filename);

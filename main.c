@@ -496,7 +496,7 @@ main(argc, argv)
 	int		status;
 
 	/*  make a window for the icon */
-	iconWindow = XCreateSimpleWindow(tool_d, RootWindowOfScreen(tool_s),
+	iconWindow = XCreateSimpleWindow(tool_d, DefaultRootWindow(tool_d),
 					 0, 0, 1, 1, 0,
 					 BlackPixelOfScreen(tool_s),
 					 BlackPixelOfScreen(tool_s));
@@ -801,7 +801,7 @@ notablet:
 	XtAppMainLoop(tool_app);
     }
     else
-#endif USE_TAB
+#endif /* USE_TAB */
 
 	XtAppMainLoop(tool_app);
     return 0;

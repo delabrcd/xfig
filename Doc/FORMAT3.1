@@ -17,35 +17,29 @@
  * the party supplying this software to the X Consortium.
  */
 
-The following is the format of Fig files (fig 3.0).
+The only difference from version 3.0 to version 3.1 is that the position
+of the "magnet" has been shifted by 14 fig units.
+In the 2.1 and older versions of xfig the grid was in multiples of 5 fig
+units, but they were on intervals 4, 9, 14, 19, etc.
+When version 3.0 was created, coordinates were simply multiplied by the
+ratio of the resolutions (1200/80 = 15) so values like 4 became 60 instead
+of 74 ((4+1)*15 - 1).
 
-The changes from version 2.1 are as follows:
+This means that figures converted from 2.1 and older files are offset by
+14 fig units but new objects entered with version 3.0 are correct.
 
-1) Area fill values now range from -1 (unfilled) to 0 to 20 (white to black).
-   Previously, 0 was unfilled and 1 to 21 were white to black.
-
-2) All objects except text now have two colors - pen and fill.
-
-3) a)	Text objects are now terminated with the string "\001" (no quotes)
-	instead of the Control-A (^A) character.  This will alleviate problems
-	with mailing fig files through mailers which strip control characters.
-
-   b)	characters above 177 octal (127 decimal) are now represented by the
-	string "\xxx" where "xxx" is the OCTAL value of the character.  This
-	allows one to use 7-bit editors to modify xfig files.
-	Multi-line text objects are still parsed but appear on one line on
-	the canvas.  Perhaps true multi-line text objects will be supported
-	in the future.
-
-4) EPS objects have been generalized to PICture objects to allow more formats
-	such as XPM and XBM.  No actual change to the format.
+In version 3.1 the magnet grid is at intervals 0, 75, 150, etc instead of 
+-1, 74, 149, etc.
+Figures from 2.1 and older are correctly converted now and a warning is popped
+up when you read in a version 3.0 file that says you may have to offset the
+figure when you load it, using the x and y offsets in the file panel.
 
 --------------------------------------------------------------------------------
 Description of the Fig Format Follows
 --------------------------------------------------------------------------------
 
 (1) The very first line is a comment line containing the name and version:
-	#FIG 3.0
+	#FIG 3.1
 
     The character # at the first column of a line indicates that the line
     is a comment line which will be ignored.

@@ -319,3 +319,22 @@ extern char *getenv();
 #ifdef NOSTRSTR
 extern char *strstr();
 #endif
+
+#if defined(BSD) || defined(__bsdi__)
+
+extern	long		random();
+extern	void		srandom();
+
+#define	frandom()	(random()*(1./2147483648.))
+
+#else /* not BSD */
+
+extern	void		srand48();
+extern	long		lrand48();
+extern	double		drand48();
+
+#define	srandom(seed)	srand48(seed)
+#define	random()	lrand48()
+#define	frandom()	drand48()
+
+#endif	/* not BSD */

@@ -38,23 +38,3 @@ typedef unsigned char  BYTE;	/* 8-bit unsigned integer */
 typedef BYTE  COLR[4];		/* red, green, blue, exponent */
 
 #define MIN_NEU_SAMPLES	600	/* min number of samples (npixels/samplefac) needed for network */
-
-/*
- *  random.h - header file for random(3) and urand() function.
- *
- *     10/1/85
- */
-
-#ifdef	BSD
-extern long  random();
-
-#define	 frandom()	(random()*(1./2147483648.))
-
-#else /* not BSD */
-
-extern long  lrand48();
-extern double  drand48();
-#define	 random()	lrand48()
-#define	 frandom()	drand48()
-
-#endif	/* not BSD */

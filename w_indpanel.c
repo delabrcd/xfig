@@ -711,7 +711,6 @@ setup_ind_panel()
     XSetBackground(tool_d, ind_button_gc, ind_but_bg);
     XSetForeground(tool_d, ind_button_gc, ind_but_fg);
     XSetFont(tool_d, ind_button_gc, button_font->fid);
-    XSetFillStyle(tool_d, ind_button_gc, FillTiled);
 
     /* also create gc with fore=background for blanking areas */
     ind_blank_gc = XCreateGC(tool_d, XtWindow(ind_panel), (unsigned long) 0, NULL);
@@ -2020,6 +2019,7 @@ show_fill_style(sw)
     if ((cur_fillcolor == BLACK || cur_fillcolor == DEFAULT || cur_fillcolor == WHITE) &&
 	 (cur_fillstyle >= NUMSHADEPATS && cur_fillstyle < NUMSHADEPATS+NUMTINTPATS))
 	    cur_fillstyle = UNFILLED;	/* no tints, set unfilled */
+    XSetFillStyle(tool_d, ind_button_gc, FillTiled);
     if (cur_fillstyle == UNFILLED) {
 	XSetTile(tool_d, ind_button_gc,
 		(cur_fillcolor==BLACK ||
@@ -2042,6 +2042,7 @@ show_fill_style(sw)
 	else
 	   put_msg("FILL pattern %d",cur_fillstyle-NUMSHADEPATS-NUMTINTPATS);
     }
+    XSetFillStyle(tool_d, ind_button_gc, FillSolid);
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(sw->button);
     /* put the pixmap in the widget background */

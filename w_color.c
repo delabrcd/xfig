@@ -1802,7 +1802,7 @@ show_pen_color()
     char	    colorname[10];
 
     if (cur_pencolor < DEFAULT || cur_pencolor >= NUM_STD_COLS+num_usr_cols ||
-	colorFree[cur_pencolor-NUM_STD_COLS])
+	cur_pencolor >= NUM_STD_COLS && colorFree[cur_pencolor-NUM_STD_COLS])
 	    cur_pencolor = DEFAULT;
     if (cur_pencolor == DEFAULT || cur_pencolor == BLACK)
 	color = x_fg_color.pixel;
@@ -1871,7 +1871,7 @@ show_fill_color()
     char	    colorname[10];
 
     if (cur_fillcolor < DEFAULT || cur_fillcolor >= NUM_STD_COLS+num_usr_cols ||
-	colorFree[cur_fillcolor-NUM_STD_COLS])
+	cur_fillcolor >= NUM_STD_COLS && colorFree[cur_fillcolor-NUM_STD_COLS])
 	    cur_fillcolor = DEFAULT;
     if (cur_fillcolor == DEFAULT || cur_fillcolor == BLACK)
 	color = x_fg_color.pixel;

@@ -34,6 +34,10 @@ extern		elastic_box();
 extern		show_zoom();
 extern		pan_origin();
 
+/* global for w_canvas.c */
+
+Boolean	zoom_in_progress = False;
+
 /* extern int		   gc_thickness[NUMOPS]; */
 
 static		do_zoom(), cancel_zoom();
@@ -44,14 +48,11 @@ static int	(*save_locmove_proc) ();
 static int	(*save_leftbut_proc) ();
 static int	(*save_middlebut_proc) ();
 static int	(*save_rightbut_proc) ();
-static Cursor	save_cur_cursor;
 static int	save_action_on;
 
 float		zoomscale = 1.0/ZOOM_FACTOR;
 int		zoomxoff = 0;
 int		zoomyoff = 0;
-
-static Boolean	zoom_in_progress = False;
 
 /* used for private box drawing functions */
 static int	my_fix_x, my_fix_y;
@@ -64,6 +65,7 @@ zoom_selected(x, y, button)
     if (!zoom_in_progress) {
 	switch (button) {
 	case Button1:
+	    set_temp_cursor(magnify_cursor);
 	    init_zoombox_drawing(x, y);
 	    break;
 	case Button2:
@@ -74,8 +76,10 @@ zoom_selected(x, y, button)
 	    show_zoom(&ind_switches[ZOOM_SWITCH_INDEX]);
 	    break;
 	}
-    } else if (button == Button1)
+    } else if (button == Button1) {
+	reset_cursor();
 	do_zoom(x, y);
+    }
 }
 
 
@@ -101,7 +105,6 @@ init_zoombox_drawing(x, y)
     save_middlebut_proc = canvas_middlebut_proc;
     save_rightbut_proc = canvas_rightbut_proc;
     save_kbd_proc = canvas_kbd_proc;
-    save_cur_cursor = cur_cursor;
 
     my_cur_x = my_fix_x = x;
     my_cur_y = my_fix_y = y;
@@ -112,7 +115,6 @@ init_zoombox_drawing(x, y)
     canvas_middlebut_proc = canvas_rightbut_proc = null_proc;
     canvas_rightbut_proc = cancel_zoom;
     elastic_box(my_fix_x, my_fix_y, my_cur_x, my_cur_y);
-    set_temp_cursor(null_cursor);
     set_action_on();
     zoom_in_progress = True;
 }
@@ -150,7 +152,6 @@ do_zoom(x, y)
     canvas_middlebut_proc = save_middlebut_proc;
     canvas_rightbut_proc = save_rightbut_proc;
     canvas_kbd_proc = save_kbd_proc;
-    set_cursor(save_cur_cursor);
     action_on = save_action_on;
     zoom_in_progress = False;
 }
@@ -166,7 +167,7 @@ cancel_zoom()
     canvas_middlebut_proc = save_middlebut_proc;
     canvas_rightbut_proc = save_rightbut_proc;
     canvas_kbd_proc = save_kbd_proc;
-    set_cursor(save_cur_cursor);
+    reset_cursor();
     action_on = save_action_on;
     zoom_in_progress = False;
 }

@@ -64,13 +64,13 @@ read_xpm(pic)
 		image.width, image.height, image.ncolors);
 	pic->numcols = image.ncolors;
 	pic->pixmap = None;
-	pic->bitmap = (char *) malloc(image.width*image.height*sizeof(unsigned char));
+	pic->bitmap = (unsigned char *) malloc(image.width*image.height*sizeof(unsigned char));
 	if (pic->bitmap == NULL) {
 	    file_msg("cannot allocate space for GIF/XPM image");
 	    return;
 	}
 	for (i=0; i<image.width*image.height; i++)
-	    pic->bitmap[i] = (char) image.data[i]; /* int to char */
+	    pic->bitmap[i] = (unsigned char) image.data[i]; /* int to unsigned char */
 	XpmFreeXpmImage(&image);	/* get rid of the image */
 	pic->hw_ratio = (float) image.height / image.width;
 	pic->bit_size.x = image.width;

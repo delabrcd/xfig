@@ -1,9 +1,15 @@
 This file contains some possible things to do in future versions of xfig.
 
-make zooming only rescale texts which are visible in the new zoom.  This may be
+Should arrow size change in update mode when linewidth changes?
+	Easier method to set/change arrow size
+Rotate objects using only the mouse (requires new mode button)
+Split/join two objects together (e.g. end of one line attached to the beginning
+	of another line to make single, new line).  This would only make sense
+	for lines/splines?
+Make zooming only rescale texts which are visible in the new zoom.  This may be
 	a problem because the bounding box of the text at the new size isn't
 	known until the font is rescaled.
-make it smart about duplicate GIFs:
+Make it smart about duplicate GIFs:
 	o Same GIFs on canvas use same bitmap[]
 	  (each has its own pixmap in case different rotation, size etc)
 	o Thus, they all share the same colors
@@ -35,7 +41,6 @@ Allow vertically-aligned text
         descenders.
 Have common edit popup for all four splines to allow conversion between all
 Save modified_flag before file operations and restore if undo used
-Should arrow size change in update mode when linewidth changes?
 Change eps_bitmaps so that background is transparent; i.e. stipple (needs to
 	work in normal and reverse-video modes)
 Make popup windows come up so that they don't overlap the figure (if possible).

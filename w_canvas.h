@@ -39,8 +39,8 @@ extern String	local_translations;
 	if (!anypointposn) { \
 	    int _txx; \
 	    x = ((_txx = x%posn_rnd[cur_pointposn]) < posn_hlf[cur_pointposn]) \
-		? x - _txx - 1 : x + posn_rnd[cur_pointposn] - _txx - 1; \
+		? x - _txx : x + posn_rnd[cur_pointposn] - _txx; \
 	    y = ((_txx = y%posn_rnd[cur_pointposn]) < posn_hlf[cur_pointposn]) \
-		? y - _txx - 1 : y + posn_rnd[cur_pointposn] - _txx - 1; \
+		? y - _txx : y + posn_rnd[cur_pointposn] - _txx; \
 	}
 

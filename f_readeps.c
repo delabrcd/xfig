@@ -26,6 +26,10 @@
 extern FILE	*open_picfile();
 extern void	*close_picfile();
 
+#ifdef DPS
+static int bitmapDPS (FILE*,int,int,int,int,int,int,int,char *);
+#endif
+
 int
 read_epsf(pic)
     F_pic	   *pic;
@@ -178,9 +182,8 @@ read_epsf(pic)
 #ifdef DPS
     /* if Display PostScript */
     if ( useDPS ) {
-	static int bitmapDPS (FILE*,int,int,int,int,int,int,int,char *);
         if (!bitmapDPS(epsf,llx,lly,urx,ury,
-                       pic->size_x,pic->size_y,nbitmap,pic->bitmap)) {
+                       pic->bit_size.x,pic->bit_size.y,nbitmap,pic->bitmap)) {
             file_msg("DPS extension failed to generate EPS bitmap\n");
 	    close_picfile(epsf,type);
             return 1;
@@ -215,7 +218,7 @@ read_epsf(pic)
 	gs commands (New method)
 
 	W is the width in pixels and H is the height
-	gs -dSAFER -sDEVICE=pbmraw -gWxH -sOutputFile=/tmp/xfig-pic%%%%%%%.pbm -q -
+	gs -dSAFER -sDEVICE=pbmraw(or gif8) -gWxH -sOutputFile=/tmp/xfig-pic%%%%%%%.pbm -q -
 
 	-llx -lly translate
 	(psfile) run
@@ -279,9 +282,15 @@ read_epsf(pic)
     }
 #endif /* GSBIT */
 
+#ifdef DPS
+    /* If Display PostScript fails than we bailed out earlier */
+    if ( !useDPS && !useGS )
+#else
     /* for whatever reason, ghostscript wasn't available or didn't work but there 
        is a preview bitmap - use that */
-    if ( !useGS ) {
+    if ( !useGS )
+#endif
+{
         mp = pic->bitmap;
         bzero(mp, nbitmap);	/* init bitmap to zero */
         last = pic->bitmap + nbitmap;
@@ -374,13 +383,12 @@ int bitmapDPS (FILE *fp, int llx, int lly, int urx, int ury,
 	XImage *image;
 	DPSContext dps;
 	
-	/* create bit pixmap and its GC */
-	bit = XCreatePixmap(dpy,DefaultRootWindow(dpy),width,height,
-			    DefaultDepthOfScreen(tool_s));
+	/* create 1-bit pixmap and its GC */
+	bit = XCreatePixmap(dpy,DefaultRootWindow(dpy),width,height,1);
         gcbit = XCreateGC(dpy,bit,0,NULL);
 
         /* create standard colormap for black-and-white only */
-        cm = XCreateColormap(dpy,RootWindow(dpy,scr),
+        cm = XCreateColormap(dpy,DefaultRootWindow(dpy),
                 DefaultVisual(dpy,scr),AllocAll);
         color.pixel = 0;
         color.red = color.green = color.blue = 0;
@@ -394,18 +402,23 @@ int bitmapDPS (FILE *fp, int llx, int lly, int urx, int ury,
         scm->colormap = cm;
         scm->red_max = 1;
         scm->red_mult = 1;
+        scm->green_max = 1;
+        scm->green_mult = 0;
+        scm->blue_max = 1;
+        scm->blue_mult = 0;
         scm->base_pixel = 0;
         scm->visualid = XVisualIDFromVisual(DefaultVisual(dpy,scr));
 
         /* create and set Display PostScript context for bit pixmap */
-        dps = XDPSCreateContext(dpy,bit,gcbit,0,height,0,scm,NULL,0,
+        dps = XDPSCreateContext(dpy,bit,gcbit,0,height,0,scm,NULL,2,
                 DPSDefaultTextBackstop,DPSDefaultErrorProc,NULL);
         if (dps==NULL) {
 		file_msg("Cannot create Display PostScript context!");
 		return 0;
         }
-        DPSPrintf(dps,"\n resyncstart\n");
         DPSSetContext(dps);
+
+        DPSPrintf(dps,"\n resyncstart\n");
         DPSFlushContext(dps);
         DPSWaitContext(dps);
 
@@ -418,7 +431,9 @@ int bitmapDPS (FILE *fp, int llx, int lly, int urx, int ury,
 		(int)(25.4*scrheight/scrheightmm));
 
         /* scale */
-        DPSPrintf(dps,"%f %f scale\n",PIX_PER_INCH/dppi,PIX_PER_INCH/dppi);
+        DPSPrintf(dps,"%f %f scale\n",
+		(PIX_PER_INCH/dppi)/ZOOM_FACTOR,
+		(PIX_PER_INCH/dppi)/ZOOM_FACTOR);
 
         /* paint white background */
         DPSPrintf(dps,

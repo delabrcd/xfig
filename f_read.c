@@ -73,7 +73,7 @@ static F_compound *read_compoundobject();
 static void	   count_lines_correctly();
 
 #define FILL_CONVERT(f) \
-	   ((proto == 22 || proto == 30) ? (f): \
+	   ((proto >= 22) ? (f): \
 	     (((proto>=20) || (f) == 0 || !TFX) ?  \
 		(f-1) : (!TFX? (NUMFILLPATS-1) - ((f)-1)*5: UNFILLED)))
 
@@ -198,7 +198,7 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 	if (strstr(buf, "TFX") != NULL)
 	    TFX = True;
 
-	if (proto == 22 || proto == 30) {
+	if (proto >= 30) {
 	    /* read Portrait/Landscape indicator now */
 	    if (fgets(buf, BUF_SIZE, fp) == 0)
 		return -1;		/* error */
@@ -246,14 +246,18 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 		}
 	    }
 	}
-	status = read_objects(fp, obj, xoff, yoff);
+	status = read_objects(fp, obj);
 
     } else {
 	file_msg("Converting figure from 1.3 format to %s.",PROTOCOL_VERSION);
 	file_msg("If this doesn't work then this is not a Fig file.");
 	proto = 13;
-	status = read_1_3_objects(fp, obj);
+	status = read_1_3_objects(fp, buf, obj);
     }
+    fclose(fp);
+    /* don't go any further if there was an error in reading the figure */
+    if (status < 0)
+	return (status);
 
     n_num_usr_cols++;	/* number of user colors = max index + 1 */
     if (merge) {
@@ -272,21 +276,39 @@ readfp_fig(fp, obj, merge, xoff, yoff)
     if (!merge)
 	remap_imagecolors(obj);
 
-    /* get pixels per inch to expected value. */
-    if(obj->nwcorner.x != PIX_PER_INCH)
-       scale_figure(obj,((float)PIX_PER_INCH)/obj->nwcorner.x);
+    /*******************************************************************************
+	The older versions of xfig (1.3 to 2.1) used values that ended in 4 or 9
+	for coordinates on the "grid".  When multiplied by 15 for the 3.0
+	resolution these values ended up 14 "new" pixels off the grid.
+
+	For 3.0 files, 1 is added to the coordinates, and in addition, the USER
+	is supposed to set the x and y offset in the file panel both to the
+	amount necessary to correct the problem.
+	For older files 1 is first added to coordinates then they are multiplied by 15.
+    ********************************************************************************/
+
+    if (proto == 30) {
+       file_msg("Warning, because of a bug in version 3.0 you may need to offset");
+       file_msg("your figure by 14 fig units in X and Y if this figure was");
+       file_msg("converted from an older version of xfig.  See the File panel.");
+    }
+    if (proto == 30)
+       scale_figure(obj,((float)PIX_PER_INCH)/obj->nwcorner.x,0);
+    else if (obj->nwcorner.x != PIX_PER_INCH)
+       scale_figure(obj,((float)PIX_PER_INCH)/obj->nwcorner.x,15);
+
+    /* shift the figure by the amount in the x and y offsets from the file panel */
+    translate_compound(obj, xoff, yoff);
 
     /* ask the user if the figure should be shifted if there are negative coords */
     shift_figure(obj);
 
-    fclose(fp);
     return (status);
 }
 
-read_objects(fp, obj, xoff, yoff)
+read_objects(fp, obj)
     FILE	   *fp;
     F_compound	   *obj;
-    int		    xoff, yoff;
 {
     F_ellipse	   *e, *le = NULL;
     F_line	   *l, *ll = NULL;
@@ -331,7 +353,6 @@ read_objects(fp, obj, xoff, yoff)
 		ll = (ll->next = l);
 	    else
 		ll = obj->lines = l;
-	    translate_line(l, xoff, yoff);
 	    num_object++;
 	    break;
 	case O_SPLINE:
@@ -341,7 +362,6 @@ read_objects(fp, obj, xoff, yoff)
 		ls = (ls->next = s);
 	    else
 		ls = obj->splines = s;
-	    translate_spline(s, xoff, yoff);
 	    num_object++;
 	    break;
 	case O_ELLIPSE:
@@ -360,7 +380,6 @@ read_objects(fp, obj, xoff, yoff)
 		la = (la->next = a);
 	    else
 		la = obj->arcs = a;
-	    translate_arc(a, xoff, yoff);
 	    num_object++;
 	    break;
 	case O_TEXT:
@@ -370,7 +389,6 @@ read_objects(fp, obj, xoff, yoff)
 		lt = (lt->next = t);
 	    else
 		lt = obj->texts = t;
-	    translate_text(t, xoff, yoff);
 	    num_object++;
 	    break;
 	case O_COMPOUND:
@@ -380,7 +398,6 @@ read_objects(fp, obj, xoff, yoff)
 		lc = (lc->next = c);
 	    else
 		lc = obj->compounds = c;
-	    translate_compound(c, xoff, yoff);
 	    num_object++;
 	    break;
 	default:
@@ -431,7 +448,7 @@ read_arcobject(fp)
 
     a->next = NULL;
     a->for_arrow = a->back_arrow = NULL;
-    if (proto == 22 || proto == 30) {
+    if (proto >= 30) {
 	n = sscanf(buf, "%*d%d%d%d%d%d%d%d%d%f%d%d%d%d%f%f%d%d%d%d%d%d\n",
 	       &a->type, &a->style, &a->thickness,
 	       &a->pen_color, &a->fill_color, &a->depth,
@@ -456,7 +473,7 @@ read_arcobject(fp)
 	a->cap_style = CAP_BUTT;	/* butt line cap */
     }
     a->type--;	/* internally, 0=open arc, 1=pie wedge */
-    if (((proto < 22) && (n != 19)) || ((proto == 22 || proto == 30) && (n != 21))) {
+    if (((proto < 22) && (n != 19)) || ((proto >= 30) && (n != 21))) {
 	file_msg(Err_incomp, "arc", line_no);
 	free((char *) a);
 	return (NULL);
@@ -609,7 +626,7 @@ read_ellipseobject()
 	return (NULL);
 
     e->next = NULL;
-    if (proto == 22 || proto == 30) {
+    if (proto >= 30) {
 	n = sscanf(buf, "%*d%d%d%d%d%d%d%d%d%f%d%f%d%d%d%d%d%d%d%d\n",
 	       &e->type, &e->style, &e->thickness,
 	       &e->pen_color, &e->fill_color, &e->depth,
@@ -630,7 +647,7 @@ read_ellipseobject()
 	       &e->end.x, &e->end.y);
 	e->fill_color = e->pen_color;
     }
-    if (((proto < 22) && (n != 18)) || ((proto == 22 || proto == 30) && (n != 19))) {
+    if (((proto < 22) && (n != 18)) || ((proto >= 30) && (n != 19))) {
 	file_msg(Err_incomp, "ellipse", line_no);
 	free((char *) e);
 	return (NULL);
@@ -668,7 +685,7 @@ read_lineobject(fp)
     /* 3.0(experimental 2.2) or later additionally has number of points parm for
 	all line objects and fill color separate from border color */
     radius_flag = ((proto >= 21) || (l->type == T_ARC_BOX && proto == 20));
-    if (proto == 22 || proto == 30) {
+    if (proto >= 30) {
 	n = sscanf(buf, "%*d%d%d%d%d%d%d%d%d%f%d%d%d%d%d%d",
 		   &l->type, &l->style, &l->thickness, &l->pen_color, &l->fill_color,
 		   &l->depth, &l->pen_style, &l->fill_style, &l->style_val,
@@ -694,7 +711,7 @@ read_lineobject(fp)
     }
     if ((!radius_flag && n != 10) ||
 	(radius_flag && ((proto == 21 && n != 11) ||
-			((proto == 22 || proto == 30) && n != 15)))) {
+			((proto >= 30) && n != 15)))) {
 	    file_msg(Err_incomp, "line", line_no);
 	    free((char *) l);
 	    return (NULL);
@@ -802,7 +819,7 @@ read_splineobject(fp)
 
     /* 3.0(experimental 2.2) or later has number of points parm for all spline
 	objects and fill color separate from border color */
-    if (proto == 22 || proto == 30) {
+    if (proto >= 30) {
 	    n = sscanf(buf, "%*d%d%d%d%d%d%d%d%d%f%d%d%d%d",
 		    &s->type, &s->style, &s->thickness, &s->pen_color, &s->fill_color,
 		    &s->depth, &s->pen_style, &s->fill_style, &s->style_val,
@@ -814,7 +831,7 @@ read_splineobject(fp)
 	    s->fill_color = s->pen_color;
 	    s->cap_style = CAP_BUTT;	/* butt line cap */
     }
-    if (((proto < 22) && (n != 10)) || ((proto == 22 || proto == 30) && n != 13)) {
+    if (((proto < 22) && (n != 10)) || ((proto >= 30) && n != 13)) {
 	file_msg(Err_incomp, "spline", line_no);
 	free((char *) s);
 	return (NULL);
@@ -979,7 +996,7 @@ read_textobject(fp)
 			pos++;
 	replaced = buf[pos];
 	buf[pos]='f';
-	if (proto == 22 || proto == 30) { /* order of parms is more like other objects now */
+	if (proto >= 30) { /* order of parms is more like other objects now */
 	    n = sscanf(buf, "%*d%d%d%d%d%d%f%f%d%*f%*f%d%d%[^f]%[f]",
 		&t->type, &t->color, &t->depth, &t->pen_style,
 		&t->font, &tx_size, &t->angle,
@@ -1011,7 +1028,7 @@ read_textobject(fp)
     }
 #else
 
-    if (proto == 22 || proto == 30) {	/* order of parms is more like other objects now;
+    if (proto >= 30) {	/* order of parms is more like other objects now;
 			   string is now terminated with the literal '\001',
 			   and 8-bit characters are represented as \xxx */
 	n = sscanf(buf, "%*d%d%d%d%d%d%f%f%d%*f%*f%d%d%[^\n]",
@@ -1048,7 +1065,7 @@ read_textobject(fp)
     more = False;
     if (proto < 22 && n == 13)
 	more = True;		/* in older xfig there is more if ^A wasn't found yet */
-    else if (proto == 22 || proto == 30) { /* in 3.0(2.2) there is more if \001 wasn't found */
+    else if (proto >= 30) { /* in 3.0(2.2) there is more if \001 wasn't found */
 	len = strlen(s);
 	if ((strcmp(&s[len-4],"\\001") == 0) &&	/* if we find '\000' */
 	    (len >= 4 && s[len-5] != '\\')) {	/* and not '\\000' */
@@ -1096,7 +1113,7 @@ read_textobject(fp)
 		strcat(s, s_temp);
 	} while (n == 1);
     }
-    if (proto == 22 || proto == 30) {
+    if (proto >= 30) {
 	/* now convert any \xxx to ascii characters */
 	if (strchr(s,'\\')) {
 		int num;
@@ -1312,20 +1329,22 @@ F_compound	   *obj;
 	translate_text(t, dx, dy);
 }
 
-scale_figure(obj,mul)
+scale_figure(obj,mul,offset)
 F_compound	   *obj;
-float		   mul;
+float		    mul;
+int		    offset;
 {
     /* scale the whole figure for new pixels per inch */
-    file_msg(
-	"Scaling entire figure by a factor of %.1f for new %d pixel per inch resolution.",
+    if (mul != 1.0)
+      file_msg(
+	"Scaling figure by a factor of %.1f for new %d pixel per inch resolution.",
 		mul,PIX_PER_INCH);
-    read_scale_ellipses(obj->ellipses, mul);
-    read_scale_arcs(obj->arcs, mul);
-    read_scale_lines(obj->lines, mul);
-    read_scale_splines(obj->splines, mul);
-    read_scale_compounds(obj->compounds, mul);
-    read_scale_texts(obj->texts, mul);
+    read_scale_ellipses(obj->ellipses, mul, offset);
+    read_scale_arcs(obj->arcs, mul, offset);
+    read_scale_lines(obj->lines, mul, offset);
+    read_scale_splines(obj->splines, mul, offset);
+    read_scale_compounds(obj->compounds, mul, offset);
+    read_scale_texts(obj->texts, mul, offset);
 
 }
 
@@ -1700,7 +1719,7 @@ renumber(color)
  * Added by Andreas_Bagge@maush2.han.de (A.Bagge), 14.12.94
  */
 
-void
+static void
 count_lines_correctly(fp)
     FILE *fp;
 {

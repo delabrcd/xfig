@@ -25,6 +25,7 @@
  */
 
 #include <stdio.h>
+#include "fig.h"
 #include "f_neuclrtab.h"
 
 static	void initnet();

@@ -137,13 +137,7 @@ init_font()
 	for (f = 0; f < NUM_FONTS; f++) {
 	    nf = NULL;
 	    strcpy(template,x_fontinfo[f].template);
-	    strcat(template,"*-*-*-*-*-*-");
-	    /* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
-	    if (strstr(template,"symbol") == NULL &&
-		strstr(template,"zapfdingbats") == NULL)
-		    strcat(template,"ISO8859-*");
-	    else
-		strcat(template,"*-*");
+	    strcat(template,"*-*-*-*-*-*-*-*");
 	    /* don't free the Fontlist because we keep pointers into it */
 	    p = 0;
 	    if ((fontlist = XListFonts(tool_d, template, MAXNAMES, &count))==0) {
@@ -283,13 +277,7 @@ lookfont(f, s)
 		/* X11 fonts, create a full XLFD font name */
 		strcpy(template,x_fontinfo[f].template);
 		/* attach pointsize to font name */
-		strcat(template,"%d-*-*-*-*-*-");
-		/* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
-		if (strstr(template,"symbol") == NULL &&
-		strstr(template,"zapfdingbats") == NULL)
-		    strcat(template,"ISO8859-*");
-		else
-		strcat(template,"*-*");
+		strcat(template,"%d-*-*-*-*-*-*-*");
 		/* use the pixel field instead of points in the fontname so that the
 		font scales with screen size */
 		sprintf(fn, template, s);
@@ -1269,13 +1257,14 @@ set_line_stuff(width, style, style_val, join_style, cap_style, op, color)
     XChangeGC(tool_d, gccache[op], mask, &gcv);
     if (style == DASH_LINE || style == DOTTED_LINE) {
 	if (style_val > 0.0) {	/* style_val of 0.0 causes problems */
+	    /* length of ON pixels for dotted */
+	    if (style == DOTTED_LINE)
+		dash_list[op][0] = (char)display_zoomscale;
 	    /* length of ON/OFF pixels */
-	    dash_list[op][0] = dash_list[op][1] = (char) round(style_val * display_zoomscale);
+	    else 
+		dash_list[op][0] = dash_list[op][1] = (char)round(style_val*display_zoomscale);
 	    if (dash_list[op][0]==0)		/* take care for rounding to zero ! */
 		dash_list[op][0]=dash_list[op][1]=1;
-
-	    if (style == DOTTED_LINE)
-		dash_list[op][0] = (char)display_zoomscale; /* length of ON pixels for dotted */
 	    XSetDashes(tool_d, gccache[op], 0, (char *) dash_list[op], 2);
 	}
     }

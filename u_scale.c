@@ -21,169 +21,182 @@
 #include "resources.h"
 #include "object.h"
 
-read_scale_ellipse(ellipse, mul)
+read_scale_ellipse(ellipse, mul, offset)
     F_ellipse	   *ellipse;
     float      	    mul;
+    int		    offset;
 {
-    ellipse->center.x *= mul;
-    ellipse->center.y *= mul;
-    ellipse->start.x *= mul;
-    ellipse->start.y *= mul;
-    ellipse->end.x *= mul;
-    ellipse->end.y *= mul;
-    ellipse->radiuses.x *= mul;
-    ellipse->radiuses.y *= mul;
+    ellipse->center.x = ellipse->center.x * mul + offset;
+    ellipse->center.y = ellipse->center.y * mul + offset;
+    ellipse->start.x = ellipse->start.x * mul + offset;
+    ellipse->start.y = ellipse->start.y * mul + offset;
+    ellipse->end.x = ellipse->end.x * mul + offset;
+    ellipse->end.y = ellipse->end.y * mul + offset;
+    ellipse->radiuses.x = ellipse->radiuses.x * mul;
+    ellipse->radiuses.y = ellipse->radiuses.y * mul;
 }
 
-read_scale_arc(arc, mul)
+read_scale_arc(arc, mul, offset)
     F_arc	   *arc;
     float      	    mul;
+    int		    offset;
 {
-    arc->center.x *= mul;
-    arc->center.y *= mul;
-    arc->point[0].x *= mul;
-    arc->point[0].y *= mul;
-    arc->point[1].x *= mul;
-    arc->point[1].y *= mul;
-    arc->point[2].x *= mul;
-    arc->point[2].y *= mul;
+    arc->center.x = arc->center.x * mul + offset;
+    arc->center.y = arc->center.y * mul + offset;
+    arc->point[0].x = arc->point[0].x * mul + offset;
+    arc->point[0].y = arc->point[0].y * mul + offset;
+    arc->point[1].x = arc->point[1].x * mul + offset;
+    arc->point[1].y = arc->point[1].y * mul + offset;
+    arc->point[2].x = arc->point[2].x * mul + offset;
+    arc->point[2].y = arc->point[2].y * mul + offset;
 
-    read_scale_arrow(arc->for_arrow,mul);
-    read_scale_arrow(arc->back_arrow,mul);
+    read_scale_arrow(arc->for_arrow, mul, offset);
+    read_scale_arrow(arc->back_arrow, mul, offset);
 }
 
-read_scale_line(line, mul)
+read_scale_line(line, mul, offset)
     F_line	   *line;
     float      	    mul;
+    int		    offset;
 {
     F_point	   *point;
 
     for (point = line->points; point != NULL; point = point->next) {
-	point->x *= mul;
-	point->y *= mul;
+	point->x = point->x * mul + offset;
+	point->y = point->y * mul + offset;
     }
 
 
-    read_scale_arrow(line->for_arrow,mul);
-    read_scale_arrow(line->back_arrow,mul);
+    read_scale_arrow(line->for_arrow, mul, offset);
+    read_scale_arrow(line->back_arrow, mul, offset);
 }
 
-read_scale_text(text, mul)
+read_scale_text(text, mul, offset)
     F_text	   *text;
     float      	    mul;
+    int		    offset;
 {
-    text->base_x *= mul;
-    text->base_y *= mul;
+    text->base_x = text->base_x * mul + offset;
+    text->base_y = text->base_y * mul + offset;
     /* length, ascent and descent are already correct */
     /* Don't change text->size.  text->size is points */
 }
 
-read_scale_spline(spline, mul)
+read_scale_spline(spline, mul, offset)
     F_spline	   *spline;
     float	    mul;
+    int		    offset;
 {
     F_point	   *point;
     F_control	   *cp;
 
     for (point = spline->points; point != NULL; point = point->next) {
-	point->x *= mul;
-	point->y *= mul;
+	point->x = point->x * mul + offset;
+	point->y = point->y * mul + offset;
     }
     for (cp = spline->controls; cp != NULL; cp = cp->next) {
-	cp->lx *= mul;
-	cp->ly *= mul;
-	cp->rx *= mul;
-	cp->ry *= mul;
+	cp->lx = cp->lx * mul + offset;
+	cp->ly = cp->ly * mul + offset;
+	cp->rx = cp->rx * mul + offset;
+	cp->ry = cp->ry * mul + offset;
     }
 
-    read_scale_arrow(spline->for_arrow,mul);
-    read_scale_arrow(spline->back_arrow,mul);
+    read_scale_arrow(spline->for_arrow, mul, offset);
+    read_scale_arrow(spline->back_arrow, mul, offset);
 }
 
-read_scale_arrow(arrow,mul)
-     F_arrow        *arrow;
-     float          mul;
+read_scale_arrow(arrow, mul, offset)
+    F_arrow        *arrow;
+    float           mul;
+    int		    offset;
 {
   if(!arrow)
     return;
 
-    arrow->wid       *= mul;
-    arrow->ht        *= mul;
+    arrow->wid  = arrow->wid * mul + offset;
+    arrow->ht   = arrow->ht  * mul + offset;
 }
 
-read_scale_compound(compound, mul)
+read_scale_compound(compound, mul, offset)
     F_compound	   *compound;
     float	    mul;
+    int		    offset;
 {
-    compound->nwcorner.x *= mul;
-    compound->nwcorner.y *= mul;
-    compound->secorner.x *= mul;
-    compound->secorner.y *= mul;
+    compound->nwcorner.x = compound->nwcorner.x * mul + offset;
+    compound->nwcorner.y = compound->nwcorner.y * mul + offset;
+    compound->secorner.x = compound->secorner.x * mul + offset;
+    compound->secorner.y = compound->secorner.y * mul + offset;
 
-    read_scale_lines(compound->lines, mul);
-    read_scale_splines(compound->splines, mul);
-    read_scale_ellipses(compound->ellipses, mul);
-    read_scale_arcs(compound->arcs, mul);
-    read_scale_texts(compound->texts, mul);
-    read_scale_compounds(compound->compounds, mul);
+    read_scale_lines(compound->lines, mul, offset);
+    read_scale_splines(compound->splines, mul, offset);
+    read_scale_ellipses(compound->ellipses, mul, offset);
+    read_scale_arcs(compound->arcs, mul, offset);
+    read_scale_texts(compound->texts, mul, offset);
+    read_scale_compounds(compound->compounds, mul, offset);
 }
 
-read_scale_arcs(arcs, mul)
+read_scale_arcs(arcs, mul, offset)
     F_arc	   *arcs;
     float	    mul;
+    int		    offset;
 {
     F_arc	   *a;
 
     for (a = arcs; a != NULL; a = a->next)
-	read_scale_arc(a, mul);
+	read_scale_arc(a, mul, offset);
 }
 
-read_scale_compounds(compounds, mul)
+read_scale_compounds(compounds, mul, offset)
     F_compound	   *compounds;
     float	    mul;
+    int		    offset;
 {
     F_compound	   *c;
 
     for (c = compounds; c != NULL; c = c->next)
-	read_scale_compound(c, mul);
+	read_scale_compound(c, mul, offset);
 }
 
-read_scale_ellipses(ellipses, mul)
+read_scale_ellipses(ellipses, mul, offset)
     F_ellipse	   *ellipses;
     float	    mul;
+    int		    offset;
 {
     F_ellipse	   *e;
 
     for (e = ellipses; e != NULL; e = e->next)
-	read_scale_ellipse(e, mul);
+	read_scale_ellipse(e, mul, offset);
 }
 
-read_scale_lines(lines, mul)
+read_scale_lines(lines, mul, offset)
     F_line	   *lines;
     float	    mul;
+    int		    offset;
 {
     F_line	   *l;
 
     for (l = lines; l != NULL; l = l->next)
-	read_scale_line(l, mul);
+	read_scale_line(l, mul, offset);
 }
 
-read_scale_splines(splines, mul)
+read_scale_splines(splines, mul, offset)
     F_spline	   *splines;
     float	    mul;
+    int		    offset;
 {
     F_spline	   *s;
 
     for (s = splines; s != NULL; s = s->next)
-	read_scale_spline(s, mul);
+	read_scale_spline(s, mul, offset);
 }
 
-read_scale_texts(texts, mul)
+read_scale_texts(texts, mul, offset)
     F_text	   *texts;
     float	    mul;
+    int		    offset;
 {
     F_text	   *t;
 
     for (t = texts; t != NULL; t = t->next)
-	read_scale_text(t, mul);
+	read_scale_text(t, mul, offset);
 }

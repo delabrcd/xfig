@@ -164,8 +164,8 @@ draw_ellipse(e, op)
     } else if (op != ERASE && (e->style == DOTTED_LINE || e->style == DASH_LINE)) {
 	a = e->radiuses.x;
 	b = e->radiuses.y;
-	curve(canvas_win, a, 0, a, 0, e->direction, False,
-		7*max2(a,b), (b * b), (a * a),
+	curve(canvas_win, a, 0, a, 0, False, e->direction,
+		(int)(7*max2(a,b)*zoomscale), (b * b), (a * a),
 		e->center.x, e->center.y, op,
 		e->thickness, e->style, e->style_val, e->fill_style,
 		e->pen_color, e->fill_color, CAP_BUTT);
@@ -1128,6 +1128,10 @@ draw_arcarrows(a, op)
  Jordan, William J. Lennon and Barry D. Holm, IEEE Transaction on Computers
  Vol C-22, No. 12 December 1973.
 
+ This routine is only called for ellipses when the andle is 0 and the line type
+ is not solid.  For angles of 0 with solid lines, pw_curve() is called.
+ For all other angles angle_ellipse() is called.
+
  Will fill the curve if fill_style is != UNFILLED (-1)
  Call with draw_center = True and center_x, center_y set to draw endpoints
 	to center point (xoff,yoff) (arc type 2, i.e. pie wedge)
@@ -1145,9 +1149,10 @@ curve(window, xstart, ystart, xend, yend, draw_center,
     Color	    pen_color, fill_color;
     int		    cap_style;
 {
-    register int    deltax, deltay, dfx, dfy, x, y;
-    int		    dfxx, dfyy;
-    int		    falpha, fx, fy, fxy, absfx, absfy, absfxy;
+    register int    x, y;
+    register double deltax, deltay, dfx, dfy;
+    double	    dfxx, dfyy;
+    double	    falpha, fx, fy, fxy, absfx, absfy, absfxy;
     int		    margin, test_succeed, inc, dec;
     float	    zoom;
 
@@ -1173,10 +1178,10 @@ curve(window, xstart, ystart, xend, yend, draw_center,
 
     x = xstart;
     y = ystart;
-    dfx = 2 * a * xstart;
-    dfy = 2 * b * ystart;
-    dfxx = 2 * a;
-    dfyy = 2 * b;
+    dfx = 2 * (double) a * (double) xstart;
+    dfy = 2 * (double) b * (double) ystart;
+    dfxx = 2 * (double) a;
+    dfyy = 2 * (double) b;
 
     falpha = 0;
     if (direction) {
@@ -1201,9 +1206,9 @@ curve(window, xstart, ystart, xend, yend, draw_center,
 	fx = falpha + dfx * deltax + a;
 	fy = falpha + dfy * deltay + b;
 	fxy = fx + fy - falpha;
-	absfx = abs(fx);
-	absfy = abs(fy);
-	absfxy = abs(fxy);
+	absfx = fabs(fx);
+	absfy = fabs(fy);
+	absfxy = fabs(fxy);
 
 	if ((absfxy <= absfx) && (absfxy <= absfy))
 	    falpha = fxy;

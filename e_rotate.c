@@ -31,12 +31,14 @@
 
 extern double	compute_angle();
 
-int	setcenter;
-int	setcenter_x;
-int	setcenter_y;
-int	setanchor;
-int	setanchor_x;
-int	setanchor_y;
+/* from e_flip.c */
+extern int	setanchor;
+extern int	setanchor_x;
+extern int	setanchor_y;
+
+int		setcenter;
+int		setcenter_x;
+int		setcenter_y;
 
 static int	copy;
 static int	rotn_dirn;

@@ -21,6 +21,9 @@
 #include "resources.h"
 #include "object.h"
 #include "u_create.h"
+#include "u_fonts.h"
+#include "w_drawprim.h"
+#include "w_zoom.h"
 
 /*******    Fig 1.3 subtype of objects	  *******/
 #define			DRAW_ELLIPSE_BY_RAD	1
@@ -47,8 +50,9 @@ extern int	line_no;
 extern int	num_object;
 
 int
-read_1_3_objects(fp, obj)
+read_1_3_objects(fp, buf, obj)
     FILE	   *fp;
+    char	   *buf;
     F_compound	   *obj;
 {
     F_ellipse	   *e, *le = NULL;
@@ -60,7 +64,7 @@ read_1_3_objects(fp, obj)
     int		    n;
     int		    object, pixperinch, canvaswid, canvasht, coord_sys;
 
-    n = fscanf(fp, "%d%d%d%d\n", &pixperinch, &coord_sys, &canvaswid, &canvasht);
+    n = sscanf(buf, "%d%d%d%d\n", &pixperinch, &coord_sys, &canvaswid, &canvasht);
     if (n != 4) {
 	file_msg("Incorrect format in the first line in input file");
 	return (-1);
@@ -461,22 +465,26 @@ read_1_3_textobject(fp)
 {
     F_text	   *t;
     int		    n;
+    int		    dum;
     char	    buf[128];
+    extern PIX_FONT lookfont();
+    PR_SIZE	    tx_dim;
 
     if ((t = create_text()) == NULL)
 	return (NULL);
 
     t->type = T_LEFT_JUSTIFIED;
-    t->flags = RIGID_TEXT;
+    t->size = 18;		/* size field wasn't used in version 1.3 */
+    t->flags = RIGID_TEXT;	/* same with flags (called style) */
     t->color = BLACK;
     t->depth = 0;
     t->pen_style = 0;
     t->angle = 0.0;
     t->next = NULL;
     /* ascent and length will be recalculated later */
-    n = fscanf(fp, " %d %d %d %d %d %d %d %[^\n]", &t->font,
-	       &t->size, &t->flags, &t->ascent, &t->length,
-	       &t->base_x, &t->base_y, buf);
+    n = fscanf(fp, " %d %d %d %d %d %d %d %[^\n]",
+		&t->font, &dum, &dum, &t->ascent, &t->length,
+		&t->base_x, &t->base_y, buf);
     if (n != 8) {
 	file_msg("Incomplete text data");
 	free((char *) t);
@@ -484,10 +492,26 @@ read_1_3_textobject(fp)
     }
     if ((t->cstring = new_string(strlen(buf) + 1)) == NULL) {
 	free((char *) t);
+	file_msg("Empty text string at line %d.", line_no);
 	return (NULL);
     }
+    /* put string in structure */
     strcpy(t->cstring, buf);
-    if (t->size == 0)
-	t->size = 18;
+
+    /* get the font struct */
+    t->fontstruct = lookfont(x_fontnum(t->flags, t->font),
+			round(t->size*display_zoomscale));
+
+    if (t->font >= MAXFONT(t)) {
+	file_msg("Invalid text font (%d) at line %d, setting to DEFAULT.",
+		t->font, line_no);
+	t->font = DEFAULT;
+    }
+    /* now calculate the actual length and height of the string in fig units */
+    tx_dim = textsize(t->fontstruct, strlen(t->cstring), t->cstring);
+    t->length = round(tx_dim.length);
+    t->ascent = round(tx_dim.ascent);
+    t->descent = round(tx_dim.descent);
+
     return (t);
 }

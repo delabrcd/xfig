@@ -29,12 +29,14 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-int	setanchor;
-int	setanchor_x;
-int	setanchor_y;
-int	setcenter;
-int	setcenter_x;
-int	setcenter_y;
+/* from e_rotate.c */
+extern int	setcenter;
+extern int	setcenter_x;
+extern int	setcenter_y;
+
+int		setanchor;
+int		setanchor_x;
+int		setanchor_y;
 
 static int	flip_axis;
 static int	copy;

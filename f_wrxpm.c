@@ -22,21 +22,21 @@
 #include "w_zoom.h"
 #include <X11/xpm.h>
 
-static int	create_n_write_pixmap();
+static int	create_n_write_xpm();
 
 int
-write_pixmap(file_name,mag)
+write_xpm(file_name,mag)
     char	   *file_name;
     float	    mag;
 {
     if (!ok_to_write(file_name, "EXPORT"))
 	return (1);
 
-    return (create_n_write_pixmap(file_name,mag));	/* write the pixmap file */
+    return (create_n_write_xpm(file_name,mag));	/* write the xpm file */
 }
 
 static int
-create_n_write_pixmap(filename,mag)
+create_n_write_xpm(filename,mag)
     char	   *filename;
     float	    mag;
 {
@@ -116,7 +116,7 @@ create_n_write_pixmap(filename,mag)
     cur_objmask = M_NONE;
     redisplay_objects(&objects);/* draw the figure into the pixmap */
 
-    put_msg("Writing pixmap file...");
+    put_msg("Writing xpm file...");
     app_flush();
 
     canvas_win = sav_canvas;	/* go back to the real canvas */
@@ -124,7 +124,7 @@ create_n_write_pixmap(filename,mag)
 
     if (XpmWriteFileFromPixmap(tool_d, filename, pixmap, (Pixmap) NULL, &attr)
 	!= XpmSuccess) {
-	    put_msg("Couldn't write pixmap file");
+	    put_msg("Couldn't write xpm file");
 	    status = 1;
     } else {
 	    put_msg("Pixmap written to \"%s\"", filename);

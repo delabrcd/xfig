@@ -19,6 +19,7 @@ extern float	zoomscale;
 extern float	display_zoomscale;
 extern int	zoomxoff;
 extern int	zoomyoff;
+extern Boolean	zoom_in_progress;
 
 typedef struct { int x,y; } zXPoint ;
 
