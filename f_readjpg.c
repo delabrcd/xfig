@@ -8,11 +8,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 /* The following code is from the example.c file in the JPEG distribution */
@@ -39,7 +45,10 @@ read_jpg(file,filetype,pic)
     int		    filetype;
     F_pic	   *pic;
 {
-
+	/* make scale factor larger for metric */
+	float scale = (appres.INCHES ?
+				(float)PIX_PER_INCH :
+				2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
 	pict = pic;
 	if (!read_JPEG_file(file))
 	    return FileInvalid;
@@ -47,8 +56,8 @@ read_jpg(file,filetype,pic)
 	/* number of colors is put in by put_colormap() */
 	pic->subtype = T_PIC_JPEG;
 	pic->pixmap = None;
-	pic->size_x = pic->bit_size.x * ZOOM_FACTOR;
-	pic->size_y = pic->bit_size.y * ZOOM_FACTOR;
+	pic->size_x = pic->bit_size.x * scale;
+	pic->size_y = pic->bit_size.y * scale;
 	pic->hw_ratio = (float) pic->bit_size.y/pic->bit_size.x;
 
 	/* we have the image here, see if we need to map it to monochrome display */
@@ -60,9 +69,9 @@ read_jpg(file,filetype,pic)
 
 /* These static variables are needed by the error routines. */
 
-METHODDEF	jmp_buf setjmp_buffer;		/* for return to caller */
-METHODDEF	void	error_exit();
-METHODDEF	void	error_output();
+static	jmp_buf setjmp_buffer;		/* for return to caller */
+static	void	error_exit();
+static	void	error_output();
 
 struct error_mgr {
   struct jpeg_error_mgr pub;	/* "public" fields */
@@ -118,7 +127,7 @@ read_JPEG_file (file)
 
 	/* Step 3: read file parameters with jpeg_read_header() */
 
-	(void) jpeg_read_header(&cinfo, TRUE);
+	(void) jpeg_read_header(&cinfo, True);
 	/* We can ignore the return value from jpeg_read_header since
 	 *   (a) suspension is not possible with the stdio data source, and
 	 *   (b) we passed TRUE to reject a tables-only JPEG file as an error.
@@ -172,14 +181,29 @@ read_JPEG_file (file)
 		*bitmapptr++ = (unsigned char) buffer[0][i];
 	}
 
-	/* Step 7: Finish decompression */
+	/* Step 7: fill up the colortable in the pict object */
+	/* (Must do this before jpeg_finish_decompress or jpeg_destroy_decompress) */
+
+	pict->numcols = cinfo.actual_number_of_colors;
+	for (i = 0; i < pict->numcols; i++) {
+	    pict->cmap[i].red   = cinfo.colormap[0][i];
+	    /* set other colors to first if grayscale */
+	    if (cinfo.jpeg_color_space == JCS_GRAYSCALE) {
+		pict->cmap[i].green = pict->cmap[i].blue = pict->cmap[i].red;
+	    } else {
+		pict->cmap[i].green = cinfo.colormap[1][i];
+		pict->cmap[i].blue  = cinfo.colormap[2][i];
+	    }
+	}
+
+	/* Step 8: Finish decompression */
 
 	(void) jpeg_finish_decompress(&cinfo);
 	/* We can ignore the return value since suspension is not possible
 	 * with the stdio data source.
 	 */
 
-	/* Step 8: Release JPEG decompression object */
+	/* Step 9: Release JPEG decompression object */
 
 	/* This is an important step since it will release a good deal of memory. */
 	jpeg_destroy_decompress(&cinfo);
@@ -187,15 +211,6 @@ read_JPEG_file (file)
 	/* At this point you may want to check to see whether any corrupt-data
 	 * warnings occurred (test whether jerr.pub.num_warnings is nonzero).
 	 */
-
-	/* fill up the colortable in the pict object */
-
-	pict->numcols = cinfo.actual_number_of_colors;
-	for (i = 0; i < pict->numcols; i++) {
-	    pict->cmap[i].red   = cinfo.colormap[0][i];
-	    pict->cmap[i].green = cinfo.colormap[1][i];
-	    pict->cmap[i].blue  = cinfo.colormap[2][i];
-	}
 
 	/* And we're done! */
 	return True;
@@ -205,7 +220,7 @@ read_JPEG_file (file)
  * Here's the routine that will replace the standard error_exit method:
  */
 
-METHODDEF void
+static void
 error_exit (cinfo)
      j_common_ptr cinfo;
 {
@@ -226,7 +241,8 @@ error_exit (cinfo)
     longjmp(err->setjmp_buffer, 1);
 }
 
-METHODDEF void error_output(cinfo)
+static void
+error_output(cinfo)
      j_common_ptr cinfo;
 {
   char	buffer[JMSG_LENGTH_MAX];

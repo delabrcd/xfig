@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -88,7 +94,7 @@ validline_in_mask(l)
 {
     return ((((l->type == T_BOX) ||
 	      (l->type == T_ARC_BOX)) && (cur_objmask & M_POLYLINE_BOX)) ||
-	    ((l->type == T_PIC_BOX) && (cur_objmask & M_POLYLINE_BOX)) ||
+	    ((l->type == T_PICTURE) && (cur_objmask & M_POLYLINE_BOX)) ||
 	    ((l->type == T_POLYLINE) && (cur_objmask & M_POLYLINE_LINE)) ||
 	    ((l->type == T_POLYGON) && (cur_objmask & M_POLYLINE_POLYGON)));
 }
@@ -187,7 +193,7 @@ toggle_markers_in_compound(cmpnd)
 	for (l = cmpnd->lines; l != NULL; l = l->next) {
 	    if ((((l->type == T_BOX) ||
 		  (l->type == T_ARC_BOX)) && (mask & M_POLYLINE_BOX)) ||
-		((l->type == T_PIC_BOX) && (mask & M_POLYLINE_BOX)) ||
+		((l->type == T_PICTURE) && (mask & M_POLYLINE_BOX)) ||
 		((l->type == T_POLYLINE) && (mask & M_POLYLINE_LINE)) ||
 		((l->type == T_POLYGON) && (mask & M_POLYLINE_POLYGON)))
 		toggle_linemarker(l);
@@ -239,7 +245,7 @@ update_markers(mask)
 	((oldmask & M_POLYLINE_BOX) != (newmask & M_POLYLINE_BOX)))
 	for (l = objects.lines; l != NULL; l = l->next) {
 	    if ((((l->type == T_BOX) ||
-		  (l->type == T_ARC_BOX || l->type == T_PIC_BOX)) &&
+		  (l->type == T_ARC_BOX || l->type == T_PICTURE)) &&
 	      ((oldmask & M_POLYLINE_BOX) != (newmask & M_POLYLINE_BOX))) ||
 		((l->type == T_POLYLINE) &&
 	    ((oldmask & M_POLYLINE_LINE) != (newmask & M_POLYLINE_LINE))) ||

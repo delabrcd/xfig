@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -33,8 +39,8 @@ int		latexline_mode = 0;
 int		latexarrow_mode = 0;
 int		autoforwardarrow_mode = 0;
 int		autobackwardarrow_mode = 0;
-int		cur_gridmode = GRID_0;
-int		cur_pointposn = P_MAGNET;
+int		cur_gridmode;
+int		cur_pointposn;
 int		posn_rnd[P_GRID3 + 1];
 int		posn_hlf[P_GRID3 + 1];
 int		grid_fine[GRID_3 + 1];
@@ -53,6 +59,7 @@ int		anypointposn = 0;
 int		figure_modified = 0;
 char		cur_fig_units[32];
 Boolean		warnexist = False;
+Boolean		warninput = False;
 
 /**********************	 global mode variables	************************/
 
@@ -69,9 +76,15 @@ char		batch_file[32];
 
 char	       *lang_items[] = {
     "box",     "latex",  "epic", "eepic", "eepicemu",
-    "pictex",  "ibmgl",  "eps",  "ps",    "pstex", 
-    "pstex_t", "textyl", "tpic", "pic",   "mf",
-    "gif",     "jpg",    "xbm",
+    "pictex",  "hpl",    "eps",  "ps",    "pstex", 
+    "pstex_t", "textyl", "tpic", "pic",   "mf",      "pcx", 
+#ifdef USE_GIF
+    "gif",
+#endif
+#ifdef USE_JPEG
+    "jpg",
+#endif
+    "xbm",
 #ifdef USE_XPM
     "xpm",
 #endif
@@ -93,9 +106,14 @@ char	       *lang_texts[] = {
     "TPIC                           ",
     "PIC                            ",
     "MF (MetaFont)                  ",
+    "PCX paintbrush format          ",
+#ifdef USE_GIF
     "GIF                            ",
+#endif
+#ifdef USE_JPEG
     "JPEG                           ",
-    "X11 Bitmap                     ",
+#endif
+    "X11 Bitmap (XBM)               ",
 #ifdef USE_XPM
     "X11 Pixmap (XPM)               ",
 #endif
@@ -126,7 +144,7 @@ int		cur_capstyle	= CAP_BUTT;
 float		cur_dashlength	= DEF_DASHLENGTH;
 float		cur_dotgap	= DEF_DOTGAP;
 float		cur_styleval	= 0.0;
-Color		cur_pencolor	= DEFAULT;
+Color		cur_pencolor	= BLACK;
 Color		cur_fillcolor	= WHITE;
 int		cur_boxradius	= DEF_BOXRADIUS;
 int		cur_fillstyle	= UNFILLED;
@@ -142,8 +160,8 @@ float		cur_elltextangle = 0.0;	/* text/ellipse input angle */
 /***************************  File Settings  ****************************/
 
 char		cur_dir[1024];
-char		cur_filename[200] = "";
-char		save_filename[200] = "";	/* to undo load */
+char		cur_filename[PATH_MAX] = "";
+char		save_filename[PATH_MAX] = "";	/* to undo load */
 char		cut_buf_name[100];
 char		file_header[32] = "#FIG ";
 

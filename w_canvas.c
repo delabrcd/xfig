@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 /*********************** IMPORTS ************************/
@@ -140,11 +146,11 @@ static String	canvas_translations =
 init_canvas(tool)
     Widget	   tool;
 {
-    XColor	   fixcolors[2];
-
-    DeclareArgs(10);
+    DeclareArgs(12);
 
     FirstArg(XtNlabel, "");
+    NextArg(XtNforeground, x_fg_color.pixel);
+    NextArg(XtNbackground, x_bg_color.pixel);
     NextArg(XtNwidth, CANVAS_WD);
     NextArg(XtNheight, CANVAS_HT);
     NextArg(XtNfromHoriz, mode_panel);
@@ -157,21 +163,6 @@ init_canvas(tool)
 
     canvas_sw = XtCreateWidget("canvas", labelWidgetClass, tool,
 			       Args, ArgCount);
-
-    FirstArg(XtNforeground, &x_fg_color.pixel);
-    NextArg(XtNbackground, &x_bg_color.pixel);
-    GetValues(canvas_sw);
-
-    /*
-     * get the RGB values for recolor cursor use -- may want to have cursor
-     * color resource
-     */
-    fixcolors[0] = x_fg_color;
-    fixcolors[1] = x_bg_color;
-    XQueryColors(tool_d, tool_cm, fixcolors, 2);
-    x_fg_color = fixcolors[0];
-    x_bg_color = fixcolors[1];
-
     /* now fix the global GC */
     XSetState(tool_d, gc, x_fg_color.pixel, x_bg_color.pixel, GXcopy,
 	      AllPlanes);
@@ -289,17 +280,11 @@ canvas_selected(tool, event, params, nparams)
 	/* we might want to check action_on */
 	/* if arrow keys are pressed, pan */
 	key = XLookupKeysym(ke, 0);
-	if (key == XK_Left ||
-	    key == XK_Right ||
-	    key == XK_Up ||
+	if (key == XK_Up ||
 	    key == XK_Down ||
-	    key == XK_Home ||
-	    key == XK_Multi_key ||
-	    key == XK_Meta_L ||
-	    key == XK_Meta_R ||
-	    key == XK_Alt_L ||
-	    key == XK_Alt_R ||
-	    key == XK_Escape ) {
+	    ((key == XK_Left ||    /* *don't* process the following if in text input mode */
+	      key == XK_Right ||
+	      key == XK_Home) && (!action_on || cur_mode != F_TEXT))) {
 	        switch (key) {
 		    case XK_Left:
 			pan_left(event->state&ShiftMask);
@@ -316,15 +301,16 @@ canvas_selected(tool, event, params, nparams)
 		    case XK_Home:
 			pan_origin();
 			break;
-		    case XK_Multi_key:
-		    case XK_Meta_L:
-		    case XK_Meta_R:
-		    case XK_Alt_L:
-		    case XK_Alt_R:
-		    case XK_Escape:
+		}
+	} else if 
+	     ((key == XK_Multi_key || /* process the following *only* if in text input mode */
+	      key == XK_Meta_L ||
+	      key == XK_Meta_R ||
+	      key == XK_Alt_L ||
+	      key == XK_Alt_R ||
+	      key == XK_Escape) && action_on && cur_mode == F_TEXT) {
 			compose_key = 1;
 			break;
-		}
 	} else if (key == XK_Control_L || key == XK_Control_R) { 
 		/* show the control-key actions */
 		set_temp_cursor(magnify_cursor);
@@ -337,26 +323,31 @@ canvas_selected(tool, event, params, nparams)
 		    draw_shift_mousefun_canvas();
 	} else {
 	    if (canvas_kbd_proc != null_proc) {
-		switch (compose_key) {
-		case 0:
-		    if (XLookupString(ke, buf, sizeof(buf), NULL, NULL) > 0)
-			(*canvas_kbd_proc) ((unsigned char) buf[0]);
-		    break;
-		case 1:
-		    if (XLookupString(ke, &compose_buf[0], 1, NULL, NULL) > 0)
-			compose_key = 2;
-		    break;
-		case 2:
-		    if (XLookupString(ke, &compose_buf[1], 1, NULL, NULL) > 0) {
-			if ((c = getComposeKey(compose_buf)) != '\0')
-			    (*canvas_kbd_proc) (c);
-			else {
-			    (*canvas_kbd_proc) ((unsigned char) compose_buf[0]);
-			    (*canvas_kbd_proc) ((unsigned char) compose_buf[1]);
-			}
-			compose_key = 0;
-		    }
-		    break;
+		if (key == XK_Left || key == XK_Right || key == XK_Home || key == XK_End) {
+			(*canvas_kbd_proc) ((unsigned char) 0, key);
+		    compose_key = 0;	/* in case Meta was followed with cursor movement */
+		} else {
+		    switch (compose_key) {
+			case 0:
+			    if (XLookupString(ke, buf, sizeof(buf), NULL, NULL) > 0)
+				(*canvas_kbd_proc) (buf[0], (KeySym) 0);
+			    break;
+			case 1:
+			    if (XLookupString(ke, &compose_buf[0], 1, NULL, NULL) > 0)
+				compose_key = 2;
+			    break;
+			case 2:
+			    if (XLookupString(ke, &compose_buf[1], 1, NULL, NULL) > 0) {
+				if ((c = getComposeKey(compose_buf)) != '\0')
+				    (*canvas_kbd_proc) (c, (KeySym) 0);
+				else {
+				    (*canvas_kbd_proc) ((unsigned char) compose_buf[0], (KeySym) 0);
+				    (*canvas_kbd_proc) ((unsigned char) compose_buf[1], (KeySym) 0);
+				}
+				compose_key = 0;
+			    }
+			    break;
+		    } /* switch */
 		}
 	    } else {
 		/* Be cheeky... we aren't going to do anything, so pass the
@@ -399,7 +390,8 @@ clear_region(xmin, ymin, xmax, ymax)
 
 static void get_canvas_clipboard();
 
-static void canvas_paste(w, paste_event)
+static void
+canvas_paste(w, paste_event)
 Widget w;
 XKeyEvent *paste_event;
 {
@@ -426,12 +418,12 @@ XtPointer buf;
 unsigned long *length;
 int *format;
 {
-	char *c;
+	unsigned char *c;
 	int i;
 
 	c = buf;
 	for (i=0; i<*length; i++) {
-           canvas_kbd_proc(*c);
+           canvas_kbd_proc(*c, (KeySym) 0);
            c++;
 	}
 	XtFree(buf);

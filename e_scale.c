@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -176,7 +182,7 @@ init_boxscale_ellipse(x, y)
 
     if (cur_e->type == T_ELLIPSE_BY_RAD ||
 	cur_e->type == T_CIRCLE_BY_RAD) {
-	if (x == cur_e->start.x || y == cur_e->start.y) {
+	if (x == cur_e->start.x && y == cur_e->start.y) {
 	    put_msg("Center point selected, ignored");
 	    return False;
 	} else {
@@ -890,7 +896,7 @@ init_boxscale_line(x, y)
 
     if (cur_l->type != T_BOX &&
 	cur_l->type != T_ARC_BOX &&
-	cur_l->type != T_PIC_BOX) {
+	cur_l->type != T_PICTURE) {
 	put_msg("Can't use box scale on selected object");
 	return False;
     }
@@ -993,7 +999,7 @@ fix_boxscale_line(x, y)
     new_l = copy_line(cur_l);
     draw_line(cur_l, ERASE);
     assign_newboxpoint(new_l, fix_x, fix_y, x, y);
-    if (new_l->type == T_PIC_BOX) {
+    if (new_l->type == T_PICTURE) {
 	if (signof(fix_x - from_x) != signof(fix_x - x))
 	    new_l->pic->flipped = 1 - new_l->pic->flipped;
 	if (signof(fix_y - from_y) != signof(fix_y - y))
@@ -1054,7 +1060,7 @@ init_scale_line()
     set_action_on();
     toggle_linemarker(cur_l);
     set_temp_cursor(crosshair_cursor);
-    if (cur_l->type == T_BOX || cur_l->type == T_PIC_BOX)
+    if (cur_l->type == T_BOX || cur_l->type == T_PICTURE)
 	boxsize_msg(2);	/* factor of 2 because measurement is from midpoint */
     elastic_scalepts(cur_l->points);
     canvas_locmove_proc = scaling_line;

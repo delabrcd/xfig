@@ -269,6 +269,8 @@ PICFLAGS = -pic
 # -------------------------------------------------------------------------
 # start of Imakefile
 
+#  NOTE: AS of X11R6 the official comment for Imakefile is the word #
+
 # Copyright (c) 1985 by Supoj Sutanthavibul
 # Copyright (c) 1994 by Brian V. Smith
 # Parts Copyright (c) 1991 by Paul King
@@ -280,12 +282,23 @@ PICFLAGS = -pic
 # documentation files (the "Software"), including without limitation the
 # rights to use, copy, modify, merge, publish, distribute, sublicense,
 # and/or sell copies of the Software, and to permit persons who receive
-# copies from any such party to do so, with the only requirement being
-# that this copyright notice remain intact.  This license includes without
-# limitation a license to do the foregoing actions under any patents of
-# the party supplying this software to the X Consortium.
+# and/or sell copies of the Software subject to the restriction stated
+# below, and to permit persons who receive copies from any such party to
+# do so, with the only requirement being that this copyright notice remain
+# intact.
+# This license includes without limitation a license to do the foregoing
+# actions under any patents of the party supplying this software to the
+# X Consortium.
+#
+# Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+# be included if xfig is to be sold, due to the patent held by Unisys Corp.
+# on the LZW compression algorithm.
+# If you wish to sell xfig, you must comment out the USEGIF symbol below
+# by putting the word "XCOMM" in front of it.  Be sure to make a new
+# Makefile after that ("make Makefile").
 
-#  NOTE: AS of X11R6 the official comment for Imakefile is the word #
+# If you don't have the JPEG library or don't want to use JPEG, comment
+# out the following line
 
 # Uncomment the following definition for XAWLIB if you want to use
 # the 3d Athena Widget Set (highly recommended!)
@@ -295,40 +308,36 @@ PICFLAGS = -pic
 # Uncomment the following if needed for DECstations running older X11R4
 # INCROOT=/usr/include/mit
 
-# Uncomment the following XPM variable if you have the XPM (color pixmap)
+# Uncomment the #define for USEXPM if you have the XPM (color pixmap)
 # package and you would like to use the following:
-# USE_XPM will allow import/export of XPM files
-# USE_XPM_ICON uses a color xpm icon for xfig itself (USE_XPM must be
-#	defined if you use USE_XPM_ICON)
+# USEXPM will allow import/export of XPM files
+# USEXPM_ICON uses a color xpm icon for xfig itself (USEXPM must be
+#	defined if you use USEXPM_ICON)
 # You need XPM version 3.4c or newer.  This is available from ftp.x.org
 #   in /contrib/libraries.
+# Change XPMLIB if necessary to point to the xpm library (libXpm)
+# Change XPMINC if necessary to point to the include file for xpm (xpm.h)
 
-# XPMDEFINES = -DUSE_XPM -DUSE_XPM_ICON
-# XPMLIBDIR = /usr/lib
-# XPMINCDIR = /usr/include/X11
-# XPMLIB = -L$(XPMLIBDIR) -lXpm
+XPMLIBDIR = /usr/lib
+XPMINC = -I/usr/include/X11
+XPMLIB = -L$(XPMLIBDIR) -lXpm
 
-# If you have installed the jpeg libraries on your system, uncomment the
+# If you have installed the jpeg library on your system, uncomment the
 # USEINSTALLEDJPEG variable, change the JPEGLIBDIR variable to the directory
-# where your jpeg library resides and change the JPEGINCDIR to the
+# where your jpeg library resides and change the JPEGINC to the
 # directory where your jpeg header files (include) reside.
-# If you want to use xfig's jpeg library leave the XCOMM comment in and
-# leave JPEGLIBDIR=../jpeg
+# You must have version 5b or newer of the jpeg library.
+# If you haven't installed the jpeg library leave the XCOMM comment in and
+# set JPEGLIBDIR after the #else to the directory where you have the source
+# for jpeg.
 
 # #define USEINSTALLEDJPEG
 
-JPEGLIBDIR = ../jpeg
-JPEGINCDIR = $(JPEGLIBDIR)
-LIBJPEG = $(JPEGLIBDIR)/libjpeg.a
-DEPLIBJPEG = $(LIBJPEG)
-
-# For Solaris: add "-lc" to the LOCAL_LIBRARIES variable in the Imakefile
-# to link with /usr/lib/libc for the directory operations.
-
-# The Display PostScript code is not supported anymore until some kind
-# user can debug it for me, as I have no access to a server with DPS
-# extensions.  Use Ghostscript for rendering your EPS files.  It gives
-# a color image on the xfig canvas now anyway.
+JPEGLIBDIR = ../jpeg-5b
+JPEGCONF = configure
+JPEGINC = -I/$(JPEGLIBDIR)
+JPEGLIB = $(JPEGLIBDIR)/libjpeg.a
+DEPLIBJPEG = $(JPEGLIBDIR)/libjpeg.a
 
 # If using an input tablet uncomment the following
 
@@ -344,11 +353,14 @@ XFIGLIBDIR =		$(LIBDIR)/xfig
 
 DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
 
+# If your system doesn't have strstr undefine the following definition
+# HAVE_NO_NOSTRSTR = -DNOSTRSTR
+
 # If your system doesn't have strcasecmp and/or strncasecmp
 # undefine the following two definitions
 
-# HAVE_NO_STRCASECMP = -DNOSTRCASECMP
-# HAVE_NO_STRNCASECMP = -DNOSTRNCASECMP
+# HAVE_NO_STRCASECMP = -DHAVE_NO_STRCASECMP
+# HAVE_NO_STRNCASECMP = -DHAVE_NO_STRNCASECMP
 
 STRDEFINES = $(HAVE_NO_NOSTRSTR) \
 		$(HAVE_NO_STRNCASECMP) \
@@ -392,22 +404,40 @@ CACHE = -DCACHE_BITMAPS -DCACHE_SIZE_LIMIT=300
 # have the proper width.  However, one pixel extra in width shouldn't
 # matter for most imported eps files.
 
-PCXBUG = -DPCXBUG
+# PCXBUG = -DPCXBUG
 
 # *** You shouldn't have to change anything below this point. ***
 
-DEFINES =             $(STRDEFINES) -DGSBIT $(XPMDEFINES)
+DUSEGIF = -DUSE_GIF
+WRGIFS = f_wrgif.c
+WRGIFO = f_wrgif.o
+
+DUSEJPEG = -DUSE_JPEG
+READJPEGS = f_readjpg.c
+READJPEGO = f_readjpg.o
+WRJPEGS = f_wrjpg.c
+WRJPEGO = f_wrjpg.o
+
+DUSEXPM = -DUSE_XPM
+READXPMS = f_readxpm.c
+READXPMO = f_readxpm.o
+WRXPMS = f_wrxpm.c
+WRXPMO = f_wrxpm.o
+
+DUSEXPMICON = -DUSE_XPM_ICON
+
+DEFINES =             $(STRDEFINES) -DGSBIT $(DUSEXPM) $(DUSEXPMICON) $(DUSEGIF) $(DUSEJPEG)
 
 XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
 		d_intspline.c d_line.c d_regpoly.c d_spline.c d_text.c \
-		e_addpt.c e_align.c e_arrow.c e_break.c \
+		e_addpt.c e_align.c e_arrow.c e_break.c e_compound.c \
 		e_convert.c e_copy.c e_delete.c e_deletept.c \
 		e_edit.c e_flip.c e_glue.c e_move.c \
 		e_movept.c e_rotate.c e_scale.c e_update.c \
 		f_load.c f_neuclrtab.c f_picobj.c f_read.c f_readold.c \
-		f_readeps.c f_readxbm.c f_readxpm.c f_readgif.c f_readjpg.c \
+		f_readeps.c f_readxbm.c f_readgif.c $(READJPEGS) f_readpcx.c $(READXPMS) \
 		f_save.c f_util.c \
-		f_wrcom.c f_wrjpg.c f_wrgif.c f_wrxbm.c f_wrxpm.c \
+		f_wrcom.c $(WRJPEGS) f_wrxbm.c f_wrpcx.c $(WRXPMS) $(WRGIFS) \
 		main.c mode.c object.c resources.c \
 		u_bound.c u_create.c u_drag.c u_draw.c \
 		u_elastic.c u_error.c u_fonts.c u_free.c u_geom.c \
@@ -421,14 +451,14 @@ XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
 
 XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
 		d_intspline.o d_line.o d_regpoly.o d_spline.o d_text.o \
-		e_addpt.o e_align.o e_arrow.o e_break.o \
+		e_addpt.o e_align.o e_arrow.o e_break.o e_compound.o \
 		e_convert.o e_copy.o e_delete.o e_deletept.o \
 		e_edit.o e_flip.o e_glue.o e_move.o \
 		e_movept.o e_rotate.o e_scale.o e_update.o \
 		f_load.o f_neuclrtab.o f_picobj.o f_read.o f_readold.o \
-		f_readeps.o f_readxbm.o f_readxpm.o f_readgif.o f_readjpg.o \
+		f_readeps.o f_readxbm.o f_readgif.o $(READJPEGO) f_readpcx.o $(READXPMO) \
 		f_save.o f_util.o \
-		f_wrcom.o f_wrjpg.o f_wrgif.o f_wrxbm.o f_wrxpm.o \
+		f_wrcom.o $(WRJPEGO) f_wrxbm.o f_wrpcx.o $(WRXPMO) $(WRGIFO) \
 		main.o mode.o object.o resources.o \
 		u_bound.o u_create.o u_drag.o u_draw.o \
 		u_elastic.o u_error.o u_fonts.o u_free.o u_geom.o \
@@ -447,21 +477,21 @@ MAINDEPFILES =  fig.icon.X patchlevel.h version.h
 SRCS = $(XFIGSRC)
 OBJS = $(XFIGOBJ)
 
-EXTRA_INCLUDES = -I$(XPMINCDIR) -I$(JPEGINCDIR)
+EXTRA_INCLUDES = $(JPEGINC) $(XPMINC)
 DEPLIBS = $(DEPXAWLIB) $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
 
-LOCAL_LIBRARIES = 	$(LIBJPEG)
-SYS_LIBRARIES= 		-lm $(DPSLIB) $(XPMLIB) $(TABLIB) $(XAWLIB) $(XMULIB) $(XTOOLLIB) $(XLIB)
+LOCAL_LIBRARIES = 	$(JPEGLIB)
+SYS_LIBRARIES= 		-lm $(XPMLIB) $(TABLIB) $(XAWLIB) $(XMULIB) $(XTOOLLIB) $(XLIB)
 
 xfig: $(DEPLIBJPEG)
 
 # only compile our jpeg if the use doesn't have one installed
 
-$(LIBJPEG): $(JPEGLIBDIR)/jconfig.h
+$(JPEGLIBDIR)/libjpeg.a: $(JPEGLIBDIR)/jconfig.h
 	cd $(JPEGLIBDIR); $(MAKE) libjpeg.a
 
 $(JPEGLIBDIR)/jconfig.h:
-	cd $(JPEGLIBDIR) ; ./configure CC='$(CC)'
+	cd $(JPEGLIBDIR) ; ./$(JPEGCONF) CC='$(CC)'
 
 PROGRAM = xfig
 
@@ -526,6 +556,14 @@ main.o:  $(MAINDEPFILES)
 	$(CC) -c $(CFLAGS)  $(USETAB)  $*.c
 
 f_readjpg.o:  $(JPEGLIBDIR)/jconfig.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)    $*.c
+
+f_wrjpg.o:  $(JPEGLIBDIR)/jconfig.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)    $*.c
+
+f_readeps.o:
 	$(RM) $@
 	$(CC) -c $(CFLAGS)  $(PCXBUG) $*.c
 

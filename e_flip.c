@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -179,46 +185,50 @@ flip_search(p, type, x, y, px, py)
 }
 
 static
-init_fliparc(a, px, py)
-    F_arc	   *a;
+init_fliparc(old_a, px, py)
+    F_arc	   *old_a;
     int		    px, py;
 {
-    F_arc	   *arc;
+    F_arc	   *new_a;
 
     set_temp_cursor(wait_cursor);
-    arc = copy_arc(a);
-    flip_arc(arc, px, py, flip_axis);
+    new_a = copy_arc(old_a);
+    flip_arc(new_a, px, py, flip_axis);
     if (copy) {
-	add_arc(arc);
+	add_arc(new_a);
     } else {
-	toggle_arcmarker(a);
-	draw_arc(a, ERASE);
-	change_arc(a, arc);
+	toggle_arcmarker(old_a);
+	draw_arc(old_a, ERASE);
+	change_arc(old_a, new_a);
     }
-    draw_arc(arc, PAINT);
-    toggle_arcmarker(arc);
+    /* redisplay objects under this object before it was rotated */
+    redisplay_arc(old_a);
+    /* and this arc and any other objects on top */
+    redisplay_arc(new_a);
     reset_cursor();
 }
 
 static
-init_flipcompound(c, px, py)
-    F_compound	   *c;
+init_flipcompound(old_c, px, py)
+    F_compound	   *old_c;
     int		    px, py;
 {
-    F_compound	   *compound;
+    F_compound	   *new_c;
 
     set_temp_cursor(wait_cursor);
-    compound = copy_compound(c);
-    flip_compound(compound, px, py, flip_axis);
+    new_c = copy_compound(old_c);
+    flip_compound(new_c, px, py, flip_axis);
     if (copy) {
-	add_compound(compound);
+	add_compound(new_c);
     } else {
-	toggle_compoundmarker(c);
-	draw_compoundelements(c, ERASE);
-	change_compound(c, compound);
+	toggle_compoundmarker(old_c);
+	draw_compoundelements(old_c, ERASE);
+	change_compound(old_c, new_c);
     }
-    draw_compoundelements(compound, PAINT);
-    toggle_compoundmarker(compound);
+    /* redisplay objects under this object before it was rotated */
+    redisplay_compound(old_c);
+    /* and this object and any other objects on top */
+    redisplay_compound(new_c);
     reset_cursor();
 }
 
@@ -237,8 +247,10 @@ init_flipellipse(old_e, px, py)
 	draw_ellipse(old_e, ERASE);
 	change_ellipse(old_e, new_e);
     }
-    draw_ellipse(new_e, PAINT);
-    toggle_ellipsemarker(new_e);
+    /* redisplay objects under this object before it was rotated */
+    redisplay_ellipse(old_e);
+    /* and this object and any other objects on top */
+    redisplay_ellipse(new_e);
 }
 
 static
@@ -257,8 +269,10 @@ init_flipline(old_l, px, py)
 	draw_line(old_l, ERASE);
 	change_line(old_l, new_l);
     }
-    draw_line(new_l, PAINT);
-    toggle_linemarker(new_l);
+    /* redisplay objects under this object before it was rotated */
+    redisplay_line(old_l);
+    /* and this object and any other objects on top */
+    redisplay_line(new_l);
 }
 
 static
@@ -277,8 +291,10 @@ init_flipspline(old_s, px, py)
 	draw_spline(old_s, ERASE);
 	change_spline(old_s, new_s);
     }
-    draw_spline(new_s, PAINT);
-    toggle_splinemarker(new_s);
+    /* redisplay objects under this object before it was rotated */
+    redisplay_spline(old_s);
+    /* and this object and any other objects on top */
+    redisplay_spline(new_s);
 }
 
 flip_line(l, x, y, flip_axis)
@@ -297,7 +313,7 @@ flip_line(l, x, y, flip_axis)
 	    p->x = x + (x - p->x);
 	break;
     }
-    if (l->type == T_PIC_BOX)
+    if (l->type == T_PICTURE)
 	l->pic->flipped = 1 - l->pic->flipped;
 }
 

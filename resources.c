@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -63,6 +69,11 @@ char		*short_clrNames[] = {
 			"Mg4", "Mg3", "Mg2", "Br4", "Br3", "Br2",
 			"Pk4", "Pk3", "Pk2", "Pnk", "Gld" };
 
+/* these are allocated in main() in case we aren't using default colormap 
+   (so we can't use BlackPixelOfScreen...) */
+
+XColor		black_color, white_color;
+
 /* original directory where xfig started */
 char	orig_dir[PATH_MAX+2];
 
@@ -89,7 +100,7 @@ Boolean		all_colors_available;
 int		avail_image_cols = -1;
 
 /* colormap used for same */
-XColor		image_cells[MAXCOLORMAPSIZE];
+XColor		image_cells[MAX_COLORMAP_SIZE];
 
 appresStruct	appres;
 Window		real_canvas, canvas_win, msg_win, sideruler_win, topruler_win;
@@ -115,6 +126,9 @@ Display	       *tool_d;
 Screen	       *tool_s;
 Window		tool_w;
 int		tool_sn;
+int		tool_vclass;
+Visual	       *tool_v;
+int		tool_dpth;
 int		tool_cells;
 Colormap	tool_cm, newcmap;
 Boolean		swapped_cmap = False;
@@ -134,6 +148,8 @@ Boolean		writing_pixmap;		/* set when exporting to other pixmap formats */
 unsigned long	but_fg, but_bg;
 unsigned long	ind_but_fg, ind_but_bg;
 unsigned long	mouse_but_fg, mouse_but_bg;
+
+float		ZOOM_FACTOR;	/* assigned in main.c */
 
 /* will be filled in with environment variable XFIGTMPDIR */
 char	       *TMPDIR;
@@ -157,9 +173,57 @@ char    *just_items[] = {
     "Centered  ",
     "Flush left"};
 
+/* IMPORTANT:  if the number or order of this table is changed be sure
+		to change the PAPER_xx definitions in resources.h */
+
+char	*paper_sizes[] = {
+    "Letter ",
+    "Legal  ",
+    "Ledger ",
+    "Tabloid",
+    "A      ",
+    "B      ",
+    "C      ",
+    "D      ",
+    "E      ",
+    "A4     ",   
+    "A3     ",
+    "A2     ",
+    "A1     ",
+    "A0     ",
+    "B5     "
+    };
+
+char	*full_paper_sizes[] = {
+    "Letter  (8.5\" x 11\")",
+    "Legal   (8.5\" x 14\")",
+    "Ledger  ( 11\" x 17\")",
+    "Tabloid ( 17\" x 11\")",
+    "A       (8.5\" x 11\")",
+    "B       ( 11\" x 17\")",
+    "C       ( 17\" x 22\")",
+    "D       ( 22\" x 34\")",
+    "E       ( 34\" x 44\")",
+    "A4      (21  cm x  29.7cm)",   
+    "A3      (29.7cm x  42  cm)",
+    "A2      (42  cm x  59.4cm)",
+    "A1      (59.4cm x  84  cm)",
+    "A0      (84  cm x 118.8cm)",
+    "B5      (18.2cm x  25.7cm)"
+    };
+
+char    *multiple_pages[] = {
+    "Single",
+    "Multiple"};
+
 /* for w_file.c and w_export.c */
 
 char    *offset_unit_items[] = {
         " Inches  ", " Centim. ", "Fig Units" };
 
 int	RULER_WD;
+
+/* flag for when picture object is read in merge_file to see if need to remap
+   existing picture colors */
+
+Boolean	pic_obj_read;

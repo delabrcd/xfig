@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -26,7 +32,7 @@
 #define magnify_height 16
 #define magnify_x_hot 6
 #define magnify_y_hot 6
-static char magnify_bits[] = {
+static unsigned char magnify_bits[] = {
    0x40, 0x00, 0xf8, 0x03, 0x4c, 0x06, 0x46, 0x0c, 0x42, 0x08, 0x42, 0x08,
    0xff, 0x1f, 0x42, 0x08, 0x42, 0x08, 0x46, 0x0c, 0x4c, 0x1e, 0xf8, 0x3f,
    0x40, 0x7c, 0x00, 0xf8, 0x00, 0xf0, 0x00, 0x60};

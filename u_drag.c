@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -255,7 +261,7 @@ init_linedragging(l, x, y)
     canvas_middlebut_proc = array_place_line;
     canvas_rightbut_proc = cancel_line;
     set_action_on();
-    if (l->type == T_BOX || l->type == T_ARC_BOX || l->type == T_PIC_BOX) {
+    if (l->type == T_BOX || l->type == T_ARC_BOX || l->type == T_PICTURE) {
 	line_bound(l, &xmin, &ymin, &xmax, &ymax);
 	get_links(xmin, ymin, xmax, ymax);
     }
@@ -360,12 +366,19 @@ init_textdragging(t, x, y)
     int		    x, y;
 {
     float	   cw,cw2;
+    int		   x1, y1;
 
     new_t = t;
     fix_x = cur_x = x;
     fix_y = cur_y = y;
-    x1off = new_t->base_x - x;
-    y1off = new_t->base_y - y;
+    x1 = new_t->base_x;
+    y1 = new_t->base_y;
+    /* adjust fix_x/y so that text will fall on grid if grid is on */
+    round_coords(x1,y1);
+    fix_x += new_t->base_x - x1;
+    fix_y += new_t->base_y - y1;
+    x1off = x1-x; /*new_t->base_x - x;*/
+    y1off = y1-y; /*new_t->base_y - y;*/
     if (t->type == T_CENTER_JUSTIFIED || t->type == T_RIGHT_JUSTIFIED) {
 	txsize = textsize(t->fontstruct, strlen(t->cstring), t->cstring);
 	if (t->type == T_CENTER_JUSTIFIED) {

@@ -2,7 +2,6 @@
 XFIG - Facility for Interactive Generation of figures under X11
 ===============================================================
 
-
 Xfig is a menu-driven tool that allows the user to draw and manipulate objects
 interactively in an X window.  The resulting pictures can be saved, printed
 on postscript printers or converted to a variety of other formats (e.g. to
@@ -13,13 +12,17 @@ This file contains some notes about installing xfig, the directory
 some further documentation including the manual in troff -man format
 and PostScript.
 
-***************************************************************************
-Please refer any questions/bug fixes/contributions etc. about TransFig or 
-xfig to me.
+Xfig and its postprocessor fig2dev (part of the TransFig package) are available
+from ftp.x.org in /contrib/applications/drawing_tools and from any CTAN machine
+(e.g. ftp.tex.ac.uk) in /pub/archive/graphics.
 
-Brian Smith
+***************************************************************************
+Please send email about any questions/bug fixes/contributions etc. about
+TransFig or xfig to xfig-bugs@epb1.lbl.gov.
+
+Brian V. Smith
 Lawrence Berkeley National Laboratory
-bvsmith@lbl.gov
+xfig-bugs@epb1.lbl.gov
 ***************************************************************************
 
 Note that although I work at Lawrence Berkeley National Laboratory (LBNL)
@@ -29,13 +32,14 @@ of this software for any purpose.
 
 Here is the legal part:
 
-THE LAWRENCE BERKELEY NATIONAL LABORATORY DISCLAIMS ALL WARRANTIES WITH REGARD
-TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS, IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR
-CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
-DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
-ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
-SOFTWARE.
+THE LAWRENCE BERKELEY NATIONAL LABORATORY DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS, IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY SPECIAL,
+INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+
 ______________________________________________________________________________
 
 NOTE 1: Because Unisys has stated that they will not charge royalties for the
@@ -44,25 +48,22 @@ NOTE 1: Because Unisys has stated that they will not charge royalties for the
 	However, be aware that if you sell xfig, for example as part of
 	a CD-ROM package with freeware, you may be liable for paying royalties
 	to Unisys.
-	The authors of xfig and the Lawrence Berkeley Laboratory cannot be held
-	responsible in any case.
+	It is recommended that you comment out the "#define USEGIF" line in the 
+	Imakefile before compiling and selling xfig.
+	*** The authors of xfig and the Lawrence Berkeley Laboratory cannot be held
+	responsible in any case. ***
 
-NOTE 2: Because of the patent/licensing issue with Unisys and the LZW compression
-	algorithm used in GIF files, the author of Ghostscript has decided to
-	remove GIF support from that program.
-	xfig will now use PCX output from Ghostscript when importing EPS files.
-	This means that you must compile Ghostscript with the pcx256 and pbmraw
-	drivers.
+NOTE 2: Because of the patent/licensing issue with Unisys and the LZW
+	compression algorithm used in GIF files, the author of Ghostscript has
+	decided to remove GIF support from that program.  xfig now uses
+	PCX output from Ghostscript when importing EPS files.  This means that
+	you must compile Ghostscript with the pcx256 and pbmraw drivers.
+
 	Additionally, there is a bug in the pcx driver in Aladdin Ghostscript
 	versions prior to 3.32, which writes an incorrect pcx file for images
 	with odd width (not even).  There is a compile-time flag called PCXBUG
-	set (the default) in the Imakefile to make xfig add one pixel to the
-	width of an odd-width image when it reads in the pcx output from
-	Ghostscript.
-	If you have Aladdin Ghostscript 3.32 or newer (which wasn't released
-	as of this writing) you may comment out that flag and your images will
-	have the proper width.  However, one pixel extra in width shouldn't
-	matter for most imported eps files.
+	in the Imakefile to make xfig add one pixel to the width of an
+	odd-width image when it reads in the pcx output from Ghostscript.
 
 ++++++++++++++++++++++
 NOTE about version 3.0
@@ -85,19 +86,34 @@ INSTALLATION NOTES:
 
 1. Edit the Imakefile if you need to customize it (see following notes).
 	For a 3D look, see NOTE below.
-	If you already have the jpeg library on your system uncomment
+	If you already have the JPEG library on your system uncomment
 	the "#define USEINSTALLEDJPEG" line in the Imakefile.
-	You must have version 5b or newer of the jpeg library.
-2. Type "xmkmf" to create the Makefile from the Imakefile.
+	You must have version 5b or newer of the JPEG library.
+	The JPEG library is available from several places.  The official
+	archive site is ftp.uu.net in /graphics/jpeg.
+	Another is ftp.x.org in /contrib/libaries.
+	** Make sure you delete or rename any older version of the JPEG
+	library you might have on your system.  Some Linux systems come
+	with an older version which is incompatible with xfig.
+	Look for any other comments in the Imakefile which describe options.
+2. Type "xmkmf" to create the Makefile from the Imakefile.  If you don't have
+	xmkmf you can do "make Makefile".  In either case you must have imake,
+	which can be found at the X Consortium site, ftp.x.org.
 3. Type "make"         (**** This MUST be done before "make install" ****).
-	Note: The "configure" script will be automatically run in the jpeg
-	directory if you are using the jpeg library supplied with xfig.
-	This will create the Makefile in that directory from your system
+	Note: The "configure" script will be automatically run in the JPEG
+	directory if you haven't enabled the USEINSTALLEDJPEG variable (i.e.
+	you have defined the JPEGLIBDIR and other variables).
+	This will create the Makefile in the JPEG directory from your system
 	configuration.  
+	If for whatever reason, the configure script doesn't run, go into the
+	JPEG directory and type "./configure" then "make".  Then go back to
+	the xfig directory and continue with "make".
 4. Type "make install"
-	If you don't do this step, be sure to install the app-defaults files
-	Fig.ad and Fig-color.ad and the CompKeyDB file in the directory
-	specified by XFIGLIBDIR (default: /usr/local/lib/X11/xfig).
+   ****	If you don't do this step, be sure to install the app-defaults files
+	Fig.ad and Fig-color.ad in the system app-defaults directory (usually
+	/usr/lib/X11/app-defaults or something like that) and the CompKeyDB file
+	in the directory specified by XFIGLIBDIR
+	(default: /usr/local/lib/X11/xfig).
 5. Type "make install.man".
 6. For X11R5 and later color implementations, specify "*customization: -color"
 	in your .Xdefaults or .Xresources file.
@@ -108,14 +124,27 @@ If you have the XPM3 package (X11 color pixmaps) you can export your figures
    Uncomment the XPMDEFINES and related variables in the Imakefile in that case.
    You need version 3.4c or newer.  This is available from ftp.x.org in
    /contrib/libraries.
-If you have Ghostscript, enable the -DGSBIT flag in the Imakefile and xfig will
-   attempt to use it to interpret any encapsulated Postscript (EPS) files you
-   import.  Ghostscript must be compiled with with the "pcx256" and "pbmraw"
-   drivers.  The pbm driver is used when you run xfig on a monochrome display
-   and the pcx256 driver is used on a color display.
+If you have Ghostscript, xfig will attempt to use it to interpret any
+   encapsulated Postscript (EPS) files you import.  Ghostscript must be compiled
+   with with the "pcx256" and "pbmraw" drivers.  The pbm driver is used when you
+   run xfig on a monochrome display and the pcx256 driver is used on a color
+   display.
    See NOTE 2 above about the pcx driver in Ghostscript.
-If your system doesn't have strstr(), add the flag -DNOSTRSTR in the Imakefile
-   in the DEFINES line.
+If you don't have Ghostscript, remove the -DGSBIT flag in the "DEFINES" variable
+   in the Imakefile.
+
+If you have the default paper size for Ghostscript as A4 (metric) change (in gs_init.ps)
+
+% Optionally choose a default paper size other than U.S. letter.
+   (a4) /PAPERSIZE where { pop pop } { /PAPERSIZE exch def } ifelse
+
+to
+   systemdict /DEVICEWIDTH known systemdict /DEVICEHEIGHT known or not
+    { (a4) /PAPERSIZE where { pop pop } { /PAPERSIZE exch def } ifelse
+    } if
+
+If your system doesn't have strstr(), uncomment the line with HAVE_NO_STRSTR
+   in the Imakefile.
 If your system doesn't have strcasecmp() and/or strncasecmp(), uncomment the
    lines in the Imakefile with HAVE_NO_STRCASECMP and HAVE_NO_STRNCASECMP.
 If you have an input tablet and your X server supports the XInputExtension
@@ -126,12 +155,7 @@ NOTE:	For a 3D look, I recommend using Kaleb Keithley's 3D Athena Widget set,
 	a direct replacement for the Xaw library.  After you compile and install that
 	package, and after step 1 above, just uncomment the definition of XAWLIB in
 	the Imakefile and it will use the 3D widget set.
-	This set is available from ftp.x.org.
-
-NOTE:	The Display PostScript code is not supported anymore until some kind
-	user can debug it for me, as I have no access to a server with DPS
-	extensions.  Use Ghostscript for rendering your EPS files.  It gives
-	a color image on the xfig canvas now anyway.
+	This set is available from ftp.x.org in /contrib/widgets.
 
 The maximum width of the top ruler is set to 1020 pixels and the height of the
 side ruler to 860 pixels.  If your server can handle pixmaps larger than this
@@ -186,14 +210,10 @@ Solaris users
 
 You should have:
 
-#define SystemV YES
 #define SystemV4 YES
 
 in your imake machine config file (usually in /usr/lib/X11/config or something
 like that).
-
-Add "-lc" to the LOCAL_LIBRARIES variable in the Imakefile to link with 
-/usr/lib/libc for the directory operations.
 
 Some people have had trouble with the Sun cc 3.0.1 compiler and optimization.
 You may need to shut off optimization.
@@ -205,10 +225,81 @@ XFree86 Users
 
 Version 3.1 of XFree86 causes problems.  Get version 3.1.1 or newer.
 
-----------------------------------------------
-Possible problems encountered installing xfig:
-----------------------------------------------
+================================================================================
+Artwork credits
+================================================================================
 
+This section gives credit to those people who have contributed to the Examples
+directory.
+Any figures not listed here were probably done by Brian Smith.
+
+Fig file	Description			Artist
+--------	-----------			------
+antennas.fig	various ultra-wideband antennas	(can't remember who submitted this)
+
+sowpig.fig	RAAF F-111C fighter		Carlo Kopp (he has an "Unofficial F-111"
+		w/2xAGM-142 Have Nap SOWs	web page at:
+rfxc.fig	RFX Strike/Recon Fighter	http://www.cs.monash.edu.au/~carlo/archive/MILITARY/F-111/
+greenpig.fig	F/RF-111C/G Tactical Fighter
+lidar.fig	Sidelooking battlefield surveillance LIDAR
+
+Linuxlogo.fig	This was an entry in the	Philipp Reisner
+		Linux 2.0 Logo contest
+
+clp_computer.fig computer clipart		W. Chimiak (chim@tachyon.medeng.wfu.edu)
+clp_network.fig	 computer network clipart
+clp_bldgs.fig	 various buildings clipart
+
+illusion.fig	"impossible" 3-D object		Vivek Khera (khera@cs.duke.edu)
+recycle.fig	recycling logo
+
+flowchart.fig	flowchart building blocks	Tim P. Starrin (noid@cyborg.larc.nasa.gov)
+
+logo.fig	first fig file using imported	Bryan Boyter (original author of eps
+		eps object			import code for xfig)
+	
+================================================================================
+
+**********************************************
+Possible problems encountered installing xfig:
+**********************************************
+
+PROBLEM:
+	A warning about some action not found occurs, e.g.:
+	Warning: Actions not found: ModeOpenCompound
+
+POSSIBLE CAUSE AND SOLUTION:
+	You didn't install the app-defaults files.
+________________________________________________________________________________
+PROBLEM:
+	Thick line shows through arrowhead in certain orientations.
+
+POSSIBLE CAUSE AND SOLUTION:
+	In X11R5 there was a bug in the clipping algorithm (Xlib).  Switch to
+	X11R6 or apply the following patch to mit/lib/X/XPolyReg.c in the
+	X11R5 library:
+
+*** XPolyReg.c.orig	Tue Dec 15 12:01:22 1992
+--- XPolyReg.c	Wed Nov 15 09:41:13 1995
+***************
+*** 402,408 ****
+  	    if (numRects && pts->x == rects->x1 && pts->y == rects->y2 &&
+  		pts[1].x == rects->x2 &&
+  		(numRects == 1 || rects[-1].y1 != rects->y1) &&
+! 		(!i || pts[2].y > pts[1].y)) {
+  		rects->y2 = pts[1].y + 1;
+  		continue;
+  	    }
+--- 402,409 ----
+  	    if (numRects && pts->x == rects->x1 && pts->y == rects->y2 &&
+  		pts[1].x == rects->x2 &&
+  		(numRects == 1 || rects[-1].y1 != rects->y1) &&
+! 		/* Fixed version from X11 R6 */
+! 		(i && pts[2].y > pts[1].y)) {
+  		rects->y2 = pts[1].y + 1;
+  		continue;
+  	    }
+________________________________________________________________________________
 PROBLEM:
 	When using LaTeX fonts in Xfig I always end up with postscript
 	fonts instead rather than, say, Computer Modern. 
@@ -326,3 +417,4 @@ PROBLEM:
 
 POSSIBLE CAUSE AND SOLUTION:
 	On linux you need to have gcc version 2.6.2 or newer.
+

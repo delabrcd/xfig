@@ -8,11 +8,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "w_icons.h"
@@ -99,13 +105,13 @@ extern	Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 typedef struct choice_struct {
     int		    value;
     icon_struct	   *icon;
-    Pixmap	    normalPM,blackPM;
+    Pixmap	    pixmap;
 }		choice_info;
 
 typedef struct ind_sw_struct {
     int		    type;	/* one of I_CHOICE .. I_FVAL */
     int		    func;
-    char	    line1[14], line2[6];
+    char	    line1[16], line2[8];
     int		    sw_width;
     int		   *i_varadr;
     float	   *f_varadr;
@@ -119,7 +125,7 @@ typedef struct ind_sw_struct {
     Widget	    button;
     Widget	    formw;
     Widget	    updbut;
-    Pixmap	    normalPM;
+    Pixmap	    pixmap;
     Widget	    panel;	/* to keep track if already created */
 }		ind_sw_info;
 

@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -30,6 +36,7 @@
 #include "w_mousefun.h"
 #include "w_setup.h"
 #include "w_util.h"
+#include "w_zoom.h"
 #ifdef USE_XPM_ICON
 #include <xpm.h>
 #endif /* USE_XPM_ICON */
@@ -50,6 +57,7 @@ extern void	setup_cmd_panel();
 extern		X_error_handler();
 extern void	error_handler();
 extern void	my_quit();
+extern void	quit();
 extern int	ignore_exp_cnt;
 extern int	psfontnum();
 extern int	latexfontnum();
@@ -73,6 +81,24 @@ static int	Itwo = 2;
 static float	Fzero = 0.0;
 static float	Fone = 1.0;
 
+/* to get any visual the user specifies */
+
+typedef struct
+{
+	Visual	*visual;
+	int	depth;
+} OptionsRec;
+
+OptionsRec	Options;
+
+XtResource resources[] =
+{
+	{"visual", "Visual", XtRVisual, sizeof (Visual *),
+	XtOffsetOf (OptionsRec, visual), XtRImmediate, NULL},
+	{"depth", "Depth", XtRInt, sizeof (int),
+	XtOffsetOf (OptionsRec, depth), XtRImmediate, NULL},
+};
+
 /* actions so that we may install accelerators at the top level */
 static XtActionsRec	main_actions[] =
 {
@@ -90,6 +116,12 @@ static XtActionsRec	main_actions[] =
 };
 
 static XtResource application_resources[] = {
+    {"zoom", "Zoom", XtRFloat, sizeof(float),
+    XtOffset(appresPtr, zoom), XtRFloat, (caddr_t) & Fone},
+    {"canvasbackground",  "canvasBackground",  XtRString,  sizeof(char *),
+    XtOffset(appresPtr,canvasBackground), XtRString, (caddr_t) NULL},
+    {"canvasforeground",  "canvasForeground",  XtRString,  sizeof(char *),
+    XtOffset(appresPtr,canvasForeground), XtRString, (caddr_t) NULL},
     {"iconGeometry",  "IconGeometry",  XtRString,  sizeof(char *),
     XtOffset(appresPtr,iconGeometry), XtRString, (caddr_t) NULL},
     {"showallbuttons", "ShowAllButtons", XtRBoolean, sizeof(Boolean),
@@ -132,6 +164,8 @@ static XtResource application_resources[] = {
     XtOffset(appresPtr, startlinewidth), XtRInt, (caddr_t) & Ione},
     {"startgridmode", "StartGridMode", XtRInt, sizeof(int),
     XtOffset(appresPtr, startgridmode), XtRInt, (caddr_t) & Izero},
+    {"startposnmode", "StartPosnMode", XtRInt, sizeof(int),
+    XtOffset(appresPtr, startposnmode), XtRInt, (caddr_t) & Ione},
     {"latexfonts", "Latexfonts", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, latexfonts), XtRBoolean, (caddr_t) & false},
     {"specialtext", "SpecialText", XtRBoolean, sizeof(Boolean),
@@ -170,6 +204,12 @@ static XtResource application_resources[] = {
 
 static XrmOptionDescRec options[] =
 {
+    {"-visual", "*visual", XrmoptionSepArg, NULL},
+    {"-depth", "*depth", XrmoptionSepArg, NULL},
+
+    {"-zoom", ".zoom", XrmoptionSepArg, 0},
+    {"-cbg", ".canvasBackground", XrmoptionSepArg, (caddr_t) NULL},
+    {"-cfg", ".canvasForeground", XrmoptionSepArg, (caddr_t) NULL},
     {"-iconGeometry", ".iconGeometry", XrmoptionSepArg, (caddr_t) NULL},
     {"-showallbuttons", ".showallbuttons", XrmoptionNoArg, "True"},
     {"-right", ".justify", XrmoptionNoArg, "True"},
@@ -213,6 +253,7 @@ static XrmOptionDescRec options[] =
     {"-startfillstyle", ".startfillstyle", XrmoptionSepArg, 0},
     {"-startlinewidth", ".startlinewidth", XrmoptionSepArg, 0},
     {"-startgridmode", ".startgridmode",  XrmoptionSepArg, 0},
+    {"-startposnmode", ".startposnmode",  XrmoptionSepArg, 0},
     {"-max_image_colors", ".max_image_colors", XrmoptionSepArg, 0},
     {"-dontswitchcmap", ".dont_switch_cmap", XrmoptionNoArg, "True"},
     {"-tablet", ".tablet", XrmoptionNoArg, "True"},
@@ -272,14 +313,16 @@ xfig [-help] \
 [-startlatexFont <font>] \
 \n     \
 [-startlinewidth <width>] \
+[-startposnmode <number>] \
 [-startpsFont <font>] \
-[-starttextstep <number>] \
 \n     \
+[-starttextstep <number>] \
 [-tablet (if installed)] \
 [-track] \
-[-userscale <scale>] \
 \n     \
+[-userscale <scale>] \
 [-userunit <units>] \
+[-visual <visual>] \
 [file]\n";
 
 Atom wm_protocols[2];
@@ -321,13 +364,105 @@ main(argc, argv)
     char	   *userhome;
     Dimension	    w, h;
     XGCValues	    gcv;
+    Colormap	    colormap;		/* created colormap */
+    XVisualInfo	    vinfo;		/* template for find visual */
+    XVisualInfo	   *vinfo_list;		/* returned list of visuals */
+    int		    count;		/* number of matchs (only 1?) */
+    int		    cnt;		/* for the Xt args */
+    Arg		    args[10];
+    int		    xargc;		/* keeps copies of the command-line arguments */
+    char	  **xargv;
+    XColor	    dumcolor;
 
     DeclareArgs(5);
 
-    if (argc > 1 && strcmp(argv[1],"-help")==0) {
+    /* version number only */
+    if (argc > 1 && strcasecmp(argv[1],"-v")==0) {
+	(void) fprintf(stderr, " XFIG %s patchlevel %s (Protocol %s)\n",
+		   FIG_VERSION, PATCHLEVEL, PROTOCOL_VERSION);
+	exit(0);
+
+    /* help message only */
+    } else if (argc > 1 && strcmp(argv[1],"-help")==0) {
 	fprintf(stderr,"%s",help_list);
 	exit(0);
     }
+
+/* start of visual check/set */
+
+	/*
+	 * save the command line arguments
+	 */
+
+	xargc = argc;
+	xargv = (char **) XtMalloc (argc * sizeof (char *));
+	bcopy ((char *) argv, (char *) xargv, argc * sizeof (char *));
+
+	/*
+	 * The following creates a _dummy_ toplevel widget so we can
+	 * retrieve the appropriate visual resource.
+	 */
+	tool = XtAppInitialize (&tool_app, "Fig", options, XtNumber (options), &argc, argv,
+			       (String *) NULL, args, 0);
+	/* save important info */
+	tool_d = XtDisplay(tool);
+	tool_s = XtScreen(tool);
+	tool_sn = DefaultScreen(tool_d);
+
+	XtGetApplicationResources (tool, &Options, resources,
+				   XtNumber (resources),
+				   args, 0);
+	cnt = 0;
+	if (Options.visual && Options.visual != DefaultVisualOfScreen (tool_s)) {
+		XtSetArg (args[cnt], XtNvisual, Options.visual); ++cnt;
+		/*
+		 * Now we create an appropriate colormap.  We could
+		 * use a default colormap based on the class of the
+		 * visual; we could examine some property on the
+		 * rootwindow to find the right colormap; we could
+		 * do all sorts of things...
+		 */
+		tool_cm = XCreateColormap (tool_d,
+					    RootWindowOfScreen (tool_s),
+					    Options.visual,
+					    AllocNone);
+		XtSetArg (args[cnt], XtNcolormap, tool_cm); ++cnt;
+
+		/*
+		 * Now find some information about the visual.
+		 */
+		vinfo.visualid = XVisualIDFromVisual (Options.visual);
+		vinfo_list = XGetVisualInfo (tool_d, VisualIDMask, &vinfo, &count);
+		if (vinfo_list && count > 0) {
+			XtSetArg (args[cnt], XtNdepth, vinfo_list[0].depth);
+			++cnt;
+			XFree ((XPointer) vinfo_list);
+			/* save the depth of the visual */
+			tool_dpth = vinfo_list[0].depth;
+		}
+		/* save the visual */
+		tool_v = Options.visual;
+	} else {
+		/* no visual specified by the user, use default */
+		tool_v = DefaultVisual(tool_d,tool_sn);
+		/* same for colormap */
+		tool_cm = DefaultColormapOfScreen(tool_s);
+		tool_dpth = DefaultDepthOfScreen(tool_s);
+	}
+	/* and save the class */
+	tool_vclass = tool_v->class;
+
+	XtDestroyWidget (tool);
+
+	/*
+	 * Now create the real toplevel widget.
+	 */
+	XtSetArg (args[cnt], XtNargv, xargv); ++cnt;
+	XtSetArg (args[cnt], XtNargc, xargc); ++cnt;
+	tool = XtAppCreateShell ((String) "xfig", (String) "Fig",
+				applicationShellWidgetClass,
+				tool_d, args, cnt);
+/* end of visual check/set */
 
     /* we are not writing the figure to the bitmap */
     writing_bitmap = False;
@@ -342,28 +477,13 @@ main(argc, argv)
     (void) sprintf(tool_name, " XFIG %s patchlevel %s (Protocol %s)",
 		   FIG_VERSION, PATCHLEVEL, PROTOCOL_VERSION);
     (void) strcat(file_header, PROTOCOL_VERSION);
-    tool = XtAppInitialize(&tool_app, (String) "Fig", (XrmOptionDescList) options,
-			   (Cardinal) XtNumber(options),
-#if XtSpecificationRelease < 5
-			   (Cardinal *) & argc,
-			   (String *) argv,
-#else
-			   &argc,
-			   argv,
-#endif
-			   (String *) NULL,
-#if XtSpecificationRelease < 5
-			   (String *) NULL, 
-#else
-			   (ArgList) NULL,
-#endif
-			   (Cardinal) 0);
-
 
     /* install actions to get to the functions with accelerators */
     XtAppAddActions(tool_app, main_actions, XtNumber(main_actions));
 
     fix_converters();
+
+    /* get the application resources */
     XtGetApplicationResources(tool, &appres, application_resources,
 			      XtNumber(application_resources), NULL, 0);
 
@@ -372,15 +492,24 @@ main(argc, argv)
 	    filename = argv[1];
     }
 
-    tool_d = XtDisplay(tool);
-    tool_s = XtScreen(tool);
-    tool_cm = DefaultColormapOfScreen(tool_s);
-    tool_sn = DefaultScreen(tool_d);
     tool_cells = CellsOfScreen(tool_s);
     screen_res = (int) ((float) WidthOfScreen(tool_s) /
 			((appres.INCHES) ?
 			    ((float) WidthMMOfScreen(tool_s)/2.54) :
 				     WidthMMOfScreen(tool_s) ));
+
+    /* set zoom factor for resolution chosen */
+    if (appres.zoom <= 0.0)
+	appres.zoom = 1.0;		/* user didn't specify starting zoom, use 1.0 */
+
+    ZOOM_FACTOR = PIX_PER_INCH/DISPLAY_PIX_PER_INCH;
+
+    display_zoomscale = appres.zoom;
+    zoomscale=display_zoomscale/ZOOM_FACTOR;
+
+    /* start with default paper size; letter for imperial and A4 for Metric */
+    appres.papersize = (appres.INCHES? PAPER_LETTER: PAPER_A4);
+    appres.multiple = False;
 
     /* filled in later */
     tool_w = (Window) NULL;
@@ -401,8 +530,25 @@ main(argc, argv)
 
     /* setup the defaults or the user preferences */
 
-    if (appres.max_image_colors == 0)
-	appres.max_image_colors = DEF_MAX_IMAGE_COLS;
+    /* if any of these classes, allow total number of cmap entries for image colors */
+    switch( tool_vclass ){
+	case GrayScale:
+	case PseudoColor:
+	    /* if the user hasn't specified a limit to the number of colors for images */
+	    if (appres.max_image_colors <= 0)
+		appres.max_image_colors = DEF_MAX_IMAGE_COLS;
+	    break;
+	case StaticGray:
+	case StaticColor:	/* number of colors = number of map_entries */
+	    appres.max_image_colors = tool_v->map_entries;
+	    break;
+	case DirectColor:
+	case TrueColor:		/* set number of colors at max */
+	    appres.max_image_colors = MAX_COLORMAP_SIZE;
+	    break;
+	default:
+	    break;
+    }
 
     if (appres.startfontsize >= 1.0)
 	cur_fontsize = round(appres.startfontsize);
@@ -415,6 +561,14 @@ main(argc, argv)
     } else {
 	    cur_latex_font = latexfontnum (appres.startlatexFont);
     }
+
+    /* allocate black and white in case we aren't using the default colormap */
+    /* (in which case we could have just used BlackPixelOfScreen...) */
+
+    XAllocNamedColor(tool_d, tool_cm, (String) "white", &dumcolor, &dumcolor);
+    white_color = dumcolor;
+    XAllocNamedColor(tool_d, tool_cm, (String) "black", &dumcolor, &dumcolor);
+    black_color = dumcolor;
 
     cur_ps_font = psfontnum (appres.startpsFont);
 
@@ -430,6 +584,9 @@ main(argc, argv)
     if (appres.startgridmode >= 0)
 	cur_gridmode = min2(appres.startgridmode,GRID_3);
 
+    if (appres.startposnmode >= 0)
+	cur_pointposn = min2(appres.startposnmode,P_GRID3);
+
     /* turn off PSFONT_TEXT flag if user specified -latexfonts */
     if (appres.latexfonts)
 	cur_textflags = cur_textflags & (~PSFONT_TEXT);
@@ -441,7 +598,7 @@ main(argc, argv)
 	cur_textflags = cur_textflags & (~PSFONT_TEXT);
 
     if (appres.user_unit)
-	strncpy(cur_fig_units, appres.user_unit, sizeof(cur_fig_units));
+	strncpy(cur_fig_units, appres.user_unit, sizeof(cur_fig_units)-1);
     else
 	cur_fig_units[0] = '\0';
 
@@ -467,10 +624,10 @@ main(argc, argv)
 	    old = XtDatabase(tool_d);
 	    XrmMergeDatabases(newdb, &old);
 
-	    /* now set the tool part, since its already created */
-	    FirstArg(XtNborderColor, WhitePixelOfScreen(tool_s));
-	    NextArg(XtNforeground, WhitePixelOfScreen(tool_s));
-	    NextArg(XtNbackground, BlackPixelOfScreen(tool_s));
+	    /* now set the tool part, since it's already created */
+	    FirstArg(XtNborderColor, white_color.pixel);
+	    NextArg(XtNforeground, white_color.pixel);
+	    NextArg(XtNbackground, black_color.pixel);
 	    SetValues(tool);
 	}
     }
@@ -493,7 +650,30 @@ main(argc, argv)
      */
     check_colors();
 
+    /* parse any canvas background or foreground color the user wants */
+    if (appres.canvasBackground) {
+	XParseColor(tool_d, tool_cm, appres.canvasBackground, &x_bg_color);
+	if (XAllocColor(tool_d, tool_cm, &x_bg_color)==0) {
+	    fprintf(stderr,"Can't allocate background color for canvas\n");
+	    appres.canvasBackground = (char*) NULL;
+	}
+    } else {
+	x_bg_color = white_color;
+    }
+    if (appres.canvasForeground) {
+	XParseColor(tool_d, tool_cm, appres.canvasForeground, &x_fg_color);
+	if (XAllocColor(tool_d, tool_cm, &x_fg_color)==0) {
+	    fprintf(stderr,"Can't allocate background color for canvas\n");
+	    appres.canvasForeground = (char*) NULL;
+	}
+    } else {
+	x_fg_color = black_color;
+    }
+
+    /* setup the cursors */
     init_cursor();
+
+    /* make the top-level widget */
     FirstArg(XtNinput, (XtArgVal) True);
     NextArg(XtNdefaultDistance, (XtArgVal) 0);
     NextArg(XtNresizable, (XtArgVal) False);
@@ -524,14 +704,33 @@ main(argc, argv)
     if (RULER_WD < DEF_RULER_WD)
 	RULER_WD = DEF_RULER_WD;
 
-    if (init_canv_wd == 0)
-	init_canv_wd = appres.landscape ? DEF_CANVAS_WD_LAND :
-	    DEF_CANVAS_WD_PORT;
+    CANVAS_WD_LAND = DEF_CANVAS_WD_LAND;
+    CANVAS_HT_LAND = DEF_CANVAS_HT_LAND;
+    CANVAS_WD_PORT = DEF_CANVAS_WD_PORT;
+    CANVAS_HT_PORT = DEF_CANVAS_HT_PORT;
 
-    if (init_canv_ht == 0)
-	init_canv_ht = appres.landscape ? DEF_CANVAS_HT_LAND :
-	    DEF_CANVAS_HT_PORT;;
-
+    if (appres.landscape) {
+	CANVAS_WD_LAND = init_canv_wd;
+	CANVAS_HT_LAND = init_canv_ht;
+    } else {
+	CANVAS_WD_PORT = init_canv_wd;
+	CANVAS_HT_PORT = init_canv_ht;
+    }
+    if (init_canv_wd == 0) {
+	if (appres.landscape) {
+	    init_canv_wd = CANVAS_WD_LAND = DEF_CANVAS_WD_LAND;
+	} else {
+	    init_canv_wd = CANVAS_WD_PORT = DEF_CANVAS_WD_PORT;
+	}
+    }
+    if (init_canv_ht == 0) {
+	if (appres.landscape) {
+	    init_canv_ht = CANVAS_HT_LAND = DEF_CANVAS_HT_LAND;
+	} else {
+	    init_canv_ht = CANVAS_HT_PORT = DEF_CANVAS_HT_PORT;
+	}
+    }
+	
     setup_sizes(init_canv_wd, init_canv_ht);
     (void) init_cmd_panel(form);
     (void) init_msg(form,filename);
@@ -572,8 +771,13 @@ main(argc, argv)
 
     /* for the main window trap delete window and save_yourself (my_quit) is called */
     wm_protocols[0] = wm_delete_window;
+    /* remove WM_SAVE_YOURSELF until I do the "right" thing with it */
+#ifdef WHEN_SAVE_YOURSELF_IS_FIXED
     wm_protocols[1] = XInternAtom(XtDisplay(tool), "WM_SAVE_YOURSELF", False);
     (void) XSetWMProtocols(XtDisplay(tool), tool_w, wm_protocols, 2);
+#else
+    (void) XSetWMProtocols(XtDisplay(tool), tool_w, wm_protocols, 1);
+#endif
 
     /* use the XPM color icon for color display */
 #ifdef USE_XPM_ICON
@@ -585,8 +789,7 @@ main(argc, argv)
 	/*  make a window for the icon */
 	iconWindow = XCreateSimpleWindow(tool_d, DefaultRootWindow(tool_d),
 					 0, 0, 1, 1, 0,
-					 BlackPixelOfScreen(tool_s),
-					 BlackPixelOfScreen(tool_s));
+					black_color.pixel, black_color.pixel);
 	xfig_icon_attr.valuemask = XpmReturnPixels | XpmCloseness;
 	xfig_icon_attr.colormap = tool_cm;
 	/* flag whether or not to free colors when quitting xfig */
@@ -644,14 +847,14 @@ main(argc, argv)
 	/* relocate the side button panel */
 	XtUnmanageChild(mode_panel);
 	XtUnmanageChild(canvas_sw);
-	FirstArg(XtNfromHoriz, canvas_sw);	/* panel right of canvas */
+	FirstArg(XtNfromHoriz, sideruler_sw);	/* canvas goes right of side ruler */
+	SetValues(canvas_sw);
+	FirstArg(XtNfromHoriz, canvas_sw);	/* panel goes right of canvas */
 	NextArg(XtNhorizDistance, -INTERNAL_BW);
 	NextArg(XtNfromVert, mousefun);
 	NextArg(XtNleft, XtChainRight);
 	NextArg(XtNright, XtChainRight);
 	SetValues(mode_panel);
-	FirstArg(XtNfromHoriz, sideruler_sw);	/* panel right of canvas */
-	SetValues(canvas_sw);
 	XtManageChild(canvas_sw);
 	XtManageChild(mode_panel);
     }
@@ -677,7 +880,7 @@ main(argc, argv)
 
     /* parse the export language resource */
     for (i=0; i<NUM_EXP_LANG; i++)
-	if (strcmp(appres.exportLanguage, lang_items[i])==0)
+	if (strcasecmp(appres.exportLanguage, lang_items[i])==0)
 	    break;
     /* found it set the language number */
     if (i < NUM_EXP_LANG)
@@ -715,7 +918,7 @@ main(argc, argv)
     (void) signal(SIGSEGV, error_handler);
     (void) signal(SIGINT, SIG_IGN);	/* in case user accidentally types ctrl-c */
 
-    put_msg("READY, please select a mode or load a file");
+    put_msg("READY. Select a mode or load a file");
 
     /*
      * decide on filename for cut buffer: first try users HOME directory to
@@ -979,8 +1182,8 @@ check_colors()
     XColor	    dum,color;
 
     /* no need to allocate black and white specially */
-    colors[BLACK] = BlackPixelOfScreen(tool_s);
-    colors[WHITE] = WhitePixelOfScreen(tool_s);
+    colors[BLACK] = black_color.pixel;
+    colors[WHITE] = white_color.pixel;
     /* fill the colors array with black (except for white) */
     for (i=0; i<NUM_STD_COLS; i++)
 	if (i != BLACK && i != WHITE)

@@ -14,13 +14,27 @@ Rotatable boxes - store width, height, upper-left corner and angle only?
 Allow multiple pages of figures
 Store page size with file
 Super/subscripts for text objects
+Composite objects (ala PostScript) that can be filled if wanted
+	e.g. polyline joined with arc and filled:
+	 _______
+	(_______)
+Text that is connected to objects which appears in popup near object
+	e.g. to have extra information about an object, like "this is
+	my mother at age 5" in a family tree figure
 
 ----------------------------------------------------------
 The following DON'T require a change to the file protocol:
 ----------------------------------------------------------
 
+Allow define arc by center and two points on radius
+Allow picking of points off the positioning grid
+Recursively uncompound objects with one click
+Show position of mouse in Fig coordinates in new indicator window
+Text blocks in text frame
+Make CGM export option for fig2dev
 Automatic pan of canvas when drawing at an edge.
 Make a simple way to create quarter-circle and half-circle using arc
+Allow specifing center and two points on radius for arc besides current method
 Possibly use already allocated colors when importing GIF/XPM figures
 	(e.g. black, red, etc)
 Re-render EPS file (using gs) at new resolution when zooming LARGER

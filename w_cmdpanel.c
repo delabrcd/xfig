@@ -9,11 +9,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -51,6 +57,7 @@ void		setup_cmd_panel();
 static void	sel_cmd_but();
 static void	enter_cmd_but();
 void		quit();
+void		new();
 void		delete_all_cmd();
 void		paste();
 
@@ -70,8 +77,8 @@ typedef struct cmd_switch_struct {
 /* command panel of switches below the lower ruler */
 cmd_sw_info cmd_switches[] = {
     {"Quit",	   "quit", quit, null_proc, null_proc, "Quit", ""},
-    {"Delete ALL", "delete_all", delete_all_cmd, null_proc, null_proc, 
-				"Delete all", ""},
+    {"New", 	   "new", new, null_proc, null_proc, 
+				"New", ""},
     {"Port/Land",  "orient", change_orient, null_proc, null_proc, "Change Orient.", ""},
     {"Undo",	   "undo", undo, null_proc, null_proc, "Undo", ""},
     {"Redraw",	   "redraw", redisplay_canvas, null_proc, null_proc, 
@@ -92,6 +99,7 @@ static XtActionsRec cmd_actions[] =
     {"LeaveCmdSw", (XtActionProc) clear_mousefun},
     {"quit", (XtActionProc) quit},
     {"orient", (XtActionProc) change_orient},
+    {"new", (XtActionProc) new},
     {"delete_all", (XtActionProc) delete_all_cmd},
     {"undo", (XtActionProc) undo},
     {"redraw", (XtActionProc) redisplay_canvas},
@@ -251,10 +259,11 @@ goodbye(abortflag)
     /* free all the loaded X-Fonts*/
     free_Fonts();
 
+    chdir(orig_dir);
+
     XtDestroyWidget(tool);
     /* generate a fault to cause core dump */
     if (abortflag) {
-	chdir(orig_dir);	/* change to original directory first */
 	abort();
     }
     exit(0);
@@ -267,6 +276,20 @@ paste()
 }
 
 void
+new()
+{
+    if (emptyfigure()) {
+	put_msg("New figure already");
+	return;
+    }
+    delete_all();
+    strcpy(save_filename,cur_filename);
+    update_cur_filename("");
+    put_msg("Immediate Undo will restore the figure");
+    redisplay_canvas();
+}
+
+void
 delete_all_cmd()
 {
     if (emptyfigure()) {
@@ -274,6 +297,7 @@ delete_all_cmd()
 	return;
     }
     delete_all();
+    strcpy(save_filename,cur_filename);
     put_msg("Immediate Undo will restore the figure");
     redisplay_canvas();
 }
@@ -292,20 +316,26 @@ change_orient()
     GetValues(canvas_sw);
 
     if (appres.landscape) {
-	dx = DEF_CANVAS_WD_PORT - formw;
-	dy = DEF_CANVAS_HT_PORT - formh;
+	/* save current size for switching back */
+	CANVAS_WD_LAND = CANVAS_WD;
+	CANVAS_HT_LAND = CANVAS_HT;
+	dx = CANVAS_WD_PORT - formw;
+	dy = CANVAS_HT_PORT - formh;
 	TOOL_WD += dx;
 	TOOL_HT += dy;
 	XtResizeWidget(tool, TOOL_WD, TOOL_HT, 0);
-	resize_all((int) (DEF_CANVAS_WD_PORT), (int) (DEF_CANVAS_HT_PORT));
+	resize_all((int) (CANVAS_WD_PORT), (int) (CANVAS_HT_PORT));
 	appres.landscape = False;
     } else {
-	dx = DEF_CANVAS_WD_LAND - formw;
-	dy = DEF_CANVAS_HT_LAND - formh;
+	/* save current size for switching back */
+	CANVAS_WD_PORT = CANVAS_WD;
+	CANVAS_HT_PORT = CANVAS_HT;
+	dx = CANVAS_WD_LAND - formw;
+	dy = CANVAS_HT_LAND - formh;
 	TOOL_WD += dx;
 	TOOL_HT += dy;
 	XtResizeWidget(tool, TOOL_WD, TOOL_HT, 0);
-	resize_all((int) (DEF_CANVAS_WD_LAND), (int) (DEF_CANVAS_HT_LAND));
+	resize_all((int) (CANVAS_WD_LAND), (int) (CANVAS_HT_LAND));
 	appres.landscape = True;
     }
     /* and the printer and export orientation labels */

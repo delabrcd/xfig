@@ -12,11 +12,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -31,6 +37,7 @@
 #include "u_create.h"
 #include "u_undo.h"
 #include "w_canvas.h"
+#include "w_capture.h"
 #include "w_drawprim.h"
 #include "w_util.h"
 #include "w_indpanel.h"
@@ -51,8 +58,8 @@ extern char    *panel_get_value();
 extern PIX_FONT lookfont();
 
 Widget		make_popup_menu();
+Widget		make_color_popup_menu();
 static Widget	make_popup_menu_images();
-static Widget	make_color_popup_menu();
 
 extern Pixmap	psfont_menu_bitmaps[];
 extern Pixmap	latexfont_menu_bitmaps[];
@@ -167,10 +174,15 @@ static char	buf[64];
 static Widget	px_panel[MAXNUMPTS];
 static Widget	py_panel[MAXNUMPTS];
 
-static char	*pic_names[] = {"--","EPS","GIF","JPEG","XBM"
-#ifdef USE_XPM
-			,"XPM"
+static char	*pic_names[] = {
+			"--", "EPS", "GIF", 
+#ifdef USE_JPEG
+			"JPEG",
 #endif
+			"PCX", "XBM",
+#ifdef USE_XPM
+			"XPM",
+#endif /* USE_XPM */
 		};
 
 static int	ellipse_flag;
@@ -426,8 +438,9 @@ expand_pic(w, ev)
     p1.y = atoi(panel_get_value(y1_panel));
     p2.x = atoi(panel_get_value(x2_panel));
     p2.y = atoi(panel_get_value(y2_panel));
-    dx = p2.x - p1.x;
-    dy = p2.y - p1.y;
+    /* size is upper-lower+1 */
+    dx = p2.x - p1.x + ZOOM_FACTOR;
+    dy = p2.y - p1.y + ZOOM_FACTOR;
     rotation = 0;
     if (dx < 0 && dy < 0)
 	rotation = 180;
@@ -474,8 +487,9 @@ shrink_pic(w, ev)
     p1.y = atoi(panel_get_value(y1_panel));
     p2.x = atoi(panel_get_value(x2_panel));
     p2.y = atoi(panel_get_value(y2_panel));
-    dx = p2.x - p1.x;
-    dy = p2.y - p1.y;
+    /* size is upper-lower+1 */
+    dx = p2.x - p1.x + ZOOM_FACTOR;
+    dy = p2.y - p1.y + ZOOM_FACTOR;
     rotation = 0;
     if (dx < 0 && dy < 0)
 	rotation = 180;
@@ -488,16 +502,17 @@ shrink_pic(w, ev)
     if (((rotation == 0 || rotation == 180) && !flip_pic_flag) ||
 	(rotation != 0 && rotation != 180 && flip_pic_flag)) {
 	ratio = fabs((float) dy / (float) dx);
+	/* upper coord is lower+size-1 */
 	if (ratio > orig_ratio)
-	    p2.y = p1.y + signof(dy) * (int) (fabs((float) dx) * orig_ratio);
+	    p2.y = p1.y + signof(dy) * (int) (fabs((float) dx) * orig_ratio) - ZOOM_FACTOR;
 	else
-	    p2.x = p1.x + signof(dx) * (int) (fabs((float) dy) / orig_ratio);
+	    p2.x = p1.x + signof(dx) * (int) (fabs((float) dy) / orig_ratio) - ZOOM_FACTOR;
     } else {
 	ratio = fabs((float) dx / (float) dy);
 	if (ratio > orig_ratio)
-	    p2.x = p1.x + signof(dx) * (int) (fabs((float) dy) * orig_ratio);
+	    p2.x = p1.x + signof(dx) * (int) (fabs((float) dy) * orig_ratio) - ZOOM_FACTOR;
 	else
-	    p2.y = p1.y + signof(dy) * (int) (fabs((float) dx) / orig_ratio);
+	    p2.y = p1.y + signof(dy) * (int) (fabs((float) dx) / orig_ratio) - ZOOM_FACTOR;
     }
     sprintf(buf, "%d", p2.x);
     panel_set_value(x2_panel, buf);
@@ -521,14 +536,16 @@ origsize_pic(w, ev)
     p1.y = atoi(panel_get_value(y1_panel));
     p2.x = atoi(panel_get_value(x2_panel));
     p2.y = atoi(panel_get_value(y2_panel));
-    dx = p2.x - p1.x;
-    dy = p2.y - p1.y;
+    /* size is upper-lower+1 */
+    dx = p2.x - p1.x + ZOOM_FACTOR;
+    dy = p2.y - p1.y + ZOOM_FACTOR;
 
     if (dx == 0 || dy == 0 || orig_ratio == 0.0)
 	return;
 
-    p2.x = p1.x + signof(dx) * new_l->pic->size_x;
-    p2.y = p1.y + signof(dy) * new_l->pic->size_y;
+    /* upper coord is lower+size-1 */
+    p2.x = p1.x + signof(dx) * new_l->pic->size_x - ZOOM_FACTOR;
+    p2.y = p1.y + signof(dy) * new_l->pic->size_y - ZOOM_FACTOR;
     sprintf(buf, "%d", p2.x);
     panel_set_value(x2_panel, buf);
     sprintf(buf, "%d", p2.y);
@@ -678,11 +695,15 @@ make_window_line(l)
 	xy_panel(p1.x, p1.y, "First Corner", &x1_panel, &y1_panel);
 	xy_panel(p2.x, p2.y, "Opposite Corner", &x2_panel, &y2_panel);
 	break;
-    case T_PIC_BOX:
+    case T_PICTURE:
 	old_l->type = T_BOX;	/* so colors of old won't be included in new */
 	generic_window("POLYLINE", "Picture Object", &picobj_ic, done_line, False, False);
 
 	pen_color_selection_panel();
+	/* only the XBM (bitmap) type has a pen color */
+	if (new_l->pic != 0 && new_l->pic->subtype != T_PIC_XBM)
+	    XtSetSensitive(pen_color_panel, False);
+
 	int_panel(new_l->depth, form, "Depth =", &depth_panel);
 	if (!strcmp(new_l->pic->file, EMPTY_PIC))
 	    new_l->pic->file[0] = '\0';
@@ -772,15 +793,18 @@ make_window_line(l)
 				       form, Args, ArgCount);
   
 	/* although the EPS may have colors, the actual number is not known */
-	if (new_l->pic != 0 && 
-	    (new_l->pic->subtype == T_PIC_GIF ||
+	if (new_l->pic != 0 && (
 #ifdef USE_XPM
-	     new_l->pic->subtype == T_PIC_PIXMAP ||
+	     new_l->pic->subtype == T_PIC_XPM ||
+#endif /* USE_XPM */
+	     new_l->pic->subtype == T_PIC_PCX ||
+#ifdef USE_JPEG
+	     new_l->pic->subtype == T_PIC_JPEG ||
 #endif
-	     new_l->pic->subtype == T_PIC_JPEG))
+	     new_l->pic->subtype == T_PIC_GIF))
 		sprintf(buf,"%d",new_l->pic->numcols);
 	else
-		strcpy(buf,"--");
+		strcpy(buf,"N/A");
 
 	FirstArg(XtNfromVert, below);
 	NextArg(XtNfromHoriz, beside);
@@ -811,8 +835,9 @@ make_window_line(l)
 	menu = make_popup_menu(flip_pic_items, XtNumber(flip_pic_items),
 			       flip_pic_panel, flip_pic_select);
 
-	dx = p2.x - p1.x;
-	dy = p2.y - p1.y;
+	/* size is upper-lower+1 */
+	dx = p2.x - p1.x + ZOOM_FACTOR;
+	dy = p2.y - p1.y + ZOOM_FACTOR;
 	rotation = 0;
 	if (dx < 0 && dy < 0)
 	    rotation = 180;
@@ -897,7 +922,7 @@ get_new_line_values()
 	p2.x = atoi(panel_get_value(x2_panel));
 	p2.y = atoi(panel_get_value(y2_panel));
 	break;
-    case T_PIC_BOX:
+    case T_PICTURE:
 	check_depth();
 	new_l->pen_color = pen_color;
 	new_l->fill_color = fill_color;
@@ -907,8 +932,9 @@ get_new_line_values()
 	p2.x = atoi(panel_get_value(x2_panel));
 	p2.y = atoi(panel_get_value(y2_panel));
 
-	dx = p2.x - p1.x;
-	dy = p2.y - p1.y;
+	/* size is upper-lower+1 */
+	dx = p2.x - p1.x + ZOOM_FACTOR;
+	dy = p2.y - p1.y + ZOOM_FACTOR;
 	rotation = 0;
 	if (dx < 0 && dy < 0)
 	    rotation = 180;
@@ -954,10 +980,16 @@ get_new_line_values()
 		read_picobj(new_l->pic,new_l->pen_color);
 	}
 	/* update bitmap size */
-	if (new_l->pic->subtype != 0)
+	if (new_l->pic->subtype != 0) {
 	    sprintf(buf,"%d x %d",new_l->pic->bit_size.x,new_l->pic->bit_size.y);
-	else
+	    /* only the XBM (bitmap) type has a pen color */
+	    if (new_l->pic->subtype == T_PIC_XBM)
+		XtSetSensitive(pen_color_panel, True);
+	    else
+		XtSetSensitive(pen_color_panel, False);
+	} else {
 	    strcpy(buf,"--");
+	}
 	FirstArg(XtNlabel, buf);
 	SetValues(pic_size);
 
@@ -973,14 +1005,18 @@ get_new_line_values()
 
 	/* number of colors */
 	/* although the EPS may have colors, the actual number is not known */
-	if ((new_l->pic->subtype == T_PIC_GIF ||
+	if (
+	     new_l->pic->subtype == T_PIC_PCX ||
 #ifdef USE_XPM
-	     new_l->pic->subtype == T_PIC_PIXMAP ||
+	     new_l->pic->subtype == T_PIC_XPM ||
+#endif /* USE_XPM */
+#ifdef USE_JPEG
+	     new_l->pic->subtype == T_PIC_JPEG ||
 #endif
-	     new_l->pic->subtype == T_PIC_JPEG))
+	     new_l->pic->subtype == T_PIC_GIF)
 		sprintf(buf,"%d",new_l->pic->numcols);
 	else
-		strcpy(buf,"--");
+		strcpy(buf,"N/A");
 	FirstArg(XtNlabel, buf);
 	SetValues(pic_colors);
 
@@ -990,6 +1026,9 @@ get_new_line_values()
 	SetValues(orig_hw_panel);
 	app_flush();
 
+	if (new_l->pic->subtype == T_PIC_XBM)
+	     put_msg("Read XBM image of %dx%d pixels OK",
+		new_l->pic->bit_size.x, new_l->pic->bit_size.y);
 	/* recolor and redraw all picturess if this is one */
 	if (file_changed && !appres.monochrome &&
 	   (new_l->pic->numcols > 0) && (new_l->pic->bitmap != 0)) {
@@ -997,16 +1036,19 @@ get_new_line_values()
 		remap_image_two(&objects, new_l);
 		/* and redraw all of the pictures already on the canvas */
 		redraw_images(&objects);
-		put_msg("Read %s image of %dx%d pixels OK",
+		put_msg("Read %s image of %dx%d pixels and %d colors OK",
 			new_l->pic->subtype == T_PIC_EPS? "EPS":
 			  new_l->pic->subtype == T_PIC_GIF? "GIF":
+#ifdef USE_JPEG
 			    new_l->pic->subtype == T_PIC_JPEG? "JPEG":
-			      new_l->pic->subtype == T_PIC_BITMAP? "XBM":
-#ifdef USE_XPM
-				new_l->pic->subtype == T_PIC_PIXMAP? "XPM":
 #endif
+				new_l->pic->subtype == T_PIC_PCX? "PCX":
+#ifdef USE_XPM
+				  new_l->pic->subtype == T_PIC_XPM? "XPM":
+#endif /* USE_XPM */
 				    "Unknown",
-			new_l->pic->bit_size.x, new_l->pic->bit_size.y);
+			new_l->pic->bit_size.x, new_l->pic->bit_size.y,
+			new_l->pic->numcols);
 		app_flush();
 	}
 
@@ -1047,8 +1089,8 @@ done_line()
     case DONE:
 	get_new_line_values();
 	redisplay_lines(new_l, old_l);
-	if (new_l->type == T_PIC_BOX)
-	    old_l->type = T_PIC_BOX;		/* restore type */
+	if (new_l->type == T_PICTURE)
+	    old_l->type = T_PICTURE;		/* restore type */
 	clean_up();
 	old_l->next = new_l;
 	set_latestline(old_l);
@@ -1064,8 +1106,8 @@ done_line()
 		saved_objects.lines->next = old_l;
 	else if (saved_objects.lines == new_l)
 		saved_objects.lines = old_l;
-	if (new_l->type == T_PIC_BOX) {
-	    old_l->type = T_PIC_BOX;		/* restore type */
+	if (new_l->type == T_PICTURE) {
+	    old_l->type = T_PICTURE;		/* restore type */
 	    if (file_changed) {
 		remap_imagecolors(&objects);	/* and restore colors */
 		redraw_images(&objects);	/* and refresh them */
@@ -1241,8 +1283,6 @@ get_new_text_values()
 static
 done_text()
 {
-    int		    xmin, ymin, xmax, ymax, dum;
-
     switch (button_result) {
     case APPLY:
 	changed = 1;
@@ -1353,10 +1393,10 @@ get_new_ellipse_values()
 	new_e->start = new_e->center;
     } else {
 	new_e->start.x = new_e->center.x - new_e->radiuses.x;
-	new_e->start.y = new_e->center.y - new_e->radiuses.y;
+	new_e->start.y = new_e->center.y;
     }
     new_e->end.x = new_e->center.x + new_e->radiuses.x;
-    new_e->end.y = new_e->center.y + new_e->radiuses.y;
+    new_e->end.y = new_e->center.y;
 }
 
 static
@@ -1583,9 +1623,15 @@ new_generic_values()
     generic_vals.depth = atoi(panel_get_value(depth_panel));
     /* include dash length in panel, too */
     generic_vals.style_val = (float) atof(panel_get_value(style_val_panel));
-    if (generic_vals.style == DASH_LINE || generic_vals.style == DOTTED_LINE)
+    if (generic_vals.style == DASH_LINE || generic_vals.style == DOTTED_LINE ||
+        generic_vals.style == DASH_DOT_LINE ||
+        generic_vals.style == DASH_2_DOTS_LINE ||
+        generic_vals.style == DASH_3_DOTS_LINE )
         if (generic_vals.style_val <= 0.0) {
-	    generic_vals.style_val = ((generic_vals.style == DASH_LINE)?
+	    generic_vals.style_val = ((generic_vals.style == DASH_LINE ||
+                generic_vals.style == DASH_DOT_LINE ||
+                generic_vals.style == DASH_2_DOTS_LINE ||
+                generic_vals.style == DASH_3_DOTS_LINE)?
 					     cur_dashlength: cur_dotgap)*
 					(generic_vals.thickness + 1) / 2;
 	    sprintf(buf, "%1.1f", generic_vals.style_val);
@@ -1595,7 +1641,11 @@ new_generic_values()
     if (fill_flag==1) {		/* fill color */
 	val = panel_get_value(fill_style_panel);
 	if (*val >= ' ' && *val <= '9') {
-	    if ((fill = atoi(val)) > 200)
+	    /* if fill value > 200%, set to 100%.  Also if > 100% and fill color is
+	       black or white set to 100% */
+	    if ((fill = atoi(val)) > 200 ||
+		(fill_color == BLACK || fill_color == DEFAULT || fill_color == WHITE) &&
+			fill > 100)
 		fill = 100;
 	    generic_vals.fill_style = fill / (200 / (NUMSHADEPATS+NUMTINTPATS - 1));
 	}
@@ -1710,7 +1760,9 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
     static char	   *joinstyle_items[] = {
 			"Miter", "Round", "Bevel"};
     static char	   *linestyle_items[] = {
-			"Solid Line ", "Dashed Line", "Dotted Line"};
+			"Solid Line ", "Dashed Line", "Dotted Line",
+                        "Dash-Dot line", "Dash-Dot-Dot line",
+                        "Dash-Dot-Dot-Dot line"};
 
     FirstArg(XtNwidth, &width);
     NextArg(XtNheight, &height);
@@ -1773,7 +1825,7 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
 
 	image_pm = XCreatePixmapFromBitmapData(tool_d, canvas_win,
 				     icon->bits, icon->width, icon->height,
-				     fg, bg, XDefaultDepthOfScreen(tool_s));
+				     fg, bg, tool_dpth);
 	pix_table[i].image_pm = image_pm;
 	pix_table[i].image = icon;
     }
@@ -1940,7 +1992,7 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
 		    else if (i==5) bits = arrow5_bits;
 		    else if (i==6) bits = arrow6_bits;
 		    arrow_table[i] = XCreateBitmapFromData(tool_d,canvas_win,
-					bits, 32, 32); 
+					(char*)bits, 32, 32); 
 		}
 	    }
 
@@ -1981,7 +2033,7 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
 	    NextArg(XtNlabel, "");
 	    NextArg(XtNheight, 32);
 	    NextArg(XtNwidth, 32);
-	    NextArg(XtNbackgroundPixmap, arrowtype_choices[type].normalPM);
+	    NextArg(XtNbackgroundPixmap, arrowtype_choices[type].pixmap);
 	    for_arrow_type_panel = XtCreateManagedWidget("Arrowtype",
 					    menuButtonWidgetClass,
 					    for_aform, Args, ArgCount);
@@ -2043,7 +2095,7 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
 	    NextArg(XtNlabel, "");
 	    NextArg(XtNheight, 32);
 	    NextArg(XtNwidth, 32);
-	    NextArg(XtNbackgroundPixmap, arrowtype_choices[type].normalPM);
+	    NextArg(XtNbackgroundPixmap, arrowtype_choices[type].pixmap);
 	    back_arrow_type_panel = XtCreateManagedWidget("Arrowtype",
 					    menuButtonWidgetClass,
 					    back_aform, Args, ArgCount);
@@ -2354,6 +2406,7 @@ color_selection_panel(label, name, widget, color, callback)
     set_color_name(color);
     FirstArg(XtNfromVert, below);
     NextArg(XtNfromHoriz, beside);
+    NextArg(XtNwidth, 70);
     *widget = XtCreateManagedWidget(
 		     name, menuButtonWidgetClass, form, Args, ArgCount);
     /*
@@ -2363,14 +2416,15 @@ color_selection_panel(label, name, widget, color, callback)
     /* also set the label */
     (callback)(*widget, (XtPointer) color, NULL);
     below = *widget;
-    menu = make_color_popup_menu(*widget, callback);
+    menu = make_color_popup_menu(*widget, callback, False);
 }
 
 
-static		Widget
-make_color_popup_menu(parent, callback)
+Widget
+make_color_popup_menu(parent, callback, export)
     Widget	    parent;
     XtCallbackProc  callback;
+    Boolean	    export;
 
 {
     Widget	    pop_menu, entry;
@@ -2379,16 +2433,26 @@ make_color_popup_menu(parent, callback)
     pop_menu = XtCreatePopupShell("menu", simpleMenuWidgetClass, parent,
 				  NULL, ZERO);
 
-    for (i = 0; i < NUM_STD_COLS+num_usr_cols; i++) {
+    for (i = (export? -2: 0); i < NUM_STD_COLS+num_usr_cols; i++) {
 	if (i >= NUM_STD_COLS && colorFree[i-NUM_STD_COLS])
 	    continue;
-	set_color_name(i);
+	if (export && i == -2)
+	    sprintf(buf,"None");
+	else if (export && i == -1)
+	    sprintf(buf,"Background");
+	else
+	    set_color_name(i);
 	if (all_colors_available)
-	    FirstArg(XtNforeground, colors[i])
+	    FirstArg(XtNforeground, ((export && i<0)?
+					black_color.pixel: colors[i]))
 	else
 	    ArgCount = 0;
 	entry = XtCreateManagedWidget(buf, smeBSBObjectClass, pop_menu,
 				      Args, ArgCount);
+	/* make a separator line before real colors */
+	if (export && i== -1)
+	    (void) XtCreateManagedWidget(buf, smeLineObjectClass, pop_menu,
+				      NULL, 0);
 	XtAddCallback(entry, XtNcallback, callback, (XtPointer) i);
     }
     set_color_name(DEFAULT);
@@ -2505,7 +2569,7 @@ str_panel(string, name, pi_x)
 
     /* make the labels of the widgets xxx_label for the label part and xxx_text for
 	the asciiwidget part */
-    labelname = (char *) malloc(strlen(name)+5);
+    labelname = (char *) malloc(strlen(name)+7);
     textname = (char *) malloc(strlen(name)+6);
     strcpy(labelname,name);
     strcat(labelname,"_label");
@@ -2652,6 +2716,9 @@ get_f_pos(fp, pi_x, pi_y)
     fp->x = (atoi(panel_get_value(pi_x)));
     fp->y = (atoi(panel_get_value(pi_y)));
 }
+
+/* this makes a scrollable panel in which the x/y points for the
+	Fig object are displayed */
 
 static
 points_panel(p, closed)
@@ -2835,7 +2902,7 @@ for_arrow_type_select(w, new_type, garbage)
     choice_info	    *choice;
 
     choice = (choice_info *) new_type;
-    FirstArg(XtNbackgroundPixmap, choice->normalPM);
+    FirstArg(XtNbackgroundPixmap, choice->pixmap);
     SetValues(for_arrow_type_panel);
     if (!for_arrow) {
 	toggle_for_arrow(w, garbage, garbage);
@@ -2855,7 +2922,7 @@ back_arrow_type_select(w, new_type, garbage)
     choice_info	    *choice;
 
     choice = (choice_info *) new_type;
-    FirstArg(XtNbackgroundPixmap, choice->normalPM);
+    FirstArg(XtNbackgroundPixmap, choice->pixmap);
     SetValues(back_arrow_type_panel);
     if (!back_arrow) {
 	toggle_back_arrow(w, garbage, garbage);
@@ -2938,9 +3005,9 @@ color_select(w, color)
     FirstArg(XtNfont, &f);
     GetValues(w);
     FirstArg(XtNlabel, buf);
-    len = XTextWidth(f, buf, strlen(buf)) + 8;
-    NextArg(XtNwidth, len);	/* set width of panel to width of colorname */
-    NextArg(XtNresizable, True);
+    /* don't know why, but we *MUST* set the size again here or it
+       will stay the width that it first had when created */
+    NextArg(XtNwidth, 70);
 
     if (all_colors_available) { /* set color if possible */
 	XColor		xcolor;
@@ -3030,8 +3097,9 @@ flip_pic_select(w, new_flipflag, garbage)
     p1.y = atoi(panel_get_value(y1_panel));
     p2.x = atoi(panel_get_value(x2_panel));
     p2.y = atoi(panel_get_value(y2_panel));
-    dx = p2.x - p1.x;
-    dy = p2.y - p1.y;
+    /* size is upper-lower+1 */
+    dx = p2.x - p1.x + ZOOM_FACTOR;
+    dy = p2.y - p1.y + ZOOM_FACTOR;
     rotation = 0;
     if (dx < 0 && dy < 0)
 	rotation = 180;
@@ -3098,7 +3166,8 @@ fill_style_select(w, new_fillflag, garbage)
     }
 }
 
-void clear_text_key(w)
+void
+clear_text_key(w)
 Widget w;
 {
 	panel_set_value(w, "");
@@ -3106,7 +3175,8 @@ Widget w;
 
 static void get_clipboard();
 
-void paste_panel_key(w, event)
+void
+paste_panel_key(w, event)
 Widget w;
 XKeyEvent *event;
 {
@@ -3116,7 +3186,8 @@ XKeyEvent *event;
         XtGetSelectionValue(w, XA_PRIMARY, XA_STRING, get_clipboard, w, event_time);
 }
 
-static void get_clipboard(w, client_data, selection, type, buf, length, format)
+static void
+get_clipboard(w, client_data, selection, type, buf, length, format)
 Widget w;
 XtPointer client_data;
 Atom *selection;
@@ -3215,9 +3286,6 @@ grab_button(panel_local, item, event)
     int            *event;
 {
     time_t	    tim;
-    uid_t	    uid;
-    pid_t	    pid;
-    int		    captured;
     char	    tmpfile[32];
     struct passwd  *who;
 
@@ -3225,19 +3293,15 @@ grab_button(panel_local, item, event)
 	the current time */
     who = getpwuid(getuid());
     tim = time( (time_t*)0);
-    sprintf(tmpfile,"%s_%d.gif",who->pw_name,tim);
+#ifdef USE_GIF
+    sprintf(tmpfile,"%s_%ld.gif",who->pw_name,tim);
+#else
+    sprintf(tmpfile,"%s_%ld.pcx",who->pw_name,tim);
+#endif /* USE_GIF */
                                                 
-    /* unmap the xfig windows, capture a gif into our tmpfile, 
-        then remap our windows!    */
+    /* capture the screen area into our tmpfile */
 
-    XtUnmapWidget(tool);
-    XtUnmapWidget(popup);
-    XSync(tool_d, False);
-    captured = captureGif( tmpfile );
-    XtMapWidget(tool);
-    XtMapWidget(popup);
-
-    if ( captured == True ) {
+    if ( captureImage(popup, tmpfile ) == True ) {
       panel_set_value( pic_name_panel, tmpfile);
       push_apply_button();
     }
@@ -3259,10 +3323,7 @@ image_edit_button(panel_local, item, event)
     Widget         *item;
     int            *event;
 {
-    time_t tim;
-    uid_t uid;
     pid_t pid;
-    char tmpfile[32];
     char *s;
     struct stat original_stat;
     int err;
@@ -3305,7 +3366,7 @@ image_edit_button(panel_local, item, event)
 	XtUnmapWidget(popup);
     	XSync(tool_d, False);
 
-        waitpid( pid, &status, 0 );
+        (void) waitpid( pid, &status, 0 );
 
         XtMapWidget(tool);  /* bring back the xfig windows */
         XtMapWidget(popup);

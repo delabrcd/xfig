@@ -1,34 +1,45 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1991 by Brian V. Smith
+ * Copyright (c) 1995 Jim Daley (jdaley@cix.compulink.co.uk)
+ * Parts Copyright (c) 1995 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 /*
   Screen capture functions - let user draw rectangle on screen
-  & write gif file of contents of that area.
+  & write gif or pcx file (if USE_GIF is NOT set) file of
+  contents of that area.
 */
 
 #include "fig.h"
 #include "resources.h"
+#include "w_capture.h"
 
-
-       int  captureGif();	  /* returns True on success */
-       int  canHandleCapture();	  /* returns True if image capture will works */
-
-static int  getImageData();	  /* returns zero on failure */
-static int  selectedRootArea();   /* returns zero on failure */
+static Boolean  getImageData();	  	/* returns zero on failure */
+static Boolean  selectedRootArea();	/* returns zero on failure */
 static void drawRect();
-static int  getCurrentColours();  /* returns no of colours in map */
+static int  getCurrentColors();		/* returns number of colors in map */
 
 
-static unsigned char *data;  	  /* pointer to captured & converted data */
+static unsigned char *data;		/* pointer to captured & converted data */
+
 /* 
   statics which need to be set up before we can call
   drawRect - drawRect relies on GC being an xor so
@@ -37,43 +48,81 @@ static unsigned char *data;  	  /* pointer to captured & converted data */
 static Window   rectWindow;
 static GC       rectGC;
 
-
-
-int
-captureGif(filename)  		/* returns True on success */
+Boolean
+captureImage(window, filename)  	/* returns True on success */
+Widget window;
 char *filename;
 {
-unsigned char   Red[MAXCOLORMAPSIZE],
-		Green[MAXCOLORMAPSIZE],
-		Blue[MAXCOLORMAPSIZE];
+unsigned char   Red[MAX_COLORMAP_SIZE],
+		Green[MAX_COLORMAP_SIZE],
+		Blue[MAX_COLORMAP_SIZE];
 int      	numcols;
 int      	captured;
 int      	width, height;
-long		giflen;
+Boolean		status;
+
+#ifdef USE_GIF
+  long		giflen;
+#else
+  FILE		*pcxfile;
+  char		*dptr;
+  int		i,j;
+#endif /* USE_GIF */
 
  if (!ok_to_write(filename, "EXPORT") )
    return(False);
 
+  /* unmap the xfig windows, capture a gif/pcx then remap our windows */
 
- if ( getImageData(&width, &height, &numcols, Red, Green, Blue) == 0 ) {
+  XtUnmapWidget(tool);
+  XtUnmapWidget(window);
+  XSync(tool_d, False);
+
+  /* capture the screen area */
+  status = getImageData(&width, &height, &numcols, Red, Green, Blue);
+
+  /* map our windows again */
+  XtMapWidget(tool);
+  XtMapWidget(window);
+
+  if ( status == False ) {
     put_msg("Nothing Captured.");
     app_flush();
     captured = False;
-   
  } else {
    /* encode the image and write to the file */
+#ifdef USE_GIF
     put_msg("Writing GIF file...");
+#else
+    put_msg("Writing binary PCX file...");
+#endif /* USE_GIF */
+
     app_flush();
 
-    if ((giflen=GIFencode(filename, width, height, numcols,
+#ifdef USE_GIF
+    if ((giflen=GIFencode(filename, width, height, numcols, -1,
 	 Red, Green, Blue, data)) == (long) 0) {
-	    put_msg("Couldn't write GIF file");
+	    file_msg("Couldn't write GIF file %s",filename);
+	    put_msg("Couldn't write GIF file %s",filename);
 	    captured = False;
     } else {
 	    put_msg("%dx%d GIF written to \"%s\" (%ld bytes)",
 			width, height, filename,giflen);
 	    captured = True;
     }
+#else	/* no GIF, write pcx file */
+    if ((pcxfile = fopen(filename,"w"))==0) {
+	file_msg("Cannot open PCX file %s for writing",filename);
+	put_msg("Cannot open PCX file %s for writing",filename);
+	captured = False;
+    } else {
+	/* write the pcx file */
+	_write_pcx(pcxfile, data, Red, Green, Blue, numcols, width, height);
+	fclose(pcxfile);
+	captured = True;
+    }
+#endif /* USE_GIF */
+
     free(data);
  }
 
@@ -81,15 +130,14 @@ long		giflen;
 }
 
 
-
-static
-int getImageData(w, h, nc, Red, Green, Blue) /* returns 0 on failure */
+static Boolean
+getImageData(w, h, nc, Red, Green, Blue) /* returns False on failure */
   int *w, *h, *nc;
   unsigned char Red[], Green[], Blue[];
 {
-  XColor colours[MAXCOLORMAPSIZE];
-  int colused[MAXCOLORMAPSIZE];
-  int mapcols[MAXCOLORMAPSIZE];
+  XColor colors[MAX_COLORMAP_SIZE];
+  int colused[MAX_COLORMAP_SIZE];
+  int mapcols[MAX_COLORMAP_SIZE];
 
   int x, y, width, height;
   Window cw;
@@ -100,15 +148,15 @@ int getImageData(w, h, nc, Red, Green, Blue) /* returns 0 on failure */
   unsigned char *iptr, *dptr;
 
   sleep(1);   /* in case he'd like to click on something */
-  if ( selectedRootArea( &x, &y, &width, &height, &cw ) == 0 )
-     return(0);
+  if ( selectedRootArea( &x, &y, &width, &height, &cw ) == False )
+     return False;
 
   image = XGetImage(tool_d, XDefaultRootWindow(tool_d),
 				 x, y, width, height, AllPlanes, ZPixmap);
   if (!image || !image->data) {
     fprintf(stderr, "Cannot capture %dx%d area - memory problems?\n",
 								width,height);
-    return 0;
+    return False;
   }
 
 
@@ -116,12 +164,12 @@ int getImageData(w, h, nc, Red, Green, Blue) /* returns 0 on failure */
   *w = width = image->width;
   *h = height = image->height;
 
-  numcols = getCurrentColours(XDefaultRootWindow(tool_d), colours);
+  numcols = getCurrentColors(XDefaultRootWindow(tool_d), colors);
   if ( numcols <= 0 ) {  /* ought not to get here as capture button
                  should not appear for these displays */
-    fprintf(stderr, "Cannot handle a display without a colourmap.\n");
+    fprintf(stderr, "Cannot handle a display without a colormap.\n");
     XDestroyImage( image );
-    return 0;
+    return False;
   }
 
   iptr = (unsigned char *) image->data;
@@ -129,10 +177,10 @@ int getImageData(w, h, nc, Red, Green, Blue) /* returns 0 on failure */
   if ( !dptr ) {
     fprintf(stderr, "Insufficient memory to convert image.\n");
     XDestroyImage(image);
-    return 0;
+    return False;
   }
      
-  if (tool_cells  >  2) { /* colour */
+  if (tool_cells  >  2) { /* color */
 	/* copy them to the Red, Green and Blue arrays */
 	for (i=0; i<numcols; i++) {
 	    colused[i] = 0;
@@ -156,9 +204,9 @@ int getImageData(w, h, nc, Red, Green, Blue) /* returns 0 on failure */
 	for (i=0; i< *nc; i++) {
 	    if (colused[i]) {
 		mapcols[i] =  numcols;
-		Red[numcols]   = colours[i].red >> 8;
-		Green[numcols] = colours[i].green >> 8;
-		Blue[numcols]  = colours[i].blue >> 8;
+		Red[numcols]   = colors[i].red >> 8;
+		Green[numcols] = colors[i].green >> 8;
+		Blue[numcols]  = colors[i].blue >> 8;
 		numcols++;
 	    }
 	}
@@ -199,15 +247,16 @@ int getImageData(w, h, nc, Red, Green, Blue) /* returns 0 on failure */
 	    }
 	}
 	for (i=0; i<2; i++) {
-	    Red[i]   = colours[i].red >> 8;
-	    Green[i] = colours[i].green >> 8;
-	    Blue[i]  = colours[i].blue >> 8;
+	    Red[i]   = colors[i].red >> 8;
+	    Green[i] = colors[i].green >> 8;
+	    Blue[i]  = colors[i].blue >> 8;
 	}
 	numcols = 2;
   }
   *nc = numcols;
 
-XDestroyImage(image);
+  XDestroyImage(image);
+  return True;
 }
 
 
@@ -224,7 +273,7 @@ XDestroyImage(image);
   	button1 again marks end point - any other cancels
 */
 
-static int 
+static Boolean 
 selectedRootArea( x_r, y_r, w_r, h_r, cw )
   int *x_r, *y_r, *w_r, *h_r;
   Window *cw;
@@ -250,7 +299,7 @@ unsigned int mask;
   while (PTR_BUTTON_STATE( win_x, win_y, mask ) == 0) {}
   if ( !(mask & Button1Mask ) ) {
     XUngrabPointer(tool_d, CurrentTime);
-    return(0); 
+    return False; 
   } else {
     while (PTR_BUTTON_STATE( win_x, win_y, mask ) != 0) 
 	;
@@ -299,7 +348,7 @@ unsigned int mask;
 
 
   if (width == 0 || height == 0 || !(mask & Button1Mask) )  
-    return 0;  /* cancelled or selected nothing */
+    return False;  /* cancelled or selected nothing */
 
 
   /* we have a rectangle - set up the return parameters */    
@@ -310,7 +359,7 @@ unsigned int mask;
   else
     *cw = child_r;
 
-  return 1;
+  return True;
 }
 
 
@@ -335,10 +384,10 @@ if ( onscreen != draw )
 }
 
 /*
-  in picking up the colour map I'm making the assumption that the user
+  in picking up the color map I'm making the assumption that the user
   has arranged the captured screen to appear as he wishes - ie that
-  whatever colours he wants are displayed - this means that if the
-  chosen window colour map is not installed then we need to pick
+  whatever colors he wants are displayed - this means that if the
+  chosen window color map is not installed then we need to pick
   the one that is - rather than the one appropriate to the window
      The catch is that there may be several installed maps
      so we do need to check the window -  rather than pick up
@@ -377,30 +426,30 @@ if ( onscreen != draw )
 #define lowbit(x) ((x) & (~(x) + 1))
 
 static int
-getCurrentColours(w, colours)
+getCurrentColors(w, colors)
      Window w;
-     XColor colours[];
+     XColor colors[];
 {
   XWindowAttributes xwa;
-  int i, ncolours;
+  int i, ncolors;
   Colormap map;
 
   XGetWindowAttributes(tool_d, w, &xwa);
 
   if (xwa.visual->class == TrueColor) {
-    fprintf(stderr,"TrueColor visual No colourmap.\n");
+    fprintf(stderr,"TrueColor visual No colormap.\n");
     return 0;
   }
 
   else if (!xwa.colormap) {
     XGetWindowAttributes(tool_d, XDefaultRootWindow(tool_d), &xwa);
     if (!xwa.colormap) {
-       fprintf(stderr,"no Colourmap available.\n");
+       fprintf(stderr,"no Colormap available.\n");
        return 0;
     }
   }
 
-  ncolours = xwa.visual->map_entries;
+  ncolors = xwa.visual->map_entries;
 
   if (xwa.visual->class == DirectColor) {
     Pixel red, green, blue, red1, green1, blue1;
@@ -410,9 +459,9 @@ getCurrentColours(w, colours)
     red1   = lowbit(xwa.visual->red_mask);
     green1 = lowbit(xwa.visual->green_mask);
     blue1  = lowbit(xwa.visual->blue_mask);
-    for (i=0; i<ncolours; i++) {
-      colours[i].pixel = red|green|blue;
-      colours[i].pad = 0;
+    for (i=0; i<ncolors; i++) {
+      colors[i].pixel = red|green|blue;
+      colors[i].pad = 0;
       red += red1;
       if (red > xwa.visual->red_mask)     red = 0;
       green += green1;
@@ -422,9 +471,9 @@ getCurrentColours(w, colours)
     }
   }
   else {
-    for (i=0; i<ncolours; i++) {
-      colours[i].pixel = i;
-      colours[i].pad = 0;
+    for (i=0; i<ncolors; i++) {
+      colors[i].pixel = i;
+      colors[i].pad = 0;
     }
   }
 
@@ -441,20 +490,20 @@ getCurrentColours(w, colours)
      else               map = tool_cm;  /* last resort! */
      XFree( maps );
      }
-  XQueryColors(tool_d, map, colours, ncolours);
+  XQueryColors(tool_d, map, colors, ncolors);
 
-  return(ncolours);
+  return(ncolors);
 }
 
 
 /* 
   returns True if we can handle XImages from the visual class
-  The current Gif write functions & our image conversion routines
-  require us to produce a colourmapped byte per pixel image 
-  pointed to by    data
+  The current Image write functions & our image conversion routines
+  require us to produce a colormapped byte per pixel image 
+  pointed to by data
 */
 
-int
+Boolean
 canHandleCapture( d )
   Display *d;
 {
@@ -465,7 +514,7 @@ canHandleCapture( d )
     if (( !xwa.colormap )   ||
        ( xwa.depth > 8 )    ||
          ( xwa.visual->class == TrueColor)   || 
-           ( xwa.visual->map_entries > MAXCOLORMAPSIZE ))
+           ( xwa.visual->map_entries > MAX_COLORMAP_SIZE ))
 		return False;
     else
 		return True;

@@ -8,11 +8,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -43,8 +49,10 @@ emptyname_msg(name, msg)
 {
     int		    returnval;
 
-    if (returnval = emptyname(name))
+    if (returnval = emptyname(name)) {
 	put_msg("No file name specified, %s command ignored", msg);
+	XBell(tool_d,0);
+    }
     return (returnval);
 }
 
@@ -87,7 +95,7 @@ change_directory(path)
 	return (0);
     }
     if (chdir(path) == -1) {
-	put_msg("Can't go to directory %s, : %s", path, sys_errlist[errno]);
+	file_msg("Can't go to directory %s, : %s", path, sys_errlist[errno]);
 	return (1);
     }
     if (get_directory(cur_dir)) /* get cwd */
@@ -149,17 +157,21 @@ ok_to_write(file_name, op_name)
 		put_msg("Write permission for \"%s\" is denied", file_name);
 		return (0);
 	    } else {
-		if (warnexist) {
+	       if (warninput) {
+		 sprintf(string, "\"%s\" is an input file.\nDo you want to choose a new filename ?", file_name);
+		 popup_query(QUERY_YESCAN, string);
+	         return(0);
+		} else {
+		  if (warnexist) {
 		    sprintf(string, "\"%s\" already exists.\nDo you want to overwrite it?", file_name);
 		    if (!popup_query(QUERY_YESCAN, string)) {
 			put_msg("%s cancelled", op_name);
-			return (0);
+			return(0);
 		    }
-		}
-		/* !warnexist */
-		else {
+		   } else {
 			return(1);
-		}
+		   }
+		}  
 	    }
 	} else {
 	    put_msg("\"%s\" is read only", file_name);
@@ -309,14 +321,22 @@ remap_imagecolors(obj)
 	    image_cells[i].green = (unsigned short) clrtab[i][N_GRN] << 8;
 	    image_cells[i].blue  = (unsigned short) clrtab[i][N_BLU] << 8;
 	}
-	XStoreColors(tool_d, tool_cm, image_cells, avail_image_cols);
+	YStoreColors(tool_cm, image_cells, avail_image_cols);
 	/* get the new, mapped indices for the image colormap */
 	remap_image_colormap(obj);
     } else {
-	/* simply store each image's colormap in the X colormap */ 
+/*
+ * Extract the RGB values from the image's colormap and allocate
+ * the appropreate X colormap entries.
+ */
 	scol = 0;	/* global color counter */
-	straight_cmap(obj);
-	XStoreColors(tool_d, tool_cm, image_cells, scol);
+	extract_cmap(obj);
+	for (i=0; i<scol; i++) {
+	    image_cells[i].flags = DoRed|DoGreen|DoBlue;
+	}
+	YStoreColors(tool_cm, image_cells, scol);
+	scol = 0;	/* global color counter */
+	readjust_cmap(obj);
 	if (appres.DEBUG) 
 	    fprintf(stderr,"Able to use %d colors without neural net\n",scol);
     }
@@ -334,7 +354,7 @@ count_colors(obj)
 	count_colors(c);
     }
     for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PIC_BOX && l->pic->bitmap != NULL &&
+	if (l->type == T_PICTURE && l->pic->bitmap != NULL &&
 	    l->pic->numcols > 0) {
 		ncolors += l->pic->numcols;
 	}
@@ -353,7 +373,7 @@ alloc_imagecolors(num)
     avail_image_cols = num;
     for (i=0; i<avail_image_cols; i++) {
 	image_cells[i].flags = DoRed|DoGreen|DoBlue;
-	if (!alloc_color(&image_cells[i].pixel, 1)) {
+	if (!alloc_color_cells(&image_cells[i].pixel, 1)) {
 	    break;
 	}
     }
@@ -369,9 +389,61 @@ count_pixels(obj)
 	count_pixels(c);
     }
     for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PIC_BOX && l->pic->bitmap != NULL &&
+	if (l->type == T_PICTURE && l->pic->bitmap != NULL &&
 	    l->pic->numcols > 0) {
 		npixels += l->pic->bit_size.x * l->pic->bit_size.y;
+	}
+    }
+}
+
+readjust_cmap(obj)
+    F_compound	   *obj;
+{
+    F_line	   *l;
+    F_compound	   *c;
+    int		   i,j;
+
+    for (c = obj->compounds; c != NULL; c = c->next) {
+	readjust_cmap(c);
+    }
+    for (l = obj->lines; l != NULL; l = l->next) {
+	if (l->type == T_PICTURE && l->pic->bitmap != NULL &&
+	    l->pic->numcols > 0) {
+		for (i=0; i<l->pic->numcols; i++) {
+		    j = l->pic->cmap[i].pixel;
+		    l->pic->cmap[i].pixel = image_cells[j].pixel;
+		    scol++;
+		}
+		if (l->pic->pixmap)
+		    XFreePixmap(tool_d, l->pic->pixmap);
+		l->pic->pixmap = 0;		/* this will force regeneration of the pixmap */
+	}
+    }
+}
+
+extract_cmap(obj)
+    F_compound	   *obj;
+{
+    F_line	   *l;
+    F_compound	   *c;
+    int		   i;
+
+    for (c = obj->compounds; c != NULL; c = c->next) {
+	extract_cmap(c);
+    }
+    for (l = obj->lines; l != NULL; l = l->next) {
+	if (l->type == T_PICTURE && l->pic->bitmap != NULL &&
+	    l->pic->numcols > 0) {
+		for (i=0; i<l->pic->numcols; i++) {
+		    image_cells[scol].red   = l->pic->cmap[i].red << 8;
+		    image_cells[scol].green = l->pic->cmap[i].green << 8;
+		    image_cells[scol].blue  = l->pic->cmap[i].blue << 8;
+		    l->pic->cmap[i].pixel = scol;
+		    scol++;
+		}
+		if (l->pic->pixmap)
+		    XFreePixmap(tool_d, l->pic->pixmap);
+		l->pic->pixmap = 0;		/* this will force regeneration of the pixmap */
 	}
     }
 }
@@ -387,7 +459,7 @@ straight_cmap(obj)
 	straight_cmap(c);
     }
     for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PIC_BOX && l->pic->bitmap != NULL &&
+	if (l->type == T_PICTURE && l->pic->bitmap != NULL &&
 	    l->pic->numcols > 0) {
 		for (i=0; i<l->pic->numcols; i++) {
 		    image_cells[scol].red   = l->pic->cmap[i].red << 8;
@@ -416,7 +488,7 @@ add_pixels(obj)
 	add_pixels(c);
     }
     for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PIC_BOX && l->pic->bitmap != NULL &&
+	if (l->type == T_PICTURE && l->pic->bitmap != NULL &&
 	    l->pic->numcols > 0) {
 		/* now add each pixel to the sample list */
 		for (i=0; i<l->pic->bit_size.x * l->pic->bit_size.y; i++) {
@@ -443,7 +515,7 @@ remap_image_colormap(obj)
 	remap_image_colormap(c);
     }
     for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PIC_BOX && l->pic->bitmap != NULL &&
+	if (l->type == T_PICTURE && l->pic->bitmap != NULL &&
 	    l->pic->numcols > 0) {
 		for (i=0; i<l->pic->numcols; i++) {
 		    /* real color from the image */
@@ -462,7 +534,21 @@ remap_image_colormap(obj)
 }
 
 /* map the bytes in pic->bitmap to bits for monochrome display */
+/* DESTROYS original pic->bitmap */
 /* uses a Floyd-Steinberg algorithm from the pbmplus package */
+
+/* Here is the copyright notice:
+**
+** Copyright (C) 1989 by Jef Poskanzer.
+**
+** Permission to use, copy, modify, and distribute this software and its
+** documentation for any purpose and without fee is hereby granted, provided
+** that the above copyright notice appear in all copies and that both that
+** copyright notice and this permission notice appear in supporting
+** documentation.  This software is provided "as is" without express or
+** implied warranty.
+**
+*/
 
 #define FS_SCALE 1024
 #define HALF_FS_SCALE 512
@@ -580,7 +666,7 @@ F_pic	*pic;
 	return;
 }
 
-#ifdef HAVE_NO_NOSTRSTR
+#ifdef NOSTRSTR
 
 char *strstr(s1, s2)
     char *s1, *s2;
@@ -599,7 +685,8 @@ char *strstr(s1, s2)
 /* strncasecmp and strcasecmp by Fred Appelman (Fred.Appelman@cv.ruu.nl) */
 
 #ifdef HAVE_NO_STRNCASECMP
-int strncasecmp(const char* s1, const char* s2, int n)
+int
+strncasecmp(const char* s1, const char* s2, int n)
 {
    char c1,c2;
 
@@ -622,7 +709,8 @@ int strncasecmp(const char* s1, const char* s2, int n)
 #endif
 
 #ifdef HAVE_NO_STRCASECMP
-int strcasecmp(const char* s1, const char* s2)
+int
+strcasecmp(const char* s1, const char* s2)
 {
    char c1,c2;
 

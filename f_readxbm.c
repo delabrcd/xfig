@@ -8,11 +8,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -32,24 +38,27 @@ read_xbm(file,filetype,pic)
     int		    filetype;
     F_pic	   *pic;
 {
-  int status;
-  unsigned int x, y;
+    int status;
+    unsigned int x, y;
+    /* make scale factor larger for metric */
+    float scale = (appres.INCHES ?
+			(float)PIX_PER_INCH :
+			2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
 
     /* first try for a X Bitmap file format */
     status = ReadDataFromBitmapFile(file, &x, &y, &pic->bitmap);
     if (status == BitmapSuccess) {
-	pic->subtype = T_PIC_BITMAP;
+	pic->subtype = T_PIC_XBM;
 	pic->hw_ratio = (float) y / x;
 	pic->numcols = 0;
 	pic->bit_size.x = x;
 	pic->bit_size.y = y;
-	pic->size_x = x * ZOOM_FACTOR;
-	pic->size_y = y * ZOOM_FACTOR;
-	put_msg("XBitmap object of size %dx%d read OK", x, y);
+	pic->size_x = x * scale;
+	pic->size_y = y * scale;
 	return PicSuccess;
     }
-  /* Non Bitmap file */
-  return FileInvalid;
+    /* Non Bitmap file */
+    return FileInvalid;
 }
 
 /* The following is a modified version of the
@@ -98,7 +107,8 @@ static Bool initialized = False;	/* easier to fill in at run time */
  *	Table index for the hex values. Initialized once, first time.
  *	Used for translation value or delimiter significance lookup.
  */
-static void initHexTable()
+static void
+initHexTable()
 {
     /*
      * We build the table at run time for several reasons:
@@ -131,7 +141,8 @@ static void initHexTable()
 /*
  *	read next hex value in the input stream, return -1 if EOF
  */
-static NextInt(fstream)
+static
+NextInt(fstream)
     FILE *fstream;
 {
     int	ch;
@@ -211,7 +222,7 @@ ReadDataFromBitmapFile(file, width, height, data_ret)
 	    RETURN (BitmapFileInvalid);
 	}
 	if (sscanf(line,"#define %s %d",name_and_type,&value) == 2) {
-	    if (!(type = rindex(name_and_type, '_')))
+	    if (!(type = strrchr(name_and_type, '_')))
 	      type = name_and_type;
 	    else
 	      type++;
@@ -232,7 +243,7 @@ ReadDataFromBitmapFile(file, width, height, data_ret)
 	else
 	  continue;
 
-	if (!(type = rindex(name_and_type, '_')))
+	if (!(type = strrchr(name_and_type, '_')))
 	  type = name_and_type;
 	else
 	  type++;

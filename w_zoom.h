@@ -8,11 +8,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 extern float	zoomscale;
@@ -23,13 +29,11 @@ extern Boolean	zoom_in_progress;
 
 typedef struct { int x,y; } zXPoint ;
 
-#define ZOOMX(x) round(zoomscale*((x)-zoomxoff)-display_zoomscale)
-#define ZOOMY(y) round(zoomscale*((y)-zoomyoff)-display_zoomscale)
-#define BACKX(x) round((x+display_zoomscale)/zoomscale+zoomxoff)
-#define BACKY(y) round((y+display_zoomscale)/zoomscale+zoomyoff)
+#define ZOOMX(x) round(zoomscale*((x)-zoomxoff))
+#define ZOOMY(y) round(zoomscale*((y)-zoomyoff))
+#define BACKX(x) round(x/zoomscale+zoomxoff)
+#define BACKY(y) round(y/zoomscale+zoomyoff)
 
-#define zXDrawPoint(d,w,gc,x,y) \
-    XDrawPoint(d,w,gc,(short)ZOOMX(x),(short)ZOOMY(y))
 #define zXDrawArc(d,w,gc,x,y,d1,d2,a1,a2)\
     XDrawArc(d,w,gc,(short)ZOOMX(x),(short)ZOOMY(y), \
 	     (short)round(zoomscale*(d1)),(short)round(zoomscale*(d2)),\

@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #define		F_NULL			0
@@ -58,6 +64,9 @@
 #define		F_ZOOM			49
 #define		F_LOAD			50
 #define		F_EDIT			50
+#define		F_ENTER_COMP		51
+#define		F_EXIT_COMP		52
+#define		F_EXIT_ALL_COMP		53
 
 extern int	cur_mode;
 
@@ -144,6 +153,7 @@ extern int	cur_numxcopies;
 extern int	cur_numycopies;
 extern char	cur_fig_units[32];
 extern Boolean	warnexist;
+extern Boolean  warninput;
 
 extern void	reset_modifiedflag();
 extern void	set_modifiedflag();
@@ -159,20 +169,47 @@ extern int	min_num_points;
 
 extern Boolean	export_flushleft;	/* flush left (true) or center (false) */
 
-#ifdef USE_XPM
-#define NUM_EXP_LANG	19	/* number of export languages */
-#else
-#define NUM_EXP_LANG	18	/* number of export languages */
-#endif
+/* position of languages starting from 0 */
+enum {
+	LANG_BOX,
+	LANG_LATEX,
+	LANG_EPIC,
+	LANG_EEPIC,
+	LANG_EEPICEMU,
+	LANG_PICTEX,
+	LANG_IBMGL,
+	LANG_EPS,
+	LANG_PS,
+	LANG_PSTEX,
+	LANG_PXTEX_T,
+	LANG_TEXTYL,
+	LANG_TPIC,
+	LANG_PIC,
+	LANG_MF,
 
-#define LANG_EPS	7	/* position of eps starting from 0 */
-#define LANG_PS		8
-#define LANG_GIF	15
-#define LANG_JPEG	16
-#define LANG_XBITMAP	17
-#ifdef USE_XPM
-#define LANG_XPIXMAP	18
+/* the bitmap formats follow LANG_MF (METAFONT) */
+
+	LANG_PCX,
+#ifdef USE_GIF
+	LANG_GIF,
 #endif
+#ifdef USE_JPEG
+	LANG_JPEG,
+#endif
+	LANG_XBM,
+#ifdef USE_XPM
+	LANG_XPM,
+#endif
+	END_OF_LANGS
+};
+
+/* IMPORTANT: Bitmap formats (e.g. GIF, JPEG) must follow BITMAP_FORMAT */
+
+#define	BITMAP_FORMAT	LANG_MF+1
+
+/* number of export languages */
+
+#define NUM_EXP_LANG	END_OF_LANGS
 
 extern int	cur_exp_lang;
 extern char    *lang_items[NUM_EXP_LANG];
@@ -223,6 +260,6 @@ extern float	cur_elltextangle;	/* text/ellipse input angle */
 
 extern char	cur_dir[];
 extern char	cur_filename[];
-extern char	save_filename[];	/* to undo load */
+extern char	save_filename[];	/* to undo load or "new" command */
 extern char	file_header[];
 extern char	cut_buf_name[];

@@ -10,29 +10,33 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #define		PIX_PER_INCH		1200
 #define		PIX_PER_CM		450	/* ((int)(PIX_PER_INCH / 2.54
 						 * + (5.0/2))) */
 #define DISPLAY_PIX_PER_INCH 80
-#define ZOOM_FACTOR (PIX_PER_INCH/DISPLAY_PIX_PER_INCH)
 
 /* Portrait dimensions */
 #define		DEF_CANVAS_HT_PORT	9*DISPLAY_PIX_PER_INCH
 #define		DEF_CANVAS_WD_PORT	8.5*DISPLAY_PIX_PER_INCH
 
 /* Landscape dimensions */
-#define		DEF_CANVAS_HT_LAND	8*DISPLAY_PIX_PER_INCH
-#define		DEF_CANVAS_WD_LAND	10.5*DISPLAY_PIX_PER_INCH
+#define		DEF_CANVAS_HT_LAND	8.5*DISPLAY_PIX_PER_INCH
+#define		DEF_CANVAS_WD_LAND	11*DISPLAY_PIX_PER_INCH
 
 #define		DEF_RULER_WD		24
-/*#define		RULER_WD		24*/
 
 #ifndef MAX_TOPRULER_WD
 #define		MAX_TOPRULER_WD		1152
@@ -61,6 +65,8 @@ extern int	MSGPANEL_WD;
 extern int	MOUSEFUN_WD, MOUSEFUN_HT;
 extern int	INDPANEL_WD;
 extern int	CANVAS_WD, CANVAS_HT;
+extern int	CANVAS_WD_LAND, CANVAS_HT_LAND;
+extern int	CANVAS_WD_PORT, CANVAS_HT_PORT;
 extern int	INTERNAL_BW;
 extern int	TOPRULER_WD, TOPRULER_HT;
 extern int	SIDERULER_WD, SIDERULER_HT;

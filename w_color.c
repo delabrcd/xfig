@@ -11,11 +11,19 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
+ *
+ ****************************************************************************
  *
  * Parts of this work were extracted from Richard Hesketh's xcoloredit
  * client. Here is the copyright notice which must remain intact:
@@ -235,6 +243,38 @@ static String user_color_translations =
 static String triple_translations =
 	"<Key>Return: update_from_triple()\n";
 
+YStoreColor(colormap,color)
+Colormap colormap;
+XColor *color;
+{
+	switch( tool_vclass ){
+	    case GrayScale:
+	    case PseudoColor:
+		XStoreColor(tool_d,colormap,color);
+		break;
+	    case StaticGray:
+	    case StaticColor:
+	    case DirectColor:
+	    case TrueColor:
+		XAllocColor(tool_d,colormap,color);
+		break;
+	    default:
+		if (appres.DEBUG)
+		    fprintf(stderr,"Unknown Visual Class\n");
+	}
+}
+
+YStoreColors(colormap,color,ncolors)
+Colormap colormap;
+XColor color[];
+int ncolors;
+{
+	int		 i;
+
+	for( i=0; i<ncolors; i++ )
+	    YStoreColor(colormap,&color[i]);
+}
+
 create_color_panel(form,label,cancel,isw)
 Widget		 form, label, cancel;
 ind_sw_info	*isw;
@@ -260,7 +300,7 @@ ind_sw_info	*isw;
 
 	if (all_colors_available) {
 	    /* allocate two colorcells for the mixed fill and pen color widgets */
-	    if (!alloc_color(pixels,2)) {
+	    if (!alloc_color_cells(pixels,2)) {
 		file_msg("Can't allocate necessary colorcells, can't popup color panel");
 		return;
 	    }
@@ -461,10 +501,19 @@ ind_sw_info	*isw;
 	    if (colorFree[i])
 		continue;
 	    sprintf(str,"%d", i+NUM_STD_COLS);
+	    
+	    /* pick contrasting color for label in cell */
+	    XQueryColor(tool_d, tool_cm, &user_colors[i]);
+	    if ((0.30 * user_colors[i].red +
+		 0.59 * user_colors[i].green +
+		 0.11 * user_colors[i].blue) < 0.5 * (255 << 8))
+			form_fg = colors[WHITE];
+	    else
+			form_fg = colors[BLACK];
 	    colorMemory[i] = XtVaCreateManagedWidget("colorMemory",
 				labelWidgetClass, userBox,
 				XtNlabel, str, 
-				XtNforeground, x_bg_color.pixel,
+				XtNforeground, form_fg,
 				XtNbackground, (all_colors_available? 
 					user_colors[i].pixel: x_fg_color.pixel),
 				XtNwidth, USR_COL_W, XtNheight, USR_COL_H,
@@ -763,7 +812,10 @@ restore_mixed_colors()
 	}
 	mixed_color[0].pixel = save0;
 	mixed_color[1].pixel = save1;
-	XStoreColors(tool_d, tool_cm, mixed_color, 2);
+	/* now change the background of the widgets if StaticGray, StaticColor,
+	   DirectColor or TrueColor visuals */
+	set_mixed_color(0);
+	set_mixed_color(1);
 
 	/* set the scrollbars to the initial mixed colour values */
 	do_change = False;
@@ -781,6 +833,74 @@ restore_mixed_colors()
 	edit_fill = save_edit;
 }
 
+/*
+   For the StaticGray, StaticColor, DirectColor and TrueColor visual classes
+   change the background color of the mixed color widget specified by which
+   (0=pen, 1=fill).  For the other classes, we changed the color for the
+   allocated pixel when we called YStoreColor().
+*/
+
+set_mixed_color(which)
+int	which;
+{
+	if( tool_vclass == StaticGray ||
+	    tool_vclass == StaticColor ||
+	    tool_vclass == DirectColor ||
+	    tool_vclass == TrueColor) {
+		XAllocColor(tool_d, tool_cm, &mixed_color[which]);
+		if (colorMemory[which]) {
+		    FirstArg(XtNbackground, mixed_color[which].pixel);
+		    SetValues(mixedColor[which]);
+		}
+	} else {
+		XStoreColor(tool_d, tool_cm, &mixed_color[which]);
+	}
+	/* now make contrasting color for the label */
+	if (colorMemory[which]) {
+	    pick_contrast(user_colors[which],mixedColor[which]);
+	}
+}
+
+/* This is similar to set_mixed_color() except it is for the user colors */
+
+set_user_color(which)
+int	which;
+{
+	if( tool_vclass == StaticGray ||
+	    tool_vclass == StaticColor ||
+	    tool_vclass == DirectColor ||
+	    tool_vclass == TrueColor) {
+		XAllocColor(tool_d, tool_cm, &user_colors[which]);
+		/* update colors pixel value */
+		colors[which+NUM_STD_COLS] = user_colors[which].pixel;
+		if (colorMemory[which]) {
+		    FirstArg(XtNbackground, user_colors[which].pixel);
+		    SetValues(colorMemory[which]);
+		}
+	} else {
+		XStoreColor(tool_d, tool_cm, &user_colors[which]);
+	}
+	/* make the label in a contrasting color */
+	if (colorMemory[which]) {
+	    pick_contrast(user_colors[which],colorMemory[which]);
+	}
+}
+
+pick_contrast(color,widget)
+XColor	color;
+Widget	widget;
+{
+    Pixel cell_fg;
+    if ((0.30 * color.red +
+	 0.59 * color.green +
+	 0.11 * color.blue) < 0.5 * (255 << 8))
+	    cell_fg = colors[WHITE];
+    else
+	    cell_fg = colors[BLACK];
+    FirstArg(XtNforeground, cell_fg);
+    SetValues(widget);
+}
+
 /* change the label of the mixedColor widget[i] to the name of the color */
 /* also set the foreground color to contrast the background */
 
@@ -788,7 +908,7 @@ set_mixed_name(i,col)
 int	i,col;
 {
     int	fore;
-    char	buf[5];
+    char	buf[10];
 
     if (col < NUM_STD_COLS) {
 	FirstArg(XtNlabel, colorNames[col+1].name)
@@ -827,12 +947,14 @@ XtPointer closure, ptr;
 {
 	/* deselect any cell currently selected */
 	if (current_memory >= 0)
-	    draw_a_dotted_box(colorMemory[current_memory], unboxedGC);
+	    draw_a_box(colorMemory[current_memory], unboxedGC);
 	/* add another widget to the user color panel */
 	if ((current_memory = add_color_cell(False, 0, 0, 0, 0)) == -1)	/* using black */
 		put_msg("No more user colors allowed");
-	draw_a_dotted_box(colorMemory[current_memory], unboxedGC);
+	draw_a_box(colorMemory[current_memory], unboxedGC);
 	modified[edit_fill] = True;
+	_pick_memory(colorMemory[current_memory]);
+	colorUsed[current_memory]=True;
 }
 
 /* add a widget to the user color list with color r,g,b */
@@ -850,10 +972,11 @@ int	r,g,b;
 	int	i;
 	char	labl[5];
 	Boolean	new;
+	Pixel	cell_fg;
 
 	if (all_colors_available) {
 	    /* try to get a colorcell */
-	    if (!alloc_color(pixels,1)) {
+	    if (!alloc_color_cells(pixels,1)) {
 		put_msg("Can't allocate user color, not enough colorcells");
 		return 0;
 	    }
@@ -886,10 +1009,11 @@ int	r,g,b;
 	user_colors[indx].green = g*256;
 	user_colors[indx].blue = b*256;
 	user_colors[indx].flags = DoRed|DoGreen|DoBlue;
-	user_colors[indx].pixel = colors[NUM_STD_COLS+indx] = pixels[0];
-
-	if (all_colors_available)
-	    XStoreColor(tool_d, tool_cm, &user_colors[indx]);
+	user_colors[indx].pixel = pixels[0];
+	/* in case we have read-only colormap, get the pixel value now */
+	YStoreColor(tool_cm,&user_colors[indx]);
+	/* and put it in main colors */
+	colors[NUM_STD_COLS+indx] = user_colors[indx].pixel;
 
 	colorUsed[indx] = False;
 	colorFree[indx] = False;
@@ -918,6 +1042,10 @@ int	r,g,b;
 		XtManageChild(colorMemory[indx]);
 	    }
 	}
+	/* now set the color of the widget if TrueColor, etc. */
+	if (all_colors_available)
+	    set_user_color(indx);
+
 	return indx;
 }
 
@@ -930,22 +1058,45 @@ int	r,g,b;
 */
 
 Boolean
-alloc_color(pixels,n)
+alloc_color_cells(pixels,n)
 Pixel	pixels[];
 int	n;
 {
     int	i;
-    /* allocate them one at a time in case we can't allocate all of them.  If that
-       is the case then we switch colormaps and allocate the rest */
+
+    /* allocate them one at a time in case we can't allocate all of them.
+       If that is the case then we switch colormaps and allocate the rest */
     for (i=0; i<n; i++) {
-	if (!XAllocColorCells(tool_d, tool_cm, 0, &plane_masks, 0, &pixels[i], 1)) {
-	    /* try again with new colormap */
-	    if (!switch_colormap() ||
-	        (!XAllocColorCells(tool_d, tool_cm, 0, &plane_masks, 0, &pixels[i], 1))) {
+      switch( tool_vclass ){
+/*
+ * Use XAllocColorCells "to allocate read/write color cells and color plane
+ * combinations for GrayScale and PseudoColor models"
+ */
+	case GrayScale:
+	case PseudoColor:
+	    if (!XAllocColorCells(tool_d, tool_cm, 0, &plane_masks, 0, &pixels[i], 1)) {
+	        /* try again with new colormap */
+		if (!switch_colormap() ||
+	            (!XAllocColorCells(tool_d, tool_cm, 0, &plane_masks, 0, &pixels[i], 1))) {
 		    put_msg("Cannot define user colors.");
 		    return False;
+		}
 	    }
-        }
+	    break;
+/*
+ * Do not attempt to allocate color resources for static visuals
+ * (but assume the colors can be achieved).
+ */
+	case StaticGray:
+	case StaticColor:
+	case DirectColor:
+	case TrueColor:
+	    break;
+
+        default:
+	    put_msg("Cannot define user colors in the Unknown Visual.");
+	    return False;
+      }
     }
     return True;
 }
@@ -997,7 +1148,7 @@ XtPointer closure, ptr;
 		return;
 	}
 	/* get rid of the box drawn around this cell */
-	draw_a_dotted_box(colorMemory[current_memory], unboxedGC);
+	draw_a_box(colorMemory[current_memory], unboxedGC);
 	/* save it to undelete */
 	undel_user_color = user_colors[current_memory];
 	del_color_cell(current_memory);
@@ -1148,6 +1299,17 @@ Widget		 w;
 char		*dum;
 XButtonEvent	*ev;
 {
+	int	i,indx;
+
+	/* put the color pixel value in the table */
+	/* this is done here because if the visual is TrueColor, etc. the value of
+	   the pixel changes with the color itself */
+	for (i=0; i<=1; i++) {
+	    indx = mixed_color_indx[i];
+	    if (indx >= NUM_STD_COLS)
+		colors[indx] = user_colors[indx-NUM_STD_COLS].pixel;
+	}
+
 	/* have either the fill or pen color been modified? */
 
 	if (modified[0]) {
@@ -1215,7 +1377,8 @@ XButtonEvent	*ev;
 	rgb_values[edit_fill].g = mixed_color[edit_fill].green;
 	rgb_values[edit_fill].b = mixed_color[edit_fill].blue;
 	if (all_colors_available)
-	    XStoreColor(tool_d, tool_cm, &mixed_color[edit_fill]);
+	    set_mixed_color(edit_fill);
+		
 	/* undraw any box around the current user-memory cell */
 	if (current_memory != -1)
 	    erase_boxed((Widget)NULL, (XEvent *)NULL,
@@ -1245,6 +1408,12 @@ XEvent *event;
 String *params;
 Cardinal *num_params;
 {
+	_pick_memory(w);
+}
+
+_pick_memory(w)
+Widget w;
+{
 	int	i;
 
 	/* make sliders sensitive */
@@ -1255,7 +1424,7 @@ Cardinal *num_params;
 	    if (w == colorMemory[i]) {
 		/* erase box around old memory cell */
 		if (current_memory >= 0)
-		    draw_a_dotted_box(colorMemory[current_memory], unboxedGC);
+		    draw_a_box(colorMemory[current_memory], unboxedGC);
 		/* new memory cell */
 		current_memory = i;
 		draw_boxed((Widget)NULL, (XEvent *)NULL,
@@ -1273,7 +1442,7 @@ Cardinal *num_params;
 			CHANGE_BLUE(current_memory);
 			do_change = True;
 			if (all_colors_available)
-			    XStoreColor(tool_d, tool_cm, &mixed_color[edit_fill]);
+			    set_mixed_color(edit_fill);
 			update_scrl_triple((Widget)NULL, (XEvent *)NULL,
 				(String *)NULL, (Cardinal *)NULL);
 		} else {
@@ -1284,7 +1453,7 @@ Cardinal *num_params;
 			user_colors[current_memory].blue =
 					mixed_color[edit_fill].blue;
 			if (all_colors_available)
-			    XStoreColor(tool_d, tool_cm, &user_colors[current_memory]);
+			    set_user_color(current_memory);
 		}
 		/* activate the delete color button */
 		XtSetSensitive(delColor, True);
@@ -1345,8 +1514,9 @@ Cardinal *num_params;
 }
 
 
-/* draw a dashed box around the given widget */
-draw_a_dotted_box(w, gc)
+/* draw or erase a dashed or solid box around the given widget */
+
+draw_a_box(w, gc)
 Widget w;
 GC gc;
 {
@@ -1368,7 +1538,6 @@ GC gc;
 	XDrawRectangle(tool_d, XtWindow(userBox), gc, x, y, width, height);
 }
 
-
 static void
 expose_draw_boxed(w, event, params, num_params)
 Widget w;
@@ -1389,7 +1558,7 @@ Cardinal *num_params;
 {
 	if (current_memory < 0)
 		return;
-	draw_a_dotted_box(colorMemory[current_memory],
+	draw_a_box(colorMemory[current_memory],
 			colorUsed[current_memory] ? boxedChangedGC : boxedGC);
 }
 
@@ -1403,7 +1572,7 @@ Cardinal *num_params;
 {
 	if (current_memory < 0)
 		return;
-	draw_a_dotted_box(colorMemory[current_memory], unboxedGC);
+	draw_a_box(colorMemory[current_memory], unboxedGC);
 }
 
 static void
@@ -1673,12 +1842,13 @@ Cardinal *num_params;
 StoreMix_and_Mem()
 {
 	if (all_colors_available)
-	    XStoreColor(tool_d, tool_cm, &mixed_color[edit_fill]);
+	    set_mixed_color(edit_fill);
+	set_mixed_color(edit_fill);
 	user_colors[current_memory].red = mixed_color[edit_fill].red;
 	user_colors[current_memory].green = mixed_color[edit_fill].green;
 	user_colors[current_memory].blue = mixed_color[edit_fill].blue;
 	if (all_colors_available)
-	    XStoreColor(tool_d, tool_cm, &user_colors[current_memory]);
+	    set_user_color(current_memory);
 }
 
 static void
@@ -1879,19 +2049,19 @@ show_pen_color()
 	sprintf(colorname,"%d",cur_pencolor);
     }
     /* first erase old colorname */
-    XDrawImageString(tool_d, pen_color_button->normalPM, ind_button_gc, 3, 25,
+    XDrawImageString(tool_d, pen_color_button->pixmap, ind_button_gc, 3, 25,
 	      "        ", 8);
     /* now fill the color rectangle with the new color */
     XSetForeground(tool_d, pen_color_gc, color);
-    XFillRectangle(tool_d, pen_color_button->normalPM, pen_color_gc,
+    XFillRectangle(tool_d, pen_color_button->pixmap, pen_color_gc,
 			pen_color_button->sw_width - 30, 4, 26, 26);
     /* and put the color name in the button also */
-    XDrawImageString(tool_d, pen_color_button->normalPM, ind_button_gc, 3, 25,
+    XDrawImageString(tool_d, pen_color_button->pixmap, ind_button_gc, 3, 25,
 	      colorname, strlen(colorname));
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(pen_color_button->button);
     /* put the pixmap in the widget background */
-    FirstArg(XtNbackgroundPixmap, pen_color_button->normalPM);
+    FirstArg(XtNbackgroundPixmap, pen_color_button->pixmap);
     SetValues(pen_color_button->button);
 }
 
@@ -1946,19 +2116,19 @@ show_fill_color()
 	sprintf(colorname,"%d",cur_fillcolor);
     }
     /* first erase old colorname */
-    XDrawImageString(tool_d, fill_color_button->normalPM, ind_button_gc, 3, 25,
+    XDrawImageString(tool_d, fill_color_button->pixmap, ind_button_gc, 3, 25,
 	      "        ", 8);
     /* now fill the color rectangle  with the new fill color */
     XSetForeground(tool_d, fill_color_gc, color);
-    XFillRectangle(tool_d, fill_color_button->normalPM, fill_color_gc,
+    XFillRectangle(tool_d, fill_color_button->pixmap, fill_color_gc,
 			fill_color_button->sw_width - 30, 4, 26, 26);
     /* and put the color name in the button also */
-    XDrawImageString(tool_d, fill_color_button->normalPM, ind_button_gc, 3, 25,
+    XDrawImageString(tool_d, fill_color_button->pixmap, ind_button_gc, 3, 25,
 	      colorname, strlen(colorname));
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(fill_color_button->button);
     /* put the pixmap in the widget background */
-    FirstArg(XtNbackgroundPixmap, fill_color_button->normalPM);
+    FirstArg(XtNbackgroundPixmap, fill_color_button->pixmap);
     SetValues(fill_color_button->button);
 }
 

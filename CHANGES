@@ -2,6 +2,209 @@
 Version 3.1
 =============================================================================
 
+GENERAL NOTE:
+	Because Unisys Corp. has stated that they will not charge royalties for
+	the use of the LZW compression algorithm in *FREE* programs, xfig will
+	continue to support importing and exporting of GIF images.
+	However, be aware that if you sell xfig, for example as part of a CD-ROM
+	package with freeware, you may be liable for paying royalties to Unisys.
+	You may comment out the USEGIF variable in the Imakefile to avoid this.
+	With USEGIF commented out, xfig will still import GIF files, but not
+	export in that format.
+	*** The authors of xfig and the Lawrence Berkeley National Laboratory
+	cannot be held responsible in any case. ***
+
+Patchlevel 5 (XXX, XX, XXXX)
+
+NEW FEATURES
+
+o option of transparent color for GIF export (e.g. make background transparent)
+o fantastic new Examples from Carlo Kopp:
+	1. Examples/greenpig.fig - F/RF-111C/G Tactical Fighter
+	2. Examples/rfxc.fig - RFX Strike/Recon Fighter
+	3. Examples/lidar.fig - Sidelooking battlefield surveillance LIDAR
+	4. Examples/sowpig - RAAF F-111C fighter jet w/ 2x AGM-142 Have Nap SOWs
+o Examples/Linuxlogo.fig is the only entry in the Linux 2.0 Logo constest to be
+	rendered with xfig - from Philipp Reisner (Austria)
+o new clip art objects in Examples/clp_computer.fig and Examples/clp_network.fig
+	from W. Chimiak (chim@tachyon.medeng.wfu.edu)
+o more new example files (done by me, Brian Smith)
+	3dhouse.fig
+	control_box_schemat.fig
+	control_box.fig
+o works with GrayScale, TrueColor, DirectColor, StaticColor and StaticGray
+	visuals now.  Use "-visual <visualname>" command-line argument or 
+	"Fig.visual: <visualname>".  Also, "-depth <depth>" (Fig.depth: <depth>)
+	supported.
+	thanks to help from Kevin Russell (krussell@dres.dnd.ca)
+o "Delete All" button changed to "New" function - all objects are delete and
+	the current filename is cleared.  Also, the file save and load shortcuts
+	will force the file panel to popup if the current filename is empty.
+	This will prevent a user from doing a "delete all" to create a new 
+	figure and forgetting to change the filename when saving.
+o new edit features when entering text on canvas:
+	Left arrow key and Control-B moves cursor left
+	Right arrow key and Control-F moves cursor right
+	Home key and Control-A moves cursor to beginning of text
+	End key and Control-E moves cursor to the end of text
+	Delete key and Control-D delete the character to the right of the cursor
+	Control-K deletes from the cursor to the end of the text
+	Pan operations using the arrows and the Home key are disabled during
+	text entry because they are used for positioning the text cursor now.
+o "Open Compound" operation to temporarily go inside a compound object to edit
+	individual components.  Can enter nested compounds. Close compound to 
+	group objects back into compound.
+o xfig will now automatically unzip/uncompress Fig files with .Z, .z or .gz
+	suffixes automatically.  It does not recompress/zip them when saving,
+	though.
+o -zoom (resource Fig.zoom) option to start xfig at any zoom value
+o -startposnmode (resource Fig.startposnmode) option to start xfig with point
+	positioning mode specified. Values can be 0 ("any") to 4 (1 inch/20mm).
+o size of blank area (margin) around figure when exporting to bitmap-style
+	formats (e.g. GIF, XPM etc.) is settable in export window now
+o when zooming larger, spacing of dots in grid lines stays constant
+o button to hide/show hidden directories (names that begin with ".") in file
+	popup menus
+o paper size selectable for printing and when exporting to PS/EPS:
+	"Letter", "Legal", "Ledger", "Tabloid", "A", "B", "C", "D", "E", "A0",
+	"A1", "A2", "A3", "A4" and "B5"
+o in the past if an ellipse was scaled such that the radii become equal it was
+	"converted" to a circle.  This "feature" has been removed.
+o point objects (POLYLINES with only one point) now have thickness, as they
+	should.  Additionally, if the cap style is rounded, they will be filled
+	circles
+o when exporting figure containing picture objects, xfig warns if the export
+	filename is the same as any of the picture files
+o note explaining how metric units are defined in xfig in the Doc/FORMAT3.1 file
+o when updating objects with update button, they were drawn twice - now they are
+	only drawn once
+o when deleting xfig window (WM_DELETE_WINDOW), popup confirmation gives user
+	the option to save figure
+o README file updated to give credit for Example figures not done by Brian Smith
+o default suffix for hpgl (ibmgl) export changed to "hpl" for PC users
+
+BUGS FIXED
+
+o -exportLanguage ignores case now (e.g. GIF == gif)
+o identical consecutive points in lines and "normal" splines are removed as file
+	is read into xfig
+o some thick arrowheads still protruded into the object they touched (in fig2dev
+	too) - fix from Tobias Ringstrom
+o resource for compose key database file is keyFile, not ComposeKeyDB (Fig.ad)
+o color of labels for color numbers/names in color panel contrast their color
+o edit panel allowed > 100% fill for black and white fill
+o additional check for bad Bounding Box in imported EPS file
+o when flipping objects vertically or horizontally, overlapping objects weren't
+	redrawn
+o format error in sprintf for temp filename in screen capture (%d should be %ld)
+o some versions of imake don't like null parameters in SpecialObjectRule in
+	Imakefile - changed to "NullParameter"
+o "modified" flag wasn't being set when changing spline<->line or box<->arcbox,
+	thus one could quit without saving without xfig confirming
+	from Matthias Braun (browny@ise.fhg.de)
+o when figure is read in from file, any arrowheads with width, height or
+	thickness of 0 are given default values (were causing SIGFPE errors)
+o colormap must be saved before jpeg_finish_decompress or
+	jpeg_destroy_decompress are called in read_JPEG_file()
+o when fore/background colors different from black/white respectively, the fill
+	colors for black and white fill were incorrect
+o when merging figure with no picture objects into figure with picture objects
+	colors were unnecessarily remapped
+o "rubberbanding" of object being drawn would continue after object was
+	completed.  Also, double clicking on a directory name would cause
+	segmentation fault.
+	fixed by Stefan Proels (proels@fmi.uni-passau.de)
+o Imakefile had error - $(PCXBUG) was incorrectly passed to f_readjpc.c
+	instead of f_readeps.c where it was needed
+o If the directory path in a file popup was changed by typing into the path
+	window but carriage return wasn't pressed, rescan showed the correct
+	directory but the path wasn't correct so no files were accessible.
+o Redefined $(XPMINCDIR) to $(XPMINC) because some compilers have trouble with
+	header search path with empty "-I"
+o string allocation errors in string widgets in popup edit panels
+o no return code for successful screen capture which would result in failure
+	randomly
+o picture objects scaled (enlarged) correctly in metric mode so they print 1:1
+o incorrect values for white colormap entry when writing jpeg file on
+	monochrome display
+o Some people have older X11 include files that don't have <unistd.h> included.
+	fig.h explicitely includes that now for the SEEK_END identifier
+o Not enough space for number strings in rulers (SEG fault)
+o circle grab points moved even if no changes made in popup edit of circle or
+	ellipse object
+o after attempt to do a horiz/vert move point of a circle was disallowed,
+	further move points were disabled until edit mode switched
+o if both points of "circle-by-diameter" have same y value it thought that the
+	edge is the center when you try to use "box scale"
+o colormap from jpeg file was referenced after memory was freed
+o #include <jpeglib.h> changed to #include "jpeglib.h" to ensure corrrect path
+	used to find header file
+o problems on Linux with gcc locating old jpeg library even when JPEBLIGDIR
+	pointed to local version
+o buf too short in set_mixed_names
+o line2 too short in button struct
+o file not closed after writing JPEG file
+o pen color for picture objects disabled for all except XBM (bitmap) in popup
+	edit
+o confusion with -DNOSTRSTR, NOSTRSTR and HAVE_NO_STRSTR cleaned up. See README.
+o possible error in rulers with sprintf %f called with integer expression
+o cleaned up add/delete user defined colors - no requirement to click on
+	colorcell after "Add Color" to set color sliders
+o added condition in Imakefile that f_wrjpg.c depends on jconfig.h (jpeg library)
+o changed #include <jpeglib.h> to #include "jpeglib.h" because of search rules
+o Version 1.0 of Xaw3d used resources topShadow and bottomShadow for colors of
+	those resources.  Version 1.1 uses topShadowPixel and bottomShadowPixel.
+	I have included both names in the Fig.ad app-defaults file for
+	compatibility.
+o removed extraneous comma (,) in length and distance messages when
+	drawing/moving objects
+o cleaned up many type mismatch warnings for bitmap data
+o bug in skip_comment() which prevented some machines from seeing the end of
+	file, giving erroneous "Incorrect format" error
+o typos in xfig.man in resources StartGridMode, StartPosnMode, StartLineWidth,
+	StartFillStyle and StartTextStep (had lowercase 's')
+o pcx file was closed twice
+o if there is an error when writing screen capture to a file, the popup error
+	message window shows the error
+o Examples/logo.fig had squished logo eps file
+
+-----------------------------------------------------------------------------
+Patchlevel 4b (May, 20, 1996)
+
+BUGS FIXED
+
+o arrowheads caused DOMAIN error for asin on very small arcs
+o constraint loop error when starting xfig with button panel on right side fixed
+o Some compilers optimized away the dummy functions in f_readxpm.c and f_wrxpm.c
+	because they were static but never referenced.  These dummy functions
+	are needed when the XPM code is not used, for those same compilers that
+	don't like empty .o files.  The "static" has been removed.
+o BoundingBox handled better with importing EPS figures
+	from Yves ? <root@marin.sevy.fr; however, mail to this address bounced>
+o meta characters in file names (e.g. "&", "|", etc.) weren't properly escaped
+	when passed to fig2dev or when printing
+o changing directories in the image browser broke file/export directory widgets
+o user-defined fill colors above 63 were being limited to 63 when reading in
+	Fig file
+o bug in zoom macros resulted in some objects being shifted when zooming
+o segfault when importing jpeg picture with grayscale colormap fixed
+o when moving text that is currently off the positioning grid, and positioning
+	grid is turned on, text is correctly placed on the grid now
+o changing between portrait and landscape mode keeps previous canvas size
+o limits.h included now for i386 and SVR4 machines
+o when switching between inches and metric mode, the figure on the canvas is 
+	scaled appropriately, so that (e.g.) a 1 inch line becomes a 2.54 cm
+	line instead of 2.666 cm as it use to.
+	from Henning Spruth (hns@regent.e-technik.tu-muenchen.de)
+o changed "METHODDEF" to "static" for f_readjpg variables because the definition
+	of METHODDEF changed in jpeg-6a
+o xfig incorrectly interpreted the WM_SAVE_YOURSELF signal from window managers
+	for now, this signal is ignored until I have time to "do the right
+	thing", which is to checkpoint xfig so it may be restarted later in
+	exactly the same state (figure and panel settings etc) if the user
+	desires to do so.
+
+-----------------------------------------------------------------------------
 Patchlevel 4a (Aug, 24, 1995)
 
 BUG FIXED
@@ -109,7 +312,7 @@ o when rotating or flipping an object, the new position wasn't kept on the
 	point positioning grid
 o selecting drawing mode using keyboard accelerators now updates mouse
 	indicator window
-o undo of multiple copy (array place) now undos all objects
+o undo of multiple copy (array place) now undoes all objects
 o undo of "figure load" properly sets "current filename" in File popup and
 	"default filename" in Export popup back to original values
 o undo of "figure load" does not set "figure modified" flag now
@@ -298,7 +501,6 @@ Version 3.0
 =============================================================================
 
 Patchlevel 0 (Dec 22, 1994)
-Changes to Version 2.1.8:
 
 NEW FEATURES:
 
@@ -367,6 +569,8 @@ o EPS objects have been changed to "picture objects" to include GIF images,
 	in "Network: Computation in Neural Systems" Vol. 5 (1994) pp 351-367.
 	for a discussion of the algorithm.]
 
+o support for Input Tablet - see Imakefile
+	Greg LaCoste (greg@seismo.do.usbr.gov)
 o when moving an object on the canvas the straight-line (sqrt(x^2 + y^2))
 	distance from the original position is reported in the message panel
 	along with the X and Y distances.
@@ -493,7 +697,6 @@ Version 2.1
 =============================================================================
 
 Patchlevel 8 (Oct 1, 1993)
-Changes to Patchlevel 7:
 
 NEW FEATURES:
 
@@ -598,7 +801,6 @@ o Renamed ICONFIGFILES (already used by X11 config) to ICONXFIGFILES and defined
 
 ------------------------------------------------------------------------------
 Patchlevel 7 (May 3, 1993)
-Changes to Patchlevel 6:
 
 NEW FEATURES:
 
@@ -694,7 +896,6 @@ o problem fixed with file popup and grab
 
 ------------------------------------------------------------------------------
 Patchlevel 6 (Nov 1992)
-Changes to Patchlevel 5:
 
 NEW FEATURES:
 
@@ -709,7 +910,6 @@ o rotated ellipses don't become coarse as they are zoomed
 
 ------------------------------------------------------------------------------
 Patchlevel 5 (Nov 1992)
-Changes to Patchlevel 4:
 
 NEW FEATURES:
 
@@ -833,7 +1033,6 @@ o removed ISO8859 requirement for Symbol and ZapfDingbats fonts (those fonts
 
 ------------------------------------------------------------------------------
 Patchlevel 4 (Apr 1992)
-Changes to Patchlevel 3:
 
 o keyFile resource allows ANY path for compose key data base, not just relative
 	to $XFIGLIBDIR
@@ -922,7 +1121,6 @@ o small performance fix in u_draw.c in add_point() when reallocating points
 
 ------------------------------------------------------------------------------
 Patchlevel 3 (Jan 1992)
-Changes to Patchlevel 2:
 
 o pressing carriage return in value part of popup indicator buttons that take
 	integer or float (e.g. line width) now sets the value and pops down
@@ -989,7 +1187,6 @@ o renamed Fig-co.ad to Fig-color.ad for color customization under X11R5 (see
 
 ------------------------------------------------------------------------------
 Patchlevel 2 (Dec 1991)
-Changes to Patchlevel 1:
 
 o the font flag (LaTeX, PostScript) wasn't being changed correctly in the
 	UPDATE text object operation when switching from LaTeX to PostScript
@@ -1052,7 +1249,6 @@ o bug fixed where number of objects count in file popup was sometimes clipped
 ------------------------------------------------------------------------------
 
 Patchlevel 1 (Oct 1991)
-Changes to Patchlevel 0:
 
 o xfig now reads text size, height and length as floats and rounds to ints
 	this is done because certain programs generate floats for these
@@ -1091,7 +1287,7 @@ Patchlevel 0 (Sep 1991)
 Changes to Version 2.0 Patchlevel 10:
 
 Implemented by Paul King (king@cs.uq.oz.au) and
-Brian Smith (envbvs@epb7.lbl.gov) with help from
+Brian Smith (bvsmith.lbl.gov) with help from
 Micah Beck (beck@cs.cornell.edu) and
 Brian Boyter (pyrdc!bimbo!boyter@uunet.UU.NET) (EPS code).
 

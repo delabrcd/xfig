@@ -9,11 +9,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -39,6 +45,15 @@ extern Boolean	popup_up;
 Boolean		file_up = False;	/* whether the file panel is up (or the export panel) */
 Widget		cfile_text;		/* widget for the current filename */
 
+/* Global so w_dir.c can access us */
+
+Widget		file_selfile,	/* selected file widget */
+		file_mask,	/* mask widget */
+		file_dir,	/* current directory widget */
+		file_flist,	/* file list widget */
+		file_dlist;	/* dir list widget */
+Widget		file_popup;
+
 /* these are in fig units */
 
 static float	offset_unit_conv[] = { (float)PIX_PER_INCH, (float)PIX_PER_CM, 1.0 };
@@ -52,6 +67,7 @@ static Widget	cfile_lab;
 static Widget	cancel, save, merge, load;
 static Widget	file_w;
 static Widget	fig_offset_x, fig_offset_y;
+static Widget	file_panel;
 static Widget	file_xoff_unit_panel, file_xoff_unit_menu;
 static Widget	file_yoff_unit_panel, file_yoff_unit_menu;
 static int	xoff_unit_setting, yoff_unit_setting;
@@ -79,15 +95,6 @@ static XtActionsRec	file_actions[] =
     {"merge", (XtActionProc) do_merge},
 };
 
-/* Global so w_dir.c can access us */
-
-Widget		file_panel,	/* so w_dir can access the scrollbars */
-		file_popup,	/* the popup itself */
-		file_selfile,	/* selected file widget */
-		file_mask,	/* mask widget */
-		file_dir,	/* current directory widget */
-		file_flist,	/* file list wiget */
-		file_dlist;	/* dir list wiget */
 static void
 file_panel_dismiss()
 {
@@ -121,7 +128,7 @@ do_merge(w, ev)
     Widget	    w;
     XButtonEvent   *ev;
 {
-    char	    filename[200];
+    char	    filename[PATH_MAX];
     char	   *fval, *dval;
     int		    xoff, yoff;
 
@@ -156,11 +163,19 @@ do_load(w, ev)
     if (!emptyfigure() && figure_modified) {
 	if (file_popup)
 	    XtSetSensitive(load, False);
-	if (!popup_query(QUERY_YESCAN, load_msg)) {
+	if (popup_query(QUERY_YESCAN, load_msg) == RESULT_CANCEL) {
 	    if (file_popup)
 		XtSetSensitive(load, True);
 	    return;
 	}
+    }
+    /* if the user used a keyboard accelerator but the filename
+       is empty, popup the file panel to force him/her to enter a name */
+    if (emptyname(cur_filename) && !file_up) {
+	put_msg("No filename, please enter name");
+	XBell(tool_d,0);
+	popup_file_panel(w);
+	return;
     }
     if (file_popup) {
 	app_flush();			/* make sure widget is updated (race condition) */
@@ -193,10 +208,28 @@ do_save(w)
     Widget	    w;
 {
     char	   *fval, *dval;
+    int		    qresult;
 
     if (emptyfigure_msg("Save"))
 	return;
+    /* if the user is inside any compound objects, ask whether to save all or just this part */
+    if ((F_compound *)objects.parent != NULL) {
+	qresult = popup_query(QUERY_ALLPARTCAN,
+			"You have opened a compound. You may save just\nthe visible part or all of the figure.");
+	if (qresult == RESULT_CANCEL)
+		return;
+	if (qresult == RESULT_ALL)
+	    close_all_compounds();
+    }
 
+    /* if the user used a keyboard accelerator or right button on File but the filename
+       is empty, popup the file panel to force him/her to enter a name */
+    if (emptyname(cur_filename) && !file_up) {
+	put_msg("No filename, please enter name");
+	XBell(tool_d,0);
+	popup_file_panel(w);
+	return;
+    }
     if (file_popup) {
 	FirstArg(XtNstring, &fval);
 	GetValues(file_selfile);	/* check the ascii widget for a filename */
@@ -404,7 +437,7 @@ create_file_panel(w)
 	FirstArg(XtNfont, &temp_font);
 	GetValues(file);
 
-	FirstArg(XtNwidth, 350);
+	FirstArg(XtNwidth, FILE_WIDTH);
 	NextArg(XtNheight, max_char_height(temp_font) * 2 + 4);
 	NextArg(XtNeditType, XawtextEdit);
 	NextArg(XtNstring, cur_filename);

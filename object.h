@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 /* DEFAULT is used for many things - font, color etc */
@@ -23,8 +29,12 @@
 #define		SOLID_LINE		0
 #define		DASH_LINE		1
 #define		DOTTED_LINE		2
-#define		RUBBER_LINE		3
-#define		PANEL_LINE		4
+#define		DASH_DOT_LINE		3
+#define		DASH_2_DOTS_LINE	4
+#define		DASH_3_DOTS_LINE	5
+
+#define		RUBBER_LINE		11
+#define		PANEL_LINE		12
 
 #define		BLACK			0
 #define		BLUE			1
@@ -135,23 +145,34 @@ typedef struct f_arc {
 typedef struct f_pic {
     char	    file[PATH_MAX];
     int		    subtype;
+
 /* be sure to update NUM_PIC_TYPES if you add types */
-#ifdef USE_XPM
-#define NUM_PIC_TYPES	5
-#define T_PIC_PIXMAP	5
-#else
-#define NUM_PIC_TYPES	4
+/* These values are used internally, so changing them doesn't
+   affect any Fig files */
+
+enum {
+	T_PIC_NONE,
+	T_PIC_EPS,
+	T_PIC_GIF,
+#ifdef USE_JPEG
+	T_PIC_JPEG,
 #endif
-#define T_PIC_EPS	1
-#define T_PIC_GIF	2
-#define T_PIC_JPEG	3
-#define T_PIC_BITMAP	4
+	T_PIC_PCX,
+	T_PIC_XBM,
+#ifdef USE_XPM
+	T_PIC_XPM,
+#endif
+	LAST_PIC
+     } _pic_types;
+
+#define NUM_PIC_TYPES LAST_PIC-1
 
 #define PicSuccess	1
 #define FileInvalid    -2
+
     int		    flipped;
     unsigned char   *bitmap;
-    struct Cmap	    cmap[MAXCOLORMAPSIZE];  /* for GIF/XPM/JPEG files */
+    struct Cmap	    cmap[MAX_COLORMAP_SIZE];  /* for GIF/XPM/JPEG files */
     int		    numcols;		/* number of colors in cmap */
     float	    hw_ratio;
     int		    size_x, size_y;	/* picture size (fig units) */
@@ -177,7 +198,7 @@ typedef struct f_line {
 #define					T_BOX		2
 #define					T_POLYGON	3
 #define					T_ARC_BOX	4
-#define					T_PIC_BOX	5
+#define					T_PICTURE	5
     int		    style;
     int		    thickness;
     Color	    pen_color;
@@ -314,6 +335,8 @@ typedef struct f_compound {
     struct f_spline *splines;
     struct f_text  *texts;
     struct f_arc   *arcs;
+    struct f_compound *parent;	/* for "enter/leave compound" */
+    struct f_compound *GABPtr;	/* Where original compound came from */
     struct f_compound *compounds;
     struct f_compound *next;
 }

@@ -1,13 +1,24 @@
 The following are applications which can produce Fig files as their output:
 
 ************************************************************************
-pstoedit - converts Postscript(TM) files to a simple vector graphic format,
-	that can be edited. Currently tgif, xfig, and Framemaker(TM) (MIF-
-	format) and flat PostScript are supported.
-	Available from:
-	  ftp://ftp.x.org/contrib/applications/tgif/pstoedit/pstoedit.2.3.1.tar.gz
-	  ftp://ftp.cs.ucla.edu/pub/tgif/pstoedit/pstoedit.2.3.1.tar.gz
-	  ftp://bourbon.cs.ucla.edu/pub/pstoedit/pstoedit.2.3.1.tar.gz
+pstoedit - converts Postscript(TM) files to other vector graphic formats
+	that can be edited. Besides Fig output, tgif, Framemaker(TM) (MIF-
+	format) and flattened PostScript are supported along with several
+	others.
+	You need a C++ compiler to install and GhostScript to run pstoedit.
+	pstoedit should run on all Un*x like systems and has also been ported
+	to OS/2 and DOS.
+	The newest version as of this writing (9 Jul 1996) is 2.41 and is
+	available from:
+
+	ftp://ftp.x.org/contrib/applications/tgif/pstoedit/pstoedit.2.41.tar.gz
+	ftp://ftp.cs.ucla.edu/pub/tgif/pstoedit/pstoedit.2.41.tar.gz
+	ftp://bourbon.cs.ucla.edu/pub/pstoedit/pstoedit.2.41.tar.gz
+
+************************************************************************
+hp2xx - converts HPGL to EPS, LaTex, Fig or simplified HPGL converter
+	From Ian MacPhedran <macphed@engr.USask.Ca> in 
+	ftp://ftp.engr.usask.ca/pub/hp2xx/
 
 ************************************************************************
 xgraph - plotting package for X - version on iworks.ecn.uiowa.edu in
@@ -15,10 +26,43 @@ xgraph - plotting package for X - version on iworks.ecn.uiowa.edu in
 
 ************************************************************************
 gnuplot - Plotting package; can output in Fig format.
+	For the location of gnuplot, here is the (paraphrased) excerpt from
+	the FAQ.  Note, that although there are versions of gnuplot for
+	several different platforms, xfig only runs under X11.
+
+	The official distribution site for the gnuplot source is dartmouth.edu,
+	in /pub/gnuplot.  Official mirrors of that distribution are (for
+	Australia) monu1.cc.monash.edu.au and (for Europe) irisa.irisa.fr.
+	You can also get it from your friendly neighbourhood comp.sources.misc
+	archive.
+
+	MS-DOS and MS-Windows binaries are available from oak.oakland.edu
+	(North America) as pub/msdos/plot/gpt34*.zip, garbo.uwasa.fi (Europe)
+	as /pc/plot/gpt34*.zip and archie.au (Australia) as
+	micros/pc/oak/plot/gpt34*.zip.  The files are: gpt34doc.zip,
+	gpt34exe.zip, gpt34src.zip and gpt34win.zip.
+
+	OS/2 2.x binaries are at ftp-os2.nmsu.edu in /os2/2.x/unix/gnu/gplt34.zip.
+
+	Amiga sources and binaries are available from wuarchive.wustl.edu
+	as /pub/amiga/aminet/util/gnu/gnuplot-3.4*; there are numerous mirrors
+	of this distribution.
+
+	The NeXTSTEP front end can be found at sonata.cc.purdue.edu and
+	cs.orst.edu.
+
+	A version for OS-9/68K can be found at cabrales.cs.wisc.edu in
+	/pub/OSK/GRAPHICS; it includes both an X and non - X versions.
+
+	A version of gnuplot for the Macintosh is included in the gpcontrb
+	file, or can be found at wuarchive.wustl.edu in
+	edu/math/mac/graphingAids, as MacGnuPlot3.2.sea.hqx and
+	MacGnuPlotPackage3.2.sea.hqx.
 
 ************************************************************************
 pic2fig - converts PIC (used with troff/ditroff/etc) to Fig.
-	May be found at ftp.cs.orst.edu in /localsrc/graphics.
+	May be found at ftp.cs.orst.edu in /localsrc/graphics and
+	at ftp.x.org in /contrib/utilities.
 
 ************************************************************************
 plot2fig - converts Unix PLOT language to Fig

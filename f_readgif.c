@@ -9,11 +9,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 /* The following code is extracted from giftoppm.c, from the pbmplus package */
@@ -46,7 +52,7 @@
 struct {
 	unsigned int	Width;
 	unsigned int	Height;
-	struct	 Cmap	ColorMap[MAXCOLORMAPSIZE];
+	struct	 Cmap	ColorMap[MAX_COLORMAP_SIZE];
 	unsigned int	BitPixel;
 	unsigned int	ColorResolution;
 	unsigned int	Background;
@@ -82,7 +88,7 @@ read_gif(file,filetype,pic)
 {
 	unsigned char	buf[16];
 	unsigned char	c;
-	struct Cmap 	localColorMap[MAXCOLORMAPSIZE];
+	struct Cmap 	localColorMap[MAX_COLORMAP_SIZE];
 	int		useGlobalColormap;
 	unsigned int	bitPixel;
 	char		version[4];
@@ -180,7 +186,7 @@ static Boolean
 ReadColorMap(fd,number,cmap)
 FILE	*fd;
 unsigned int	number;
-struct Cmap cmap[MAXCOLORMAPSIZE];
+struct Cmap cmap[MAX_COLORMAP_SIZE];
 {
 	int		i;
 	unsigned char	rgb[3];
@@ -436,15 +442,19 @@ ReadGIFImage(pic, fd, len, height, cmap, numcols, interlace)
 F_pic	*pic;
 FILE	*fd;
 unsigned int	len, height;
-struct Cmap cmap[MAXCOLORMAPSIZE];
+struct Cmap cmap[MAX_COLORMAP_SIZE];
 unsigned int	numcols;
 int	interlace;
 {
 	unsigned char	c;	
 	int		i, j, v;
-	int		dup[MAXCOLORMAPSIZE];
+	int		dup[MAX_COLORMAP_SIZE];
 	int		numdups, num;
 	int		xpos = 0, ypos = 0, pass = 0;
+	/* make scale factor larger for metric */
+	float scale = (appres.INCHES ?
+				(float)PIX_PER_INCH :
+				2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
 
 	/*
 	**  Initialize the Compression routines
@@ -502,8 +512,8 @@ fini:
 	pic->hw_ratio = (float) height / len;
 	pic->bit_size.x = len;
 	pic->bit_size.y = height;
-	pic->size_x = len * ZOOM_FACTOR;
-	pic->size_y = height * ZOOM_FACTOR;
+	pic->size_x = len * scale;
+	pic->size_y = height * scale;
 
 	numdups = 0;
 	num=0;

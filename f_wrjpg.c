@@ -2,12 +2,23 @@
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1995 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -26,26 +37,28 @@
 static	Boolean	    create_n_write_jpg();
 static	Boolean	    write_JPEG_file();
 extern	Pixmap	    init_write_color_image();
-static	XColor	    jcolors[MAXCOLORMAPSIZE];
+static	XColor	    jcolors[MAX_COLORMAP_SIZE];
 static	int	    width, height;
 static  XImage	   *image;
 static	unsigned char *dptr;
 
 Boolean
-write_jpg(file_name,mag)
+write_jpg(file_name,mag,margin)
     char	   *file_name;
     float	    mag;
+    int		    margin;
 {
     if (!ok_to_write(file_name, "EXPORT"))
 	return False;
 
-    return (create_n_write_jpg(file_name,mag));	/* write the jpg file */
+    return (create_n_write_jpg(file_name,mag,margin));	/* write the jpg file */
 }
 
 static Boolean
-create_n_write_jpg(filename,mag)
+create_n_write_jpg(filename,mag,margin)
     char	   *filename;
     float	    mag;
+    int		    margin;
 {
     int		    i;
     Pixmap	    pixmap;
@@ -54,7 +67,7 @@ create_n_write_jpg(filename,mag)
     unsigned char  *iptr, *bptr;
 
     /* setup the canvas, pixmap and zoom */
-    if ((pixmap = init_write_color_image(32767,mag,&width,&height)) == 0)
+    if ((pixmap = init_write_color_image(32767,mag,&width,&height,margin)) == 0)
 	return False;
 
     if ((file=fopen(filename,"w"))==0) {
@@ -82,6 +95,7 @@ create_n_write_jpg(filename,mag)
 
 	if ((bptr = (unsigned char *) malloc(height*width))==NULL) {
 	    file_msg("Can't allocate memory for image");
+	    fclose(file);
 	    return False;
 	}
 	/* setup black/white colormap */
@@ -128,7 +142,7 @@ create_n_write_jpg(filename,mag)
     app_flush();
 
     if (write_JPEG_file(file) == 0) {
-	put_msg("Couldn't write JPEG file");
+	file_msg("Couldn't write JPEG file");
 	status = False;
     } else {
 	put_msg("%dx%d JPEG written to %s", width, height, filename);
@@ -144,6 +158,7 @@ create_n_write_jpg(filename,mag)
     if (tool_cells <= 2)
 	free(bptr);
 
+    fclose(file);
     return status;
 }
 
@@ -223,7 +238,7 @@ write_JPEG_file (file)
    */
   /* This may be an option in the future */
 #ifdef JPEG_QUALITY
-  jpeg_set_quality(&cinfo, quality, TRUE /* limit to baseline-JPEG values */);
+  jpeg_set_quality(&cinfo, quality, True /* limit to baseline-JPEG values */);
 #endif /* JPEG_QUALITY */
 
   /* Step 4: Start compressor */
@@ -231,7 +246,7 @@ write_JPEG_file (file)
   /* TRUE ensures that we will write a complete interchange-JPEG file.
    * Pass TRUE unless you are very sure of what you're doing.
    */
-  jpeg_start_compress(&cinfo, TRUE);
+  jpeg_start_compress(&cinfo, True);
 
   /* Step 5: while (scan lines remain to be written) */
   /*           jpeg_write_scanlines(...); */

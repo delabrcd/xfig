@@ -8,11 +8,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -27,7 +33,11 @@ struct _xfstruct x_fontinfo[NUM_FONTS] = {
     {"-adobe-times-medium-i-normal--", (struct xfont*) NULL},
     {"-adobe-times-bold-r-normal--", (struct xfont*) NULL},
     {"-adobe-times-bold-i-normal--", (struct xfont*) NULL},
+#ifndef dontkludge
+    {"-bitstream-charter-medium-r-normal--", (struct xfont*) NULL},   /* kludge to get scaled font */
+#else
     {"-schumacher-clean-medium-r-normal--", (struct xfont*) NULL},	/* closest to Avant-Garde */
+#endif
     {"-schumacher-clean-medium-i-normal--", (struct xfont*) NULL},
     {"-schumacher-clean-bold-r-normal--", (struct xfont*) NULL},
     {"-schumacher-clean-bold-i-normal--", (struct xfont*) NULL},

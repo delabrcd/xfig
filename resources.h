@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "paintop.h"
@@ -27,6 +33,15 @@
 #define NUM_STD_COLS	32
 #define MAX_USR_COLS	512
 
+/* number of paper sizes (A4, B5, letter, etc. [see resources.c]) */
+#define NUMPAPERSIZES	15
+/* define these positions so we can start with default paper size */
+#define PAPER_LETTER	0
+#define PAPER_A4	9
+/* define these positions so we can switch between them on port/landscape */
+#define PAPER_LEDGER	2
+#define PAPER_TABLOID	3
+
 #define	Color		int
 
 /* default number of colors to use for GIF/XPM */
@@ -34,7 +49,7 @@
 #define DEF_MAX_IMAGE_COLS 64
 
 /* for GIF files */
-#define	MAXCOLORMAPSIZE	256	/* for GIF files */
+#define	MAX_COLORMAP_SIZE	256	/* for GIF files */
 
 struct Cmap {
 	unsigned short red, green, blue;
@@ -45,6 +60,11 @@ typedef struct {
 		char *name,
 		     *rgb;
 		} fig_colors ;
+
+/* these are allocated in main() in case we aren't using default colormap 
+   (so we can't use BlackPixelOfScreen... */
+
+extern XColor		 black_color, white_color;
 
 /* original directory where xfig started */
 extern char		 orig_dir[PATH_MAX+2];
@@ -70,11 +90,13 @@ extern Boolean		 all_colors_available;
 /* number of colors we want to use for GIF/XPM images */
 extern int		avail_image_cols;
 /* colormap used for same */
-extern XColor		image_cells[MAXCOLORMAPSIZE];
+extern XColor		image_cells[MAX_COLORMAP_SIZE];
 
 /* resources structure */
 
 typedef struct _appres {
+    char	   *canvasBackground;
+    char	   *canvasForeground;
     char	   *iconGeometry;
     Boolean	    INCHES;
     Boolean	    DEBUG;
@@ -95,10 +117,11 @@ typedef struct _appres {
     float	    tmp_height;
     float	    startfontsize;	/* ges 6 Feb 91 */
     int		    internalborderwidth;
-    float	    starttextstep;
-    int		    startfillstyle;
-    int		    startlinewidth;
-    int		    startgridmode;
+    float	    starttextstep;	/* starting multi-line text spacing */
+    int		    startfillstyle;	/* starting fill style */
+    int		    startlinewidth;	/* starting line width */
+    int		    startgridmode;	/* starting grid mode */
+    int		    startposnmode;	/* starting point position mode */
     int		    but_per_row;	/* number of buttons wide for the mode panel */
     Boolean	    monochrome;
     char	   *keyFile;
@@ -111,6 +134,9 @@ typedef struct _appres {
     Boolean	    dont_switch_cmap;	/* don't allow switching of colormap */
     int		    rulerthick;		/* thickness of rulers */
     char	   *image_editor;	/* image editor (xv, etc) */
+    int		    papersize;		/* size of paper */
+    Boolean	    multiple;		/* multiple/single page for export/print */
+    float	    zoom;		/* starting zoom scale */
 }		appresStruct, *appresPtr;
 extern appresStruct appres;
 
@@ -146,6 +172,8 @@ typedef XFontStruct *PIX_FONT;
 typedef pr_size PR_SIZE;
 typedef RectRec RECT;
 
+extern float	ZOOM_FACTOR;
+
 extern Window	real_canvas, canvas_win, msg_win, sideruler_win, topruler_win;
 
 extern Cursor	cur_cursor;
@@ -169,6 +197,9 @@ extern Display *tool_d;
 extern Screen  *tool_s;
 extern Window	tool_w;
 extern int	tool_sn;
+extern int	tool_vclass;
+extern Visual  *tool_v;
+extern int	tool_dpth;
 extern int	tool_cells;
 extern Colormap	tool_cm, newcmap;
 extern Boolean	swapped_cmap;
@@ -198,6 +229,9 @@ extern char *text_translations;
 
 extern char    *orient_items[2];
 extern char    *just_items[2];
+extern char    *paper_sizes[NUMPAPERSIZES];
+extern char    *full_paper_sizes[NUMPAPERSIZES];
+extern char    *multiple_pages[2];
 
 /* for w_file.c and w_export.c */
 
@@ -208,3 +242,8 @@ extern int	RULER_WD;
 /* environment variable name definition for image editor used for screen capture */
 
 #define XFIG_ENV_GIF_EDITOR    getenv("XFIG_GIF_EDITOR")
+
+/* flag for when picture object is read in merge_file to see if need to remap
+   existing picture colors */
+
+extern Boolean	pic_obj_read;

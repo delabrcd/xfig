@@ -8,11 +8,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -112,17 +118,17 @@ init_fontmenu(tool)
 					    latex_fontmenu, Args, ArgCount);
 
     for (i = 0; i < NUM_FONTS + 1; i++) {
-	ps_fontmenu_items[i].type = MENU_IMAGESTRING;	/* put the fontnames in
-							 * menu */
+	ps_fontmenu_items[i].type = MENU_IMAGESTRING;		/* put the fontnames in
+								 * menu */
 	ps_fontmenu_items[i].label = ps_fontinfo[i].name;
-	ps_fontmenu_items[i].info = (caddr_t) i - 1;	/* index for font # */
+	ps_fontmenu_items[i].info = (caddr_t) (i - 1);		/* index for font # */
     }
 
     for (i = 0; i < NUM_LATEX_FONTS; i++) {
 	latex_fontmenu_items[i].type = MENU_IMAGESTRING;	/* put the fontnames in
 								 * menu */
 	latex_fontmenu_items[i].label = latex_fontinfo[i].name;
-	latex_fontmenu_items[i].info = (caddr_t) i;	/* index for font # */
+	latex_fontmenu_items[i].info = (caddr_t) i;		/* index for font # */
     }
 
     FirstArg(XtNwidth, PS_FONTPANE_WD*2);
@@ -236,13 +242,13 @@ setup_fontmenu()
 	psfont_menu_bitmaps[i] = XCreatePixmapFromBitmapData(tool_d,
 				   XtWindow(ind_panel), (char *) psfont_menu_bits[i],
 				     PS_FONTPANE_WD, PS_FONTPANE_HT, fg, bg,
-				      XDefaultDepthOfScreen(tool_s));
+				      tool_dpth);
 
     for (i = 0; i < NUM_LATEX_FONTS; i++)
 	latexfont_menu_bitmaps[i] = XCreatePixmapFromBitmapData(tool_d,
 				     XtWindow(ind_panel), (char *) latexfont_menu_bits[i],
 				      LATEX_FONTPANE_WD, LATEX_FONTPANE_HT, fg, bg,
-				       XDefaultDepthOfScreen(tool_s));
+				       tool_dpth);
 
     /* Store the bitmaps in the menu panes */
     for (i = 0; i < NUM_FONTS + 1; i++) {
@@ -254,7 +260,7 @@ setup_fontmenu()
 	SetValues(latex_fontpane[i]);
     }
 
-    FirstArg(XtNbackground, BlackPixelOfScreen(tool_s));
+    FirstArg(XtNbackground, black_color.pixel);
     SetValues(ps_buttons);
     SetValues(latex_buttons);
 

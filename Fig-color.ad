@@ -23,14 +23,15 @@
 	Fig*commands*background:		grey85
 	Fig*commands*foreground:		black
 ! Indicator (lower) panel
-	Fig*ind_panel.horizontal.background:	lightskyblue
-	Fig*ind_panel.horizontal.foreground:	black
-	Fig*ind_panel.ind_box.button_form.button*background: dodgerblue
+	Fig*ind_panel.ind_box.button_form.button*background:lightsteelblue1
 	Fig*ind_panel.ind_box.button_form.button*foreground: black
 	Fig*ind_panel.ind_box.button_form.update*foreground: red
 	Fig*ind_panel.ind_box.button_form.update*background: white
+! Scrollbar
+	Fig*ind_panel.horizontal.background:	lightsteelblue1
+	Fig*ind_panel.horizontal.foreground:	black
 !   The box that contains the buttons and the horiz. scrollbar
-	Fig*ind_panel.ind_box.background:	dodgerblue
+	Fig*ind_panel.ind_box.background:	lightskyblue
 !   The border color of the buttons themselves
 	Fig*ind_panel.ind_box.button_form.borderColor: black
 ! Control panel for updating
@@ -44,6 +45,11 @@
 	Fig*mode_panel.label.foreground:	black
 	Fig*mode_panel.button.background:	lightskyblue
 	Fig*mode_panel.button.foreground:	black
+! Font popup menu from indicator panel
+	Fig*latex_font_menu*background:		white
+	Fig*latex_font_menu*foreground:		black
+	Fig*ps_font_menu*background:		white
+	Fig*ps_font_menu*foreground:		black
 ! Mouse indicator panel
 	Fig*mouse_panel.background:		lavender
 	Fig*mouse_panel.foreground:		black
@@ -53,6 +59,8 @@
 	Fig*edit_panel.form.cancel.background:	red
 	Fig*edit_panel.form.screen_capture.background:	lightskyblue
 	Fig*edit_panel.form.edit_image.background: lavender
+	Fig*edit_panel.form*background:		white
+	Fig*edit_panel.form*foreground:		black
 ! Button to reread picture file
 	Fig*edit_panel.form.reread.background:	lightskyblue
 ! Button to browse for picture files
@@ -75,9 +83,11 @@
 	Fig*browse_panel*dir_name*Scrollbar*background:	dodgerblue
 	Fig*browse_panel*dir_name*Scrollbar*foreground:	red
 	Fig*browse_panel*home.foreground:	black
-	Fig*browse_panel*home.background:	dodgerblue
+	Fig*browse_panel*home.background:	lightsteelblue1
+	Fig*browse_panel*hidden.foreground:	black
+	Fig*browse_panel*hidden.background:	lightsteelblue1
 	Fig*browse_panel.rescan.foreground:	black
-	Fig*browse_panel.rescan.background:	dodgerblue
+	Fig*browse_panel.rescan.background:	lightsteelblue1
 	Fig*browse_panel.close.foreground:	black
 	Fig*browse_panel.close.background:	red2
 	Fig*browse_panel.apply.foreground:	black
@@ -95,9 +105,11 @@
 	Fig*file_panel*dir_name*Scrollbar*background:	dodgerblue
 	Fig*file_panel*dir_name*Scrollbar*foreground:	red
 	Fig*file_panel*home.foreground:		black
-	Fig*file_panel*home.background:		dodgerblue
+	Fig*file_panel*home.background:		lightsteelblue1
+	Fig*file_panel*hidden.foreground:	black
+	Fig*file_panel*hidden.background:	lightsteelblue1
 	Fig*file_panel.rescan.foreground:	black
-	Fig*file_panel.rescan.background:	dodgerblue
+	Fig*file_panel.rescan.background:	lightsteelblue1
 	Fig*file_panel.cancel.foreground:	black
 	Fig*file_panel.cancel.background:	red2
 	Fig*file_panel.save.foreground:		black
@@ -105,7 +117,7 @@
 	Fig*file_panel.load.foreground:		black
 	Fig*file_panel.load.background:		green2
 	Fig*file_panel.merge.foreground:	black
-	Fig*file_panel.merge.background:	dodgerblue
+	Fig*file_panel.merge.background:	lightsteelblue1
 ! Export popup
 	Fig*export_panel*background:		lightskyblue
 	Fig*export_panel*Text*background:	white
@@ -123,9 +135,11 @@
 	Fig*export_panel*landscape.menu.background: white
 	Fig*export_panel*landscape.menu.foreground: black
 	Fig*export_panel*home.foreground:	black
-	Fig*export_panel*home.background:	dodgerblue
+	Fig*export_panel*home.background:	lightsteelblue1
+	Fig*export_panel*hidden.foreground:	black
+	Fig*export_panel*hidden.background:	lightsteelblue1
 	Fig*export_panel.rescan.foreground:	black
-	Fig*export_panel.rescan.background:	dodgerblue
+	Fig*export_panel.rescan.background:	lightsteelblue1
 	Fig*export_panel.cancel.foreground:	black
 	Fig*export_panel.cancel.background:	red2
 	Fig*export_panel.export.foreground:	black
@@ -145,9 +159,9 @@
 	Fig*print_panel.num_batch_val.foreground: black
 	Fig*print_panel.dismiss.background:	red
 	Fig*print_panel.dismiss.foreground:	black
-	Fig*print_panel.print_batch.background:	dodgerblue
+	Fig*print_panel.print_batch.background:	lightsteelblue1
 	Fig*print_panel.print_batch.foreground:	black
-	Fig*print_panel.clear_batch.background:	orange
+	Fig*print_panel.clear_batch.background:	orange1
 	Fig*print_panel.clear_batch.foreground:	black
 	Fig*print_panel.print.background:	green2
 	Fig*print_panel.print.foreground:	black
@@ -164,14 +178,18 @@
 	Fig*file_msg_panel.clear.background:	red2
 	Fig*file_msg_panel.clear.foreground:	black
 ! Query popup
-	Fig*query_popup.query_form.background:	lightslateblue
+	Fig*query_popup.query_form.background:	lightskyblue
 	Fig*query_popup.query_form.foreground:	black
 	Fig*query_popup.query_form.message.background: lightgrey
 	Fig*query_popup.query_form.message.foreground: black
 	Fig*query_popup.query_form.yes.background: red2
 	Fig*query_popup.query_form.yes.foreground: black
-	Fig*query_popup.query_form.no.background: orange
+	Fig*query_popup.query_form.no.background: orange1
 	Fig*query_popup.query_form.no.foreground: black
+	Fig*query_popup.query_form.all.background: green2
+	Fig*query_popup.query_form.all.foreground: black
+	Fig*query_popup.query_form.part.background: red2
+	Fig*query_popup.query_form.part.foreground: black
 	Fig*query_popup.query_form.cancel.background: green2
 	Fig*query_popup.query_form.cancel.foreground: black
 ! Basic background for all indicator popup panels
@@ -179,6 +197,13 @@
 	Fig*set_indicator_panel.form.Label.foreground: black
 	Fig*set_indicator_panel.form.background: grey90
 	Fig*set_indicator_panel.form.foreground: black
+!   and default any others to black/white
+	Fig*set_indicator_panel.form.*background: white
+	Fig*set_indicator_panel.form.*foreground: black
+! Close compound popup
+	Fig*close_compound_form.background:			lightskyblue
+	Fig*close_compound_form.close_compound.background:	orange1
+	Fig*close_compound_form.close_all_compounds.background:	yellow
 ! Popup color panel
 !   Standard colors label
 	Fig*set_indicator_panel.form.stdLabel.background:	grey80

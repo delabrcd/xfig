@@ -13,11 +13,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 /*
@@ -36,7 +42,7 @@ static	void inxbuild();
 static	int  contest();
 static	void alterneigh();
 static	void altersingle();
-static	inxsearch();
+static	int  inxsearch();
 
 #define MAXNETSIZE	256
 
@@ -289,8 +295,8 @@ int radpower[MAXNETSIZE>>3];	/* radpower for precomputation */
 
 /* initialise network in range (0,0,0) to (255,255,255) */
 
-static
-void initnet()	
+static void
+initnet()	
 {
 	register int i;
 	register int *p;
@@ -306,8 +312,8 @@ void initnet()
 
 /* do after unbias - insertion sort of network and build netindex[0..255] */
 
-static
-void inxbuild()
+static void
+inxbuild()
 {
 	register int i,j,smallpos,smallval;
 	register int *p,*q;
@@ -347,8 +353,8 @@ void inxbuild()
 	for (j=previouscol+1; j<256; j++) netindex[j] = maxnetpos; /* really 256 */
 }
 
-static
-int inxsearch(b,g,r)  /* accepts real BGR values after net is unbiased */
+static int
+inxsearch(b,g,r)  /* accepts real BGR values after net is unbiased */
 register int b,g,r;
 {
 	register int i,j,dist,a,bestd;
@@ -403,8 +409,8 @@ register int b,g,r;
 /* for frequently chosen neurons, freq[i] is high and bias[i] is negative */
 /* bias[i] = gamma*((1/netsize)-freq[i]) */
 
-static
-int contest(b,g,r)	/* accepts biased BGR values */
+static int
+contest(b,g,r)	/* accepts biased BGR values */
 register int b,g,r;
 {
 	register int i,dist,a,biasdist,betafreq;
@@ -440,8 +446,8 @@ register int b,g,r;
 
 /* move neuron i towards (b,g,r) by factor alpha */
 
-static
-void altersingle(alpha,i,b,g,r)	/* accepts biased BGR values */
+static void
+altersingle(alpha,i,b,g,r)	/* accepts biased BGR values */
 register int alpha,i,b,g,r;
 {
 	register int *n;
@@ -458,8 +464,8 @@ register int alpha,i,b,g,r;
 /* move neurons adjacent to i towards (b,g,r) by factor */
 /* alpha*(1-((i-j)^2/[r]^2)) precomputed as radpower[|i-j|]*/
 
-static
-void alterneigh(rad,i,b,g,r)	/* accents biased BGR values */
+static void
+alterneigh(rad,i,b,g,r)	/* accents biased BGR values */
 int rad,i;
 register int b,g,r;
 {
@@ -496,8 +502,8 @@ register int b,g,r;
 }
 
 
-static
-void learn()
+static void
+learn()
 {
 	register int i,j,b,g,r;
 	int radius,rad,alpha,step,delta,samplepixels;
@@ -555,8 +561,8 @@ void learn()
 /* which can then be used for colour map */
 /* and record position i to prepare for sort */
 
-static
-void unbiasnet()
+static void
+unbiasnet()
 {
 	int i,j;
 
@@ -569,8 +575,8 @@ void unbiasnet()
 
 /* Don't do this until the network has been unbiased */
 		
-static
-void cpyclrtab()
+static void
+cpyclrtab()
 {
 	register int i,j,k;
 	

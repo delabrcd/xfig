@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -30,6 +36,7 @@
 #include "w_zoom.h"
 
 extern PIX_FONT lookfont();
+extern		X_error_handler();
 
 /************** POLYGON/CURVE DRAWING FACILITIES ****************/
 
@@ -482,7 +489,7 @@ draw_line(line, op)
 	return;
     }
     /* is it a picture object? */
-    if (line->type == T_PIC_BOX) {
+    if (line->type == T_PICTURE) {
 	if (line->pic->bitmap != NULL) {
 	    draw_pic_pixmap(line, op);
 	    return;
@@ -519,7 +526,7 @@ draw_line(line, op)
     if (line->points->next == NULL) {
 	/* draw but don't fill */
 	pw_point(canvas_win, x, y, line->thickness,
-		 op, line->pen_color);
+		 op, line->pen_color, line->cap_style);
 	return;
     }
 
@@ -607,8 +614,9 @@ draw_pic_pixmap(box, op)
 	clear_region(xmin, ymin, xmax, ymax);
 	return;
     }
-    width = abs(origin.x - opposite.x);
-    height = abs(origin.y - opposite.y);
+    /* width is upper-lower+1 */
+    width = abs(origin.x - opposite.x) + 1;
+    height = abs(origin.y - opposite.y) + 1;
     rotation = 0;
     if (origin.x > opposite.x && origin.y > opposite.y)
 	rotation = 180;
@@ -627,7 +635,7 @@ draw_pic_pixmap(box, op)
 	    create_pic_pixmap(box, rotation, width, height, box->pic->flipped);
 
     XCopyArea(tool_d, box->pic->pixmap, canvas_win, gccache[op],
-	      0, 0, xmax - xmin, ymax - ymin, xmin, ymin);
+	      0, 0, width, height, xmin, ymin);
     XFlush(tool_d);
 }
 
@@ -647,8 +655,9 @@ create_pic_pixmap(box, rotation, width, height, flipped)
     int		    cwidth, cheight;
     int		    i;
     int		    j;
-    char	   *data;
-    char	   *tdata;
+    int		    k;
+    unsigned char  *data;
+    unsigned char  *tdata;
     int		    nbytes;
     int		    bbytes;
     int		    ibit, jbit, jnb;
@@ -668,13 +677,13 @@ create_pic_pixmap(box, rotation, width, height, flipped)
     cheight = box->pic->bit_size.y;
 
     /* create a new bitmap at the specified size (requires interpolation) */
-    /* XBM style *OR* EPS, XPM, GIF or JPEG on monochrome display */
+    /* XBM style *OR* EPS, PCX, XPM, GIF or JPEG on monochrome display */
     if (box->pic->numcols == 0) {
 	    nbytes = (width + 7) / 8;
 	    bbytes = (cwidth + 7) / 8;
 	    data = (char *) malloc(nbytes * height);
 	    tdata = (char *) malloc(nbytes);
-	    bzero(data, nbytes * height);	/* clear memory */
+	    bzero((char*)data, nbytes * height);	/* clear memory */
 	    if ((!flipped && (rotation == 0 || rotation == 180)) ||
 		(flipped && !(rotation == 0 || rotation == 180))) {
 		for (j = 0; j < height; j++) {
@@ -702,7 +711,7 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 	    if (rotation == 180 || rotation == 270)
 		for (j = 0; j < height; j++) {
 		    jnb = j*nbytes;
-		    bzero(tdata, nbytes);
+		    bzero((char*)tdata, nbytes);
 		    for (i = 0; i < width; i++)
 			if (*(data + jnb + (width - i - 1) / 8) & (1 << ((width - i - 1) & 7)))
 			    *(tdata + i / 8) += (1 << (i & 7));
@@ -722,84 +731,125 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 	    if (writing_bitmap) {
 		fg = x_fg_color.pixel;			/* writing xbm, 1 and 0 */
 		bg = x_bg_color.pixel;
-	    } else if (box->pic->subtype == T_PIC_BITMAP) {
+	    } else if (box->pic->subtype == T_PIC_XBM) {
 		fg = x_color(box->pen_color);		/* xbm, use object pen color */
 		bg = x_bg_color.pixel;
 	    } else if (box->pic->subtype == T_PIC_EPS) {
-		fg = BlackPixelOfScreen(tool_s);	/* pbm from gs is inverted */
-		bg = WhitePixelOfScreen(tool_s);
+		fg = black_color.pixel;			/* pbm from gs is inverted */
+		bg = white_color.pixel;
 	    } else {
-		fg = WhitePixelOfScreen(tool_s);	/* gif, xpm after map_to_mono */
-		bg = BlackPixelOfScreen(tool_s);
+		fg = white_color.pixel;			/* gif, xpm after map_to_mono */
+		bg = black_color.pixel;
 	    }
 		
 	    box->pic->pixmap = XCreatePixmapFromBitmapData(tool_d, canvas_win,
-					data, width, height, fg,bg,
-					DefaultDepthOfScreen(tool_s));
+					data, width, height, fg,bg, tool_dpth);
 	    free(data);
+            free(tdata);
 
-      /* EPS, XPM, GIF or JPEG on color display */
+      /* EPS, PCX, XPM, GIF or JPEG on color display */
+      /* It is important to note that the Cmap pixels are unsigned long. */
+      /* Therefore all manipulation of the image data should be as unsigned long. */
+      /* bpp = bytes per pixel */
+      /* bpl = bytes per line */
       } else {
+            unsigned char *pixel, *cpixel, *p1, *p2, tmp;
+            int bpp, bpl, cbpp, cbpl;
+            unsigned long *Lpixel;
+            unsigned short *Spixel;
+            unsigned char *Cpixel;
 	    struct Cmap	*cmap = box->pic->cmap;
-	    nbytes = width;
-	    bbytes = cwidth;
-	    data = (char *) malloc(nbytes * height);
-	    tdata = (char *) malloc(nbytes);
-	    bzero(data, nbytes * height);	/* clear memory */
+
+            cbpp = 1;
+            cbpl = cwidth * cbpp;
+	    if (tool_dpth == 24 || tool_dpth == 32)
+                bpp = 4;
+	    else if (tool_dpth == 16)
+                bpp = 2;
+	    else
+                bpp = 1;
+            bpl = width * bpp;
+	    data = (char *) malloc(bpl * height);
+	    bzero((char*)data, bpl * height);
 	    if ((!flipped && (rotation == 0 || rotation == 180)) ||
 		(flipped && !(rotation == 0 || rotation == 180))) {
-		for (j = 0; j < height; j++) {
-		    jbit = cheight * j / height * bbytes;
-		    jnb = j*nbytes;
-		    for (i = 0; i < width; i++) {
-			ibit = cwidth * i / width;
-			*(data + jnb + i) =
-				cmap[(unsigned char) *(box->pic->bitmap +
-						       jbit + ibit)].pixel;
+                for( j=0; j<height; j++ ){
+                  p1 = data + (j * bpl);
+                  p2 = box->pic->bitmap + (j * cheight / height * cbpl);
+                  for( i=0; i<width; i++ ){
+                    pixel = p1 + (i * bpp);
+                    cpixel = p2 + (i * cbpl / width );
+		    if (bpp == 4) {
+			Lpixel = (unsigned long *) pixel;
+			*Lpixel = cmap[*cpixel].pixel;
+		    } else if (bpp == 2) {
+			Spixel = (unsigned short *) pixel;
+			*Spixel = cmap[*cpixel].pixel;
+		    } else {
+			Cpixel = (unsigned char *) pixel;
+			*Cpixel = cmap[*cpixel].pixel;
 		    }
-		}
+                  }
+                }
 	    } else {
-		for (j = 0; j < height; j++) {
-		    ibit = cwidth * j / height;
-		    for (i = 0; i < width; i++) {
-			jbit = cheight * i / width;
-			*(data + (height - j - 1) * nbytes + i) =
-				cmap[(unsigned char) *(box->pic->bitmap +
-						       jbit * bbytes + ibit)].pixel;
+                for( j=0; j<height; j++ ){
+                  p1 = data + (j * bpl);
+                  p2 = box->pic->bitmap + (j * cbpl / height);
+                  for( i=0; i<width; i++ ){
+                    pixel = p1 + (i * bpp);
+                    cpixel = p2 + (i * cheight / width * cbpl);
+		    if (bpp == 4) {
+			Lpixel = (unsigned long *) pixel;
+			*Lpixel = cmap[*cpixel].pixel;
+		    } else if (bpp == 2) {
+			Spixel = (unsigned short *) pixel;
+			*Spixel = cmap[*cpixel].pixel;
+		    } else {
+			Cpixel = (unsigned char *) pixel;
+			*Cpixel = cmap[*cpixel].pixel;
 		    }
-		}
+                  }
+                }
 	    }
 
 	    /* horizontal swap */
-	    if (rotation == 180 || rotation == 270)
-		for (j = 0; j < height; j++) {
-		    bzero(tdata, nbytes);
-		    jnb = j*nbytes;
-		    for (i = 0; i < width; i++)
-			*(tdata + i) = *(data + jnb + (width - i - 1));
-		    bcopy(tdata, data + jnb, nbytes);
-		}
+	    if (rotation == 180 || rotation == 270){
+                for( j=0; j<height; j++ ){
+                  p1 = data + (j * bpl);
+                  p2 = p1 + ((width - 1) * bpp);
+                  for( i=0; i<width/2; i++, p2 -= 2*bpp ){
+                    for( k=0; k<bpp; k++, p1++, p2++ ){
+                      tmp = *p1;
+                      *p1 = *p2;
+                      *p2 = tmp;
+                    }
+                  }
+                }
+            }
 
 	    /* vertical swap */
 	    if ((!flipped && (rotation == 180 || rotation == 270)) ||
-		(flipped && !(rotation == 180 || rotation == 270)))
-		for (j = 0; j < (height + 1) / 2; j++) {
-		    jnb = j*nbytes;
-		    bcopy(data + jnb, tdata, nbytes);
-		    bcopy(data + (height - j - 1) * nbytes, data + jnb, nbytes);
-		    bcopy(tdata, data + (height - j - 1) * nbytes, nbytes);
-		}
+		(flipped && !(rotation == 180 || rotation == 270))){
+                for( i=0; i<width; i++ ){
+                  p1 = data + (i * bpp);
+                  p2 = p1 + ((height - 1) * bpl);
+                  for( j=0; j<height/2; j++, p1 += (width-1)*bpp, p2 -= (width+1)*bpp ){
+                    for( k=0; k<bpp; k++, p1++, p2++ ){
+                      tmp = *p1;
+                      *p1 = *p2;
+                      *p2 = tmp;
+                    }
+                  }
+                }
+            }
 
-	    image = XCreateImage(tool_d, DefaultVisualOfScreen(tool_s),
-				DefaultDepthOfScreen(tool_s),
-				ZPixmap, 0, data, width, height, 8, 0);
+	    image = XCreateImage(tool_d, tool_v, tool_dpth,
+				ZPixmap, 0, data, width, height, 8*bpp, 0);
 	    box->pic->pixmap = XCreatePixmap(tool_d, canvas_win,
-				width, height, DefaultDepthOfScreen(tool_s));
+				width, height, tool_dpth);
 	    XPutImage(tool_d, box->pic->pixmap, gc, image, 0, 0, 0, 0, width, height);
 	    XDestroyImage(image);
     }
-
-    free(tdata);
 
     box->pic->color = box->pen_color;
     box->pic->pix_rotation = rotation;
@@ -828,67 +878,6 @@ draw_spline(spline, op)
 	draw_closed_spline(spline, op);
     else if (spline->type == T_OPEN_NORMAL)
 	draw_open_spline(spline, op);
-}
-
-/***************************************************************************
-   I have to include the Xlib procedure XSetRegion here because the original
-   calls XSetClipRectangles with YXBanded, which doesn't always work.
-   This is apparently due to a bug in XSubtractRegion which, under certain
-   conditions produces a list of rectangles which isn't YXBanded in order,
-   This produces a BadMatch error when XSetRegion calls XSetClipRectangles
-   with the YXBanded mode.
-   This kludge to call XSetClipRectangles with Unsorted doesn't fix the problem
-   it just prevents the BadMatch error.  There is some real problem with the
-   list of rectangles generated by XSubtractRegion so in those cases there
-   is no clipping and the line part of the object will cover the arrowhead.
-
-   Here is the copyright for the original XSetRegion from the X library:
-***************************************************************************/
-
-/***************************************************************************
-Copyright 1987, 1988 by Digital Equipment Corporation, Maynard, Massachusetts,
-and the Massachusetts Institute of Technology, Cambridge, Massachusetts.
-
-                        All Rights Reserved
-
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
-provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
-supporting documentation, and that the names of Digital or MIT not be
-used in advertising or publicity pertaining to distribution of the
-software without specific, written prior permission.  
-
-DIGITAL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
-ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
-DIGITAL BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
-ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
-WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
-ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
-SOFTWARE.
-***************************************************************************/
-
-#include "region.h"
-
-XfigSetRegion( dpy, gc, r )
-    Display *dpy;
-    GC gc;
-    register Region r;
-{
-    register int i;
-    register XRectangle *xr, *pr;
-    register BOX *pb;
-    if (xr = (XRectangle *)
-	_XAllocScratch(dpy, (unsigned long) (r->numRects * sizeof (XRectangle)))) {
-	for (pr = xr, pb = r->rects, i = r->numRects; --i >= 0; pr++, pb++) {
-	    pr->x = pb->x1;
-	    pr->y = pb->y1;
-	    pr->width = pb->x2 - pb->x1;
-	    pr->height = pb->y2 - pb->y1;
-	}
-    }
-    if (xr || !r->numRects)
-	XSetClipRectangles(dpy, gc, 0, 0, xr, r->numRects, Unsorted /*YXBanded*/ );
 }
 
 draw_intspline(spline, op)
@@ -1166,16 +1155,18 @@ compute_arcarrow_angle(x1, y1, x2, y2, direction, arrow, x, y)
     dy=y2-y1;
     dx=x2-x1;
     r=sqrt(dx*dx+dy*dy);
-    if (arrow->ht>2*r) {
-	compute_normal(x1,y1,x2,y2,direction,x,y);
-	return;
-    }
 
     h = (double) arrow->ht;
     /* lpt is the amount the arrowhead extends beyond the end of the line */
     lpt = arrow->thickness*15/2.0/(arrow->wid/h/2.0);
     /* add this to the length */
     h += lpt;
+
+    /* radius too small for this method, use normal method */
+    if (h > 2.0*r) {
+	compute_normal(x1,y1,x2,y2,direction,x,y);
+	return;
+    }
 
     beta=atan2(dy,dx);
     if (direction) {
@@ -1187,6 +1178,16 @@ compute_arcarrow_angle(x1, y1, x2, y2, direction, arrow, x, y)
     *x=round(x1+r*cos(beta+alpha));
     *y=round(y1+r*sin(beta+alpha));
 }
+
+/* temporary error handler - see call to XSetRegion in clip_arrows below */
+
+tempXErrorHandler (display, event)
+    Display	*display;
+    XErrorEvent	*event;
+{
+	return 0;
+}
+
 
 /****************************************************************
 
@@ -1249,6 +1250,7 @@ clip_arrows(obj, objtype, op)
 	xpts[3].y = ZOOMY(fcy2);
 	xpts[4].x = ZOOMX(fcx1);
 	xpts[4].y = ZOOMY(fcy1);
+	/* draw the clipping area for debugging */
 	if (appres.DEBUG) {
 	  for (i=0; i<5; i++) {
 	    if (i==4)
@@ -1290,6 +1292,7 @@ clip_arrows(obj, objtype, op)
 	xpts[3].y = ZOOMY(bcy2);
 	xpts[4].x = ZOOMX(bcx1);
 	xpts[4].y = ZOOMY(bcy1);
+	/* draw the clipping area for debugging */
 	if (appres.DEBUG) {
 	  int j;
 	  for (i=0; i<5; i++) {
@@ -1310,7 +1313,13 @@ clip_arrows(obj, objtype, op)
     }
     /* now set the clipping region for the subsequent drawing of the object */
     if (obj->for_arrow || obj->back_arrow) {
-	XfigSetRegion(tool_d, gccache[op], mainregion);
+	/* install a temporary error handler to ignore any BadMatch error
+	   from the buggy R5 Xlib XSetRegion() */
+	XSetErrorHandler (tempXErrorHandler);
+	XSetRegion(tool_d, gccache[op], mainregion);
+	/* restore original error handler */
+	if (!appres.DEBUG)
+	    XSetErrorHandler(X_error_handler);
 	XDestroyRegion(mainregion);
     }
 }
@@ -1356,15 +1365,20 @@ calc_arrow(x1, y1, x2, y2, c1x, c1y, c2x, c2y, objthick, arrow, points, npoints)
 
     /* lpt is the amount the arrowhead extends beyond the end of the
        line because of the sharp point (miter join) */
-    lpt = arrow->thickness*15/2.0/(wid/ht/2.0);
+    if (type == 2)
+      lpt = arrow->thickness*15 / (2.0 * sin(atan(wid / (2.4 * ht))));
+    else if (type == 3)
+      lpt = arrow->thickness*15 / (2.0 * sin(atan(wid / (1.6 * ht))));
+    else
+      lpt = arrow->thickness*15 / (2.0 * sin(atan(wid / (2.0 * ht))));
 
     /* alpha is the angle the line is relative to horizontal */
     alpha = atan2(dy,-dx);
 
     /* ddx, ddy is amount to move end of line back so that arrowhead point
        ends where line used to */
-    ddx = lpt*0.9 * cos(alpha);
-    ddy = lpt*0.9 * sin(alpha);
+    ddx = lpt * cos(alpha);
+    ddy = lpt * sin(alpha);
 
     /* move endpoint of line back */
     mx = x2 + ddx;
@@ -1758,7 +1772,7 @@ redraw_images(obj)
 	redraw_images(c);
     }
     for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PIC_BOX && l->pic->numcols > 0)
+	if (l->type == T_PICTURE && l->pic->numcols > 0)
 		redisplay_line(l);
     }
 }

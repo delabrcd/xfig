@@ -8,11 +8,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -27,14 +33,15 @@
 static Boolean	create_n_write_xbm();
 
 Boolean
-write_xbm(file_name,mag)
+write_xbm(file_name,mag,margin)
     char	   *file_name;
     float	    mag;
+    int		    margin;
 {
     if (!ok_to_write(file_name, "EXPORT"))
 	return False;
 
-    return (create_n_write_xbm(file_name,mag));  /* write the xbm file */
+    return (create_n_write_xbm(file_name,mag,margin));  /* write the xbm file */
 }
 
 static Boolean	havegcs = False;
@@ -43,9 +50,10 @@ static unsigned long save_fg_color;
 static unsigned long save_bg_color;
 
 static Boolean
-create_n_write_xbm(filename,mag)
+create_n_write_xbm(filename,mag,margin)
     char	   *filename;
     float	    mag;
+    int		    margin;
 {
     int		    xmin, ymin, xmax, ymax;
     int		    width, height;
@@ -83,12 +91,12 @@ create_n_write_xbm(filename,mag)
     ymax = round(ymax*zoomscale);
 
     /* provide a small margin (pixels) */
-    if ((xmin -= 10) < 0)
+    if ((xmin -= margin) < 0)
 	xmin = 0;
-    if ((ymin -= 10) < 0)
+    if ((ymin -= margin) < 0)
 	ymin = 0;
-    xmax += 10;
-    ymax += 10;
+    xmax += margin;
+    ymax += margin;
 
     if (appres.DEBUG) {
 	elastic_box(xmin, ymin, xmax, ymax);
@@ -136,8 +144,7 @@ create_n_write_xbm(filename,mag)
     clear_pic_pixmaps();
 
     /* create pixmap from (0,0) to (xmax,ymax) */
-    largepm = XCreatePixmap(tool_d, canvas_win, xmax + 1, ymax + 1,
-			    DefaultDepthOfScreen(tool_s));
+    largepm = XCreatePixmap(tool_d, canvas_win, xmax + 1, ymax + 1, tool_dpth);
     /* clear it */
     XFillRectangle(tool_d, largepm, gccache[ERASE], 0, 0, xmax+1, ymax+1);
     sav_canvas = canvas_win;	/* save current canvas window id */
@@ -176,7 +183,7 @@ create_n_write_xbm(filename,mag)
     }
     if (XWriteBitmapFile(tool_d, filename, bitmap, width, height, -1, -1)
 	!= BitmapSuccess) {
-	put_msg("Couldn't write xbm file");
+	file_msg("Couldn't write xbm file");
 	status = False;
     } else {
 	put_msg("Bitmap written to \"%s\"", filename);
@@ -238,8 +245,8 @@ clear_compound_pic(compounds)
 clear_pic_pixmap(line)
     F_line	   *line;
 {
-    if (line->type == T_PIC_BOX && line->pic->pixmap != 0) {
-	free((char *) line->pic->pixmap);
+    if (line->type == T_PICTURE && line->pic->pixmap != 0) {
+	XFreePixmap(tool_d, line->pic->pixmap);
 	line->pic->pixmap = 0;
     }
 }

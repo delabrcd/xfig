@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 /* For the X stuff, include only Xlib.h and Intrinsic.h here - 
@@ -42,10 +48,12 @@
 #include <ctype.h>
 #include <errno.h>
 
-#ifndef __bsdi__
+#if !defined(__bsdi__) && !defined(__NetBSD__)
 extern int	errno;
 extern int	sys_nerr;
+#if (! (defined(BSD) && (BSD >= 199306)))
 extern char    *sys_errlist[];
+#endif
 #endif
 
 extern char    *mktemp();
@@ -248,23 +256,9 @@ int bcmp();
 
 #endif /* XtSpecificationRelease > 4 */
 
-#ifndef X_NOT_STDC_ENV
-#include <string.h>
-#ifndef index
-#define index strchr
-#endif
-#ifndef rindex
-#define rindex strrchr
-#endif
-#else  /* X_NOT_STDC_ENV IS defined */
+#ifdef X_NOT_STDC_ENV
 #ifdef SYSV
 #include <string.h>
-#ifndef index
-#define index strchr
-#endif
-#ifndef rindex
-#define rindex strrchr
-#endif
 #else  /* NOT SYSV */
 #include <strings.h>
 #ifndef strchr
@@ -319,7 +313,7 @@ extern char *getenv();
 #ifdef _POSIX_SOURCE
 #include <limits.h>
 #else
-#if !defined(sun) || defined(sparc)
+#if !defined(sun) || defined(sparc) || (defined(SVR4) && defined(i386))
 #define _POSIX_SOURCE
 #include <limits.h>
 #undef _POSIX_SOURCE

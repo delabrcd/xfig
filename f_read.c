@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -127,6 +133,7 @@ read_fig(file_name, obj, merge, xoff, yoff)
     line_no = 0;
     read_file_name = file_name;
     first_file_msg = True;
+    uncompress_file(file_name);
     if ((fp = fopen(file_name, "r")) == NULL)
 	return (errno);
     else {
@@ -135,6 +142,64 @@ read_fig(file_name, obj, merge, xoff, yoff)
 	/* so subsequent file_msg() calls don't print wrong file name */
 	first_file_msg = False;
 	return status;
+    }
+}
+
+/* unzip/uncompress file if necessary */
+
+uncompress_file(name)
+    char	   *name;
+{
+    char	   *compname = NULL;
+    char	    unc[PATH_MAX+20];	/* temp buffer for uncompress/gunzip command */
+    Boolean	    compr=False;
+    struct stat	    status;
+
+    /* see if the filename ends with .Z */
+    /* if so, generate uncompress command and use pipe (filetype = 1) */
+    if (strlen(name) > 2 && !strcmp(".Z", name + (strlen(name)-2))) {
+	sprintf(unc,"uncompress %s",name);
+	compr = True;
+    /* or with .z or .gz */
+    } else if ((strlen(name) > 3 && !strcmp(".gz", name + (strlen(name)-3))) ||
+	      ((strlen(name) > 2 && !strcmp(".z", name + (strlen(name)-2))))) {
+	sprintf(unc,"gunzip -q %s",name);
+	compr = True;
+    /* none of the above, see if the file with .Z or .gz or .z appended exists */
+    } else {
+	compname = (char*) malloc(strlen(name)+4);
+	strcpy(compname, name);
+	strcat(compname, ".Z");
+	if (!stat(compname, &status)) {
+	    sprintf(unc, "uncompress %s",compname);
+	    compr = True;
+	    strcpy(name,compname);
+	} else {
+	    strcpy(compname, name);
+	    strcat(compname, ".z");
+	    if (!stat(compname, &status)) {
+		sprintf(unc, "gunzip -q %s",compname);
+		compr = True;
+		strcpy(name,compname);
+	    } else {
+		strcpy(compname, name);
+		strcat(compname, ".gz");
+		if (!stat(compname, &status)) {
+		    sprintf(unc, "gunzip -q %s",compname);
+		    compr = True;
+		    strcpy(name,compname);
+		}
+	    }
+	}
+    }
+
+    /* do the uncompression/unzip if needed */
+    if (compr) {
+	system(unc);
+	/* strip off the trailing .Z, .z or .gz */
+	*strrchr(name,'.') = '\0';
+	if (compname)
+	    free(compname);
     }
 }
 
@@ -155,7 +220,7 @@ readfp_fig(fp, obj, merge, xoff, yoff)
     for (i=0; i<MAX_USR_COLS; i++)
 	n_colorFree[i] = True;
 
-    bzero(obj, COMOBJ_SIZE);
+    bzero((char*)obj, COMOBJ_SIZE);
     if (fgets(buf, BUF_SIZE, fp) == 0)	/* version */
 	return -2;
     if (strncmp(buf, "#FIG", 4) == 0) { /* versions 1.4/later have #FIG in
@@ -199,7 +264,7 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 		}
 	    }
 
-	    /* read metric/inches OR Centering indicator now */
+	    /* read Centering indicator now */
 	    if (fgets(buf, BUF_SIZE, fp) == 0) {
 		file_msg("No Center/Flushleft specification");
 		return -1;		/* error */
@@ -223,8 +288,10 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 		    line_no++;
 	    }
 	    /* set appres mode appropriately */
+	    fig_units = (strncasecmp(buf,"metric",5) != 0);
 	    if (!merge) {
-		fig_units = (strncasecmp(buf,"metric",5) != 0);
+		/* set the units string for the length messages */
+		strcpy(cur_fig_units, fig_units ? "in" : "cm");
 		/* and set the rulers/grid accordingly */
 		if (fig_units != (int) appres.INCHES) {
 		    appres.INCHES = (Boolean) fig_units;
@@ -285,7 +352,17 @@ readfp_fig(fp, obj, merge, xoff, yoff)
     if (proto == 30)
        scale_figure(obj,((float)PIX_PER_INCH)/obj->nwcorner.x,0);
     else if (obj->nwcorner.x != PIX_PER_INCH)
-       scale_figure(obj,((float)PIX_PER_INCH)/obj->nwcorner.x,15);
+       if (proto == 21 && obj->nwcorner.x == 76 && !appres.INCHES)
+	  scale_figure(obj,((float)PIX_PER_INCH)/80,15); /* for 2.1.8S, HWS */
+       else
+          scale_figure(obj,((float)PIX_PER_INCH)/obj->nwcorner.x,15);
+
+    if (merge && proto >= 30) {		/* rescale for mixed units, HWS */
+       if (!fig_units && appres.INCHES)
+	   read_scale_compound(obj,((float)PIX_PER_INCH)/(2.54*PIX_PER_CM),0);
+       if (fig_units && !appres.INCHES)
+	   read_scale_compound(obj,(2.54*PIX_PER_CM)/((float)PIX_PER_INCH),0);
+    }
 
     /* shift the figure by the amount in the x and y offsets from the file panel */
     translate_compound(obj, xoff, yoff);
@@ -660,6 +737,7 @@ read_lineobject(fp)
     int		    n, x, y, fa, ba, npts;
     int		    type, style, radius_flag;
     float	    thickness, wid, ht;
+    int		    ox, oy;
 
     if ((l = create_line()) == NULL)
 	return (NULL);
@@ -732,7 +810,7 @@ read_lineobject(fp)
 	l->back_arrow = new_arrow(type, style, thickness, wid, ht);
 	skip_comment(fp);
     }
-    if (l->type == T_PIC_BOX) {
+    if (l->type == T_PICTURE) {
 	line_no++;
 	if ((l->pic = create_pic()) == NULL) {
 	    free((char *) l);
@@ -744,6 +822,9 @@ read_lineobject(fp)
 	    return (NULL);
 	}
 	read_picobj(l->pic,l->pen_color);
+	/* we've read in a pic object - merge_file uses this info to decide
+	   whether or not to remap any picture colors in first figure */
+	pic_obj_read = True;
     } else
 	l->pic = NULL;
 
@@ -761,6 +842,8 @@ read_lineobject(fp)
 	free_linestorage(l);
 	return (NULL);
     }
+    ox = x;
+    oy = y;
     /* read subsequent points */
     if (proto < 22)
 	npts = 1000000;	/* loop until we find 9999 9999 for previous fig files */
@@ -773,6 +856,11 @@ read_lineobject(fp)
 	}
 	if (proto < 22 && x == 9999)
 	    break;
+	/* ignore identical consecutive points */
+	if (ox == x && oy == y)
+	    continue;
+	ox = x;
+	oy = y;
 	if ((q = create_point()) == NULL) {
 	    free_linestorage(l);
 	    return (NULL);
@@ -806,6 +894,7 @@ read_splineobject(fp)
     F_point	   *p, *q;
     F_control	   *cp, *cq;
     int		    c, n, x, y, fa, ba, npts;
+    int		    ox, oy;
     int		    type, style;
     float	    thickness, wid, ht;
     float	    lx, ly, rx, ry;
@@ -879,6 +968,8 @@ read_splineobject(fp)
     p->x = x;
     p->y = y;
     c = 1;
+    ox = x;
+    oy = y;
     /* read subsequent points */
     if (proto < 22)
 	npts = 1000000;	/* loop until we find 9999 9999 for previous fig files */
@@ -890,6 +981,12 @@ read_splineobject(fp)
 	    free_splinestorage(s);
 	    return (NULL);
 	};
+	/* ignore identical consecutive points *ONLY FOR NORMAL SPLINE* */
+	/* interpolated spline has control points which would have to be deleted too */
+	if (normal_spline(s) && (ox == x && oy == y))
+	    continue;
+	ox = x;
+	oy = y;
 	if (proto < 22 && x == 9999)
 	    break;
 	if ((q = create_point()) == NULL) {
@@ -910,7 +1007,9 @@ read_splineobject(fp)
 
     line_no++;
     skip_comment(fp);
+
     /* Read controls */
+
     if ((n = fscanf(fp, "%f%f%f%f", &lx, &ly, &rx, &ry)) != 4) {
 	file_msg(Err_incomp, "spline", line_no);
 	free_splinestorage(s);
@@ -1229,7 +1328,7 @@ read_line(fp)
 skip_comment(fp)
     FILE	   *fp;
 {
-    char	    c;
+    int		    c;
 
     while ((c = fgetc(fp)) == '#')
 	skip_line(fp);

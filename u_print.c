@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -54,26 +60,31 @@ char *shell_protect_string(string)
     return(buf);
 }
 
-print_to_printer(printer, mag, flushleft, params)
+print_to_printer(printer, mag,  params)
     char	    printer[];
-    Boolean	    flushleft;
     float	    mag;
     char	    params[];
 {
     char	    prcmd[2*PATH_MAX+200], translator[255];
     char	    syspr[2*PATH_MAX+200];
     char	    tmpfile[PATH_MAX];
+    char	   *outfile;
 
     sprintf(tmpfile, "%s/%s%06d", TMPDIR, "xfig-print", getpid());
     warnexist = False;
     if (write_file(tmpfile))
 	return;
 
-    sprintf(translator, "fig2dev -Lps %s -P -m %f %s -n %s",
-	    flushleft ? "" : "-c" ,
+    outfile = shell_protect_string(cur_filename);
+    if (!outfile || outfile[0] == '\0')
+	outfile = "NoName";
+    sprintf(translator, "fig2dev -Lps %s -P -z %s %s -m %f %s -n %s",
+	    (!appres.multiple && !appres.flushleft ? "-c" : "") ,
+	    paper_sizes[appres.papersize],
+	    appres.multiple ? "-M" : "",
 	    mag,
 	    appres.landscape ? "-l xxx" : "-p xxx",
-	    cur_filename);
+	    outfile);
 
     /* make the print command with no filename (it will be in stdin) */
     gen_print_cmd(syspr, "", printer, params);
@@ -84,10 +95,10 @@ print_to_printer(printer, mag, flushleft, params)
 	file_msg("Error during PRINT (check standard error output)");
     else {
 	if (emptyname(printer))
-	    put_msg("Printing figure on printer %s in %s mode ... done",
+	    put_msg("Printing on printer %s in %s mode ... done",
 		    printer, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
 	else
-	    put_msg("Printing figure on printer %s in %s mode ... done",
+	    put_msg("Printing on printer %s in %s mode ... done",
 		    printer, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     }
     unlink(tmpfile);
@@ -109,7 +120,7 @@ gen_print_cmd(cmd,file,printer,pr_params)
 		pr_params,
 		shell_protect_string(file));
 #endif
-	put_msg("Printing figure on default printer in %s mode ...     ",
+	put_msg("Printing on default printer in %s mode ...     ",
 		appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     } else {
 #if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
@@ -123,18 +134,18 @@ gen_print_cmd(cmd,file,printer,pr_params)
 		printer,
 		shell_protect_string(file));
 #endif
-	put_msg("Printing figure on printer %s in %s mode ...     ",
-		printer, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
+	put_msg("Printing on printer %s with paper size %s in %s mode ...     ",
+		printer, paper_sizes[appres.papersize],
+		appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     }
     app_flush();		/* make sure message gets displayed */
 }
 
 /* xoff and yoff are in fig2dev print units (1/72 inch) */
 
-print_to_file(file, lang, mag, flushleft, xoff, yoff)
+print_to_file(file, lang, mag, xoff, yoff)
     char	   *file, *lang;
     float	    mag;
-    Boolean	    flushleft;
     int		    xoff, yoff;
 {
     char	    prcmd[2*PATH_MAX+200];
@@ -159,16 +170,19 @@ print_to_file(file, lang, mag, flushleft, xoff, yoff)
     app_flush();		/* make sure message gets displayed */
 
     if (!strcmp(lang, "ps"))
-	sprintf(prcmd, "fig2dev -Lps %s -P -m %f %s -n %s -x %d -y %d %s %s", 
-		flushleft ? "" : "-c" ,
-		mag, appres.landscape ? "-l xxx" : "-p xxx", cur_filename,
+	sprintf(prcmd, "fig2dev -Lps %s -P -z %s %s -m %f %s -n %s -x %d -y %d %s %s", 
+		(!appres.multiple && !appres.flushleft ? "-c" : "") ,
+		paper_sizes[appres.papersize],
+		appres.multiple ? "-M" : "",
+		mag, appres.landscape ? "-l xxx" : "-p xxx", outfile,
 		xoff, yoff,
 		tmp_fig_file, outfile);
     else if (!strcmp(lang, "eps"))
-	sprintf(prcmd, "fig2dev -Lps -m %f %s -n %s %s %s",
+	sprintf(prcmd, "fig2dev -Lps -z %s -m %f %s -n %s %s %s",
+		paper_sizes[appres.papersize],
 		mag, appres.landscape ? "-l xxx" : "-p xxx",
-		cur_filename, tmp_fig_file, outfile);
-    else if (!strcmp(lang, "ibmgl"))
+		outfile, tmp_fig_file, outfile);
+    else if (!strcmp(lang, "hpl"))
 	sprintf(prcmd, "fig2dev -Libmgl -m %f %s %s %s",
 		mag, appres.landscape ? "" : "-P", tmp_fig_file,
 		outfile);

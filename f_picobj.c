@@ -11,11 +11,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 /* GS bitmap generation added: 13 Nov 1992, by Michael C. Grant
@@ -37,8 +43,11 @@
 
 extern	int	read_xbm();
 extern	int	read_xpm();
+extern	int	read_pcx();
 extern	int	read_epsf();
 extern	int	read_gif();
+
+#define MAX_SIZE 255
 
 FILE	*open_picfile();
 void	 close_picfile();
@@ -82,35 +91,45 @@ read_picobj(pic,color)
 	return;
     }
     close_picfile(fd,type);
-    fd=open_picfile(pic->file, &type);
 
+#ifdef USE_JPEG
     /* see if JPEG file */
+    fd=open_picfile(pic->file, &type);
     if ((stat=read_jpg(fd,type,pic)) != FileInvalid) {
 	close_picfile(fd,type);
 	return;
     }
     close_picfile(fd,type);
-    fd=open_picfile(pic->file, &type);
+#endif
 
     /* see if X11 Bitmap */
+    fd=open_picfile(pic->file, &type);
     if ((stat=read_xbm(fd,type,pic)) != FileInvalid) {
 	close_picfile(fd,type);
 	return;
     }
     close_picfile(fd,type);
-    fd=open_picfile(pic->file, &type);
 
 #ifdef USE_XPM
     /* no, try XPM */
-    if ((stat=read_xpm(fd,type,pic)) != XpmFileInvalid) {
+    fd=open_picfile(pic->file, &type);
+    if ((stat=read_xpm(fd,type,pic)) != FileInvalid) {
 	close_picfile(fd,type);
 	return;
     }
     close_picfile(fd,type);
-    fd=open_picfile(pic->file, &type);
 #endif /* USE_XPM */
 
+    /* no, try PCX */
+    fd=open_picfile(pic->file, &type);
+    if ((stat=read_pcx(fd,type,pic)) != FileInvalid) {
+	close_picfile(fd,type);
+	return;
+    }
+    close_picfile(fd,type);
+
     /* neither, try EPS */
+    fd=open_picfile(pic->file, &type);
     if ((stat=read_epsf(fd,type,pic)) != FileInvalid) {
 	pic->subtype = T_PIC_EPS;
 	close_picfile(fd,type);
@@ -196,8 +215,13 @@ close_picfile(file,type)
     FILE	*file;
     int		type;
 {
+    char line[MAX_SIZE];
+
     if (type == 0)
 	fclose(file);
-    else
+    else{
+        while(fgets(line,MAX_SIZE,file))
+		;
 	pclose(file);
+    }
 }

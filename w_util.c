@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -36,17 +42,13 @@ win_setmouseposition(w, x, y)
 {
 }
 
-/* manually flush out X events */
+/* synchronize so that (e.g.) new cursor appears etc. */
 
 app_flush()
 {
-    while (XtAppPending(tool_app)) {
-	XEvent		event;
-
-	/* pass events to ensure we are completely initialised */
-	XtAppNextEvent(tool_app, &event);
-	XtDispatchEvent(&event);
-    }
+	/* this method prevents "ghost" rubberbanding when the user
+	   moves the mouse after creating/resizing object */
+	XSync(tool_d, False);
 }
 
 /* popup a confirmation window */
@@ -82,6 +84,20 @@ accept_cancel()
     query_result = RESULT_CANCEL;
 }
 
+static void
+accept_part()
+{
+    query_done = 1;
+    query_result = RESULT_PART;
+}
+
+static void
+accept_all()
+{
+    query_done = 1;
+    query_result = RESULT_ALL;
+}
+
 int
 popup_query(query_type, message)
     int		    query_type;
@@ -89,6 +105,7 @@ popup_query(query_type, message)
 {
     Widget	    query_popup, query_form, query_message;
     Widget	    query_yes, query_no, query_cancel;
+    Widget	    query_part, query_all;
     int		    xposn, yposn;
     Window	    win;
     XEvent	    event;
@@ -124,41 +141,71 @@ popup_query(query_type, message)
     query_message = XtCreateManagedWidget("message", labelWidgetClass,
 					  query_form, Args, ArgCount);
 
-    FirstArg(XtNheight, 25);
-    NextArg(XtNvertDistance, 15);
-    NextArg(XtNfromVert, query_message);
-    NextArg(XtNborderWidth, INTERNAL_BW);
-    NextArg(XtNlabel, " Yes  ");
-    NextArg(XtNhorizDistance, 55);
-    query_yes = XtCreateManagedWidget("yes", commandWidgetClass,
+    if (query_type == QUERY_ALLPARTCAN) {
+	FirstArg(XtNheight, 25);
+	NextArg(XtNvertDistance, 15);
+	NextArg(XtNfromVert, query_message);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNlabel, "Save All ");
+	NextArg(XtNhorizDistance, 55);
+	query_all = XtCreateManagedWidget("all", commandWidgetClass,
 				      query_form, Args, ArgCount);
-    XtAddEventHandler(query_yes, ButtonReleaseMask, (Boolean) 0,
-		      (XtEventHandler)accept_yes, (XtPointer) NULL);
-
-    if (query_type == QUERY_YESNO || query_type == QUERY_YESNOCAN) {
+	XtAddEventHandler(query_all, ButtonReleaseMask, (Boolean) 0,
+		      (XtEventHandler)accept_all, (XtPointer) NULL);
 	ArgCount = 4;
 	NextArg(XtNhorizDistance, 25);
-	NextArg(XtNlabel, "  No  ");
-	NextArg(XtNfromHoriz, query_yes);
-	query_no = XtCreateManagedWidget("no", commandWidgetClass,
+	NextArg(XtNlabel, "Save Part");
+	NextArg(XtNfromHoriz, query_all);
+	query_part = XtCreateManagedWidget("part", commandWidgetClass,
 					 query_form, Args, ArgCount);
-	XtAddEventHandler(query_no, ButtonReleaseMask, (Boolean) 0,
-			  (XtEventHandler)accept_no, (XtPointer) NULL);
-
+	XtAddEventHandler(query_part, ButtonReleaseMask, (Boolean) 0,
+			  (XtEventHandler)accept_part, (XtPointer) NULL);
+	/* setup for the cancel button */
 	ArgCount = 5;
-	NextArg(XtNfromHoriz, query_no);
+	NextArg(XtNfromHoriz, query_part);
+
     } else {
-	ArgCount = 4;
-	NextArg(XtNhorizDistance, 25);
-	NextArg(XtNfromHoriz, query_yes);
+	/* yes/no or yes/no/cancel */
+
+	FirstArg(XtNheight, 25);
+	NextArg(XtNvertDistance, 15);
+	NextArg(XtNfromVert, query_message);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNlabel, " Yes  ");
+	NextArg(XtNhorizDistance, 55);
+	query_yes = XtCreateManagedWidget("yes", commandWidgetClass,
+				query_form, Args, ArgCount);
+	XtAddEventHandler(query_yes, ButtonReleaseMask, (Boolean) 0,
+			  (XtEventHandler)accept_yes, (XtPointer) NULL);
+
+	if (query_type == QUERY_YESNO || query_type == QUERY_YESNOCAN) {
+	    ArgCount = 4;
+	    NextArg(XtNhorizDistance, 25);
+	    NextArg(XtNlabel, "  No  ");
+	    NextArg(XtNfromHoriz, query_yes);
+	    query_no = XtCreateManagedWidget("no", commandWidgetClass,
+				query_form, Args, ArgCount);
+	    XtAddEventHandler(query_no, ButtonReleaseMask, (Boolean) 0,
+				(XtEventHandler)accept_no, (XtPointer) NULL);
+
+	    /* setup for the cancel button */
+	    ArgCount = 5;
+	    NextArg(XtNfromHoriz, query_no);
+	} else {
+	    /* setup for the cancel button */
+	    ArgCount = 4;
+	    NextArg(XtNhorizDistance, 25);
+	    NextArg(XtNfromHoriz, query_yes);
+	}
     }
 
-    if (query_type == QUERY_YESCAN || query_type == QUERY_YESNOCAN) {
-	NextArg(XtNlabel, "Cancel");
-	query_cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
-					 query_form, Args, ArgCount);
-	XtAddEventHandler(query_cancel, ButtonReleaseMask, (Boolean) 0,
-		      (XtEventHandler)accept_cancel, (XtPointer) NULL);
+    if (query_type == QUERY_YESCAN || query_type == QUERY_YESNOCAN ||
+	query_type == QUERY_ALLPARTCAN) {
+	    NextArg(XtNlabel, "Cancel");
+	    query_cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
+						query_form, Args, ArgCount);
+	    XtAddEventHandler(query_cancel, ButtonReleaseMask, (Boolean) 0,
+			  (XtEventHandler)accept_cancel, (XtPointer) NULL);
     }
 
     XtPopup(query_popup, XtGrabExclusive);

@@ -9,11 +9,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -93,7 +99,7 @@ reset_mousefun()
     XSetForeground(tool_d, mouse_blank_gc, mouse_but_bg);
 
     mousefun_pm = XCreatePixmap(tool_d, XtWindow(mousefun),
-		    MOUSEFUN_WD, MOUSEFUN_HT, DefaultDepthOfScreen(tool_s));
+		    MOUSEFUN_WD, MOUSEFUN_HT, tool_dpth);
 
     XFillRectangle(tool_d, mousefun_pm, mouse_blank_gc, 0, 0,
 		   MOUSEFUN_WD, MOUSEFUN_HT);
@@ -193,8 +199,7 @@ draw_mousefun_kbd()
     if (keybd_pm == 0) {
 	keybd_pm = XCreatePixmapFromBitmapData(tool_d, canvas_win, 
 				kbd_ic.bits, kbd_ic.width, kbd_ic.height, 
-				mouse_but_fg, mouse_but_bg,
-				DefaultDepthOfScreen(tool_s));
+				mouse_but_fg, mouse_but_bg, tool_dpth);
     }
     /* copy the keyboard image pixmap into the mouse function pixmap */
     XCopyArea(tool_d, keybd_pm, mousefun_pm, mouse_button_gc,
@@ -377,7 +382,8 @@ String          kbd_translations =
 
 static int	actions_added=0;
 
-void init_kbd_actions()
+void
+init_kbd_actions()
 {
     if (!actions_added) {
 	actions_added = 1;

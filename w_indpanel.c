@@ -9,11 +9,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -259,13 +265,20 @@ unsigned char	arrow6_bits[] = {
 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 
-icon_struct	arrow0_ic = { arrow0_width, arrow0_height, arrow0_bits };
-icon_struct	arrow1_ic = { arrow1_width, arrow1_height, arrow1_bits };
-icon_struct	arrow2_ic = { arrow2_width, arrow2_height, arrow2_bits };
-icon_struct	arrow3_ic = { arrow3_width, arrow3_height, arrow3_bits };
-icon_struct	arrow4_ic = { arrow4_width, arrow4_height, arrow4_bits };
-icon_struct	arrow5_ic = { arrow5_width, arrow5_height, arrow5_bits };
-icon_struct	arrow6_ic = { arrow6_width, arrow6_height, arrow6_bits };
+icon_struct	arrow0_ic = { arrow0_width, arrow0_height, 
+			      (char*)arrow0_bits };
+icon_struct	arrow1_ic = { arrow1_width, arrow1_height, 
+			      (char*)arrow1_bits };
+icon_struct	arrow2_ic = { arrow2_width, arrow2_height, 
+			      (char*)arrow2_bits };
+icon_struct	arrow3_ic = { arrow3_width, arrow3_height, 
+			      (char*)arrow3_bits };
+icon_struct	arrow4_ic = { arrow4_width, arrow4_height, 
+			      (char*)arrow4_bits };
+icon_struct	arrow5_ic = { arrow5_width, arrow5_height, 
+			      (char*)arrow5_bits };
+icon_struct	arrow6_ic = { arrow6_width, arrow6_height, 
+			      (char*)arrow6_bits };
 
 /* indicator switch definitions */
 
@@ -356,6 +369,9 @@ static choice_info linestyle_choices[] = {
     {SOLID_LINE, &solidline_ic,},
     {DASH_LINE, &dashline_ic,},
     {DOTTED_LINE, &dottedline_ic,},
+    {DASH_DOT_LINE, &dashdotline_ic,},
+    {DASH_2_DOTS_LINE, &dash2dotsline_ic,},
+    {DASH_3_DOTS_LINE, &dash3dotsline_ic,},
 };
 #define NUM_LINESTYLE_CHOICES (sizeof(linestyle_choices)/sizeof(choice_info))
 
@@ -715,8 +731,6 @@ init_ind_panel(tool)
 	appres.ShowAllButtons = True;
     }
     update_indpanel(cur_indmask);
-    /* add translation and action to set value on CR in nval popup */
-/***    XtAppAddActions(tool_app, set_actions, XtNumber(set_actions)); ***/
     /* set up action and translation for mousefun kbd icon */
     init_kbd_actions();
 }
@@ -814,8 +828,6 @@ setup_ind_panel()
 {
     int		    i;
     ind_sw_info	   *isw;
-    Display	   *d = tool_d;
-    Screen	   *s = tool_s;
     Pixmap	    p;
     Pixel	    fg,bg;
 
@@ -854,19 +866,19 @@ setup_ind_panel()
 	else if (ind_switches[i].func == I_FILL_COLOR)
 	    fill_color_button = isw;	/* to update its pixmap in the indicator panel */
 
-	p = XCreatePixmap(d, XtWindow(isw->button), isw->sw_width,
-			  DEF_IND_SW_HT, DefaultDepthOfScreen(s));
-	XFillRectangle(d, p, ind_blank_gc, 0, 0,
+	p = XCreatePixmap(tool_d, XtWindow(isw->button), isw->sw_width,
+			  DEF_IND_SW_HT, tool_dpth);
+	XFillRectangle(tool_d, p, ind_blank_gc, 0, 0,
 		       isw->sw_width, DEF_IND_SW_HT);
-	XDrawImageString(d, p, ind_button_gc, 3, 12, isw->line1, strlen(isw->line1));
-	XDrawImageString(d, p, ind_button_gc, 3, 25, isw->line2, strlen(isw->line2));
+	XDrawImageString(tool_d, p, ind_button_gc, 3, 12, isw->line1, strlen(isw->line1));
+	XDrawImageString(tool_d, p, ind_button_gc, 3, 25, isw->line2, strlen(isw->line2));
 
-	isw->normalPM = p;
+	isw->pixmap = p;
 	FirstArg(XtNbackgroundPixmap, p);
 	SetValues(isw->button);
 	/* generate pixmaps if this is a choice panel */
 	if (ind_switches[i].type == I_CHOICE)
-		generate_choice_pixmaps(isw);
+	    generate_choice_pixmaps(isw);
     }
 
     /* setup the pixmap in the color button */
@@ -884,22 +896,19 @@ setup_ind_panel()
 	}
 
     p = XCreatePixmapFromBitmapData(tool_d, XtWindow(ind_panel),
-		    (char *) set_bits, UPD_BITS, UPD_BITS, fg, bg,
-		    DefaultDepthOfScreen(tool_s));
+		    (char *) set_bits, UPD_BITS, UPD_BITS, fg, bg, tool_dpth);
     FirstArg(XtNbitmap, p);
     SetValues(set_upd);
     p = XCreatePixmapFromBitmapData(tool_d, XtWindow(ind_panel),
-		    (char *) clr_bits, UPD_BITS, UPD_BITS, fg, bg,
-		    DefaultDepthOfScreen(tool_s));
+		    (char *) clr_bits, UPD_BITS, UPD_BITS, fg, bg, tool_dpth);
     FirstArg(XtNbitmap, p);
     SetValues(clr_upd);
     p = XCreatePixmapFromBitmapData(tool_d, XtWindow(ind_panel),
-		    (char *) tog_bits, UPD_BITS, UPD_BITS, fg, bg,
-		    DefaultDepthOfScreen(tool_s));
+		    (char *) tog_bits, UPD_BITS, UPD_BITS, fg, bg, tool_dpth);
     FirstArg(XtNbitmap, p);
     SetValues(tog_upd);
 
-    XDefineCursor(d, XtWindow(ind_panel), arrow_cursor);
+    XDefineCursor(tool_d, XtWindow(ind_panel), arrow_cursor);
     update_current_settings();
 
     FirstArg(XtNmappedWhenManaged, True);
@@ -915,12 +924,12 @@ generate_choice_pixmaps(isw)
     tmp_choice = isw->choices;
     for (i = 0; i < isw->numchoices; tmp_choice++, i++) {
 	if (tmp_choice->icon != 0)
-	    tmp_choice->normalPM = XCreatePixmapFromBitmapData(tool_d,
+	    tmp_choice->pixmap = XCreatePixmapFromBitmapData(tool_d,
 				XtWindow(ind_panel),
 				tmp_choice->icon->bits,
 				tmp_choice->icon->width,
-				tmp_choice->icon->height, ind_but_fg, ind_but_bg,
-				DefaultDepthOfScreen(tool_s));
+				tmp_choice->icon->height,
+				ind_but_fg, ind_but_bg, tool_dpth);
     }
 }
 
@@ -981,7 +990,7 @@ update_string_pixmap(isw, buf, xpos, ypos)
     char	   *buf;
     int		    xpos, ypos;
 {
-    XDrawImageString(tool_d, isw->normalPM, ind_button_gc,
+    XDrawImageString(tool_d, isw->pixmap, ind_button_gc,
 		     xpos, ypos, buf, strlen(buf));
     /*
      * Fool the toolkit by changing the background pixmap to 0 then giving it
@@ -991,7 +1000,7 @@ update_string_pixmap(isw, buf, xpos, ypos)
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(isw->button);
     /* put the pixmap in the widget background */
-    FirstArg(XtNbackgroundPixmap, isw->normalPM);
+    FirstArg(XtNbackgroundPixmap, isw->pixmap);
     SetValues(isw->button);
 }
 
@@ -1005,7 +1014,7 @@ update_choice_pixmap(isw, mode)
 
     /* put the pixmap in the widget background */
     tmp_choice = isw->choices + mode;
-    XCopyArea(tool_d, tmp_choice->normalPM, isw->normalPM, ind_button_gc,
+    XCopyArea(tool_d, tmp_choice->pixmap, isw->pixmap, ind_button_gc,
 	      0, 0, tmp_choice->icon->width, tmp_choice->icon->height, 32, 0);
     /*
      * Fool the toolkit by changing the background pixmap to 0 then giving it
@@ -1015,7 +1024,7 @@ update_choice_pixmap(isw, mode)
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(isw->button);
     /* put the pixmap in the widget background */
-    FirstArg(XtNbackgroundPixmap, isw->normalPM);
+    FirstArg(XtNbackgroundPixmap, isw->pixmap);
     SetValues(isw->button);
 }
 
@@ -1031,6 +1040,64 @@ static Widget	nval_popup, form, cancel, set, beside, below, newvalue,
 		label;
 static Widget	dash_length, dot_gap;
 static ind_sw_info *nval_i;
+
+/* Update current dash length or dot gap including */
+/* the corresponding string value in the indicator panel. */
+
+/* Auxilliary function to check if the panel was set up before. */
+
+static int
+panel_defined(func)
+   int func;
+{
+   int isw;
+
+   for (isw=0; isw<NUM_IND_SW; isw++)
+   {
+      if ( ind_switches[isw].func == func )
+      {
+         if ( ind_switches[isw].panel )
+            return 1;
+         else
+            return 0;
+      }
+   }
+   return 0;
+}
+
+double
+update_line_styleval(styleval)
+   double styleval;
+{
+   char buf[32];
+
+   if ( cur_linestyle == DASH_LINE || cur_linestyle == DASH_DOT_LINE ||
+        cur_linestyle == DASH_2_DOTS_LINE || cur_linestyle == DASH_3_DOTS_LINE )
+   { 
+       cur_dashlength = styleval;
+       /* Update string value if panel already set up. */
+       if ( panel_defined(I_LINESTYLE) )
+       {
+           sprintf(buf,"%1.1f",(double)cur_dashlength);
+           FirstArg(XtNstring, buf);
+           NextArg(XtNinsertPosition, 0);
+           SetValues(dash_length);
+       }
+   }
+   else if ( cur_linestyle == DOTTED_LINE )
+   {
+       cur_dotgap = styleval;
+       /* Update string value if panel already set up. */
+       if ( panel_defined(I_LINESTYLE) )
+       {
+           sprintf(buf,"%1.1f",(double)cur_dotgap);
+           FirstArg(XtNstring, buf);
+           NextArg(XtNinsertPosition, 0);
+           SetValues(dot_gap);
+       }
+   }
+   return styleval;
+}
 
 /* handle choice settings */
 
@@ -1071,7 +1138,9 @@ choice_panel_set(w, sel_choice, ev)
 	if (cur_dotgap <= 0.0)
 	    cur_dotgap = DEF_DOTGAP;
 
-	if(cur_linestyle==DASH_LINE)
+	if(cur_linestyle==DASH_LINE || cur_linestyle==DASH_DOT_LINE ||
+           cur_linestyle==DASH_2_DOTS_LINE ||
+           cur_linestyle==DASH_3_DOTS_LINE)
 	  cur_styleval=cur_dashlength;
 	else if(cur_linestyle==DOTTED_LINE)
 	  cur_styleval=cur_dotgap;
@@ -1187,13 +1256,12 @@ popup_choice_panel(isw)
 	    if (cur_fillcolor == BLACK || cur_fillcolor == WHITE ||
 		cur_fillcolor == DEFAULT) {
 		    if (i > NUMSHADEPATS && i <= NUMSHADEPATS+NUMTINTPATS)
-			continue;		/* skip the tints for black */
+			continue;		/* skip the tints for black and white */
 	    }
-	    p = ((cur_fillcolor == BLACK || cur_fillcolor == DEFAULT)?
-		fillstyle_choices[i].blackPM: fillstyle_choices[i].normalPM);
+	    p = fillstyle_choices[i].pixmap;
 	    tmp_choice->value = i-1;		/* fill value = i-1 */
 	} else {
-	    p = tmp_choice->normalPM;
+	    p = tmp_choice->pixmap;
 	}
 
 	/* check for new row of buttons */
@@ -1735,12 +1803,12 @@ show_linewidth(sw)
 	cur_linewidth = 0;
 
     /* erase by drawing wide, inverted (white) line */
-    pw_vector(sw->normalPM, DEF_IND_SW_WD / 2 + 2, DEF_IND_SW_HT / 2,
+    pw_vector(sw->pixmap, DEF_IND_SW_WD / 2 + 2, DEF_IND_SW_HT / 2,
 	      sw->sw_width - 2, DEF_IND_SW_HT / 2, ERASE,
 	      DEF_IND_SW_HT, PANEL_LINE, 0.0, DEFAULT);
     /* draw current line thickness into pixmap */
     if (cur_linewidth > 0)	/* don't draw line for zero-thickness */
-	pw_vector(sw->normalPM, DEF_IND_SW_WD / 2 + 2, DEF_IND_SW_HT / 2,
+	pw_vector(sw->pixmap, DEF_IND_SW_WD / 2 + 2, DEF_IND_SW_HT / 2,
 		  sw->sw_width - 2, DEF_IND_SW_HT / 2, PAINT,
 		  cur_linewidth, PANEL_LINE, 0.0, DEFAULT);
 
@@ -1752,7 +1820,7 @@ show_linewidth(sw)
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(sw->button);
     /* put the pixmap in the widget background */
-    FirstArg(XtNbackgroundPixmap, sw->normalPM);
+    FirstArg(XtNbackgroundPixmap, sw->pixmap);
     SetValues(sw->button);
     put_msg("LINE Thickness = %d", cur_linewidth);
 }
@@ -1874,19 +1942,34 @@ static
 show_linestyle(sw)
     ind_sw_info	   *sw;
 {
+    if (cur_dashlength <= 0.0)
+       cur_dashlength = DEF_DASHLENGTH;
+    if (cur_dotgap <= 0.0)
+       cur_dotgap = DEF_DOTGAP;
     update_choice_pixmap(sw, cur_linestyle);
     switch (cur_linestyle) {
     case SOLID_LINE:
-	cur_styleval = 0.0;
-	put_msg("SOLID LINE STYLE (for BOX, POLYGON and POLYLINE)");
+	put_msg("SOLID LINE STYLE");
 	break;
     case DASH_LINE:
 	cur_styleval = cur_dashlength;
-	put_msg("DASH LINE STYLE (for BOX, POLYGON and POLYLINE)");
+	put_msg("DASH LINE STYLE");
 	break;
     case DOTTED_LINE:
 	cur_styleval = cur_dotgap;
-	put_msg("DOTTED LINE STYLE (for BOX, POLYGON and POLYLINE)");
+	put_msg("DOTTED LINE STYLE");
+	break;
+    case DASH_DOT_LINE:
+        cur_styleval = cur_dashlength;
+	put_msg("DASH-DOT LINE STYLE");
+	break;
+    case DASH_2_DOTS_LINE:
+        cur_styleval = cur_dashlength;
+	put_msg("DASH-DOT-DOT LINE STYLE");
+	break;
+    case DASH_3_DOTS_LINE:
+        cur_styleval = cur_dashlength;
+	put_msg("DASH-DOT-DOT-DOT LINE STYLE");
 	break;
     }
 }
@@ -2074,13 +2157,13 @@ show_boxradius(sw)
     else if (cur_boxradius < 3)
 	cur_boxradius = 3;
     /* erase by drawing wide, inverted (white) line */
-    pw_vector(sw->normalPM, DEF_IND_SW_WD / 2, DEF_IND_SW_HT / 2,
+    pw_vector(sw->pixmap, DEF_IND_SW_WD / 2, DEF_IND_SW_HT / 2,
 	      DEF_IND_SW_WD, DEF_IND_SW_HT / 2, ERASE,
 	      DEF_IND_SW_HT, PANEL_LINE, 0.0, DEFAULT);
     /* draw current radius into pixmap */
-    curve(sw->normalPM, 0, cur_boxradius, -cur_boxradius, 0, True, False, 1, 50,
+    curve(sw->pixmap, 0, cur_boxradius, -cur_boxradius, 0, True, False, 1, 50,
 	  cur_boxradius, cur_boxradius, DEF_IND_SW_WD - 2, DEF_IND_SW_HT - 2,
-	  PAINT, 1, PANEL_LINE, 0.0, 0, DEFAULT, DEFAULT, CAP_BUTT);
+	  PAINT, 1, PANEL_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
 
     /*
      * Fool the toolkit by changing the background pixmap to 0 then giving it
@@ -2090,7 +2173,7 @@ show_boxradius(sw)
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(sw->button);
     /* put the pixmap in the widget background */
-    FirstArg(XtNbackgroundPixmap, sw->normalPM);
+    FirstArg(XtNbackgroundPixmap, sw->pixmap);
     SetValues(sw->button);
     put_msg("ROUNDED-CORNER BOX Radius = %d", cur_boxradius);
 }
@@ -2134,21 +2217,13 @@ show_fill_style(sw)
 	    cur_fillstyle = UNFILLED;	/* no tints, set unfilled */
     XSetFillStyle(tool_d, ind_button_gc, FillTiled);
     if (cur_fillstyle == UNFILLED) {
-	XSetTile(tool_d, ind_button_gc,
-		(cur_fillcolor==BLACK ||
-		   (cur_fillcolor==DEFAULT && x_fg_color.pixel==colors[BLACK])?
-				fillstyle_choices[0].blackPM:
-				fillstyle_choices[0].normalPM));
-	XFillRectangle(tool_d, sw->normalPM, ind_button_gc, 32, 0, 32, 32);
+	XSetTile(tool_d, ind_button_gc, fillstyle_choices[0].pixmap);
+	XFillRectangle(tool_d, sw->pixmap, ind_button_gc, 32, 0, 32, 32);
 	put_msg("NO-FILL MODE");
     } else {
 	/* put the pixmap in the widget background */
-	XSetTile(tool_d, ind_button_gc,
-		(cur_fillcolor==BLACK ||
-		   (cur_fillcolor==DEFAULT && x_fg_color.pixel==colors[BLACK])?
-				fillstyle_choices[cur_fillstyle+1].blackPM:
-				fillstyle_choices[cur_fillstyle+1].normalPM));
-	XFillRectangle(tool_d, sw->normalPM, ind_button_gc, 35, 4, 26, 24);
+	XSetTile(tool_d, ind_button_gc, fillstyle_choices[cur_fillstyle+1].pixmap);
+	XFillRectangle(tool_d, sw->pixmap, ind_button_gc, 35, 4, 26, 24);
 	if (cur_fillstyle < NUMSHADEPATS+NUMTINTPATS)
 	   put_msg("FILL MODE (black density/color intensity = %d%%)",
 		(cur_fillstyle * 200) / (NUMSHADEPATS+NUMTINTPATS - 1));
@@ -2159,7 +2234,7 @@ show_fill_style(sw)
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(sw->button);
     /* put the pixmap in the widget background */
-    FirstArg(XtNbackgroundPixmap, sw->normalPM);
+    FirstArg(XtNbackgroundPixmap, sw->pixmap);
     SetValues(sw->button);
 }
 
@@ -2175,21 +2250,18 @@ recolor_fillstyles()
     savezoom = display_zoomscale;
     display_zoomscale = 1.0;
     for (i = 0; i < NUMFILLPATS; i++) {
-	j = i-(NUMTINTPATS+NUMSHADEPATS);
-	if (j >= 0) {
+	j = i-(NUMTINTPATS+NUMSHADEPATS);	
+	if (j >= 0) {				/* actual patterns */
 	    savepm = fill_pm[i];
 	    /* use the one create at zoom = 1 */
 	    fill_pm[i] = fill_but_pm[j];
 	}
 	set_fill_gc(i, PAINT, cur_pencolor, cur_fillcolor, 0, 0);
-	if ((cur_fillcolor == WHITE || cur_fillcolor == BLACK || cur_fillcolor == DEFAULT) && 
+	/* skip tints for black, white and default */
+	if ((cur_fillcolor == WHITE || cur_fillcolor == BLACK || cur_fillcolor == DEFAULT) &&
 	    (i >= NUMSHADEPATS && i < NUMTINTPATS+NUMSHADEPATS))
 		continue;
-	XFillRectangle(tool_d, fillstyle_choices[i+1].normalPM, fillgc, 0, 0, 32, 32);
-	if (i < NUMSHADEPATS || (i >= NUMTINTPATS+NUMSHADEPATS && 
-	    (cur_fillcolor == BLACK || cur_fillcolor == DEFAULT))) {
-	    XFillRectangle(tool_d, fillstyle_choices[i+1].blackPM, fillgc, 0, 0, 32, 32);
-	}
+	XFillRectangle(tool_d, fillstyle_choices[i+1].pixmap, fillgc, 0, 0, 32, 32);
 	if (j >= 0) {
 	    fill_pm[i] = savepm;
 	}
@@ -2284,17 +2356,17 @@ show_font(sw)
     }
 
     /* erase larger fontpane bits if we switched to smaller (Latex) */
-    XFillRectangle(tool_d, sw->normalPM, ind_blank_gc, 0, 0,
+    XFillRectangle(tool_d, sw->pixmap, ind_blank_gc, 0, 0,
 	       32 + max2(PS_FONTPANE_WD, LATEX_FONTPANE_WD), DEF_IND_SW_HT);
     /* and redraw info */
-    XDrawImageString(tool_d, sw->normalPM, ind_button_gc, 3, 12, sw->line1,
+    XDrawImageString(tool_d, sw->pixmap, ind_button_gc, 3, 12, sw->line1,
 		     strlen(sw->line1));
-    XDrawImageString(tool_d, sw->normalPM, ind_button_gc, 3, 25, sw->line2,
+    XDrawImageString(tool_d, sw->pixmap, ind_button_gc, 3, 25, sw->line2,
 		     strlen(sw->line2));
 
     XCopyArea(tool_d, using_ps ? psfont_menu_bitmaps[cur_ps_font + 1] :
 	      latexfont_menu_bitmaps[cur_latex_font],
-	      sw->normalPM, ind_button_gc, 0, 0,
+	      sw->pixmap, ind_button_gc, 0, 0,
 	      using_ps ? PS_FONTPANE_WD : LATEX_FONTPANE_WD,
 	      using_ps ? PS_FONTPANE_HT : LATEX_FONTPANE_HT,
 	  using_ps ? 32 : 32 + (PS_FONTPANE_WD - LATEX_FONTPANE_WD) / 2, 6);
@@ -2302,7 +2374,7 @@ show_font(sw)
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(sw->button);
     /* put the pixmap in the widget background */
-    FirstArg(XtNbackgroundPixmap, sw->normalPM);
+    FirstArg(XtNbackgroundPixmap, sw->pixmap);
     SetValues(sw->button);
     put_msg("Font: %s", using_ps ? ps_fontinfo[cur_ps_font + 1].name :
 	    latex_fontinfo[cur_latex_font].name);

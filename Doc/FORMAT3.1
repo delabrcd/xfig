@@ -61,7 +61,14 @@ Description of the Fig Format Follows
     Xfig will read the orientation string and change the canvas to match
     either the Landscape or Portrait mode of the figure file.
 
-    The units specification is self-explanatory.
+    The units specification is self-explanatory, however there is an important
+    note about metric units.  To preserve a regular grid on the canvas the
+    centimeter is defined to be 450 Fig units and not 472.4 (1200/2.54).
+    For drawings done in metric units, fig2dev magnifies the output when
+    exporting or printing to compensate for the difference (472.4/450).
+    Also, if you make a drawing in one unit scale and switch to the other
+    units in xfig, the drawing will be rescaled on the screen by xfig to
+    remain consistent.
 
     The coordinate_system variable is ignored - the origin is ALWAYS the
     upper-left corner.
@@ -172,6 +179,9 @@ Description of the Fig Format Follows
 	 0 = Solid
 	 1 = Dashed
 	 2 = Dotted
+	 3 = Dash-dotted
+	 4 = Dash-double-dotted
+	 5 = Dash-triple-dotted
 
     The style_val field is defined as the length, in 1/80 inches, of the on/off
     dashes for dashed lines, and the distance between the dots, in 1/80 inches,

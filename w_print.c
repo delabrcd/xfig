@@ -9,11 +9,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -31,13 +37,17 @@ extern Boolean  batch_exists;
 extern char    *shell_protect_string();
 
 /* from w_export.c */
-extern Widget		export_orient_panel;
-extern Widget		export_just_panel;
+extern Widget	export_orient_panel;
+extern Widget	export_just_panel;
+extern Widget	export_papersize_panel;
+extern Widget	export_multiple_panel;
 
 /* global so w_cmdpanel.c and w_export.c can access it */
 Widget		print_orient_panel;
 /* global so f_read.c and w_export.c can access it */
 Widget		print_just_panel;
+Widget		print_papersize_panel;
+Widget		print_multiple_panel;
 
 /* LOCAL */
 
@@ -46,6 +56,12 @@ static Widget	orient_menu, orient_lab;
 
 static void	just_select();
 static Widget	just_menu, just_lab;
+
+static void	papersize_select();
+static Widget	papersize_menu, papersize_lab;
+
+static void	multiple_select();
+static Widget	multiple_menu, multiple_lab;
 
 static Widget	print_panel, print_popup, dismiss, print, 
 		printer_text, param_text, printer_lab, param_lab, clear_batch, print_batch, 
@@ -79,7 +95,7 @@ void
 do_print(w)
     Widget	    w;
 {
-	DeclareArgs(1);
+	DeclareArgs(2);
 	float	    mag;
 	char	   *printer_val;
 	char	   *param_val;
@@ -117,7 +133,7 @@ do_print(w)
 		    strcat(c1, cmd2);		/* append tail */
 		}
 	    }
-	    print_to_printer(printer_val, mag, appres.flushleft, cmd);
+	    print_to_printer(printer_val, mag, cmd);
 	}
 }
 
@@ -151,7 +167,7 @@ do_print_batch(w)
 	if (mag <= 0.0)
 	    mag = 1.0;
 
-	print_to_file(tmp_exp_file, "ps", mag, appres.flushleft, 0, 0);
+	print_to_file(tmp_exp_file, "ps", mag, 0, 0);
 	put_msg("Appending to batch file \"%s\" (%s mode) ... done",
 		    batch_file, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
 	app_flush();		/* make sure message gets displayed */
@@ -193,8 +209,8 @@ do_clear_batch(w)
 
 update_batch_count()
 {
-	char	    num[4];
-	DeclareArgs(1);
+	char	    num[10];
+	DeclareArgs(2);
 
 	sprintf(num,"%3d",num_batch_figures);
 	FirstArg(XtNlabel,num);
@@ -215,7 +231,7 @@ orient_select(w, new_orient, garbage)
     Widget	    w;
     XtPointer	    new_orient, garbage;
 {
-    DeclareArgs(1);
+    DeclareArgs(2);
 
     FirstArg(XtNlabel, XtName(w));
     SetValues(print_orient_panel);
@@ -223,6 +239,8 @@ orient_select(w, new_orient, garbage)
     if (export_orient_panel)
 	SetValues(export_orient_panel);
     appres.landscape = (int) new_orient;
+    /* make sure that paper size is appropriate */
+    papersize_select(print_papersize_panel, (XtPointer) appres.papersize, (XtPointer) 0);
 }
 
 static void
@@ -230,7 +248,7 @@ just_select(w, new_just, garbage)
     Widget	    w;
     XtPointer	    new_just, garbage;
 {
-    DeclareArgs(1);
+    DeclareArgs(2);
 
     FirstArg(XtNlabel, XtName(w));
     SetValues(print_just_panel);
@@ -238,6 +256,60 @@ just_select(w, new_just, garbage)
     if (export_just_panel)
 	SetValues(export_just_panel);
     appres.flushleft = (new_just? True: False);
+}
+
+static void
+papersize_select(w, new_papersize, garbage)
+    Widget	    w;
+    XtPointer	    new_papersize, garbage;
+{
+    DeclareArgs(2);
+    int papersize = (int) new_papersize;
+
+    /* if choice was ledger but we are in landscape mode switch to tabloid */
+    if (papersize == PAPER_LEDGER && appres.landscape)
+	papersize = PAPER_TABLOID;
+    /* or vice versa */
+    else if (papersize == PAPER_TABLOID && !appres.landscape)
+	papersize = PAPER_LEDGER;
+    FirstArg(XtNlabel, paper_sizes[papersize]);
+    SetValues(print_papersize_panel);
+    /* change export papersize if it exists */
+    if (export_papersize_panel)
+	SetValues(export_papersize_panel);
+    appres.papersize = papersize;
+}
+
+static void
+multiple_select(w, new_multiple, garbage)
+    Widget	    w;
+    XtPointer	    new_multiple, garbage;
+{
+    DeclareArgs(2);
+    int multiple = (int) new_multiple;
+
+    FirstArg(XtNlabel, multiple_pages[multiple]);
+    SetValues(print_multiple_panel);
+    /* change export multiple if it exists */
+    if (export_multiple_panel)
+	SetValues(export_multiple_panel);
+    appres.multiple = (multiple? True : False);
+    /* if multiple pages, disable justification (must be flush left) */
+    if (appres.multiple) {
+	XtSetSensitive(just_lab, False);
+	XtSetSensitive(print_just_panel, False);
+	if (export_just_panel) {
+	    XtSetSensitive(just_lab, False);
+	    XtSetSensitive(export_just_panel, False);
+	}
+    } else {
+	XtSetSensitive(just_lab, True);
+	XtSetSensitive(print_just_panel, True);
+	if (export_just_panel) {
+	    XtSetSensitive(just_lab, True);
+	    XtSetSensitive(export_just_panel, True);
+	}
+    }
 }
 
 popup_print_panel(w)
@@ -301,7 +373,7 @@ create_print_panel(w)
 	GetValues(image);
 	p = XCreatePixmapFromBitmapData(tool_d, XtWindow(canvas_sw),
 		      printer_ic.bits, printer_ic.width, printer_ic.height,
-		      fg, bg, DefaultDepthOfScreen(tool_s));
+		      fg, bg, tool_dpth);
 	FirstArg(XtNbitmap, p);
 	SetValues(image);
 
@@ -312,7 +384,7 @@ create_print_panel(w)
 	(void) XtCreateManagedWidget("print_label", labelWidgetClass,
 					print_panel, Args, ArgCount);
 
-	FirstArg(XtNlabel, "    Magnification%:");
+	FirstArg(XtNlabel, "      Magnification %");
 	NextArg(XtNfromVert, image);
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
@@ -331,7 +403,7 @@ create_print_panel(w)
 	XtOverrideTranslations(mag_text,
 			       XtParseTranslationTable(text_translations));
 
-	FirstArg(XtNlabel, "       Orientation:");
+	FirstArg(XtNlabel, "          Orientation");
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNfromVert, mag_text);
@@ -347,7 +419,7 @@ create_print_panel(w)
 	orient_menu = make_popup_menu(orient_items, XtNumber(orient_items),
 				      print_orient_panel, orient_select);
 
-	FirstArg(XtNlabel, "     Justification:");
+	FirstArg(XtNlabel, "        Justification");
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNfromVert, print_orient_panel);
@@ -365,9 +437,50 @@ create_print_panel(w)
 	just_menu = make_popup_menu(just_items, XtNumber(just_items),
 				    print_just_panel, just_select);
 
+	/* paper size */
 
-	FirstArg(XtNlabel, "PostScript Printer:");
+	FirstArg(XtNlabel, "           Paper Size");
+	NextArg(XtNjustify, XtJustifyLeft);
+	NextArg(XtNborderWidth, 0);
 	NextArg(XtNfromVert, print_just_panel);
+	papersize_lab = XtCreateManagedWidget("papersize_label", labelWidgetClass,
+					 print_panel, Args, ArgCount);
+
+	FirstArg(XtNlabel, paper_sizes[appres.papersize]);
+	NextArg(XtNfromHoriz, papersize_lab);
+	NextArg(XtNfromVert, print_just_panel);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNresizable, True);
+	print_papersize_panel = XtCreateManagedWidget("papersize",
+					   menuButtonWidgetClass,
+					   print_panel, Args, ArgCount);
+	papersize_menu = make_popup_menu(paper_sizes, XtNumber(paper_sizes),
+				    print_papersize_panel, papersize_select);
+
+	/* multiple/single page */
+
+	FirstArg(XtNlabel, "Multiple/Single Pages");
+	NextArg(XtNjustify, XtJustifyLeft);
+	NextArg(XtNborderWidth, 0);
+	NextArg(XtNfromVert, print_papersize_panel);
+	multiple_lab = XtCreateManagedWidget("multiple_label", labelWidgetClass,
+					 print_panel, Args, ArgCount);
+
+	FirstArg(XtNlabel, multiple_pages[appres.multiple? 1:0]);
+	NextArg(XtNfromHoriz, multiple_lab);
+	NextArg(XtNfromVert, print_papersize_panel);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNresizable, True);
+	print_multiple_panel = XtCreateManagedWidget("multiple_pages",
+					   menuButtonWidgetClass,
+					   print_panel, Args, ArgCount);
+	multiple_menu = make_popup_menu(multiple_pages, XtNumber(multiple_pages),
+				    print_multiple_panel, multiple_select);
+
+	/* printer name */
+
+	FirstArg(XtNlabel, "   PostScript Printer");
+	NextArg(XtNfromVert, print_multiple_panel);
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
 	printer_lab = XtCreateManagedWidget("printer_label", labelWidgetClass,
@@ -378,7 +491,7 @@ create_print_panel(w)
 	 */
 
 	FirstArg(XtNwidth, 100);
-	NextArg(XtNfromVert, print_just_panel);
+	NextArg(XtNfromVert, print_multiple_panel);
 	NextArg(XtNfromHoriz, printer_lab);
 	NextArg(XtNeditType, XawtextEdit);
 	NextArg(XtNinsertPosition, 0);
@@ -404,7 +517,7 @@ create_print_panel(w)
 		}
 	}
 
-	FirstArg(XtNlabel, "  Print Job Params:");
+	FirstArg(XtNlabel, "     Print Job Params");
 	NextArg(XtNfromVert, printer_text);
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
@@ -427,7 +540,7 @@ create_print_panel(w)
 	XtOverrideTranslations(param_text,
 			       XtParseTranslationTable(text_translations));
 
-	FirstArg(XtNlabel, "  Figures in batch:");
+	FirstArg(XtNlabel, "     Figures in batch");
 	NextArg(XtNfromVert, param_text);
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
@@ -494,4 +607,21 @@ create_print_panel(w)
 	XtInstallAccelerators(print_panel, clear_batch);
 	XtInstallAccelerators(print_panel, print);
 	update_batch_count();
+
+	/* if multiple pages is on, desensitive justification panels */
+	if (appres.multiple) {
+	    XtSetSensitive(just_lab, False);
+	    XtSetSensitive(print_just_panel, False);
+	    if (export_just_panel) {
+	        XtSetSensitive(just_lab, False);
+	        XtSetSensitive(export_just_panel, False);
+	    }
+	} else {
+	    XtSetSensitive(just_lab, True);
+	    XtSetSensitive(print_just_panel, True);
+	    if (export_just_panel) {
+	        XtSetSensitive(just_lab, True);
+	        XtSetSensitive(export_just_panel, True);
+	    }
+	}
 }

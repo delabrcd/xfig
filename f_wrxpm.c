@@ -2,15 +2,24 @@
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1995 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
-
-#ifdef USE_XPM
 
 #include "fig.h"
 #include "resources.h"
@@ -26,20 +35,22 @@ extern Pixmap	init_write_color_image();
 static Boolean	create_n_write_xpm();
 
 Boolean
-write_xpm(file_name,mag)
+write_xpm(file_name,mag,margin)
     char	   *file_name;
     float	    mag;
+    int		    margin;
 {
     if (!ok_to_write(file_name, "EXPORT"))
 	return False;
 
-    return (create_n_write_xpm(file_name,mag));	/* write the xpm file */
+    return (create_n_write_xpm(file_name,mag,margin));	/* write the xpm file */
 }
 
 static Boolean
-create_n_write_xpm(filename,mag)
+create_n_write_xpm(filename,mag,margin)
     char	   *filename;
     float	    mag;
+    int		    margin;
 {
     Pixmap	    pixmap;
     Boolean	    status;
@@ -48,7 +59,7 @@ create_n_write_xpm(filename,mag)
     XpmAttributes   attr;
 
     /* setup the canvas, pixmap and zoom */
-    if ((pixmap = init_write_color_image(32767,mag,&width,&height)) == 0)
+    if ((pixmap = init_write_color_image(32767,mag,&width,&height,margin)) == 0)
 	return False;
 
     attr.valuemask = XpmColormap;
@@ -59,7 +70,7 @@ create_n_write_xpm(filename,mag)
 
     if (XpmWriteFileFromPixmap(tool_d, filename, pixmap, (Pixmap) NULL, &attr)
 	!= XpmSuccess) {
-	    put_msg("Couldn't write xpm file");
+	    file_msg("Couldn't write xpm file");
 	    status = False;
     } else {
 	    put_msg("%dx%d XPM Pixmap written to %s", width, height, filename);
@@ -70,15 +81,3 @@ create_n_write_xpm(filename,mag)
 
     return status;
 }
-
-#else /* USE_XPM */
-
-/* for those compilers that don't like empty .c files */
-
-static void
-dum_function()
-{
-  ;
-}
-
-#endif /* USE_XPM */

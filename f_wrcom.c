@@ -1,14 +1,24 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * This file is from GIFencode by Evgeni Chernyaev (chernaev@mx.decnet.ihep.su)
  * Parts Copyright (c) 1995 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 /*
@@ -32,10 +42,11 @@ static	int	savexoff, saveyoff;
 static	Boolean	zoomchanged;
 
 Pixmap
-init_write_color_image(maxsize, mag, uwidth, uheight)
+init_write_color_image(maxsize, mag, uwidth, uheight, margin)
     int		  maxsize;
     float	  mag;
     int		 *uwidth, *uheight;
+    int		  margin;
 {
     Pixmap pixmap;
 
@@ -70,12 +81,12 @@ init_write_color_image(maxsize, mag, uwidth, uheight)
     /* don't add margin if image is near the max of maxsize by maxsize */
     if ((ymax - ymin) <= maxsize-2 && (xmax - xmin) <= maxsize-2) {
 	/* provide a small margin (pixels) */
-	if ((xmin -= 10) < 0)
+	if ((xmin -= margin) < 0)
 	    xmin = 0;
-	if ((ymin -= 10) < 0)
+	if ((ymin -= margin) < 0)
 	    ymin = 0;
-	xmax += 10;
-	ymax += 10;
+	xmax += margin;
+	ymax += margin;
     }
 
     /* shift the figure */
@@ -99,8 +110,7 @@ init_write_color_image(maxsize, mag, uwidth, uheight)
     clear_patterns();
 
     /* create pixmap from (0,0) to (xmax,ymax) */
-    if ((pixmap = XCreatePixmap(tool_d, canvas_win, width, height, 
-			DefaultDepthOfScreen(tool_s)))==0)
+    if ((pixmap = XCreatePixmap(tool_d, canvas_win, width, height, tool_dpth))==0)
 	return 0;
 
     /* clear it */

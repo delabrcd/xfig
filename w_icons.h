@@ -9,17 +9,23 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 typedef struct _icon_struct {
-    int		    width, height;
-    unsigned char   *bits;
-}		icon_struct;
+    int	    width, height;
+    char   *bits;
+}	icon_struct;
 
 extern icon_struct	addpt_ic;
 
@@ -38,12 +44,13 @@ extern icon_struct	box_ic;
 extern icon_struct	regpoly_ic;
 extern icon_struct	picobj_ic;
 extern icon_struct	arc_box_ic;
-extern icon_struct	break_ic;
 extern icon_struct	cirrad_ic;
 extern icon_struct	cirdia_ic;
 extern icon_struct	c_spl_ic;
 extern icon_struct	copy_ic;
 extern icon_struct	glue_ic;
+extern icon_struct	break_ic;
+extern icon_struct	open_comp_ic;
 extern icon_struct	joinmiter_ic;
 extern icon_struct	joinround_ic;
 extern icon_struct	joinbevel_ic;
@@ -53,6 +60,9 @@ extern icon_struct	capproject_ic;
 extern icon_struct	solidline_ic;
 extern icon_struct	dashline_ic;
 extern icon_struct	dottedline_ic;
+extern icon_struct	dashdotline_ic;
+extern icon_struct	dash2dotsline_ic;
+extern icon_struct	dash3dotsline_ic;
 extern icon_struct	deletept_ic;
 extern icon_struct	ellrad_ic;
 extern icon_struct	elldia_ic;

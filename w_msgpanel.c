@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 
@@ -188,7 +194,8 @@ update_cur_filename(newname)
 
 /* VARARGS1 */
 int
-put_msg(va_alist) va_dcl
+put_msg(va_alist)
+    va_dcl
 {
     va_list ap;
     char *format;
@@ -216,7 +223,7 @@ boxsize_msg(fact)
 		(float)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
     dy = (float) fact * abs(cur_y - fix_y) /
 		(float)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
-    put_msg("Width = %.3lf %s, Length = %.3lf, %s",
+    put_msg("Width = %.3lf %s, Length = %.3lf %s",
 		dx*appres.user_scale, cur_fig_units,
 		dy*appres.user_scale, cur_fig_units);
 }
@@ -241,7 +248,7 @@ int type;
     dx = (cur_x - fx)/(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
     dy = (cur_y - fy)/(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
     len = (float)sqrt(dx*dx + dy*dy);
-    put_msg("%s = %.3f %s, dx = %.3lf %s, dy = %.3lf, %s",
+    put_msg("%s = %.3f %s, dx = %.3lf %s, dy = %.3lf %s",
 		(type==MSG_RADIUS? "Radius":
                   (type==MSG_DIAM? "Diameter":
 		  (type==MSG_LENGTH? "Length": "Distance"))),

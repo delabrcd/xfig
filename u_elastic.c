@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -50,11 +56,13 @@ static void	elastic_links();
 elastic_box(x1, y1, x2, y2)
     int		    x1, y1, x2, y2;
 {
-    /* line_style = RUBBER_LINE so that we don't scale it */
-    pw_vector(canvas_win, x1, y1, x1, y2, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
-    pw_vector(canvas_win, x1, y2, x2, y2, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
-    pw_vector(canvas_win, x2, y2, x2, y1, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
-    pw_vector(canvas_win, x2, y1, x1, y1, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
+    int		    wid, ht;
+
+    set_line_stuff(1, RUBBER_LINE, 0.0, JOIN_MITER, CAP_BUTT,
+		INV_PAINT, DEFAULT);
+    wid = abs(x2-x1)+1;
+    ht = abs(y2-y1)+1;
+    zXDrawRectangle(tool_d, canvas_win, gccache[INV_PAINT],min2(x1,x2),min2(y1,y2),wid,ht);
 }
 
 elastic_movebox()
@@ -360,7 +368,7 @@ scaling_line(x, y)
     elastic_scalepts(cur_l->points);
     adjust_box_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
     elastic_scalepts(cur_l->points);
-    if (cur_l->type == T_BOX || cur_l->type == T_PIC_BOX)
+    if (cur_l->type == T_BOX || cur_l->type == T_PICTURE)
 	boxsize_msg(2);
 }
 
@@ -768,6 +776,9 @@ moving_text(x, y)
     elastic_movetext();
     length_msg(MSG_DIST);
 }
+
+/* use x1off, y1off so that the beginning of the text isn't
+   shifted under the cursor */
 
 elastic_movetext()
 {

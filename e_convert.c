@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -99,6 +105,7 @@ box_2_box(l)
     clean_up();
     set_action_object(F_CONVERT, O_POLYLINE);
     set_latestline(newl);
+    set_modifiedflag();
     return;
 }
 
@@ -151,12 +158,13 @@ line_2_spline(l)
     free_linestorage(l);
 
     /* now put back the new spline */
-    draw_spline(s, PAINT);
     mask_toggle_splinemarker(s);
     list_add_spline(&objects.splines, s);
+    redisplay_spline(s);
     clean_up();
     set_action_object(F_CONVERT, O_POLYLINE);
     set_latestspline(s);
+    set_modifiedflag();
     return;
 }
 
@@ -200,11 +208,12 @@ spline_2_line(s)
     free_splinestorage(s);
 
     /* and put in the new line */
-    draw_line(l, PAINT);
     mask_toggle_linemarker(l);
     list_add_line(&objects.lines, l);
+    redisplay_line(l);
     clean_up();
     set_action_object(F_CONVERT, O_SPLINE);
     set_latestline(l);
+    set_modifiedflag();
     return;
 }

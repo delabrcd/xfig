@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -82,6 +88,13 @@ new_arrow(type, style, thickness, wid, ht)
     if ((a = create_arrow()) == NULL)
 	return (NULL);
 
+    /* if thickness, width, or height are 0.0, make reasonable values */
+    if (thickness==0.0)
+	thickness = (float) (max2(1,cur_linewidth));
+    if (wid==0.0)
+	wid = thickness * DEF_ARROW_WID;
+    if (ht==0.0)
+	ht = thickness * DEF_ARROW_HT;
     a->type = type;
     a->style = style;
     a->thickness = thickness;

@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 /*
@@ -240,14 +246,16 @@ lookfont(fnum, size)
 	if (nf != NULL) {
 	    if (nf->size > size && !appres.SCALABLEFONTS)
 		found = True;
-	    else while (nf != NULL){
-	    if (nf->size == size || (!appres.SCALABLEFONTS &&
-		     (nf->size >= size && oldnf->size <= size ))) {
-		found = True;
-		break;
-	    }
-	    oldnf = nf;
-	    nf = nf->next;
+	    else {
+		while (nf != NULL) {
+		    if (nf->size == size || (!appres.SCALABLEFONTS &&
+			   (nf->size >= size && oldnf->size <= size))) {
+			found = True;
+			break;
+		    }
+		    oldnf = nf;
+		    nf = nf->next;
+		}
 	    }
 	}
 	if (found) {		/* found exact size (or only larger available) */
@@ -472,7 +480,7 @@ init_fill_gc()
 /* SHADING */
 
 /* grey images for fill patterns (32x32) */
-static char shade_images[NUMSHADEPATS][128] = {
+static unsigned char shade_images[NUMSHADEPATS][128] = {
  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -669,66 +677,66 @@ static char shade_images[NUMSHADEPATS][128] = {
 /* 30 degrees left diagonal */
 #define left30_width 8
 #define left30_height 4
-static char left30_bits[] = {
+static unsigned char left30_bits[] = {
    0x03, 0x0c, 0x30, 0xc0};
 /* 30 degrees right diagonal */
 #define right30_width 8
 #define right30_height 4
-static char right30_bits[] = {
+static unsigned char right30_bits[] = {
    0xc0, 0x30, 0x0c, 0x03};
 /* 30 degrees crosshatch */
 #define crosshatch30_width 8
 #define crosshatch30_height 4
-static char crosshatch30_bits[] = {
+static unsigned char crosshatch30_bits[] = {
    0x81, 0x66, 0x18, 0x66};
 /* 45 degrees left diagonal */
 #define left45_width 8
 #define left45_height 8
-static char left45_bits[] = {
+static unsigned char left45_bits[] = {
    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
 /* 45 degrees right diagonal */
 #define right45_width 8
 #define right45_height 8
-static char right45_bits[] = {
+static unsigned char right45_bits[] = {
    0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
 /* 45 degrees crosshatch */
 #define crosshatch45_width 8
 #define crosshatch45_height 8
-static char crosshatch45_bits[] = {
+static unsigned char crosshatch45_bits[] = {
    0x11, 0x0a, 0x04, 0x0a, 0x11, 0xa0, 0x40, 0xa0};
 /* horizontal bricks */
 #define bricks_width 16
 #define bricks_height 16
-static char bricks_bits[] = {
+static unsigned char bricks_bits[] = {
    0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80,
    0x00, 0x80, 0xff, 0xff, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00,
    0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0xff, 0xff};
 /* vertical bricks */
 #define vert_bricks_width 16
 #define vert_bricks_height 16
-static char vert_bricks_bits[] = {
+static unsigned char vert_bricks_bits[] = {
    0xff, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
    0x80, 0x80, 0x80, 0x80, 0x80, 0xff, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80};
 /* horizontal lines */
 #define horizontal_width 8
 #define horizontal_height 4
-static char horizontal_bits[] = {
+static unsigned char horizontal_bits[] = {
    0xff, 0x00, 0x00, 0x00};
 /* vertical lines */
 #define vertical_width 8
 #define vertical_height 8
-static char vertical_bits[] = {
+static unsigned char vertical_bits[] = {
    0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88};
 /* crosshatch */
 #define crosshatch_width 8
 #define crosshatch_height 4
-static char crosshatch_bits[] = {
+static unsigned char crosshatch_bits[] = {
    0xff, 0x88, 0x88, 0x88};
 /* left-pointing shingles */
 #define leftshingle_width 24
 #define leftshingle_height 24
-static char leftshingle_bits[] = {
+static unsigned char leftshingle_bits[] = {
    0x00, 0x00, 0x80, 0x00, 0x00, 0x80, 0x00, 0x00, 0x40, 0x00, 0x00, 0x40,
    0x00, 0x00, 0x20, 0x00, 0x00, 0x20, 0x00, 0x00, 0x10, 0xff, 0xff, 0xff,
    0x80, 0x00, 0x00, 0x80, 0x00, 0x00, 0x40, 0x00, 0x00, 0x40, 0x00, 0x00,
@@ -738,7 +746,7 @@ static char leftshingle_bits[] = {
 /* right-pointing shingles */
 #define rightshingle_width 24
 #define rightshingle_height 24
-static char rightshingle_bits[] = {
+static unsigned char rightshingle_bits[] = {
    0x00, 0x00, 0x10, 0x00, 0x00, 0x10, 0x00, 0x00, 0x20, 0x00, 0x00, 0x20,
    0x00, 0x00, 0x40, 0x00, 0x00, 0x40, 0x00, 0x00, 0x80, 0xff, 0xff, 0xff,
    0x00, 0x10, 0x00, 0x00, 0x10, 0x00, 0x00, 0x20, 0x00, 0x00, 0x20, 0x00,
@@ -748,7 +756,7 @@ static char rightshingle_bits[] = {
 /* vertical left-pointing shingles */
 #define vert_leftshingle_width 24
 #define vert_leftshingle_height 24
-static char vert_leftshingle_bits[] = {
+static unsigned char vert_leftshingle_bits[] = {
    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
    0x80, 0x80, 0x81, 0x80, 0x80, 0x86, 0x80, 0x80, 0x98, 0x80, 0x80, 0xe0,
    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
@@ -758,7 +766,7 @@ static char vert_leftshingle_bits[] = {
 /* vertical right-pointing shingles */
 #define vert_rightshingle_width 24
 #define vert_rightshingle_height 24
-static char vert_rightshingle_bits[] = {
+static unsigned char vert_rightshingle_bits[] = {
    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
    0x80, 0xc0, 0x80, 0x80, 0xb0, 0x80, 0x80, 0x8c, 0x80, 0x80, 0x83, 0x80,
    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
@@ -768,25 +776,25 @@ static char vert_rightshingle_bits[] = {
 /* fish scales */
 #define fishscales_width 16
 #define fishscales_height 8
-static char fishscales_bits[] = {
+static unsigned char fishscales_bits[] = {
    0x40, 0x02, 0x30, 0x0c, 0x0e, 0x70, 0x01, 0x80, 0x02, 0x40, 0x0c, 0x30,
    0x70, 0x0e, 0x80, 0x01};
 /* small fish scales */
 #define small_fishscales_width 8
 #define small_fishscales_height 8
-static char small_fishscales_bits[] = {
+static unsigned char small_fishscales_bits[] = {
    0x01, 0x01, 0x82, 0x6c, 0x10, 0x10, 0x28, 0xc6};
 /* circles */
 #define circles_width 16
 #define circles_height 16
-static char circles_bits[] = {
+static unsigned char circles_bits[] = {
    0xe0, 0x0f, 0x18, 0x30, 0x04, 0x40, 0x02, 0x80, 0x02, 0x80, 0x01, 0x00,
    0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00,
    0x02, 0x80, 0x02, 0x80, 0x04, 0x40, 0x18, 0x30};
 /* hexagons */
 #define hexagons_width 30
 #define hexagons_height 18
-static char hexagons_bits[] = {
+static unsigned char hexagons_bits[] = {
    0x08, 0x80, 0x00, 0x00, 0x08, 0x80, 0x00, 0x00, 0x04, 0x00, 0x01, 0x00,
    0x04, 0x00, 0x01, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00,
    0x01, 0x00, 0x04, 0x00, 0x01, 0x00, 0x04, 0x00, 0x00, 0x00, 0xf8, 0x3f,
@@ -796,20 +804,20 @@ static char hexagons_bits[] = {
 /* octagons */
 #define octagons_width 16
 #define octagons_height 16
-static char octagons_bits[] = {
+static unsigned char octagons_bits[] = {
    0xe0, 0x0f, 0x10, 0x10, 0x08, 0x20, 0x04, 0x40, 0x02, 0x80, 0x01, 0x00,
    0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00,
    0x02, 0x80, 0x04, 0x40, 0x08, 0x20, 0x10, 0x10};
 /* horizontal sawtooth */
 #define horiz_saw_width 16
 #define horiz_saw_height 8
-static char horiz_saw_bits[] = {
+static unsigned char horiz_saw_bits[] = {
    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x08, 0x14, 0x14, 0x22, 0x22,
    0x41, 0x41, 0x80, 0x80};
 /* vertical sawtooth */
 #define vert_saw_width 8
 #define vert_saw_height 16
-static char vert_saw_bits[] = {
+static unsigned char vert_saw_bits[] = {
    0x02, 0x04, 0x08, 0x10, 0x08, 0x04, 0x02, 0x01, 0x02, 0x04, 0x08, 0x10,
    0x08, 0x04, 0x02, 0x01};
 
@@ -822,28 +830,36 @@ struct patrn_strct {
 	}
 
 	pattern_images[NUMPATTERNS] = {
-		{left30_width, left30_height, left30_bits},
-		{right30_width, right30_height, right30_bits},
-		{crosshatch30_width, crosshatch30_height, crosshatch30_bits},
-		{left45_width, left45_height, left45_bits},
-		{right45_width, right45_height, right45_bits},
-		{crosshatch45_width, crosshatch45_height, crosshatch45_bits},
-		{bricks_width, bricks_height, bricks_bits},
-		{vert_bricks_width, vert_bricks_height, vert_bricks_bits},
-		{horizontal_width, horizontal_height, horizontal_bits},
-		{vertical_width, vertical_height, vertical_bits},
-		{crosshatch_width, crosshatch_height, crosshatch_bits},
-		{leftshingle_width, leftshingle_height, leftshingle_bits},
-		{rightshingle_width, rightshingle_height, rightshingle_bits},
-		{vert_leftshingle_width, vert_leftshingle_height, vert_leftshingle_bits},
-		{vert_rightshingle_width, vert_rightshingle_height, vert_rightshingle_bits},
-		{fishscales_width, fishscales_height, fishscales_bits},
-		{small_fishscales_width, small_fishscales_height, small_fishscales_bits},
-		{circles_width, circles_height, circles_bits},
-		{hexagons_width, hexagons_height, hexagons_bits},
-		{octagons_width, octagons_height, octagons_bits},
-		{horiz_saw_width, horiz_saw_height, horiz_saw_bits},
-		{vert_saw_width, vert_saw_height, vert_saw_bits}
+		{left30_width, left30_height, (char*)left30_bits},
+		{right30_width, right30_height, (char*)right30_bits},
+		{crosshatch30_width, crosshatch30_height, 
+		 (char*)crosshatch30_bits},
+		{left45_width, left45_height, (char*)left45_bits},
+		{right45_width, right45_height, (char*)right45_bits},
+		{crosshatch45_width, crosshatch45_height, 
+		 (char*)crosshatch45_bits},
+		{bricks_width, bricks_height, (char*)bricks_bits},
+		{vert_bricks_width, vert_bricks_height, 
+		 (char*)vert_bricks_bits},
+		{horizontal_width, horizontal_height, (char*)horizontal_bits},
+		{vertical_width, vertical_height, (char*)vertical_bits},
+		{crosshatch_width, crosshatch_height, (char*)crosshatch_bits},
+		{leftshingle_width, leftshingle_height, 
+		 (char*)leftshingle_bits},
+		{rightshingle_width, rightshingle_height, 
+		 (char*)rightshingle_bits},
+		{vert_leftshingle_width, vert_leftshingle_height, 
+		 (char*)vert_leftshingle_bits},
+		{vert_rightshingle_width, vert_rightshingle_height, 
+		 (char*)vert_rightshingle_bits},
+		{fishscales_width, fishscales_height, (char*)fishscales_bits},
+		{small_fishscales_width, small_fishscales_height, 
+		 (char*)small_fishscales_bits},
+		{circles_width, circles_height, (char*)circles_bits},
+		{hexagons_width, hexagons_height, (char*)hexagons_bits},
+		{octagons_width, octagons_height, (char*)octagons_bits},
+		{horiz_saw_width, horiz_saw_height, (char*)horiz_saw_bits},
+		{vert_saw_width, vert_saw_height, (char*)vert_saw_bits}
 				};
 
 /* generate the fill pixmaps */
@@ -862,36 +878,32 @@ init_fill_pm()
     /**********************************************************************************/
 
     /* use same colors for "NONE" indicator for black and color */
-    fillstyle_choices[0].normalPM =
-	fillstyle_choices[0].blackPM = XCreatePixmapFromBitmapData(tool_d,
+    fillstyle_choices[0].pixmap = XCreatePixmapFromBitmapData(tool_d,
 			XtWindow(ind_panel), none_ic.bits, none_ic.width,
 			none_ic.height, x_fg_color.pixel, x_bg_color.pixel,
-			DefaultDepthOfScreen(tool_s));
+			tool_dpth);
 
     /* Shade patterns go from full black to full saturation of the color */
     for (i = 0; i < NUMSHADEPATS; i++) {
 	fill_pm[i] = XCreateBitmapFromData(tool_d, XtWindow(canvas_sw),
-				   shade_images[i], 32, 32);
+				   (char*)shade_images[i], 32, 32);
 	/* create fill style pixmaps for indicator button */
 	/* The actual colors of fg/bg will be reset in recolor_fillstyles */
-	fillstyle_choices[i + 1].normalPM = XCreatePixmapFromBitmapData(tool_d,
-		 XtWindow(canvas_sw), shade_images[i], 32, 32,
-		 x_fg_color.pixel,x_bg_color.pixel,DefaultDepthOfScreen(tool_s));
-	fillstyle_choices[i + 1].blackPM = XCreatePixmapFromBitmapData(tool_d,
-		 XtWindow(canvas_sw), shade_images[i], 32, 32,
-		 x_fg_color.pixel,x_bg_color.pixel,DefaultDepthOfScreen(tool_s));
+	fillstyle_choices[i + 1].pixmap = XCreatePixmapFromBitmapData(tool_d,
+		 XtWindow(canvas_sw), (char*)shade_images[i], 32, 32,
+		 x_fg_color.pixel,x_bg_color.pixel,tool_dpth);
     }
     /* Tint patterns go from full saturation of the color to full white */
     /* Note that there are no fillstyle_choices for tints for black */
     for (i = NUMSHADEPATS; i < NUMSHADEPATS+NUMTINTPATS; i++) {
 	j = NUMSHADEPATS+NUMTINTPATS-i-1;	/* reverse the patterns */
 	fill_pm[i] = XCreateBitmapFromData(tool_d, XtWindow(canvas_sw),
-				   shade_images[j], 32, 32);
+				   (char*)shade_images[j], 32, 32);
 	/* create fill style pixmaps for indicator button */
 	/* The actual colors of fg/bg will be reset in recolor_fillstyles */
-	fillstyle_choices[i + 1].normalPM = XCreatePixmapFromBitmapData(tool_d,
-		 XtWindow(canvas_sw), shade_images[j], 32, 32,
-		 x_fg_color.pixel,x_bg_color.pixel,DefaultDepthOfScreen(tool_s));
+	fillstyle_choices[i + 1].pixmap = XCreatePixmapFromBitmapData(tool_d,
+		 XtWindow(canvas_sw), (char*)shade_images[j], 32, 32,
+		 x_fg_color.pixel,x_bg_color.pixel,tool_dpth);
     }
     /* Now do the remaining patterns (bricks, shingles, etc) */
     for (i = NUMSHADEPATS+NUMTINTPATS; i < NUMFILLPATS; i++) {
@@ -906,14 +918,10 @@ init_fill_pm()
 	rescale_pattern(i);
 	/* create fill style pixmaps for indicator button */
 	/* The actual colors of fg/bg will be reset in recolor_fillstyles */
-	fillstyle_choices[i + 1].normalPM = XCreatePixmapFromBitmapData(tool_d,
+	fillstyle_choices[i + 1].pixmap = XCreatePixmapFromBitmapData(tool_d,
 		 XtWindow(canvas_sw), pattern_images[j].odata,
 		 pattern_images[j].owidth, pattern_images[j].oheight,
-		 x_fg_color.pixel,x_bg_color.pixel,DefaultDepthOfScreen(tool_s));
-	fillstyle_choices[i + 1].blackPM = XCreatePixmapFromBitmapData(tool_d,
-		 XtWindow(canvas_sw), pattern_images[j].odata,
-		 pattern_images[j].owidth, pattern_images[j].oheight,
-		 x_fg_color.pixel,x_bg_color.pixel,DefaultDepthOfScreen(tool_s));
+		 x_fg_color.pixel,x_bg_color.pixel,tool_dpth);
     }
 }
 
@@ -970,17 +978,26 @@ pw_curve(w, xstart, ystart, xend, yend,
     }
 }
 
-pw_point(w, x, y, line_width, op, color)
+/* a point object - actually draw a line from (x-line_width/2,y) to (x+linewidth/2,y)
+	so that we get some thickness */
+
+pw_point(w, x, y, line_width, op, color, cap_style)
     Window	    w;
     int		    x, y;
     int		    op, line_width;
     Color	    color;
+    int		    cap_style;
 {
-    /* pw_point doesn't use line_style or fill_style - maybe not needed */
-    /* (needs color though - hns) */
-    set_line_stuff(line_width, SOLID_LINE, 0.0, JOIN_MITER, CAP_BUTT,
+    int		    hf_wid;
+    /* pw_point doesn't use line_style or fill_style but needs color */
+    set_line_stuff(line_width, SOLID_LINE, 0.0, JOIN_MITER, cap_style,
 		op, color);
-    zXDrawPoint(tool_d, w, gccache[op], x, y);
+    if (cap_style > 0)
+	hf_wid = 0;
+    else
+	hf_wid = (int)(ZOOM_FACTOR*line_width/2);
+    /* add one to the right if the line_width is odd */
+    zXDrawLine(tool_d, w, gccache[op], x-hf_wid, y, x+hf_wid+(line_width%2), y);
 }
 
 pw_arcbox(w, xmin, ymin, xmax, ymax, radius, op,
@@ -1060,7 +1077,7 @@ pw_lines(w, points, npoints, op, line_width, line_style,
 
     if ((npoints == 1) ||
 	(npoints == 2 && points[0].x == points[1].x && points[0].y == points[1].y)) {
-	    pw_point(w, points[0].x, points[0].y, line_width, op, pen_color);
+	    pw_point(w, points[0].x, points[0].y, line_width, op, pen_color, cap_style);
 	    return;
     }
 	
@@ -1073,7 +1090,7 @@ pw_lines(w, points, npoints, op, line_width, line_style,
 	}
     }
 
-    /* if it's a fill pat we know about */
+    /* if it's a fill pat we know about, find upper-left corner for pattern origin */
     if (fill_style >= 0 && fill_style < NUMFILLPATS) {
 	int xmin=100000, ymin=100000, i;
 	if (fill_style >= NUMTINTPATS+NUMSHADEPATS) {
@@ -1110,8 +1127,8 @@ set_clip_window(xmin, ymin, xmax, ymax)
     clip_ymin = clip[0].y = ymin;
     clip_xmax = xmax;
     clip_ymax = ymax;
-    clip_width = clip[0].width = xmax - xmin;
-    clip_height = clip[0].height = ymax - ymin;
+    clip_width = clip[0].width = xmax - xmin + 1;
+    clip_height = clip[0].height = ymax - ymin + 1;
     XSetClipRectangles(tool_d, gccache[PAINT], 0, 0, clip, 1, YXBanded);
     XSetClipRectangles(tool_d, gccache[INV_PAINT], 0, 0, clip, 1, YXBanded);
 }
@@ -1169,24 +1186,13 @@ set_fill_gc(fill_style, op, pencolor, fillcolor, xorg, yorg)
 		fg = x_color(pencolor);
 		bg = x_color(fillcolor);
 	  } else {
-	    if (!all_colors_available || fillcolor==DEFAULT ||
-		 fillcolor==BLACK || fillcolor==WHITE) {
-		if (fillcolor==DEFAULT || fillcolor==BLACK || fillcolor==WHITE) {
-		    if (fillcolor == WHITE) {
-			fg = x_bg_color.pixel;
-			bg = x_fg_color.pixel;
-		    } else {
-			fg = x_fg_color.pixel;
-			bg = x_bg_color.pixel;
-		    }
-		} else {	/* come here when monochrome and not DEF, BLACK or WHITE */
-			fg = x_fg_color.pixel;
-			bg = x_bg_color.pixel;
-		}
-	    } else {
+	      if (fillcolor == BLACK || fillcolor == DEFAULT) {
+		fg = x_color(BLACK);
+		bg = x_color(WHITE);
+	      } else {
 		fg = x_color(fillcolor);
-		bg = (fill_style < NUMSHADEPATS? x_fg_color.pixel: x_bg_color.pixel);
-	    }
+		bg = (fill_style < NUMSHADEPATS? x_color(BLACK): x_color(WHITE));
+	      }
 	  }
 	} else {
 	    fg = x_bg_color.pixel;   /* un-fill */
@@ -1214,6 +1220,14 @@ static unsigned char dash_list[16][2] = {{255, 255}, {255, 255},
 
 static int join_styles[3] = { JoinMiter, JoinRound, JoinBevel };
 static int cap_styles[3] = { CapButt, CapRound, CapProjecting };
+
+static int ndash_dot = 4;
+static float dash_dot[4] = { 1., 0.5, 0., 0.5 };
+static int ndash_2dots = 6;
+static float dash_2dots[6] = { 1., 0.45, 0., 0.333, 0., 0.45 };
+static int ndash_3dots = 8;
+static float dash_3dots[8] = { 1., 0.4, 0., 0.3, 0., 0.3, 0., 0.4 };
+
 
 set_line_stuff(width, style, style_val, join_style, cap_style, op, color)
     int		    width, style, join_style, cap_style, op;
@@ -1256,7 +1270,9 @@ set_line_stuff(width, style, style_val, join_style, cap_style, op, color)
 	join_style == gc_join_style[op] &&
 	cap_style == gc_cap_style[op] &&
 	(writing_bitmap? color == gc_color[op] : x_color(color) == gc_color[op]) &&
-	((style != DASH_LINE && style != DOTTED_LINE) ||
+	((style != DASH_LINE && style != DOTTED_LINE &&
+          style != DASH_DOT_LINE && style != DASH_2_DOTS_LINE &&
+          style != DASH_3_DOTS_LINE) ||
 	 dash_list[op][1] == (unsigned char) round(style_val * display_zoomscale))
 	)
 	    return;			/* no need to change anything */
@@ -1267,13 +1283,15 @@ set_line_stuff(width, style, style_val, join_style, cap_style, op, color)
 	mask |= GCForeground;
     gcv.join_style = join_styles[join_style];
     gcv.cap_style = cap_styles[cap_style];
-    gcv.line_style = (style == DASH_LINE || style == DOTTED_LINE) ?
+    gcv.line_style = (style == DASH_LINE || style == DOTTED_LINE ||
+             style == DASH_DOT_LINE || style == DASH_2_DOTS_LINE ||
+             style == DASH_3_DOTS_LINE) ?
 	LineOnOffDash : LineSolid;
     gcv.foreground = (writing_bitmap? color : x_color(color));
 
     XChangeGC(tool_d, gccache[op], mask, &gcv);
-    if (style == DASH_LINE || style == DOTTED_LINE) {
-	if (style_val > 0.0) {	/* style_val of 0.0 causes problems */
+    if (style_val > 0.0) {	/* style_val of 0.0 causes problems */
+	if (style == DASH_LINE || style == DOTTED_LINE) {
 	    /* length of ON/OFF pixels */
 	    if (style_val * display_zoomscale > 255.0)
 		dash_list[op][0] = dash_list[op][1] = (char) 255;	/* too large for X! */
@@ -1287,6 +1305,34 @@ set_line_stuff(width, style, style_val, join_style, cap_style, op, color)
 	    if (dash_list[op][0]==0)		/* take care for rounding to zero ! */
 		dash_list[op][0]=dash_list[op][1]=1;
 	    XSetDashes(tool_d, gccache[op], 0, (char *) dash_list[op], 2);
+	} else if (style == DASH_DOT_LINE || style == DASH_2_DOTS_LINE ||
+		  style == DASH_3_DOTS_LINE) {
+            int il, nd;
+            float *fl;
+            if (style == DASH_2_DOTS_LINE) {
+		fl=dash_2dots;
+		nd=ndash_2dots;
+	    } else if (style == DASH_3_DOTS_LINE) {
+		fl=dash_3dots;
+		nd=ndash_3dots;
+	    } else {
+		fl=dash_dot;
+		nd=ndash_dot;
+	    }
+	    for (il =0; il<nd; il ++) {
+                if (fl[il] != 0.) {
+		    if (fl[il] * style_val * display_zoomscale > 255.0)
+			dash_list[op][il] = (char) 255;	/* too large for X! */
+	    	    else
+	        	dash_list[op][il] = (char) round(fl[il] * style_val * 
+					display_zoomscale);
+		} else {
+		    dash_list[op][il] = (char)display_zoomscale;
+		    if (dash_list[op][il]==0)	/* take care for rounding to zero ! */
+			dash_list[op][il]=1;
+		}
+	    }
+	    XSetDashes(tool_d, gccache[op], 0, (char *) dash_list[op], nd);
 	}
     }
     gc_thickness[op] = width;

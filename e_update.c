@@ -9,11 +9,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -34,6 +40,7 @@ extern		update_current_settings();
 extern PIX_FONT lookfont();
 static int	init_update_object();
 static int	init_update_settings();
+extern double update_line_styleval();
 
 #define	up_part(lv,rv,mask) \
 		if (cur_updatemask & (mask)) \
@@ -103,7 +110,7 @@ init_update_settings(p, type, x, y, px, py)
 	return;
     case O_POLYLINE:
 	cur_l = (F_line *) p;
-	if (cur_l->type != T_PIC_BOX) {
+	if (cur_l->type != T_PICTURE) {
 		up_part(cur_linewidth, cur_l->thickness, I_LINEWIDTH);
 		up_part(cur_fillstyle, cur_l->fill_style, I_FILLSTYLE);
 		up_part(cur_pencolor, cur_l->pen_color, I_PEN_COLOR);
@@ -111,11 +118,13 @@ init_update_settings(p, type, x, y, px, py)
 		up_part(cur_linestyle, cur_l->style, I_LINESTYLE);
 		up_part(cur_joinstyle, cur_l->join_style, I_JOINSTYLE);
 		up_part(cur_capstyle, cur_l->cap_style, I_CAPSTYLE);
-		up_part(cur_styleval, cur_l->style_val, I_LINESTYLE);
+		up_part(cur_styleval, 
+                   update_line_styleval((cur_l->style_val*2.) / (cur_l->thickness+1.)),
+		   I_LINESTYLE);
 		up_part(cur_arrowmode, get_arrow_mode(cur_l), I_ARROWMODE);
 		up_part(cur_arrowtype, get_arrow_type(cur_l), I_ARROWTYPE);
 		}
-	else if (cur_l->pic->subtype == T_PIC_BITMAP)	/* only XBM pictures have color */
+	else if (cur_l->pic->subtype == T_PIC_XBM)	/* only XBM pictures have color */
 		up_part(cur_pencolor, cur_l->pen_color, I_PEN_COLOR);
 	up_part(cur_depth, cur_l->depth, I_DEPTH);
 	if (cur_l->type == T_ARC_BOX)
@@ -151,7 +160,9 @@ init_update_settings(p, type, x, y, px, py)
 	up_part(cur_pencolor, cur_e->pen_color, I_PEN_COLOR);
 	up_part(cur_fillcolor, cur_e->fill_color, I_FILL_COLOR);
 	up_part(cur_linestyle, cur_e->style, I_LINESTYLE);
-	up_part(cur_styleval, cur_e->style_val, I_LINESTYLE);
+	up_part(cur_styleval, 
+            update_line_styleval((cur_e->style_val*2.) / (cur_e->thickness+1.)),
+	    I_LINESTYLE);
 	up_part(cur_depth, cur_e->depth, I_DEPTH);
 	break;
     case O_ARC:
@@ -162,7 +173,9 @@ init_update_settings(p, type, x, y, px, py)
 	up_part(cur_fillcolor, cur_a->fill_color, I_FILL_COLOR);
 	up_part(cur_arctype, cur_a->type, I_ARCTYPE);
 	up_part(cur_linestyle, cur_a->style, I_LINESTYLE);
-	up_part(cur_styleval, cur_a->style_val, I_LINESTYLE);
+	up_part(cur_styleval, 
+            update_line_styleval((cur_a->style_val*2.) / (cur_a->thickness+1.)),
+	    I_LINESTYLE);
 	up_part(cur_capstyle, cur_a->cap_style, I_CAPSTYLE);
 	up_part(cur_depth, cur_a->depth, I_DEPTH);
 	up_part(cur_arrowmode, get_arrow_mode((F_line *)cur_a), I_ARROWMODE);
@@ -175,7 +188,9 @@ init_update_settings(p, type, x, y, px, py)
 	up_part(cur_pencolor, cur_s->pen_color, I_PEN_COLOR);
 	up_part(cur_fillcolor, cur_s->fill_color, I_FILL_COLOR);
 	up_part(cur_linestyle, cur_s->style, I_LINESTYLE);
-	up_part(cur_styleval, cur_s->style_val, I_LINESTYLE);
+	up_part(cur_styleval, 
+            update_line_styleval((cur_s->style_val*2.) / (cur_s->thickness+1.)),
+	    I_LINESTYLE);
 	if (cur_s->type == T_OPEN_NORMAL || cur_s->type == T_OPEN_INTERP)
 	    up_part(cur_capstyle, cur_s->cap_style, I_CAPSTYLE);
 	up_part(cur_depth, cur_s->depth, I_DEPTH);
@@ -272,7 +287,7 @@ update_ellipse(ellipse)
     up_part(ellipse->fill_color, cur_fillcolor, I_FILL_COLOR);
     up_part(ellipse->depth, cur_depth, I_DEPTH);
     fix_fillstyle((F_line *)ellipse);	/* make sure it has legal fill style if color changed */
-    draw_ellipse(ellipse, PAINT);
+    /* updated object will be redisplayed by init_update_xxx() */
 }
 
 update_arc(arc)
@@ -291,7 +306,7 @@ update_arc(arc)
     up_part(arc->depth, cur_depth, I_DEPTH);
     up_arrow((F_line *)arc);
     fix_fillstyle((F_line *)arc);	/* make sure it has legal fill style if color changed */
-    draw_arc(arc, PAINT);
+    /* updated object will be redisplayed by init_update_xxx() */
 }
 
 update_line(line)
@@ -299,7 +314,7 @@ update_line(line)
 {
     draw_line(line, ERASE);
 	up_part(line->thickness, cur_linewidth, I_LINEWIDTH);
-    if (line->type != T_PIC_BOX) {
+    if (line->type != T_PICTURE) {
 	up_part(line->style, cur_linestyle, I_LINESTYLE);
 	up_part(line->style_val, cur_styleval * (cur_linewidth + 1) / 2, 
 		I_LINESTYLE);
@@ -317,7 +332,7 @@ update_line(line)
     if (line->type == T_POLYLINE && line->points->next != NULL)
 	up_arrow(line);
     fix_fillstyle(line);	/* make sure it has legal fill style if color changed */
-    draw_line(line, PAINT);
+    /* updated object will be redisplayed by init_update_xxx() */
 }
 
 update_text(text)
@@ -346,7 +361,7 @@ update_text(text)
     text->descent = size.descent;
     text->length = size.length;
     reload_text_fstruct(text);	/* make sure fontstruct is current */
-    draw_text(text, PAINT);
+    /* updated object will be redisplayed by init_update_xxx() */
 }
 
 update_spline(spline)
@@ -366,7 +381,7 @@ update_spline(spline)
     if (open_spline(spline))
 	up_arrow((F_line *)spline);
     fix_fillstyle((F_line *)spline);	/* make sure it has legal fill style if color changed */
-    draw_spline(spline, PAINT);
+    /* updated object will be redisplayed by init_update_xxx() */
 }
 
 /* check that the fill style is legal for the color in the object */
@@ -383,10 +398,10 @@ fix_fillstyle(object)
 			object->fill_style = UNFILLED;
     }
     /* a little sanity check */
-    if (object->fill_color < DEFAULT)
-	object->fill_color = DEFAULT;
-    if (object->fill_color >= NUMFILLPATS)
-	object->fill_color = NUMFILLPATS;
+    if (object->fill_style < DEFAULT)
+	object->fill_style = DEFAULT;
+    if (object->fill_style >= NUMFILLPATS)
+	object->fill_style = NUMFILLPATS;
 }
 
 up_arrow(object)

@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -32,10 +38,17 @@
 #include "w_mousefun.h"
 #include "w_setup.h"
 #include "w_zoom.h"
+#include <X11/keysym.h>
 
 extern PIX_FONT lookfont();
 
-#define CTRL_H	8
+#define CTRL_A	'\001'
+#define CTRL_B	'\002'
+#define CTRL_D	'\004'
+#define CTRL_E	'\005'
+#define CTRL_F	'\006'
+#define CTRL_H	'\010'
+#define CTRL_K	'\013'
 #define NL	10
 #define CR	13
 #define CTRL_X	24
@@ -63,7 +76,6 @@ static		wrap_up();
 int		char_handler();
 static F_text  *new_text();
 
-static int	cpy_n_char();
 static int	prefix_length();
 static int	initialize_char_handler();
 static int	terminate_char_handler();
@@ -139,8 +151,10 @@ wrap_up()
     terminate_char_handler();
 
     if (cur_t == NULL) {	/* a brand new text */
+	strcat(prefix, suffix);	/* re-attach any suffix */
+	leng_prefix=strlen(prefix);
 	if (leng_prefix == 0)
-	    return;
+	    return;		/* nothing afterall */
 	cur_t = new_text();
 	add_text(cur_t);
     } else {			/* existing text modified */
@@ -284,7 +298,8 @@ init_text_input(x, y)
 	/* leng_prefix is # of char in the text before the cursor */
 	leng_prefix = prefix_length(cur_t->cstring, posn);
 	leng_suffix -= leng_prefix;
-	cpy_n_char(prefix, cur_t->cstring, leng_prefix);
+	strncpy(prefix, cur_t->cstring, leng_prefix);
+	prefix[leng_prefix]='\0';
 	strcpy(suffix, &cur_t->cstring[leng_prefix]);
 	tsize = textsize(canvas_font, leng_prefix, prefix);
 
@@ -333,17 +348,6 @@ new_text()
     return (text);
 }
 
-static int
-cpy_n_char(dst, src, n)
-    char	   *dst, *src;
-    int		    n;
-{
-    /* src must be longer than n chars */
-
-    while (n--)
-	*dst++ = *src++;
-    *dst = '\0';
-}
 
 static int
 prefix_length(string, where_p)
@@ -488,53 +492,117 @@ char	c;
 	    work_angle, s, work_textcolor);
 }
 
-char_handler(c)
+char_handler(c, keysym)
     unsigned char   c;
+    KeySym	    keysym;
 {
-    float	    cwidth, cw2;
-    float	    cwsin, cwcos;
-    float	    cw2sin, cw2cos;
+    register int    i;
+    register float  cw;
 
     if (cr_proc == NULL)
 	return;
 
     if (c == CR || c == NL) {
 	new_text_line();
-    } else if (c == DEL || c == CTRL_H) {
+    /* move cursor left - move char from prefix to suffix */
+    /* Control-B and the Left arrow key both do this */
+    } else if (keysym == XK_Left || c == CTRL_B) {
 	if (leng_prefix > 0) {
 	    erase_char_string();
-	    cwidth = (float) (ZOOM_FACTOR * char_advance(canvas_font, 
-			(unsigned char) prefix[leng_prefix - 1]));
-	    cw2 = cwidth/2.0;
-	    cwsin = cwidth*sin_t;
-	    cwcos = cwidth*cos_t;
-	    cw2sin = cw2*sin_t;
-	    cw2cos = cw2*cos_t;
-
-	    /* correct text/cursor posn for justification and zoom factor */
-	    switch (work_textjust) {
-	    case T_LEFT_JUSTIFIED:
-		rcur_x -= cwcos;
-		rcur_y += cwsin;
-		break;
-	    case T_CENTER_JUSTIFIED:
-		rbase_x += cw2cos;
-		rbase_y -= cw2sin;
-		rcur_x -= cw2cos;
-		rcur_y += cw2sin;
-		break;
-	    case T_RIGHT_JUSTIFIED:
-		rbase_x += cwcos;
-		rbase_y -= cwsin;
-		break;
-	    }
-	    prefix[--leng_prefix] = '\0';
-	    cbase_x = round(rbase_x);
-	    cbase_y = round(rbase_y);
-	    cur_x = round(rcur_x);
-	    cur_y = round(rcur_y);
+	    for (i=leng_suffix+1; i>0; i--)	/* copies null too */
+		suffix[i]=suffix[i-1];
+	    suffix[0]=prefix[leng_prefix-1];
+	    prefix[leng_prefix-1]='\0';
+	    leng_prefix--;
+	    leng_suffix++;
+	    move_cur(-1, suffix[0], 1.0);
 	    draw_char_string();
 	}
+    /* move cursor right - move char from suffix to prefix */
+    /* Control-F and Right arrow key both do this */
+    } else if (keysym == XK_Right || c == CTRL_F) {
+	if (leng_suffix > 0) {
+	    erase_char_string();
+	    prefix[leng_prefix] = suffix[0];
+	    prefix[leng_prefix+1]='\0';
+	    for (i=0; i<=leng_suffix; i++)	/* copies null too */
+		suffix[i]=suffix[i+1];
+	    leng_suffix--;
+	    leng_prefix++;
+	    move_cur(1, prefix[leng_prefix-1], 1.0);
+	    draw_char_string();
+	}
+    /* move cursor to beginning of text - put everything in suffix */
+    /* Control-A and Home key both do this */
+    } else if (keysym == XK_Home || c == CTRL_A) {
+	if (leng_prefix > 0) {
+	    erase_char_string();
+	    for (i=leng_prefix-1; i>=0; i--)
+		move_cur(-1, prefix[i], 1.0);
+	    strcat(prefix,suffix);
+	    strcpy(suffix,prefix);
+	    prefix[0]='\0';
+	    leng_prefix=0;
+	    leng_suffix=strlen(suffix);
+	    draw_char_string();
+	}
+    /* move cursor to end of text - put everything in prefix */
+    /* Control-E and End key both do this */
+    } else if (keysym == XK_End || c == CTRL_E) {
+	if (leng_suffix > 0) {
+	    erase_char_string();
+	    for (i=0; i<leng_suffix; i++)
+		move_cur(1, suffix[i], 1.0);
+	    strcat(prefix,suffix);
+	    suffix[0]='\0';
+	    leng_suffix=0;
+	    leng_prefix=strlen(prefix);
+	    draw_char_string();
+	}
+    /* backspace - delete char left of cursor */
+    } else if (c == CTRL_H) {
+	if (leng_prefix > 0) {
+	    erase_char_string();
+	    switch (work_textjust) {
+		case T_LEFT_JUSTIFIED:
+		    move_cur(-1, prefix[leng_prefix-1], 1.0);
+		    break;
+		case T_RIGHT_JUSTIFIED:
+		    move_text(1, prefix[leng_prefix-1], 1.0);
+		    break;
+		case T_CENTER_JUSTIFIED:
+		    move_cur(-1, prefix[leng_prefix-1], 2.0);
+		    move_text(1, prefix[leng_prefix-1], 2.0);
+		    break;
+		}
+	    prefix[--leng_prefix] = '\0';
+	    draw_char_string();
+	}
+    /* delete char to right of cursor */
+    /* Control-D and Delete key both do this */
+    } else if (c == DEL || c == CTRL_D) {
+	if (leng_suffix > 0) {
+	    erase_char_string();
+	    switch (work_textjust) {
+		case T_LEFT_JUSTIFIED:
+		    /* nothing to do with cursor or text base */
+		    break;
+		case T_RIGHT_JUSTIFIED:
+		    move_cur(1, suffix[0], 1.0);
+		    move_text(1, suffix[0], 1.0);
+		    break;
+		case T_CENTER_JUSTIFIED:
+		    move_cur(1, suffix[0], 2.0);
+		    move_text(1, suffix[0], 2.0);
+		    break;
+		}
+	    /* shift suffix left one char */
+	    for (i=0; i<=leng_suffix; i++)	/* copies null too */
+		suffix[i]=suffix[i+1];
+	    leng_suffix--;
+	    draw_char_string();
+	}
+    /* delete to beginning of line */
     } else if (c == CTRL_X) {
 	if (leng_prefix > 0) {
 	    erase_char_string();
@@ -568,6 +636,31 @@ char_handler(c)
 	    *prefix = '\0';
 	    draw_char_string();
 	}
+    /* delete to end of line */
+    } else if (c == CTRL_K) {
+	if (leng_suffix > 0) {
+	    erase_char_string();
+	    switch (work_textjust) {
+	      case T_LEFT_JUSTIFIED:
+		break;
+	      case T_RIGHT_JUSTIFIED:
+		/* move cursor to end of (orig) string then move string over */
+		while (leng_suffix--) {
+		    move_cur(1, suffix[leng_suffix], 1.0);
+		    move_text(1, suffix[leng_suffix], 1.0);
+		}
+		break;
+	      case T_CENTER_JUSTIFIED:
+		while (leng_suffix--) {
+		    move_cur(1, suffix[leng_suffix], 2.0);
+		    move_text(1, suffix[leng_suffix], 2.0);
+		}
+		break;
+	    }
+	    leng_suffix = 0;
+	    *suffix = '\0';
+	    draw_char_string();
+	}
     } else if (c < SP) {
 	put_msg("Invalid character ignored");
     } else if (leng_prefix + leng_suffix == BUF_SIZE) {
@@ -575,40 +668,66 @@ char_handler(c)
 
     /* normal text character */
     } else {	
-	erase_char_string();/*draw_char_string();	/* erase current string */
-
-	cwidth = ZOOM_FACTOR * char_advance(canvas_font, (unsigned char) c);
-	cwsin = cwidth*sin_t;
-	cwcos = cwidth*cos_t;
-	cw2 = cwidth/2.0;
-	cw2sin = cw2*sin_t;
-	cw2cos = cw2*cos_t;
-	/* correct text/cursor posn for justification and rotation */
+	erase_char_string();	/* erase current string */
 	switch (work_textjust) {
-	  case T_LEFT_JUSTIFIED:
-	    rcur_x += cwcos;
-	    rcur_y -= cwsin;
-	    break;
-	  case T_CENTER_JUSTIFIED:
-	    rbase_x -= cw2cos;
-	    rbase_y += cw2sin;
-	    rcur_x += cw2cos;
-	    rcur_y -= cw2sin;
-	    break;
-	  case T_RIGHT_JUSTIFIED:
-	    rbase_x -= cwcos;
-	    rbase_y += cwsin;
-	    break;
-	}
+	    case T_LEFT_JUSTIFIED:
+		move_cur(1, c, 1.0);
+		break;
+	    case T_RIGHT_JUSTIFIED:
+		move_text(-1, c, 1.0);
+		break;
+	    case T_CENTER_JUSTIFIED:
+		move_cur(1, c, 2.0);
+		move_text(-1, c, 2.0);
+		break;
+	    }
 	prefix[leng_prefix++] = c;
 	prefix[leng_prefix] = '\0';
-	cbase_x = round(rbase_x);
-	cbase_y = round(rbase_y);
-	cur_x = round(rcur_x);
-	cur_y = round(rcur_y);
 	draw_char_string();	/* draw new string */
     }
 }
+
+/* move the cursor left (-1) or right (1) by the width of char c divided by div */
+
+move_cur(dir, c, div)
+    int		    dir;
+    unsigned char   c;
+    float	    div;
+{
+    double	    cwidth;
+    double	    cwsin, cwcos;
+
+    cwidth = (float) (ZOOM_FACTOR * char_advance(canvas_font, c));
+    cwsin = cwidth/div*sin_t;
+    cwcos = cwidth/div*cos_t;
+
+    rcur_x += dir*cwcos;
+    rcur_y -= dir*cwsin;
+    cur_x = round(rcur_x);
+    cur_y = round(rcur_y);
+}
+
+/* move the base of the text left (-1) or right (1) by the width of
+   char c divided by div */
+
+move_text(dir, c, div)
+    int		    dir;
+    unsigned char   c;
+    float	    div;
+{
+    double	    cwidth;
+    double	    cwsin, cwcos;
+
+    cwidth = (float) (ZOOM_FACTOR * char_advance(canvas_font, c));
+    cwsin = cwidth/div*sin_t;
+    cwcos = cwidth/div*cos_t;
+
+    rbase_x += dir*cwcos;
+    rbase_y -= dir*cwsin;
+    cbase_x = round(rbase_x);
+    cbase_y = round(rbase_y);
+}
+
 
 /*******************************************************************
 

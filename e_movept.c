@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -49,7 +55,7 @@ static int	relocate_ellipsepoint();
 static int	relocate_linepoint();
 static int	relocate_splinepoint();
 
-static int	init_move_point();
+static Boolean	init_move_point();
 static int	init_arb_move_point();
 static int	init_stretch_move_point();
 
@@ -86,7 +92,8 @@ init_arb_move_point(obj, type, x, y, p, q)
     F_point	   *p, *q;
 {
     constrained = MOVE_ARB;
-    init_move_point(obj, type, x, y, p, q);
+    if (!init_move_point(obj, type, x, y, p, q))
+	return;
     set_mousefun("new posn", "", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_middlebut_proc = null_proc;
@@ -99,14 +106,15 @@ init_stretch_move_point(obj, type, x, y, p, q)
     F_point	   *p, *q;
 {
     constrained = MOVE_HORIZ_VERT;
-    init_move_point(obj, type, x, y, p, q);
+    if (!init_move_point(obj, type, x, y, p, q))
+	return;
     set_mousefun("", "new posn", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_middlebut_proc = canvas_leftbut_proc;
     canvas_leftbut_proc = null_proc;
 }
 
-static
+static Boolean
 init_move_point(obj, type, x, y, p, q)
     char	   *obj;
     int		    type, x, y;
@@ -131,7 +139,7 @@ init_move_point(obj, type, x, y, p, q)
 	movedpoint_num = (int) p;
 	cur_e = (F_ellipse *) obj;
 	if (!init_ellipsepointmoving()) /* selected center, ignore */
-	    return;
+	    return False;
 	break;
     case O_ARC:
 	force_noanglegeom();
@@ -149,8 +157,9 @@ init_move_point(obj, type, x, y, p, q)
 	init_compoundpointmoving();
 	break;
     default:
-	return;
+	return False;
     }
+    return True;
 }
 
 static
@@ -171,8 +180,7 @@ init_ellipsepointmoving()
     if (constrained &&
 	(cur_e->type == T_CIRCLE_BY_DIA || cur_e->type == T_CIRCLE_BY_RAD)) {
 	put_msg("Constrained move not supported for CIRCLES");
-	return False;		/* abort - constrained move for circle not
-				 * needed */
+	return False;		/* abort - constrained move for circle not allowed */
     }
     if (movedpoint_num == 0) {
 	if (cur_e->type == T_ELLIPSE_BY_RAD ||
@@ -201,19 +209,19 @@ init_ellipsepointmoving()
     set_action_on();
     toggle_ellipsemarker(cur_e);
     switch (cur_e->type) {
-    case T_ELLIPSE_BY_RAD:
+      case T_ELLIPSE_BY_RAD:
 	canvas_locmove_proc = constrained_resizing_ebr;
 	elastic_ebr();
 	break;
-    case T_CIRCLE_BY_RAD:
+      case T_CIRCLE_BY_RAD:
 	canvas_locmove_proc = resizing_cbr;
 	elastic_cbr();
 	break;
-    case T_ELLIPSE_BY_DIA:
+      case T_ELLIPSE_BY_DIA:
 	canvas_locmove_proc = constrained_resizing_ebd;
 	elastic_ebd();
 	break;
-    case T_CIRCLE_BY_DIA:
+      case T_CIRCLE_BY_DIA:
 	canvas_locmove_proc = resizing_cbd;
 	elastic_cbd();
 	break;
@@ -232,16 +240,16 @@ static
 cancel_movedellipsepoint()
 {
     switch (cur_e->type) {
-	case T_ELLIPSE_BY_RAD:
+      case T_ELLIPSE_BY_RAD:
 	elastic_ebr();
 	break;
-    case T_CIRCLE_BY_RAD:
+      case T_CIRCLE_BY_RAD:
 	elastic_cbr();
 	break;
-    case T_ELLIPSE_BY_DIA:
+      case T_ELLIPSE_BY_DIA:
 	elastic_ebd();
 	break;
-    case T_CIRCLE_BY_DIA:
+      case T_CIRCLE_BY_DIA:
 	elastic_cbd();
 	break;
     }
@@ -289,11 +297,17 @@ relocate_ellipsepoint(ellipse, x, y, point_num)
     if (point_num == 0) {	/* starting point is selected  */
 	fix_x = ellipse->end.x;
 	fix_y = ellipse->end.y;
+	/* don't allow coincident start/end points */
+	if (ellipse->end.x == x && ellipse->end.y == y)
+	    return;
 	ellipse->start.x = x;
 	ellipse->start.y = y;
     } else {
 	fix_x = ellipse->start.x;
 	fix_y = ellipse->start.y;
+	/* don't allow coincident start/end points */
+	if (ellipse->start.x == x && ellipse->start.y == y)
+	    return;
 	ellipse->end.x = x;
 	ellipse->end.y = y;
     }
@@ -323,11 +337,6 @@ relocate_ellipsepoint(ellipse, x, y, point_num)
 	ellipse->radiuses.x = round(sqrt(dx * dx + dy * dy));
 	ellipse->radiuses.y = ellipse->radiuses.x;
 	break;
-    }
-    /* if this WAS an ellipse and is NOW a circle (radii are equal), change type */
-    if (ellipse->type == T_ELLIPSE_BY_RAD || ellipse->type == T_ELLIPSE_BY_DIA) {
-	if (ellipse->radiuses.x == ellipse->radiuses.y)
-	    ellipse->type += 2;
     }
     reset_cursor();
 }
@@ -603,7 +612,7 @@ init_linepointmoving()
 
     case T_BOX:
     case T_ARC_BOX:
-    case T_PIC_BOX:
+    case T_PICTURE:
 	if (right_point->next == NULL) {	/* point 4 */
 	    fix_x = cur_l->points->next->x;
 	    fix_y = cur_l->points->next->y;
@@ -677,7 +686,7 @@ fix_box(x, y)
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     adjust_box_pos(x, y, from_x, from_y, &x, &y);
     new_l = copy_line(cur_l);
-    if (new_l->type == T_PIC_BOX) {
+    if (new_l->type == T_PICTURE) {
 	if (signof(fix_x - from_x) != signof(fix_x - x))
 	    new_l->pic->flipped = 1 - new_l->pic->flipped;
 	if (signof(fix_y - from_y) != signof(fix_y - y))

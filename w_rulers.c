@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -28,6 +34,7 @@
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
+#include "object.h"
 
 /*
  * The following will create rulers the same size as the initial screen size.
@@ -64,7 +71,7 @@ static unsigned char	tr_marker_bits[] = {
     0x80, 0x02,		/*       * *  */
     0x00, 0x01,		/*        *  */
 };
-icon_struct trm_pr = {TRM_WID, TRM_HT, tr_marker_bits};
+icon_struct trm_pr = {TRM_WID, TRM_HT, (char*)tr_marker_bits};
 
 static int	srroffx = 2, srroffy = -7;
 static unsigned char	srr_marker_bits[] = {
@@ -85,7 +92,7 @@ static unsigned char	srr_marker_bits[] = {
     0x80,		/*        *  */
     0x00
 };
-icon_struct srrm_pr = {SRM_WID, SRM_HT, srr_marker_bits};
+icon_struct srrm_pr = {SRM_WID, SRM_HT, (char*)srr_marker_bits};
 
 static int	srloffx = -10, srloffy = -7;
 static unsigned char	srl_marker_bits[] = {
@@ -106,7 +113,7 @@ static unsigned char	srl_marker_bits[] = {
     0x01,		/* *	      */
     0x00
 };
-icon_struct srlm_pr = {SRM_WID, SRM_HT, srl_marker_bits};
+icon_struct srlm_pr = {SRM_WID, SRM_HT, (char*)srl_marker_bits};
 
 static Pixmap	toparrow_pm = 0, sidearrow_pm = 0;
 static Pixmap	topruler_pm = 0, sideruler_pm = 0;
@@ -161,15 +168,16 @@ static int	ONEMM = (PIX_PER_CM / 10);
 
 /************************* UNITBOX ************************/
 
-extern Widget   make_popup_menu();
-extern Atom     wm_delete_window;
-extern char    *panel_get_value();
+extern Widget	make_popup_menu();
+extern Atom	wm_delete_window;
+extern char	*panel_get_value();
 void popup_unit_panel();
-static int      rul_unit_setting, fig_unit_setting=0, fig_scale_setting=0;
-static Widget   rul_unit_panel, fig_unit_panel, fig_scale_panel;
-static Widget   rul_unit_menu, fig_unit_menu, fig_scale_menu;
-static Widget   scale_factor_lab, scale_factor_panel;
-static Widget   user_unit_lab, user_unit_panel;
+static Boolean	rul_unit_setting;
+static int	fig_unit_setting=0, fig_scale_setting=0;
+static Widget	rul_unit_panel, fig_unit_panel, fig_scale_panel;
+static Widget	rul_unit_menu, fig_unit_menu, fig_scale_menu;
+static Widget	scale_factor_lab, scale_factor_panel;
+static Widget	user_unit_lab, user_unit_panel;
 
 
 XtActionsRec	unitbox_actions[] =
@@ -257,7 +265,7 @@ unit_panel_set(w, ev)
     int old_rul_unit;
 
     old_rul_unit = appres.INCHES;
-    appres.INCHES = rul_unit_setting ? 1 : 0;
+    appres.INCHES = rul_unit_setting ? True : False;
     init_grid();	/* change point positioning messages if necessary */
     if (fig_scale_setting)
 	appres.user_scale = (float) atof(panel_get_value(scale_factor_panel));
@@ -267,7 +275,7 @@ unit_panel_set(w, ev)
     if (fig_unit_setting) {
         strncpy(cur_fig_units,
 	    panel_get_value(user_unit_panel),
-	    sizeof(cur_fig_units));
+	    sizeof(cur_fig_units)-1);
 	put_msg("Ruler scale: %s,  Figure scale: 1 %s = %.4f %s",
 		appres.INCHES ? "in" : "cm",
 		appres.INCHES ? "in" : "cm",
@@ -284,6 +292,13 @@ unit_panel_set(w, ev)
 	SetValues(unitbox_sw);
 	reset_rulers();
 	setup_grid(cur_gridmode);
+	if(!emptyfigure()) { /* rescale, HWS */
+	  if(old_rul_unit)
+	    read_scale_compound(&objects,(2.54*PIX_PER_CM)/((float)PIX_PER_INCH),0);
+	  else
+	    read_scale_compound(&objects,((float)PIX_PER_INCH)/(2.54*PIX_PER_CM),0);
+	  redisplay_canvas();
+	}
     }
     unit_panel_dismiss();
 }
@@ -323,7 +338,7 @@ rul_unit_select(w, new_unit, garbage)
 {
     FirstArg(XtNlabel, XtName(w));
     SetValues(rul_unit_panel);
-    rul_unit_setting = (int) new_unit;
+    rul_unit_setting = ((int)new_unit)==1? True: False;
     if (rul_unit_setting)
 	put_msg("ruler scale : inches");
     else
@@ -374,7 +389,7 @@ popup_unit_panel()
 
     /* make ruler units menu */
 
-    rul_unit_setting = appres.INCHES ? 1 : 0;
+    rul_unit_setting = appres.INCHES ? True : False;
     FirstArg(XtNfromVert, label);
     NextArg(XtNborderWidth, 0);
     beside = XtCreateManagedWidget("Ruler Units  =", labelWidgetClass,
@@ -382,7 +397,7 @@ popup_unit_panel()
 
     FirstArg(XtNfromVert, label);
     NextArg(XtNfromHoriz, beside);
-    rul_unit_panel = XtCreateManagedWidget(rul_unit_items[rul_unit_setting],
+    rul_unit_panel = XtCreateManagedWidget(rul_unit_items[rul_unit_setting? 1:0],
 				menuButtonWidgetClass, form, Args, ArgCount);
     below = rul_unit_panel;
     rul_unit_menu = make_popup_menu(rul_unit_items, XtNumber(rul_unit_items),
@@ -672,8 +687,7 @@ setup_topruler()
     /* make pixmaps for top ruler arrow */
     toparrow_pm = XCreatePixmapFromBitmapData(tool_d, topruler_win, 
 				trm_pr.bits, trm_pr.width, trm_pr.height, 
-				fg^bg, (unsigned long) 0,
-				DefaultDepthOfScreen(tool_s));
+				fg^bg, (unsigned long) 0, tool_dpth);
 
     /* now make the real xor gc */
     gcv.background = bg;
@@ -683,8 +697,7 @@ setup_topruler()
     XDefineCursor(tool_d, topruler_win, lr_arrow_cursor);
 
     topruler_pm = XCreatePixmap(tool_d, topruler_win,
-				TOPRULER_WD, TOPRULER_HT,
-				DefaultDepthOfScreen(tool_s));
+				TOPRULER_WD, TOPRULER_HT, tool_dpth);
 
     reset_topruler();
 }
@@ -693,17 +706,16 @@ resize_topruler()
 {
     XFreePixmap(tool_d, topruler_pm);
     topruler_pm = XCreatePixmap(tool_d, topruler_win,
-				TOPRULER_WD, TOPRULER_HT,
-				DefaultDepthOfScreen(tool_s));
+				TOPRULER_WD, TOPRULER_HT, tool_dpth);
 
     reset_topruler();
 }
 
 reset_topruler()
 {
-    register int    i, j;
+    register int    i;
     register Pixmap p = topruler_pm;
-    char	    number[4],clen;
+    char	    number[6],clen;
     int		    X0;
     float	    skip;
 
@@ -726,45 +738,43 @@ reset_topruler()
     X0 = BACKX(0);
     if (appres.INCHES) {
 	X0 -= (X0 % SINCH);
-	for (i = X0+SINCH-1; i <= X0+round(TOPRULER_WD/zoomscale); i += SINCH) {
-	    j = i + 1;
-	    if ((int)(j/skip) % PIX_PER_INCH == 0) {
-		if (1.0*j/PIX_PER_INCH == (int)(j/PIX_PER_INCH))
-		    sprintf(number, "%-d", (int)(j / PIX_PER_INCH));
+	for (i = X0; i <= X0+round(TOPRULER_WD/zoomscale); i += SINCH) {
+	    if ((int)(i/skip) % PIX_PER_INCH == 0) {
+		if (1.0*i/PIX_PER_INCH == (int)(i/PIX_PER_INCH))
+		    sprintf(number, "%-d", (int)(i / PIX_PER_INCH));
 		else
-		    sprintf(number, "%-.1f", 1.0 * j / PIX_PER_INCH);
+		    sprintf(number, "%-.1f", (float)(1.0 * i / PIX_PER_INCH));
 		XDrawString(tool_d, p, tr_gc, ZOOMX(i) - strlen(number)*clen/2,
 			TOPRULER_HT - INCH_MARK - 5, number, strlen(number));
 	    }
-	    if (j % PIX_PER_INCH == 0) {
+	    if (i % PIX_PER_INCH == 0) {
 		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
 			  TOPRULER_HT - INCH_MARK - 1);
-	    } else if (j % HINCH == 0)
+	    } else if (i % HINCH == 0)
 		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
 			  TOPRULER_HT - HALF_MARK - 1);
-	    else if (j % QINCH == 0 && display_zoomscale >= 0.2)
+	    else if (i % QINCH == 0 && display_zoomscale >= 0.2)
 		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
 			  TOPRULER_HT - QUARTER_MARK - 1);
-	    else if (j % SINCH == 0 && display_zoomscale >= 0.4)
+	    else if (i % SINCH == 0 && display_zoomscale >= 0.4)
 		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
 			  TOPRULER_HT - SIXTEENTH_MARK - 1);
 	}
     } else {
 	X0 -= (X0 % TWOMM);
-	for (i = X0+TWOMM-1; i <= X0+round(TOPRULER_WD/zoomscale); i += ONEMM) {
-	    j = i + 1;
-	    if ((int)(j/skip) % PIX_PER_CM == 0) {
-		if (1.0*j/PIX_PER_CM == (int)(j/PIX_PER_CM))
-		    sprintf(number, "%-d", (int)(j / PIX_PER_CM));
+	for (i = X0; i <= X0+round(TOPRULER_WD/zoomscale); i += ONEMM) {
+	    if ((int)(i/skip) % PIX_PER_CM == 0) {
+		if (1.0*i/PIX_PER_CM == (int)(i/PIX_PER_CM))
+		    sprintf(number, "%-d", (int)(i / PIX_PER_CM));
 		else
-		    sprintf(number, "%-.1f", 1.0 * j / PIX_PER_CM);
+		    sprintf(number, "%-.1f", (float)(1.0 * i / PIX_PER_CM));
 		XDrawString(tool_d, p, tr_gc, ZOOMX(i) - strlen(number)*clen/2,
 			TOPRULER_HT - INCH_MARK - 5, number, strlen(number));
 	    }
-	    if (j % PIX_PER_CM == 0)
+	    if (i % PIX_PER_CM == 0)
 		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
 			  TOPRULER_HT - INCH_MARK - 1);
-	    else if (j % TWOMM == 0 && display_zoomscale >= 0.3)
+	    else if (i % TWOMM == 0 && display_zoomscale >= 0.3)
 		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
 			  TOPRULER_HT - QUARTER_MARK - 1);
 	}
@@ -938,13 +948,11 @@ setup_sideruler()
     if (appres.RHS_PANEL) {
 	sidearrow_pm = XCreatePixmapFromBitmapData(tool_d, sideruler_win, 
 				srlm_pr.bits, srlm_pr.width, srlm_pr.height, 
-				fg^bg, (unsigned long) 0,
-				DefaultDepthOfScreen(tool_s));
+				fg^bg, (unsigned long) 0, tool_dpth);
     } else {
 	sidearrow_pm = XCreatePixmapFromBitmapData(tool_d, sideruler_win, 
 				srrm_pr.bits, srrm_pr.width, srrm_pr.height, 
-				fg^bg, (unsigned long) 0,
-				DefaultDepthOfScreen(tool_s));
+				fg^bg, (unsigned long) 0, tool_dpth);
     }
 
     /* now make the real xor gc */
@@ -955,8 +963,7 @@ setup_sideruler()
     XDefineCursor(tool_d, sideruler_win, ud_arrow_cursor);
 
     sideruler_pm = XCreatePixmap(tool_d, sideruler_win,
-				 SIDERULER_WD, SIDERULER_HT,
-				 DefaultDepthOfScreen(tool_s));
+				 SIDERULER_WD, SIDERULER_HT, tool_dpth);
 
     reset_sideruler();
 }
@@ -965,16 +972,15 @@ resize_sideruler()
 {
     XFreePixmap(tool_d, sideruler_pm);
     sideruler_pm = XCreatePixmap(tool_d, sideruler_win,
-				 SIDERULER_WD, SIDERULER_HT,
-				 DefaultDepthOfScreen(tool_s));
+				 SIDERULER_WD, SIDERULER_HT, tool_dpth);
     reset_sideruler();
 }
 
 reset_sideruler()
 {
-    register int    i, j;
+    register int    i;
     register Pixmap p = sideruler_pm;
-    char	    number[4];
+    char	    number[6];
     int		    Y0;
     float	    skip;
 
@@ -998,54 +1004,52 @@ reset_sideruler()
     if (appres.INCHES) {
 	Y0 -= (Y0 % SINCH);
 	if (appres.RHS_PANEL) {
-	    for (i = Y0+SINCH-1; i <= Y0+round(SIDERULER_HT/zoomscale); i += SINCH) {
-		j = i + 1;
-		if (j % PIX_PER_INCH == 0) {
+	    for (i = Y0; i <= Y0+round(SIDERULER_HT/zoomscale); i += SINCH) {
+		if (i % PIX_PER_INCH == 0) {
 		    XDrawLine(tool_d, p, sr_gc, SIDERULER_WD - INCH_MARK,
 			      ZOOMY(i), SIDERULER_WD, ZOOMY(i));
-		    if ((int)(j/skip) % PIX_PER_INCH == 0) {
-			if (1.0*j/PIX_PER_INCH == (int)(j/PIX_PER_INCH))
-			    sprintf(number, "%d", (int)(j / PIX_PER_INCH));
+		    if ((int)(i/skip) % PIX_PER_INCH == 0) {
+			if (1.0*i/PIX_PER_INCH == (int)(i / PIX_PER_INCH))
+			    sprintf(number, "%d", (int)(i / PIX_PER_INCH));
 			else
-			    sprintf(number, "%.1f", j / PIX_PER_INCH);
+			    sprintf(number, "%.1f", (float)(1.0 * i / PIX_PER_INCH));
 			XDrawString(tool_d, p, sr_gc,
 				SIDERULER_WD - INCH_MARK - 22, ZOOMY(i) + 3,
 				number, strlen(number));
 		    }
-		} else if (j % HINCH == 0)
+		} else if (i % HINCH == 0)
 		    XDrawLine(tool_d, p, sr_gc,
 			      SIDERULER_WD - HALF_MARK, ZOOMY(i),
 			      SIDERULER_WD, ZOOMY(i));
-		else if (j % QINCH == 0 && display_zoomscale >= 0.2)
+		else if (i % QINCH == 0 && display_zoomscale >= 0.2)
 		    XDrawLine(tool_d, p, sr_gc,
 			      SIDERULER_WD - QUARTER_MARK, ZOOMY(i),
 			      SIDERULER_WD, ZOOMY(i));
-		else if (j % SINCH == 0 && display_zoomscale >= 0.4)
+		else if (i % SINCH == 0 && display_zoomscale >= 0.4)
 		    XDrawLine(tool_d, p, sr_gc,
 			      SIDERULER_WD - SIXTEENTH_MARK, ZOOMY(i),
 			      SIDERULER_WD, ZOOMY(i));
 	    }
 	} else {
-	    for (i = Y0+SINCH-1; i <= Y0+round(SIDERULER_HT/zoomscale); i += SINCH) {
-		j = i + 1;
-		if (j % PIX_PER_INCH == 0) {
+	    for (i = Y0; i <= Y0+round(SIDERULER_HT/zoomscale); i += SINCH) {
+		if (i % PIX_PER_INCH == 0) {
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
 			      INCH_MARK - 1, ZOOMY(i));
-		    if ((int)(j/skip) % PIX_PER_INCH == 0) {
-			if (1.0*j/PIX_PER_INCH == (int)(j/PIX_PER_INCH))
-			    sprintf(number, "%d", (int)(j / PIX_PER_INCH));
+		    if ((int)(i/skip) % PIX_PER_INCH == 0) {
+			if (1.0*i/PIX_PER_INCH == (int)(i / PIX_PER_INCH))
+			    sprintf(number, "%d", (int)(i / PIX_PER_INCH));
 			else
-			    sprintf(number, "%.1f", j / PIX_PER_INCH);
+			    sprintf(number, "%.1f", (float)(1.0 * i / PIX_PER_INCH));
 		        XDrawString(tool_d, p, sr_gc, INCH_MARK + 3,
 				ZOOMY(i) + 3, number, strlen(number));
 		    }
-		} else if (j % HINCH == 0)
+		} else if (i % HINCH == 0)
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
 			      HALF_MARK - 1, ZOOMY(i));
-		else if (j % QINCH == 0 && display_zoomscale >= 0.2)
+		else if (i % QINCH == 0 && display_zoomscale >= 0.2)
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
 			      QUARTER_MARK - 1, ZOOMY(i));
-		else if (j % SINCH == 0 && display_zoomscale >= 0.4)
+		else if (i % SINCH == 0 && display_zoomscale >= 0.4)
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
 			      SIXTEENTH_MARK - 1, ZOOMY(i));
 	    }
@@ -1053,40 +1057,38 @@ reset_sideruler()
     } else {
 	Y0 -= (Y0 % TWOMM);
 	if (appres.RHS_PANEL) {
-	    for (i = Y0+TWOMM-1; i <= Y0+round(SIDERULER_HT/zoomscale); i++) {
-		j = i + 1;
-		if (j % PIX_PER_CM == 0) {
+	    for (i = Y0; i <= Y0+round(SIDERULER_HT/zoomscale); i++) {
+		if (i % PIX_PER_CM == 0) {
 		    XDrawLine(tool_d, p, sr_gc, SIDERULER_WD - INCH_MARK,
 			      ZOOMY(i), SIDERULER_WD, ZOOMY(i));
-		    if ((int)(j/skip) % PIX_PER_CM == 0) {
-			if (1.0*j/PIX_PER_CM == (int)(j/PIX_PER_CM))
-			    sprintf(number, "%d", (int)(j / PIX_PER_CM));
+		    if ((int)(i/skip) % PIX_PER_CM == 0) {
+			if (1.0*i/PIX_PER_CM == (int)(i / PIX_PER_CM))
+			    sprintf(number, "%d", (int)(i / PIX_PER_CM));
 			else
-			    sprintf(number, "%.1f", j / PIX_PER_CM);
+			    sprintf(number, "%.1f", (float)(1.0 * i / PIX_PER_CM));
 			XDrawString(tool_d, p, sr_gc,
 				SIDERULER_WD - INCH_MARK - 14, ZOOMY(i) + 3,
 				number, strlen(number));
 		    }
-		} else if (j % TWOMM == 0 && display_zoomscale >= 0.3)
+		} else if (i % TWOMM == 0 && display_zoomscale >= 0.3)
 		    XDrawLine(tool_d, p, sr_gc,
 			      SIDERULER_WD - QUARTER_MARK, ZOOMY(i),
 			      SIDERULER_WD, ZOOMY(i));
 	    }
 	} else {
-	    for (i = Y0+TWOMM-1; i <= Y0+round(SIDERULER_HT/zoomscale); i++) {
-		j = i + 1;
-		if (j % PIX_PER_CM == 0) {
+	    for (i = Y0; i <= Y0+round(SIDERULER_HT/zoomscale); i++) {
+		if (i % PIX_PER_CM == 0) {
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
 			      INCH_MARK - 1, ZOOMY(i));
-		    if ((int)(j/skip) % PIX_PER_CM == 0) {
-			if (1.0*j/PIX_PER_CM == (int)(j/PIX_PER_CM))
-			    sprintf(number, "%d", (int)(j / PIX_PER_CM));
+		    if ((int)(i/skip) % PIX_PER_CM == 0) {
+			if (1.0*i/PIX_PER_CM == (int)(i / PIX_PER_CM))
+			    sprintf(number, "%d", (int)(i / PIX_PER_CM));
 			else
-			    sprintf(number, "%.1f", j / PIX_PER_CM);
+			    sprintf(number, "%.1f", (float)(1.0 * i / PIX_PER_CM));
 			XDrawString(tool_d, p, sr_gc, INCH_MARK + 3,
 				ZOOMY(i) + 3, number, strlen(number));
 		    }
-		} else if (j % TWOMM == 0 && display_zoomscale >= 0.3)
+		} else if (i % TWOMM == 0 && display_zoomscale >= 0.3)
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
 			      QUARTER_MARK - 1, ZOOMY(i));
 	    }

@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 /**************** IMPORTS ****************/
@@ -293,6 +299,7 @@ undo_change()
 undo_add()
 {
     int		    xmin, ymin, xmax, ymax;
+    char	    ctemp[PATH_MAX];
 
     switch (last_object) {
     case O_POLYLINE:
@@ -323,6 +330,10 @@ undo_add()
 	cut_objects(&objects, &object_tails);
 	compound_bound(&saved_objects, &xmin, &ymin, &xmax, &ymax);
 	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
+	/* restore filename if necessary (from undo of "New" command) */
+	strcpy(ctemp, cur_filename);
+	update_cur_filename(save_filename);
+	strcpy(save_filename, ctemp);
 	break;
     }
     last_action = F_DELETE;
@@ -331,6 +342,7 @@ undo_add()
 undo_delete()
 {
     int		    xmin, ymin, xmax, ymax;
+    char	    ctemp[PATH_MAX];
 
     switch (last_object) {
     case O_POLYLINE:
@@ -360,8 +372,13 @@ undo_delete()
     case O_ALL_OBJECT:
 	saved_objects.next = NULL;
 	compound_bound(&saved_objects, &xmin, &ymin, &xmax, &ymax);
+	tail(&objects, &object_tails);
 	append_objects(&objects, &saved_objects, &object_tails);
 	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
+	/* restore filename if necessary (from "New" command) */
+	strcpy(ctemp, cur_filename);
+	update_cur_filename(save_filename);
+	strcpy(save_filename, ctemp);
     }
     last_action = F_ADD;
 }
@@ -429,7 +446,7 @@ undo_move()
 undo_load()
 {
     F_compound	    temp;
-    char	    ctemp[200];
+    char	    ctemp[PATH_MAX];
 
     temp = objects;
     objects = saved_objects;

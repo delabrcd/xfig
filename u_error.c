@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -111,18 +117,24 @@ emergency_quit(abortflag)
 }
 
 /* ARGSUSED */
-void my_quit(w, event, params, num_params)
-Widget w;
-XEvent *event;
-String *params;
-Cardinal *num_params;
+void
+my_quit(w, event, params, num_params)
+    Widget     w;
+    XEvent    *event;
+    String    *params;
+    Cardinal  *num_params;
 {
     extern Atom wm_protocols[];
     if (event && event->type == ClientMessage &&
+#ifdef WHEN_SAVE_YOURSELF_IS_FIXED
 	((event->xclient.data.l[0] != wm_protocols[0]) &&
 	 (event->xclient.data.l[0] != wm_protocols[1])))
+#else
+	(event->xclient.data.l[0] != wm_protocols[0]))
+#endif
     {
 	return;
     }
-    emergency_quit(False);
+    /* quit after asking whether user wants to save figure */
+    quit(w);
 }

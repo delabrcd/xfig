@@ -10,11 +10,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -35,6 +41,8 @@ load_file(file, xoff, yoff)
     F_compound	    c;
 
     put_msg("Loading file %s...",file);
+    c.parent = NULL;
+    c.GABPtr = NULL;
     c.arcs = NULL;
     c.compounds = NULL;
     c.ellipses = NULL;
@@ -48,6 +56,8 @@ load_file(file, xoff, yoff)
 	clean_up();
 	(void) strcpy(save_filename, cur_filename);
 	update_cur_filename(file);
+	/* in case the user is inside any compounds */
+	close_all_compounds();
 	saved_objects = objects;
 	objects = c;
 	redisplay_canvas();
@@ -92,6 +102,8 @@ merge_file(file, xoff, yoff)
     c.next = NULL;
     set_temp_cursor(wait_cursor);
 
+    /* clear picture object read flag */
+    pic_obj_read = False;
     s = read_fig(file, &c, True, xoff, yoff);	/* merging */
     if (s == 0) {			/* Successful read */
 	int		xmin, ymin, xmax, ymax;
@@ -101,8 +113,9 @@ merge_file(file, xoff, yoff)
 	saved_objects = c;
 	tail(&objects, &object_tails);
 	append_objects(&objects, &saved_objects, &object_tails);
-	/* must remap all EPS/GIF/XPMs now */
-	remap_imagecolors(&objects);
+	/* must remap all EPS/GIF/XPMs now if any new pic objects were read */
+	if (pic_obj_read)
+	    remap_imagecolors(&objects);
 	redraw_images(&objects);
 	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
 	put_msg("%d object(s) read from \"%s\"", num_object, file);

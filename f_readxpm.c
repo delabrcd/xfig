@@ -8,14 +8,18 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
-
-#ifdef USE_XPM
 
 #include "fig.h"
 #include "resources.h"
@@ -35,11 +39,16 @@ read_xpm(file,filetype,pic)
     int		    filetype;
     F_pic	   *pic;
 {
-    int status;
-    XpmImage		image;
-    int			i;
-    char		*c;
-    XColor		exact_def;
+    int		    status;
+    XpmImage	    image;
+    int		    i;
+    char	   *c;
+    XColor	    exact_def;
+
+    /* make scale factor larger for metric */
+    float scale = (appres.INCHES ?
+			(float)PIX_PER_INCH :
+			2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
 
     status = XpmReadFileToXpmImage(pic->file, &image, NULL);
     /* if out of colors, try switching colormaps and reading again */
@@ -58,15 +67,13 @@ read_xpm(file,filetype,pic)
 	    }
 	    if (XParseColor(tool_d, tool_cm, c, &exact_def) == 0) {
 		file_msg("Error parsing color %s",c);
-		exact_def.red = exact_def.green = exact_def.blue = 255;
+		exact_def.red = exact_def.green = exact_def.blue = 65535;
 	    }
 	    pic->cmap[i].red = exact_def.red >> 8;
 	    pic->cmap[i].green = exact_def.green >> 8;
 	    pic->cmap[i].blue = exact_def.blue >> 8;
 	}
-	pic->subtype = T_PIC_PIXMAP;
-	put_msg("XPixmap of size %dx%d with %d colors read OK",
-		image.width, image.height, image.ncolors);
+	pic->subtype = T_PIC_XPM;
 	pic->numcols = image.ncolors;
 	pic->pixmap = None;
 	pic->bitmap = (unsigned char *) malloc(image.width*image.height*sizeof(unsigned char));
@@ -79,25 +86,14 @@ read_xpm(file,filetype,pic)
 	XpmFreeXpmImage(&image);	/* get rid of the image */
 	pic->hw_ratio = (float) image.height / image.width;
 	pic->bit_size.x = image.width;
-	pic->size_x = image.width * ZOOM_FACTOR;
+	pic->size_x = image.width * scale;
 	pic->bit_size.y = image.height;
-	pic->size_y = image.height * ZOOM_FACTOR;
+	pic->size_y = image.height * scale;
 	/* if monochrome display map bitmap */
 	if (tool_cells <= 2 || appres.monochrome)
 	    map_to_mono(pic);
+
 	return PicSuccess;
     }
     return FileInvalid;
 }
-
-#else /* USE_XPM */
-
-/* for those compilers that don't like empty .c files */
-
-static void
-dum_function()
-{
-  ;
-}
-
-#endif /* USE_XPM */

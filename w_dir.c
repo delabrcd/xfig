@@ -9,11 +9,17 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  *
  *	Created: 13 Aug 88
  *
@@ -80,13 +86,18 @@ static char   **file_list, **dir_list;
 static char   **filelist, **dirlist;
 static char    *dirmask;
 
+static Widget	hidden;
+static Boolean	show_hidden = False;
+
 /* External variables */
 
-extern Widget	file_panel, export_panel;
 extern Widget	exp_selfile, file_selfile, exp_dir, file_dir, exp_flist,
 		file_flist, exp_dlist, file_dlist, exp_mask, file_mask;
-extern Boolean	file_up, export_up;
-extern char	export_dir[];
+extern Widget	browse_selfile, browse_dir, browse_flist,
+		browse_dlist, browse_mask;
+
+extern Boolean	file_up, export_up, browse_up;
+extern char	export_cur_dir[], browse_cur_dir[];
 
 /* Functions */
 
@@ -115,13 +126,17 @@ FileSelected(w, client_data, ret_val)
 
     strcpy(CurrentSelectionName, ret_struct->string);
     FirstArg(XtNstring, CurrentSelectionName);
-    if (export_up) {
-	SetValues(exp_selfile);
-		XawTextSetInsertionPoint(exp_selfile, strlen(CurrentSelectionName));
-    } else {
+    if (file_up) {
 	SetValues(file_selfile);
 		XawTextSetInsertionPoint(file_selfile, strlen(CurrentSelectionName));
-    }
+    } else if (export_up) {
+	SetValues(exp_selfile);
+		XawTextSetInsertionPoint(exp_selfile, strlen(CurrentSelectionName));
+    } else if (browse_up) {
+	SetValues(browse_selfile);
+		XawTextSetInsertionPoint(browse_selfile, strlen(CurrentSelectionName));
+    } /* if nothing is selected it probably means that the user was impatient and
+	double clicked the file name again while it was still loading the first */
 }
 
 /* Function:	DirSelected() is called when the user selects a directory.
@@ -141,6 +156,19 @@ DirSelected(w, client_data, ret_val)
 
     strcpy(CurrentSelectionName, ret_struct->string);
     DoChangeDir(CurrentSelectionName);
+}
+
+void
+ShowHidden(w, client_data, ret_val)
+    Widget	    w;
+    XtPointer	    client_data;
+    XtPointer	    ret_val;
+{
+    show_hidden = !show_hidden;
+    FirstArg(XtNlabel, show_hidden? "Hide Hidden": "Show Hidden");
+    SetValues(hidden);
+    /* make it rescan the current directory */
+    DoChangeDir(".");
 }
 
 void
@@ -178,9 +206,12 @@ SetDir(widget, event, params, num_params)
     FirstArg(XtNstring, &ndir);
     if (file_up) {
 	GetValues(file_dir);
-    } else {
+    } else if (export_up) {
 	GetValues(exp_dir);
-	strcpy(export_dir,ndir);	/* save in global var */
+	strcpy(export_cur_dir,ndir);	/* save in global var */
+    } else {	/* must be image browser */
+	GetValues(browse_dir);
+	strcpy(browse_cur_dir,ndir);
     }
     /* if there is a ~ in the directory, parse the username */
     if (ndir[0]=='~')
@@ -251,7 +282,7 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     Widget	    file_viewport;
     Widget	    dir_viewport;
     PIX_FONT	    temp_font;
-    int		    char_ht;
+    int		    char_ht,char_wd;
 
     dir_entry_cnt = NENTRIES;
     file_entry_cnt = NENTRIES;
@@ -265,15 +296,17 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     NextArg(XtNborderWidth, 0);
     w = XtCreateManagedWidget("file_alt_label", labelWidgetClass,
 			      parent, Args, ArgCount);
+
     FirstArg(XtNfont, &temp_font);
     GetValues(w);
     char_ht = max_char_height(temp_font) + 2;
+    char_wd = char_width(temp_font) + 2;
 
     FirstArg(XtNallowVert, True);
     NextArg(XtNfromHoriz, w);
     NextArg(XtNfromVert, below);
     NextArg(XtNborderWidth, INTERNAL_BW);
-    NextArg(XtNwidth, 350);
+    NextArg(XtNwidth, FILE_WIDTH);
     NextArg(XtNheight, char_ht * 10);
     file_viewport = XtCreateManagedWidget("vport", viewportWidgetClass,
 					  parent, Args, ArgCount);
@@ -289,7 +322,7 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNscrollVertical, XawtextScrollNever);
     NextArg(XtNresize, XawtextResizeWidth);
-    NextArg(XtNwidth, 350);
+    NextArg(XtNwidth, FILE_WIDTH);
     NextArg(XtNfromHoriz, w);
     NextArg(XtNfromVert, file_viewport);
     *mask_w = XtCreateManagedWidget("mask", asciiTextWidgetClass, 
@@ -318,7 +351,7 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     NextArg(XtNfromVert, *mask_w);
     NextArg(XtNvertDistance, 15);
     NextArg(XtNfromHoriz, w);
-    NextArg(XtNwidth, 350);
+    NextArg(XtNwidth, FILE_WIDTH);
     *dir_w = XtCreateManagedWidget("dir_name", asciiTextWidgetClass,
 				   parent, Args, ArgCount);
 
@@ -335,18 +368,29 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     FirstArg(XtNlabel, "Home");
     NextArg(XtNfromVert, dir_alt);
     NextArg(XtNfromHoriz, dir_alt);
-    NextArg(XtNhorizDistance, -70);
+    NextArg(XtNhorizDistance, -(char_wd * 5));
     NextArg(XtNborderWidth, INTERNAL_BW);
     home = XtCreateManagedWidget("home", commandWidgetClass, 
 				parent, Args, ArgCount);
     XtAddCallback(home, XtNcallback, GoHome, (XtPointer) NULL);
 
+    /* put a button for showing/hiding hidden files below the Home button */
+
+    FirstArg(XtNlabel, show_hidden? "Hide Hidden": "Show Hidden");
+    NextArg(XtNfromVert, home);
+    NextArg(XtNfromHoriz, dir_alt);
+    NextArg(XtNhorizDistance, (int) -(char_wd * 10.5));
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    hidden = XtCreateManagedWidget("hidden", commandWidgetClass, 
+				parent, Args, ArgCount);
+    XtAddCallback(hidden, XtNcallback, ShowHidden, (XtPointer) NULL);
+
     FirstArg(XtNallowVert, True);
     NextArg(XtNfromHoriz, dir_alt);
     NextArg(XtNfromVert, *dir_w);
     NextArg(XtNborderWidth, INTERNAL_BW);
-    NextArg(XtNwidth, 350);
-    NextArg(XtNheight, char_ht * 4);
+    NextArg(XtNwidth, FILE_WIDTH);
+    NextArg(XtNheight, char_ht * 5);
     dir_viewport = XtCreateManagedWidget("dirvport", viewportWidgetClass,
 					 parent, Args, ArgCount);
 
@@ -441,6 +485,9 @@ MakeFileList(dir_name, mask, dir_list, file_list)
     for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
 	/* skip over '.' (current dir) */
 	if (!strcmp(dp->d_name, "."))
+	    continue;
+	/* if don't want to see the hidden files (beginning with ".") skip them */
+	if (!show_hidden && dp->d_name[0]=='.' && strcmp(dp->d_name,".."))
 	    continue;
 
 	if (IsDirectory(dir_name, dp->d_name)) {
@@ -537,8 +584,7 @@ DoChangeDir(dir)
     strcpy(tmpdir, cur_dir);		/* save cur_dir in case ndir is bad */
     strcpy(cur_dir, ndir);
     if (change_directory(cur_dir) != 0 ) {
-	file_msg("Can't change to directory %s", cur_dir);
-	strcpy(cur_dir, tmpdir);
+	strcpy(cur_dir, tmpdir);	/* can't go there */
 	return;
     } else if (MakeFileList(ndir, dirmask, &dirlist, &filelist) == False) {
 	file_msg("Unable to list directory %s", ndir);
@@ -556,13 +602,19 @@ DoChangeDir(dir)
 	XawTextSetInsertionPoint(file_dir, strlen(cur_dir));
 	NewList(file_flist,filelist);
 	NewList(file_dlist,dirlist);
-    } else {
+    } else if (export_up) {
 	SetValues(exp_dir);
-	strcpy(export_dir,cur_dir);	/* save in global var */
+	strcpy(export_cur_dir,cur_dir);	/* save in global var */
 	XawTextSetInsertionPoint(exp_dir, strlen(cur_dir));
 	NewList(exp_flist, filelist);
 	NewList(exp_dlist, dirlist);
-	}
+    } else {	/* must be image browser */
+	SetValues(browse_dir);
+	strcpy(browse_cur_dir,cur_dir);	/* save in global var */
+	XawTextSetInsertionPoint(browse_dir, strlen(cur_dir));
+	NewList(browse_flist, filelist);
+	NewList(browse_dlist, dirlist);
+    }
     CurrentSelectionName[0] = '\0';
 }
 
@@ -593,18 +645,33 @@ Rescan(widget, event, params, num_params)
 	GetValues(file_mask);
 	FirstArg(XtNstring, &dir);
 	GetValues(file_dir);
+	if (change_directory(dir))	/* make sure we are there */
+	    return;
 	(void) MakeFileList(dir, dirmask, &dir_list, &file_list);
 	NewList(file_flist,file_list);
 	NewList(file_dlist,dir_list);
-    } else {
+    } else if (export_up) {
 	FirstArg(XtNstring, &dirmask);
 	GetValues(exp_mask);
 	FirstArg(XtNstring, &dir);
 	GetValues(exp_dir);
-	strcpy(export_dir,dir);		/* save in global var */
+	if (change_directory(dir))	/* make sure we are there */
+	    return;
+	strcpy(export_cur_dir,dir);		/* save in global var */
 	(void) MakeFileList(dir, dirmask, &dir_list, &file_list);
 	NewList(exp_flist, file_list);
 	NewList(exp_dlist, dir_list);
+    } else {	/* must be image browser */
+	FirstArg(XtNstring, &dirmask);
+	GetValues(browse_mask);
+	FirstArg(XtNstring, &dir);
+	GetValues(browse_dir);
+	if (change_directory(dir))	/* make sure we are there */
+	    return;
+	strcpy(browse_cur_dir,dir);		/* save in global var */
+	(void) MakeFileList(dir, dirmask, &dir_list, &file_list);
+	NewList(browse_flist, file_list);
+	NewList(browse_dlist, dir_list);
     }
 }
 

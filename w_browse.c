@@ -1,13 +1,25 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1991 by Brian V. Smith
+ * Copyright (c) 1995 Jim Daley (jdaley@cix.compulink.co.uk)
+ * Parts Copyright (c) 1995 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software subject to the restriction stated
+ * below, and to permit persons who receive copies from any such party to
+ * do so, with the only requirement being that this copyright notice remain
+ * intact.
+ * This license includes without limitation a license to do the foregoing
+ * actions under any patents of the party supplying this software to the 
+ * X Consortium.
+ *
+ * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
+ * be included if xfig is to be sold, due to the patent held by Unisys Corp.
+ * on the LZW compression algorithm.
  */
 
 #include "fig.h"
@@ -61,24 +73,26 @@ static XtActionsRec	file_actions[] =
 static char browse_filename[PATH_MAX];
 static char local_dir[PATH_MAX];
 
-/* Use w_file.c's widgets so w_dir.c can access us */
+/* Global so w_dir.c can access us */
 
-extern Widget	file_selfile,	/* selected file widget */
-		file_mask,	/* mask widget */
-		file_dir,	/* current directory widget */
-		file_flist,	/* file list wiget */
-		file_dlist;	/* dir list wiget */
+char		browse_cur_dir[PATH_MAX];	/* current directory for browsing */
 
-extern Boolean		file_up;
+Widget		browse_selfile,	/* selected file widget */
+		browse_mask,	/* mask widget */
+		browse_dir,	/* current directory widget */
+		browse_flist,	/* file list wiget */
+		browse_dlist;	/* dir list wiget */
+
+Boolean		browse_up;
 
 static void
 browse_panel_dismiss()
 {
     FirstArg(XtNstring, "\0");
-    SetValues( file_selfile );   /* blank out name for next call */
+    SetValues( browse_selfile );   /* blank out name for next call */
     XtPopdown(browse_popup);
     XtSetSensitive(browse_parent, True);
-    file_up = False;
+    browse_up = False;
 }
 
 void
@@ -90,9 +104,9 @@ got_browse(w, ev)
 
     if (browse_popup) {
 	FirstArg(XtNstring, &dval);
-	GetValues(file_dir);
+	GetValues(browse_dir);
 	FirstArg(XtNstring, &fval);
-	GetValues(file_selfile); /* check the ascii widget for a filename */
+	GetValues(browse_selfile); /* check the ascii widget for a filename */
 	if (emptyname(fval))
             {
 	    fval = browse_filename; /* Filename widget empty, use current filename */
@@ -138,9 +152,13 @@ popup_browse_panel(w)
     set_temp_cursor(wait_cursor);
     XtSetSensitive(w, False);
     browse_parent = w;
-    file_up = True;
+    browse_up = True;
 
-    get_directory( local_dir );
+    if (!browse_popup) {
+	get_directory( local_dir );
+    } else {
+	strcpy(local_dir, browse_cur_dir);
+    }
 
     /* move to the file directory  - if not the current dir
         and set up the file/directory values
@@ -153,7 +171,7 @@ popup_browse_panel(w)
       strcpy( local_dir, pval );
       strcpy( browse_filename, fval+1 );
       local_dir[ strlen( pval) - strlen(fval)] = '\0';
-      change_directory( local_dir );
+      (void) change_directory( local_dir );
     }
 
     if (!browse_popup) {
@@ -161,9 +179,9 @@ popup_browse_panel(w)
     }
 
     FirstArg( XtNstring, local_dir );
-    SetValues( file_dir );
+    SetValues( browse_dir );
     FirstArg(XtNstring, browse_filename );
-    SetValues(file_selfile);	
+    SetValues(browse_selfile);	
 
     Rescan(0, 0, 0, 0);
 
@@ -216,9 +234,9 @@ create_browse_panel(w)
 	NextArg(XtNvertDistance, 15);
 	NextArg(XtNfromVert, cfile_lab);
 	NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
-	file_selfile = XtCreateManagedWidget("file_name", asciiTextWidgetClass,
+	browse_selfile = XtCreateManagedWidget("file_name", asciiTextWidgetClass,
 					     browse_panel, Args, ArgCount);
-	XtOverrideTranslations(file_selfile,
+	XtOverrideTranslations(browse_selfile,
 			   XtParseTranslationTable(text_translations));
 
 	if (!actions_added) {
@@ -228,15 +246,15 @@ create_browse_panel(w)
 	    XtAppAddActions(tool_app, file_name_actions, XtNumber(file_name_actions));
 	}
 
-	create_dirinfo(False, browse_panel, file_selfile, &beside, &below,
-		       &file_mask, &file_dir, &file_flist, &file_dlist);
+	create_dirinfo(False, browse_panel, browse_selfile, &beside, &below,
+		       &browse_mask, &browse_dir, &browse_flist, &browse_dlist);
 
 	/* make <return> in the filename window apply the file */
-	XtOverrideTranslations(file_selfile,
+	XtOverrideTranslations(browse_selfile,
 			   XtParseTranslationTable(file_name_translations));
 
 	/* make <return> and a double click in the file list window apply the file */
-	XtAugmentTranslations(file_flist,
+	XtAugmentTranslations(browse_flist,
 			   XtParseTranslationTable(file_list_translations));
 	FirstArg(XtNlabel, " Close ");
 	NextArg(XtNvertDistance, 15);

@@ -21,7 +21,7 @@ Fig*unitbox.font:		6x13
 Fig*allowShellResize:		False
 
 ! filename mask for the file popup browser
-Fig*file_panel*mask*string:	*.fig
+Fig*file_panel*mask*string:	*.fig*
 
 ! default export language
 Fig.exportLanguage:		eps
@@ -30,7 +30,7 @@ Fig.exportLanguage:		eps
 Fig*export_panel*mask*string:	*ps
 
 ! filename mask for the image popup browser
-Fig*browse_panel*mask*string:	*.[gjxe][ipb][fgms]*
+Fig*browse_panel*mask*string:	*.[gjxep][ipbc][fgmsx]*
 
 ! printer name
 ! If the following resource is NOT set, xfig will use the PRINTER 
@@ -55,7 +55,16 @@ Fig.max_image_colors:		80
 ! If you are using the 3d Athena widget set (which looks very nice)
 ! and you want the scrollbars to be 3d (even though they look funny)
 ! then comment out the following three resources.
+! NOTE:
+! There are two names for top/bottom shadow colors (e.g. topShadow and 
+! topShadowPixel) because the resources changed in version 1.1 of Xaw3d.
+! (Version 1.1 uses xxxShadowPixel).
+! I include both for compatibility.  Be sure to change both values when
+! modifying them.
+
 	Fig*horizontal.shadowWidth: 0
+	Fig*horizontal.topShadowPixel: black
+	Fig*horizontal.bottomShadowPixel: white
 	Fig*horizontal.topShadow: black
 	Fig*horizontal.bottomShadow: white
 ! the following is done so the widget set doesn't try to make shades of
@@ -63,10 +72,14 @@ Fig.max_image_colors:		80
 	Fig*Scrollbar.shadowWidth: 0
 	Fig*Scrollbar.topShadow: black
 	Fig*Scrollbar.bottomShadow: white
+	Fig*Scrollbar.topShadowPixel: black
+	Fig*Scrollbar.bottomShadowPixel: white
 ! this is for the standard color buttons in the color panel
 	Fig*stdColor.shadowWidth: 0
 	Fig*stdColor.topShadow: black
 	Fig*stdColor.bottomShadow: white
+	Fig*stdColor.topShadowPixel: black
+	Fig*stdColor.bottomShadowPixel: white
 ! You may need or want to adjust the highlight thickness for the mode
 ! and indicator panels depending on the results.  If it is too thick
 ! it will erase part of the button graphics.
@@ -92,43 +105,46 @@ Fig*canvas.translations: #override \n\
 ! then the wired-in name of the xfig global directory won't be prefixed to it.
 ! An initial "~/" is replaced by the value of "$HOME/".
 !
-!Fig*ComposeKeyDB:	~/.xfig.Compose-key
+!Fig*keyFile:	~/.xfig.Compose-key
 
 ! keyboard accelerators
 
 
+Fig*accelerators: \
+	Meta<Key>d: delete_all()\n\
+	Meta<Key>n: new()\n\
+	Meta<Key>o: orient()\n\
+	Meta<Key>u: undo()\n\
+	Meta<Key>r: redraw()\n\
+	Ctrl<Key>l: redraw()\n\
+	Meta<Key>t: paste()\n\
+	Meta<Key>s: SaveFile()\n\
+	Meta<Key>l: LoadFile()\n
+!
+! The following accelerators must be in the Fig*XXX*accelerators hierarchy
+! or the Quit button looks like it has been activated when the user uses
+! an accelerator like Alt-F (popup file panel)
+!
 Fig*quit*accelerators: \
 	Meta<Key>q: quit()\n
-Fig*delete_all*accelerators: \
-	Meta<Key>d: delete_all()\n
-Fig*orient*accelerators: \
-	Meta<Key>o: orient()\n
-Fig*undo*accelerators: \
-	Meta<Key>u: undo()\n
-Fig*redraw*accelerators: \
-	Meta<Key>r: redraw()\n\
-	Ctrl<Key>l: redraw()\n
-Fig*paste*accelerators: \
-	Meta<Key>t: paste()\n
 Fig*file*accelerators: \
-	Meta<Key>s: SaveFile()\n\
-	Meta<Key>l: LoadFile()\n\
 	Meta<Key>f: file()\n
+Fig*export*accelerators: \
+	Meta<Key>e: export()\n
+Fig*print*accelerators: \
+	Meta<Key>p: print()\n
 Fig*file_menu*accelerators: \
 	Meta<Key>c: cancel()\n\
 	Meta<Key>l: load()\n\
 	Meta<Key>m: merge()\n\
 	Meta<Key>r: rescan()\n\
 	Meta<Key>s: save()\n
-Fig*export*accelerators: \
-	Meta<Key>e: export()\n
 Fig*export_menu*accelerators: \
 	Meta<Key>c: cancel()\n\
 	Meta<Key>e: export()\n\
 	Meta<Key>r: rescan()\n
-Fig*print*accelerators: \
-	Meta<Key>p: print()\n
 Fig*print_menu*accelerators: \
+	Meta<Key>c: dismiss()\n\
 	Meta<Key>d: dismiss()\n\
 	Meta<Key>b: print_batch()\n\
 	Meta<Key>x: clear_batch()\n\
@@ -151,6 +167,7 @@ Fig*mode_panel*accelerators: \
 	Ctrl<Key>e: ModeEditObject()\n\
 	None<Key>g: ModeCompound()\n\
 	Shift<Key>g: ModeBreakCompound()\n\
+	None<Key>o: ModeOpenCompound()\n\
 	Ctrl<Key>r: ModeRotateObjectCW()\n\
 	Shift<Key>r: ModeRotateObjectCCW()\n\
 	None<Key>f: ModeFlipObjectUD()\n\
