@@ -2,12 +2,12 @@
 <html>
 <head>
 <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=EUC-JP">
-<title>XFIG User Manual - Panning, Zooming, Rulers and Units</title>
+<title>Panning, Zooming, Rulers and Units</title>
 <link rev="made" href="mailto:VEF00200@nifty.ne.jp">
 </head>
 
 <body>
-<a href="contents.html"><img src="../images/xfig-title.gif"
+<a href="contents.html"><img src="../images/xfig-title.png"
   alt="XFIG Users Manual" border=0></a>
 
 <h1>スクロール、ズーム、ルーラ、及び単位</h1>
@@ -41,7 +41,7 @@
 <h3><a name="rulers">ルーラー (目盛)</a></h3>
 
 <blockquote>
-  <img src="../images/ruler.gif" alt="[Ruler]">
+  <img src="../images/ruler.png" alt="[Ruler]">
 </blockquote>
 <p>
 ルーラーはキャンバスの上、及び右 
@@ -67,6 +67,11 @@
 づつスクロールします。
 それらの操作を SHIFT キーを押した状態で行なうと、
 スクロールの量が5倍になります。
+<p>
+<img src="../images/pict-new.png" alt="New">
+<b>xfig</b> が<a href="installation.html#wheelmouse">ホイール・マウス・サポート</a>
+を有効としてコンパイルされており、かつホイール・マウスを使っているならば、
+キャンバス上でホイールを回すことによってもキャンバスを上下にスクロールさせられます。
 
 <h3><a name="pan-by-key">キー操作によるスクロール</a></h3>
 
@@ -103,7 +108,7 @@
 
 <h2><a name="zooming">ズーム</a></h2>
 
-<img src="../images/zoom-button.gif" align="right" border=1 alt="">
+<img src="../images/zoom-button.png" align="right" border=1 alt="">
 キャンバスの拡大/縮小は、<a href="attributes.html">属性パネル</a>の 
 <a href="attributes.html#zoom-scale">Zoom Scale</a> で
 拡大率を設定することによって行なうことができます。
@@ -140,6 +145,12 @@ CONTROL キーを押した状態でマウスボタン1 (`zoom area') をクリックすることによって
 拡大したい領域の1つの角を指定し、
 次にその対角でマウスボタン1 (`final point') を押すことにより、
 拡大したい領域を指定する
+
+<p>
+<li><img src="../images/pict-new.png" alt="New">
+<b>xfig</b> が<a href="installation.html#wheelmouse">ホイール・マウス・サポート</a>
+を有効としてコンパイルされており、かつホイール・マウスを使っているならば、
+キャンバス上の拡大したい点で CONTROL キーを押した状態でホイールを下に回す
 </ul>
 
 <h3><a name="zoom-out">縮小 (Zoom out)</a></h3>
@@ -153,6 +164,12 @@ CONTROL キーを押した状態でマウスボタン1 (`zoom area') をクリックすることによって
 <li><a href="main_menus.html#view-menu">View メニュー</a>から 
 <i>Zoom out</i> を選択するか、
 アクセラレータ <tt>Z</tt> を用いる
+
+<p>
+<li><img src="../images/pict-new.png" alt="New">
+<b>xfig</b> が<a href="installation.html#wheelmouse">ホイール・マウス・サポート</a>
+を有効としてコンパイルされており、かつホイール・マウスを使っているならば、
+キャンバス上で CONTROL キーを押した状態でホイールを上に回す
 </ul>
 
 <h3><a name="unzoom">ズームの解除 (Unzoom)</a></h3>
@@ -173,7 +190,7 @@ CONTROL キーを押した状態でマウスボタン3 (`Unzoom') をクリックする
 <h3><a name="unit-box">UNIT ボックス</a></h3>
 
 <blockquote>
-  <img src="../images/unit-box.gif" alt="[Unit Box]">
+  <img src="../images/unit-box.png" alt="[Unit Box]">
 </blockquote>
 <p>
 UNIT ボックスは
@@ -189,14 +206,19 @@ UNIT ボックスをマウスボタン3 (`Set Units/Scale')でクリックするか、
 単位の設定のためのポップアップ・パネルが開かれます。
 <p>
 <blockquote>
-  <img src="../images/unit-panel.gif" alt="[Unit Panel]">
+  <img src="../images/unit-panel.png" alt="[Unit Panel]">
 </blockquote>
 
 <p>
 <dl>
 <dt><i>Ruler units</i>
 <dd><a href="#rulers">ルーラー</a>の目盛に用いる単位を、
-<i>Imperial (in)</i>、もしくは <i>Metric (cm)</i> のいずれかに設定します。
+<i>Imperial (fraction)</i>、<i>Imperial (decimal)</i>、
+もしくは <i>Metric (cm)</i> のいずれかに設定します。
+<i>Imperial (fraction)</i> が選択されている場合、
+長さは ``3-5/8 in'' や ``3 ft 7-1/2 in'' のように分数で表示されます。
+他のものが選択されている場合には、
+``3.3242 cm'' のように小数の値が表示されます。
 
 <p>
 <dt><i>Figure units</i>
@@ -225,16 +247,16 @@ UNIT ボックスをマウスボタン3 (`Set Units/Scale')でクリックするか、
 選択されている場合に限って有効となります。
 </dl>
 <p>
-上のパネルの例では、<i>Ruler units</i> は <i>Metric</i>、
+上のパネルの例では、<i>Ruler units</i> は <i>Imperial (fraction)</i>、
 <i>Figure units</i> は <i>User defined</i>、
-<i>Unit name</i> は ``<tt>km</tt>''、
+<i>Unit name</i> は ``<tt>ft</tt>'' (feet)、
 <i>Figure scale</i> は <i>User defined</i>、
 <i>Scale factor</i> は 2.0 であるので、
-描画に際しては 1cm は 2.0km と報告されます。
+描画に際しては 1 inch は 2 ft と、
+1-7/16 inch は 2 ft 10-1/2 in と報告されます。
 <p>
 これらの初期値は、<a href="options.html">コマンド行オプション</a>や
 <a href="options.html#resources">リソース</a>によって指定することができます。
-
 
 <p>
 <hr>

@@ -1,15 +1,15 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 2000 by Brian V. Smith
+ * Copyright (c) 2000-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -50,25 +50,30 @@ read_png(file,filetype,pic)
     /* read the png file here */
     png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,
 		(png_voidp) NULL, NULL, NULL);
-    if (!png_ptr)
+    if (!png_ptr) {
+	close_picfile(file,filetype);
 	return FileInvalid;
+    }
 		
     info_ptr = png_create_info_struct(png_ptr);
     if (!info_ptr) {
 	png_destroy_read_struct(&png_ptr, (png_infopp) NULL, (png_infopp) NULL);
+	close_picfile(file,filetype);
 	return FileInvalid;
     }
 
     end_info = png_create_info_struct(png_ptr);
     if (!end_info) {
 	png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp) NULL);
+	close_picfile(file,filetype);
 	return FileInvalid;
     }
 
-    /* set long jump here */
+    /* set long jump recovery here */
     if (setjmp(png_ptr->jmpbuf)) {
 	/* if we get here there was a problem reading the file */
 	png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+	close_picfile(file,filetype);
 	return FileInvalid;
     }
 	
@@ -114,7 +119,7 @@ read_png(file,filetype,pic)
 
     /* dither rgb files down to 8 bit palette */
     num_palette = 0;
-    pic->transp = TRANSP_NONE;
+    pic->pic_cache->transp = TRANSP_NONE;
     if (color_type & PNG_COLOR_MASK_COLOR) {
 	png_uint_16p	histogram;
 
@@ -123,8 +128,8 @@ read_png(file,filetype,pic)
 	   combine with the alpha information in each pixel to make the image */
 
 	if (color_type & PNG_COLOR_MASK_ALPHA)
-	    pic->transp = TRANSP_BACKGROUND;
-#endif
+	    pic->pic_cache->transp = TRANSP_BACKGROUND;
+#endif /* USE_ALPHA */
 
 	if (png_get_PLTE(png_ptr, info_ptr, &palette, &num_palette)) {
 	    png_get_hIST(png_ptr, info_ptr, &histogram);
@@ -137,13 +142,13 @@ read_png(file,filetype,pic)
 	/* make a gray colormap */
 	num_palette = 256;
 	for (i = 0; i < num_palette; i++)
-	    pic->cmap[i].red = pic->cmap[i].green = pic->cmap[i].blue = i;
+	    pic->pic_cache->cmap[i].red = pic->pic_cache->cmap[i].green = pic->pic_cache->cmap[i].blue = i;
     } else {
 	/* transfer the palette to the object's colormap */
 	for (i=0; i<num_palette; i++) {
-	    pic->cmap[i].red   = palette[i].red;
-	    pic->cmap[i].green = palette[i].green;
-	    pic->cmap[i].blue  = palette[i].blue;
+	    pic->pic_cache->cmap[i].red   = palette[i].red;
+	    pic->pic_cache->cmap[i].green = palette[i].green;
+	    pic->pic_cache->cmap[i].blue  = palette[i].blue;
 	}
     }
     rowsize = w;
@@ -157,6 +162,7 @@ read_png(file,filetype,pic)
 	if ((row_pointers[i] = malloc(rowsize)) == NULL) {
 	    for (j=0; j<i; j++)
 		free(row_pointers[j]);
+	    close_picfile(file,filetype);
 	    return FileInvalid;
 	}
     }
@@ -165,26 +171,30 @@ read_png(file,filetype,pic)
     png_read_image(png_ptr, row_pointers);
 
     /* allocate the bitmap */
-    if ((pic->bitmap=malloc(rowsize*h))==NULL)
-	    return FileInvalid;
+    if ((pic->pic_cache->bitmap=malloc(rowsize*h))==NULL) {
+	close_picfile(file,filetype);
+	return FileInvalid;
+    }
 
     /* copy it to our bitmap */
-    ptr = pic->bitmap;
+    ptr = pic->pic_cache->bitmap;
     for (i=0; i<h; i++) {
 	bcopy(row_pointers[i], ptr, rowsize);
 	ptr += rowsize;
     }
     /* put in width, height */
-    pic->bit_size.x = w;
-    pic->bit_size.y = h;
+    pic->pic_cache->bit_size.x = w;
+    pic->pic_cache->bit_size.y = h;
 
     if (color_type == PNG_COLOR_TYPE_RGB || color_type == PNG_COLOR_TYPE_RGB_ALPHA) {
 	/* no palette, must use neural net to reduce to 256 colors with palette */
-	if (!map_to_palette(pic))
+	if (!map_to_palette(pic)) {
+	    close_picfile(file,filetype);
 	    return FileInvalid;		/* out of memory or something */
-	pic->numcols = 256;
+	}
+	pic->pic_cache->numcols = 256;
     } else {
-	pic->numcols = num_palette;
+	pic->pic_cache->numcols = num_palette;
     }
 
     /* clean up */
@@ -193,14 +203,15 @@ read_png(file,filetype,pic)
     for (i=0; i<h; i++)
 	free(row_pointers[i]);
 
-    pic->subtype = T_PIC_PNG;
+    pic->pic_cache->subtype = T_PIC_PNG;
     pic->pixmap = None;
-    pic->hw_ratio = (float) pic->bit_size.y / pic->bit_size.x;
-    pic->size_x = pic->bit_size.x * scale;
-    pic->size_y = pic->bit_size.y * scale;
+    pic->hw_ratio = (float) pic->pic_cache->bit_size.y / pic->pic_cache->bit_size.x;
+    pic->pic_cache->size_x = pic->pic_cache->bit_size.x * scale;
+    pic->pic_cache->size_y = pic->pic_cache->bit_size.y * scale;
     /* if monochrome display map bitmap */
     if (tool_cells <= 2 || appres.monochrome)
 	map_to_mono(pic);
 
+    close_picfile(file,filetype);
     return PicSuccess;
 }

@@ -1,12 +1,20 @@
 !Don't change the following string - xfig uses it to determine
 ! if you have the newest app-defaults files installed
 
-Fig.version:			3.2.3d
+Fig.version:			3.2.4
 
 ! some sample settings you may want to change
 
+! The following fixes a problem that some window managers have
+! with xfig continually resizing itself
+
+Fig*AllowShellResize: false
+
 ! Image editor - can edit imported image
-Fig.image_editor:		xv -rw
+Fig.image_editor:		xv
+
+! name of ghostscript (not ghostview)
+Fig.ghostscript:		gs
 
 ! Browser - put your favorite browser here.  
 ! 		This is for viewing the xfig html reference.
@@ -146,10 +154,6 @@ Fig.internalborderwidth:	1
 	Fig*mode_panel.background:	black
 	Fig*mode_panel.foreground:	black
 
-! make the F12 key paste text in the canvas
-Fig*canvas.translations: #override \n\
-			<Key>F12: PasteCanv()
-
 ! Specify a private Compose key database file.  If this resource contains a "/"
 ! then the wired-in name of the xfig global directory won't be prefixed to it.
 ! An initial "~/" is replaced by the value of "$HOME/".
@@ -178,52 +182,55 @@ Fig.translations: #override \n\
 ! keyboard accelerators
 
 Fig*accelerators: \
-	Meta<Key>d: DeleteAll() \n\
-	Alt<Key>d:  DeleteAll() \n\
 	Meta<Key>n: New() \n\
 	Alt<Key>n:  New() \n\
-	Meta<Key>c: ChangeOrient() \n\
-	Alt<Key>c:  ChangeOrient() \n\
-	Meta<Key>u: Undo() \n\
-	Alt<Key>u:  Undo() \n\
-	Meta<Key>r: Redraw() \n\
-	Alt<Key>r:  Redraw() \n\
-	Ctrl<Key>l: Redraw() \n\
-	Meta<Key>t: Paste() \n\
-	Alt<Key>t:  Paste() \n\
-	Meta<Key>a: SaveAs() \n\
-	Alt<Key>a:  SaveAs() \n\
-	Shift Meta<Key>p: PrintFile() \n\
-	Shift Alt<Key>p:  PrintFile() \n\
-	Shift Meta<Key>x: ExportFile() \n\
-	Shift Alt<Key>x:  ExportFile() \n\
-	Meta<Key>s: SaveFile() \n\
-	Alt<Key>s:  SaveFile() \n\
-	Meta<Key>m: MergeFile() \n\
-	Alt<Key>m:  MergeFile() \n\
-	Meta<Key>k: SpellCheck() \n\
-	Alt<Key>k:  SpellCheck() \n\
-	Meta<Key>i: Search() \n\
-	Alt<Key>i:  Search() \n\
-	Meta<Key>g: PopupGlobals() \n\
-	Alt<Key>g:  PopupGlobals() \n\
-	Meta<Key>q: Quit() \n\
-	Alt<Key>q:  Quit() \n\
 	Meta<Key>o: OpenFile() \n\
 	Alt<Key>o:  OpenFile() \n\
-	Meta<Key>p: PopupPrint() \n\
-	Alt<Key>p:  PopupPrint() \n\
+	Meta<Key>m: MergeFile() \n\
+	Alt<Key>m:  MergeFile() \n\
+	Meta<Key>z: PopupDigitize() \n\
+	Alt<Key>z:  PopupDigitize() \n\
+	Meta<Key>s: DoSave() \n\
+	Alt<Key>s:  DoSave() \n\
+	Meta<Key>a: SaveAs() \n\
+	Alt<Key>a:  SaveAs() \n\
+	Shift Meta<Key>x: ExportFile() \n\
+	Shift Alt<Key>x:  ExportFile() \n\
 	Meta<Key>x: PopupExport() \n\
 	Alt<Key>x:  PopupExport() \n\
-	Meta<Key>y: ToggleShowBalloons() \n\
-	Alt<Key>y:  ToggleShowBalloons() \n\
-	Meta<Key>b: ToggleShowBorders() \n\
-	Alt<Key>b:  ToggleShowBorders() \n\
-	Meta<Key>l: ToggleShowLengths() \n\
-	Alt<Key>l:  ToggleShowLengths() \n\
+	Shift Meta<Key>p: PrintFile() \n\
+	Shift Alt<Key>p:  PrintFile() \n\
+	Meta<Key>p: PopupPrint() \n\
+	Alt<Key>p:  PopupPrint() \n\
+	Meta<Key>q: Quit() \n\
+	Alt<Key>q:  Quit() \n\
+	Meta<Key>u: Undo() \n\
+	Alt<Key>u:  Undo() \n\
+	Meta<Key>t: Paste() \n\
+	Alt<Key>t:  Paste() \n\
+	Meta<Key>i: Search() \n\
+	Alt<Key>i:  Search() \n\
+	Meta<Key>k: SpellCheck() \n\
+	Alt<Key>k:  SpellCheck() \n\
+	Meta<Key>g: PopupGlobals() \n\
+	Alt<Key>g:  PopupGlobals() \n\
+	Meta<Key>d: DeleteAll() \n\
+	Alt<Key>d:  DeleteAll() \n\
+	Ctrl<Key>l: Redraw() \n\
+	Meta<Key>r: Redraw() \n\
+	Alt<Key>r:  Redraw() \n\
+	Meta<Key>c: ChangeOrient() \n\
+	Alt<Key>c:  ChangeOrient() \n\
 	Shift<Key>z: ZoomIn() \n\
 	Ctrl<Key>z: ZoomFit() \n\
-	<Key>z: ZoomOut()
+	<Key>z: ZoomOut()\n\
+	Ctrl<Key>y: ShowNamedStyles() \n\
+	Meta<Key>b: ToggleShowBorders() \n\
+	Alt<Key>b:  ToggleShowBorders() \n\
+	Meta<Key>y: ToggleShowBalloons() \n\
+	Alt<Key>y:  ToggleShowBalloons() \n\
+	Meta<Key>l: ToggleShowLengths() \n\
+	Alt<Key>l:  ToggleShowLengths()
 
 ! Translations for when File menu is popped up
 Fig*commands*File*translations: #augment \n\
@@ -236,7 +243,8 @@ Fig*commands*File*translations: #augment \n\
 	<Key>n: XtMenuPopdown(filemenu) New() \n\
 	<Key>o: XtMenuPopdown(filemenu) OpenFile() \n\
 	<Key>m: XtMenuPopdown(filemenu) MergeFile() \n\
-	<Key>s: XtMenuPopdown(filemenu) SaveFile() \n\
+	<Key>d: XtMenuPopdown(filemenu) PopupDigitize() \n\
+	<Key>s: XtMenuPopdown(filemenu) DoSave() \n\
 	<Key>a: XtMenuPopdown(filemenu) SaveAs() \n\
 	<Key>e: XtMenuPopdown(filemenu) PopupExport() \n\
 	<Key>p: XtMenuPopdown(filemenu) PopupPrint() \n\
@@ -268,6 +276,7 @@ Fig*commands*Edit*translations: #augment \n\
 	<Key>t: XtMenuPopdown(editmenu) PasteCanv() \n\
 	<Key>f: XtMenuPopdown(editmenu) Search() \n\
 	<Key>s: XtMenuPopdown(editmenu) SpellCheck() \n\
+	<Key>d: XtMenuPopdown(editmenu) DeleteAll() \n\
 	<Key>g: XtMenuPopdown(editmenu) PopupGlobals() \n\
 	<Key>n: XtMenuPopdown(editmenu) PopupUnits() \n\
 	<Key>: XtMenuPopdown(editmenu)
@@ -282,6 +291,7 @@ Fig*commands*View*translations: #augment \n\
 	Meta<Key>f: XtMenuPopdown(viewmenu) PlaceMenu(filemenu) xMenuPopup(filemenu) \n\
 	Meta<Key>e: XtMenuPopdown(viewmenu) PlaceMenu(editmenu) xMenuPopup(editmenu) \n\
 	Meta<Key>h: XtMenuPopdown(viewmenu) PlaceMenu(helpmenu) xMenuPopup(helpmenu) \n\
+	<Key>s: XtMenuPopdown(viewmenu) ShowNamedStyles() \n\
 	<Key>r: XtMenuPopdown(viewmenu) Redraw() \n\
 	<Key>t: XtMenuPopdown(viewmenu) ChangeOrient() \n\
 	<Key>i: XtMenuPopdown(viewmenu) ZoomIn() \n\
@@ -315,6 +325,13 @@ Fig*commands*Help*translations: #augment \n\
 Fig*commands*Help*accelerators: \
 	Meta<Key>h: PlaceMenu(helpmenu)xMenuPopup(helpmenu) \n\
 	Alt<Key>h:  PlaceMenu(helpmenu)xMenuPopup(helpmenu)
+
+Fig*set_nval_panel*accelerators: \
+	<Key>Escape: QuitNval()
+Fig*set_choice_panel*accelerators: \
+	<Key>Escape: QuitChoice()
+Fig*set_dimline_panel*accelerators: \
+	<Key>Escape: QuitDimline()
 
 ! file popop accelerators
 Fig*file_panel*accelerators: \
@@ -415,42 +432,46 @@ Fig*global_panel*accelerators: \
 
 Fig*mode_panel*accelerators: \
 	Ctrl<Key>a: ModeAddPoint() \n\
-	None<Key>a: ModeAlign() \n\
-	None<Key>r: ModeArc() \n\
-	Shift<Key>b: ModeArcBox() \n\
 	Shift<Key>a: ModeArrow() \n\
-	None<Key>b: ModeBox() \n\
-	Shift<Key>g: ModeBreakCompound() \n\
-	Shift<Key>c: ModeCircleD() \n\
-	None<Key>c: ModeCircleR() \n\
-	Shift<Key>i: ModeClIntSpline() \n\
-	Shift<Key>s: ModeClSpline() \n\
-	None<Key>g: ModeCompound() \n\
-	None<Key>v: ModeConvertObject() \n\
+	<Key>a: ModeAlign() \n\
+	Shift<Key>b: ModeArcBox() \n\
+	<Key>b: ModeBox() \n\
 	Ctrl<Key>c: ModeCopyObject() \n\
-	None<Key>d: ModeDeleteObject() \n\
+	Shift<Key>c: ModeEllipseD() \n\
+	<Key>c: ModeEllipseR() \n\
 	Shift<Key>d: ModeDeletePoint() \n\
+	<Key>d: ModeDeleteObject() \n\
 	Ctrl<Key>e: ModeEditObject() \n\
 	Shift<Key>e: ModeEllipseD() \n\
-	None<Key>e: ModeEllipseR() \n\
+	<Key>e: ModeEllipseR() \n\
 	Shift<Key>f: ModeFlipObjectLR() \n\
-	None<Key>f: ModeFlipObjectUD() \n\
-	None<Key>i: ModeIntSpline() \n\
-	None<Key>l: ModeLine() \n\
-	None<Key>m: ModeMoveObject() \n\
-	Shift<Key>m: ModeMovePoint() \n\
-	None<Key>o: ModeOpenCompound() \n\
-	None<Key>j: ModeJoinSplit() \n\
-	Ctrl<Key>p: ModePIC() \n\
+	<Key>f: ModeFlipObjectUD() \n\
+	Ctrl<Key>g: ModeAnglemeas() \n\
+	Shift<Key>g: ModeBreakCompound() \n\
+	<Key>g: ModeCompound() \n\
+	Shift<Key>i: ModeClIntSpline() \n\
+	<Key>i: ModeIntSpline() \n\
+	<Key>j: ModeJoinSplit() \n\
 	Shift<Key>l: ModePopupLibrary() \n\
-	None<Key>p: ModePoly() \n\
+	<Key>l: ModeLine() \n\
+	Ctrl<Key>m: ModeAreameas() \n\
+	Shift<Key>m: ModeMovePoint() \n\
+	<Key>m: ModeMoveObject() \n\
+	Ctrl<Key>n: ModeLenmeas() \n\
+	<Key>n: ModeTangent() \n\
+	<Key>o: ModeOpenCompound() \n\
+	Ctrl<Key>p: ModePIC() \n\
 	Shift<Key>p: ModeRegPoly() \n\
-	Shift<Key>r: ModeRotateObjectCCW() \n\
+	<Key>p: ModePoly() \n\
 	Ctrl<Key>r: ModeRotateObjectCW() \n\
+	Shift<Key>r: ModeRotateObjectCCW() \n\
+	<Key>r: ModeArc() \n\
 	Ctrl<Key>s: ModeScale() \n\
-	None<Key>s: ModeSpline() \n\
-	None<Key>t: ModeText() \n\
-	None<Key>u: ModeUpdateObject()
+	Shift<Key>s: ModeClSpline() \n\
+	<Key>s: ModeSpline() \n\
+	<Key>t: ModeText() \n\
+	<Key>u: ModeUpdateObject() \n\
+	<Key>v: ModeConvertObject()
 
 ! to make the color selection menu in the popup editor work
 Fig*color_menu_form*Command.translations: \
@@ -465,4 +486,65 @@ Fig*menu_divider.font:			7x13
 Fig*menu_divider.justify:		center
 Fig*menu_divider.topShadowContrast:	0
 Fig*menu_divider.bottomShadowContrast:	0
+
+
+! ----------------------------------------------------------------
+! WHEEL-MOUSE SUPPORT:
+! written by T.Sato <VEF00200@nifty.ne.jp>
+! xfig must be compiled with -DWHEELMOUSE
+
+! switch setting via wheel rotation
+!
+Fig*ind_panel*Command.translations: #override \
+    <Btn4Down>:PressMiddle()\n\
+    <Btn4Up>:ReleaseMiddle()\n\
+    <Btn5Down>:PressRight()\n\
+    <Btn5Up>:ReleaseRight()
+
+! up/down numeric value via wheel rotation
+!
+Fig*spinner_form*Text.translations: #override \
+    <Btn4Down>: SpinnerUpDown(-) \n\
+    <Btn5Down>: SpinnerUpDown(+) \n\
+    <Btn4Up>: SpinnerUpDown(-) \n\
+    <Btn5Up>: SpinnerUpDown(+)
+
+Fig*spinner_form*Command.translations: #override \
+    <BtnDown>:	set() \n\
+    <BtnUp>:	notify() unset()
+
+! move scrollbar via wheel rotation
+!
+Fig*Scrollbar.translations: #override \
+    <Btn4Down>: StartScroll(Backward) StartScroll(Backward) \
+        StartScroll(Backward) StartScroll(Backward) StartScroll(Backward) \n\
+    <Btn5Down>: StartScroll(Forward) StartScroll(Forward) \
+        StartScroll(Forward) StartScroll(Forward) StartScroll(Forward)
+
+! popup drawing/editing menu via wheel rotation.
+! if Control is pressed, zoom in/zoom out via wheel rotation.
+!
+Fig*canvas.translations: #override \
+    Shift<Btn4Down>: PopupModePanel(draw) \n\
+    Shift<Btn5Down>: PopupModePanel(edit)
+
+Fig*draw_menu*translations: #override \
+    <Message>WM_PROTOCOLS: PopdownModePanel() \n\
+    <Btn5Down>: PopdownModePanel()
+
+Fig*edit_menu*translations: #override \
+    <Message>WM_PROTOCOLS: PopdownModePanel() \n\
+    <Btn4Down>: PopdownModePanel()
+
+Fig*draw_menu*highlightThickness: 1
+Fig*edit_menu*highlightThickness: 1
+
+! do not want to popup SimpleMenu via wheel rotation
+!
+Fig*MenuButton.translations: #override \
+    <Btn4Down>: \n\
+    <Btn5Down>:
+
+! END OF WHEEL-MOUSE resources
+! ----------------------------------------------------------------
 

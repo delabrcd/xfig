@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -21,6 +21,7 @@
 #include "mode.h"
 #include "paintop.h"
 #include "u_markers.h"
+#include "w_drawprim.h"
 #include "w_zoom.h"
 
 #define set_marker(win,x,y,w,h) \
@@ -87,7 +88,7 @@ validline_in_mask(l)
     F_line	   *l;
 {
     return ((((l->type == T_BOX) ||
-	      (l->type == T_ARC_BOX)) && (cur_objmask & M_POLYLINE_BOX)) ||
+	      (l->type == T_ARCBOX)) && (cur_objmask & M_POLYLINE_BOX)) ||
 	    ((l->type == T_PICTURE) && (cur_objmask & M_POLYLINE_BOX)) ||
 	    ((l->type == T_POLYLINE) && (cur_objmask & M_POLYLINE_LINE)) ||
 	    ((l->type == T_POLYGON) && (cur_objmask & M_POLYLINE_POLYGON)));
@@ -187,7 +188,7 @@ toggle_markers_in_compound(cmpnd)
 	for (l = cmpnd->lines; l != NULL; l = l->next) {
 	    if (active_layer(l->depth) &&
 	        ((((l->type == T_BOX) ||
-		  (l->type == T_ARC_BOX)) && (mask & M_POLYLINE_BOX)) ||
+		  (l->type == T_ARCBOX)) && (mask & M_POLYLINE_BOX)) ||
 		((l->type == T_PICTURE) && (mask & M_POLYLINE_BOX)) ||
 		((l->type == T_POLYLINE) && (mask & M_POLYLINE_LINE)) ||
 		((l->type == T_POLYGON) && (mask & M_POLYLINE_POLYGON))))
@@ -243,7 +244,7 @@ update_markers(mask)
 	CHANGED_MASK(M_POLYLINE_BOX))
 	for (l = objects.lines; l != NULL; l = l->next) {
 	    if (active_layer(l->depth) &&
-		((((l->type == T_BOX || l->type == T_ARC_BOX || 
+		((((l->type == T_BOX || l->type == T_ARCBOX || 
 		   l->type == T_PICTURE)) && CHANGED_MASK(M_POLYLINE_BOX)) ||
 		((l->type == T_POLYLINE) && CHANGED_MASK(M_POLYLINE_LINE)) ||
 		((l->type == T_POLYGON) && CHANGED_MASK(M_POLYLINE_POLYGON))))

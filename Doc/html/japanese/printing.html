@@ -2,12 +2,12 @@
 <html>
 <head>
 <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=EUC-JP">
-<title>XFIG User Manual - Printing</title>
+<title>Printing</title>
 <link rev="made" href="mailto:VEF00200@nifty.ne.jp">
 </head>
 
 <body>
-<a href="contents.html"><img src="../images/xfig-title.gif"
+<a href="contents.html"><img src="../images/xfig-title.png"
   alt="XFIG Users Manual" border=0></a>
 
 <h1>印刷、及びエクスポート</h1>
@@ -15,7 +15,7 @@
 <ul>
 <li><a href="#print">印刷</a>
 <li><a href="#export">エクスポート</a>
-<li><a href="#latex_and_xfig">LaTeX と Xfig</a>
+<li><a href="latex_and_xfig.html">LaTeX と Xfig</a>
 <li><a href="#imagemap">HTML イメージ・マップの生成</a>
 </ul>
 <p>
@@ -24,7 +24,7 @@ Fig ファイルの Export や Print のために、
 ポスト・プロセッサである <b>fig2dev</b> を呼び出します。
 Export に際しては、PostScript、EPS、LaTeX、METAFONT や、
 GIF、JPEG などのビットマップ・フォーマットを含む、
-1ダース以上のフォーマットがサポートされています。
+いくつものフォーマットがサポートされています。
 Export の章の <a href="#language"><i>Language</i></a> の説明を参照して下さい。
 <p>
 これは、<b>xfig</b> とともに、<b>fig2dev</b> を
@@ -45,8 +45,12 @@ Export の章の <a href="#language"><i>Language</i></a> の説明を参照して下さい。
 出力をファイルに格納したい場合には 
 <a href="#export">Export</a> を使用します。
 <p>
+アクセラレータ <tt>Shift-Meta-P</tt> は
+以前に設定されたパラメータを用いて印刷を行ないます
+(つまり、Print パネルは開かれませんが、その図は印刷されます)。
+<p>
 <blockquote>
-  <img src="../images/print-panel.gif" alt="[Print Panel]">
+  <img src="../images/print-panel.png" alt="[Print Panel]">
 </blockquote>
 
 <p>
@@ -134,6 +138,17 @@ Export の章の <a href="#language"><i>Language</i></a> の説明を参照して下さい。
 デフォルトは白です。
 
 <p>
+<dt><i>Grid</i>
+<img src="../images/pict-new.png" alt="New">
+<dd><i>Minor</i> (細)、及び／もしくは <i>Major</i> (太) の
+グリッドの間隔をプルダウン・メニューから選択し、
+あるいは直接入力することにより、
+灰色のグリッドを印刷することができます。
+グリッドの間隔の単位は、図の単位に依存して、
+inch、あるいは mm となります。
+デフォルトは <i>None</i> です。
+
+<p>
 <dt><a name="printer"><i>Printer</i></a>
 <dd>出力先のプリンタを指定します。
 このフィールドが空の場合には、
@@ -170,6 +185,12 @@ Export の章の <a href="#language"><i>Language</i></a> の説明を参照して下さい。
 <dt><i>Dismiss</i>
 <dd>このボタンをクリックすると Print パネルが閉じられます。
 アクセラレータ <tt>Meta-C</tt> も同じ意味を持ちます。
+
+<p>
+<dt><i>Print all layers/Export only active</i>
+<dd>図全体 (全てのレイヤ) を印刷するか、
+<a href="layers.html">Depth パネル</a>でアクティブにされている
+レイヤのみを印刷するかを選ぶことができます。
 
 <p>
 <dt><i>Print FIGURE / BATCH to Printer</i>
@@ -225,34 +246,160 @@ Export の章の <a href="#language"><i>Language</i></a> の説明を参照して下さい。
 (例えば LaTeX や FrameMaker など) で読み込みたい場合に用いることができます。
 <p>
 <b>xfig</b> を LaTeX とともに使用するためのヒントについては 
-<a href="#latex_and_xfig">LaTeX と Xfig</a> を参照して下さい。
+<a href="latex_and_xfig.html">LaTeX と Xfig</a> を参照して下さい。
+<p>
+アクセラレータ <tt>Shift-Meta-X</tt> は
+以前に設定されたパラメータを用いてエクスポートを行ないます
+(つまり、Export パネルは開かれませんが、その図はエクスポートされます)。
 <p>
 図を PostScript プリンタへ出力するためには 
 <a href="#print">Print</a> を使用して下さい。
 <p>
 <blockquote>
-  <img src="../images/export-panel.gif" alt="[Export Panel]">
+  <img src="../images/export-panel.png" alt="[Export Panel]">
 </blockquote>
 <p>
 
-<a href="#language"><i>Language</i></a> が <i>GIF</i> である場合には、
-どの色を透明とするかを選択するメニューが現れます。
-<blockquote>
-  <img src="../images/export-gif.gif" alt="[Export GIF]" >
-</blockquote>
-<p>
-<a href="#language"><i>Language</i></a> が <i>JPEG (JFIF)</i> である場合には、
-``quality factor'' を設定するためのフィールドが現れます。
-<blockquote>
-  <img src="../images/export-jpeg.gif" alt="[Export JPEG]" >
-</blockquote>
-
-<p>
 <dl>
+<dt><a name="language"><i>Language</i></a>
+<dd>図をエクスポートするフォーマット (言語) を選択します。
+デフォルトは <i>Encapsulated PostScript</i> ですが、
+<tt>Fig.exportLanguage</tt> リソースによって変更することもできます。
+<p>
+以下のフォーマットが使用可能です。
+<p>
+<b>ベクタ・フォーマット</b>:
+<ul>
+<li>PostScript
+<li>Encapsulated PostScript (EPSF)
+<li>EPS With ASCII (EPSI) preview
+<li>EPS With monochrome TIFF preview
+<li>EPS With color TIFF preview
+<li><a name="pdf_export">PDF (Portable Document Format)</a>
+<li>Combined PostScript/LaTeX
+<li>Combined PDF/LaTeX
+<img src="../images/pict-new.png" alt="New">
+<li>LaTeX picture environment
+<li>PicTeX macros
+<li>IBMGL (HP-GL)
+<li>Textyl
+<li>TPIC
+<li>PIC
+<li>MF (MetaFont)
+<li>MP (MetaPost)
+<img src="../images/pict-new.png" alt="New">
+<li>MMP (Multi-MetaPost)
+<img src="../images/pict-new.png" alt="New">
+<li><a name="cgm_export">CGM</a>
+(Computer Graphics Metafile - useful to import into Microsoft WORD, etc.)
+<li><a name="cgm_export">Binary CGM</a>
+<img src="../images/pict-new.png" alt="New">
+<li><a name="cgm_export">EMF</a>(Enhanced Metafile)
+<img src="../images/pict-new.png" alt="New">
+<li>Tk (Tck/Tk toolkit canvas)
+<li>SVG (Scalable Vector Graphics - beta driver)
+<img src="../images/pict-new.png" alt="New">
+<li><a href="#imagemap">HTML Image map</a>
+</ul>
+
+<p>
+ビットマップ・フォーマット:
+<ul>
+<li><A HREF="http://www.dcs.ed.ac.uk/%7Emxr/gfx/2d-hi.html">GIF</A>
+(Graphic Interchange Format)
+<li><A HREF="http://www.dcs.ed.ac.uk/%7Emxr/gfx/2d-hi.html">JPEG</A>
+<li><A HREF="http://www.dcs.ed.ac.uk/%7Emxr/gfx/2d-hi.html">PCX</A>
+(Paintbrush format)
+<li><A HREF="http://www.boutell.com/boutell/png/">PNG</A>
+(Portable Network Graphics)
+<li><A HREF="http://www.dcs.ed.ac.uk/%7Emxr/gfx/2d-hi.html">PPM</A>
+(Portable Pixmap)
+<li><A HREF="http://www.dcs.ed.ac.uk/%7Emxr/gfx/2d-hi.html">SLD</A>
+(AutoDesk slide format)
+<li><A HREF="http://www.dcs.ed.ac.uk/%7Emxr/gfx/2d-hi.html">TIFF</A>
+(Tag Image File Format)
+<li><A HREF="http://www.dcs.ed.ac.uk/%7Emxr/gfx/2d-hi.html">XBM</A>
+(X11 Bitmap)
+<li><A HREF="http://www.dcs.ed.ac.uk/%7Emxr/gfx/2d-hi.html">XPM</A>
+(X11 Pixmap)
+</ul>
+
+<p>
+LaTeX フォーマットのバリエーションとして、
+標準の picture 環境以外に、<i>epic</i>、<i>eepic</i>、
+及び <i>eepicemu</i> マクロを使用することもできます。
+<i>Combined PostScript/LaTeX</i> を用いると、図のテキストの部分を LaTeX で、
+それ以外の部分を PostScript で出力することができますが、
+これは特に図に複雑な数式が含まれている場合 
+(<a href="attributes.html#text-flags">TEXT FLAGS</a> も参照) 
+に有用です。
+<p>
+<b>xfig</b> で作成することのできるすべての図を、
+すべてのフォーマットにおいて完全に出力できるわけではありません。
+例えば、<a href="drawing.html#picture">取り込まれたイメージ</a>は 
+IBMGL でのエクスポートに際しては出力されません。
+PostScript でのエクスポートに際しては 
+<b>xfig</b> のほとんどすべての機能が使用可能であり、
+またかなり高品質の出力を生成することができます。
+<p>
+<b>xfig</b> と共に入手可能な 
+<b>TransFig</b> パッケージの一部である <b>fig2dev</b> プログラムが、
+Fig フォーマットからの実際の変換の処理を行ないます。
+<p>
+GIF や JPEG などのビットマップ形式でのエクスポートを行なうためには、
+<a href="installation.html#ghostscript">Ghostscript</a>、
+及び <a href="installation.html#netpbm">netpbm パッケージ</a> 
+が必要となります。
+
+<p>
 <dt><i>Magnification</i>
 <dd>図の出力に際しての拡大率を、% で指定します。
 デフォルトは 100% ですが、
 <tt>Fig.magnification</tt> リソースによって変更することもできます。
+
+<p>
+<dt><i>Export all layers/Export only active</i>
+<dd>図全体 (全ての<a href="layers.html">レイヤ</a>) をエクスポートするか、
+<a href="layers.html#depth_panel">Depth パネル</a> でアクティブとされている
+レイヤのみをエクスポートするかを選ぶことができます。
+
+<p>
+<dt><a name="border_margin"><i>Border Margin</i></a>
+<dd>PostScript、Encapsulated PostScript、HTML image map、
+及びビットマップ・フォーマットのいずれか (例えば、GIF、JPEG など) 
+でのエクスポートに際して、
+図の周囲にここで指定した幅の余白を設けることができます。
+余白の大きさの単位は、ピクセル、もしくは 1/80インチです。
+
+<p>
+<dt><i>Background</i>
+<dd>出力する図の背景の色を設定します。
+デフォルトは白です。
+
+<p>
+<dt><i>Grid</i>
+<img src="../images/pict-new.png" alt="New">
+<dd><i>Minor</i> (細)、及び／もしくは <i>Major</i> (太) の
+グリッドの間隔をプルダウン・メニューから選択し、
+あるいは直接入力することにより、
+灰色のグリッドを印刷することができます。
+グリッドの間隔の単位は、図の単位に依存して、
+inch、あるいは mm となります。
+デフォルトは <i>None</i> です。
+
+<p>
+<dt><i>PostScript Options</i>
+<dd>これらのオプションは、<a href="#language"><i>Language</i></a> として
+<i>PostScript</i> が選択されている場合に現れます。
+
+<p>
+<dl>
+<dt><i>Paper Size</i>
+<dd>用紙の大きさを選択します。
+使用可能な <i>Paper Size</i> については、
+<a href="#paper-size">Print パネル</a> での説明を参照して下さい。
+これは、<a href="#language"><i>Language</i></a> として 
+<i>PostScript</i> を選択している場合に限って有効となります。
 
 <p>
 <dt><i>Fit to Page</i>
@@ -260,14 +407,6 @@ Export の章の <a href="#language"><i>Language</i></a> の説明を参照して下さい。
 <i>Paper Size</i> で設定された用紙に 
 少なくとも 1/2 インチの余裕を持って図が収まるように、
 <i>Magnification</i> を自動的に設定します。
-これは、<a href="#language"><i>Language</i></a> として 
-<i>PostScript</i> を選択している場合に限って有効となります。
-
-<p>
-<dt><i>Paper Size</i>
-<dd>用紙の大きさを選択します。
-使用可能な <i>Paper Size</i> については、
-<a href="#paper-size">Print パネル</a> での説明を参照して下さい。
 これは、<a href="#language"><i>Language</i></a> として 
 <i>PostScript</i> を選択している場合に限って有効となります。
 
@@ -298,7 +437,7 @@ Export の章の <a href="#language"><i>Language</i></a> の説明を参照して下さい。
 <i>PostScript</i> を選択している場合に限って有効となります。
 
 <p>
-<dt><i>Export Offset</i>
+<dt><i>Offset</i>
 <dd>エクスポートに際して、
 図はここで設定された距離だけ右、もしくは下へシフトして出力されます。
 負の値を指定することにより、
@@ -306,109 +445,34 @@ Export の章の <a href="#language"><i>Language</i></a> の説明を参照して下さい。
 距離の単位は、<i>Inches</i>、
 <i>Centimeters</i>、及び <i>Fig Units</i> (version 3.x では 1/1200 インチ) 
 から選択することができます。
+</dl>
 
 <p>
-<dt><a name="language"><i>Language</i></a>
-<dd>図をエクスポートするフォーマット (言語) を選択します。
-デフォルトは <i>Encapsulated PostScript</i> ですが、
-<tt>Fig.exportLanguage</tt> リソースによって変更することもできます。
+<dt><i>Bitmap Options</i>
+<dd>これらのオプションは、<a href="#language"><i>Language</i></a> として
+ビットマップ・フォーマットが選択されている場合に現れます。
 <p>
-以下のフォーマットが使用可能です。
+<blockquote>
+  <img src="../images/export-panel-gif.png" alt="[Export GIF]" >
+  <br>
+  <img src="../images/export-panel-jpeg.png" alt="[Export JPEG]" >
+</blockquote>
 <p>
-<b>ベクタ・フォーマット</b>:
-<ul>
-<li>LaTeX picture environment
-<li>PicTeX macros
-<li>IBMGL (HP-GL)
-<li>Encapsulated PostScript (EPSF)
-<li>PostScript
-<li><a name="pdf_export">PDF</a> (Portable Document Format)
-<li>Combined PostScript/LaTeX
-<li>Textyl
-<li>TPIC
-<li>PIC
-<li>MF (MetaFont)
-<li><a name="cgm_export">CGM</a>
-  (Computer Graphics Metafile - useful to import into Microsoft WORD, etc.)
-<li>Tk (Tck/Tk toolkit canvas)
-<li><a href="#imagemap">HTML Image map</a>
-</ul>
-
-<p>
-<b>ビットマップ・フォーマット</b>:
-<ul>
-<li><a href="http://www.dcs.ed.ac.uk/~mxr/gfx/2d-hi.html">GIF</a>
-  (Graphic Interchange Format)
-<li><a href="http://www.dcs.ed.ac.uk/~mxr/gfx/2d-hi.html">JPEG</a>
-<li><a href="http://www.dcs.ed.ac.uk/~mxr/gfx/2d-hi.html">PCX</a>
-  (Paintbrush format)
-<li><a href="http://www.boutell.com/boutell/png/">PNG</a>
-  (Portable Network Graphics)
-<li><a href="http://www.dcs.ed.ac.uk/~mxr/gfx/2d-hi.html">PPM</a>
-  (Portable Pixmap)
-<li><a href="http://www.dcs.ed.ac.uk/~mxr/gfx/2d-hi.html">SLD</a>
-  (AutoDesk slide format)
-<li><a href="http://www.dcs.ed.ac.uk/~mxr/gfx/2d-hi.html">TIFF</a>
-  (Tag Image File Format)
-<li><a href="http://www.dcs.ed.ac.uk/~mxr/gfx/2d-hi.html">XBM</a>
-  (X11 Bitmap)
-<li><a href="http://www.dcs.ed.ac.uk/~mxr/gfx/2d-hi.html">XPM</a>
-  (X11 Pixmap)
-</ul>
-
-<p>
-LaTeX フォーマットのバリエーションとして、
-標準の picture 環境以外に、<i>epic</i>、<i>eepic</i>、
-及び <i>eepicemu</i> マクロを使用することもできます。
-<i>Combined PostScript/LaTeX</i> を用いると、図のテキストの部分を LaTeX で、
-それ以外の部分を PostScript で出力することができますが、
-これは特に図に複雑な数式が含まれている場合 
-(<a href="attributes.html#text-flags">TEXT FLAGS</a> も参照) 
-に有用です。
-<p>
-<b>xfig</b> で作成することのできるすべての図を、
-すべてのフォーマットにおいて完全に出力できるわけではありません。
-例えば、<a href="drawing.html#picture">取り込まれたイメージ</a>は 
-IBMGL でのエクスポートに際しては出力されません。
-PostScript でのエクスポートに際しては 
-<b>xfig</b> のほとんどすべての機能が使用可能であり、
-またかなり高品質の出力を生成することができます。
-<p>
-<b>xfig</b> と共に入手可能な 
-<b>TransFig</b> パッケージの一部である <b>fig2dev</b> プログラムが、
-Fig フォーマットからの実際の変換の処理を行ないます。
-<p>
-GIF や JPEG などのビットマップ形式でのエクスポートを行なうためには、
-<a href="installation.html#ghostscript">GhostScript</a>、
-及び <a href="installation.html#netpbm">netpbm パッケージ</a> 
-が必要となります。
-
-<p>
-<dt><a name="smooth"><i>Smooth</i></a>
+<dl>
+<dt><a name="smooth"><i>Smoothing</i></a>
 <dd><a href="#language"><i>Language</i></a> が
 ビットマップ・フォーマットのいずれかである場合には 
 <i>Smooth</i> というラベルの付けられたボタンが現れます。
-これは、フォントの描画品質を改善するために 
-(`<tt>-S 2</tt>' オプションを用いて) <b>fig2dev</b> に 
-<a href="installation.html#install-misc">GhostScript</a> 
-がイメージを2倍の大きさで生成させるようにさせ、
+これは、フォントの描画品質を改善するために、
+`<tt>-S 2</tt>' オプション (<i>Some smoothing</i>)、
+あるいは `<tt>-S 4</tt>' オプション (<i>Some smoothing</i>) を付けて
+<b>fig2dev</b> を呼び出します。
+これらは <a href="installation.html#install-misc">Ghostscript</a> 
+にイメージを2倍の大きさで生成させ、
 その結果を <a href="installation.html#install-misc"><tt>pnmscale</tt></a> 
 によって本来の大きさに縮小しますが、
-これは隣り合ったピクセルの色の平均を取ることによって
-イメージを滑らかにします。
-
-<p>
-<dt><a name="border_margin"><i>Border Margin</i></a>
-<dd>PostScript、Encapsulated PostScript、HTML image map、
-及びビットマップ・フォーマットのいずれか (例えば、GIF、JPEG など) 
-でのエクスポートに際して、
-図の周囲にここで指定した幅の余白を設けることができます。
-余白の大きさの単位は、ピクセル、もしくは 1/80インチです。
-
-<p>
-<dt><i>Background</i>
-<dd>出力する図の背景の色を設定します。
-デフォルトは白です。
+これは隣り合ったピクセルの色の平均を取ることによってイメージを滑らかにします。
+デフォルトは <i>No smoothing</i> です。
 
 <p>
 <dt><i>Transparent Color</i>
@@ -420,27 +484,33 @@ Transparent GIF に対応した GIF ビューア
 代わりにその色があった場所にはビューアの背景が現れるようになります。
 このメニュー・ボタンは、
 GIF フォーマットでのエクスポートに際してのみ表示されます。
-<p>
 デフォルトは <i>None</i> です。
 
 <p>
-<dt><i>Default Filename</i>
-<dd><i>Output Filename</i> でファイル名が指定されなかった場合には、
+<dt><i>JPEG Image quality</i>
+<dd><a href="#language"><i>Language</i></a> が <i>JPEG</i> であるならば、
+「quality factor」を選択するためのエントリが現れます。
+デフォルトは 75 です。
+</dl>
+
+<p>
+<dt><i>Default File</i>
+<dd><i>Output File</i> でファイル名が指定されなかった場合には、
 出力はここに表示されているファイルへ書き込まれます。
 <p>
 このファイル名は、デフォルトでは図のファイル名に
 出力のフォーマットに対応する拡張子を付け加えたものとなっていますが、
-<i>Output Filename</i> でファイル名を指定して
+<i>Output File</i> でファイル名を指定して
 エクスポートを行なった場合にはそのファイル名に変更されます。
 
 <p>
-<dt><i>Output Filename</i>
+<dt><i>Output File</i>
 <dd>出力を書き込むファイルを指定します。
 このフィールドが空の場合には、
-<i>Default Filename</i> フィールドのファイル名が
+<i>Default File</i> フィールドのファイル名が
 出力先のファイル名として用いられます。
 <p>
-<i>Output Filename</i> フィールドのファイル名は、
+<i>Output File</i> フィールドのファイル名は、
 <i>Alternatives</i> リストのファイル名をクリックするか、
 もしくはキーボードから直接入力することによって変更することができます。
 ファイル名を入力した後に return をタイプすると、
@@ -454,7 +524,7 @@ GIF フォーマットでのエクスポートに際してのみ表示されます。
 その中からエクスポート先のファイルを選択することができます。
 <p>
 このリストの中のファイル名をマウスボタン1でクリックすると、
-そのファイル名が <i>Output Filename</i> フィールドにコピーされます。
+そのファイル名が <i>Output File</i> フィールドにコピーされます。
 また、このリストの中のファイル名をマウスボタン1でダブル・クリックすると、
 <i>Export</i> ボタンをクリックした場合と同様に
 そのファイルへのエスポートが行なわれます。
@@ -528,287 +598,19 @@ GIF フォーマットでのエクスポートに際してのみ表示されます。
 <p>
 <dt><i>Export</i>
 <dd>このボタンをクリックすると、
-<i>Output Filename</i> フィールドで
+<i>Output File</i> フィールドで
 ファイル名が指定されている場合にはそのファイルへの、
-さもなくば <i>Default Filename</i> で示されているファイルへの
+さもなくば <i>Default File</i> で示されているファイルへの
 エクスポートが行なわれます。
 アクセラレータ <tt>Meta-E</tt> も同じ意味を持ちます。
 <p>
-<i>Default Filename</i> とは異なる、
+<i>Default File</i> とは異なる、
 既に存在するファイルへのエクスポートを行なおうとした場合には、
 エクスポートを行なうかどうかを確認するための確認ウィンドウが開かれます。
-また、<i>Default Filename</i> とは異なるファイルへの
+また、<i>Default File</i> とは異なるファイルへの
 エクスポートを行なった場合には、
-そのファイル名が <i>Default Filename</i> に設定されます。
+そのファイル名が <i>Default File</i> に設定されます。
 </dl>
-
-<p>
-<hr>
-
-<h2><a name="latex_and_xfig">LaTeX と Xfig</a></h2>
-
-ここで、<b>xfig</b> と LaTeX を使用するための
-いくつかの有用なヒントを示しておきます。
-<p>
-この解説は、Eric Masson (ericm@kirk.ee.mcgill.ca) 
-によって書かれた文書に基づくものです。
-
-<h3>xfig の図を LaTeX ファイルに取り込む方法</h3>
-
-<b>xfig</b> の起動に際して、次のようなコマンドを用います：
-<pre>
-  xfig -specialtext -latexfonts -startlatexFont default
-</pre>
-<p>
-もし<b>全て</b>の図を 
-<a href="attributes.html#text-flags"><i>Special</i> フラグ</a> 
-と <a href="attributes.html#font-panel"><i>LaTeX</i> フォント</a> 
-を選択して開始したいのであれば、<tt>.Xresources</tt> ファイルか
-あなたが使っているリソース・ファイルで次のように指定します：
-<pre>
-  Fig.latexfonts: true
-  Fig.specialtext: true
-</pre>
-<p>
-<b>xfig</b> が生成でき、LaTeX が読むことのできる、
-いくつかのフォーマットがあります。
-ここでは3つのケースのみをカバーします：
-
-<ol type="A">
-<li>直接 LaTeX 形式で出力する
-<li>Encapsulated PostScript (EPS) で出力し、それを LaTeX で取り込む
-<li>図の一部を PostScript で、一部を LaTeX で出力し、
-  それらを文書の上で重ね合わせる
-</ol>
-<p>
-これらの方法にはそれぞれの利点があり、同程度に容易に扱うことができます。
-方法 (A) の利点は、全てが TeX 形式に含まれており、
-DVI ファイルが必要な情報全てを保持することです。
-(B) では出力に際して PostScript の全ての機能とフォントを使用できます。
-(C) では PostScript の描画機能と、
-LaTeX のテキストのタイプセット機能を用いることができます。
-<p>
-LaTeX 文書のプリアンブル (<tt>\begin{document}</tt> よりも前の部分) 
-に、次の行を置きます：
-<pre>
-        \input{psfig}
-</pre>
-<p>
-プリアンプルは次のようなものとなるかも知れません：
-<pre>
-  \documentstyle[12pt,bezier,amstex]{article}  % include bezier curves
-  \renewcommand\baselinestretch{1.0}           % single space
-  \pagestyle{empty}                            % no headers and page numbers
-  \oddsidemargin -10 true pt      % Left margin on odd-numbered pages.
-  \evensidemargin 10 true pt      % Left margin on even-numbered pages.
-  \marginparwidth 0.75 true in    % Width of marginal notes.
-  \oddsidemargin  0 true in       % Note that \oddsidemargin=\evensidemargin
-  \evensidemargin 0 true in
-  \topmargin -0.75 true in        % Nominal distance from top of page to top of
-  \textheight 9.5 true in         % Height of text (including footnotes and figures)
-  \textwidth 6.375 true in        % Width of text line.
-  \parindent=0pt                  % Do not indent paragraphs
-  \parskip=0.15 true in
-
-  \input{psfig}           % Capability to place postscript drawings
-
-
-  \begin{document}
-  \end{document}
-</pre>
-
-<h3>Type A ― 直接 LaTeX 形式で出力する</h3>
-
-描画能力の点では、これは最も非力です。
-LaTeX では、いくつかの特定の角度の線のみを描画することができます。
-線に矢印が付いている場合、この制限はさらに厳しくなります。
-楕円、スプラインなどの、いくつかの機能はサポートされていません。
-(<b>xfig</b> は <tt>bezier</tt> などの 
-LaTeX マクロ・パッケージによる利点を用いていません。)
-<p>
-この方法で線を描画する場合には、
-<b>xfig</b> 上での<a href="attributes.html#angle-geom">線の角度</a>を
-適切なものに制限するようにしなければなりません。
-さもなくば、図を LaTeX フォーマットでエクスポートした際に、
-<b>xfig</b> はそれを LaTeX が扱える最も近い角度で近似し、
-通常は望ましくない結果が生じます。
-<p>
-このモードではテキストに LaTeX のコマンドを含めることができ、
-LaTeX に取り込まれた際にそのコマンドは適切に解釈されます。
-例えば：
-<pre>
-        $\int_0^9 f(x) dx$
-</pre>
-は関数 <i>f(x)</i> の 0 から 9 の積分となります。
-LaTeX ファイルを生成するためには、<b>xfig</b> の 
-<a href="main_menus.html#file-menu"><i>File</i> メニュー</a> 
-から <i>Export...</i> を選択し、
-エクスポートする <a href="#language"><i>Language</i></a> として 
-<i>LaTeX picture</i> を選択します。
-これによって <tt>.latex</tt> というサフィックスを持つファイルを生成し、
-直接 LaTeX 文書に取り込むことができます。
-<p>
-例えば、次のコードはファイル <tt>yourfile.latex</tt> を
-直接 LaTeX 文書に取り込みます：
-<pre>
-  \begin{figure}[htbp]
-  \begin{center}
-
-  \input{yourfile.latex} 
-
-  \caption{The caption on your figure}
-  \label{figure:yourreferencename}
-  \end{center}
-  \end{figure}
-</pre>
-
-<h3>Type B ― Encapsulated PostScript での出力</h3>
-
-この方法では図の描画についての制限はありません。
-ただし、このフォーマットにおいては LaTeX のコマンドは使用できません。
-しかし、このフォーマットが選択された場合には
-多数の PostScript の全てが使用可能となります。
-<p>
-図を描き終ったならば、<b>xfig</b> の 
-<a href="main_menus.html#file-menu"><i>File</i> メニュー</a> 
-から <i>Export...</i> を選択し、
-エクスポートする <a href="#language"><i>Language</i></a> として 
-<i>Encapsulated PostScript</i> を選択します。
-これによって、次のような方法によって LaTeX 文書に取り込むことができる、
- <tt>.eps</tt> というサフィックスを持つファイルを生成することができます。
-<pre>
-  \begin{figure}[htbp]
-  \begin{center}
-    \psfig{file=yourfile.eps}
-  \end{center}
-  \caption{Your caption}
-  \label{figure:yourreference}
-  \end{figure}
-</pre>
-<p>
-<b>注意：</b> 環境によってはこの方法は使用できないかも知れません。
-また、この方法で生成される DVI ファイルは
-ポータブルではないものとなることがあります。
- 
-<h3>Type C ― Postscript/LaTeX の組み合わせ</h3>
-
-この方法ではどのような線や曲線を使うこともできます。
-また、LaTeX のコマンドの使用も許され、
-かつ PostScript フォントを使用することもできます。
-従って、テキストの中に
-<pre>
-        $\int_0^9 f(x) dx$
-</pre>
-のように入力すれば、それは LaTeX で処理されます。
-LaTeX で出力したいテキストについては 
-<a href="attributes.html#text-flags"><i>Special</i> フラグ</a> を ON にし、
-PostScript で出力したいテキストについては 
-OFF にする必要があることに注意して下さい。
-
-<p>
-この方法を用いる場合には、
-<a href="main_menus.html#file-menu"><i>File</i> メニュー</a> 
-から <i>Export...</i> を選択し、
-エクスポートする <a href="#language"><i>Language</i></a> として 
-<i>Combined PostScript/LaTeX (both part)</i> を選択します。
-これによって、次のような方法によって LaTeX 文書に取り込むことができる 
-<tt>.pstex_t</tt> というサフィックスを持つファイルと、
-PostScript のコードを含む <tt>.pstex</tt> というサフィックスを持つファイル
-を生成することができます。
-<tt>.pstex_t</tt> ファイルは自動的に <tt>.pstex</tt> ファイルを取り込むので、
-これを明示的に TeX ファイルに含める必要はありません。
-図を取り込むためには、次のようなものを用います：
-<pre>
-  \begin{figure}[htbp]
-  \begin{center}
-
-  \input{yourfigure.pstex_t}
-
-  \caption{Your figure}
-  \label{figure:example}
-  \end{center}
-  \end{figure}
-</pre>
-<p>
-<b>注意：</b> <b>xfig</b> が生成した <tt>.pstex_t</tt> ファイルを
-編集したいと思うことがあるかも知れません。
-それは <tt>.pstex</tt> ファイルを完全なパスで参照することがありますが、
-これはそれらのファイルを他のディレクトリに動かした場合に問題を生じます。
-個人的には、完全なパス指定を削除し、
-ファイル名のみを残しておくことを好んでいます。
-
-<h3>補足</h3>
-
-Fig ファイルに Encapsulated PostScript ファイルを
-<a href="drawing.html#picture">取り込む</a>ことができます。
-これは、他のプログラムの出力に書き込みをしたい時に有用です。
-例えば、MATLAB の図を取り込んで、
-興味のあるポイントをテキスト、線、円などで示すことができます。
-Version 2.1.7 以降の <b>xfig</b> は、
-図の中の PostScript の図を表示するための 
-<a href="installation.html#ghostscript">GhostScript</a> 
-へのフックを含んでいます。
-<p>
-もし <tt>.ps</tt> ファイルしか持っていないならば、
-それを Encapsulated PostScript に変換するために 
-GhostScript の <b>ps2epsi</b> を用いることができるでしょう。
-<p>
-必要であれば、
-<a href="installation.html#pstoedit"><b>pstoedit</b></a> を用いれば、
-PostScript を Fig ファイルに変換することができるかも知れません。
-
-<hr>
-
-<h3><tt>pstex_t</tt> での図の大きさの変更</h3>
-
-From Stephen Eglen (stephene@cogs.susx.ac.uk)
-
-<p>
-図を
-<pre>
-  \input{file.psttext_t}
-</pre>
-によって取り込みたいのであれば、図の大きさを指定する方法はありません。
-<p>
-これに対する、2つの解決方法があります：
-<ol>
-<li>最初から <b>xfig</b> で正しい大きさで図を作成する。
-あるいは、図をエクスポートする際に、<a href="#export">Export パネル</a> の 
-<i>Magnification</i> での設定を変更することによって図の大きさを変更する。
-いずれの方法でも、LaTeX 文書上での図の大きさが気に入らなかった場合には 
-<b>xfig</b> に戻らなければならない。
-<p>
-<li><tt>\scalebox</tt>、あるいは <tt>\resizebox</tt> を用いて、
-LaTeX に図の大きさを変更させる。
-これはグラフィック・パッケージからのテキストや図をスケーリングするための
-一般的な機能です。
-<p>
-<pre>
-       \scalebox{factor}{object}
-</pre>
-は、任意の比率でオブジェクトをスケーリングします。
-比率は単純な数値 (1よりも小さければ縮小、1よりも大きければ拡大) です。
-オブジェクトは、通常はいくつかのテキストやグラフィックです。
-<p>
-例えば：
-<pre>
-       \scalebox{2}{ \input{file.pstex_t} }
-</pre>
-は、ドライバに依存して、図を2倍に拡大します。
-ビットマップ・フォントをスケーリングすると醜い結果が得られるので避けること。
-<p>
-<pre>
-       \resizebox{width}{ht} {stuff}
-</pre>
-は "<tt>stuff</tt>" を <tt>width</tt> × <tt>ht</tt> の大きさにリサイズします。
-パラメータとして "<tt>!</tt>" を用いるとボックスのアスペクト比が保存されます。
-例えば：
-<pre>
-       \resizebox{5cm}{!}{fat cat} 
-</pre>
-は "<tt>fat cat</tt>" の幅を 5cm に、高さを適切に設定します。
-(Lamport の本の 129ページより)
-</ol>
 
 <p>
 <hr>

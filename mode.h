@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -33,11 +33,10 @@
 #define		F_CLOSED_APPROX_SPLINE	11
 #define		F_INTERP_SPLINE		12
 #define		F_CLOSED_INTERP_SPLINE	13
-#define		F_ARC_BOX		14
+#define		F_ARCBOX		14
 #define		F_REGPOLY		15
 #define		F_PICOBJ		16
 #define		F_PLACE_LIB_OBJ		17
-#define		F_PASTE			18
 
 #define	    FIRST_EDIT_MODE	    F_GLUE
 #define		F_GLUE			30
@@ -67,6 +66,11 @@
 #define		F_OPEN_CLOSE		54
 #define		F_SPLIT			55
 #define		F_JOIN			56
+#define		F_TANGENT		57
+#define		F_ANGLEMEAS		58
+#define		F_LENMEAS		59
+#define		F_AREAMEAS		60
+#define		F_PASTE			61
 
 extern int	cur_mode;
 
@@ -106,6 +110,10 @@ extern int	latexarrow_mode;
 extern int	autoforwardarrow_mode;
 extern int	autobackwardarrow_mode;
 
+/* grid subunit modes (mm, 1/16", 1/10") */
+#define		NUM_GRID_UNITS		3
+enum 		{ MM_UNIT, FRACT_UNIT, TENTH_UNIT };
+
 /* grid mode */
 #define		GRID_0			0
 #define		GRID_1			1
@@ -113,10 +121,10 @@ extern int	autobackwardarrow_mode;
 #define		GRID_3			3
 #define		GRID_4			4
 
-extern int	cur_gridmode;
-extern int	grid_fine[];
-extern int	grid_coarse[];
-extern char    *grid_name[];
+extern int	cur_gridmode, cur_gridunit, grid_unit;
+extern int	grid_fine[NUM_GRID_UNITS][GRID_4];
+extern int	grid_coarse[NUM_GRID_UNITS][GRID_4];
+extern char    *grid_name[NUM_GRID_UNITS][GRID_4+1];
 
 /* point position */
 #define		P_ANY			0
@@ -127,8 +135,8 @@ extern char    *grid_name[];
 #define		P_GRID4			5
 
 extern int	cur_pointposn;
-extern int	posn_rnd[];
-extern int	posn_hlf[];
+extern int	posn_rnd[NUM_GRID_UNITS][P_GRID4+1];
+extern int	posn_hlf[NUM_GRID_UNITS][P_GRID4+1];
 
 /* rotn axis */
 #define		UD_FLIP			1
@@ -160,7 +168,6 @@ extern char	cur_spellchk[PATH_MAX];
 extern char	cur_browser[PATH_MAX];
 extern char	cur_pdfviewer[PATH_MAX];
 extern Boolean	warnexist;
-extern Boolean  warninput;
 
 extern void	reset_modifiedflag();
 extern void	set_modifiedflag();
@@ -176,33 +183,43 @@ extern int	min_num_points;
 
 extern Boolean	export_flushleft;	/* flush left (true) or center (false) */
 
+/*********************************************************************/
+/* If you change the order of the LANG_xxx you must change the order */
+/* of the lang_texts[] and the LANG_items[] items in mode.c          */
+/*********************************************************************/
+
 /* position of languages starting from 0 */
 enum {
+	LANG_PS,
+	LANG_EPS,
+	LANG_EPS_ASCII,
+	LANG_EPS_MONO_TIFF,
+	LANG_EPS_COLOR_TIFF,
+	LANG_PDF,
 	LANG_BOX,
 	LANG_LATEX,
 	LANG_EPIC,
 	LANG_EEPIC,
 	LANG_EEPICEMU,
+	LANG_PSTEX,
+	LANG_PDFTEX,
 	LANG_PICTEX,
 	LANG_IBMGL,
-	LANG_EPS,
-	LANG_PS,
-	LANG_PDF,
-	LANG_PSTEX,
 	LANG_TEXTYL,
 	LANG_TPIC,
 	LANG_PIC,
+	LANG_MAP,
 	LANG_MF,
 	LANG_MP,
 	LANG_MMP,
 	LANG_CGM,
+	LANG_BCGM,	 /* binary cgm */
+	LANG_EMF,
 	LANG_TK,
-	LANG_MAP,
+	LANG_SVG,
 /* bitmap formats should follow here, starting with GIF */
 	LANG_GIF,
-#ifdef USE_JPEG
 	LANG_JPEG,
-#endif
 	LANG_PCX,
 	LANG_PNG,
 	LANG_PPM,
@@ -245,7 +262,7 @@ extern int	cur_ps_font;
 extern int	cur_textjust;
 extern int	cur_textflags;
 
-/***************************  Lines ****************************/
+/*******************************  Lines *********************************/
 
 extern int	cur_linewidth;
 extern int	cur_linestyle;
@@ -258,7 +275,6 @@ extern Color	cur_pencolor;
 extern Color	cur_fillcolor;
 extern int	cur_boxradius;
 extern int	cur_fillstyle;
-extern int	cur_penstyle;
 extern int	cur_arrowmode;
 extern int	cur_arrowtype;
 extern float	cur_arrowwidth;
@@ -269,11 +285,29 @@ extern float	cur_arrow_multheight;
 extern float	cur_arrow_multthick;
 extern Boolean	use_abs_arrowvals;
 extern int	cur_arctype;
-extern char	EMPTY_PIC[8];
 
-/* Misc */
+/*************************** Dimension lines ****************************/
+
+extern int	cur_dimline_thick;
+extern int	cur_dimline_style;
+extern int	cur_dimline_color;
+extern int	cur_dimline_leftarrow;
+extern int	cur_dimline_rightarrow;
+extern float	cur_dimline_arrowlength;
+extern float	cur_dimline_arrowwidth;
+extern Boolean	cur_dimline_ticks;
+extern int	cur_dimline_boxthick;
+extern int	cur_dimline_boxcolor;
+extern int	cur_dimline_textcolor;
+extern int	cur_dimline_font;
+extern int	cur_dimline_fontsize;
+extern int	cur_dimline_psflag;
+extern Boolean	cur_dimline_fixed;
+
+/**************************** Miscellaneous *****************************/
+
 extern float	cur_elltextangle;	/* text/ellipse input angle */
-
+extern char	EMPTY_PIC[8];
 
 /***************************  File Settings  ****************************/
 
@@ -284,4 +318,5 @@ extern char	save_filename[];	/* to undo load or "new" command */
 extern char	file_header[];
 extern char	cut_buf_name[];		/* path of .xfig cut buffer file */
 extern char	xfigrc_name[];		/* path of .xfigrc file */
+
 #endif /* MODE_H */

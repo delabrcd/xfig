@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -40,6 +40,7 @@ arrow_head_selected()
     set_mousefun("add arrow", "delete arrow", "", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     init_searchproc_left(add_arrow_head);
     init_searchproc_middle(delete_arrow_head);
     canvas_leftbut_proc = point_search_left;
@@ -155,12 +156,9 @@ add_splinearrow(spline, prev_point, selected_point)
     F_spline	   *spline;
     F_point	   *prev_point, *selected_point;
 {
-    F_point	   *p;
-
     if (prev_point == NULL) {	/* add backward arrow */
 	if (spline->back_arrow)
 	    return;
-	p = selected_point->next;
 	spline->back_arrow = backward_arrow();
 	redisplay_spline(spline);
     } else if (selected_point->next == NULL) {	/* add forward arrow */

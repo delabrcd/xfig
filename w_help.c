@@ -1,15 +1,15 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2000 by Brian V. Smith
+ * Copyright (c) 1989-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -19,6 +19,7 @@
 #include "object.h"
 #include "mode.h"
 #include "f_util.h"
+#include "w_indpanel.h"
 #include "w_msgpanel.h"
 #include "w_util.h"
 
@@ -50,11 +51,32 @@ launch_refman(w, closure, call_data)
 	  if (!check_docfile(filename))
 	    sprintf(filename, "%s/html/index.html", XFIGDOCDIR);
 	}
-#endif
+#endif /* I18N */
 	if (!check_docfile(filename))
 		return;
-	launch_viewer(filename, "Launching Web browser for html pages", appres.browser);
+	launch_viewer(filename, "Launching Web browser for html pages", cur_browser);
 }
+
+void
+launch_refpdf_en(w, closure, call_data)
+    Widget    w;
+    XtPointer closure;
+    XtPointer call_data;
+{
+	sprintf(filename,"%s/xfig_ref_en.pdf",XFIGDOCDIR);
+	launch_viewer(filename,"Launching PDF viewer for Xfig reference", cur_pdfviewer);
+}
+
+void
+launch_refpdf_jp(w, closure, call_data)
+    Widget    w;
+    XtPointer closure;
+    XtPointer call_data;
+{
+	sprintf(filename,"%s/xfig_ref_jp.pdf",XFIGDOCDIR);
+	launch_viewer(filename,"Launching PDF viewer for Xfig reference", cur_pdfviewer);
+}
+
 
 void
 launch_howto(w, closure, call_data)
@@ -63,7 +85,7 @@ launch_howto(w, closure, call_data)
     XtPointer call_data;
 {
 	sprintf(filename,"%s/xfig-howto.pdf",XFIGDOCDIR);
-	launch_viewer(filename,"Launching PDF viewer for How-to Tutorial", appres.pdf_viewer);
+	launch_viewer(filename,"Launching PDF viewer for How-to Tutorial", cur_pdfviewer);
 }
 
 void
@@ -72,16 +94,19 @@ launch_man(w, closure, call_data)
     XtPointer closure;
     XtPointer call_data;
 {
-	sprintf(filename,"%s/xfig.html",XFIGDOCDIR);
-	launch_viewer(filename,"Launching Web browser for man pages", appres.browser);
+	sprintf(filename,"%s/xfig_man.html",XFIGDOCDIR);
+	launch_viewer(filename,"Launching Web browser for man pages", cur_browser);
 }
 
 launch_viewer(filename, message, viewer)
     char     *filename, *message, *viewer;
 {
+	/* turn off Compose key LED */
+	setCompLED(0);
+
 	/* first check if the file is installed */
 	if (!check_docfile(filename))
-		return;
+	    return;
 	/* now replace the %f in the browser command with the filename and add the "&" */
 	browsecommand = build_command(viewer, filename);
 	put_msg(message);
@@ -128,6 +153,9 @@ launch_about(w, closure, call_data)
     Position  x, y;
     char	  info[400];
 
+    /* turn off Compose key LED */
+    setCompLED(0);
+
     /* don't make more than one */
     if (!help_popup) {
 
@@ -154,7 +182,7 @@ launch_about(w, closure, call_data)
 	/* make up some information */
 	strcpy(info,xfig_version);
 	strcat(info,"\n  Copyright \251 1985-1988 by Supoj Sutanthavibul");
-	strcat(info,"\n  Parts Copyright \251 1989-2000 by Brian V. Smith (BVSmith@lbl.gov)");
+	strcat(info,"\n  Parts Copyright \251 1989-2002 by Brian V. Smith (BVSmith@lbl.gov)");
 	strcat(info,"\n  Parts Copyright \251 1991 by Paul King");
 	strcat(info,"\n  See source files and man pages for other copyrights");
 

@@ -3,11 +3,11 @@
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
    <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; I; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <TITLE>XFIG User Manual - Panning </TITLE>
+   <TITLE>Panning, Zoom, Ruler and Units</TITLE>
 <LINK rev="made" href="mailto:BVSmith@lbl.gov">
 </HEAD>
 <BODY>
-<a href="contents.html"><img src="images/xfig-title.gif"
+<a href="contents.html"><img src="images/xfig-title.png"
   alt="XFIG Users Manual" border=0></a>
 
 <h1>Panning, Zoom, Ruler and Units</h1>
@@ -41,7 +41,7 @@
 <h3><a name="rulers">Rulers</a></h3>
 
 <blockquote>
-  <img src="images/ruler.gif" alt="[Rulers]">
+  <img src="images/ruler.png" alt="[Rulers]">
 </blockquote>
 <p>
 The rulers are placed at the top and right
@@ -66,6 +66,13 @@ The arrow keys have the same effect, too.
 If the SHIFT key was pressed during those operations,
 amount of scroll will be five times further.
 
+<p>
+<img src="images/pict-new.png" alt="New">
+If <b>xfig</b> is compiled with <a href="installation.html#wheelmouse">wheel mouse support</a>
+and you have a wheel-mouse, then 
+rotating the wheel <b>backward</b> on the canvas will scroll the canvas up, and 
+rotating the wheel <b>forward</b> will scroll the canvas down.
+
 <h3><a name="pan-by-key">Panning with Keyboard</a></h3>
 
 The canvas may be panned <b>left</b>, <b>right</b>, <b>up</b>, or <b>down</b> 
@@ -81,7 +88,7 @@ with mouse button 1 or 3, too.
 
 The canvas view will be moved to the origin
 if mouse button 1 (`Pan to Origin') is clicked
-on the <a href="#units">UNIX box</a>,
+on the <a href="#units">UNIT box</a>,
 or mouse button 2 (`Pan to Origin') is clicked
 on the canvas while the CONTROL key is down.
 Selecting <i>Pan to origin</i> from the 
@@ -92,16 +99,16 @@ Selecting <i>Pan to origin</i> from the
 
 By default, <b>xfig</b> will allow panning into negative coordinates. 
 <p>
-This may be turned off by either starting xfig with the
-<b><kbd>-dont_allow_neg_coords</kbd></b>
+This may be turned off by either starting <b>xfig</b> with the
+<b><kbd>-dontallownegcoords</kbd></b>
 option, or unchecking the box in the 
-<a href="global_settings.html#dont_allow_neg_coords">Global Settings</a> panel.
+<a href="global_settings.html#dontallownegcoords">Global Settings</a> panel.
 
 <hr>
 
 <h2><a name="zooming">Zooming</a></h2>
 
-<img src="images/zoom-button.gif" align="right" border=1 alt="">
+<img src="images/zoom-button.png" align="right" border=1 alt="">
 The canvas may be zoomed/unzoomed by setting the zoom scale with the
 <a href="attributes.html#zoom-scale">Zoom Scale</a> button
 in the <a href="attributes.html">Attribute panel</a>.
@@ -126,7 +133,7 @@ has the same function.
 <ul>
 <li>Click <a href="attributes.html#zoom-scale">Zoom Scale</a> 
 in the <a href="attributes.html">Attribute panel</a> 
-with mouse button 3 (`Inc/Next).
+with mouse button 3 (`Inc/Next').
 
 <p>
 <li>Choose <i>Zoom in</i> from
@@ -139,6 +146,13 @@ click mouse button 1 (`zoom area') on one corner of a rectangle,
 drag the mouse to the opposite corner
 and click mouse button 1 (`final point') again.
 The area in the rectangle will be zoomed to fit the canvas.
+
+<p>
+<li><img src="images/pict-new.png" alt="New">
+If <b>xfig</b> is compiled with <a href="installation.html#wheelmouse">wheel mouse support</a>
+and you have a wheel-mouse, then 
+rotating the wheel <b>backward</b> on the canvas while the <b>control key</b> is pressed
+will zoom the canvas in around the pointer.
 </ul>
 
 <h3><a name="zoom-out">Zoom Out</a></h3>
@@ -152,6 +166,13 @@ with mouse button 2 (`Dec/Prev').
 <li>Choose <i>Zoom out</i> from
 the <a href="main_menus.html#view-menu">View menu</a>,
 or use accelerator <tt>Z</tt>.
+
+<p>
+<li><img src="images/pict-new.png" alt="New">
+If <b>xfig</b> is compiled with <a href="installation.html#wheelmouse">wheel mouse support</a>
+and you have a wheel-mouse, then 
+rotating the wheel <b>forward</b> on the canvas while the <b>control key</b> is pressed
+will zoom the canvas out.
 </ul>
 
 <h3><a name="unzoom">Unzoom</a></h3>
@@ -172,7 +193,7 @@ while pressing the CONTROL key.
 <h3><a name="unit-box">UNIT box</a></h3>
 
 <blockquote>
-  <img src="images/unit-box.gif" alt="[Units]">
+  <img src="images/unit-box.png" alt="[Units]">
 </blockquote>
 <p>
 The Units box is placed where the top and side rulers meet.
@@ -187,19 +208,22 @@ This panel is also available from the
 <a href="main_menus.html#edit-menu">Edit Menu</a>
 <p>
 <blockquote>
-  <img src="images/unit-panel.gif" alt="[Unit Panel]">
+  <img src="images/unit-panel.png" alt="[Unit Panel]">
 </blockquote>
 
 <p>
 <dl>
 <dt>
-<img src="images/redballdot.gif" align=bottom alt="-">
+<img src="images/redballdot.png" align=bottom alt="-">
 <i>Ruler units</i>
 <dd>Select <a href="#rulers">ruler</a> 
-unit from <i>Imperial (in)</i> and <i>Metric (cm)</i>.
+unit from <i>Imperial (fraction)</i>, <i>Imperial (decimal)</i> or <i>Metric (cm)</i>.
+When <i>Imperial (fraction)</i> is chosen, then fractions
+of the units will be shown in measurement messages, e.g. <b>3-5/8 in</b>, or <b>3 ft 7-1/2 in</b>
+For the other choices, decimal values are shown, e.g. <b>3.3242 cm</b>.
 
 <dt>
-<img src="images/redballdot.gif" align=bottom alt="-">
+<img src="images/redballdot.png" align=bottom alt="-">
 <i>Figure units</i>
 <dd>Select unit
 which is used to display dimensions when entering or editing object,
@@ -208,14 +232,23 @@ If <i>User defined</i> is selected here,
 the string entered in <i>Unit name</i> will be displayed as the unit of dimension.
 
 <dt>
-<img src="images/redballdot.gif" align=bottom alt="-">
+<img src="images/redballdot.png" align=bottom alt="-">
 <i>Unit name</i>
 <dd>Set the name of the unit.
 This is effective only if
 <i>User defined</i> is selected in <i>Figure units</i>.
 
 <dt>
-<img src="images/redballdot.gif" align=bottom alt="-">
+<img src="images/redballdot.png" align=bottom alt="-">
+<i>Use fractions</i>
+<img src="images/pict-new.png" alt="New">
+<dd>If the Ruler units is Imperial (in), you may have <b>xfig</b> display measurements
+using fractions where possible.  If a measurement can be shown as an integer
+multiple of 64ths of an inch (or 32nds, 16ths, etc.) it will show it as such (e.g. 3-5/64 in), otherwise
+a decimal value will be shown (e.g. 3.085 in).
+
+<dt>
+<img src="images/redballdot.png" align=bottom alt="-">
 <i>Figure scale</i>
 <dd>Choose the scale
 which is used to display dimensions when entering or editing objects,
@@ -225,7 +258,7 @@ the value specified by <i>Scale factor</i> will be multiplied by the dimensions
 displayed when drawing objects.
 
 <dt>
-<img src="images/redballdot.gif" align=bottom alt="-">
+<img src="images/redballdot.png" align=bottom alt="-">
 <i>Scale factor</i>
 <dd>Set the value which will be multiplied by the dimensions
 when displaying them.
@@ -233,10 +266,11 @@ This is effective only if
 <i>User defined</i> is selected as <i>Figure scale</i>.
 </dl>
 
-As an exmple, in the above panel <i>Ruler units</i> are <i>Metric</i>,
+As an exmple, in the above panel <i>Ruler units</i> are <i>Imperial (fraction)</i>,
 <i>Figure units</i> are <i>User defined</i>,
-<i>Unit name</i> is "km", <i>Figure scale</i> is <i>User defined</i> 
-and <i>Scale factor</i> is 2.0, so when drawing, 1 cm will be reported as 2.0 km.
+<i>Unit name</i> is "ft" (feet), <i>Figure scale</i> is <i>User defined</i> 
+and <i>Scale factor</i> is 2.0, so when drawing, 1 inch will be reported as 2 ft., and
+1-7/16 inch will be reported as 2 ft 10-1/2 in.
 <p>
 The default values for this panel can be set by
 <a href="options.html">command line options</a> 

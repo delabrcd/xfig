@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Henning Spruth
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -26,11 +26,11 @@
 #include "u_pan.h"
 #include "w_canvas.h"
 #include "w_file.h"
+#include "w_indpanel.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
-#include "w_indpanel.h"
 
 /* global for w_canvas.c */
 
@@ -41,6 +41,7 @@ static void	init_zoombox_drawing();
 
 static void	(*save_kbd_proc) ();
 static void	(*save_locmove_proc) ();
+static void	(*save_ref_proc) ();
 static void	(*save_leftbut_proc) ();
 static void	(*save_middlebut_proc) ();
 static void	(*save_rightbut_proc) ();
@@ -196,6 +197,14 @@ zoom_selected(x, y, button)
 	case Button3:
 	    unzoom();
 	    break;
+#ifdef WHEELMOUSE
+	case Button4:
+	    wheel_dec_zoom();
+	    break;
+	case Button5:
+	    wheel_inc_zoom();
+	    break;
+#endif /* WHEELMOUSE */
 	}
     } else if (button == Button1) {
 	reset_cursor();
@@ -220,6 +229,11 @@ my_box(x, y)
     elastic_box(my_fix_x, my_fix_y, my_cur_x, my_cur_y);
 }
 
+static void
+elastic_mybox()
+{
+    elastic_box(my_fix_x, my_fix_y, my_cur_x, my_cur_y);
+}
 
 static void
 init_zoombox_drawing(x, y)
@@ -229,6 +243,7 @@ init_zoombox_drawing(x, y)
 	return;
     save_kbd_proc = canvas_kbd_proc;
     save_locmove_proc = canvas_locmove_proc;
+    save_ref_proc = canvas_ref_proc;
     save_leftbut_proc = canvas_leftbut_proc;
     save_middlebut_proc = canvas_middlebut_proc;
     save_rightbut_proc = canvas_rightbut_proc;
@@ -236,9 +251,9 @@ init_zoombox_drawing(x, y)
 
     my_cur_x = my_fix_x = x;
     my_cur_y = my_fix_y = y;
-    canvas_locmove_proc = moving_box;
 
     canvas_locmove_proc = my_box;
+    canvas_ref_proc = elastic_mybox;
     canvas_leftbut_proc = do_zoom;
     canvas_middlebut_proc = canvas_rightbut_proc = null_proc;
     canvas_rightbut_proc = cancel_zoom;
@@ -263,7 +278,7 @@ do_zoom(x, y)
     zoomyoff = my_fix_y < y ? my_fix_y : y;
     dimx = abs(x - my_fix_x);
     dimy = abs(y - my_fix_y);
-    if (!appres.allow_neg_coords) {
+    if (!appres.allownegcoords) {
 	if (zoomxoff < 0)
 	    zoomxoff = 0;
 	if (zoomyoff < 0)
@@ -285,6 +300,7 @@ do_zoom(x, y)
     /* restore state */
     canvas_kbd_proc = save_kbd_proc;
     canvas_locmove_proc = save_locmove_proc;
+    canvas_ref_proc = save_ref_proc;
     canvas_leftbut_proc = save_leftbut_proc;
     canvas_middlebut_proc = save_middlebut_proc;
     canvas_rightbut_proc = save_rightbut_proc;
@@ -300,6 +316,7 @@ cancel_zoom()
     /* restore state */
     canvas_kbd_proc = save_kbd_proc;
     canvas_locmove_proc = save_locmove_proc;
+    canvas_ref_proc = save_ref_proc;
     canvas_leftbut_proc = save_leftbut_proc;
     canvas_middlebut_proc = save_middlebut_proc;
     canvas_rightbut_proc = save_rightbut_proc;

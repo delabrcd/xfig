@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -20,6 +20,7 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "f_util.h"
 #include "d_text.h"
 #include "u_create.h"
 #include "u_fonts.h"
@@ -33,22 +34,32 @@
 #include "w_setup.h"
 #include "w_zoom.h"
 #include <X11/keysym.h>
+#include <X11/Xatom.h>
+#include <X11/Xmu/Atoms.h>
 
 /* EXPORTS */
 
 void	char_handler();
 void	draw_char_string();
 void	erase_char_string();
+#ifdef SEL_TEXT
+Boolean	text_selection_active;
+#endif /* SEL_TEXT */
 
-#define CTRL_A	'\001'
-#define CTRL_B	'\002'
-#define CTRL_D	'\004'
-#define CTRL_E	'\005'
-#define CTRL_F	'\006'
-#define CTRL_H	'\010'
-#define CTRL_K	'\013'
-#define CTRL_HAT  '\036'
-#define CTRL_UNDERSCORE  '\037'
+/* LOCALS */
+
+#define CTRL_A	'\001'		/* move to beginning of text */
+#define CTRL_B	'\002'		/* move back one char */
+#define CTRL_D	'\004'		/* delete right of cursor */
+#define CTRL_E	'\005'		/* move to end of text */
+#define CTRL_F	'\006'		/* move forward one char */
+#define CTRL_H	'\010'		/* backspace */
+#define CTRL_K	'\013'		/* kill to end of text */
+#ifdef SEL_TEXT
+#define CTRL_W	'\027'		/* delete selected text */
+#endif /* SEL_TEXT */
+#define CTRL_HAT  '\036'	/* start superscript or end subscript */
+#define CTRL_UNDERSCORE  '\037'	/* start subscript or end superscript */
 
 #define	MAX_SUPSUB 4			/* max number of nested super/subscripts */
 #define CSUB_FRAC 0.75			/* fraction of current char size for super/subscript */
@@ -76,8 +87,8 @@ static XFontStruct *canvas_zoomed_font;
 
 static Boolean	is_newline;
 static int	work_font, work_fontsize, work_flags,
-		work_psflag, work_textjust;
-static Color	work_textcolor, work_textbg;
+		work_psflag, work_textjust, work_depth;
+static Color	work_textcolor;
 static XFontStruct *work_fontstruct;
 static float	work_angle;		/* in RADIANS */
 static double	sin_t, cos_t;		/* sin(work_angle) and cos(work_angle) */
@@ -99,14 +110,28 @@ static void	turn_on_blinking_cursor();
 static void	turn_off_blinking_cursor();
 static void	move_blinking_cursor();
 
+#ifdef SEL_TEXT
+/* for text selection */
+static void	track_text_select();
+static Boolean	text_selection_showing = False;
+static int	startp, endp;
+static int 	prev_indx, lensel = 0;
+static int	start_text_select = -1;
+static int	start_sel_x, start_sel_y;
+static Boolean	click_on_text = False;
+static char	text_selection[500] = {'\0'};
+static Boolean	selection_dir = 0;
+#endif /* SEL_TEXT */
+
 #ifdef I18N
 #include <sys/wait.h>
 
-XIM xim_im = NULL;
-XIC xim_ic = NULL;
-XIMStyle xim_style = 0;
-Boolean xim_active = False;
-static int save_base_x, save_base_y;
+XIM		xim_im = NULL;
+XIC		xim_ic = NULL;
+XIMStyle	xim_style = 0;
+Boolean		xim_active = False;
+
+static int	save_base_x, save_base_y;
 
 /*
 In EUC encoding, a character can 1 to 3 bytes long.
@@ -120,16 +145,22 @@ xfig-i18n will prepare for G2 and G3 here, too.
 #define is_euc_multibyte(ch)  ((unsigned char)(ch) & 0x80)
 #define EUC_SS3 '\217'  /* single shift 3 */
 
-static int i18n_prefix_tail(), i18n_suffix_head();
-extern Boolean is_i18n_font();
+static int	i18n_prefix_tail(), i18n_suffix_head();
+extern Boolean	is_i18n_font();
 
 #ifdef I18N_USE_PREEDIT
-static pid_t preedit_pid = -1;
-static char preedit_filename[PATH_MAX] = "";
-static open_preedit_proc(), close_preedit_proc(), paste_preedit_proc();
-static Boolean is_preedit_running();
+static pid_t	preedit_pid = -1;
+static char	preedit_filename[PATH_MAX] = "";
+static 		open_preedit_proc(), close_preedit_proc(), paste_preedit_proc();
+static Boolean	is_preedit_running();
 #endif  /* I18N_USE_PREEDIT */
 #endif  /* I18N */
+
+/********************************************************/
+/*							*/
+/*			Procedures			*/
+/*							*/
+/********************************************************/
 
 void
 text_drawing_selected()
@@ -156,7 +187,7 @@ text_drawing_selected()
 #endif  /* I18N */
     reset_action_on();
     clear_mousefun_kbd();
-    set_cursor(pencil_cursor);
+    set_cursor(text_cursor);
     is_newline = False;
 }
 
@@ -168,12 +199,19 @@ finish_n_start(x, y)
     work_fontsize = cur_fontsize;
     work_float_fontsize = (float) work_fontsize;
     supersub = 0;
+    is_newline = False;
     init_text_input(x, y);
 }
 
 void
-finish_text_input()
+finish_text_input(x, y, shift)
+    int		    x, y;
+    int		    shift;
 {
+    if (shift) {
+	paste_primary_selection();
+	return;
+    }
     create_textobject();
     text_drawing_selected();
     /* reset text size after any super/subscripting */
@@ -287,7 +325,7 @@ overlay_text_input(x, y)
     cur_y = y;
 
     set_action_on();
-    set_mousefun("reposn cursor", "finish text", "cancel", "", "", "");
+    set_mousefun("new text", "finish text", "cancel", "", "paste text", "");
     draw_mousefun_kbd();
     draw_mousefun_canvas();
     canvas_kbd_proc = char_handler;
@@ -311,7 +349,7 @@ overlay_text_input(x, y)
 #ifdef I18N
     save_base_x = base_x;
     save_base_y = base_y;
-#endif
+#endif /* I18N */
 
     if (is_newline) {	/* working settings already set */
 	is_newline = False;
@@ -321,6 +359,7 @@ overlay_text_input(x, y)
 	work_psflag   = using_ps;
 	work_flags    = cur_textflags;
 	work_textjust = cur_textjust;
+	work_depth    = cur_depth;
 	work_angle    = cur_elltextangle*M_PI/180.0;
 	while (work_angle < 0.0)
 	    work_angle += M_2PI;
@@ -372,7 +411,12 @@ create_textobject()
 	    /* we didn't change anything */
 	    /* draw it and any objects that are on top */
 	    redisplay_text(cur_t);
+#ifdef SEL_TEXT
+	    /* if any text is selected, redraw those characters inverted */
+	    if (lensel)
+		draw_selection(start_sel_x, start_sel_y, text_selection);
 	    return;
+#endif /* SEL_TEXT */
 	}
 	new_t = copy_text(cur_t);
 	change_text(cur_t, new_t);
@@ -384,9 +428,9 @@ create_textobject()
 		strcpy(new_t->cstring, prefix);
 	}
 	size = textsize(canvas_font, leng_prefix, prefix);
-	new_t->ascent = size.ascent;
+	new_t->ascent  = size.ascent;
 	new_t->descent = size.descent;
-	new_t->length = size.length;
+	new_t->length  = size.length;
 	cur_t = new_t;
     }
     /* draw it and any objects that are on top */
@@ -404,8 +448,11 @@ init_text_input(x, y)
     cur_x = x;
     cur_y = y;
 
+    /* clear canvas loc move proc in case we were in text select mode */
+    canvas_locmove_proc = null_proc;
+
     set_action_on();
-    set_mousefun("reposn cursor", "finish text", "cancel", "", "", "");
+    set_mousefun("new text", "finish text", "cancel", "", "paste text", "");
     draw_mousefun_kbd();
     draw_mousefun_canvas();
     canvas_kbd_proc = char_handler;
@@ -420,11 +467,12 @@ init_text_input(x, y)
      * through
      */
 
-    /******************/
-    /* new text input */
-    /******************/
-
     if ((cur_t = text_search(cur_x, cur_y, &posn)) == NULL) {
+
+	/******************/
+	/* new text input */
+	/******************/
+
 	leng_prefix = leng_suffix = 0;
 	*suffix = 0;
 	prefix[leng_prefix] = '\0';
@@ -435,33 +483,38 @@ init_text_input(x, y)
 #ifdef I18N
 	save_base_x = base_x;
 	save_base_y = base_y;
-#endif
+#endif /* I18N */
 
 	/* set working settings from ind panel */
-	work_textcolor = cur_pencolor;
-	work_textbg	  = cur_fillcolor;	/* new for V4.0 */
-	work_fontsize = cur_fontsize;
-	work_font     = using_ps ? cur_ps_font : cur_latex_font;
-	work_psflag   = using_ps;
-	work_flags    = cur_textflags;
-	work_textjust = cur_textjust;
-	work_angle    = cur_elltextangle*M_PI/180.0;
-	while (work_angle < 0.0)
+	if (is_newline) {	/* working settings already set from previous text */
+	    is_newline = False;
+	} else {		/* set working settings from ind panel */
+	    work_textcolor = cur_pencolor;
+	    work_fontsize = cur_fontsize;
+	    work_font     = using_ps ? cur_ps_font : cur_latex_font;
+	    work_psflag   = using_ps;
+	    work_flags    = cur_textflags;
+	    work_textjust = cur_textjust;
+	    work_depth    = cur_depth;
+	    work_angle    = cur_elltextangle*M_PI/180.0;
+	    while (work_angle < 0.0)
 		work_angle += M_2PI;
-	sin_t = sin((double)work_angle);
-	cos_t = cos((double)work_angle);
+	    sin_t = sin((double)work_angle);
+	    cos_t = cos((double)work_angle);
 
-	/* load the X font and get its id for this font and size UNZOOMED */
-	/* this is to get widths etc for the unzoomed chars */
-	canvas_font = lookfont(x_fontnum(work_psflag, work_font), 
+	    /* load the X font and get its id for this font and size UNZOOMED */
+	    /* this is to get widths etc for the unzoomed chars */
+	    canvas_font = lookfont(x_fontnum(work_psflag, work_font), 
 			   work_fontsize);
-	/* get the ZOOMED font for actually drawing on the canvas */
-	canvas_zoomed_font = lookfont(x_fontnum(work_psflag, work_font), 
+	    /* get the ZOOMED font for actually drawing on the canvas */
+	    canvas_zoomed_font = lookfont(x_fontnum(work_psflag, work_font), 
 			   round(work_fontsize*display_zoomscale));
-	/* save the working font structure */
-	work_fontstruct = canvas_zoomed_font;
+	    /* save the working font structure */
+	    work_fontstruct = canvas_zoomed_font;
+	} /* (is_newline) */
 
     } else {
+
 	/*****************/
 	/* existing text */
 	/*****************/
@@ -474,17 +527,13 @@ init_text_input(x, y)
 	}
 	/* update the working text parameters */
 	work_textcolor = cur_t->color;
-#ifdef USE_TEXT_BG
-	work_textbg   = cur_t->fill_color;	/* new for V4.0 */
-#else
-	work_textbg   = cur_fillcolor;		/* for debugging until V4.0 */
-#endif /* USE_TEXT_BG */
 	work_font = cur_t->font;
 	work_fontstruct = canvas_zoomed_font = cur_t->fontstruct;
 	work_fontsize = cur_t->size;
 	work_psflag   = cur_t->flags & PSFONT_TEXT;
 	work_flags    = cur_t->flags;
 	work_textjust = cur_t->type;
+	work_depth    = cur_t->depth;
 	work_angle    = cur_t->angle;
 	while (work_angle < 0.0)
 		work_angle += M_2PI;
@@ -506,7 +555,7 @@ init_text_input(x, y)
 #ifdef I18N
 	save_base_x = base_x;
 	save_base_y = base_y;
-#endif
+#endif /* I18N */
 
 	/* set origin to base of this text so newline will go there */
 	orig_x = base_x;
@@ -525,17 +574,63 @@ init_text_input(x, y)
 	} /* switch */
 
 	leng_suffix = strlen(cur_t->cstring);
-	/* leng_prefix is # of char in the text before the cursor */
+	/* leng_prefix is index of char in the text before the cursor */
+	/* it is also used for text selection as the starting point */
 	leng_prefix = prefix_length(cur_t->cstring, posn);
+
+#ifdef SEL_TEXT
+	/**********************************************/
+	/* user has double-clicked, select whole word */
+	/**********************************************/
+	if (pointer_click == 2) {
+	    /* if any text is selected from before, undraw the selection */
+	    if (lensel && text_selection_showing)
+		undraw_selection(start_sel_x, start_sel_y, text_selection);
+	    startp = leng_prefix-1;
+	    /* back up to the beginning of the word or string */
+	    while (startp && cur_t->cstring[startp-1] != ' ')
+		startp--;
+	    endp = leng_prefix;
+	    /* now go forward to the end of the word or string */
+	    while (endp < leng_suffix && cur_t->cstring[endp] != ' ')
+		endp++;
+	    lensel = endp-startp;
+	    /* copy into the selection */
+	    strncpy(text_selection, &cur_t->cstring[startp], lensel);
+	    text_selection[lensel] = '\0';
+	    /* save starting point of selection */
+	    start_text_select = prev_indx = startp;
+	    /* prefix includes selected text */
+	    leng_prefix = endp;
+	    /* save starting x,y of select */
+	    tsize = textsize(canvas_font, leng_prefix-lensel, prefix);
+	    start_sel_x = round(base_x + tsize.length * cos_t);
+	    start_sel_y = round(base_y - tsize.length * sin_t);
+	    selection_dir =  1;		/* selecting to the right */
+	} else {
+	    /* save starting point of text selection */
+	    start_text_select = prev_indx = leng_prefix;
+	}
+#endif /* SEL_TEXT */
+	    
 	leng_suffix -= leng_prefix;
 	strncpy(prefix, cur_t->cstring, leng_prefix);
 	prefix[leng_prefix]='\0';
 	strcpy(suffix, &cur_t->cstring[leng_prefix]);
 	tsize = textsize(canvas_font, leng_prefix, prefix);
 
-	/* set current to character position of mouse click */
+	/* set current to character position of mouse click (end of prefix) */
 	cur_x = round(base_x + tsize.length * cos_t);
 	cur_y = round(base_y - tsize.length * sin_t);
+
+#ifdef SEL_TEXT
+	/* set text selection flag in case user moves pointer along text with button down */
+	text_selection_active = True;
+	/* set flag saying the user just clicked */
+	click_on_text = True;
+	/* and set canvas move procedure to keep track of text being selected */
+	canvas_locmove_proc = track_text_select;
+#endif /* SEL_TEXT */
     }
     /* save floating font size */
     work_float_fontsize = work_fontsize;
@@ -547,7 +642,21 @@ init_text_input(x, y)
     orig_ht = char_ht = ZOOM_FACTOR * max_char_height(canvas_font);
     initialize_char_handler(canvas_win, finish_text_input,
 			    base_x, base_y);
+#ifdef SEL_TEXT
+    /* if any text is selected from before, undraw the selection */
+    if (lensel && text_selection_showing) {
+	undraw_selection(start_sel_x, start_sel_y, text_selection);
+	text_selection_showing = False;
+    }
+#endif /* SEL_TEXT */
     draw_char_string();
+#ifdef SEL_TEXT
+    /* draw the selected word in inverse */
+    if (pointer_click == 2) {
+	draw_selection(start_sel_x, start_sel_y, text_selection);
+	text_selection_showing = True;
+    }
+#endif /* SEL_TEXT */
 }
 
 static F_text *
@@ -571,8 +680,8 @@ new_text()
     text->angle = work_angle;
     text->flags = work_flags;
     text->color = cur_pencolor;
-    text->depth = cur_depth;
-    text->pen_style = 0;
+    text->depth = work_depth;
+    text->pen_style = -1;
     size = textsize(canvas_font, leng_prefix, prefix);
     text->length = size.length;
     text->ascent = size.ascent;
@@ -584,6 +693,7 @@ new_text()
     return (text);
 }
 
+/* return the index of the character in the string before the cursor (where_p) */
 
 static int
 prefix_length(string, where_p)
@@ -671,12 +781,12 @@ draw_cursor(x, y)
 }
 
 static void
-initialize_char_handler(p, cr, bx, by)
-    Window	    p;
+initialize_char_handler(w, cr, bx, by)
+    Window	    w;
     int		    (*cr) ();
     int		    bx, by;
 {
-    pw = p;
+    pw = w;
     cr_proc = cr;
     rbase_x = cbase_x = bx;	/* keep real base so dont have roundoff */
     rbase_y = cbase_y = by;
@@ -693,7 +803,7 @@ initialize_char_handler(p, cr, bx, by)
       xim_active = True;
       xim_set_spot(cur_x, cur_y);
     }
-#endif
+#endif /* I18N */
 }
 
 static void
@@ -704,7 +814,7 @@ terminate_char_handler()
 #ifdef I18N
     if (xim_ic != NULL) XUnsetICFocus(xim_ic);
     xim_active = False;
-#endif
+#endif /* I18N */
 }
 
 do_char(ch, op)
@@ -713,8 +823,8 @@ do_char(ch, op)
     char	     c[2];
 
     c[0] = ch; c[1] = '\0';
-    pw_text(pw, cur_x, cur_y, op, canvas_zoomed_font, 
-	    work_angle, c, work_textcolor);
+    pw_text(pw, cur_x, cur_y, op, MAX_DEPTH+1, canvas_zoomed_font, 
+	    work_angle, c, work_textcolor, COLOR_NONE);
 }
 
 draw_char(ch)
@@ -733,8 +843,8 @@ do_prefix(op)
     int		     op;
 {
     if (leng_prefix)
-	pw_text(pw, cbase_x, cbase_y, op, canvas_zoomed_font, 
-		work_angle, prefix, work_textcolor);
+	pw_text(pw, cbase_x, cbase_y, op, MAX_DEPTH+1, canvas_zoomed_font, 
+		work_angle, prefix, work_textcolor, COLOR_NONE);
 }
 
 draw_prefix()
@@ -751,8 +861,8 @@ do_suffix(op)
     int		     op;
 {
     if (leng_suffix)
-	pw_text(pw, cur_x, cur_y, op, canvas_zoomed_font, 
-		work_angle, suffix, work_textcolor);
+	pw_text(pw, cur_x, cur_y, op, MAX_DEPTH+1, canvas_zoomed_font, 
+		work_angle, suffix, work_textcolor, COLOR_NONE);
 }
 
 draw_suffix()
@@ -768,11 +878,11 @@ erase_suffix()
 void
 erase_char_string()
 {
-    pw_text(pw, cbase_x, cbase_y, ERASE, canvas_zoomed_font, 
-	    work_angle, prefix, work_textcolor);
+    pw_text(pw, cbase_x, cbase_y, ERASE, MAX_DEPTH+1, canvas_zoomed_font, 
+	    work_angle, prefix, work_textcolor, COLOR_NONE);
     if (leng_suffix)
-	pw_text(pw, cur_x, cur_y, ERASE, canvas_zoomed_font, 
-		work_angle, suffix, work_textcolor);
+	pw_text(pw, cur_x, cur_y, ERASE, MAX_DEPTH+1, canvas_zoomed_font, 
+		work_angle, suffix, work_textcolor, COLOR_NONE);
 }
 
 void
@@ -780,53 +890,54 @@ draw_char_string()
 {
 #ifdef I18N
     if (appres.international && is_i18n_font(canvas_font)) {
-      double cwidth;
-      int direc, asc, des;
-      XCharStruct overall;
-      float mag = ZOOM_FACTOR / display_zoomscale;
-      float prefix_width = 0, suffix_width = 0;
-      if (0 < leng_prefix) {
-	i18n_text_extents(canvas_zoomed_font, prefix, leng_prefix,
-			  &direc, &asc, &des, &overall);
-	prefix_width = (float)(overall.width) * mag;
-      }
-      if (0 < leng_suffix) {
-	i18n_text_extents(canvas_zoomed_font, suffix, leng_suffix,
-			  &direc, &asc, &des, &overall);
-	suffix_width = (float)(overall.width) * mag;
-      }
+	double cwidth;
+	int direc, asc, des;
+	XCharStruct overall;
 
-      cbase_x = save_base_x;
-      cbase_y = save_base_y;
-      switch (work_textjust) {
-      case T_LEFT_JUSTIFIED:
-	break;
-      case T_RIGHT_JUSTIFIED:
-	cbase_x = cbase_x - (prefix_width + suffix_width) * cos_t;
-	cbase_y = cbase_y + (prefix_width + suffix_width) * sin_t;
-	break;
-      case T_CENTER_JUSTIFIED:
-	cbase_x = cbase_x - (prefix_width + suffix_width) * cos_t / 2;
-	cbase_y = cbase_y + (prefix_width + suffix_width) * sin_t / 2;
-	break;
-      }
+	float mag = ZOOM_FACTOR / display_zoomscale;
+	float prefix_width = 0, suffix_width = 0;
+	if (0 < leng_prefix) {
+	    i18n_text_extents(canvas_zoomed_font, prefix, leng_prefix,
+			  &direc, &asc, &des, &overall);
+	    prefix_width = (float)(overall.width) * mag;
+	}
+	if (0 < leng_suffix) {
+	    i18n_text_extents(canvas_zoomed_font, suffix, leng_suffix,
+			  &direc, &asc, &des, &overall);
+	    suffix_width = (float)(overall.width) * mag;
+	}
+
+	cbase_x = save_base_x;
+	cbase_y = save_base_y;
+	switch (work_textjust) {
+	    case T_LEFT_JUSTIFIED:
+		break;
+	    case T_RIGHT_JUSTIFIED:
+		cbase_x = cbase_x - (prefix_width + suffix_width) * cos_t;
+		cbase_y = cbase_y + (prefix_width + suffix_width) * sin_t;
+		break;
+	    case T_CENTER_JUSTIFIED:
+		cbase_x = cbase_x - (prefix_width + suffix_width) * cos_t / 2;
+		cbase_y = cbase_y + (prefix_width + suffix_width) * sin_t / 2;
+		break;
+	}
       
-      pw_text(pw, cbase_x, cbase_y, PAINT, canvas_zoomed_font, 
-	      work_angle, prefix, work_textcolor);
-      cur_x = cbase_x + prefix_width * cos_t;
-      cur_y = cbase_y - prefix_width * sin_t;
-      if (leng_suffix)
-	pw_text(pw, cur_x, cur_y, PAINT, canvas_zoomed_font, 
-		work_angle, suffix, work_textcolor);
-      move_blinking_cursor(cur_x, cur_y);
-      return;
+	pw_text(pw, cbase_x, cbase_y, PAINT, MAX_DEPTH+1, canvas_zoomed_font, 
+	      work_angle, prefix, work_textcolor, COLOR_NONE);
+	cur_x = cbase_x + prefix_width * cos_t;
+	cur_y = cbase_y - prefix_width * sin_t;
+	if (leng_suffix)
+	    pw_text(pw, cur_x, cur_y, PAINT, MAX_DEPTH+1, canvas_zoomed_font, 
+		work_angle, suffix, work_textcolor, COLOR_NONE);
+	move_blinking_cursor(cur_x, cur_y);
+	return;
     }
-#endif
-    pw_text(pw, cbase_x, cbase_y, PAINT, canvas_zoomed_font, 
-	    work_angle, prefix, work_textcolor);
+#endif /* I18N */
+    pw_text(pw, cbase_x, cbase_y, PAINT, MAX_DEPTH+1, canvas_zoomed_font, 
+	    work_angle, prefix, work_textcolor, COLOR_NONE);
     if (leng_suffix)
-	pw_text(pw, cur_x, cur_y, PAINT, canvas_zoomed_font, 
-		work_angle, suffix, work_textcolor);
+	pw_text(pw, cur_x, cur_y, PAINT, MAX_DEPTH+1, canvas_zoomed_font, 
+		work_angle, suffix, work_textcolor, COLOR_NONE);
     move_blinking_cursor(cur_x, cur_y);
 }
 
@@ -842,14 +953,26 @@ char_handler(kpe, c, keysym)
     if (cr_proc == NULL)
 	return;
 
+#ifdef SEL_TEXT
+    /* clear text selection flag since user typed a character */
+    /* but only if not one of the selection editing chars */
+    if (c != CTRL_W) {
+	if (text_selection_active)
+	    undraw_selection(start_sel_x, start_sel_y, text_selection);
+	text_selection_active = False;
+	/* and canvas loc move proc */
+	canvas_locmove_proc = null_proc;
+    }
+#endif /* SEL_TEXT */
+
     if (c == CR || c == NL) {
 	new_text_line();
-    }else if (c == CTRL_UNDERSCORE) {
-      /* subscript */
-      new_text_down();
-    }else if (c == CTRL_HAT) {
-      /* superscript */
-      new_text_up();
+    } else if (c == CTRL_UNDERSCORE) {
+	/* subscript */
+	new_text_down();
+    } else if (c == CTRL_HAT) {
+	/* superscript */
+	new_text_up();
 
     /******************************************************/
     /* move cursor left - move char from prefix to suffix */
@@ -857,28 +980,14 @@ char_handler(kpe, c, keysym)
     /******************************************************/
     } else if (keysym == XK_Left || c == CTRL_B) {
 #ifdef I18N
-	if (leng_prefix > 0
-	      && appres.international && is_i18n_font(canvas_font)) {
-	    int len;
+	if (leng_prefix > 0 && appres.international && is_i18n_font(canvas_font)) {
 	    erase_char_string();
-	    len = i18n_prefix_tail(NULL);
-	    for (i=leng_suffix+len; i>0; i--)	/* copies null too */
-		suffix[i]=suffix[i-len];
-	    for (i=0; i<len; i++)
-	        suffix[i]=prefix[leng_prefix-len+i];
-	    prefix[leng_prefix-len]='\0';
-	    leng_prefix-=len;
-	    leng_suffix+=len;
+	    move_pref_to_suf();
 	    draw_char_string();
 	} else
 #endif /* I18N */
 	if (leng_prefix > 0) {
-	    for (i=leng_suffix+1; i>0; i--)	/* copies null too */
-		suffix[i]=suffix[i-1];
-	    suffix[0]=prefix[leng_prefix-1];
-	    prefix[leng_prefix-1]='\0';
-	    leng_prefix--;
-	    leng_suffix++;
+	    move_pref_to_suf();
 	    move_cur(-1, suffix[0], 1.0);
 	}
 
@@ -888,28 +997,14 @@ char_handler(kpe, c, keysym)
     /*******************************************************/
     } else if (keysym == XK_Right || c == CTRL_F) {
 #ifdef I18N
-	if (leng_suffix > 0
-	      && appres.international && is_i18n_font(canvas_font)) {
-	    int len;
+	if (leng_suffix > 0 && appres.international && is_i18n_font(canvas_font)) {
 	    erase_char_string();
-	    len = i18n_suffix_head(NULL);
-	    for (i=0; i<len; i++)
-	        prefix[leng_prefix+i]=suffix[i];
-	    prefix[leng_prefix+len]='\0';
-	    for (i=0; i<=leng_suffix-len; i++)	/* copies null too */
-		suffix[i]=suffix[i+len];
-	    leng_suffix-=len;
-	    leng_prefix+=len;
+	    move_suf_to_pref();
 	    draw_char_string();
 	} else
 #endif /* I18N */
 	if (leng_suffix > 0) {
-	    prefix[leng_prefix] = suffix[0];
-	    prefix[leng_prefix+1]='\0';
-	    for (i=0; i<=leng_suffix; i++)	/* copies null too */
-		suffix[i]=suffix[i+1];
-	    leng_suffix--;
-	    leng_prefix++;
+	    move_suf_to_pref();
 	    move_cur(1, prefix[leng_prefix-1], 1.0);
 	}
 
@@ -1170,6 +1265,73 @@ char_handler(kpe, c, keysym)
 		    break;
 	    }
 	}
+#ifdef SEL_TEXT
+    /************************/
+    /* delete selected text */
+    /************************/
+    } else if (c == CTRL_W) {
+	/* only if active */
+	if (lensel) {
+	    /* simply delete lensel characters from the end of the prefix */
+	    prefix[leng_prefix-lensel] = '\0';
+	    leng_prefix = strlen(prefix);
+	    switch (work_textjust) {
+		case T_LEFT_JUSTIFIED:
+		    erase_suffix();
+		    break;
+		case T_CENTER_JUSTIFIED:
+		    erase_prefix();
+		    erase_suffix();
+		    break;
+		case T_RIGHT_JUSTIFIED:
+		    erase_prefix();
+		    break;
+	    }
+	    /* move cursor and/or text (prefix) base */
+	    for (i=0; i<lensel; i++) {
+		switch (work_textjust) {
+		  case T_LEFT_JUSTIFIED:
+		    move_cur(-1, text_selection[i], 1.0);
+		    break;
+		  case T_CENTER_JUSTIFIED:
+		    move_cur(-1, text_selection[i], 2.0);
+		    move_text(1, text_selection[i], 2.0);
+		    break;
+		  case T_RIGHT_JUSTIFIED:
+		    move_text(1, text_selection[i], 1.0);
+		    break;
+		}
+	    }
+	    /* turn off blinking cursor temporarily */
+	    turn_off_blinking_cursor();
+	    /* erase the selection characters */
+	    pw_text(pw, start_sel_x, start_sel_y, PAINT, MAX_DEPTH+1, canvas_zoomed_font, 
+		work_angle, text_selection, CANVAS_BG, CANVAS_BG);
+	    switch (work_textjust) {
+		case T_LEFT_JUSTIFIED:
+		    /* redraw suffix */
+		    draw_suffix();
+		    break;
+		case T_CENTER_JUSTIFIED:
+		    /* redraw both prefix and suffix */
+		    draw_prefix();
+		    draw_suffix();
+		    break;
+		case T_RIGHT_JUSTIFIED:
+		    /* redraw prefix */
+		    draw_prefix();
+		    break;
+	    }
+	    /* turn on blinking cursor again */
+	    turn_on_blinking_cursor(draw_cursor, draw_cursor,
+			    cur_x, cur_y, (long) BLINK_INTERVAL);
+	    /* clear the selection */
+	    lensel = 0;
+	    text_selection[0] = '\0';
+	    text_selection_active = False;
+	    text_selection_showing = False;
+	}
+#endif /* SEL_TEXT */
     } else if (c < SP) {
 	put_msg("Invalid character ignored");
     } else if (leng_prefix + leng_suffix == BUF_SIZE) {
@@ -1268,12 +1430,301 @@ move_text(dir, c, div)
     cbase_y = round(rbase_y);
 }
 
+#ifdef SEL_TEXT
 
-/*******************************************************************
+/********************************************************/
+/*							*/
+/*		Text selection procedures		*/
+/*							*/
+/********************************************************/
 
-	blinking cursor handling routines
+/* keep track of text being selected by button down pointer movement */
 
-*******************************************************************/
+static void
+track_text_select(x, y)
+    int		    x, y;
+{
+    int		    indx, posn;
+    int		    i, dir;
+    char	    substr[200];
+
+    /* if user released button, turn off canvas locmove proc */
+    if (!text_selection_active) {
+	canvas_locmove_proc = null_proc;
+	return;
+    }
+
+    /* if the pointer is not in the string (plus a little to the right) anymore, return */
+    if (!in_text_bound(cur_t, x, y, &posn, True))
+	return;
+
+    indx = prefix_length(cur_t->cstring, posn);
+    /* if on same character, return */
+    if (indx == prev_indx)
+	return;
+
+    /* if the user just clicked and has now moved the pointer */
+    if (click_on_text) {
+	/* save starting point of selection for refresing if user clicks elsewhere */
+	start_sel_x = cur_x;
+	start_sel_y = cur_y;
+	/* clear the selection */
+	text_selection[0] = '\0';
+	lensel = 0;
+	if (indx < prev_indx)
+	    selection_dir = -1;		/* selecting to the left */
+	else
+	    selection_dir =  1;		/* selecting to the right */
+	click_on_text = False;
+    }
+	
+    if (indx > start_text_select) {
+	/* selecting right */
+	if (selection_dir == -1) {
+	    /* but we were selecting left, switch */
+	    selection_dir = 1;
+	    for (i=0; i<lensel; i++)
+		move_cur(1, text_selection[i], 1.0);
+	    /* and draw the characters normal */
+	    undraw_selection(cur_x, cur_y, text_selection);
+	    text_selection[0] = '\0';
+	    lensel = 0;
+	    /* restart prev_index */
+	    prev_indx = start_text_select;
+	} 
+	if (indx > prev_indx) {
+	    /* we selected right, and are still moving right */
+	    for (i=0; i < (indx-prev_indx); i++) {
+		substr[i] = cur_t->cstring[i+prev_indx];
+		/* move char to prefix */
+		move_suf_to_pref();
+		/* update currently selected text */
+		text_selection[lensel++] = substr[i];
+	    }
+	    substr[i] = '\0';
+	    text_selection[lensel] = '\0';
+	    text_selection[indx-start_text_select] = '\0';
+	    /* draw the characters inverted */
+	    draw_selection(cur_x, cur_y, substr);
+	    /* and move the cursor to the current position */
+	    for (i=0; i<strlen(substr); i++)
+		move_cur(1, substr[i], 1.0);
+	} else {
+	    /* we started selecting right, but are unselecting left */
+	    for (i=0; i < (prev_indx-indx); i++) {
+		substr[i] = cur_t->cstring[i+indx];
+		/* put char back in suffix */
+		move_pref_to_suf();
+		/* update currently selected text */
+		lensel--;
+	    }
+	    substr[i] = '\0';
+	    text_selection[lensel] = '\0';
+	    /* move the cursor to the current position */
+	    for (i=0; i<strlen(substr); i++)
+		move_cur(-1, substr[i], 1.0);
+	    /* and draw the characters normal */
+	    undraw_selection(cur_x, cur_y, substr);
+	}
+
+    } else {
+	/* selecting left */
+	if (selection_dir == 1) {
+	    /* but we were selecting right, switch */
+	    selection_dir = -1;
+	    for (i=0; i<lensel; i++)
+		move_cur(-1, text_selection[i], 1.0);
+	    /* and draw the characters normal */
+	    undraw_selection(cur_x, cur_y, text_selection);
+	    text_selection[0] = '\0';
+	    lensel = 0;
+	    /* restart prev_index */
+	    prev_indx = start_text_select;
+	}
+	if (indx < prev_indx) {
+	    /* we selected left, and are still moving left */
+	    for (i=0; i < (prev_indx-indx); i++) {
+		substr[i] = cur_t->cstring[i+indx];
+		/* move char to suffix */
+		move_pref_to_suf();
+	    }
+	    substr[i] = '\0';
+	    /* update currently selected text */
+	    lensel += prev_indx-indx;
+	    strncpy(text_selection, &cur_t->cstring[indx], lensel);
+	    text_selection[lensel] = '\0';
+	    /* move the cursor to the current position */
+	    for (i=0; i<strlen(substr); i++)
+		move_cur(-1, substr[i], 1.0);
+	    /* and draw the characters inverted */
+	    draw_selection(cur_x, cur_y, substr);
+	} else {
+	    /* we started selecting left, but are unselecting right */
+	    for (i=0; i < (indx-prev_indx); i++) {
+		substr[i] = cur_t->cstring[i+prev_indx];
+		/* put char back in prefix */
+		move_suf_to_pref();
+	    }
+	    substr[i] = '\0';
+	    /* update currently selected text */
+	    lensel -= indx-prev_indx;
+	    strncpy(text_selection, &cur_t->cstring[indx], lensel);
+	    text_selection[lensel] = '\0';
+	    /* draw the characters normal */
+	    undraw_selection(cur_x, cur_y, substr);
+	    /* and move the cursor to the current position */
+	    for (i=0; i<strlen(substr); i++)
+		move_cur(1, substr[i], 1.0);
+	}
+    }
+    text_selection_showing = True;
+    prev_indx = indx;
+}
+#endif /* SEL_TEXT */
+
+/* move last char of prefix to first of suffix */
+
+move_pref_to_suf()
+{
+    int		    i, len;
+
+#ifdef I18N
+    if (leng_prefix > 0 && appres.international && is_i18n_font(canvas_font)) {
+	len = i18n_prefix_tail(NULL);
+	for (i=leng_suffix+len; i>0; i--)	/* copies null too */
+	    suffix[i]=suffix[i-len];
+	for (i=0; i<len; i++)
+	    suffix[i]=prefix[leng_prefix-len+i];
+	prefix[leng_prefix-len]='\0';
+	leng_prefix-=len;
+	leng_suffix+=len;
+    } else
+#endif /* I18N */
+    if (leng_prefix > 0) {
+	for (i=leng_suffix+1; i>0; i--)	/* copies null too */
+	    suffix[i]=suffix[i-1];
+	suffix[0]=prefix[leng_prefix-1];
+	prefix[leng_prefix-1]='\0';
+	leng_prefix--;
+	leng_suffix++;
+    }
+}
+
+/* move first char of suffix to last of prefix */
+
+move_suf_to_pref()
+{
+    int		    i, len;
+
+#ifdef I18N
+    if (leng_suffix > 0 && appres.international && is_i18n_font(canvas_font)) {
+	len = i18n_suffix_head(NULL);
+	for (i=0; i<len; i++)
+	   prefix[leng_prefix+i]=suffix[i];
+	prefix[leng_prefix+len]='\0';
+	for (i=0; i<=leng_suffix-len; i++)	/* copies null too */
+	    suffix[i]=suffix[i+len];
+	leng_suffix-=len;
+	leng_prefix+=len;
+    } else
+#endif /* I18N */
+    if (leng_suffix > 0) {
+	prefix[leng_prefix] = suffix[0];
+	prefix[leng_prefix+1]='\0';
+	for (i=0; i<=leng_suffix; i++)	/* copies null too */
+	    suffix[i]=suffix[i+1];
+	leng_suffix--;
+	leng_prefix++;
+    }
+}
+
+#ifdef SEL_TEXT
+
+/* draw string from x, y in inverse (selected) color */
+
+draw_selection(x, y, string)
+    int		    x, y;
+    char	   *string;
+{
+    /* turn off blinking cursor temporarily */
+    turn_off_blinking_cursor();
+    pw_text(pw, x, y, PAINT, MAX_DEPTH+1, canvas_zoomed_font, 
+		work_angle, string, CANVAS_BG, work_textcolor);
+    /* turn on blinking cursor again */
+    turn_on_blinking_cursor(draw_cursor, draw_cursor,
+		    cur_x, cur_y, (long) BLINK_INTERVAL);
+}
+
+/* draw string from x, y in normal (unselected) color */
+
+undraw_selection(x, y, string)
+    int		    x, y;
+    char	   *string;
+{
+    /* turn off blinking cursor temporarily */
+    turn_off_blinking_cursor();
+    pw_text(pw, x, y, PAINT, MAX_DEPTH+1, canvas_zoomed_font, 
+		work_angle, string, work_textcolor, CANVAS_BG);
+    /* turn on blinking cursor again */
+    turn_on_blinking_cursor(draw_cursor, draw_cursor,
+		    cur_x, cur_y, (long) BLINK_INTERVAL);
+}
+
+/* convert selection to string */
+/* this the callback w_canvas.c: canvas_selected() when user pastes the selection */
+
+Boolean
+ConvertSelection(w, selection, target, type, value, length, format)
+    Widget	    w;
+    Atom	   *selection, *target, *type;
+    XtPointer	   *value;
+    unsigned long  *length;
+    int		   *format;
+{
+    /* if nothing, return */
+    if (lensel == 0)
+	return False;
+
+    if (*target == XA_STRING ||
+	*target == XA_TEXT(tool_d) ||
+	*target == XA_COMPOUND_TEXT(tool_d)) {
+	if (*target == XA_COMPOUND_TEXT(tool_d))
+	    *type = *target;
+	else
+	    *type = XA_STRING;
+	*value = text_selection;
+	*length = lensel;
+	*format = 8;
+	return True;
+    }
+}
+
+void
+LoseSelection(w, selection)
+    Widget	    w;
+    Atom	   *selection;
+{
+    lensel = 0;
+    text_selection[0] = '\0';
+    /* unhighlight text */
+    if (cur_t)
+	redisplay_text(cur_t);
+}
+
+void
+TransferSelectionDone(w, selection, target)
+    Widget	    w;
+    Atom	   *selection, *target;
+{
+    /* nothing to do */
+}
+#endif /* SEL_TEXT */
+
+/****************************************************************/
+/*								*/
+/*		Blinking cursor handling routines		*/
+/*								*/
+/****************************************************************/
 
 static int	cursor_on, cursor_is_moving;
 static int	cursor_x, cursor_y;
@@ -1354,7 +1805,7 @@ move_blinking_cursor(x, y)
     cursor_is_moving = 0;
 #ifdef I18N
     if (xim_active) xim_set_spot(x, y);
-#endif
+#endif /* I18N */
 }
 
 /*
@@ -1402,12 +1853,16 @@ reload_text_fstruct(t)
 }
 
 
-
-/* ================================================================ */
+/****************************************************************/
+/*								*/
+/*		Internationalization utility procedures		*/
+/*								*/
+/****************************************************************/
 
 #ifdef I18N
 
-static void GetPreferredGeomerty(ic, name, area)
+static void
+GetPreferredGeomerty(ic, name, area)
      XIC ic;
      char *name;
      XRectangle **area;
@@ -1418,7 +1873,8 @@ static void GetPreferredGeomerty(ic, name, area)
   XFree(list);
 }
 
-static void SetGeometry(ic, name, area)
+static void
+SetGeometry(ic, name, area)
      XIC ic;
      char *name;
      XRectangle *area;
@@ -1471,7 +1927,8 @@ xim_set_ic_geometry(ic, width, height)
   }
 }
 
-Boolean xim_initialize(w)
+Boolean
+xim_initialize(w)
      Widget w;
 {
   const XIMStyle style_notuseful = 0;
@@ -1583,7 +2040,8 @@ xim_set_spot(x, y)
   }
 }
 
-static int i18n_prefix_tail(char *s1)
+static int
+i18n_prefix_tail(char *s1)
 {
   int len, i;
   if (appres.euc_encoding && is_euc_multibyte(prefix[leng_prefix-1])) {
@@ -1606,7 +2064,8 @@ static int i18n_prefix_tail(char *s1)
   return len;
 }
 
-static int i18n_suffix_head(char *s1)
+static int
+i18n_suffix_head(char *s1)
 {
   int len, i;
   if (appres.euc_encoding && is_euc_multibyte(suffix[0])) {
@@ -1645,7 +2104,8 @@ prefix_append_char(ch)
 }
 
 #ifdef I18N_USE_PREEDIT
-static Boolean is_preedit_running()
+static Boolean
+is_preedit_running()
 {
   pid_t pid;
   sprintf(preedit_filename, "%s/%s%06d", TMPDIR, "xfig-preedit", getpid());
@@ -1653,7 +2113,7 @@ static Boolean is_preedit_running()
   pid = waitpid(-1, NULL, WNOHANG);
 #else
   pid = wait3(NULL, WNOHANG, NULL);
-#endif
+#endif /* defined(_POSIX_SOURCE) || defined(SVR4) */
   if (0 < preedit_pid && pid == preedit_pid) preedit_pid = -1;
   return (0 < preedit_pid && access(preedit_filename, R_OK) == 0);
 }
@@ -1666,7 +2126,8 @@ kill_preedit()
   }
 }
 
-static close_preedit_proc(x, y)
+static
+close_preedit_proc(x, y)
      int x, y;
 {
   if (is_preedit_running()) {
@@ -1677,7 +2138,8 @@ static close_preedit_proc(x, y)
   draw_mousefun_canvas();
 }
 
-static open_preedit_proc(x, y)
+static
+open_preedit_proc(x, y)
      int x, y;
 {
   int i;
@@ -1705,7 +2167,8 @@ static open_preedit_proc(x, y)
   draw_mousefun_canvas();
 }
 
-static paste_preedit_proc(x, y)
+static
+paste_preedit_proc(x, y)
      int x, y;
 {
   FILE *fp;
@@ -1721,7 +2184,7 @@ static paste_preedit_proc(x, y)
 	prefix[leng_prefix++] = ch;
     }
     prefix[leng_prefix] = '\0';
-    finish_text_input();
+    finish_text_input(0,0,0);
     fclose(fp);
     put_msg("Text pasted from pre-edit window");
   } else {

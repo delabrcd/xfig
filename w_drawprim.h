@@ -1,22 +1,43 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
 #ifndef W_DRAWPRIM_H
 #define W_DRAWPRIM_H
+
+#include "w_zoom.h"
+
+/* function prototypes */
+
+extern void pw_text(Window w, int x, int y, int op, int depth, XFontStruct *fstruct,
+	float angle, char *string, Color color, Color background);
+extern void pw_vector(Window w, int x1, int y1, int x2, int y2, int op,
+	  int line_width, int line_style, float style_val, Color color);
+extern void pw_curve(Window w, int xstart, int ystart, int xend, int yend,
+	 int op, int depth, int linewidth, int style, float style_val, int fill_style,
+	 Color pen_color, Color fill_color, int cap_style);
+extern void pw_point(Window w, int x, int y, int op, int depth, int line_width,
+	 Color color, int cap_style);
+extern void pw_arcbox(Window w, int xmin, int ymin, int xmax, int ymax, int radius,
+	  int op, int depth, int line_width, int line_style,
+	  float style_val, int fill_style, Color pen_color, Color fill_color);
+extern void pw_lines(Window w, zXPoint *points, int npoints, int op, int depth,
+	 int line_width, int line_style, float style_val,
+	 int join_style, int cap_style, int fill_style,
+	 Color pen_color, Color fill_color);
 
 extern pr_size      textsize();
 extern XFontStruct *bold_font;
@@ -58,10 +79,7 @@ extern unsigned char	shade_images[NUMSHADEPATS][128];
 		    ((font)->per_char[(char)-(font)->min_char_or_byte2].width):\
 		    ((font)->max_bounds.width))
 
-#define set_x_color(gc,col) XSetForeground(tool_d,gc,\
-	(!all_colors_available? colors[BLACK]: \
-		(col<0||col>=NUM_STD_COLS+num_usr_cols)? x_fg_color.pixel:colors[col]))
-void pw_arcbox(Window w, int xmin, int ymin, int xmax, int ymax, int radius, int op,
-               int line_width, int line_style, float style_val, int fill_style,
-	       Color pen_color, Color fill_color);
+#define set_x_fg_color(gc,col) XSetForeground(tool_d,gc, x_color(col))
+#define set_x_bg_color(gc,col) XSetBackground(tool_d,gc, x_color(col))
+
 #endif /* W_DRAWPRIM_H */

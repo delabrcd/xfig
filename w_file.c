@@ -1,16 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2000 by Brian V. Smith
+ * Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -21,12 +21,14 @@
 #include "mode.h"
 #include "e_edit.h"
 #include "f_read.h"
+#include "f_util.h"
 #include "u_create.h"
 #include "u_redraw.h"
 #include "w_drawprim.h"		/* for max_char_height */
 #include "w_dir.h"
 #include "w_export.h"
 #include "w_file.h"
+#include "w_indpanel.h"
 #include "w_layers.h"
 #include "w_msgpanel.h"
 #include "w_util.h"
@@ -35,9 +37,10 @@
 #include "w_util.h"
 #include "w_zoom.h"
 
-#define	FILE_WID	158	/* width of Current file etc to show preview to the right */
+#define	FILE_WID	157	/* width of Current file etc to show preview to the right */
 #define FILE_ALT_WID	260	/* width of file alternatives panel */
-#define PREVIEW_CANVAS_SIZE 240	/* size (square) of preview canvas */
+#define PREVIEW_CANVAS_W 232	/* width of landscape preview canvas (swap W, H for portrait) */
+#define PREVIEW_CANVAS_H 180	/* height of landscape preview */
 
 /* file modes for popup panel */
 
@@ -49,23 +52,23 @@ enum file_modes {
 
 /* EXPORTS */
 
-Boolean		file_up = False; /* whether the file panel is up (or the export panel) */
-Widget		file_panel;	/* the file panel itself */
-Widget		cfile_text;	/* widget for the current filename */
-Widget		file_selfile,	/* selected file widget */
-		file_mask,	/* mask widget */
-		file_dir,	/* current directory widget */
-		file_flist,	/* file list widget */
-		file_dlist;	/* dir list widget */
+Boolean		file_up = False;	/* whether the file panel is up (or the export panel) */
+Widget		file_panel;		/* the file panel itself */
+Widget		cfile_text;		/* widget for the current filename */
+Widget		file_selfile,		/* selected file widget */
+		file_mask,		/* mask widget */
+		file_dir,		/* current directory widget */
+		file_flist,		/* file list widget */
+		file_dlist;		/* dir list widget */
 Widget		file_popup;
 Boolean		colors_are_swapped = False;
-Widget		preview_size, preview_widget, preview_name;
-Widget		preview_stop, preview_label;
+Widget		preview_size, preview_widget, preview_widget_form, preview_name;
+Widget		preview_stop, preview_label, dummy_label;
 Widget		comments_widget;
-Pixmap		preview_pixmap;
+Pixmap		preview_land_pixmap, preview_port_pixmap;
 Boolean		cancel_preview = False;
 Boolean		preview_in_progress = False;
-void		load_request();	/* this is needed by main() */
+void		load_request();		/* this is needed by main() */
 
 /* LOCALS */
 
@@ -89,9 +92,9 @@ static int	save_avail_image_cols;
 static Boolean	image_colors_are_saved = False;
 
 static void	popup_file_panel();
-static void	file_panel_cancel(), do_merge();
-static void	do_load(), do_merge(), do_save();
-static void	merge_request(), cancel_request();
+static void	file_panel_cancel();
+static void	do_load(), do_merge();
+static void	merge_request(), cancel_request(), save_request();
 static void	clear_preview();
 
 DeclareStaticArgs(15);
@@ -101,38 +104,41 @@ static Widget	cancel_button, save_button, merge_button;
 static Widget	load_button, new_xfig_button;
 static Widget	fig_offset_lbl_x, fig_offset_lbl_y;
 static Widget	fig_offset_x, fig_offset_y;
-static Widget	file_xoff_unit_panel, file_xoff_unit_menu;
-static Widget	file_yoff_unit_panel, file_yoff_unit_menu;
+static Widget	file_xoff_unit_panel;
+static Widget	file_yoff_unit_panel;
 static int	xoff_unit_setting, yoff_unit_setting;
 
 static String	file_list_load_translations =
 			"<Btn1Down>,<Btn1Up>: Set()Notify()\n\
-			<Btn1Up>(2): Load()\n\
-			<Key>Return: Load()";
+			<Btn1Up>(2): DoLoad()\n\
+			<Key>Return: DoLoad()";
 static String	file_name_load_translations =
-			"<Key>Return: Load()\n\
+			"<Key>Return: DoLoad()\n\
 			<Key>Escape: CancelFile()";
 static String	file_list_saveas_translations =
 			"<Btn1Down>,<Btn1Up>: Set()Notify()\n\
-			<Btn1Up>(2): Save()\n\
-			<Key>Return: Save()\n\
+			<Btn1Up>(2): SaveRequest()\n\
+			<Key>Return: DoSave()\n\
 			<Key>Escape: CancelFile()";
 static String	file_name_saveas_translations =
-			"<Key>Return: Save()\n\
+			"<Key>Return: DoSave()\n\
 			<Key>Escape: CancelFile()";
 static String	file_list_merge_translations =
 			"<Btn1Down>,<Btn1Up>: Set()Notify()\n\
-			<Btn1Up>(2): Merge()\n\
-			<Key>Return: Merge()";
+			<Btn1Up>(2): DoMerge()\n\
+			<Key>Return: DoMerge()";
 static String	file_name_merge_translations =
-			"<Key>Return: Merge()\n\
+			"<Key>Return: DoMerge()\n\
 			<Key>Escape: CancelFile()";
 
 static XtActionsRec	file_name_actions[] =
 {
-    {"Load", (XtActionProc) load_request},
-    {"Save", (XtActionProc) save_request},
-    {"Merge", (XtActionProc) merge_request},
+    {"DoLoad", (XtActionProc) load_request},
+    {"SaveRequest", (XtActionProc) save_request},
+    {"DoSave", (XtActionProc) do_save},
+    {"DoMerge", (XtActionProc) merge_request},
+    {"Load", (XtActionProc) popup_open_panel},
+    {"Merge", (XtActionProc) popup_merge_panel},
 };
 static String	file_translations =
 	"<Message>WM_PROTOCOLS: DismissFile()";
@@ -140,8 +146,8 @@ static XtActionsRec	file_actions[] =
 {
     {"DismissFile", (XtActionProc) cancel_request},
     {"CancelFile", (XtActionProc) cancel_request},
-    {"Load", (XtActionProc) load_request},
-    {"Merge", (XtActionProc) merge_request},
+    {"DoLoad", (XtActionProc) load_request},
+    {"DoMerge", (XtActionProc) merge_request},
 };
 
 void
@@ -219,6 +225,9 @@ do_merge(w, ev)
     GetValues(file_selfile);	/* check the ascii widget for a filename */
     if (emptyname(fval))
 	fval = cur_filename;	/* "Filename" widget empty, use current filename */
+
+    if (!strstr(fval,".fig"))	/* if no .fig, add it */
+	strcat(fval,".fig");
 
     if (emptyname_msg(fval, "MERGE"))
 	return;
@@ -317,6 +326,10 @@ do_load(w, ev)
 	GetValues(file_selfile);	/* check the ascii widget for a filename */
 	if (emptyname(fval))
 	    fval = cur_filename;	/* Filename widget empty, use current filename */
+
+	if (!strstr(fval,".fig"))	/* if no .fig, add it */
+	    strcat(fval,".fig");
+
 	if (emptyname_msg(fval, "LOAD"))
 	    return;
 	if (change_directory(dval) == 0) {
@@ -343,37 +356,44 @@ new_xfig_request(w, ev)
     Widget	    w;
     XButtonEvent   *ev;
 {
-  pid_t pid;
-  char *fval;
-  char **xxargv;
-  int i, j;
-  extern int xargc;
-  extern char **xargv;
-  extern char *arg_filename;
+    pid_t pid;
+    char *fval;
+    char **xxargv;
+    int i, j;
+    extern int xargc;
+    extern char **xargv;
+    extern char *arg_filename;
 
-  FirstArg(XtNstring, &fval);
-  GetValues(file_selfile);	/* check the ascii widget for a filename */
+    FirstArg(XtNstring, &fval);
+    GetValues(file_selfile);	/* check the ascii widget for a filename */
 
-  if (emptyname(fval)) put_msg("Launching new xfig...");
-  else put_msg("Launching new xfig for file %s...", fval);
-  pid = fork();
-  if (pid == -1) {
-    file_msg("Couldn't fork the process: %s", strerror(errno));
-  } else if (pid == 0) {
-    xxargv = (char **)XtMalloc((xargc+2) * sizeof (char *));
-    for (i = j = 0; i < xargc; i++) {
-      if (emptyname(arg_filename) || strcmp(xargv[i], arg_filename) != 0)
-	xxargv[j++] = xargv[i];
+    if (emptyname(fval)) 
+	put_msg("Launching new xfig...");
+    else {
+	if (!strstr(fval,".fig"))	/* if no .fig, add it */
+	    strcat(fval,".fig");
+	put_msg("Launching new xfig for file %s...", fval);
     }
-    if (!emptyname(fval)) xxargv[j++] = fval;
-    xxargv[j] = NULL;
-    execvp(xxargv[0], xxargv);
 
-    fprintf(stderr, "xfig: couldn't exec %s: %s\n", xxargv[0], strerror(errno));
-    exit(1);
-  }
+    pid = fork();
+    if (pid == -1) {
+	file_msg("Couldn't fork the process: %s", strerror(errno));
+    } else if (pid == 0) {
+	xxargv = (char **)XtMalloc((xargc+2) * sizeof (char *));
+	for (i = j = 0; i < xargc; i++) {
+	    if (emptyname(arg_filename) || strcmp(xargv[i], arg_filename) != 0)
+		xxargv[j++] = xargv[i];
+	}
+	if (!emptyname(fval)) 
+	    xxargv[j++] = fval;
+	xxargv[j] = NULL;
+	execvp(xxargv[0], xxargv);
 
-  file_panel_dismiss();
+	fprintf(stderr, "xfig: couldn't exec %s: %s\n", xxargv[0], strerror(errno));
+	exit(1);
+    }
+
+    file_panel_dismiss();
 }
 
 /* set a request to save.  See notes above for load_request() */
@@ -383,6 +403,9 @@ save_request(w, ev)
     Widget	    w;
     XButtonEvent   *ev;
 {
+    /* turn off Compose key LED */
+    setCompLED(0);
+
     if (preview_in_progress) {
 	file_save_request = True;
 	/* request to cancel the preview */
@@ -400,6 +423,7 @@ do_save(w, ev)
     XButtonEvent   *ev;
 {
     char	   *fval, *dval;
+    char	    tmpstr[PATH_MAX];
     int		    qresult;
 
     /* don't save if in the middle of drawing/editing */
@@ -413,8 +437,7 @@ do_save(w, ev)
     restore_user_colors();
     restore_nuser_colors();
 
-    /* if the user is inside any compound objects, ask whether to save all or
-		just this part */
+    /* if the user is inside any compound objects, ask whether to save all or just this part */
     if ((F_compound *)objects.parent != NULL) {
 	qresult = popup_query(QUERY_ALLPARTCAN,
 		"You have opened a compound. You may save just\nthe visible part or all of the figure.");
@@ -448,8 +471,14 @@ do_save(w, ev)
 	    fval = cur_filename;	/* "Filename" widget empty, use current filename */
 	    warnexist = False;		/* don't warn if this file exists */
 	/* copy the name from the file_name widget to the current filename */
-	} else if (strcmp(cur_filename, fval) != 0) {
-	    warnexist = True;			/* warn if this file exists */
+	} else {
+	    if (!strstr(fval,".fig")) {	/* if no .fig, add it */
+		strcpy(tmpstr, fval);
+		strcat(tmpstr,".fig");
+		fval = tmpstr;
+	    }
+	    if (strcmp(cur_filename, fval) != 0)
+		warnexist = True;	/* warn if this file exists */
 	}
 
 	if (emptyname_msg(fval, "Save"))
@@ -574,11 +603,14 @@ popup_merge_panel()
 	popup_file_panel(F_MERGE);
 }
 
-void
+static void
 popup_file_panel(mode)
     int	    mode;
 {
 	DeclareArgs(5);
+
+	/* turn off Compose key LED */
+	setCompLED(0);
 
 	/* already up? */
 	if (file_up) {
@@ -618,17 +650,10 @@ popup_file_panel(mode)
 	/* now add/remove appropriate buttons and set the title in the titlebar */
 	if (mode == F_SAVEAS) {
 	    XtUnmanageChild(load_button);
-	    XtUnmanageChild(new_xfig_button);
 	    XtUnmanageChild(merge_button);
 	    XtManageChild(save_button);
 	    FirstArg(XtNtitle, "Xfig: SaveAs");
 	    SetValues(file_popup);
-	    FirstArg(XtNlabel, "Cancel ");
-	    NextArg(XtNheight, 25);
-	    NextArg(XtNfromHoriz, save_button);
-	    SetValues(cancel_button);
-	    XtUnmanageChild(cancel_button);
-	    XtManageChild(cancel_button);
 	    /* make <return> in the filename window save the file */
 	    XtOverrideTranslations(file_selfile,
 			   XtParseTranslationTable(file_name_saveas_translations));
@@ -643,12 +668,6 @@ popup_file_panel(mode)
 	    XtManageChild(new_xfig_button);
 	    FirstArg(XtNtitle, "Xfig: Open Figure");
 	    SetValues(file_popup);
-	    FirstArg(XtNlabel, "Cancel ");
-	    NextArg(XtNheight, 25);
-	    NextArg(XtNfromHoriz, new_xfig_button);
-	    SetValues(cancel_button);
-	    XtUnmanageChild(cancel_button);
-	    XtManageChild(cancel_button);
 	    /* make <return> in the filename window load the file */
 	    XtOverrideTranslations(file_selfile,
 			   XtParseTranslationTable(file_name_load_translations));
@@ -656,19 +675,12 @@ popup_file_panel(mode)
 	    XtOverrideTranslations(file_flist,
 			   XtParseTranslationTable(file_list_load_translations));
 
-	} else {
+	} else { /* must be F_MERGE */
 	    XtUnmanageChild(save_button);
 	    XtUnmanageChild(load_button);
-	    XtUnmanageChild(new_xfig_button);
 	    XtManageChild(merge_button);
 	    FirstArg(XtNtitle, "Xfig: Merge Figure");
 	    SetValues(file_popup);
-	    FirstArg(XtNlabel, "Cancel");
-	    NextArg(XtNheight, 25);
-	    NextArg(XtNfromHoriz, merge_button);
-	    SetValues(cancel_button);
-	    XtUnmanageChild(cancel_button);
-	    XtManageChild(cancel_button);
 	    /* make <return> in the filename window merge the file */
 	    XtOverrideTranslations(file_selfile,
 			   XtParseTranslationTable(file_name_merge_translations));
@@ -685,6 +697,10 @@ popup_file_panel(mode)
 	FirstArg(XtNlabel, buf);
 	SetValues(num_objects);
 	XtPopup(file_popup, XtGrabNone);
+	/* get rid of the dummy label if we haven't already */
+	XtUnmanageChild(dummy_label);
+	/* and put in the real preview widget */
+	XtManageChild(preview_widget);
 	/* insure that the most recent colormap is installed */
 	set_cmap(XtWindow(file_popup));
 	(void) XSetWMProtocols(tool_d, XtWindow(file_popup), &wm_delete_window, 1);
@@ -804,9 +820,10 @@ create_file_panel()
 				     file_panel, Args, ArgCount);
 
 	FirstArg(XtNwidth, 40);
+	NextArg(XtNleftMargin, 4);
 	NextArg(XtNeditType, XawtextEdit);
 	NextArg(XtNstring, "0");
-	NextArg(XtNinsertPosition, 1);
+	NextArg(XtNinsertPosition, 0);
 	NextArg(XtNfromHoriz, fig_offset_lbl_x);
 	NextArg(XtNfromVert, num_objects);
 	NextArg(XtNborderWidth, INTERNAL_BW);
@@ -826,7 +843,7 @@ create_file_panel()
 	NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
 	file_xoff_unit_panel = XtCreateManagedWidget(offset_unit_items[appres.INCHES? 0: 1],
 				menuButtonWidgetClass, file_panel, Args, ArgCount);
-	file_xoff_unit_menu = make_popup_menu(offset_unit_items, XtNumber(offset_unit_items), 
+	make_pulldown_menu(offset_unit_items, XtNumber(offset_unit_items), 
 				   -1, "", file_xoff_unit_panel, file_xoff_unit_select);
 
 	/* put the Y offset below the X */
@@ -843,9 +860,10 @@ create_file_panel()
 				     file_panel, Args, ArgCount);
 
 	FirstArg(XtNwidth, 40);
+	NextArg(XtNleftMargin, 4);
 	NextArg(XtNeditType, XawtextEdit);
 	NextArg(XtNstring, "0");
-	NextArg(XtNinsertPosition, 1);
+	NextArg(XtNinsertPosition, 0);
 	NextArg(XtNfromHoriz, fig_offset_lbl_y);
 	NextArg(XtNfromVert, file_xoff_unit_panel);
 	NextArg(XtNborderWidth, INTERNAL_BW);
@@ -865,7 +883,7 @@ create_file_panel()
 	NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
 	file_yoff_unit_panel = XtCreateManagedWidget(offset_unit_items[appres.INCHES? 0: 1],
 				menuButtonWidgetClass, file_panel, Args, ArgCount);
-	file_yoff_unit_menu = make_popup_menu(offset_unit_items, XtNumber(offset_unit_items), 
+	make_pulldown_menu(offset_unit_items, XtNumber(offset_unit_items), 
 				   -1, "", file_yoff_unit_panel, file_yoff_unit_select);
 
 	FirstArg(XtNlabel, " Current File");
@@ -906,6 +924,7 @@ create_file_panel()
 
 	/* make the filename slot narrow so we can show the preview to the right */
 	FirstArg(XtNwidth, FILE_WID);
+	NextArg(XtNleftMargin, 4);
 	NextArg(XtNheight, max_char_height(temp_font) * 2 + 4);
 	NextArg(XtNeditType, XawtextEdit);
 	NextArg(XtNstring, cur_filename);
@@ -954,15 +973,14 @@ create_file_panel()
 					    preview_form, Args, ArgCount);
 
 	/* make a label for the figure size */
-	FirstArg(XtNlabel, "                     ");
+	FirstArg(XtNlabel, " ");
 	NextArg(XtNfromHoriz, preview_label);
 	NextArg(XtNborderWidth, 0);
 	preview_size = XtCreateManagedWidget("preview_size", labelWidgetClass,
 					    preview_form, Args, ArgCount);
 
 	/* and one for the figure name in the preview */
-	FirstArg(XtNlabel, "                          ");
-	NextArg(XtNwidth, PREVIEW_CANVAS_SIZE);
+	FirstArg(XtNlabel, " ");
 	NextArg(XtNfromVert, preview_label);
 	NextArg(XtNborderWidth, 0);
 	preview_name = XtCreateManagedWidget("preview_name", labelWidgetClass,
@@ -971,30 +989,59 @@ create_file_panel()
 	/* now a label widget for the preview canvas */
 
 	/* first create a pixmap for its background, into which we'll draw the figure */
-	preview_pixmap = XCreatePixmap(tool_d, canvas_win, 
-			PREVIEW_CANVAS_SIZE, PREVIEW_CANVAS_SIZE, tool_dpth);
-	/* erase it */
-	XFillRectangle(tool_d, preview_pixmap, gccache[ERASE], 0, 0, 
-			PREVIEW_CANVAS_SIZE, PREVIEW_CANVAS_SIZE);
+	/* actually, make one for landscape and one for portrait */
+	preview_land_pixmap = XCreatePixmap(tool_d, canvas_win, 
+			PREVIEW_CANVAS_W, PREVIEW_CANVAS_H, tool_dpth);
+	preview_port_pixmap = XCreatePixmap(tool_d, canvas_win, 
+			PREVIEW_CANVAS_H, PREVIEW_CANVAS_W, tool_dpth);
 
-	FirstArg(XtNlabel, "");
-	NextArg(XtNbackgroundPixmap, preview_pixmap);
+	/* make a form for the preview widget so we can center it */
+
+	FirstArg(XtNwidth, PREVIEW_CANVAS_W+8);
+	NextArg(XtNheight, PREVIEW_CANVAS_W+8);
 	NextArg(XtNfromVert, preview_name);
-	NextArg(XtNwidth, PREVIEW_CANVAS_SIZE);
-	NextArg(XtNheight, PREVIEW_CANVAS_SIZE);
 	NextArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainTop);
 	NextArg(XtNleft, XtChainLeft);
 	NextArg(XtNright, XtChainLeft);
-	preview_widget = XtCreateManagedWidget("preview_widget", labelWidgetClass,
-					  preview_form, Args, ArgCount);
+	preview_widget_form = XtCreateManagedWidget("preview_widget_form",
+				formWidgetClass, preview_form, Args, ArgCount);
+
+	/* make a dummy label to fill the space until we put up the preview */
+	FirstArg(XtNlabel, "");
+	NextArg(XtNwidth, PREVIEW_CANVAS_W);
+	NextArg(XtNheight, PREVIEW_CANVAS_W);
+	dummy_label = XtCreateManagedWidget("dummy_label", labelWidgetClass,
+					  preview_widget_form, Args, ArgCount);
+
+	/* start the widget preview in portrait */
+	/* don't manage it yet until the panel is popped up */
+
+	FirstArg(XtNlabel, "");
+	NextArg(XtNbackgroundPixmap, preview_port_pixmap);
+	NextArg(XtNhorizDistance, (PREVIEW_CANVAS_W-PREVIEW_CANVAS_H)/2+4); /* center */
+	NextArg(XtNvertDistance, 4);
+	NextArg(XtNwidth, PREVIEW_CANVAS_H);
+	NextArg(XtNheight, PREVIEW_CANVAS_W);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	preview_widget = XtCreateWidget("preview_widget", labelWidgetClass,
+					  preview_widget_form, Args, ArgCount);
+	/* erase the preview pixmaps */
+	clear_preview();
+
 	/* label for the figure comments */
+
 	FirstArg(XtNlabel, "Figure comments:");
-	NextArg(XtNfromVert, preview_widget);
+	NextArg(XtNfromVert, preview_widget_form);
 	below = XtCreateManagedWidget("comments_label", labelWidgetClass,
 					  preview_form, Args, ArgCount);
 	/* window for the figure comments */
-	FirstArg(XtNwidth, PREVIEW_CANVAS_SIZE);
+
+	FirstArg(XtNwidth, PREVIEW_CANVAS_W+8);
+	NextArg(XtNleftMargin, 4);
 	NextArg(XtNheight, 50);
 	NextArg(XtNfromVert, below);
 	NextArg(XtNvertDistance, 1);
@@ -1015,15 +1062,31 @@ create_file_panel()
 	NextArg(XtNfromVert, comments_widget);
 	preview_stop = XtCreateManagedWidget("preview_stop", commandWidgetClass,
 				       preview_form, Args, ArgCount);
-	XtAddEventHandler(preview_stop, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(preview_stop, ButtonReleaseMask, False,
 			  (XtEventHandler)file_preview_stop, (XtPointer) NULL);
 
 	/* end of preview form */
 
 	/* now make buttons along the bottom */
 
+	FirstArg(XtNlabel, "Cancel");
+	NextArg(XtNfromHoriz, beside);
+	NextArg(XtNhorizDistance, 25);
+	NextArg(XtNfromVert, butbelow);
+	NextArg(XtNvertDistance, 15);
+	NextArg(XtNheight, 25);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNtop, XtChainBottom);
+	NextArg(XtNbottom, XtChainBottom);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	beside = cancel_button = XtCreateManagedWidget("cancel", commandWidgetClass,
+				       file_panel, Args, ArgCount);
+	XtAddEventHandler(cancel_button, ButtonReleaseMask, False,
+			  (XtEventHandler)cancel_request, (XtPointer) NULL);
+
 	/* now create Save, Open and Merge buttons but don't manage them - that's
-	   done in popup_saveas_panel, popup_load_panel, and popup_merge_panel */
+	   done in popup_saveas_panel, popup_open_panel, and popup_merge_panel */
 
 	FirstArg(XtNlabel, " Save ");
 	NextArg(XtNvertDistance, 15);
@@ -1038,8 +1101,8 @@ create_file_panel()
 	NextArg(XtNright, XtChainLeft);
 	save_button = XtCreateWidget("save", commandWidgetClass,
 				     file_panel, Args, ArgCount);
-	XtAddEventHandler(save_button, ButtonReleaseMask, (Boolean) 0,
-			  (XtEventHandler)save_request, (XtPointer) NULL);
+	XtAddEventHandler(save_button, ButtonReleaseMask, False,
+			  (XtEventHandler) do_save, (XtPointer) NULL);
 
 	FirstArg(XtNlabel, " Open ");
 	NextArg(XtNborderWidth, INTERNAL_BW);
@@ -1054,7 +1117,7 @@ create_file_panel()
 	NextArg(XtNright, XtChainLeft);
 	load_button = XtCreateWidget("load", commandWidgetClass,
 				     file_panel, Args, ArgCount);
-	XtAddEventHandler(load_button, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(load_button, ButtonReleaseMask, False,
 			  (XtEventHandler)load_request, (XtPointer) NULL);
 
 	FirstArg(XtNlabel, "Merge ");
@@ -1070,7 +1133,7 @@ create_file_panel()
 	NextArg(XtNright, XtChainLeft);
 	merge_button = XtCreateWidget("merge", commandWidgetClass,
 				      file_panel, Args, ArgCount);
-	XtAddEventHandler(merge_button, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(merge_button, ButtonReleaseMask, False,
 			  (XtEventHandler)merge_request, (XtPointer) NULL);
 
 	FirstArg(XtNlabel, "New xfig...");
@@ -1086,24 +1149,8 @@ create_file_panel()
 	NextArg(XtNright, XtChainLeft);
 	new_xfig_button = XtCreateWidget("new_xfig", commandWidgetClass,
 				     file_panel, Args, ArgCount);
-	XtAddEventHandler(new_xfig_button, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(new_xfig_button, ButtonReleaseMask, False,
 			  (XtEventHandler)new_xfig_request, (XtPointer) NULL);
-
-	FirstArg(XtNlabel, "Cancel");
-	NextArg(XtNhorizDistance, 25);
-	NextArg(XtNfromVert, butbelow);
-	NextArg(XtNvertDistance, 15);
-	NextArg(XtNfromHoriz, new_xfig_button);
-	NextArg(XtNheight, 25);
-	NextArg(XtNborderWidth, INTERNAL_BW);
-	NextArg(XtNtop, XtChainBottom);
-	NextArg(XtNbottom, XtChainBottom);
-	NextArg(XtNleft, XtChainLeft);
-	NextArg(XtNright, XtChainLeft);
-	cancel_button = XtCreateManagedWidget("cancel", commandWidgetClass,
-				       file_panel, Args, ArgCount);
-	XtAddEventHandler(cancel_button, ButtonReleaseMask, (Boolean) 0,
-			  (XtEventHandler)cancel_request, (XtPointer) NULL);
 
 	XtInstallAccelerators(file_panel, cancel_button);
 	XtInstallAccelerators(file_panel, save_button);
@@ -1125,19 +1172,25 @@ check_cancel()
 }
 
 static void
-clear_preview(void)
+clear_preview()
 {
-    FirstArg(XtNlabel, "   ");
+    FirstArg(XtNlabel, "                                 ");
     SetValues(preview_name);
 
-    FirstArg(XtNlabel, "   ");
+    FirstArg(XtNlabel, "                     ");
     SetValues(preview_size);
 
-    XFillRectangle(tool_d, preview_pixmap, gccache[ERASE], 0, 0, 
-		   PREVIEW_CANVAS_SIZE, PREVIEW_CANVAS_SIZE);
+    /* clear both port and land pixmap */
+    XSetForeground(tool_d, gccache[ERASE], x_bg_color.pixel);
+    XFillRectangle(tool_d, preview_land_pixmap, gccache[ERASE], 0, 0, 
+		   PREVIEW_CANVAS_W, PREVIEW_CANVAS_H);
+    XFillRectangle(tool_d, preview_port_pixmap, gccache[ERASE], 0, 0, 
+		   PREVIEW_CANVAS_H, PREVIEW_CANVAS_W);
+
     FirstArg(XtNbackgroundPixmap, (Pixmap)0);
     SetValues(preview_widget);
-    FirstArg(XtNbackgroundPixmap, preview_pixmap);
+    /* put port pixmap in widget */
+    FirstArg(XtNbackgroundPixmap, preview_port_pixmap);
     SetValues(preview_widget);
 }
 
@@ -1153,10 +1206,10 @@ file_preview_stop(w, ev)
     process_pending();
 }
 
-preview_figure(filename, parent, canvas, size_widget, pixmap)
+preview_figure(filename, parent, canvas, size_widget, port_pixmap, land_pixmap)
     char       *filename;
     Widget	parent, canvas, size_widget;
-    Pixmap	pixmap;
+    Pixmap	port_pixmap, land_pixmap;
 {
     fig_settings    settings;
     int		save_objmask;
@@ -1166,11 +1219,10 @@ preview_figure(filename, parent, canvas, size_widget, pixmap)
     F_compound	*figure;
     int		xmin, xmax, ymin, ymax;
     float	width, height, size;
+    int		pixwidth, pixheight;
     int		i, status;
     char	figsize[50];
     Pixel	pb;
-    Boolean	save_layers[MAX_DEPTH+1];
-    int		save_min_depth, save_max_depth, depths[MAX_DEPTH+1];
     struct counts obj_counts[MAX_DEPTH+1];
 
     /* alloc a compound object - we must do it this way so free_compound()
@@ -1197,11 +1249,9 @@ preview_figure(filename, parent, canvas, size_widget, pixmap)
     preview_in_progress = True;
 
     /* save active layer array and set all to True */
-    save_active_layers(save_layers);
-    save_depths(depths);
-    save_min_depth = min_depth;
-    save_max_depth = max_depth;
-    save_counts(&obj_counts[0]);
+    save_active_layers();
+    save_depths();
+    save_counts_and_clear();
     reset_layers();
 
     /* save user colors in case preview changes them */
@@ -1234,9 +1284,6 @@ preview_figure(filename, parent, canvas, size_widget, pixmap)
     save_shownums	= appres.shownums;
     appres.shownums	= False;
 
-    /* now switch the drawing canvas to our preview window */
-    canvas_win = (Window) pixmap;
-    
     /* insure that the most recent colormap is installed */
     set_cmap(XtWindow(parent));
 
@@ -1260,10 +1307,16 @@ preview_figure(filename, parent, canvas, size_widget, pixmap)
 	save_avail_image_cols = avail_image_cols;
     }
 
+    /* unmanage the preview widget in case we need to change its shape (port<->land) */
+    XtUnmanageChild(canvas);
+    /* fool the toolkit into drawing the new pixmap */
+    FirstArg(XtNbackgroundPixmap, (Pixmap)0);
+    SetValues(canvas);
+
     /* read the figure into the local F_compound "figure" */
 
     /* we'll ignore the stuff returned in "settings" */
-    if ((status = read_figc(filename, figure, False, True, False, 0, 0, &settings)) != 0) {
+    if ((status = read_figc(filename,figure, DONT_MERGE, REMAP_IMAGES, 0,0,&settings)) != 0) {
 	switch (status) {
 	   case -1: file_msg("Bad format");
 		   break;
@@ -1272,11 +1325,7 @@ preview_figure(filename, parent, canvas, size_widget, pixmap)
 	   default: file_msg("Error reading %s: %s",filename,strerror(errno));
 	}
 	/* clear pixmap of any figure so user knows something went wrong */
-	XFillRectangle(tool_d, pixmap, gccache[ERASE], 0, 0, 
-			PREVIEW_CANVAS_SIZE, PREVIEW_CANVAS_SIZE);
-	/* clear the preview name */
-	FirstArg(XtNlabel, "  ");
-	SetValues(preview_name);
+	clear_preview();
     } else {
 	/*
 	 *  successful read, get the size 
@@ -1325,24 +1374,41 @@ preview_figure(filename, parent, canvas, size_widget, pixmap)
 	    SetValues(preview_size);
     	}
 
+	/* now switch the drawing canvas to our preview window and set width/height */
+	if (settings.landscape) {
+	    canvas_win = (Window) land_pixmap;
+	    pixwidth = PREVIEW_CANVAS_W;
+	    pixheight = PREVIEW_CANVAS_H;
+	} else {
+	    canvas_win = (Window) port_pixmap;
+	    pixwidth = PREVIEW_CANVAS_H;
+	    pixheight = PREVIEW_CANVAS_W;
+	}
+
 	/* scale to fit the preview canvas */
-	display_zoomscale = (float) (PREVIEW_CANVAS_SIZE-20) / size;
+	display_zoomscale = 
+			min2((float)(pixwidth-8)/width, (float)(pixheight-8)/height) *
+				ZOOM_FACTOR;
+	/* limit magnification to 5.0 */
+	if (display_zoomscale > 5.0)
+		display_zoomscale = 5.0;
 	zoomscale = display_zoomscale/ZOOM_FACTOR;
+
 	/* center the figure in the canvas */
-	zoomxoff = -(PREVIEW_CANVAS_SIZE/zoomscale - width)/2.0 + xmin;
-	zoomyoff = -(PREVIEW_CANVAS_SIZE/zoomscale - height)/2.0 + ymin;
+	zoomxoff = -(pixwidth/zoomscale - width) / 2.0 + xmin;
+	zoomyoff = -(pixheight/zoomscale - height) / 2.0 + ymin;
 
 	/* insure that the most recent colormap is installed */
 	/* we may have switched to a private colormap when previewing this figure */
 	set_cmap(XtWindow(parent));
 
-	/* clear pixmap */
-	XFillRectangle(tool_d, pixmap, gccache[ERASE], 0, 0, 
-			PREVIEW_CANVAS_SIZE, PREVIEW_CANVAS_SIZE);
-
 	/* no markers */
 	save_objmask = cur_objmask;
 	cur_objmask = 0;
+
+	/* clear the pixmap with the canvas background color */
+	XSetForeground(tool_d, gccache[ERASE], x_bg_color.pixel);
+	XFillRectangle(tool_d, canvas_win, gccache[ERASE], 0, 0, pixwidth, pixheight);
 
 	/* if he pressed "cancel preview" while reading file, skip displaying figure */
 	if (! check_cancel()) {
@@ -1352,27 +1418,33 @@ preview_figure(filename, parent, canvas, size_widget, pixmap)
 
 	/* restore marker flag */
 	cur_objmask = save_objmask;
+
+	/* put the pixmap back in and set the width and height and center it */
+	FirstArg(XtNbackgroundPixmap, canvas_win);
+	NextArg(XtNwidth, pixwidth);
+	NextArg(XtNheight, pixheight);
+	if (settings.landscape) {
+	    NextArg(XtNvertDistance, (PREVIEW_CANVAS_W-PREVIEW_CANVAS_H)/2+4);
+	    NextArg(XtNhorizDistance, 4);
+	} else {
+	    NextArg(XtNvertDistance, 4);
+	    NextArg(XtNhorizDistance, (PREVIEW_CANVAS_W-PREVIEW_CANVAS_H)/2+4);
+	}
+	SetValues(canvas);
+	XtManageChild(canvas);
     }
 
     /* free the figure compound */
     free_compound(&figure);
 
-    /* fool the toolkit into drawing the new pixmap */
-    FirstArg(XtNbackgroundPixmap, (Pixmap)0);
-    SetValues(canvas);
-    FirstArg(XtNbackgroundPixmap, pixmap);
-    SetValues(canvas);
-
     /* switch canvas back */
     canvas_win = main_canvas;
 
     /* restore active layer array */
-    restore_active_layers(save_layers);
+    restore_active_layers();
     /* and depth and counts */
-    restore_depths(depths);
-    min_depth = save_min_depth;
-    max_depth = save_max_depth;
-    restore_counts(&obj_counts[0]);
+    restore_depths();
+    restore_counts();
 
     /* now restore settings for main canvas/figure */
     display_zoomscale	= save_zoomscale;

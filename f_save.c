@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -20,21 +20,32 @@
 #include "mode.h"
 #include "object.h"
 #include "f_read.h"
+#include "f_util.h"
 #include "u_create.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
 #include "w_zoom.h"
+#ifdef I18N
+#include <locale.h>
+#endif  /* I18N */
 
-static int write_tmpfile=0;
+static int	write_tmpfile = 0;
+static char	save_cur_dir[PATH_MAX];
 
 init_write_tmpfile()
 {
   write_tmpfile=1;
+  /* save current file directory */
+  strcpy(save_cur_dir, cur_file_dir);
+  /* and set to TMPDIR to preserver absolute paths of any imported pictures */
+  strcpy(cur_file_dir, TMPDIR);
 }
 
 end_write_tmpfile()
 {
   write_tmpfile=0;
+  /* restore current file directory */
+  strcpy(cur_file_dir, save_cur_dir);
 }
 
 write_file(file_name, update_recent)
@@ -90,6 +101,10 @@ write_objects(fp)
 
     if (!update_figs)
 	put_msg("Writing . . .");
+#ifdef I18N
+    /* set the numeric locale to C so we get decimal points for numbers */
+    setlocale(LC_NUMERIC, "C");
+#endif  /* I18N */
     write_file_header(fp);
     for (a = objects.arcs; a != NULL; a = a->next) {
 	num_object++;
@@ -115,6 +130,10 @@ write_objects(fp)
 	num_object++;
 	write_text(fp, t);
     }
+#ifdef I18N
+    /* reset to original locale */
+    setlocale(LC_NUMERIC, "");
+#endif  /* I18N */
     if (ferror(fp)) {
 	fclose(fp);
 	return (-1);
@@ -242,22 +261,14 @@ write_line(fp, l)
 {
     F_point	   *p;
     F_arrow	   *f, *b;
-    int		   npts;
+    int		    npts;
+    char	   *picfile;
 
     if (l->points == NULL)
 	return;
 
     /* any comments first */
     write_comments(fp, l->comments);
-
-#ifdef V4_0
-    if ( (write_tmpfile) && (l->type == T_PICTURE) && (l->pic!=NULL)) {
-	if ((l->pic->subtype==T_PIC_FIG) && (l->pic->figure!=NULL)) {
-	    write_compound(fp, l->pic->figure);
-	    return;
-	}
-    }
-#endif /* V4_0 */
 
     /* count number of points and put it in the object */
     for (npts=0, p = l->points; p != NULL; p = p->next)
@@ -276,15 +287,16 @@ write_line(fp, l)
 		b->thickness, b->wd*15.0, b->ht*15.0);
     if (l->type == T_PICTURE) {
 	char *s1;
-	if (l->pic->file == NULL || strlen(l->pic->file) == 0) {
+	picfile = l->pic->pic_cache->file;
+	if (picfile == NULL || strlen(picfile) == 0) {
 	    s1 = "<empty>";
-	} else if (strncmp(l->pic->file, cur_file_dir, strlen(cur_file_dir)) == 0) {
-	    /* use relative path if the file is under current directory */
-	    s1 = l->pic->file + strlen(cur_file_dir);
-	    while (*s1 == '/')
-		s1++;
+	} else if (strncmp(picfile, cur_file_dir, strlen(cur_file_dir))==0 && 
+	    strlen(picfile) > strlen(cur_file_dir) && picfile[strlen(cur_file_dir)] == '/') {
+		/* use relative path if the file is under current directory */
+		    s1 = &picfile[strlen(cur_file_dir)+1];
 	} else {
-	    s1 = l->pic->file;
+		/* use full path */
+		s1 = picfile;
 	}
 	fprintf(fp, "\t%d %s\n", l->pic->flipped, s1);
     }
@@ -423,6 +435,8 @@ emergency_save(file_name)
 
     if ((fp = fopen(file_name, "wb")) == NULL)
 	return (-1);
+    /* first close any open compounds */
+    close_all_compounds();
     num_object = 0;
     if (write_objects(fp))
 	return (-1);

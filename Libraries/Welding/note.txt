@@ -1,0 +1,25 @@
+From sales@qm-soft.no Fri Aug  9 05:55:13 2002
+Received: from me03.web2000.activeisp.com (webmail2.activeisp.com [213.188.134.18])
+	by epb1.lbl.gov (8.11.0/8.11.0) with ESMTP id g79D8j901515
+	for <xfigmail@epb1.lbl.gov>; Fri, 9 Aug 2002 06:08:46 -0700 (PDT)
+Received: from qm-soft.no (unverified [193.213.246.19]) by me03.web2000.activeisp.com
+ (Rockliffe SMTPRA 4.5.6) with ESMTP id <B0035648739@me03.web2000.activeisp.com> for <xfigmail@epb1.lbl.gov>;
+ Fri, 9 Aug 2002 15:09:19 +0200
+Date: Fri, 09 Aug 2002 14:55:13 +0200
+From: Erik Engh <sales@qm-soft.no>
+To: "Brian V. Smith" <xfigmail@epb1.lbl.gov>
+Subject: xfig library
+
+Hello Brian !
+
+I hope this works OK
+Enclosed you will find a special library covering all defect types that 
+has been identified in the EN ISO 6520- 1
+Welding and allied processes
+
+I am also creating a similar library for welding joints if you are 
+interested
+
+regards
+
+erik engh

@@ -1,16 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1995 Jim Daley (jdaley@cix.compulink.co.uk)
- * Parts Copyright (c) 1995-2000 by Brian V. Smith
+ * Parts Copyright (c) 1995-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -20,8 +20,10 @@
 #include "object.h"
 #include "mode.h"
 #include "e_edit.h"
+#include "u_create.h"
 #include "w_drawprim.h"
 #include "w_dir.h"
+#include "w_indpanel.h"
 #include "w_msgpanel.h"
 #include "w_util.h"
 #include "w_setup.h"
@@ -48,11 +50,11 @@ static Widget	browse_panel,
 
 static String	file_list_translations =
 	"<Btn1Down>,<Btn1Up>: Set()Notify()\n\
-	<Btn1Up>(2): ApplyBrowse()\n\
-	<Key>Return: ApplyBrowse()\n";
+	<Btn1Up>(2): ApplyBrowseAndClose()\n\
+	<Key>Return: ApplyBrowseAndClose()\n";
 
 static String	file_name_translations =
-	"<Key>Return: ApplyBrowse()\n";
+	"<Key>Return: ApplyBrowseAndClose()\n";
 static void	browse_panel_close();
 void		got_browse();
 
@@ -69,6 +71,7 @@ static XtActionsRec	file_actions[] =
     {"DismissBrowse", (XtActionProc) browse_panel_close},
     {"CloseBrowse", (XtActionProc) browse_panel_close},
     {"ApplyBrowse", (XtActionProc) got_browse},
+    {"ApplyBrowseAndClose", (XtActionProc) browse_panel_close},
 };
 
 static char browse_filename[PATH_MAX];
@@ -99,7 +102,7 @@ got_browse(w, ev)
     Widget	    w;
     XButtonEvent   *ev;
 {
-    char	   *fval, *dval;
+    char	   *fval, *dval, *path;
 
     if (browse_popup) {
 	FirstArg(XtNstring, &dval);
@@ -114,21 +117,15 @@ got_browse(w, ev)
 	if (emptyname_msg(fval, "Apply"))
 	    return;
 
-	if (strcmp(dval, local_dir) == 0)	{ /* directory has not changed */
-                panel_set_value( pic_name_panel, fval );
-
-        } else {
-          char *path;
-          path = malloc( strlen(dval) + 1 + strlen(fval) + 1);
-          if ( path ) {
-                strcpy( path,dval );
-                strcat( path, "/");
-                strcat( path, fval );
-                panel_set_value( pic_name_panel, path );
-                free(path);
-          }
-        }
-        push_apply_button();  /* slightly iffy - assumes called from eps_edit */
+	path = new_string( strlen(dval) + 1 + strlen(fval) + 1);
+	if ( path ) {
+	    strcpy( path,dval );
+	    strcat( path, "/");
+	    strcat( path, fval );
+	    panel_set_value( pic_name_panel, path );
+	    free(path);
+	}
+	push_apply_button();  /* slightly iffy - assumes called from edit picture */
     }
 }
 
@@ -152,7 +149,7 @@ popup_browse_panel(w)
     file_viewed[0] = '\0';
 
     if (!browse_popup) {
-	get_directory( local_dir );
+	get_directory(local_dir);
     } else {
 	strcpy(local_dir, cur_browse_dir);
     }
@@ -160,24 +157,24 @@ popup_browse_panel(w)
     /* move to the file directory  - if not the current dir
         and set up the file/directory values
     */
-    pval = (char*)panel_get_value( pic_name_panel );
-    fval = strrchr( pval, '/' );
+    pval = (char*) panel_get_value( pic_name_panel );
+    fval = strrchr(pval, '/');
     if ( !fval ) {	/* no path in name so just use name */
-      strcpy( browse_filename, pval );
+      strcpy(browse_filename, pval);
     } else {		/* set us up in the same path as the file */
-      strcpy( local_dir, pval );
-      strcpy( browse_filename, fval+1 );
-      local_dir[ strlen( pval) - strlen(fval)] = '\0';
-      (void) change_directory( local_dir );
+      strcpy(local_dir, pval);
+      strcpy(browse_filename, fval+1);
+      local_dir[strlen(pval) - strlen(fval)] = '\0';
+      (void) change_directory(local_dir);
     }
 
     if (!browse_popup) {
 	create_browse_panel(w);
     }
 
-    FirstArg( XtNstring, local_dir );
-    SetValues( browse_dir );
-    FirstArg(XtNstring, browse_filename );
+    FirstArg(XtNstring, local_dir);
+    SetValues(browse_dir);
+    FirstArg(XtNstring, browse_filename);
     SetValues(browse_selfile);	
 
     Rescan(0, 0, 0, 0);
@@ -211,8 +208,7 @@ create_browse_panel(w)
 	browse_panel = XtCreateManagedWidget("browse_panel", formWidgetClass,
 					   browse_popup, NULL, ZERO);
 
-
-	FirstArg(XtNlabel, "         Filename");
+	FirstArg(XtNlabel, "     Filename");
 	NextArg(XtNvertDistance, 15);
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNtop, XtChainTop);
@@ -253,7 +249,7 @@ create_browse_panel(w)
 	XtOverrideTranslations(browse_selfile,
 			   XtParseTranslationTable(file_name_translations));
 
-	/* make <return> and a double click in the file list window apply the file */
+	/* make <return> and a double click in the file list window apply the file and close */
 	XtAugmentTranslations(browse_flist,
 			   XtParseTranslationTable(file_list_translations));
 	FirstArg(XtNlabel, " Close ");
@@ -267,7 +263,7 @@ create_browse_panel(w)
 	NextArg(XtNbottom, XtChainBottom);
 	closebtn = XtCreateManagedWidget("close", commandWidgetClass,
 				       browse_panel, Args, ArgCount);
-	XtAddEventHandler(closebtn, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(closebtn, ButtonReleaseMask, False,
 			  (XtEventHandler)browse_panel_close, (XtPointer) NULL);
 
 
@@ -282,7 +278,7 @@ create_browse_panel(w)
 	NextArg(XtNbottom, XtChainBottom);
 	apply = XtCreateManagedWidget("apply", commandWidgetClass,
 				     browse_panel, Args, ArgCount);
-	XtAddEventHandler(apply, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(apply, ButtonReleaseMask, False,
 			  (XtEventHandler)got_browse, (XtPointer) NULL);
 	XtInstallAccelerators(browse_panel, closebtn);
 	XtInstallAccelerators(browse_panel, apply);

@@ -1,3 +1,18 @@
+/*
+ * FIG : Facility for Interactive Generation of figures
+ * Copyright (c) 2000-2002 by Brian V. Smith
+ *
+ * Any party obtaining a copy of these files is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
+ *
+ */
+
 /* 
    FigList - 
 
@@ -13,9 +28,9 @@
 #include <X11/Xmu/Drawing.h>
 #ifdef XAW3D
 #include <X11/Xaw3d/XawInit.h>
-#else /* XAW3d */
+#else /* XAW3D */
 #include <X11/Xaw/XawInit.h>
-#endif /* XAW3d */
+#endif /* XAW3D */
 
 #include "w_listwidgetP.h"
 
@@ -26,13 +41,13 @@ static void SelectNext(), SelectPrev();
 static void SelectLeft(), SelectRight();
 
 static char defaultTranslations[] =
-	"<Btn1Down>:	Set() \n\
-	<Btn1Up>:	Notify() \n\
-	<Key>Home:	SelectHome() \n\
-	<Key>End:	SelectEnd() \n\
-	<Key>Down:	SelectNext() \n\
-	<Key>Up:	SelectPrev() \n\
-	<Key>Left:	SelectLeft() \n\
+	"<Btn1Down>:	Set()\n\
+	<Btn1Up>:	Notify()\n\
+	<Key>Home:	SelectHome()\n\
+	<Key>End:	SelectEnd()\n\
+	<Key>Down:	SelectNext()\n\
+	<Key>Up:	SelectPrev()\n\
+	<Key>Left:	SelectLeft()\n\
 	<Key>Right:	SelectRight()";
 
 static XtActionsRec	actions[] = {
@@ -112,8 +127,6 @@ SelectHome(w, event, params, num_params)
     String	*params;
     Cardinal	*num_params;
 {
-    FigListWidget	lw = (FigListWidget) w;
-
     /* highlight and call any callbacks */
     FigListFinishUp(w, 0);
 }

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
@@ -9,10 +9,10 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -76,6 +76,9 @@ static double	last_origin_tension, last_extremity_tension;
 void
 undo()
 {
+    /* turn off Compose key LED */
+    setCompLED(0);
+
     switch (last_action) {
       case F_ADD:
 	undo_add();
@@ -141,10 +144,10 @@ undo_join_split()
 	bcopy((char*)old_l, (char*)&swp_l, sizeof(F_line));
 	bcopy((char*)new_l, (char*)old_l, sizeof(F_line));
 	bcopy((char*)&swp_l, (char*)new_l, sizeof(F_line));
-	/* but keep the next pointers unchanged */
-	swp_l.next = old_l->next;
-	old_l->next = new_l->next;
-	new_l->next = swp_l.next;
+	/* this assumes that the object are at the end of the objects list */
+	/* correct the depth counts if necessary */
+	if (!new_l->next && old_l->next) add_depth(O_POLYLINE, old_l->depth);
+	else if (new_l->next && !old_l->next) remove_depth(O_POLYLINE, old_l->depth);
 	set_action_object(F_JOIN, O_POLYLINE);
 	redisplay_lines(new_l, old_l);
     } else {
@@ -154,10 +157,10 @@ undo_join_split()
 	bcopy((char*)old_s, (char*)&swp_s, sizeof(F_spline));
 	bcopy((char*)new_s, (char*)old_s, sizeof(F_spline));
 	bcopy((char*)&swp_s, (char*)new_s, sizeof(F_spline));
-	/* but keep the next pointers unchanged */
-	swp_s.next = old_s->next;
-	old_s->next = new_s->next;
-	new_s->next = swp_s.next;
+	/* this assumes that the object are at the end of the objects list */
+	/* correct the depth counts if necessary */
+	if (!new_s->next && old_s->next) add_depth(O_SPLINE, old_s->depth);
+	else if (new_s->next && !old_s->next) remove_depth(O_SPLINE, old_s->depth);
 	set_action_object(F_JOIN, O_SPLINE);
 	redisplay_splines(new_s, old_s);
     }
@@ -222,7 +225,7 @@ undo_convert()
     switch (last_object) {
       case O_POLYLINE:
 	if (saved_objects.lines->type == T_BOX ||
-	    saved_objects.lines->type == T_ARC_BOX)
+	    saved_objects.lines->type == T_ARCBOX)
 		box_2_box(latest_line);
 	else
 		spline_line(saved_objects.splines);
@@ -519,9 +522,6 @@ undo_delete()
 	compound_bound(&saved_objects, &xmin, &ymin, &xmax, &ymax);
 	tail(&objects, &object_tails);
 	append_objects(&objects, &saved_objects, &object_tails);
-	/* restore depths and depth counters */
-	restore_depths(saved_depths);
-	restore_counts(&saved_counts[0]);
 	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
 	/* restore filename if necessary (from "New" command) */
 	if (save_filename[0] != '\0') {

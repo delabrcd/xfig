@@ -5,7 +5,8 @@ FORMAT 4.0 example
 ------------------
 
 #FIG 4.0
-Res	1200
+Res	1200/500	(use 1200 for inches, 500 for metric)
+Bounds	300 500 3045 9302 (optional bounding box from figure compound)
 Orient	Landscape
 Units	Metric
 Uscale	3cm=1ft		(screen ruler scale)
@@ -17,6 +18,7 @@ Smag	.4		(screen magnification [zoom])
 Backg	ivory		(canvas background color which is used by fig2dev too)
 GIFTransp None		(GIF transparent color)
 JPGQual	75		(JPEG quality)
+Margin	15		(number of pixels for margin for bitmap export)
 
 UCol 35 #440033		(User colors)
 
@@ -25,7 +27,7 @@ Box			(three subtypes)
   Box-Arcbox ...	
   Box-Normal ...
   Box-Picture ...
-Pgon ...
+Poly ...
 Spline ...
 Arc			(three subtypes)
    Arc-Open ...
@@ -62,15 +64,13 @@ Background color for text (or "None") to allow background (ala XDrawImageString)
 Honor fractional text sizes (float).  Currently, xfig reads the size as float
 	but converts to integer internally.
 No need for duplicating first point at end for polygon in file itself
-Use PIX_PER_CM = 470 instead of 450 (w_setup.h)
+Use PIX_PER_CM = 500 instead of 450 (w_setup.h)
 	Need to rescale older (3.2.0 and older) metric figures by difference
 Add canvas background color to Fig file
 	add option to specify default color in fig2dev
 Add elliptical arcs
 Importing of Fig files as pictures
-
 Add new font choices done by Ian Cameron Smith (clint@hermit.org http://www.hermit.org/)
-
 Some kind of color pallette which is global (remains around between drawings)
    o Also library of color pallettes? 
 
@@ -96,35 +96,22 @@ Text that is connected to objects which appears in popup near object
 The following DON'T require a change to the file protocol:
 ----------------------------------------------------------
 
-Ability to "lock" depths so that they are displayed but may not be edited
 "File watch" feature so that xfig will re-read figure file when time-stamp
 	changes (file has been updated by external program).  Probably should
 	add "end of file"  marker so we know when it is complete.
 Have "static objects" which aren't erased when new figure is loaded.  This way
 	you can have a template into which figures may be merged.
-"Slide show" feature by hitting Alt-N to load next .fig file in the current
-	directory.  Also, say Tab in file menu would go to the next file
-	in the directory, loading that filename into the Filename slot.
-	Credit Alec Muffett (Alec.Muffett@UK.Sun.COM) for the idea.
 Option for grid to be constant screen-size (independent of zooming)
 Allow picking of points that aren't on the positioning grid
 Recursively uncompound objects with one click
-Show position of mouse in Fig coordinates in new indicator window
-Automatic pan of canvas when drawing at an edge.
 Possibly use already allocated colors when importing GIF/XPM figures
 	(e.g. black, red, etc)
 Re-render imported EPS files (using gs) at new resolution when zooming LARGER
 Moving object when point_posn mode is on should first move object to closest
 	positioning grid position then allow movement from there.
-	Cancel should restore original coords.
 Look in ../AppPlusS/XCC.c for code to allocate colors using any
 	valid visual/depth/colormap.
 Mode to rotate objects using only the mouse (requires new mode button)
-Make it smart about duplicate PICs:
-	o Same PICs on canvas use same bitmap[]
-	  (each has its own pixmap in case different rotation, size etc)
-	o Thus, they all share the same colors
-Allow printing of grid in figure (actually fig2dev option)
 Create resource for "print" command (e.g. lp, lpr, whatever) which uses meta-
 	notation to place filename (e.g.  print_command: "lpr -P%p %f" where %p
 	is the printer string and %f is the filename)
@@ -141,7 +128,6 @@ Allow vertically-aligned text
   "bottom" would mean the time under the bottom of the text including
         descenders.
 Have common edit popup for all four splines to allow conversion between all
-Save modified_flag before file operations and restore if undo used
 Change eps_bitmaps so that background is transparent; i.e. stipple
 Extend smart links to work for SCALE, MOVEPT and perhaps EDIT, UPDATE.
 	Could also extend them to work for arc-type links and for
@@ -152,35 +138,12 @@ Extend smart links to work for SCALE, MOVEPT and perhaps EDIT, UPDATE.
 	require changing the F_linkinfo structure to have left_endpt,
 	left_prevpt, right_endpt, right_prevpt fields instead of the current
 	endpt, prevpt and two_pts fields.
-Still need to think about how point positioning should be utilized with
-	many of the editing commands, e.g. if point positioning is set to
-	large grid and you are trying to move an object, should:
-	a) it be ignored, b) you can pick up an object anywhere but
-	you must put the 'pick-up' point back on a grid posn,
-	c) you have to pick up and put down objects at grid posns,
-	d) you can pick up and place an object anywhere but when you
-	place it, the point on the object closest the pickup point is
-	automatically rounded to the nearest grid posn, e) you can
-	pick up objects anywhere and movement is multiples of the grid size.
-	The current behaviour is c) and b) can be mimicked by changing the
-	point posn indicator mid-move.  It has the disadvantage that you
-	may not be able to pick up an object which isn't on the grid points.
-	I think e) is the next best but it won't let you mimick b).
-Make arcs use pw_curve to speed them up.
-Add bounding box to every F_object definition, useful for:
-	1) faster drawing of rubber objects
-	2) handling the selective redrawing of figures better after they become
-	   the innocent victim during an expose or erasure of another object
 Generalize align mode (like glue mode) to allow arbitrary tagged objects to be
 	aligned rather than just compounds.
-Make a raise/lower depth feature:
-	the raise_ic icon is already in w_icons.c
-Allow direct modification of the tension of a X-spline point from the Edit
-	Object window, or at least, allow to copy the tension value from
-	one point to another.
+Make a raise/lower depth feature
 A 'gravity' mode whereby points placed by aiming and clicking are brought not
 	to the closest fiducial point of a figure, but to the closest continuous
-	point on the figure (applies only to circles, arcs, and straight lines),
+	point on the figure (applies only to circles, arcs and straight lines),
 	taking into account constraints of angle (like manhattan constraint).
 	Example 1:  I click near the circumference of a circle.  The point is
 	placed exactly on the circumference, closest to where I clicked.
@@ -188,54 +151,3 @@ A 'gravity' mode whereby points placed by aiming and clicking are brought not
 	other than the E, W, S, or N extreme.  Example 2:  I am in manhattan
 	constraint, and I click near a random-slope line.  The point is placed
 	on the line in the one place consistent with the manhattan constraint.
-Clean up array-place copy:
-	If y copies is set to 0, then xfig treats the x direction as the direction
-	of the copies.
-	If both are non-zero, the x and y are e-w and n-s, but the number of copies
-	can be fewer than x*y if the first copy is in a strange place.
-	If only y is set, it is like x, but the first copy (when y is 2) is not
-	drawn properly.
-
----------------------------------------------------------------------------
-------------- note about restructuring xfig data structures ---------------
----------------------------------------------------------------------------
-What really needs to be done is a major rework of the list structures used
-	to store xfig objects.  Here are some comments involving the change.
-
-Rather than having a depth attribute for objects, you can use the order
-in which objects are entered to determine their depth:  later objects
-appear on the top.  A raise/lower depth operation would allow you to
-change the ordering.
-
-The consequences to the current implementation of converting totally to this
-scheme are non-trivial.  Instead of having separate lists for each object
-type, you need to have a single list which has a union of all the different
-objects as its type.  This will require changes in many places in the code.
-At the moment there are many places where each of the lists are traversed
-separately.  In many cases the code can be simplified dramatically if there
-was only a single list.  For example, to perform a move on an object there
-are separate routines (one for each object type) to start/cancel/place the
-object.  You could replace this by a single routine for start/cancel and
-place which worked no matter what type you had.  (Who says you can't use
-object-orientation in C :-)).  Another advantage is that the current caching
-scheme for redrawing would no longer be needed (i.e. redrawing would be
-greatly simplified).  Also undo would become simpler (I think).
-
-If we want to make a smooth transition from the current scheme to the
-one described above (and I do), here is how I propose we do it:
-
-We need to change every direct access to the current lists to use functions.
-i.e. something like
-        for (a=objects.arc; a!=NULL; a=a->next) ...
-to be something like
-        for (a=first_arc(); a!=NULL; a=next_arc(a)) ...
-
-At the moment these routines would be simple to implement.
-Once all occurrences had been changed, it would simply be a matter
-of changing the underlying list structure and changing the first_arc,
-next_arc routines.  Then as we had time we could replace whichever
-sets of six loops by a single loop which did
-        for (o=first_obj(); o!=NULL; o=next_obj(o)) ...
----------------------------------------------------------------------------
--------- end of note about restructuring xfig data structures -------------
----------------------------------------------------------------------------

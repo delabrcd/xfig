@@ -1,22 +1,23 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2000 by Brian V. Smith
+ * Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright, 1987, Massachusetts Institute of Technology
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
 #include "fig.h"
 #include "resources.h"
 #include "object.h"
+#include "f_picobj.h"
 #include "w_setup.h"
 
 /* attempt to read a bitmap file */
@@ -39,17 +40,19 @@ read_xbm(file,filetype,pic)
 			2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
 
     /* first try for a X Bitmap file format */
-    status = ReadDataFromBitmapFile(file, &x, &y, &pic->bitmap);
+    status = ReadDataFromBitmapFile(file, &x, &y, &pic->pic_cache->bitmap);
     if (status == BitmapSuccess) {
-	pic->subtype = T_PIC_XBM;
+	pic->pic_cache->subtype = T_PIC_XBM;
 	pic->hw_ratio = (float) y / x;
-	pic->numcols = 0;
-	pic->bit_size.x = x;
-	pic->bit_size.y = y;
-	pic->size_x = x * scale;
-	pic->size_y = y * scale;
+	pic->pic_cache->numcols = 0;
+	pic->pic_cache->bit_size.x = x;
+	pic->pic_cache->bit_size.y = y;
+	pic->pic_cache->size_x = x * scale;
+	pic->pic_cache->size_y = y * scale;
+	close_picfile(file,filetype);
 	return PicSuccess;
     }
+    close_picfile(file,filetype);
     /* Non Bitmap file */
     return FileInvalid;
 }
@@ -65,15 +68,14 @@ read_xbm(file,filetype,pic)
 /* Copyright, 1987, Massachusetts Institute of Technology */
 
 /*
-Permission to use, copy, modify, distribute, and sell this software and its
-documentation for any purpose is hereby granted without fee, provided that
-the above copyright notice appear in all copies and that both that
-copyright notice and this permission notice appear in supporting
-documentation, and that the name of M.I.T. not be used in advertising or
-publicity pertaining to distribution of the software without specific,
-written prior permission.  M.I.T. makes no representations about the
-suitability of this software for any purpose.  It is provided "as is"
-without express or implied warranty.
+ * Any party obtaining a copy of these files is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
 */
 
 /*

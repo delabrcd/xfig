@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -22,10 +22,14 @@
 #define		PIX_PER_CM		450	/* closest to correct (472.4) and still
 						   have the rulers look good */
 						 
+/* shorthand */
+#define		PPI PIX_PER_INCH
+#define		PPCM PIX_PER_CM
+
 #define DISPLAY_PIX_PER_INCH 80
 
 /* Portrait dimensions */
-#define		DEF_CANVAS_HT_PORT	9*DISPLAY_PIX_PER_INCH
+#define		DEF_CANVAS_HT_PORT	9.5*DISPLAY_PIX_PER_INCH
 #define		DEF_CANVAS_WD_PORT	8.5*DISPLAY_PIX_PER_INCH
 
 /* Landscape dimensions */
@@ -47,7 +51,7 @@
 
 #define		DEF_INTERNAL_BW		1
 #define		POPUP_BW		2
-#define		DEF_LAYER_WD		60	/* default width of the depth panel */
+#define		DEF_LAYER_WD		58	/* default width of the depth panel */
 
 extern int	TOOL_WD, TOOL_HT;
 extern int	CMDFORM_WD, CMDFORM_HT;

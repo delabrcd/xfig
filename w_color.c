@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Parts Copyright (c) 1994-2000 by Brian V. Smith
+ * Parts Copyright (c) 1994-2002 by Brian V. Smith
  * Parts Copyright 1990,1992 Richard Hesketh
  *          Computing Lab. University of Kent at Canterbury, UK
  *
@@ -12,10 +12,10 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  ****************************************************************************
  *
@@ -61,11 +61,12 @@
 #include "resources.h"
 #include "mode.h"
 #include "object.h"
-#include "w_util.h"
 #include "w_color.h"
 #include "w_drawprim.h"
 #include "w_indpanel.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
+#include "w_util.h"
 
 /* EXPORTS */
 
@@ -73,7 +74,7 @@ Widget	delunusedColors;
 
 /* LOCALS */
 
-DeclareStaticArgs(20);
+DeclareStaticArgs(30);
 
 /* callback routines */
 static void cancel_color_popup();
@@ -273,6 +274,8 @@ create_color_panel(form,label,cancel,isw)
 	    /* allocate two colorcells for the mixed fill and pen color widgets */
 	    if (!alloc_color_cells(pixels,2)) {
 		file_msg("Can't allocate necessary colorcells, can't popup color panel");
+		XtDestroyWidget(isw->panel);	/* the panel hasn't been fully created */
+		isw->panel = NULL;
 		return;
 	    }
 	    mixed_color[0].pixel = pixels[0];
@@ -285,7 +288,6 @@ create_color_panel(form,label,cancel,isw)
 
 	/* make the OK button */
 	FirstArg(XtNlabel, "  Ok  ");
-	NextArg(XtNheight, 30);
 	NextArg(XtNfromVert, cancel);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNtop, XtChainTop);
@@ -294,7 +296,7 @@ create_color_panel(form,label,cancel,isw)
 	NextArg(XtNright, XtChainLeft);
 	ok_button = XtCreateManagedWidget("set_color_ok", commandWidgetClass,
 				       form, Args, ArgCount);
-	XtAddEventHandler(ok_button, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(ok_button, ButtonReleaseMask, False,
 			  (XtEventHandler) set_color_ok, (XtPointer) NULL);
 
 	/* put the fill and pen colors down the left side */
@@ -380,7 +382,7 @@ create_color_panel(form,label,cancel,isw)
 	NextArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainTop);
 	NextArg(XtNleft, XtChainLeft);
-	NextArg(XtNright, XtChainRight);
+	NextArg(XtNright, XtChainLeft);
 	stdForm = XtCreateManagedWidget("stdForm", formWidgetClass,
 						form, Args, ArgCount);
 	choice = isw->choices;
@@ -435,9 +437,13 @@ create_color_panel(form,label,cancel,isw)
 		NextArg(XtNfromHoriz, beside);
 		NextArg(XtNresize, False);
 		NextArg(XtNresizable, False);
+		NextArg(XtNtop, XtChainTop);
+		NextArg(XtNbottom, XtChainTop);
+		NextArg(XtNleft, XtChainLeft);
+		NextArg(XtNright, XtChainLeft);
 		beside = XtCreateManagedWidget("stdColor", commandWidgetClass,
 					       stdForm, Args, ArgCount);
-		XtAddEventHandler(beside, ButtonReleaseMask, (Boolean) 0,
+		XtAddEventHandler(beside, ButtonReleaseMask, False,
 				  (XtEventHandler) _set_std_color, (XtPointer) choice);
 		XtOverrideTranslations(beside,
 			       XtParseTranslationTable(std_color_translations));
@@ -524,9 +530,11 @@ create_color_panel(form,label,cancel,isw)
 	NextArg(XtNfromVert, userViewport);
 	NextArg(XtNtop, XtChainBottom);
 	NextArg(XtNbottom, XtChainBottom);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	addColor = XtCreateManagedWidget("addColor", commandWidgetClass,
 					       userForm, Args, ArgCount);
-	XtAddEventHandler(addColor, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(addColor, ButtonReleaseMask, False,
 			  (XtEventHandler) add_color, (XtPointer) 0);
 
 	FirstArg(XtNlabel, "Lookup and Add");
@@ -534,9 +542,11 @@ create_color_panel(form,label,cancel,isw)
 	NextArg(XtNfromVert, userViewport);
 	NextArg(XtNtop, XtChainBottom);
 	NextArg(XtNbottom, XtChainBottom);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	lookupColor = XtCreateManagedWidget("lookupColor", commandWidgetClass,
 					       userForm, Args, ArgCount);
-	XtAddEventHandler(lookupColor, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(lookupColor, ButtonReleaseMask, False,
 			  (XtEventHandler) lookup_color, (XtPointer) 0);
 
 	/* start new row of buttons */
@@ -545,9 +555,11 @@ create_color_panel(form,label,cancel,isw)
 	NextArg(XtNfromVert, addColor);
 	NextArg(XtNtop, XtChainBottom);
 	NextArg(XtNbottom, XtChainBottom);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	delColor = XtCreateManagedWidget("deleteColor", commandWidgetClass,
 					       userForm, Args, ArgCount);
-	XtAddEventHandler(delColor, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(delColor, ButtonReleaseMask, False,
 			  (XtEventHandler) del_color, (XtPointer) 0);
 
 	FirstArg(XtNlabel, "UnDelete");
@@ -555,9 +567,11 @@ create_color_panel(form,label,cancel,isw)
 	NextArg(XtNfromVert, addColor);
 	NextArg(XtNtop, XtChainBottom);
 	NextArg(XtNbottom, XtChainBottom);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	undelColor = XtCreateManagedWidget("undeleteColor", commandWidgetClass,
 					       userForm, Args, ArgCount);
-	XtAddEventHandler(undelColor, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(undelColor, ButtonReleaseMask, False,
 			  (XtEventHandler) undel_color, (XtPointer) 0);
 
 	FirstArg(XtNlabel, "Delete Unused");
@@ -565,9 +579,11 @@ create_color_panel(form,label,cancel,isw)
 	NextArg(XtNfromVert, addColor);
 	NextArg(XtNtop, XtChainBottom);
 	NextArg(XtNbottom, XtChainBottom);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	delunusedColors = XtCreateManagedWidget("deleteUnused", commandWidgetClass,
 					       userForm, Args, ArgCount);
-	XtAddEventHandler(delunusedColors, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(delunusedColors, ButtonReleaseMask, False,
 			  (XtEventHandler) del_unused_user_colors, (XtPointer) 0);
 
 	/***************************************************************************/
@@ -579,7 +595,7 @@ create_color_panel(form,label,cancel,isw)
 	NextArg(XtNtop, XtChainBottom);
 	NextArg(XtNbottom, XtChainBottom);
 	NextArg(XtNleft, XtChainLeft);
-	NextArg(XtNright, XtChainRight);
+	NextArg(XtNright, XtChainLeft);
 	mixingForm = XtCreateManagedWidget("mixingForm", formWidgetClass,
 						userForm, Args, ArgCount);
 	XtAppAddActions(XtWidgetToApplicationContext(mixingForm),
@@ -743,6 +759,8 @@ create_color_panel(form,label,cancel,isw)
 	SetValues(sb);
 
 	XtPopup(choice_popup, (appres.DEBUG? XtGrabNone: XtGrabExclusive));
+	XtInstallAccelerators(form, cancel);
+
 	/* if the file message window is up add it to the grab */
 	file_msg_add_grab();
 
@@ -835,9 +853,9 @@ restore_mixed_colors()
 	/* and update the hex values */
 	save_edit = edit_fill;
 	edit_fill=0;
-	update_triple((Widget)NULL, (XEvent *)NULL, (String *)NULL, (Cardinal *)NULL);
+	update_triple();
 	edit_fill=1;
-	update_triple((Widget)NULL, (XEvent *)NULL, (String *)NULL, (Cardinal *)NULL);
+	update_triple();
 	edit_fill = save_edit;
 }
 
@@ -962,7 +980,7 @@ add_color(w, closure, call_data)
 	/* deselect any cell currently selected */
 	erase_boxed(current_memory);
 	/* add another widget to the user color panel */
-	if ((current_memory = add_color_cell(False, 0, 0, 0, 0)) == -1)	/* using black */
+	if ((current_memory = add_color_cell(DONT_USE_EXISTING_COLOR, 0, 0, 0, 0)) == -1)
 		put_msg("No more user colors allowed");
 	modified[edit_fill] = True;
 	pick_memory(current_memory);
@@ -1021,7 +1039,7 @@ undel_color(w, closure, call_data)
 	int	    indx;
 
 	XtSetSensitive(undelColor, False);
-	if ((indx=add_color_cell(False, 0, undel_user_color.red/256,
+	if ((indx=add_color_cell(DONT_USE_EXISTING_COLOR, 0, undel_user_color.red/256,
 		undel_user_color.green/256,
 		undel_user_color.blue/256)) == -1) {
 		    put_msg("Can't allocate more than %d user colors, not enough colormap entries",
@@ -1050,7 +1068,7 @@ count_user_colors()
 
     /* now any "next" compounds off the top of the list */
     for (c = objects.next; c != NULL; c = c->next) {
-	c_colors(c);
+	c_user_colors(c);
     }
     /* now add up the colors that are used */
     count = 0;
@@ -1216,11 +1234,11 @@ add_color_cell(use_exist, indx, r, g, b)
 	}
 
 	/* if a space is free but there was never a color there, must create one */
-	if (indx<num_usr_cols && colorMemory[indx]==0)
+	if (indx < num_usr_cols && colorMemory[indx]==0)
 	    new = True;
 
 	/* if not, increment num_usr_cols */
-	if (indx>= num_usr_cols) {
+	if (indx >= num_usr_cols) {
 	    if (num_usr_cols >= MAX_USR_COLS)
 		return -1;
 	    if (use_exist)
@@ -1367,7 +1385,7 @@ alloc_color_cells(pixels,n)
 Boolean
 switch_colormap()
 {
-	if (swapped_cmap || appres.dont_switch_cmap) {
+	if (swapped_cmap || appres.dontswitchcmap) {
 	    return False;
 	}
 	if ((newcmap = XCopyColormapAndFree(tool_d, tool_cm)) == 0) {
@@ -1406,6 +1424,7 @@ del_color_cell(indx)
 	pixels[0] = user_colors[indx].pixel;
 	if (all_colors_available)
 	    XFreeColors(tool_d, tool_cm, pixels, 1, 0);
+
 	/* now set free flag for that cell */
 	colorFree[indx] = True;
 	colorUsed[indx] = False;
@@ -1592,7 +1611,7 @@ set_std_color(color)
 			(float)(1.0 - rgb_values[edit_fill].g/65536.0), THUMB_H);
 	XawScrollbarSetThumb(blueScroll,
 			(float)(1.0 - rgb_values[edit_fill].b/65536.0), THUMB_H);
-	update_triple((Widget)NULL, (XEvent*)NULL, (String *)NULL, (Cardinal *)NULL);
+	update_triple();
 	/* inactivate the current_memory cell */
 	current_memory = -1;
 	/* and the hexadecimal window */
@@ -1817,15 +1836,11 @@ update_scrl_triple(w, event, params, num_params)
     Cardinal *num_params;
 {
 	if (current_memory >= 0)
-		update_triple(w, event, params, num_params);
+		update_triple();
 }
 
 static void
-update_triple(w, event, params, num_params)
-    Widget w;
-    XEvent *event;
-    String *params;
-    Cardinal *num_params;
+update_triple()
 {
 	char hexvalue[10];
 

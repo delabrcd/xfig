@@ -1,11 +1,11 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
 <html>
 <head>
-<title>XFIG User Manual - Miscellaneous</title>
+<title>Miscellaneous</title>
 </head>
 
 <body>
-<a href="contents.html"><img src="images/xfig-title.gif"
+<a href="contents.html"><img src="images/xfig-title.png"
   alt="XFIG Users Manual" border=0></a>
 
 <hr>
@@ -13,17 +13,25 @@
 <h1>Miscellaneous</h1>
 
 <dl>
-<dd><img src="images/redballdot.gif" alt="-">
+<dd><img src="images/redballdot.png" alt="-">
 <a href="#search-replace">Search/Replace/Update</a>
-<dd><img src="images/redballdot.gif" alt="-">
+<dd><img src="images/redballdot.png" alt="-">
 <a href="#spell-check">Spell Check</a>
-<dd><img src="images/redballdot.gif" alt="-">
+<dd><img src="images/redballdot.png" alt="-">
+<a href="#mouse">2- or 3-Button Mouse</a>
+<dd><img src="images/redballdot.png" alt="-">
+<a href="#wheelmouse">Wheel Mouse</a>
+<dd><img src="images/redballdot.png" alt="-">
 <a href="#mouse-indicator">Mouse Function Indicator</a>
-<dd><img src="images/redballdot.gif" alt="-">
+<dd><img src="images/redballdot.png" alt="-">
 <a href="#balloons">Information Balloons</a>
-<dd><img src="images/redballdot.gif" alt="-">
+<dd><img src="images/redballdot.png" alt="-">
+<a href="fig-format.html">Fig File Format</a>
+<dd><img src="images/redballdot.png" alt="-">
+<a href="latex_and_xfig.html">LaTeX and Xfig</a>
+<dd><img src="images/redballdot.png" alt="-">
 <a href="i18n.html">Internationalization</a>
-<dd><img src="images/redballdot.gif" alt="-">
+<dd><img src="images/redballdot.png" alt="-">
 <a href="#y2k">Year 2000 Compliancy</a>
 </dl>
 
@@ -41,18 +49,18 @@ users can search and optionally replace
 It is also possible to apply
 <a href="editing.html#update">UPDATE</a> to searched texts.
 <p>
-  <img src="images/search-text-panel.gif" alt="[Search/Replace Panel]">
+  <img src="images/search-text-panel.png" alt="[Search/Replace Panel]">
 
 <p>
 <dl>
 <dt>
-<img src="images/redballdot.gif" align=bottom alt="-">
+<img src="images/redballdot.png" align=bottom alt="-">
 <i>Search for</i>
 <dd>Specify the string to be searched.  Pressing <i>Return</i> in this window
 or pressing the <i>Search</i> button will start the search.
 
 <dt>
-<img src="images/redballdot.gif" align=bottom alt="-">
+<img src="images/redballdot.png" align=bottom alt="-">
 <i>Search</i>
 <dd>
 Pressing this button will start the search for the text
@@ -61,19 +69,19 @@ The results of the search will be displayed in the bottom window, with
 the coordinates of each text object containing the word or words.
 
 <dt>
-<img src="images/redballdot.gif" align=bottom alt="-">
+<img src="images/redballdot.png" align=bottom alt="-">
 <i>Case Sensitive</i>
 <dd>If this box is checked,
 upper-case and lower-case letters will be considered significant when searching.
 
 <dt>
-<img src="images/redballdot.gif" align=bottom alt="-">
+<img src="images/redballdot.png" align=bottom alt="-">
 <i>Replace with</i>
 <dd>Specify the string to replace the string
 entered in the <i>Search</i> field.
 
 <dt>
-<img src="images/redballdot.gif" align=bottom alt="-">
+<img src="images/redballdot.png" align=bottom alt="-">
 <i>Replace</i>
 <dd>If this button is clicked after the search,
 the string specified in <i>Search for</i> field will be replaced
@@ -81,7 +89,7 @@ with the string specified in the <i>Replace with</i> field.
 <i>Search</i> must be clicked once before clicking this button.
 
 <dt>
-<img src="images/redballdot.gif" align=bottom alt="-">
+<img src="images/redballdot.png" align=bottom alt="-">
 <i>UPDATE Settings</i>
 <dd>
 If this button is clicked after the search,
@@ -105,17 +113,17 @@ Xfig will run the external spelling checker (resource <TT>Fig.spellcheckcommand<
 on <a href="drawing.html#text">text</a> in the figure,
 and shows any misspelled words in the text.
 <p>
-  <img src="images/spell-check-panel.gif" alt="[Spell Check Panel]">
+  <img src="images/spell-check-panel.png" alt="[Spell Check Panel]">
 
 <dl>
 <dt>
-<img src="images/redballdot.gif" align=bottom alt="-">
+<img src="images/redballdot.png" align=bottom alt="-">
 <i>Status window</i>
 <dd>This window shows the status of the spelling checker, and how 
 many words (if any) are misspelled.
 
 <dt>
-<img src="images/redballdot.gif" align=bottom alt="-">
+<img src="images/redballdot.png" align=bottom alt="-">
 <i>Misspelled words</i>
 <dd>This listbox shows the misspelled words, with a scrollbar if necessary
 If you click on a word it is copied to the <i>Correction</i> window
@@ -124,7 +132,7 @@ window or the <i>Correct</i> button will replace <b>all</b> occurrances
 of this word in all text objects in the figure.
 
 <dt>
-<img src="images/redballdot.gif" align=bottom alt="-">
+<img src="images/redballdot.png" align=bottom alt="-">
 <i>Recheck</i>
 <dd>Pressing this button will do a re-check of spelling.  This is useful
 after correcting words to verify the corrections.
@@ -134,11 +142,58 @@ N.B.: The <a href="main_menus.html#undo"><i>Undo</i></a> function
 is not available for this feature.
 
 <hr>
+<h2><a name="mouse">2- or 3-Button Mouse</a></h2>
+Use of a three-button mouse is recommended, but it is also
+possible to use a two-button mouse (if you have a two-button mouse and
+your X server doesn't emulate a three-button mouse, press the Meta (or Alt) key
+and right mouse button together to simulate mouse button 2). Normally, mouse
+buttons 1 to 3 are assigned to the left, middle, and right buttons respectively.
 
+<hr>
+<h2><a name="wheelmouse">Wheel Mouse</a></h2>
+
+If xfig is compiled with `<tt>#define WHEELMOUSE</tt>' defined in the Imakefile
+and you have a wheel-mouse, then the following functions are available:
+<dl>
+<dt>
+<img src="images/redballdot.png" align=bottom alt="-">
+Attribute Buttons
+<dd> Rotating the wheel on attribute buttons will increase/decrease
+  setting of the button as if mouse button 2 or 3 is clicked.
+  This can be useful to alter parameters such as Line Width.
+
+<dt>
+<img src="images/redballdot.png" align=bottom alt="-">
+Spinners
+<dd> Rotating the wheel on a spinner will increase/decrease the value.
+
+<dt>
+<img src="images/redballdot.png" align=bottom alt="-">
+Rulers and Canvas
+<dd> Rotating the wheel on the rulers or canvas will scroll the canvas.
+
+<dt>
+<img src="images/redballdot.png" align=bottom alt="-">
+Zooming
+<dd> Rotating the wheel on the canvas while the <b>Control</b> key is pressed
+  will zoom/unzoom the canvas around the pointer.
+
+<dt>
+<img src="images/redballdot.png" align=bottom alt="-">
+Changing Modes
+<dd> Rotating the wheel on the canvas while the <b>Shift</b> key is pressed
+  will popup a panel to select
+  drawing modes (upward) and editing modes (downward).
+  The panel will close when any item is selected, or when the
+  wheel is rotated in the reverse direction.
+
+</dl>
+
+<hr>
 <h2><a name="mouse-indicator">Mouse Function Indicator</a></h2>
 
 <blockquote>
-  <img src="images/mouse-function-indicator.gif" alt="[Mouse Function Indicator]">
+  <img src="images/mouse-function-indicator.png" alt="[Mouse Function Indicator]">
 </blockquote>
 <p>
 Mouse Function Indicator shows which functions are assigned
@@ -171,8 +226,11 @@ over will popup after a predetermined time
 (in milliseconds; resource <tt>Fig.balloon_delay</tt>).
 Here is an example:
 <blockquote>
-  <img src="images/balloons-example.gif" alt="[Balloons Example]">
+  <img src="images/balloons-example.png" alt="[Balloons Example]">
 </blockquote>
+
+<hr>
+
 
 <hr>
 <h2><a name="y2k">Year 2000 Compliancy</a></h2>

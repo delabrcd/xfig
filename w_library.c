@@ -1,16 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1998 by Stephane Mancini
- * Parts Copyright (c) 1999-2000 by Brian V. Smith
+ * Parts Copyright (c) 1999-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -31,6 +31,8 @@
 #include "w_drawprim.h"		/* for max_char_height */
 #include "w_dir.h"
 #include "w_file.h"
+#include "w_indpanel.h"
+#include "w_library.h"
 #include "w_listwidget.h"
 #include "w_layers.h"
 #include "w_msgpanel.h"
@@ -44,7 +46,7 @@
 #include <sys/dir.h>
 #else
 #include <dirent.h>
-#endif
+#endif /* HAVE_NO_DIRENT */
 
 #define N_LIB_MAX	  100		/* max number of libraries */
 #define N_LIB_OBJECT_MAX  400		/* max number of objects in a library */
@@ -56,7 +58,7 @@
 #define LIB_FILE_WIDTH	  MAIN_WIDTH-LIB_PREVIEW_SIZE-20 /* size of object list panel */
 
 /* STATICS */
-static void	library_cancel(), load_library();
+static void	library_cancel(), load_library(), library_stop();
 static void	create_library_panel(), libraryStatus(char *format,...);
 static void	put_object_sel(), set_cur_obj_name(), erase_pixmap();
 static void	sel_item_icon();
@@ -72,15 +74,15 @@ static Widget	library_popup=0;
 static Widget	put_cur_obj;
 static Widget	library_form, title;
 static Widget	lib_obj_label, library_label, library_menu, library_menu_button;
-static Widget	sel_view_button, sel_view_menu;
+static Widget	sel_view_button;
 static Widget	object_form;
 static Widget	icon_form, icon_viewport, icon_box;
 static Widget	list_form, list_viewport, object_list;
-static Widget	icon_size_button, icon_size_menu;
+static Widget	icon_size_button;
 static Widget	library_status;
 static Widget	lib_preview_label, preview_lib_widget;
 static Widget	comment_label, object_comments;
-static Widget	cancel, selobj;
+static Widget	cancel, selobj, stop;
 static Widget	lib_buttons[N_LIB_OBJECT_MAX];
 
 static Boolean	MakeObjectLibrary(),MakeLibraryFileList();
@@ -102,9 +104,11 @@ static int	prev_icon_size;
 static char	*icon_sizes[] = { "40", "60", "80", "100", "120" };
 static int	num_icon_sizes = sizeof(icon_sizes)/sizeof(char *);
 static Boolean	loading_library = False;	/* lockout flag */
+static Boolean	library_stop_request = False;	/* to stop loading library */
 
 static String	library_translations =
 			"<Message>WM_PROTOCOLS: DismissLibrary()\n\
+			 <Key>Escape: DismissLibrary()\n\
 			 <Btn1Up>(2): put_object_sel()\n\
 			 <Key>Return: put_object_sel()\n";
 static String	object_list_translations =
@@ -144,7 +148,7 @@ static char	 *viewtypes[] = {"List View", "Icon View"};
 static struct lib_rec *library_rec[N_LIB_MAX + 1];
 
 static char	**library_objects_texts=NULL;
-F_compound	**lib_compounds=NULL;
+F_libobject	**lib_compounds=NULL;
 
 static Position xposn, yposn;
 
@@ -180,6 +184,17 @@ put_selected_request()
     } else {
 	put_selected();
     }
+}
+
+/* request to stop loading library */
+
+static void
+library_stop(w, ev)
+     Widget	    w;
+     XButtonEvent   *ev;
+{
+     library_stop_request = True;
+     XtSetSensitive(stop, False);
 }
 
 static void
@@ -236,6 +251,7 @@ library_cancel(w, ev)
 	reset_action_on();
 	canvas_kbd_proc = null_proc;
 	canvas_locmove_proc = null_proc;
+	canvas_ref_proc = null_proc;
 	canvas_leftbut_proc = null_proc;
 	canvas_middlebut_proc = null_proc;
 	canvas_rightbut_proc = null_proc;
@@ -256,6 +272,9 @@ load_library(w, new_library, garbage)
     Dimension	    lwidth, lheight;
     Dimension	    lawidth, laheight;
 
+    /* pop down the menu */
+    XtPopdown(library_menu);
+
     /* if already in the middle of loading a library, return */
     if (loading_library) {
 	return;
@@ -264,8 +283,16 @@ load_library(w, new_library, garbage)
     /* set lockout flag */
     loading_library = True;
 
+    /* clear stop request flag */
+    library_stop_request = False;
+    /* make the stop button sensitive */
+    XtSetSensitive(stop, True);
+
     /* no object selected yet */
     old_library_object = cur_library_object = -1;
+
+    /* first make sure markers are off or they'll show up in the icons */
+    update_markers(M_NONE);
 
     /* only set current library if the load is successful */
     if (MakeObjectLibrary(librec->path,
@@ -330,6 +357,10 @@ put_object_sel(w, ev)
     if ((library_objects_texts[0] == 0) || (cur_library_object == -1))
 	return;
 
+    /* if user was placing another object, remove it from the list first */
+    if (action_on)
+	remove_compound_depth(new_c);
+
     obj = cur_library_object;
      /* create a compound for the chosen object if it hasn't already been created */
     if (load_lib_obj(obj) == False)
@@ -347,12 +378,14 @@ static Boolean
 load_lib_obj(obj)
     int		obj;
 {
-	fig_settings    settings;
-	char		fname[PATH_MAX];
-	char		save_file_dir[PATH_MAX];
+	fig_settings     settings;
+	char		 fname[PATH_MAX];
+	char		 save_file_dir[PATH_MAX];
+	F_compound	*c, *c2;
+	Boolean		 status;
 
 	/* if already loaded, return */
-	if (lib_compounds[obj] != 0)
+	if (lib_compounds[obj]->compound != 0)
 		return True;
 
 	libraryStatus("Loading %s",cur_objects_names[obj]);
@@ -362,32 +395,59 @@ load_lib_obj(obj)
 	strcpy(cur_file_dir, cur_library_path);
 	change_directory(cur_file_dir);
 
-	lib_compounds[obj]=create_compound();
+	c = lib_compounds[obj]->compound = create_compound();
 
 	/* read in the object file */
 	/* we'll ignore the stuff returned in "settings" */
 	sprintf(fname,"%s%s",cur_objects_names[obj],".fig");
 
-	/* call with abspath = True to use absolute path of imported pictures */
-	if (read_figc(fname,lib_compounds[obj], True, True, True, 0, 0, &settings)==0) {
-		translate_compound(lib_compounds[obj],
-			 -lib_compounds[obj]->nwcorner.x,
-			 -lib_compounds[obj]->nwcorner.y);
+	if (read_figc(fname, c, MERGE, REMAP_IMAGES, 0, 0, &settings)==0) {
+	    /* if there are no other objects than one compound, don't encapsulate
+		it in another compound */
+	    if (c->arcs == 0 && c->ellipses == 0 && c->lines == 0 && 
+		c->splines == 0 && c->texts == 0) {
+		/* but first check that there is a compound */
+		if (c->compounds == 0) {
+		    /* an error reading a .fig file */
+		    file_msg("Empty library file: %s.fig, ignoring",cur_objects_names[obj]);
+		    /* delete the compound we just created */
+		    delete_compound(lib_compounds[obj]->compound);
+		    lib_compounds[obj]->compound = (F_compound *) NULL;
+		    /* go back to the file directory */
+		    strcpy(cur_file_dir, save_file_dir);
+		    change_directory(cur_file_dir);
+		    return False;
+		}
+		/* now check if the compound is the only one */
+		if (c->compounds->next == 0) {
+		    /* save ptr to embedded compound */
+		    c2 = c->compounds;
+		    /* free the toplevel */
+		    free((char *) c);
+	            c = c2;
+		    lib_compounds[obj]->compound = c;
+		}
+	    }
+	    /* save the upper-left corner before we translate it to 0,0 */
+	    lib_compounds[obj]->corner.x = lib_compounds[obj]->compound->nwcorner.x;
+	    lib_compounds[obj]->corner.y = lib_compounds[obj]->compound->nwcorner.y;
+	    /* now translate it to 0,0 */
+	    translate_compound(lib_compounds[obj]->compound,
+			 -lib_compounds[obj]->compound->nwcorner.x,
+			 -lib_compounds[obj]->compound->nwcorner.y);
+	    status = True;
 	} else {
 		/* an error reading a .fig file */
 		file_msg("Error reading %s.fig",cur_objects_names[obj]);
 		/* delete the compound we just created */
-		delete_compound(lib_compounds[obj]);
-		lib_compounds[obj] = (F_compound *) NULL;
-		/* go back to the file directory */
-		strcpy(cur_file_dir, save_file_dir);
-		change_directory(cur_file_dir);
-		return False;
+		delete_compound(lib_compounds[obj]->compound);
+		lib_compounds[obj]->compound = (F_compound *) NULL;
+		status = False;
 	}
 	/* go back to the file directory */
 	strcpy(cur_file_dir, save_file_dir);
 	change_directory(cur_file_dir);
-	return True;
+	return status;
 }
 
 /* come here when user clicks on library object name */
@@ -434,6 +494,7 @@ NewObjectSel(w, closure, call_data)
     SetValues(selobj);
 }
 
+void
 popup_library_panel()
 {
     set_temp_cursor(wait_cursor);
@@ -480,446 +541,463 @@ popup_library_panel()
 static void
 create_library_panel()
 {
-  Widget	 status_label;
-  int		 i;
+    Widget	 status_label;
+    int		 i;
 
-  XFontStruct	*temp_font;
-  static Boolean actions_added=False;
-  Widget	 beside;
-  char		*library_names[N_LIB_MAX + 1];
-  char		 buf[20];
+    XFontStruct	*temp_font;
+    static Boolean actions_added=False;
+    Widget	 beside;
+    char		*library_names[N_LIB_MAX + 1];
+    char		 buf[20];
 
-  /* make sure user doesn't request an icon size too small or large */
-  if (appres.library_icon_size < atoi(icon_sizes[0]))
+    /* make sure user doesn't request an icon size too small or large */
+    if (appres.library_icon_size < atoi(icon_sizes[0]))
 	appres.library_icon_size = atoi(icon_sizes[0]);
-  if (appres.library_icon_size > atoi(icon_sizes[num_icon_sizes-1]))
+    if (appres.library_icon_size > atoi(icon_sizes[num_icon_sizes-1]))
 	appres.library_icon_size = atoi(icon_sizes[num_icon_sizes-1]);
 
-  prev_icon_size = appres.library_icon_size;
+    prev_icon_size = appres.library_icon_size;
 
-  library_objects_texts = (char **) malloc(N_LIB_OBJECT_MAX*sizeof(char *));
-  for (i=0;i<N_LIB_OBJECT_MAX;i++)
-     library_objects_texts[i]=NULL;
+    library_objects_texts = (char **) malloc(N_LIB_OBJECT_MAX*sizeof(char *));
+     for (i=0; i < N_LIB_OBJECT_MAX; i++)
+       library_objects_texts[i]=NULL;
 
-  lib_compounds = (F_compound **) malloc(N_LIB_OBJECT_MAX*sizeof(F_compound *));
-  for (i=0;i<N_LIB_OBJECT_MAX;i++)
-    lib_compounds[i]=NULL;
+    lib_compounds = (F_libobject **) malloc(N_LIB_OBJECT_MAX*sizeof(F_libobject *));
+    for (i=0;i<N_LIB_OBJECT_MAX;i++) {
+      lib_compounds[i] = (F_libobject *) malloc(sizeof(F_libobject));
+      lib_compounds[i]->compound=NULL;
+    }
 
-  /* get all the library directory names into library_rec[] */
-  /* return value is number of directories at the top level only */
-  num_library_names = MakeLibrary();
+    /* get all the library directory names into library_rec[] */
+    /* return value is number of directories at the top level only */
+    num_library_names = MakeLibrary();
 
-  XtTranslateCoords(tool, (Position) 200, (Position) 50, &xposn, &yposn);
+    XtTranslateCoords(tool, (Position) 200, (Position) 50, &xposn, &yposn);
 
-  FirstArg(XtNx, xposn);
-  NextArg(XtNy, yposn + 50);
-  NextArg(XtNtitle, "Select an object or library");
-  NextArg(XtNcolormap, tool_cm);
-  library_popup = XtCreatePopupShell("library_menu",
+    FirstArg(XtNx, xposn);
+    NextArg(XtNy, yposn + 50);
+    NextArg(XtNtitle, "Select an object or library");
+    NextArg(XtNcolormap, tool_cm);
+    library_popup = XtCreatePopupShell("library_menu",
 				     transientShellWidgetClass,
 				     tool, Args, ArgCount);
 
-  library_form = XtCreateManagedWidget("library_form", formWidgetClass,
+    library_form = XtCreateManagedWidget("library_form", formWidgetClass,
 					library_popup, NULL, ZERO);
-  XtAugmentTranslations(library_form,
+    XtAugmentTranslations(library_form,
 			 XtParseTranslationTable(library_translations));
 	
-  FirstArg(XtNlabel, "Load a Library");
-  NextArg(XtNwidth, MAIN_WIDTH-4);
-  NextArg(XtNborderWidth, 0);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainTop);
-  title=XtCreateManagedWidget("library_title", labelWidgetClass,
+    FirstArg(XtNlabel, "Load a Library");
+    NextArg(XtNwidth, MAIN_WIDTH-4);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    title=XtCreateManagedWidget("library_title", labelWidgetClass,
 			      library_form, Args, ArgCount);
 
-  /* label for Library */
-  FirstArg(XtNlabel, "Library:");
-  NextArg(XtNjustify, XtJustifyLeft);
-  NextArg(XtNfromVert, title);
-  NextArg(XtNborderWidth, 0);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainTop);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainLeft);
-  library_label = XtCreateManagedWidget("library_label", labelWidgetClass,
+    /* label for Library */
+    FirstArg(XtNlabel, "Library:");
+    NextArg(XtNjustify, XtJustifyLeft);
+    NextArg(XtNfromVert, title);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    library_label = XtCreateManagedWidget("library_label", labelWidgetClass,
 				      library_form, Args, ArgCount);
 
-  /* pulldown menu for Library */
+    /* pulldown menu for Library */
 
-  if (num_library_names == 0) {
+    if (num_library_names == 0) {
 	/* if no libraries, make menu button insensitive */
 	FirstArg(XtNlabel, "No libraries");
 	NextArg(XtNsensitive, False);
-  } else {
+    } else {
 	/* make long label to fill out panel */
 	FirstArg(XtNlabel, "000000000000000000000000000000000000000000000000");
-  }
-  NextArg(XtNfromHoriz, library_label);
-  NextArg(XtNfromVert, title);
-  NextArg(XtNborderWidth, INTERNAL_BW);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainTop);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainLeft);
-  NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
-  library_menu_button = XtCreateManagedWidget("library_menu_button",
+    }
+    NextArg(XtNfromHoriz, library_label);
+    NextArg(XtNfromVert, title);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
+    library_menu_button = XtCreateManagedWidget("library_menu_button",
 					    menuButtonWidgetClass,
 					    library_form, Args, ArgCount);
-
-  /* make the menu and attach it to the button */
-  (void) make_library_menu(library_menu_button, 
+    /* make the menu and attach it to the button */
+    (void) make_library_menu(library_menu_button, 
     					library_rec, num_library_names);
 
-  if (!actions_added) {
+    if (!actions_added) {
 	XtAppAddActions(tool_app, library_actions, XtNumber(library_actions));
 	actions_added = True;
-  }		
+    }		
 
-  /* Status indicator label */
-  FirstArg(XtNlabel, " Status:");
-  NextArg(XtNfromVert, library_menu_button);
-  NextArg(XtNborderWidth, 0);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainTop);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainLeft);
-  status_label = XtCreateManagedWidget("status_label", labelWidgetClass,
-			       library_form, Args, ArgCount);
+    /* Status indicator label */
+    FirstArg(XtNlabel, " Status:");
+    NextArg(XtNfromVert, library_menu_button);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    status_label = XtCreateManagedWidget("status_label", labelWidgetClass,
+				library_form, Args, ArgCount);
 
-  /* text widget showing status */
+    /* text widget showing status */
 
-  FirstArg(XtNwidth, MAIN_WIDTH-77);
-  NextArg(XtNstring, "None loaded");
-  NextArg(XtNeditType, XawtextRead);	/* read-only */
-  NextArg(XtNdisplayCaret, FALSE);	/* don't want to see the ^ cursor */
-  NextArg(XtNheight, 30);		/* make room for scrollbar if necessary */
-  NextArg(XtNfromHoriz, status_label);
-  NextArg(XtNhorizDistance, 5);
-  NextArg(XtNfromVert, library_menu_button);
-  NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainTop);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainRight);
-  library_status = XtCreateManagedWidget("library_status", asciiTextWidgetClass,
+    FirstArg(XtNwidth, MAIN_WIDTH-77);
+    NextArg(XtNstring, "None loaded");
+    NextArg(XtNeditType, XawtextRead);	/* read-only */
+    NextArg(XtNdisplayCaret, FALSE);	/* don't want to see the ^ cursor */
+    NextArg(XtNheight, 30);		/* make room for scrollbar if necessary */
+    NextArg(XtNfromHoriz, status_label);
+    NextArg(XtNhorizDistance, 5);
+    NextArg(XtNfromVert, library_menu_button);
+    NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainRight);
+    library_status = XtCreateManagedWidget("library_status", asciiTextWidgetClass,
 					     library_form, Args, ArgCount);
 
-  FirstArg(XtNlabel," Current object:");
-  NextArg(XtNresize, False);
-  NextArg(XtNfromVert, library_status);
-  NextArg(XtNborderWidth, 0);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainTop);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainLeft);
-  beside = XtCreateManagedWidget("cur_lib_object_label", labelWidgetClass,
+    /* button to stop loading library */
+
+    FirstArg(XtNlabel,"  Stop  ");
+    NextArg(XtNsensitive, False);	/* disabled to start */
+    NextArg(XtNfromVert, status_label);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    stop = XtCreateManagedWidget("stop", commandWidgetClass,
+				 library_form, Args, ArgCount);
+    XtAddEventHandler(stop, ButtonReleaseMask, False,
+		    (XtEventHandler) library_stop, (XtPointer) NULL);
+
+    FirstArg(XtNlabel,"Selected object:");
+    NextArg(XtNresize, False);
+    NextArg(XtNfromVert, stop);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    beside = XtCreateManagedWidget("cur_lib_object_label", labelWidgetClass,
 			      library_form, Args, ArgCount);
 
-  FirstArg(XtNlabel, " ");
-  NextArg(XtNresize, False);
-  NextArg(XtNwidth, MAIN_WIDTH-130);
-  NextArg(XtNfromHoriz, beside);
-  NextArg(XtNfromVert, library_status);
-  NextArg(XtNjustify, XtJustifyLeft);
-  NextArg(XtNborderWidth, 0);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainTop);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainRight);
-  put_cur_obj = XtCreateManagedWidget("cur_lib_object", labelWidgetClass,
+    FirstArg(XtNlabel, " ");
+    NextArg(XtNresize, False);
+    NextArg(XtNwidth, MAIN_WIDTH-130);
+    NextArg(XtNfromHoriz, beside);
+    NextArg(XtNfromVert, stop);
+    NextArg(XtNjustify, XtJustifyLeft);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainRight);
+    put_cur_obj = XtCreateManagedWidget("cur_lib_object", labelWidgetClass,
 			      library_form, Args, ArgCount);
 
-  /* make a label and pulldown to choose list or icon view */
-  FirstArg(XtNlabel, "View:");
-  NextArg(XtNfromVert, put_cur_obj);
-  NextArg(XtNborderWidth, 0);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainTop);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainLeft);
-  beside = XtCreateManagedWidget("view_label", labelWidgetClass,
+    /* make a label and pulldown to choose list or icon view */
+    FirstArg(XtNlabel, "View:");
+    NextArg(XtNfromVert, put_cur_obj);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    beside = XtCreateManagedWidget("view_label", labelWidgetClass,
 			      library_form, Args, ArgCount);
 
 
-  FirstArg(XtNlabel, appres.icon_view? "Icon View":"List View");
-  NextArg(XtNfromHoriz, beside);
-  NextArg(XtNfromVert, put_cur_obj);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainTop);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainLeft);
-  NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
-  sel_view_button = XtCreateManagedWidget("view_menu_button",
+    FirstArg(XtNlabel, appres.icon_view? "Icon View":"List View");
+    NextArg(XtNfromHoriz, beside);
+    NextArg(XtNfromVert, put_cur_obj);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
+    sel_view_button = XtCreateManagedWidget("view_menu_button",
 					    menuButtonWidgetClass,
 					    library_form, Args, ArgCount);
 
-  /* make the view menu and attach it to the menu button */
+    /* make the view menu and attach it to the menu button */
 
-  sel_view_menu = make_popup_menu(viewtypes, 2, -1, "",
+    make_pulldown_menu(viewtypes, 2, -1, "",
 				 sel_view_button, sel_view);
 
-  /* label and pulldown to choose size of icons */
+    /* label and pulldown to choose size of icons */
 
-  FirstArg(XtNlabel, "Icon size:");
-  NextArg(XtNfromHoriz, sel_view_button);
-  NextArg(XtNhorizDistance, 10);
-  NextArg(XtNfromVert, put_cur_obj);
-  NextArg(XtNborderWidth, 0);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainTop);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainLeft);
-  beside = XtCreateManagedWidget("icon_size_label", labelWidgetClass,
+    FirstArg(XtNlabel, "Icon size:");
+    NextArg(XtNfromHoriz, sel_view_button);
+    NextArg(XtNhorizDistance, 10);
+    NextArg(XtNfromVert, put_cur_obj);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    beside = XtCreateManagedWidget("icon_size_label", labelWidgetClass,
 			      library_form, Args, ArgCount);
 
-  sprintf(buf, "%4d", appres.library_icon_size);
-  FirstArg(XtNlabel, buf);
-  NextArg(XtNsensitive, appres.icon_view? True: False); /* sensitive only if icon view */
-  NextArg(XtNfromHoriz, beside);
-  NextArg(XtNfromVert, put_cur_obj);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainTop);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainLeft);
-  NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
-  icon_size_button = XtCreateManagedWidget("icon_size_menu_button",
+    sprintf(buf, "%4d", appres.library_icon_size);
+    FirstArg(XtNlabel, buf);
+    NextArg(XtNsensitive, appres.icon_view? True: False); /* sensitive only if icon view */
+    NextArg(XtNfromHoriz, beside);
+    NextArg(XtNfromVert, put_cur_obj);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
+    icon_size_button = XtCreateManagedWidget("icon_size_menu_button",
 					    menuButtonWidgetClass,
 					    library_form, Args, ArgCount);
 
-  /* make the view menu and attach it to the menu button */
+    /* make the view menu and attach it to the menu button */
 
-  icon_size_menu = make_popup_menu(icon_sizes, num_icon_sizes, -1, "",
+    make_pulldown_menu(icon_sizes, num_icon_sizes, -1, "",
 				 icon_size_button, change_icon_size);
 
-  /* get height of font so we can make a form an integral number of lines tall */
-  FirstArg(XtNfont, &temp_font);
-  GetValues(put_cur_obj);
-  char_ht = max_char_height(temp_font) + 2;
-  char_wd = char_width(temp_font) + 2;
+    /* get height of font so we can make a form an integral number of lines tall */
+    FirstArg(XtNfont, &temp_font);
+    GetValues(put_cur_obj);
+    char_ht = max_char_height(temp_font) + 2;
+    char_wd = char_width(temp_font) + 2;
 
-  /* make that form to hold either the list stuff or icon view stuff */
+    /* make that form to hold either the list stuff or icon view stuff */
 
-  /* because of the problem of sizing them if we manage/unmanage the
-     two views, we have both managed at all times and just raise the
-     window of the form we want (icon_form or list_form) */
+    /* because of the problem of sizing them if we manage/unmanage the
+       two views, we have both managed at all times and just raise the
+       window of the form we want (icon_form or list_form) */
 
-  FirstArg(XtNfromVert,sel_view_button);
-  NextArg(XtNheight, 17*char_ht+8);
-  NextArg(XtNwidth, MAIN_WIDTH);
-  NextArg(XtNdefaultDistance, 0);
-  NextArg(XtNborderWidth, INTERNAL_BW);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainBottom);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainRight);
-  object_form = XtCreateManagedWidget("object_form", formWidgetClass,
+    FirstArg(XtNfromVert,sel_view_button);
+    NextArg(XtNheight, 17*char_ht+8);
+    NextArg(XtNwidth, MAIN_WIDTH);
+    NextArg(XtNdefaultDistance, 0);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainRight);
+    object_form = XtCreateManagedWidget("object_form", formWidgetClass,
 					  library_form, Args, ArgCount);
 
-  /**** ICON VIEW STUFF ****/
+    /**** ICON VIEW STUFF ****/
 
-  /* make a form to hold the viewport which holds the box */
+    /* make a form to hold the viewport which holds the box */
 
-  FirstArg(XtNheight, 17*char_ht+8);
-  NextArg(XtNwidth, MAIN_WIDTH);
-  NextArg(XtNdefaultDistance, 0);
-  NextArg(XtNborderWidth, 0);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainBottom);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainRight);
-  icon_form = XtCreateManagedWidget("icon_form", formWidgetClass,
+    FirstArg(XtNheight, 17*char_ht+8);
+    NextArg(XtNwidth, MAIN_WIDTH);
+    NextArg(XtNdefaultDistance, 0);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainRight);
+    icon_form = XtCreateManagedWidget("icon_form", formWidgetClass,
 					  object_form, Args, ArgCount);
 
-  /* make a viewport in which to put the box widget which holds the icons */
+    /* make a viewport in which to put the box widget which holds the icons */
 
-  FirstArg(XtNheight, 17*char_ht+8);
-  NextArg(XtNborderWidth, 0);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainBottom);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainRight);
-  NextArg(XtNallowHoriz, False);
-  NextArg(XtNallowVert, True);
-  icon_viewport = XtCreateManagedWidget("icon_vport", viewportWidgetClass,
+    FirstArg(XtNheight, 17*char_ht+8);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainRight);
+    NextArg(XtNallowHoriz, False);
+    NextArg(XtNallowVert, True);
+    icon_viewport = XtCreateManagedWidget("icon_vport", viewportWidgetClass,
 					  icon_form, Args, ArgCount);
 					
-  /* make a box widget to hold the object icons */
+    /* make a box widget to hold the object icons */
 
-  FirstArg(XtNorientation, XtorientVertical);
-  NextArg(XtNhSpace, 2);
-  NextArg(XtNvSpace, 2);
-  NextArg(XtNwidth, MAIN_WIDTH-12);
-  NextArg(XtNheight, 17*char_ht+4);
-  NextArg(XtNborderWidth, 0);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainBottom);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainRight);
-  icon_box = XtCreateManagedWidget("icon_box", boxWidgetClass,
+    FirstArg(XtNorientation, XtorientVertical);
+    NextArg(XtNhSpace, 2);
+    NextArg(XtNvSpace, 2);
+    NextArg(XtNwidth, MAIN_WIDTH-12);
+    NextArg(XtNheight, 17*char_ht+4);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainRight);
+    icon_box = XtCreateManagedWidget("icon_box", boxWidgetClass,
 					icon_viewport, Args, ArgCount);
 
-  /**** LIST VIEW STUFF ****/
+    /**** LIST VIEW STUFF ****/
 
-  /* make a form to hold the viewport and preview stuff */
+    /* make a form to hold the viewport and preview stuff */
 
-  FirstArg(XtNheight, 17*char_ht+4);
-  NextArg(XtNwidth, MAIN_WIDTH);
-  NextArg(XtNdefaultDistance, 2);
-  NextArg(XtNborderWidth, 0);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainBottom);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainRight);
-  list_form = XtCreateManagedWidget("list_form", formWidgetClass,
+    FirstArg(XtNheight, 17*char_ht+4);
+    NextArg(XtNwidth, MAIN_WIDTH);
+    NextArg(XtNdefaultDistance, 2);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainRight);
+    list_form = XtCreateManagedWidget("list_form", formWidgetClass,
 					  object_form, Args, ArgCount);
 
-  /* make a viewport to hold the list */
+    /* make a viewport to hold the list */
 
-  FirstArg(XtNheight, 17*char_ht+4);
-  NextArg(XtNwidth, LIB_FILE_WIDTH);
-  NextArg(XtNborderWidth, INTERNAL_BW);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainBottom);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainRight);
-  NextArg(XtNforceBars, True);
-  NextArg(XtNallowHoriz, False);
-  NextArg(XtNallowVert, True);
-  list_viewport = XtCreateManagedWidget("list_vport", viewportWidgetClass,
+    FirstArg(XtNheight, 17*char_ht+4);
+    NextArg(XtNwidth, LIB_FILE_WIDTH);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainRight);
+    NextArg(XtNforceBars, True);
+    NextArg(XtNallowHoriz, False);
+    NextArg(XtNallowVert, True);
+    list_viewport = XtCreateManagedWidget("list_vport", viewportWidgetClass,
 					list_form, Args, ArgCount);
 
-  /* make a list widget in the viewport with entries going down
-     the column then right */
+    /* make a list widget in the viewport with entries going down
+       the column then right */
 
-  FirstArg(XtNverticalList,True);
-  NextArg(XtNborderWidth, 0);
-  NextArg(XtNwidth, LIB_FILE_WIDTH);
-  NextArg(XtNheight, 17*char_ht);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainBottom);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainRight);
-  object_list = XtCreateManagedWidget("object_list", figListWidgetClass,
+    FirstArg(XtNverticalList,True);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNwidth, LIB_FILE_WIDTH);
+    NextArg(XtNheight, 17*char_ht);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainRight);
+    object_list = XtCreateManagedWidget("object_list", figListWidgetClass,
 					list_viewport, Args, ArgCount);
-  /* install the empty list */
-  XawListChange(object_list, library_objects_texts, 0, 0, True);
+    /* install the empty list */
+    XawListChange(object_list, library_objects_texts, 0, 0, True);
 
-  XtAddCallback(object_list, XtNcallback, NewObjectSel, (XtPointer) NULL);
+    XtAddCallback(object_list, XtNcallback, NewObjectSel, (XtPointer) NULL);
 
-  XtAugmentTranslations(object_list,
+    XtAugmentTranslations(object_list,
 			XtParseTranslationTable(object_list_translations));
 
-  /* make a label for the preview canvas */
+    /* make a label for the preview canvas */
 
-  FirstArg(XtNlabel, "Object preview");
-  NextArg(XtNfromHoriz, list_viewport);
-  NextArg(XtNvertDistance, 40);
-  NextArg(XtNwidth, LIB_PREVIEW_SIZE+2);
-  NextArg(XtNborderWidth, 0);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainTop);
-  NextArg(XtNleft, XtChainRight);
-  NextArg(XtNright, XtChainRight);
-  lib_preview_label = XtCreateManagedWidget("library_preview_label", labelWidgetClass,
+    FirstArg(XtNlabel, "Object preview");
+    NextArg(XtNfromHoriz, list_viewport);
+    NextArg(XtNvertDistance, 40);
+    NextArg(XtNwidth, LIB_PREVIEW_SIZE+2);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainRight);
+    NextArg(XtNright, XtChainRight);
+    lib_preview_label = XtCreateManagedWidget("library_preview_label", labelWidgetClass,
 					  list_form, Args, ArgCount);
 
-  /* and a label for the object name */
+    /* and a label for the object name */
 
-  FirstArg(XtNlabel," ");
-  NextArg(XtNfromHoriz, list_viewport);
-  NextArg(XtNfromVert,lib_preview_label);
-  NextArg(XtNwidth, LIB_PREVIEW_SIZE+2);
-  NextArg(XtNborderWidth, 0);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainTop);
-  NextArg(XtNleft, XtChainRight);
-  NextArg(XtNright, XtChainRight);
-  lib_obj_label = XtCreateManagedWidget("library_object_label", labelWidgetClass,
+    FirstArg(XtNlabel," ");
+    NextArg(XtNfromHoriz, list_viewport);
+    NextArg(XtNfromVert,lib_preview_label);
+    NextArg(XtNwidth, LIB_PREVIEW_SIZE+2);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainRight);
+    NextArg(XtNright, XtChainRight);
+    lib_obj_label = XtCreateManagedWidget("library_object_label", labelWidgetClass,
 					  list_form, Args, ArgCount);
 
-  /* first create a pixmap for its background, into which we'll draw the figure */
+    /* first create a pixmap for its background, into which we'll draw the figure */
 
-  preview_lib_pixmap = XCreatePixmap(tool_d, canvas_win,
+    preview_lib_pixmap = XCreatePixmap(tool_d, canvas_win,
 			LIB_PREVIEW_SIZE, LIB_PREVIEW_SIZE, tool_dpth);
 
-  /* create a second one as a copy in case the user cancels the popup */
-  cur_obj_preview = XCreatePixmap(tool_d, canvas_win,
+    /* create a second one as a copy in case the user cancels the popup */
+    cur_obj_preview = XCreatePixmap(tool_d, canvas_win,
 			LIB_PREVIEW_SIZE, LIB_PREVIEW_SIZE, tool_dpth);
-  /* erase them */
-  erase_pixmap(preview_lib_pixmap);
-  erase_pixmap(cur_obj_preview);
+    /* erase them */
+    erase_pixmap(preview_lib_pixmap);
+    erase_pixmap(cur_obj_preview);
 
-  /* now make a preview canvas to the right of the object list */
-  FirstArg(XtNfromHoriz, list_viewport);
-  NextArg(XtNfromVert, lib_obj_label);
-  NextArg(XtNlabel, "");
-  NextArg(XtNborderWidth, 1);
-  NextArg(XtNbackgroundPixmap, preview_lib_pixmap);
-  NextArg(XtNwidth, LIB_PREVIEW_SIZE);
-  NextArg(XtNheight, LIB_PREVIEW_SIZE);
-  NextArg(XtNtop, XtChainTop);
-  NextArg(XtNbottom, XtChainTop);
-  NextArg(XtNleft, XtChainRight);
-  NextArg(XtNright, XtChainRight);
-  preview_lib_widget = XtCreateManagedWidget("library_preview_widget", labelWidgetClass,
+    /* now make a preview canvas to the right of the object list */
+    FirstArg(XtNfromHoriz, list_viewport);
+    NextArg(XtNfromVert, lib_obj_label);
+    NextArg(XtNlabel, "");
+    NextArg(XtNborderWidth, 1);
+    NextArg(XtNbackgroundPixmap, preview_lib_pixmap);
+    NextArg(XtNwidth, LIB_PREVIEW_SIZE);
+    NextArg(XtNheight, LIB_PREVIEW_SIZE);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainRight);
+    NextArg(XtNright, XtChainRight);
+    preview_lib_widget = XtCreateManagedWidget("library_preview_widget", labelWidgetClass,
 					  list_form, Args, ArgCount);
 
-  /**** END OF LIST VIEW STUFF ****/
+    /**** END OF LIST VIEW STUFF ****/
 
-  /* now a place for the library object comments */
-  FirstArg(XtNlabel, "Object comments:");
-  NextArg(XtNwidth, MAIN_WIDTH-6);
-  NextArg(XtNfromVert, object_form);
-  NextArg(XtNtop, XtChainBottom);
-  NextArg(XtNbottom, XtChainBottom);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainRight);
-  comment_label = XtCreateManagedWidget("comment_label", labelWidgetClass,
+    /* now a place for the library object comments */
+    FirstArg(XtNlabel, "Object comments:");
+    NextArg(XtNwidth, MAIN_WIDTH-6);
+    NextArg(XtNfromVert, object_form);
+    NextArg(XtNtop, XtChainBottom);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainRight);
+    comment_label = XtCreateManagedWidget("comment_label", labelWidgetClass,
 					  library_form, Args, ArgCount);
-  FirstArg(XtNfromVert, comment_label);
-  NextArg(XtNvertDistance, 1);
-  NextArg(XtNtop, XtChainBottom);
-  NextArg(XtNbottom, XtChainBottom);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainRight);
-  NextArg(XtNwidth, MAIN_WIDTH-6);
-  NextArg(XtNheight, 50);
-  NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
-  NextArg(XtNscrollVertical, XawtextScrollWhenNeeded);
-  object_comments = XtCreateManagedWidget("object_comments", asciiTextWidgetClass,
+    FirstArg(XtNfromVert, comment_label);
+    NextArg(XtNvertDistance, 1);
+    NextArg(XtNtop, XtChainBottom);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainRight);
+    NextArg(XtNwidth, MAIN_WIDTH-6);
+    NextArg(XtNheight, 50);
+    NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
+    NextArg(XtNscrollVertical, XawtextScrollWhenNeeded);
+    object_comments = XtCreateManagedWidget("object_comments", asciiTextWidgetClass,
 					  library_form, Args, ArgCount);
 
-  FirstArg(XtNlabel, "Select object");
-  NextArg(XtNsensitive, False);			/* no library loaded yet */
-  NextArg(XtNfromVert, object_comments);
-  NextArg(XtNvertDistance, 10);
-  NextArg(XtNheight, 25);
-  NextArg(XtNborderWidth, INTERNAL_BW);
-  NextArg(XtNtop, XtChainBottom);
-  NextArg(XtNbottom, XtChainBottom);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainLeft);
-  selobj = XtCreateManagedWidget("select", commandWidgetClass,
+    FirstArg(XtNlabel, "   Cancel    ");
+    NextArg(XtNfromVert, object_comments);
+    NextArg(XtNvertDistance, 10);
+    NextArg(XtNheight, 25);
+    NextArg(XtNresize, False);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    NextArg(XtNtop, XtChainBottom);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
 				 library_form, Args, ArgCount);
-  XtAddEventHandler(selobj, ButtonReleaseMask, False,
-		    (XtEventHandler) put_object_sel, (XtPointer) NULL);
-
-  FirstArg(XtNlabel, "   Cancel    ");
-  NextArg(XtNfromVert, object_comments);
-  NextArg(XtNvertDistance, 10);
-  NextArg(XtNfromHoriz, selobj);
-  NextArg(XtNhorizDistance, 25);
-  NextArg(XtNheight, 25);
-  NextArg(XtNresize, False);
-  NextArg(XtNborderWidth, INTERNAL_BW);
-  NextArg(XtNtop, XtChainBottom);
-  NextArg(XtNbottom, XtChainBottom);
-  NextArg(XtNleft, XtChainLeft);
-  NextArg(XtNright, XtChainLeft);
-  cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
-				 library_form, Args, ArgCount);
-  XtAddEventHandler(cancel, ButtonReleaseMask, False,
+    XtAddEventHandler(cancel, ButtonReleaseMask, False,
 		    (XtEventHandler) library_cancel, (XtPointer) NULL);
+
+    FirstArg(XtNlabel, "Select object");
+    NextArg(XtNsensitive, False);			/* no library loaded yet */
+    NextArg(XtNfromVert, object_comments);
+    NextArg(XtNvertDistance, 10);
+    NextArg(XtNfromHoriz, cancel);
+    NextArg(XtNhorizDistance, 15);
+    NextArg(XtNheight, 25);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    NextArg(XtNtop, XtChainBottom);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    selobj = XtCreateManagedWidget("select", commandWidgetClass,
+				 library_form, Args, ArgCount);
+    XtAddEventHandler(selobj, ButtonReleaseMask, False,
+		    (XtEventHandler) put_object_sel, (XtPointer) NULL);
+    XtInstallAccelerators(library_form, cancel);
 }
 
 extern void popdown_subs();
@@ -938,28 +1016,32 @@ make_library_menu(parent, librec, num)
 				parent, NULL, ZERO);
     /* if this is the toplevel menu, add a callback to popdown any submenus if
        the user releases the pointer button outside a submenu */
-    if (XtIsSubclass(parent, menuButtonWidgetClass))
+    if (XtIsSubclass(parent, menuButtonWidgetClass)) {
+	/* also keep handle for load_library() to make sure it's popped down */
+	library_menu = menu;
 	XtAddCallback(menu, XtNpopdownCallback, popdown_subs, (XtPointer) NULL);
+    }
     
     for (i = 0; i < num; i++) {
+	/* add one blank in front and after name to allow space for diamond and/or arrow */
+	sprintf(name," %s ",librec[i]->name);
 	if (librec[i]->nsubs) {
 	    submenu = make_library_menu(menu, librec[i]->subdirs, 
 	    					librec[i]->nsubs);
 	    FirstArg(XtNsubMenu, submenu);
 	    NextArg(XtNrightBitmap, menu_cascade_arrow); /* use arrow to indicate cascade */
 	    NextArg(XtNrightMargin, 9);			/* room to the right of the arrow */
-	    if (librec[i]->figs_at_top)
+	    if (librec[i]->figs_at_top) {
 		NextArg(XtNselectCascade, True);	/* if there are fig files, make the */
-							/* cascade selectable */
-	    /* add one blank to name to allow space for arrow */
-	    sprintf(name,"%s ",librec[i]->name);
+		NextArg(XtNleftBitmap, diamond_pixmap);	/* cascade selectable and add a bitmap */
+	    }						/* in the left bitmap of the BSB */
 	    entry = XtCreateManagedWidget(name, smeCascadeObjectClass, menu, 
 				Args, ArgCount);
 	    /* if there are fig files at this level, make the dir name selectable */
 	    if (librec[i]->figs_at_top)
 		XtAddCallback(entry, XtNcallback, load_library, (XtPointer) librec[i]);
 	} else {
-	    entry = XtCreateManagedWidget(librec[i]->name, smeCascadeObjectClass, menu, 
+	    entry = XtCreateManagedWidget(name, smeCascadeObjectClass, menu, 
 				NULL, ZERO);
 	    XtAddCallback(entry, XtNcallback, load_library, (XtPointer) librec[i]);
 	  }
@@ -1108,7 +1190,8 @@ PutLibraryEntry(librec, path, lname, name)
 */
 
 static Boolean
-ScanLibraryDirectory(librec, path, longname, name, figs_at_top, nentries)
+ScanLibraryDirectory(at_top, librec, path, longname, name, figs_at_top, nentries)
+    Boolean	 at_top;
     struct lib_rec *librec[];		
     char	*path, *longname, *name;
     Boolean	*figs_at_top;
@@ -1129,17 +1212,24 @@ ScanLibraryDirectory(librec, path, longname, name, figs_at_top, nentries)
 	return False;
     }
 
+    recnum = 0;
+
     /* read the directory to see if there are any .fig files at this level */
     *figs_at_top = False;
     for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
 	if (strstr(dp->d_name,".fig") != NULL && !IsDirectory(path, dp->d_name)) {
 	    /* is a file with .fig in the name */
 	    *figs_at_top = True;
+	    /* if we're at the toplevel scan, put this directory first */
+	    if (at_top) {
+		/* toplevel has .fig files, make a library_rec entry for it */
+		librec[0] = (struct lib_rec *) malloc(sizeof(struct lib_rec));
+		PutLibraryEntry(library_rec[0], path, "(Toplevel Directory)", "(Toplevel Directory)");
+		recnum++;
+	    }
 	    break;
 	}
     }
-
-    recnum = 0;
 
     /* now read the directory for the subdirectories */
     rewinddir(dirp);
@@ -1164,10 +1254,14 @@ ScanLibraryDirectory(librec, path, longname, name, figs_at_top, nentries)
 		    PutLibraryEntry(lp, path2, lname, dp->d_name);
 		    recnum++;
 		    /* and recurse */
-		    if (!ScanLibraryDirectory(lp->subdirs, path2, lname, dp->d_name,
+		    if (!ScanLibraryDirectory(False, lp->subdirs, path2, lname, dp->d_name,
 				&lp->figs_at_top, &lp->nsubs)) {
 			return False;
 		    }
+		    /* if there are no .fig files in this directory and there
+		       are no subdirs, remove this entry */
+		    if (!lp->figs_at_top && lp->nsubs == 0)
+			recnum--;
 		}
 	    } 
 	}
@@ -1192,24 +1286,19 @@ MakeLibrary()
 {
     FILE	*file;
     struct stat	 st;
-    char	*base, path[PATH_MAX];
+    char	*base, *path;
     char	 *c, s[N_LIB_LINE_MAX], name[N_LIB_NAME_MAX];
     int		 num, numlibs;
     Boolean	 dum;
 
-    base = getenv("HOME");
-    if (appres.library_dir[0] == '~' && base != NULL) {
-	sprintf(path, "%s%s", base, &appres.library_dir[1]);
-    } else {
-	sprintf(path, "%s", appres.library_dir);
-    }
+    path = appres.library_dir;
 
     if (stat(path, &st) != 0) {       /* no such file */
 	file_msg("Can't find %s, no libraries available", path);
 	return 0;
     } else if (S_ISDIR(st.st_mode)) {
 	/* if it is directory, scan the sub-directories and search libraries */
-	(void) ScanLibraryDirectory(&library_rec, path, "", "", &dum, &numlibs);
+	(void) ScanLibraryDirectory(True, &library_rec, path, "", "", &dum, &numlibs);
 	return numlibs;
     } else {
 	/* if it is a file, it must contain list of libraries */
@@ -1235,7 +1324,7 @@ MakeLibrary()
 		library_rec[numlibs] = (struct lib_rec *) malloc(sizeof(struct lib_rec));
 		PutLibraryEntry(library_rec[numlibs], path, name, name);
 		/* and attach its subdirectories */
-		(void) ScanLibraryDirectory(library_rec[numlibs]->subdirs, path, name, "",
+		(void) ScanLibraryDirectory(True, library_rec[numlibs]->subdirs, path, name, "",
 					&library_rec[numlibs]->figs_at_top, &num);
 		library_rec[numlibs]->nsubs = num;
 	    }
@@ -1252,10 +1341,10 @@ MakeLibrary()
  */
 
 static Boolean
-MakeObjectLibrary(library_dir,objects_names,compound)
+MakeObjectLibrary(library_dir,objects_names,libobjects)
      char *library_dir;
      char **objects_names;
-     F_compound **compound;
+     F_libobject **libobjects;
 {
     int		i, j;
     int		num_old_items;
@@ -1312,10 +1401,10 @@ MakeObjectLibrary(library_dir,objects_names,compound)
         i = 0;
         while ((objects_names[i]!=NULL) && (flag==True)) {
 	    /* free any previous compound objects */
-	    if (compound[i]!=NULL) {
-		free_compound(&compound[i]);
+	    if (libobjects[i]->compound != NULL) {
+		free_compound(&libobjects[i]->compound);
 	    }
-	    compound[i] = (F_compound *) 0;
+	    libobjects[i]->compound = (F_compound *) 0;
 	    if (appres.icon_view) {
 		/* make a new pixmap if one doesn't exist */
 		if (!lib_icons[i])
@@ -1351,6 +1440,12 @@ MakeObjectLibrary(library_dir,objects_names,compound)
 		process_pending();
 	    }
 	    i++;
+	    /* if user has requested to stop loading */
+	    if (library_stop_request) {
+		/* make stop button insensitive */
+	        XtSetSensitive(stop, False);
+		break;
+	    }
         }
 	if (appres.icon_view) {
 	    /* now we have the icons (used in sel_view) */
@@ -1371,7 +1466,10 @@ MakeObjectLibrary(library_dir,objects_names,compound)
 	SetValues(library_menu_button);
 	SetValues(icon_size_button);
 
-        libraryStatus("%d library objects in library",num_list_items);
+	if (library_stop_request)
+            libraryStatus("aborted - %d objects loaded out of %d in library",i,num_list_items);
+	else
+            libraryStatus("%d library objects in library",num_list_items);
     } else {
 	flag = False;
     }
@@ -1384,7 +1482,7 @@ MakeObjectLibrary(library_dir,objects_names,compound)
 /* get the list of files in the library dir_name and put in obj_list[] */
 
 static Boolean
-MakeLibraryFileList(dir_name,obj_list)
+MakeLibraryFileList(dir_name, obj_list)
      char	   *dir_name;
      char	   **obj_list;
 {
@@ -1405,7 +1503,13 @@ MakeLibraryFileList(dir_name,obj_list)
   library_objects_texts[N_LIB_OBJECT_MAX-1]=NULL;
   numobj=0;
   for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
-    if ((numobj+1<N_LIB_OBJECT_MAX) && (dp->d_name[0]!='.') &&
+    /* if user has requested to stop loading */
+    if (library_stop_request) {
+	/* make stop button insensitive */
+	XtSetSensitive(stop, False);
+	break;
+    }
+    if ((numobj+1<N_LIB_OBJECT_MAX) && (dp->d_name[0] != '.') &&
 	((c=strstr(dp->d_name,".fig")) != NULL) &&
 	(strstr(dp->d_name,".fig.bak") == NULL)) {
 	    if (!IsDirectory(dir_name, dp->d_name)) {
@@ -1456,9 +1560,6 @@ preview_libobj(objnum, pixmap, pixsize, margin)
     float	 save_zoomscale;
     Boolean	save_shownums;
     F_compound	*compound;
-    Boolean	 save_layers[MAX_DEPTH+1];
-    int		 save_min_depth, save_max_depth, depths[MAX_DEPTH +1];
-    struct counts obj_counts[MAX_DEPTH+1];
     Boolean	 status;
 
     /* if already previewing file, return */
@@ -1478,12 +1579,10 @@ preview_libobj(objnum, pixmap, pixsize, margin)
     appres.shownums	= False;
 
     /* save active layer array and set all to True */
-    save_active_layers(save_layers);
+    save_active_layers();
     reset_layers();
-    save_depths(depths);
-    save_min_depth = min_depth;
-    save_max_depth = max_depth;
-    save_counts(&obj_counts[0]);
+    save_depths();
+    save_counts_and_clear();
 
     /* now switch the drawing canvas to our pixmap */
     canvas_win = (Window) pixmap;
@@ -1493,7 +1592,7 @@ preview_libobj(objnum, pixmap, pixsize, margin)
     app_flush();
 
     if ((status=load_lib_obj(objnum)) == True) {
-	compound = lib_compounds[objnum];
+	compound = lib_compounds[objnum]->compound;
 	add_compound_depth(compound);	/* count objects at each depth */
 	/* put any comments in the comment window */
 	set_comments(compound->comments);
@@ -1531,12 +1630,10 @@ preview_libobj(objnum, pixmap, pixsize, margin)
     canvas_win = main_canvas;
 
     /* restore active layer array */
-    restore_active_layers(save_layers);
+    restore_active_layers();
     /* and depth and counts */
-    restore_depths(depths);
-    min_depth = save_min_depth;
-    max_depth = save_max_depth;
-    restore_counts(&obj_counts[0]);
+    restore_depths();
+    restore_counts();
 
     /* now restore settings for main canvas/figure */
     display_zoomscale	= save_zoomscale;
@@ -1616,7 +1713,7 @@ sel_item_icon(w, ev)
 	    FirstArg(XtNsensitive, True);
 	    SetValues(selobj);
 	    /* get the object compound */
-	    compound = lib_compounds[which_num];
+	    compound = lib_compounds[which_num]->compound;
 	    /* put its comments in the comment window */
 	    set_comments(compound->comments);
 	    /* copy the icon to the preview in case user switches to list view */

@@ -2,20 +2,19 @@
 <html>
 <head>
 <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=EUC-JP">
-<title>XFIG User Manual - Internationalization</title>
+<title>Internationalization</title>
 <link rev="made" href="mailto:VEF00200@nifty.ne.jp">
 </head>
 
 <body>
-<a href="contents.html"><img src="../images/xfig-title.gif"
+<a href="contents.html"><img src="../images/xfig-title.png"
   alt="XFIG Users Manual" border=0></a>
 
 <h1>国際化 (日本語、韓国語などの使用)</h1>
 
 <b>xfig 3.2.X</b>、及び <b>fig2dev 3.2.X</b> には国際化のためのコードが含まれており、
 テキストに日本語などの文字を含めることが可能となっています。
-現時点では、日本語、及び<a href="../images/screen-korean.gif">韓国語</a>
-での動作が確認されています。
+現時点では、日本語、及び韓国語での動作が確認されています。
 <p>
 これについての追加の情報が 
 <a href="http://member.nifty.ne.jp/tsato/xfig/">
@@ -26,6 +25,13 @@
 へお送り下さい。
 日本のユーザーは、<b>xfig</b> そのものに関する質問なども
 この宛先へ送られても結構です。
+<p>
+現時点では <b>xfig</b> の公式リリースには含まれていませんが、
+ギリシャ (ISO-8859-4)、ヘブライ (ISO-8859-8)、タイ (ISO-8859-11)、
+シリル (ru_RU.KOI8) なども使用できるかも知れません。
+これについては、<a href="http://member.nifty.ne.jp/tsato/xfig/">
+<i>http://member.nifty.ne.jp/tsato/xfig/</i></a> の
+<i>Xfig and non-ASCII Characters</i> を参照して下さい。
 
 <p>
 <hr>
@@ -77,11 +83,11 @@
 <h3><a name="install-xfig">xfig のインストール</a></h3>
 
 <ol>
-<li><a href="installation.html"><b>xfig.3.2.3b.tar.gz</b></a> 
+<li><a href="installation.html"><b>xfig.3.2.4<i>x</i>.full.tar.gz</b></a> 
 を入手し、展開します。
 
 <p>
-<li><tt>xfig.3.2.3b/Imakefile</tt> の、
+<li><tt>xfig.3.2.4<i>x</i>/Imakefile</tt> の、
 ``<tt>#define I18N</tt>'' のコメント・アウトを解除 
 (<tt>XCOMM</tt> を削除) します。
 
@@ -101,16 +107,16 @@ C ライブラリが必要なロケールをサポートしていないならば、
 <h3><a name="install-fig2dev">fig2dev のインストール</a></h3>
 
 <ol>
-<li><a href="installation.html"><b>transfig.3.2.3b.tar.gz</b></a> 
+<li><a href="installation.html"><b>transfig.3.2.4<i>x</i>.tar.gz</b></a> 
 を入手し、展開します。
 
 <p>
-<li><tt>transfig.3.2.3b/fig2dev/Imakefile</tt> の、
+<li><tt>transfig.3.2.4<i>x</i>/fig2dev/Imakefile</tt> の、
 ``<tt>#define I18N</tt>'' のコメント・アウトを解除 
 (<tt>XCOMM</tt> を削除) します。
 
 <p>
-<li><a href="japanese.ps"><tt>japanese.ps</tt></a> などのファイルを 
+<li><tt>japanese.ps</tt> などのファイルを 
 <tt>/usr/local/lib/fig2dev</tt> 以外のディレクトリにインストールしたいならば、
 その <tt>Imakefile</tt> の中の 
 <tt>FIG2DEV_LIBDIR</tt>、及び <tt>I18N_DEV_DEFS</tt> の指定を書き換えます。
@@ -184,7 +190,7 @@ Over the Spot での入力を行なうようになります。
 <dd>変換中のテキストはキャンバスの下端に表示されます。
 <p>
 <blockquote>
-  <img src="../images/xim-off-the-spot.gif" alt="[Input Style: Off-the-Spot]">
+  <img src="../images/xim-off-the-spot.png" alt="[Input Style: Off-the-Spot]">
 </blockquote>
 
 <p>
@@ -197,7 +203,7 @@ Over the Spot での入力を行なうようになります。
 あるいはキャンバス上の表示が乱れたりする可能性もあります。
 <p>
 <blockquote>
-  <img src="../images/xim-over-the-spot.gif" alt="[Input Style: Over-the-Spot]">
+  <img src="../images/xim-over-the-spot.png" alt="[Input Style: Over-the-Spot]">
 </blockquote>
 
 <p>
@@ -205,7 +211,7 @@ Over the Spot での入力を行なうようになります。
 <dd>変換中のテキストは独立したウィンドウに表示されます。
 <p>
 <blockquote>
-  <img src="../images/xim-root.gif" alt="[Input Style: Root]">
+  <img src="../images/xim-root.png" alt="[Input Style: Root]">
 </blockquote>
 </dl>
 
@@ -281,7 +287,7 @@ PostScript での出力に際して用いるフォントは
 さもなくば HLaTeX-Myoungjo-Regular、及び HLaTeX-Gothic-Regular を使用します。
 <p>
 ロケール名としては、<tt>korean</tt>、<tt>ko</tt>、<tt>ko_KR</tt>、
-<tt>ko_KR.ujis</tt>、<tt>ko_KR.eucKR</tt>、及び <tt>ko_KR.EUC</tt> 
+<tt>ko_KR.eucKR</tt>、及び <tt>ko_KR.EUC</tt> 
 が使用できるようにしてあります。
 
 <h4>その他の言語</h4>
@@ -389,6 +395,7 @@ JIS-X-0201 のカナ (いわゆる半角カナ) や JIS-X-0212 (補助漢字) の文字を
 <tr><td>Slackware Linux 3.1     <td>XFree86          <td>kinput2
 <tr><td>RedHat Linux 4.2, 5.2   <td>XFree86          <td>kinput2
 <tr><td>Debian GNU/Linux 2.x    <td>XFree86          <td>kinput2, skkinput
+<tr><td>Linux MLD 5             <td>XFree86          <td>kinput2
 </table>
 </center>
 <p>

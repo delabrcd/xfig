@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -31,7 +31,7 @@
 #define A4_WIDTH	 9921
 #define A4_HEIGHT	14031
 
-/* min,max zoom allowed */
+/* min, max zoom allowed */
 #define	MIN_ZOOM	0.01
 #define	MAX_ZOOM	100
 
@@ -41,8 +41,14 @@
 #define MAX_DEPTH	999
 
 /* min, max font size (points) */
-#define MIN_FONT_SIZE	5
+#define MIN_FONT_SIZE	1
 #define MAX_FONT_SIZE	500
+
+/* min, max font size on the display (after zooming) */
+/* this is necessary because some X servers crash completely
+   when rendering very small fonts */
+#define MIN_X_FONT_SIZE	5
+#define MAX_X_FONT_SIZE	MAX_FONT_SIZE
 
 /* maximum width of lines (Fig units) */
 #define MAX_LINE_WIDTH 500
@@ -81,14 +87,19 @@
 #define MAX_RECENT_FILES	9
 #define DEF_RECENT_FILES	5
 
-/* for GIF files */
-#define	MAX_COLORMAP_SIZE	256
+/* for picture files */
+#define	MAX_COLORMAP_SIZE	MAX_USR_COLS
 
 /* for JPEG export */
 #define	DEF_JPEG_QUALITY	75
 
 /* default border margin for export */
 #define DEF_EXPORT_MARGIN	0
+
+/* for screen capture */
+
+#define	IMAGE_PALETTE	0	/* colormapped screen capture */
+#define IMAGE_RGB	1	/* RGB (TrueColor) screen capture */
 
 struct Cmap {
 	unsigned short red, green, blue;
@@ -134,13 +145,16 @@ extern Boolean		 colorUsed[MAX_USR_COLS];
 extern Boolean		 colorFree[MAX_USR_COLS];
 extern Boolean		 n_colorFree[MAX_USR_COLS];
 extern Boolean		 all_colors_available;
-extern Pixel		 dk_gray_color, lt_gray_color;
+extern Pixel		 dark_gray_color, med_gray_color, lt_gray_color;
 extern Pixel		 pageborder_color;
+extern Pixel		 zero_lines_color;
 extern int		 max_depth, min_depth;
 extern char		 tool_name[200];
 extern int		 export_background_color; /* current export/print background color */
-
-extern char		*userhome;	/* user's home directory */
+extern Boolean		 display_fractions;	/* whether to display fractions in lengths */
+extern char		*userhome;		/* user's home directory */
+extern struct _pics	*pictures;		/* common repository to share imported pictures */
+extern float		 scale_factor;		/* scale drawing as it is read in */
 
 /* number of colors we want to use for GIF/XPM images */
 extern int		avail_image_cols;
@@ -150,7 +164,7 @@ extern XColor		image_cells[MAX_COLORMAP_SIZE];
 /* resources structure */
 
 typedef struct _appres {
-    Boolean	    allow_neg_coords;	/* allow negative x/y coordinates for panning */
+    Boolean	    allownegcoords;	/* allow negative x/y coordinates for panning */
     int		    balloon_delay;	/* delay (ms) before balloon pops up on */
     char	   *boldFont;
     char	   *browser;		/* browser for viewing html docs */
@@ -159,8 +173,9 @@ typedef struct _appres {
     char	   *canvasbackground;
     char	   *canvasforeground;
     Boolean	    DEBUG;
-    Boolean	    dont_switch_cmap;	/* don't allow switching of colormap */
-    Boolean	    draw_zero_lines;	/* draw lines through 0,0 (useful w/allow_neg_coords) */
+    Boolean	    dontswitchcmap;	/* don't allow switching of colormap */
+    Boolean	    installowncmap;	/* install our own private colormap */
+    Boolean	    drawzerolines;	/* draw lines through 0,0 (useful w/allow_neg_coords) */
     char	   *exportLanguage;
     Boolean	    flushleft;		/* center/flush-left printing */
     char	   *geometry;
@@ -209,8 +224,8 @@ typedef struct _appres {
     Boolean	    tracking;		/* mouse tracking in rulers */
     int		    transparent;	/* transparent color for GIF export
 						(-2=none, -1=background) */
-    float	    user_scale;		/* scale screen units to user units */
-    char	   *user_unit;		/* user defined unit name */
+    float	    userscale;		/* scale screen units to user units */
+    char	   *userunit;		/* user defined unit name */
     float	    zoom;		/* starting zoom scale */
     char	   *version;		/* version of the app-defaults file (compared with
 					   the version/patchlevel of xfig when starting */
@@ -219,8 +234,18 @@ typedef struct _appres {
     Boolean	    rigidtext;
     Boolean	    hiddentext;
     Boolean	    showdepthmanager;	/* whether or not to display the depth manager */
+    char	   *grid_color;		/* color of grid (when on) */
+    int		    smooth_factor;	/* smoothing factor when export to bitmap formats */
     Boolean	    icon_view;		/* icon or list view of library objects */
     int		    library_icon_size;	/* size of those icons */
+    Boolean	    splash;		/* whether or not to show the splash screen on startup */
+    char	   *zerolines;		/* color of zero-crossing lines on canvas */
+    int		    freehand_resolution; /* minimum spacing of points when drawing freehand */
+    char	   *tgrid_unit;		/* units of grid/point positioning (1/10" or 1/16") */
+    Boolean	    overlap;		/* overlap/no-overlap multiple pages for export/print */
+    char	   *ghostscript;	/* name of ghostscript (e.g. gs or gswin32) */
+    Boolean	    correct_font_size;	/* adjust for difference in Fig screen res vs points (80/72) */
+    int		    encoding;		/* encoding for latex escape translation */
 #ifdef I18N
     Boolean international;
     String font_menu_language;
@@ -288,7 +313,7 @@ extern Window	msg_win, sideruler_win, topruler_win;
 
 extern Cursor	cur_cursor;
 extern Cursor	arrow_cursor, bull_cursor, buster_cursor, crosshair_cursor,
-		null_cursor, pencil_cursor, pick15_cursor, pick9_cursor,
+		null_cursor, text_cursor, pick15_cursor, pick9_cursor,
 		panel_cursor, l_arrow_cursor, lr_arrow_cursor, r_arrow_cursor,
 		u_arrow_cursor, ud_arrow_cursor, d_arrow_cursor, wait_cursor,
 		magnify_cursor;
@@ -319,14 +344,16 @@ extern Boolean	swapped_cmap;
 extern Atom	wm_delete_window;
 extern int	num_recent_files;	/* number of recent files in list */
 extern int	max_recent_files;	/* user max number of recent files */
+extern int	splash_onscreen;	/* flag used to clear off splash graphic */
 
 extern GC	gc, button_gc, ind_button_gc, mouse_button_gc,
 		fill_color_gc, pen_color_gc, blank_gc, ind_blank_gc, 
-		mouse_blank_gc, gccache[NUMOPS],
+		mouse_blank_gc, gccache[NUMOPS], grid_gc,
 		fillgc, fill_gc[NUMFILLPATS],	/* fill style gc's */
 		tr_gc, tr_xor_gc, tr_erase_gc,	/* for the rulers */
 		sr_gc, sr_xor_gc, sr_erase_gc;
 
+extern Color	grid_color;
 extern Pixmap	fill_pm[NUMFILLPATS],fill_but_pm[NUMPATTERNS];
 extern float	fill_pm_zoom[NUMFILLPATS],fill_but_pm_zoom[NUMFILLPATS];
 extern XColor	x_fg_color, x_bg_color;
@@ -334,8 +361,12 @@ extern unsigned long but_fg, but_bg;
 extern unsigned long ind_but_fg, ind_but_bg;
 extern unsigned long mouse_but_fg, mouse_but_bg;
 
-/* will be filled in with environment variable XFIGTMPDIR */
+/* will contain environment variable XFIGTMPDIR, if any */
 extern char    *TMPDIR;
+
+/* will contain environment variable FIG2DEV_DIR, if any */
+extern char    *fig2dev_path;
+extern char     fig2dev_cmd[PATH_MAX];
 
 extern String  text_translations;
 
@@ -344,7 +375,7 @@ extern String  text_translations;
 extern char    *orient_items[2];
 extern char    *just_items[2];
 extern struct   paper_def paper_sizes[NUMPAPERSIZES];
-extern char    *multiple_pages[2];
+extern char    *multiple_pages[2], *overlap_pages[2];
 
 /* for w_file.c and w_export.c */
 

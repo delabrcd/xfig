@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -25,6 +25,7 @@
 #include "u_search.h"
 #include "u_undo.h"
 #include "w_canvas.h"
+#include "w_drawprim.h"
 #include "w_mousefun.h"
 #include "w_msgpanel.h"
 #include "w_modepanel.h"
@@ -50,6 +51,7 @@ join_split_selected()
     draw_mousefun_canvas();
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     init_searchproc_left(init_join);
     init_searchproc_middle(init_split);
     canvas_leftbut_proc = point_search_left;		/* point search for join */
@@ -72,7 +74,6 @@ init_join(obj, type, x, y, p, q)
     switch (type) {
       case O_POLYLINE:
 	cur_l = (F_line *) obj;
-	canvas_middlebut_proc = null_proc;
 	join_lines(cur_l, p, q);
 	break;
       case O_SPLINE:
@@ -94,6 +95,11 @@ init_split(obj, type, x, y, px, py)
     switch (type) {
       case O_POLYLINE:
 	cur_l = (F_line *) obj;
+	if (cur_l->type == T_PICTURE) {
+	    put_msg("Can't remove points from picture");
+	    beep();
+	    return;
+	}
 	split_line(px, py);
 	break;
       case O_SPLINE:
@@ -215,9 +221,12 @@ join_line2(obj, type, x, y, p, q)
 		return;
 	line = (F_line *) obj;
 	first2 = (p == NULL);
+	/* if user clicked on same point twice return */
+	if (line == line1 && first1 == first2)
+	    return;
 	new_l = copy_line(line1);
 	/* if user clicked on both endpoints of a line, make it a POLYGON */
-	if (line == line1) {
+	if (line == line1 && first1 != first2) {
 	    new_l->type = T_POLYGON;
 	    lastp = last_point(new_l->points);
 	    append_point(new_l->points->x, new_l->points->y, &lastp);
@@ -446,7 +455,7 @@ split_line(px, py)
     if (cur_l->points->next == NULL)
 	return;				/* A single point line - that would be tough to split */
 
-    if (cur_l->type != T_POLYGON && cur_l->type != T_BOX && cur_l->type != T_ARC_BOX) {
+    if (cur_l->type != T_POLYGON && cur_l->type != T_BOX && cur_l->type != T_ARCBOX) {
 	if (left_point == NULL) 	/* selected_point is the first point */
 	    return;
 	else if (right_point == NULL)	/* last point */
@@ -461,7 +470,7 @@ split_line(px, py)
     /* remove original line from the objects */
     delete_line(cur_l);
 
-    if (cur_l->type == T_POLYGON || cur_l->type == T_BOX || cur_l->type == T_ARC_BOX) {
+    if (cur_l->type == T_POLYGON || cur_l->type == T_BOX || cur_l->type == T_ARCBOX) {
 	/* change polygon or box to polyline */
 
 	/* search original for point */

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1992 by James Tough
  * Parts Copyright (c) 1998 by Georg Stemmer
@@ -11,10 +11,10 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -39,50 +39,11 @@
 #include "w_layers.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
+#include "w_util.h"
 #include "w_zoom.h"
 
-/* declarations for splines */
-
-#define         HIGH_PRECISION    0.5
-#define         LOW_PRECISION     1.0
-#define         ZOOM_PRECISION    5.0
-#define         ARROW_START       4
-#define         MAX_SPLINE_STEP   0.2
-
-#define COPY_CONTROL_POINT(P0, S0, P1, S1) \
-      P0 = P1; \
-      S0 = S1
-
-#define NEXT_CONTROL_POINTS(P0, S0, P1, S1, P2, S2, P3, S3) \
-      COPY_CONTROL_POINT(P0, S0, P1, S1); \
-      COPY_CONTROL_POINT(P1, S1, P2, S2); \
-      COPY_CONTROL_POINT(P2, S2, P3, S3); \
-      COPY_CONTROL_POINT(P3, S3, P3->next, S3->next)
-
-#define INIT_CONTROL_POINTS(SPLINE, P0, S0, P1, S1, P2, S2, P3, S3) \
-      COPY_CONTROL_POINT(P0, S0, SPLINE->points, SPLINE->sfactors); \
-      COPY_CONTROL_POINT(P1, S1, P0->next, S0->next);               \
-      COPY_CONTROL_POINT(P2, S2, P1->next, S1->next);               \
-      COPY_CONTROL_POINT(P3, S3, P2->next, S2->next)
-
-#define SPLINE_SEGMENT_LOOP(K, P0, P1, P2, P3, S1, S2, PREC) \
-      step = step_computing(K, P0, P1, P2, P3, S1, S2, PREC);    \
-      spline_segment_computing(step, K, P0, P1, P2, P3, S1, S2)
-
-static Boolean       compute_closed_spline();
-static Boolean       compute_open_spline();
-
-static void          spline_segment_computing();
-static float         step_computing();
-static INLINE        point_adding();
-static INLINE        point_computing();
-static INLINE        negative_s1_influence();
-static INLINE        negative_s2_influence();
-static INLINE        positive_s1_influence();
-static INLINE        positive_s2_influence();
-static INLINE double f_blend();
-static INLINE double g_blend();
-static INLINE double h_blend();
+/* the spline definition stuff has been moved to u_draw_spline.c which
+   is included later in this file */
 
 /************** ARRAY FOR ARROW SHAPES **************/ 
 
@@ -205,16 +166,16 @@ y)
 	return True;
 }
 
-draw_point_array(w, op, line_width, line_style, style_val, 
+draw_point_array(w, op, depth, line_width, line_style, style_val, 
 	    join_style, cap_style, fill_style, pen_color, fill_color)
     Window          w;
-    int             op;
+    int             op, depth;
     int             line_width, line_style, cap_style;
     float           style_val;
     int             join_style, fill_style;
     Color           pen_color, fill_color;
 {
-	pw_lines(w, points, npoints, op, line_width, line_style, style_val,
+	pw_lines(w, points, npoints, op, depth, line_width, line_style, style_val,
 		    join_style, cap_style, fill_style, pen_color, fill_color);
 }
 
@@ -225,6 +186,7 @@ draw_arc(a, op)
     int		    op;
 {
     double	    rx, ry;
+    int		    cx, cy, scx, scy;
     int		    radius;
     int		    xmin, ymin, xmax, ymax;
     int		    i;
@@ -238,25 +200,42 @@ draw_arc(a, op)
     ry = a->center.y - a->point[0].y;
     radius = round(sqrt(rx * rx + ry * ry));
 
+    cx = a->center.x;
+    cy = a->center.y;
+
     /* show point numbers if requested */
     if (appres.shownums) {
+	/* we may have to enlarge the clipping area to include the center point of the arc */
+	scx = ZOOMX(cx);
+	scy = ZOOMY(cy);
+	if (scx < clip_xmin+10 || scx > clip_xmax-10 ||
+	    scy < clip_ymin+10 || scy > clip_ymax-10)
+		set_clip_window(min2(scx-10,clip_xmin), min2(scy-10,clip_ymin), 
+				max2(scx+10,clip_xmax), max2(scy+10,clip_ymax));
+	sprintf(bufx,"c");
+	pw_text(canvas_win, cx, round(cy-3.0/zoomscale), 
+		op, a->depth, roman_font, 0.0, bufx, RED, COLOR_NONE);
+	pw_point(canvas_win, cx, cy, op, a->depth, 4, RED, CAP_ROUND);
 	for (i=1; i<=3; i++) {
 	    /* label the point number above the point */
 	    sprintf(bufx,"%d",i);
 	    pw_text(canvas_win, a->point[i-1].x, round(a->point[i-1].y-3.0/zoomscale), 
-		PAINT, roman_font, 0.0, bufx, RED);
+		op, a->depth, roman_font, 0.0, bufx, RED, COLOR_NONE);
+	    pw_point(canvas_win, a->point[i-1].x, a->point[i-1].y, op, a->depth, 4, RED, CAP_ROUND);
 	}
+	/* restore original clip window */
+	set_clip_window(clip_xmin, clip_ymin, clip_xmax, clip_ymax);
     }
     /* fill points array but don't display the points yet */
 
-    curve(canvas_win, 
-    	  round(a->point[0].x - a->center.x),
-	  round(a->center.y - a->point[0].y),
-	  round(a->point[2].x - a->center.x),
-	  round(a->center.y - a->point[2].y),
-	  False, (a->type == T_PIE_WEDGE_ARC),
+    curve(canvas_win, a->depth,
+    	  round(a->point[0].x - cx),
+	  round(cy - a->point[0].y),
+	  round(a->point[2].x - cx),
+	  round(cy - a->point[2].y),
+	  DONT_DRAW_POINTS, (a->type == T_PIE_WEDGE_ARC? DRAW_CENTER: DONT_DRAW_CENTER),
 	  a->direction, radius, radius,
-	  round(a->center.x), round(a->center.y), op,
+	  round(cx), round(cy), op,
 	  a->thickness, a->style, a->style_val, a->fill_style,
 	  a->pen_color, a->fill_color, a->cap_style);
 
@@ -265,7 +244,7 @@ draw_arc(a, op)
     clip_arrows(a,O_ARC,op,0);
 
     /* draw the arc itself */
-    draw_point_array(canvas_win, op, a->thickness,
+    draw_point_array(canvas_win, op, a->depth, a->thickness,
 		     a->style, a->style_val, JOIN_BEVEL,
 		     a->cap_style, a->fill_style,
 		     a->pen_color, a->fill_color);
@@ -301,14 +280,14 @@ draw_ellipse(e, op)
 
     if (e->angle != 0.0) {
 	angle_ellipse(e->center.x, e->center.y, e->radiuses.x, e->radiuses.y,
-		e->angle, op, e->thickness, e->style,
+		e->angle, op, e->depth, e->thickness, e->style,
 		e->style_val, e->fill_style, e->pen_color, e->fill_color);
     /* it is much faster to use curve() for dashed and dotted lines that to
        use the server's sloooow algorithms for that */
     } else if (op != ERASE && (e->style == DOTTED_LINE || e->style == DASH_LINE)) {
 	a = e->radiuses.x;
 	b = e->radiuses.y;
-	curve(canvas_win, a, 0, a, 0, True, False, e->direction,
+	curve(canvas_win, e->depth, a, 0, a, 0, DRAW_POINTS, DONT_DRAW_CENTER, e->direction,
 		(b * b), (a * a),
 		e->center.x, e->center.y, op,
 		e->thickness, e->style, e->style_val, e->fill_style,
@@ -319,12 +298,18 @@ draw_ellipse(e, op)
 	ymin = e->center.y - e->radiuses.y;
 	xmax = e->center.x + e->radiuses.x;
 	ymax = e->center.y + e->radiuses.y;
-	pw_curve(canvas_win, xmin, ymin, xmax, ymax, op,
+	pw_curve(canvas_win, xmin, ymin, xmax, ymax, op, e->depth,
 		 e->thickness, e->style, e->style_val, e->fill_style,
 		 e->pen_color, e->fill_color, CAP_ROUND);
     }
     /* write the depth on the object */
     debug_depth(e->depth,e->center.x,e->center.y);
+}
+
+static Boolean
+add_closepoint()
+{
+  return add_point(points[0].x,points[0].y);
 }
 
 /*
@@ -439,12 +424,12 @@ static int	totpts,i,j;
 static int	order[4]={0,1,3,2};
 
 angle_ellipse(center_x, center_y, radius_x, radius_y, angle,
-	      op, thickness, style, style_val, fill_style,
+	      op, depth, thickness, style, style_val, fill_style,
 	      pen_color, fill_color)
     int		    center_x, center_y;
     int		    radius_x, radius_y;
     float	    angle;
-    int		    op,thickness,style,fill_style;
+    int		    op,depth,thickness,style,fill_style;
     int		    pen_color, fill_color;
     float	    style_val;
 {
@@ -458,8 +443,6 @@ angle_ellipse(center_x, center_y, radius_x, radius_y, angle,
 	int	savexoff, saveyoff;
 	zXPoint	*ipnts;
 
-	/* clear any previous error message */
-	put_msg("");
 	if (radius_x == 0 || radius_y == 0)
 		return;
 
@@ -537,7 +520,7 @@ angle_ellipse(center_x, center_y, radius_x, radius_y, angle,
 	/* add another point to join with first */
 	if (!add_point(ipnts->x,ipnts->y))
 		too_many_points();
-	draw_point_array(canvas_win, op, thickness, style, style_val,
+	draw_point_array(canvas_win, op, depth, thickness, style, style_val,
 		 JOIN_BEVEL, CAP_ROUND, fill_style, pen_color, fill_color);
 
 	zoomscale = savezoom;
@@ -577,7 +560,7 @@ draw_line(line, op)
     int		    op;
 {
     F_point	   *point;
-    int		    i, xx, yy, x, y;
+    int		    i, x, y;
     int		    xmin, ymin, xmax, ymax;
     char	   *string;
     F_point	   *p0, *p1, *p2;
@@ -589,39 +572,67 @@ draw_line(line, op)
 	return;
 
     /* is it an arcbox? */
-    if (line->type == T_ARC_BOX) {
+    if (line->type == T_ARCBOX) {
 	draw_arcbox(line, op);
 	return;
     }
     /* is it a picture object or a Fig figure? */
     if (line->type == T_PICTURE) {
-	if (line->pic->bitmap != NULL) {
-	    draw_pic_pixmap(line, op);
-	    return;
-#ifdef V4_0
-        /* check for Fig file */
-        } else if ((line->pic->subtype == T_PIC_FIG)&&(line->pic->figure != NULL)) {
-	    draw_figure(line, op);
-	    return;
-#endif /* V4_0 */
-	} else {		/* label empty pic bounding box */
-	    if (line->pic->file[0] == '\0')
-		string = EMPTY_PIC;
-	    else {
-		string = xf_basename(line->pic->file);
+	if (line->pic->pic_cache) {
+	    if ((line->pic->pic_cache->bitmap != (Pixmap) NULL) && active_layer(line->depth)) {
+		/* only draw the picture if there is a pixmap AND this layer is active */
+		draw_pic_pixmap(line, op);
+		return;
+	    } else if (line->pic->pic_cache->bitmap != NULL) { 
+		/* if there is a pixmap but the layer is not active, draw it as a filled box */
+		line->type = T_BOX;
+		line->fill_style = NUMSHADEPATS-1;	 /* fill it */
+		draw_line(line, op);
+		line->type = T_PICTURE;
+		return;
 	    }
-	    p0 = line->points;
-	    p1 = p0->next;
-	    p2 = p1->next;
-	    xmin = min3(p0->x, p1->x, p2->x);
-	    ymin = min3(p0->y, p1->y, p2->y);
-	    xmax = max3(p0->x, p1->x, p2->x);
-	    ymax = max3(p0->y, p1->y, p2->y);
-	    canvas_font = lookfont(0, 12);	/* get a size 12 font */
-	    txt = textsize(canvas_font, strlen(string), string);
+	}
+
+	/* either there is no pixmap or this layer is grayed out,
+	   label empty pic bounding box */
+	if (!line->pic->pic_cache || line->pic->pic_cache->file[0] == '\0')
+	    string = EMPTY_PIC;
+	else {
+	    string = xf_basename(line->pic->pic_cache->file);
+	}
+	p0 = line->points;
+	p1 = p0->next;
+	p2 = p1->next;
+	xmin = min3(p0->x, p1->x, p2->x);
+	ymin = min3(p0->y, p1->y, p2->y);
+	xmax = max3(p0->x, p1->x, p2->x);
+	ymax = max3(p0->y, p1->y, p2->y);
+	canvas_font = lookfont(0, 12);	/* get a size 12 font */
+	txt = textsize(canvas_font, strlen(string), string);
+	/* if the box is large enough, put the filename in the four corners */
+	if (xmax - xmin > 2.5*txt.length) {
+	    int u,d,w,marg;
+	    u = txt.ascent;
+	    d = txt.descent;
+	    w = txt.length;
+	    marg = 6 * ZOOM_FACTOR;	/* margin space around text */
+
+	    pw_text(canvas_win, xmin+marg, ymin+u+marg, op, line->depth,
+			canvas_font, 0.0, string, DEFAULT, GREEN);
+	    pw_text(canvas_win, xmax-txt.length-marg, ymin+u+marg, op, line->depth,
+			canvas_font, 0.0, string, DEFAULT, GREEN);
+	    /* do bottom two corners if tall enough */
+	    if (ymax - ymin > 3*(u+d)) {
+		pw_text(canvas_win, xmin+marg, ymax-d-marg, op, line->depth,
+			canvas_font, 0.0, string, DEFAULT, GREEN);
+		pw_text(canvas_win, xmax-txt.length-marg, ymax-d-marg, op, line->depth,
+			canvas_font, 0.0, string, DEFAULT, GREEN);
+	    }
+	} else {
+	    /* only room for one label - center it */
 	    x = (xmin + xmax) / 2 - txt.length/display_zoomscale / 2;
 	    y = (ymin + ymax) / 2;
-	    pw_text(canvas_win, x, y, op, canvas_font, 0.0, string, DEFAULT);
+	    pw_text(canvas_win, x, y, op, line->depth, canvas_font, 0.0, string, DEFAULT, GREEN);
 	}
     }
     /* get first point and coordinates */
@@ -632,12 +643,12 @@ draw_line(line, op)
     /* is it a single point? */
     if (line->points->next == NULL) {
 	/* draw but don't fill */
-	pw_point(canvas_win, x, y, line->thickness,
-		 op, line->pen_color, line->cap_style);
+	pw_point(canvas_win, x, y, op, line->depth,
+			line->thickness, line->pen_color, line->cap_style);
 	/* label the point number above the point */
 	if (appres.shownums) {
-	    pw_text(canvas_win, x, round(y-3.0/zoomscale), PAINT, 
-			roman_font, 0.0, "1", RED);
+	    pw_text(canvas_win, x, round(y-3.0/zoomscale), PAINT, line->depth, 
+			roman_font, 0.0, "1", RED, COLOR_NONE);
 	}
 	return;
     }
@@ -647,8 +658,6 @@ draw_line(line, op)
 
     i=1;
     for (point = line->points; point != NULL; point = point->next) {
-	xx = x;
-	yy = y;
 	x = point->x;
 	y = point->y;
 	/* label the point number above the point */
@@ -657,8 +666,8 @@ draw_line(line, op)
 	    if (((line->type == T_BOX || line->type == T_POLYGON) && point->next != NULL) ||
 		(line->type != T_BOX && line->type != T_POLYGON)) {
 		sprintf(bufx,"%d",i++);
-		pw_text(canvas_win, x, round(y-3.0/zoomscale), PAINT, 
-			roman_font, 0.0, bufx, RED);
+		pw_text(canvas_win, x, round(y-3.0/zoomscale), PAINT, line->depth,
+			roman_font, 0.0, bufx, RED, COLOR_NONE);
 	    }
 	}
 	if (!add_point(x, y)) {
@@ -671,8 +680,8 @@ draw_line(line, op)
     /* also create the arrowheads */
     clip_arrows(line,O_POLYLINE,op,0);
 
-    draw_point_array(canvas_win, op, line->thickness, line->style,
-		     line->style_val, line->join_style,
+    draw_point_array(canvas_win, op, line->depth, line->thickness, 
+		     line->style, line->style_val, line->join_style,
 		     line->cap_style, line->fill_style,
 		     line->pen_color, line->fill_color);
 
@@ -714,15 +723,23 @@ draw_arcbox(line, op)
 	/* label the point number above the point */
 	if (appres.shownums) {
 	    sprintf(bufx,"%d",i++);
-	    pw_text(canvas_win, point->x, round(point->y-3.0/zoomscale), PAINT, 
-			roman_font, 0.0, bufx, RED);
+	    pw_text(canvas_win, point->x, round(point->y-3.0/zoomscale), PAINT, line->depth,
+			roman_font, 0.0, bufx, RED, COLOR_NONE);
 	}
     }
     pw_arcbox(canvas_win, xmin, ymin, xmax, ymax, round(line->radius*ZOOM_FACTOR),
-	      op, line->thickness, line->style, line->style_val, line->fill_style,
+	      op, line->depth, line->thickness, line->style, line->style_val, line->fill_style,
 	      line->pen_color, line->fill_color);
     /* write the depth on the object */
     debug_depth(line->depth,xmin,ymin);
+}
+
+static Boolean
+subset(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2)
+    int		    xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2;
+{
+    return (xmin2 <= xmin1) && (xmax1 <= xmax2) && 
+           (ymin2 <= ymin1) && (ymax1 <= ymax2);
 }
 
 draw_pic_pixmap(box, op)
@@ -734,6 +751,7 @@ draw_pic_pixmap(box, op)
     int		    width, height, rotation;
     F_pos	    origin;
     F_pos	    opposite;
+    Pixmap          clipmask;
     XGCValues	    gcv;
 
     origin.x = ZOOMX(box->points->x);
@@ -745,6 +763,7 @@ draw_pic_pixmap(box, op)
     ymin = min2(origin.y, opposite.y);
     xmax = max2(origin.x, opposite.x);
     ymax = max2(origin.y, opposite.y);
+
     if (op == ERASE) {
 	clear_region(xmin, ymin, xmax, ymax);
 	return;
@@ -770,16 +789,51 @@ draw_pic_pixmap(box, op)
 	    create_pic_pixmap(box, rotation, width, height, box->pic->flipped);
 
     if (box->pic->mask) {
+      /* mask is in rectangle (xmin,ymin)...(xmax,ymax)
+         clip to rectangle (clip_xmin,clip_ymin)...(clip_xmax,clip_ymax) */
+      if (subset(xmin, ymin, xmax, ymax, clip_xmin, clip_ymin, clip_xmax, clip_ymax)) {        
 	gcv.clip_mask = box->pic->mask;
 	gcv.clip_x_origin = xmin;
 	gcv.clip_y_origin = ymin;
-	XChangeGC(tool_d, gccache[op], GCClipMask|GCClipXOrigin|GCClipYOrigin, &gcv);
+        clipmask = (Pixmap)0; /* don't need extra clipmask now */
+      }
+      else {
+        /* compute intersection of the two rectangles */        
+        GC depth_one_gc;
+        int xxmin, yymin, xxmax, yymax, ww, hh;
+        xxmin = max2(xmin, clip_xmin);
+        xxmax = min2(xmax, clip_xmax);
+        yymin = max2(ymin, clip_ymin);
+        yymax = min2(ymax, clip_ymax);
+        ww = xxmax - xxmin + 1;
+        hh = yymax - yymin + 1;
+	/* 
+        The caller should have caught the case that pic and clip rectangle 
+        don't overlap. So we may assume ww > 0, hh > 0.
+	*/
+        clipmask = XCreatePixmap(tool_d, canvas_win, ww, hh, 1);
+	depth_one_gc = XCreateGC(tool_d, clipmask, (unsigned long) 0, 0);
+	XSetForeground(tool_d, depth_one_gc, 0);
+        XCopyArea(tool_d, box->pic->mask, clipmask, depth_one_gc,
+                  xxmin - xmin, yymin - ymin, /* origin source */
+                  ww, hh,                     /* width & height */
+                  0, 0);                      /* origin destination */
+        XFreeGC(tool_d, depth_one_gc);
+	gcv.clip_mask = clipmask;
+	gcv.clip_x_origin = xxmin;
+	gcv.clip_y_origin = yymin; 
+      }
+      XChangeGC(tool_d, gccache[op], GCClipMask|GCClipXOrigin|GCClipYOrigin, &gcv);
     }
     XCopyArea(tool_d, box->pic->pixmap, canvas_win, gccache[op],
 	      0, 0, width, height, xmin, ymin);
     if (box->pic->mask) {
 	gcv.clip_mask = 0;
 	XChangeGC(tool_d, gccache[op], GCClipMask, &gcv);
+      if (clipmask)
+        XFreePixmap(tool_d, clipmask);
+      /* restore clipping */
+      set_clip_window(clip_xmin, clip_ymin, clip_xmax, clip_ymax);
     }
     XFlush(tool_d);
 }
@@ -820,8 +874,8 @@ create_pic_pixmap(box, rotation, width, height, flipped)
     if (appres.DEBUG)
 	fprintf(stderr,"Scaling pic pixmap to %dx%d pixels\n",width,height);
 
-    cwidth = box->pic->bit_size.x;	/* current width, height */
-    cheight = box->pic->bit_size.y;
+    cwidth = box->pic->pic_cache->bit_size.x;	/* current width, height */
+    cheight = box->pic->pic_cache->bit_size.y;
 
     box->pic->color = box->pen_color;
     box->pic->pix_rotation = rotation;
@@ -836,15 +890,15 @@ create_pic_pixmap(box, rotation, width, height, flipped)
     /* create a new bitmap at the specified size (requires interpolation) */
 
     /* MONOCHROME display OR XBM */
-    if (box->pic->numcols == 0) {
+    if (box->pic->pic_cache->numcols == 0) {
 	    nbytes = (width + 7) / 8;
 	    bbytes = (cwidth + 7) / 8;
 	    if ((data = (unsigned char *) malloc(nbytes * height)) == NULL) {
-		file_msg(ALLOC_PIC_ERR, box->pic->file);
+		file_msg(ALLOC_PIC_ERR, box->pic->pic_cache->file);
 		return;
 	    }
 	    if ((tdata = (unsigned char *) malloc(nbytes)) == NULL) {
-		file_msg(ALLOC_PIC_ERR, box->pic->file);
+		file_msg(ALLOC_PIC_ERR, box->pic->pic_cache->file);
 		free(data);
 		return;
 	    }
@@ -858,7 +912,7 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 		    jbit = cheight * j / height * bbytes;
 		    for (i = 0; i < width; i++) {
 			ibit = cwidth * i / width;
-			wbit = (unsigned char) *(box->pic->bitmap + jbit + ibit / 8);
+			wbit = (unsigned char) *(box->pic->pic_cache->bitmap + jbit + ibit / 8);
 			if (wbit & (1 << (7 - (ibit & 7))))
 			    *(data + j * nbytes + i / 8) += (1 << (i & 7));
 		    }
@@ -871,7 +925,7 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 		    ibit = cwidth * j / height;
 		    for (i = 0; i < width; i++) {
 			jbit = cheight * i / width * bbytes;
-			wbit = (unsigned char) *(box->pic->bitmap + jbit + ibit / 8);
+			wbit = (unsigned char) *(box->pic->pic_cache->bitmap + jbit + ibit / 8);
 			if (wbit & (1 << (7 - (ibit & 7))))
 			    *(data + (height - j - 1) * nbytes + i / 8) += (1 << (i & 7));
 		    }
@@ -903,10 +957,10 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 		}
 	    }
 
-	    if (box->pic->subtype == T_PIC_XBM) {
+	    if (box->pic->pic_cache->subtype == T_PIC_XBM) {
 		fg = x_color(box->pen_color);		/* xbm, use object pen color */
 		bg = x_bg_color.pixel;
-	    } else if (box->pic->subtype == T_PIC_EPS) {
+	    } else if (box->pic->pic_cache->subtype == T_PIC_EPS) {
 		fg = black_color.pixel;			/* pbm from gs is inverted */
 		bg = white_color.pixel;
 	    } else {
@@ -919,7 +973,7 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 	    free(data);
 	    free(tdata);
 
-      /* EPS, PCX, XPM, GIF or JPEG on *COLOR* display */
+      /* EPS, PCX, XPM, GIF, PNG or JPEG on *COLOR* display */
       /* It is important to note that the Cmap pixels are unsigned long. */
       /* Therefore all manipulation of the image data should be as unsigned long. */
       /* bpl = bytes per line */
@@ -930,24 +984,25 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 	    unsigned int	*Lpixel;
 	    unsigned short	*Spixel;
 	    unsigned char	*Cpixel;
-	    struct Cmap		*cmap = box->pic->cmap;
+	    struct Cmap		*cmap = box->pic->pic_cache->cmap;
 
 	    cbpp = 1;
 	    cbpl = cwidth * cbpp;
 	    bpl = width * image_bpp;
 	    if ((data = (unsigned char *) malloc(bpl * height)) == NULL) {
-		file_msg(ALLOC_PIC_ERR,box->pic->file);
+		file_msg(ALLOC_PIC_ERR,box->pic->pic_cache->file);
 		return;
 	    }
 	    /* allocate mask for any transparency information */
-	    if (box->pic->transp != TRANSP_NONE) {
-		if ((mask = (unsigned char *) malloc((width+7)/8 * height)) == NULL) {
-		    file_msg(ALLOC_PIC_ERR,box->pic->file);
-		    free(data);
-		    return;
-		}
-		/* set all bits in mask */
-		for (i = (width+7)/8 * height - 1; i >= 0; i--)
+	    if (box->pic->pic_cache->subtype == T_PIC_GIF && 
+	        box->pic->pic_cache->transp != TRANSP_NONE) {
+		    if ((mask = (unsigned char *) malloc((width+7)/8 * height)) == NULL) {
+			file_msg(ALLOC_PIC_ERR,box->pic->pic_cache->file);
+			free(data);
+			return;
+		    }
+		    /* set all bits in mask */
+		    for (i = (width+7)/8 * height - 1; i >= 0; i--)
 			*(mask+i)=  (unsigned char) 255;
 	    }
 	    bwidth = (width+7)/8;
@@ -974,10 +1029,10 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 			break;
 
 		if (type1) {
-			src = box->pic->bitmap + (j * cheight / height * cbpl);
+			src = box->pic->pic_cache->bitmap + (j * cheight / height * cbpl);
 			dst = data + (j * bpl);
 		} else {
-			src = box->pic->bitmap + (j * cbpl / height);
+			src = box->pic->pic_cache->bitmap + (j * cbpl / height);
 			dst = data + (j * bpl);
 		}
 
@@ -989,9 +1044,9 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 			    cpixel = src + (i * cheight / width * cbpl);
 		    }
 		    /* if this pixel is the transparent color then clear the mask pixel */
-		    if (box->pic->transp != TRANSP_NONE && 
-		       (*cpixel==(unsigned char) box->pic->transp)) {
-			if (type1) {
+		    if (box->pic->pic_cache->transp != TRANSP_NONE && 
+			(*cpixel==(unsigned char) box->pic->pic_cache->transp)) {
+			  if (type1) {
 			    if (hswap) {
 				if (vswap)
 				    clr_mask_bit(height-j-1,width-i-1,bwidth,mask);
@@ -1003,7 +1058,7 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 				else
 				    clr_mask_bit(j,i,bwidth,mask);
 			    }
-			} else {
+			  } else {
 			    if (!vswap) {
 				if (hswap)
 				    clr_mask_bit(j,width-i-1,bwidth,mask);
@@ -1015,7 +1070,7 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 				else
 				    clr_mask_bit(height-j-1,i,bwidth,mask);
 			    }
-			}
+			  } /* type */
 		    }
 		    if (image_bpp == 4) {
 			Lpixel = (unsigned int *) pixel;
@@ -1076,8 +1131,10 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 				width, height, tool_dpth);
 	    XPutImage(tool_d, box->pic->pixmap, gc, image, 0, 0, 0, 0, width, height);
 	    XDestroyImage(image);
+	    /* make the clipmask to do the GIF transparency */
 	    if (mask) {
-		box->pic->mask = XCreateBitmapFromData(tool_d, tool_w, mask, width, height);
+		box->pic->mask = XCreateBitmapFromData(tool_d, tool_w, (char*) mask,
+						width, height);
 		free(mask);
 	    }
     }
@@ -1100,263 +1157,6 @@ clr_mask_bit(r,c,bwidth,mask)
     mask[byte] &= ~bits[bit];
 }
 
-#ifdef V4_0
-
-draw_figure(line, op)
-    F_line *line;
-    int op;
-{
-
-  F_pos origin;
-  F_pos opposite;
-  F_pos point;
-  F_pos nw,se,nw2,se2,m;
-  int i,rotation;
-  
-  origin.x=line->points->x;
-  origin.y=line->points->y;
-  opposite.x=line->points->next->next->x;
-  opposite.y=line->points->next->next->y;  
-
-  point.x=line->points->next->x;
-  point.y=line->points->next->y;
-
-  nw.x = min2(origin.x, opposite.x);
-  nw.y = min2(origin.y, opposite.y);
-  se.x = max2(origin.x, opposite.x);
-  se.y = max2(origin.y, opposite.y);
-
-  /* flip figure */
-  if (line->pic->flipped!=line->pic->pix_flipped) {
-    line->pic->pix_flipped=line->pic->flipped;
-    
-    if (line->pic->flipped==1) {
-      flip_compound(line->pic->figure, 
-			min2(line->pic->figure->nwcorner.x, line->pic->figure->secorner.x),
-			min2(line->pic->figure->nwcorner.y, line->pic->figure->secorner.y),
-			LR_FLIP);
-      rotate_figure(line->pic->figure,
-			min2(line->pic->figure->secorner.x, line->pic->figure->nwcorner.x),
-			min2(line->pic->figure->secorner.y, line->pic->figure->nwcorner.y));
-      line->pic->pix_rotation=360-line->pic->pix_rotation%360;
-    } else {
-      flip_compound(line->pic->figure,
-			max2(line->pic->figure->nwcorner.x, line->pic->figure->secorner.x),
-			min2(line->pic->figure->nwcorner.y, line->pic->figure->secorner.y),
-			LR_FLIP);
-      rotate_figure(line->pic->figure,
-			min2(line->pic->figure->secorner.x, line->pic->figure->nwcorner.x),
-			min2(line->pic->figure->secorner.y, line->pic->figure->nwcorner.y));
-      line->pic->pix_rotation=360-line->pic->pix_rotation%360;
-    }
-  }
-  
-  /*  compute rotation angle */
-  rotation = 0;
-  if (!line->pic->flipped) {
-    if (origin.x > opposite.x && origin.y > opposite.y)
-      rotation = 180;
-    if (origin.x > opposite.x && origin.y <= opposite.y)
-      rotation = 270;
-    if (origin.x <= opposite.x && origin.y > opposite.y)
-      rotation = 90;
-  } else {
-    if ((origin.x > opposite.x && origin.y > opposite.y) && 
-	((point.y==origin.y)||(point.x==origin.x)))
-	    rotation = 180;
-    if ((origin.x > opposite.x && origin.y <= opposite.y) &&
-	((point.y==origin.y) || (point.x==origin.x)))
-	   rotation = 270;
-    if ((origin.x <= opposite.x && origin.y > opposite.y) && 
-	(( point.y==origin.y)|| (point.x==origin.x)))
-	   rotation = 90;
-  }
-  /* rotate the figure */
-  while ((rotation!=line->pic->pix_rotation)) {
-    rotate_figure(line->pic->figure,origin.x,origin.y);
-    line->pic->pix_rotation=((line->pic->pix_rotation+90)%360);
-  }
-  
-  /* translate the nwcorner of the figure into the nwcorner of the box*/
-  translate_compound(line->pic->figure, 
-		-line->pic->figure->nwcorner.x+nw.x,
-		nw.y-line->pic->figure->nwcorner.y);
-  
-  nw2.x=min2(line->pic->figure->nwcorner.x,line->pic->figure->secorner.x);
-  nw2.y=min2(line->pic->figure->nwcorner.y,line->pic->figure->secorner.y);
-  se2.x=max2(line->pic->figure->nwcorner.x,line->pic->figure->secorner.x);
-  se2.y=max2(line->pic->figure->nwcorner.y,line->pic->figure->secorner.y);
-  
-  /*  scale figure */
-  scale_compound(
-		 line->pic->figure,
-		 ((float)(-nw.x+se.x)/(float)(se2.x-nw2.x)),
-		 ((float)(-nw.y+se.y)/(float)(se2.y-nw2.y)),
-		 nw.x,nw.y);
-  
-  /* draw figure */
-  draw_compoundelements(line->pic->figure,op);
-  
-  return;
-}
-#endif /* V4_0 */
-
-/*********************** SPLINE ***************************/
-
-void
-draw_spline(spline, op)
-    F_spline	   *spline;
-    int		    op;
-{
-    Boolean         success;
-    int		    xmin, ymin, xmax, ymax;
-    int		    i;
-    F_point	   *p;
-    float           precision;
-
-    spline_bound(spline, &xmin, &ymin, &xmax, &ymax);
-    if (!overlapping(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax),
-		     clip_xmin, clip_ymin, clip_xmax, clip_ymax))
-	return;
-
-    precision = (display_zoomscale < ZOOM_PRECISION) ? LOW_PRECISION 
-                                                     : HIGH_PRECISION;
-
-    if (appres.shownums) {
-	for (i=1, p=spline->points; p; p=p->next) {
-	    /* label the point number above the point */
-	    sprintf(bufx,"%d",i++);
-	    pw_text(canvas_win, p->x, round(p->y-3.0/zoomscale), PAINT, 
-		roman_font, 0.0, bufx, RED);
-	}
-    }
-    if (open_spline(spline))
-	success = compute_open_spline(spline, precision);
-    else
-	success = compute_closed_spline(spline, precision);
-    if (success) {
-	/* setup clipping so that spline doesn't protrude beyond arrowhead */
-	/* also create the arrowheads */
-	clip_arrows(spline,O_SPLINE,op,4);
-
-	draw_point_array(canvas_win, op, spline->thickness, spline->style,
-		       spline->style_val, JOIN_MITER, spline->cap_style,
-		       spline->fill_style, spline->pen_color,
-		       spline->fill_color);
-	/* restore clipping */
-	set_clip_window(clip_xmin, clip_ymin, clip_xmax, clip_ymax);
-
-	if (spline->back_arrow)	/* backward arrow  */
-	    draw_arrow(spline, spline->back_arrow, barpts, nbpts, op);
-	if (spline->for_arrow)	/* backward arrow  */
-	    draw_arrow(spline, spline->for_arrow, farpts, nfpts, op);
-	/* write the depth on the object */
-	debug_depth(spline->depth,spline->points->x,spline->points->y);
-    }
-}
-
-static Boolean
-compute_open_spline(spline, precision)
-     F_spline	   *spline;
-     float         precision;
-{
-  int       k;
-  float     step;
-  F_point   *p0, *p1, *p2, *p3;
-  F_sfactor *s0, *s1, *s2, *s3;
-
-  init_point_array();
-
-  COPY_CONTROL_POINT(p0, s0, spline->points, spline->sfactors);
-  COPY_CONTROL_POINT(p1, s1, p0, s0);
-  /* first control point is needed twice for the first segment */
-  COPY_CONTROL_POINT(p2, s2, p1->next, s1->next);
-
-  if (p2->next == NULL) {
-      COPY_CONTROL_POINT(p3, s3, p2, s2);
-  } else {
-      COPY_CONTROL_POINT(p3, s3, p2->next, s2->next);
-  }
-
-
-  for (k = 0 ;  ; k++) {
-      SPLINE_SEGMENT_LOOP(k, p0, p1, p2, p3, s1->s, s2->s, precision);
-      if (p3->next == NULL)
-	break;
-      NEXT_CONTROL_POINTS(p0, s0, p1, s1, p2, s2, p3, s3);
-  }
-  /* last control point is needed twice for the last segment */
-  COPY_CONTROL_POINT(p0, s0, p1, s1);
-  COPY_CONTROL_POINT(p1, s1, p2, s2);
-  COPY_CONTROL_POINT(p2, s2, p3, s3);
-  SPLINE_SEGMENT_LOOP(k, p0, p1, p2, p3, s1->s, s2->s, precision);
-  
-  if (!add_point(p3->x, p3->y))
-    too_many_points();
-  
-  return True;
-}
-
-
-static Boolean
-compute_closed_spline(spline, precision)
-     F_spline	   *spline;
-     float         precision;
-{
-  int k, i;
-  float     step;
-  F_point   *p0, *p1, *p2, *p3, *first;
-  F_sfactor *s0, *s1, *s2, *s3, *s_first;
-
-  init_point_array();
-
-  INIT_CONTROL_POINTS(spline, p0, s0, p1, s1, p2, s2, p3, s3);
-  COPY_CONTROL_POINT(first, s_first, p0, s0); 
-
-  for (k = 0 ; p3 != NULL ; k++) {
-      SPLINE_SEGMENT_LOOP(k, p0, p1, p2, p3, s1->s, s2->s, precision);
-      NEXT_CONTROL_POINTS(p0, s0, p1, s1, p2, s2, p3, s3);
-  }
-  /* when we are at the end, join to the beginning */
-  COPY_CONTROL_POINT(p3, s3, first, s_first);
-  SPLINE_SEGMENT_LOOP(k, p0, p1, p2, p3, s1->s, s2->s, precision);
-
-  for (i=0; i<2; i++) {
-      k++;
-      NEXT_CONTROL_POINTS(p0, s0, p1, s1, p2, s2, p3, s3);
-      SPLINE_SEGMENT_LOOP(k, p0, p1, p2, p3, s1->s, s2->s, precision);
-  }
-
-  if (!add_point(points[0].x,points[0].y))
-    too_many_points();
-
-  return True;
-}
-
-
-void
-quick_draw_spline(spline, operator)
-     F_spline      *spline;
-     int           operator;
-{
-  int        k;
-  float     step;
-  F_point   *p0, *p1, *p2, *p3;
-  F_sfactor *s0, *s1, *s2, *s3;
-  
-  init_point_array();
-
-  INIT_CONTROL_POINTS(spline, p0, s0, p1, s1, p2, s2, p3, s3);
- 
-  for (k=0 ; p3!=NULL ; k++) {
-      SPLINE_SEGMENT_LOOP(k, p0, p1, p2, p3, s1->s, s2->s, LOW_PRECISION);
-      NEXT_CONTROL_POINTS(p0, s0, p1, s1, p2, s2, p3, s3);
-  }
-  draw_point_array(canvas_win, operator, spline->thickness, spline->style,
-		   spline->style_val, JOIN_MITER, spline->cap_style,
-		   spline->fill_style, spline->pen_color, spline->fill_color);
-}
-
 /*********************** TEXT ***************************/
 
 static char    *hidden_text_string = "<<>>";
@@ -1369,8 +1169,9 @@ draw_text(text, op)
     int		    x,y;
     int		    xmin, ymin, xmax, ymax;
     int		    x1,y1, x2,y2, x3,y3, x4,y4;
+    double	    cost, sint;
 
-    if (text->zoom != zoomscale)
+    if (text->zoom != zoomscale || text->fontstruct == (XFontStruct*) 0)
 	reload_text_fstruct(text);
     text_bound(text, &xmin, &ymin, &xmax, &ymax,
 	       &x1,&y1, &x2,&y2, &x3,&y3, &x4,&y4);
@@ -1389,26 +1190,95 @@ draw_text(text, op)
 
     x = text->base_x;
     y = text->base_y;
+    cost = cos(text->angle);
+    sint = sin(text->angle);
     if (text->type == T_CENTER_JUSTIFIED || text->type == T_RIGHT_JUSTIFIED) {
 	size = textsize(text->fontstruct, strlen(text->cstring),
 			    text->cstring);
 	size.length = size.length/display_zoomscale;
 	if (text->type == T_CENTER_JUSTIFIED) {
-	    x = round(x-cos(text->angle)*size.length/2);
-	    y = round(y+sin(text->angle)*size.length/2);
+	    x = round(x-cost*size.length/2);
+	    y = round(y+sint*size.length/2);
 	} else {	/* T_RIGHT_JUSTIFIED */
-	    x = round(x-cos(text->angle)*size.length);
-	    y = round(y+sin(text->angle)*size.length);
+	    x = round(x-cost*size.length);
+	    y = round(y+sint*size.length);
 	}
     }
-    if (hidden_text(text))
-	pw_text(canvas_win, x, y, op, lookfont(0,12),
-		text->angle, hidden_text_string, DEFAULT);
-    else
-	pw_text(canvas_win, x, y, op, text->fontstruct,
-		text->angle, text->cstring, text->color);
+    if (hidden_text(text)) {
+	pw_text(canvas_win, x, y, op, text->depth, lookfont(0,12),
+		text->angle, hidden_text_string, DEFAULT, COLOR_NONE);
+    } else {
+	/* if size is less than the displayable size, Greek it by drawing a DARK gray line,
+	   UNLESS the depth is inactive in which case draw it in MED_GRAY */
+	if (text->size*display_zoomscale < MIN_X_FONT_SIZE) {
+	    x1 = (x1+x4)/2;
+	    x2 = (x2+x3)/2;
+	    y1 = (y1+y4)/2;
+	    y2 = (y2+y3)/2;
+	    greek_text(text, x1, y1, x2, y2);
+	} else {
+	    /* Otherwise, draw the text normally */
+	    pw_text(canvas_win, x, y, op, text->depth, text->fontstruct,
+		text->angle, text->cstring, text->color, COLOR_NONE);
+	}
+    }
+
     /* write the depth on the object */
     debug_depth(text->depth,x,y);
+}
+
+/*
+ * Draw text as "Greeked", from (x1, y1) to (x2, y2), meaning as a dashed gray line.
+ * This is done when the text would be too small to read anyway.
+ */
+
+greek_text(text, x1, y1, x2, y2)
+    F_text	*text;
+    int		 x1,y1, x2,y2;
+{
+    int		 color;
+    int		 lensofar, lenword, lenspace;
+    int		 xs, ys, xe, ye;
+    float	 dx, dy;
+    char	*word, *cp;
+
+    if (text->depth < MAX_DEPTH+1 && !active_layer(text->depth))
+	color = MED_GRAY;
+    else
+	color = DARK_GRAY;
+
+    cp = text->cstring;
+
+    /* get unit dx, dy */
+    dx = (float)(x2-x1)/strlen(cp);
+    dy = (float)(y2-y1)/strlen(cp);
+
+    lensofar = 0;
+    while (*cp) {
+	lenword = 0;
+	/* count chars in this word */
+	while (*cp) {
+	    if (*cp == ' ')
+		break;
+	    lenword++;
+	    cp++;
+	}
+	/* now count how many spaces follow it */
+	lenspace = 0;
+	while (*cp) {
+	    if (*cp != ' ')
+		break;
+	    lenspace++;
+	    cp++;
+	}
+	xs = x1 + dx*lensofar;
+	ys = y1 + dy*lensofar;
+	xe = xs + dx*lenword;
+	ye = ys + dy*lenword;
+	pw_vector(canvas_win, xs, ys, xe, ye, PAINT, 1, RUBBER_LINE, 0.0, color);
+	/* add length of this word and space(s) to lensofar */
+	lensofar = lensofar + lenword + lenspace;
+    }
 }
 
 /*********************** COMPOUND ***************************/
@@ -1571,7 +1441,7 @@ clip_arrows(obj, objtype, op, skip)
 	}
 	calc_arrow(x, y, points[npoints-1].x, points[npoints-1].y,
 		   &fcx1, &fcy1, &fcx2, &fcy2,
-		   obj->thickness, obj->for_arrow, farpts, &nfpts, &nboundpts);
+		   obj->for_arrow, farpts, &nfpts, &nboundpts);
 	/* set clipping to the first three points of the arrowhead and
 	   the box surrounding it */
 	for (i=0; i < nboundpts; i++) {
@@ -1616,7 +1486,7 @@ clip_arrows(obj, objtype, op, skip)
 	}
 	calc_arrow(x, y, points[0].x, points[0].y,
 		   &bcx1, &bcy1, &bcx2, &bcy2,
-		    obj->thickness, obj->back_arrow, barpts,&nbpts, &nboundpts);
+		    obj->back_arrow, barpts,&nbpts, &nboundpts);
 	/* set clipping to the first three points of the arrowhead and
 	   the box surrounding it */
 	for (i=0; i < nboundpts; i++) {
@@ -1682,10 +1552,9 @@ clip_arrows(obj, objtype, op, skip)
 
 ****************************************************************/
 
-calc_arrow(x1, y1, x2, y2, c1x, c1y, c2x, c2y, thick, arrow, points, npoints, nboundpts)
+calc_arrow(x1, y1, x2, y2, c1x, c1y, c2x, c2y, arrow, points, npoints, nboundpts)
     int		    x1, y1, x2, y2;
     int		   *c1x, *c1y, *c2x, *c2y;
-    int		    thick;
     F_arrow	   *arrow;
     zXPoint	    points[];
     int		   *npoints, *nboundpts;
@@ -1864,7 +1733,7 @@ draw_arrow(obj, arrow, points, npoints, op)
 	fill = NUMTINTPATS+NUMSHADEPATS-1;	/* "hollow", fill with white */
     else
 	fill = NUMSHADEPATS-1;			/* "solid", fill with solid color */
-    pw_lines(canvas_win, points, npoints, op, round(arrow->thickness),
+    pw_lines(canvas_win, points, npoints, op, obj->depth, round(arrow->thickness),
 		SOLID_LINE, 0.0, JOIN_MITER, CAP_BUTT,
 		fill, obj->pen_color, obj->pen_color);
 }
@@ -1882,7 +1751,7 @@ draw_arrow(obj, arrow, points, npoints, op)
  Jordan, William J. Lennon and Barry D. Holm, IEEE Transaction on Computers
  Vol C-22, No. 12 December 1973.
 
- This routine is only called for ellipses when the andle is 0 and the line type
+ This routine is only called for ellipses when the angle is 0 and the line type
  is not solid.  For angles of 0 with solid lines, pw_curve() is called.
  For all other angles angle_ellipse() is called.
 
@@ -1896,10 +1765,10 @@ draw_arrow(obj, arrow, points, npoints, op)
 ****************************************************************/
 
 void
-curve(Window window, int xstart, int ystart, int xend, int yend, 
+curve(Window window, int depth, int xstart, int ystart, int xend, int yend, 
 	Boolean draw_points, Boolean draw_center, int direction,
-	int a, int b, int xoff, int yoff, int op, int thick, int style,
-	float style_val, int fill_style, 
+	int a, int b, int xoff, int yoff, int op, int thick,
+	int style, float style_val, int fill_style, 
 	Color pen_color, Color fill_color, int cap_style)
 {
     register int    x, y;
@@ -1908,6 +1777,12 @@ curve(Window window, int xstart, int ystart, int xend, int yend,
     double	    falpha, fx, fy, fxy, absfx, absfy, absfxy;
     int		    margin, test_succeed, inc, dec;
     float	    zoom;
+
+    /* if this depth is inactive, draw the curve in gray */
+    if (depth < MAX_DEPTH+1 && !active_layer(depth)) {
+	pen_color = MED_GRAY;
+	fill_color = LT_GRAY;
+    }
 
     zoom = 1.0;
     /* if drawing on canvas (not in indicator button) adjust values by zoomscale */
@@ -2002,271 +1877,10 @@ curve(Window window, int xstart, int ystart, int xend, int yend,
     }
 	
     if (draw_points) {
-	draw_point_array(window, op, thick, style, style_val, JOIN_BEVEL,
+	draw_point_array(window, op, depth, thick, style, style_val, JOIN_BEVEL,
 			cap_style, fill_style, pen_color, fill_color);
     }
 }
-
-/********************* CURVES FOR SPLINES *****************************
-
- The following spline drawing routines are from
-
-    "X-splines : A Spline Model Designed for the End User"
-
-    by Carole BLANC and Christophe SCHLICK,
-    in Proceedings of SIGGRAPH ' 95
-
-***********************************************************************/
-
-#define Q(s)  (-(s))	/* changed from (-(s)/2.0) B. Smith 12/15/97 */
-#define EQN_NUMERATOR(dim) \
-  (A_blend[0]*p0->dim+A_blend[1]*p1->dim+A_blend[2]*p2->dim+A_blend[3]*p3->dim)
-
-static INLINE double
-f_blend(numerator, denominator)
-     double numerator, denominator;
-{
-  double p = 2 * denominator * denominator;
-  double u = numerator / denominator;
-  double u2 = u * u;
-
-  return (u * u2 * (10 - p + (2*p - 15)*u + (6 - p)*u2));
-}
-
-static INLINE double
-g_blend(u, q)             /* p equals 2 */
-     double u, q;
-{
-  return(u*(q + u*(2*q + u*(8 - 12*q + u*(14*q - 11 + u*(4 - 5*q))))));
-}
-
-static INLINE double
-h_blend(u, q)
-     double u, q;
-{
-  double u2=u*u;
-   return (u * (q + u * (2 * q + u2 * (-2*q - u*q))));
-}
-
-static INLINE
-negative_s1_influence(t, s1, A0, A2)
-     double       t, s1, *A0 ,*A2;
-{
-  *A0 = h_blend(-t, Q(s1));
-  *A2 = g_blend(t, Q(s1));
-}
-
-static INLINE
-negative_s2_influence(t, s2, A1, A3)
-     double       t, s2, *A1 ,*A3;
-{
-  *A1 = g_blend(1-t, Q(s2));
-  *A3 = h_blend(t-1, Q(s2));
-}
-
-static INLINE
-positive_s1_influence(k, t, s1, A0, A2)
-     int          k;
-     double       t, s1, *A0 ,*A2;
-{
-  double Tk;
-  
-  Tk = k+1+s1;
-  *A0 = (t+k+1<Tk) ? f_blend(t+k+1-Tk, k-Tk) : 0.0;
-  
-  Tk = k+1-s1;
-  *A2 = f_blend(t+k+1-Tk, k+2-Tk);
-}
-
-static INLINE
-positive_s2_influence(k, t, s2, A1, A3)
-     int          k;
-     double       t, s2, *A1 ,*A3;
-{
-  double Tk;
-
-  Tk = k+2+s2; 
-  *A1 = f_blend(t+k+1-Tk, k+1-Tk);
-  
-  Tk = k+2-s2;
-  *A3 = (t+k+1>Tk) ? f_blend(t+k+1-Tk, k+3-Tk) : 0.0;
-}
-
-static INLINE
-point_adding(A_blend, p0, p1, p2, p3)
-     F_point     *p0, *p1, *p2, *p3;
-     double      *A_blend;
-{
-  double weights_sum;
-
-  weights_sum = A_blend[0] + A_blend[1] + A_blend[2] + A_blend[3];
-  if (!add_point(round(EQN_NUMERATOR(x) / (weights_sum)),
-		 round(EQN_NUMERATOR(y) / (weights_sum))))
-      too_many_points();
-}
-
-static INLINE
-point_computing(A_blend, p0, p1, p2, p3, x, y)
-     F_point     *p0, *p1, *p2, *p3;
-     double      *A_blend;
-     int         *x, *y;
-{
-  double weights_sum;
-
-  weights_sum = A_blend[0] + A_blend[1] + A_blend[2] + A_blend[3];
-
-  *x = round(EQN_NUMERATOR(x) / (weights_sum));
-  *y = round(EQN_NUMERATOR(y) / (weights_sum));
-}
-
-static float
-step_computing(k, p0, p1, p2, p3, s1, s2, precision)
-     int     k;
-     F_point *p0, *p1, *p2, *p3;
-     double  s1, s2;
-     float   precision;
-{
-  double A_blend[4];
-  int    xstart, ystart, xend, yend, xmid, ymid, xlength, ylength;
-  int    start_to_end_dist, number_of_steps;
-  float  step, angle_cos, scal_prod, xv1, xv2, yv1, yv2, sides_length_prod;
-  
-  /* This function computes the step used to draw the segment (p1, p2)
-     (xv1, yv1) : coordinates of the vector from middle to origin
-     (xv2, yv2) : coordinates of the vector from middle to extremity */
-
-  if ((s1 == 0) && (s2 == 0))
-    return(1.0);              /* only one step in case of linear segment */
-
-  /* compute coordinates of the origin */
-  if (s1>0) {
-      if (s2<0) {
-	  positive_s1_influence(k, 0.0, s1, &A_blend[0], &A_blend[2]);
-	  negative_s2_influence(0.0, s2, &A_blend[1], &A_blend[3]); 
-      } else {
-	  positive_s1_influence(k, 0.0, s1, &A_blend[0], &A_blend[2]);
-	  positive_s2_influence(k, 0.0, s2, &A_blend[1], &A_blend[3]); 
-      }
-      point_computing(A_blend, p0, p1, p2, p3, &xstart, &ystart);
-  } else {
-      xstart = p1->x;
-      ystart = p1->y;
-  }
-  
-  /* compute coordinates  of the extremity */
-  if (s2>0) {
-      if (s1<0) {
-	  negative_s1_influence(1.0, s1, &A_blend[0], &A_blend[2]);
-	  positive_s2_influence(k, 1.0, s2, &A_blend[1], &A_blend[3]);
-      } else {
-	  positive_s1_influence(k, 1.0, s1, &A_blend[0], &A_blend[2]);
-	  positive_s2_influence(k, 1.0, s2, &A_blend[1], &A_blend[3]); 
-      }
-      point_computing(A_blend, p0, p1, p2, p3, &xend, &yend);
-  } else {
-      xend = p2->x;
-      yend = p2->y;
-  }
-
-  /* compute coordinates  of the middle */
-  if (s2>0) {
-      if (s1<0) {
-	  negative_s1_influence(0.5, s1, &A_blend[0], &A_blend[2]);
-	  positive_s2_influence(k, 0.5, s2, &A_blend[1], &A_blend[3]);
-      } else {
-	  positive_s1_influence(k, 0.5, s1, &A_blend[0], &A_blend[2]);
-	  positive_s2_influence(k, 0.5, s2, &A_blend[1], &A_blend[3]); 
-      }
-  } else if (s1<0) {
-      negative_s1_influence(0.5, s1, &A_blend[0], &A_blend[2]);
-      negative_s2_influence(0.5, s2, &A_blend[1], &A_blend[3]);
-  } else {
-      positive_s1_influence(k, 0.5, s1, &A_blend[0], &A_blend[2]);
-      negative_s2_influence(0.5, s2, &A_blend[1], &A_blend[3]);
-  }
-  point_computing(A_blend, p0, p1, p2, p3, &xmid, &ymid);
-
-  xv1 = xstart - xmid;
-  yv1 = ystart - ymid;
-  xv2 = xend - xmid;
-  yv2 = yend - ymid;
-
-  scal_prod = xv1*xv2 + yv1*yv2;
-  
-  sides_length_prod = (float) sqrt((double)((xv1*xv1 + yv1*yv1)*(xv2*xv2 + yv2*yv2)));
-
-  /* compute cosinus of origin-middle-extremity angle, which approximates the
-     curve of the spline segment */
-  if (sides_length_prod == 0.0)
-    angle_cos = 0.0;
-  else
-    angle_cos = scal_prod/sides_length_prod; 
-
-  xlength = xend - xstart;
-  ylength = yend - ystart;
-
-  start_to_end_dist = (int) sqrt((double)(xlength*xlength + ylength*ylength));
-
-  /* more steps if segment's origin and extremity are remote */
-  number_of_steps = (int) sqrt((double)start_to_end_dist)/2;
-
-  /* more steps if the curve is high */
-  number_of_steps += (int)((1 + angle_cos)*10);
-
-  if (number_of_steps == 0)
-    step = 1;
-  else
-    step = precision/number_of_steps;
-  
-  if ((step > MAX_SPLINE_STEP) || (step == 0))
-    step = MAX_SPLINE_STEP;
-  return (step);
-}
-
-static void
-spline_segment_computing(step, k, p0, p1, p2, p3, s1, s2)
-     float   step;
-     F_point *p0, *p1, *p2, *p3;
-     int     k;
-     double  s1, s2;
-{
-  double A_blend[4];
-  double t;
-  
-  if (s1<0) {  
-     if (s2<0) {
-	 for (t=0.0 ; t<1 ; t+=step) {
-	     negative_s1_influence(t, s1, &A_blend[0], &A_blend[2]);
-	     negative_s2_influence(t, s2, &A_blend[1], &A_blend[3]);
-
-	     point_adding(A_blend, p0, p1, p2, p3);
-	 }
-     } else {
-	 for (t=0.0 ; t<1 ; t+=step) {
-	     negative_s1_influence(t, s1, &A_blend[0], &A_blend[2]);
-	     positive_s2_influence(k, t, s2, &A_blend[1], &A_blend[3]);
-
-	     point_adding(A_blend, p0, p1, p2, p3);
-	 }
-     }
-  } else if (s2<0) {
-      for (t=0.0 ; t<1 ; t+=step) {
-	     positive_s1_influence(k, t, s1, &A_blend[0], &A_blend[2]);
-	     negative_s2_influence(t, s2, &A_blend[1], &A_blend[3]);
-
-	     point_adding(A_blend, p0, p1, p2, p3);
-      }
-  } else {
-      for (t=0.0 ; t<1 ; t+=step) {
-	     positive_s1_influence(k, t, s1, &A_blend[0], &A_blend[2]);
-	     positive_s2_influence(k, t, s2, &A_blend[1], &A_blend[3]);
-
-	     point_adding(A_blend, p0, p1, p2, p3);
-      } 
-  }
-}
-
-
 
 /* redraw all the picture objects */
 
@@ -2280,8 +1894,8 @@ redraw_images(obj)
 	redraw_images(c);
     }
     for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PICTURE && l->pic->numcols > 0)
-		redisplay_line(l);
+	if (l->type == T_PICTURE && l->pic->pic_cache && l->pic->pic_cache->numcols > 0)
+	    redisplay_line(l);
     }
 }
 
@@ -2300,6 +1914,92 @@ int depth, x, y;
 	sprintf(str,"%d",depth);
 	size = textsize(roman_font, strlen(str), str);
 	pw_text(canvas_win, x-size.length-round(3.0/zoomscale), round(y-3.0/zoomscale),
-		PAINT, roman_font, 0.0, str, RED);
+		PAINT, depth, roman_font, 0.0, str, RED, COLOR_NONE);
     }
 }
+
+/*********************** SPLINE ***************************/
+
+/**********************************/
+/* include common spline routines */
+/**********************************/
+
+#include "u_draw_spline.c"
+
+void
+draw_spline(spline, op)
+    F_spline	   *spline;
+    int		    op;
+{
+    Boolean         success;
+    int		    xmin, ymin, xmax, ymax;
+    int		    i;
+    F_point	   *p;
+    float           precision;
+
+    spline_bound(spline, &xmin, &ymin, &xmax, &ymax);
+    if (!overlapping(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax),
+		     clip_xmin, clip_ymin, clip_xmax, clip_ymax))
+	return;
+
+    precision = (display_zoomscale < ZOOM_PRECISION) ? LOW_PRECISION 
+                                                     : HIGH_PRECISION;
+
+    if (appres.shownums) {
+	for (i=1, p=spline->points; p; p=p->next) {
+	    /* label the point number above the point */
+	    sprintf(bufx,"%d",i++);
+	    pw_text(canvas_win, p->x, round(p->y-3.0/zoomscale), PAINT, spline->depth,
+		roman_font, 0.0, bufx, RED, COLOR_NONE);
+	}
+    }
+    if (open_spline(spline))
+	success = compute_open_spline(spline, precision);
+    else
+	success = compute_closed_spline(spline, precision);
+    if (success) {
+	/* setup clipping so that spline doesn't protrude beyond arrowhead */
+	/* also create the arrowheads */
+	clip_arrows(spline,O_SPLINE,op,4);
+
+	draw_point_array(canvas_win, op, spline->depth, spline->thickness,
+		       spline->style, spline->style_val,
+		       JOIN_MITER, spline->cap_style,
+		       spline->fill_style, spline->pen_color,
+		       spline->fill_color);
+	/* restore clipping */
+	set_clip_window(clip_xmin, clip_ymin, clip_xmax, clip_ymax);
+
+	if (spline->back_arrow)	/* backward arrow  */
+	    draw_arrow(spline, spline->back_arrow, barpts, nbpts, op);
+	if (spline->for_arrow)	/* backward arrow  */
+	    draw_arrow(spline, spline->for_arrow, farpts, nfpts, op);
+	/* write the depth on the object */
+	debug_depth(spline->depth,spline->points->x,spline->points->y);
+    }
+}
+
+void
+quick_draw_spline(spline, operator)
+     F_spline      *spline;
+     int           operator;
+{
+  int        k;
+  float     step;
+  F_point   *p0, *p1, *p2, *p3;
+  F_sfactor *s0, *s1, *s2, *s3;
+  
+  init_point_array();
+
+  INIT_CONTROL_POINTS(spline, p0, s0, p1, s1, p2, s2, p3, s3);
+ 
+  for (k=0 ; p3!=NULL ; k++) {
+      SPLINE_SEGMENT_LOOP(k, p0, p1, p2, p3, s1->s, s2->s, LOW_PRECISION);
+      NEXT_CONTROL_POINTS(p0, s0, p1, s1, p2, s2, p3, s3);
+  }
+  draw_point_array(canvas_win, operator, spline->depth, spline->thickness,
+		   spline->style, spline->style_val,
+		   JOIN_MITER, spline->cap_style,
+		   spline->fill_style, spline->pen_color, spline->fill_color);
+}
+

@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -22,6 +22,7 @@
 #include "u_fonts.h"
 #include "w_indpanel.h"
 #include "w_msgpanel.h"
+#include "w_setup.h"
 
 int		cur_mode = F_NULL;
 int		cur_halign = ALIGN_NONE;
@@ -32,13 +33,36 @@ int		latexline_mode = 0;
 int		latexarrow_mode = 0;
 int		autoforwardarrow_mode = 0;
 int		autobackwardarrow_mode = 0;
-int		cur_gridmode;
+int		cur_gridmode, cur_gridunit, grid_unit;
 int		cur_pointposn;
-int		posn_rnd[P_GRID4 + 1];
-int		posn_hlf[P_GRID4 + 1];
-int		grid_fine[GRID_4 + 1];
-int		grid_coarse[GRID_4 + 1];
-char	       *grid_name[GRID_4 + 1];
+int		posn_rnd[NUM_GRID_UNITS][P_GRID4 + 1] = {
+		   { 0, PPCM/10, PPCM/5, PPCM/2, PPCM, PPCM*2},	/*   mm  mode */
+		   { 0, PPI/16, PPI/8, PPI/4, PPI/2, PPI},	/* 1/16" mode */
+		   { 0, PPI/20, PPI/10, PPI/5, PPI/2, PPI},	/* 1/10" mode */
+		   };
+int		posn_hlf[NUM_GRID_UNITS][P_GRID4 + 1] = {
+		   { 0, PPCM/20, PPCM/10, PPCM/4, PPCM/2, PPCM},
+		   { 0, PPI/32, PPI/16, PPI/8, PPI/4, PPI/2},
+		   { 0, PPI/40, PPI/20, PPI/10, PPI/5, PPI/2},
+		   };
+int		grid_coarse[NUM_GRID_UNITS][GRID_4] = {
+		   { PPCM/5, PPCM/2, PPCM, PPCM*2},		/* 2mm, 5mm, 10mm, 20mm */
+		   { PPI/8, PPI/4, PPI/2, PPI},			/* 1/8", 1/4", 1/2", 1" */
+		   { PPI/10, PPI/5, PPI/2, PPI},		/* 1/10", 1/5", 1/2", 1" */
+		   };
+int		grid_fine[NUM_GRID_UNITS][GRID_4] = {
+		   { PPCM/10, PPCM/5, PPCM/2, PPCM},
+		   { PPI/16, PPI/16, PPI/8, PPI/8},
+		   { PPI/20, PPI/10, PPI/5, PPI/2},
+		   };
+
+		/* the first entry in each unit category is only used for point positioning */
+char	       *grid_name[NUM_GRID_UNITS][GRID_4+1] = {
+		   { "1mm", "2 mm", "5 mm", "10 mm", "20 mm"},
+		   { "1/16 inch", "1/8 inch", "1/4 inch", "1/2 inch", "1 inch"},
+		   { "0.05 inch", "0.1 inch", "0.2 inch", "0.5 inch", "1.0 inch"},
+		   };
+
 float		cur_rotnangle = 90.0;
 int		cur_linkmode = 0;
 int		cur_numsides = 6;
@@ -57,7 +81,6 @@ char		cur_spellchk[PATH_MAX];
 char		cur_browser[PATH_MAX];
 char		cur_pdfviewer[PATH_MAX];
 Boolean		warnexist = False;
-Boolean		warninput = False;
 
 /**********************	 global mode variables	************************/
 
@@ -72,16 +95,20 @@ int		cur_exp_lang;		/* gets initialized in main.c */
 Boolean		batch_exists = False;
 char		batch_file[32];
 
+/*******************************************************************/
+/* If you change the order of the lang_items[] you must change the */
+/* order of the lang_texts[] and the LANG_xxx items in mode.h      */
+/*******************************************************************/
+
 char	       *lang_items[] = {
-	"box",  "latex", "epic", "eepic", "eepicemu", "pictex",
-	"hpl",  "eps",   "ps",   "pdf",   "pstex",    "textyl",
-	"tpic", "pic",   "mf",   "mp",    "mmp",      "cgm",
-	"tk",   "map",
+	"ps",    "eps",   "eps_ascii", "eps_mono_tiff", "eps_color_tiff",
+	"pdf",   "box",   "latex",  "epic", "eepic", "eepicemu",
+	"pstex", "pdftex","pictex", "hpl",  "textyl",
+	"tpic",  "pic",   "map",    "mf",
+	"mp",    "mmp",   "cgm",    "bcgm", "emf",   "tk",  "svg",
 /* bitmap formats start here */
 	"gif",  
-#ifdef USE_JPEG
 	"jpeg",
-#endif /* USE_JPEG */
 	"pcx",  "png",   "ppm", "sld", "tiff", "xbm", 
 #ifdef USE_XPM
 	"xpm",
@@ -89,42 +116,47 @@ char	       *lang_items[] = {
     };
 
 char	       *lang_texts[] = {
-	"LaTeX box (figure boundary)       ",
-	"LaTeX picture                     ",
-	"LaTeX picture + epic macros       ",
-	"LaTeX picture + eepic macros      ",
-	"LaTeX picture + eepicemu macros   ",
-	"PiCTeX macros                     ",
-	"IBMGL (or HPGL)                   ",
-	"Encapsulated Postscript           ",
-	"Postscript                        ",
-	"PDF (Portable Document Format)    ",
-	"Combined PS/LaTeX (both parts)    ",
-	"Textyl \\special commands          ",
-	"TPIC                              ",
-	"PIC                               ",
-	"MF  (MetaFont)                    ",
-	"MP  (MetaPost)                    ",
-	"MMP (Multi MetaPost)              ",
-	"CGM (Computer Graphics Metafile)  ",
-	"Tk  (Tcl/Tk toolkit)              ",
-	"HTML Image Map                    ",
+	"Postscript                          ",
+	"EPS (Encapsulated Postscript)       ",
+	"EPS with ASCII (EPSI) preview       ",
+	"EPS with Monochrome TIFF preview    ",
+	"EPS with Color TIFF preview         ",
+	"PDF (Portable Document Format)      ",
+	"LaTeX box (figure boundary)         ",
+	"LaTeX picture                       ",
+	"LaTeX picture + epic macros         ",
+	"LaTeX picture + eepic macros        ",
+	"LaTeX picture + eepicemu macros     ",
+	"Combined PS/LaTeX (both parts)      ",
+	"Combined PDF/LaTeX (both parts)     ",
+	"PiCTeX macros                       ",
+	"IBMGL (or HPGL)                     ",
+	"Textyl \\special commands            ",
+	"TPIC                                ",
+	"PIC                                 ",
+	"HTML Image Map                      ",
+	"MF  (MetaFont)                      ",
+	"MP  (MetaPost)                      ",
+	"MMP (Multi MetaPost)                ",
+	"CGM (Computer Graphics Metafile)    ",
+	"Binary CGM                          ",
+	"EMF (Enhanced Metafile)             ",
+	"Tk  (Tcl/Tk toolkit)                ",
+	"SVG (Scalable Vector Graphics; beta)",
 
 	/*** bitmap formats follow ***/
 	/* if you move GIF, change FIRST_BITMAP_LANG in mode.h */
 
-	"GIF  (Graphics Interchange Format)",
-#ifdef USE_JPEG
-	"JPEG (Joint Photo. Expert Group   ",
-#endif /* USE_JPEG */
-	"PCX  (PC Paintbrush)              ",
-	"PNG  (Portable Network Graphics)  ",
-	"PPM  (Portable Pixmap)            ",
-	"SLD  (AutoCad Slide)              ",
-	"TIFF (no compression)             ",
-	"XBM  (X11 Bitmap)                 ",
+	"GIF  (Graphics Interchange Format)  ",
+	"JPEG (Joint Photo. Expert Group     ",
+	"PCX  (PC Paintbrush)                ",
+	"PNG  (Portable Network Graphics)    ",
+	"PPM  (Portable Pixmap)              ",
+	"SLD  (AutoCad Slide)                ",
+	"TIFF (no compression)               ",
+	"XBM  (X11 Bitmap)                   ",
 #ifdef USE_XPM
-	"XPM  (X11 Pixmap)                 ",
+	"XPM  (X11 Pixmap)                   ",
 #endif /* USE_XPM */
     };
 
@@ -160,7 +192,6 @@ Color		cur_pencolor	= BLACK;
 Color		cur_fillcolor	= WHITE;
 int		cur_boxradius	= DEF_BOXRADIUS;
 int		cur_fillstyle	= UNFILLED;
-int		cur_penstyle	= NUMSHADEPATS;	/* solid color */
 int		cur_arrowmode	= L_NOARROWS;
 int		cur_arrowtype	= 0;
 float		cur_arrowthick	= 1.0;			/* pixels */
@@ -171,10 +202,29 @@ float		cur_arrow_multwidth = DEF_ARROW_WID;
 float		cur_arrow_multheight = DEF_ARROW_HT;
 Boolean		use_abs_arrowvals = False;		/* start with values prop. to width */
 int		cur_arctype	= T_OPEN_ARC;
-char		EMPTY_PIC[8]	= "<empty>";
 
-/* Misc */
-float		cur_elltextangle = 0.0;	/* text/ellipse input angle */
+/*************************** Dimension lines ****************************/
+
+int		cur_dimline_thick = 1;		/* main line and tick thickness */
+int		cur_dimline_style = SOLID_LINE;	/* main line style */
+int		cur_dimline_color = BLACK;	/* color */
+int		cur_dimline_leftarrow = 2;	/* arrow type (black triangle) */
+int		cur_dimline_rightarrow = 2;	/* other end */
+float		cur_dimline_arrowlength = DEF_ARROW_HT;	/* as a multiple of line thickness */
+float		cur_dimline_arrowwidth = DEF_ARROW_WID;	/* as a multiple of line thickness */
+Boolean		cur_dimline_ticks = True;	/* Include ticks */
+int		cur_dimline_boxthick = 1;	/* thickness of text box line */
+int		cur_dimline_boxcolor = WHITE;	/* start with white-filled text box */
+int		cur_dimline_textcolor = BLACK;	/* text color */
+int		cur_dimline_font = 0;		/* Times Roman */
+int		cur_dimline_fontsize = DEF_FONTSIZE; /* size of text */
+int		cur_dimline_psflag = 1;
+Boolean		cur_dimline_fixed = False;	/* text is adjusted to report line length */
+
+/**************************** Miscellaneous *****************************/
+
+float		cur_elltextangle = 0.0;		/* text/ellipse input angle */
+char		EMPTY_PIC[8]	= "<empty>";
 
 /***************************  File Settings  ****************************/
 

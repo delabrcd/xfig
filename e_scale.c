@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -21,6 +21,7 @@
 #include "object.h"
 #include "paintop.h"
 #include "d_text.h"
+#include "e_rotate.h"
 #include "e_scale.h"
 #include "u_create.h"
 #include "u_draw.h"
@@ -28,8 +29,10 @@
 #include "u_search.h"
 #include "u_undo.h"
 #include "w_canvas.h"
+#include "w_drawprim.h"
 #include "w_mousefun.h"
 #include "w_msgpanel.h"
+#include "w_setup.h"
 
 static Boolean	init_boxscale_ellipse();
 static Boolean	init_boxscale_line();
@@ -81,6 +84,7 @@ scale_selected()
 			LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     init_searchproc_left(init_box_scale);
     init_searchproc_middle(init_center_scale);
     canvas_leftbut_proc = object_search_left;
@@ -229,9 +233,11 @@ init_boxscale_ellipse(x, y)
     if ((cur_e->type == T_CIRCLE_BY_DIA) ||
 	(cur_e->type == T_CIRCLE_BY_RAD)) {
 	canvas_locmove_proc = constrained_resizing_cbd;
+	canvas_ref_proc = elastic_cbd;
 	elastic_cbd();
     } else {
 	canvas_locmove_proc = constrained_resizing_ebd;
+	canvas_ref_proc = elastic_ebd;
 	elastic_ebd();
     }
     canvas_leftbut_proc = fix_boxscale_ellipse;
@@ -242,6 +248,7 @@ init_boxscale_ellipse(x, y)
 static void
 cancel_boxscale_ellipse()
 {
+    canvas_ref_proc = canvas_locmove_proc = null_proc;
     if ((cur_e->type == T_CIRCLE_BY_DIA) ||
 	(cur_e->type == T_CIRCLE_BY_RAD))
 	elastic_cbd();
@@ -268,14 +275,12 @@ fix_boxscale_ellipse(x, y)
     /* find how much the radii changed */
     dx = 1.0 * new_e->radiuses.x / cur_e->radiuses.x;
     dy = 1.0 * new_e->radiuses.y / cur_e->radiuses.y;
-    /* scale the line thickness */
-    scale_linewidth(new_e, dx, dy);
     change_ellipse(cur_e, new_e);
+    wrapup_scale();
     /* redraw anything under the old ellipse */
     redisplay_ellipse(cur_e);
     /* and the new one */
     redisplay_ellipse(new_e);
-    wrapup_scale();
 }
 
 static void
@@ -337,6 +342,7 @@ init_scale_ellipse()
     toggle_ellipsemarker(cur_e);
     set_cursor(crosshair_cursor);
     canvas_locmove_proc = scaling_ellipse;
+    canvas_ref_proc = elastic_scale_curellipse;
     elastic_scaleellipse(cur_e);
     canvas_middlebut_proc = fix_scale_ellipse;
     canvas_rightbut_proc = cancel_scale_ellipse;
@@ -352,6 +358,7 @@ init_scale_ellipse()
 static void
 cancel_scale_ellipse()
 {
+    canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_scaleellipse(cur_e);
     toggle_ellipsemarker(cur_e);
     wrapup_scale();
@@ -366,11 +373,11 @@ fix_scale_ellipse(x, y)
     new_e = copy_ellipse(cur_e);
     relocate_ellipsepoint(new_e, cur_x, cur_y);
     change_ellipse(cur_e, new_e);
+    wrapup_scale();
     /* redraw anything under the old ellipse */
     redisplay_ellipse(cur_e);
     /* and the new one */
     redisplay_ellipse(new_e);
-    wrapup_scale();
 }
 
 static void
@@ -391,8 +398,6 @@ relocate_ellipsepoint(ellipse, x, y)
     oldy = from_y - fix_y;
     oldd = sqrt(oldx * oldx + oldy * oldy);
     scalefact = newd / oldd;
-    /* scale the line thickness */
-    scale_linewidth(ellipse, scalefact, scalefact);
 
     ellipse->radiuses.x = round(ellipse->radiuses.x * scalefact);
     ellipse->radiuses.y = round(ellipse->radiuses.y * scalefact);
@@ -419,6 +424,7 @@ init_scale_arc()
     elastic_scalearc(cur_a);
     set_cursor(crosshair_cursor);
     canvas_locmove_proc = scaling_arc;
+    canvas_ref_proc = elastic_scale_curarc;
     canvas_middlebut_proc = fix_scale_arc;
     canvas_rightbut_proc = cancel_scale_arc;
     return True;
@@ -427,6 +433,7 @@ init_scale_arc()
 static void
 cancel_scale_arc()
 {
+    canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_scalearc(cur_a);
     /* erase last lengths if appres.showlengths is true */
     erase_lengths();
@@ -455,16 +462,14 @@ fix_scale_arc(x, y)
     scalefact = newd / oldd;
     /* scale any arrowheads */
     scale_arrows(new_a,scalefact,scalefact);
-    /* scale line width */
-    scale_linewidth(new_a,scalefact,scalefact);
 
     relocate_arcpoint(new_a, x, y);
     change_arc(cur_a, new_a);
+    wrapup_scale();
     /* redraw anything under the old arc */
     redisplay_arc(cur_a);
     /* and the new one */
     redisplay_arc(new_a);
-    wrapup_scale();
 }
 
 static void
@@ -537,6 +542,7 @@ init_scale_spline()
     toggle_splinemarker(cur_s);
     elastic_scalepts(cur_s->points);
     canvas_locmove_proc = scaling_spline;
+    canvas_ref_proc = elastic_scale_curspline;
     canvas_middlebut_proc = fix_scale_spline;
     canvas_rightbut_proc = cancel_scale_spline;
     return True;
@@ -545,6 +551,7 @@ init_scale_spline()
 static void
 cancel_scale_spline()
 {
+    canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_scalepts(cur_s->points);
     toggle_splinemarker(cur_s);
     wrapup_scale();
@@ -555,6 +562,7 @@ fix_scale_spline(x, y)
     int		    x, y;
 {
     elastic_scalepts(cur_s->points);
+    canvas_ref_proc = null_proc;
     adjust_box_pos(x, y, from_x, from_y, &x, &y);
     /* make a copy of the original and save as unchanged object */
     old_s = copy_spline(cur_s);
@@ -564,11 +572,11 @@ fix_scale_spline(x, y)
     old_s->next = cur_s;
     /* now change the original to become the new object */
     rescale_points(cur_s, x, y);
+    wrapup_scale();
     /* redraw anything under the old spline */
     redisplay_spline(old_s);
     /* and the new one */
     redisplay_spline(cur_s);
-    wrapup_scale();
 }
 
 /***************************  compound	********************************/
@@ -652,9 +660,10 @@ init_boxscale_compound(x, y)
 	cosa = fabs(dx / l);
 	sina = fabs(dy / l);
     }
-    boxsize_msg(1);
+    boxsize_scale_msg(1);
     elastic_box(fix_x, fix_y, cur_x, cur_y);
-    canvas_locmove_proc = constrained_resizing_box;
+    canvas_locmove_proc = constrained_resizing_scale_box;
+    canvas_ref_proc = elastic_fixedbox;
     canvas_leftbut_proc = fix_boxscale_compound;
     canvas_rightbut_proc = cancel_boxscale_compound;
     return True;
@@ -663,6 +672,7 @@ init_boxscale_compound(x, y)
 static void
 cancel_boxscale_compound()
 {
+    canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     /* erase last lengths if appres.showlengths is true */
     erase_lengths();
@@ -685,11 +695,11 @@ fix_boxscale_compound(x, y)
     scaley = (double) (y - fix_y) / (from_y - fix_y);
     scale_compound(new_c, scalex, scaley, fix_x, fix_y);
     change_compound(cur_c, new_c);
+    wrapup_scale();
     /* redraw anything under the old compound */
     redisplay_compound(cur_c);
     /* and the new one */
     redisplay_compound(new_c);
-    wrapup_scale();
 }
 
 static void
@@ -702,6 +712,7 @@ init_scale_compound()
     set_cursor(crosshair_cursor);
     elastic_scalecompound(cur_c);
     canvas_locmove_proc = scaling_compound;
+    canvas_ref_proc = elastic_scale_curcompound;
     canvas_middlebut_proc = fix_scale_compound;
     canvas_rightbut_proc = cancel_scale_compound;
 }
@@ -709,6 +720,7 @@ init_scale_compound()
 static void
 cancel_scale_compound()
 {
+    canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_scalecompound(cur_c);
     /* erase last lengths if appres.showlengths is true */
     erase_lengths();
@@ -732,11 +744,11 @@ fix_scale_compound(x, y)
     old_c->next = cur_c;
     /* now change the original to become the new object */
     prescale_compound(cur_c, cur_x, cur_y);
+    wrapup_scale();
     /* redraw anything under the old compound */
     redisplay_compound(old_c);
     /* and the new one */
     redisplay_compound(cur_c);
-    wrapup_scale();
 }
 
 static void
@@ -771,6 +783,14 @@ scale_compound(c, sx, sy, refx, refy)
     F_compound	   *c1;
     int		    x1, y1, x2, y2;
 
+    /* if sx and sy == 1.0, return now */
+    if (sx == 0.0 && sy == 0.0)
+	return;
+
+    /* check if really a dimension line */
+    if (rescale_dimension_line(c, sx, sy, refx, refy))
+	return; /* yes, return now */
+
     x1 = round(refx + (c->nwcorner.x - refx) * sx);
     y1 = round(refy + (c->nwcorner.y - refy) * sy);
     x2 = round(refx + (c->secorner.x - refx) * sx);
@@ -797,7 +817,193 @@ scale_compound(c, sx, sy, refx, refy)
     }
     for (c1 = c->compounds; c1 != NULL; c1 = c1->next) {
 	scale_compound(c1, sx, sy, refx, refy);
+	/* if there's a dimension line in this compound reset corners */
+	c->nwcorner.x = min2(c->nwcorner.x, c1->nwcorner.x);
+	c->nwcorner.y = min2(c->nwcorner.y, c1->nwcorner.y);
+	c->secorner.x = max2(c->secorner.x, c1->secorner.x);
+	c->secorner.y = max2(c->secorner.y, c1->secorner.y);
     }
+}
+
+Boolean
+rescale_dimension_line(dimline, scalex, scaley, refx, refy)
+    F_compound	   *dimline;
+    float	    scalex, scaley;
+    int		    refx, refy;
+{
+    F_line	   *l, *line, *box, *tick1, *tick2;
+    F_text	   *text;
+    double	    length, dx, dy, angle;
+    float	    save_rotnangle, save_rotn_dirn;
+    int		    p1x, p1y, p2x, p2y, centerx, centery;
+    int		    x1, x2, y1, y2, save;
+    int		    theight, tlen2, tht2;
+    PR_SIZE	    tsize;
+    char	    str[80], comment[100];
+    F_point	   *pnt;
+    Boolean	    fixed_text;
+    int		    save_lthick, save_t1thick, save_t2thick;
+
+    /* locate the line components of the dimension line */
+    if (!dimline_components(dimline, &line, &tick1, &tick2, &box))
+	/* not a dimension line, return */
+	return False;
+	
+    /* get the two endpoints and scale them */
+    p1x = round(refx + (line->points->x - refx) * scalex);
+    p1y = round(refy + (line->points->y - refy) * scaley);
+    p2x = round(refx + (line->points->next->x - refx) * scalex);
+    p2y = round(refy + (line->points->next->y - refy) * scaley);
+
+    /* put them back */
+    line->points->x = p1x;
+    line->points->y = p1y;
+    line->points->next->x = p2x;
+    line->points->next->y = p2y;
+
+    /* if drawn right to left or top to bottom at 90 degrees swap the two points */
+    if (p1x > p2x || (p1y < p2y && p1x == p2x)) {
+	save = p1x; p1x = p2x; p2x = save;
+	save = p1y; p1y = p2y; p2y = save;
+    }
+    dx = p2x-p1x;
+    dy = p2y-p1y;
+
+    /* get the text component */
+    text = dimline->texts;
+    fixed_text = text && text->comments && (strncasecmp(text->comments,"fixed text", 10)==0);
+    if (!fixed_text) {
+	/* length of the line */
+	length = sqrt(dx*dx + dy*dy);
+
+	/* make text with the length */
+	make_dimension_string(length, str, False);
+
+	/* put the new length in the comment */
+	sprintf(comment, "Dimension line: %s",str);
+	/* free any old comment */
+	if (dimline->comments)
+	    free(dimline->comments);
+	/* put in the new one */
+	dimline->comments = my_strdup(comment);
+    }
+
+    /* center the box for the length string */
+    centerx = (p1x+p2x)/2;
+    centery = (p1y+p2y)/2;
+    /* angle of the line */
+    angle = -atan2(dy, dx);
+
+    /* recompute the text, text angle and text box */
+    if (text) {
+	/* new string, but only if comment doesn't say "fixed text" */
+     	if (!fixed_text) {
+	    /* free any old string */
+	    if (text->cstring)
+		free(text->cstring);
+	    text->cstring = my_strdup(str);
+	}
+	/* recalculate text sizes */
+	text->fontstruct = lookfont(x_fontnum(text->flags, text->font), text->size);
+	text->zoom = 1.0;
+	tsize = textsize(text->fontstruct, strlen(text->cstring), text->cstring);
+	text->ascent  = tsize.ascent;
+	text->descent = tsize.descent;
+	text->length  = tsize.length;
+	theight = tsize.ascent + tsize.descent;
+	text->angle = angle;
+	text->base_x = centerx + sin(angle)*round(theight/2.0 - tsize.descent);
+	text->base_y = centery + cos(angle)*round(theight/2.0 - tsize.descent);
+    } /* if (text) */
+
+    /* half the text length + a margin */
+    tlen2 = text->length/2 + 60;
+    /* half the height + a margin */
+    tht2 = theight/2 + 60;
+
+    /* save global rotation angle and direction to use our own */
+    save_rotnangle = act_rotnangle;
+    save_rotn_dirn = rotn_dirn;
+    act_rotnangle = -angle * 180.0 / M_PI;
+    rotn_dirn = 1;
+
+    /* now rescale the text box (the box) */
+    if (box) {
+	pnt = box->points;
+	pnt->x = centerx-tlen2;
+	pnt->y = centery-tht2;
+	pnt = pnt->next;
+	pnt->x = centerx-tlen2;
+	pnt->y = centery+tht2;
+	pnt = pnt->next;
+	pnt->x = centerx+tlen2;
+	pnt->y = centery+tht2;
+	pnt = pnt->next;
+	pnt->x = centerx+tlen2;
+	pnt->y = centery-tht2;
+	pnt = pnt->next;
+	pnt->x = centerx-tlen2;
+	pnt->y = centery-tht2;
+
+	/* rotate the box around the center */
+	rotate_line(box, centerx, centery);
+    } /* if (box) */
+
+    /* now recalculate the end ticks */
+    if (tick1) {
+	pnt = tick1->points;
+	pnt->x = p1x;
+	pnt->y = p1y-tht2;
+	pnt = pnt->next;
+	pnt->x = p1x;
+	pnt->y = p1y+tht2;
+	/* rotate the line around the endpoint */
+	rotate_line(tick1, p1x, p1y);
+    }
+
+    /* the other tick */
+    if (tick2) {
+	pnt = tick2->points;
+	pnt->x = p2x;
+	pnt->y = p2y-tht2;
+	pnt = pnt->next;
+	pnt->x = p2x;
+	pnt->y = p2y+tht2;
+	/* rotate the line around the endpoint */
+	rotate_line(tick2, p2x, p2y);
+    }
+
+    /* restore original rotation angle and direction */
+    act_rotnangle = save_rotnangle;
+    rotn_dirn = save_rotn_dirn;
+
+    /* get the bounds of the compound */
+    /* but set the thicknesses of the line and ticks to 0 so they aren't taken into account */
+    save_lthick = line->thickness;
+    line->thickness = 0;
+    if (tick1) {
+	save_t1thick = tick1->thickness;
+	tick1->thickness = 0;
+    }
+    if (tick2) {
+	save_t2thick = tick2->thickness;
+	tick2->thickness = 0;
+    }
+
+    compound_bound(dimline, &x1, &y1, &x2, &y2);
+    /* restore the thicknesses */
+    line->thickness = save_lthick;
+    if (tick1)
+	tick1->thickness = save_t1thick;
+    if (tick2)
+	tick2->thickness = save_t2thick;
+
+    dimline->nwcorner.x = x1;
+    dimline->nwcorner.y = y1;
+    dimline->secorner.x = x2;
+    dimline->secorner.y = y2;
+    
+    return True;
 }
 
 static void
@@ -813,7 +1019,7 @@ scale_line(l, sx, sy, refx, refy)
 	p->y = round(refy + (p->y - refy) * sy);
     }
     /* now scale the radius for an arc-box */
-    if (l->type == T_ARC_BOX) {
+    if (l->type == T_ARCBOX) {
 	int h,w;
 	/* scale by the average of height/width factor */
 	l->radius = round(l->radius * (sx+sy)/2);
@@ -829,8 +1035,6 @@ scale_line(l, sx, sy, refx, refy)
     }
     /* finally, scale any arrowheads */
     scale_arrows(l,sx,sy);
-    /* scale line width */
-    scale_linewidth(l,sx,sy);
 }
 
 static void
@@ -847,8 +1051,6 @@ scale_spline(s, sx, sy, refx, refy)
     }
     /* scale any arrowheads */
     scale_arrows(s,sx,sy);
-    /* scale line width */
-    scale_linewidth(s,sx,sy);
 }
 
 static void
@@ -894,8 +1096,6 @@ scale_arc(a, sx, sy, refx, refy)
     a->direction = compute_direction(a->point[0], a->point[1], a->point[2]);
     /* scale any arrowheads */
     scale_arrows(a,sx,sy);
-    /* scale line width */
-    scale_linewidth(a,sx,sy);
 }
 
 static void
@@ -922,8 +1122,6 @@ scale_ellipse(e, sx, sy, refx, refy)
 	if (e->radiuses.x == e->radiuses.y)
 	    e->type += 2;
     }
-    /* scale line width */
-    scale_linewidth(e,sx,sy);
 }
 
 static void
@@ -962,7 +1160,7 @@ init_boxscale_line(x, y)
     double	    dx, dy, l;
 
     if (cur_l->type != T_BOX &&
-	cur_l->type != T_ARC_BOX &&
+	cur_l->type != T_ARCBOX &&
 	cur_l->type != T_PICTURE) {
 	put_msg(BOX_SCL2_MSG);
 	beep();
@@ -1046,6 +1244,7 @@ init_boxscale_line(x, y)
     boxsize_msg(1);
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     canvas_locmove_proc = constrained_resizing_box;
+    canvas_ref_proc = elastic_fixedbox;
     canvas_leftbut_proc = fix_boxscale_line;
     canvas_rightbut_proc = cancel_boxscale_line;
     return True;
@@ -1054,6 +1253,7 @@ init_boxscale_line(x, y)
 static void
 cancel_boxscale_line()
 {
+    canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     /* erase last lengths if appres.showlengths is true */
     erase_lengths();
@@ -1084,19 +1284,17 @@ fix_boxscale_line(x, y)
 	    new_l->pic->flipped = 1 - new_l->pic->flipped;
 	if (signof(fix_y - from_y) != signof(fix_y - y))
 	    new_l->pic->flipped = 1 - new_l->pic->flipped;
-    } else if (new_l->type == T_ARC_BOX) {	/* scale the radius also */
+    } else if (new_l->type == T_ARCBOX) {	/* scale the radius also */
 	scale_radius(cur_l, new_l, owd, oht, nwd, nht);
     }
     change_line(cur_l, new_l);
     scalex = 1.0 * nwd/owd;
     scaley = 1.0 * nht/oht;
-    /* scale the line width */
-    scale_linewidth(new_l, scalex, scaley);
+    wrapup_scale();
     /* redraw anything under the old line */
     redisplay_line(cur_l);
     /* and the new one */
     redisplay_line(new_l);
-    wrapup_scale();
 }
 
 void
@@ -1142,10 +1340,12 @@ init_scale_line()
     set_action_on();
     toggle_linemarker(cur_l);
     set_cursor(crosshair_cursor);
-    if (cur_l->type == T_BOX || cur_l->type == T_PICTURE)
+    if (cur_l->type == T_BOX || cur_l->type == T_ARCBOX || cur_l->type == T_PICTURE) {
 	boxsize_msg(2);	/* factor of 2 because measurement is from midpoint */
+    }
     elastic_scalepts(cur_l->points);
     canvas_locmove_proc = scaling_line;
+    canvas_ref_proc = elastic_scale_curline;
     canvas_middlebut_proc = fix_scale_line;
     canvas_rightbut_proc = cancel_scale_line;
     return True;
@@ -1154,6 +1354,7 @@ init_scale_line()
 static void
 cancel_scale_line()
 {
+    canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_scalepts(cur_l->points);
     /* erase last lengths if appres.showlengths is true */
     erase_lengths();
@@ -1179,19 +1380,19 @@ fix_scale_line(x, y)
     old_l->next = cur_l;
     /* now change the original to become the new object */
     rescale_points(cur_l, x, y);
-    /* and scale the radius if ARC_BOX */
-    if (cur_l->type == T_ARC_BOX) {
+    /* and scale the radius if ARCBOX */
+    if (cur_l->type == T_ARCBOX) {
 	owd = abs(old_l->points->x - old_l->points->next->next->x);
 	oht = abs(old_l->points->y - old_l->points->next->next->y);
 	nwd = abs(cur_l->points->x - cur_l->points->next->next->x);
 	nht = abs(cur_l->points->y - cur_l->points->next->next->y);
 	scale_radius(cur_l, cur_l, owd, oht, nwd, nht);
     }
+    wrapup_scale();
     /* redraw anything under the old line */
     redisplay_line(old_l);
     /* and the new one */
     redisplay_line(cur_l);
-    wrapup_scale();
 }
 
 static void
@@ -1200,16 +1401,16 @@ rescale_points(obj, x, y)
     int		    x, y;
 {
     F_point	   *p;
-    int		    newx, newy, oldx, oldy;
-    float	    newd, oldd, scalefact;
+    double	    newx, newy, oldx, oldy;
+    double	    newd, oldd, scalefact;
 
     newx = x - fix_x;
     newy = y - fix_y;
-    newd = sqrt((double) (newx * newx + newy * newy));
+    newd = sqrt(newx * newx + newy * newy);
 
     oldx = from_x - fix_x;
     oldy = from_y - fix_y;
-    oldd = sqrt((double) (oldx * oldx + oldy * oldy));
+    oldd = sqrt(oldx * oldx + oldy * oldy);
 
     scalefact = newd / oldd;
     for (p = obj->points; p != NULL; p = p->next) {
@@ -1218,8 +1419,6 @@ rescale_points(obj, x, y)
     }
     /* scale any arrows */
     scale_arrows(obj,scalefact,scalefact);
-    /* scale line width */
-    scale_linewidth(obj,scalefact,scalefact);
     set_modifiedflag();
 }
 
@@ -1250,22 +1449,4 @@ scale_arrow(arrow,sx,sy)
     arrow->ht *= sx;
     arrow->wd *= sx;
     return;
-}
-
-/* scale line width - we can call the object a F_line because all
-   Fig object structures have the same components up until the style_val */
-
-scale_linewidth(l,sx,sy)
-    F_line	 *l;
-    float	  sx,sy;
-{
-    if (l->thickness == 0)
-	return;
-
-    /* scale the thickness by the average of the horizontal and vertical scale factors */
-    sx = ((float)fabs(sx)+(float)fabs(sy))/2.0;
-    l->thickness *= sx;
-    /* don't allow underflow */
-    if (l->thickness == 0)
-	l->thickness = 1;
 }

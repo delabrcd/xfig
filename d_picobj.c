@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -93,7 +93,7 @@ create_picobj(x, y)
     box->pen_color = cur_pencolor;
     box->fill_color = DEFAULT;
     box->depth = cur_depth;
-    box->pen_style = 0;
+    box->pen_style = -1;
     box->join_style = 0;	/* not used */
     box->cap_style = 0;		/* not used */
     box->fill_style = UNFILLED;
@@ -104,12 +104,8 @@ create_picobj(x, y)
 	free((char *) box);
 	return;
     }
-    box->pic->file[0] = '\0';
-    box->pic->bitmap = NULL;
-    box->pic->numcols = 0;
-    box->pic->subtype = 0;
-    box->pic->bit_size.x = 0;
-    box->pic->bit_size.y = 0;
+    box->pic->new = True;		/* set new flag to delete if it user cancels edit operation */
+    box->pic->pic_cache = NULL;
     box->pic->flipped = 0;
     box->pic->hw_ratio = 0.0;
     box->pic->pixmap = 0;
@@ -117,9 +113,6 @@ create_picobj(x, y)
     box->pic->pix_height = 0;
     box->pic->pix_rotation = 0;
     box->pic->pix_flipped = 0;
-#ifdef V4_0
-    box->pic->figure= (struct f_compound*) NULL;
-#endif
     box->points = point;
     append_point(fix_x, y, &point);
     append_point(x, y, &point);

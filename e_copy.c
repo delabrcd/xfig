@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -38,6 +38,7 @@ copy_selected()
 {
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     init_searchproc_left(init_arb_copy);
     init_searchproc_middle(init_constrained_copy);
     init_searchproc_right(init_copy_to_scrap);
@@ -72,9 +73,8 @@ init_constrained_copy(p, type, x, y, px, py)
 {
     constrained = MOVE_HORIZ_VERT;
     init_copy(p, type, x, y, px, py);
-    canvas_middlebut_proc = canvas_leftbut_proc;
-    canvas_leftbut_proc = null_proc;
-    set_mousefun("", "place object", "cancel", LOC_OBJ, LOC_OBJ, LOC_OBJ);
+    set_mousefun("place object", "array placement", "cancel", 
+		LOC_OBJ, LOC_OBJ, LOC_OBJ);
     draw_mousefun_canvas();
 }
 

@@ -1,16 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -31,13 +31,8 @@ typedef struct _icon_struct {
 }	icon_struct;
 
 extern icon_struct	addpt_ic;
-
-#ifdef notdef			/* not used yet */
-extern icon_struct	raise_ic;
-#endif
-
 extern icon_struct	figure_ic;
-extern char		*fig_c_icon_X[];
+extern char		*fig_full_c_icon_X[], *fig_reduced_c_icon_X[];
 
 extern icon_struct	smartoff_ic;
 extern icon_struct	smartmove_ic;
@@ -127,12 +122,17 @@ extern icon_struct	fbarrows_ic;
 extern icon_struct	open_arc_ic;
 extern icon_struct	pie_wedge_arc_ic;
 extern icon_struct	xspl_ic;
+extern icon_struct	tangent_ic;
+extern icon_struct	anglemeas_ic;
+extern icon_struct	lenmeas_ic;
+extern icon_struct	areameas_ic;
 
 /* misc icons */
 
 extern icon_struct	kbd_ic;
 extern icon_struct	printer_ic;
 
+extern icon_struct	no_arrow_ic;
 extern icon_struct	arrow0_ic;
 extern icon_struct	arrow1o_ic, arrow1f_ic;
 extern icon_struct	arrow2o_ic, arrow2f_ic;
@@ -144,6 +144,7 @@ extern icon_struct	arrow7o_ic, arrow7f_ic;
 extern icon_struct	arrow8o_ic, arrow8f_ic;
 extern icon_struct	arrow9a_ic, arrow9b_ic;
 extern icon_struct	arrow10a_ic, arrow10b_ic;
+extern unsigned char	no_arrow_bits[];
 extern unsigned char	arrow0_bits[];
 extern unsigned char	arrow1o_bits[], arrow1f_bits[];
 extern unsigned char	arrow2o_bits[], arrow2f_bits[];
@@ -155,5 +156,13 @@ extern unsigned char	arrow7o_bits[], arrow7f_bits[];
 extern unsigned char	arrow8o_bits[], arrow8f_bits[];
 extern unsigned char	arrow9a_bits[], arrow9b_bits[];
 extern unsigned char	arrow10a_bits[], arrow10b_bits[];
+
+/* for splash screen */
+
+#ifdef USE_XPM
+extern char		*spl_bckgnd_xpm[];
+#endif /* USE_XPM */
+extern icon_struct	letters_ic;
+extern icon_struct	spl_bckgnd_ic;
 
 #endif /* W_ICONS_H */

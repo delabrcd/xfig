@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -85,6 +85,7 @@ flip_selected()
 			LOC_OBJ, LOC_OBJ, "set anchor");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     init_searchproc_left(init_flip);
     init_searchproc_middle(init_copynflip);
     canvas_leftbut_proc = object_search_left;
@@ -335,17 +336,26 @@ flip_text(t, x, y, flip_axis)
     F_text	   *t;
     int		    x, y, flip_axis;
 {
+    double	    sina, cosa;
+
+    while (t->angle > M_2PI)
+	t->angle -= M_2PI;
+    /* flip the angle around 2PI */
+    t->angle = M_2PI - t->angle;
     switch (flip_axis) {
-    case UD_FLIP:		/* x axis  */
-	t->base_y = y + (y - t->base_y);
-	break;
-    case LR_FLIP:		/* y axis  */
+      case LR_FLIP:		/* left/right around the y axis  */
 	t->base_x = x + (x - t->base_x);
-	/* must flip right/left justification too */
+	/* switch justification */
 	if (t->type == T_LEFT_JUSTIFIED)
-	    t->type =T_RIGHT_JUSTIFIED;
-	else if (t->type == T_RIGHT_JUSTIFIED)
-	    t->type =T_LEFT_JUSTIFIED;
+	    t->type = T_RIGHT_JUSTIFIED;
+	else
+	    t->type = T_LEFT_JUSTIFIED;
+	break;
+      case UD_FLIP:		/* up/down around the x axis  */
+	cosa = cos((double)t->angle);
+	sina = sin((double)t->angle);
+	t->base_x = t->base_x + round((t->ascent - t->descent)*sina);
+	t->base_y = y + (y - t->base_y) + round((t->ascent - t->descent)*cosa);
 	break;
     }
 }

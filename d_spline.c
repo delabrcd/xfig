@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
@@ -9,10 +9,10 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -90,9 +90,14 @@ create_splineobject(x, y)
 {
     F_spline	   *spline;
 
-    if (x != fix_x || y != fix_y || num_point < min_num_points) {
+    if (x != fix_x || y != fix_y) 
 	get_intermediatepoint(x, y, 0);
+    if (num_point < min_num_points) {	/* too few points */
+	put_msg("Not enough points for spline");
+	beep();
+	return;
     }
+
     elastic_line();
     /* erase any length info if appres.showlengths is true */
     erase_lengths();
@@ -114,7 +119,7 @@ create_splineobject(x, y)
     spline->fill_color = cur_fillcolor;
     spline->cap_style = cur_capstyle;
     spline->depth = cur_depth;
-    spline->pen_style = 0;
+    spline->pen_style = -1;
     spline->fill_style = cur_fillstyle;
     /*
      * The current fill style is saved in all spline objects (but support for

@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -87,6 +87,7 @@ rotate_selected()
 			LOC_OBJ, LOC_OBJ, "set center");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     init_searchproc_left(init_rotate);
     init_searchproc_middle(init_copynrotate);
     canvas_leftbut_proc = object_search_left;
@@ -363,13 +364,13 @@ rotate_figure(f, x, y)
 {
   float old_rotn_dirn, old_act_rotnangle;
 
-  old_rotn_dirn= rotn_dirn;
-  old_act_rotnangle= act_rotnangle;
-  rotn_dirn= -1;
-  act_rotnangle=90.0;
+  old_rotn_dirn = rotn_dirn;
+  old_act_rotnangle = act_rotnangle;
+  rotn_dirn = -1;
+  act_rotnangle = 90.0;
   rotate_compound(f,x,y);
-  rotn_dirn=old_rotn_dirn;
-  act_rotnangle=old_act_rotnangle;
+  rotn_dirn = old_rotn_dirn;
+  act_rotnangle = old_act_rotnangle;
 }
 
 rotate_spline(s, x, y)
@@ -495,7 +496,7 @@ valid_rot_angle(c)
     if (fabs(act_rotnangle) == 90.0 || fabs(act_rotnangle == 180.0))
 	return 1; /* always valid */
     for (l = c->lines; l != NULL; l = l->next)
-	if (l->type == T_ARC_BOX || l->type == T_BOX)
+	if (l->type == T_ARCBOX || l->type == T_BOX)
 	    return 0;
     for (c1 = c->compounds; c1 != NULL; c1 = c1->next)
 	if (!valid_rot_angle(c1))

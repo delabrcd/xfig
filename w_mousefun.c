@@ -1,16 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -18,11 +18,12 @@
 #include "figx.h"
 #include "resources.h"
 #include <X11/keysym.h>
-#include "w_util.h"
-#include "w_icons.h"	/* for kbd_ic */
+#include "w_icons.h"
 #include "w_drawprim.h"
+#include "w_indpanel.h"
 #include "w_mousefun.h"
 #include "w_setup.h"
+#include "w_util.h"
 
 #define MOUSE_BUT_WID		(int) (MOUSEFUN_WD * 0.045)
 #define MOUSE_BUT_HGT		(int) (MOUSEFUN_HT * 0.5)
@@ -81,9 +82,9 @@ init_mousefun(tool)
     mousefun = XtCreateManagedWidget("mouse_panel", labelWidgetClass,
 				     tool, Args, ArgCount);
     /* popup when mouse passes over button */
-    XtAddEventHandler(mousefun, EnterWindowMask, (Boolean) 0,
+    XtAddEventHandler(mousefun, EnterWindowMask, False,
 		      mouse_balloon_trigger, (XtPointer) mousefun);
-    XtAddEventHandler(mousefun, LeaveWindowMask, (Boolean) 0,
+    XtAddEventHandler(mousefun, LeaveWindowMask, False,
 		      mouse_unballoon, (XtPointer) mousefun);
 }
 
@@ -367,6 +368,19 @@ void
 draw_shift_mousefun_canvas()
 {
     draw_mousefun(mousefun_sh_l, mousefun_sh_m, mousefun_sh_r);
+}
+
+void
+draw_shift_mousefun_canvas2(tl, tm, tr)
+    char *tl, *tm, *tr;
+{
+    if (!tl)
+      tl = mousefun_sh_l;
+    if (!tm)
+      tm = mousefun_sh_m;
+    if (!tr)
+      tr = mousefun_sh_r;
+    draw_mousefun(tl, tm, tr);
 }
 
 void

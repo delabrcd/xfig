@@ -1,44 +1,37 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2001 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
 /* This subclasses the SmeBSB object to make a cascade menu */
 
 #include <stdio.h>
+#include "fig.h"
+#include "figx.h"
+#include <X11/Intrinsic.h>
 #include <X11/IntrinsicP.h>
-#include <X11/StringDefs.h>
 
 #include <X11/Xmu/Drawing.h>
 
 #ifdef XAW3D
 #include <X11/Xaw3d/XawInit.h>
-#include <X11/Xaw3d/SimpleMenu.h>
-#include <X11/Xaw3d/Cardinals.h>
 #else
 #include <X11/Xaw/XawInit.h>
-#include <X11/Xaw/SimpleMenu.h>
-#include <X11/Xaw/Cardinals.h>
 #endif /* XAW3D */
 
 #include "SmeCascadeP.h"
 
 #include <X11/ShellP.h>
-#ifdef XAW3D
-#include <X11/Xaw3d/SimpleMenP.h>
-#else
-#include <X11/Xaw/SimpleMenP.h>
-#endif /* XAW3D */
 
 #define offset(field) XtOffset(SmeCascadeObject, sme_cascade.field)
 
@@ -398,7 +391,11 @@ Notify(w)
  ************************************************************/
 
 extern void	_XtDefaultWarningMsg();
-static void	null_proc();
+
+static void
+null_sme_proc()
+{
+}
 
 static void
 popdown(w)
@@ -407,13 +404,9 @@ popdown(w)
     int i;
 
     /* nullify the warning handler because we may have an unmatched grab */
-    XtAppSetWarningMsgHandler(XtWidgetToApplicationContext(w), null_proc);
+    XtAppSetWarningMsgHandler(XtWidgetToApplicationContext(w), null_sme_proc);
     XtPopdown(w);
     /* restore the warning handler */
     XtAppSetWarningMsgHandler(XtWidgetToApplicationContext(w), _XtDefaultWarningMsg);
 }
 
-static void
-null_proc()
-{
-}

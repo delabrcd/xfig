@@ -1,21 +1,18 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1999 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  */
 
 The new components in protocol 3.2 are the paper size, magnification,
@@ -99,12 +96,12 @@ Description of the Fig Format Follows
     of six classes (or types).
 
 	0)	Color pseudo-object.
-	1)	Arc.
-	2)	Ellipse which is a generalization of circle.
-	3)	Polyline which includes polygon and box.
-	4)	Spline which includes 
+	1)	Ellipse which is a generalization of circle.
+	2)	Polyline which includes polygon and box.
+	3)	Spline which includes
 		closed/open approximated/interpolated/x-spline spline.
-	5)	Text.
+	4)	Text.
+	5)	Arc.
 	6)	Compound object which is composed of one or more objects.
 
     In the following elaboration on object formats, every value of fig
@@ -140,6 +137,11 @@ Description of the Fig Format Follows
 	 values from 32 to 543 (512 total) are user colors and
 	 are defined in color pseudo-objects (type 0)
 
+	 Your X server may limit the number of colors to something less
+	 than this, especially on a 8-bit PseudoColor visual, where
+	 the number of usable colors will be 256 minus the number of colors
+	 xfig preallocates for itself and the 32 standard colors (about 48).
+
     For WHITE color, the area fill field is defined as follows:
 	
 	-1 = not filled
@@ -174,16 +176,22 @@ Description of the Fig Format Follows
 	44 = 45 degree left diagonal pattern
 	45 = 45 degree right diagonal pattern
 	46 = 45 degree crosshatch
-	47 = bricks
-	48 = circles
+	47 = horizontal bricks
+	48 = vertical bricks
 	49 = horizontal lines
 	50 = vertical lines
 	51 = crosshatch
-	52 = fish scales
-	53 = small fish scales
-	54 = octagons
-	55 = horizontal "tire treads"
-	56 = vertical "tire treads"
+	52 = horizontal "shingles" skewed to the right
+	53 = horizontal "shingles" skewed to the left
+	54 = vertical "shingles" skewed one way
+	55 = vertical "shingles"skewed the other way
+	56 = fish scales
+	57 = small fish scales
+	58 = circles
+	59 = hexagons
+	60 = octagons
+	61 = horizontal "tire treads"
+	62 = vertical "tire treads"
 
     The depth field is defined as follows:
 
@@ -207,8 +215,8 @@ Description of the Fig Format Follows
     The join_style field is defined FOR LINES only as follows:
 
 	 0 = Miter (the default in xfig 2.1 and earlier)
-	 1 = Bevel
-	 2 = Round
+	 1 = Round
+	 2 = Bevel
 
     The cap_style field is defined FOR LINES, OPEN SPLINES and ARCS only as follows:
 
@@ -265,9 +273,11 @@ Description of the Fig Format Follows
 	 0 = Hollow (actually filled with white)
 	 1 = Filled with pen_color
 
-(3.0) OBJECT DEFINITION:
+(3.0) OBJECT DEFINITIONS:
 
+    ================================================
     (3.1) Color Pseudo-objects (user-defined colors)
+    ================================================
 	  This is used to define arbitrary colors beyond the 32 standard colors.
 	  The color objects must be defined before any other Fig objects.
 
@@ -276,17 +286,19 @@ Description of the Fig Format Follows
 	----	----			-------------------
 	int	object_code		(always 0)
 	int	color_number		(color number, from 32-543 (512 total))
-     hex string	rgb values		(hexadecimal string describing red,
+	hex string  rgb values		(hexadecimal string describing red,
 					 green and blue values (e.g. #330099) )
 
+    ============================================================================
     (3.2) ARC
+    =========
 
     First line:
 	type	name			(brief description)
 	----	----			-------------------
 	int	object_code		(always 5)
-	int	sub_type		(0: pie-wedge (closed)
-					 1: open ended arc)
+	int	sub_type		(1: open ended arc
+					 2: pie-wedge (closed) )
 	int	line_style		(enumeration type)
 	int	line_thickness		(1/80 inch)
 	int	pen_color		(enumeration type, pen color)
@@ -298,7 +310,7 @@ Description of the Fig Format Follows
 	int	cap_style		(enumeration type)
 	int	direction		(0: clockwise, 1: counterclockwise)
 	int	forward_arrow		(0: no forward arrow, 1: on)
-	int	backward_arrow		(0: no forward arrow, 1: on)
+	int	backward_arrow		(0: no backward arrow, 1: on)
 	float	center_x, center_y	(center of the arc)
 	int	x1, y1			(Fig units, the 1st point the user entered)
 	int	x2, y2			(Fig units, the 2nd point)
@@ -322,7 +334,9 @@ Description of the Fig Format Follows
 	float	arrow_width		(Fig units)
 	float	arrow_height		(Fig units)
 
+    ============================================================================
     (3.3) COMPOUND
+    ==============
 
     A line with object code 6 signifies the start of a compound.
     There are four more numbers on this line which indicate the
@@ -347,7 +361,9 @@ Description of the Fig Format Follows
     Last line:
 	-6
 
+    ============================================================================
     (3.4) ELLIPSE
+    =============
 
     First line:
 	type	name			(brief description)
@@ -372,7 +388,9 @@ Description of the Fig Format Follows
 	int	start_x, start_y	(Fig units; the 1st point entered)
 	int	end_x, end_y		(Fig units; the last point entered)
 
+    ============================================================================
     (3.5) POLYLINE
+    ==============
 
     First line:
 	type	name			(brief description)
@@ -402,7 +420,16 @@ Description of the Fig Format Follows
 
     Backward arrow line: same as ARC object
 
-    Points line:
+    For picture (type 5) the following line follows:
+
+	type	name			(brief description)
+	----	----			-------------------
+	boolean	flipped			orientation = normal (0) or flipped (1)
+	char	file[]			name of picture file to import
+
+    Points line(s).  The x,y coordinates follow, any number to a line, with
+    as many lines as are necessary:
+
 	type	name			(brief description)
 	----	----			-------------------
 	int	x1, y1			(Fig units)
@@ -412,13 +439,9 @@ Description of the Fig Format Follows
 	int	xnpoints ynpoints	(this will be the same as the 1st
 					point for polygon and box)
 
-    PIC line:
-	type	name			(brief description)
-	----	----			-------------------
-	boolean	flipped			orientation = normal (0) or flipped (1)
-	char	file[]			name of picture file to import
-
+    ============================================================================
     (3.6) SPLINE
+    ============
 
     First line:
 	type	name			(brief description)
@@ -458,7 +481,11 @@ Description of the Fig Format Follows
     control point, except when the value of	the factor is 0 for which
     there is a first-order discontinuity (i.e. angular point).
 
+
+    ============================================================================
     (3.7) TEXT
+    ==========
+
 	type	name			(brief description)
 	----	----			-------------------
 	int	object 			(always 4)

@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * This software is copyright (C) 1991-1996, Thomas G. Lane.
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * All Rights Reserved except as specified below.
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -59,6 +59,7 @@
 #include "fig.h"
 #include "resources.h"
 #include "object.h"
+#include "f_picobj.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
 #include <setjmp.h>
@@ -84,20 +85,23 @@ read_jpg(file,filetype,pic)
 				(float)PIX_PER_INCH :
 				2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
 	pict = pic;
-	if (!read_JPEG_file(file))
+	if (!read_JPEG_file(file)) {
+	    close_picfile(file,filetype);
 	    return FileInvalid;
+	}
 
 	/* number of colors is put in by read_JPEG_file() */
-	pic->subtype = T_PIC_JPEG;
 	pic->pixmap = None;
-	pic->size_x = pic->bit_size.x * scale;
-	pic->size_y = pic->bit_size.y * scale;
-	pic->hw_ratio = (float) pic->bit_size.y/pic->bit_size.x;
+	pic->pic_cache->subtype = T_PIC_JPEG;
+	pic->pic_cache->size_x = pic->pic_cache->bit_size.x * scale;
+	pic->pic_cache->size_y = pic->pic_cache->bit_size.y * scale;
+	pic->hw_ratio = (float) pic->pic_cache->bit_size.y/pic->pic_cache->bit_size.x;
 
 	/* we have the image here, see if we need to map it to monochrome display */
 	if (tool_cells <= 2 || appres.monochrome)
 	    map_to_mono(pic);
 
+	close_picfile(file,filetype);
 	return PicSuccess;
 }
 
@@ -174,12 +178,12 @@ read_JPEG_file (file)
 
 	/* Now fill in the pict parameters */
 
-	pict->bit_size.x = cinfo.image_width;
-	pict->bit_size.y = cinfo.image_height;
-	if ((pict->bitmap = (unsigned char *) 
+	pict->pic_cache->bit_size.x = cinfo.image_width;
+	pict->pic_cache->bit_size.y = cinfo.image_height;
+	if ((pict->pic_cache->bitmap = (unsigned char *) 
 	     malloc(cinfo.image_width * cinfo.image_height)) == NULL)
 		error_exit("Can't alloc memory for JPEG image");
-	bitmapptr = pict->bitmap;
+	bitmapptr = pict->pic_cache->bitmap;
 
 	/* Step 4: set parameters for decompression */
 
@@ -218,15 +222,15 @@ read_JPEG_file (file)
 	/* Step 7: fill up the colortable in the pict object */
 	/* (Must do this before jpeg_finish_decompress or jpeg_destroy_decompress) */
 
-	pict->numcols = cinfo.actual_number_of_colors;
-	for (i = 0; i < pict->numcols; i++) {
-	    pict->cmap[i].red   = cinfo.colormap[0][i];
+	pict->pic_cache->numcols = cinfo.actual_number_of_colors;
+	for (i = 0; i < pict->pic_cache->numcols; i++) {
+	    pict->pic_cache->cmap[i].red   = cinfo.colormap[0][i];
 	    /* set other colors to first if grayscale */
 	    if (cinfo.jpeg_color_space == JCS_GRAYSCALE) {
-		pict->cmap[i].green = pict->cmap[i].blue = pict->cmap[i].red;
+		pict->pic_cache->cmap[i].green = pict->pic_cache->cmap[i].blue = pict->pic_cache->cmap[i].red;
 	    } else {
-		pict->cmap[i].green = cinfo.colormap[1][i];
-		pict->cmap[i].blue  = cinfo.colormap[2][i];
+		pict->pic_cache->cmap[i].green = cinfo.colormap[1][i];
+		pict->pic_cache->cmap[i].blue  = cinfo.colormap[2][i];
 	    }
 	}
 

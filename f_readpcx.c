@@ -1,16 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1999 Russell Marks
- * Parts Copyright (c) 2000 by Brian V. Smith
+ * Based on (public domain) code from Russell Marks
+ * Parts Copyright (c) 2000-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -18,6 +18,8 @@
 #include "resources.h"
 #include "object.h"
 #include "f_neuclrtab.h"
+#include "f_picobj.h"
+#include "f_util.h"
 #include "w_color.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
@@ -69,18 +71,21 @@ read_pcx(file,filetype,pic)
 		    2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
     
     status = _read_pcx(file,pic);
-    if (status != 1)
+    if (status != 1) {
+	close_picfile(file,filetype);
 	return FileInvalid;
+    }
 
-    pic->subtype = T_PIC_PCX;
     pic->pixmap = None;
-    pic->hw_ratio = (float) pic->bit_size.y / pic->bit_size.x;
-    pic->size_x = pic->bit_size.x * scale;
-    pic->size_y = pic->bit_size.y * scale;
+    pic->hw_ratio = (float) pic->pic_cache->bit_size.y / pic->pic_cache->bit_size.x;
+    pic->pic_cache->subtype = T_PIC_PCX;
+    pic->pic_cache->size_x = pic->pic_cache->bit_size.x * scale;
+    pic->pic_cache->size_y = pic->pic_cache->bit_size.y * scale;
     /* if monochrome display map bitmap */
     if (tool_cells <= 2 || appres.monochrome)
 	map_to_mono(pic);
 
+    close_picfile(file,filetype);
     return PicSuccess;
 }
 
@@ -103,7 +108,7 @@ _read_pcx(pcxfile,pic)
 	byte		 inbyte,inbyte2;
 	int		 real_bpp;		/* how many bpp file really is */
 
-	pic->bitmap=NULL;
+	pic->pic_cache->bitmap=NULL;
 
 	fread(&header,1,sizeof(struct pcxhed),pcxfile);
 	if (header.manuf!=10 || header.encod!=1)
@@ -155,58 +160,58 @@ _read_pcx(pcxfile,pic)
 	if (real_bpp==1 || real_bpp==4)
 	    bytemax=(1<<30);	/* we use a 'y<h' test instead for these files */
 
-	if ((pic->bitmap=malloc(w*(h+2)*bytepp))==NULL)
+	if ((pic->pic_cache->bitmap=malloc(w*(h+2)*bytepp))==NULL)
 	    return FileInvalid;
 
 	/* need this if more than one bitplane */
-	memset(pic->bitmap,0,w*h*bytepp);
+	memset(pic->pic_cache->bitmap,0,w*h*bytepp);
 
 	bytesdone=0;
 
 	/* start reading image */
 	for (yy=0; yy<h; yy++) {
-	  plane=0;
-	  pmask=1;
+	  plane = 0;
+	  pmask = 1;
 	  
-	  y=yy;
-	  x=0;
-	  while (y==yy) {
+	  y = yy;
+	  x = 0;
+	  while (y == yy) {
 	    inbyte=fgetc(pcxfile);
 	    if (inbyte<192) {
-	      dispbyte(pic->bitmap,&x,&y,inbyte,w,h,real_bpp,
+	      dispbyte(pic->pic_cache->bitmap,&x,&y,inbyte,w,h,real_bpp,
 		byteline,&plane,&pmask);
 	      bytesdone++;
 	    } else {
-	      inbyte2=fgetc(pcxfile);
-	      inbyte&=63;
+	      inbyte2 = fgetc(pcxfile);
+	      inbyte &= 63;
 	      for (count=0; count<inbyte; count++)
-		dispbyte(pic->bitmap,&x,&y,inbyte2,w,h,real_bpp,
+		dispbyte(pic->pic_cache->bitmap,&x,&y,inbyte2,w,h,real_bpp,
 			byteline,&plane,&pmask);
-	      bytesdone+=inbyte;
+	      bytesdone += inbyte;
 	    }
 	  }
 	}
 
-	pic->bit_size.x = w;
-	pic->bit_size.y = h;
+	pic->pic_cache->bit_size.x = w;
+	pic->pic_cache->bit_size.y = h;
 
 	/* read palette */
 	switch(real_bpp) {
 	    case 1:
-		pic->cmap[0].red = pic->cmap[0].green = pic->cmap[0].blue = 0;
-		pic->cmap[1].red = pic->cmap[1].green = pic->cmap[1].blue = 255;
-		pic->numcols = 2;
+		pic->pic_cache->cmap[0].red = pic->pic_cache->cmap[0].green = pic->pic_cache->cmap[0].blue = 0;
+		pic->pic_cache->cmap[1].red = pic->pic_cache->cmap[1].green = pic->pic_cache->cmap[1].blue = 255;
+		pic->pic_cache->numcols = 2;
 		break;
 	  
 	    case 2:
 	    case 3:
 	    case 4:
 		/* 2-,3-, and 4-bit, palette is embedded in header */
-		pic->numcols = (1<<real_bpp);
-		for (x=0; x < pic->numcols; x++) {
-		    pic->cmap[x].red   = header.pal16[x*3  ];
-		    pic->cmap[x].green = header.pal16[x*3+1];
-		    pic->cmap[x].blue  = header.pal16[x*3+2];
+		pic->pic_cache->numcols = (1<<real_bpp);
+		for (x=0; x < pic->pic_cache->numcols; x++) {
+		    pic->pic_cache->cmap[x].red   = header.pal16[x*3  ];
+		    pic->pic_cache->cmap[x].green = header.pal16[x*3+1];
+		    pic->pic_cache->cmap[x].blue  = header.pal16[x*3+2];
 		}
 		break;
 
@@ -214,21 +219,21 @@ _read_pcx(pcxfile,pic)
 		/* 8-bit */
 		fseek(pcxfile, -768L, SEEK_END);/* locate colormap in last 768 bytes of file */
 		for (x=0; x<256; x++) {
-		    pic->cmap[x].red   = fgetc(pcxfile);
-		    pic->cmap[x].green = fgetc(pcxfile);
-		    pic->cmap[x].blue  = fgetc(pcxfile);
+		    pic->pic_cache->cmap[x].red   = fgetc(pcxfile);
+		    pic->pic_cache->cmap[x].green = fgetc(pcxfile);
+		    pic->pic_cache->cmap[x].blue  = fgetc(pcxfile);
 		}
 		/* start with 256 */
-		pic->numcols = 256;
+		pic->pic_cache->numcols = 256;
 		/* ignore duplicate white entries after real colors */
-		for (i = pic->numcols-1; i >=0 ; i--) {
-		if (pic->cmap[i].red != 255 ||
-		    pic->cmap[i].green != 255 ||
-		    pic->cmap[i].blue != 255)
+		for (i = pic->pic_cache->numcols-1; i >=0 ; i--) {
+		if (pic->pic_cache->cmap[i].red != 255 ||
+		    pic->pic_cache->cmap[i].green != 255 ||
+		    pic->pic_cache->cmap[i].blue != 255)
 			break;
 		}
-		if (i < pic->numcols-2)
-		    pic->numcols = i+2;
+		if (i < pic->pic_cache->numcols-2)
+		    pic->pic_cache->numcols = i+2;
 		break;
 	  
 	    case 24:

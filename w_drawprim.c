@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -53,7 +53,7 @@ XFontStruct	*canvas_font;
 
 /* LOCAL */
 
-static Pixel	gc_color[NUMOPS];
+static Pixel	gc_color[NUMOPS], gc_background[NUMOPS];
 static XRectangle clip[1];
 static int	parsesize();
 static Boolean	openwinfonts;
@@ -106,7 +106,7 @@ init_font()
      * it.
      */
 
-    /* if the user hasn't disallowed off scalable fonts, check that the
+    /* if the user hasn't disallowed scalable fonts, check that the
        server really has them by checking for font of 0-0 size */
     openwinfonts = False;
     if (appres.scalablefonts) {
@@ -214,8 +214,8 @@ lookfont(fnum, size)
     int		    fnum, size;
 {
 	XFontStruct    *fontst;
-	char		fn[200],back_fn[200];
-	char		template[200];
+	char		fn[300],back_fn[300];
+	char		template[300], *sub;
 	Boolean		found;
 	struct xfont   *newfont, *nf, *oldnf;
 
@@ -223,10 +223,14 @@ lookfont(fnum, size)
 	    fnum = 0;			/* pass back the -normal font font */
 	if (size < 0)
 	    size = DEF_FONTSIZE;	/* default font size */
-	if (size < MIN_FONT_SIZE)
-	    size = MIN_FONT_SIZE;	/* minimum allowable */
-	else if (size > MAX_FONT_SIZE)
-	    size = MAX_FONT_SIZE;	/* maximum allowable */
+	if (size < MIN_X_FONT_SIZE)
+	    size = MIN_X_FONT_SIZE;	/* minimum allowable */
+	else if (size > MAX_X_FONT_SIZE)
+	    size = MAX_X_FONT_SIZE;	/* maximum allowable */
+
+	/* if user asks, adjust for correct font size */
+	if (appres.correct_font_size)
+	    size = round(size*80.0/72.0);
 
 	/* see if we've already loaded that font size 'size'
 	   from the font family 'fnum' */
@@ -303,12 +307,13 @@ lookfont(fnum, size)
 		sprintf(back_fn, template, size);
 	    }
 	    /* allocate space for the name and put it in the structure */
-	    nf->fname = (char *) malloc(max2(strlen(fn),strlen(back_fn))+1);
+	    nf->fname = (char *) new_string(max2(strlen(fn),strlen(back_fn)));
 	    strcpy(nf->fname, fn);
 	    /* save the backup name too */
-	    nf->bname = (char *) malloc(strlen(back_fn)+1);
+	    nf->bname = (char *) new_string(strlen(back_fn));
 	    strcpy(nf->bname, back_fn);
 	} /* scalable */
+
 	if (nf->fstruct == NULL) {
 	    if (appres.DEBUG)
 		fprintf(stderr,"Loading font %s\n",fn);
@@ -320,20 +325,41 @@ lookfont(fnum, size)
 	    fontst = XLoadQueryFont(tool_d, fn);
 	    reset_cursor();
 	    if (fontst == NULL) {
-		file_msg("Can't load font %s\n  trying %s", fn, nf->bname);
-		/* correct font doesn't exist, try backup font name */
-		fontst = XLoadQueryFont(tool_d, nf->bname);
-		if (fontst) {
-		    /* use this name instead */
-		    strcpy(nf->fname, nf->bname);
+		/* doesn't exist, see if substituting "condensed" for "narrow" will match */
+		if ((sub=strstr(fn,"-narrow-")) != NULL) {
+		    strcpy(template, fn);
+		    strcpy(&template[sub-fn],"-condensed-");
+		    strcat(template, (sub+8));
+		    /* try it */
+		    fontst = XLoadQueryFont(tool_d, template);
 		} else {
+		    /* doesn't exist, try backup font name */
+		    fontst = XLoadQueryFont(tool_d, nf->bname);
+		    if (fontst) {
+			/* use this name instead */
+			strcpy(nf->fname, nf->bname);
+		    } else {
+			/* backup name doesn't exist, see if we can substitute "condensed" for "narrow" */
+			if ((sub=strstr(nf->bname,"-narrow-")) != NULL) {
+			    /* see if substituting "condensed" for "narrow" will match */
+			    strcpy(template, nf->bname);
+			    strcpy(&template[sub-nf->bname],"-condensed-");
+			    strcat(template, (sub+8));
+			    /* try it */
+			    fontst = XLoadQueryFont(tool_d, template);
+			}
+		    }
+		}
+	    }
+	    if (fontst == NULL) {
+		if (fontst == NULL) {
 		    /* even that font doesn't exist, use a plain one */
-		    file_msg("No good, using %s", appres.normalFont);
+		    file_msg("Can't find %s, using %s", fn, appres.normalFont);
 		    fontst = XLoadQueryFont(tool_d, appres.normalFont);
 		    if (nf->fname)
 			free(nf->fname);
 		    /* allocate space for the name and put it in the structure */
-		    nf->fname = (char *) malloc(strlen(appres.normalFont)+1);
+		    nf->fname = (char *) new_string(strlen(appres.normalFont));
 		    strcpy(nf->fname, appres.normalFont);  /* keep actual name */
 		}
 	    }
@@ -345,37 +371,55 @@ lookfont(fnum, size)
 }
 
 /* print "string" in window "w" using font specified in fstruct at angle
-	"angle" (radians) at (x,y) */
+	"angle" (radians) at (x,y)
+   If background is != COLOR_NONE, draw background color ala DrawImageString
+*/
 
-pw_text(w, x, y, op, fstruct, angle, string, color)
-    Window	    w;
-    int		    x, y, op;
-    XFontStruct	   *fstruct;
-    float	    angle;
-    char	   *string;
-    Color	    color;
+void
+pw_text(Window w, int x, int y, int op, int depth, XFontStruct *fstruct,
+	float angle, char *string, Color color, Color background)
 {
+    int		xfg, xbg;
+
     if (fstruct == NULL) {
 	fprintf(stderr,"Error, in pw_text, fstruct==NULL\n");
 	return;
     }
 
-    if (x_color(color) != gc_color[op]) {
-	/* don't change the colors for ERASE */
-	if (op == PAINT || op == INV_PAINT) {
-	    if (op == PAINT)
-		set_x_color(gccache[op], color);
-	    else
-		XSetForeground(tool_d, gccache[op], x_color(color) ^ x_bg_color.pixel);
-	    gc_color[op] = x_color(color);
-	}
+    /* if this depth is inactive, draw the text in gray */
+    /* if depth == MAX_DEPTH+1 then the caller wants the original color no matter what */
+    if (depth < MAX_DEPTH+1 && !active_layer(depth))
+	color = MED_GRAY;
+
+    /* get the X colors */
+    xfg = x_color(color);
+    xbg = x_color(background);
+    if ((xfg != gc_color[op]) ||
+	(background != COLOR_NONE && (xbg != gc_background[op]))) {
+	    /* don't change the colors for ERASE */
+	    if (op == PAINT || op == INV_PAINT) {
+		if (op == PAINT)
+		    set_x_fg_color(gccache[op], color);
+		else
+		    XSetForeground(tool_d,gccache[op], xfg ^ x_bg_color.pixel);
+		gc_color[op] = xfg;
+		if (background != COLOR_NONE) {
+		    set_x_bg_color(gccache[op], background);
+		    gc_background[op] = xbg;
+		}
+	    }
     }
 
     /* check for preview cancel here.  The text call may take some time if
        a large font has to be rotated. */
     if (check_cancel())
 	return ;
-    zXRotDrawString(tool_d, fstruct, angle, w, gccache[op], x, y, string);
+
+    if (background != COLOR_NONE) {
+	zXRotDrawImageString(tool_d, fstruct, angle, w, gccache[op], x, y, string);
+    } else {
+	zXRotDrawString(tool_d, fstruct, angle, w, gccache[op], x, y, string);
+    }
 }
 
 PR_SIZE
@@ -454,13 +498,25 @@ makegc(op, fg, bg)
 init_gc()
 {
     int		    i;
+    XColor	    tmp_color;
 
     gccache[PAINT] = makegc(PAINT, x_fg_color.pixel, x_bg_color.pixel);
     gccache[ERASE] = makegc(ERASE, x_fg_color.pixel, x_bg_color.pixel);
     gccache[INV_PAINT] = makegc(INV_PAINT, x_fg_color.pixel, x_bg_color.pixel);
+    /* parse any grid color spec */
+    XParseColor(tool_d, tool_cm, appres.grid_color, &tmp_color);
+    if (XAllocColor(tool_d, tool_cm, &tmp_color)==0) {
+	fprintf(stderr,"Can't allocate color for grid \n");
+        grid_color = x_fg_color.pixel;
+	grid_gc = makegc(PAINT, grid_color, x_bg_color.pixel);
+    } else {
+        grid_color = tmp_color.pixel;
+	grid_gc = makegc(PAINT, grid_color, x_bg_color.pixel);
+    }
 
     for (i = 0; i < NUMOPS; i++) {
 	gc_color[i] = -1;
+	gc_background[i] = -1;
 	gc_thickness[i] = -1;
 	gc_line_style[i] = -1;
 	gc_join_style[i] = -1;
@@ -925,34 +981,33 @@ init_fill_pm()
     }
 }
 
-pw_vector(w, x1, y1, x2, y2, op, line_width, line_style, style_val, color)
-    Window	    w;
-    int		    x1, y1, x2, y2, op, line_width, line_style;
-    float	    style_val;
-    Color	    color;
+void
+pw_vector(Window w, int x1, int y1, int x2, int y2, int op,
+	  int line_width, int line_style, float style_val, Color color)
 {
     if (line_width == 0)
 	return;
-    set_line_stuff(line_width, line_style, style_val, JOIN_MITER, CAP_BUTT,
-		op, color);
+    set_line_stuff(line_width, line_style, style_val, JOIN_MITER, CAP_BUTT, op, color);
     if (line_style == PANEL_LINE)
 	XDrawLine(tool_d, w, gccache[op], x1, y1, x2, y2);
     else
 	zXDrawLine(tool_d, w, gccache[op], x1, y1, x2, y2);
 }
 
-pw_curve(w, xstart, ystart, xend, yend,
-	 op, linewidth, style, style_val, fill_style,
-	 pen_color, fill_color, cap_style)
-    Window	    w;
-    int		    xstart, ystart, xend, yend;
-    int		    op, linewidth, style, fill_style;
-    float	    style_val;
-    Color	    pen_color, fill_color;
-    int		    cap_style;
+void
+pw_curve(Window w, int xstart, int ystart, int xend, int yend,
+	 int op, int depth, int linewidth, int style, float style_val, int fill_style,
+	 Color pen_color, Color fill_color, int cap_style)
 {
     int		    xmin, ymin;
     unsigned int    wd, ht;
+
+    /* if this depth is inactive, draw the curve and any fill in gray */
+    /* if depth == MAX_DEPTH+1 then the caller wants the original color no matter what */
+    if (depth < MAX_DEPTH+1 && !active_layer(depth)) {
+	pen_color = MED_GRAY;
+	fill_color = LT_GRAY;
+    }
 
     xmin = min2(xstart, xend);
     ymin = min2(ystart, yend);
@@ -981,14 +1036,16 @@ pw_curve(w, xstart, ystart, xend, yend,
 /* a point object - actually draw a line from (x-line_width/2,y) to (x+linewidth/2,y)
 	so that we get some thickness */
 
-pw_point(w, x, y, line_width, op, color, cap_style)
-    Window	    w;
-    int		    x, y;
-    int		    op, line_width;
-    Color	    color;
-    int		    cap_style;
+void
+pw_point(Window w, int x, int y, int op, int depth, int line_width,
+	 Color color, int cap_style)
 {
     int		    hf_wid;
+
+    /* if this depth is inactive, draw the point in gray */
+    if (!active_layer(depth))
+	color = MED_GRAY;
+
     /* pw_point doesn't use line_style or fill_style but needs color */
     set_line_stuff(line_width, SOLID_LINE, 0.0, JOIN_MITER, cap_style,
 		op, color);
@@ -1001,12 +1058,18 @@ pw_point(w, x, y, line_width, op, color, cap_style)
 }
 
 void
-pw_arcbox(Window w, int xmin, int ymin, int xmax, int ymax, int radius, int op,
-               int line_width, int line_style, float style_val, int fill_style,
-	       Color pen_color, Color fill_color)
+pw_arcbox(Window w, int xmin, int ymin, int xmax, int ymax, int radius,
+	  int op, int depth, int line_width, int line_style,
+	  float style_val, int fill_style, Color pen_color, Color fill_color)
 {
     GC		    gc;
     int		    diam = 2 * radius;
+
+    /* if this depth is inactive, draw the arcbox in gray */
+    if (depth < MAX_DEPTH+1 && !active_layer(depth)) {
+	pen_color = MED_GRAY;
+	fill_color = LT_GRAY;
+    }
 
     /* if it's a fill pat we know about */
     if (fill_style >= 0 && fill_style < NUMFILLPATS) {
@@ -1014,14 +1077,11 @@ pw_arcbox(Window w, int xmin, int ymin, int xmax, int ymax, int radius, int op,
 	/* upper left */
 	zXFillArc(tool_d, w, fillgc, xmin, ymin, diam, diam, 90 * 64, 90 * 64);
 	/* lower left */
-	zXFillArc(tool_d, w, fillgc, xmin, ymax - diam, diam, diam,
-		  180 * 64, 90 * 64);
+	zXFillArc(tool_d, w, fillgc, xmin, ymax - diam, diam, diam, 180 * 64, 90 * 64);
 	/* lower right */
-	zXFillArc(tool_d, w, fillgc, xmax - diam, ymax - diam, diam, diam,
-		  270 * 64, 90 * 64);
+	zXFillArc(tool_d, w, fillgc, xmax - diam, ymax - diam, diam, diam, 270 * 64, 90 * 64);
 	/* upper right */
-	zXFillArc(tool_d, w, fillgc, xmax - diam, ymin, diam, diam,
-		  0 * 64, 90 * 64);
+	zXFillArc(tool_d, w, fillgc, xmax - diam, ymin, diam, diam, 0 * 64, 90 * 64);
 	/* fill strip on left side between upper and lower arcs */
 	if (ymax - ymin - diam > 0)
 	    zXFillRectangle(tool_d, w, fillgc, xmin, ymin + radius, radius,
@@ -1041,29 +1101,31 @@ pw_arcbox(Window w, int xmin, int ymin, int xmax, int ymax, int radius, int op,
     set_line_stuff(line_width, line_style, style_val, JOIN_MITER, CAP_BUTT,
 		op, pen_color);
     gc = gccache[op];
+    /* now draw the edges and arc corners */
     zXDrawArc(tool_d, w, gc, xmin, ymin, diam, diam, 90 * 64, 90 * 64);
     zXDrawLine(tool_d, w, gc, xmin, ymin + radius, xmin, ymax - radius + 1);
     zXDrawArc(tool_d, w, gc, xmin, ymax - diam, diam, diam, 180 * 64, 90 * 64);
     zXDrawLine(tool_d, w, gc, xmin + radius, ymax, xmax - radius + 1, ymax);
-    zXDrawArc(tool_d, w, gc, xmax - diam, ymax - diam,
-	      diam, diam, 270 * 64, 90 * 64);
+    zXDrawArc(tool_d, w, gc, xmax - diam, ymax - diam, diam, diam, 270 * 64, 90 * 64);
     zXDrawLine(tool_d, w, gc, xmax, ymax - radius, xmax, ymin + radius - 1);
     zXDrawArc(tool_d, w, gc, xmax - diam, ymin, diam, diam, 0 * 64, 90 * 64);
     zXDrawLine(tool_d, w, gc, xmax - radius, ymin, xmin + radius - 1, ymin);
 }
 
-pw_lines(w, points, npoints, op, line_width, line_style,
-	style_val, join_style, cap_style, fill_style, pen_color, fill_color)
-    Window	    w;
-    zXPoint	   *points;
-    int		    npoints;
-    int		    op, line_width, line_style;
-    float	    style_val;
-    int		    join_style, cap_style, fill_style;
-    Color	    pen_color, fill_color;
+void
+pw_lines(Window w, zXPoint *points, int npoints, int op, int depth,
+	 int line_width, int line_style, float style_val,
+	 int join_style, int cap_style, int fill_style,
+	 Color pen_color, Color fill_color)
 {
     register int i;
     register XPoint *p;
+
+    /* if this depth is inactive, draw the line in gray */
+    if (depth < MAX_DEPTH+1 && !active_layer(depth)) {
+	pen_color = MED_GRAY;
+	fill_color = LT_GRAY;
+    }
 
     /* if the line has only one point or it has two points and those points are
        coincident AND we are drawing a DOTTED line, this kills Xsun and hangs
@@ -1072,7 +1134,7 @@ pw_lines(w, points, npoints, op, line_width, line_style,
 
     if ((npoints == 1) ||
 	(npoints == 2 && points[0].x == points[1].x && points[0].y == points[1].y)) {
-	    pw_point(w, points[0].x, points[0].y, line_width, op, pen_color, cap_style);
+	    pw_point(w, points[0].x, points[0].y, op, depth, line_width, pen_color, cap_style);
 	    return;
     }
 	
@@ -1126,6 +1188,7 @@ set_clip_window(xmin, ymin, xmax, ymax)
     clip_height = clip[0].height = ymax - ymin + 1;
     XSetClipRectangles(tool_d, gccache[PAINT], 0, 0, clip, 1, YXBanded);
     XSetClipRectangles(tool_d, gccache[INV_PAINT], 0, 0, clip, 1, YXBanded);
+    XSetClipRectangles(tool_d, gccache[ERASE], 0, 0, clip, 1, YXBanded);
 }
 
 set_zoomed_clip_window(xmin, ymin, xmax, ymax)
@@ -1151,10 +1214,10 @@ set_fill_gc(fill_style, op, pencolor, fillcolor, xorg, yorg)
        This might have happened if there was a change of zoom. */
 
     if ((fill_style >= NUMSHADEPATS+NUMTINTPATS) &&
-	((fill_pm[fill_style] == 0) || (fill_pm_zoom[fill_style] != zoomscale)))
+	((fill_pm[fill_style] == 0) || (fill_pm_zoom[fill_style] != display_zoomscale)))
 	    rescale_pattern(fill_style);
     fillgc = fill_gc[fill_style];
-    if (op == PAINT) {
+    if (op != ERASE) {
 	/* if a pattern, color the lines in the pen color and the field in fill color */
 	if (fill_style >= NUMSHADEPATS+NUMTINTPATS) {
 	    fg = x_color(pencolor);
@@ -1275,7 +1338,9 @@ set_line_stuff(width, style, style_val, join_style, cap_style, op, color)
 		dash_list[op][0] = (char)display_zoomscale;
 
 	    if (dash_list[op][0]==0)		/* take care for rounding to zero ! */
-		dash_list[op][0]=dash_list[op][1]=1;
+		dash_list[op][0]=1;
+	    if (dash_list[op][1]==0)		/* take care for rounding to zero ! */
+		dash_list[op][1]=1;
 	    XSetDashes(tool_d, gccache[op], 0, (char *) dash_list[op], 2);
 	} else if (style == DASH_DOT_LINE || style == DASH_2_DOTS_LINE ||
 		  style == DASH_3_DOTS_LINE) {
@@ -1319,15 +1384,29 @@ x_color(col)
 int	col;
 {
 	int	pix;
-	if (col < 0)
-		col = DEFAULT;
-	if (col==WHITE) {
+	if (!all_colors_available) {
+		pix = colors[BLACK];
+	} else if (col == LT_GRAY) {
+		pix = lt_gray_color;
+	} else if (col == DARK_GRAY) {
+		pix = dark_gray_color;
+	} else if (col == MED_GRAY) {
+		pix = med_gray_color;
+	} else if (col == TRANSP_BACKGROUND) {
+		pix = med_gray_color;
+	} else if (col == COLOR_NONE) {
 		pix = colors[WHITE];
-	} else if (col==DEFAULT) {
-		pix = x_fg_color.pixel;
+	} else if (col==WHITE) {
+		pix = colors[WHITE];
 	} else if (col==BLACK) {
 		pix = colors[BLACK];
+	} else if (col==DEFAULT) {
+		pix = x_fg_color.pixel;
+	} else if (col==CANVAS_BG) {
+		pix = x_bg_color.pixel;
 	} else {
+	   if (col < 0)
+		col = BLACK;
 	   if (col >= NUM_STD_COLS+num_usr_cols)
 	       pix = x_fg_color.pixel;
 	   else
@@ -1359,7 +1438,7 @@ int	patnum;
 				   pattern_images[j].cwidth,
 				   pattern_images[j].cheight);
 	/* set the zoom value so we know what zoom it was generated for */
-	fill_pm_zoom[patnum] = zoomscale;
+	fill_pm_zoom[patnum] = display_zoomscale;
 	/* now update the gc to use the new pixmaps */
 	if (fill_gc[patnum]) {
 	    gcv.stipple = fill_pm[patnum];

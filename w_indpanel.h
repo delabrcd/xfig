@@ -1,16 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -18,6 +18,29 @@
 #define W_INDPANEL_H
 
 #include "w_icons.h"
+
+/* EXPORTS */
+
+extern Boolean	update_buts_managed;
+extern Widget	choice_popup;
+extern void	show_zoom();
+extern void	show_fillstyle();
+extern void	inc_zoom(), dec_zoom(), fit_zoom();
+extern void	fontpane_popup();
+extern void	make_pulldown_menu_images();
+extern void	tog_selective_update();
+extern unsigned long cur_indmask;	/* mask showing which indicator buttons are mapped */
+#ifdef WHEELMOUSE
+extern void	wheel_inc_zoom(), wheel_dec_zoom();
+#endif /* WHEELMOUSE */
+
+/* size of buttons in indicator panel */
+#define		DEF_IND_SW_HT		34
+#define		DEF_IND_SW_WD		64
+#define		FONT_IND_SW_WD		(40+PS_FONTPANE_WD)
+#define		NARROW_IND_SW_WD	56
+#define		WIDE_IND_SW_WD		76
+#define		XWIDE_IND_SW_WD		86
 
 /* size of update control panel */
 #define		UPD_BITS	10	/* bits wide and high */
@@ -27,17 +50,9 @@
 
 extern Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 
-/* number of arrow types (need to declare because it is used in both
-   w_indpanel.c and e_edit.c */
-
-#ifdef NEWARROWTYPES
-#define NUM_ARROW_TYPES		21
-#else
-#define NUM_ARROW_TYPES		7
-#endif /* NEWARROWTYPES */
-
 #define NUM_CAPSTYLE_TYPES	3
 #define NUM_JOINSTYLE_TYPES	3
+#define NUM_LINESTYLE_TYPES	6
 
 /* indicator button selection */
 
@@ -55,7 +70,7 @@ extern Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 #define I_FONTSIZE	0x00000800
 #define I_FONT		0x00001000
 #define I_TEXTSTEP	0x00002000
-#define I_free1_____	0x00004000	/* this one is free for another ind */
+#define I_DIMLINE   	0x00004000
 #define I_ROTNANGLE	0x00008000
 #define I_NUMSIDES	0x00010000
 #define I_PEN_COLOR	0x00020000
@@ -77,7 +92,7 @@ extern Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 #define I_NONE		0x00000000
 
 /* be sure to update I_ALL if more buttons are added */
-#define I_ALL		0xffffffff & ~I_free1_____ & ~I_free2_____ & ~I_free3_____
+#define I_ALL		0xffffffff & ~I_free2_____ & ~I_free3_____
 
 #define I_MIN2		(I_POINTPOSN)
 #define I_MIN3		(I_MIN2 | I_LINKMODE)
@@ -89,7 +104,7 @@ extern Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 				I_PEN_COLOR | I_FILL_COLOR | I_DEPTH)
 #define I_LINE1		(I_FILLSTYLE | I_LINESTYLE | I_JOINSTYLE | I_LINEWIDTH | \
 				I_PEN_COLOR | I_FILL_COLOR | I_DEPTH | I_CAPSTYLE)
-#define I_LINE		(I_MIN2 | I_LINE1 | I_DEPTH | I_ANGLEGEOM | \
+#define I_LINE		(I_MIN2 | I_LINE1 | I_DEPTH | I_ANGLEGEOM | I_DIMLINE | \
 				I_ARROWMODE | I_ARROWTYPE | I_ARROWSIZE)
 #define I_BOX		(I_MIN2 | I_LINE1 | I_DEPTH)
 #define I_CIRCLE	(I_MIN2 | I_LINE0 | I_DEPTH)
@@ -102,11 +117,12 @@ extern Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 #define I_ARCBOX	(I_BOX | I_BOXRADIUS)
 #define I_PICOBJ	(I_MIN2 | I_DEPTH | I_PEN_COLOR)
 #define I_OBJECT	(I_TEXT0 | I_LINE1 | I_ARROWMODE | I_ARROWTYPE | I_ARROWSIZE | \
-				I_BOXRADIUS | I_DEPTH | I_ARCTYPE)
+				I_BOXRADIUS | I_DEPTH | I_ARCTYPE | I_DIMLINE)
 #define I_ALIGN		(I_HALIGN | I_VALIGN)
 #define I_ROTATE	(I_MIN2 | I_ROTNANGLE | I_NUMCOPIES)
 #define I_COPY   	(I_MIN3 | I_NUMXCOPIES | I_NUMYCOPIES)
 #define I_ADD_DEL_ARROW (I_LINEWIDTH | I_ARROWTYPE | I_ARROWSIZE)
+#define I_TANGENT     (I_MIN2 | I_LINE1 | I_DEPTH | I_ARROWTYPE | I_ARROWMODE)
 
 /* for checking which parts to update */
 #define I_UPDATEMASK	(I_OBJECT)
@@ -117,10 +133,11 @@ typedef struct choice_struct {
     Pixmap	    pixmap;
 }		choice_info;
 
-extern choice_info arrowtype_choices[];
+extern choice_info dim_arrowtype_choices[];
 extern choice_info fillstyle_choices[];
 extern choice_info capstyle_choices[];
 extern choice_info joinstyle_choices[];
+extern choice_info linestyle_choices[];
 
 typedef struct ind_sw_struct {
     int		    type;	/* one of I_CHOICE .. I_FVAL */
@@ -145,19 +162,10 @@ typedef struct ind_sw_struct {
     Widget	    panel;	/* to keep track if already created */
 }		ind_sw_info;
 
-#define ZOOM_SWITCH_INDEX	0	/* used by w_zoom.c */
-
-/* EXPORTS */
-
 extern ind_sw_info ind_switches[];
 extern ind_sw_info *fill_style_sw;
 extern ind_sw_info *pen_color_button, *fill_color_button;
-extern ind_sw_info *color_popup;
 
-extern Boolean	update_buts_managed;
-extern Widget	choice_popup;
-extern void	show_zoom();
-extern void	show_fillstyle();
-extern void	inc_zoom(), dec_zoom(), fit_zoom();
+#define ZOOM_SWITCH_INDEX	0	/* used by w_zoom.c */
 
 #endif /* W_INDPANEL_H */

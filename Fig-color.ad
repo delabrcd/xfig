@@ -6,7 +6,7 @@ Fig*highlightThickness: 		2
 
 !##### Background, Foreground
 
-Fig*canvas.background: 			ivory
+Fig*canvas.background: 			gray97
 Fig*canvas.foreground: 			black
 
 ! all other fore/backgrounds not explicitely chosen
@@ -101,7 +101,7 @@ Fig*button_form.update*foreground:	red
 Fig*upd_ctrl_form.upd_ctrl_btns*shadowWidth:	2
 
 !##### Shadows
-Fig*shadowWidth:			2
+Fig*shadowWidth:			1
 Fig*Label.shadowWidth:			1
 Fig*horizontal.shadowWidth: 		2
 Fig*Scrollbar.shadowWidth:		2

@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -34,7 +34,7 @@ free_arc(list)
 	if (arc->back_arrow)
 	    free((char *) arc->back_arrow);
 	if (arc->comments)
-	    free((char *) arc->comments);
+	    free(arc->comments);
 	free((char *) arc);
     }
     *list = NULL;
@@ -55,7 +55,7 @@ free_compound(list)
 	free_spline(&compound->splines);
 	free_text(&compound->texts);
 	if (compound->comments) {
-	    free((char *) compound->comments);
+	    free(compound->comments);
 	    compound->comments = NULL;
 	}
 	free((char *) compound);
@@ -73,7 +73,7 @@ free_ellipse(list)
 	ellipse = e;
 	e = e->next;
 	if (ellipse->comments)
-	    free((char *) ellipse->comments);
+	    free(ellipse->comments);
 	free((char *) ellipse);
     }
     *list = NULL;
@@ -102,7 +102,7 @@ free_text(list)
 	t = t->next;
 	free(text->cstring);
 	if (text->comments)
-	    free((char *) text->comments);
+	    free(text->comments);
 	free((char *) text);
     }
     *list = NULL;
@@ -132,7 +132,7 @@ free_splinestorage(s)
     if (s->back_arrow)
 	free((char *) s->back_arrow);
     if (s->comments)
-	free((char *) s->comments);
+	free(s->comments);
     free((char *) s);
 }
 
@@ -145,8 +145,7 @@ free_linestorage(l)
     if (l->back_arrow)
 	free((char *) l->back_arrow);
     if (l->pic) {
-	if (l->pic->bitmap)
-	    free((char *) l->pic->bitmap);
+	free_picture_entry(l->pic->pic_cache);
 	if (l->pic->pixmap != 0)
 	    XFreePixmap(tool_d, l->pic->pixmap);
 	l->pic->pixmap = (Pixmap) 0;
@@ -156,8 +155,45 @@ free_linestorage(l)
 	free((char *) l->pic);
     }
     if (l->comments)
-	free((char *) l->comments);
+	free(l->comments);
     free((char *) l);
+}
+
+free_picture_entry(picture)
+    struct _pics   *picture;
+{
+    if (!picture)
+	return;
+
+    if (picture->refcount == 0) {
+	fprintf(stderr, "Error freeing picture %x %s with refcount = 0\n",
+		picture, picture->file);
+	return;
+    }
+    picture->refcount--;
+    if (picture->refcount == 0) {
+	if (appres.DEBUG)
+	    fprintf(stderr,"Delete picture %x %s, refcount = %d\n",
+				picture, picture->file, picture->refcount);
+	if (picture->bitmap)
+	    free((char *) picture->bitmap);
+	free(picture->file);
+	if (picture->realname)
+	    free(picture->realname);
+	/* unlink from list */
+	if (picture->next)
+	    picture->next->prev = picture->prev;
+	if (picture->prev)
+	    picture->prev->next = picture->next;
+	/* at the head of the list */
+	if (picture->prev == NULL)
+	    pictures = NULL;
+	free(picture);
+    } else {
+	if (appres.DEBUG)
+	    fprintf(stderr,"Decrease refcount for picture %x %s, refcount = %d\n",
+				picture, picture->file, picture->refcount);
+    }
 }
 
 free_points(first_point)

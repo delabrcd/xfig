@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -21,6 +21,8 @@
 #include "mode.h"
 #include "paintop.h"
 #include "u_bound.h"
+#include "w_drawprim.h"
+#include "w_file.h"
 #include "w_setup.h"
 #include "w_zoom.h"
 
@@ -132,14 +134,14 @@ arc_bound(arc, xmin, ymin, xmax, ymax)
     	sy = min2(sy,arc->center.y);
     }
 
-    half_wd = arc->thickness / 2 * ZOOM_FACTOR;
+    half_wd = arc->thickness / 2.0 * ZOOM_FACTOR;
     *xmax = bx + half_wd;
     *ymax = by + half_wd;
     *xmin = sx - half_wd;
     *ymin = sy - half_wd;
 
     /* show the boundaries */
-    if (appres.DEBUG) {
+    if (appres.DEBUG && !preview_in_progress) {
 	pw_vector(canvas_win, *xmin, *ymin, *xmax, *ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
 	pw_vector(canvas_win, *xmax, *ymin, *xmax, *ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
 	pw_vector(canvas_win, *xmax, *ymax, *xmin, *ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
@@ -162,6 +164,11 @@ compound_bound(compound, xmin, ymin, xmax, ymax)
     F_text	   *t;
     int		    bx, by, sx, sy, first = 1;
     int		    llx, lly, urx, ury;
+
+    if (compound == 0) {
+	*xmin = *ymin = *xmax = *ymax = 0;
+	return;
+    }
 
     llx = lly = urx = ury = 0;
 
@@ -276,7 +283,7 @@ compound_bound(compound, xmin, ymin, xmax, ymax)
     *xmax = urx;
     *ymax = ury;
     /* show the boundaries */
-    if (appres.DEBUG) {
+    if (appres.DEBUG && !preview_in_progress) {
 	pw_vector(canvas_win, *xmin, *ymin, *xmax, *ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
 	pw_vector(canvas_win, *xmax, *ymin, *xmax, *ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
 	pw_vector(canvas_win, *xmax, *ymax, *xmin, *ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
@@ -310,13 +317,13 @@ ellipse_bound(e, xmin, ymin, xmax, ymax)
 	}
 	/* angle of 0 is easy */
 	if (e->angle == 0) {
-	    half_wd = e->thickness/2*ZOOM_FACTOR;
+	    half_wd = e->thickness / 2.0 * ZOOM_FACTOR;
 	    *xmin = xcen - a - half_wd;
 	    *xmax = xcen + a + half_wd;
 	    *ymin = ycen - b - half_wd;
 	    *ymax = ycen + b + half_wd;
 	    /* show the boundaries */
-	    if (appres.DEBUG) {
+	    if (appres.DEBUG && !preview_in_progress) {
 		pw_vector(canvas_win,*xmin,*ymin,*xmax,*ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
 		pw_vector(canvas_win,*xmax,*ymin,*xmax,*ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
 		pw_vector(canvas_win,*xmax,*ymax,*xmin,*ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
@@ -348,8 +355,8 @@ ellipse_bound(e, xmin, ymin, xmax, ymax)
 	c6 = 2*v1;
 	c3 = c3*v1-v1;
 	/* odd first points */
-	*xmin = *ymin =  100000;
-	*xmax = *ymax = -100000;
+	*xmin = *ymin =  10000000;
+	*xmax = *ymax = -10000000;
 	if (yymax % 2) {
 		d = sqrt(c3);
 		*xmin = min2(*xmin,xcen-d);
@@ -382,7 +389,7 @@ ellipse_bound(e, xmin, ymin, xmax, ymax)
 	}
 	/* for simplicity, just add half the line thickness to xmax and ymax
 	   and subtract half from xmin and ymin */
-	half_wd = e->thickness/2;
+	half_wd = e->thickness / 2.0;	/* want Fig units, so don't multiply by ZOOM_FACTOR */
 	*xmax += half_wd;
 	*ymax += half_wd;
 	*xmin -= half_wd;
@@ -395,7 +402,7 @@ ellipse_bound(e, xmin, ymin, xmax, ymax)
 	*xmin = min2(*xmin*ZOOM_FACTOR, min2(e->start.x, e->end.x)-3);
 	*ymin = min2(*ymin*ZOOM_FACTOR, min2(e->start.y, e->end.y)-3);
 	/* show the boundaries */
-	if (appres.DEBUG) {
+	if (appres.DEBUG && !preview_in_progress) {
 	    pw_vector(canvas_win, *xmin, *ymin, *xmax, *ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
 	    pw_vector(canvas_win, *xmax, *ymin, *xmax, *ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
 	    pw_vector(canvas_win, *xmax, *ymax, *xmin, *ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
@@ -438,11 +445,11 @@ general_spline_bound(s, xmin, ymin, xmax, ymax)
     F_spline      *s;
     int	          *xmin, *ymin, *xmax, *ymax;
 {
-  F_point   *cur_point, *previous_point, *next_point;
+  F_point   *cur_point, *next_point;
   F_sfactor *cur_sfactor;     
   int       x0, y0, x1, y1, x2, y2 ,x ,y;
   
-  previous_point = cur_point = s->points;
+  cur_point = s->points;
   cur_sfactor = s->sfactors;
   *xmin = *xmax = x0 = x1 = cur_point->x;
   *ymin = *ymax = y0 = y1 = cur_point->y;
@@ -452,7 +459,6 @@ general_spline_bound(s, xmin, ymin, xmax, ymax)
   
   while (1)
     {   
-      previous_point = cur_point;
       cur_point = next_point;
       next_point = next_point->next;
 
@@ -637,9 +643,9 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 	    p2y = p->y;
 	}
 	calc_arrow(p1x, p1y, p2x, p2y, &dum, &dum, &dum, &dum,
-			obj->thickness, obj->for_arrow, arrowpts, &npts, &dum);
-	fxmin=fymin=100000;
-	fxmax=fymax=-100000;
+			obj->for_arrow, arrowpts, &npts, &dum);
+	fxmin=fymin=10000000;
+	fxmax=fymax=-10000000;
 	for (i=0; i<npts; i++) {
 	    fxmin = min2(fxmin, arrowpts[i].x);
 	    fymin = min2(fymin, arrowpts[i].y);
@@ -650,7 +656,7 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 	*xmax = max2(*xmax, fxmax);
 	*ymin = min2(*ymin, fymin);
 	*ymax = max2(*ymax, fymax);
-	if (appres.DEBUG) {
+	if (appres.DEBUG && !preview_in_progress) {
 	  pw_vector(canvas_win,fxmin,fymin,fxmax,fymin,PAINT,1,RUBBER_LINE,0.0,MAGENTA);
 	  pw_vector(canvas_win,fxmax,fymin,fxmax,fymax,PAINT,1,RUBBER_LINE,0.0,MAGENTA);
 	  pw_vector(canvas_win,fxmax,fymax,fxmin,fymax,PAINT,1,RUBBER_LINE,0.0,MAGENTA);
@@ -671,9 +677,9 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 	    p2y = obj->points->y;
 	}
 	calc_arrow(p1x, p1y, p2x, p2y, &dum, &dum, &dum, &dum,
-			obj->thickness, obj->back_arrow, arrowpts, &npts, &dum);
-	bxmin=bymin=100000;
-	bxmax=bymax=-100000;
+			obj->back_arrow, arrowpts, &npts, &dum);
+	bxmin=bymin=10000000;
+	bxmax=bymax=-10000000;
 	for (i=0; i<npts; i++) {
 	    bxmin = min2(bxmin, arrowpts[i].x);
 	    bymin = min2(bymin, arrowpts[i].y);
@@ -684,7 +690,7 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 	*xmax = max2(*xmax, bxmax);
 	*ymin = min2(*ymin, bymin);
 	*ymax = max2(*ymax, bymax);
-	if (appres.DEBUG) {
+	if (appres.DEBUG && !preview_in_progress) {
 	  pw_vector(canvas_win,bxmin,bymin,bxmax,bymin,PAINT,1,RUBBER_LINE,0.0,MAGENTA);
 	  pw_vector(canvas_win,bxmax,bymin,bxmax,bymax,PAINT,1,RUBBER_LINE,0.0,MAGENTA);
 	  pw_vector(canvas_win,bxmax,bymax,bxmin,bymax,PAINT,1,RUBBER_LINE,0.0,MAGENTA);
@@ -707,7 +713,7 @@ int x;
     if (x < 0)
 	return -ceil_coords(-x);
 
-    tmp_t = x % posn_rnd[cur_pointposn];
+    tmp_t = x % posn_rnd[cur_gridunit][cur_pointposn];
     x = x - tmp_t;
     return x;
 }
@@ -726,8 +732,8 @@ int x;
     if (x < 0)
 	return -floor_coords(-x);
 
-    x = x + posn_rnd[cur_pointposn]-1;
-    tmp_t = x%posn_rnd[cur_pointposn];
+    x = x + posn_rnd[cur_gridunit][cur_pointposn]-1;
+    tmp_t = x%posn_rnd[cur_gridunit][cur_pointposn];
     x = x - tmp_t;
     return x;
 }

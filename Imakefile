@@ -4,17 +4,25 @@
 
 XCOMM FIG : Facility for Interactive Generation of figures
 XCOMM Copyright (c) 1985-1988 by Supoj Sutanthavibul
-XCOMM Parts Copyright (c) 1989-2000 by Brian V. Smith
+XCOMM Parts Copyright (c) 1989-2002 by Brian V. Smith
 XCOMM Parts Copyright (c) 1991 by Paul King
 XCOMM
 XCOMM Any party obtaining a copy of these files is granted, free of charge, a
 XCOMM full and unrestricted irrevocable, world-wide, paid up, royalty-free,
 XCOMM nonexclusive right and license to deal in this software and
 XCOMM documentation files (the "Software"), including without limitation the
-XCOMM rights to use, copy, modify, merge, publish, distribute, sublicense,
-XCOMM and/or sell copies of the Software, and to permit persons who receive
-XCOMM copies from any such party to do so, with the only requirement being
-XCOMM that this copyright notice remain intact.
+XCOMM rights to use, copy, modify, merge, publish and/or distribute copies of
+XCOMM the Software, and to permit persons who receive copies from any such 
+XCOMM party to do so, with the only requirement being that this copyright 
+XCOMM notice remain intact.
+
+XCOMM ------------------------------
+XCOMM IMPORTANT GENERAL NOTE:
+XCOMM ------------------------------
+XCOMM
+XCOMM Anytime the Imakefile is changed, you must do either "xmkmf" or "make Makefile",
+XCOMM followed by "make clean" before doing a "make" or "make install" of any kind.
+
 
 XCOMM If you want to install xfig in a directory other than the default X11 binary
 XCOMM directory, uncomment the following "BINDIR" line and change the path
@@ -25,10 +33,23 @@ XCOMM
 XCOMM Finally, uncomment and change XAPPLOADDIR to the directory where you want the
 XCOMM app-defaults resource files to go.  You will have to use the environment
 XCOMM variable XAPPLRESDIR to point to this directory.
+XCOMM On Sun systems running Openwindows you probably need to set the environment
+XCOMM variable XUSERFILESEARCHPATH to point to your app-defaults directory, and 
+XCOMM append a "%N" to the path, e.g. /users/me/xfig/app-defaults/%N
+XCOMM
+XCOMM Don't set the DESTDIR variable unless you want to install xfig in a totally
+XCOMM different tree than the "correct" tree that your X system expects. The usual
+XCOMM purpose of DESTDIR is to test an install process by installing in a benign area.
 
 XCOMM BINDIR = /usr/bin/X11
 XCOMM MKDIRHIER = /bin/sh /usr/bin/X11/mkdirhier
 XCOMM XAPPLOADDIR = /home/user/xfig
+
+XCOMM Redefine the following if your PNG library and/or include file
+XCOMM are in different places
+
+PNGLIBDIR = $(USRLIBDIR)
+PNGINC = -I/usr/local/include
 
 XCOMM If don't want JPEG support, comment out the #define USEJPEG line
 XCOMM Uncomment the #define for USEJPEG if you want to be able to import
@@ -48,18 +69,12 @@ XCOMM You must have version 5b or newer of the jpeg library.
 #ifdef USEJPEG
 #ifdef USEINSTALLEDJPEG
 JPEGLIBDIR = /usr/local/lib
-JPEGINCDIR = /usr/include/X11
+JPEGINC = -I/usr/include/X11
 #else
 JPEGLIBDIR = ../jpeg
-JPEGINCDIR = $(JPEGLIBDIR)
-#endif
+JPEGINC = -I$(JPEGLIBDIR)
+#endif /* USEINSTALLEDJPEG */
 #endif /* USEJPEG */
-
-XCOMM Comment out the following #define USEPNG if you don't want PNG support
-XCOMM Uncomment the #define for USEPNG if you want to be able to import
-XCOMM PNG (Portable Network Graphics) files.
-
-#define USEPNG
 
 XCOMM Uncomment the #define for USEXPM if you want to use the XPM
 XCOMM (color pixmap) package.
@@ -90,12 +105,20 @@ XCOMM the 3d Athena Widget Set (highly recommended!)
 XCOMM Then be sure to change the XAW3DINC to point to the directory where your
 XCOMM 3D Athena widget headers are located
 
-#define XAW3D
+XCOMM #define XAW3D
 
 #ifdef XAW3D
 XAW3DINC = -I/usr/include/X11/Xaw3d
 DUSEXAW3D = -DXAW3D
 XAWLIB = -lXaw3d
+#endif
+
+XCOMM Uncomment the following if you have a wheel mouse.  See docs for description.
+
+XCOMM #define WHEELMOUSE
+
+#ifdef WHEELMOUSE
+DUSEWHEELMOUSE = -DWHEELMOUSE
 #endif
 
 XCOMM Change the location of your printcap file if necessary
@@ -116,11 +139,11 @@ XCOMM to 1, 3, or 4 depending on your workstation model and X libraries.
 
 COMP_LED = -DCOMP_LED=3
 
-XCOMM Uncomment the next line if you want use Japanese (i18n) on xfig.
-XCOMM If your setlocale() dosen't support the locale, you should
+XCOMM Comment out the next line if you have any problems with the locale.
+XCOMM If your setlocale() doesn't support the locale, you should
 XCOMM add -DSETLOCALE to I18N_DEFS.
 
-XCOMM #define I18N
+#define I18N
 
 XCOMM If using an input tablet uncomment the following
 
@@ -141,9 +164,13 @@ XCOMM XFIGLIBDIR = /usr/local/lib/xfig
 XCOMM use this if you want the multi-key data base file in the standard X11 tree
 XFIGLIBDIR = $(LIBDIR)/xfig
 
-XCOMM now you can configure where the documentation should be located
-XFIGDOCDIR = $(LIBDIR)/xfig
-XCOMM XFIGDOCDIR = /usr/share/doc/xfig-doc
+XCOMM XFIGDOCDIR tells where the html and pdf documentation should go
+XCOMM XFIGDOCDIR = $(DOCDIR)/xfig
+XFIGDOCDIR = /usr/share/doc/xfig
+
+XCOMM MANDIR tells where the standard man pages should go (no need to change it
+XCOMM if you want the man pages installed in the standard place on your system
+XCOMM MANDIR = $(MANSOURCEPATH)$(MANSUFFIX)
 
 XCOMM If your system doesn't have strstr undefine the following definition
 XCOMM HAVE_NO_NOSTRSTR = -DNOSTRSTR
@@ -184,18 +211,6 @@ XCOMM default can be found in w_drawprim.h.  This option may be specified by
 XCOMM adding -DMAXNUMPTS=xxxx to the DEFINES line, where xxxx is the maximum
 XCOMM number of vertices.
 
-XCOMM Additionally, there is a bug in the pcx driver in Aladdin Ghostscript
-XCOMM versions prior to 3.32, which writes an incorrect pcx file for images
-XCOMM with odd width (not even).  Uncomment the following compile-time flag
-XCOMM PCXBUG to make xfig add one pixel to the width of an odd-width image
-XCOMM it reads in the pcx output from Ghostscript.
-XCOMM If you have Aladdin Ghostscript 3.32 or newer (which wasn't released
-XCOMM as of this writing) you may leave it commented out and your images will
-XCOMM have the proper width.  However, one pixel extra in width shouldn't
-XCOMM matter for most imported eps files.
-
-XCOMM PCXBUG = -DPCXBUG
-
 XCOMM If you want a compiler other than "cc", define it here
 
 XCOMM CC = /opt/SUNWspro/bin/cc
@@ -207,7 +222,6 @@ XCOMM *****************************************************
 XCOMM *****************************************************
 
 #ifdef USEJPEG
-JPEGINC = -I$(JPEGINCDIR)
 
 #ifdef USEINSTALLEDJPEG
 JPEGLIB = -L$(JPEGLIBDIR) -ljpeg
@@ -241,24 +255,19 @@ STRDEFINES = $(HAVE_NO_NOSTRSTR) \
 #undef InstallManPage
 #endif
 #define InstallManPage(file,dest)                                       @@\
-InstallManPageLong(Doc/file,dest,file)
+InstallManPageLong(file,dest,file)
 
 #ifdef USESMALLICONS
 DUSESMALLICONS = -DUSE_SMALL_ICONS
-#endif
+#endif /* USESMALLICONS */
+
+PNGLIBS = -L$(PNGLIBDIR) -lpng -lz
 
 #ifdef USEJPEG
 DUSEJPEG = -DUSE_JPEG
 READJPEGS = f_readjpg.c
 READJPEGO = f_readjpg.o
-#endif
-
-#ifdef USEPNG
-DUSEPNG = -DUSE_PNG
-PNGLIBS = -lpng -lz
-READPNGS = f_readpng.c
-READPNGO = f_readpng.o
-#endif /* USEPNG */
+#endif /* USEJPEG */
 
 #ifdef USEXPM
 DUSEXPM = -DUSE_XPM
@@ -267,56 +276,57 @@ READXPMS = f_readxpm.c
 READXPMO = f_readxpm.o
 #ifdef USEXPM_ICON
 DUSEXPMICON = -DUSE_XPM_ICON
-#endif
-#endif
+#endif /* USEXPM_ICON */
+#endif /* USEXPM */
 
 DEFINES =             $(STRDEFINES) $(USEINLINE) $(DUSEXPM) $(DUSEXAW3D) \
-			$(DUSEJPEG) $(DUSEPNG) $(I18N_DEFS) \
-			$(HAVE_NO_DIRENT) 
+			$(DUSEJPEG) $(I18N_DEFS) \
+			$(HAVE_NO_DIRENT) $(DUSEWHEELMOUSE)
+
 
 XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
 		d_subspline.c d_line.c d_regpoly.c d_spline.c d_text.c \
 		e_addpt.c e_align.c e_arrow.c e_break.c e_compound.c \
 		e_convert.c e_copy.c e_delete.c e_deletept.c \
-		e_edit.c e_flip.c e_glue.c e_joinsplit.c e_move.c \
-		e_movept.c e_placelib.c e_rotate.c e_scale.c e_update.c \
+		e_edit.c e_flip.c e_glue.c e_joinsplit.c e_measure.c e_move.c \
+		e_movept.c e_placelib.c e_rotate.c e_scale.c e_tangent.c e_update.c \
 		f_load.c f_neuclrtab.c f_picobj.c f_read.c f_readold.c \
-		f_readppm.c f_readtif.c f_readeps.c \
-		f_readxbm.c f_readgif.c $(READJPEGS) f_readpcx.c $(READXPMS) $(READPNGS) \
-		f_save.c f_util.c f_wrpcx.c \
+		f_readppm.c f_readpng.c f_readtif.c f_readeps.c \
+		f_readxbm.c f_readgif.c $(READJPEGS) f_readpcx.c $(READXPMS) \
+		f_save.c f_util.c f_wrpcx.c f_wrpng.c \
 		main.c mode.c object.c resources.c \
 		u_bound.c u_create.c u_drag.c u_draw.c \
 		u_elastic.c u_error.c u_fonts.c u_free.c u_geom.c \
-		u_list.c u_markers.c u_pan.c u_print.c \
-		u_redraw.c u_scale.c u_search.c u_translate.c u_undo.c w_listwidget.c \
+		u_list.c u_markers.c u_pan.c u_print.c u_redraw.c u_scale.c u_search.c \
+		u_smartsearch.c u_translate.c u_undo.c w_digitize.c w_listwidget.c \
 		w_browse.c w_capture.c w_srchrepl.c w_help.c w_layers.c w_menuentry.c \
 		w_canvas.c w_cmdpanel.c w_color.c w_cursor.c w_dir.c w_drawprim.c \
 		w_export.c w_file.c w_fontbits.c w_fontpanel.c w_grid.c w_icons.c \
 		w_indpanel.c w_library.c w_modepanel.c w_mousefun.c w_msgpanel.c \
-		w_print.c w_rottext.c w_rulers.c w_setup.c w_util.c w_zoom.c \
-		$(I18N_SRC) SmeCascade.c
+		w_print.c w_rottext.c w_rulers.c w_setup.c w_style.c w_util.c w_zoom.c \
+		$(I18N_SRC) SmeCascade.c SmeBSB.c SimpleMenu.c
 
 XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
 		d_subspline.o d_line.o d_regpoly.o d_spline.o d_text.o \
 		e_addpt.o e_align.o e_arrow.o e_break.o e_compound.o \
 		e_convert.o e_copy.o e_delete.o e_deletept.o \
-		e_edit.o e_flip.o e_glue.o e_joinsplit.o e_move.o \
-		e_movept.o e_placelib.o e_rotate.o e_scale.o e_update.o \
+		e_edit.o e_flip.o e_glue.o e_joinsplit.o e_measure.o e_move.o \
+		e_movept.o e_placelib.o e_rotate.o e_scale.o e_tangent.o e_update.o \
 		f_load.o f_neuclrtab.o f_picobj.o f_read.o f_readold.o \
-		f_readppm.o f_readtif.o f_readeps.o \
-		f_readxbm.o f_readgif.o $(READJPEGO) f_readpcx.o $(READXPMO) $(READPNGO) \
-		f_save.o f_util.o f_wrpcx.o \
+		f_readppm.o f_readpng.o f_readtif.o f_readeps.o \
+		f_readxbm.o f_readgif.o $(READJPEGO) f_readpcx.o $(READXPMO) \
+		f_save.o f_util.o f_wrpcx.o f_wrpng.o \
 		main.o mode.o object.o resources.o \
 		u_bound.o u_create.o u_drag.o u_draw.o \
 		u_elastic.o u_error.o u_fonts.o u_free.o u_geom.o \
-		u_list.o u_markers.o u_pan.o u_print.o \
-		u_redraw.o u_scale.o u_search.o u_translate.o u_undo.o w_listwidget.o \
+		u_list.o u_markers.o u_pan.o u_print.o u_redraw.o u_scale.o u_search.o \
+		u_smartsearch.o u_translate.o u_undo.o w_digitize.o w_listwidget.o \
 		w_browse.o w_capture.o w_srchrepl.o w_help.o w_layers.o w_menuentry.o \
 		w_canvas.o w_cmdpanel.o w_color.o w_cursor.o w_dir.o w_drawprim.o \
 		w_export.o w_file.o w_fontbits.o w_fontpanel.o w_grid.o w_icons.o \
 		w_indpanel.o w_library.o w_modepanel.o w_mousefun.o w_msgpanel.o \
-		w_print.o w_rottext.o w_rulers.o w_setup.o w_util.o w_zoom.o \
-		$(I18N_OBJ) SmeCascade.o
+		w_print.o w_rottext.o w_rulers.o w_setup.o w_style.o w_util.o w_zoom.o \
+		$(I18N_OBJ) SmeCascade.o SmeBSB.o SimpleMenu.o
 
 XCOMM Other dependencies should be handled by "make depend"
 
@@ -325,7 +335,7 @@ MAINDEPFILES =  patchlevel.h version.h
 SRCS = $(XFIGSRC)
 OBJS = $(XFIGOBJ)
 
-EXTRA_INCLUDES = $(JPEGINC) $(XPMINC) $(XAW3DINC)
+EXTRA_INCLUDES = $(JPEGINC) $(PNGINC) $(XPMINC) $(XAW3DINC)
 DEPLIBS = XawClientDepLibs
 
 LOCAL_LIBRARIES = 	$(JPEGLIB)
@@ -357,7 +367,7 @@ ComplexProgramTarget(xfig)
 InstallAppDefaults(Fig)
 InstallAppDefaults(Fig-color)
 
-XCOMM Install the compose key database and object libraries
+XCOMM Install the compose key database, object libraries and documentation
 XCOMM here with "make install"
 
 install::
@@ -368,23 +378,37 @@ install::
 
 XCOMM Install program, libraries and documentation with "make install.all"
 install.all::
+	$(MAKE) install
 	$(MAKE) install.libs
 	$(MAKE) install.doc
 
+xfig.man: Doc/xfig.man
+	$(LN) Doc/xfig.man xfig.man
+
 XCOMM Install the documentation here with "make install.doc"
 install.doc::
-	@echo Installing man pages to $(DESTDIR)$(MANDIR)
+	@echo Installing man pages to $(MANDIR)
+	@if [ -d $(DESTDIR)$(XFIGDOCDIR) ]; then set +x; \
+		else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGDOCDIR) ; set +x; ); fi
 	@$(MAKE) install.man
 	@$(MAKE) install.html
 
 XCOMM Install the HTML documentation here with "make install.html"
-install.html::
+
 #ifdef I18N
+install.html::
 	@$(MAKE) install.jhtml
+	@$(MAKE) install.rhtml
+#else
+install.html::
+	@$(MAKE) install.rhtml
 #endif
+
+install.rhtml::
 	@(cd Doc ; \
 	echo Copying pdf and html files to $(DESTDIR)$(XFIGDOCDIR) ; \
-	$(INSTALL) -m 644 -c xfig.html $(DESTDIR)$(XFIGDOCDIR) ; \
+	$(INSTALL) -m 644 -c xfig_man.html $(DESTDIR)$(XFIGDOCDIR) ; \
+	$(INSTALL) -m 644 -c xfig_ref_en.pdf $(DESTDIR)$(XFIGDOCDIR) ; \
 	$(INSTALL) -m 644 -c xfig-howto.pdf $(DESTDIR)$(XFIGDOCDIR) ; \
 	if [ -d $(DESTDIR)$(XFIGDOCDIR)/html ]; then set +x; \
 	   else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGDOCDIR)/html ); fi ; \
@@ -403,7 +427,7 @@ install.html::
 
 #ifdef I18N
 install.jhtml::
-	@echo "Copying japanese html files"
+	@echo "Copying japanese html files to $(DESTDIR)$(XFIGDOCDIR)"
 	@(cd Doc/html/japanese ; \
 	if [ -d $(DESTDIR)$(XFIGDOCDIR)/html/japanese ]; then set +x; \
 	   else (set -x; $(MKDIRHIER) $(DESTDIR)$(XFIGDOCDIR)/html/japanese ); fi ; \
@@ -417,8 +441,8 @@ install.libs::
 	@echo "Copying Fig Object Libraries"
 	@if [ -d $(DESTDIR)$(OBJLIBDIR) ]; then set +x; \
 		else (set -x; $(MKDIRHIER) $(DESTDIR)$(OBJLIBDIR) ; set +x; ); fi
-	@if [ -d Examples/Libraries ]; then \
-	(cd Examples/Libraries ; \
+	@if [ -d Libraries ]; then \
+	(cd Libraries ; \
 	for d in * ;  do \
 	    (cd $$d ; \
 	    if [ -d $(DESTDIR)$(OBJLIBDIR)/$$d ]; then set +x; \
@@ -452,7 +476,7 @@ install.libs::
 	else echo No Object Libraries to install ; \
 	fi;
 
-SpecialObjectRule(main.o, main.c $(MAINDEPFILES) mode.h, $(USETAB) $(OBJLIB) $(DUSEXPMICON) )
+SpecialObjectRule(main.o, main.c $(MAINDEPFILES) mode.h w_setup.h, $(USETAB) $(OBJLIB) $(DUSESMALLICONS) $(DUSEXPMICON) )
 SpecialObjectRule(f_read.o, f_read.c $(MAINDEPFILES) mode.h, )
 SpecialObjectRule(u_error.o, u_error.c $(MAINDEPFILES) mode.h,  )
 SpecialObjectRule(resources.o, resources.c resources.h,  )
@@ -495,10 +519,12 @@ SpecialObjectRule(f_picobj.o, f_picobj.c  mode.h, )
 SpecialObjectRule(f_save.o, f_save.c  mode.h, )
 SpecialObjectRule(f_util.o, f_util.c  mode.h, )
 SpecialObjectRule(mode.o, mode.c  mode.h, )
-SpecialObjectRule(object.o, object.c  mode.h, )
+SpecialObjectRule(object.o, object.c  object.h mode.h, )
 SpecialObjectRule(u_bound.o, u_bound.c  mode.h, )
 SpecialObjectRule(u_create.o, u_create.c  mode.h, )
 SpecialObjectRule(u_drag.o, u_drag.c  mode.h, )
+SpecialObjectRule(u_draw.o, u_draw.c  u_draw_spline.c mode.h, )
+SpecialObjectRule(u_geom.o, u_geom.c  u_draw_spline.c, )
 SpecialObjectRule(u_elastic.o, u_elastic.c  mode.h, )
 SpecialObjectRule(u_list.o, u_list.c  mode.h, )
 SpecialObjectRule(u_markers.o, u_markers.c  mode.h, )
@@ -508,7 +534,6 @@ SpecialObjectRule(u_search.o, u_search.c  mode.h, )
 SpecialObjectRule(u_undo.o, u_undo.c  mode.h, )
 SpecialObjectRule(w_browse.o, w_browse.c  mode.h, )
 SpecialObjectRule(w_cmdpanel.o, w_cmdpanel.c  mode.h, )
-SpecialObjectRule(w_color.o, w_color.c  mode.h w_indpanel.h, )
 SpecialObjectRule(w_dir.o, w_dir.c  mode.h, )
 SpecialObjectRule(w_drawprim.o, w_drawprim.c  mode.h, )
 SpecialObjectRule(w_export.o, w_export.c  mode.h, )
@@ -517,7 +542,7 @@ SpecialObjectRule(w_grid.o, w_grid.c  mode.h, )
 SpecialObjectRule(w_indpanel.o, w_indpanel.c  mode.h w_indpanel.h object.h, )
 SpecialObjectRule(w_library.o, w_library.c  mode.h, )
 SpecialObjectRule(w_menuentry.o, w_menuentry.c  w_menuentry.h w_menuentryP.h, )
-SpecialObjectRule(w_modepanel.o, w_modepanel.c  mode.h w_icons.h object.h, $(DUSESMALLICONS))
+SpecialObjectRule(w_modepanel.o, w_modepanel.c  mode.h w_indpanel.h w_icons.h object.h, $(DUSESMALLICONS))
 SpecialObjectRule(w_msgpanel.o, w_msgpanel.c  mode.h, )
 SpecialObjectRule(w_rulers.o, w_rulers.c  mode.h, )
 SpecialObjectRule(w_zoom.o, w_zoom.c  mode.h, )

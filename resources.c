@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -84,7 +84,7 @@ Boolean		update_figs = False;
 
 #ifdef USE_XPM
 XpmAttributes	xfig_icon_attr;
-#endif
+#endif /* USE_XPM */
 Pixel		colors[NUM_STD_COLS+MAX_USR_COLS];
 XColor		user_colors[MAX_USR_COLS];
 XColor		undel_user_color;
@@ -97,12 +97,15 @@ Boolean		colorUsed[MAX_USR_COLS];
 Boolean		colorFree[MAX_USR_COLS];
 Boolean		n_colorFree[MAX_USR_COLS];
 Boolean		all_colors_available;
-Pixel		dk_gray_color, lt_gray_color;
+Pixel		dark_gray_color, med_gray_color, lt_gray_color;
 Pixel		pageborder_color;
+Pixel		zero_lines_color;
 int		max_depth=-1;
 int		min_depth=-1;
 char		tool_name[200];
-char		*userhome;		/* user's home directory */
+Boolean		display_fractions=True;	/* whether to display fractions in lengths */
+char		*userhome=NULL;		/* user's home directory */
+float		 scale_factor=1.0;	/* scale drawing as it is read in */
 
 /* number of colors we want to use for pictures */
 /* this will be determined when the first picture is used.  We will take
@@ -120,7 +123,7 @@ Window		msg_win, sideruler_win, topruler_win;
 
 Cursor		cur_cursor;
 Cursor		arrow_cursor, bull_cursor, buster_cursor, crosshair_cursor,
-		null_cursor, pencil_cursor, pick15_cursor, pick9_cursor,
+		null_cursor, text_cursor, pick15_cursor, pick9_cursor,
 		panel_cursor, l_arrow_cursor, lr_arrow_cursor, r_arrow_cursor,
 		u_arrow_cursor, ud_arrow_cursor, d_arrow_cursor, wait_cursor,
 		magnify_cursor;
@@ -151,14 +154,16 @@ Boolean		swapped_cmap = False;
 Atom		wm_delete_window;
 int		num_recent_files;	/* number of recent files in list */
 int		max_recent_files;	/* user max number of recent files */
+int		splash_onscreen = False; /* flag used to clear off splash graphic */
 
 GC		gc, button_gc, ind_button_gc, mouse_button_gc,
 		fill_color_gc, pen_color_gc, blank_gc, ind_blank_gc, 
-		mouse_blank_gc, gccache[NUMOPS],
+		mouse_blank_gc, gccache[NUMOPS], grid_gc,
 		fillgc, fill_gc[NUMFILLPATS],	/* fill style gc's */
 		tr_gc, tr_xor_gc, tr_erase_gc,	/* for the rulers */
 		sr_gc, sr_xor_gc, sr_erase_gc;
 
+Color		grid_color;
 Pixmap		fill_pm[NUMFILLPATS],fill_but_pm[NUMPATTERNS];
 float		fill_pm_zoom[NUMFILLPATS],fill_but_pm_zoom[NUMFILLPATS];
 XColor		x_fg_color, x_bg_color;
@@ -173,6 +178,10 @@ float		PIC_FACTOR;	/* assigned in main.c, updated in unit_panel_set() and
 /* will be filled in with environment variable XFIGTMPDIR */
 char	       *TMPDIR;
 
+/* will contain environment variable FIG2DEV_DIR, if any */
+char	       *fig2dev_path;
+char	        fig2dev_cmd[PATH_MAX];
+
 /***** translations used for asciiTextWidgets in general windows *****/
 String  text_translations =
 	"<Key>Return: no-op()\n\
@@ -185,8 +194,8 @@ String  text_translations =
 /* for w_export.c and w_print.c */
 
 char    *orient_items[] = {
-    " portrait ",
-    "landscape "};
+    " Portrait ",
+    "Landscape "};
 
 char    *just_items[] = {
     "Centered  ",
@@ -230,6 +239,10 @@ struct	paper_def paper_sizes[NUMPAPERSIZES] = {
 char    *multiple_pages[] = {
     "  Single  ",
     " Multiple "};
+
+char    *overlap_pages[] = {
+    " No Overlap",
+    "  Overlap  "};
 
 /* for w_file.c and w_export.c */
 

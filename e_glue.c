@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -49,6 +49,7 @@ compound_selected()
 			LOC_OBJ, "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     init_searchproc_left(tag_object);
     canvas_leftbut_proc = object_search_left;
     canvas_middlebut_proc = init_tag_region;
@@ -117,7 +118,7 @@ cancel_tag_region()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     /* erase last lengths if appres.showlengths is true */
-    erase_lengths();
+    erase_box_lengths();
     compound_selected();
     draw_mousefun_canvas();
 }
@@ -130,7 +131,7 @@ tag_region(x, y)
 
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     /* erase last lengths if appres.showlengths is true */
-    erase_lengths();
+    erase_box_lengths();
     xmin = min2(fix_x, x);
     ymin = min2(fix_y, y);
     xmax = max2(fix_x, x);
@@ -166,13 +167,13 @@ create_compoundobject(x, y)
        grid point or a few pixels if positioning grid is "ANY" */
     if (c->nwcorner.x == c->secorner.x) {
 	if (cur_pointposn != P_ANY) {
-	    c->secorner.x += posn_rnd[cur_pointposn];
+	    c->secorner.x += posn_rnd[cur_gridunit][cur_pointposn];
 	    c->secorner.x = ceil_coords(c->secorner.x);
 	}
     }
     if (c->nwcorner.y == c->secorner.y) {
 	if (cur_pointposn != P_ANY) {
-	    c->secorner.y += posn_rnd[cur_pointposn];
+	    c->secorner.y += posn_rnd[cur_gridunit][cur_pointposn];
 	    c->secorner.y = ceil_coords(c->secorner.y);
 	}
     }

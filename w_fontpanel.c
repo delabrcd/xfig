@@ -1,15 +1,15 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2000 by Brian V. Smith
+ * Copyright (c) 1989-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -18,6 +18,7 @@
 #include "resources.h"
 #include "u_fonts.h"		/* printer font names */
 #include "w_fontbits.h"
+#include "w_indpanel.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
@@ -48,14 +49,15 @@ static XtCallbackRec pane_callbacks[] =
 };
 
 static String	fontpane_translations =
-	"<Message>WM_PROTOCOLS: FontPaneCancel()\n";
+	"<Message>WM_PROTOCOLS: FontPaneCancel()\n\
+	 <Key>Escape: FontPaneCancel()\n";
 static XtActionsRec	fontpane_actions[] =
 {
     {"FontPaneCancel", (XtActionProc) fontpane_cancel},
 };
 
-static Widget	ps_fontpanes, ps_buttons;
-static Widget	latex_fontpanes, latex_buttons;
+static Widget	ps_fontpanes, ps_form;
+static Widget	latex_fontpanes, latex_form;
 static Widget	ps_fontpane[NUM_FONTS+1];
 static Widget	latex_fontpane[NUM_LATEX_FONTS];
 static Boolean	first_fontmenu;
@@ -64,7 +66,7 @@ void
 init_fontmenu(tool)
     Widget	    tool;
 {
-    Widget	    tmp_but;
+    Widget	    tmp_but, ps_cancel, latex_cancel;
     register int    i;
     register MenuItemRec *mi;
     XtTranslations  pane_actions;
@@ -89,20 +91,53 @@ init_fontmenu(tool)
 			XtParseTranslationTable(fontpane_translations));
     XtAppAddActions(tool_app, fontpane_actions, XtNumber(fontpane_actions));
 
+    FirstArg(XtNwidth, PS_FONTPANE_WD*2);
+    NextArg(XtNdefaultDistance, INTERNAL_BW);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    ps_form = XtCreateManagedWidget("ps_form", formWidgetClass,
+				       ps_fontmenu, Args, ArgCount);
+    XtOverrideTranslations(ps_form,
+			XtParseTranslationTable(fontpane_translations));
+
+    FirstArg(XtNwidth, LATEX_FONTPANE_WD*2);
+    NextArg(XtNdefaultDistance, INTERNAL_BW);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    latex_form = XtCreateManagedWidget("latex_form", formWidgetClass,
+					  latex_fontmenu, Args, ArgCount);
+    XtOverrideTranslations(latex_fontmenu,
+			XtParseTranslationTable(fontpane_translations));
+
+    /* box with PostScript font image buttons */
     FirstArg(XtNvSpace, -INTERNAL_BW);
     NextArg (XtNhSpace, -INTERNAL_BW);
     NextArg (XtNwidth, PS_FONTPANE_WD*2 + INTERNAL_BW*4);	/* two across */
     NextArg (XtNhSpace, 0);
-
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     ps_fontpanes = XtCreateManagedWidget("menu", boxWidgetClass,
-					 ps_fontmenu, Args, ArgCount);
+					 ps_form, Args, ArgCount);
 
+    /* box with LaTeX font image buttons */
     FirstArg(XtNvSpace, -INTERNAL_BW);
     NextArg (XtNhSpace, -INTERNAL_BW);
     NextArg (XtNwidth, LATEX_FONTPANE_WD*2 + INTERNAL_BW*4);	/* two across */
     NextArg (XtNhSpace, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     latex_fontpanes = XtCreateManagedWidget("menu", boxWidgetClass,
-					    latex_fontmenu, Args, ArgCount);
+					    latex_form, Args, ArgCount);
 
     for (i = 0; i < NUM_FONTS + 1; i++) {
 	ps_fontmenu_items[i].type = MENU_IMAGESTRING;		/* put the fontnames in
@@ -118,59 +153,10 @@ init_fontmenu(tool)
 	latex_fontmenu_items[i].info = (caddr_t) i;		/* index for font # */
     }
 
-    FirstArg(XtNwidth, PS_FONTPANE_WD*2);
-    NextArg(XtNdefaultDistance, INTERNAL_BW);
-    NextArg(XtNborderWidth, 0);
-    ps_buttons = XtCreateManagedWidget("ps_buttons", formWidgetClass,
-				       ps_fontpanes, Args, ArgCount);
-
-    FirstArg(XtNwidth, LATEX_FONTPANE_WD*2);
-    NextArg(XtNdefaultDistance, INTERNAL_BW);
-    NextArg(XtNborderWidth, 0);
-    latex_buttons = XtCreateManagedWidget("latex_buttons", formWidgetClass,
-					  latex_fontpanes, Args, ArgCount);
-
-    FirstArg(XtNlabel, "Cancel");
-    NextArg(XtNwidth, PS_FONTPANE_WD);
-    NextArg(XtNheight, PS_FONTPANE_HT+4);
-    NextArg(XtNborderWidth, 0);
-    tmp_but = XtCreateManagedWidget("cancel", commandWidgetClass,
-				    ps_buttons, Args, ArgCount);
-    XtAddEventHandler(tmp_but, ButtonReleaseMask, (Boolean) 0,
-		      fontpane_cancel, (XtPointer) NULL);
-
-    FirstArg(XtNlabel, "Use LaTex Fonts");
-    NextArg(XtNfromHoriz, tmp_but);
-    NextArg(XtNwidth, PS_FONTPANE_WD);
-    NextArg(XtNheight, PS_FONTPANE_HT+4);
-    NextArg(XtNborderWidth, 0);
-    tmp_but = XtCreateManagedWidget("use_latex_fonts", commandWidgetClass,
-				    ps_buttons, Args, ArgCount);
-    XtAddEventHandler(tmp_but, ButtonReleaseMask, (Boolean) 0,
-		      fontpane_swap, (XtPointer) NULL);
-
-    FirstArg(XtNlabel, "Cancel");
-    NextArg(XtNwidth, LATEX_FONTPANE_WD);
-    NextArg(XtNheight, LATEX_FONTPANE_HT+4);
-    NextArg(XtNborderWidth, 0);
-    tmp_but = XtCreateManagedWidget("cancel", commandWidgetClass,
-				    latex_buttons, Args, ArgCount);
-    XtAddEventHandler(tmp_but, ButtonReleaseMask, (Boolean) 0,
-		      fontpane_cancel, (XtPointer) NULL);
-
-    FirstArg(XtNlabel, "Use PostScript Fonts");
-    NextArg(XtNfromHoriz, tmp_but);
-    NextArg(XtNwidth, LATEX_FONTPANE_WD);
-    NextArg(XtNheight, LATEX_FONTPANE_HT+4);
-    NextArg(XtNborderWidth, 0);
-    tmp_but = XtCreateManagedWidget("use_postscript_fonts", commandWidgetClass,
-				    latex_buttons, Args, ArgCount);
-    XtAddEventHandler(tmp_but, ButtonReleaseMask, (Boolean) 0,
-		      fontpane_swap, (XtPointer) NULL);
-
     pane_actions = XtParseTranslationTable("<EnterWindow>:set()\n\
 		<Btn1Up>:notify()unset()\n");
 
+    /* make the PostScript font image buttons */
     FirstArg(XtNwidth, PS_FONTPANE_WD);
     NextArg(XtNheight, PS_FONTPANE_HT+4);
     NextArg(XtNcallback, pane_callbacks);
@@ -187,7 +173,34 @@ init_fontmenu(tool)
 					       ps_fontpanes, Args, ArgCount);
 	XtOverrideTranslations(ps_fontpane[i], pane_actions);
     }
+    /* Cancel */
+    FirstArg(XtNlabel, "Cancel");
+    NextArg(XtNfromVert, ps_fontpanes);
+    NextArg(XtNhorizDistance, 4);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    ps_cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
+				    ps_form, Args, ArgCount);
+    XtAddEventHandler(ps_cancel, ButtonReleaseMask, False,
+		      fontpane_cancel, (XtPointer) NULL);
 
+    /* button to switch to the LaTeX fonts */
+    FirstArg(XtNlabel, " Use LaTex Fonts ");
+    NextArg(XtNfromVert, ps_fontpanes);
+    NextArg(XtNfromHoriz, ps_cancel);
+    NextArg(XtNhorizDistance, 10);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    tmp_but = XtCreateManagedWidget("use_latex_fonts", commandWidgetClass,
+				    ps_form, Args, ArgCount);
+    XtAddEventHandler(tmp_but, ButtonReleaseMask, False,
+		      fontpane_swap, (XtPointer) NULL);
+
+    /* now make the LaTeX font image buttons */
     FirstArg(XtNwidth, LATEX_FONTPANE_WD);
     NextArg(XtNheight, LATEX_FONTPANE_HT+4);
     NextArg(XtNcallback, pane_callbacks);
@@ -204,6 +217,35 @@ init_fontmenu(tool)
 					   latex_fontpanes, Args, ArgCount);
 	XtOverrideTranslations(latex_fontpane[i], pane_actions);
     }
+    /* Cancel */
+    FirstArg(XtNlabel, "Cancel");
+    NextArg(XtNfromVert, latex_fontpanes);
+    NextArg(XtNhorizDistance, 4);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    latex_cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
+				    latex_form, Args, ArgCount);
+    XtAddEventHandler(latex_cancel, ButtonReleaseMask, False,
+		      fontpane_cancel, (XtPointer) NULL);
+
+    /* button to switch to the PostScript fonts */
+    FirstArg(XtNlabel, " Use PostScript Fonts ");
+    NextArg(XtNfromVert, latex_fontpanes);
+    NextArg(XtNfromHoriz, latex_cancel);
+    NextArg(XtNhorizDistance, 10);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    tmp_but = XtCreateManagedWidget("use_postscript_fonts", commandWidgetClass,
+				    latex_form, Args, ArgCount);
+    XtAddEventHandler(tmp_but, ButtonReleaseMask, False,
+		      fontpane_swap, (XtPointer) NULL);
+
+    XtInstallAccelerators(ps_form, ps_cancel);
+    XtInstallAccelerators(latex_form, latex_cancel);
 }
 
 /* create the bitmaps for the font menu */
@@ -268,10 +310,6 @@ setup_fontmenu()
 	SetValues(latex_fontpane[i]);
     }
 
-    FirstArg(XtNbackground, black_color.pixel);
-    SetValues(ps_buttons);
-    SetValues(latex_buttons);
-
     XtRealizeWidget(ps_fontmenu);
     XtRealizeWidget(latex_fontmenu);
     /* at this point the windows are realized but not drawn */
@@ -284,7 +322,6 @@ fontpane_popup(psfont_adr, latexfont_adr, psflag_adr, showfont_fn, show_widget)
     int		   *psfont_adr, *latexfont_adr, *psflag_adr;
     void	    (*showfont_fn) ();
     Widget	    show_widget;
-
 {
     DeclareArgs(2);
     Position	    xposn, yposn;

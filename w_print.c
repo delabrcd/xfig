@@ -1,16 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -25,26 +25,35 @@
 #include "w_export.h"
 #include "w_print.h"
 #include "w_icons.h"
+#include "w_indpanel.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
 
 /* EXPORTS */
 
-Widget		print_popup;	/* the main export popup */
-Widget		print_orient_panel;
-Widget		print_just_panel;
-Widget		print_papersize_panel;
-Widget		print_multiple_panel;
-Widget		printer_menu_button;
-Widget		print_mag_text;
-Widget		print_background_panel;
-void		print_update_figure_size();
-Boolean		print_all_layers=True;
+Widget	print_popup;	/* the main print popup */
+Widget	print_panel;	/* the form it's in */
+Widget	print_orient_panel;
+Widget	print_just_panel;
+Widget	print_papersize_panel;
+Widget	print_multiple_panel;
+Widget	print_overlap_panel;
+Widget	printer_menu_button;
+Widget	print_mag_text;
+Widget	print_background_panel;
+void	print_update_figure_size();
+Boolean	print_all_layers=True;
+Widget	print_grid_minor_text, print_grid_major_text;
+Widget	print_grid_minor_menu_button, print_grid_minor_menu;
+Widget	print_grid_major_menu_button, print_grid_major_menu;
+Widget	print_grid_unit_label;
 
 /* LOCAL */
 
 DeclareStaticArgs(15);
+
+static Widget	beside, below;
 
 #define MAX_PRINTERS 1000		/* for those systems using lprng :-) */
 static char    *printer_names[MAX_PRINTERS];
@@ -52,34 +61,30 @@ static int	parse_printcap();
 static int	numprinters;
 
 static void	orient_select();
-static Widget	orient_menu, orient_lab;
 
 static void	just_select();
-static Widget	just_menu, just_lab;
+static Widget	just_lab;
 
 static void	papersize_select();
-static Widget	papersize_menu, papersize_lab;
+static Widget	papersize_menu;
 
 static void	background_select();
-static Widget	background_lab, background_menu;
+static Widget	background_menu;
 
 static void	multiple_select();
-static Widget	multiple_menu, multiple_lab;
+static void	overlap_select();
 
 static void	printer_select();
-static Widget	printer_menu;
 
-static Widget	print_panel, dismiss, print, 
-		printer_text, param_text, printer_lab, param_lab,
+static Widget	dismiss, print, 
+		printer_text, param_text,
 		clear_batch, print_batch, 
-		num_batch_lab, num_batch,
+		num_batch,
 		printalltoggle, printactivetoggle;
 
-static Widget	mag_lab;
 static Widget	size_lab;
 
 static void	update_figure_size();
-static Widget	fitpage;
 static void	fit_page();
 
 static Position xposn, yposn;
@@ -92,11 +97,6 @@ void		do_print(), do_print_batch();
 static XtCallbackProc switch_print_layers();
 
 /* callback list to keep track of magnification window */
-
-static XtCallbackRec mag_callback[] = {
-	{(XtCallbackProc)update_mag, (XtPointer)NULL},
-	{(XtCallbackProc)NULL, (XtPointer)NULL},
-	};
 
 String  print_translations =
         "<Key>Return: UpdateMag()\n\
@@ -138,7 +138,7 @@ do_print(w)
 	char	   *param_val;
 	char	    cmd[255],cmd2[255];
 	char	   *c1;
-	char	    backgrnd[10];
+	char	    backgrnd[10], grid[80];
 
 	/* don't print if in the middle of drawing/editing */
 	if (check_action_on())
@@ -158,10 +158,12 @@ do_print(w)
 	/* update the figure size (magnification * bounding_box) */
 	print_update_figure_size();
 
-	FirstArg(XtNstring, &printer_val);
-	GetValues(printer_text);
-	FirstArg(XtNstring, &param_val);
-	GetValues(param_text);
+	printer_val = panel_get_value(printer_text);
+	param_val = panel_get_value(param_text);
+
+	/* get grid params and assemble into fig2dev parm */
+	get_grid_spec(grid, print_grid_minor_text);
+
 	if (batch_exists) {
 	    gen_print_cmd(cmd,batch_file,printer_val,param_val);
 	    if (system(cmd) != 0)
@@ -180,7 +182,8 @@ do_print(w)
 	    }
 	    /* make a #rrggbb string from the background color */
 	    make_rgb_string(export_background_color, backgrnd);
-	    print_to_printer(printer_val, backgrnd, appres.magnification, print_all_layers, cmd);
+	    print_to_printer(printer_val, backgrnd, appres.magnification,
+				print_all_layers, grid, cmd);
 	}
 }
 
@@ -288,7 +291,7 @@ do_print_batch(w)
 	FILE	   *infp,*outfp;
 	char	    tmp_exp_file[32];
 	char	    str[255];
-	char	    backgrnd[10];
+	char	    backgrnd[10], grid[80];
 
 	if (writing_batch || emptyfigure_msg(print_msg))
 		return;
@@ -314,8 +317,11 @@ do_print_batch(w)
 	/* make a #rrggbb string from the background color */
 	make_rgb_string(export_background_color, backgrnd);
 
+	/* get grid params and assemble into fig2dev parm */
+	get_grid_spec(grid, print_grid_minor_text);
+
 	print_to_file(tmp_exp_file, "ps", appres.magnification, 0, 0, backgrnd,
-				NULL, FALSE, print_all_layers, 0, FALSE);
+				NULL, False, print_all_layers, 0, False, grid);
 	put_msg("Appending to batch file \"%s\" (%s mode) ... done",
 		    batch_file, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
 	app_flush();		/* make sure message gets displayed */
@@ -434,18 +440,38 @@ multiple_select(w, new_multiple, garbage)
     if (appres.multiple) {
 	XtSetSensitive(just_lab, False);
 	XtSetSensitive(print_just_panel, False);
+	XtSetSensitive(print_overlap_panel, True);
 	if (export_just_panel) {
 	    XtSetSensitive(just_lab, False);
 	    XtSetSensitive(export_just_panel, False);
+	    if (cur_exp_lang == LANG_PS)
+		XtSetSensitive(export_overlap_panel, True);
 	}
     } else {
 	XtSetSensitive(just_lab, True);
 	XtSetSensitive(print_just_panel, True);
+	XtSetSensitive(print_overlap_panel, False);
 	if (export_just_panel) {
 	    XtSetSensitive(just_lab, True);
 	    XtSetSensitive(export_just_panel, True);
+	    XtSetSensitive(export_overlap_panel, False);
 	}
     }
+}
+
+static void
+overlap_select(w, new_overlap, garbage)
+    Widget	    w;
+    XtPointer	    new_overlap, garbage;
+{
+    int overlap = (int) new_overlap;
+
+    FirstArg(XtNlabel, overlap_pages[overlap]);
+    SetValues(print_overlap_panel);
+    /* change export overlap if it exists */
+    if (export_overlap_panel)
+	SetValues(export_overlap_panel);
+    appres.overlap = (overlap? True : False);
 }
 
 /* user selected a background color from the menu */
@@ -474,6 +500,42 @@ background_select(w, closure, call_data)
     export_background_color = (int)closure;
 
     XtPopdown(background_menu);
+}
+
+/* come here when user chooses minor grid interval from menu */
+
+void
+print_grid_minor_select(w, new_grid_choice, garbage)
+    Widget	    w;
+    XtPointer	    new_grid_choice, garbage;
+{
+    char *val;
+    grid_minor = (int) new_grid_choice;
+
+    /* put selected grid value in the text area */
+    /* first get rid of any "mm" following the value */
+    val = strtok(my_strdup(grid_choices[grid_minor]), " ");
+    FirstArg(XtNstring, val);
+    SetValues(print_grid_minor_text);
+    free(val);
+}
+
+/* come here when user chooses major grid interval from menu */
+
+void
+print_grid_major_select(w, new_grid_choice, garbage)
+    Widget	    w;
+    XtPointer	    new_grid_choice, garbage;
+{
+    char *val;
+    grid_major = (int) new_grid_choice;
+
+    /* put selected grid value in the text area */
+    /* first get rid of any "mm" following the value */
+    val = strtok(my_strdup(grid_choices[grid_major]), " ");
+    FirstArg(XtNstring, val);
+    SetValues(print_grid_major_text);
+    free(val);
 }
 
 static void
@@ -519,6 +581,9 @@ popup_print_panel(w)
 {
     char	    buf[30];
 
+    /* turn off Compose key LED */
+    setCompLED(0);
+
     set_temp_cursor(wait_cursor);
     if (print_popup) {
 	/* the print popup already exists, but the magnification may have been
@@ -528,11 +593,15 @@ popup_print_panel(w)
 	SetValues(print_mag_text);
 	/* also the figure size (magnification * bounding_box) */
 	print_update_figure_size();
+	/* now set the color and name in the background button */
+	set_but_col(print_background_panel, export_background_color);
 	/* and the background color menu */
 	XtDestroyWidget(background_menu);
 	background_menu = make_color_popup_menu(print_background_panel,
 	    				"Background Color", background_select, 
-					False, True);
+					NO_TRANSP, INCL_BACKG);
+	/* reset grid menus to be consistent with units */
+	reset_grid_menus();
     } else {
 	create_print_panel(w);
     }
@@ -549,12 +618,13 @@ popup_print_panel(w)
 
 }
 
+/* make the popup print panel */
+
 create_print_panel(w)
     Widget	    w;
 {
 	Widget	    image;
-	Widget	    entry,mag_spinner;
-	Widget	    beside;
+	Widget	    entry,mag_spinner, below, fitpage;
 	Pixmap	    p;
 	unsigned    long fg, bg;
 	char	   *printer_val;
@@ -563,7 +633,6 @@ create_print_panel(w)
 	int	    ux,uy,lx,ly;
 	int	    i,len,maxl;
 	float	    mult;
-	XColor	    xcolor;
 
 	XtTranslateCoords(tool, (Position) 0, (Position) 0, &xposn, &yposn);
 
@@ -589,6 +658,10 @@ create_print_panel(w)
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNinternalWidth, 0);
 	NextArg(XtNinternalHeight, 0);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	image = XtCreateManagedWidget("printer_image", labelWidgetClass,
 				      print_panel, Args, ArgCount);
 	FirstArg(XtNforeground, &fg);
@@ -602,23 +675,29 @@ create_print_panel(w)
 
 	FirstArg(XtNlabel, "Print to PostScript Printer");
 	NextArg(XtNfromHoriz, image);
-	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	(void) XtCreateManagedWidget("print_label", labelWidgetClass,
 					print_panel, Args, ArgCount);
 
 	FirstArg(XtNlabel, " Magnification %");
 	NextArg(XtNfromVert, image);
-	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
-	mag_lab = XtCreateManagedWidget("mag_label", labelWidgetClass,
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	beside = XtCreateManagedWidget("mag_label", labelWidgetClass,
 					print_panel, Args, ArgCount);
 
 	/* make a spinner entry for the mag */
 	/* note: this was called "magnification" */
 	sprintf(buf, "%.1f", appres.magnification);
 	mag_spinner = MakeFloatSpinnerEntry(print_panel, &print_mag_text, "magnification",
-				image, mag_lab, mag_callback, buf, 0.0, 10000.0, 1.0, 45);
+				image, beside, update_mag, buf, 0.0, 10000.0, 1.0, 45);
 
 	/* we want to track typing here to update figure size label */
 
@@ -631,9 +710,13 @@ create_print_panel(w)
 	NextArg(XtNfromVert, image);
 	NextArg(XtNfromHoriz, mag_spinner);
 	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	fitpage = XtCreateManagedWidget("fitpage", commandWidgetClass,
 				       print_panel, Args, ArgCount);
-	XtAddEventHandler(fitpage, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(fitpage, ButtonReleaseMask, False,
 			  (XtEventHandler)fit_page, (XtPointer) NULL);
 
 	/* Figure Size to the right of the fit page window */
@@ -649,26 +732,36 @@ create_print_panel(w)
 	NextArg(XtNfromVert, image);
 	NextArg(XtNfromHoriz, fitpage);
 	NextArg(XtNhorizDistance, 5);
-	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	size_lab = XtCreateManagedWidget("size_label", labelWidgetClass,
 					print_panel, Args, ArgCount);
 
 	/* paper size */
 
 	FirstArg(XtNlabel, "      Paper Size");
-	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNfromVert, fitpage);
-	papersize_lab = XtCreateManagedWidget("papersize_label", labelWidgetClass,
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	beside = XtCreateManagedWidget("papersize_label", labelWidgetClass,
 					 print_panel, Args, ArgCount);
 
 	FirstArg(XtNlabel, paper_sizes[appres.papersize].fname);
-	NextArg(XtNfromHoriz, papersize_lab);
+	NextArg(XtNfromHoriz, beside);
 	NextArg(XtNfromVert, fitpage);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNresizable, True);
-	NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
+	NextArg(XtNrightBitmap, menu_arrow);	/* use menu arrow for pull-down */
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	print_papersize_panel = XtCreateManagedWidget("papersize",
 					   menuButtonWidgetClass,
 					   print_panel, Args, ArgCount);
@@ -685,27 +778,37 @@ create_print_panel(w)
 	/* Orientation */
 
 	FirstArg(XtNlabel, "     Orientation");
-	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNfromVert, print_papersize_panel);
-	orient_lab = XtCreateManagedWidget("orient_label", labelWidgetClass,
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	beside = XtCreateManagedWidget("orient_label", labelWidgetClass,
 					   print_panel, Args, ArgCount);
 
-	FirstArg(XtNfromHoriz, orient_lab);
+	FirstArg(XtNfromHoriz, beside);
 	NextArg(XtNfromVert, print_papersize_panel);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	print_orient_panel = XtCreateManagedWidget(orient_items[appres.landscape],
 					     menuButtonWidgetClass,
 					     print_panel, Args, ArgCount);
-	orient_menu = make_popup_menu(orient_items, XtNumber(orient_items), -1, "",
+	make_pulldown_menu(orient_items, XtNumber(orient_items), -1, "",
 				      print_orient_panel, orient_select);
 
 	FirstArg(XtNlabel, "Justification");
-	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNfromHoriz, print_orient_panel);
 	NextArg(XtNfromVert, print_papersize_panel);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	just_lab = XtCreateManagedWidget("just_label", labelWidgetClass,
 					 print_panel, Args, ArgCount);
 
@@ -714,51 +817,72 @@ create_print_panel(w)
 	NextArg(XtNfromVert, print_papersize_panel);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	print_just_panel = XtCreateManagedWidget("justify",
 					   menuButtonWidgetClass,
 					   print_panel, Args, ArgCount);
-	just_menu = make_popup_menu(just_items, XtNumber(just_items), -1, "",
+	make_pulldown_menu(just_items, XtNumber(just_items), -1, "",
 				    print_just_panel, just_select);
 
 	/* multiple/single page */
 
 	FirstArg(XtNlabel, "           Pages");
-	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNfromVert, print_just_panel);
-	multiple_lab = XtCreateManagedWidget("multiple_label", labelWidgetClass,
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	beside = XtCreateManagedWidget("multiple_label", labelWidgetClass,
 					 print_panel, Args, ArgCount);
 
 	FirstArg(XtNlabel, multiple_pages[appres.multiple? 1:0]);
-	NextArg(XtNfromHoriz, multiple_lab);
+	NextArg(XtNfromHoriz, beside);
 	NextArg(XtNfromVert, print_just_panel);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	print_multiple_panel = XtCreateManagedWidget("multiple_pages",
 					   menuButtonWidgetClass,
 					   print_panel, Args, ArgCount);
-	multiple_menu = make_popup_menu(multiple_pages, XtNumber(multiple_pages), -1, "",
+	make_pulldown_menu(multiple_pages, XtNumber(multiple_pages), -1, "",
 				    print_multiple_panel, multiple_select);
+
+	FirstArg(XtNlabel, overlap_pages[appres.overlap? 1:0]);
+	NextArg(XtNfromHoriz, print_multiple_panel);
+	NextArg(XtNfromVert, print_just_panel);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	print_overlap_panel = XtCreateManagedWidget("overlap_pages",
+					   menuButtonWidgetClass,
+					   print_panel, Args, ArgCount);
+	make_pulldown_menu(overlap_pages, XtNumber(overlap_pages), -1, "",
+				    print_overlap_panel, overlap_select);
 
 	/* background color */
 
-	FirstArg(XtNlabel, "   Background");
-	NextArg(XtNjustify, XtJustifyLeft);
-	NextArg(XtNfromHoriz, print_multiple_panel);
+	FirstArg(XtNlabel, "Background");
+	NextArg(XtNfromHoriz, print_overlap_panel);
 	NextArg(XtNfromVert, print_just_panel);
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainTop);
 	NextArg(XtNleft, XtChainLeft);
 	NextArg(XtNright, XtChainLeft);
-	background_lab = XtCreateManagedWidget("background_label", labelWidgetClass,
+	beside = XtCreateManagedWidget("background_label", labelWidgetClass,
 					 print_panel, Args, ArgCount);
 
-	/* put the canvas background colorname in to start */
-	set_color_name(export_background_color, buf);
-	FirstArg(XtNlabel, buf);
-	NextArg(XtNbackground, x_color(export_background_color));  /* set color of button */
-	NextArg(XtNfromHoriz, background_lab);
+	FirstArg(XtNfromHoriz, beside);
 	NextArg(XtNfromVert, print_just_panel);
 	NextArg(XtNresize, False);
 	NextArg(XtNwidth, 80);
@@ -766,26 +890,45 @@ create_print_panel(w)
 	NextArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainTop);
 	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	print_background_panel = XtCreateManagedWidget("background",
 					   menuButtonWidgetClass,
 					   print_panel, Args, ArgCount);
-	/* now set foreground to contrasting color */
-	xcolor.pixel = x_color(export_background_color);
-	XQueryColor(tool_d, tool_cm, &xcolor);
-	pick_contrast(xcolor, print_background_panel);
+
+	/* now set the color and name in the background button */
+	set_but_col(print_background_panel, export_background_color);
 
 	/* make color menu */
 	background_menu = make_color_popup_menu(print_background_panel, 
 					"Background Color", background_select,
-					False, True);
+					NO_TRANSP, INCL_BACKG);
+	/* grid options */
+	FirstArg(XtNlabel, "            Grid");
+	NextArg(XtNfromVert, print_background_panel);
+	NextArg(XtNborderWidth, 0);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	beside = XtCreateManagedWidget("grid_label", labelWidgetClass,
+					    print_panel, Args, ArgCount);
+	below = make_grid_options(print_panel, print_background_panel, beside,
+				&print_grid_minor_menu_button, &print_grid_major_menu_button,
+				&print_grid_minor_menu, &print_grid_major_menu,
+				&print_grid_minor_text, &print_grid_major_text,
+				&print_grid_unit_label,
+				print_grid_major_select, print_grid_minor_select);
 
 	/* printer name */
 
 	FirstArg(XtNlabel, "         Printer");
-	NextArg(XtNfromVert, print_background_panel);
-	NextArg(XtNjustify, XtJustifyLeft);
+	NextArg(XtNfromVert, below);
 	NextArg(XtNborderWidth, 0);
-	printer_lab = XtCreateManagedWidget("printer_label", labelWidgetClass,
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	beside = XtCreateManagedWidget("printer_label", labelWidgetClass,
 					    print_panel, Args, ArgCount);
 	/*
 	 * don't SetValue the XtNstring so the user may specify the default
@@ -793,11 +936,16 @@ create_print_panel(w)
 	 */
 
 	FirstArg(XtNwidth, 100);
-	NextArg(XtNfromVert, print_background_panel);
-	NextArg(XtNfromHoriz, printer_lab);
+	NextArg(XtNleftMargin, 4);
+	NextArg(XtNfromVert, below);
+	NextArg(XtNfromHoriz, beside);
 	NextArg(XtNeditType, XawtextEdit);
 	NextArg(XtNinsertPosition, 0);
 	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	printer_text = XtCreateManagedWidget("printer", asciiTextWidgetClass,
 					     print_panel, Args, ArgCount);
 
@@ -819,7 +967,7 @@ create_print_panel(w)
 		}
 	}
 	/* parse /etc/printcap for printernames for the pull-down menu */
-	numprinters = parse_printcap(&printer_names);
+	numprinters = parse_printcap(printer_names);
 	/* find longest name */
 	maxl = 0;
 	for (i=0; i<numprinters; i++) {
@@ -835,21 +983,28 @@ create_print_panel(w)
 	if (numprinters > 0) {
 	    FirstArg(XtNlabel, buf);
 	    NextArg(XtNfromHoriz, printer_text);
-	    NextArg(XtNfromVert, print_background_panel);
+	    NextArg(XtNfromVert, below);
 	    NextArg(XtNborderWidth, INTERNAL_BW);
 	    NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
+	    NextArg(XtNtop, XtChainTop);
+	    NextArg(XtNbottom, XtChainTop);
+	    NextArg(XtNleft, XtChainLeft);
+	    NextArg(XtNright, XtChainLeft);
 	    printer_menu_button = XtCreateManagedWidget("printer_names",
 					   menuButtonWidgetClass,
 					   print_panel, Args, ArgCount);
-	    printer_menu = make_popup_menu(printer_names, numprinters, -1, "",
+	    make_pulldown_menu(printer_names, numprinters, -1, "",
 				    printer_menu_button, printer_select);
 	}
 
 	FirstArg(XtNlabel, "Print Job Params");
 	NextArg(XtNfromVert, printer_text);
-	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
-	param_lab = XtCreateManagedWidget("job_params_label", labelWidgetClass,
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	beside = XtCreateManagedWidget("job_params_label", labelWidgetClass,
 					    print_panel, Args, ArgCount);
 	/*
 	 * don't SetValue the XtNstring so the user may specify the default
@@ -858,10 +1013,14 @@ create_print_panel(w)
 
 	FirstArg(XtNwidth, 100);
 	NextArg(XtNfromVert, printer_text);
-	NextArg(XtNfromHoriz, param_lab);
+	NextArg(XtNfromHoriz, beside);
 	NextArg(XtNeditType, XawtextEdit);
 	NextArg(XtNinsertPosition, 0);
 	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	param_text = XtCreateManagedWidget("job_params", asciiTextWidgetClass,
 					     print_panel, Args, ArgCount);
 
@@ -870,16 +1029,22 @@ create_print_panel(w)
 
 	FirstArg(XtNlabel, "Figures in batch");
 	NextArg(XtNfromVert, param_text);
-	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
-	num_batch_lab = XtCreateManagedWidget("num_batch_label", labelWidgetClass,
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	beside = XtCreateManagedWidget("num_batch_label", labelWidgetClass,
 					    print_panel, Args, ArgCount);
 	FirstArg(XtNwidth, 30);
 	NextArg(XtNlabel, "  0");
 	NextArg(XtNfromVert, param_text);
-	NextArg(XtNfromHoriz, num_batch_lab);
-	NextArg(XtNjustify, XtJustifyLeft);
+	NextArg(XtNfromHoriz, beside);
 	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	num_batch = XtCreateManagedWidget("num_batch", labelWidgetClass,
 					     print_panel, Args, ArgCount);
 
@@ -889,9 +1054,13 @@ create_print_panel(w)
 	NextArg(XtNhorizDistance, 6);
 	NextArg(XtNheight, 35);
 	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	dismiss = XtCreateManagedWidget("dismiss", commandWidgetClass,
 				       print_panel, Args, ArgCount);
-	XtAddEventHandler(dismiss, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(dismiss, ButtonReleaseMask, False,
 			  (XtEventHandler)print_panel_dismiss, (XtPointer) NULL);
 
 	/* radio for printing all layers */
@@ -909,9 +1078,13 @@ create_print_panel(w)
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNvertDistance, 10);
 	NextArg(XtNhorizDistance, 6);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	print = XtCreateManagedWidget("print", commandWidgetClass,
 				      print_panel, Args, ArgCount);
-	XtAddEventHandler(print, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(print, ButtonReleaseMask, False,
 			  (XtEventHandler)do_print, (XtPointer) NULL);
 
 	FirstArg(XtNlabel, "Print FIGURE\nto Batch");
@@ -921,9 +1094,13 @@ create_print_panel(w)
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNvertDistance, 10);
 	NextArg(XtNhorizDistance, 6);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	print_batch = XtCreateManagedWidget("print_batch", commandWidgetClass,
 				      print_panel, Args, ArgCount);
-	XtAddEventHandler(print_batch, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(print_batch, ButtonReleaseMask, False,
 			  (XtEventHandler)do_print_batch, (XtPointer) NULL);
 
 	FirstArg(XtNlabel, "Clear\nBatch");
@@ -933,9 +1110,13 @@ create_print_panel(w)
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNvertDistance, 10);
 	NextArg(XtNhorizDistance, 6);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	clear_batch = XtCreateManagedWidget("clear_batch", commandWidgetClass,
 				      print_panel, Args, ArgCount);
-	XtAddEventHandler(clear_batch, ButtonReleaseMask, (Boolean) 0,
+	XtAddEventHandler(clear_batch, ButtonReleaseMask, False,
 			  (XtEventHandler)do_clear_batch, (XtPointer) NULL);
 
 	/* install accelerators for the following functions */
@@ -1105,13 +1286,17 @@ make_layer_choice(label_all, label_active, parent, below, beside, hdist, vdist)
 	NextArg(XtNvertDistance, vdist);
 	NextArg(XtNfromHoriz, beside);
 	NextArg(XtNhorizDistance, hdist);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	form = XtCreateManagedWidget("layer_choice_form", formWidgetClass,
 				parent, Args, ArgCount);
 
 	FirstArg(XtNbitmap, (print_all_layers? sm_check_pm : sm_null_check_pm));
 	NextArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainTop);
-	NextArg(XtNleft, XtChainLeft);	/* make it stay on left side */
+	NextArg(XtNleft, XtChainLeft);
 	NextArg(XtNright, XtChainLeft);
 	NextArg(XtNinternalWidth, 1);
 	NextArg(XtNinternalHeight, 1);
@@ -1131,8 +1316,8 @@ make_layer_choice(label_all, label_active, parent, below, beside, hdist, vdist)
 	NextArg(XtNfromHoriz, printalltoggle);
 	NextArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainTop);
-	NextArg(XtNleft, XtChainRight);	/* make it stay on right side */
-	NextArg(XtNright, XtChainRight);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	below = XtCreateManagedWidget("print_all_layers", labelWidgetClass,
 				form, Args, ArgCount);
 
@@ -1142,7 +1327,7 @@ make_layer_choice(label_all, label_active, parent, below, beside, hdist, vdist)
 	NextArg(XtNfromVert, printalltoggle);
 	NextArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainTop);
-	NextArg(XtNleft, XtChainLeft);	/* make it stay on left side */
+	NextArg(XtNleft, XtChainLeft);
 	NextArg(XtNright, XtChainLeft);
 	NextArg(XtNinternalWidth, 1);
 	NextArg(XtNinternalHeight, 1);
@@ -1164,8 +1349,8 @@ make_layer_choice(label_all, label_active, parent, below, beside, hdist, vdist)
 	NextArg(XtNfromHoriz, printactivetoggle);
 	NextArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainTop);
-	NextArg(XtNleft, XtChainRight);	/* make it stay on right side */
-	NextArg(XtNright, XtChainRight);
+	NextArg(XtNleft, XtChainLeft);	/* make it stay on left side */
+	NextArg(XtNright, XtChainLeft);
 	below = XtCreateManagedWidget("print_active_layers", labelWidgetClass,
 				form, Args, ArgCount);
 

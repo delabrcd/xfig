@@ -2,12 +2,12 @@
 <html>
 <head>
 <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=EUC-JP">
-<title>XFIG User Manual - FAQ</title>
+<title>FAQ</title>
 <link rev="made" href="mailto:VEF00200@nifty.ne.jp">
 </head>
 
 <body>
-<a href="contents.html"><img src="../images/xfig-title.gif"
+<a href="contents.html"><img src="../images/xfig-title.png"
   alt="XFIG Users Manual" border=0></a>
 
 <h1>FAQ</h1>
@@ -34,6 +34,10 @@
 
 <p>
 <li><a href="#install_pers"><b>xfig</b> を自分のディレクトリにインストールする方法は？</a>
+
+<p>
+<li><a href="#mailing_list"><b>xfig</b> 専用の
+メーリング・リストやニューズグループはあるのか？</a>
 </ol>
 
 <h2><a name="faq-running"><b>xfig</b> の実行に際しての問題</a></h2>
@@ -59,7 +63,7 @@ Computer Modern フォントではなく PostScript フォントで出力される</a>
 
 <p>
 <li><a href="#arc-boxes">エクスポートした PostScript ファイルを 
-GhostScript で表示させた際に、Arc-box が正しく表示されない</a>
+Ghostscript で表示させた際に、Arc-box が正しく表示されない</a>
 
 <p>
 <li><a href="#openw_icon">OpenWindows が <b>xfig</b> のアイコンを見失うことがある</a>
@@ -75,11 +79,38 @@ GhostScript で表示させた際に、Arc-box が正しく表示されない</a>
 
 <p>
 <li><a href="#gs550_pattern_bug">エクスポートした PostScript ファイルを 
-  GhostScript 5.50 で表示すると、パターンが全て黒くなる</a>
+  Ghostscript 5.50 で表示すると、パターンが全て黒くなる</a>
 
 <p>
 <li><a href="#grafbase">METAFONT フォーマットでエクスポートしたファイルが、
   私が持っていない <tt>grafbase.mf</tt> ファイルを参照している</a>
+
+<p>
+<li><a href="#pulldown">CDE 上でプルダウン・メニューが機能しない</a>
+
+<p>
+<li><a href="#mntext">LaTeX テキストで ``mn'' と出力される</a>
+
+<p>
+<li><a href="#gs700_pattern_bug">EPS や GIF などでエクスポートした際に、
+パターンでの塗りつぶしが多角形の境界を超えてしまう</a>
+
+<p>
+<li><a href="#superclass">xfig が、
+``Warning: Representation size 4 must match superclass's to override underline''
+と報告する</a>
+
+<p>
+<li><a href="#en_US">fig2dev が、
+``can't open file: /usr/X11R6/lib/X11/fig2dev/en_US.ps'' などと報告する</a>
+
+<p>
+<li><a href="#XUSERFILESEARCHPATH">XAPPLRESDIR 環境変数を設定しても、
+xfig が個人のディレクトリにある app-defaults ファイルを見付けない</a>
+
+<p>
+<li><a href="#multi-key">TEXT オブジェクトのためのポップアップ・パネルで
+a-umlaute などの特殊な文字を入力できない</a>
 </ol>
 
 <h2><a name="faq-compile"><b>xfig</b> のコンパイルに際しての問題</a></h2>
@@ -107,8 +138,16 @@ GhostScript で表示させた際に、Arc-box が正しく表示されない</a>
 <tt>+O3</tt> の最適化で問題を起こすことがある</a>
 
 <p>
-<li><a href="#jpeg_prob">Linux において、
-``undefined reference to `jpeg_write_scanlines' '' などのエラーが報告される</a>
+<li><a href="#jpeg_prob">コンパイルに際して、
+``Unresolved: jpeg_std_error / jpeg_create_decompress /
+jpeg_destroy_decompress / jpeg_stdio_src'' などのエラーが出る</a>
+
+<p>
+<li><a href="#fontset">コンパイルに際して、
+``w_menuentry.c: In function `Redisplay': /
+w_menuentry.c:129: structure has no member named `fontset' / 
+w_menuentry.c:143: structure has no member named `international' ''
+などのエラーが出る</a>
 </ol>
 
 <hr>
@@ -193,7 +232,41 @@ shape factor と呼ばれる１つのパラメータによって制御されます。
 <dt><tt>Fig</tt>、及び <tt>Fig-color</tt>
 <dd><tt>xfig</tt> コマンドの実行に先立って、
 環境変数 <tt>XAPPLRESDIR</tt> をこれらのファイルを置いたディレクトリに設定します
+
+<dt><tt>Doc/html</tt>
+<dd>このディレクトリ (そしてそのサブ・ディレクトリ) 全体を
+Imakefile の <tt>XFIGLIBDIR</tt> が指すディレクトリにコピー
+(<tt>cp -r</tt> を使う) すべきです。
+
+<dt><tt>Doc/xfig-howto.pdf</tt>、及び <tt>Doc/xfig.pdf</tt>
+<dd>これらのファイルは
+Imakefile の <tt>XFIGLIBDIR</tt> が指すディレクトリにコピーすべきです。
 </dl>
+
+<hr>
+
+<h3><a name="mailing_list"><b>xfig</b> 専用の
+メーリング・リストやニューズグループはあるのか？</a></h3>
+
+<b>xfig</b> のためのメーリング・リストはありませんが、
+メールを <a href="mailto:xfig-bugs@www-epb.lbl.gov">xfig-bugs@www-epb.lbl.gov</a> 
+へ送る、あるいはそれに関する質問を
+<a href="news:comp.windows.x">comp.windows.x</a>、
+<a href="news:comp.windows.x.apps">comp.windows.x.apps</a>、
+<a href="news:comp.os.linux.x">comp.os.linux.x</a>、
+<a href="news:comp.os.linux">comp.os.linux</a>、
+あるいは
+<a href="news:comp.os.linux.misc">comp.os.linux.misc</a>
+へポストすることができます。
+<b>fig2dev</b> に関する質問は、
+<a href="news:comp.text.tex">comp.text.tex</a> 
+へポストすることもできます。
+<p>
+(日本のユーザーは、バグ・レポートは
+<a href="mailto:VEF00200@nifty.ne.jp">VEF00200@nifty.ne.jp (T.Sato)</a>
+へ送られても結構です。
+また、質問は <a href="news:fj.comp.x11">fj.comp.x11</a> などへ
+ポストしても良いでしょう。)
 
 <hr>
 
@@ -253,6 +326,7 @@ libNextaw がこの問題を引き起こすようです。
 <dd><b>xfig</b> と共に配布されている app-defaults ファイル 
 (<tt>Fig.ad</tt>、及び <tt>Fig-color.ad</tt>) を
 所定のディレクトリにインストールして下さい。
+この最も容易な方法は、``<tt>make install</tt>'' を用いることです。
 </dl>
 
 <hr>
@@ -316,16 +390,16 @@ Computer Modern フォントではなく PostScript フォントで出力される</a></h3>
 <hr>
 
 <h3><a name="arc-boxes">エクスポートした PostScript ファイルを 
-GhostScript で表示させた際に、Arc-box が正しく表示されない</a></h3>
+Ghostscript で表示させた際に、Arc-box が正しく表示されない</a></h3>
 
 <dl>
 <dt>POSSIBLE CAUSE:
-<dd>GhostScript version 4.01 には、
+<dd>Ghostscript version 4.01 には、
 <tt>arcto</tt> オペレータに関するバグがあります。
 
 <p>
 <dt>SOLUTION:
-<dd><a href="installation.html#ghostscript">GhostScript 4.03</a> 以降を
+<dd><a href="installation.html#ghostscript">Ghostscript 4.03</a> 以降を
 入手して下さい。
 </dl>
 
@@ -364,6 +438,8 @@ GhostScript で表示させた際に、Arc-box が正しく表示されない</a></h3>
 <tt>CompKeyDB</tt> ファイルで発生することがあります。
 </dl>
 
+<hr>
+
 <h3><a name="sol_opt">PostScript でエクスポートしたファイルに
   誤った %%BoundingBox が書かれる</a></h3>
 
@@ -378,12 +454,12 @@ GhostScript で表示させた際に、Arc-box が正しく表示されない</a></h3>
 <hr>
 
 <h3><a name="gs550_pattern_bug">エクスポートした PostScript ファイルを 
-  GhostScript 5.50 で表示すると、パターンが全て黒くなる</a></h3>
+  Ghostscript 5.50 で表示すると、パターンが全て黒くなる</a></h3>
 
 <dl>
 <dt>POSSIBLE CAUSE AND SOLUTION:
-<dd>GhostScript Version 5.10〜5.50 には、これを引き起こすバグがあります。
-新しいバージョンの GhostScript を入手して下さい。
+<dd>Ghostscript Version 5.10〜5.50 には、これを引き起こすバグがあります。
+新しいバージョンの Ghostscript を入手して下さい。
 </dl>
 
 <hr>
@@ -399,6 +475,120 @@ ftp://ctan.tug.org/tex-archive/graphics/fig2mf/</a>
 から入手することがっできます。
 </dl>
 
+<hr>
+
+<h3><a name="pulldown">CDE 上でプルダウン・メニューが機能しない</a></h3>
+
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd>CDE や、その他の一部のシステムにおいては、
+プルダウン・メニューを機能させるためには、
+<b>Num Lock</b>、及び <b>Caps Lock</b> キーを解除する必要があります。
+</dl>
+
+<hr>
+
+<h3><a name="mntext">LaTeX テキストで ``mn'' と出力される</a></h3>
+
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd>この問題は、LaTeX パートに出力される <tt>\smash</tt> における問題です。
+もしあなたのシステムで <tt>\mddefault</tt> と <tt>\updefault</tt> が
+正しくセットアップされていないならば、
+それらを何もしないように定義する必要があります。
+</dl>
+
+<hr>
+
+<h3><a name="gs700_pattern_bug">EPS や GIF などでエクスポートした際に、
+パターンでの塗りつぶしが多角形の境界を超えてしまう</a></h3>
+
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd>Ghostscript versions 7.00 には、
+これを引き起こすバグ (#418928) があります。
+新しいバージョンの Ghostscript を入手して下さい。
+</dl>
+
+<hr>
+
+<h3><a name="superclass">xfig が、
+``Warning: Representation size 4 must match superclass's to override underline''
+と報告する</a></h3>
+
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd>3D Menu ウィジェット (SmeBSBObject) が 2D バージョンの代わりに使われ、
+あるいはその逆となっています
+(Imakefile/Makefile の <tt>-DXAW3D</tt> を確認して下さい)。
+2D と 3D のウジェット・ライブラリ (Xaw と Xaw3d)、
+そしてヘッダ・ファイルを混ぜないで下さい。
+</dl>
+
+<hr>
+
+<h3><a name="en_US">fig2dev が、
+``can't open file: /usr/X11R6/lib/X11/fig2dev/en_US.ps'' などと報告する</a></h3>
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd>これは、RedHat システムのみにおける問題のようです。
+私は、国際化機能を有効とすべきでない時にそれが有効とされており、
+存在していないファイルを探しているものと考えています。
+RedHat から新しいバージョンの xfig と transfig をダウンロードして下さい。
+</dl>
+
+<hr>
+
+<h3><a name="XUSERFILESEARCHPATH">XAPPLRESDIR 環境変数を設定しても、
+xfig が個人のディレクトリにある app-defaults ファイルを見付けない</a></h3>
+
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd>
+もし Sun の OpenWindows X サーバーを使っているならば、
+個人用の app-defaults ディレクトリを示すために、
+そのパスに ``%N'' を付けたものを、別の環境変数、
+<tt>XUSERFILESEARCHPATH</tt> に設定する必要があります。
+例えば：
+<blockquote>
+<tt>setenv XUSERFILESEARCHPATH $HOME/app-defaults/%N</tt>
+</blockquote>
+</dl>
+
+<hr>
+
+<h3><a name="multi-key">TEXT オブジェクトのためのポップアップ・パネルで
+a-umlaute などの特殊な文字を入力できない</a></h3>
+
+<dl>
+<dt>POSSIBLE CAUSES AND SOLUTIONS:
+<dd>
+<dl>
+<dt><b>CompKeyDB</b> ファイルがインストールされていない。
+<dd>
+これは、<b>xfig</b> に
+a-umlaute、c-cedilla などの Latin-1 キャラクタを生成するために
+マルチ・キー・シーケンスをどのように扱うかを告げるファイルです。
+<b>xfig</b> とそれに関連するファイルを完全にインストールするために、
+<tt>make install</tt> を実行すべきです。
+
+<p>
+<dt>キーボードに <i>Multi_key</i> キーがない。
+<dd>
+ある種のシステム (例えば、SPARCstation) は、
+このシーケンスのための <i>Compose</i> キー、
+あるいは <i>Multi_key</i> を持っています。
+もしあなたのキーボードにそのようなキーがないならば、
+他のキーを <i>Multi_key</i> に割り当て直して下さい。
+例えば、X サーバーに <i>Super_L</i>、及び <i>Super_R</i> として認識されている
+「Windows」キーを <i>Multi_key</i> に割り当て直すためには、
+<b>xmodmap</b> プログラムを用いて次のようにします：
+<p>
+<tt>xmodmap -e "keysym Super_L = Multi_key"</tt><br>
+<tt>xmodmap -e "keysym Super_R = Multi_key"</tt>
+</dl>
+</dl>
+  
 <hr>
 
 <h3><a name="alpha">DEC Alpha において、コンパイラが 
@@ -527,8 +717,9 @@ HP からコンパイラのパッチを入手して下さい。
 
 <hr>
 
-<h3><a name="jpeg_prob">Linux において、
-``undefined reference to `jpeg_write_scanlines' '' などのエラーが報告される</a></h3>
+<h3><a name="jpeg_prob">コンパイルに際して、
+``Unresolved: jpeg_std_error / jpeg_create_decompress /
+jpeg_destroy_decompress / jpeg_stdio_src'' などのエラーが出る</a></h3>
 
 <dl>
 <dt>POSSIBLE CAUSE:
@@ -541,6 +732,35 @@ HP からコンパイラのパッチを入手して下さい。
 及び <tt>/usr/local/lib/libjpeg.a</tt>) と、
 ヘッダ・ファイル (通常は <tt>/usr/local/include/jpegdata.h</tt>) 
 を削除して下さい。
+</dl>
+
+<hr>
+
+<h3><a name="fontset">コンパイルに際して、
+``w_menuentry.c: In function `Redisplay': /
+w_menuentry.c:129: structure has no member named `fontset' / 
+w_menuentry.c:143: structure has no member named `international' ''
+などのエラーが出る</a></h3>
+
+<dl>
+<dt>POSSIBLE CAUSE:
+<dd>おそらく、<tt>fontset</tt> や <tt>international</tt> のコンポーネントを
+含んでいない古いバージョンの 3D Athena ウィジェット・セット (Xaw3d) を持っているのに、
+Intrinsics ライブラリがそれらのコンポーネントを含んでいるのでしょう。
+
+<p>
+<dt>SOLUTION:
+<dd><a href="ftp://ftp.x.org/contrib/widgets/Xaw3d">
+ftp://ftp.x.org/contrib/widgets/Xaw3d</a> から新しいバージョンの Xaw3d を入手するか、
+システムの 2D Athena ウィジェットをを使って下さい。
+<p>
+後者は次の手順で行なえます：
+<ol>
+<li>Imakefile の ``<tt>XAWLIB = -lXaw3d</tt>'' をコメント・アウトする
+<li>``<tt>rm w_menuentry.o</tt>'' を実行する
+<li>``<tt>make Makefile</tt>''
+<li>``<tt>make</tt>''
+</ol>
 </dl>
 
 <p>

@@ -1,4 +1,19 @@
 /*
+ * FIG : Facility for Interactive Generation of figures
+ * Copyright (c) 2000-2002 by Brian V. Smith
+ *
+ * Any party obtaining a copy of these files is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
+ *
+ */
+
+/*
     w_menuentry.c - subclassed BSB Menu Entry object 
     
     This adds the underline resource to underline one character of the label
@@ -11,21 +26,12 @@
 
 #ifdef XAW3D
 #include <X11/Xaw3d/XawInit.h>
-#include <X11/Xaw3d/SimpleMenu.h>
-#include <X11/Xaw3d/SmeBSB.h>
 #else
 #include <X11/Xaw/XawInit.h>
-#include <X11/Xaw/SimpleMenu.h>
-#include <X11/Xaw/SmeBSB.h>
-#endif
+#endif /* XAW3D */
 
+#include "figx.h"
 #include "w_menuentryP.h"
-
-#ifdef XAW3D
-#include <X11/Xaw3d/Cardinals.h>
-#else
-#include <X11/Xaw/Cardinals.h>
-#endif
 
 #include <stdio.h>
 
@@ -127,7 +133,7 @@ Region region;
     int	fontset_ascent, fontset_descent;
 #if (XtVersion >= 11006)
     XFontSetExtents *ext = XExtentsOfFontSet(entry->sme_bsb.fontset);
-#endif
+#endif /* XtVersion R6 */
 
     Dimension s;
 #ifdef XAW3D
@@ -143,8 +149,7 @@ Region region;
     if ( entry->sme.international == True ) {
         fontset_ascent = abs(ext->max_ink_extent.y);
         fontset_descent = ext->max_ink_extent.height - fontset_ascent;
-    }
-    else { /*else, compute size from font like R5*/
+    } else { /*else, compute size from font like R5*/
         font_ascent = entry->sme_bsb.font->max_bounds.ascent;
         font_descent = entry->sme_bsb.font->max_bounds.descent;
     }

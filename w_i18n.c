@@ -1,15 +1,15 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1995-2000 by T. Sato
+ * Copyright (c) 1995-2002 by T. Sato
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  */
 
 #ifdef I18N
@@ -558,7 +558,23 @@ static void ScaleDown(from_image, to_image, width, height, scale)
   }
 }
 
-/* draw text to drawable */
+void i18n_draw_text();
+
+/* draw text to drawable WITH background color */
+
+void i18n_draw_image_string(dpy, drawable, gc, x, y, str, len)
+     Display *dpy;
+     Drawable drawable;
+     GC gc;
+     int x, y;
+     char *str;
+     int len;
+{
+  i18n_draw_text(dpy, drawable, gc, x, y, str, len, True);
+}
+
+/* draw text to drawable with no background */
+
 void i18n_draw_string(dpy, drawable, gc, x, y, str, len)
      Display *dpy;
      Drawable drawable;
@@ -566,6 +582,18 @@ void i18n_draw_string(dpy, drawable, gc, x, y, str, len)
      int x, y;
      char *str;
      int len;
+{
+  i18n_draw_text(dpy, drawable, gc, x, y, str, len, False);
+}
+
+void i18n_draw_text(dpy, drawable, gc, x, y, str, len, drawbg)
+     Display	*dpy;
+     Drawable	 drawable;
+     GC		 gc;
+     int	 x, y;
+     char	 *str;
+     int	 len;
+     Boolean	 drawbg;
 {
   static Pixmap paint_bitmap = None;
   static int paint_bitmap_width = -1;
@@ -589,7 +617,10 @@ void i18n_draw_string(dpy, drawable, gc, x, y, str, len)
   XGetGCValues(dpy, gc, GCFont, &values);
   if (!appres.international || !is_i18n_text(str)
       || !seek_fontset(values.font, &fontset, &font_size)) {
-    XDrawString(dpy, drawable, gc, x, y, str, len);
+    if (drawbg)
+	XDrawImageString(dpy, drawable, gc, x, y, str, len);
+    else
+	XDrawString(dpy, drawable, gc, x, y, str, len);
   } else {
     if (drawable != last_drawable || values.font != last_font
 	|| strncmp(str, last_str, sizeof(last_str)) != 0) {
@@ -641,7 +672,11 @@ void i18n_draw_string(dpy, drawable, gc, x, y, str, len)
       XFillRectangle(dpy, text_bitmap, depth_one_gc, 0, 0,
 		     text_bitmap_width, text_bitmap_height);
       XSetForeground(dpy, depth_one_gc, 1);
-      XmbDrawString(dpy, text_bitmap, fontset, depth_one_gc,
+      if (drawbg)
+          XmbDrawImageString(dpy, text_bitmap, fontset, depth_one_gc,
+		    max2(-ink.x, 0), -ink.y, str, len);
+      else
+          XmbDrawString(dpy, text_bitmap, fontset, depth_one_gc,
 		    max2(-ink.x, 0), -ink.y, str, len);
 
       from_image = XGetImage(dpy, text_bitmap, 0, 0,
@@ -665,18 +700,6 @@ void i18n_draw_string(dpy, drawable, gc, x, y, str, len)
     XSetTSOrigin(dpy, my_gc, x - lbearing, y - ascent);
     XFillRectangle(dpy, drawable, my_gc, x - lbearing, y - ascent, width, height);
   }
-}
-
-/* i18n_draw_image_string() is identical to i18n_draw_string() now */
-void i18n_draw_image_string(dpy, drawable, gc, x, y, str, len)
-     Display *dpy;
-     Drawable drawable;
-     GC gc;
-     int x, y;
-     char *str;
-     int len;
-{
-  i18n_draw_string(dpy, drawable, gc, x, y, str, len);
 }
 
 #ifdef SETLOCALE

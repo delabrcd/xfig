@@ -1,22 +1,23 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2000 by Brian V. Smith
+ * Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
 #include "fig.h"
 #include "figx.h"
 #include "resources.h"
+#include "main.h"
 #include "mode.h"
 #include "object.h"
 #include "f_read.h"
@@ -28,6 +29,7 @@
 #include "u_undo.h"
 #include "w_canvas.h"
 #include "w_cmdpanel.h"
+#include "w_digitize.h"
 #include "w_drawprim.h"
 #include "w_export.h"
 #include "w_file.h"
@@ -42,6 +44,7 @@
 #include "w_srchrepl.h"
 #include "w_util.h"
 #include "w_setup.h"
+#include "w_style.h"
 #include "w_zoom.h"
 #ifdef I18N
 #include "d_text.h"
@@ -59,6 +62,7 @@ Widget	global_panel;
 /* Widgets holding the ascii values for the string-based settings */
 
 Widget	bal_delay;
+Widget	n_freehand_resolution;
 Widget	n_recent_files;
 Widget	max_colors;
 Widget	image_ed;
@@ -68,12 +72,11 @@ Widget	pdfview;
 
 /* prototypes */
 
-static void	sel_cmd_but();
 static void	enter_cmd_but();
 void		delete_all_cmd();
-static void	init_move_object(),move_object();
+static void	init_move_paste_object(),move_paste_object();
 static void	place_object(),cancel_paste();
-static void	put_draw();
+static void	paste_draw();
 static void	place_object_orig_posn();
 static void	place_menu(), popup_menu();
 static void	load_recent_file();
@@ -84,7 +87,7 @@ static void	global_panel_cancel();
 Widget		CreateLabelledAscii();
 static Widget	create_main_menu();
 
-static int	cur_paste_x,cur_paste_y,off_paste_x,off_paste_y;
+static int	off_paste_x,off_paste_y;
 static int	orig_paste_x,orig_paste_y;
 
 /* popup message over command button when mouse enters it */
@@ -112,14 +115,17 @@ XtActionsRec     menu_actions[] =
 		    };
 
 menu_def file_menu_items[] = {
-	{"New        (Meta-N)",		0, new},
-	{"Open...    (Meta-O)",		0, popup_open_panel}, 
-	{"Merge...   (Meta-M)",		0, popup_merge_panel}, 
-	{"Save       (Meta-S)",		0, save_request},
-	{"Save As... (Meta-A)",		5, popup_saveas_panel},
-	{"Export...  (Meta-X)",		0, popup_export_panel},
-	{"Print...   (Meta-P)",		0, popup_print_panel},
-	{"Exit       (Meta-Q)",		1, quit},
+	{"New         (Meta-N)",	0, new},
+	{"Open...     (Meta-O)",	0, popup_open_panel}, 
+	{"Merge...    (Meta-M)",	0, popup_merge_panel}, 
+#ifdef DIGITIZE
+	{"Digitize... (Meta-Z)",	0, popup_digitize_panel},
+#endif /* DIGITIZE */
+	{"Save        (Meta-S)",	0, do_save},
+	{"Save As...  (Meta-A)",	5, popup_saveas_panel},
+	{"Export...   (Meta-X)",	0, popup_export_panel},
+	{"Print...    (Meta-P)",	0, popup_print_panel},
+	{"Exit        (Meta-Q)",	1, quit},
 	{(char *) -1,			0, NULL}, /* makes a line separator followed by */
 	{NULL, 0, NULL},				/* recently loaded files */
     };
@@ -130,6 +136,7 @@ menu_def edit_menu_items[] = {
 	{"Paste Text         (F18/F20)", 6, paste_primary_selection},
 	{"Search/Replace...  (Meta-I) ", -1, popup_search_panel},
 	{"Spell Check...     (Meta-K) ", 0, spell_check},
+	{"Delete All         (Meta-D) ", 0, delete_all_cmd},
 	{"-",				 0, NULL},
 	{"Global settings... (Meta-G) ", 0, show_global_settings},
 	{"Set units...                ", 5, popup_unit_panel},
@@ -143,6 +150,7 @@ menu_def edit_menu_items[] = {
 #define VRTX_NUM_MSG	"vertex numbers         "
 
 menu_def view_menu_items[] = {
+	{"Manage Styles...      (Ctrl-Y)",  7, popup_manage_style_panel},
 	{"Redraw                (Ctrl-L)",  0, redisplay_canvas},
 	{"Portrait/Landscape    (Meta-C)",  3, change_orient},
 	{"Zoom In               (Shift-Z)", 5, inc_zoom},
@@ -163,6 +171,13 @@ menu_def view_menu_items[] = {
 
 menu_def help_menu_items[] = {
 	{"Xfig Reference (HTML)...",	0, launch_refman},
+#ifdef FIXED_JAPANESE_PDF
+	{"Xfig Reference (PDF, English)...",	0, launch_refpdf_en},
+	/* Tom Sato said that the Japanese version of the pdf looked ugly so we'll not distribute it now */
+	{"Xfig Reference (PDF, Japanese)...",	0, launch_refpdf_jp}
+#else
+	{"Xfig Reference (PDF)...",	0, launch_refpdf_en},
+#endif /* FIXED_JAPANESE_PDF */
 	{"Xfig Man Pages (HTML)...",	5, launch_man},
 	{"How-To Guide (PDF)...",	0, launch_howto},
 	{"About Xfig...",		0, launch_about},
@@ -227,9 +242,9 @@ init_main_menus(tool, filename)
     name_panel = XtCreateManagedWidget("file_name", labelWidgetClass, tool,
 				      Args, ArgCount);
     /* popup balloon when mouse passes over filename */
-    XtAddEventHandler(name_panel, EnterWindowMask, (Boolean) 0,
+    XtAddEventHandler(name_panel, EnterWindowMask, False,
 		      filename_balloon_trigger, (XtPointer) name_panel);
-    XtAddEventHandler(name_panel, LeaveWindowMask, (Boolean) 0,
+    XtAddEventHandler(name_panel, LeaveWindowMask, False,
 		      filename_unballoon, (XtPointer) name_panel);
     /* add actions to position the menus if the user uses an accelerator */
     XtAppAddActions(tool_app, menu_actions, XtNumber(menu_actions));
@@ -256,16 +271,16 @@ create_main_menu(i, beside)
 	/* make button to popup each menu */
 	menu->widget = XtCreateManagedWidget(menu->label, menuButtonWidgetClass,
 					   cmd_form, Args, ArgCount);
-	XtAddEventHandler(menu->widget, EnterWindowMask, (Boolean) 0,
+	XtAddEventHandler(menu->widget, EnterWindowMask, False,
 			  enter_cmd_but, (XtPointer) menu);
 
 	/* now the menu itself */
 	menu->menuwidget = create_menu_item(menu);
 	
 	/* popup when mouse passes over button */
-	XtAddEventHandler(menu->widget, EnterWindowMask, (Boolean) 0,
+	XtAddEventHandler(menu->widget, EnterWindowMask, False,
 			  cmd_balloon_trigger, (XtPointer) menu);
-	XtAddEventHandler(menu->widget, LeaveWindowMask, (Boolean) 0,
+	XtAddEventHandler(menu->widget, LeaveWindowMask, False,
 			  cmd_unballoon, (XtPointer) menu);
 
 	return menu->widget;
@@ -316,7 +331,7 @@ Widget
 create_menu_item(menup)
 	main_menu_info *menup;
 {
-	int	i, j;
+	int	i;
 	Widget	menu, entry;
 	DeclareArgs(5);
 
@@ -345,8 +360,6 @@ create_menu_item(menup)
 					(XtPointer) menup->widget);
 	    }
 	}
-	XtAddEventHandler(menup->widget, EnterWindowMask, (Boolean) 0,
-			  enter_cmd_but, (XtPointer) menup);
 	return menu;
 }
 
@@ -473,6 +486,9 @@ quit(w, closure, call_data)
     XtPointer	    closure;
     XtPointer	    call_data;
 {
+    /* turn off Compose key LED */
+    setCompLED(0);
+
     /* don't quit if in the middle of drawing/editing */
     if (check_action_on())
 	return;
@@ -483,6 +499,13 @@ quit(w, closure, call_data)
 	XtSetSensitive(w, True);
 	return;		/* cancel, do not quit */
     }
+    /* if the user hasn't saved changes to the named styles confirm */
+    if (style_dirty_flag)
+	if (confirm_close_style() == RESULT_CANCEL) {
+	    XtSetSensitive(w, True);
+	    return;	/* cancel, don't quit */
+	}
+
     goodbye(False);	/* finish up and exit */
 }
 
@@ -524,7 +547,11 @@ paste(w, closure, call_data)
     XtPointer	    call_data;
 {
 	fig_settings    settings;
-	int x,y;
+	int		x,y;
+	struct stat	file_status;
+
+	/* turn off Compose key LED */
+	setCompLED(0);
 
 	/* don't paste if in the middle of drawing/editing */
 	if (check_action_on())
@@ -551,8 +578,7 @@ paste(w, closure, call_data)
 	cur_c->next = NULL;
 
 	/* read in the cut buf file */
-	/* call with abspath = True to use absolute path of imported pictures */
-	if (read_figc(cut_buf_name,cur_c, True, False, True, 0, 0, &settings)==0) {  
+	if (read_figc(cut_buf_name,cur_c,MERGE,DONT_REMAP_IMAGES,0,0,&settings)==0) {  
 		compound_bound(cur_c,
 			     &cur_c->nwcorner.x,
 			     &cur_c->nwcorner.y,
@@ -566,8 +592,12 @@ paste(w, closure, call_data)
 		/* make it relative for mouse positioning */
 		translate_compound(cur_c, -cur_c->nwcorner.x, -cur_c->nwcorner.y);
 	} else {
-		/* an error reading a .fig file */
-		file_msg("Error reading %s",cut_buf_name);
+		/* an error reading the .xfig file */
+		if (stat(cut_buf_name, &file_status) == 0) {	/* file exists */
+		    file_msg("Error reading %s",cut_buf_name);
+		} else if (errno == ENOENT) {
+		    file_msg("Cut buffer (%s) is empty",cut_buf_name);
+		}
 		reset_action_on();
 		turn_off_current();
 		set_cursor(arrow_cursor);
@@ -575,6 +605,7 @@ paste(w, closure, call_data)
 		return;
 	}
 	/* redraw all of the pictures already on the canvas */
+	canvas_ref_proc = null_proc;
 	redraw_images(&objects);
 
 	put_msg("Reading objects from \"%s\" ...Done", cut_buf_name);
@@ -583,7 +614,8 @@ paste(w, closure, call_data)
 	add_compound_depth(new_c);
 	off_paste_x=new_c->secorner.x;
 	off_paste_y=new_c->secorner.y;
-	canvas_locmove_proc = init_move_object;
+	canvas_locmove_proc = init_move_paste_object;
+	canvas_ref_proc = move_paste_object;
 	canvas_leftbut_proc = place_object;
 	canvas_middlebut_proc = place_object_orig_posn;
 	canvas_rightbut_proc = cancel_paste;
@@ -599,7 +631,7 @@ paste(w, closure, call_data)
 	if (y<0)
 		y = 20;
 	/* draw the first image */
-	init_move_object(BACKX(x), BACKY(y));
+	init_move_paste_object(BACKX(x), BACKY(y));
 }
 
 static void
@@ -610,18 +642,19 @@ cancel_paste()
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     clear_mousefun();
     set_mousefun("","","", "", "", "");
     turn_off_current();
     set_cursor(arrow_cursor);
     cur_mode = F_NULL;
-    put_draw(ERASE);
+    paste_draw(ERASE);
     /* remove it from the depths */
     remove_compound_depth(new_c);
 }
 
 static void
-put_draw(paint_mode)
+paste_draw(paint_mode)
 int paint_mode;
 {
    if (paint_mode==ERASE)
@@ -631,34 +664,40 @@ int paint_mode;
 }
 
 static void
-move_object(x, y)
+move_paste_object(x, y)
     int		    x, y;
 {
     int dx,dy;
     void  (*save_canvas_locmove_proc) ();
+    void  (*save_canvas_ref_proc) ();
   
     save_canvas_locmove_proc = canvas_locmove_proc;
+    save_canvas_ref_proc = canvas_ref_proc;
+    /* so we don't recurse infinitely */
     canvas_locmove_proc = null_proc;
-    put_draw(ERASE);  
-    dx=x-cur_paste_x;
-    dy=y-cur_paste_y;
+    canvas_ref_proc = null_proc;
+    paste_draw(ERASE);  
+    dx=x-cur_x;
+    dy=y-cur_y;
     translate_compound(new_c,dx,dy);
-    cur_paste_x=x;
-    cur_paste_y=y;
-    put_draw(PAINT);
+    cur_x=x;
+    cur_y=y;
+    paste_draw(PAINT);
     canvas_locmove_proc = save_canvas_locmove_proc;
+    canvas_ref_proc = save_canvas_ref_proc;
 }
 
 static void
-init_move_object(x, y)
+init_move_paste_object(x, y)
     int		    x, y;
 {	
-    cur_paste_x = x;
-    cur_paste_y = y;
+    cur_x=x;
+    cur_y=y;
     translate_compound(new_c,x,y);
     
-    put_draw(PAINT);
-    canvas_locmove_proc = move_object;
+    paste_draw(PAINT);
+    canvas_locmove_proc = move_paste_object;
+    canvas_ref_proc = move_paste_object;
 }
 
 /* button 1: paste object at current position of mouse */
@@ -668,7 +707,6 @@ place_object(x, y, shift)
     int		    x, y;
     unsigned int    shift;
 {
-    put_draw(ERASE);
     clean_up();
     add_compound(new_c);
     set_modifiedflag();
@@ -685,7 +723,8 @@ place_object_orig_posn(x, y, shift)
 {
     int dx,dy;
 
-    put_draw(ERASE);
+    canvas_ref_proc = null_proc;
+    paste_draw(ERASE);
     clean_up();
     /* move back to original position */
     dx = orig_paste_x-x;
@@ -703,6 +742,9 @@ new(w, closure, call_data)
     XtPointer	    closure;
     XtPointer	    call_data;
 {
+    /* turn off Compose key LED */
+    setCompLED(0);
+
     /* don't allow if in the middle of drawing/editing */
     if (check_action_on())
 	return;
@@ -725,6 +767,9 @@ void
 delete_all_cmd(w, closure, call_data)
     Widget	    w;
 {
+    /* turn off Compose key LED */
+    setCompLED(0);
+
     /* don't allow if in the middle of drawing/editing */
     if (check_action_on())
 	return;
@@ -747,51 +792,64 @@ change_orient(w)
     Dimension	formw, formh;
     int		dx, dy;
 
+    /* turn off Compose key LED */
+    setCompLED(0);
+
     /* don't change orientation if in the middle of drawing/editing */
     if (check_action_on())
 	return;
 
-    /* get the current size of the canvas */
-    FirstArg(XtNwidth, &formw);
-    NextArg(XtNheight, &formh);
-    GetValues(canvas_sw);
+    /* don't resize anything if the user specified xfig's geometry */
+    if (!geomspec) {
+	/* get the current size of the canvas */
+	FirstArg(XtNwidth, &formw);
+	NextArg(XtNheight, &formh);
+	GetValues(canvas_sw);
 
-    if (appres.landscape) {
-	/* save current size for switching back */
-	CANVAS_WD_LAND = CANVAS_WD;
-	CANVAS_HT_LAND = CANVAS_HT;
-	dx = CANVAS_WD_PORT - formw;
-	dy = CANVAS_HT_PORT - formh;
-	TOOL_WD += dx;
-	TOOL_HT += dy;
-	XtResizeWidget(tool, TOOL_WD, TOOL_HT, 0);
-	resize_all((int) (CANVAS_WD_PORT), (int) (CANVAS_HT_PORT));
-	appres.landscape = False;
+	if (appres.landscape) {
+	    /* save current size for switching back */
+	    CANVAS_WD_LAND = CANVAS_WD;
+	    CANVAS_HT_LAND = CANVAS_HT;
+	    dx = CANVAS_WD_PORT - formw;
+	    dy = CANVAS_HT_PORT - formh;
+	    TOOL_WD += dx;
+	    TOOL_HT += dy;
+	    XtResizeWidget(tool, TOOL_WD, TOOL_HT, 0);
+	    resize_all((int) (CANVAS_WD_PORT), (int) (CANVAS_HT_PORT));
+	    appres.landscape = False;
+        } else {
+	    /* save current size for switching back */
+	    CANVAS_WD_PORT = CANVAS_WD;
+	    CANVAS_HT_PORT = CANVAS_HT;
+	    dx = CANVAS_WD_LAND - formw;
+	    dy = CANVAS_HT_LAND - formh;
+	    TOOL_WD += dx;
+	    TOOL_HT += dy;
+	    XtResizeWidget(tool, TOOL_WD, TOOL_HT, 0);
+	    resize_all((int) (CANVAS_WD_LAND), (int) (CANVAS_HT_LAND));
+	    appres.landscape = True;
+	}
     } else {
-	/* save current size for switching back */
-	CANVAS_WD_PORT = CANVAS_WD;
-	CANVAS_HT_PORT = CANVAS_HT;
-	dx = CANVAS_WD_LAND - formw;
-	dy = CANVAS_HT_LAND - formh;
-	TOOL_WD += dx;
-	TOOL_HT += dy;
-	XtResizeWidget(tool, TOOL_WD, TOOL_HT, 0);
-	resize_all((int) (CANVAS_WD_LAND), (int) (CANVAS_HT_LAND));
-	appres.landscape = True;
+	/* just toggle the flag */
+	appres.landscape = !appres.landscape;
     }
-    /* and the printer and export orientation labels */
+    /* change the printer and export orientation labels */
     FirstArg(XtNlabel, orient_items[appres.landscape]);
     if (print_orient_panel)
 	SetValues(print_orient_panel);
     if (export_orient_panel)
 	SetValues(export_orient_panel);
 
+    /* draw the new orientation of the page border */
+    clear_canvas();
+    redisplay_canvas();
+
     /* the figure has been modified */
     set_modifiedflag();
 #ifdef I18N
     if (xim_ic != NULL)
       xim_set_ic_geometry(xim_ic, CANVAS_WD, CANVAS_HT);
-#endif
+#endif /* I18N */
 }
 
 /*
@@ -820,8 +878,8 @@ typedef struct _global {
     Boolean	showballoons;		/* show popup messages */
     Boolean	showlengths;		/* length/width lines */
     Boolean	shownums;		/* print point numbers  */
-    Boolean	allow_neg_coords;	/* allow negative x/y coordinates for panning */
-    Boolean	draw_zero_lines;	/* draw lines through 0,0 */
+    Boolean	allownegcoords;		/* allow negative x/y coordinates for panning */
+    Boolean	drawzerolines;		/* draw lines through 0,0 */
 }	globalStruct;
 
 globalStruct global;
@@ -830,14 +888,17 @@ void
 show_global_settings(w)
     Widget	    w;
 {
+	/* turn off Compose key LED */
+	setCompLED(0);
+
 	global.tracking = appres.tracking;
 	global.show_pageborder = appres.show_pageborder;
 	global.showdepthmanager = appres.showdepthmanager;
 	global.showballoons = appres.showballoons;
 	global.showlengths = appres.showlengths;
 	global.shownums = appres.shownums;
-	global.allow_neg_coords = appres.allow_neg_coords;
-	global.draw_zero_lines = appres.draw_zero_lines;
+	global.allownegcoords = appres.allownegcoords;
+	global.drawzerolines = appres.drawzerolines;
 
 	popup_global_panel(w);
 }
@@ -871,7 +932,7 @@ create_global_panel(w)
     Widget	    w;
 {
 	DeclareArgs(10);
-	Widget	    	 beside, below, n_recent, recent;
+	Widget	    	 beside, below, n_freehand, freehand, n_recent, recent;
 	Widget		 delay_form, delay_spinner;
 	Position	 xposn, yposn;
 	char		 buf[80];
@@ -892,85 +953,102 @@ create_global_panel(w)
 	global_panel = XtCreateManagedWidget("global_panel", formWidgetClass,
 					     global_popup, NULL, ZERO);
 
-	below = CreateCheckbutton("Track mouse in rulers ", "track_mouse", 
-			global_panel, NULL, NULL, True, True, &global.tracking,0,0);
-	below = CreateCheckbutton("Show page borders     ", "page_borders", 
-			global_panel, below, NULL, True, True, &global.show_pageborder,0,0);
-	below = CreateCheckbutton("Show depth manager    ", "depth_manager", 
-			global_panel, below, NULL, True, True, &global.showdepthmanager,0,0);
-	show_bal = CreateCheckbutton("Show info balloons    ", "show_balloons", 
-			global_panel, below, NULL, True, True, &global.showballoons,0,0);
+	below = CreateCheckbutton("Track mouse in rulers   ", "track_mouse", 
+			global_panel, NULL, NULL, MANAGE, LARGE_CHK,
+			&global.tracking, 0,0);
+	below = CreateCheckbutton("Show page borders       ", "page_borders", 
+			global_panel, below, NULL, MANAGE, LARGE_CHK,
+			&global.show_pageborder, 0,0);
+	below = CreateCheckbutton("Show depth manager      ", "depth_manager", 
+			global_panel, below, NULL, MANAGE, LARGE_CHK,
+			&global.showdepthmanager, 0,0);
+	show_bal = CreateCheckbutton("Show info balloons      ", "show_balloons", 
+			global_panel, below, NULL, MANAGE, LARGE_CHK,
+			&global.showballoons,0,0);
 
 	/* put the delay label and spinner in a form to group them */
 	FirstArg(XtNdefaultDistance, 1);
 	NextArg(XtNfromHoriz, show_bal);
 	NextArg(XtNfromVert, below);
+	NextArg(XtNborderWidth, 0);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	delay_form = XtCreateManagedWidget("bal_del_form", formWidgetClass, global_panel,
 			Args, ArgCount);
 
 	FirstArg(XtNlabel,"Delay (ms):");
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNtop, XtChainTop);
-	NextArg(XtNbottom, XtChainBottom);
+	NextArg(XtNbottom, XtChainTop);
 	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	delay_label = beside = XtCreateManagedWidget("balloon_delay", labelWidgetClass, 
 				delay_form, Args, ArgCount);
 	sprintf(buf, "%d", appres.balloon_delay);
 	delay_spinner = MakeIntSpinnerEntry(delay_form, &bal_delay, "balloon_delay", 
-			NULL, beside, (XtCallbackRec *) NULL, buf, 0, 100000, 1, 40);
-	/* make the spinner resize with the form */
+			NULL, beside, (XtCallbackProc) NULL, buf, 0, 100000, 1, 40);
 	FirstArg(XtNtop, XtChainTop);
-	NextArg(XtNbottom, XtChainBottom);
-	NextArg(XtNright, XtChainRight);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	SetValues(delay_spinner);
 
-	below = CreateCheckbutton("Show line lengths     ", "show_lengths", 
-			global_panel, show_bal, NULL, True, True, &global.showlengths, 0, 0);
-	below = CreateCheckbutton("Show vertex numbers   ", "show_vertexnums", 
-			global_panel, below, NULL, True, True, &global.shownums, 0, 0);
-	below = CreateCheckbutton("Allow negative coords ", "show_vertexnums", 
-			global_panel, below, NULL, True, True, &global.allow_neg_coords, 0, 0);
-	below = CreateCheckbutton("Draw lines through 0,0", "draw_zero_lines", 
-			global_panel, below, NULL, True, True, &global.draw_zero_lines, 0, 0);
+	below = CreateCheckbutton("Show line lengths       ", "show_lengths", 
+			global_panel, show_bal, NULL, MANAGE, LARGE_CHK,
+			&global.showlengths, 0, 0);
+	below = CreateCheckbutton("Show vertex numbers     ", "show_vertexnums", 
+			global_panel, below, NULL, MANAGE, LARGE_CHK,
+			&global.shownums, 0, 0);
+	below = CreateCheckbutton("Allow negative coords   ", "show_vertexnums", 
+			global_panel, below, NULL, MANAGE, LARGE_CHK,
+			&global.allownegcoords, 0, 0);
+	below = CreateCheckbutton("Draw lines through 0,0  ", "drawzerolines", 
+			global_panel, below, NULL, MANAGE, LARGE_CHK,
+			&global.drawzerolines, 0, 0);
 
-	FirstArg(XtNlabel, "Recently used files");
+	FirstArg(XtNlabel, "Freehand drawing resolution");
 	NextArg(XtNfromVert, below);
 	NextArg(XtNborderWidth, 0);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	freehand = XtCreateManagedWidget("freehand_resolution", labelWidgetClass,
+					global_panel, Args, ArgCount);
+	sprintf(buf,"%d",appres.freehand_resolution);
+	n_freehand = MakeIntSpinnerEntry(global_panel, &n_freehand_resolution, "freehand_res", 
+			below, freehand, (XtCallbackProc) NULL, buf, 0, 100000, 10, 26);
+	below = freehand;
+
+	FirstArg(XtNlabel, "Recently used files        ");
+	NextArg(XtNfromVert, below);
+	NextArg(XtNborderWidth, 0);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	recent = XtCreateManagedWidget("recent_file_entries", labelWidgetClass,
 					global_panel, Args, ArgCount);
 	sprintf(buf,"%d",max_recent_files);
 	n_recent = MakeIntSpinnerEntry(global_panel, &n_recent_files, "max_recent_files", 
-			below, recent, (XtCallbackRec *) NULL, buf, 0, MAX_RECENT_FILES, 1, 31);
+			below, recent, (XtCallbackProc) NULL, buf, 0, MAX_RECENT_FILES, 1, 26);
 	below = recent;
 
 	sprintf(buf,"%d",appres.max_image_colors);
-	below = CreateLabelledAscii(&max_colors, "Max image colors", "max_image_colors",
-			global_panel, below, buf, 63);
-	below = CreateLabelledAscii(&image_ed, "Image editor    ", "image_editor",
+	below = CreateLabelledAscii(&max_colors, "Maximum image colors       ", "max_image_colors",
+			global_panel, below, buf, 40);
+	below = CreateLabelledAscii(&image_ed, "Image editor ", "image_editor",
 			global_panel, below, cur_image_editor, 340);
-	below = CreateLabelledAscii(&spell_chk, "Spelling checker", "spell_check",
+	below = CreateLabelledAscii(&spell_chk, "Spell checker", "spell_check",
 			global_panel, below, cur_spellchk, 340);
-	below = CreateLabelledAscii(&browser, "HTML Browser    ", "html_browser",
+	below = CreateLabelledAscii(&browser, "HTML Browser ", "html_browser",
 			global_panel, below, cur_browser, 340);
-	below = CreateLabelledAscii(&pdfview, "PDF Viewer      ", "pdf_viewer",
+	below = CreateLabelledAscii(&pdfview, "PDF Viewer   ", "pdf_viewer",
 			global_panel, below, cur_pdfviewer, 340);
 
-	FirstArg(XtNlabel, "  OK  ");
-	NextArg(XtNfromVert, below);
-	NextArg(XtNvertDistance, 15);
-	NextArg(XtNheight, 25);
-	NextArg(XtNborderWidth, INTERNAL_BW);
-	NextArg(XtNtop, XtChainBottom);
-	NextArg(XtNbottom, XtChainBottom);
-	NextArg(XtNleft, XtChainLeft);
-	NextArg(XtNright, XtChainLeft);
-	beside = XtCreateManagedWidget("global_ok", commandWidgetClass,
-					   global_panel, Args, ArgCount);
-	XtAddEventHandler(beside, ButtonReleaseMask, (Boolean) 0,
-			  (XtEventHandler) global_panel_done, (XtPointer) NULL);
-
 	FirstArg(XtNlabel, "Cancel");
-	NextArg(XtNfromHoriz, beside);
 	NextArg(XtNfromVert, below);
 	NextArg(XtNvertDistance, 15);
 	NextArg(XtNheight, 25);
@@ -979,13 +1057,29 @@ create_global_panel(w)
 	NextArg(XtNbottom, XtChainBottom);
 	NextArg(XtNleft, XtChainLeft);
 	NextArg(XtNright, XtChainLeft);
-	below = XtCreateManagedWidget("cancel", commandWidgetClass,
+	beside = XtCreateManagedWidget("cancel", commandWidgetClass,
 					   global_panel, Args, ArgCount);
-	XtAddEventHandler(below, ButtonReleaseMask, (Boolean) 0,
-			  (XtEventHandler)global_panel_cancel, (XtPointer) NULL);
+	XtAddEventHandler(beside, ButtonReleaseMask, False,
+			  (XtEventHandler) global_panel_cancel, (XtPointer) NULL);
+
+	FirstArg(XtNlabel, "  Ok  ");
+	NextArg(XtNfromVert, below);
+	NextArg(XtNvertDistance, 15);
+	NextArg(XtNfromHoriz, beside);
+	NextArg(XtNheight, 25);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNtop, XtChainBottom);
+	NextArg(XtNbottom, XtChainBottom);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	below = XtCreateManagedWidget("global_ok", commandWidgetClass,
+					   global_panel, Args, ArgCount);
+	XtAddEventHandler(below, ButtonReleaseMask, False,
+			  (XtEventHandler) global_panel_done, (XtPointer) NULL);
 
 	/* install accelerators for the following functions */
 	XtInstallAccelerators(global_panel, below);
+
 }
 
 Widget
@@ -1004,6 +1098,8 @@ CreateLabelledAscii(text_widg, label, widg_name, parent, below, str, width)
     NextArg(XtNfromVert, below);
     NextArg(XtNjustify, XtJustifyLeft);
     NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainLeft);
     lab_widg = XtCreateManagedWidget("label", labelWidgetClass,
@@ -1015,7 +1111,10 @@ CreateLabelledAscii(text_widg, label, widg_name, parent, below, str, width)
     NextArg(XtNfromVert, below);
     NextArg(XtNfromHoriz, lab_widg);
     NextArg(XtNwidth, width);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
     NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     *text_widg = XtCreateManagedWidget(widg_name, asciiTextWidgetClass,
 					parent, Args, ArgCount);
     /* install "standard" translations */
@@ -1030,26 +1129,26 @@ global_panel_done(w, ev)
     XButtonEvent   *ev;
 {
 	Boolean	    asp, gsp, adz, gdz;
-	int	    tmp_recent;
+	int	    temp;
 	char	    buf[80];
 
 	/* copy all new values back to masters */
 	appres.tracking = global.tracking;
 	asp = appres.show_pageborder;
 	gsp = global.show_pageborder;
-	adz = appres.draw_zero_lines;
-	gdz = global.draw_zero_lines;
+	adz = appres.drawzerolines;
+	gdz = global.drawzerolines;
 	/* update settings */
 	appres.show_pageborder = gsp;
-	appres.draw_zero_lines = gdz;
+	appres.drawzerolines = gdz;
 
-	/* if show_pageborder or draw_zero_lines WAS on and is now off, redraw */
+	/* if show_pageborder or drawzerolines WAS on and is now off, redraw */
 	if ((asp && !gsp) || (adz && !gdz)) {
 	    /* was on, turn off */
 	    clear_canvas();
 	    redisplay_canvas();		
 	} else if ((!asp && gsp) || (!adz && gdz)) {
-	    /* if show_pageborder or draw_zero_lines WAS off and is now on, draw them */
+	    /* if show_pageborder or drawzerolines WAS off and is now on, draw them */
 	    /* was off, turn on */
 	    redisplay_pageborder();
 	}
@@ -1058,27 +1157,44 @@ global_panel_done(w, ev)
 	    toggle_show_depths();
 	appres.showdepthmanager = global.showdepthmanager;
 	appres.showballoons = global.showballoons;
-	appres.balloon_delay = atoi(panel_get_value(bal_delay));
+	temp = atoi(panel_get_value(bal_delay));
+	if (temp < 0) {
+	    temp = 0;
+	    panel_set_int(bal_delay, temp);
+	}
+	appres.balloon_delay = temp;
 	appres.showlengths = global.showlengths;
 	appres.shownums = global.shownums;
-	appres.allow_neg_coords = global.allow_neg_coords;
-	appres.draw_zero_lines = global.draw_zero_lines;
+	appres.allownegcoords = global.allownegcoords;
+	appres.drawzerolines = global.drawzerolines;
 	/* go to 0,0 if user turned off neg coords and we're in the negative */
-	if (!appres.allow_neg_coords)
+	if (!appres.allownegcoords)
 	    if (zoomxoff < 0 || zoomyoff < 0)
 		pan_origin();
 
-	tmp_recent = atoi(panel_get_value(n_recent_files));
-	if (tmp_recent > MAX_RECENT_FILES)
-	    tmp_recent = MAX_RECENT_FILES;
+	/* get the freehand resolution spinner value */
+	temp = atoi(panel_get_value(n_freehand_resolution));
+	if (temp < 0) {
+	    temp = 0;
+	    panel_set_int(n_freehand_resolution, temp);
+	}
+	appres.freehand_resolution = temp;
+
+	/* get the number of recent files spinner value */
+	temp = atoi(panel_get_value(n_recent_files));
+	if (temp > MAX_RECENT_FILES)
+	    temp = MAX_RECENT_FILES;
+	else if (temp < 0)
+	    temp = 0;
+	panel_set_int(n_recent_files, temp);
 	/* if number of recent files has changed, update it in the .xfigrc file */
-	if (max_recent_files != tmp_recent) {
+	if (max_recent_files != temp) {
 	    Widget menu, entry;
 	    int i;
 	    char id[10];
 
 	    menu = main_menus[0].menuwidget;
-	    max_recent_files = tmp_recent;
+	    max_recent_files = temp;
 	    num_recent_files = min2(num_recent_files, max_recent_files);
 	    sprintf(buf,"%d",max_recent_files);
 	    update_xfigrc("max_recent_files", buf);
@@ -1101,7 +1217,12 @@ global_panel_done(w, ev)
 	    XtUnmanageChild(main_menus[0].widget);
 	    XtManageChild(main_menus[0].widget);
 	}
-	appres.max_image_colors = atoi(panel_get_value(max_colors));
+	temp = atoi(panel_get_value(max_colors));
+	if (temp <= 0) {
+	    temp = 10;
+	    panel_set_int(max_colors, temp);
+	}
+	appres.max_image_colors = temp;
 	strcpy(cur_image_editor, panel_get_value(image_ed));
 	strcpy(cur_spellchk, panel_get_value(spell_chk));
 	strcpy(cur_browser, panel_get_value(browser));
@@ -1299,7 +1420,7 @@ load_recent_file(w, client_data, call_data)
     if (c=strrchr(dir,'/')) {
 	*c = '\0';			/* terminate dir at last '/' */
 	change_directory(dir);
-	strcpy(cur_file_dir, dir);	/* update current file directory */
+	strcpy(cur_file_dir, dir);	/* update current directory */
 	strcpy(cur_export_dir, dir);	/* and export current directory */
     }
     /* load the file */
@@ -1317,6 +1438,9 @@ acc_load_recent_file(w, event, params, nparams)
 {
     /* get file number from passed arg */
     int		which = atoi(*params);
+
+    /* turn off Compose key LED */
+    setCompLED(0);
 
     /* see if that file exists in the list */
     if (which > num_recent_files)
@@ -1366,6 +1490,9 @@ refresh_view_menu_item(label, state)
 void
 refresh_view_menu()
 {
+    /* turn off Compose key LED */
+    setCompLED(0);
+
     refresh_view_menu_item(PAGE_BRD_MSG, appres.show_pageborder);
     refresh_view_menu_item(DPTH_MGR_MSG, appres.showdepthmanager);
     refresh_view_menu_item(INFO_BAL_MSG, appres.showballoons);

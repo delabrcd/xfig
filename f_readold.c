@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -19,6 +19,7 @@
 #include "resources.h"
 #include "object.h"
 #include "f_read.h"
+#include "f_util.h"
 #include "u_create.h"
 #include "u_fonts.h"
 #include "w_drawprim.h"
@@ -147,7 +148,7 @@ read_1_3_arcobject(fp)
 
     a->pen_color = a->fill_color = BLACK;
     a->depth = 0;
-    a->pen_style = 0;
+    a->pen_style = -1;
     a->cap_style = CAP_BUTT;
     a->for_arrow = NULL;
     a->back_arrow = NULL;
@@ -294,7 +295,7 @@ read_1_3_ellipseobject(fp)
     e->pen_color = e->fill_color = BLACK;
     e->angle = 0.0;
     e->depth = 0;
-    e->pen_style = 0;
+    e->pen_style = -1;
     e->fill_style = UNFILLED;
     e->next = NULL;
     n = fscanf(fp, " %d %d %d %f %d %d %d %d %d %d %d %d %d\n",
@@ -333,7 +334,7 @@ read_1_3_lineobject(fp)
 
     l->pen_color = l->fill_color = DEFAULT;
     l->depth = 0;
-    l->pen_style = 0;
+    l->pen_style = -1;
     l->join_style = JOIN_MITER;
     l->cap_style = CAP_BUTT;
     l->fill_style = UNFILLED;
@@ -401,7 +402,7 @@ read_1_3_splineobject(fp)
 
     s->pen_color = s->fill_color = BLACK;
     s->depth = 0;
-    s->pen_style = 0;
+    s->pen_style = -1;
     s->fill_style = UNFILLED;
     s->cap_style = CAP_BUTT;
     s->for_arrow = NULL;
@@ -485,7 +486,7 @@ read_1_3_textobject(fp)
     t->flags = RIGID_TEXT;	/* same with flags (called style) */
     t->color = BLACK;
     t->depth = 0;
-    t->pen_style = 0;
+    t->pen_style = -1;
     t->angle = 0.0;
     t->next = NULL;
     /* ascent and length will be recalculated later */

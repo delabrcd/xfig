@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -23,7 +23,7 @@ extern	char	*my_strdup();
 /* For the X stuff, include only Xlib.h and Intrinsic.h here - 
    use figx.h for widget stuff */
 
-#if defined(ultrix) || defined(__bsdi__) || defined(Mips)
+#if defined(ultrix) || defined(__bsdi__) || defined(Mips) || defined(apollo)
 #include <sys/types.h>	/* for stat structure */
 #endif
 #include <sys/stat.h>
@@ -113,15 +113,14 @@ extern char    *mktemp();
  *
  * Copyright 1991 Massachusetts Institute of Technology
  *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty.
+ * Any party obtaining a copy of these files is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  * M.I.T. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL M.I.T.
@@ -315,7 +314,6 @@ extern char *getenv();
 #define DIRSTRUCT struct dirent
 #endif
 
-/* define PATH_MAX if not already defined */
 /* taken from the X11R5 server/os/osfonts.c file */
 #ifndef X_NOT_POSIX
 #ifdef _POSIX_SOURCE
@@ -329,6 +327,7 @@ extern char *getenv();
 #endif /* _POSIX_SOURCE */
 #endif /* X_NOT_POSIX */
 
+/* define PATH_MAX if not already defined */
 #ifndef PATH_MAX
 #include <sys/param.h>
 #ifdef MAXPATHLEN

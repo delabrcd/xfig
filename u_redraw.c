@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -28,6 +28,7 @@
 #include "w_canvas.h"
 #include "w_drawprim.h"
 #include "w_file.h"
+#include "w_indpanel.h"
 #include "w_layers.h"
 #include "w_setup.h"
 #include "w_util.h"
@@ -93,13 +94,25 @@ clearcounts()
     }
 }
 
-redisplay_objects(objects)
-    F_compound	   *objects;
+redisplay_objects(active_objects)
+    F_compound	   *active_objects;
 {
     int		    depth;
+    F_compound	   *objects; /* for drawing */
+  
+    objects = active_objects;
 
     if (objects == NULL)
 	return;
+
+    /*
+     * Opened compound with `keep parent visible'?
+     */
+    for (; (objects->parent != NULL) && (objects->draw_parent); ) {
+      /* put in any changes */
+      *((F_compound*)objects->GABPtr) = *objects;            
+      objects = objects->parent;
+    }
 
     clearcounts();
     /*
@@ -108,7 +121,22 @@ redisplay_objects(objects)
      * loop is the original code for redisplay_objects.
      */
 
+    if (gray_layers) {
+	for (depth = max_depth; depth >= min_depth; --depth) {
+	    /* if user wants gray inactive layer, draw it */
+	    if (!active_layer(depth)) {
+		redisplay_arcobject(objects->arcs, depth);
+		redisplay_compoundobject(objects->compounds, depth);
+		redisplay_ellipseobject(objects->ellipses, depth);
+		redisplay_lineobject(objects->lines, depth);
+		redisplay_splineobject(objects->splines, depth);
+		redisplay_textobject(objects->texts, depth);
+	    }
+	}
+    }
+
     for (depth = max_depth; depth >= min_depth; --depth) {
+	/* if active layer, or user wants gray inactive layer, draw it */
 	if (active_layer(depth)) {
 	    redisplay_arcobject(objects->arcs, depth);
 	    redisplay_compoundobject(objects->compounds, depth);
@@ -125,9 +153,11 @@ redisplay_objects(objects)
      */
 
     /* show the markers if they are on */
-    toggle_markers_in_compound(objects);
+    toggle_markers_in_compound(active_objects);
+    /* mark any center if requested */
     if (setcenter)
 	center_marker(setcenter_x, setcenter_y);
+    /* and any anchor */
     if (setanchor)
 	center_marker(setanchor_x, setanchor_y);
 }
@@ -296,7 +326,11 @@ redisplay_compoundobject(compounds, depth)
 void
 redisplay_canvas()
 {
+    /* turn off Compose key LED */
+    setCompLED(0);
+
     redisplay_region(0, 0, CANVAS_WD, CANVAS_HT);
+    reset_rulers();
 }
 
 /* redisplay the object currently being created by the user (if any) */
@@ -312,10 +346,14 @@ redisplay_curobj()
 
     /* find which type of object we need to refresh */
 
+    /* creating an object */
+    /* placing a library object is slightly different */
     if (cur_mode < FIRST_EDIT_MODE) {
       switch (cur_mode) {
+	case F_PLACE_LIB_OBJ:
+	   break;	/* don't do anything */
 	case F_PICOBJ:
-	case F_ARC_BOX:
+	case F_ARCBOX:
 	case F_BOX:
 	   elastic_box(fix_x, fix_y, cur_x, cur_y);
 	   break;
@@ -347,23 +385,32 @@ redisplay_curobj()
 		    ry = cur_y;
 		}
 		pw_vector(canvas_win, p->x, p->y, rx, ry,
-		      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
+		      PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 		/* erase endpoint because next seg will redraw it */
 		pw_vector(canvas_win, rx, ry, rx, ry,
 		      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 	    }
 	    break;
 	case F_CIRCULAR_ARC:
-	    for (i=0; i<num_point; i++) {
-		if (i < num_point-1) {
-		    rx = point[i+1].x;
-		    ry = point[i+1].y;
-		} else {
-		    rx = cur_x;
-		    ry = cur_y;
+	    if (center_marked) {
+	        center_marker(center_point.x, center_point.y);
+		/* redraw either circle or partial arc */
+		if (num_point)
+		    elastic_arc();
+		else
+		    elastic_cbr();
+	    } else {
+		for (i=0; i<num_point; i++) {
+		    if (i < num_point-1) {
+			rx = point[i+1].x;
+			ry = point[i+1].y;
+		    } else {
+			rx = cur_x;
+			ry = cur_y;
+		    }
+		    pw_vector(canvas_win, point[i].x, point[i].y, rx, ry,
+				INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 		}
-		pw_vector(canvas_win, point[i].x, point[i].y, rx, ry,
-		      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 	    }
 	    break;
 	case F_TEXT:
@@ -375,6 +422,9 @@ redisplay_curobj()
 	    draw_char_string();
 	    break;
       }
+    } else {
+	/* editing an object, just refresh it as is */
+	(*canvas_ref_proc)(cur_x, cur_y);
     }
 }
 
@@ -398,7 +448,6 @@ redisplay_region(xmin, ymin, xmax, ymax)
     ymax += 10;
     set_clip_window(xmin, ymin, xmax, ymax);
     clear_canvas();
-    redisplay_pageborder();
     redisplay_objects(&objects);
     redisplay_curobj();
     reset_clip_window();
@@ -412,15 +461,31 @@ update_pageborder()
     if (appres.show_pageborder) {
 	clear_canvas();
 	redisplay_canvas();		
-	redisplay_pageborder();
     }
 }
 
 /* make a light blue line showing the right and bottom edge of the current page size */
 /* also make light blue lines vertically and horizontally through 0,0 if
-   draw_zero_lines is true */
+   drawzerolines is true */
 
 redisplay_pageborder()
+{
+    /* first the page border if user wants it */
+    if (appres.show_pageborder) 
+	redraw_pageborder();
+
+    /* now the lines through 0,0 */
+    if (appres.drawzerolines) {
+	/* set the color */
+	XSetForeground(tool_d, gc, zero_lines_color);
+	XDrawLine(tool_d, canvas_win, gc, round(-zoomxoff*zoomscale), 0, 
+					  round(-zoomxoff*zoomscale), CANVAS_HT);
+	XDrawLine(tool_d, canvas_win, gc, 0, round(-zoomyoff*zoomscale), CANVAS_WD, 
+					  round(-zoomyoff*zoomscale));
+    }
+}
+
+redraw_pageborder()
 {
     int		   pwd, pht, ux;
     int		   x, y;
@@ -428,16 +493,6 @@ redisplay_pageborder()
 
     /* set the color */
     XSetForeground(tool_d, gc, pageborder_color);
-
-    /* first the lines through 0,0 */
-    if (appres.draw_zero_lines) {
-	XDrawLine(tool_d, canvas_win, gc, round(-zoomxoff*zoomscale), 0, 
-					  round(-zoomxoff*zoomscale), CANVAS_HT);
-	XDrawLine(tool_d, canvas_win, gc, 0, round(-zoomyoff*zoomscale), CANVAS_WD, 
-					  round(-zoomyoff*zoomscale));
-    }
-    if (!appres.show_pageborder) 
-	return;
 
     pwd = paper_sizes[appres.papersize].width;
     pht = paper_sizes[appres.papersize].height;
@@ -451,30 +506,58 @@ redisplay_pageborder()
 	pwd = pht;
 	pht = ux;
     }
-#ifdef CENTER_PAGE
-    if (appres.flushleft) {
-	x = 0;
-	y = 0;
+    /* if multiple page mode, draw all page borders that are visible */
+    if (appres.multiple) {
+	int	wd, ht, xoff, yoff;
+
+	wd = CANVAS_WD/zoomscale;
+	ht = CANVAS_HT/zoomscale;
+
+	/* draw the page borders in the positive direction */
+	for (y=0; y < ht+zoomyoff; y += pht) {
+	    for (x=0; x < wd+zoomxoff; x += pwd) {
+		draw_pb(x, y, pwd, pht);
+	    }
+	}
+	/* now draw the page borders in the -X, -Y direction */
+	for (y=0; y > zoomyoff; y -= pht) {
+	    for (x=0; x > zoomxoff; x -= pwd) {
+		draw_pb(x, y, -pwd, -pht);
+	    }
+	}
+	/* now draw the page borders in the -X, +Y direction */
+	for (y=0; y < ht+zoomyoff; y += pht) {
+	    for (x=0; x > zoomxoff; x -= pwd) {
+		draw_pb(x, y, -pwd, pht);
+	    }
+	}
+	/* now draw the page borders in the +X, -Y direction */
+	for (y=0; y > zoomyoff; y -= pht) {
+	    for (x=0; x < wd+zoomxoff; x += pwd) {
+		draw_pb(x, y, pwd, -pht);
+	    }
+	}
     } else {
-	/* get current bounding box of figure to center pageborder around figure */
-	compound_bound(&objects, &objects.nwcorner.x, &objects.nwcorner.y,
-		&objects.secorner.x, &objects.secorner.y);
-	x = objects.nwcorner.x-(pwd-(objects.secorner.x-objects.nwcorner.x))/2;
-	y = objects.nwcorner.y-(pht-(objects.secorner.y-objects.nwcorner.y))/2;
+	zXDrawLine(tool_d, canvas_win, gc, 0,   0,   pwd, 0);
+	zXDrawLine(tool_d, canvas_win, gc, pwd, 0,   pwd, pht);
+	zXDrawLine(tool_d, canvas_win, gc, pwd, pht, 0,   pht);
+	zXDrawLine(tool_d, canvas_win, gc, 0,   pht, 0,   0);
     }
-#else  /* not CENTER_PAGE */
-    x = 0;
-    y = 0;
-#endif  /* CENTER_PAGE */
-    zXDrawLine(tool_d, canvas_win, gc, x,     y,     x+pwd, y);
-    zXDrawLine(tool_d, canvas_win, gc, x+pwd, y,     x+pwd, y+pht);
-    zXDrawLine(tool_d, canvas_win, gc, x+pwd, y+pht, x,     y+pht);
-    zXDrawLine(tool_d, canvas_win, gc, x,     y+pht, x,     y);
     /* Now put the paper size in the lower-right corner just outside the page border.
        We want the full name except for the size in parenthesis */
     strcpy(pname,paper_sizes[appres.papersize].fname);
+    /* truncate after first part of name */
     *(strchr(pname, '('))= '\0';
-    XDrawString(tool_d,canvas_win,gc,ZOOMX(x+pwd)+3,ZOOMY(y+pht),pname,strlen(pname));
+    XDrawString(tool_d,canvas_win,gc,ZOOMX(pwd)+3,ZOOMY(pht),pname,strlen(pname));
+}
+
+draw_pb(x, y, w, h)
+    int		   x, y, w, h;
+{
+	zXDrawLine(tool_d, canvas_win, gc, x,   y,   x+w, y);
+	zXDrawLine(tool_d, canvas_win, gc, x+w, y,   x+w, y+h);
+	zXDrawLine(tool_d, canvas_win, gc, x+w, y+h, x,   y+h);
+	zXDrawLine(tool_d, canvas_win, gc, x,   y+h, x,   y);
 }
 
 redisplay_zoomed_region(xmin, ymin, xmax, ymax)
@@ -507,8 +590,29 @@ redisplay_arc(a)
     F_arc	   *a;
 {
     int		    xmin, ymin, xmax, ymax;
+    int		    cx, cy;
 
     arc_bound(a, &xmin, &ymin, &xmax, &ymax);
+    /* if vertices (and center point) are shown, make sure to include them in the clip area */
+    if (appres.shownums) {
+	/* first adjust for height/width of labels (don't really care which way they are) */
+	xmin -= 175;
+	xmax += 175;
+	ymin -= 175;
+	/* (the numbers are above the vertices so we don't need to move ymax) */
+
+	/* now adjust for center point if it is outside the arc */
+	cx = a->center.x;
+	cy = a->center.y;
+	if (cx < xmin+80)
+	    xmin = cx-80;
+	if (cx > xmax-150)
+	    xmax = cx+150;
+	if (cy < ymin+150)
+	    ymin = cy-150;
+	if (cy > ymax-80)
+	    ymax = cy;
+    }
     redisplay_zoomed_region(xmin, ymin, xmax, ymax);
 }
 

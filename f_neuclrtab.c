@@ -1,6 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1994 Anthony Dekker
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  *
  * [NEUQUANT Neural-Net quantization algorithm by Anthony Dekker, 1994.
  * See "Kohonen neural networks for optimal colour quantization"
@@ -11,10 +12,10 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -46,12 +47,12 @@ BYTE	clrtab[256][3];
 static int	netsize;
 
 #ifndef DEFSMPFAC
-#ifdef SPEED
-#define DEFSMPFAC	(240/SPEED+3)
-#else
-#define DEFSMPFAC	30	/* only sample every 30th pixel */
-#endif
-#endif
+#  ifdef SPEED
+#    define DEFSMPFAC	(240/SPEED+3)
+#  else
+#    define DEFSMPFAC	30	/* only sample every 30th pixel */
+#  endif /* SPEED */
+#endif /* DEFSMPFAC */
 
 int	samplefac = DEFSMPFAC;	/* sampling factor */
 
@@ -152,6 +153,7 @@ register int	n;
 }
 
 
+int
 neu_clrtab(ncolors)		/* make new color table using ncolors */
 int	ncolors;
 {
@@ -224,7 +226,7 @@ int	n;
 #ifdef MAXERR
 			if (err[i] > MAXERR) err[i] = MAXERR;
 			else if (err[i] < -MAXERR) err[i] = -MAXERR;
-#endif
+#endif /* MAXERR */
 			err[i] += cs[x][i];
 			if (err[i] < 0) err[i] = 0;
 			else if (err[i] > 255) err[i] = 255;

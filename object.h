@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -20,6 +20,10 @@
 
 /* values to signify color used for transparent GIF color */
 
+#define		CANVAS_BG		-7	/* use canvas background color */
+#define		DARK_GRAY		-6	/* pseudo color to Greek small text */
+#define		MED_GRAY		-5	/* pseudo colors to gray out inactive layers */
+#define		LT_GRAY			-4
 #define		TRANSP_BACKGROUND	-3	/* use background of figure as transp color */
 #define		TRANSP_NONE		-2	/* no transp color */
 #define		COLOR_NONE		-2	/* no background color (exporting) */
@@ -55,19 +59,62 @@
 		components up to and including the f_points in the same order.
 **/
 
+typedef struct f_pos {
+    int		    x, y;
+}
+		F_pos;
+
+/***********************************************************************/
+/* NOTE: If you change this you must change _pic_names in e_edit.c too */
+/***********************************************************************/
+
+/* These values are used internally, so changing them doesn't
+   affect any Fig files */
+
+enum pictypes {
+	T_PIC_NONE,
+	T_PIC_EPS,
+	T_PIC_GIF,
+#ifdef USE_JPEG
+	T_PIC_JPEG,
+#endif /* USE_JPEG */
+	T_PIC_PCX,
+	T_PIC_PNG,
+	T_PIC_PPM,
+	T_PIC_TIF,
+	T_PIC_XBM,
+#ifdef USE_XPM
+	T_PIC_XPM,
+#endif /* USE_XPM */
+	LAST_PIC
+     } ;
+
+#define NUM_PIC_TYPES LAST_PIC-1
+
+struct _pics {
+		char	     *file;
+		char	     *realname;		/* in case the actual file is compressed (.gz, etc) */
+		time_t	      time_stamp;	/* to see if the file has changed */
+		char	     *bitmap;
+	        enum pictypes subtype;
+	        int	      size_x, size_y;	/* picture size (fig units) */
+	        struct f_pos  bit_size;		/* size of bitmap in pixels */
+	        struct Cmap   cmap[MAX_COLORMAP_SIZE];  /* for GIF/XPM/JPEG files */
+	        int	      numcols;		/* number of colors in cmap */
+	        int	      transp;		/* transparent color (TRANSP_NONE if none) for GIFs */
+		int	      refcount;		/* number of references to picture */
+		struct _pics *prev;
+		struct _pics *next;
+	     };
+
 typedef struct f_point {
     int		    x, y;
     struct f_point *next;
 }
 		F_point;
 
-typedef struct f_pos {
-    int		    x, y;
-}
-		F_pos;
-
-#define DEF_ARROW_WID 4
-#define DEF_ARROW_HT 8
+#define DEF_ARROW_WID 4.0
+#define DEF_ARROW_HT  8.0
 
 typedef struct f_arrow {
     int		    type;
@@ -96,7 +143,7 @@ typedef struct f_ellipse {
     int		    depth;
     int		    pen_style;
     float	    style_val;
-    float	    angle;
+    float	    angle;		/* in radians */
     int		    direction;
 #define					UNFILLED	-1
     struct f_pos    center;
@@ -153,64 +200,24 @@ typedef struct f_arc {
 #define		DEF_DASHLENGTH		4
 #define		DEF_DOTGAP		3
 
-/***********************************************************************/
-/* NOTE: If you change this you must change _pic_names in e_edit.c too */
-/***********************************************************************/
-
-/* These values are used internally, so changing them doesn't
-   affect any Fig files */
-
-enum pictypes {
-	T_PIC_NONE,
-#ifdef V4_0
-	T_PIC_FIG,
-#endif /* V4_0 */
-	T_PIC_EPS,
-	T_PIC_GIF,
-#ifdef USE_JPEG
-	T_PIC_JPEG,
-#endif /* USE_JPEG */
-	T_PIC_PCX,
-#ifdef USE_PNG
-	T_PIC_PNG,
-#endif /* USE_PNG */
-	T_PIC_PPM,
-	T_PIC_TIF,
-	T_PIC_XBM,
-#ifdef USE_XPM
-	T_PIC_XPM,
-#endif /* USE_XPM */
-	LAST_PIC
-     } ;
-
-#define NUM_PIC_TYPES LAST_PIC-1
-
 #define PicSuccess	1
 #define FileInvalid    -2
 
 /* Picture sub-type */
 
 typedef struct f_pic {
-    char	    file[PATH_MAX];
-    enum pictypes   subtype;
+    struct _pics   *pic_cache;		/* picture repository (bitmap, refcount etc) */
+    Boolean	    new;		/* set when creating object, cleared when
+					   Done is clicked in edit operation */
     int		    flipped;
-    unsigned char  *bitmap;
-    Pixmap	    mask;
-    struct Cmap	    cmap[MAX_COLORMAP_SIZE];  /* for GIF/XPM/JPEG files */
-    int		    numcols;		/* number of colors in cmap */
-    int		    transp;		/* transparent color (TRANSP_NONE if none) for GIFs */
     float	    hw_ratio;
-    int		    size_x, size_y;	/* picture size (fig units) */
-    struct f_pos    bit_size;		/* size of bitmap in pixels */
+    Pixmap	    mask;		/* for GIF transparency */
     Color	    color;		/* only used for XBM */
     Pixmap	    pixmap;		/* pixmap created for canvas */
     int		    pix_rotation,
 		    pix_width,		/* current width of pixmap (pixels) */
 		    pix_height,		/* current height of pixmap (pixels) */
 		    pix_flipped;
-#ifdef V4_0
-    struct f_compound *figure;		/* Fig compound if picture type == T_PIC_FIG */
-#endif
 }
 		F_pic;
 
@@ -227,7 +234,7 @@ typedef struct f_line {
 #define					T_POLYLINE	1
 #define					T_BOX		2
 #define					T_POLYGON	3
-#define					T_ARC_BOX	4
+#define					T_ARCBOX	4
 #define					T_PICTURE	5
     int		    style;
     int		    thickness;
@@ -251,7 +258,7 @@ typedef struct f_line {
 #define					JOIN_MITER	0
 #define					JOIN_ROUND	1
 #define					JOIN_BEVEL	2
-    int		    radius;	/* corner radius for T_ARC_BOX */
+    int		    radius;	/* corner radius for T_ARCBOX */
     struct f_pic   *pic;
     char	   *comments;
     struct f_line  *next;
@@ -382,8 +389,9 @@ typedef struct f_compound {
     struct f_text  *texts;
     struct f_arc   *arcs;
     char	   *comments;
-    struct f_compound *parent;	/* for "enter/leave compound" */
+    struct f_compound *parent;	/* for "open/close compound" */
     struct f_compound *GABPtr;	/* Where original compound came from */
+    Boolean	    draw_parent;
     struct f_compound *compounds;
     struct f_compound *next;
 }
@@ -460,6 +468,11 @@ typedef struct f_linkinfo {
 #define M_OBJECT	(M_ELLIPSE | M_POLYLINE | M_SPLINE | M_TEXT | M_ARC)
 #define M_NO_TEXT	(M_ELLIPSE | M_POLYLINE | M_SPLINE | M_COMPOUND | M_ARC)
 #define M_ALL		(M_OBJECT | M_COMPOUND)
+
+#define M_ANGLEMEAS_OBJECT  (M_POLYLINE_LINE | M_POLYLINE_POLYGON | M_ARC)
+#define M_LENMEAS_OBJECT    (M_POLYLINE_LINE | M_POLYLINE_POLYGON | M_POLYLINE_BOX | M_ARC | M_ELLIPSE)
+#define M_AREAMEAS_OBJECT   (M_POLYLINE_POLYGON | M_POLYLINE_BOX | M_ARC | M_ELLIPSE)
+#define M_TANGENT_OBJECT (M_VARPTS_OBJECT | M_POLYLINE_BOX | M_ARC | M_ELLIPSE)
 
 /************************  Objects  **********************/
 

@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2000 by Brian V. Smith
+ * Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1990 by Digital Equipment Corporation. All Rights Reserved.
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1990 by Digital Equipment Corporation
@@ -9,10 +9,10 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  * Original xdir code:
  *
@@ -58,6 +58,7 @@
 #include "w_drawprim.h"		/* for max_char_height */
 #include "w_export.h"
 #include "w_file.h"
+#include "w_indpanel.h"
 #include "w_listwidget.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
@@ -66,7 +67,7 @@
 #include <sys/dir.h>
 #else
 #include <dirent.h>
-#endif
+#endif /* HAVE_NO_DIRENT */
 
 static char	CurrentSelectionName[PATH_MAX];
 static int	file_entry_cnt, dir_entry_cnt;
@@ -129,16 +130,16 @@ FileSelected(w, client_data, call_data)
     FirstArg(XtNstring, CurrentSelectionName);
     if (browse_up) {
 	SetValues(browse_selfile);
-		XawTextSetInsertionPoint(browse_selfile, strlen(CurrentSelectionName));
+	XawTextSetInsertionPoint(browse_selfile, strlen(CurrentSelectionName));
     } else if (file_up) {
 	SetValues(file_selfile);
-		XawTextSetInsertionPoint(file_selfile, strlen(CurrentSelectionName));
+	XawTextSetInsertionPoint(file_selfile, strlen(CurrentSelectionName));
 	/* and show a preview of the figure in the preview canvas */
 	preview_figure(CurrentSelectionName, file_popup, preview_widget,
-			preview_size, preview_pixmap);
+			preview_size, preview_port_pixmap, preview_land_pixmap);
     } else if (export_up) {
 	SetValues(exp_selfile);
-		XawTextSetInsertionPoint(exp_selfile, strlen(CurrentSelectionName));
+	XawTextSetInsertionPoint(exp_selfile, strlen(CurrentSelectionName));
     }
     /* if nothing is selected it probably means that the user was impatient and
 	double clicked the file name again while it was still loading the first */
@@ -202,7 +203,7 @@ GoHome(w, client_data, ret_val)
    Also, copy the dir to the current directory widget in the file popup
 */
 
-/* Function:  SetDir() changes to the directory specified in the widget.
+/* Function:  SetDir() changes to the parent directory.
  * Arguments: Standard Xt action arguments.
  * Returns:   Nothing.
  * Notes:
@@ -301,18 +302,18 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     if (browse_up) {
 	get_directory(cur_browse_dir);
 	dir = cur_browse_dir;
-    } else if (file_up) {
-	get_directory(cur_file_dir);
-	dir = cur_file_dir;
     } else if (export_up) {
 	get_directory(cur_export_dir);
 	dir = cur_export_dir;
+    } else {
+	get_directory(cur_file_dir);
+	dir = cur_file_dir;
     }
 
-    if (file_panel) {
+    if (file_up) {
 	FirstArg(XtNlabel, "Fig files");
     } else {
-	FirstArg(XtNlabel, " Alternatives");
+	FirstArg(XtNlabel, "     Existing");
     }
     NextArg(XtNfromVert, below);
     NextArg(XtNborderWidth, 0);
@@ -330,7 +331,7 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
 
     /* make a viewport to hold the list widget of filenames */
     FirstArg(XtNallowVert, True);
-    if (file_panel) {
+    if (file_up) {
 	/* for the file panel, put the viewport below the Alternatives label */
 	NextArg(XtNfromVert, w);
 	NextArg(XtNheight, char_ht * 15);	/* show first 15 filenames */
@@ -338,11 +339,15 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
 	/* for the export or browse panel, put the viewport beside the Alternatives label */
 	NextArg(XtNfromVert, below);
 	NextArg(XtNfromHoriz, w);
-	NextArg(XtNheight, char_ht * 10);	/* show 10 lines */
+	if (browse_up) {
+	    NextArg(XtNheight, char_ht * 10);	/* show 10 lines for existing browse files */
+	} else {
+	    NextArg(XtNheight, char_ht * 4);	/* show 4 lines for existing export files */
+	}
     }
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNwidth, file_width);
-    NextArg(XtNtop, XtChainTop);	/* chain the viewport resizes fully */
+    NextArg(XtNtop, XtChainTop);		/* chain so the viewport resizes fully */
     NextArg(XtNbottom, XtChainBottom);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainRight);
@@ -364,6 +369,7 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     /* text widget for the filename mask */
 
     FirstArg(XtNeditType, XawtextEdit);
+    NextArg(XtNleftMargin, 4);
     NextArg(XtNscrollHorizontal, XawtextScrollNever);
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNscrollVertical, XawtextScrollNever);
@@ -397,6 +403,7 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
 			      parent, Args, ArgCount);
 
     FirstArg(XtNstring, dir);
+    NextArg(XtNleftMargin, 4);
     NextArg(XtNinsertPosition, strlen(dir));
     NextArg(XtNheight, char_ht * 2);
     NextArg(XtNborderWidth, INTERNAL_BW);
@@ -815,14 +822,14 @@ IsDirectory(path, file)
     struct stat	    statbuf;
 
     if (file == NULL)
-	return (False);
+	return False;
     MakeFullPath(path, file, fullpath);
     if (stat(fullpath, &statbuf))	/* error, report that it is not a directory */
-	return (False);
+	return False;
     if (statbuf.st_mode & S_IFDIR)
-	return (True);
+	return True;
     else
-	return (False);
+	return False;
 }
 
 /* Function:	MakeFullPath() creates the full pathname for the given file.

@@ -8,8 +8,8 @@ on postscript printers or converted to a variety of other formats (e.g. to
 allow inclusion in LaTeX documents).
 
 This file contains some notes about installing xfig, the directory
-'Examples' contains some example figures and the 'Doc' directory contains
-some further documentation including the manual in troff -man format
+'Libraries/Examples' contains some example figures and the 'Doc' directory
+contains some further documentation including the manual in troff -man format
 and PostScript.
 
 You also need to get the TransFig package which contains fig2dev, the
@@ -56,29 +56,36 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
 OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 
-And here is the copyright notice that you will find in every source file:
+***************************************************************************
+SPECIAL COPYRIGHT NOTICE:
 
- FIG : Facility for Interactive Generation of figures
- Copyright (c) 1985-1988 by Supoj Sutanthavibul
- Parts Copyright (c) 1989-2000 by Brian V. Smith
- Parts Copyright (c) 1991 by Paul King
+The xfig copyright has changed slightly in version 3.2.4.
+It now states that:
 
- Any party obtaining a copy of these files is granted, free of charge, a
- full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- nonexclusive right and license to deal in this software and
- documentation files (the "Software"), including without limitation the
- rights to use, copy, modify, merge, publish, distribute, sublicense,
- and/or sell copies of the Software, and to permit persons who receive
- copies from any such party to do so, with the only requirement being
- that this copyright notice remain intact.
+	FIG : Facility for Interactive Generation of figures
+	Copyright (c) 1985-1988 by Supoj Sutanthavibul
+	Parts Copyright (c) 1989-2002 by Brian V. Smith
+	Parts Copyright (c) 1991 by Paul King
 
+	Any party obtaining a copy of these files is granted, free of charge, a
+	full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+	nonexclusive right and license to deal in this software and
+	documentation files (the "Software"), including without limitation the
+	rights to use, copy, modify, merge, publish and/or distribute copies of
+	the Software, and to permit persons who receive copies from any such 
+	party to do so, with the only requirement being that this copyright 
+	notice remain intact.
+
+The previous notice allowed the *selling* of xfig. This is not allowed now,
+unless xfig is simply included in a collection of programs (e.g. a CD) that
+you are selling.
 ______________________________________________________________________________
 
 NOTE 1: Because Unisys has stated that they WILL charge royalties for the
 	use of the LZW compression algorithm even in FREE programs, I have
 	removed all traces of the GIF LZW compression/decompression code from
 	xfig.  Xfig now calls giftopnm and ppmtopcx to import GIF files.
-	Screen capture writes a PCX file.
+	Screen capture writes a PNG file.
 	Exporting is handled by calling the ppmtogif program from fig2dev.
 	You should use PNG instead of GIF anyway.
 
@@ -86,26 +93,30 @@ NOTE 2: For exporting Fig files to any of the bitmap formats (e.g. PNG, JPEG)
 	you will need to get a version of ghostscript that has jpeg, pcx256,
 	pbmraw, ppmraw and tiff24nc drivers.  Ghostscript is available from
 	ftp.cs.wisc.edu in /ghost/aladdin.
+	If your ghostscript is not called "gs" then change the X resource
+	"Fig.ghostscript" in Fig.ad to the correct name before installing xfig.
+
 	fig2dev uses ghostscript for exporting and xfig uses it for importing
 	PS and EPS files.
-
-	Additionally, there is a bug in the pcx driver in Aladdin Ghostscript
-	versions prior to 3.32, which writes an incorrect pcx file for images
-	with odd width (not even).  There is a compile-time flag called PCXBUG
-	in the Imakefile to make xfig add one pixel to the width of an
-	odd-width image when it reads in the pcx output from Ghostscript.
 
 	**** Important ****
 	You need the netpbm package which includes the ppmtojpeg program. You
 	can get this from http://download.sourceforge.net/netpbm/
 
-NOTE 3: It is highly recommended that you install the following ghostscript
-	fonts files into your X11 Type1 fonts directory (usually
-	/usr/lib/X11/fonts/Type1) for the best scalable on-screen fonts.  You
-	need to update the "fonts.dir" and "fonts.scale" files to reflect these
-	fonts.  Basically, if you copy the following lines into those two files
-	and update the count in the first line to include them, then do an
+NOTE 3: It is highly recommended that you use Type1 fonts for xfig.
+	For RedHat systems you can use following command (as root):
+
+	        chkfontpath --add /usr/share/fonts/default/Type1
+
+	For other X systems you can install the following ghostscript files
+	into your X11 Type1 fonts directory (usu. /usr/lib/X11/fonts/Type1) for
+	the best scalable on-screen fonts.  You need to update the "fonts.dir" 
+	and "fonts.scale" files to reflect these fonts.  
+
+	Basically, if you copy the following lines into those two files and
+	update the count in the first line to include them, then do an
 	"xset fp rehash" the X Window System will know about them.
+
 	Of course, you will have to also copy the ghostscript font files
 	themselves (i.e. b018012l.pfb etc.) into the X11 fonts/Type1 directory.
 	You can get these fonts from ftp://ftp.cs.wisc.edu/pub/ghost/aladdin/fonts
@@ -157,6 +168,13 @@ INSTALLATION NOTES:
 	want the app-defaults resource files to go.  You will have to use the
 	environment variable XAPPLRESDIR in your shell to point to this
 	directory.
+	On Sun systems running Openwindows you probably need to set the environment
+	variable XUSERFILESEARCHPATH to point to your app-defaults directory, and 
+	append a "%N" to the path, e.g. /users/me/xfig/app-defaults/%N
+    1d. Don't set the DESTDIR variable unless you want to install xfig in a
+	totally different tree than the "correct" tree that your X system
+	expects. The usual purpose of DESTDIR is to test an install process by
+	installing in a benign area.
 
 2. Type "xmkmf" to create the Makefile from the Imakefile.  If you don't have
 	xmkmf you can do "make -f Makefile.noimake Makefile".  In either case
@@ -177,6 +195,8 @@ INSTALLATION NOTES:
 	This will install the executable (xfig) into the execute directory,
 	the Fig library objects into xfig's library directory XFIGLIBDIR,
 	and the documentation files into xfig's document directory XFIGDOCDIR.
+	To change where the standard "man" pages go, change MANDIR=<path> in the
+	Imakefile.
 	There is a reference in HTML, a tutorial in PDF format, and the man
 	pages in PDF format, although the HTML files are much better than the
 	man pages.  The Help menu in xfig will launch the browser to read the
@@ -226,6 +246,11 @@ INSTALLATION NOTES:
 	non-color related resources.
 	NOTE: this only works under X11R5 and later.
 
+------------------------------
+IMPORTANT GENERAL NOTE:
+------------------------------
+Anytime the Imakefile is changed, you must do either "xmkmf" or "make Makefile",
+followed by "make clean" before doing a "make" or "make install" of any kind.
 
 ------------------------------
 NOTES on changes to Imakefile:
@@ -256,11 +281,6 @@ o If you want to be able to import JPEG images then:
     library you might have on your system.  Some Linux systems come
     with an older version which is incompatible with xfig.
 
-o If you *don't* want PNG support, comment out the #define USEPNG line in
-  the Imakefile.
-
-o If you want to be able to import PNG images then:
-  o Uncomment the "#define USEPNG" line in the Imakefile.
   o You need the PNG library (-lpng) and the zlib (-lz) compression library.
     You can find the PNG sources at http://www.libpng.org/pub/png/libpng.html and
     the zlib sources at ftp://ftp.cdrom.com/pub/infozip/zlib.
@@ -311,6 +331,9 @@ o If your system doesn't have strcasecmp() and/or strncasecmp(), uncomment the
 
 o If your system doesn't have the strerror() function then uncomment the
   "#define NEED_STRERROR" in the Imakefile.
+
+o If you have a wheel mouse, uncomment the "XCOMM #define WHEELMOUSE" line.
+  See the documentation for a description of the wheel function in xfig.
 
 o If you have an input tablet and your X server supports the XInputExtension
   uncomment the lines that define TABLIB and USETAB in the Imakefile.
@@ -376,6 +399,10 @@ The program to translate your figure into one of many printer languages
 package put together by Micah Beck and maintained by me, Brian Smith.
 It is available from ftp.x.org in /contrib/applications/drawing_tools/transfig.
 See the man pages for more information.
+
+xfig relies on the user's command search path to run fig2dev, but you
+may also set the FIG2DEV_DIR environment variable if you want to force
+it to look elsewhere.
 
 If you have a SYSV system but use BSD-style printing (lpr instead of lp) you
 must define -DBSDLPR in the Imakefile/Makefile.
@@ -578,7 +605,7 @@ POSSIBLE CAUSE AND SOLUTION:
 Artwork credits:
 ----------------
 
-This section gives credit to those people who have contributed to the Examples
+This section gives credit to those people who have contributed to the Libraries/Examples
 directory.
 Any figures not listed here were probably done by Brian Smith.
 
@@ -611,4 +638,3 @@ ps-foil.fig	power supply circuit board foil layout
 ps-schematic.fig  power supply circuit board schematic
 clp_computer.fig various computers, monitors etc.  W. Chimiak (chim@tachyon.medeng.wfu.edu)
 clp_network.fig	computer network components
-	

@@ -9,10 +9,10 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -151,7 +151,6 @@ static XImage          *XRotMagnifyImage();
 /* ---------------------------------------------------------------------- */
 
 
-
 /**************************************************************************/
 /* Routine to replace `strtok' : this one returns a zero length string if */
 /* it encounters two consecutive delimiters                               */
@@ -166,18 +165,18 @@ static char
     static int start, len;
     static char *stext;
     
-    if(str2==NULL)
+    if (str2==NULL)
 	return NULL;
     
     /* initialise if str1 not NULL */
-    if(str1!=NULL) {
+    if (str1!=NULL) {
 	start=0;
 	stext=str1;
 	len=strlen(str1);
     }
     
     /* run out of tokens ? */
-    if(start>=len)
+    if (start>=len)
 	return NULL;
     
     /* loop through characters */
@@ -185,10 +184,10 @@ static char
 	/* loop through delimiters */
 	stop=0;
 	for(j=0; j<strlen(str2); j++)
-	    if(stext[i]==str2[j])
+	    if (stext[i]==str2[j])
 		stop=1;
 	
-	if(stop)
+	if (stop)
 	    break;
     }
     
@@ -214,7 +213,7 @@ XRotVersion(str, n)
     char *str;
     int n;
 {
-    if(str!=NULL)
+    if (str!=NULL)
 	strncpy(str, XV_COPYRIGHT, n);
     return XV_VERSION;
 }
@@ -231,7 +230,7 @@ void
 XRotSetMagnification(m)
     float m;
 {
-    if(m>0.)
+    if (m>0.)
 	style.magnify=m;
 }
 
@@ -247,7 +246,7 @@ void
 XRotSetBoundingBoxPad(p)
     int p;
 {
-    if(p>=0)
+    if (p>=0)
 	style.bbx_pad=p;
 }
 
@@ -269,12 +268,12 @@ MakeXImage(dpy, w, h)
     
     /* reserve memory for image */
     data=(char *)calloc((unsigned)(((w-1)/8+1)*h), 1);
-    if(data==NULL)
+    if (data==NULL)
 	return NULL;
     
     /* create the XImage */
     I=XCreateImage(dpy, tool_v, 1, XYBitmap, 0, data, w, h, 8, 0);
-    if(I==NULL)
+    if (I==NULL)
 	return NULL;
     
     I->byte_order=I->bitmap_bit_order=MSBFirst;
@@ -407,7 +406,7 @@ XRotPaintAlignedString(dpy, font, angle, drawable, gc, x, y, text,
     Pixmap bitmap_to_paint;
     
     /* return early for NULL/empty strings */
-    if(text==NULL || *text=='\0')
+    if (text==NULL || *text=='\0')
         return 0;
     
     /* manipulate angle to 0<=angle<2*PI radians */
@@ -418,29 +417,30 @@ XRotPaintAlignedString(dpy, font, angle, drawable, gc, x, y, text,
         angle-=M_2PI;
     
     /* horizontal text made easy */
-    if(angle==0. && style.magnify==1.) 
+    if (fabs(angle) < 0.0001 && style.magnify == 1.0) 
 	return(XRotDrawHorizontalString(dpy, font, drawable, gc, x, y,
 					text, align, bg));
     
     /* get a rotated bitmap */
     item=XRotRetrieveFromCache(dpy, font, angle, text, align);
-    if(item==NULL)
+    if (item==NULL)
 	return 0;
     
     /* this gc has similar properties to the user's gc */
     my_gc=XCreateGC(dpy, drawable, (unsigned long) 0, 0);
-    XCopyGC(dpy, gc, GCForeground|GCBackground|GCFunction|GCPlaneMask,
+    XCopyGC(dpy, gc, GCForeground|GCBackground|GCFunction|GCPlaneMask|
+	GCClipMask|GCClipXOrigin|GCClipYOrigin,
 	    my_gc);
 
     /* alignment : which point (hot_x, hot_y) relative to bitmap centre
        coincides with user's specified point? */
     
     /* y position */
-    if(align==TLEFT || align==TCENTRE || align==TRIGHT)
+    if (align==TLEFT || align==TCENTRE || align==TRIGHT)
         hot_y=(float)item->rows_in/2*style.magnify;
-    else if(align==MLEFT || align==MCENTRE || align==MRIGHT)
+    else if (align==MLEFT || align==MCENTRE || align==MRIGHT)
 	hot_y=0;
-    else if(align==BLEFT || align==BCENTRE || align==BRIGHT)
+    else if (align==BLEFT || align==BCENTRE || align==BRIGHT)
 	hot_y= -(float)item->rows_in/2*style.magnify;
 #ifdef I18N
     else if (is_i18n_font(font)) {
@@ -454,9 +454,9 @@ XRotPaintAlignedString(dpy, font, angle, drawable, gc, x, y, text,
 	hot_y= -((float)item->rows_in/2-(float)font->descent)*style.magnify;
     
     /* x position */
-    if(align==TLEFT || align==MLEFT || align==BLEFT || align==NONE)
+    if (align==TLEFT || align==MLEFT || align==BLEFT || align==NONE)
 	hot_x= -(float)item->max_width/2*style.magnify;
-    else if(align==TCENTRE || align==MCENTRE || align==BCENTRE)
+    else if (align==TCENTRE || align==MCENTRE || align==BCENTRE)
 	hot_x=0;
     else
         hot_x=(float)item->max_width/2*style.magnify;
@@ -470,14 +470,14 @@ XRotPaintAlignedString(dpy, font, angle, drawable, gc, x, y, text,
     hot_yp= hot_x*sin_angle + hot_y*cos_angle;
     
     /* text background will be drawn using XFillPolygon */
-    if(bg) {
+    if (bg) {
 	GC depth_one_gc;
 	XPoint *xpoints;
 	Pixmap empty_stipple;
 	
 	/* reserve space for XPoints */
 	xpoints=(XPoint *)malloc((unsigned)(4*item->nl*sizeof(XPoint)));
-	if(!xpoints)
+	if (!xpoints)
 	    return 1;
 	
 	/* rotate corner positions */
@@ -524,17 +524,17 @@ XRotPaintAlignedString(dpy, font, angle, drawable, gc, x, y, text,
 	Pixmap new_bitmap, inverse;
 	
 	/* try and get some GC properties */
-	if(XGetGCValues(dpy, gc, 
+	if (XGetGCValues(dpy, gc, 
 			GCStipple|GCFillStyle|GCForeground|GCBackground|
 			GCTileStipXOrigin|GCTileStipYOrigin,
 			&values)) {
 
 	    /* only do this if stippling requested */
-	    if((values.fill_style==FillStippled ||
+	    if ((values.fill_style==FillStippled ||
 		values.fill_style==FillOpaqueStippled) && !bg) {
 
 		/* opaque stipple: draw rotated text in background colour */
-		if(values.fill_style==FillOpaqueStippled) {
+		if (values.fill_style==FillOpaqueStippled) {
 		    XSetForeground(dpy, my_gc, values.background);
 		    XSetFillStyle(dpy, my_gc, FillStippled);
 		    XSetStipple(dpy, my_gc, item->bitmap);
@@ -607,7 +607,7 @@ XRotPaintAlignedString(dpy, font, angle, drawable, gc, x, y, text,
     XFreeGC(dpy, my_gc);
 
     /* stippled bitmap no longer needed */
-    if(bitmap_to_paint!=item->bitmap)
+    if (bitmap_to_paint!=item->bitmap)
 	XFreePixmap(dpy, bitmap_to_paint);
 
 #ifdef CACHE_XIMAGES
@@ -615,7 +615,7 @@ XRotPaintAlignedString(dpy, font, angle, drawable, gc, x, y, text,
 #endif /*CACHE_XIMAGES*/
 
     /* if item isn't cached, destroy it completely */
-    if(!item->cached) 
+    if (!item->cached) 
 	XRotFreeTextItem(dpy,item);
 
     /* we got to the end OK! */
@@ -660,17 +660,18 @@ XRotDrawHorizontalString(dpy, font, drawable, gc, x, y, text,
     my_gc=XCreateGC(dpy, drawable, (unsigned long) 0, 0);
     XCopyGC(dpy, gc,
 	    GCForeground|GCBackground|GCFunction|GCStipple|GCFillStyle|
+	    GCClipMask|GCClipXOrigin|GCClipYOrigin|GCSubwindowMode|
 	    GCTileStipXOrigin|GCTileStipYOrigin|GCPlaneMask, my_gc);
     XSetFont(dpy, my_gc, font->fid);
 	
     /* count number of sections in string */
-    if(align!=NONE)
+    if (align!=NONE)
 	for(i=0; i<strlen(text)-1; i++)
-	    if(text[i]=='\n')
+	    if (text[i]=='\n')
 		nl++;
     
     /* ignore newline characters if not doing alignment */
-    if(align==NONE)
+    if (align==NONE)
 	str2=str2_a;
     else
 	str2=str2_b;
@@ -679,17 +680,17 @@ XRotDrawHorizontalString(dpy, font, drawable, gc, x, y, text,
     height=font->ascent+font->descent;
     
     /* y position */
-    if(align==TLEFT || align==TCENTRE || align==TRIGHT)
+    if (align==TLEFT || align==TCENTRE || align==TRIGHT)
 	yp=y+font->ascent;
-    else if(align==MLEFT || align==MCENTRE || align==MRIGHT)
+    else if (align==MLEFT || align==MCENTRE || align==MRIGHT)
 	yp=y-nl*height/2+font->ascent;
-    else if(align==BLEFT || align==BCENTRE || align==BRIGHT)
+    else if (align==BLEFT || align==BCENTRE || align==BRIGHT)
 	yp=y-nl*height+font->ascent;
     else
 	yp=y;
     
     str1=my_strdup(text);
-    if(str1==NULL)
+    if (str1==NULL)
 	return 1;
     
     str3=my_strtok(str1, str2);
@@ -701,11 +702,11 @@ XRotDrawHorizontalString(dpy, font, drawable, gc, x, y, text,
       height=overall.ascent+overall.descent;
 
       /* y position */
-      if(align==TLEFT || align==TCENTRE || align==TRIGHT)
+      if (align==TLEFT || align==TCENTRE || align==TRIGHT)
 	  yp=y+overall.ascent;
-      else if(align==MLEFT || align==MCENTRE || align==MRIGHT)
+      else if (align==MLEFT || align==MCENTRE || align==MRIGHT)
 	  yp=y-nl*height/2+overall.ascent;
-      else if(align==BLEFT || align==BCENTRE || align==BRIGHT)
+      else if (align==BLEFT || align==BCENTRE || align==BRIGHT)
 	  yp=y-nl*height+overall.ascent;
       else
 	  yp=y;
@@ -718,15 +719,15 @@ XRotDrawHorizontalString(dpy, font, drawable, gc, x, y, text,
                      &overall);
 
 	/* where to draw section in x ? */
-	if(align==TLEFT || align==MLEFT || align==BLEFT || align==NONE)
+	if (align==TLEFT || align==MLEFT || align==BLEFT || align==NONE)
 	    xp=x;
-	else if(align==TCENTRE || align==MCENTRE || align==BCENTRE)
+	else if (align==TCENTRE || align==MCENTRE || align==BCENTRE)
 	    xp=x-overall.rbearing/2;
 	else
 	    xp=x-overall.rbearing;
 	
 	/* draw string onto bitmap */
-	if(!bg)
+	if (!bg)
 	    XDrawString(dpy, drawable, my_gc, xp, yp, str3, strlen(str3));
 	else
 	    XDrawImageString(dpy, drawable, my_gc, xp, yp, str3, strlen(str3));
@@ -768,7 +769,7 @@ static RotatedTextItem
     RotatedTextItem *i1=first_text_item;
     
     /* get font name, if it exists */
-    if(XGetFontProperty(font, XA_FONT, &name_value)) {
+    if (XGetFontProperty(font, XA_FONT, &name_value)) {
 	DEBUG_PRINT1("got font name OK\n");
 	font_name=XGetAtomName(dpy, name_value);
 	fid=0;
@@ -800,7 +801,7 @@ static RotatedTextItem
 
     while(i1 && !item) {
 	/* match everything EXCEPT fontname/ID */
-	if(strcmp(text, i1->text)==0 &&
+	if (strcmp(text, i1->text)==0 &&
 	   fabs(angle-i1->angle)<0.0001 &&
 	   style.magnify==i1->magnify &&
 	   (i1->nl==1 ||
@@ -808,8 +809,8 @@ static RotatedTextItem
 	      ((i1->align==0)?9:(i1->align-1))%3)) {
 
 	    /* now match fontname/ID */
-	    if(font_name!=NULL && i1->font_name!=NULL) {
-		if(strcmp(font_name, i1->font_name)==0) {
+	    if (font_name!=NULL && i1->font_name!=NULL) {
+		if (strcmp(font_name, i1->font_name)==0) {
 		    item=i1;
 		    DEBUG_PRINT1("Matched against font names\n");
 		}
@@ -817,8 +818,8 @@ static RotatedTextItem
 		    i1=i1->next;
 	    }
 #ifdef CACHE_FID
-	    else if(font_name==NULL && i1->font_name==NULL) {
-		if(fid==i1->fid) {
+	    else if (font_name==NULL && i1->font_name==NULL) {
+		if (fid==i1->fid) {
 		    item=i1;
 		    DEBUG_PRINT1("Matched against FID's\n");
                 }
@@ -833,23 +834,23 @@ static RotatedTextItem
 	    i1=i1->next;
     }
     
-    if(item)
+    if (item)
 	DEBUG_PRINT1("**Found target in cache.\n");
-    if(!item)
+    if (!item)
 	DEBUG_PRINT1("**No match in cache.\n");
 
     /* no match */
-    if(!item) {
+    if (!item) {
 	/* create new item */
 	item=XRotCreateTextItem(dpy, font, angle, text, align);
-	if(!item)
+	if (!item)
 	    return NULL;
 
 	/* record what it shows */
 	item->text=my_strdup(text);
 
 	/* fontname or ID */
-	if(font_name!=NULL) {
+	if (font_name!=NULL) {
 	    item->font_name=my_strdup(font_name);
 	    item->fid=0;
 	}
@@ -866,7 +867,7 @@ static RotatedTextItem
 	XRotAddToLinkedList(dpy, item);
     }
 
-    if(font_name)
+    if (font_name)
 	XFree(font_name);
 
     /* if XImage is cached, need to recreate the bitmap */
@@ -933,25 +934,25 @@ static RotatedTextItem
     
     /* allocate memory */
     item=(RotatedTextItem *)malloc((unsigned)sizeof(RotatedTextItem));
-    if(!item)
+    if (!item)
 	return NULL;
 	
     /* count number of sections in string */
     item->nl=1;
-    if(align!=NONE)
+    if (align!=NONE)
 	for(i=0; i<strlen(text)-1; i++)
-	    if(text[i]=='\n')
+	    if (text[i]=='\n')
 		item->nl++;
     
     /* ignore newline characters if not doing alignment */
-    if(align==NONE)
+    if (align==NONE)
 	str2=str2_a;
     else
 	str2=str2_b;
     
     /* find width of longest section */
     str1=my_strdup(text);
-    if(str1==NULL)
+    if (str1==NULL)
 	return NULL;
     
     str3=my_strtok(str1, str2);
@@ -965,11 +966,11 @@ static RotatedTextItem
     do {
 	str3=my_strtok((char *)NULL, str2);
 
-	if(str3!=NULL) {
+	if (str3!=NULL) {
 	    XTextExtents(font, str3, strlen(str3), &dir, &asc, &desc,
 			 &overall);
 
-	    if(overall.rbearing>item->max_width)
+	    if (overall.rbearing>item->max_width)
 		item->max_width=overall.rbearing;
 	}
     }
@@ -1013,12 +1014,12 @@ static RotatedTextItem
     /* text background will be drawn using XFillPolygon */
     item->corners_x=
 	(float *)malloc((unsigned)(4*item->nl*sizeof(float)));
-    if(!item->corners_x)
+    if (!item->corners_x)
 	return NULL;
     
     item->corners_y=
 	(float *)malloc((unsigned)(4*item->nl*sizeof(float)));
-    if(!item->corners_y)
+    if (!item->corners_y)
 	return NULL;
     
     /* draw text horizontally */
@@ -1032,7 +1033,7 @@ static RotatedTextItem
     yp=font->ascent;
     
     str1=my_strdup(text);
-    if(str1==NULL)
+    if (str1==NULL)
 	return NULL;
     
     str3=my_strtok(str1, str2);
@@ -1043,9 +1044,9 @@ static RotatedTextItem
 		&overall);
 
 	/* where to draw section in x ? */
-	if(align==TLEFT || align==MLEFT || align==BLEFT || align==NONE)
+	if (align==TLEFT || align==MLEFT || align==BLEFT || align==NONE)
 	    xp=0;
-	else if(align==TCENTRE || align==MCENTRE || align==BCENTRE)
+	else if (align==TCENTRE || align==MCENTRE || align==BCENTRE)
 	    xp=(item->max_width-overall.rbearing)/2;
 	else
             xp=item->max_width-overall.rbearing;
@@ -1059,7 +1060,7 @@ static RotatedTextItem
 	  item->corners_y[ic]=((float)(yp-overall.ascent)-(float)item->rows_in/2)
 	    *style.magnify;
 	else
-#endif
+#endif /* I18N */
 	item->corners_x[ic]=((float)xp-(float)item->cols_in/2)*style.magnify;
 	item->corners_y[ic]=((float)(yp-font->ascent)-(float)item->rows_in/2)
 	    *style.magnify;
@@ -1085,7 +1086,7 @@ static RotatedTextItem
     
     /* create image to hold horizontal text */
     I_in=MakeXImage(dpy, item->cols_in, item->rows_in);
-    if(I_in==NULL)
+    if (I_in==NULL)
 	return NULL;
     
     /* extract horizontal text */
@@ -1094,7 +1095,7 @@ static RotatedTextItem
     I_in->format=XYBitmap;
     
     /* magnify horizontal text */
-    if(style.magnify!=1.) {
+    if (style.magnify!=1.) {
 	I_in=XRotMagnifyImage(dpy, I_in);
 
 	old_cols_in=item->cols_in;
@@ -1110,15 +1111,15 @@ static RotatedTextItem
     item->rows_out=fabs((float)item->rows_in*cos_angle) +
 	fabs((float)item->cols_in*sin_angle) +0.99999 +2;
 
-    if(item->cols_out%2==0)
+    if (item->cols_out%2==0)
 	item->cols_out++;
     
-    if(item->rows_out%2==0)
+    if (item->rows_out%2==0)
 	item->rows_out++;
     
     /* create image to hold rotated text */
     item->ximage=MakeXImage(dpy, item->cols_out, item->rows_out);
-    if(item->ximage==NULL)
+    if (item->ximage==NULL)
 	return NULL;
     
     byte_w_in=(item->cols_in-1)/8+1;
@@ -1132,13 +1133,13 @@ static RotatedTextItem
 
     /* where abouts does text actually lie in rotated image? */
     /* check angle within 0.5 degrees (0.008 radians) */
-    if(fabs((double)angle)<0.008 || fabs((double)angle-M_PI/2)<0.008 || 
+    if (fabs((double)angle)<0.008 || fabs((double)angle-M_PI/2)<0.008 || 
        fabs((double)angle-M_PI)<0.008 || fabs((double)angle-3*M_PI/2)<0.008) {
 	xl=0;
 	xr=(float)item->cols_out;
 	xinc=0;
     }
-    else if(angle<M_PI) {
+    else if (angle<M_PI) {
 	xl=(float)item->cols_out/2+
 	    (dj-(float)item->rows_in/(2*cos_angle))/
 		tan(angle)-2;
@@ -1174,8 +1175,8 @@ static RotatedTextItem
 	    jt=(float)item->rows_in/2 - (-di*sin_angle + dj*cos_angle);
 	    
             /* set pixel if required */
-            if(it>=0 && it<item->cols_in && jt>=0 && jt<item->rows_in)
-                if((I_in->data[jt*byte_w_in+it/8] & 128>>(it%8))>0)
+            if (it>=0 && it<item->cols_in && jt>=0 && jt<item->rows_in)
+                if ((I_in->data[jt*byte_w_in+it/8] & 128>>(it%8))>0)
                     item->ximage->data[byte_out+i/8]|=128>>i%8;
 	    
 	    di+=1;
@@ -1186,7 +1187,7 @@ static RotatedTextItem
     }
     XDestroyImage(I_in);
     
-    if(style.magnify!=1.) {
+    if (style.magnify!=1.) {
 	item->cols_in=old_cols_in;
 	item->rows_in=old_rows_in;
     }
@@ -1246,7 +1247,7 @@ XRotAddToLinkedList(dpy, item)
 	sizeof(XImage) + strlen(item->text) + 
 	    item->nl*8*sizeof(float) + sizeof(RotatedTextItem);
 
-    if(item->font_name!=NULL)
+    if (item->font_name!=NULL)
 	item->size+=strlen(item->font_name);
     else
 	item->size+=sizeof(Font);
@@ -1269,7 +1270,7 @@ XRotAddToLinkedList(dpy, item)
 		 current_size, item->size, CACHE_SIZE_LIMIT*1024);
 
     /* if this item is bigger than whole cache, forget it */
-    if(item->size>CACHE_SIZE_LIMIT*1024) {
+    if (item->size>CACHE_SIZE_LIMIT*1024) {
 	DEBUG_PRINT1("Too big to cache\n\n");
 	item->cached=0;
 	return;
@@ -1280,12 +1281,12 @@ XRotAddToLinkedList(dpy, item)
 
 	DEBUG_PRINT2("Removed %d bytes\n", i1->size);
 
-	if(i1->font_name!=NULL)
+	if (i1->font_name!=NULL)
 	    DEBUG_PRINT5("  (`%s'\n   %s\n   angle=%f align=%d)\n",
 			 i1->text, i1->font_name, i1->angle, i1->align);
 
 #ifdef CACHE_FID
-	if(i1->font_name==NULL)
+	if (i1->font_name==NULL)
 	    DEBUG_PRINT5("  (`%s'\n  FID=%ld\n   angle=%f align=%d)\n",
                          i1->text, i1->fid, i1->angle, i1->align);
 #endif /*CACHE_FID*/
@@ -1303,7 +1304,7 @@ XRotAddToLinkedList(dpy, item)
     }
 
     /* add new item to end of linked list */
-    if(first_text_item==NULL) {
+    if (first_text_item==NULL) {
 	item->next=NULL;
 	first_text_item=item;
 	last=item;
@@ -1337,7 +1338,7 @@ XRotFreeTextItem(dpy, item)
 {
     free(item->text);
 
-    if(item->font_name!=NULL)
+    if (item->font_name!=NULL)
 	free(item->font_name);
 
     free((char *)item->corners_x);
@@ -1386,7 +1387,7 @@ static XImage
 
     /* this will hold final image */
     I_out=MakeXImage(dpy, cols_out, rows_out);
-    if(I_out==NULL)
+    if (I_out==NULL)
 	return NULL;
 
     /* width in bytes of input, output images */
@@ -1408,7 +1409,7 @@ static XImage
 
 	    /* bilinear interpolation - where are we on bitmap ? */
 	    /* right edge */
-	    if(i==cols_in-1 && j!=rows_in-1) {
+	    if (i==cols_in-1 && j!=rows_in-1) {
 		t=0;
 		u=y-(float)j;
 
@@ -1418,7 +1419,7 @@ static XImage
 		z4=z3;
 	    }
 	    /* top edge */
-	    else if(i!=cols_in-1 && j==rows_in-1) {
+	    else if (i!=cols_in-1 && j==rows_in-1) {
 		t=x-(float)i;
 		u=0;
 
@@ -1428,7 +1429,7 @@ static XImage
 		z4=z1;
 	    }
 	    /* top right corner */
-	    else if(i==cols_in-1 && j==rows_in-1) {
+	    else if (i==cols_in-1 && j==rows_in-1) {
 		u=0;
 		t=0;
 
@@ -1450,7 +1451,7 @@ static XImage
 	    }
 
 	    /* if interpolated value is greater than 0.5, set bit */
-	    if(((1-t)*(1-u)*z1 + t*(1-u)*z2 + t*u*z3 + (1-t)*u*z4)>0.5)
+	    if (((1-t)*(1-u)*z1 + t*(1-u)*z2 + t*u*z3 + (1-t)*u*z4)>0.5)
 		I_out->data[j2*byte_width_out+i2/8]|=128>>i2%8;
 
 	    x+=mag_inv;
@@ -1503,20 +1504,20 @@ XPoint
     
     /* count number of sections in string */
     nl=1;
-    if(align!=NONE)
+    if (align!=NONE)
 	for(i=0; i<strlen(text)-1; i++)
-	    if(text[i]=='\n')
+	    if (text[i]=='\n')
 		nl++;
     
     /* ignore newline characters if not doing alignment */
-    if(align==NONE)
+    if (align==NONE)
 	str2=str2_a;
     else
 	str2=str2_b;
     
     /* find width of longest section */
     str1=my_strdup(text);
-    if(str1==NULL)
+    if (str1==NULL)
 	return NULL;
     
     str3=my_strtok(str1, str2);
@@ -1530,11 +1531,11 @@ XPoint
     do {
 	str3=my_strtok((char *)NULL, str2);
 
-	if(str3!=NULL) {
+	if (str3!=NULL) {
 	    XTextExtents(font, str3, strlen(str3), &dir, &asc, &desc,
 			 &overall);
 
-	    if(overall.rbearing>max_width)
+	    if (overall.rbearing>max_width)
 		max_width=overall.rbearing;
 	}
     }
@@ -1559,11 +1560,11 @@ XPoint
     cos_angle = (float) round(cos((double) angle)*1000.0) / 1000.0;
     
     /* y position */
-    if(align==TLEFT || align==TCENTRE || align==TRIGHT)
+    if (align==TLEFT || align==TCENTRE || align==TRIGHT)
         hot_y=(float)rows_in/2*style.magnify;
-    else if(align==MLEFT || align==MCENTRE || align==MRIGHT)
+    else if (align==MLEFT || align==MCENTRE || align==MRIGHT)
 	hot_y=0;
-    else if(align==BLEFT || align==BCENTRE || align==BRIGHT)
+    else if (align==BLEFT || align==BCENTRE || align==BRIGHT)
 	hot_y= -(float)rows_in/2*style.magnify;
 #ifdef I18N
     else if (is_i18n_font(font))
@@ -1573,20 +1574,20 @@ XPoint
 	hot_y= -((float)rows_in/2-(float)font->descent)*style.magnify;
     
     /* x position */
-    if(align==TLEFT || align==MLEFT || align==BLEFT || align==NONE)
+    if (align==TLEFT || align==MLEFT || align==BLEFT || align==NONE)
 	hot_x= -(float)max_width/2*style.magnify;
-    else if(align==TCENTRE || align==MCENTRE || align==BCENTRE)
+    else if (align==TCENTRE || align==MCENTRE || align==BCENTRE)
 	hot_x=0;
     else
         hot_x=(float)max_width/2*style.magnify;
     
     /* reserve space for XPoints */
     xp_in=(XPoint *)malloc((unsigned)(5*sizeof(XPoint)));
-    if(!xp_in)
+    if (!xp_in)
 	return NULL;
 
     xp_out=(XPoint *)malloc((unsigned)(5*sizeof(XPoint)));
-    if(!xp_out)
+    if (!xp_out)
 	return NULL;
 
     /* bounding box when horizontal, relative to bitmap centre */

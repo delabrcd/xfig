@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
@@ -9,10 +9,10 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -40,6 +40,7 @@ convert_selected()
     set_mousefun("spline<->line", "", "open<->closed", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     init_searchproc_left(init_convert_line_spline);
     init_searchproc_right(init_convert_open_closed);
     canvas_leftbut_proc = object_search_left;
@@ -85,7 +86,7 @@ init_convert_line_spline(p, type, x, y, px, py)
 	    line_spline(cur_l, cur_l->type == T_POLYGON ?
 		    flag ? T_CLOSED_APPROX : T_CLOSED_INTERP :
 		    flag ? T_OPEN_APPROX : T_OPEN_INTERP);
-	} else if (cur_l->type == T_ARC_BOX || cur_l->type == T_BOX) {
+	} else if (cur_l->type == T_ARCBOX || cur_l->type == T_BOX) {
 		box_2_box(cur_l);
 	}
 	break;
@@ -110,11 +111,11 @@ box_2_box(old_l)
     new_l = copy_line(old_l);
     switch (old_l->type) {
       case T_BOX:
-	new_l->type = T_ARC_BOX;
+	new_l->type = T_ARCBOX;
 	if (new_l->radius == DEFAULT || new_l->radius == 0)
 	    new_l->radius = cur_boxradius;
 	break;
-      case T_ARC_BOX:
+      case T_ARCBOX:
 	new_l->type = T_BOX;
 	break;
     }
@@ -140,6 +141,7 @@ line_spline(l, type_value)
 
     if (num_points(l->points) < CLOSED_SPLINE_MIN_NUM_POINTS) {
 	put_msg("Not enough points for a spline");
+	beep();
 	return;
     }
 
@@ -281,8 +283,13 @@ toggle_polyline_polygon(line, previous_point, selected_point)
   if (line->type == T_POLYLINE)
     {
 
+      if (line->points->next == NULL || line->points->next->next == NULL) {
+	  put_msg("Not enough points for a polygon");
+	  beep();
+	  return;  /* less than 3 points - don't close the polyline */
+      }
       if ((point = create_point()) == NULL)
-	return;
+	  return;
       
       point->x = last_pt->x;
       point->y = last_pt->y;
@@ -325,6 +332,12 @@ toggle_open_closed_spline(spline, previous_point, selected_point)
 {
   F_point *last_pt;
   F_sfactor *last_sfactor, *previous_sfactor, *selected_sfactor;
+
+  if (spline->points->next == NULL || spline->points->next->next == NULL) {
+      put_msg("Not enough points for a spline");
+      beep();
+      return;  /* less than 3 points - don't close the spline */
+  }
 
   last_pt = last_point(spline->points);
   last_sfactor = search_sfactor(spline, last_pt);

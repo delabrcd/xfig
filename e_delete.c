@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -45,6 +45,7 @@ delete_selected()
 			LOC_OBJ, "", LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     init_searchproc_left(init_delete);
     init_searchproc_right(init_delete_to_scrap);
     canvas_leftbut_proc = object_search_left;
@@ -131,9 +132,6 @@ delete_region(x, y)
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     /* erase last lengths if appres.showlengths is true */
     erase_lengths();
-    /* save the current depths and counts for undo */
-    save_depths(saved_depths);
-    save_counts(&saved_counts[0]);
 
     c->nwcorner.x = min2(fix_x, x);
     c->nwcorner.y = min2(fix_y, y);
@@ -258,10 +256,13 @@ delete_all()
 
     /* initialize layer/depth info */
     reset_layers();
-    save_depths(saved_depths);
-    save_counts(&saved_counts[0]);
+    save_depths();
+    /* reset min,max depth */
+    min_depth = max_depth = -1;
+    save_counts_and_clear();
     reset_depths();
-    clearallcounts();
+    /* refresh depth manager */
+    update_layers();
 
     /* in case the user is inside any compounds */
     close_all_compounds();

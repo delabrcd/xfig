@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -25,6 +25,22 @@
 #include "resources.h"
 #include "object.h"
 #include "u_geom.h"
+
+/*************************** ROTATE VECTOR **********************
+In fact, rotate & scale ;-)                                    */
+
+static void
+rotate_vector(vx, vy, c, s) 
+    double         *vx, *vy;
+    double         c, s;
+{
+    double wx, wy;
+    wx = c * (*vx) - s * (*vy);
+    wy = s * (*vx) + c * (*vy);
+    *vx = wx;
+    *vy = wy;
+}
+
 
 /*************************** COMPUTE NORMAL **********************
 
@@ -129,6 +145,43 @@ close_to_vector(x1, y1, x2, y2, xp, yp, d, dd, px, py)
     return (0);
 }
 
+/********************* COMPUTE ARC RADIUS ******************
+Input arguments :
+	(x1, y1), (x2, y2), (x3, y3): 3 points on arc
+Output arguments :
+	(*r) : Radius of the arc
+Return value :
+	0 : if p1, p2, p3 are co-linear.
+	1 : if they are not.
+*************************************************************/
+
+int
+compute_arcradius(x1, y1, x2, y2, x3, y3, r)
+   int x1, y1, x2, y2, x3, y3;
+   float* r;
+{
+   F_pos p1, p2, p3;
+   float cx, cy, dx, dy;
+
+   p1.x = x1; p1.y = y1;
+   p2.x = x2; p2.y = y2;
+   p3.x = x3; p3.y = y3;
+
+   if (!compute_arccenter(p1, p2, p3, &cx, &cy))
+     return 0;
+   dx = x2 - cx;
+   dy = y2 - cy;
+   if (dx == 0.0 && dy == 0.0) {
+     *r = 0.0;
+     return 0;
+   }
+   else {
+     *r = sqrt(dx * dx + dy * dy);
+     return 1;
+   }
+}
+
+
 /********************* COMPUTE ARC CENTER ******************
 
 New routine 12/11/00 from Thomas Henlich - better at finding center
@@ -156,7 +209,6 @@ compute_arccenter(p1, p2, p3, x, y)
 	(p2.x == p3.x && p2.y == p3.y)) {
 	    return 0;
     }
-
     a = (double)p1.x - (double)p2.x;
     b = (double)p1.x + (double)p2.x;
     c = (double)p1.y - (double)p2.y;
@@ -181,9 +233,405 @@ compute_arccenter(p1, p2, p3, x, y)
     else {
 	return 0;
     }
+
     *x = (float) resx;
     *y = (float) resy;
+
     return 1;
+}
+
+/********************* CLOSE TO ARC ************************
+
+Input arguments :
+	a: arc object
+        xp, yp: Point
+        d: tolerance
+Output arguments :
+	(*px,*py) : `near' point on the arc
+Return value :
+	0 on failure, 1 on success
+
+*************************************************************/
+
+int
+close_to_arc(a, xp, yp, d, px, py)
+   F_arc* a;
+   int xp, yp, d;
+   float *px, *py;
+{
+   int i, ok;
+   double ux, uy, vx, vy, wx, wy, dx, dy, rarc, rp, uang, vang, wang, pang;
+   double cphi, sphi;
+
+   ux = a->point[0].x - a->center.x;
+   uy = a->point[0].y - a->center.y;
+   vx = a->point[1].x - a->center.x;
+   vy = a->point[1].y - a->center.y;
+   wx = a->point[2].x - a->center.x;
+   wy = a->point[2].y - a->center.y;
+   if (((ux == 0.0) && (uy == 0.0)) || ((vx == 0.0) && (vy == 0.0)) || 
+       ((wx == 0.0) && (wy == 0.0)))
+     return 0;
+   rarc = sqrt(ux * ux + uy * uy);
+   dx = xp - a->center.x;
+   dy = yp - a->center.y;
+   if ((dx == 0.0) && (dy == 0.0))
+     return 0;
+   rp = sqrt(dx * dx + dy * dy);
+   if (fabs(rarc - rp) > d)
+     return 0;
+   /* radius ok, check special cases first */
+   for (i = 0; i < 3; i++) {
+     if (abs(xp - a->point[i].x) <= d && abs(yp - a->point[i].y <= d)) {
+       *px = (float)(a->point[i].x);
+       *py = (float)(a->point[i].y);
+       return 1;
+     }
+   }
+
+   /* check angles */
+   uang = atan2(uy, ux);
+   vang = atan2(vy, vx);
+   wang = atan2(wy, wx);
+   pang = atan2(dy, dx);
+
+   if (uang >= wang) {
+     if ((uang >= vang) && (vang >= wang))
+       ok = (uang >= pang) && (pang >= wang);
+     else {
+       wang += 2*M_PI;
+       if (uang >= pang)
+         pang += 2*M_PI;
+       ok = (pang <= wang);
+     }
+   }
+   else {
+     if ((uang <= vang) && (vang <= wang))
+       ok = (uang <= pang) && (pang <= wang);     
+     else {
+       wang -= 2*M_PI;
+       if (uang <= pang)
+         pang -= 2*M_PI;
+         ok = (pang >= wang);
+     }
+   }       
+   if (!ok)
+     return 0;
+   /* generate point */
+   cphi = cos(pang);
+   sphi = sin(pang);
+   dx = rarc;
+   dy = 0;
+   rotate_vector(&dx, &dy, cphi, sphi);             
+   *px = (float)(a->center.x + dx);
+   *py = (float)(a->center.y + dy);
+   return 1;
+}
+
+/********************* COMPUTE ELLIPSE DISTANCE ***************
+
+Input arguments :
+       (dx, dy)   vector from center to test point
+       (a, b)     main axes (`radii') of ellipse
+Output arguments :
+       *dis       distance from center as is
+       *r         distance from center as should be
+*************************************************************/
+static void
+compute_ellipse_distance(dx, dy, a, b, dis, r)
+   double dx, dy, a, b;
+   double *dis, *r;
+{
+    if (dx == 0.0 && dy == 0.0)
+        *dis = 0.0;        /* prevent core dumps */
+    else
+       *dis = sqrt(dx * dx + dy * dy);    
+    if (a * dy == 0.0 && b * dx == 0.0)
+        *r = 0.0;		/* prevent core dumps */
+    else
+        *r = a * b * (*dis) / sqrt(1.0 * b * b * dx * dx + 1.0 * a * a * dy * dy);
+}
+
+/********************* CLOSE TO ELLIPSE ************************
+
+Input arguments :
+	e: (possibly rotated!) ellipse object
+        xp, yp: Point
+        d: tolerance
+Output arguments :
+	(*ex,*ey) : `near' point on the ellipse
+        (*vx,*vy) : tangent vector
+Return value :
+	0 on failure, 1 on success
+*************************************************************/
+int
+close_to_ellipse(e, xp, yp, d, ex, ey, vx, vy)
+   F_ellipse* e;
+   int xp, yp, d;
+   float *ex, *ey, *vx, *vy;
+{
+   double a, b, dx, dy, phi, cphi, sphi, qx, qy, dvx, dvy;
+   double dis, r;
+   int wx, wy;
+
+   dx = xp - e->center.x;
+   dy = yp - e->center.y;
+   a = e->radiuses.x;
+   b = e->radiuses.y;
+   phi = e->angle;
+
+   if (phi == 0.0) { /* extra case for speed */
+     compute_ellipse_distance(dx, dy, a, b, &dis, &r);
+     if (fabs(dis - r) <= d) {
+       wx = round(r * dx / dis);
+       wy = round(r * dy / dis);
+       *ex = (float)(e->center.x + wx);     
+       *ey = (float)(e->center.y + wy);     
+       if (a == 0.0) { /* degenerated */
+         dvx = 0.0;
+         dvy = b;
+       }
+       else if (b == 0.0) { /* degenerated */
+         dvx = a;
+         dvy = 0.0;
+       }
+       else {
+         dvx = - ((double)wy) * a /b;
+         dvy = ((double)wx) * b /a;
+       }
+       *vx = (float)dvx;
+       *vy = (float)dvy;
+       return 1;
+     }
+   }
+   else { /* general case: rotation */
+     cphi = cos(phi);
+     sphi = sin(phi);
+     rotate_vector(&dx, &dy, cphi, sphi);
+     compute_ellipse_distance(dx, dy, a, b, &dis, &r);
+     if (fabs(dis - r) <= d) {
+       qx = r * dx / dis;
+       qy = r * dy / dis;
+       if (a == 0.0) {
+         dvx = 0.0; 
+         dvy = b;
+       }
+       else if (b == 0.0) {
+         dvx = a; 
+         dvy = 0.0;
+       }
+       else {
+         dvx = -qy * a/b;
+         dvy = qx * b/a;
+       }
+       rotate_vector(&qx, &qy, cphi, -sphi);
+       rotate_vector(&dvx, &dvy, cphi, -sphi);
+       *ex = (float)(e->center.x + qx);
+       *ey = (float)(e->center.y + qy);
+       *vx = (float)dvx;
+       *vy = (float)dvy;
+       return 1;
+     }
+   }
+   return 0;
+}       
+
+
+/********************* CLOSE TO POLYLINE ************************
+
+Input arguments :
+	p: polyline object
+        xp, yp: Point
+        d: tolerance
+        sd: singular tolerance
+Output arguments :
+	(*px,*py) : `near' point on the polyline
+        (*lx1, *ly1), (*lx2, *ly2): neighbor polyline corners
+Return value :
+	0 on failure, 1 on success
+*************************************************************/
+
+int
+close_to_polyline(l, xp, yp, d, sd, px, py, lx1, ly1, lx2, ly2)
+   F_line* l;
+   int xp, yp, d, sd;
+   int *px, *py, *lx1, *ly1, *lx2, *ly2;
+{
+   F_point *point;
+   int x1, y1, x2, y2;
+   float tol2;
+   tol2 = (float) d*d;
+
+   point = l->points;
+   x1 = point->x;
+   y1 = point->y;
+   if (abs(xp - x1) <= sd && abs(yp - y1) <= sd) {
+     *px = *lx1 = *lx2 = x1;
+     *py = *ly1 = *ly2 = y1;
+     return 1;
+   }
+   for (point = point->next; point != NULL; point = point->next) {
+     x2 = point->x;
+     y2 = point->y;
+     if (abs(xp - x2) <= sd && abs(yp - y2) <= sd) {
+       *px = *lx1 = *lx2 = x2;
+       *py = *ly1 = *ly2 = y2;
+       return 1;
+     }
+     if (close_to_vector(x1, y1, x2, y2, xp, yp, d, tol2, px, py)) {
+       *lx1 = x1; *ly1 = y1;
+       *lx2 = x2; *ly2 = y2;
+       return 1;
+     }
+     x1 = x2;
+     y1 = y2;
+   }
+   return 0;
+}
+    
+/********************* CLOSE TO SPLINE ************************
+
+Input arguments :
+	p: spline object
+        xp, yp: Point
+        d: tolerance
+Output arguments :
+	(*px,*py) : `near' point on the spline
+        (*lx1, *ly1), (*lx2, *ly2): points for tangent
+Return value :
+	0 on failure, 1 on success
+*************************************************************/
+
+
+
+/* Take a look at close_to_vector in u_geom.c ... and then tell me:
+   Are those people mathematicians? */
+
+static int
+close_to_float_vector(x1, y1, x2, y2, xp, yp, d, px, py, lambda)
+    float	    x1, y1, x2, y2, xp, yp, d;
+    float	   *px, *py, *lambda;
+{
+  /* always stores in (*px,*py) the orthogonal projection of (xp,yp)
+     onto the line through (x1,y1) and (x2,y2)
+     returns 1 if (x,y) is closer than d to the *segment* between these two,
+     otherwise 0 */
+    float rx, ry, radius, radius2, nx, ny, distance;
+    int ok;
+
+    rx = x2 - x1;
+    ry = y2 - y1; /* direction vector of the straight line */
+    radius2 = rx * rx + ry * ry;
+    if (radius2 > 0.0)
+        radius = sqrt(radius2); /* its length */
+    else
+        return(0); /* singular case */
+    nx = -ry/radius;
+    ny = rx/radius; /* unit normal vector */
+    distance = (xp - x1) * nx + (yp - y1) * ny; /* distance (Hesse) */
+    *px = xp - distance * nx;
+    *py = yp - distance * ny; /* the projection */
+    if (fabs(distance) > d)
+      ok = 0;
+    else if ((xp-x1) * (xp-x1) + (yp-y1) * (yp-y1) <= d * d) {
+      *lambda = 0.0;
+      ok = 1; /* close to endpoint */
+    }
+    else if ((xp-x2) * (xp-x2) + (yp-y2) * (yp-y2) <= d * d) {
+      *lambda = 1.0;
+      ok = 1; /* close to endpoint */
+    }
+    else {
+      *lambda = ((xp-x1)*rx + (yp-y1)*ry)/radius2; /* the parameter (0=point1, 1=point2) */
+      if ((0.0 <= *lambda) && (*lambda <= 1.0))
+        ok = 1;
+      else
+        ok = 0;
+    }
+    return ok;
+}
+
+static int isfirst, prevx, prevy, firstx, firsty;
+static int tx, ty, td, px1, py1, px2, py2, foundx, foundy;
+
+/* dirty trick: redefine init_point_array to do nothing and 
+   add_point to check distance */
+
+static void	init_point_array();
+static Boolean	add_point();
+static Boolean	add_closepoint();
+
+/**********************************/
+/* include common spline routines */
+/**********************************/
+
+#include "u_draw_spline.c"
+
+static void
+init_point_array()
+{
+}
+
+static Boolean
+add_point(x, y)
+  int x, y;
+{
+  float ux, uy, lambda;
+
+  if (isfirst) {
+    firstx = x;
+    firsty = y;
+    isfirst = False;
+  }
+  else {
+    if (close_to_float_vector((float)prevx, (float)prevy, (float)x, (float)y, 
+                              (float)tx, (float)ty, (float)td, &ux, &uy, &lambda)) {
+      foundx = round(ux);
+      foundy = round(uy);
+      px1 = prevx;
+      py1 = prevy;
+      px2 = x;
+      py2 = y;            
+      DONE = True;
+    }
+  }
+  prevx = x;
+  prevy = y;
+
+  return True;
+}
+
+static Boolean
+add_closepoint() {
+  return add_point(firstx, firsty);
+}
+
+int
+close_to_spline(spline, xp, yp, d, px, py, lx1, ly1, lx2, ly2)
+   F_spline* spline;
+   int xp, yp, d;
+   int *px, *py, *lx1, *ly1, *lx2, *ly2;
+{
+  float     precision;
+
+  tx = xp; ty = yp; /* test point */
+  td = d;           /* tolerance */
+  isfirst = True;
+  precision = HIGH_PRECISION;
+
+  if (open_spline(spline)) 
+    compute_open_spline(spline, precision);
+  else
+    compute_closed_spline(spline, precision);
+  if (DONE) {
+    *px = foundx;
+    *py = foundy;
+    *lx1 = px1;
+    *ly1 = py1;
+    *lx2 = px2;
+    *ly2 = py2;
+  }
+  return DONE;
 }
 
 /********************* COMPUTE ANGLE ************************
@@ -256,6 +704,267 @@ compute_direction(p1, p2, p3)
     }
     return (0);			/* clockwise */
 }
+
+/********************* COMPUTE ANGLE BY 3 POINTS ************
+Input arguments:
+        p1, p2, p3 : Points
+Output arguments : angle in the range [0, 2PI)
+Return value : 0 on failure, 1 on success       
+*************************************************************/
+
+int 
+compute_3p_angle(p1, p2, p3, alpha)
+    F_point *p1, *p2, *p3;
+    double* alpha;
+{
+    double vx, vy, wx, wy;
+    double dang;
+
+    vx = (double)(p1->x - p2->x);
+    vy = (double)(p1->y - p2->y);
+    wx = (double)(p3->x - p2->x);
+    wy = (double)(p3->y - p2->y);
+    if (((vx == 0.0) && (vy == 0.0)) || ((wx == 0.0) && (wy == 0.0))) {
+       return(0);
+    }
+    dang = -atan2(wy, wx) + atan2(vy, vx); /* difference angle */
+    if (dang < 0.0)
+        dang += 2*M_PI;      
+    *alpha = dang;
+    return(1);
+}    
+
+
+/********************* COMPUTE LINE ANGLE *******************
+
+Input arguments :
+        l : the line object
+        p : point
+Output arguments : angle in the range [0, 2PI)
+Return value : 0 on failure, 1 on success
+*************************************************************/
+
+int 
+compute_line_angle(l, p, alpha)
+   F_line* l;
+   F_point* p;
+   double* alpha;
+{
+   F_point *q, *vorq, *nachq;
+
+   q = l->points;
+   vorq = NULL;
+   nachq = l->points->next;
+
+   for (; q != NULL; vorq = q, q = nachq, nachq = (nachq) ? nachq->next : NULL) {
+     if ((q->x == p->x) && (q->y == p->y) && (vorq)) {
+       if (nachq) {
+         if (compute_3p_angle(vorq, q, nachq, alpha))
+           return(1);
+       }
+       else if (l->type == T_POLYGON) {
+         if (compute_3p_angle(vorq, q, l->points->next, alpha))
+           return(1);
+       }
+     }
+   }
+   return(0);
+}	
+
+/********************* COMPUTE ARC ANGLE *******************
+
+Input arguments :
+        a : the arc
+Output arguments : orientated angle
+Return value : 0 on failure, 1 on success
+*************************************************************/
+
+int 
+compute_arc_angle(a, alpha)
+   F_arc* a;
+   double* alpha;
+{
+   double ux, uy, vx, vy, wx, wy;
+   double uang, vang, wang, dang;
+   ux = a->point[0].x - a->center.x;
+   uy = a->point[0].y - a->center.y;
+   vx = a->point[1].x - a->center.x;
+   vy = a->point[1].y - a->center.y;
+   wx = a->point[2].x - a->center.x;
+   wy = a->point[2].y - a->center.y;
+   if (((ux == 0.0) && (uy == 0.0)) || ((vx == 0.0) && (vy == 0.0)) || 
+       ((wx == 0.0) && (wy == 0.0))) {
+       return(0);
+   }
+   uang = atan2(uy, ux);
+   vang = atan2(vy, vx);
+   wang = atan2(wy, wx);
+ 
+   if (uang >= wang) {
+      if ((uang >= vang) && (vang >= wang))
+          dang = uang - wang;
+      else
+          dang = -2*M_PI + uang - wang;
+   }
+   else {
+      if ((uang <= vang) && (vang <= wang))
+          dang = uang - wang;
+      else
+          dang = 2*M_PI + uang - wang;
+   }
+   *alpha = dang;
+   return(1);
+}   
+
+/********************* COMPUTE POLY LENGTH *******************
+
+Input arguments :
+        l : the polyline
+Output arguments : 
+        *lp : computed length
+Return value : 0 on failure, 1 on success
+*************************************************************/
+int
+compute_poly_length(l, lp)
+   F_line* l;
+   float* lp;
+{
+   double length;
+   F_point *q, *lastq;
+   double dx, dy, dl;
+
+   length = 0.0;
+   lastq = NULL;
+
+   for (q = l->points; q != NULL; lastq = q, q = q->next) {
+     if (lastq) {
+       dx = (double)(q->x - lastq->x);
+       dy = (double)(q->y - lastq->y);
+       if ((dx == 0.0) && (dy == 0.0))
+         dl = 0.0;
+       else
+         dl = sqrt(dx * dx + dy * dy);
+       length += dl;
+     }
+   }
+   *lp = (float)length;
+   return 1;
+}    
+
+/********************* COMPUTE ARC LENGTH *******************
+
+Input arguments :
+        a : the arc
+Output arguments : 
+        *lp : computed length
+Return value : 0 on failure, 1 on success
+*************************************************************/
+int
+compute_arc_length(a, lp)
+   F_arc* a;
+   float* lp;
+{
+   double length, alpha, ux, uy, arcradius;
+   
+
+   if (!compute_arc_angle(a, &alpha))
+     return 0;
+   ux = a->point[0].x - a->center.x;
+   uy = a->point[0].y - a->center.y;
+   if ((ux == 0.0) && (uy == 0.0)) 
+     arcradius = 0.0;
+   else
+     arcradius = sqrt(ux*ux + uy*uy);
+   *lp = (float)(arcradius * fabs(alpha));
+   return 1;
+}
+
+/********************* COMPUTE POLYGON AREA *******************
+
+Input arguments :
+        l : the polygon
+Output arguments : 
+        *lp : computed area
+Return value : 0 on failure, 1 on success
+*************************************************************/
+
+int
+compute_poly_area(l, ap)
+   F_line* l;
+   float* ap;
+{
+   float area;
+   F_point *q, *lastq;
+   double dx, dy;
+
+   area = 0.0;
+   lastq = NULL;
+   for (q = l->points; q != NULL; lastq = q, q = q->next) {
+     if (lastq) 
+       area += (float)(-lastq->x * q->y + lastq->y * q->x);
+   }
+   area /= 2.0;
+   *ap = area;
+   return 1;
+}
+
+/********************* COMPUTE ARC AREA *******************
+
+Input arguments :
+        a : the arc
+Output arguments : 
+        *lp : computed area
+Return value : 0 on failure, 1 on success
+*************************************************************/
+
+int
+compute_arc_area(a, ap)
+   F_arc* a;
+   float* ap;
+{
+   double area, tri_area, alpha, ux, uy, arcradius;
+   
+   if (!compute_arc_angle(a, &alpha))
+     return 0;
+   ux = a->point[0].x - a->center.x;
+   uy = a->point[0].y - a->center.y;
+   if ((ux == 0.0) && (uy == 0.0)) 
+     arcradius = 0.0;
+   else
+     arcradius = sqrt(ux*ux + uy*uy);   
+   /* sector (`pie-shape') 
+      A = (pi * r * r) * (alpha / 2pi) */
+   area = 0.5 * alpha * arcradius * arcradius;
+   /* open arc: subtract triangular area */
+   if (a->type == T_OPEN_ARC) {
+     tri_area = 0.5 * arcradius * arcradius * fabs(sin(alpha));
+     if (area > 0)
+       area -= tri_area;
+     else
+       area += tri_area;
+   }
+   *ap = (float)area;
+   return 1;
+}
+
+/********************* COMPUTE ELLIPSE AREA *******************
+
+Input arguments :
+        e : the ellipse
+Output arguments : 
+        *lp : computed area
+Return value : 0 on failure, 1 on success
+*************************************************************/
+
+int
+compute_ellipse_area(e, ap)
+   F_ellipse* e;
+   float* ap;
+{
+   *ap = (float)(M_PI * e->radiuses.x * e->radiuses.y);
+   return 1;
+}
+
 
 /*********************** LATEX LINE ROUTINES ***************************/
 

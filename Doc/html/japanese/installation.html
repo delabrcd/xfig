@@ -2,12 +2,12 @@
 <html>
 <head>
 <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=EUC-JP">
-<title>XFIG User Manual - Installation</title>
+<title>Installation</title>
 <link rev="made" href="mailto:VEF00200@nifty.ne.jp">
 </head>
 
 <body>
-<a href="contents.html"><img src="../images/xfig-title.gif"
+<a href="contents.html"><img src="../images/xfig-title.png"
   alt="XFIG Users Manual" border=0></a>
 
 <h1>xfig の入手とインストール</h1>
@@ -38,17 +38,18 @@
 <a href="i18n.html">国際化</a> も参照して下さい。
 <p>
 <ol>
-<li><b>xfig</b> のソース (<tt>xfig.3.2.3b.tar.gz</tt>) を入手して、展開します。
+<li><b>xfig</b> のソース (<tt>xfig.3.2.4.full.tar.gz</tt>) 
+を入手して、展開します。
 ソースの展開は、
 <p>
 <blockquote>
-<tt>gunzip -c xfig.3.2.3b.tar.gz | tar xvf -</tt>
+<tt>gunzip -c xfig.3.2.4.full.tar.gz | tar xvf -</tt>
 </blockquote>
 <p>
 あるいは、
 <p>
 <blockquote>
-<tt>gunzip xfig.3.2.3b.tar.gz; tar xvf xfig.3.2.3b.tar</tt>
+<tt>gunzip xfig.3.2.4.tar.gz; tar xvf xfig.3.2.4.tar</tt>
 </blockquote>
 <p>
 のような方法で行なうことができます。
@@ -62,19 +63,37 @@
 (例えば <a href="ftp://ftp.tex.ac.uk/pub/archive/graphics/">
 <i>ftp://ftp.tex.ac.uk/pub/archive/graphics</i></a>) 
 から入手することができます。
+日本国内では <a href="http://www.ring.gr.jp">Ring Server</a> 
+や <a href="http://sunsite.sut.ac.jp/">SunSITE</a> などにも
+ミラーされていますので、
+できるだけ近くのサイトから入手するようにして下さい。
+<p>
+<tt>xfig.3.2.4.full.tar.gz</tt> 以外に、
+<tt>xfig.3.2.4.code_only.tar.gz</tt>、
+<tt>xfig.3.2.4.docs_only.tar.gz</tt>、
+及び
+<tt>xfig.3.2.4.libraries_only.tar.gz</tt> 
+として、それぞれソース・コード、ドキュメント、
+及びライブラリのみを含んだものも用意されています。
 
 <p>
 <li>必要に応じて <tt>Imakefile</tt> を編集します。
 <p>
 <ul>
 <li>もし <b>xfig</b> を X11 のデフォルトのバイナリ・ディレクトリ以外に
-インストールしたいのであれば、
-``<tt>BINDIR = ...</tt>'' のコメント・アウトを解除 
+インストールしたいのであれば:
+<ul>
+<li>``<tt>BINDIR = ...</tt>'' のコメント・アウトを解除 
 (<tt>XCOMM</tt> を削除) し、そのディレクトリの指定を 
 <b>xfig</b> をインストールしたいディレクトリに書き換えます。
-また、<tt>MKDIRHIER</tt> の定義が <tt>BINDIR</tt> の変更の影響を受けるため、
+<li>また、<tt>MKDIRHIER</tt> の定義が <tt>BINDIR</tt> の変更の影響を受けるため、
 ``<tt>MKDIRHIER = ...</tt>'' のコメント・アウトも解除し、
 <tt>mkdirhier</tt> コマンドのパスを指定する必要があるかも知れません。
+<li>そして、<tt>XAPPLOADDIR</tt> のコメント・アウトを解除し、
+app-defaults ファイルを置きたいディレクトリに変更します。
+このディレクトリを指すように 
+<tt>XAPPLRESDIR</tt> を設定することが必要となるでしょう。
+</ul>
 
 <p>
 <li>JPEG サポート機能を使用する場合には 
@@ -94,12 +113,19 @@
 JPEG ライブラリのソースを展開したディレクトリを <tt>JPEGLIBDIR</tt> で指定します。
 古いバージョンの JPEG ライブラリがインストールされている場合、
 それを削除するか、あるいはその名前を変更する必要があるかも知れません。
-Linux システムの一部は、<b>xfig</b> で使用することのできない、
-古いバージョンの JPEG ライブラリを含んでいるようです。
 <p>
 JPEG サポート機能を使用しない場合には、``<tt>#define USEJPEG</tt>'' を
 <tt>XCOMM</tt> ディレクティブを用いてコメント・アウト
 (<tt>XCOMM #define USEJPEG</tt>) します。
+
+<p>
+<li>PNG ライブラリ (-lpng)、及び zlib (-lz) 圧縮ライブラリも必要となります。
+PNG ライブラリのソースは
+<a href="http://www.libpng.org/pub/png/libpng.html">
+http://www.libpng.org/pub/png/libpng.html</a> で、
+zlib ライブラリのソースは
+<a href="ftp://ftp.cdrom.com/pub/infozip/zlib">
+ftp://ftp.cdrom.com/pub/infozip/zlib</a> で見付けることができます。
 
 <p>
 <li>XPM サポート機能を使用する場合には 
@@ -108,11 +134,6 @@ JPEG サポート機能を使用しない場合には、``<tt>#define USEJPEG</tt>'' を
 また必要に応じて <tt>XPMLIBDIR</tt> などの設定を変更します。
 この機能を使用するためには、
 <a href="#xpm">XPM3 パッケージ</a> (Version 3.4c 以降のもの) が必要となります。
-<p>
-XPM サポート機能を使用しない場合には、``<tt>#define USEXPM</tt>'' が
-<tt>XCOMM</tt> ディレクティブを用いてコメント・アウトされている 
-(<tt>XCOMM #define USEXPM</tt>) 
-ことを確認します。
 
 <p>
 <li><a href="#xaw3d">Xaw3d (Three-D Athena Widget)</a> ライブラリ
@@ -128,6 +149,38 @@ Xaw3d は、<tt>-DARROW_SCROLLBAR</tt> を指定せずに
 <b>xfig</b> のボタンを小さくしたいと思われるかも知れません。
 もしそうであれば、``<tt>#define USESMALLICONS</tt>'' の
 コメント・アウトを解除して下さい。
+
+<p>
+<li>システムが <tt>strcasecmp()</tt>、
+及び/もしくは <tt>strncasecmp()</tt> をサポートしていないならば、
+<p>
+<blockquote>
+<tt>HAVE_NO_STRCASECMP = -DHAVE_NO_STRCASECMP</tt>
+</blockquote>
+<p>
+及び/もしくは
+<p>
+<blockquote>
+<tt>HAVE_NO_STRNCASECMP = -DHAVE_NO_STRNCASECMP</tt>
+</blockquote>
+<p>
+のコメント・アウトを解除します。
+
+<p>
+<li>システムが <tt>strstr()</tt> をサポートしていないならば、
+``<tt>#define NOSTRSTR</tt>'' のコメント・アウトを解除します。
+
+<p>
+<li>システムが <tt>strerror()</tt> をサポートしていない  
+(しかし <tt>sys_errlist</tt> をサポートしている) ならば、
+``<tt>NEED_STRERROR = -DNEED_STRERROR</tt>'' のコメント・アウトを解除します。
+
+<p>
+<li>ホイール・マウス・サポートを有効としたいならば、
+``<tt>#define WHEELMOUSE</tt>'' のコメント・アウトを解除します。
+<b>xfig</b> におけるホイール・マウスの機能については、
+「<a href="miscellaneous.html#wheelmouse">ホイール・マウス</a>」
+を参照して下さい。
 
 <p>
 <li><b>xfig</b> の国際化機能を有効としたい場合には、
@@ -181,8 +234,8 @@ Xaw3d は、<tt>-DARROW_SCROLLBAR</tt> を指定せずに
 <a href="i18n.html">国際化</a> も参照して下さい。
 <p>
 <ol>
-<li><b>transfig</b> のソース (<tt>transfig.3.2.3b.tar.gz</tt>) を入手して、
-展開します。
+<li><b>transfig</b> のソース (<tt>transfig.3.2.4.tar.gz</tt>) 
+を入手して、展開します。
 これは、<a href="#install-xfig"><b>xfig</b></a> 
 と同じサイトから入手することができます。
 
@@ -202,11 +255,7 @@ Xaw3d は、<tt>-DARROW_SCROLLBAR</tt> を指定せずに
 また LaTeX 2.09 のユーザーはいずれも指定しないべきでしょう。
 
 <p>
-<li>JPEG サポート機能を使用するならば、
-``<tt>#define USEJPEG</tt>'' がコメント・アウトされていないことを確認し、
-必要に応じて <tt>USEINSTALLEDJPEG</tt>、
-及び <tt>JPEGLIBDIR</tt> の定義を変更します。
-この機能を使用するためには、
+<li>JPEG サポート機能を使用するためには、
 <a href="#jpeg">JPEG ライブラリ</a> (Version 5b 以降のもの) が必要となります。
 JPEG ライブラリが既にシステムにインストールされている場合には、
 ``<tt>#define USEINSTALLEDJPEG</tt>'' が
@@ -224,15 +273,20 @@ JPEG サポート機能を使用しないならば、``<tt>#define USEJPEG</tt>'' を
 (<tt>XCOMM #define USEJPEG</tt>) します。
 
 <p>
+<li>PNG ライブラリ (-lpng)、及び zlib (-lz) 圧縮ライブラリも必要となります。
+PNG ライブラリのソースは
+<a href="http://www.libpng.org/pub/png/libpng.html">
+http://www.libpng.org/pub/png/libpng.html</a> で、
+zlib ライブラリのソースは
+<a href="ftp://ftp.cdrom.com/pub/infozip/zlib">
+ftp://ftp.cdrom.com/pub/infozip/zlib</a> で見付けることができます。
+
+<p>
 <li>XPM サポート機能を使用する場合には 
-``<tt>#define USEXPM</tt>'' がコメント・アウトされていないことを確認し、
+``<tt>#define USEXPM</tt>'' のコメント・アウトを解除し、
 また必要に応じて <tt>XPMLIBDIR</tt> などの設定を変更します。
 この機能を使用するためには、
 <a href="#xpm">XPM3 パッケージ</a> (Version 3.4c 以降のもの) が必要となります。
-<p>
-XPM サポート機能を使用しない場合には、
-``<tt>#define USEXPM</tt>'' をコメント・アウト 
-(<tt>XCOMM #define USEXPM</tt>) します。
 
 <p>
 <li>システムが <tt>strcasecmp()</tt>、
@@ -270,6 +324,11 @@ XPM サポート機能を使用しない場合には、
 ``<tt>#define I18N</tt>'' のコメント・アウトを解除 
 (<tt>XCOMM</tt> を削除) します。
 詳細については、<a href="i18n.html">国際化</a>を参照して下さい。
+<p>
+<b>パッケージ・メンテナへの要望：</b>
+バイナリ形式で配布するためのパッケージを用意する際には、
+そのパッケージが日本や韓国などでも使用できるように
+<a href="i18n.html">国際化機能</a>を有効としておくことが望まれます。
 </ul>
 <p>
 詳細は、<tt>README</tt> や <tt>Imakefile</tt> を参照して下さい。
@@ -297,18 +356,18 @@ XPM サポート機能を使用しない場合には、
 <h2><a name="install-misc">その他のソフトウェアのインストール</a></h2>
 
 通常、<b>xfig</b>、及び <b>transfig</b> (<b>fig2dev</b>) に加え、
-<a href="#ghostscript"><b>GhostScript</b></a>、
+<a href="#ghostscript"><b>Ghostscript</b></a>、
 及び <a href="#netpbm"><b>netpbm</b></a> をインストールしておく必要があります。
 <p>
 <ul>
 <li><b>xfig</b> は、<a href="drawing.html#picture">PostScript のイメージ</a>の表示や
 いくつかのフォーマットでの図の<a href="printing.html#export">エクスポート</a>に際して、
-<b>GhostScript</b> (<tt>gs</tt> コマンド) を呼び出します。
+<b>Ghostscript</b> (<tt>gs</tt> コマンド) を呼び出します。
 <p>
-GhostScript は、pbmraw、ppmraw、pcx256、jpeg、及び tiff24nc ドライバを
+Ghostscript は、pbmraw、ppmraw、pcx256、jpeg、及び tiff24nc ドライバを
 組み込んでコンパイルされている必要があります。
 <p>
-<b>GhostScript</b> は、
+<b>Ghostscript</b> は、
 <a href="ftp://prep.ai.mit.edu/pub/gnu">ftp://prep.ai.mit.edu/pub/gnu</a>
 やその<a href="http://www.fsf.org/order/ftp.html">ミラー・サイト</a>、
 あるいは 
@@ -321,8 +380,8 @@ GhostScript は、pbmraw、ppmraw、pcx256、jpeg、及び tiff24nc ドライバを
 <b>netpbm</b> パッケージの所定のコマンドを呼び出します。
 <p>
 実際に使用されることがあるコマンドは、
-pbmtoxbm、 pgmtopbm、pnmdepth、pnmscale、pnmtopng、pnmtotiff、
-ppmquant、ppmtoacad、ppmtogif、ppmtopcx、及び ppmtopgm です。
+pbmtoxbm、pgmtopbm、pnmdepth、pnmscale、pnmtopng、pnmtotiff、ppmquant、
+ppmtoacad、ppmtogif、ppmtopcx、ppmtopgm、ppmtojpeg、及び ppmtoxpm です。
 <p>
 <b>netpbm</b> は、
 <a href="ftp://ftp.x.org/contrib/utilities/">
@@ -332,6 +391,10 @@ ftp://ftp.x.org/contrib/utilities</a> や
 あるいは <a href="ftp://ftp.cdrom.com/pub/X11/contrib/utilities/">
 ftp://ftp.cdrom.com/pub/X11/contrib/utilities</a> 
 から入手することができます。
+<br>
+それが <b>ppmtojpeg</b> を含んでいることを確かめて下さい。
+これは、9.0 や 9.1 といった、
+新しいリリースにのみ含まれているかも知れません。
 </ul>
 
 <hr>
@@ -394,11 +457,11 @@ JPEG フォーマットのイメージを取り扱うためのパッケージです。
 <b>xfig</b> と同様の場所から入手することができます。
 
 <p>
-<li><a name="ghostscript"><b>GhostScript</b></a><br>
+<li><a name="ghostscript"><b>Ghostscript</b></a><br>
 <b>xfig</b> は、<a href="drawing.html#picture">PostScript のイメージ</a>の表示や
 いくつかのフォーマットでの図の<a href="printing.html#export">エクスポート</a>に際して、
-<b>GhostScript</b> (<tt>gs</tt> コマンド) を呼び出します。
-<b>GhostScript</b> の著作権は Aladdin Enterprises が所有していますが、
+<b>Ghostscript</b> (<tt>gs</tt> コマンド) を呼び出します。
+<b>Ghostscript</b> の著作権は Aladdin Enterprises が所有していますが、
 これ (少なくとも古いバージョン) は GPL に従って配布されており、
 <a href="ftp://prep.ai.mit.edu/pub/gnu">ftp://prep.ai.mit.edu/pub/gnu</a>
 やその<a href="http://www.fsf.org/order/ftp.html">ミラー・サイト</a>、
@@ -407,16 +470,35 @@ JPEG フォーマットのイメージを取り扱うためのパッケージです。
 などから入手することができます。
 <p>
 日本語を含んだ図を取り扱うためには、
-日本語を扱うことのできる GhostScript が必要となります。
+日本語を扱うことのできる Ghostscript が必要となります。
 これについては、
 <a href="http://www.ldl.jaist.ac.jp/~akr/nonresearch/free-software/ghostscript/">
-GhostScript の日本語化情報</a> などを参照して下さい。
+Ghostscript の日本語化情報</a> などを参照して下さい。
 
 <p>
 <li><b>cdraw2fig</b><br>
 ``Cheap Draw'' フォーマットから Fig フォーマットへの変換プログラムです。
 Cheap Draw 2.0 は Bob Pratt によって作成されたものであり、
 osu-cis の UNIXPC アーカイブから入手することが可能です。
+
+<p>
+<li><b>chemtool</b><br>
+Fig フォーマットでの出力を行なう 
+(そして XBM よりも凝った出力のために transfig に頼っている) 
+X11 用の化学構造エディタであり、
+<a href="http://www.uni-ulm.de/~s_tvolk/chemtool">
+http://www.uni-ulm.de/~s_tvolk/chemtool</a>
+から入手することができます。
+
+<p>
+<li><b>figbuild</b><br>
+<b>figbuild</b> は Fig ファイル (Version 3.x ― 3.1 と 3.2 でテスト) と
+高さのためのコンフィギュレーション・ファイルを読み込み、
+Radiance の入力ファイルを生成します。
+Written by Peter Apian-Bennewitz at Fraunhofer ISE, Germany.
+See:
+<a href="http://www.ise.fhg.de/radiance/pabs-toolbox/figbuild/figbuild.html">
+http://www.ise.fhg.de/radiance/pabs-toolbox/figbuild/figbuild.html</a>
 
 <p>
 <li><a name="gimp"><b>GIMP</b></a><br>
@@ -433,6 +515,18 @@ Fig フォーマットやその他のフォーマットでの出力を生成することができます。
 <a href="ftp://ftp.dartmouth.edu/pub/gnuplot/">
 ftp://ftp.dartmouth.edu/pub/gnuplot</a> ですが、
 近くの <tt>comp.sources.misc</tt> アーカイブから入手することなども可能です。
+
+<p>
+<li><b>grass2fig</b><br>
+GRASS GIS (Geographic Resources Analysis Support System) は、
+X ウィンドウ・システム上のグラフィカル・ユーザー・インターフェースとシェルを通して
+様々なプラットホームで動作する、
+ラスター、位相幾何学的ベクタ、イメージ処理、そしてグラフィック生成機能を持つ、
+オープン・ソースのグラフィカル・インフォメーション・システム (GIS) である。
+それは GNU General Public License (GPL) のもとにリリースされている。
+<a href="http://grass.itc.it/">http://grass.itc.it/</a> を参照のこと。
+<b>grass2fig</b> プログラムは 
+GRASS バイナリ・ベクタ・マップを Fig ファイルに変換する。
 
 <p>
 <li><a name="gzip"><b>gzip (gunzip)</b></a><br>
@@ -455,13 +549,11 @@ PostScript、LaTeX、Fig などのフォーマットに変換することが可能です。
 から入手することができます。
 
 <p>
-<li><b>chemtool</b><br>
-Fig フォーマットでの出力を行なう 
-(そして XBM よりも凝った出力のために transfig に頼っている) 
-X11 用の化学構造エディタであり、
-<a href="http://www.uni-ulm.de/~s_tvolk/chemtool">
-http://www.uni-ulm.de/~s_tvolk/chemtool</a>
-から入手することができます。
+<li><b>jfig</b><br>
+<b>jfig</b> は、<b>xfig</b> に基づいた Java によるプログラムである。
+<a href="http://tech-www.informatik.uni-hamburg.de/applets/javafig/applet.html">
+http://tech-www.informatik.uni-hamburg.de/applets/javafig/applet.html</a>
+を参照。
 
 <p>
 <li><b>mifXfig</b><br>
@@ -474,22 +566,23 @@ http://www.ida.liu.se/~vaden/teaching/m2f/</a>
 
 <p>
 <li><b>Msphinx</b><br>
-A friendly package to handle satellite images.
+衛星のイメージを扱うための使いやすいパッケージ。
 <br>
 <dl>
-<dt>Main features:
-<dd><b>Msphinx</b> includes two types of analysis and processing functions:
+<dt>主な機能：
+<dd><b>Msphinx</b> は２種類の分析／処理機能を含んでいる：
 <ul>
-<li>Functions to process the basic data geometry and projection planes.
-<li>Functions to manipulate and modify the graphic display and print.
+<li>基本的な地理データや投射プレーンの処理
+<li>画像表示／印刷出力の操作／変更
 </ul>
-<dt>Communication capabilities:
+<dt>通信機能：
 <dd>
 <ul>
-<li>Data writes from external user programs (C or Fortran) into the memory planes.
-<li>User-to-user data exchange (text or images).
-<li>User image data base visualisation.
-<li>Direct links to other packages:
+<li>外部のユーザー・プログラム (C や Fortran) から
+メモリー・プレーンへのデータの書き込み
+<li>ユーザー間でのデータ交換 (テキスト、あるいは画像)
+<li>ユーザー・イメージ・データベースの視覚化
+<li>他のパッケージとの直接的な接続：
 <ul>
 <li>Mgraph (2d and contouring plotting)
 <li>HDFLook (HDF read write files)
@@ -498,7 +591,9 @@ A friendly package to handle satellite images.
 </ul>
 </ul>
 </dl>
-Find it at: <a href="http://loasys.univ-lille1.fr/Msphinx/Msphinx_gb.html">http://loasys.univ-lille1.fr/Msphinx/Msphinx_gb.html</a>
+これは、<a href="http://loasys.univ-lille1.fr/Msphinx/Msphinx_gb.html">
+http://loasys.univ-lille1.fr/Msphinx/Msphinx_gb.html</a>
+で見付けられる。
 
 <p>
 <li><a name="netpbm"><b>netpbm</b></a><br>
@@ -514,16 +609,6 @@ ftp://ftp.x.org/contrib/utilities</a> や
 あるいは <a href="ftp://ftp.cdrom.com/pub/X11/contrib/utilities/">
 ftp://ftp.cdrom.com/pub/X11/contrib/utilities</a> 
 から入手することができます。
-
-<p>
-<li><b>figbuild</b><br>
-<b>figbuild</b> は Fig ファイル (Version 3.x ― 3.1 と 3.2 でテスト) と
-高さのためのコンフィギュレーション・ファイルを読み込み、
-Radiance の入力ファイルを生成します。
-Written by Peter Apian-Bennewitz at Fraunhofer ISE, Germany.
-See:
-<a href="http://www.ise.fhg.de/radiance/pabs-toolbox/figbuild/figbuild.html">
-http://www.ise.fhg.de/radiance/pabs-toolbox/figbuild/figbuild.html</a>
 
 <p>
 <li><b>pic2fig</b><br>
@@ -566,11 +651,11 @@ ftp://ftp.x.org/contrib/applications/tgif/pstoedit</a> や
 の <tt>/contrib/applications/tgif/pstoedit</tt> から入手することができます。
 
 <p>
-<li><b>xfigbar</b> and <b>xfigpie</b><br>
+<li><b>xfigbar</b>、及び <b>xfigpie</b><br>
 棒グラフ、及びパイ・チャートを Fig ファイルとして生成するための
 2つの C プログラム。
 John Conover &lt;john@johncon.johncon.com&gt; によって書かれたもので、
-e-mail によって入手できる：
+e-mail によって入手できます：
 <br>
 <tt>
 mail info-request@johncon.com

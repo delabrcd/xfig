@@ -18,7 +18,7 @@
 .\" Parts Copyright (C) 1989 by Jef Poskanzer.
 .\" Copyright notice for pbmplus code:
 .\"
-.\" Permission to use, copy, modify, and distribute this software and its
+.\" Permission to use, copy, modify and distribute this software and its
 .\" documentation for any purpose and without fee is hereby granted, provided
 .\" that the above copyright notice appear in all copies and that both that
 .\" copyright notice and this permission notice appear in supporting
@@ -108,7 +108,7 @@
 .PD
 ..
 .\"-------
-.TH XFIG 1 "Xfig 3.2.3b (July 19, 2000)"
+.TH XFIG 1 "Xfig 3.2.4 (Dec 2002)"
 .SH NAME
 xfig - Facility for Interactive Generation of figures under X11
 .SH SYNOPSIS
@@ -167,7 +167,7 @@ LaTeX, Metafont, PostScript or Encapsulated PostScript,
 tk (tcl/tk tool command language/tool kit package),
 GIF, JPEG, PCX, PNG, PPM, TIFF,
 XBM, XPM, AutoCAD Slide, IBM-GL (HP/GL), Pic
-PiCTeX, box, epic, eepic, and eepicemu.
+PiCTeX, box, epic, eepic and eepicemu.
 .PP
 See man fig2dev for all options.
 .PP
@@ -184,7 +184,7 @@ ftp://ftp.x.org/contrib/applications/drawing_tools/transfig .
 Print all command-line options for xfig and quit.
 .\"-------
 .At
-.BR \-a [ llow_neg_coords ]
+.BR \-a [ llownegcoords ]
 .Ap
 Allow panning into the negative region of the canvas.
 This is the default
@@ -230,7 +230,9 @@ Use
 .I color
 as the background color for the canvas.
 If you want to set the background of everything in xfig
-(e.g. menus, etc.) use the general -bg option.
+(e.g. menus, etc.) use the general 
+.B -bg
+option.
 .\"-------
 .At
 .BR \-center
@@ -241,7 +243,8 @@ This is the default.
 .At
 .BR \-centim [ ers ]
 .Ap
-Make centimeters the unit of choice.  See also -metric.
+Make centimeters the unit of choice.  See also 
+.B -metric.
 .\"-------
 .At
 .BR \-cfg " color"
@@ -250,7 +253,9 @@ Use
 .I color
 as the default color for objects.
 If you want to set the foreground of everything in xfig
-(e.g. menus, etc.) use the general -fg option.
+(e.g. menus, etc.) use the general 
+.B -fg
+option.
 .\"-------
 .At
 .BR \-deb [ ug ]
@@ -271,7 +276,7 @@ See also the
 option.
 .\"-------
 .At
-.BR \-dont_a [ llow_neg_coords ]
+.BR \-donta [ llownegcoords ]
 .Ap
 Don't allow panning into the negative region of the canvas.
 The default is to allow panning in the negative region.
@@ -280,7 +285,8 @@ The default is to allow panning in the negative region.
 .BR \-dontshowb [ alloons ]
 .Ap
 Prevents xfig from popping up the information balloons.
-See also -showballoons.
+See also 
+.B -showballoons.
 .\"-------
 .At
 .BR \-dontshowl [ engths ]
@@ -289,7 +295,7 @@ Don't show lengths of lines as they are being drawn.
 This is the default.
 .\"-------
 .At
-.BR \-dont_s [ how_zero_lines ]
+.BR \-dontshowz [ erolines ]
 .Ap
 Don't show axis zero lines on the canvas.
 The default is to show them.
@@ -302,6 +308,16 @@ enough colors available in the default colormap.  See also
 .BR \-max_image_colors.
 .\"-------
 .At
+.BR \-enc [ oding ]
+.I encoding
+.Ap
+Encode character set using
+.I encoding
+when exporting LaTeX text.  The default is 1.  This is used
+for the ISO-8859 encoding of character sets.  Allowed
+values are 0 (no encoding), 1 (ISO-8859-1) or 2 (ISO-8859-2).
+.\"-------
+.At
 .BR \-exportL [ anguage ]
 .I language
 .Ap
@@ -311,9 +327,9 @@ Choices are:
 .\"--------------------------------------------------------------------
 .\" Table Begin
 .\"--------------------------------------------------------------------
-.ne 17
+.ne 40
 .nf
-.nr t0 \w'eepicemu\0\0\0\0'u
+.nr t0 \w'eps_color_tiff\0\0\0\0'u
 .ta \n(t0u
 .\" set n to length of longest line
 .di xx
@@ -326,30 +342,42 @@ Name	Language
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
 .\" DATA
+Vector formats:
 box	LaTeX box (figure boundary)
 latex	LaTeX picture
 epic	LaTeX picture + epic macros
 eepic	LaTeX picture + eepic macros
 eepicemu	LaTeX picture + eepicemu macros
 pictex	PiCTeX macros
-ibmgl	IBMGL (or HPGL)
+hpl	HPGL (IBMGL)
 eps	Encapuslated PostScript
+eps_ascii	Encapuslated PostScript with ASCII preview
+eps_mono_tiff	Encapuslated PostScript with monochrome binary (TIFF) preview
+eps_color_tiff	Encapuslated PostScript with color binary (TIFF) preview
 ps	PostScript
 pdf	PDF (Portable Document Format)
 pstex	Combined PS/LaTeX (both PS and LaTeX parts)
+pdftex	Combined PDF/LaTeX (both PDF and LaTeX parts)
 textyl	Textyl special commands
 tpic	TPIC
 pic	PIC
 mf	MF (MetaFont)
-cgm	CGM (Computer MetaGraphics)
+mp	MP (MetaPost)
+mmp	MMP (Multi-MetaPost)
+cgm	CGM (Computer Graphics Meta file)
+bcgm	Binary CGM (Computer Graphics Meta file)
+emf	Enhanced Meta file)
 tk	Tk (of the tcl/tk fame)
-sld	(AutoCad slide)
-pcx	PCX
-png	PNG
+svg	SVG (Scalable Vector Graphics (XML variant))
+
+Bitmap formats:
 gif	GIF
 jpeg	JPEG (JFIF)
-tiff	TIFF
+pcx	PCX
+png	PNG
 ppm	PPM (portable pixmap package)
+sld	(AutoCad slide)
+tiff	TIFF
 xbm	X11 Bitmap
 xpm	X11 Pixmap (XPM3 package)
 
@@ -385,16 +413,54 @@ Set the print option to print the figure flush left.
 The default is to center the figure on the page.
 .\"-------
 .At
+.BR \-free [ hand_resolution ]
+.I resolution
+.Ap
+Set the resolution of the freehand drawing mode to
+.I resolution
+pixels.  This is the number of pixels the mouse must move before xfig 
+adds another point to the object being drawn.
+.\"-------
+.At
 .BR \-geom [ etry ]
 .RI [ WxH ] [+X+Y]
 .Ap
 You may use the -geometry option or resource to
 .I size and/or position the xfig window,
-or you may use -pwidth and/or -pheight
+or you may use 
+.B -pwidth 
+and/or 
+.B -pheight
 to specify the canvas size in inches or centimeters.
-If you use the -geom option to make the xfig window smaller
-than the default, you may have to use the -but_per_row option to 
+If you use the 
+.B -geom 
+option to make the xfig window smaller
+than the default, you may have to use the 
+.B -but_per_row 
+option to 
 tell xfig to put 3 or 4 buttons per row on the left mode panel.
+.\"-------
+.At
+.BR \-gh [ ostscript ]
+.I postscript-interpreter
+.Ap
+Select the PostScript (tm) interpreter of your choice.  The default is ghostscript (gs).
+This is needed when importing Encapsulated PostScript files.
+.\"-------
+.At
+.BR \-grid_c [ olor ]
+.I color
+.Ap
+Draw the grid on the canvas in this color (default: red).
+.\"-------
+.At
+.BR \-grid_u [ nit ]
+.I unit
+.Ap
+Only used when in inches mode to choose between showing fractions or decimal inches
+in the rulers and grid.  Any of the following may be used to force decimal inches:
+"ten", "tenth", "10, "1/10".
+If any other value is used for this option, the rulers will show 1/16 inch divisions.
 .\"-------
 .At
 .BR \-hidd [ entext ]
@@ -420,10 +486,17 @@ flag is
 .IR off .
 .\"-------
 .At
-.BR \-hide [ depthmanager ]
+.BR \-dontshowd [ epthmanager ]
 .Ap
 Hide the depth manager panel.
 The default is to show the panel.
+.\"-------
+.At
+.BR \-icon_ [ view ]
+.Ap
+Show the library objects as icons.  This is the default.  The other
+mode is 
+.B -list_view.
 .\"-------
 .At
 .BR \-iconG [ eometry ]
@@ -444,6 +517,11 @@ in Picture Object panel.
 .Ap
 Make inches the unit of choice.
 This is the default.
+.\"-------
+.At
+.BR \-ins [ tallowncmap ] 
+.Ap
+Install own colormap. Normally, xfig uses the current colormap.
 .\"-------
 .At
 .BR \-internalBW " width"
@@ -520,11 +598,25 @@ Change the position of the side panel window to the left of the canvas window.
 This is the default.
 .\"-------
 .At
-.BR \-li [ brary_dir ]
+.BR \-library_d [ ir ]
 .I directory
 .Ap
 Specify directory where Fig object libraries are located.  There may be sub-directories
 there and sub-sub-directories, etc.
+.\"-------
+.At
+.BR \-library_i [ con_size ]
+.I size
+.Ap
+Specify the size of the icons shown for library objects.  The default is 60 pixels, with the
+minimum being 40 and the maximum being 120.
+.\"-------
+.At
+.BR \-lis [ t_view ]
+.Ap
+Show the library objects as a list of names. The default 
+mode is 
+.B -icon_view.
 .\"-------
 .At
 .BR \-mag [ nification ]
@@ -541,7 +633,10 @@ Limit the number of colors used for imported images to
 .At
 .BR \-me [ tric ]
 .Ap
-Make centimeters the unit of choice.  Also -centimeters.
+Make centimeters the unit of choice.  
+The option
+.B -centimeters
+may also be used.
 .IP \&
 After
 .I xfig
@@ -563,6 +658,13 @@ Sets multiple page mode for print or export. See also
 .BR \-single.
 .\"-------
 .At
+.BR \-noo [ verlap ]
+.Ap
+When exporting in multiple page mode, causes no overlap from page to page.
+This is the default.  See also
+.BR \-overlap.
+.\"-------
+.At
 .BR \-nor [ mal ]
 .I font
 .Ap
@@ -572,10 +674,17 @@ This font is also used on the canvas when the selected font is not
 available in an X11 font (default = 6x13).
 .\"-------
 .At
-.BR \-nos [ calablefonts ]
+.BR \-nosc [ alablefonts ]
 .Ap
 Disables use of the X11R5 or OpenWindows scalable fonts.
 You might want to use this for debugging.
+.\"-------
+.At
+.BR \-nosp [ lash ]
+.Ap
+Don't show the startup splash screen.  The default is to show it (
+.BR -splash
+).
 .\"-------
 .At
 .BR \-not [ rack ]
@@ -583,11 +692,22 @@ You might want to use this for debugging.
 Turn off cursor (mouse) tracking arrows.
 .\"-------
 .At
+.BR \-ov [ erlap ]
+.Ap
+When exporting in multiple page mode, causes overlap from page to page of
+about 10%.
+See also
+.BR \-nooverlap.
+.\"-------
+.At
 .BR \-pag [ eborder ]
 .I color
 .Ap
 Draw the page border on the canvas in this color (default light blue).
-The page border is turned on by the -showpageborder (resource Fig.showpageborder) option,
+The page border is turned on by the 
+.B -showpageborder
+option
+(resource Fig.showpageborder),
 and shows the edges of the current 
 .I export
 paper size.
@@ -597,28 +717,70 @@ paper size.
 .I size
 .Ap
 Set the initial paper size for Export and Print.  Choices are
-.in +.5i
+.Sp
+.\"--------------------------------------------------------------------
+.\" Table Begin
+.\"--------------------------------------------------------------------
+.ne 32
 .nf
-Letter (8.5" x 11"),
-Legal (8.5" x 14"),
-Ledger ( 17" x 11"),
-Tabloid ( 11" x 17"),
-A (8.5" x 11"),
-B ( 11" x 17"),
-C ( 17" x 22"),
-D ( 22" x 34"),
-E ( 34" x 44"),
-A4 (21 cm x 29.7cm),
-A3 (29.7cm x 42 cm),
-A2 (42 cm x 59.4cm),
-A1 (59.4cm x 84.1 cm),
-A0 (84.1 cm x 118.9cm),
-B5 (18.2cm x 25.7cm)
+.nr t0 \w'tabloid\0\0\0\0'u
+.nr t1 \n(t0+\w'Tabloid\0\0\0\0'u
+.ta \n(t0u \n(t1u
+.\" set n to length of longest line
+.di xx
+tabloid	Tabloid	17in x 11in
+.nr n \n(.nu
+.di
+.rm xx
+.\" HEADER
+Option	Paper	Size
+.if n \l'\nnu\&-'
+.if t \l'\nnu'
+.\" DATA
+letter	Letter	8.5in x 11in
+legal	Legal	8.5in x 14in
+tabloid	Tabloid	17in x 11in
+a	ANSI A	8.5in x 11in
+b	ANSI B	11in x 17in
+c	ANSI C	17in x 22in
+d	ANSI D	22in x 34in
+e	ANSI E	34in x 44in
+a9	ISO A9	37mm x 52mm
+a8	ISO A8	52mm x 74mm
+a7	ISO A7	74mm x 105mm
+a6	ISO A6	105mm x 148mm
+a5	ISO A5	148mm x 210mm
+a4	ISO A4	210mm x 297mm
+a3	ISO A3	297mm x 420mm
+a2	ISO A2	420mm x 594mm
+a1	ISO A1	594mm x 840mm
+a0	ISO A0	840mm x 1189mm
+b10	JIS B10	32mm x 45mm
+b9	JIS B9	45mm x 64mm
+b8	JIS B8	64mm x 91mm
+b7	JIS B7	91mm x 128mm
+b6	JIS B6	128mm x 182mm
+b5	JIS B5	182mm x 257mm
+b4	JIS B4	257mm x 364mm
+b3	JIS B3	364mm x 515mm
+b2	JIS B2	515mm x 728mm
+b1	JIS B1	728mm x 1030mm
+b0	JIS B0	1030mm x 1456mm
+.if n \l'\nnu\&-'
+.if t \l'\nnu'
+.DT
 .fi
-.in
+.\"--------------------------------------------------------------------
+.\" Table End
+.\"--------------------------------------------------------------------
+.\"-------
 .Sp
 Note that this doesn't affect the size of the drawing canvas. 
-Use the -pheight and -pwidth options for that.
+Use the 
+.B -pheight 
+and 
+.B -pwidth 
+options for that.
 .\"-------
 .At
 .BR \-ph [ eight ]
@@ -630,7 +792,9 @@ canvas
 .I height
 high (where
 .I height
-is either cm or in, depending on the -metric setting).
+is either cm or in, depending on the 
+.B -metric 
+setting).
 .\"-------
 .At
 .BR \-po [ rtrait ]
@@ -649,7 +813,9 @@ canvas
 .I width
 wide (where
 .I width
-is either cm or in, depending on the -metric setting).
+is either cm or in, depending on the 
+.B -metric 
+setting).
 .\"-------
 .At
 .BR \-righ [ t ]
@@ -675,16 +841,24 @@ The default is
 .At
 .BR \-ru [ lerthick ]
 .Ap
-Set the thickness of the top and side rulers in pixels.
+Set the height(width) of the top(side) rulers in pixels.
 The default (and minimum) is 24.
 .\"-------
 .At
-.BR \-sc [ alablefonts ]
+.BR \-scala [ blefonts ]
 .Ap
 Allows use of the X11R5 or OpenWindows scalable fonts (this is the default).
 If the scalable fonts aren't available
 .I xfig
 will automatically switch to non-scaling fonts.
+.\"-------
+.At
+.BR \-scale_factor
+.I scale
+.Ap
+Scale every figure read in by this value.  This is useful in conjunction with the 
+.B -update
+option to do batch scaling of figures.
 .\"-------
 .At
 .BR \-showa [ llbuttons ]
@@ -713,7 +887,8 @@ but allows the user to see all settable parameters.
 Forces 
 .I xfig
 to pop up the information balloons when the mouse
-passws over a button. This is the default. See also -dontshowballoons.
+passws over a button. This is the default. See also 
+.B -dontshowballoons .
 .\"-------
 .At
 .BR \-showd [ epthmanager ]
@@ -737,15 +912,23 @@ This mode is ignored when drawing in freehand mode.
 This flag may be toggled by pressing <Meta>i (default).
 .\"-------
 .At
+.BR \-shown [ ums ]
+.Ap
+With this option, xfig will draw all objects with a red number next to each vertex.
+This is generally only useful for debugging.
+.\"-------
+.At
 .BR \-showp [ ageborder ]
 .Ap
 Makes 
 .I xfig 
 show the border of the current paper size in the color specified
-by the -pageborder option (default light blue).
+by the 
+.B -pageborder
+option (default: light blue).
 .\"-------
 .At
-.BR \-show_ [ zero_lines ]
+.BR \-showz [ erolines ]
 .Ap
 Show axis zero lines on the canvas.
 This is the default
@@ -756,6 +939,14 @@ This is the default
 Sets single page mode for print or export. 
 This is the default.  See also 
 .BR \-multiple.
+.\"-------
+.At
+.BR \-sm [ ooth_factor ]
+.I factor
+.Ap
+Enable smoothing when exporting to the bitmap formats (e.g. GIF, PNG, etc.). The allowed
+values are 0 (no smoothing), 2 or 4 (most smoothing).  This parameter is passed 
+to ghostscript in the -dTextAlphaBits -dGraphicsAlphaBits options to smooth the figure.
 .\"-------
 .At
 .BR \-spec [ ialtext ]
@@ -868,7 +1059,11 @@ Set the starting text step.
 Specifies that xfig should use the input tablet instead of the mouse
 for drawing.  You must have the XInputExtension in your X server and
 an input tablet for this to work.  Also, you must modify the Imakefile
-to include the USETAB and TABLIB variables.
+to include the 
+.B USETAB 
+and 
+.B TABLIB 
+variables.
 .\"-------
 .At
 .BR \-track
@@ -887,7 +1082,7 @@ color panel, starting at 0 (black) and ending at 31 (gold),
 or may be a user-defined color number, which is 32 or higher.
 .\"-------
 .At
-.BR \-up [ date ]
+.BR \-update
 .I file [ file ... ]
 .Ap
 Run xfig in an "update" mode, where it will read each Fig file specified
@@ -961,7 +1156,7 @@ option.
 Set the starting zoom scale.
 
 
-.bp
+.PP
 .SH "X RESOURCES and DEFAULTS"
 The overall widget name(Class) is xfig(Fig).
 These resources correspond to the command line arguments:
@@ -970,9 +1165,8 @@ These resources correspond to the command line arguments:
 .\" Table Begin
 .\"--------------------------------------------------------------------
 .nr t0 \w'internalborderwidth\0'u
-.nr t1 \n(t0+\w'InternalBorderWidth\0'u
-.nr t2 \n(t1+\w'boolean\0'u
-.nr t3 \n(t2+\w'Times-Roman\0'u
+.nr t1 \n(t0+\w'boolean\0'u
+.nr t2 \n(t1+\w'8.5 (landscape)\0'u
 .ta \n(t0u \n(t1u \n(t2u \n(t3u
 .if n .RS -1i
 .if t .RS
@@ -980,91 +1174,118 @@ These resources correspond to the command line arguments:
 .\"-------
 .\" set n to length of table line
 .di xx
-Name	Class	Type	Default	Command-line
+Name	Type	Default	Command-line equivalent
 .nr n \n(.nu
 .di
 .rm xx
 .\"-------
 .\" HEADER
 .\"-------
-Name\&\&\&\&\&\&	Class\&\&\&\&\&\&	Type	Default\&\&\&\&\&	Command-line
-\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&	\&\&\&\&\&\&\&\&	equivalent
+Name	Type	Default	Command-line equivalent
 .\"-------
 .\" BODY
 .\"-------
-.if n \l'\nnu\&-'
+.if n \l'\nnu-'
 .if t \l'\nnu'
-allow_neg_coords\&	NegativeCoordinates	boolean	on\&\&\&\&\&\&\&	\-allow_neg_coords,
-\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-dont_allow_neg_coords,
-balloon_delay\&\&	balloonDelay\&\&	integer	500 (ms)\&\&\&\&	\-balloon_delay
-boldFont\&\&\&\&	Font\&\&\&\&\&\&	string	8x13bold\&\&\&\&	\-bold
-but_per_row\&\&\&	But_per_row\&\&\&	int	2\&\&\&\&\&\&\&\&	\-but_per_row
-buttonFont\&\&\&\&	Font\&\&\&\&\&\&	string	6x13\&\&\&\&	\-button
-canvasBackground	Background\&\&\&	string	white\&\&\&\&\&\&	\-cbg
-canvasForeground	Foreground\&\&\&	string	black\&\&\&\&\&\&	\-cfg
-debug\&\&\&\&\&\&	Debug\&\&\&\&\&\&	boolean	off\&\&\&\&\&\&\&	\-debug
-depth\&\&\&\&\&\&	Depth\&\&\&\&\&\&	integer	*\&\&\&\&\&\&\&\&	\-depth
-dont_switch_cmap	Dont_switch_cmap	boolean	false\&\&\&\&\&\&	\-dontswitchcmap
-exportLanguage\&	ExportLanguage\&	string	eps\&\&\&\&\&\&\&	\-exportLanguage
-export_margin\&\&	Margin\&\&\&\&\&	integer	0\&\&\&\&\&\&\&\&	\-export_margin
-flipvisualhints\&	Hints\&\&\&\&\&\&	boolean	false\&\&\&\&\&\&	\-flipvisualhints
-flushleft\&\&\&\&	FlushLeft\&\&\&\&	boolean	false\&\&\&\&\&\&	\-flushleft
-image_editor\&\&	ImageEditor\&\&\&	string	xv\&\&\&\&\&\&\&	\-image_editor
-inches\&\&\&\&\&	Inches\&\&\&\&\&	boolean	true\&\&\&\&\&\&	\-inches,
-\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-centimeters,
-\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-imperial,
-\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-metric
-internalborderwidth	InternalBorderWidth	integer	1\&\&\&\&\&\&\&\&	\-internalBW
-justify\&\&\&\&\&	Justify\&\&\&\&\&	boolean	false\&\&\&\&\&\&	\-left (false),
-\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-right (true)
-jpeg_quality\&\&	Quality\&\&\&\&\&	integer	75\&\&\&\&\&\&\&	\-jpeg_quality
-keyFile\&\&\&\&\&	KeyFile\&\&\&\&\&	string	CompKeyDB\&\&\&\&	\-keyFile
-landscape\&\&\&\&	Orientation\&\&\&	boolean	true\&\&\&\&\&\&	\-Landscape,
-\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-Portrait
-latexfonts\&\&\&	Latexfonts\&\&\&	boolean	off\&\&\&\&\&\&\&	\-latexfonts
-library_dir\&\&\&	Directory\&\&\&\&	string	~/xfiglib\&\&\&\&	\-library_dir
-magnification\&\&	Magnification\&\&	float	100\&\&\&\&\&\&\&	\-magnification
-max_image_colors\&	Max_image_colors	integer	64\&\&\&\&\&\&\&	\-max_image_colors
-monochrome\&\&\&\&	Monochrome\&\&\&	boolean	false\&\&\&\&\&\&	\-monochrome
-multiple\&\&\&\&	Multiple\&\&\&\&	boolean	false\&\&\&\&\&\&\&	\-multiple
-normalFont\&\&\&	Font\&\&\&\&\&\&	string	6x13\&\&\&\&\&\&	\-normal
-pageborder\&\&\&	Color\&\&\&\&\&\&	string	color\&\&\&\&\&\&	\-pageborder
-page_size\&\&\&\&	Pagesize\&\&\&\&	string	Letter/A4\&\&\&\&	\-page_size
-pheight\&\&\&\&\&	Height\&\&\&\&\&	float	8(9.5)\&\&\&\&\&	\-pheight
-pwidth\&\&\&\&\&	Width\&\&\&\&\&\&	float	10(8)\&\&\&\&\&\&	\-pwidth
-rulerthick\&\&\&	RulerThick\&\&\&	integer	24\&\&\&\&\&\&\&	\-rulerthick
-scalablefonts\&\&	ScalableFonts\&\&	boolean	true\&\&\&\&\&\&	\-scalablefonts
-showallbuttons\&	ShowAllButtons\&	boolean	false\&\&\&\&\&\&	\-showallbuttons
-showballoons\&\&	ShowBalloons\&\&	boolean	true\&\&\&\&\&\&	\-showballoons,
-\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-dontshowballoons
-showdepthmanager	Hints\&\&\&\&\&\&	boolean	true\&\&\&\&\&\&	\-showdepthmanager,
-\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-dontshowdepthmanager
-showpageborder\&\&	Debug\&\&\&\&\&\&	boolean	true\&\&\&\&\&\&	\-showpageborder,
-\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-dontshowpageborder
-showlengths\&\&\&	ShowLengths\&\&\&	boolean	false\&\&\&\&\&\&	\-showlengths,
-\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-dontshowlengths
-show_zero_lines\&	Axis\&\&\&\&\&\&	boolean	true\&\&\&\&\&\&	\-show_zero_lines,
-\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-dont_show_zero_lines
-single\&\&\&\&\&	Single\&\&\&\&\&	boolean	true\&\&\&\&\&\&\&	\-single
-specialtext\&\&\&	SpecialText\&\&\&	boolean	false\&\&\&\&\&\&	\-specialtext
-spellcheckcommand	spellCheckCommand	string	spell %s\&\&\&\&\&	\-spellcheckcommand
-spinner_delay\&\&	spinnerDelay\&\&	integer	500 (ms)\&\&\&\&\&\&\&	\-spinner_delay
-spinner_rate\&\&	spinnerRate\&\&\&	integer	100 (ms)\&\&\&\&\&\&\&	\-spinner_rate
-startfillstyle\&\&	StartFillStyle\&	integer	0\&\&\&\&\&\&\&\&	\-startfillstyle
-startfontsize\&\&	StartFontSize\&\&	float	12\&\&\&\&\&\&\&	\-startfontsize
-startgridmode\&\&	StartGridMode\&\&	integer	0\&\&\&\&\&\&\&\&	\-startgridmode
-startlatexFont\&	StartlatexFont\&	string	Default\&\&\&\&\&	\-startlatexFont
-startlinewidth\&	StartLineWidth\&	integer	1\&\&\&\&\&\&\&\&	\-startlinewidth
-startposnmode\&\&	StartPosnMode\&\&	integer	1\&\&\&\&\&\&\&\&	\-startposnmode
-startpsFont\&\&\&	StartpsFont\&\&\&	string	Times\-Roman\&\&\&	\-startpsFont
-starttextstep\&\&	StartTextStep\&\&	float	1.2\&\&\&\&\&\&\&	\-starttextstep
-trackCursor\&\&\&\&	Track\&\&\&\&\&\&	boolean	on\&\&\&\&\&\&\&	\-track,
-\&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-notrack
-transparent_color	Transparent\&\&\&	integer	-2 (none)\&\&\&\&	\-transparent_color
-userscale\&\&\&\&	UserScale\&\&\&\&	float	1.0\&\&\&\&\&\&\&	\-userscale
-userunit\&\&\&\&	UserUnit\&\&\&\&	string	in(cm)\&\&\&\&\&	\-userunit
-visual\&\&\&\&\&	Visual\&\&\&\&\&	string	*\&\&\&\&\&\&\&\&	\-visual
-zoom\&\&\&\&\&\&	Zoom\&\&\&\&\&\&\&	float	1.0\&\&\&\&\&\&\&	\-zoom
+allownegcoords	boolean	true	\-allownegcoords (true),
+			\-dontallownegcoords (false)
+balloon_delay	integer	500 (ms)	\-balloon_delay
+boldFont	string	8x13bold	\-bold
+but_per_row	integer	2	\-but_per_row
+buttonFont	string	6x13	\-button
+canvasbackground	string	white	\-cbg
+canvasforeground	string	black	\-cfg
+correctfontsize	boolean	false	\-correctfontsize
+debug	boolean	false	\-debug
+depth	integer	*	\-depth
+dontswitchcmap	boolean	false	\-dontswitchcmap
+euc_encoding	boolean	false	(n/a)
+encoding	integer	1	\-encoding
+exportLanguage	string	eps	\-exportLanguage
+export_margin	integer	0	\-export_margin
+flipvisualhints	boolean	false	\-flipvisualhints
+flushleft	boolean	false	\-flushleft (true),
+			\-center (false)
+freehand_resolution	integer	25	\-freehand_resolution
+grid_color	string	black	\-grid_color
+grid_unit	string	1/16 (inch)	\-grid_unit
+		0.1 (metric)
+hiddentext	boolean	false	\-hiddentext
+icon_view	boolean	true	\-icon_view (true),
+			\-list_view (false)
+image_editor	string	xv	\-image_editor
+inches	boolean	true	\-inches (true),
+			\-imperial (true),
+			\-centimeters (false),
+			\-metric (false)
+installowncmap	boolean	false	\-installowncmap
+internalborderwidth	integer	1	\-internalBW
+jpeg_quality	integer	75	\-jpeg_quality
+justify	boolean	false	\-left (false),
+			\-right (true)
+keyFile	string	CompKeyDB	\-keyFile
+landscape	boolean	true	\-Landscape (true),
+			\-landscape (true),
+			\-Portrait (false),
+			\-portrait (false)
+latexfonts	boolean	false	\-latexfonts
+library_dir	string	~/xfiglib	\-library_dir
+magnification	float	100	\-magnification
+max_image_colors	integer	64	\-max_image_colors
+monochrome	boolean	false	\-monochrome
+multiple	boolean	false	\-multiple
+normalFont	string	6x13	\-normal
+overlap	boolean	true	\-overlap (true),
+			\-nooverlap (false)
+pageborder	string	lightblue	\-pageborder
+paper_size	string	Letter (inch)	\-paper_size
+		A4 (metric)
+pheight	float	8.5 (landscape)	\-pheight
+		9.5 (portrait)
+pwidth	float	11 (landscape)	\-pwidth
+		8.5 (portrait)
+rulerthick	integer	24	\-rulerthick
+scalablefonts	boolean	true	\-scalablefonts (true),
+			\-noscalablefonts (false)
+scale_factor	float	1.0	\-scale_factor
+showallbuttons	boolean	false	\-showallbuttons
+showballoons	boolean	true	\-showballoons (true),
+			\-dontshowballoons (false)
+showdepthmanager	boolean	true	\-showdepthmanager (true),
+			\-dontshowdepthmanager (false)
+showlengths	boolean	false	\-showlengths (true),
+			\-dontshowlengths (false)
+shownums	boolean	false	\-shownums (true),
+			\-dontshownums (false)
+showpageborder	boolean	true	\-showpageborder (true),
+			\-dontshowpageborder (false)
+showzerolines	boolean	true	\-showzerolines (true),
+			\-dontshowzerolines (false)
+single	boolean	true	\-single
+smooth_factor	integer	0	\-smooth_factor
+specialtext	boolean	false	\-specialtext
+splash	boolean	true	\-splash (true),
+			\-nosplash (false)
+spellcheckcommand	string	spell %s	\-spellcheckcommand
+spinner_delay	integer	500 (ms)	\-spinner_delay
+spinner_rate	integer	100 (ms)	\-spinner_rate
+startfillstyle	integer	0	\-startfillstyle
+startfontsize	float	12	\-startfontsize
+startgridmode	integer	0	\-startgridmode
+startlatexFont	string	Default	\-startlatexFont
+startlinewidth	integer	1	\-startlinewidth
+startposnmode	integer	1	\-startposnmode
+startpsFont	string	Times\-Roman	\-startpsFont
+starttextstep	float	1.2	\-starttextstep
+tablet	boolean	false	\-track,
+trackCursor	boolean	true	\-track (true),
+			\-notrack (false)
+transparent_color	integer	-2 (none)	\-transparent_color
+userscale	float	1.0	\-userscale
+userunit	string	in (inches)	\-userunit
+		cm (metric)
+visual	string	*	\-visual
+zoom	float	1.0	\-zoom
 
 * Default visual and depth depend on the X server. Use \fIxdpyinfo\fR to see what visuals
 and depths are supported.
@@ -1078,7 +1299,7 @@ and depths are supported.
 .\" Table End
 .\"--------------------------------------------------------------------
 
-.bp
+.PP
 .SH BUGS and RESTRICTIONS
 Please send bug reports, fixes, new features etc. to:
 .br
@@ -1178,10 +1399,10 @@ Any party obtaining a copy of these files is granted, free of charge, a
 full and unrestricted irrevocable, world-wide, paid up, royalty-free,
 nonexclusive right and license to deal in this software and
 documentation files (the "Software"), including without limitation the
-rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons who receive
-copies from any such party to do so, with the only requirement being
-that this copyright notice remain intact.
+rights to use, copy, modify, merge, publish and/or distribute copies of
+the Software, and to permit persons who receive copies from any such 
+party to do so, with the only requirement being that this copyright 
+notice remain intact.
 .PP
 Note that although I work at Lawrence Berkeley National Laboratory (LBNL)
 I don't speak for LBNL nor do I represent LBNL with respect to my work on
@@ -1511,10 +1732,10 @@ Bill Chimiak (chim@bgsm.edu)
 .sp
 .in -4
 .sp
-.B "Version 3.2.3:"
+.B "Version 3.2.3 and newer:"
 .sp 2
 .in +4
-Please see the CHANGES file for credits for version 3.2.3 features.
+Please see the CHANGES file for credits for newer releases.
 .in -4
 .SH NOTES
 Many bug fixes/cleanups etc. by a host of faithful users

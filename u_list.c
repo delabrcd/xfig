@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
@@ -9,10 +9,10 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -261,6 +261,9 @@ remove_compound_depth(comp)
     F_text	   *tt;
     F_compound	   *cc;
 
+    if (comp == (F_compound *) 0)
+	return;
+
     /* defer updating of layer buttons until we've added the entire compound */
     defer_update_layers++;
     for (aa=comp->arcs; aa; aa=aa->next)
@@ -296,7 +299,7 @@ list_add_arc(list, a)
 	*list = a;
     else
 	aa->next = a;
-    if (list == &objects.arcs || list == &saved_objects.arcs)
+    if (list == &objects.arcs)
 	while (a) {
 	    add_depth(O_ARC, a->depth);
 	    a = a->next;
@@ -314,7 +317,7 @@ list_add_ellipse(list, e)
 	*list = e;
     else
 	ee->next = e;
-    if (list == &objects.ellipses || list == &saved_objects.ellipses)
+    if (list == &objects.ellipses)
 	while (e) {
 	    add_depth(O_ELLIPSE, e->depth);
 	    e = e->next;
@@ -332,7 +335,7 @@ list_add_line(list, l)
 	*list = l;
     else
 	ll->next = l;
-    if (list == &objects.lines || list == &saved_objects.lines)
+    if (list == &objects.lines)
 	while (l) {
 	    add_depth(O_POLYLINE, l->depth);
 	    l = l->next;
@@ -350,7 +353,7 @@ list_add_spline(list, s)
 	*list = s;
     else
 	ss->next = s;
-    if (list == &objects.splines || list == &saved_objects.splines)
+    if (list == &objects.splines)
 	while (s) {
 	    add_depth(O_SPLINE, s->depth);
 	    s = s->next;
@@ -368,7 +371,7 @@ list_add_text(list, t)
 	*list = t;
     else
 	tt->next = t;
-    if (list == &objects.texts || list == &saved_objects.texts)
+    if (list == &objects.texts)
 	while (t) {
 	    add_depth(O_TEXT, t->depth);
 	    t = t->next;
@@ -387,7 +390,7 @@ list_add_compound(list, c)
     else
 	cc->next = c;
     
-    if (list == &objects.compounds || list == &saved_objects.compounds) {
+    if (list == &objects.compounds) {
 	while (c) {
 	    add_compound_depth(c);
 	    c = c->next;
@@ -749,6 +752,9 @@ tail(ob, tails)
 append_objects(l1, l2, tails)
     F_compound	   *l1, *l2, *tails;
 {
+    /* don't forget to account for the depths */
+    add_compound_depth(l2);
+
     if (tails->arcs)
 	tails->arcs->next = l2->arcs;
     else
@@ -780,30 +786,83 @@ append_objects(l1, l2, tails)
 cut_objects(objects, tails)
     F_compound	   *objects, *tails;
 {
-    if (tails->arcs)
+    if (tails->arcs) {
+	remove_arc_depths(tails->arcs->next);
 	tails->arcs->next = NULL;
-    else
+    } else if (objects->arcs) {
+	remove_arc_depths(objects->arcs);
 	objects->arcs = NULL;
-    if (tails->compounds)
+    }
+    if (tails->compounds) {
+	remove_compound_depth(tails->compounds->next);
 	tails->compounds->next = NULL;
-    else
+    } else if (objects->compounds) {
+	remove_compound_depth(objects->compounds);
 	objects->compounds = NULL;
-    if (tails->ellipses)
+    }
+    if (tails->ellipses) {
+	remove_ellipse_depths(tails->ellipses->next);
 	tails->ellipses->next = NULL;
-    else
+    } else if (objects->ellipses) {
+	remove_ellipse_depths(objects->ellipses);
 	objects->ellipses = NULL;
-    if (tails->lines)
+    }
+    if (tails->lines) {
+	remove_line_depths(tails->lines->next);
 	tails->lines->next = NULL;
-    else
+    } else if (objects->lines) {
+	remove_line_depths(objects->lines);
 	objects->lines = NULL;
-    if (tails->splines)
+    }
+    if (tails->splines) {
+	remove_spline_depths(tails->splines->next);
 	tails->splines->next = NULL;
-    else
+    } else if (objects->splines) {
+	remove_spline_depths(objects->splines);
 	objects->splines = NULL;
-    if (tails->texts)
+    }
+    if (tails->texts) {
+	remove_text_depths(tails->texts->next);
 	tails->texts->next = NULL;
-    else
+    } else if (objects->texts) {
+	remove_text_depths(objects->texts);
 	objects->texts = NULL;
+    }
+}
+
+remove_arc_depths(a)
+    F_arc	   *a;
+{
+    for ( ; a; a= a->next)
+	remove_depth(O_ARC, a->depth);
+}
+
+remove_ellipse_depths(e)
+    F_ellipse	   *e;
+{
+    for ( ; e; e = e->next)
+	remove_depth(O_ELLIPSE, e->depth);
+}
+
+remove_line_depths(l)
+    F_line	   *l;
+{
+    for ( ; l; l = l->next)
+	remove_depth(O_POLYLINE, l->depth);
+}
+
+remove_spline_depths(s)
+    F_spline	   *s;
+{
+    for ( ; s; s = s->next)
+	remove_depth(O_SPLINE, s->depth);
+}
+
+remove_text_depths(t)
+    F_text	   *t;
+{
+    for ( ; t; t = t->next)
+	remove_depth(O_TEXT, t->depth);
 }
 
 append_point(x, y, point)    /** used in d_arcbox **/

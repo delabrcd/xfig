@@ -1,16 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1997 by T. Sato
- * Parts Copyright (c) 1997-2000 by Brian V. Smith
+ * Parts Copyright (c) 1997-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -45,15 +45,15 @@ There is currently no way to undo replace/update operations.
 #include "resources.h"
 #include "object.h"
 #include "d_text.h"
-#include "e_edit.h"
 #include "e_update.h"
 #include "f_util.h"
-#include "w_setup.h"
-#include "w_util.h"
 #include "w_drawprim.h"
+#include "w_indpanel.h"
 #include "w_listwidget.h"
 #include "w_msgpanel.h"
 #include "w_srchrepl.h"
+#include "w_setup.h"
+#include "w_util.h"
 #include "u_create.h"
 #include <stdarg.h>
 
@@ -62,8 +62,6 @@ There is currently no way to undo replace/update operations.
 
 static String search_panel_translations =
         "<Message>WM_PROTOCOLS: QuitSearchPanel()\n";
-static String found_text_panel_translations =
-        "<Message>WM_PROTOCOLS: QuitFoundTextPanel()\n";
 static String spell_panel_translations =
         "<Message>WM_PROTOCOLS: QuitSpellPanel()\n";
 static String spell_text_translations =
@@ -93,11 +91,6 @@ static XtActionsRec search_actions[] =
     {"ReplaceText", (XtActionProc) do_replace},
     {"QuitSearchPanel", (XtActionProc) search_panel_dismiss},
     {"QuitFoundTextPanel", (XtActionProc) found_text_panel_dismiss},
-};
-
-static XtActionsRec found_text_actions[] =
-{
-    {"QuitFoundTextPanel", (XtActionProc)found_text_panel_dismiss},
 };
 
 static XtActionsRec spell_actions[] =
@@ -220,20 +213,6 @@ replace_text_in_compound(com, pattern, dst)
         }
       }
       if (replaced) {  /* replace the text object */
-#ifdef notdef  /* this code can get into infinite loop
-		  when replacing "a" to "A", for example */
-	new_t = copy_text(t);
-	free(new_t->cstring);
-	/* put in new string */
-	new_t->cstring = my_strdup(str);
-        size = textsize(lookfont(x_fontnum(psfont_text(t), new_t->font),
-                                 new_t->size), strlen(new_t->cstring), new_t->cstring);
-        new_t->ascent = size.ascent;
-        new_t->descent = size.descent;
-        new_t->length = size.length;
-	/* replace old with new in the list */
-	change_text(t, new_t);
-#else  /* here is code from older xfig */
         if (strlen(t->cstring) != strlen(str)) {
           free(t->cstring);
           t->cstring = new_string(strlen(str));
@@ -244,7 +223,6 @@ replace_text_in_compound(com, pattern, dst)
         t->ascent = size.ascent;
         t->descent = size.descent;
         t->length = size.length;
-#endif
         processed = True;
       }
     }
@@ -273,10 +251,7 @@ do_update(widget, closure, call_data)
 }
 
 static void 
-found_text_panel_dismiss(widget, closure, call_data)
-    Widget	    widget;
-    XtPointer	    closure;
-    XtPointer	    call_data;
+found_text_panel_dismiss()
 {
   if (found_text_panel != None) 
 	XtDestroyWidget(found_text_panel);
@@ -449,6 +424,9 @@ popup_search_panel()
     Widget form, label, dismiss_button;
     int rx,ry;
 
+    /* turn off Compose key LED */
+    setCompLED(0);
+
     /* don't paste if in the middle of drawing/editing */
     if (check_action_on())
 	return;
@@ -481,12 +459,20 @@ popup_search_panel()
     
     FirstArg(XtNlabel, "  Search for:");
     NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     label = XtCreateManagedWidget("search_lab", labelWidgetClass,
                                   form, Args, ArgCount);
     
     FirstArg(XtNfromHoriz, label);
     NextArg(XtNeditType, XawtextEdit);
     NextArg(XtNwidth, 200);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     search_text_widget = XtCreateManagedWidget("search_text", asciiTextWidgetClass,
                                                form, Args, ArgCount);
     XtOverrideTranslations(search_text_widget,
@@ -496,20 +482,27 @@ popup_search_panel()
 
     FirstArg(XtNlabel, "Search ");
     NextArg(XtNfromHoriz, search_text_widget);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     search_button = XtCreateManagedWidget("search", commandWidgetClass,
                                           form, Args, ArgCount);
     XtAddCallback(search_button, XtNcallback,
                 (XtCallbackProc) search_and_replace_text, (XtPointer) NULL);
   
     (void) CreateCheckbutton("Case sensitive", "case_sensitive", 
-			form, NULL, search_button, True, False, &case_sensitive, 0, 0);
-
+			form, NULL, search_button, MANAGE, SMALL_CHK, &case_sensitive, 0, 0);
     below = label;
 
     FirstArg(XtNfromVert, below);
     NextArg(XtNvertDistance, 6);
     NextArg(XtNborderWidth, 0);
     NextArg(XtNlabel, "Replace with:");
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     replace_text_label = XtCreateManagedWidget("replace_lab", labelWidgetClass,
                                   form, Args, ArgCount);
 
@@ -518,6 +511,10 @@ popup_search_panel()
     NextArg(XtNfromHoriz, replace_text_label);
     NextArg(XtNeditType, XawtextEdit);
     NextArg(XtNwidth, 200);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     replace_text_widget = XtCreateManagedWidget("replace_text", asciiTextWidgetClass,
                                                form, Args, ArgCount);
     XtOverrideTranslations(replace_text_widget,
@@ -526,6 +523,10 @@ popup_search_panel()
     FirstArg(XtNfromVert, below);
     NextArg(XtNfromHoriz, replace_text_widget);
     NextArg(XtNlabel, "Replace");
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     do_replace_button = XtCreateManagedWidget("do_replace", commandWidgetClass,
                                                    form, Args, ArgCount);
     XtAddCallback(do_replace_button, XtNcallback,
@@ -534,6 +535,10 @@ popup_search_panel()
     FirstArg(XtNfromVert, below);
     NextArg(XtNfromHoriz, do_replace_button);
     NextArg(XtNlabel, "UPDATE  settings");
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     do_update_button = XtCreateManagedWidget("dismiss", commandWidgetClass,
                                         form, Args, ArgCount);
     XtAddCallback(do_update_button, XtNcallback,
@@ -548,7 +553,12 @@ popup_search_panel()
     NextArg(XtNjustify, XtJustifyLeft);
     NextArg(XtNwidth, SEARCH_WIDTH);
     NextArg(XtNheight, 20);
-    search_msg_win = XtCreateManagedWidget("search_msg_win", labelWidgetClass,                                       form, Args, ArgCount);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    search_msg_win = XtCreateManagedWidget("search_msg_win", labelWidgetClass, 
+		    form, Args, ArgCount);
     
     below = search_msg_win;
 
@@ -561,6 +571,10 @@ popup_search_panel()
     NextArg(XtNdisplayCaret, False);
     NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
     NextArg(XtNscrollVertical, XawtextScrollAlways);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     search_results_win = XtCreateManagedWidget("search_results_win", asciiTextWidgetClass,
 			form, Args, ArgCount);
     
@@ -570,6 +584,10 @@ popup_search_panel()
 
     FirstArg(XtNfromVert, below);
     NextArg(XtNlabel, "Dismiss");
+    NextArg(XtNtop, XtChainBottom);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     dismiss_button = XtCreateManagedWidget("dismiss", commandWidgetClass,
                                     form, Args, ArgCount);
     XtAddCallback(dismiss_button, XtNcallback,
@@ -695,7 +713,7 @@ popup_spell_check_panel(list, nitems)
     NextArg(XtNtop, XtChainTop);
     NextArg(XtNbottom, XtChainTop);
     NextArg(XtNleft, XtChainLeft);
-    NextArg(XtNright, XtChainRight);
+    NextArg(XtNright, XtChainLeft);
     correct_word = XtCreateManagedWidget("correct_word", asciiTextWidgetClass,
 				     form, Args, ArgCount);
     /* "Return" corrects word */
@@ -710,8 +728,8 @@ popup_spell_check_panel(list, nitems)
     NextArg(XtNfromHoriz, correct_word);
     NextArg(XtNtop, XtChainTop);
     NextArg(XtNbottom, XtChainTop);
-    NextArg(XtNleft, XtChainRight);
-    NextArg(XtNright, XtChainRight);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     correct_button = XtCreateManagedWidget("correct", commandWidgetClass,
                                            form, Args, ArgCount);
     XtAddCallback(correct_button, XtNcallback,
@@ -780,6 +798,9 @@ spell_check()
   int	  len, i;
   Boolean done = FALSE;
   static int lines = 0;
+
+  /* turn off Compose key LED */
+  setCompLED(0);
 
   put_msg("Spell checking...");
 

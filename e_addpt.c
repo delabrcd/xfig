@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -27,6 +27,7 @@
 #include "u_list.h"
 #include "u_search.h"
 #include "w_canvas.h"
+#include "w_drawprim.h"
 #include "w_mousefun.h"
 #include "w_modepanel.h"
 
@@ -42,6 +43,7 @@ point_adding_selected()
     set_mousefun("break/add here", "", "", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     init_searchproc_left(init_point_adding);
     canvas_leftbut_proc = object_search_left;
     canvas_middlebut_proc = null_proc;
@@ -83,16 +85,19 @@ init_point_adding(p, type, x, y, px, py)
     if (left_point == NULL || right_point == NULL) {
 	if (latexline_mode || latexarrow_mode) {
 	    canvas_locmove_proc = latex_line;
+	    canvas_ref_proc = elastic_line;
 	    return;
 	}
 	if (mountain_mode || manhattan_mode) {
 	    canvas_locmove_proc = constrainedangle_line;
+	    canvas_ref_proc = elastic_line;
 	    return;
 	}
     } else {
 	force_noanglegeom();
     }
     canvas_locmove_proc = reshaping_line;
+    canvas_ref_proc = elastic_linelink;
 }
 
 static void
@@ -106,6 +111,7 @@ wrapup_pointadding()
 static void
 cancel_pointadding()
 {
+    canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_linelink();
     /* turn back on all relevant markers */
     update_markers(new_objmask);
@@ -115,6 +121,7 @@ cancel_pointadding()
 static void
 cancel_line_pointadding()
 {
+    canvas_ref_proc = canvas_locmove_proc = null_proc;
     if (left_point != NULL && right_point != NULL)
 	pw_vector(canvas_win, left_point->x, left_point->y,
 		  right_point->x, right_point->y, PAINT,
@@ -154,6 +161,14 @@ fix_splinepoint_adding(x, y)
 {
     F_point	   *p;
 
+    /* if this point is coincident with the point being added to, return */
+    if (((left_point == NULL) && 
+	   (cur_x == cur_s->points[0].x) && (cur_y == cur_s->points[0].y)) ||
+	   ((left_point != NULL) && 
+	   (left_point->x == cur_x) && (left_point->y == cur_y))) {
+	return;
+    }
+
     (*canvas_locmove_proc) (x, y);
     if ((p = create_point()) == NULL) {
 	wrapup_pointadding();
@@ -162,11 +177,11 @@ fix_splinepoint_adding(x, y)
     p->x = cur_x;
     p->y = cur_y;
     elastic_linelink();
+    wrapup_pointadding();
     splinepoint_adding(cur_s, left_point, p, right_point,
 		   approx_spline(cur_s) ? S_SPLINE_APPROX : S_SPLINE_INTERP);
     /* turn back on all relevant markers */
     update_markers(new_objmask);
-    wrapup_pointadding();
 }
 
 /*

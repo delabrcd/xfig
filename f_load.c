@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -27,11 +27,17 @@
 #include "w_cmdpanel.h"
 #include "w_export.h"
 #include "w_file.h"
+#include "w_indpanel.h"
 #include "w_layers.h"
 #include "w_msgpanel.h"
+#include "w_rulers.h"
 #include "w_print.h"
 #include "w_util.h"
 #include "w_setup.h"
+
+/* LOCAL declarations */
+
+void	read_fail_message();
 
 /* load Fig file.
 
@@ -69,7 +75,7 @@ load_file(file, xoff, yoff)
     /* object counters for depths */
     clearallcounts();
 
-    s = read_figc(file, &c, False, True, False, xoff, yoff, &settings);
+    s = read_figc(file, &c, DONT_MERGE, REMAP_IMAGES, xoff, yoff, &settings);
     defer_update_layers = 1;	/* so update_layers() won't update for each object */
     add_compound_depth(&c);	/* count objects at each depth */
     defer_update_layers = 0;
@@ -147,10 +153,13 @@ update_settings(settings)
 	if (print_popup)
 	    SetValues(print_just_panel);
 
-	/* set the units string for the length messages */
-	strcpy(cur_fig_units, settings->units ? "in" : "cm");
-	/* and set the rulers/grid accordingly */
-	if (settings->units != (int) appres.INCHES) {
+	/* set the rulers/grid accordingly */
+	if (settings->units != (int) appres.INCHES || cur_gridunit != settings->grid_unit) {
+	    /* reset the units string for the length messages */
+	    strcpy(cur_fig_units, settings->units ? "in" : "cm");
+	    /* and grid unit (1/16th, 1/10th, etc) */
+	    cur_gridunit = settings->grid_unit;
+
 	    appres.INCHES = (Boolean) settings->units;
 	    /* PIC_FACTOR is the number of Fig units per printer points (1/72 inch) */
 	    /* it changes with Metric and Imperial */
@@ -165,6 +174,10 @@ update_settings(settings)
 		SetValues(unitbox_sw);
 	    }
 	}
+
+	/* set the unit indicator in the upper-right corner */
+	set_unit_indicator(False);
+
 	/* paper size */
 	if ((appres.papersize = settings->papersize) < 0) {
 	    file_msg("Illegal paper size in file, using default");
@@ -209,7 +222,7 @@ merge_file(file, xoff, yoff)
     char	   *file;
     int		    xoff, yoff;
 {
-    F_compound	   *c;
+    F_compound	   *c, *c2;
     int		    s;
     fig_settings    settings;
 
@@ -229,20 +242,36 @@ merge_file(file, xoff, yoff)
     /* clear picture object read flag */
     pic_obj_read = False;
 
-    s = read_figc(file, c, True, False, False, xoff, yoff, &settings);	/* merging */
+    /* read merged file into compound */
+    s = read_figc(file, c, MERGE, DONT_REMAP_IMAGES, xoff, yoff, &settings);
 
     if (s == 0) {			/* Successful read */
-	compound_bound(c, &c->nwcorner.x, &c->nwcorner.y,
+	/* only if there are objects other than user colors */
+	if (c) {
+	    /* if there are no objects other than one compound, don't encapsulate
+		   it in another compound */
+	    if (c->arcs == 0 && c->ellipses == 0 && c->lines == 0 && 
+		c->splines == 0 && c->texts == 0 &&
+		(c->compounds != 0 && c->compounds->next == 0)) {
+		    /* save ptr to embedded compound */
+		    c2 = c->compounds;
+		    /* free the toplevel */
+		    free((char *) c);
+	            c = c2;
+	    }
+	    compound_bound(c, &c->nwcorner.x, &c->nwcorner.y,
 		   &c->secorner.x, &c->secorner.y);
-	clean_up();
-	/* add the depths of the objects besides adding the objects to the main list */
-	list_add_compound(&objects.compounds, c);
-	set_latestcompound(c);
+	    clean_up();
+	    /* add the depths of the objects besides adding the objects to the main list */
+	    list_add_compound(&objects.compounds, c);
+	    set_latestcompound(c);
+	}
 	/* must remap all EPS/GIF/XPMs now if any new pic objects were read */
 	if (pic_obj_read)
-	    remap_imagecolors(&objects);
+	    remap_imagecolors();
 	redraw_images(&objects);
-	redisplay_zoomed_region(c->nwcorner.x, c->nwcorner.y, 
+	if (c)
+	    redisplay_zoomed_region(c->nwcorner.x, c->nwcorner.y, 
 				c->secorner.x, c->secorner.y);
 	put_msg("%d object(s) read from \"%s\"", num_object, file);
 	set_action_object(F_ADD, O_COMPOUND);
@@ -298,7 +327,7 @@ update_recent_list(file)
 
     /* put new entry in first slot */
     /* prepend with file number (1) */
-    name = malloc(strlen(file)+4);
+    name = new_string(strlen(file)+4);
     sprintf(name,"1 %s",file);
     recent_files[0].name = name;
     if (num_recent_files < max_recent_files)
@@ -308,4 +337,34 @@ update_recent_list(file)
     rebuild_file_menu(None);
     /* now update the user's .xfigrc file with the file list */
     update_recent_files();
+}
+
+void
+read_fail_message(file, err)
+    char	   *file;
+    int		    err;
+{
+    if (err == 0)		/* Successful read */
+	return;
+#ifdef ENAMETOOLONG
+    else if (err == ENAMETOOLONG)
+	file_msg("File name \"%s\" is too long", file);
+#endif /* ENAMETOOLONG */
+    else if (err == ENOENT)
+	file_msg("File \"%s\" does not exist.", file);
+    else if (err == ENOTDIR)
+	file_msg("A name in the path \"%s\" is not a directory.", file);
+    else if (err == EACCES)
+	file_msg("Read access to file \"%s\" is blocked.", file);
+    else if (err == EISDIR)
+	file_msg("File \"%s\" is a directory.", file);
+    else if (err == NO_VERSION)
+	file_msg("File \"%s\" has no version number in header.", file);
+    else if (err == EMPTY_FILE)
+	file_msg("File \"%s\" is empty.", file);
+    else if (err == BAD_FORMAT)
+	/* Format error; relevant error message is already delivered */
+	;
+    else
+	file_msg("File \"%s\" is not accessable; %s.", file, strerror(err));
 }

@@ -1,16 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -30,19 +30,23 @@
 #include "w_mousefun.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
+#include "w_util.h"
 
 static void	init_update_object();
 static void	init_update_settings();
-static int	seek_smallest_depth();
-static int	seek_largest_depth();
 
 static Boolean	keep_depth = False;
 static int	delta_depth;
 
+
+#define min(a,b) ((a)<(b)) ? (a) : (b)
 #define up_part(lv,rv,mask) \
 		if (cur_updatemask & (mask)) \
-		    (lv) = (keep_depth && mask == I_DEPTH) ? ((lv)+delta_depth) : (rv)
-
+		    (lv) = (rv)
+#define up_depth_part(lv,rv) \
+		if (cur_updatemask & I_DEPTH) \
+		    (lv) = keep_depth ? \
+			(min((lv)+delta_depth,MAX_DEPTH)) : (rv)
 
 void
 update_selected()
@@ -51,6 +55,7 @@ update_selected()
 			LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     init_searchproc_left(init_update_object);
     init_searchproc_middle(init_update_settings);
     canvas_leftbut_proc = object_search_left;
@@ -85,7 +90,7 @@ get_arrow_type(object)
     if (object->for_arrow)
 	type = object->for_arrow->type*2 - 1 + object->for_arrow->style;
     else if (object->back_arrow)
-	type =  object->back_arrow->type*2 - 1 + object->back_arrow->style;
+	type = object->back_arrow->type*2 - 1 + object->back_arrow->style;
     else
 	type = 0;
     if (type < 0)
@@ -102,12 +107,57 @@ init_update_settings(p, type, x, y, px, py)
     int		    x, y;
     int		    px, py;
 {
-    int		old_psfont_flag, new_psfont_flag;
+    int		    old_psfont_flag, new_psfont_flag;
+    F_line	   *dline, *dtick1, *dtick2, *dbox;
+    F_text	   *dtext;
 
     switch (type) {
       case O_COMPOUND:
-	put_msg("There is no support for updating settings from a compound object");
-	return;
+	cur_c = (F_compound *) p;
+
+	/* if this is a dimension line, update the dimline settings from it */
+	if (dimline_components(cur_c, &dline, &dtick1, &dtick2, &dbox)) {
+	    if (dline) {
+		cur_dimline_thick = dline->thickness;
+		cur_dimline_style = dline->style;
+		cur_dimline_color = dline->pen_color;
+		if (dline->back_arrow) {
+		    cur_dimline_leftarrow = dline->back_arrow->type*2 - 1 +
+				dline->back_arrow->style;
+		    cur_dimline_arrowlength = dline->back_arrow->ht;
+		    cur_dimline_arrowwidth = dline->back_arrow->wd;
+		} else {
+		    cur_dimline_leftarrow = 0;
+		}
+		if (dline->for_arrow) {
+		    cur_dimline_rightarrow = dline->for_arrow->type*2 - 1 +
+				dline->for_arrow->style;
+		    cur_dimline_arrowlength = dline->for_arrow->ht;
+		    cur_dimline_arrowwidth = dline->for_arrow->wd;
+		} else {
+		    cur_dimline_rightarrow = 0;
+		}
+	        cur_dimline_ticks = (dtick1 || dtick2);
+	    }
+	    if (dbox) {
+		cur_dimline_boxthick = dbox->thickness;
+		cur_dimline_boxcolor = dbox->fill_color;
+	    }
+	    if (dtext = cur_c->texts) {
+		cur_dimline_textcolor = dtext->color;
+		cur_dimline_font = dtext->font;
+		cur_dimline_fontsize = dtext->size;
+		cur_dimline_psflag = (dtext->flags & PSFONT_TEXT)? 1:0;
+		cur_dimline_fixed = (dtext->comments && 
+				     (strncasecmp(dtext->comments,"fixed text", 10)==0));
+	    }
+	}
+
+	/* only update the depth setting from the smallest depth in the compound */
+	if (cur_updatemask & I_DEPTH) {
+	    cur_depth = find_smallest_depth(cur_c);
+	}
+	break;
       case O_POLYLINE:
 	cur_l = (F_line *) p;
 	if (cur_l->type != T_PICTURE) {
@@ -127,17 +177,19 @@ init_update_settings(p, type, x, y, px, py)
 			up_from_arrow(cur_l->back_arrow,cur_l->thickness);
 		if (cur_l->for_arrow)
 			up_from_arrow(cur_l->for_arrow,cur_l->thickness);
-	} else if (cur_l->pic->subtype == T_PIC_XBM)	/* only XBM pictures have color */
+	} else if (cur_l->pic->pic_cache && cur_l->pic->pic_cache->subtype == T_PIC_XBM) {
+		/* only XBM pictures have color */
 		up_part(cur_pencolor, cur_l->pen_color, I_PEN_COLOR);
-	up_part(cur_depth, cur_l->depth, I_DEPTH);
-	if (cur_l->type == T_ARC_BOX)
+	}
+	up_depth_part(cur_depth, cur_l->depth);
+	if (cur_l->type == T_ARCBOX)
 	    up_part(cur_boxradius, cur_l->radius, I_BOXRADIUS);
 	break;
       case O_TEXT:
 	cur_t = (F_text *) p;
 	up_part(cur_textjust, cur_t->type, I_TEXTJUST);
 	up_part(cur_pencolor, cur_t->color, I_PEN_COLOR);
-	up_part(cur_depth, cur_t->depth, I_DEPTH);
+	up_depth_part(cur_depth, cur_t->depth);
 	up_part(cur_elltextangle, cur_t->angle/M_PI*180.0, I_ELLTEXTANGLE);
 	old_psfont_flag = (cur_textflags & PSFONT_TEXT);
 	new_psfont_flag = (cur_t->flags & PSFONT_TEXT);
@@ -166,7 +218,7 @@ init_update_settings(p, type, x, y, px, py)
 	up_part(cur_styleval, (cur_e->style_val*2.)/(cur_e->thickness+1.), I_LINESTYLE);
 	/* update the dash length/dot gap value for cur_styleval */
 	up_dashdot(cur_styleval, cur_e->style, I_LINESTYLE);
-	up_part(cur_depth, cur_e->depth, I_DEPTH);
+	up_depth_part(cur_depth, cur_e->depth);
 	break;
       case O_ARC:
 	cur_a = (F_arc *) p;
@@ -180,7 +232,7 @@ init_update_settings(p, type, x, y, px, py)
 	/* update the dash length/dot gap value for cur_styleval */
 	up_dashdot(cur_styleval, cur_a->style, I_LINESTYLE);
 	up_part(cur_capstyle, cur_a->cap_style, I_CAPSTYLE);
-	up_part(cur_depth, cur_a->depth, I_DEPTH);
+	up_depth_part(cur_depth, cur_a->depth);
 	up_part(cur_arrowmode, get_arrow_mode((F_line *)cur_a), I_ARROWMODE);
 	up_part(cur_arrowtype, get_arrow_type((F_line *)cur_a), I_ARROWTYPE);
 	if (cur_a->back_arrow)
@@ -200,7 +252,7 @@ init_update_settings(p, type, x, y, px, py)
 	up_dashdot(cur_styleval, cur_s->style, I_LINESTYLE);
 	if (cur_s->type == T_OPEN_APPROX || cur_s->type == T_OPEN_INTERP)
 	    up_part(cur_capstyle, cur_s->cap_style, I_CAPSTYLE);
-	up_part(cur_depth, cur_s->depth, I_DEPTH);
+	up_depth_part(cur_depth, cur_s->depth);
 	up_part(cur_arrowmode, get_arrow_mode((F_line *)cur_s), I_ARROWMODE);
 	up_part(cur_arrowtype, get_arrow_type((F_line *)cur_s), I_ARROWTYPE);
 	if (cur_s->back_arrow)
@@ -208,11 +260,16 @@ init_update_settings(p, type, x, y, px, py)
 	if (cur_s->for_arrow)
 		up_from_arrow(cur_s->for_arrow,cur_s->thickness);
 	break;
-    default:
+      default:
 	return;
     }
     update_current_settings();
-    put_msg("Settings UPDATED");
+    if (type == O_COMPOUND) {
+	put_msg("Only the (smallest) depth is retrieved from a compound object");
+	beep();
+    } else {
+	put_msg("Settings UPDATED");
+    }
 }
 
 up_from_arrow(arrow, thick)
@@ -257,22 +314,21 @@ init_update_object(p, type, x, y, px, py)
 	   relative to each other, setting the depth of the *most shallow*
 	   to the desired depth */
 	keep_depth = True;
-	largest = seek_largest_depth(cur_c);
+	largest = find_largest_depth(cur_c);
 	/* find delta */
-	delta_depth = cur_depth - seek_smallest_depth(cur_c);
+	delta_depth = cur_depth - find_smallest_depth(cur_c);
 	/* if renumbering would make depths too large don't allow it */
 	if ((delta_depth + largest > MAX_DEPTH) && (cur_updatemask & I_DEPTH)) {
+	    if (popup_query(QUERY_YESNO,
+		"Some depths would exceed maximum - those objects\nwill be set to maximum depth. Update anyway?") != RESULT_YES) {
 	    delta_depth = 0;
 	    dontupdate = True;
+	}
 	}
 	update_compound(new_c);
 	keep_depth = False;
 
 	change_compound(cur_c, new_c);
-	if (dontupdate) {
-	    put_msg("Depths not updated - would put some objects past maximum depth");
-	    beep();
-	}
 	/* redraw anything near the old comound */
 	redisplay_compound(cur_c);
 	/* draw the new compound */
@@ -341,78 +397,6 @@ init_update_object(p, type, x, y, px, py)
 	put_msg("Object(s) UPDATED");
 }
 
-static int
-seek_smallest_depth(compound)
-    F_compound	   *compound;
-{
-	F_line	 *l;
-	F_spline	 *s;
-	F_ellipse	 *e;
-	F_arc	 *a;
-	F_text	 *t;
-	F_compound *c;
-	int	  smallest, d1;
-
-	smallest = MAX_DEPTH;
-	for (l = compound->lines; l != NULL; l = l->next) {
-	    if (l->depth < smallest) smallest = l->depth;
-	}
-	for (s = compound->splines; s != NULL; s = s->next) {
-	    if (s->depth < smallest) smallest = s->depth;
-	}
-	for (e = compound->ellipses; e != NULL; e = e->next) {
-	    if (e->depth < smallest) smallest = e->depth;
-	}
-	for (a = compound->arcs; a != NULL; a = a->next) {
-	    if (a->depth < smallest) smallest = a->depth;
-	}
-	for (t = compound->texts; t != NULL; t = t->next) {
-	    if (t->depth < smallest) smallest = t->depth;
-	}
-	for (c = compound->compounds; c != NULL; c = c->next) {
-	    d1 = seek_smallest_depth(c);
-	    if (d1 < smallest)
-		smallest = d1;
-	}
-	return smallest;
-}
-
-static int
-seek_largest_depth(compound)
-    F_compound	   *compound;
-{
-	F_line	 *l;
-	F_spline	 *s;
-	F_ellipse	 *e;
-	F_arc	 *a;
-	F_text	 *t;
-	F_compound *c;
-	int	  largest, d1;
-
-	largest = MIN_DEPTH;
-	for (l = compound->lines; l != NULL; l = l->next) {
-	    if (l->depth > largest) largest = l->depth;
-	}
-	for (s = compound->splines; s != NULL; s = s->next) {
-	    if (s->depth > largest) largest = s->depth;
-	}
-	for (e = compound->ellipses; e != NULL; e = e->next) {
-	    if (e->depth > largest) largest = e->depth;
-	}
-	for (a = compound->arcs; a != NULL; a = a->next) {
-	    if (a->depth > largest) largest = a->depth;
-	}
-	for (t = compound->texts; t != NULL; t = t->next) {
-	    if (t->depth > largest) largest = t->depth;
-	}
-	for (c = compound->compounds; c != NULL; c = c->next) {
-	    d1 = seek_largest_depth(c);
-	    if (d1 > largest)
-		largest = d1;
-	}
-	return largest;
-}
-
 update_ellipse(ellipse)
     F_ellipse	   *ellipse;
 {
@@ -425,7 +409,7 @@ update_ellipse(ellipse)
     up_part(ellipse->fill_style, cur_fillstyle, I_FILLSTYLE);
     up_part(ellipse->pen_color, cur_pencolor, I_PEN_COLOR);
     up_part(ellipse->fill_color, cur_fillcolor, I_FILL_COLOR);
-    up_part(ellipse->depth, cur_depth, I_DEPTH);
+    up_depth_part(ellipse->depth, cur_depth);
     fix_fillstyle((F_line *)ellipse);	/* make sure it has legal fill style if color changed */
     /* updated object will be redisplayed by init_update_xxx() */
 }
@@ -443,7 +427,7 @@ update_arc(arc)
     up_part(arc->cap_style, cur_capstyle, I_CAPSTYLE);
     up_part(arc->pen_color, cur_pencolor, I_PEN_COLOR);
     up_part(arc->fill_color, cur_fillcolor, I_FILL_COLOR);
-    up_part(arc->depth, cur_depth, I_DEPTH);
+    up_depth_part(arc->depth, cur_depth);
     /* check new type - if pie-wedge and there are any arrows, delete them */
     if (arc->type == T_PIE_WEDGE_ARC) {
 	if (arc->for_arrow) {
@@ -477,10 +461,11 @@ update_line(line)
 	up_part(line->fill_color, cur_fillcolor, I_FILL_COLOR);
 	up_part(line->radius, cur_boxradius, I_BOXRADIUS);
 	up_part(line->fill_style, cur_fillstyle, I_FILLSTYLE);
-	}
-    else if (line->pic->subtype == T_PIC_XBM)	/* only xbm images have pen color */
+    } else if (line->pic->pic_cache && line->pic->pic_cache->subtype == T_PIC_XBM) {
+	/* only XBM pictures have color */
 	up_part(line->pen_color, cur_pencolor, I_PEN_COLOR);
-    up_part(line->depth, cur_depth, I_DEPTH);
+    }
+    up_depth_part(line->depth, cur_depth);
     /* only POLYLINES with more than one point may have arrow heads */
     if (line->type == T_POLYLINE && line->points->next != NULL)
 	up_arrow(line);
@@ -513,7 +498,7 @@ update_text(text)
     up_part(text->size, cur_fontsize, I_FONTSIZE);
     up_part(text->angle, cur_elltextangle*M_PI/180.0, I_ELLTEXTANGLE);
     up_part(text->color, cur_pencolor, I_PEN_COLOR);
-    up_part(text->depth, cur_depth, I_DEPTH);
+    up_depth_part(text->depth, cur_depth);
     size = textsize(lookfont(x_fontnum(psfont_text(text), text->font),
 			text->size), strlen(text->cstring), text->cstring);
     text->ascent = size.ascent;
@@ -536,7 +521,7 @@ update_spline(spline)
     up_part(spline->fill_style, cur_fillstyle, I_FILLSTYLE);
     up_part(spline->pen_color, cur_pencolor, I_PEN_COLOR);
     up_part(spline->fill_color, cur_fillcolor, I_FILL_COLOR);
-    up_part(spline->depth, cur_depth, I_DEPTH);
+    up_depth_part(spline->depth, cur_depth);
     if (open_spline(spline))
 	up_arrow((F_line *)spline);
     fix_fillstyle((F_line *)spline);	/* make sure it has legal fill style if color changed */
@@ -646,12 +631,99 @@ up_arrow(object)
 update_compound(compound)
     F_compound	   *compound;
 {
-    update_lines(compound->lines);
-    update_splines(compound->splines);
-    update_ellipses(compound->ellipses);
-    update_arcs(compound->arcs);
-    update_texts(compound->texts);
-    update_compounds(compound->compounds);
+    F_line	   *dline, *dtick1, *dtick2, *dbox;
+    F_text	   *dtext;
+
+    /* if this is a dimension line, update its settings from the dimline settings */
+    if (dimline_components(compound, &dline, &dtick1, &dtick2, &dbox)) {
+	if (dline) {
+	    dline->thickness = cur_dimline_thick;
+	    dline->style = cur_dimline_style;
+	    dline->pen_color = cur_dimline_color;
+
+	    /* free old left arrow */
+	    if (dline->back_arrow) {
+		free((char *) dline->back_arrow);
+		dline->back_arrow = NULL;
+	    }
+	    /* create new one if setting says so */
+	    if (cur_dimline_leftarrow != -1)
+		dline->back_arrow = backward_dim_arrow();
+
+	    /* free old right arrow */
+	    if (dline->for_arrow) {
+		free((char *) dline->for_arrow);
+		dline->for_arrow = NULL;
+	    }
+	    /* create new one if setting says so */
+	    if (cur_dimline_rightarrow != -1)
+		dline->for_arrow = forward_dim_arrow();
+	} /* if (dline) */
+
+	/* update text box */
+	if (dbox) {
+	    /* attach the polygon after the main line */
+	    dline->next = dbox;
+	    dbox->thickness = cur_dimline_boxthick;
+	    dbox->fill_color = cur_dimline_boxcolor;
+	}
+
+	/* free any old ticks */
+	if (dtick1)
+	    free_line(dtick1);
+	if (dtick2)
+	    free_line(dtick2);
+
+	/* create new ones if user wants */
+	if (cur_dimline_ticks) {
+	    create_dimline_ticks(dline, &dtick1, &dtick2);
+	    /* attach it to the previous object in the compound */
+	    if (dbox)
+		dbox->next = dtick1;
+	    else
+		dline->next = dtick1;
+	    dtick1->next = dtick2;
+	} else {
+	    /* no ticks, terminate list of lines after box */
+	    dbox->next = (F_line *) NULL;
+	}
+
+	/* finally, the text */
+	if (dtext = compound->texts) {
+	    dtext->color = cur_dimline_textcolor;
+	    dtext->font = cur_dimline_font;
+	    dtext->size = cur_dimline_fontsize;
+	    dtext->flags = cur_dimline_psflag? PSFONT_TEXT: 0;
+	    /* free any comments in the text */
+	    free((char *) dtext->comments);
+	    if (cur_dimline_fixed)
+		dtext->comments = my_strdup("fixed text");
+	}
+	/* now update the depths of the components */
+	up_depth_part(dline->depth, cur_depth);
+	if (dbox)
+	    up_depth_part(dbox->depth,  cur_depth);
+	if (dtick1)
+	    up_depth_part(dtick1->depth, cur_depth);
+	if (dtick2)
+	    up_depth_part(dtick2->depth, cur_depth);
+	if (dtext)
+	    up_depth_part(dtext->depth, cur_depth);
+
+	/* finally, rescale if necessary */
+	rescale_dimension_line(compound, 1.0, 1.0, 0, 0);
+
+	/* end of dimension line update */
+
+    } else {
+	/* ordinary compound */
+	update_lines(compound->lines);
+	update_splines(compound->splines);
+	update_ellipses(compound->ellipses);
+	update_arcs(compound->arcs);
+	update_texts(compound->texts);
+	update_compounds(compound->compounds);
+    }
     compound_bound(compound, &compound->nwcorner.x, &compound->nwcorner.y,
 		   &compound->secorner.x, &compound->secorner.y);
 }

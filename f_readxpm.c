@@ -1,15 +1,15 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2000 by Brian V. Smith
+ * Copyright (c) 1989-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -29,8 +29,8 @@
 */
 
 int
-read_xpm(filename,filetype,pic)
-    char	   *filename;
+read_xpm(file, filetype, pic)
+    char	   *file;
     int		    filetype;
     F_pic	   *pic;
 {
@@ -45,12 +45,12 @@ read_xpm(filename,filetype,pic)
 			(float)PIX_PER_INCH :
 			2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
 
-    status = XpmReadFileToXpmImage(filename, &image, NULL);
+    status = XpmReadFileToXpmImage(file, &image, NULL);
     /* if out of colors, try switching colormaps and reading again */
     if (status == XpmColorFailed) {
 	if (!switch_colormap())
 	    return PicSuccess;
-	status = XpmReadFileToXpmImage(pic->file, &image, NULL);
+	status = XpmReadFileToXpmImage(file, &image, NULL);
     }
     if (status == XpmSuccess) {
 	/* now look up the colors in the image and put them in the pic colormap */
@@ -64,25 +64,26 @@ read_xpm(filename,filetype,pic)
 		file_msg("Error parsing color %s",c);
 		exact_def.red = exact_def.green = exact_def.blue = 65535;
 	    }
-	    pic->cmap[i].red = exact_def.red >> 8;
-	    pic->cmap[i].green = exact_def.green >> 8;
-	    pic->cmap[i].blue = exact_def.blue >> 8;
+	    pic->pic_cache->cmap[i].red = exact_def.red >> 8;
+	    pic->pic_cache->cmap[i].green = exact_def.green >> 8;
+	    pic->pic_cache->cmap[i].blue = exact_def.blue >> 8;
 	}
-	pic->subtype = T_PIC_XPM;
-	pic->numcols = image.ncolors;
+	pic->pic_cache->subtype = T_PIC_XPM;
+	pic->pic_cache->numcols = image.ncolors;
 	pic->pixmap = None;
-	pic->bitmap = (unsigned char *) malloc(image.width*image.height*sizeof(unsigned char));
-	if (pic->bitmap == NULL) {
+	pic->pic_cache->bitmap = (unsigned char *) 
+					malloc(image.width*image.height*sizeof(unsigned char));
+	if (pic->pic_cache->bitmap == NULL) {
 	    file_msg("cannot allocate space for XPM image");
 	    return PicSuccess;
 	}
 	for (i=0; i<image.width*image.height; i++)
-	    pic->bitmap[i] = (unsigned char) image.data[i]; /* int to unsigned char */
+	    pic->pic_cache->bitmap[i] = (unsigned char) image.data[i]; /* int to unsigned char */
 	pic->hw_ratio = (float) image.height / image.width;
-	pic->bit_size.x = image.width;
-	pic->size_x = image.width * scale;
-	pic->bit_size.y = image.height;
-	pic->size_y = image.height * scale;
+	pic->pic_cache->bit_size.x = image.width;
+	pic->pic_cache->bit_size.y = image.height;
+	pic->pic_cache->size_x = image.width * scale;
+	pic->pic_cache->size_y = image.height * scale;
 	XpmFreeXpmImage(&image);	/* get rid of the image */
 	/* if monochrome display map bitmap */
 	if (tool_cells <= 2 || appres.monochrome)

@@ -2,12 +2,12 @@
 <html>
 <head>
 <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=EUC-JP">
-<title>XFIG User Manual - Miscellaneous</title>
+<title>Miscellaneous</title>
 <link rev="made" href="mailto:VEF00200@nifty.ne.jp">
 </head>
 
 <body>
-<a href="contents.html"><img src="../images/xfig-title.gif"
+<a href="contents.html"><img src="../images/xfig-title.png"
   alt="XFIG Users Manual" border=0></a>
 
 <h1>その他</h1>
@@ -15,6 +15,8 @@
 <ul>
 <li><a href="#search-replace">テキストの検索と置換</a>
 <li><a href="#spell-check">スペル・チェック</a>
+<li><a href="#mouse">2ボタン・マウス、及び3ボタン・マウス</a>
+<li><a href="#wheelmouse">ホイール・マウス</a>
 <li><a href="#mouse-indicator">マウス機能インジケータ</a>
 <li><a href="#balloons">バルーン・メッセージ</a>
 <li><a href="i18n.html">国際化</a>
@@ -36,7 +38,7 @@ Search &amp; Replace パネルでは、
 <a href="editing.html#update">UPDATE</a> を行なうことも可能です。
 <p>
 <blockquote>
-  <img src="../images/search-text-panel.gif" alt="[Search/Replace Panel]">
+  <img src="../images/search-text-panel.png" alt="[Search/Replace Panel]">
 </blockquote>
 
 <p>
@@ -95,7 +97,7 @@ Spell Check パネルを開くことができます。
 を実行し、その結果を表示します。
 <p>
 <blockquote>
-<img src="../images/spell-check-panel.gif" alt="[Spell Check Panel]">
+<img src="../images/spell-check-panel.png" alt="[Spell Check Panel]">
 </blockquote>
 
 <p>
@@ -126,10 +128,62 @@ Spell Check パネルを開くことができます。
 
 <p><hr>
 
+<h2><a name="mouse">2ボタン・マウス、及び3ボタン・マウス</a></h2>
+
+3ボタン・マウスの使用が推奨されますが、
+2ボタン・マウスを使うことも可能です。
+もし2ボタン・マウスを使っており、
+X サーバーが3ボタン・マウスのエミュレートを行なっていないならば、
+META (あるいは ALT) キーとマウスボタン3 (右ボタン) を同時に押すことで、
+マウスボタン2をシミュレートできます。
+通常、マウスボタン1〜3は、それぞれ左、中、及び右ボタンに割り当てられます。
+
+<p><hr>
+
+<h2><a name="wheelmouse">ホイール・マウス</a></h2>
+
+<b>xfig</b> が Imakefile の 
+`<tt>#define WHEELMOUSE</tt>' を有効としてコンパイルされており、
+かつホイール・マウスを使っているならば、
+以下の機能が使用可能となります:
+<p>
+<dl>
+<dt>属性ボタン
+<dd>属性ボタンの上でホイールを回転させると、
+マウス・ボタン2や3がクリックされた場合と同様、
+そのボタンの設定がインクリメント／デクリメントされます。
+これは、線の太さなどのパラメータを変更する際に有用でしょう。
+
+<p>
+<dt>スピナー
+<dd>スピナーの上でホイールを回転させると、
+その値が増加／減少します。
+
+<p>
+<dt>ルーラー (ものさし)
+<dd>ルーラーの上でホイールを回転させると、
+キャンバスがスクロールします。
+
+<p>
+<dt>ズーム
+<dd>キャンバス上で CONTROL キーを押した状態でホイールを回転させると、
+ポインタの周囲でキャンバスが拡大／縮小します。
+
+<p>
+<dt>モード変更
+<dd>キャンバス上でホイールを回転させると、
+描画モード (上向き)、 あるいは編集モード (下向き) を選択するための
+パネルが開かれます。
+このパネルは、いずれかの項目が選択されるか、
+あるいはホイールが逆に回された時に閉じられます。
+</dl>
+
+<p><hr>
+
 <h2><a name="mouse-indicator">マウス機能インジケータ</a></h2>
 
 <blockquote>
-  <img src="../images/mouse-function-indicator.gif" alt="[Mouse Function Indicator]">
+  <img src="../images/mouse-function-indicator.png" alt="[Mouse Function Indicator]">
 </blockquote>
 <p>
 マウス機能インジケータには、
@@ -170,7 +224,7 @@ Shift キーや Control キーが押されているかどうか、など)
 この例を次に示します。
 <p>
 <blockquote>
-  <img src="../images/balloons-example.gif" alt="[Balloons Example]">
+  <img src="../images/balloons-example.png" alt="[Balloons Example]">
 </blockquote>
 
 <p><hr>

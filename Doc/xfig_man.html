@@ -1,0 +1,2501 @@
+<HTML><HEAD><TITLE>Manpage of XFIG</TITLE>
+</HEAD><BODY>
+<H1>XFIG</H1>
+Section: User Commands  (1)<BR>Updated: Xfig 3.2.3a-sgi (Feb 9, 2000)
+<BR><A HREF="#index">Index</A>
+<HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+xfig - Facility for Interactive Generation of figures under X11
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>xfig</B>
+
+[<I>options</I>]
+
+[<I>file</I>]
+
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<I>Xfig</I>
+
+is a menu-driven tool that allows the user to draw and manipulate
+objects interactively under the X Window System.
+<B>It runs under X version 11</B>
+
+<B>release 4 or higher</B>
+
+and requires a two- or three-button mouse.
+<I>file</I>
+
+specifies the name of a file to be edited.
+The objects in the file will be read at the start of
+<I>xfig</I>.
+
+<P>
+
+The bulk of the documentation fori
+<I>xfig</I>
+
+is in an HTML-based reference guide.
+See the Help menu in
+<I>xfig</I>
+
+or point your browser at 
+<I>Doc/html/index.html</I>
+
+(provided with the
+<I>xfig</I>
+
+distribution, usually in the 
+<I>Doc/www</I>
+
+directory).
+There are both English and Japanese versions.
+<P>
+
+When using a two-button mouse use the
+<I>&lt;Meta&gt;</I>
+
+key and the right button at the same time to effect
+the action of the middle button.
+<P>
+
+<I>Xfig</I>
+
+is available from
+<A HREF="ftp://www-epb.lbl.gov/xfig">ftp://www-epb.lbl.gov/xfig</A>
+and usually from <A HREF="ftp://ftp.x.org/contrib/applications/drawing_tools/xfig">ftp://ftp.x.org/contrib/applications/drawing_tools/xfig</A> .
+<P>
+
+The
+<I>TransFig</I>
+
+package is used when printing or exporting the output from
+<I>xfig</I>.
+
+The
+<I>fig2dev</I>
+
+program from the 
+<I>TransFig</I>
+
+package is automatically called by
+<I>xfig</I>
+
+as a back-end processor to produce various types of output:
+<P>
+
+LaTeX, Metafont, PostScript or Encapsulated PostScript,
+tk (tcl/tk tool command language/tool kit package),
+GIF, JPEG, PCX, PNG, PPM, TIFF,
+XBM, XPM, AutoCAD Slide, IBM-GL (HP/GL), Pic
+PiCTeX, box, epic, eepic, and eepicemu.
+<P>
+
+See man fig2dev for all options.
+<P>
+
+The
+<I>TransFig</I>
+
+package is available from
+<A HREF="ftp://www-epb.lbl.gov/xfig">ftp://www-epb.lbl.gov/xfig</A> and
+<A HREF="ftp://ftp.x.org/contrib/applications/drawing_tools/transfig">ftp://ftp.x.org/contrib/applications/drawing_tools/transfig</A> .
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+
+
+<P>
+
+
+<B>-help</B>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Print all command-line options for xfig and quit.
+
+
+</DL>
+<P>
+
+
+<B>-a</B>[<B>llownegcoords</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Allow panning into the negative region of the canvas.
+This is the default
+
+
+</DL>
+<P>
+
+
+<B>-bal</B>[<B>loon_delay</B>]
+
+<I>msec</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Cause popup information balloons to be delayed by
+<I>msec</I>
+
+milliseconds.  The default is 500 milliseconds.
+
+
+</DL>
+<P>
+
+
+<B>-bol</B>[<B>d</B>]
+
+<I>font</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Cause the font used for displaying the file name and
+confirmation messages to be
+<I>font</I>
+
+(default = 8x13bold).
+
+
+</DL>
+<P>
+
+
+<B>-butt</B>[<B>on</B>]
+
+<I>font</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Cause the font used for most buttons to be
+<I>font</I>
+
+(default = 6x13).
+
+
+</DL>
+<P>
+
+
+<B>-but_</B>[<B>per_row</B>]
+
+<I>number</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Specify the number of buttons wide the mode panel should be.
+This is useful in conjunction with the
+<B>-pheight</B>
+
+parameter to reduce the canvas height for small screens.
+
+
+</DL>
+<P>
+
+
+<B>-cbg</B> color
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Use
+<I>color</I>
+
+as the background color for the canvas.
+If you want to set the background of everything in xfig
+(e.g. menus, etc.) use the general -bg option.
+
+
+</DL>
+<P>
+
+
+<B>-center</B>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set the print option to print the figure centered on the page.
+This is the default.
+
+
+</DL>
+<P>
+
+
+<B>-centim</B>[<B>ers</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Make centimeters the unit of choice.  See also -metric.
+
+
+</DL>
+<P>
+
+
+<B>-cfg</B> color
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Use
+<I>color</I>
+
+as the default color for objects.
+If you want to set the foreground of everything in xfig
+(e.g. menus, etc.) use the general -fg option.
+
+
+</DL>
+<P>
+
+
+<B>-deb</B>[<B>ug</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Turn on debugging mode.
+Prints various debugging messages like font names etc.
+
+
+</DL>
+<P>
+
+
+<B>-dep</B>[<B>th</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Choose depth of visual desired.  Your server must support the desired
+visual and depth chosen.
+Use
+<I>xdpyinfo</I>
+
+to see what visuals and depths are supported.
+See also the
+<B>-visual</B>
+
+option.
+
+
+</DL>
+<P>
+
+
+<B>-donta</B>[<B>llownegcoords</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Don't allow panning into the negative region of the canvas.
+The default is to allow panning in the negative region.
+
+
+</DL>
+<P>
+
+
+<B>-dontshowb</B>[<B>alloons</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Prevents xfig from popping up the information balloons.
+See also -showballoons.
+
+
+</DL>
+<P>
+
+
+<B>-dontshowl</B>[<B>engths</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Don't show lengths of lines as they are being drawn.
+This is the default.
+
+
+</DL>
+<P>
+
+
+<B>-dontshowz</B>[<B>erolines</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Don't show axis zero lines on the canvas.
+The default is to show them.
+
+
+</DL>
+<P>
+
+
+<B>-dontsw</B>[<B>itchcmap</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Prevents xfig from switching to a private colormap if there aren't
+enough colors available in the default colormap.  See also
+<B>-max_image_colors.</B>
+
+
+
+</DL>
+<P>
+
+
+<B>-exportL</B>[<B>anguage</B>]
+
+<I>language</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Specifies the default language to be used for when exporting a fig file.
+Choices are:
+
+<P>
+
+
+
+
+
+<PRE>
+
+Name        Language
+<HR>box         LaTeX box (figure boundary)
+latex       LaTeX picture
+epic        LaTeX picture + epic macros
+eepic       LaTeX picture + eepic macros
+eepicemu    LaTeX picture + eepicemu macros
+pictex      PiCTeX macros
+ibmgl       IBMGL (or HPGL)
+eps         Encapuslated PostScript
+ps          PostScript
+pdf         PDF (Portable Document Format)
+pstex       Combined PS/LaTeX (both PS and LaTeX parts)
+textyl      Textyl special commands
+tpic        TPIC
+pic         PIC
+mf          MF (MetaFont)
+cgm         CGM (Computer MetaGraphics)
+tk          Tk (of the tcl/tk fame)
+sld         (AutoCad slide)
+pcx         PCX
+png         PNG
+gif         GIF
+jpeg        JPEG (JFIF)
+tiff        TIFF
+ppm         PPM (portable pixmap package)
+xbm         X11 Bitmap
+xpm         X11 Pixmap (XPM3 package)
+
+<HR></PRE>
+
+
+
+
+
+<P>
+
+</DL>
+<P>
+
+
+<B>-export_m</B>[<B>argin</B>]
+
+<I>width</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set the size of the border margin around the figure for exporting
+to bitmap, PostScript, Encapsulated PostScript, or HTML MAP formats.
+This is in units of pixels (1/80th inch).
+The default is 0.
+
+
+</DL>
+<P>
+
+
+<B>-fli</B>[<B>pvisualhints</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Flip left/right mouse indicator messages for mice whose buttons
+have been switched.
+The default is to NOT flip the messages.
+
+
+</DL>
+<P>
+
+
+<B>-flu</B>[<B>shleft</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set the print option to print the figure flush left.
+The default is to center the figure on the page.
+
+
+</DL>
+<P>
+
+
+<B>-geom</B>[<B>etry</B>]
+
+[<I>WxH</I>]<I>[+X+Y]</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+You may use the -geometry option or resource to
+<I>size and/or position the xfig window,</I>
+
+or you may use -pwidth and/or -pheight
+to specify the canvas size in inches or centimeters.
+If you use the -geom option to make the xfig window smaller
+than the default, you may have to use the -but_per_row option to 
+tell xfig to put 3 or 4 buttons per row on the left mode panel.
+
+
+</DL>
+<P>
+
+<B>-grid</B>[<B>_color</B>]
+
+<I>color</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Draw the grid on the canvas in this color (default black).
+
+</DL>
+<P>
+
+<B>-hidd</B>[<B>entext</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Start
+<I>xfig</I>
+
+with the
+<I>hidden text</I>
+
+mode for text objects.
+The
+<I>Hidden</I>
+
+attribute is used for figures that will be used with
+<I>LaTeX</I>
+
+and is applicable only to the display of the document in
+<I>xfig</I>.
+
+It means that the text itself is not shown onscreen, but only the string
+``&lt;text&gt;''.  This is to keep long sequences of
+<I>LaTeX</I>
+
+formatting commands from making the screen messy and hard to read.
+The default for the
+<I>Hidden</I>
+
+flag is
+<I>off</I>.
+
+
+
+</DL>
+<P>
+
+
+<B>-dontshowd</B>[<B>epthmanager</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Hide the depth manager panel.
+The default is to show the panel.
+
+
+</DL>
+<P>
+
+
+<B>-iconG</B>[<B>eometry</B>]
+
++<I>X</I>+<I>Y</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Specifies the position for the icon.
+
+
+</DL>
+<P>
+
+
+<B>-im</B>[<B>age_editor</B>]
+
+<I>editor</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Specify bitmap editor to use when ``Edit Image'' button is pressed
+in Picture Object panel.
+
+
+</DL>
+<P>
+
+
+<B>-inc</B>[<B>hes</B>]
+
+<B>(or</B>-imperial)
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Make inches the unit of choice.
+This is the default.
+
+
+</DL>
+<P>
+
+
+<B>-internalBW</B> width
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Use lines of width
+<I>width</I>
+
+between all buttons and panels (default = 1).
+
+
+</DL>
+<P>
+
+
+<B>-jpeg</B>[<B>_quality</B>]
+
+<I>quality</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set the quality factor for exporting to the jpeg format.
+The default is 75.
+
+
+</DL>
+<P>
+
+
+<B>-k</B>[<B>eyFile</B>]
+
+<I>compose-key-file</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Use
+<I>compose-key-file</I>
+
+instead of
+<I>CompKeyDB</I>
+
+for compose (meta) key database.
+If there are no
+``<B>/</B>''s
+
+in the name, the file must reside in the
+<I>xfig</I>
+
+library directory,
+<I>$XFIGLIBDIR</I>,
+
+usually
+<B>/usr/local/lib/X11/xfig</B>.
+
+If there are any
+``<B>/</B>''s
+
+in the name it is taken as is (not relative to
+<I>$XFIGLIBDIR</I>).
+
+If there is a leading
+``<B>~/</B>''
+
+in the string then the
+``<B>~</B>''
+
+is expanded to the user's home directory.
+
+
+</DL>
+<P>
+
+
+<B>-lan</B>[<B>dscape</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Make
+<I>xfig</I>
+
+come up in landscape mode (10.5&quot; x 8&quot;).
+This is the default; however as the orientation is stored with Fig files,
+when you load a Fig file the orientation will change as required.
+This is only true for files of version 3.0 or higher.
+<BR>
+
+See also -portrait.
+
+
+</DL>
+<P>
+
+
+<B>-lat</B>[<B>exfonts</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Start
+<I>xfig</I>
+
+with
+<I>LaTeX</I>
+
+font selection.
+Normally, the
+<I>PostScript</I>
+
+fonts are available as the default.
+This flag selects the
+<I>LaTeX</I>
+
+fonts to start.
+
+
+</DL>
+<P>
+
+
+<B>-le</B>[<B>ft</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Change the position of the side panel window to the left of the canvas window.
+This is the default.
+
+
+</DL>
+<P>
+
+
+<B>-li</B>[<B>brary_dir</B>]
+
+<I>directory</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Specify directory where Fig object libraries are located.  There may be sub-directories
+there and sub-sub-directories, etc.
+
+
+</DL>
+<P>
+
+
+<B>-mag</B>[<B>nification</B>]
+
+<I>mag</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set export and print magnification in %.
+
+</DL>
+<P>
+
+
+<B>-max</B>[<B>_image_colors</B>]
+
+<I>numcols</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Limit the number of colors used for imported images to
+<I>numcols (default 64).</I>
+
+
+
+</DL>
+<P>
+
+
+<B>-me</B>[<B>tric</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Make centimeters the unit of choice.  Also -centimeters.
+<DT><DD>
+After
+<I>xfig</I>
+
+is started you may change the units from metric to
+imperial or vice versa from a popup menu available by pressing mouse
+button 3 in the
+<I>units</I>
+
+box where the two rulers meet.
+
+
+</DL>
+<P>
+
+
+<B>-mo</B>[<B>nochrome</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Use black and white only.
+
+
+</DL>
+<P>
+
+
+<B>-mu</B>[<B>ltiple</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Sets multiple page mode for print or export. See also 
+<B>-single.</B>
+
+
+
+</DL>
+<P>
+
+
+<B>-nor</B>[<B>mal</B>]
+
+<I>font</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Cause the font used for the message window to be
+<I>font</I>.
+
+This font is also used on the canvas when the selected font is not
+available in an X11 font (default = 6x13).
+
+
+</DL>
+<P>
+
+
+<B>-nos</B>[<B>calablefonts</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Disables use of the X11R5 or OpenWindows scalable fonts.
+You might want to use this for debugging.
+
+
+</DL>
+<P>
+
+
+<B>-not</B>[<B>rack</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Turn off cursor (mouse) tracking arrows.
+
+
+</DL>
+<P>
+
+
+<B>-pag</B>[<B>eborder</B>]
+
+<I>color</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Draw the page border on the canvas in this color (default light blue).
+The page border is turned on by the -showpageborder (resource Fig.showpageborder) option,
+and shows the edges of the current 
+<I>export</I>
+
+paper size.
+
+
+</DL>
+<P>
+
+
+<B>-pap</B>[<B>er_size</B>]
+
+<I>size</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set the initial paper size for Export and Print.  Choices are
+
+<PRE>
+Letter (8.5&quot; x 11&quot;),
+Legal (8.5&quot; x 14&quot;),
+Ledger ( 17&quot; x 11&quot;),
+Tabloid ( 11&quot; x 17&quot;),
+A (8.5&quot; x 11&quot;),
+B ( 11&quot; x 17&quot;),
+C ( 17&quot; x 22&quot;),
+D ( 22&quot; x 34&quot;),
+E ( 34&quot; x 44&quot;),
+A4 (21 cm x 29.7cm),
+A3 (29.7cm x 42 cm),
+A2 (42 cm x 59.4cm),
+A1 (59.4cm x 84.1 cm),
+A0 (84.1 cm x 118.9cm),
+B5 (18.2cm x 25.7cm)
+</PRE>
+
+
+
+<P>
+
+Note that this doesn't affect the size of the drawing canvas. 
+Use the -pheight and -pwidth options for that.
+
+
+</DL>
+<P>
+
+
+<B>-ph</B>[<B>eight</B>]
+
+<I>height</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Make the
+<I>xfig</I>
+
+canvas
+<I>height</I>
+
+high (where
+<I>height</I>
+
+is either cm or in, depending on the -metric setting).
+
+
+</DL>
+<P>
+
+
+<B>-po</B>[<B>rtrait</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Make
+<I>xfig</I>
+
+come up in portrait mode (8.5&quot; x 9&quot;).  See note about landscape mode.
+
+
+</DL>
+<P>
+
+
+<B>-pw</B>[<B>idth</B>]
+
+<I>width</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Make the
+<I>xfig</I>
+
+canvas
+<I>width</I>
+
+wide (where
+<I>width</I>
+
+is either cm or in, depending on the -metric setting).
+
+
+</DL>
+<P>
+
+
+<B>-righ</B>[<B>t</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Change the position of the side panel window to the right of the canvas window
+(default: left).
+
+
+</DL>
+<P>
+
+
+<B>-rigi</B>[<B>d</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Start
+<I>xfig</I>
+
+with the
+<I>rigid text</I>
+
+mode for text objects.
+The
+<I>Rigid</I>
+
+attribute forces text to remain the same size even if
+inside a compound object that is scaled up or down.
+The default is
+<I>off</I>.
+
+
+
+</DL>
+<P>
+
+
+<B>-ru</B>[<B>lerthick</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set the thickness of the top and side rulers in pixels.
+The default (and minimum) is 24.
+
+
+</DL>
+<P>
+
+
+<B>-sc</B>[<B>alablefonts</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Allows use of the X11R5 or OpenWindows scalable fonts (this is the default).
+If the scalable fonts aren't available
+<I>xfig</I>
+
+will automatically switch to non-scaling fonts.
+
+
+</DL>
+<P>
+
+
+<B>-showa</B>[<B>llbuttons</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Show all the
+<I>xfig</I>
+
+indicator buttons instead of only those relevant
+to the current drawing mode.
+Normally, the buttons
+<I>line width</I>,
+
+<I>area-fill</I>,
+
+<I>grid mode</I>,
+
+<I>text size</I>,
+
+etc. are only visible when
+they are relevant to the current drawing mode.
+The
+<B>-showallbuttons</B>
+
+option makes all
+of the indicator buttons visible at all times.
+This takes up more screen real estate,
+but allows the user to see all settable parameters.
+
+
+</DL>
+<P>
+
+
+<B>-showb</B>[<B>alloons</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Forces 
+<I>xfig</I>
+
+to pop up the information balloons when the mouse
+passws over a button. This is the default. See also -dontshowballoons.
+
+
+</DL>
+<P>
+
+
+<B>-showd</B>[<B>epthmanager</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Show the depth manager panel.  This panel lets one show or hide
+objects at various depths.
+This is the default.
+
+
+</DL>
+<P>
+
+
+<B>-showl</B>[<B>engths</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Makes 
+<I>xfig </I>
+
+show the lengths of lines being drawn, in red text near the
+line itself.  Also, when points are moved or added.  In addition, imagine
+a triangle formed with the line segment as the hypotenuse,
+and a vertical and horizontal line forming the other two sides.  These
+lines and their lengths are also drawn in red as the point is moved or added.
+This mode is ignored when drawing in freehand mode.
+<BR>
+
+This flag may be toggled by pressing &lt;Meta&gt;i (default).
+
+
+</DL>
+<P>
+
+
+<B>-showp</B>[<B>ageborder</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Makes 
+<I>xfig </I>
+
+show the border of the current paper size in the color specified
+by the -pageborder option (default light blue).
+
+
+</DL>
+<P>
+
+
+<B>-showz</B>[<B>erolines</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Show axis zero lines on the canvas.
+This is the default
+
+
+</DL>
+<P>
+
+
+<B>-si</B>[<B>ngle</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Sets single page mode for print or export. 
+This is the default.  See also 
+<B>-multiple.</B>
+
+
+
+</DL>
+<P>
+
+
+<B>-spec</B>[<B>ialtext</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Start
+<I>xfig</I>
+
+with the
+<I>special text</I>
+
+mode for text objects.
+Special text means that special characters in the string are not specially
+processed but are passed directly to
+<I>LaTeX</I>.
+
+This is most useful for writing LaTeX equations.
+If this flag is not set, then the backslash character '\' is changed
+to the \backslash command, a brace '{' is turned into a brace command \{, etc.
+
+
+</DL>
+<P>
+
+
+<B>-spel</B>[<B>lcheckcommand</B>]
+
+<I>command</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Use
+<I>command</I>
+
+for the external spell checking program when using the spell check/search/replace
+popup.  
+The string
+<I>command</I>
+
+should include the string ``%s'' which is replaced by a temporary filename.
+Default is ``spell %s''.
+
+
+</DL>
+<P>
+
+
+<B>-spinner_d</B>[<B>elay</B>]
+
+<I>msec</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+The delay (in milliseconds) before the spinner will automatically count up 
+or down when the button is pressed.
+Spinners are the (numeric) text widgets with an up- and down-arrow, which when 
+clicked, cause the value to be incremented/decremented.
+The default is 500 milliseconds.
+
+
+</DL>
+<P>
+
+
+<B>-spinner_r</B>[<B>rate</B>]
+
+<I>msec</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+The rate (in milliseconds) at which the spinner will count
+when the up- or down-arrow is pressed.
+
+
+</DL>
+<P>
+
+
+<B>-startfi</B>[<B>llstyle</B>]
+
+<I>stylenumber</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set the starting fill style for area fill (-1 to 21).
+
+
+</DL>
+<P>
+
+
+<B>-startfo</B>[<B>ntsize</B>]
+
+<I>pointsize</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set the default font size for text objects (default = 12pt).
+
+
+</DL>
+<P>
+
+
+<B>-startg</B>[<B>ridmode</B>]
+
+<I>modenumber</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set the starting grid mode (0 to 3).  Mode 0 is no grid.
+In imperial (inches) mode, grid mode 1 is 1/4 inch,
+mode 2 is 1/2 inch and mode 3 is 1 inch.
+In metric mode, grid mode 1 is 5mm, mode 2 is 1cm and mode 3 is 2cm.
+
+
+</DL>
+<P>
+
+
+<B>-startla</B>[<B>texFont</B>]
+
+<I>font</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set the starting font name for
+<I>LaTeX</I>
+
+fonts.
+
+
+</DL>
+<P>
+
+
+<B>-startli</B>[<B>newidth</B>]
+
+<I>width</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set the starting line width.
+
+
+</DL>
+<P>
+
+
+<B>-startpo</B>[<B>snmode</B>]
+
+<I>modenumber</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set the starting point positioning mode (0 to 4)
+In imperial (inches) mode, positioning mode 0 is ``any'',
+mode 1 is 1/16 inch,
+mode 2 is 1/4 inch, mode 3 is 1/2 inch and mode 4 is 1 inch.
+In metric mode, mode 0 is ``any'',
+mode 1 is 1mm, mode 2 is 5mm, mode 3 is 10mm and mode 4 is 20mm.
+
+
+</DL>
+<P>
+
+
+<B>-startp</B>[<B>sFont</B>]
+
+<I>font</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set the starting font name for
+<I>PostScript</I>
+
+fonts.
+
+
+</DL>
+<P>
+
+
+<B>-startt</B>[<B>extstep</B>]
+
+<I>stepsize</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set the starting text step.
+
+
+</DL>
+<P>
+
+
+<B>-ta</B>[<B>blet</B>]
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Specifies that xfig should use the input tablet instead of the mouse
+for drawing.  You must have the XInputExtension in your X server and
+an input tablet for this to work.  Also, you must modify the Imakefile
+to include the USETAB and TABLIB variables.
+
+
+</DL>
+<P>
+
+
+<B>-track</B>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Turn on cursor (mouse) tracking arrows (default).
+
+
+</DL>
+<P>
+
+
+<B>-tran</B>[<B>sparent_color</B>]
+
+<I>color_number</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Make the transparent color for GIF export
+<I>color_number.</I>
+
+This number is the color number according to the 
+<B>xfig</B>
+
+color panel, starting at 0 (black) and ending at 31 (gold),
+or may be a user-defined color number, which is 32 or higher.
+
+
+</DL>
+<P>
+
+
+<B>-up</B>[<B>date</B>]
+
+<I>file [ file ... ]</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Run xfig in an &quot;update&quot; mode, where it will read each Fig file specified
+on the command line and write it out to the original file,
+in the current file format for the version of xfig being run.
+The original Fig file will be preserved with
+the suffix <I>.bak</I> attached to the name.
+<BR>
+
+In this mode, xfig doesn't connect the X server, so no window is opened,
+and it exits when finished.
+
+
+</DL>
+<P>
+
+
+<B>-users</B>[<B>cale</B>]
+
+<I>scale</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set the multiplier for displayed line lengths etc.
+This factor is multiplied by the actual length,
+radius or diameter of the object currently
+being drawn on the canvas.
+It is useful for making scale drawings, where
+e.g. 1 inch = 1 foot (userscale = 12.0) or 1cm = 1m (userscale = 100.0).
+
+
+</DL>
+<P>
+
+
+<B>-useru</B>[<B>nit</B>]
+
+<I>units</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+The
+<I>units</I>
+
+string is printed with the length information when drawing objects.
+For example if the
+<I>userscale</I>
+
+= 1.0 and the
+<I>userunit</I>
+
+=
+<I>ft</I>
+
+then a line which is 3 inches long on the canvas would be displayed as
+``length = 3 ft'' when it is being drawn.
+<DT><DD>
+After
+<I>xfig</I>
+
+is started you may change the
+<I>userscale</I>
+
+and the
+<I>userunit</I>
+
+from a popup menu available by pressing mouse button 3 in the
+<I>units</I>
+
+box where the two rulers meet.
+
+
+</DL>
+<P>
+
+
+<B>-visual</B>
+
+<I>visualname</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Use
+<I>visualname</I>
+
+as the visual for xfig.  The names are TrueColor (case is not important),
+StaticColor, DirectColor, StaticGray, GrayScale and PseudoColor.
+<I>xfig</I>
+
+uses the default visual unless this is specified.  Your server must
+support the desired visual.
+Use
+<I>xdpyinfo</I>
+
+to see what visuals and depths are supported.
+See also the
+<B>-depth</B>
+
+option.
+
+
+</DL>
+<P>
+
+
+<B>-zoom</B>
+
+<I>zoomscale</I>
+
+
+
+<DL COMPACT>
+<DT><DD>
+
+
+Set the starting zoom scale.
+<P>
+<P>
+
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>X RESOURCES and DEFAULTS</H2>
+
+The overall widget name(Class) is xfig(Fig).
+These resources correspond to the command line arguments:
+<P>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<PRE>
+Name                Class               Type    Default     Command-line
+                                                            equivalent
+<HR>allownegcoords      NegativeCoordinates boolean on          -allownegcoords,
+                                                            -dontallownegcoords,
+balloon_delay       balloonDelay        integer 500 (ms)    -balloon_delay
+boldFont            Font                string  8x13bold    -bold
+but_per_row         But_per_row         int     2           -but_per_row
+buttonFont          Font                string  6x13        -button
+canvasBackground    Background          string  white       -cbg
+canvasForeground    Foreground          string  black       -cfg
+debug               Debug               boolean off         -debug
+depth               Depth               integer *           -depth
+dontswitchcmap      Dontswitchcmap      boolean false       -dontswitchcmap
+exportLanguage      ExportLanguage      string  eps         -exportLanguage
+export_margin       Margin              integer 0           -export_margin
+flipvisualhints     Hints               boolean false       -flipvisualhints
+flushleft           FlushLeft           boolean false       -flushleft
+grid_color          Color               string  black       -grid_color
+image_editor        ImageEditor         string  xv          -image_editor
+inches              Inches              boolean true        -inches,
+                                                            -centimeters,
+                                                            -imperial,
+                                                            -metric
+internalborderwidth InternalBorderWidth integer 1           -internalBW
+justify             Justify             boolean false       -left (false),
+                                                            -right (true)
+jpeg_quality        Quality             integer 75          -jpeg_quality
+keyFile             KeyFile             string  CompKeyDB   -keyFile
+landscape           Orientation         boolean true        -Landscape,
+                                                            -Portrait
+latexfonts          Latexfonts          boolean off         -latexfonts
+library_dir         Directory           string  ~/xfiglib   -library_dir
+magnification       Magnification       float   100         -magnification
+max_image_colors    Max_image_colors    integer 64          -max_image_colors
+monochrome          Monochrome          boolean false       -monochrome
+multiple            Multiple            boolean false       -multiple
+normalFont          Font                string  6x13        -normal
+pageborder          Color               string  lightblue   -pageborder
+page_size           Pagesize            string  Letter/A4   -page_size
+pheight             Height              float   8(9.5)      -pheight
+pwidth              Width               float   10(8)       -pwidth
+rulerthick          RulerThick          integer 24          -rulerthick
+scalablefonts       ScalableFonts       boolean true        -scalablefonts
+showallbuttons      ShowAllButtons      boolean false       -showallbuttons
+showballoons        ShowBalloons        boolean true        -showballoons,
+                                                            -dontshowballoons
+showdepthmanager    Hints               boolean true        -showdepthmanager,
+                                                            -dontshowdepthmanager
+showpageborder      Debug               boolean true        -showpageborder,
+                                                            -dontshowpageborder
+showlengths         ShowLengths         boolean false       -showlengths,
+                                                            -dontshowlengths
+showzerolines       Axis                boolean true        -showzerolines,
+                                                            -dontshowzerolines
+single              Single              boolean true        -single
+specialtext         SpecialText         boolean false       -specialtext
+spellcheckcommand   spellCheckCommand   string  spell %s    -spellcheckcommand
+spinner_delay       spinnerDelay        integer 500 (ms)    -spinner_delay
+spinner_rate        spinnerRate         integer 100 (ms)    -spinner_rate
+startfillstyle      StartFillStyle      integer 0           -startfillstyle
+startfontsize       StartFontSize       float   12          -startfontsize
+startgridmode       StartGridMode       integer 0           -startgridmode
+startlatexFont      StartlatexFont      string  Default     -startlatexFont
+startlinewidth      StartLineWidth      integer 1           -startlinewidth
+startposnmode       StartPosnMode       integer 1           -startposnmode
+startpsFont         StartpsFont         string  Times-Roman -startpsFont
+starttextstep       StartTextStep       float   1.2         -starttextstep
+trackCursor         Track               boolean on          -track,
+                                                            -notrack
+transparent_color   Transparent         integer -2 (none)   -transparent_color
+userscale           UserScale           float   1.0         -userscale
+userunit            UserUnit            string  in(cm)      -userunit
+visual              Visual              string  *           -visual
+zoom                Zoom                float   1.0         -zoom
+
+* Default visual and depth depend on the X server. Use <I>xdpyinfo</I> to see what visuals
+and depths are supported.
+<HR></PRE>
+
+
+
+
+
+<P>
+
+<A NAME="lbAG">&nbsp;</A>
+<H2>BUGS and RESTRICTIONS</H2>
+
+Please send bug reports, fixes, new features etc. to:
+<BR>
+
+<A HREF="mailto:xfig-bugs@epb1.lbl.gov">xfig-bugs@epb1.lbl.gov</A>
+(Brian V. Smith)
+<P>
+
+When reporting a bug, please first check if the problem is mentioned in
+the FAQ section of the HTML files (xfig Help menu).  
+<P>
+
+If it is not mentioned there, be sure to report the operating system you
+are using (e.g. SunOS 4.1.3), type of X server and version (OpenWindows 3, X11R6.4,
+XFree86 3.2.2, etc) and color depth (e.g. 8bpp, 16bpp), and most
+importantly the version of xfig or fig2dev that is having the problem.
+<P>
+
+It is also VERY useful to me if you can provide a stack trace from a debugger
+such as gdb, dbx, ups, etc, if the bug causes xfig to crash.
+<P>
+
+Because of the difference of some fonts in some X servers and the PostScript
+fonts on printers, text alignment can be problematic.
+<P>
+
+Not all operations employ smart redrawing of objects which are altered
+as a by product of the operation.
+You may need to use
+<I>Redraw</I>
+
+in these cases.
+<P>
+
+Some servers do not allow bitmaps/pixmaps taller than the screen height
+or wider than the screen width.
+That is why there is a limit on the width
+of the top ruler and height of the side ruler.
+If you need wider/taller rulers AND your server allows bigger pixmaps,
+you may define
+<B>MAX_TOPRULER_WD</B>
+
+and/or
+<B>MAX_SIDERULER_HT</B>
+
+in your Imakefile in the
+<I>DEFINES</I>
+
+line.
+For example,
+to have a maximum top ruler width of 1160 pixels, add
+<B>-DMAX_TOPRULER_WD=1160</B>
+
+to your
+<I>DEFINES</I>
+
+line in the Imakefile.
+<P>
+
+If the image is panned or the
+<I>xfig</I>
+
+window iconified and de-iconified
+during the middle of an operation (e.g. while drawing a line), the picture
+will be distorted.
+This can be corrected using
+<I>Redraw</I>
+
+after the operation is complete.
+<P>
+
+When zoomed very large, the length of dashes in dashed lines will top out
+at 255 pixels long.  This is due to a restriction in X
+that the dash list is defined by char (255 pixels maximum for a dash).
+The figure will print correctly, however.
+<P>
+
+When you do a copy/rotate with multiple copies,
+only the creation of the last object can be undone with the Undo button.
+<P>
+
+Modifications to text using the popup search/update/replace/spell check panel 
+cannot be undone.
+<P>
+
+See the
+<B>README</B>
+
+file for troubleshooting.
+<A NAME="lbAH">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<P>
+
+fig2dev(1)
+(<I>TransFig</I>
+
+package)
+<P>
+
+gs(1)
+(<I>Ghostscript</I>
+
+PostScript previewer)
+<A NAME="lbAI">&nbsp;</A>
+<H2>ACKNOWLEDGEMENT</H2>
+
+(From the original author, Supoj Sutanthavibul):
+Many thanks goes to Professor Donald E. Fussell who inspired the
+creation of this tool.
+<P>
+
+(From current maintainer Brian Smith):
+Thanks to all the users who have contributed to xfig, especially
+Paul King who, besides adding many features,
+revamped the look and feel which became version 2.1.
+<A NAME="lbAJ">&nbsp;</A>
+<H2>COPYRIGHT</H2>
+
+<PRE>
+Original Copyright (c) 1985 by Supoj Sutanthavibul
+Parts Copyright (c) 1989-2002 by Brian V. Smith
+Parts Copyright (c) 1991 by Paul King
+Other Copyrights may be found in various files
+
+
+</PRE>
+
+<P>
+
+Any party obtaining a copy of these files is granted, free of charge, a
+full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+nonexclusive right and license to deal in this software and
+documentation files (the "Software"), including without limitation the
+rights to use, copy, modify, merge, publish and/or distribute copies of
+the Software, and to permit persons who receive copies from any such 
+party to do so, with the only requirement being that this copyright 
+notice remain intact.
+<P>
+
+Note that although I work at Lawrence Berkeley National Laboratory (LBNL)
+I don't speak for LBNL nor do I represent LBNL with respect to my work on
+TransFig and xfig, nor does LBL make any representations about the suitability
+of this software for any purpose.
+<P>
+
+Here is the legal part:
+<P>
+
+THE LAWRENCE BERKELEY NATIONAL LABORATORY DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS, IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY SPECIAL,
+INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+<P>
+<P>
+
+<I>PostScript</I>
+
+is a trademark of Adobe Systems Incorporated.
+
+<P>
+
+<PRE>
+Parts Copyright (C) 1989 by Jef Poskanzer.
+Copyright notice for pbmplus code:
+
+
+Permission to use, copy, modify, and distribute this
+software and its documentation for any purpose and without
+fee is hereby granted, provided that the above copyright
+notice appear in all copies and that both that copyright
+notice and this permission notice appear in supporting
+documentation.  This software is provided ``as is'' without
+express or implied warranty.
+</PRE>
+
+<BR>
+
+<A NAME="lbAK">&nbsp;</A>
+<H2>FILES</H2>
+
+<B>
+</B>
+<DL COMPACT>
+<DT><B>CompKeyDB</B>
+
+<DD>
+Data base of compose (meta) key sequences for 8-bit characters.
+Must be installed in
+<B>$(XFIGLIBDIR)</B>
+
+with ``make install'',
+or may be specified with command line option
+<B>-keyFile</B>
+
+or X toolkit resource keyFile.
+See the
+<I>Imakefile</I>.
+
+<DT>/usr/lib/X11/xfig<DD>
+This directory contains the html documentation, the above mentioned
+CompKeyDB file, and a directory of libraries containing Fig objects
+such as electrical symbols, logic symbols, etc.
+<DT><B>Fig.ad and Fig-color.ad</B>
+
+<DD>
+Application defaults files which are automatically installed
+in the system app-defaults directory with the
+<I>make install</I>
+
+command.
+<DT><B>Doc/FORMAT3.2</B>
+
+<DD>
+Description of Fig file format.
+<DT><B>README</B>
+
+<DD>
+Installation instructions and troubleshooting.
+<DT><B>CHANGES</B>
+
+<DD>
+Description of bug fixes/new features.
+<P>
+</DL>
+<A NAME="lbAL">&nbsp;</A>
+<H2>AUTHORS</H2>
+
+Many people have contributed to
+<I>xfig</I>.
+
+Here is a list of the people who
+have contributed the most (in chronological order):
+<P>
+<B>Version 1:</B>
+
+<P>
+
+Original author:
+<BR>
+
+Supoj Sutanthavibul, University of Texas at Austin
+<P>
+The
+<I>LaTeX</I>
+
+line drawing modes were contributed by:
+<BR>
+
+Frank Schmuck, Cornell University
+<P>
+Original X11 port by:
+<BR>
+
+Ken Yap, Rochester
+<P>
+Variable window sizes, cleanup of X11 port, right hand side panel:
+<BR>
+
+Dana Chee, Bellcore
+<P>
+Cleanup of color port to X11 by:
+<BR>
+
+John T. Kohl, MIT
+<P>
+
+<B>Version 2.0:</B>
+
+
+<P>
+Area fill, multiple line thicknesses, multiple fonts and font sizes,
+bottom panel, line style/thickness,
+(and anything else that wasn't written by the others)
+by:
+<BR>
+
+Brian Smith
+<BR>
+
+(standard disclaimer applies)
+<BR>
+
+(<A HREF="mailto:bvsmith@lbl.gov">bvsmith@lbl.gov</A>)
+<P>
+Popup change-object menu by:
+<BR>
+
+Jon Tombs
+<BR>
+
+Frank Schmuck
+<P>
+Zooming and panning functions, shift key select mechanism by:
+<BR>
+
+Dieter Pellkofer
+<BR>
+
+Henning Spruth
+<P>
+Depth feature by:
+<BR>
+
+Mike Lutz
+<P>
+Cut/Paste by:
+<BR>
+
+Tom Tkacik
+<P>
+
+<B>Version 2.1:</B>
+
+
+<P>
+Indicator panel, file menu popup, print menu popup,
+panning with rulers, mouse function window, regular polygon,
+rubberbanding of circles/ellipses, filled splines on canvas,
+dashed/dotted splines on canvas, update button,
+arbitrary angle rotation of objects, alignment in compound,
+object scaling, constrained copy/move, corner markers for compound,
+context sensitive corner markers, smarter redraw, undo for compound
+and point move for boxes, cancel object creation, point positioning
+to three resolutions,
+<I>TransFig</I>
+
+scalable text, hidden text,
+special text, save of figure on crash by:
+<P>
+Paul King (<A HREF="mailto:king@cs.uq.oz.au">king@cs.uq.oz.au</A>)
+<BR>
+
+with help from:
+<BR>
+
+Brian Smith
+and Micah Beck (<A HREF="mailto:beck@cs.utk.edu">beck@cs.utk.edu</A>)
+<P>
+Encapsulated
+<I>PostScript</I>
+
+importing by:
+<BR>
+
+Brian Boyter
+<P>
+Pan/zoom with ctrl key/mouse by:
+<BR>
+
+Henning Spruth
+<P>
+International characters by:
+<BR>
+
+Herve Soulard
+<P>
+Directory Browser based on XDir by:
+<BR>
+
+Win Treese, Digital Equipment Corporation
+<P>
+Rotated ellipses by:
+<BR>
+
+James Tough, Dept. of Computer Science, Heriot-Watt University, Scotland
+<P>
+Rotated text from the
+<I>xvertext</I>
+
+package by:
+<BR>
+
+Alan Richardson, Space Science Centre, School of MAPS,
+University of Sussex
+<P>
+Popup scale menu and dynamic switching between inches and cm by:
+<BR>
+
+Paul King (<A HREF="mailto:king@cs.uq.oz.au">king@cs.uq.oz.au</A>)
+<P>
+Extensive man page formatting revisions by:
+<BR>
+
+David W. Sanderson
+<P>
+Display Postscript code for IBM RS/6000 by:
+<BR>
+
+Dave Hale (<A HREF="mailto:dhale@green.mines.colorado.edu">dhale@green.mines.colorado.edu</A>)
+
+<P>
+<B>Version 3.0:</B>
+
+
+<P>
+<BR>
+
+New arrowhead types, separate pen/fill colors, new file protocol,
+more colors with extended color popup panel, new arc style,
+new fill patterns (bricks, etc), new line join and cap styles,
+export offset and file load offset, XPM import, XBM import and export
+(and anything else that wasn't written by the others) by:
+<BR>
+
+Brian Smith
+<BR>
+
+(Note: the color popup panel was based on
+<I>xcoloredit</I>
+
+by Richard Hesketh)
+<P>
+<P>
+GIF header reading code by:
+<BR>
+
+David Koblas from the giftoppm part of the pbmplus package
+<P>
+XPM export code (using XPM3 libraries) by:
+<BR>
+
+Karel van Houten (<A HREF="mailto:K.H.C.vanHouten@research.ptt.nl">K.H.C.vanHouten@research.ptt.nl</A>)
+<P>
+Higher figure resolution (1200dpi) by:
+<BR>
+
+Ross Martin (<A HREF="mailto:martin@trcsun3.eas.asu.edu">martin@trcsun3.eas.asu.edu</A>)
+<P>
+Color quantization using neural network by:
+<BR>
+
+Anthony Dekker (<A HREF="mailto:dekker@ACM.org">dekker@ACM.org</A>)
+<BR>
+
+[NEUQUANT Neural-Net quantization algorithm by Anthony Dekker, 1994.
+See ``Kohonen neural networks for optimal colour quantization''
+in ``Network: Computation in Neural Systems'' Vol. 5 (1994) pp 351-367.
+for a discussion of the algorithm.]
+<P>
+Floyd-Steinberg algorithm for dithering color images on monochrome
+displays lifted from the Pbmplus package by Jef Poskanser.
+<P>
+rotate/flip objects around/about selected anchor point and multiple
+copies of objects by:
+<BR>
+
+Uwe Bonnes (<A HREF="mailto:bon@lte.e-technik.uni-erlangen.de">bon@lte.e-technik.uni-erlangen.de</A>)
+<P>
+Input tablet extension by:
+<BR>
+
+Greg LaCoste (<A HREF="mailto:greg@seismo.do.usbr.gov">greg@seismo.do.usbr.gov</A>)
+
+<P>
+<B>Version 3.1:</B>
+
+<P>
+
+<BR>
+
+The only difference between protocol version 3.0 and version 3.1 is
+that the position of the ``magnet'' has been shifted by 14 fig units.
+In the 2.1 and older versions of xfig the grid was in multiples of 5 fig
+units, but they were on intervals 4, 9, 14, 19, etc.
+When version 3.0 was created, coordinates were simply multiplied by the
+ratio of the resolutions (1200/80 = 15) so values like 4 became 60 instead
+of 74 ((4+1)*15 - 1).
+<P>
+The JPEG import/export code uses the Independent JPEG Group software
+(see jpeg/README for details)
+<P>
+Image browser, editor and screen capture features by:
+<BR>
+
+Jim Daley (<A HREF="mailto:jdaley@cix.compulink.co.uk">jdaley@cix.compulink.co.uk</A>)
+
+<P>
+<B>Version 3.2:</B>
+
+<P>
+
+<BR>
+
+The changes to the version 3.2 file protocol are the addition of the
+paper size, print/export magnification, single/multiple page indicator
+and a transparent color name used for GIF export to the header
+of the file.
+<BR>
+
+The other difference in the version 3.2 protocol is the
+mathematical model used for splines. The new version
+uses X-splines which allows the user to mix interpolation and approximation
+points in a same curve. More precisely, it means that an X-spline curve
+is neither an interpolated spline nor an approximated one, it is BOTH
+(the behaviour of each point is controlled by one single parameter
+called ``shape factor''). For additional information about X-splines, see:
+<P>
+<BR>&nbsp;&nbsp;&quot;X-Splines:&nbsp;A&nbsp;Spline&nbsp;Model&nbsp;Designed&nbsp;for&nbsp;the&nbsp;End&nbsp;User&quot;
+<BR>&nbsp;&nbsp;by&nbsp;C.&nbsp;Blanc&nbsp;and&nbsp;C.&nbsp;Schlick,&nbsp;Proceedings&nbsp;of&nbsp;SIGGRAPH'95
+<BR>&nbsp;&nbsp;<A HREF="http://dept-info.labri.u-bordeaux.fr/~schlick/DOC/sig1.html">http://dept-info.labri.u-bordeaux.fr/~schlick/DOC/sig1.html</A>
+<P>
+Caveat: Because previous spline models (quadratic B-splines and Bezier
+with hidden points) are no longer supported, curves that are present
+in version 3.1 and older files are automatically converted to X-splines.
+This translation is only an approximation process. It means that the
+converted curves are not exactly the same as the original ones. Though
+they are usually very close, some hand-fitting may be needed in
+some pathological cases.
+<P>
+Inclusion of X-splines by:
+<BR>
+
+Carole Blanc (<A HREF="mailto:blanc@labri.u-bordeaux.fr">blanc@labri.u-bordeaux.fr</A>)
+<BR>
+
+Christophe Schlick (<A HREF="mailto:schlick@labri.u-bordeaux.fr">schlick@labri.u-bordeaux.fr</A>)
+<BR>
+
+Note: the initial implementation was done by C. Feuille, S. Grosbois, L.
+Maziere and L. Minihot as a student practice (Universite Bordeaux, France).
+<P>
+Open/close compound feature written by
+<BR>
+
+Bill Taylor (<A HREF="mailto:bill@mainstream.com">bill@mainstream.com</A>)
+<P>
+Library feature written by 
+<BR>
+
+Stephane Mancini (<A HREF="mailto:mancini@elecsrv.enst.fr">mancini@elecsrv.enst.fr</A>)
+(object preview by Brian V. Smith)
+<P>
+The library objects in the Electrical and Logic libraries were done by
+<BR>
+
+Peter Hiscocks (<A HREF="mailto:phiscock@ee.ryerson.ca">phiscock@ee.ryerson.ca</A>)
+<P>
+The library objects in the Computer, Networks, and Hospital-Equipment
+libraries were extracted from the clipart example files by
+<BR>
+
+Bill Chimiak (<A HREF="mailto:chim@bgsm.edu">chim@bgsm.edu</A>)
+<P>
+
+<P>
+<B>Version 3.2.3:</B>
+
+<P>
+
+Please see the CHANGES file for credits for version 3.2.3 features.
+
+<A NAME="lbAM">&nbsp;</A>
+<H2>NOTES</H2>
+
+Many bug fixes/cleanups etc. by a host of faithful users
+<P>
+See the
+<B>CHANGES</B>
+
+file for all the credits
+<P>
+The
+<I>TransFig</I>
+
+package was written by Micah Beck and is maintained by Brian Smith
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">X RESOURCES and DEFAULTS</A><DD>
+<DT><A HREF="#lbAG">BUGS and RESTRICTIONS</A><DD>
+<DT><A HREF="#lbAH">SEE ALSO</A><DD>
+<DT><A HREF="#lbAI">ACKNOWLEDGEMENT</A><DD>
+<DT><A HREF="#lbAJ">COPYRIGHT</A><DD>
+<DT><A HREF="#lbAK">FILES</A><DD>
+<DT><A HREF="#lbAL">AUTHORS</A><DD>
+<DT><A HREF="#lbAM">NOTES</A><DD>
+</DL>
+</BODY>
+</HTML>

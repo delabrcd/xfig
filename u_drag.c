@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -54,6 +54,7 @@ init_ellipsedragging(e, x, y)
     y1off = (e->center.y - e->radiuses.y) - cur_y;
     y2off = (e->center.y + e->radiuses.y) - cur_y;
     canvas_locmove_proc = moving_ellipse;
+    canvas_ref_proc = elastic_moveellipse;
     canvas_leftbut_proc = place_ellipse;
     canvas_middlebut_proc = array_place_ellipse;
     canvas_rightbut_proc = cancel_ellipse;
@@ -64,6 +65,7 @@ init_ellipsedragging(e, x, y)
 static void
 cancel_ellipse()
 {
+    canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_moveellipse();
     /* erase last lengths if appres.showlengths is true */
     erase_lengths();
@@ -84,6 +86,7 @@ array_place_ellipse(x, y)
     int		    x, y;
 {
     int		    i, j, delta_x, delta_y, start_x, start_y;
+    int		    nx, ny;
     F_ellipse	   *save_ellipse;
 
     elastic_moveellipse();
@@ -97,18 +100,28 @@ array_place_ellipse(x, y)
 	place_ellipse(x, y);
     }
     else {
-	delta_x = x - fix_x;
-	delta_y = y - fix_y;
-	if ((!cur_numxcopies) || (! cur_numycopies)) {  /* special cases */
-	    for ( i=1; i <= cur_numxcopies+cur_numycopies; i++, x += delta_x, y += delta_y) {
-		place_ellipse(x, y);
+	delta_x = cur_x - fix_x;
+	delta_y = cur_y - fix_y;
+	start_x = cur_x - delta_x;
+	start_y = cur_y - delta_y;
+	if ((cur_numxcopies < 2) && (cur_numycopies < 2)) {  /* special cases */
+	    if (cur_numxcopies > 0) {
+		place_ellipse_x(start_x+delta_x, start_y);
 		new_e = copy_ellipse(cur_e);
-	    } 
+	    }
+	    if (cur_numycopies > 0) {
+		place_ellipse_x(start_x, start_y+delta_y);
+		new_e = copy_ellipse(cur_e);
+	    }
 	} else {
-	    start_x = x - delta_x;
-	    start_y = y - delta_y;
-	    for (i = 0, x = start_x;  i < cur_numxcopies; i++, x+=delta_x) {
-		for (j = 0, y = start_y;  j < cur_numycopies; j++, y+=delta_y) {
+	    nx = cur_numxcopies;
+	    if (nx == 0)
+		nx++;
+	    ny = cur_numycopies;
+	    if (ny == 0)
+		ny++;
+	    for (i = 0, x = start_x;  i < nx; i++, x+=delta_x) {
+		for (j = 0, y = start_y;  j < ny; j++, y+=delta_y) {
 		    if (i || j ) {
 			place_ellipse_x(x, y);
 			new_e = copy_ellipse(cur_e);
@@ -142,6 +155,7 @@ place_ellipse_x(x, y)
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
     translate_ellipse(new_e, x - fix_x, y - fix_y);
     if (return_proc == copy_selected) {
@@ -173,6 +187,7 @@ init_arcdragging(a, x, y)
     fix_x = cur_x = x;
     fix_y = cur_y = y;
     canvas_locmove_proc = moving_arc;
+    canvas_ref_proc = elastic_movenewarc;
     canvas_leftbut_proc = place_arc;
     canvas_middlebut_proc = array_place_arc;
     canvas_rightbut_proc = cancel_drag_arc;
@@ -183,6 +198,7 @@ init_arcdragging(a, x, y)
 static void
 cancel_drag_arc()
 {
+    canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_movearc(new_a);
     /* erase last lengths if appres.showlengths is true */
     erase_lengths();
@@ -202,45 +218,55 @@ static void
 array_place_arc(x, y)
     int		    x, y;
 {
-   int		    i, j, delta_x, delta_y, start_x, start_y;
-   F_arc	   *save_arc;
+    int		    i, j, delta_x, delta_y, start_x, start_y;
+    int		    nx, ny;
+    F_arc	   *save_arc;
 
-   elastic_movearc(new_a);
-   /* erase last lengths if appres.showlengths is true */
-   erase_lengths();
+    elastic_movearc(new_a);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
 
-   tail(&objects, &object_tails);
-   save_arc = new_a;
+    tail(&objects, &object_tails);
+    save_arc = new_a;
 
-   if ((!cur_numxcopies) && (!cur_numycopies)) {
-     place_arc(x, y);
-   }
-   else {
-     delta_x = x - fix_x;
-     delta_y = y - fix_y;
-     if ((!cur_numxcopies) || (! cur_numycopies))  /* special cases */
-       for ( i=1; i <= cur_numxcopies+cur_numycopies; i++, x += delta_x, y += delta_y)
-	 {
-	   place_arc(x, y);
-	   new_a = copy_arc(cur_a);
-	 }
-     else {
-       start_x = x - delta_x;
-       start_y = y - delta_y;
-       for (i = 0, x = start_x;  i < cur_numxcopies; i++, x+=delta_x) {
-	 for (j = 0, y = start_y;  j < cur_numycopies; j++, y+=delta_y) 
-	   if (i || j ) {
-	     place_arc_x(x, y);
-	     new_a = copy_arc(cur_a);
-	   }
-       }
-     }
-   }
-   /* put all new arcs in the saved objects structure for undo */
-   saved_objects.arcs = save_arc;
-   set_action_object(F_ADD, O_ALL_OBJECT);
-   /* turn back on all relevant markers */
-   update_markers(new_objmask);
+    if ((!cur_numxcopies) && (!cur_numycopies)) {
+	place_arc(x, y);
+    } else {
+	delta_x = cur_x - fix_x;
+	delta_y = cur_y - fix_y;
+	start_x = cur_x - delta_x;
+	start_y = cur_y - delta_y;
+	if ((cur_numxcopies < 2) && (cur_numycopies < 2)) {  /* special cases */
+	    if (cur_numxcopies > 0) {
+		place_arc_x(start_x+delta_x, start_y);
+		new_a = copy_arc(cur_a);
+	    }
+	    if (cur_numycopies > 0) {
+		place_arc_x(start_x, start_y+delta_y);
+		new_a = copy_arc(cur_a);
+	    }
+	} else {
+	    nx = cur_numxcopies;
+	    if (nx == 0)
+		nx++;
+	    ny = cur_numycopies;
+	    if (ny == 0)
+		ny++;
+	    for (i = 0, x = start_x;  i < nx; i++, x+=delta_x) {
+		for (j = 0, y = start_y;  j < ny; j++, y+=delta_y) {
+		    if (i || j ) {
+			place_arc_x(x, y);
+			new_a = copy_arc(cur_a);
+		    }
+		}
+	    }
+	}
+    }
+    /* put all new arcs in the saved objects structure for undo */
+    saved_objects.arcs = save_arc;
+    set_action_object(F_ADD, O_ALL_OBJECT);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
 }
 
 static void
@@ -261,6 +287,7 @@ place_arc_x(x, y)
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
     translate_arc(new_a, x - fix_x, y - fix_y);
     if (return_proc == copy_selected) {
@@ -294,11 +321,12 @@ init_linedragging(l, x, y)
     cur_x = fix_x = x;
     cur_y = fix_y = y;
     canvas_locmove_proc = moving_line;
+    canvas_ref_proc = elastic_movenewline;
     canvas_leftbut_proc = place_line;
     canvas_middlebut_proc = array_place_line;
     canvas_rightbut_proc = cancel_line;
     set_action_on();
-    if (l->type == T_BOX || l->type == T_ARC_BOX || l->type == T_PICTURE) {
+    if (l->type == T_BOX || l->type == T_ARCBOX || l->type == T_PICTURE) {
 	line_bound(l, &xmin, &ymin, &xmax, &ymax);
 	get_links(xmin, ymin, xmax, ymax);
     }
@@ -308,6 +336,7 @@ init_linedragging(l, x, y)
 static void
 cancel_line()
 {
+    canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_moveline(new_l->points);
     /* erase last lengths if appres.showlengths is true */
     erase_lengths();
@@ -329,6 +358,7 @@ array_place_line(x, y)
     int		    x, y;
 {
     int		    i, j, delta_x, delta_y, start_x, start_y;
+    int		    nx, ny;
     F_line	   *save_line;
 
     elastic_moveline(new_l->points);
@@ -338,20 +368,29 @@ array_place_line(x, y)
     save_line = new_l;
     if ((cur_numxcopies==0) && (cur_numycopies==0)) {
 	place_line(x, y);
-    }
-    else {
-	delta_x = x - fix_x;
-	delta_y = y - fix_y;
-	if ((cur_numxcopies==0) || (cur_numycopies==0)) {  /* special cases */
-	    for ( i=1; i <= cur_numxcopies+cur_numycopies; i++, x += delta_x, y += delta_y) {
-		place_line(x, y);
+    } else {
+	delta_x = cur_x - fix_x;
+	delta_y = cur_y - fix_y;
+	start_x = cur_x - delta_x;
+	start_y = cur_y - delta_y;
+	if ((cur_numxcopies < 2) && (cur_numycopies < 2)) {  /* special cases */
+	    if (cur_numxcopies > 0) {
+		place_line_x(start_x+delta_x, start_y);
+		new_l = copy_line(cur_l);
+	    }
+	    if (cur_numycopies > 0) {
+		place_line_x(start_x, start_y+delta_y);
 		new_l = copy_line(cur_l);
 	    }
 	} else {
-	    start_x = x - delta_x;
-	    start_y = y - delta_y;
-	    for (i = 0, x = start_x;  i < cur_numxcopies; i++, x+=delta_x) {
-		for (j = 0, y = start_y;  j < cur_numycopies; j++, y+=delta_y) {
+	    nx = cur_numxcopies;
+	    if (nx == 0)
+		nx++;
+	    ny = cur_numycopies;
+	    if (ny == 0)
+		ny++;
+	    for (i = 0, x = start_x;  i < nx; i++, x+=delta_x) {
+		for (j = 0, y = start_y;  j < ny; j++, y+=delta_y) {
 		    if (i || j ) {
 			place_line_x(x, y);
 			new_l = copy_line(cur_l);
@@ -386,6 +425,7 @@ place_line_x(x, y)
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
     dx = x - fix_x;
     dy = y - fix_y;
@@ -449,6 +489,7 @@ init_textdragging(t, x, y)
 	}
     }
     canvas_locmove_proc = moving_text;
+    canvas_ref_proc = elastic_movetext;
     canvas_leftbut_proc = place_text;
     canvas_middlebut_proc = array_place_text;
     canvas_rightbut_proc = cancel_text;
@@ -460,50 +501,61 @@ static void
 array_place_text(x, y)
     int		    x, y;
 {
-   int		    i, j, delta_x, delta_y, start_x, start_y;
-   F_text	   *save_text;
+    int		    i, j, delta_x, delta_y, start_x, start_y;
+    int		    nx, ny;
+    F_text	   *save_text;
 
-   elastic_movetext();
-   /* erase last lengths if appres.showlengths is true */
-   erase_lengths();
+    elastic_movetext();
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
 
-   tail(&objects, &object_tails);
-   save_text = new_t;
+    tail(&objects, &object_tails);
+    save_text = new_t;
 
-   if ((!cur_numxcopies) && (!cur_numycopies)) {
-     place_text(x, y);
-   }
-   else {
-     delta_x = x - fix_x;
-     delta_y = y - fix_y;
-     if ((!cur_numxcopies) || (! cur_numycopies))  /* special cases */
-       for ( i=1; i <= cur_numxcopies+cur_numycopies; i++, x += delta_x, y += delta_y)
-	 {
-	   place_text(x, y);
-	   new_t = copy_text(cur_t);
-	 }
-     else {
-       start_x = x - delta_x;
-       start_y = y - delta_y;
-       for (i = 0, x = start_x;  i < cur_numxcopies; i++, x+=delta_x) {
-	 for (j = 0, y = start_y;  j < cur_numycopies; j++, y+=delta_y) 
-	   if (i || j ) {
-	     place_text_x(x, y);
-	     new_t = copy_text(cur_t);
-	   }
-       }
-     }
-   }
-   /* put all new texts in the saved objects structure for undo */
-   saved_objects.texts = save_text;
-   set_action_object(F_ADD, O_ALL_OBJECT);
-   /* turn back on all relevant markers */
-   update_markers(new_objmask);
+    if ((!cur_numxcopies) && (!cur_numycopies)) {
+	place_text(x, y);
+    } else {
+	delta_x = cur_x - fix_x;
+	delta_y = cur_y - fix_y;
+	start_x = cur_x - delta_x;
+	start_y = cur_y - delta_y;
+	if ((cur_numxcopies < 2) && (cur_numycopies < 2)) {  /* special cases */
+	    if (cur_numxcopies > 0) {
+		place_text_x(start_x+delta_x, start_y);
+		new_t = copy_text(cur_t);
+	    }
+	    if (cur_numycopies > 0) {
+		place_text_x(start_x, start_y+delta_y);
+		new_t = copy_text(cur_t);
+	    }
+	} else {
+	    nx = cur_numxcopies;
+	    if (nx == 0)
+		nx++;
+	    ny = cur_numycopies;
+	    if (ny == 0)
+		ny++;
+	    for (i = 0, x = start_x;  i < nx; i++, x+=delta_x) {
+		for (j = 0, y = start_y;  j < ny; j++, y+=delta_y) {
+		    if (i || j ) {
+			place_text_x(x, y);
+			new_t = copy_text(cur_t);
+		    }
+		}
+	    }
+	}
+    }
+    /* put all new texts in the saved objects structure for undo */
+    saved_objects.texts = save_text;
+    set_action_object(F_ADD, O_ALL_OBJECT);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
 }
 
 static void
 cancel_text()
 {
+    canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_movetext();
     /* erase last lengths if appres.showlengths is true */
     erase_lengths();
@@ -537,6 +589,7 @@ place_text_x(x, y)
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
     translate_text(new_t, x - fix_x, y - fix_y);
     if (return_proc == copy_selected) {
@@ -568,6 +621,7 @@ init_splinedragging(s, x, y)
     cur_x = fix_x = x;
     cur_y = fix_y = y;
     canvas_locmove_proc = moving_spline;
+    canvas_ref_proc = elastic_movenewspline;
     canvas_leftbut_proc = place_spline;
     canvas_middlebut_proc = array_place_spline;
     canvas_rightbut_proc = cancel_spline;
@@ -578,6 +632,7 @@ init_splinedragging(s, x, y)
 static void
 cancel_spline()
 {
+    canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_moveline(new_s->points);
     /* erase last lengths if appres.showlengths is true */
     erase_lengths();
@@ -597,45 +652,55 @@ static void
 array_place_spline(x, y)
     int		    x, y;
 {
-   int		    i, j, delta_x, delta_y, start_x, start_y;
-   F_spline	   *save_spline;
+    int		    i, j, delta_x, delta_y, start_x, start_y;
+    int		    nx, ny;
+    F_spline	   *save_spline;
 
-   elastic_moveline(new_s->points);
-   /* erase last lengths if appres.showlengths is true */
-   erase_lengths();
+    elastic_moveline(new_s->points);
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
 
-   tail(&objects, &object_tails);
-   save_spline = new_s;
+    tail(&objects, &object_tails);
+    save_spline = new_s;
 
-   if ((!cur_numxcopies) && (!cur_numycopies)) {
-     place_spline(x, y);
-   }
-   else {
-     delta_x = x - fix_x;
-     delta_y = y - fix_y;
-     if ((!cur_numxcopies) || (! cur_numycopies))  /* special cases */
-       for ( i=1; i <= cur_numxcopies+cur_numycopies; i++, x += delta_x, y += delta_y)
-	 {
-	   place_spline(x, y);
-	   new_s = copy_spline(cur_s);
-	 }
-     else {
-       start_x = x - delta_x;
-       start_y = y - delta_y;
-       for (i = 0, x = start_x;  i < cur_numxcopies; i++, x+=delta_x) {
-	 for (j = 0, y = start_y;  j < cur_numycopies; j++, y+=delta_y) 
-	   if (i || j ) {
-	     place_spline_x(x, y);
-	     new_s = copy_spline(cur_s);
-	   }
-       }
-     }
-   }
-   /* put all new splines in the saved objects structure for undo */
-   saved_objects.splines = save_spline;
-   set_action_object(F_ADD, O_ALL_OBJECT);
-   /* turn back on all relevant markers */
-   update_markers(new_objmask);
+    if ((!cur_numxcopies) && (!cur_numycopies)) {
+	place_spline(x, y);
+    } else {
+	delta_x = cur_x - fix_x;
+	delta_y = cur_y - fix_y;
+	start_x = cur_x - delta_x;
+	start_y = cur_y - delta_y;
+	if ((cur_numxcopies < 2) && (cur_numycopies < 2)) {  /* special cases */
+	    if (cur_numxcopies > 0) {
+		place_spline_x(start_x+delta_x, start_y);
+		new_s = copy_spline(cur_s);
+	    }
+	    if (cur_numycopies > 0) {
+		place_spline_x(start_x, start_y+delta_y);
+		new_s = copy_spline(cur_s);
+	    }
+	} else {
+	    nx = cur_numxcopies;
+	    if (nx == 0)
+		nx++;
+	    ny = cur_numycopies;
+	    if (ny == 0)
+		ny++;
+	    for (i = 0, x = start_x;  i < nx; i++, x+=delta_x) {
+		for (j = 0, y = start_y;  j < ny; j++, y+=delta_y) {
+		    if (i || j ) {
+			place_spline_x(x, y);
+			new_s = copy_spline(cur_s);
+		    }
+		}
+	    }
+	}
+    }
+    /* put all new splines in the saved objects structure for undo */
+    saved_objects.splines = save_spline;
+    set_action_object(F_ADD, O_ALL_OBJECT);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
 }
 
 static void
@@ -656,6 +721,7 @@ place_spline_x(x, y)
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
     translate_spline(new_s, x - fix_x, y - fix_y);
     if (return_proc == copy_selected) {
@@ -691,6 +757,7 @@ init_compounddragging(c, x, y)
     y1off = c->nwcorner.y - y;
     y2off = c->secorner.y - y;
     canvas_locmove_proc = moving_box;
+    canvas_ref_proc = elastic_movebox;
     canvas_leftbut_proc = place_compound;
     canvas_middlebut_proc = array_place_compound;
     canvas_rightbut_proc = cancel_drag_compound;
@@ -702,6 +769,7 @@ init_compounddragging(c, x, y)
 static void
 cancel_drag_compound()
 {
+    canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_movebox();
     /* erase last lengths if appres.showlengths is true */
     erase_lengths();
@@ -722,44 +790,55 @@ static void
 array_place_compound(x, y)
     int		    x, y;
 {
-   int		    i, j, delta_x, delta_y, start_x, start_y;
-   F_compound	   *save_compound;
+    int		    i, j, delta_x, delta_y, start_x, start_y;
+    int		    nx, ny;
+    F_compound	   *save_compound;
 
-   elastic_movebox();
-   /* erase last lengths if appres.showlengths is true */
-   erase_lengths();
+    elastic_movebox();
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
 
-   tail(&objects, &object_tails);
-   save_compound = new_c;
+    tail(&objects, &object_tails);
+    save_compound = new_c;
 
-   if ((!cur_numxcopies) && (!cur_numycopies)) {
-     place_compound(x, y);
-   } else {
-     delta_x = x - fix_x;
-     delta_y = y - fix_y;
-     if ((!cur_numxcopies) || (! cur_numycopies))  /* special cases */
-       for ( i=1; i <= cur_numxcopies+cur_numycopies; i++, x += delta_x, y += delta_y)
-	 {
-	   place_compound(x, y);
-	   new_c = copy_compound(cur_c);
-	 }
-     else {
-       start_x = x - delta_x;
-       start_y = y - delta_y;
-       for (i = 0, x = start_x;  i < cur_numxcopies; i++, x+=delta_x) {
-	 for (j = 0, y = start_y;  j < cur_numycopies; j++, y+=delta_y) 
-	   if (i || j ) {
-	     place_compound_x(x, y);
-	     new_c = copy_compound(cur_c);
-	   }
-       }
-     }
-   }
-   /* put all new compounds in the saved objects structure for undo */
-   saved_objects.compounds = save_compound;
-   set_action_object(F_ADD, O_ALL_OBJECT);
-   /* turn back on all relevant markers */
-   update_markers(new_objmask);
+    if ((!cur_numxcopies) && (!cur_numycopies)) {
+	place_compound(x, y);
+    } else {
+	delta_x = cur_x - fix_x;
+	delta_y = cur_y - fix_y;
+	start_x = cur_x - delta_x;
+	start_y = cur_y - delta_y;
+	if ((cur_numxcopies < 2) && (cur_numycopies < 2)) {  /* special cases */
+	    if (cur_numxcopies > 0) {
+		place_compound_x(start_x+delta_x, start_y);
+		new_c = copy_compound(cur_c);
+	    }
+	    if (cur_numycopies > 0) {
+		place_compound_x(start_x, start_y+delta_y);
+		new_c = copy_compound(cur_c);
+	    }
+	} else {
+	    nx = cur_numxcopies;
+	    if (nx == 0)
+		nx++;
+	    ny = cur_numycopies;
+	    if (ny == 0)
+		ny++;
+	    for (i = 0, x = start_x;  i < nx; i++, x+=delta_x) {
+		for (j = 0, y = start_y;  j < ny; j++, y+=delta_y) {
+		    if (i || j ) {
+			place_compound_x(x, y);
+			new_c = copy_compound(cur_c);
+		    }
+		}
+	    }
+	}
+    }
+    /* put all new compounds in the saved objects structure for undo */
+    saved_objects.compounds = save_compound;
+    set_action_object(F_ADD, O_ALL_OBJECT);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
 }
 
 static void
@@ -783,6 +862,7 @@ place_compound_x(x, y)
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
     dx = x - fix_x;
     dy = y - fix_y;

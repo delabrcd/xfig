@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -36,6 +36,7 @@ break_selected()
     set_mousefun("break compound", "break and tag", "", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
+    canvas_ref_proc = null_proc;
     init_searchproc_left(init_break_only);
     init_searchproc_middle(init_break_tag);
     canvas_leftbut_proc = object_search_left;
@@ -45,23 +46,21 @@ break_selected()
 }
 
 static void
-init_break_only(p, type, x, y, px, py, loc_tag)
+init_break_only(p, type, x, y, px, py)
     F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
-    int 	    loc_tag;
 {
     init_break(p, type, x, y, px, py, 0);
 }
 
 static void
-init_break_tag(p, type, x, y, px, py, loc_tag)
+init_break_tag(p, type, x, y, px, py)
     F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
-    int 	    loc_tag;
 {
     init_break(p, type, x, y, px, py, 1);
 }

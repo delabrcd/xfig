@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -23,6 +23,7 @@
 #include "u_elastic.h"
 #include "u_geom.h"
 #include "w_canvas.h"
+#include "w_drawprim.h"
 #include "w_setup.h"
 #include "w_zoom.h"
 #include "d_arc.h"
@@ -63,6 +64,12 @@ elastic_box(x1, y1, x2, y2)
 }
 
 void
+elastic_fixedbox()
+{
+    elastic_box(fix_x, fix_y, cur_x, cur_y);
+}
+
+void
 elastic_movebox()
 {
     register int    x1, y1, x2, y2;
@@ -89,21 +96,31 @@ void
 resizing_box(x, y)
     int		    x, y;
 {
-    elastic_box(fix_x, fix_y, cur_x, cur_y);
+    elastic_fixedbox();
     cur_x = x;
     cur_y = y;
     boxsize_msg(1);
-    elastic_box(fix_x, fix_y, cur_x, cur_y);
+    elastic_fixedbox();
 }
 
 void
 constrained_resizing_box(x, y)
     int		    x, y;
 {
-    elastic_box(fix_x, fix_y, cur_x, cur_y);
+    elastic_fixedbox();
     adjust_box_pos(x, y, from_x, from_y, &cur_x, &cur_y);
     boxsize_msg(1);
-    elastic_box(fix_x, fix_y, cur_x, cur_y);
+    elastic_fixedbox();
+}
+
+void
+constrained_resizing_scale_box(x, y)
+    int		    x, y;
+{
+    elastic_fixedbox();
+    adjust_box_pos(x, y, from_x, from_y, &cur_x, &cur_y);
+    elastic_fixedbox();
+    boxsize_scale_msg(1);
 }
 
 void
@@ -112,6 +129,12 @@ scaling_compound(x, y)
 {
     elastic_scalecompound(cur_c);
     adjust_box_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
+    elastic_scalecompound(cur_c);
+}
+
+void
+elastic_scale_curcompound()
+{
     elastic_scalecompound(cur_c);
 }
 
@@ -134,11 +157,13 @@ elastic_scalecompound(c)
     y1 = fix_y + round((c->secorner.y - fix_y) * scalefact);
     x2 = fix_x + round((c->nwcorner.x - fix_x) * scalefact);
     y2 = fix_y + round((c->nwcorner.y - fix_y) * scalefact);
-    boxsize_msg(2);
+    boxsize_scale_msg(2);
     elastic_box(x1, y1, x2, y2);
 }
 
 /*************************** LINES *************************/
+
+/* refresh a line segment */
 
 void
 elastic_line()
@@ -172,7 +197,7 @@ latex_line(x, y)
 
     elastic_line();
     latex_endpoint(fix_x, fix_y, x, y, &cur_x, &cur_y, latexarrow_mode,
-		   (cur_pointposn == P_ANY) ? 1 : posn_rnd[cur_pointposn]);
+		   (cur_pointposn == P_ANY) ? 1 : posn_rnd[cur_gridunit][cur_pointposn]);
     length_msg(MSG_LENGTH);
     elastic_line();
     c = (x == cur_x && y == cur_y) ? null_cursor : crosshair_cursor;
@@ -316,6 +341,12 @@ moving_line(x, y)
 }
 
 void
+elastic_movenewline()
+{
+    elastic_moveline(new_l->points);
+}
+
+void
 elastic_moveline(pts)
     F_point	   *pts;
 {
@@ -393,8 +424,15 @@ scaling_line(x, y)
 {
     elastic_scalepts(cur_l->points);
     adjust_box_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
-    if (cur_l->type == T_BOX || cur_l->type == T_PICTURE)
+    if (cur_l->type == T_BOX || cur_l->type == T_ARCBOX || cur_l->type == T_PICTURE)
 	boxsize_msg(2);
+    elastic_scalepts(cur_l->points);
+}
+
+void
+elastic_scale_curline(x, y)
+    int		    x, y;
+{
     elastic_scalepts(cur_l->points);
 }
 
@@ -404,6 +442,12 @@ scaling_spline(x, y)
 {
     elastic_scalepts(cur_s->points);
     adjust_box_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
+    elastic_scalepts(cur_s->points);
+}
+
+void
+elastic_scale_curspline()
+{
     elastic_scalepts(cur_s->points);
 }
 
@@ -492,14 +536,14 @@ elastic_ebr()
     rx = cur_x - fix_x;
     ry = cur_y - fix_y;
     if (cur_angle != 0.0) {
-	angle_ellipse(fix_x, fix_y, rx, ry, cur_angle, INV_PAINT, 1, 
+	angle_ellipse(fix_x, fix_y, rx, ry, cur_angle, INV_PAINT, MAX_DEPTH+1, 1, 
 	     RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT);
     } else {
 	x1 = fix_x + rx;
 	x2 = fix_x - rx;
 	y1 = fix_y + ry;
 	y2 = fix_y - ry;
-	pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, 1,
+	pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, MAX_DEPTH+1, 1,
 	     RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
     }
 }
@@ -536,10 +580,11 @@ elastic_ebd()
     if (cur_angle != 0.0) {
 	angle_ellipse(centx, centy, abs(cur_x-fix_x)/2, 
 		  abs(cur_y-fix_y)/2, cur_angle,
-		  INV_PAINT, 1, RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT);
+		  INV_PAINT, MAX_DEPTH+1, 1, RUBBER_LINE, 0.0, UNFILLED,
+		  DEFAULT, DEFAULT);
     } else {
-	pw_curve(canvas_win, fix_x, fix_y, cur_x, cur_y,
-	     INV_PAINT, 1, RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
+	pw_curve(canvas_win, fix_x, fix_y, cur_x, cur_y, INV_PAINT, MAX_DEPTH+1, 1,
+			RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
     }
 }
 
@@ -577,7 +622,7 @@ elastic_cbr()
     x2 = fix_x - radius;
     y1 = fix_y + radius;
     y2 = fix_y - radius;
-    pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, 1,
+    pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, MAX_DEPTH+1, 1,
 	     RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
 }
 
@@ -606,7 +651,7 @@ elastic_cbd()
     x2 = fix_x + rx - radius;
     y1 = fix_y + ry + radius;
     y2 = fix_y + ry - radius;
-    pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, 1,
+    pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, MAX_DEPTH+1, 1,
 	     RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
 }
 
@@ -642,9 +687,10 @@ elastic_moveellipse()
     y2 = cur_y + y2off;
     if (cur_angle != 0.0) {
 	angle_ellipse((x1+x2)/2, (y1+y2)/2, abs(x1-x2)/2, abs(y1-y2)/2, cur_angle,
-		  INV_PAINT, 1, RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT);
+		  INV_PAINT, MAX_DEPTH+1, 1, RUBBER_LINE, 0.0, UNFILLED,
+		  DEFAULT, DEFAULT);
     } else {
-	pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, 1,
+	pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, MAX_DEPTH+1, 1,
 	     RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
     }
 }
@@ -682,13 +728,14 @@ elastic_scaleellipse(e)
     ry = round(e->radiuses.y * scalefact);
     if (cur_angle != 0.0) {
 	angle_ellipse(e->center.x, e->center.y, rx, ry, cur_angle,
-		  INV_PAINT, 1, RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT);
+		  INV_PAINT, MAX_DEPTH+1, 1, RUBBER_LINE, 0.0, UNFILLED,
+		  DEFAULT, DEFAULT);
     } else {
 	x1 = fix_x + rx;
 	x2 = fix_x - rx;
 	y1 = fix_y + ry;
 	y2 = fix_y - ry;
-	pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, 1,
+	pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, MAX_DEPTH+1, 1,
 	     RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
     }
 }
@@ -705,6 +752,12 @@ scaling_ellipse(x, y)
 	length_msg(MSG_RADIUS);
     else
 	length_msg(MSG_DIAM);
+    elastic_scaleellipse(cur_e);
+}
+
+void
+elastic_scale_curellipse()
+{
     elastic_scaleellipse(cur_e);
 }
 
@@ -730,9 +783,9 @@ reshaping_arc(x, y)
 	       cur_a->point[movedpoint_num].y, &cur_x, &cur_y);
     if (movedpoint_num == 1) {
 	/* middle point */
-	length_msg2(cur_a->point[0].x, cur_a->point[0].y,
-		    cur_a->point[2].x, cur_a->point[2].y,
-		    cur_x, cur_y);
+        arc_msg(cur_a->point[0].x, cur_a->point[0].y,
+		 cur_a->point[2].x, cur_a->point[2].y,
+		 cur_x, cur_y);
     } else {
 	/* end point */
 	altlength_msg(MSG_LENGTH,cur_a->point[1].x,cur_a->point[1].y);
@@ -772,6 +825,12 @@ moving_arc(x, y)
 }
 
 void
+elastic_movenewarc()
+{
+    elastic_movearc(new_a);
+}
+
+void
 elastic_movearc(a)
     F_arc	   *a;
 {
@@ -793,6 +852,12 @@ scaling_arc(x, y)
 {
     elastic_scalearc(cur_a);
     adjust_box_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
+    elastic_scalearc(cur_a);
+}
+
+void
+elastic_scale_curarc()
+{ 
     elastic_scalearc(cur_a);
 }
 
@@ -849,9 +914,9 @@ moving_text(x, y)
 void
 elastic_movetext()
 {
-    pw_text(canvas_win, cur_x + x1off, cur_y + y1off, INV_PAINT,
+    pw_text(canvas_win, cur_x + x1off, cur_y + y1off, INV_PAINT, MAX_DEPTH+1,
 	    new_t->fontstruct, new_t->angle, 
-	    new_t->cstring, new_t->color);
+	    new_t->cstring, new_t->color, COLOR_NONE);
 }
 
 
@@ -864,6 +929,12 @@ moving_spline(x, y)
     elastic_moveline(new_s->points);
     adjust_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
     length_msg(MSG_DIST);
+    elastic_moveline(new_s->points);
+}
+
+void
+elastic_movenewspline()
+{
     elastic_moveline(new_s->points);
 }
 

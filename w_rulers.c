@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -20,12 +20,13 @@
 #include "resources.h"
 #include "mode.h"
 #include "paintop.h"
-#include "e_edit.h"
 #include "u_pan.h"
 #include "w_drawprim.h"
 #include "w_icons.h"
+#include "w_indpanel.h"
 #include "w_mousefun.h"
 #include "w_msgpanel.h"
+#include "w_rulers.h"
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
@@ -41,7 +42,7 @@
 #define			INCH_MARK		7	/* also for cm */
 #define			HALF_MARK		6
 #define			QUARTER_MARK		5	/* also for 2mm */
-#define			SIXTEENTH_MARK		3
+#define			SIXTEENTH_MARK		3	/* also for 1/10" */
 
 #define			TRM_WID			16
 #define			TRM_HT			8
@@ -120,22 +121,131 @@ static void	sideruler_exposed();
 static void     unit_balloon_trigger();
 static void     unit_unballoon();
 
-static int	HINCH = (PIX_PER_INCH / 2);
-static int	QINCH = (PIX_PER_INCH / 4);
-static int	SINCH = (PIX_PER_INCH / 16);
-static int	TWOMM = (PIX_PER_CM / 5);
-static int	ONEMM = (PIX_PER_CM / 10);
+/* turn these into macros so we can use them in
+   struct initialization */
+#define	HINCH (PPI / 2)
+#define	QINCH (PPI / 4)
+#define	SINCH (PPI / 16)
+#define	TINCH (PPI / 10)
+#define	TWOMM (PPCM / 5)
+#define	ONEMM (PPCM / 10)
 
-/************************* UNITBOX ************************/
+/* Strings and ticks on the rulers */
+typedef struct tick_info_struct {
+  float min_zoom;
+  int skip;
+  int length;
+} tick_info;
 
-void popup_unit_panel();
+/* These lists must be sorted by increasing min_zoom! */
+static tick_info tick_inches[] = {
+  { 0.0, PPI, INCH_MARK },
+  { 0.1, HINCH, HALF_MARK },
+  { 0.2, QINCH, QUARTER_MARK },
+  { 0.6, SINCH, SIXTEENTH_MARK },
+};
+#define Ntick_inches (sizeof(tick_inches)/sizeof(tick_info))
+
+static tick_info tick_tenth_inches[] = {
+  { 0.0, PPI, INCH_MARK },
+  { 0.1, HINCH, HALF_MARK },
+  { 0.2, QINCH, QUARTER_MARK },
+  { 0.6, TINCH, SIXTEENTH_MARK },
+  { 1.0, TINCH/2, SIXTEENTH_MARK },
+  { 4.0, TINCH/4, SIXTEENTH_MARK },
+};
+#define Ntick_tenth_inches (sizeof(tick_tenth_inches)/sizeof(tick_info))
+
+static tick_info tick_metric[] = {
+  { 0.0,  PPCM, INCH_MARK },
+  { 0.41, TWOMM, QUARTER_MARK },
+  { 2.0,  ONEMM, SIXTEENTH_MARK },
+};
+#define Ntick_metric (sizeof(tick_metric)/sizeof(tick_info))
+
+typedef struct ruler_skip_struct {
+  float	max_zoom;	/* upper bound of range where these settings apply */
+  int	skipt;		/* step value for loop  */
+  int	skipx;		/* skip between strings is skipx times skipt */
+  int	prec;		/* format precision for floats */
+} ruler_skip;
+
+/* These lists must be sorted by increasing max_zoom! */
+
+static ruler_skip ruler_skip_inches[] = {
+  {  0.01,   12*PPI, 4, 1},
+  {  0.0201, 6*PPI, 4, 1},
+  {  0.0401, 2*PPI, 6, 1},
+  {  0.0501, PPI, 12, 1},
+  {  0.0801, PPI, 6, 1},
+  {  0.201,  SINCH, 64, 1},
+  {  0.301,  SINCH, 32, 1},
+  {  2.0,    SINCH, 16, 1},
+  {  4.0,    SINCH, 8, 1},
+  {  8.0,    SINCH, 4, 2},
+  { 20.0,    SINCH, 2, 3},
+  {  0.0,    SINCH, 1, 4},  
+  /* max_zoom == 0.0 indicates last element */
+};
+
+static ruler_skip ruler_skip_tenth_inches[] = {
+  {  0.01,   10*PPI,  10, 1},		/* label every   100 inches, tick 100 */
+  {  0.0201, 5*PPI,   10, 1},		/* label every    50 inches, tick   5 */
+  {  0.0401, 2*PPI,   10, 1},		/* label every    20 inches, tick   2 */
+  {  0.0801, PPI,     10, 1},		/* label every    10 inches, tick   1 */
+  {  0.201,  PPI,      5, 1},		/* label every     5 inches, tick   1 */
+  {  0.401,  TINCH*2, 10, 1},		/* label every     2 inches, tick   1/5 */
+  {  2.0,    TINCH,   10, 1},		/* label every     1 inch, tick 1/10 */
+  {  5.0,    TINCH,    5, 1},		/* label every   1/2 inch, tick 1/10 */
+  { 15.0,    TINCH/2,  2, 1},		/* label every  1/10 inch, tick 1/20 */
+  { 50.0,    TINCH/4,  2, 2},  		/* label every  1/20 inch, tick 1/40 */
+  {  0.0,    TINCH/4,  1, 3},  		/* label every  1/40 inch, tick 1/40 */
+  /* max_zoom == 0.0 indicates last element */
+};
+
+static ruler_skip ruler_skip_metric[] = {
+  { 0.011,  20*PPCM, 5, 1},
+  { 0.031,  10*PPCM, 5, 1},
+  { 0.081,  5*PPCM, 4, 1},
+  { 0.11,   2*PPCM, 5, 1},
+  { 0.31,   PPCM, 5, 1},
+  { 0.61,   ONEMM, 20, 1},
+  { 2.01,   ONEMM, 10, 1},
+  { 8.01,   ONEMM, 5, 1},
+  {12.01,   ONEMM, 2, 1},
+  { 0.0,    ONEMM, 1, 1},   
+  /* max_zoom == 0.0 indicates last element */
+};
+
+typedef struct ruler_info_struct {
+  int		 ruler_unit;
+  ruler_skip	*skips;
+  tick_info	*ticks;
+  int		 nticks;
+} ruler_info;
+
+static ruler_info ruler_inches = {
+  PPI, ruler_skip_inches, tick_inches, Ntick_inches };
+static ruler_info ruler_tenth_inches = {
+  PPI, ruler_skip_tenth_inches, tick_tenth_inches, Ntick_tenth_inches };
+static ruler_info ruler_metric = {
+  PPCM, ruler_skip_metric, tick_metric, Ntick_metric };
+
+static tick_info* ticks;
+static int	  nticks;
+static int	  ruler_unit;
+static int	  skip;
+static int	  skipx;
+static char	  precstr[10];
+
 static Boolean	rul_unit_setting;
-static int	fig_unit_setting=0, fig_scale_setting=0;
+static Boolean	fig_unit_setting=False, fig_scale_setting=False;
 static Widget	rul_unit_panel, fig_unit_panel, fig_scale_panel;
-static Widget	rul_unit_menu, fig_unit_menu, fig_scale_menu;
-static Widget	scale_factor_lab, scale_factor_panel;
-static Widget	user_unit_lab, user_unit_panel;
+static Widget	user_unit_lab, user_unit_entry, fraction_checkbox;
+static Widget	scale_factor_lab, scale_factor_entry;
 static void     unit_panel_cancel(), unit_panel_set();
+static Pixel	unit_bg, unit_fg;
+static Pixel	scale_bg, scale_fg;
 
 XtActionsRec	unitbox_actions[] =
 {
@@ -189,6 +299,7 @@ reset_rulers()
 {
     reset_topruler();
     reset_sideruler();
+    redisplay_rulers();
 }
 
 void
@@ -216,16 +327,16 @@ init_unitbox(tool)
 {
     char	    buf[20];
 
-    if (appres.user_scale != 1.0)
-	fig_scale_setting = 1;
+    if (appres.userscale != 1.0)
+	fig_scale_setting = True;
 
     if (strlen(cur_fig_units)) {
-	fig_unit_setting = 1;
+	fig_unit_setting = True;
 	sprintf(buf,"1%s = %.2f%s", appres.INCHES? "in": "cm",
-		appres.user_scale, cur_fig_units);
+		appres.userscale, cur_fig_units);
     } else {
 	strcpy(cur_fig_units, appres.INCHES ? "in" : "cm");
-	sprintf(buf,"1:%.2f", appres.user_scale);
+	sprintf(buf,"1:%.2f", appres.userscale);
     }
 
     FirstArg(XtNlabel, buf);
@@ -246,9 +357,9 @@ init_unitbox(tool)
 				Args, ArgCount);
     XtAppAddActions(tool_app, unitbox_actions, XtNumber(unitbox_actions));
     /* popup when mouse passes over button */
-    XtAddEventHandler(unitbox_sw, EnterWindowMask, (Boolean) 0,
+    XtAddEventHandler(unitbox_sw, EnterWindowMask, False,
 		      unit_balloon_trigger, (XtPointer) unitbox_sw);
-    XtAddEventHandler(unitbox_sw, LeaveWindowMask, (Boolean) 0,
+    XtAddEventHandler(unitbox_sw, LeaveWindowMask, False,
 		      unit_unballoon, (XtPointer) unitbox_sw);
     XtOverrideTranslations(unitbox_sw,
 			   XtParseTranslationTable(unitbox_translations));
@@ -386,49 +497,84 @@ unit_panel_set(w, ev)
     Widget	    w;
     XButtonEvent   *ev;
 {
-    char	    buf[20];
     int		    old_rul_unit;
 
     old_rul_unit = appres.INCHES;
     appres.INCHES = rul_unit_setting ? True : False;
     init_grid();	/* change point positioning messages if necessary */
     if (fig_scale_setting)
-	appres.user_scale = (float) atof(panel_get_value(scale_factor_panel));
+	appres.userscale = (float) atof(panel_get_value(scale_factor_entry));
     else
-	appres.user_scale = 1.0;
+	appres.userscale = 1.0;
 
-    if (fig_unit_setting) {
-        strncpy(cur_fig_units,
-	    panel_get_value(user_unit_panel),
-	    sizeof(cur_fig_units)-1);
-	sprintf(buf,"1%s = %.2f%s",
-		appres.INCHES ? "in" : "cm",
-		appres.user_scale, cur_fig_units);
-	put_msg("Figure scale: %s",buf);
-    } else {
-	strcpy(cur_fig_units, appres.INCHES ? "in" : "cm");
-	sprintf(buf,"1:%.2f", appres.user_scale);
-	put_msg("Figure scale = %s", buf);
-    }
-    FirstArg(XtNlabel, buf);
-    SetValues(unitbox_sw);
+    set_unit_indicator(fig_unit_setting);
+
+    /* reset the rulers with the new units or change from fract<->decimal */
+    reset_rulers();
+    setup_grid();
 
     if (old_rul_unit != appres.INCHES) {
-	reset_rulers();
-	setup_grid();
-	if(!emptyfigure()) { /* rescale, HWS */
-	  if(old_rul_unit)
-	    read_scale_compound(&objects,(2.54*PIX_PER_CM)/((float)PIX_PER_INCH),0);
+	/* if there are objects on the canvas, scale them to compensate for the
+	   difference in inches/metric PIX_PER_XX */
+	if (!emptyfigure()) { 
+	  if (old_rul_unit)
+	    read_scale_compound(&objects,(2.54*PPCM)/((float)PPI),0);
 	  else
-	    read_scale_compound(&objects,((float)PIX_PER_INCH)/(2.54*PIX_PER_CM),0);
+	    read_scale_compound(&objects,((float)PPI)/(2.54*PPCM),0);
 	  redisplay_canvas();
 	}
     }
     /* PIC_FACTOR is the number of Fig units (1200dpi) per printer's points (1/72 inch) */
     /* it changes with Metric and Imperial */
-    PIC_FACTOR  = (appres.INCHES ? (float)PIX_PER_INCH : 2.54*PIX_PER_CM)/72.0;
+    PIC_FACTOR  = (appres.INCHES ? (float)PPI : 2.54*PPCM)/72.0;
+
+    /* reset figure size in print and export panels */
+    export_update_figure_size();
+    print_update_figure_size();
+    /* finally, reset any grid specs in export or print panels to make consistent */
+    reset_grid_menus();
 
     unit_panel_dismiss();
+}
+
+void
+set_unit_indicator(use_userscale)
+    Boolean  use_userscale;
+{
+    char     buf[20];
+
+    if (use_userscale) {
+        strncpy(cur_fig_units,
+	    panel_get_value(user_unit_entry),
+	    sizeof(cur_fig_units)-1);
+	sprintf(buf,"1%s = %.2f%s",
+		appres.INCHES ? "in" : "cm",
+		appres.userscale, cur_fig_units);
+	put_msg("Figure scale: %s",buf);
+    } else {
+	if (appres.INCHES) {
+	    /* IP */
+	    /* if user doesn't have "i", "in*", "f", "ft", "feet", "mi" or "mile" set units to "in" */
+	    if (strcmp(cur_fig_units, "i") != 0 && strncmp(cur_fig_units,"in",2) != 0 &&
+		strcmp(cur_fig_units, "f") != 0 && strcmp(cur_fig_units, "ft") != 0 && 
+		strcmp(cur_fig_units, "feet") != 0 && strcmp(cur_fig_units, "mi") != 0 &&
+		strcmp(cur_fig_units, "mile") != 0)
+			strcpy(cur_fig_units, "in");
+	    /* otherwise leave it as the user specified it */
+	} else {
+	    /* Metric */
+	    /* if user doesn't have "mm", "cm", "dm", "m", or "km", then set units to "cm" */
+	    if (strcmp(cur_fig_units, "mm") != 0 && strncmp(cur_fig_units,"cm",2) != 0 &&
+		strcmp(cur_fig_units, "dm") != 0 && strcmp(cur_fig_units, "m") != 0 && 
+		strcmp(cur_fig_units, "km") != 0)
+			strcpy(cur_fig_units, "cm");
+	    /* otherwise leave it as the user specified it */
+	}
+	sprintf(buf,"1%s = %.2f%s", appres.INCHES? "in":"cm", appres.userscale, cur_fig_units);
+	put_msg("Figure scale = %s", buf);
+    }
+    FirstArg(XtNlabel, buf);
+    SetValues(unitbox_sw);
 }
 
 static void
@@ -438,9 +584,17 @@ fig_unit_select(w, new_unit, garbage)
 {
     FirstArg(XtNlabel, XtName(w));
     SetValues(fig_unit_panel);
-    fig_unit_setting = (int) new_unit;
-    XtSetSensitive(user_unit_lab, fig_unit_setting ? True : False);
-    XtSetSensitive(user_unit_panel, fig_unit_setting ? True : False);
+    fig_unit_setting = (Boolean) (int) new_unit;
+    if (fig_unit_setting) {
+	/* set foreground to original so we can se it */
+	FirstArg(XtNforeground, unit_fg);
+    } else {
+	/* set foreground to background to make it invisible */
+	FirstArg(XtNforeground, unit_bg);
+    }
+    SetValues(user_unit_entry);
+    XtSetSensitive(user_unit_lab, fig_unit_setting);
+    XtSetSensitive(user_unit_entry, fig_unit_setting);
     put_msg(fig_unit_setting ? "user defined figure units"
 			     : "figure units = ruler units");
 }
@@ -452,9 +606,17 @@ fig_scale_select(w, new_scale, garbage)
 {
     FirstArg(XtNlabel, XtName(w));
     SetValues(fig_scale_panel);
-    fig_scale_setting = (int) new_scale;
-    XtSetSensitive(scale_factor_lab, fig_scale_setting ? True : False);
-    XtSetSensitive(scale_factor_panel, fig_scale_setting ? True : False);
+    fig_scale_setting = (Boolean) (int) new_scale;
+    if (fig_scale_setting) {
+	/* set foreground to original so we can se it */
+	FirstArg(XtNforeground, scale_fg);
+    } else {
+	/* set foreground to background to make it invisible */
+	FirstArg(XtNforeground, scale_bg);
+    }
+    SetValues(scale_factor_entry);
+    XtSetSensitive(scale_factor_lab, fig_scale_setting);
+    XtSetSensitive(scale_factor_entry, fig_scale_setting);
     put_msg(fig_scale_setting ? "user defined scale factor"
 			     : "figure scale = 1:1");
 }
@@ -467,17 +629,36 @@ rul_unit_select(w, closure, garbage)
     int		    new_unit = (int) closure;
 
     /* return if no change */
-    if (new_unit == rul_unit_setting)
+    if (new_unit == cur_gridunit)
 	return;
 
     FirstArg(XtNlabel, XtName(w));
     SetValues(rul_unit_panel);
 
-    rul_unit_setting = new_unit==1? True: False;
-    if (rul_unit_setting)
-	put_msg("ruler scale : inches");
-    else
-	put_msg("ruler scale : centimetres");
+    /* 0 = metric, 1/2 = inches */
+
+    /* since user changed to/from metric/imperial, set unit name */
+    panel_set_value(user_unit_entry, new_unit? "in": "cm");
+
+    rul_unit_setting = new_unit;
+    if (rul_unit_setting) {
+	/* inches, check if decimal or fractional */
+	if (rul_unit_setting == TENTH_UNIT) {
+	    /* unmanage the fraction_checkbox */
+	    put_msg("ruler scale : decimal inches");
+	    XtUnmanageChild(fraction_checkbox);
+	    cur_gridunit = TENTH_UNIT;
+	} else {
+	    put_msg("ruler scale : fractional inches");
+	    XtManageChild(fraction_checkbox);
+	    cur_gridunit = FRACT_UNIT;
+	}
+    } else {
+	/* metric */
+	put_msg("ruler scale : centimeters");
+	XtUnmanageChild(fraction_checkbox);
+	cur_gridunit = MM_UNIT;
+    }
 }
 
 void
@@ -487,29 +668,32 @@ popup_unit_panel()
     Dimension	    width, height;
     char	    buf[32];
     static Boolean  actions_added=False;
-    static char    *rul_unit_items[] = {
-    "Metric (cm)  ", "Imperial (in)"};
-    static char    *fig_unit_items[] = {
-    "Ruler units ", "User defined"};
-    static char    *fig_scale_items[] = {
-    "Unity       ", "User defined"};
     int		    x;
+    static char    *rul_unit_items[] =  { "Metric (cm)        ", 
+					  "Imperial (fraction)",
+					  "Imperial (decimal) "};
+    static char    *fig_unit_items[] =  { "Ruler units ",
+					  "User defined"};
+    static char    *fig_scale_items[] = { "Unity       ",
+					  "User defined"};
+
+    /* turn off Compose key LED */
+    setCompLED(0);
 
     FirstArg(XtNwidth, &width);
     NextArg(XtNheight, &height);
     GetValues(tool);
-    /* position the popup 2/3 in from left (1/8 if mode panel on right) 
+    /* position the popup 3/5 in from left (1/8 if mode panel on right) 
        and 1/3 down from top */
     if (appres.RHS_PANEL)
 	x = (width / 8);
     else
-	x = (2 * width / 3);
-    XtTranslateCoords(tool, (Position) x, (Position) (height / 6),
+	x = (3 * width / 5);
+    XtTranslateCoords(tool, (Position) x, (Position) (height / 8),
 		      &x_val, &y_val);
 
     FirstArg(XtNx, x_val);
     NextArg(XtNy, y_val);
-    NextArg(XtNwidth, 240);
     NextArg(XtNcolormap, tool_cm);
     NextArg(XtNtitle, "Xfig: Unit menu");
     unit_popup = XtCreatePopupShell("unit_popup",
@@ -525,24 +709,24 @@ popup_unit_panel()
     unit_panel = XtCreateManagedWidget("unit_panel", formWidgetClass, unit_popup, NULL, 0);
 
     FirstArg(XtNborderWidth, 0);
-    sprintf(buf, "      Unit/Scale settings");
-    label = XtCreateManagedWidget(buf, labelWidgetClass, unit_panel, Args, ArgCount);
+    label = XtCreateManagedWidget("         Unit/Scale settings          ",
+		labelWidgetClass, unit_panel, Args, ArgCount);
 
     /* make ruler units menu */
 
     rul_unit_setting = appres.INCHES ? True : False;
     FirstArg(XtNfromVert, label);
     NextArg(XtNborderWidth, 0);
-    beside = XtCreateManagedWidget(" Ruler Units", labelWidgetClass,
+    beside = XtCreateManagedWidget(" Ruler units", labelWidgetClass,
                                    unit_panel, Args, ArgCount);
 
     FirstArg(XtNfromVert, label);
     NextArg(XtNfromHoriz, beside);
     NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
-    rul_unit_panel = XtCreateManagedWidget(rul_unit_items[rul_unit_setting? 1:0],
+    rul_unit_panel = XtCreateManagedWidget(rul_unit_items[cur_gridunit],
 				menuButtonWidgetClass, unit_panel, Args, ArgCount);
     below = rul_unit_panel;
-    rul_unit_menu = make_popup_menu(rul_unit_items, XtNumber(rul_unit_items), -1, "",
+    make_pulldown_menu(rul_unit_items, XtNumber(rul_unit_items), -1, "",
                                      rul_unit_panel, rul_unit_select);
 
     /* make figure units menu */
@@ -555,17 +739,17 @@ popup_unit_panel()
     FirstArg(XtNfromVert, below);
     NextArg(XtNfromHoriz, beside);
     NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
-    fig_unit_panel = XtCreateManagedWidget(fig_unit_items[fig_unit_setting],
+    fig_unit_panel = XtCreateManagedWidget(fig_unit_items[(int) fig_unit_setting],
 				menuButtonWidgetClass, unit_panel, Args, ArgCount);
     below = fig_unit_panel;
-    fig_unit_menu = make_popup_menu(fig_unit_items, XtNumber(fig_unit_items), -1, "",
+    make_pulldown_menu(fig_unit_items, XtNumber(fig_unit_items), -1, "",
                                      fig_unit_panel, fig_unit_select);
 
     /* user defined units */
 
     FirstArg(XtNfromVert, below);
     NextArg(XtNborderWidth, 0);
-    NextArg(XtNlabel, "   Unit Name");
+    NextArg(XtNlabel, "   Unit name");
     user_unit_lab = XtCreateManagedWidget("user_units",
                                 labelWidgetClass, unit_panel, Args, ArgCount);
 
@@ -573,14 +757,20 @@ popup_unit_panel()
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNfromHoriz, user_unit_lab);
     NextArg(XtNstring, cur_fig_units);
-    NextArg(XtNinsertPosition, strlen(buf));
     NextArg(XtNeditType, XawtextEdit);
     NextArg(XtNwidth, 50);
-    user_unit_panel = XtCreateManagedWidget(buf, asciiTextWidgetClass,
+    user_unit_entry = XtCreateManagedWidget("unit_entry", asciiTextWidgetClass,
 					unit_panel, Args, ArgCount);
-    XtOverrideTranslations(user_unit_panel,
+    XtOverrideTranslations(user_unit_entry,
 		XtParseTranslationTable(unit_text_translations));
-    below = user_unit_panel;
+    below = user_unit_entry;
+
+    /* fraction checkbox (only manage if we're currently in fractional inches) */
+
+    fraction_checkbox = CreateCheckbutton("Show fractions", "display_fractions", 
+			unit_panel, fig_unit_panel, user_unit_entry,
+			(appres.INCHES? MANAGE: DONT_MANAGE), SMALL_CHK,
+			&display_fractions, 0, 0);
 
     /* make figure scale menu */
 
@@ -595,7 +785,7 @@ popup_unit_panel()
     fig_scale_panel = XtCreateManagedWidget(fig_scale_items[fig_scale_setting],
 				menuButtonWidgetClass, unit_panel, Args, ArgCount);
     below = fig_scale_panel;
-    fig_scale_menu = make_popup_menu(fig_scale_items, XtNumber(fig_scale_items), -1, "",
+    make_pulldown_menu(fig_scale_items, XtNumber(fig_scale_items), -1, "",
                                      fig_scale_panel, fig_scale_select);
 
     /* scale factor widget */
@@ -606,38 +796,37 @@ popup_unit_panel()
     scale_factor_lab = XtCreateManagedWidget("scale_factor",
                                 labelWidgetClass, unit_panel, Args, ArgCount);
 
-    sprintf(buf, "%1.2f", appres.user_scale);
+    sprintf(buf, "%1.2f", appres.userscale);
     FirstArg(XtNfromVert, below);
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNfromHoriz, scale_factor_lab);
     NextArg(XtNstring, buf);
-    NextArg(XtNinsertPosition, strlen(buf));
     NextArg(XtNeditType, XawtextEdit);
     NextArg(XtNwidth, 50);
-    scale_factor_panel = XtCreateManagedWidget(buf, asciiTextWidgetClass,
+    scale_factor_entry = XtCreateManagedWidget("factor_entry", asciiTextWidgetClass,
                                         unit_panel, Args, ArgCount);
-    XtOverrideTranslations(scale_factor_panel,
+    XtOverrideTranslations(scale_factor_entry,
 		XtParseTranslationTable(unit_text_translations));
-    below = scale_factor_panel;
+    below = scale_factor_entry;
 
     /* standard set/cancel buttons */
 
-    FirstArg(XtNlabel, " Set ");
-    NextArg(XtNfromVert, below);
-    NextArg(XtNborderWidth, INTERNAL_BW);
-    set = XtCreateManagedWidget("set", commandWidgetClass,
-				unit_panel, Args, ArgCount);
-    XtAddEventHandler(set, ButtonReleaseMask, (Boolean) 0,
-		      (XtEventHandler)unit_panel_set, (XtPointer) NULL);
-
     FirstArg(XtNlabel, "Cancel");
     NextArg(XtNfromVert, below);
-    NextArg(XtNfromHoriz, set);
     NextArg(XtNborderWidth, INTERNAL_BW);
     cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
 				   unit_panel, Args, ArgCount);
-    XtAddEventHandler(cancel, ButtonReleaseMask, (Boolean) 0,
+    XtAddEventHandler(cancel, ButtonReleaseMask, False,
 		      (XtEventHandler)unit_panel_cancel, (XtPointer) NULL);
+
+    FirstArg(XtNlabel, " Set  ");
+    NextArg(XtNfromVert, below);
+    NextArg(XtNfromHoriz, cancel);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    set = XtCreateManagedWidget("set", commandWidgetClass,
+				unit_panel, Args, ArgCount);
+    XtAddEventHandler(set, ButtonReleaseMask, False,
+		      (XtEventHandler)unit_panel_set, (XtPointer) NULL);
 
 
     XtPopup(unit_popup, XtGrabExclusive);
@@ -646,10 +835,29 @@ popup_unit_panel()
     /* insure that the most recent colormap is installed */
     set_cmap(XtWindow(unit_popup));
 
-    XtSetSensitive(user_unit_lab, fig_unit_setting ? True : False);
-    XtSetSensitive(user_unit_panel, fig_unit_setting ? True : False);
-    XtSetSensitive(scale_factor_lab, fig_scale_setting ? True : False);
-    XtSetSensitive(scale_factor_panel, fig_scale_setting ? True : False);
+    XtSetSensitive(user_unit_lab, fig_unit_setting);
+    XtSetSensitive(user_unit_entry, fig_unit_setting);
+    XtSetSensitive(scale_factor_lab, fig_scale_setting);
+    XtSetSensitive(scale_factor_entry, fig_scale_setting);
+
+    /* save the fore/backgrounds of the unit and scale entries so we
+       can change them to make them look sensitive/insensitive */
+    FirstArg(XtNforeground, &unit_fg);
+    NextArg(XtNbackground, &unit_bg);
+    GetValues(user_unit_entry);
+    if (!fig_unit_setting) {
+	/* set foreground to background to blank out entry */
+	FirstArg(XtNforeground, unit_bg);
+	SetValues(user_unit_entry);
+    }
+    FirstArg(XtNforeground, &scale_fg);
+    NextArg(XtNbackground, &scale_bg);
+    GetValues(scale_factor_entry);
+    if (!fig_scale_setting) {
+	/* set foreground to background to blank out entry */
+	FirstArg(XtNforeground, unit_bg);
+	SetValues(scale_factor_entry);
+    }
 
     (void) XSetWMProtocols(tool_d, XtWindow(unit_popup), &wm_delete_window, 1);
 
@@ -687,48 +895,58 @@ topruler_selected(tool, event, params, nparams)
 {
     XButtonEvent   *be = (XButtonEvent *) event;
 
+#ifdef WHEELMOUSE  /* T.Sato, 2000/5/4 */
+    switch (be->button) {
+	case Button4:
+		be->button = Button1;
+		break;
+	case Button5:
+		be->button = Button3;
+		break;
+    }
+#endif /* WHEELMOUSE */
     switch (event->type) {
-    case ButtonPress:
+      case ButtonPress:
 	if (be->button == Button3 && be->state & Mod1Mask) {
 	    be->button = Button2;
 	}
 	switch (be->button) {
-	case Button1:
+	  case Button1:
 	    XDefineCursor(tool_d, topruler_win, l_arrow_cursor);
 	    break;
-	case Button2:
+	  case Button2:
 	    XDefineCursor(tool_d, topruler_win, bull_cursor);
 	    orig_zoomoff = zoomxoff;
 	    last_drag_x = event->x;
 	    break;
-	case Button3:
+	  case Button3:
 	    XDefineCursor(tool_d, topruler_win, r_arrow_cursor);
 	    break;
 	}
 	break;
-    case ButtonRelease:
+      case ButtonRelease:
 	if (be->button == Button3 && be->state & Mod1Mask) {
 	    be->button = Button2;
 	}
 	switch (be->button) {
-	case Button1:
+	  case Button1:
 	    pan_left(event->state&ShiftMask);
 	    break;
-	case Button2:
+	  case Button2:
 	    if (orig_zoomoff != zoomxoff)
 		setup_grid();
 	    break;
-	case Button3:
+	  case Button3:
 	    pan_right(event->state&ShiftMask);
 	    break;
 	}
 	XDefineCursor(tool_d, topruler_win, lr_arrow_cursor);
 	break;
-    case MotionNotify:
+      case MotionNotify:
 	if (event->x != last_drag_x) {
 	    zoomxoff -= ((event->x - last_drag_x)/zoomscale*
 				(event->state&ShiftMask?5.0:1.0));
-	    if (!appres.allow_neg_coords && (zoomxoff < 0))
+	    if (!appres.allownegcoords && (zoomxoff < 0))
 		zoomxoff = 0;
 	    reset_topruler();
 	    redisplay_topruler();
@@ -859,19 +1077,49 @@ resize_topruler()
     reset_topruler();
 }
 
-static	int	prec,skipt;
-static	float	skip;
-static	char	precstr[10];
+/***************************************************************************/
+
+static void
+get_skip_prec()
+{
+    register ruler_skip* rs;
+    ruler_info* ri;
+  
+    switch (cur_gridunit) {
+	case FRACT_UNIT:  ri = &ruler_inches;
+			  break;
+	case TENTH_UNIT:  ri = &ruler_tenth_inches;
+			  break;
+	case MM_UNIT:	  ri = &ruler_metric;
+			  break;
+    }
+		
+    ruler_unit = ri->ruler_unit;
+    ticks = ri->ticks;
+    nticks = ri->nticks;
+ 
+    for (rs = ri->skips; ; rs++) {
+	if ((display_zoomscale <= rs->max_zoom) ||
+		(rs->max_zoom == 0.0)) {
+	    skip = rs->skipt;
+	    skipx = skip * rs->skipx;
+	    sprintf(precstr, "%%.%df", rs->prec);
+	    break;
+	}
+    }
+}
+
+/* Note: For reset_top/sideruler to work properly, the value of skip should be
+ * such that (skip/ruler_unit) is an integer or (ruler_unit/skip) is an integer.
+ */
 
 reset_topruler()
 {
     register int    i,k;
+    register tick_info* tk;
     register Pixmap p = topruler_pm;
     char	    number[6],len;
     int		    X0;
-#ifdef TESTING_GRIDS
-    XGCValues	    gcv;
-#endif
 
     /* top ruler, adjustments for digits are kludges based on 6x13 char */
     XFillRectangle(tool_d, p, tr_erase_gc, 0, 0, TOPRULER_WD, TOPRULER_HT);
@@ -880,161 +1128,40 @@ reset_topruler()
     get_skip_prec();
 
     X0 = BACKX(0);
-    if (appres.INCHES) {	/* IMPERIAL */
-	X0 -= (X0 % SINCH);
-#ifdef TESTING_GRIDS
-	/* make red ticks just above the ruler ticks to show current point positioning */
-	gcv.foreground = x_color(RED);
-	XChangeGC(tool_d, tr_gc, GCForeground, &gcv);
-	if (cur_pointposn != P_ANY)
-	    for (i = X0; i <= X0+round(TOPRULER_WD/zoomscale); i += posn_rnd[cur_pointposn]) {
-		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT-QUARTER_MARK-5, ZOOMX(i),
-			  	TOPRULER_HT-QUARTER_MARK-6);
-	    }
-	gcv.foreground = x_color(BLACK);
-	XChangeGC(tool_d, tr_gc, GCForeground, &gcv);
-#endif
-	for (i = X0; i <= X0+round(TOPRULER_WD/zoomscale); i += SINCH) {
-	    if ((int)(i/skip) % PIX_PER_INCH == 0) {
-		if (1.0*i/PIX_PER_INCH == (int)(i/PIX_PER_INCH))
-		    sprintf(number, "%-d", (int)(i / PIX_PER_INCH));
-		else
-		    sprintf(number, precstr, (float)(1.0 * i / PIX_PER_INCH));
-		/* get length of string to position it */
-		len = XTextWidth(roman_font, number, strlen(number));
-		/* centered on inch mark */
-		XDrawString(tool_d, p, tr_gc, ZOOMX(i) - len/2,
-			TOPRULER_HT - INCH_MARK - 5, number, strlen(number));
-	    }
-	    if (display_zoomscale < 0.05) {
-		/* skip some number of cm ticks */
-		if (i % (skipt*PIX_PER_INCH) == 0) {
-		    XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
-			TOPRULER_HT - INCH_MARK - 1);
-		}
-	    } else if (i % PIX_PER_INCH == 0) {
-		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
-			  TOPRULER_HT - INCH_MARK - 1);
-	    } else if ((i % HINCH == 0) && display_zoomscale >= 0.1) {
-		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
-			  TOPRULER_HT - HALF_MARK - 1);
-	    } else if ((i % QINCH == 0) && display_zoomscale >= 0.2) {
-		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
-			  TOPRULER_HT - QUARTER_MARK - 1);
-	    } else if ((i % SINCH == 0) && display_zoomscale >= 0.6) {
-		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
-			  TOPRULER_HT - SIXTEENTH_MARK - 1);
-	    }
+    X0 -= (X0 % skip);
+    /*    for (i = X0; i <= X0+round(TOPRULER_WD/zoomscale); i +== skip) { */
+    for (i = X0; i <= X0+(TOPRULER_WD/zoomscale); i += skip) {
+      /* string */
+      if (i % skipx == 0) {
+        if ((i/10) % ruler_unit == 0)
+          sprintf(number, "%d%s", i/ruler_unit, cur_fig_units);
+	else if (i % ruler_unit == 0)
+          sprintf(number, "%d", i/ruler_unit);
+        else
+          sprintf(number, precstr, (float)(1.0 * i / ruler_unit));
+	/* get length of string to position it */
+	len = XTextWidth(roman_font, number, strlen(number));
+	/* centered on inch/cm mark */
+        /* maybe we should center on the number only, letting the minus sign hang out? */
+	XDrawString(tool_d, p, tr_gc, ZOOMX(i) - len/2,
+		TOPRULER_HT - INCH_MARK - 5, number, strlen(number));
+      }
+      /* ticks */
+      for (k = 0, tk = ticks; k < nticks; k++, tk++) {
+        if (display_zoomscale >= tk->min_zoom) {
+          if (i % tk->skip == 0)
+            XDrawLine(tool_d, p, tr_gc,
+                      ZOOMX(i), TOPRULER_HT -1, ZOOMX(i), TOPRULER_HT - tk->length -1);
 	}
-    } else {			/* METRIC */
-	X0 -= (X0 % TWOMM);
-	for (i = X0; i <= X0+round(TOPRULER_WD/zoomscale); i += ONEMM) {
-	    k = (int)(i/skip);
-	    if ((fabs(k-1.0*i/skip)<0.001) && (k % PIX_PER_CM == 0)) {
-		if (1.0*i/PIX_PER_CM == (int)(i/PIX_PER_CM))
-		    sprintf(number, "%-d", (int)(i / PIX_PER_CM));
-		else
-		    sprintf(number, "%-.1f", (float)(1.0 * i / PIX_PER_CM));
-		/* get length of string to position it */
-		len = XTextWidth(roman_font, number, strlen(number));
-		/* centered on cm mark */
-		XDrawString(tool_d, p, tr_gc, ZOOMX(i) - len/2,
-			TOPRULER_HT - INCH_MARK - 5, number, strlen(number));
-		/* make small tick on mark in case it is 0.5, which is between normal ticks */
-		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
-			  TOPRULER_HT - SIXTEENTH_MARK - 1);
-	    }
-	    if (display_zoomscale < 0.6) {
-		/* skip some number of cm ticks */
-		if (i % (skipt*PIX_PER_CM) == 0) {
-		    XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
-			  TOPRULER_HT - INCH_MARK - 1);
-		}
-	    } else if (i % PIX_PER_CM == 0) {
-		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
-			  TOPRULER_HT - INCH_MARK - 1);
-	    } else if ((i % TWOMM == 0) && display_zoomscale > 0.41) {
-		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
-			  TOPRULER_HT - QUARTER_MARK - 1);
-	    } else if ((i % ONEMM == 0) && display_zoomscale > 1.99) {
-		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
-			  TOPRULER_HT - SIXTEENTH_MARK - 1);
-	    }
-	}
+        else
+          break;
+      }
     }
     /* change the pixmap ID to fool the intrinsics to actually set the pixmap */
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(topruler_sw);
     FirstArg(XtNbackgroundPixmap, p);
     SetValues(topruler_sw);
-}
-
-get_skip_prec()
-{
-    skip = 1;
-    prec = 1;
-    if (appres.INCHES) {
-	if (display_zoomscale <= 0.01) {
-		skip = 48;
-		skipt = 12;
-	} else if (display_zoomscale <= 0.0201) {
-		skip = 24;
-		skipt = 6;
-	} else if (display_zoomscale <= 0.0401) {
-		skip = 12;
-		skipt = 2;
-	} else if (display_zoomscale <= 0.0501) {
-		skip = 12;
-	} else if (display_zoomscale <= 0.0801) {
-		skip = 6;
-	} else if (display_zoomscale <= 0.201) {
-		skip = 4;
-	} else if (display_zoomscale <= 0.301) {
-		skip = 2;
-	} else if (display_zoomscale < 2.01) {
-		skip = 1;
-	} else if (display_zoomscale < 4.01) {
-		skip = 0.5;
-		prec = 1;
-	} else if (display_zoomscale < 8.01) {
-		skip = 0.25;
-		prec = 2;
-	} else {
-		skip = 0.125;
-		prec = 3;
-	}
-    } else {
-	/* metric */
-	if (display_zoomscale <= 0.011) {
-		skip = 100;
-		skipt = 20;
-	} else if (display_zoomscale <= 0.031) {
-		skip = 50;
-		skipt = 10;
-	} else if (display_zoomscale <= 0.081) {
-		skip = 20;
-		skipt = 5;
-	} else if (display_zoomscale <= 0.11) {
-		skip = 10;
-		skipt = 2;
-	} else if (display_zoomscale <= 0.31) {
-		skip = 5;
-		skipt = 1;
-	} else if (display_zoomscale <= 0.61) {
-		skip = 2;
-		skipt = 1;
-	} else if (display_zoomscale <= 2.01) {
-		skip = 1;
-	} else if (display_zoomscale <= 8.01) {
-		skip = 0.5;
-	} else if (display_zoomscale <= 12.01) {
-		skip = 0.2;
-	} else {
-		skip = 0.1;
-	}
-    } /* appres.INCHES */
-    /* form a format string like %-.3f using "prec" for the precision */
-    sprintf(precstr,"%%-.%df", prec);
 }
 
 /************************* SIDERULER ************************/
@@ -1067,6 +1194,16 @@ sideruler_selected(tool, event, params, nparams)
 {
     XButtonEvent   *be = (XButtonEvent *) event;
 
+#ifdef WHEELMOUSE  /* T.Sato, 2000/5/4 */
+    switch (be->button) {
+	case Button4:
+		be->button = Button1;
+		break;
+	case Button5:
+		be->button = Button3;
+		break;
+    }
+#endif /* WHEELMOUSE */
     switch (event->type) {
     case ButtonPress:
 	if (be->button == Button3 && be->state & Mod1Mask) {
@@ -1108,7 +1245,7 @@ sideruler_selected(tool, event, params, nparams)
 	if (event->y != last_drag_y) {
 	    zoomyoff -= ((event->y - last_drag_y)/zoomscale*
 				(event->state&ShiftMask?5.0:1.0));
-	    if (!appres.allow_neg_coords && (zoomyoff < 0))
+	    if (!appres.allownegcoords && (zoomyoff < 0))
 		zoomyoff = 0;
 	    reset_sideruler();
 	    redisplay_sideruler();
@@ -1228,14 +1365,10 @@ resize_sideruler()
 reset_sideruler()
 {
     register int    i,k;
+    register tick_info* tk;
     register Pixmap p = sideruler_pm;
-    char	    number[6];
-    int		    Y0, len;
-    XFontStruct	   *font;
-
-    /* get font size to move 0 label down */
-    FirstArg(XtNfont, &font);
-    GetValues(sideruler_sw);
+    char	    number[6],len;
+    int		    Y0;
 
     /* side ruler, adjustments for digits are kludges based on 6x13 char */
     XFillRectangle(tool_d, p, sr_erase_gc, 0, 0, SIDERULER_WD,
@@ -1245,145 +1378,42 @@ reset_sideruler()
     get_skip_prec();
 
     Y0 = BACKY(0);
-    if (appres.INCHES) {	/* IMPERIAL */
-	Y0 -= (Y0 % SINCH);
-	if (appres.RHS_PANEL) {	/* right-hand panel, left-hand ruler */
-	    for (i = Y0; i <= Y0+round(SIDERULER_HT/zoomscale); i += SINCH) {
-		if ((int)(i/skip) % PIX_PER_INCH == 0) {
-		    if (1.0*i/PIX_PER_INCH == (int)(i / PIX_PER_INCH))
-			sprintf(number, "%d", (int)(i / PIX_PER_INCH));
-		    else
-			sprintf(number, precstr, (float)(1.0 * i / PIX_PER_INCH));
-		    /* get length of string to position it */
-		    len = XTextWidth(roman_font, number, strlen(number));
-		    /* centered in inch mark */
-		    XDrawString(tool_d, p, sr_gc,
-				SIDERULER_WD - INCH_MARK - len - 2,
-				ZOOMY(i) + 3, number, strlen(number));
-		}
-		if (display_zoomscale < 0.05) {
-		    /* skip some number of cm ticks */
-		    if (i % (skipt*PIX_PER_INCH) == 0) {
-			XDrawLine(tool_d, p, sr_gc, SIDERULER_WD - INCH_MARK,
-			      ZOOMY(i), SIDERULER_WD, ZOOMY(i));
-		    }
-		} else if (i % PIX_PER_INCH == 0) {
-		    XDrawLine(tool_d, p, sr_gc, SIDERULER_WD - INCH_MARK,
-			      ZOOMY(i), SIDERULER_WD, ZOOMY(i));
-		} else if ((i % HINCH == 0) && display_zoomscale >= 0.1)
-		    XDrawLine(tool_d, p, sr_gc,
-			      SIDERULER_WD - HALF_MARK, ZOOMY(i),
-			      SIDERULER_WD, ZOOMY(i));
-		else if ((i % QINCH == 0) && display_zoomscale >= 0.2)
-		    XDrawLine(tool_d, p, sr_gc,
-			      SIDERULER_WD - QUARTER_MARK, ZOOMY(i),
-			      SIDERULER_WD, ZOOMY(i));
-		else if ((i % SINCH == 0) && display_zoomscale >= 0.6)
-		    XDrawLine(tool_d, p, sr_gc,
-			      SIDERULER_WD - SIXTEENTH_MARK, ZOOMY(i),
-			      SIDERULER_WD, ZOOMY(i));
-	    }
-	} else {	/* left-hand panel, right-hand ruler */
-	    for (i = Y0; i <= Y0+round(SIDERULER_HT/zoomscale); i += SINCH) {
-		if ((int)(i/skip) % PIX_PER_INCH == 0) {
-		    if (1.0*i/PIX_PER_INCH == (int)(i / PIX_PER_INCH))
-			sprintf(number, "%d", (int)(i / PIX_PER_INCH));
-		    else
-			sprintf(number, precstr, (float)(1.0 * i / PIX_PER_INCH));
-		    /* centered on inch mark */
-		    XDrawString(tool_d, p, sr_gc, INCH_MARK + 2, ZOOMY(i) + 3,
-			  number, strlen(number));
-		}
-		if (display_zoomscale < 0.05) {
-		    /* skip some number of cm ticks */
-		    if (i % (skipt*PIX_PER_INCH) == 0) {
-			XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
-			      INCH_MARK - 1, ZOOMY(i));
-		    }
-		} else if (i % PIX_PER_INCH == 0) {
-		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
-			      INCH_MARK - 1, ZOOMY(i));
-		} else if ((i % HINCH == 0) && display_zoomscale >= 0.1)
-		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
-			      HALF_MARK - 1, ZOOMY(i));
-		else if ((i % QINCH == 0) && display_zoomscale >= 0.2)
-		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
-			      QUARTER_MARK - 1, ZOOMY(i));
-		else if ((i % SINCH == 0) && display_zoomscale >= 0.6)
-		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
-			      SIXTEENTH_MARK - 1, ZOOMY(i));
-	    }
+    Y0 -= (Y0 % skip);
+    /* appres.RHS_PANEL: right-hand or left-hand panel */
+    for (i = Y0; i <= Y0+round(SIDERULER_HT/zoomscale); i += skip) {
+      /* string */
+      if (i % skipx == 0) {
+        if ((i/10) % ruler_unit == 0)
+          sprintf(number, "%d%s", i/ruler_unit, cur_fig_units);
+	else if (i % ruler_unit == 0)
+          sprintf(number, "%d", i/ruler_unit);
+        else
+          sprintf(number, precstr, (float)(1.0 * i / ruler_unit));
+	/* get length of string to position it */
+	len = XTextWidth(roman_font, number, strlen(number));
+	/* centered on inch/cm mark */
+        if (appres.RHS_PANEL)
+	    XDrawString(tool_d, p, sr_gc, SIDERULER_WD - INCH_MARK - len - 2,
+			ZOOMY(i) + 3, number, strlen(number));
+        else
+	    XDrawString(tool_d, p, sr_gc, INCH_MARK + 2, ZOOMY(i) + 3,
+                        number, strlen(number));
+      }
+      /* ticks */
+      for (k = 0, tk = ticks; k < nticks; k++, tk++) {
+        if (display_zoomscale >= tk->min_zoom) {
+          if (i % tk->skip == 0) {
+            if (appres.RHS_PANEL)
+              XDrawLine(tool_d, p, sr_gc,
+                        SIDERULER_WD - tk->length, ZOOMY(i), SIDERULER_WD, ZOOMY(i));
+            else
+              XDrawLine(tool_d, p, sr_gc,
+                        0, ZOOMY(i), tk->length -1, ZOOMY(i));
+	  }
 	}
-    } else {		/* METRIC */
-	Y0 -= (Y0 % TWOMM);
-	if (appres.RHS_PANEL) {	/* right-hand panel, left-hand ruler */
-	    for (i = Y0; i <= Y0+round(SIDERULER_HT/zoomscale); i += ONEMM) {
-		k = (int)(i/skip);
-		if ((fabs(k-1.0*i/skip)<0.001) && (k % PIX_PER_CM == 0)) {
-		    if (1.0*i/PIX_PER_CM == (int)(i / PIX_PER_CM))
-			sprintf(number, "%d", (int)(i / PIX_PER_CM));
-		    else
-			sprintf(number, "%.1f", (float)(1.0 * i / PIX_PER_CM));
-		    XDrawString(tool_d, p, sr_gc,
-				SIDERULER_WD - INCH_MARK - 14, ZOOMY(i) + 3,
-				number, strlen(number));
-		    /* make small tick in case it is 0.5, which is between normal ticks */
-		    XDrawLine(tool_d, p, sr_gc,
-			      SIDERULER_WD - SIXTEENTH_MARK, ZOOMY(i),
-			      SIDERULER_WD, ZOOMY(i));
-		}
-		if (display_zoomscale < 0.6) {
-		    /* skip some number of cm ticks */
-		    if (i % (skipt*PIX_PER_CM) == 0) {
-		        XDrawLine(tool_d, p, sr_gc, SIDERULER_WD - INCH_MARK,
-				ZOOMY(i), SIDERULER_WD, ZOOMY(i));
-		    }
-		} else if (i % PIX_PER_CM == 0) {
-		    XDrawLine(tool_d, p, sr_gc, SIDERULER_WD - INCH_MARK,
-			      ZOOMY(i), SIDERULER_WD, ZOOMY(i));
-		} else if ((i % TWOMM == 0) && display_zoomscale > 0.41) {
-		    XDrawLine(tool_d, p, sr_gc,
-			      SIDERULER_WD - QUARTER_MARK, ZOOMY(i),
-			      SIDERULER_WD, ZOOMY(i));
-		} else if ((i % ONEMM == 0) && display_zoomscale > 1.99) {
-		    XDrawLine(tool_d, p, sr_gc,
-			      SIDERULER_WD - SIXTEENTH_MARK, ZOOMY(i),
-			      SIDERULER_WD, ZOOMY(i));
-		}
-	    }
-	} else {	/* left-hand panel, right-hand ruler */
-	    for (i = Y0; i <= Y0+round(SIDERULER_HT/zoomscale); i += ONEMM) {
-		k = (int)(i/skip);
-		if ((fabs(k-1.0*i/skip)<0.001) && (k % PIX_PER_CM == 0)) {
-		    if (1.0*i/PIX_PER_CM == (int)(i / PIX_PER_CM))
-			sprintf(number, "%d", (int)(i / PIX_PER_CM));
-		    else
-			sprintf(number, "%.1f", (float)(1.0 * i / PIX_PER_CM));
-		    XDrawString(tool_d, p, sr_gc, INCH_MARK + 3,
-				ZOOMY(i) + 3, number, strlen(number));
-		    /* make small tick in case it is 0.5, which is between normal ticks */
-		    XDrawLine(tool_d, p, sr_gc,
-			      0, ZOOMY(i),
-			      SIXTEENTH_MARK - 1, ZOOMY(i));
-		}
-		if (display_zoomscale < 0.6) {
-		    /* skip some number of cm ticks */
-		    if (i % (skipt*PIX_PER_CM) == 0) {
-		        XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
-		    		INCH_MARK - 1, ZOOMY(i));
-		    }
-		} else if (i % PIX_PER_CM == 0) {
-		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
-			      INCH_MARK - 1, ZOOMY(i));
-		} else if ((i % TWOMM == 0) && display_zoomscale > 0.41) {
-		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
-			      QUARTER_MARK - 1, ZOOMY(i));
-		} else if ((i % ONEMM == 0) && display_zoomscale > 1.99) {
-		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
-			      SIXTEENTH_MARK - 1, ZOOMY(i));
-		}
-	    }
-	}
+        else
+          break;
+      }
     }
     /* change the pixmap ID to fool the intrinsics to actually set the pixmap */
     FirstArg(XtNbackgroundPixmap, 0);

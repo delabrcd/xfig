@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -40,7 +40,7 @@ init_cursor()
     buster_cursor	= XCreateFontCursor(d, XC_pirate);
     crosshair_cursor	= XCreateFontCursor(d, XC_crosshair);
     null_cursor		= XCreateFontCursor(d, XC_tcross);
-    pencil_cursor	= XCreateFontCursor(d, XC_pencil);
+    text_cursor		= XCreateFontCursor(d, XC_xterm);
     pick15_cursor	= XCreateFontCursor(d, XC_dotbox);
     pick9_cursor	= XCreateFontCursor(d, XC_hand1);
     wait_cursor		= XCreateFontCursor(d, XC_watch);
@@ -73,7 +73,7 @@ recolor_cursors()
     XRecolorCursor(d, buster_cursor,    &x_fg_color, &x_bg_color);
     XRecolorCursor(d, crosshair_cursor, &x_fg_color, &x_bg_color);
     XRecolorCursor(d, null_cursor,      &x_fg_color, &x_bg_color);
-    XRecolorCursor(d, pencil_cursor,    &x_fg_color, &x_bg_color);
+    XRecolorCursor(d, text_cursor,      &x_fg_color, &x_bg_color);
     XRecolorCursor(d, pick15_cursor,    &x_fg_color, &x_bg_color);
     XRecolorCursor(d, pick9_cursor,     &x_fg_color, &x_bg_color);
     XRecolorCursor(d, wait_cursor,      &x_fg_color, &x_bg_color);

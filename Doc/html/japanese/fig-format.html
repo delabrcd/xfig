@@ -2,11 +2,11 @@
 <html>
 <head>
 <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=EUC-JP">
-<title>XFIG User Manual - Fig Format 3.2</title>
+<title>Fig Format 3.2</title>
 </head>
 
 <body>
-<a href="contents.html"><img src="../images/xfig-title.gif"
+<a href="contents.html"><img src="../images/xfig-title.png"
   alt="XFIG Users Manual" border=0></a>
 
 <hr>
@@ -88,8 +88,8 @@ Description of the Fig Format Follows
 	float	magnification		(export and print magnification, %)
 	string	multiple-page		("Single" or "Multiple" pages)
 	int	transparent color	(color number for transparent color for GIF
-					 export. -2=None, -1=background, 0-31 for
-					 standard colors or 32- for user colors)
+					 export. -3=background, -2=None, -1=Default,
+					 0-31 for standard colors or 32- for user colors)
 	# optional comment		(An optional set of comments may be here,
 					 which are associated with the whole figure)
 	int	resolution coord_system	(Fig units/inch and coordinate system:
@@ -110,7 +110,9 @@ Description of the Fig Format Follows
     upper-left corner.
 
     ** Coordinates are given in "fig_resolution" units.
-    ** Line thicknesses are given in 80-ths of an inch ("display units").
+    ** Line thicknesses are given in 1/80 inch (0.3175mm) or 1 screen pixel.
+       When exporting to EPS, PostScript or any bitmap format (e.g. GIF),  the
+       line thickness is reduced to 1/160 inch (0.159mm) to "lighten" the look.
     ** dash-lengths/dot-gaps are given in 80-ths of an inch.
 
 
@@ -159,6 +161,11 @@ Description of the Fig Format Follows
 	 values from 32 to 543 (512 total) are user colors and
 	 are defined in color pseudo-objects (type 0)
 
+	 Your X server may limit the number of colors to something less
+	 than this, especially on a 8-bit PseudoColor visual, where
+	 the number of usable colors will be 256 minus the number of colors
+	 xfig preallocates for itself and the 32 standard colors (about 48).
+
     For WHITE color, the area fill field is defined as follows:
 	
 	-1 = not filled
@@ -193,16 +200,22 @@ Description of the Fig Format Follows
 	44 = 45 degree left diagonal pattern
 	45 = 45 degree right diagonal pattern
 	46 = 45 degree crosshatch
-	47 = bricks
-	48 = circles
+	47 = horizontal bricks
+	48 = vertical bricks
 	49 = horizontal lines
 	50 = vertical lines
 	51 = crosshatch
-	52 = fish scales
-	53 = small fish scales
-	54 = octagons
-	55 = horizontal "tire treads"
-	56 = vertical "tire treads"
+	52 = horizontal "shingles" skewed to the right
+	53 = horizontal "shingles" skewed to the left
+	54 = vertical "shingles" skewed one way
+	55 = vertical "shingles"skewed the other way
+	56 = fish scales
+	57 = small fish scales
+	58 = circles
+	59 = hexagons
+	60 = octagons
+	61 = horizontal "tire treads"
+	62 = vertical "tire treads"
 
     The depth field is defined as follows:
 
@@ -226,8 +239,8 @@ Description of the Fig Format Follows
     The join_style field is defined FOR LINES only as follows:
 
 	 0 = Miter (the default in xfig 2.1 and earlier)
-	 1 = Bevel
-	 2 = Round
+	 1 = Round
+	 2 = Bevel
 
     The cap_style field is defined FOR LINES, OPEN SPLINES and ARCS only as follows:
 
@@ -304,8 +317,8 @@ Description of the Fig Format Follows
 	type	name			(brief description)
 	----	----			-------------------
 	int	object_code		(always 5)
-	int	sub_type		(0: pie-wedge (closed)
-					 1: open ended arc)
+	int	sub_type		(1: open ended arc
+					 2: pie-wedge (closed) )
 	int	line_style		(enumeration type)
 	int	line_thickness		(1/80 inch)
 	int	pen_color		(enumeration type, pen color)
@@ -443,11 +456,11 @@ Description of the Fig Format Follows
 	type	name			(brief description)
 	----	----			-------------------
 	int	object_code		(always 3)
-	int	sub_type		(0: opened approximated spline
+	int	sub_type		(0: open approximated spline
 					     1: closed approximated spline
-					     2: opened interpolated spline
+					     2: open   interpolated spline
 					     3: closed interpolated spline
-					     4: opened x-spline 
+					     4: open   x-spline 
 					     5: closed x-spline)
 	int	line_style		(See the end of this section)
 	int	thickness		(1/80 inch)

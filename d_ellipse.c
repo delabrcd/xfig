@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -42,15 +42,15 @@ static void	cancel_circlebyrad();
 static void	cancel_circlebydia();
 
 void
-ellipsebyradius_drawing_selected()
+circle_ellipse_byradius_drawing_selected()
 {
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
-    canvas_leftbut_proc = init_ellipsebyradius_drawing;
-    canvas_middlebut_proc = null_proc;
+    canvas_leftbut_proc = init_circlebyradius_drawing;
+    canvas_middlebut_proc = init_ellipsebyradius_drawing;
     canvas_rightbut_proc = null_proc;
     set_cursor(arrow_cursor);
-    set_mousefun("center point", "", "", "", "", "");
+    set_mousefun("Circle center", "Ellipse center", "", "", "", "");
     reset_action_on();
 }
 
@@ -58,15 +58,17 @@ static void
 init_ellipsebyradius_drawing(x, y)
     int		    x, y;
 {
+    cur_mode = F_ELLIPSE_BY_RAD;
     cur_x = fix_x = x;
     cur_y = fix_y = y;
     cur_angle = cur_elltextangle/180.0*M_PI;
     center_marker(fix_x, fix_y);
-    set_mousefun("corner point", "", "cancel", "", "", "");
+    set_mousefun("Ellipse corner", "Ellipse corner", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_locmove_proc = resizing_ebr;
-    canvas_rightbut_proc = cancel_ellipsebyrad;
     canvas_leftbut_proc = create_ellipsebyrad;
+    canvas_middlebut_proc = create_ellipsebyrad;
+    canvas_rightbut_proc = cancel_ellipsebyrad;
     set_cursor(null_cursor);
     elastic_ebr();
     set_action_on();
@@ -77,7 +79,7 @@ cancel_ellipsebyrad()
 {
     elastic_ebr();
     center_marker(fix_x, fix_y);
-    ellipsebyradius_drawing_selected();
+    circle_ellipse_byradius_drawing_selected();
     draw_mousefun_canvas();
 }
 
@@ -100,7 +102,7 @@ create_ellipsebyrad(x, y)
     ellipse->pen_color = cur_pencolor;
     ellipse->fill_color = cur_fillcolor;
     ellipse->depth = cur_depth;
-    ellipse->pen_style = 0;
+    ellipse->pen_style = -1;
     ellipse->fill_style = cur_fillstyle;
     ellipse->direction = 1;
     ellipse->center.x = fix_x;
@@ -116,17 +118,17 @@ create_ellipsebyrad(x, y)
     reset_action_on(); /* this signals redisplay_curobj() not to refresh */
     /* draw it and anything on top of it */
     redisplay_ellipse(ellipse);
-    ellipsebyradius_drawing_selected();
+    circle_ellipse_byradius_drawing_selected();
     draw_mousefun_canvas();
 }
 
-ellipsebydiameter_drawing_selected()
+circle_ellipse_bydiameter_drawing_selected()
 {
-    set_mousefun("first corner", "", "", "", "", "");
+    set_mousefun("Circle diameter", "Ellipse corner", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
-    canvas_leftbut_proc = init_ellipsebydiameter_drawing;
-    canvas_middlebut_proc = null_proc;
+    canvas_leftbut_proc = init_circlebydiameter_drawing;
+    canvas_middlebut_proc = init_ellipsebydiameter_drawing;
     canvas_rightbut_proc = null_proc;
     set_cursor(arrow_cursor);
     reset_action_on();
@@ -136,15 +138,17 @@ static void
 init_ellipsebydiameter_drawing(x, y)
     int		    x, y;
 {
+    cur_mode = F_ELLIPSE_BY_DIA;
     cur_x = fix_x = x;
     cur_y = fix_y = y;
     cur_angle = cur_elltextangle/180.0*M_PI;
     center_marker(fix_x, fix_y);
-    set_mousefun("final corner", "", "cancel", "", "", "");
+    set_mousefun("final corner", "final corner", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_locmove_proc = resizing_ebd;
-    canvas_rightbut_proc = cancel_ellipsebydia;
     canvas_leftbut_proc = create_ellipsebydia;
+    canvas_middlebut_proc = create_ellipsebydia;
+    canvas_rightbut_proc = cancel_ellipsebydia;
     set_cursor(null_cursor);
     elastic_ebd();
     set_action_on();
@@ -155,7 +159,7 @@ cancel_ellipsebydia()
 {
     elastic_ebd();
     center_marker(fix_x, fix_y);
-    ellipsebydiameter_drawing_selected();
+    circle_ellipse_bydiameter_drawing_selected();
     draw_mousefun_canvas();
 }
 
@@ -178,7 +182,7 @@ create_ellipsebydia(x, y)
     ellipse->pen_color = cur_pencolor;
     ellipse->fill_color = cur_fillcolor;
     ellipse->depth = cur_depth;
-    ellipse->pen_style = 0;
+    ellipse->pen_style = -1;
     ellipse->fill_style = cur_fillstyle;
     ellipse->direction = 1;
     ellipse->center.x = (fix_x + x) / 2;
@@ -194,36 +198,26 @@ create_ellipsebydia(x, y)
     reset_action_on(); /* this signals redisplay_curobj() not to refresh */
     /* draw it and anything on top of it */
     redisplay_ellipse(ellipse);
-    ellipsebydiameter_drawing_selected();
+    circle_ellipse_bydiameter_drawing_selected();
     draw_mousefun_canvas();
 }
 
 /***************************  circle  section  ************************/
 
-circlebyradius_drawing_selected()
-{
-    set_mousefun("center point", "", "", "", "", "");
-    canvas_kbd_proc = null_proc;
-    canvas_locmove_proc = null_proc;
-    canvas_leftbut_proc = init_circlebyradius_drawing;
-    canvas_middlebut_proc = null_proc;
-    canvas_rightbut_proc = null_proc;
-    set_cursor(arrow_cursor);
-    reset_action_on();
-}
-
 static void
 init_circlebyradius_drawing(x, y)
     int		    x, y;
 {
+    cur_mode = F_CIRCLE_BY_RAD;
     cur_x = fix_x = x;
     cur_y = fix_y = y;
     center_marker(fix_x, fix_y);
     set_mousefun("set radius", "", "cancel", "", "", "");
     draw_mousefun_canvas();
     canvas_locmove_proc = resizing_cbr;
-    canvas_rightbut_proc = cancel_circlebyrad;
     canvas_leftbut_proc = create_circlebyrad;
+    canvas_middlebut_proc = null_proc;
+    canvas_rightbut_proc = cancel_circlebyrad;
     set_cursor(null_cursor);
     elastic_cbr();
     set_action_on();
@@ -234,7 +228,7 @@ cancel_circlebyrad()
 {
     elastic_cbr();
     center_marker(fix_x, fix_y);
-    circlebyradius_drawing_selected();
+    circle_ellipse_byradius_drawing_selected();
     draw_mousefun_canvas();
 }
 
@@ -258,7 +252,7 @@ create_circlebyrad(x, y)
     c->pen_color = cur_pencolor;
     c->fill_color = cur_fillcolor;
     c->depth = cur_depth;
-    c->pen_style = 0;
+    c->pen_style = -1;
     c->fill_style = cur_fillstyle;
     c->direction = 1;
     c->center.x = fix_x;
@@ -275,26 +269,15 @@ create_circlebyrad(x, y)
     reset_action_on(); /* this signals redisplay_curobj() not to refresh */
     /* draw it and anything on top of it */
     redisplay_ellipse(c);
-    circlebyradius_drawing_selected();
+    circle_ellipse_byradius_drawing_selected();
     draw_mousefun_canvas();
-}
-
-circlebydiameter_drawing_selected()
-{
-    set_mousefun("diameter point", "", "", "", "", "");
-    canvas_kbd_proc = null_proc;
-    canvas_locmove_proc = null_proc;
-    canvas_leftbut_proc = init_circlebydiameter_drawing;
-    canvas_middlebut_proc = null_proc;
-    canvas_rightbut_proc = null_proc;
-    set_cursor(arrow_cursor);
-    reset_action_on();
 }
 
 static void
 init_circlebydiameter_drawing(x, y)
     int		    x, y;
 {
+    cur_mode = F_CIRCLE_BY_DIA;
     cur_x = fix_x = x;
     cur_y = fix_y = y;
     center_marker(fix_x, fix_y);
@@ -302,6 +285,7 @@ init_circlebydiameter_drawing(x, y)
     draw_mousefun_canvas();
     canvas_locmove_proc = resizing_cbd;
     canvas_leftbut_proc = create_circlebydia;
+    canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = cancel_circlebydia;
     set_cursor(null_cursor);
     elastic_cbd();
@@ -313,7 +297,7 @@ cancel_circlebydia()
 {
     elastic_cbd();
     center_marker(fix_x, fix_y);
-    circlebydiameter_drawing_selected();
+    circle_ellipse_bydiameter_drawing_selected();
     draw_mousefun_canvas();
 }
 
@@ -337,7 +321,7 @@ create_circlebydia(x, y)
     c->pen_color = cur_pencolor;
     c->fill_color = cur_fillcolor;
     c->depth = cur_depth;
-    c->pen_style = 0;
+    c->pen_style = -1;
     c->fill_style = cur_fillstyle;
     c->direction = 1;
     c->center.x = round((fix_x + x) / 2);
@@ -354,6 +338,6 @@ create_circlebydia(x, y)
     reset_action_on(); /* this signals redisplay_curobj() not to refresh */
     /* draw it and anything on top of it */
     redisplay_ellipse(c);
-    circlebydiameter_drawing_selected();
+    circle_ellipse_bydiameter_drawing_selected();
     draw_mousefun_canvas();
 }

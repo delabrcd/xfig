@@ -1,15 +1,15 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2000 by Brian V. Smith
+ * Copyright (c) 1989-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -23,10 +23,19 @@
 #include "u_create.h"
 #include "w_color.h"
 #include "w_file.h"
+#include "w_indpanel.h"
 #include "w_util.h"
 #include "w_icons.h"
 #include "w_msgpanel.h"
 #include "version.h"
+
+/* LOCALS */
+
+int	count_colors();
+int	count_pixels();
+
+
+/* PROCEDURES */
 
 int
 emptyname(name)
@@ -108,7 +117,7 @@ get_directory(direct)
 #else
     extern char	   *getwd();
 
-#endif
+#endif /* defined(SYSV) || defined(SVR4) || defined(_POSIX_SOURCE) */
 
 #if defined(SYSV) || defined(SVR4) || defined(_POSIX_SOURCE)
     if (getcwd(direct, PATH_MAX) == NULL) {	/* get current working dir */
@@ -118,7 +127,7 @@ get_directory(direct)
     if (getwd(direct) == NULL) {		/* get current working dir */
 	put_msg("%s", direct);			/* err msg is in directory */
 	beep();
-#endif
+#endif /* defined(SYSV) || defined(SVR4) || defined(_POSIX_SOURCE) */
 	*direct = '\0';
 	return 0;
     }
@@ -127,13 +136,15 @@ get_directory(direct)
 
 #ifndef S_IWUSR
 #define S_IWUSR 0000200
-#endif
+#endif /* S_IWUSR */
+
 #ifndef S_IWGRP
 #define S_IWGRP 0000020
-#endif
+#endif /* S_IWGRP */
+
 #ifndef S_IWOTH
 #define S_IWOTH 0000002
-#endif
+#endif /* S_IWOTH */
 
 int
 ok_to_write(file_name, op_name)
@@ -146,45 +157,40 @@ ok_to_write(file_name, op_name)
 	if (file_status.st_mode & S_IFDIR) {
 	    put_msg("\"%s\" is a directory", file_name);
 	    beep();
-	    return (0);
+	    return 0;
 	}
 	if (file_status.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) {
 	    /* writing is permitted by SOMEONE */
 	    if (access(file_name, W_OK)) {
 		put_msg("Write permission for \"%s\" is denied", file_name);
 		beep();
-		return (0);
+		return 0;
 	    } else {
-	       if (warninput) {
-		 sprintf(string, "\"%s\" is an input file.\nDo you want to choose a new filename ?", file_name);
-		 popup_query(QUERY_YESNO, string);
-	         return(0);
-		} else {
-		  if (warnexist) {
+		if (warnexist) {
 		    sprintf(string, "\"%s\" already exists.\nDo you want to overwrite it?", file_name);
 		    if (popup_query(QUERY_YESNO, string) != RESULT_YES) {
 			put_msg("%s cancelled", op_name);
-			return(0);
+			return 0;
 		    }
-		   } else {
-			return(1);
-		   }
-		}  
+		} else {
+		    return 1;
+		}
 	    }
 	} else {
 	    put_msg("\"%s\" is read only", file_name);
 	    beep();
-	    return (0);
+	    return 0;
 	}
     } else {
 	if (errno != ENOENT)
-	    return (0);		/* file does exist but stat fails */
+	    return 0;		/* file does exist but stat fails */
     }
 
-    return (1);
+    return  1;
 }
 
 /* for systems without basename() (e.g. SunOS 4.1.3) */
+/* strip any path from filename */
 
 char *
 xf_basename(filename)
@@ -200,22 +206,6 @@ xf_basename(filename)
     }
 }
 
-/* put together a new compound with a compound and a picture and remap those colors */
-
-remap_image_two(obj, l)
-    F_compound	   *obj;
-    F_line	   *l;
-{
-    F_compound	   *c;
-
-    if ((c = create_compound()) == NULL)
-	return;
-    c->compounds = obj;
-    c->lines = l;
-    remap_imagecolors(c);
-    free((char *) c);
-}
-
 static int	  scol, ncolors;
 static int	  num_oldcolors = -1;
 static Boolean	  usenet;
@@ -224,10 +214,9 @@ static int	  npixels;
 #define REMAP_MSG	"Remapping picture colors..."
 #define REMAP_MSG2	"Remapping picture colors...Done"
 
-/* remap the colors for all the pictures in the compound passed */
+/* remap the colors for all the pictures in the picture repository */
 
-remap_imagecolors(obj)
-    F_compound	   *obj;
+remap_imagecolors()
 {
     int		    i;
 
@@ -241,11 +230,9 @@ remap_imagecolors(obj)
     usenet = False;
 
     /* see if the total number of colors will fit without using the neural net */
-    ncolors = 0;
-    count_colors(obj);
+    ncolors = count_colors();
     if (ncolors == 0)
 	return;
-
 
     put_msg(REMAP_MSG);
     set_temp_cursor(wait_cursor);
@@ -297,7 +284,7 @@ remap_imagecolors(obj)
 	    return;
 
 	/* count total number of pixels in all the pictures */
-	count_pixels(obj);
+	npixels = count_pixels();
 
 	/* check if user pressed cancel button */
 	if (check_cancel())
@@ -323,7 +310,7 @@ remap_imagecolors(obj)
 	}
 	/* now add all pixels to the samples */
 	for (i=0; i<mult; i++)
-	    add_all_pixels(obj);
+	    add_all_pixels();
 
 	/* make a new colortable with the optimal colors */
 	avail_image_cols = neu_clrtab(avail_image_cols);
@@ -343,7 +330,7 @@ remap_imagecolors(obj)
 	    return;
 
 	/* get the new, mapped indices for the image colormap */
-	remap_image_colormap(obj);
+	remap_image_colormap();
     } else {
 	/*
 	 * Extract the RGB values from the image's colormap and allocate
@@ -351,13 +338,13 @@ remap_imagecolors(obj)
 	 */
 	scol = 0;	/* global color counter */
 	set_temp_cursor(wait_cursor);
-	extract_cmap(obj);
+	extract_cmap();
 	for (i=0; i<scol; i++) {
 	    image_cells[i].flags = DoRed|DoGreen|DoBlue;
 	}
 	YStoreColors(tool_cm, image_cells, scol);
 	scol = 0;	/* global color counter */
-	readjust_cmap(obj);
+	readjust_cmap();
 	if (appres.DEBUG) 
 	    fprintf(stderr,"Able to use %d colors without neural net\n",scol);
 	reset_cursor();
@@ -384,97 +371,56 @@ alloc_imagecolors(num)
     avail_image_cols = i;
 }
 
-/* count the number of colors in a picture object */
+/* count the number of colors in all the pictures in the picture repository */
 
-count_colors(obj)
-    F_compound	   *obj;
+int
+count_colors()
 {
-    F_compound	   *c;
+    int		    ncolors;
+    struct _pics   *pics;
 
-    /* count colors in main list */
-    c_colors(obj);
-    /* now any "next" compounds off the top of the list */
-    for (c = obj->next; c != NULL; c = c->next) {
-	c_colors(c);
-    }
+    ncolors = 0;
+    for (pics = pictures; pics; pics = pics->next)
+	if (pics->bitmap != NULL)
+		ncolors += pics->numcols;
+    return ncolors;
 }
 
-c_colors(obj)
-    F_compound	   *obj;
+int
+count_pixels()
 {
-    F_line	   *l;
-    F_compound	   *c;
+    int		    npixels;
+    struct _pics   *pics;
 
-    /* traverse the compounds in this compound */
-    for (c = obj->compounds; c != NULL; c = c->next) {
-	c_colors(c);
-    }
-    for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PICTURE) {
-#ifdef V4_0
-	    if (l->pic->subtype == T_PIC_FIG) {
-		c_colors(l->pic->figure);
-	    } else if (l->pic->bitmap != NULL && l->pic->numcols > 0) {
-#else
-	    if (l->pic->bitmap != NULL && l->pic->numcols > 0) {
-#endif /* V4_0 */
-		ncolors += l->pic->numcols;
+    npixels = 0;
+    for (pics = pictures; pics; pics = pics->next)
+	if (pics->bitmap != NULL && pics->numcols > 0)
+	    npixels += pics->bit_size.x * pics->bit_size.y;
+    return npixels;
+}
+
+readjust_cmap()
+{
+    F_compound	   *c;
+    struct _pics   *pics;
+    int		   i, j;
+
+    /* first adjust the colormaps in the repository */
+    for (pics = pictures; pics; pics = pics->next)
+	if (pics->bitmap != NULL && pics->numcols > 0) {
+	    for (i=0; i<pics->numcols; i++) {
+		j = pics->cmap[i].pixel;
+		pics->cmap[i].pixel = image_cells[j].pixel;
+		scol++;
 	    }
 	}
-    }
+
+    /* now free up all pixmaps in picture objects */
+    /* start with main list */
+    free_pixmaps(&objects);
 }
 
-count_pixels(obj)
-    F_compound	   *obj;
-{
-    F_compound	   *c;
-
-    /* count pixels in main list */
-    c_pixels(obj);
-    /* now any "next" compounds off the top of the list */
-    for (c = obj->next; c != NULL; c = c->next) {
-	c_pixels(c);
-    }
-}
-
-c_pixels(obj)
-    F_compound	   *obj;
-{
-    F_line	   *l;
-    F_compound	   *c;
-    /* traverse the compounds in this compound */
-    for (c = obj->compounds; c != NULL; c = c->next) {
-	c_pixels(c);
-    }
-    for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PICTURE) {
-#ifdef V4_0
-	    if (l->pic->subtype == T_PIC_FIG) {
-		c_pixels(l->pic->figure);
-	    } else if (l->pic->bitmap != NULL && l->pic->numcols > 0) {
-#else
-	    if (l->pic->bitmap != NULL && l->pic->numcols > 0) {
-#endif /* V4_0 */
-		npixels += l->pic->bit_size.x * l->pic->bit_size.y;
-	    }
-	}
-    }
-}
-
-readjust_cmap(obj)
-    F_compound	   *obj;
-{
-    F_compound	   *c;
-
-    /* readjust colormap in main list */
-    rjust_cmap(obj);
-    /* now any "next" compounds off the top of the list */
-    for (c = obj->next; c != NULL; c = c->next) {
-	rjust_cmap(c);
-    }
-}
-
-rjust_cmap(obj)
+free_pixmaps(obj)
     F_compound	   *obj;
 {
     F_line	   *l;
@@ -483,22 +429,11 @@ rjust_cmap(obj)
 
     /* traverse the compounds in this compound */
     for (c = obj->compounds; c != NULL; c = c->next) {
-	rjust_cmap(c);
+	free_pixmaps(c);
     }
     for (l = obj->lines; l != NULL; l = l->next) {
 	if (l->type == T_PICTURE) {
-#ifdef V4_0
-	    if (l->pic->subtype == T_PIC_FIG) {
-		rjust_cmap(l->pic->figure);
-	    } else if (l->pic->bitmap != NULL && l->pic->numcols > 0) {
-#else
-	    if (l->pic->bitmap != NULL && l->pic->numcols > 0) {
-#endif /* V4_0 */
-		for (i=0; i<l->pic->numcols; i++) {
-		    j = l->pic->cmap[i].pixel;
-		    l->pic->cmap[i].pixel = image_cells[j].pixel;
-		    scol++;
-		}
+	    if (l->pic->pixmap != (Pixmap) NULL) {
 		if (l->pic->pixmap)
 		    XFreePixmap(tool_d, l->pic->pixmap);
 		l->pic->pixmap = 0;		/* this will force regeneration of the pixmap */
@@ -510,165 +445,74 @@ rjust_cmap(obj)
     }
 }
 
-extract_cmap(obj)
-    F_compound	   *obj;
+extract_cmap()
 {
-    F_compound	   *c;
+    struct _pics   *pics;
+    int		    i;
 
-    /* extract colormap in main list */
-    extr_cmap(obj);
-    /* now any "next" compounds off the top of the list */
-    for (c = obj->next; c != NULL; c = c->next) {
-	extr_cmap(c);
-    }
-}
-
-extr_cmap(obj)
-    F_compound	   *obj;
-{
-    F_line	   *l;
-    F_compound	   *c;
-    int		   i;
-
-    /* traverse the compounds in this compound */
-    for (c = obj->compounds; c != NULL; c = c->next) {
-	extr_cmap(c);
-    }
-    for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PICTURE) {
-#ifdef V4_0
-	    if (l->pic->subtype == T_PIC_FIG) {
-		extr_cmap(l->pic->figure);
-	    } else if (l->pic->bitmap != NULL && l->pic->numcols > 0) {
-#else
-	    if (l->pic->bitmap != NULL && l->pic->numcols > 0) {
-#endif /* V4_0 */
-		for (i=0; i<l->pic->numcols; i++) {
-		    image_cells[scol].red   = l->pic->cmap[i].red << 8;
-		    image_cells[scol].green = l->pic->cmap[i].green << 8;
-		    image_cells[scol].blue  = l->pic->cmap[i].blue << 8;
-		    l->pic->cmap[i].pixel = scol;
-		    scol++;
-		}
-		if (l->pic->pixmap)
-		    XFreePixmap(tool_d, l->pic->pixmap);
-		l->pic->pixmap = 0;		/* this will force regeneration of the pixmap */
-		if (l->pic->mask != 0)
-		    XFreePixmap(tool_d, l->pic->mask);
-		l->pic->mask = 0;
+    /* extract the colormaps in the repository */
+    for (pics = pictures; pics; pics = pics->next)
+	if (pics->bitmap != NULL && pics->numcols > 0) {
+	    for (i=0; i<pics->numcols; i++) {
+		image_cells[scol].red   = pics->cmap[i].red << 8;
+		image_cells[scol].green = pics->cmap[i].green << 8;
+		image_cells[scol].blue  = pics->cmap[i].blue << 8;
+		pics->cmap[i].pixel = scol;
+		scol++;
 	    }
 	}
-    }
+    /* now free up the pixmaps */
+    free_pixmaps(&objects);
 }
 
-add_all_pixels(obj)
-    F_compound	   *obj;
+add_all_pixels()
 {
-    F_compound	   *c;
-
-    /* add pixels from objects in main list */
-    add_pixels(obj);
-    /* now any "next" compounds off the top of the list */
-    for (c = obj->next; c != NULL; c = c->next) {
-	add_pixels(c);
-    }
-}
-
-add_pixels(obj)
-    F_compound	   *obj;
-{
-    F_line	   *l;
-    F_compound	   *c;
+    struct _pics   *pics;
     BYTE	   col[3];
-    int		   i;
+    int		   i, npix;
     register unsigned char byte;
 
-    /* traverse the compounds in this compound */
-    for (c = obj->compounds; c != NULL; c = c->next) {
-	add_pixels(c);
-    }
-    for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PICTURE) {
-#ifdef V4_0
-	    if (l->pic->subtype == T_PIC_FIG) {
-		add_pixels(l->pic->figure);
-	    } else if (l->pic->bitmap != NULL && l->pic->numcols > 0) {
-#else
-	    if (l->pic->bitmap != NULL && l->pic->numcols > 0) {
-#endif /* V4_0 */
-		/* now add each pixel to the sample list */
-		for (i=0; i<l->pic->bit_size.x * l->pic->bit_size.y; i++) {
-		    /* check if user pressed cancel button */
-		    if (i%1000==0 && check_cancel())
-			return;
-		    byte = l->pic->bitmap[i];
-		    col[N_RED] = l->pic->cmap[byte].red;
-		    col[N_GRN] = l->pic->cmap[byte].green;
-		    col[N_BLU] = l->pic->cmap[byte].blue;
-		    neu_pixel(col);
-		}
+    for (pics = pictures; pics; pics = pics->next)
+	if (pics->bitmap != NULL && pics->numcols > 0) {
+	    /* now add each pixel to the sample list */
+	    npix = pics->bit_size.x * pics->bit_size.y;
+	    for (i=0; i < npix; i++) {
+		/* check if user pressed cancel button */
+		if (i%1000==0 && check_cancel())
+		    return;
+		byte = pics->bitmap[i];
+		col[N_RED] = pics->cmap[byte].red;
+		col[N_GRN] = pics->cmap[byte].green;
+		col[N_BLU] = pics->cmap[byte].blue;
+		neu_pixel(col);
 	    }
 	}
-    }
 }
 
-remap_image_colormap(obj)
-    F_compound	   *obj;
+remap_image_colormap()
 {
-    F_compound	   *c;
-
-    /* remap images in main list */
-    rmpimage_cmap(obj);
-    /* now any "next" compounds off the top of the list */
-    for (c = obj->next; c != NULL; c = c->next) {
-	rmpimage_cmap(c);
-    }
-}
-
-rmpimage_cmap(obj)
-    F_compound	   *obj;
-{
-    F_line	   *l;
-    F_compound	   *c;
+    struct _pics   *pics;
     BYTE	   col[3];
     int		   i;
-    int	p;
+    int		   p;
 
-    /* traverse the compounds in this compound */
-    for (c = obj->compounds; c != NULL; c = c->next) {
-	rmpimage_cmap(c);
-    }
-    for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PICTURE) {
-#ifdef V4_0
-	    if (l->pic->subtype == T_PIC_FIG) {
-		rmpimage_cmap(l->pic->figure);
-	    } else if (l->pic->bitmap != NULL && l->pic->numcols > 0) {
-#else
-	    if (l->pic->bitmap != NULL && l->pic->numcols > 0) {
-#endif /* V4_0 */
-		for (i=0; i<l->pic->numcols; i++) {
-		    /* real color from the image */
-		    col[N_RED] = l->pic->cmap[i].red;
-		    col[N_GRN] = l->pic->cmap[i].green;
-		    col[N_BLU] = l->pic->cmap[i].blue;
-		    /* X color index from the mapping */
-		    p = neu_map_pixel(col);
-		    l->pic->cmap[i].pixel = image_cells[p].pixel;
-		}
-		if (l->pic->pixmap)
-		    XFreePixmap(tool_d, l->pic->pixmap);
-		l->pic->pixmap = 0;		/* this will force regeneration of the pixmap */
-		if (l->pic->mask != 0)
-		    XFreePixmap(tool_d, l->pic->mask);
-		l->pic->mask = 0;
+    for (pics = pictures; pics; pics = pics->next)
+	if (pics->bitmap != NULL && pics->numcols > 0) {
+	    for (i=0; i<pics->numcols; i++) {
+		/* real color from the image */
+		col[N_RED] = pics->cmap[i].red;
+		col[N_GRN] = pics->cmap[i].green;
+		col[N_BLU] = pics->cmap[i].blue;
+		/* X color index from the mapping */
+		p = neu_map_pixel(col);
+		pics->cmap[i].pixel = image_cells[p].pixel;
 	    }
 	}
-    }
+    free_pixmaps(&objects);
 }
 
-/* map the bytes in pic->bitmap to bits for monochrome display */
-/* DESTROYS original pic->bitmap */
+/* map the bytes in pic->pic_cache->bitmap to bits for monochrome display */
+/* DESTROYS original pic->pic_cache->bitmap */
 /* uses a Floyd-Steinberg algorithm from the pbmplus package */
 
 /* Here is the copyright notice:
@@ -691,7 +535,7 @@ rmpimage_cmap(obj)
 map_to_mono(pic)
 F_pic	*pic;
 {
-	unsigned char *dptr = pic->bitmap;	/* 8-bit wide data pointer */
+	unsigned char *dptr = pic->pic_cache->bitmap;	/* 8-bit wide data pointer */
 	unsigned char *bptr;			/* 1-bit wide bitmap pointer */
 	int	   bitp;
 	int	   col, row, limitcol;
@@ -702,8 +546,8 @@ F_pic	*pic;
 	Boolean	   fs_direction;
 	int	   sbit;
 
-	width = pic->bit_size.x;
-	height = pic->bit_size.y;
+	width = pic->pic_cache->bit_size.x;
+	height = pic->pic_cache->bit_size.y;
 
 	/* allocate space for 1-bit bitmap */
 	if ((bptr = (unsigned char*) 
@@ -740,9 +584,9 @@ F_pic	*pic;
 		bitp = sbit;
 	    }
 	    do {
-		grey =  pic->cmap[*cP].red   * 77  +	/* 0.30 * 256 */
-			pic->cmap[*cP].green * 151 +	/* 0.59 * 256 */
-			pic->cmap[*cP].blue  * 28;	/* 0.11 * 256 */
+		grey =  pic->pic_cache->cmap[*cP].red   * 77  +	/* 0.30 * 256 */
+			pic->pic_cache->cmap[*cP].green * 151 +	/* 0.59 * 256 */
+			pic->pic_cache->cmap[*cP].blue  * 28;	/* 0.11 * 256 */
 		sum = ( grey * FS_SCALE ) / MAXVAL + thiserr[col+1];
 		if (sum >= threshval) {
 		    *bP |= bitp;		/* white bit */
@@ -790,12 +634,12 @@ F_pic	*pic;
 	    nexterr = temperr;
 	    fs_direction = ! fs_direction;
 	}
-	free((char *) pic->bitmap);
+	free((char *) pic->pic_cache->bitmap);
 	free((char *) thiserr);
 	free((char *) nexterr);
-	pic->bitmap = bptr;
+	pic->pic_cache->bitmap = bptr;
 	/* monochrome */
-	pic->numcols = 0;
+	pic->pic_cache->numcols = 0;
 		
 	return;
 }
@@ -819,7 +663,7 @@ char *strstr(s1, s2)
 	    return stmp;
     return NULL;
 }
-#endif
+#endif /* NOSTRSTR */
 
 /* strncasecmp and strcasecmp by Fred Appelman (Fred.Appelman@cv.ruu.nl) */
 
@@ -845,7 +689,7 @@ strncasecmp(const char* s1, const char* s2, int n)
    return 0;
 }
 
-#endif
+#endif /* HAVE_NO_STRNCASECMP */
 
 #ifdef HAVE_NO_STRCASECMP
 int
@@ -868,7 +712,7 @@ strcasecmp(const char* s1, const char* s2)
    return 0;
 }
 
-#endif
+#endif /* HAVE_NO_STRCASECMP */
 
 /* this routine will safely copy overlapping strings */
 /* p2 is copied to p1 and p1 is returned */
@@ -963,9 +807,11 @@ uncompress_file(name)
 /* settings from previous session.                           */
 /*************************************************************/
 
+#define RC_BUFSIZ 1000
+
 read_xfigrc()
 {
-    char  line[200], *word, *opnd;
+    char  line[RC_BUFSIZ+1], *word, *opnd;
     FILE *xfigrc;
 
     num_recent_files = 0;
@@ -978,7 +824,7 @@ read_xfigrc()
     if (xfigrc == 0)
 	return;		/* no .xfigrc file */
     
-    while (fgets(line, 199, xfigrc) != NULL) {
+    while (fgets(line, RC_BUFSIZ, xfigrc) != NULL) {
 	word = strtok(line, ": \t");
 	opnd = strtok(NULL, " \t\n");		/* parse operand and remove newline */
 	if (!word || !opnd)
@@ -1055,7 +901,7 @@ update_xfigrc(name, string)
 strain_out(name)
     char	*name;
 {
-    char    line[200], *tok;
+    char    line[RC_BUFSIZ+1], *tok;
 
     /* make a temp filename in the user's home directory so we
        can just rename it to .xfigrc after creating it */
@@ -1071,11 +917,19 @@ strain_out(name)
     if (xfigrc == 0) {
 	/* no, create one */
 	xfigrc = fopen(xfigrc_name,"wb");
+	if (xfigrc == 0) {
+	    file_msg("Can't create ~/.xfigrc - error: %s",strerror(errno));
+	    return -1;
+	}
+
 	fclose(xfigrc);
 	xfigrc = (FILE *) 0;
 	return 0;
     }
-    while (fgets(line, 199, xfigrc) != NULL) {
+    while (fgets(line, RC_BUFSIZ, xfigrc) != NULL) {
+	/* look for sane input */
+	if (line[0] == '\0')
+	    break;
 	/* make copy of line to look for token because strtok modifies the line */
 	tok = my_strdup(line);
 	if (strcasecmp(strtok(tok, ": \t"), name) == 0)
@@ -1135,6 +989,27 @@ init_settings()
     if (appres.startposnmode >= 0)
 	cur_pointposn = min2(appres.startposnmode,P_GRID4);
 
+    /* choose grid units (1/16", 1/10", MM) */
+    /* default */
+    grid_unit = FRACT_UNIT;
+
+    /* if inches is desired set grid unit to user spec (1/16" or 1/10") */
+    if (appres.INCHES) {
+	/* make sure user specified one */
+	if (strcasecmp(appres.tgrid_unit, "default") != 0) {
+	    if (strcasecmp(appres.tgrid_unit, "tenth") == 0 || 
+		strcasecmp(appres.tgrid_unit, "ten") == 0 ||
+		strcasecmp(appres.tgrid_unit, "1/10") == 0 ||
+		strcasecmp(appres.tgrid_unit, "10") == 0)
+		    grid_unit = TENTH_UNIT;
+		else
+		    grid_unit = FRACT_UNIT;
+	}
+    } else {
+	grid_unit = MM_UNIT;
+    }
+
+    cur_gridunit = grid_unit;
     /* turn off PSFONT_TEXT flag if user specified -latexfonts */
     if (appres.latexfonts)
 	cur_textflags = cur_textflags & (~PSFONT_TEXT);
@@ -1149,8 +1024,8 @@ init_settings()
     if (appres.latexfonts)
 	cur_textflags = cur_textflags & (~PSFONT_TEXT);
 
-    if (appres.user_unit)
-	strncpy(cur_fig_units, appres.user_unit, sizeof(cur_fig_units)-1);
+    if (appres.userunit)
+	strncpy(cur_fig_units, appres.userunit, sizeof(cur_fig_units)-1);
     else
 	cur_fig_units[0] = '\0';
 
@@ -1181,7 +1056,7 @@ update_fig_files(argc, argv)
     char	   *argv[];
 {
     fig_settings    settings;
-    char	   *file;
+    char	    file[PATH_MAX];
     int		    i,col;
     Boolean	    status;
     int		    allstat;
@@ -1192,13 +1067,19 @@ update_fig_files(argc, argv)
     update_figs = True;
 
     for (i=2; i<argc; i++) {
-	file = argv[i];
+	/* skip any scaling the user may have given */
+	if (strcasecmp(argv[i],"-scale_factor")==0) {
+	    /* and skip the scale factor */
+	    i++;
+	    continue;
+	}
+	strcpy(file,argv[i]);
 	fprintf(stderr,"* Reading %s ... ",file);
 	/* reset user colors */
 	for (col=0; col<MAX_USR_COLS; col++)
 	    n_colorFree[col] = True;
 	/* read Fig file but don't import any images */
-	status = read_fig(file, &objects, False, 0, 0, &settings);
+	status = read_fig(file, &objects, DONT_MERGE, 0, 0, &settings);
 	if (status != 0) {
 	    fprintf(stderr," *** Error in reading, not updating this file\n");
 	    allstat = 1;
@@ -1270,8 +1151,8 @@ strerror(e)
 	int e;
 {
 	return sys_errlist[e];
-	}
-#endif
+}
+#endif /* NEED_STRERROR */
 
 /**************************************************************************/
 /* Routine to mimic `my_strdup()' (some machines don't have it)           */
@@ -1283,7 +1164,7 @@ char
 {
     char *s;
     
-    if(str==NULL)
+    if (str==NULL)
 	return NULL;
     
     s = new_string(strlen(str)+1);
@@ -1304,8 +1185,8 @@ map_to_palette(pic)
 	unsigned char *old;
 	BYTE	 col[3];
 
-	w = pic->bit_size.x;
-	h = pic->bit_size.y;
+	w = pic->pic_cache->bit_size.x;
+	h = pic->pic_cache->bit_size.y;
 
 	mult = 1;
 	if ((neu_stat=neu_init(w*h)) <= -2) {
@@ -1316,35 +1197,35 @@ map_to_palette(pic)
 	if (neu_stat == -1) {
 	    /* couldn't alloc memory for network */
 	    fprintf(stderr,"Can't alloc memory for neural network\n");
-	    free(pic->bitmap);
+	    free(pic->pic_cache->bitmap);
 	    return False;
 	}
 	/* now add all pixels to the samples */
 	size = w*h*3;
 	for (x=0; x<size;) {
-	    col[N_BLU] = pic->bitmap[x++];
-	    col[N_GRN] = pic->bitmap[x++];
-	    col[N_RED] = pic->bitmap[x++];
+	    col[N_BLU] = pic->pic_cache->bitmap[x++];
+	    col[N_GRN] = pic->pic_cache->bitmap[x++];
+	    col[N_RED] = pic->pic_cache->bitmap[x++];
 	    for (y=0; y<mult; y++) {
 		neu_pixel(col);
 	    }
 	}
 
 	/* make a new colortable with the optimal colors */
-	pic->numcols = neu_clrtab(256);
+	pic->pic_cache->numcols = neu_clrtab(256);
 
 	/* now change the color cells with the new colors */
 	/* clrtab[][] is the colormap produced by neu_clrtab */
-	for (x=0; x<pic->numcols; x++) {
-	    pic->cmap[x].red   = (unsigned short) clrtab[x][N_RED];
-	    pic->cmap[x].green = (unsigned short) clrtab[x][N_GRN];
-	    pic->cmap[x].blue  = (unsigned short) clrtab[x][N_BLU];
+	for (x=0; x<pic->pic_cache->numcols; x++) {
+	    pic->pic_cache->cmap[x].red   = (unsigned short) clrtab[x][N_RED];
+	    pic->pic_cache->cmap[x].green = (unsigned short) clrtab[x][N_GRN];
+	    pic->pic_cache->cmap[x].blue  = (unsigned short) clrtab[x][N_BLU];
 	}
 
 	/* now alloc a 1-byte/per/pixel array for the final colormapped image */
 	/* save orig */
-	old = pic->bitmap;
-	if ((pic->bitmap=malloc(w*(h+2)))==NULL)
+	old = pic->pic_cache->bitmap;
+	if ((pic->pic_cache->bitmap=malloc(w*(h+2)))==NULL)
 	    return False;
 
 	/* and change the 3-byte pixels to the 1-byte */
@@ -1352,9 +1233,132 @@ map_to_palette(pic)
 	    col[N_BLU] = old[x];
 	    col[N_GRN] = old[x+1];
 	    col[N_RED] = old[x+2];
-	    pic->bitmap[y] = neu_map_pixel(col);
+	    pic->pic_cache->bitmap[y] = neu_map_pixel(col);
 	}
 	/* free 3-byte/pixel array */
 	free(old);
 	return True;
+}
+
+/* return pointers to the line components of a dimension line. 
+   If passed dimline is not a dimension line, the result is False */
+
+Boolean
+dimline_components(dimline, line, tick1, tick2, poly)
+    F_compound	  *dimline;
+    F_line	 **line, **tick1, **tick2, **poly;
+{
+    F_line *l;
+
+    if (!dimline->comments || strncmp(dimline->comments,"Dimension line:",15) !=0 )
+	return False;
+
+    *line = *tick1 = *tick2 = *poly = (F_line *) NULL;
+    for (l = dimline->lines; l; l=l->next) {
+	if (!l->comments)
+		continue;
+	if (strcmp(l->comments,"main dimension line")==0)
+	    *line = l;
+	else if (strcmp(l->comments,"text box")==0)
+	    *poly = l;
+	else if (strcmp(l->comments,"tick")==0) {
+	    if (*tick1 == 0)
+		*tick1 = l;
+	    else
+		*tick2 = l;
+	}
+    }
+    return True;
+}
+
+int
+find_smallest_depth(compound)
+    F_compound	   *compound;
+{
+	F_line	 *l;
+	F_spline	 *s;
+	F_ellipse	 *e;
+	F_arc	 *a;
+	F_text	 *t;
+	F_compound *c;
+	int	  smallest, d1;
+
+	smallest = MAX_DEPTH;
+	for (l = compound->lines; l != NULL; l = l->next) {
+	    if (l->depth < smallest) smallest = l->depth;
+	}
+	for (s = compound->splines; s != NULL; s = s->next) {
+	    if (s->depth < smallest) smallest = s->depth;
+	}
+	for (e = compound->ellipses; e != NULL; e = e->next) {
+	    if (e->depth < smallest) smallest = e->depth;
+	}
+	for (a = compound->arcs; a != NULL; a = a->next) {
+	    if (a->depth < smallest) smallest = a->depth;
+	}
+	for (t = compound->texts; t != NULL; t = t->next) {
+	    if (t->depth < smallest) smallest = t->depth;
+	}
+	for (c = compound->compounds; c != NULL; c = c->next) {
+	    d1 = find_smallest_depth(c);
+	    if (d1 < smallest)
+		smallest = d1;
+	}
+	return smallest;
+}
+
+int
+find_largest_depth(compound)
+    F_compound	   *compound;
+{
+	F_line	 *l;
+	F_spline	 *s;
+	F_ellipse	 *e;
+	F_arc	 *a;
+	F_text	 *t;
+	F_compound *c;
+	int	  largest, d1;
+
+	largest = MIN_DEPTH;
+	for (l = compound->lines; l != NULL; l = l->next) {
+	    if (l->depth > largest) largest = l->depth;
+	}
+	for (s = compound->splines; s != NULL; s = s->next) {
+	    if (s->depth > largest) largest = s->depth;
+	}
+	for (e = compound->ellipses; e != NULL; e = e->next) {
+	    if (e->depth > largest) largest = e->depth;
+	}
+	for (a = compound->arcs; a != NULL; a = a->next) {
+	    if (a->depth > largest) largest = a->depth;
+	}
+	for (t = compound->texts; t != NULL; t = t->next) {
+	    if (t->depth > largest) largest = t->depth;
+	}
+	for (c = compound->compounds; c != NULL; c = c->next) {
+	    d1 = find_largest_depth(c);
+	    if (d1 > largest)
+		largest = d1;
+	}
+	return largest;
+}
+
+/* get grid params and assemble into fig2dev parm */
+void
+get_grid_spec(char *grid, Widget grid_panel)
+{
+	char	   *c1;
+
+	/* get grid spec from panel */
+	strcpy(grid, panel_get_value(grid_panel));
+	if (strcasecmp(grid,"none") == 0) {
+	    grid[0]='\0';
+	}
+	c1 = panel_get_value(grid_panel);
+	if (strcasecmp(c1,"none") != 0 && strlen(c1)) {
+	    strcat(grid,":");
+	    strcat(grid,c1);
+	}
+	if (strlen(grid))
+	    strcat(grid,appres.INCHES? "in":"mm");
 }

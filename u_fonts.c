@@ -1,15 +1,15 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2000 by Brian V. Smith
+ * Copyright (c) 1989-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -22,38 +22,38 @@
 /* X11 font names */
 
 struct _xfstruct x_fontinfo[NUM_FONTS] = {
-    {"-adobe-times-medium-r-normal--", (struct xfont*) NULL},
-    {"-adobe-times-medium-i-normal--", (struct xfont*) NULL},
-    {"-adobe-times-bold-r-normal--", (struct xfont*) NULL},
-    {"-adobe-times-bold-i-normal--", (struct xfont*) NULL},
-    {"-adobe-avantgarde-book-r-normal--", (struct xfont*) NULL},
-    {"-adobe-avantgarde-book-o-normal--", (struct xfont*) NULL},
-    {"-adobe-avantgarde-demi-r-normal--", (struct xfont*) NULL},
-    {"-adobe-avantgarde-demi-o-normal--", (struct xfont*) NULL},
-    {"-adobe-bookman-light-r-normal--", (struct xfont*) NULL},
-    {"-adobe-bookman-light-i-normal--", (struct xfont*) NULL},
-    {"-adobe-bookman-demi-r-normal--", (struct xfont*) NULL},
-    {"-adobe-bookman-demi-i-normal--", (struct xfont*) NULL},
-    {"-adobe-courier-medium-r-normal--", (struct xfont*) NULL},
-    {"-adobe-courier-medium-o-normal--", (struct xfont*) NULL},
-    {"-adobe-courier-bold-r-normal--", (struct xfont*) NULL},
-    {"-adobe-courier-bold-o-normal--", (struct xfont*) NULL},
-    {"-adobe-helvetica-medium-r-normal--", (struct xfont*) NULL},
-    {"-adobe-helvetica-medium-o-normal--", (struct xfont*) NULL},
-    {"-adobe-helvetica-bold-r-normal--", (struct xfont*) NULL},
-    {"-adobe-helvetica-bold-o-normal--", (struct xfont*) NULL},
-    {"-adobe-helvetica-medium-r-narrow--", (struct xfont*) NULL},
-    {"-adobe-helvetica-medium-o-narrow--", (struct xfont*) NULL},
-    {"-adobe-helvetica-bold-r-narrow--", (struct xfont*) NULL},
-    {"-adobe-helvetica-bold-o-narrow--", (struct xfont*) NULL},
-    {"-adobe-new century schoolbook-medium-r-normal--", (struct xfont*) NULL},
-    {"-adobe-new century schoolbook-medium-i-normal--", (struct xfont*) NULL},
-    {"-adobe-new century schoolbook-bold-r-normal--", (struct xfont*) NULL},
-    {"-adobe-new century schoolbook-bold-i-normal--", (struct xfont*) NULL},
-    {"-adobe-palatino-medium-r-normal--", (struct xfont*) NULL},
-    {"-adobe-palatino-medium-i-normal--", (struct xfont*) NULL},
-    {"-adobe-palatino-bold-r-normal--", (struct xfont*) NULL},
-    {"-adobe-palatino-bold-i-normal--", (struct xfont*) NULL},
+    {"-*-times-medium-r-normal--", (struct xfont*) NULL},
+    {"-*-times-medium-i-normal--", (struct xfont*) NULL},
+    {"-*-times-bold-r-normal--", (struct xfont*) NULL},
+    {"-*-times-bold-i-normal--", (struct xfont*) NULL},
+    {"-*-avantgarde-book-r-normal--", (struct xfont*) NULL},
+    {"-*-avantgarde-book-o-normal--", (struct xfont*) NULL},
+    {"-*-avantgarde-demi-r-normal--", (struct xfont*) NULL},
+    {"-*-avantgarde-demi-o-normal--", (struct xfont*) NULL},
+    {"-*-bookman-light-r-normal--", (struct xfont*) NULL},
+    {"-*-bookman-light-i-normal--", (struct xfont*) NULL},
+    {"-*-bookman-demi-r-normal--", (struct xfont*) NULL},
+    {"-*-bookman-demi-i-normal--", (struct xfont*) NULL},
+    {"-*-courier-medium-r-normal--", (struct xfont*) NULL},
+    {"-*-courier-medium-o-normal--", (struct xfont*) NULL},
+    {"-*-courier-bold-r-normal--", (struct xfont*) NULL},
+    {"-*-courier-bold-o-normal--", (struct xfont*) NULL},
+    {"-*-helvetica-medium-r-normal--", (struct xfont*) NULL},
+    {"-*-helvetica-medium-o-normal--", (struct xfont*) NULL},
+    {"-*-helvetica-bold-r-normal--", (struct xfont*) NULL},
+    {"-*-helvetica-bold-o-normal--", (struct xfont*) NULL},
+    {"-*-helvetica-medium-r-narrow--", (struct xfont*) NULL},
+    {"-*-helvetica-medium-o-narrow--", (struct xfont*) NULL},
+    {"-*-helvetica-bold-r-narrow--", (struct xfont*) NULL},
+    {"-*-helvetica-bold-o-narrow--", (struct xfont*) NULL},
+    {"-*-new century schoolbook-medium-r-normal--", (struct xfont*) NULL},
+    {"-*-new century schoolbook-medium-i-normal--", (struct xfont*) NULL},
+    {"-*-new century schoolbook-bold-r-normal--", (struct xfont*) NULL},
+    {"-*-new century schoolbook-bold-i-normal--", (struct xfont*) NULL},
+    {"-*-palatino-medium-r-normal--", (struct xfont*) NULL},
+    {"-*-palatino-medium-i-normal--", (struct xfont*) NULL},
+    {"-*-palatino-bold-r-normal--", (struct xfont*) NULL},
+    {"-*-palatino-bold-i-normal--", (struct xfont*) NULL},
     {"-*-symbol-medium-r-normal--", (struct xfont*) NULL},
     {"-*-itc zapf chancery-medium-i-normal--", (struct xfont*) NULL},
     {"-*-itc zapf dingbats-*-*-*--", (struct xfont*) NULL},
@@ -67,41 +67,41 @@ struct _xfstruct x_fontinfo[NUM_FONTS] = {
 */
 
 struct _xfstruct x_backup_fontinfo[NUM_FONTS] = {
-    {"-adobe-times-medium-r-normal--", (struct xfont*) NULL},
-    {"-adobe-times-medium-i-normal--", (struct xfont*) NULL},
-    {"-adobe-times-bold-r-normal--", (struct xfont*) NULL},
-    {"-adobe-times-bold-i-normal--", (struct xfont*) NULL},
-    {"-b&h-lucida-medium-r-normal-sans-", (struct xfont*) NULL}, /* closest to Avant-Garde */
-    {"-b&h-lucida-medium-i-normal-sans-", (struct xfont*) NULL},
-    {"-b&h-lucida-bold-r-normal-sans-", (struct xfont*) NULL},
-    {"-b&h-lucida-bold-i-normal-sans-", (struct xfont*) NULL},
-    {"-adobe-times-medium-r-normal--", (struct xfont*) NULL},      /* closest to Bookman */
-    {"-adobe-times-medium-i-normal--", (struct xfont*) NULL},
-    {"-adobe-times-bold-r-normal--", (struct xfont*) NULL},
-    {"-adobe-times-bold-i-normal--", (struct xfont*) NULL},
-    {"-adobe-courier-medium-r-normal--", (struct xfont*) NULL},
-    {"-adobe-courier-medium-o-normal--", (struct xfont*) NULL},
-    {"-adobe-courier-bold-r-normal--", (struct xfont*) NULL},
-    {"-adobe-courier-bold-o-normal--", (struct xfont*) NULL},
-    {"-adobe-helvetica-medium-r-normal--", (struct xfont*) NULL},
-    {"-adobe-helvetica-medium-o-normal--", (struct xfont*) NULL},
-    {"-adobe-helvetica-bold-r-normal--", (struct xfont*) NULL},
-    {"-adobe-helvetica-bold-o-normal--", (struct xfont*) NULL},
-    {"-adobe-helvetica-medium-r-normal--", (struct xfont*) NULL},  /* closest to Helv-nar. */
-    {"-adobe-helvetica-medium-o-normal--", (struct xfont*) NULL},
-    {"-adobe-helvetica-bold-r-normal--", (struct xfont*) NULL},
-    {"-adobe-helvetica-bold-o-normal--", (struct xfont*) NULL},
-    {"-adobe-new century schoolbook-medium-r-normal--", (struct xfont*) NULL},
-    {"-adobe-new century schoolbook-medium-i-normal--", (struct xfont*) NULL},
-    {"-adobe-new century schoolbook-bold-r-normal--", (struct xfont*) NULL},
-    {"-adobe-new century schoolbook-bold-i-normal--", (struct xfont*) NULL},
+    {"-*-times-medium-r-normal--", (struct xfont*) NULL},
+    {"-*-times-medium-i-normal--", (struct xfont*) NULL},
+    {"-*-times-bold-r-normal--", (struct xfont*) NULL},
+    {"-*-times-bold-i-normal--", (struct xfont*) NULL},
+    {"-*-lucida-medium-r-normal-sans-", (struct xfont*) NULL}, /* closest to Avant-Garde */
+    {"-*-lucida-medium-i-normal-sans-", (struct xfont*) NULL},
+    {"-*-lucida-bold-r-normal-sans-", (struct xfont*) NULL},
+    {"-*-lucida-bold-i-normal-sans-", (struct xfont*) NULL},
+    {"-*-times-medium-r-normal--", (struct xfont*) NULL},      /* closest to Bookman */
+    {"-*-times-medium-i-normal--", (struct xfont*) NULL},
+    {"-*-times-bold-r-normal--", (struct xfont*) NULL},
+    {"-*-times-bold-i-normal--", (struct xfont*) NULL},
+    {"-*-courier-medium-r-normal--", (struct xfont*) NULL},
+    {"-*-courier-medium-o-normal--", (struct xfont*) NULL},
+    {"-*-courier-bold-r-normal--", (struct xfont*) NULL},
+    {"-*-courier-bold-o-normal--", (struct xfont*) NULL},
+    {"-*-helvetica-medium-r-normal--", (struct xfont*) NULL},
+    {"-*-helvetica-medium-o-normal--", (struct xfont*) NULL},
+    {"-*-helvetica-bold-r-normal--", (struct xfont*) NULL},
+    {"-*-helvetica-bold-o-normal--", (struct xfont*) NULL},
+    {"-*-helvetica-medium-r-normal--", (struct xfont*) NULL},  /* closest to Helv-nar. */
+    {"-*-helvetica-medium-o-normal--", (struct xfont*) NULL},
+    {"-*-helvetica-bold-r-normal--", (struct xfont*) NULL},
+    {"-*-helvetica-bold-o-normal--", (struct xfont*) NULL},
+    {"-*-new century schoolbook-medium-r-normal--", (struct xfont*) NULL},
+    {"-*-new century schoolbook-medium-i-normal--", (struct xfont*) NULL},
+    {"-*-new century schoolbook-bold-r-normal--", (struct xfont*) NULL},
+    {"-*-new century schoolbook-bold-i-normal--", (struct xfont*) NULL},
     {"-*-lucidabright-medium-r-normal--", (struct xfont*) NULL},   /* closest to Palatino */
     {"-*-lucidabright-medium-i-normal--", (struct xfont*) NULL},
     {"-*-lucidabright-demibold-r-normal--", (struct xfont*) NULL},
     {"-*-lucidabright-demibold-i-normal--", (struct xfont*) NULL},
     {"-*-symbol-medium-r-normal--", (struct xfont*) NULL},
-    {"-*-itc zapf chancery-medium-i-normal--", (struct xfont*) NULL},
-    {"-*-itc zapf dingbats-*-*-*--", (struct xfont*) NULL},
+    {"-*-zapf chancery-medium-i-normal--", (struct xfont*) NULL},
+    {"-*-zapf dingbats-*-*-*--", (struct xfont*) NULL},
 };
 
 /* PostScript font names matched with X11 font names in x_fontinfo */

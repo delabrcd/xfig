@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -22,9 +22,10 @@
 #include "object.h"
 #include "mode.h"
 #include "f_read.h"
-#include "w_drawprim.h"		/* for max_char_height */
+#include "w_drawprim.h"
 #include "w_dir.h"
 #include "w_file.h"
+#include "w_indpanel.h"
 #include "w_layers.h"
 #include "w_util.h"
 #include "w_setup.h"
@@ -37,25 +38,29 @@ Boolean	active_layers[MAX_DEPTH +1];
 Boolean	active_layer();
 Boolean	any_active_in_compound();
 Widget	layer_form;
+Boolean	gray_layers = True;
 int	object_depths[MAX_DEPTH +1];	/* count of objects at each depth */
 int	saved_depths[MAX_DEPTH +1];	/* saved when delete all is done */
+int	saved_min_depth, saved_max_depth; /* saved min/max depth */
 int	max_depth_request, min_depth_request;
+Boolean	save_layers[MAX_DEPTH+1];
 int	LAYER_WD=DEF_LAYER_WD;
 int	LAYER_HT;
 
 /* LOCALS */
 
-DeclareStaticArgs(12);
+DeclareStaticArgs(20);
 
 static	Widget		all_active_but, all_inactive_but, toggle_all_but;
+static	Widget		graytoggle, blanktoggle;
 static	Widget		layer_viewp, layer_canvas;
-static	Widget		below;
 static	XtActionProc	toggle_layer();
 static	XtActionProc	sweep_layer();
 static	XtActionProc	leave_layer();
 static	XtCallbackProc	all_active();
 static	XtCallbackProc	all_inactive();
 static	XtCallbackProc	toggle_all();
+static	XtCallbackProc	switch_layer_mode();
 static	XtActionProc	layer_exposed();
 
 /* popup message over command button when mouse enters it */
@@ -101,20 +106,21 @@ void
 init_depth_panel(parent)
     Widget	 parent;
 {
-    Widget	 label;
+    Widget	 label, below;
+    Widget	 layer_viewform;
 
     /* MOUSEFUN_HT and ind_panel height aren't known yet */
     LAYER_HT = TOPRULER_HT + CANVAS_HT;	
 
-    /* a form to hold the label and a viewport widget */
+    /* main form to hold all the layer stuff */
+
     FirstArg(XtNfromHoriz, sideruler_sw);
     NextArg(XtNdefaultDistance, 1);
     NextArg(XtNwidth, LAYER_WD);
     NextArg(XtNheight, LAYER_HT);
     NextArg(XtNleft, XtChainRight);
     NextArg(XtNright, XtChainRight);
-    layer_form = XtCreateWidget("layer_form",formWidgetClass,
-			parent, Args, ArgCount);     
+    layer_form = XtCreateWidget("layer_form",formWidgetClass, parent, Args, ArgCount);     
     if (appres.showdepthmanager)
 	XtManageChild(layer_form);
 
@@ -139,9 +145,9 @@ init_depth_panel(parent)
 				layer_form, Args, ArgCount);
     XtAddCallback(below, XtNcallback, (XtCallbackProc)all_active, (XtPointer) NULL);
     /* popup when mouse passes over button */
-    XtAddEventHandler(below, EnterWindowMask, (Boolean) 0,
+    XtAddEventHandler(below, EnterWindowMask, False,
 			  layer_balloon_trigger, (XtPointer) "Display all depths");
-    XtAddEventHandler(below, LeaveWindowMask, (Boolean) 0,
+    XtAddEventHandler(below, LeaveWindowMask, False,
 			  layer_unballoon, (XtPointer) NULL);
 
     FirstArg(XtNlabel, "All Off");
@@ -154,9 +160,9 @@ init_depth_panel(parent)
 				layer_form, Args, ArgCount);
     XtAddCallback(below, XtNcallback, (XtCallbackProc)all_inactive, (XtPointer) NULL);
     /* popup when mouse passes over button */
-    XtAddEventHandler(below, EnterWindowMask, (Boolean) 0,
+    XtAddEventHandler(below, EnterWindowMask, False,
 			  layer_balloon_trigger, (XtPointer) "Hide all depths");
-    XtAddEventHandler(below, LeaveWindowMask, (Boolean) 0,
+    XtAddEventHandler(below, LeaveWindowMask, False,
 			  layer_unballoon, (XtPointer) NULL);
 
     FirstArg(XtNlabel, "Toggle ");
@@ -169,12 +175,106 @@ init_depth_panel(parent)
 				layer_form, Args, ArgCount);
     XtAddCallback(below, XtNcallback, (XtCallbackProc)toggle_all, (XtPointer) NULL);
     /* popup when mouse passes over button */
-    XtAddEventHandler(below, EnterWindowMask, (Boolean) 0,
+    XtAddEventHandler(below, EnterWindowMask, False,
 			  layer_balloon_trigger, (XtPointer) "Toggle displayed/hidden depths");
-    XtAddEventHandler(below, LeaveWindowMask, (Boolean) 0,
+    XtAddEventHandler(below, LeaveWindowMask, False,
 			  layer_unballoon, (XtPointer) NULL);
 
-    /* viewport to be able to scroll the form with the layer buttons */
+    /* radio buttons to switch between graying out inactive layers or blanking altogether */
+
+    /* radio for graying out */
+    /* we'll insert the checkmark bitmap in setup_depth_panel */
+    FirstArg(XtNwidth, sm_check_width+6);
+    NextArg(XtNheight, sm_check_height+6);
+    NextArg(XtNfromVert, below);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    NextArg(XtNinternalWidth, 1);
+    NextArg(XtNinternalHeight, 1);
+    NextArg(XtNfont, bold_font);
+    NextArg(XtNlabel, "  ");
+    NextArg(XtNsensitive, (gray_layers? False : True));	/* make opposite button sens */
+    NextArg(XtNstate, gray_layers); 	/* initial state */
+    NextArg(XtNradioData, 1);		/* when this is pressed the value is 1 */
+    graytoggle = XtCreateManagedWidget("graytoggle", toggleWidgetClass,
+				layer_form, Args, ArgCount);
+    XtAddCallback(graytoggle, XtNcallback, (XtCallbackProc) switch_layer_mode,
+					(XtPointer) NULL);
+
+    /* label - "Gray" */
+
+    FirstArg(XtNborderWidth, 0);
+    NextArg(XtNfromVert, below);
+    NextArg(XtNfromHoriz, graytoggle);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainRight);
+    NextArg(XtNright, XtChainRight);
+    NextArg(XtNlabel, "Gray ");
+    below = XtCreateManagedWidget("graylabel", labelWidgetClass,
+				layer_form, Args, ArgCount);
+
+    /* radio for blanking */
+    FirstArg(XtNwidth, sm_check_width+6);
+    NextArg(XtNheight, sm_check_height+6);
+    NextArg(XtNfromVert, graytoggle);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    NextArg(XtNinternalWidth, 1);
+    NextArg(XtNinternalHeight, 1);
+    NextArg(XtNfont, bold_font);
+    NextArg(XtNlabel, "  ");
+    NextArg(XtNsensitive, (gray_layers? True : False));	/* make opposite button sens */
+    NextArg(XtNstate, !gray_layers);	/* initial state */
+    NextArg(XtNradioData, 2);		/* when this is pressed the value is 2 */
+    NextArg(XtNradioGroup, graytoggle);	/* this is the other radio button in the group */
+    blanktoggle = XtCreateManagedWidget("blanktoggle", toggleWidgetClass,
+				layer_form, Args, ArgCount);
+    XtAddCallback(blanktoggle, XtNcallback, (XtCallbackProc) switch_layer_mode,
+					(XtPointer) NULL);
+
+    /* label - "Blank" */
+
+    FirstArg(XtNborderWidth, 0);
+    NextArg(XtNfromVert, graytoggle);
+    NextArg(XtNfromHoriz, blanktoggle);
+    NextArg(XtNlabel, "Blank");
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainRight);
+    NextArg(XtNright, XtChainRight);
+    below = XtCreateManagedWidget("blanklabel", labelWidgetClass,
+				layer_form, Args, ArgCount);
+
+    /* a form to hold the "Front" and "Back" labels and the viewport widget */
+
+    FirstArg(XtNborderWidth, 1);
+    NextArg(XtNfromVert, below);
+    NextArg(XtNdefaultDistance, 1);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainRight);
+    NextArg(XtNright, XtChainRight);
+    layer_viewform = XtCreateManagedWidget("layer_viewform",formWidgetClass,
+			layer_form, Args, ArgCount);     
+
+    /* label - "Front" */
+
+    FirstArg(XtNborderWidth, 0);
+    NextArg(XtNlabel, " Front ");
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainRight);
+    NextArg(XtNright, XtChainRight);
+    below = XtCreateManagedWidget("frontlabel", labelWidgetClass,
+				layer_viewform, Args, ArgCount);
+
+    /* viewport to be able to scroll the layer buttons */
+
     FirstArg(XtNborderWidth, 1);
     NextArg(XtNwidth, LAYER_WD);
     NextArg(XtNallowVert, True);
@@ -185,23 +285,36 @@ init_depth_panel(parent)
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainRight);
     layer_viewp = XtCreateManagedWidget("layer_viewp", viewportWidgetClass, 
-			layer_form, Args, ArgCount);
+			layer_viewform, Args, ArgCount);
     /* popup when mouse passes over button */
-    XtAddEventHandler(layer_viewp, EnterWindowMask, (Boolean) 0,
+
+    XtAddEventHandler(layer_viewp, EnterWindowMask, False,
 			  layer_balloon_trigger, (XtPointer) "Display or hide any depth");
-    XtAddEventHandler(layer_viewp, LeaveWindowMask, (Boolean) 0,
+    XtAddEventHandler(layer_viewp, LeaveWindowMask, False,
 			  layer_unballoon, (XtPointer) NULL);
-    XtAddEventHandler(layer_viewp, StructureNotifyMask, (Boolean) 0,
+    XtAddEventHandler(layer_viewp, StructureNotifyMask, False,
 			  update_layers, (XtPointer) NULL);
 
-    /* canvas (label, actually) to in which to create the buttons */
+    /* canvas (label, actually) in which to create the buttons */
     /* we're not using real commandButtons because of the time to create
-       potentially hundreds of them depending on the layers in the figure */
+       potentially hundreds of them depending on the number of layers in the figure */
     FirstArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainRight);
     NextArg(XtNlabel, "");
-    layer_canvas = XtCreateManagedWidget("layer_canvas", labelWidgetClass, layer_viewp, 
-				Args, ArgCount);
+    layer_canvas = XtCreateManagedWidget("layer_canvas", labelWidgetClass,
+				layer_viewp, Args, ArgCount);
+    /* label - "Back" */
+
+    FirstArg(XtNborderWidth, 0);
+    NextArg(XtNfromVert, layer_viewp);
+    NextArg(XtNlabel, " Back  ");
+    NextArg(XtNtop, XtChainBottom);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainRight);
+    NextArg(XtNright, XtChainRight);
+    below = XtCreateManagedWidget("backlabel", labelWidgetClass,
+				layer_viewform, Args, ArgCount);
+
     /* make actions/translations for user to click on a layer "button" and 
        to redraw buttons on expose */
     XtAppAddActions(tool_app, layer_actions, XtNumber(layer_actions));
@@ -222,13 +335,19 @@ setup_depth_panel()
     GetValues(ind_panel);
     LAYER_HT = MOUSEFUN_HT + TOPRULER_HT + CANVAS_HT + ind_ht + INTERNAL_BW*4;
 
+    /* now that the bitmaps have been created, put the checkmark in the proper toggle */
+    FirstArg(XtNbitmap, (gray_layers? sm_check_pm : sm_null_check_pm));
+    SetValues(graytoggle);
+    FirstArg(XtNbitmap, (gray_layers? sm_null_check_pm : sm_check_pm));
+    SetValues(blanktoggle);
+
     XtUnmanageChild(layer_form);
     FirstArg(XtNheight, LAYER_HT);
     SetValues(layer_form);
     XtManageChild(layer_form);
 }
 
-#define B_WIDTH		40
+#define B_WIDTH		38
 #define B_BORDER	2
 #define C_SIZE		10
 #define TOT_B_HEIGHT	(C_SIZE+2*B_BORDER)
@@ -251,7 +370,7 @@ update_layers()
 
     height = B_BORDER * 3;
     for (i = min_depth; i <= max_depth; i++) {
-      if (0 < object_depths[i]) height += TOT_B_HEIGHT;
+      if (object_depths[i] > 0) height += TOT_B_HEIGHT;
     }
     
     /* set height of canvas for all buttons */
@@ -271,7 +390,7 @@ draw_layer_buttons()
     if (min_depth < 0) return;  /* if no objects, return */
 
     for (i = min_depth; i <= max_depth; i++) {
-        if (0 < object_depths[i]) draw_layer_button(w, i);
+        if (object_depths[i] > 0) draw_layer_button(w, i);
     }
 }
 
@@ -323,7 +442,7 @@ draw_layer_button(win, but)
 
     /* now draw in the layer number for the button */
     sprintf(str, "%3d", but);
-    XDrawString(tool_d, win, button_gc, x+w+B_BORDER, y+w, str, strlen(str));
+    XDrawString(tool_d, win, button_gc, x+w+3*B_BORDER, y+w, str, strlen(str));
 }
 
 /* this is the callback to refresh the layer buttons that have been exposed */
@@ -341,7 +460,7 @@ layer_exposed(w, event, params, nparams)
 
     y = 0;
     for (i = min_depth; i <= max_depth; i++) {
-      if (0 < object_depths[i]) {
+      if (object_depths[i] > 0) {
 	y += TOT_B_HEIGHT;
 	if (event->y <= y && y - TOT_B_HEIGHT <= event->y + event->height)
 	  draw_layer_button(XtWindow(w), i);
@@ -361,7 +480,7 @@ calculate_pressed_depth(y)
 
   y1 = TOT_B_HEIGHT;
   for (i = min_depth; i <= max_depth; i++) {
-    if (0 < object_depths[i]) {
+    if (object_depths[i] > 0) {
       if (y < y1) return i;
       y1 += TOT_B_HEIGHT;
     }
@@ -377,7 +496,8 @@ toggle_layer(w, event, params, nparams)
     Cardinal	   *nparams;
 {
     Window	    win = XtWindow(layer_canvas);
-    int		    but;
+    int		    but, i;
+    Boolean	    obscure;
 
     if (min_depth < 0) return;  /* if no objects, return */
 
@@ -387,7 +507,23 @@ toggle_layer(w, event, params, nparams)
     /* yes, toggle visibility and redraw */
     active_layers[but] = !active_layers[but];
     draw_layer_button(win, but);
-    redisplay_canvas();
+    /* if user just turned on a layer, draw only it if there are no active layers on top */
+    if (active_layers[but]) {
+	obscure = False;
+	for (i=0; i<but; i++)
+	    if (active_layers[i]) {
+		obscure = True;
+		break;
+	    }
+	if (!obscure) {
+	    clearcounts();
+	    redisplay_compoundobject(&objects, but);
+	} else
+	    redisplay_canvas();
+    } else {
+	/* otherwise redraw whole canvas to get rid of that layer */
+	redisplay_canvas();
+    }
     pressed_but = but;
 }
 
@@ -412,7 +548,7 @@ sweep_layer(w, event, params, nparams)
 
     if (pressed_but < but) {
       for (i = pressed_but + 1; i <= but; i++) {
-	if (0 < object_depths[i]
+	if (object_depths[i] > 0
 	    && active_layers[i] != active_layers[pressed_but]) {
 	  active_layers[i] = active_layers[pressed_but];
 	  draw_layer_button(win, i);
@@ -421,7 +557,7 @@ sweep_layer(w, event, params, nparams)
       }
     } else {
       for (i = pressed_but - 1; but <= i; i--) {
-	if (0 < object_depths[i]
+	if (object_depths[i] > 0
 	    && active_layers[i] != active_layers[pressed_but]) {
 	  active_layers[i] = active_layers[pressed_but];
 	  draw_layer_button(win, i);
@@ -503,6 +639,51 @@ toggle_all(w, closure, call_data)
 	active_layers[i] = !active_layers[i];
     }
     draw_layer_buttons();
+    redisplay_canvas();
+}
+
+/* when user toggles between gray-out and blank inactive layers */
+
+static XtCallbackProc
+switch_layer_mode(w, closure, call_data)
+    Widget	    w;
+    XtPointer       closure, call_data;
+{
+    Boolean	    state;
+    int		    which;
+
+    /* check state of the toggle and set/remove checkmark */
+    FirstArg(XtNstate, &state);
+    GetValues(w);
+    
+    if (state ) {
+	FirstArg(XtNbitmap, sm_check_pm);
+    } else {
+	FirstArg(XtNbitmap, sm_null_check_pm);
+    }
+    SetValues(w);
+
+    /* set the sensitivity of the toggle button to the opposite of its state
+       so that the user must press the other one now */
+    XtSetSensitive(w, !state);
+    /* and make the *other* button the opposite state */
+    if (w == graytoggle) {
+	XtSetSensitive(blanktoggle, state);
+    } else {
+	XtSetSensitive(graytoggle, state);
+    }
+    /* which button */
+    which = (int) XawToggleGetCurrent(w);
+    if (which == 0)		/* no buttons on, in transition so return now */
+	return;
+    if (which == 2)		/* "blank" button, invert state */
+	state = !state;
+
+    /* set global state */
+    gray_layers = state;
+
+    /* now simply redisplay everything */
+    clear_canvas();
     redisplay_canvas();
 }
 
@@ -659,6 +840,8 @@ toggle_show_depths()
     Dimension	wid, b;
 
     appres.showdepthmanager = !appres.showdepthmanager;
+    put_msg("%s depth manager",
+		appres.showdepthmanager? "Show": "Don't show");
     /* get actual width of layer form */
     FirstArg(XtNwidth, &wid);
     NextArg(XtNborderWidth, &b);
@@ -678,3 +861,69 @@ toggle_show_depths()
     /* and redraw the objects */
     redisplay_canvas();
 }
+
+void
+save_active_layers()
+{
+    int		 i;
+    for (i=0; i<=MAX_DEPTH; i++)
+	save_layers[i] = active_layers[i];
+}
+
+/* save depth counts and min/max depth */
+
+void
+save_depths()
+{
+    int		 i;
+    saved_min_depth = min_depth;
+    saved_max_depth = max_depth;
+    for (i=0; i<=MAX_DEPTH; i++)
+	saved_depths[i] = object_depths[i];
+}
+
+void
+save_counts()
+{
+    int		 i;
+    for (i=0; i<=MAX_DEPTH; i++)
+	saved_counts[i] = counts[i];
+}
+
+void
+save_counts_and_clear()
+{
+    save_counts();
+    clearallcounts();
+}
+
+void
+restore_active_layers()
+{
+    int		 i;
+    for (i=0; i<=MAX_DEPTH; i++)
+	active_layers[i] = save_layers[i];
+}
+
+/* restore depth counts and reset min/max depth */
+
+void
+restore_depths()
+{
+    int		 i;
+    min_depth = saved_min_depth;
+    max_depth = saved_max_depth;
+    for (i=0; i<=MAX_DEPTH; i++)
+	object_depths[i] = saved_depths[i];
+    /* refresh the layer manager */
+    update_layers();
+}
+
+void
+restore_counts()
+{
+    int		 i;
+    for (i=0; i<=MAX_DEPTH; i++)
+	 counts[i] = saved_counts[i];
+}
+

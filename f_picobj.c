@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1992 by Brian Boyter
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -34,24 +34,19 @@
 #include <xpm.h>
 #endif /* USE_XPM */
 
-#ifdef V4_0
-extern	int	read_figure();
-#endif /* V4_0 */
 extern	int	read_gif();
 extern	int	read_pcx();
 extern	int	read_epsf();
+extern	int	read_png();
 extern	int	read_ppm();
 extern	int	read_tif();
 extern	int	read_xbm();
 #ifdef USE_JPEG
 extern	int	read_jpg();
-#endif
-#ifdef USE_PNG
-extern	int	read_png();
-#endif
+#endif /* USE_JPEG */
 #ifdef USE_XPM
 extern	int	read_xpm();
-#endif
+#endif /* USE_XPM */
 
 #define MAX_SIZE 255
 
@@ -63,9 +58,6 @@ static	 struct hdr {
 	    Boolean	pipeok;
 	}
 	headers[]= {    {"GIF", "GIF",		    3, read_gif,	True},
-#ifdef V4_0
-			{"FIG", "#FIG",		    4, read_figure, True},
-#endif /* V4_0 */
 			{"PCX", "\012\005\001",	    3, read_pcx,	True},
 			{"EPS", "%!",		    2, read_epsf,	True},
 			{"PPM", "P3",		    2, read_ppm,	True},
@@ -76,45 +68,47 @@ static	 struct hdr {
 #ifdef USE_JPEG
 			{"JPEG", "\377\330\377\340", 4, read_jpg,	True},
 			{"JPEG", "\377\330\377\341", 4, read_jpg,       True},
-#endif
-#ifdef USE_PNG
+#endif /* USE_JPEG */
 			{"PNG", "\211\120\116\107\015\012\032\012", 8, read_png, True},
-#endif
 #ifdef USE_XPM
 			{"XPM", "/* XPM */",	    9, read_xpm,	False},
-#endif
+#endif /* USE_XPM */
 			};
 
 #define NUMHEADERS sizeof(headers)/sizeof(headers[0])
 
-read_picobj(pic,color)
+/*
+ * Check through the pictures repository to see if "file" is already there.
+ * If so, set the pic->pic_cache pointer to that repository entry and set
+ * "existing" to True.
+ * If not, read the file via the relevant reader and add to the repository
+ * and set "existing" to False.
+ * If "force" is true, read the file unconditionally.
+ */
+
+read_picobj(pic, file, color, force, existing)
     F_pic	   *pic;
+    char	   *file;
     Color	    color;
+    Boolean	    force;
+    Boolean	   *existing;
 {
     FILE	   *fd;
     int		    type;
     int		    i,j,c;
     char	    buf[20],realname[PATH_MAX];
-    Boolean	    found;
+    Boolean	    found, reread;
+    struct _pics   *pics, *lastpic;
+    struct stat	    file_status;
 
     pic->color = color;
     /* don't touch the flipped flag - caller has already set it */
-    pic->subtype = T_PIC_NONE;
-    pic->bitmap = (unsigned char *) NULL;
     pic->pixmap = (Pixmap) NULL;
     pic->hw_ratio = 0.0;
-    pic->size_x = 0;
-    pic->size_y = 0;
-    pic->bit_size.x = 0;
-    pic->bit_size.y = 0;
-    pic->numcols = 0;
     pic->pix_rotation = 0;
     pic->pix_width = 0;
     pic->pix_height = 0;
     pic->pix_flipped = 0;
-#ifdef V4_0
-    pic->figure = (struct f_compound*) NULL;
-#endif
 
     /* check if user pressed cancel button */
     if (check_cancel())
@@ -123,11 +117,80 @@ read_picobj(pic,color)
     put_msg("Reading Picture object file...");
     app_flush();
 
+    /* look in the repository for this filename */
+    lastpic = pictures;
+    reread = False;
+    for (pics = pictures; pics; pics = pics->next) {
+	if (strcmp(pics->file, file)==0) {
+	    /* found it - make sure the timestamp is newer than the timestamp of the file  */
+	    /* check both the "realname" and the original name */
+	    if ((stat(pics->realname, &file_status) != 0) && (stat(pics->file, &file_status) != 0)) {
+		/* oops, doesn't exist? */
+		file_msg("Error %s on %s",strerror(errno),file);
+		return;
+	    }
+	    /* or if force is true then reread it */
+	    if (force || (file_status.st_mtime > pics->time_stamp)) {
+		reread = True;
+		break;			/* no, re-read the file */
+	    }
+	    pic->pic_cache = pics;
+	    pics->refcount++;
+	    if (appres.DEBUG)
+		fprintf(stderr,"Found stored picture %s, count=%d\n",file,pics->refcount);
+	    /* if there is a bitmap, return, otherwise fall through and reread the file */
+	    if (pics->bitmap != NULL) {
+		*existing = True;
+		put_msg("Reading Picture object file...found cached picture");
+		return;
+	    }
+	    if (appres.DEBUG)
+		fprintf(stderr,"Re-reading file\n");
+	}
+	/* keep pointer to last entry */
+	lastpic = pics;
+    }
+    *existing = False;
+    if (reread) {
+	if (appres.DEBUG)
+	    fprintf(stderr,"Timestamp changed, reread file %s\n",file);
+    } else if (pics == NULL) {
+	/* didn't find it in the repository, add it */
+	pics = create_picture_entry();
+	if (lastpic) {
+	    /* add to list */
+	    lastpic->next = pics;
+	    pics->prev = lastpic;
+	} else {
+	    /* first one */
+	    pictures = pics;
+	}
+	pics->file = strdup(file);
+	pics->refcount = 1;
+	pics->bitmap = (unsigned char *) NULL;
+	pics->subtype = T_PIC_NONE;
+	pics->numcols = 0;
+	pics->size_x = 0;
+	pics->size_y = 0;
+	pics->bit_size.x = 0;
+	pics->bit_size.y = 0;
+	if (appres.DEBUG)
+	    fprintf(stderr,"New picture %s\n",file);
+    }
+    /* put it in the pic */
+    pic->pic_cache = pics;
+    pic->pixmap = (Pixmap) NULL;
+
     /* open the file and read a few bytes of the header to see what it is */
-    if ((fd=open_picfile(pic->file, &type, PIPEOK, realname)) == NULL) {
-	file_msg("No such picture file: %s",pic->file);
+    if ((fd=open_picfile(file, &type, PIPEOK, realname)) == NULL) {
+	file_msg("No such picture file: %s",file);
 	return;
     }
+    /* get the modified time and save */
+    (void) stat(file, &file_status);
+    pics->time_stamp = file_status.st_mtime;
+    /* and save the realname (it may be compressed) */
+    pics->realname = strdup(realname);
 
     /* read some bytes from the file */
     for (i=0; i<15; i++) {
@@ -149,25 +212,24 @@ read_picobj(pic,color)
 	    break;
     }
     if (found) {
-	/* open it again (it may be a pipe so we can't just rewind) */
-	fd=open_picfile(pic->file, &type, headers[i].pipeok, realname);
 	if (headers[i].pipeok) {
+	    /* open it again (it may be a pipe so we can't just rewind) */
+	    fd=open_picfile(file, &type, headers[i].pipeok, realname);
 	    if ( (*headers[i].readfunc)(fd,type,pic) == FileInvalid) {
-		file_msg("%s: Bad %s format",pic->file, headers[i].type);
+		file_msg("%s: Bad %s format",file, headers[i].type);
 	    }
 	} else {
 	    /* those routines that can't take a pipe (e.g. xpm) get the real filename */
 	    if ( (*headers[i].readfunc)(realname,type,pic) == FileInvalid) {
-		file_msg("%s: Bad %s format",pic->file, headers[i].type);
+		file_msg("%s: Bad %s format",file, headers[i].type);
 	    }
 	}
 	put_msg("Reading Picture object file...Done");
-	close_picfile(fd,type);
 	return;
     }
-	    
+
     /* none of the above */
-    file_msg("%s: Unknown image format",pic->file);
+    file_msg("%s: Unknown image format",file);
     put_msg("Reading Picture object file...Failed");
     app_flush();
 }
@@ -264,15 +326,17 @@ open_picfile(name, type, pipeok, retname)
 void
 close_picfile(file,type)
     FILE	*file;
-    int		type;
+    int		 type;
 {
-    char line[MAX_SIZE];
+    char	 line[MAX_SIZE];
+    int		 stat;
 
     if (file == 0)
 	return;
-    if (type == 0)
-	fclose(file);
-    else{
+    if (type == 0) {
+	if ((stat=fclose(file)) != 0)
+	    file_msg("Error closing picture file: %s",strerror(errno));
+    } else {
 	/* for a pipe, must read everything or we'll get a broken pipe message */
         while(fgets(line,MAX_SIZE,file))
 		;

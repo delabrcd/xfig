@@ -1,17 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -19,6 +19,7 @@
 #include "resources.h"
 #include "w_cmdpanel.h"
 #include "w_icons.h"
+#include "w_indpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
 
@@ -27,7 +28,7 @@
 int		TOOL_WD, TOOL_HT;
 int		CMDFORM_WD, CMDFORM_HT = CMD_BUT_HT;
 int		NAMEPANEL_WD;
-int		MODEPANEL_WD, MODEPANEL_HT;
+int		MODEPANEL_WD;
 int		MODEPANEL_SPACE;
 int		MSGPANEL_WD;
 int		MSGPANEL_HT = 18;

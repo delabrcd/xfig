@@ -1,22 +1,22 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1995 Jim Daley (jdaley@cix.compulink.co.uk)
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
 /*
   Screen capture functions - let user draw rectangle on screen
-  and write a pcx file of the contents of that area.
+  and write a png file of the contents of that area.
 */
 
 #include "fig.h"
@@ -25,11 +25,10 @@
 #include "w_capture.h"
 #include "w_msgpanel.h"
 
-static Boolean  getImageData();	  	/* returns zero on failure */
-static Boolean  selectedRootArea();	/* returns zero on failure */
-static void drawRect();
-static int  getCurrentColors();		/* returns number of colors in map */
-
+static Boolean	getImageData();	  	/* returns zero on failure */
+static Boolean	selectedRootArea();	/* returns zero on failure */
+static void	drawRect();
+static int	getCurrentColors();	/* returns number of colors in map */
 
 static unsigned char *data;		/* pointer to captured & converted data */
 
@@ -54,21 +53,20 @@ char *filename;
     int      		width, height;
     Boolean		status;
 
-    FILE		*pcxfile;
-    char		*dptr;
-    int			i,j;
+    FILE		*pngfile;
+    int			 type;
 
     if (!ok_to_write(filename, "EXPORT") )
 	return(False);
 
-    /* unmap the xfig windows, capture a gif/pcx then remap our windows */
+    /* unmap the xfig windows, capture a png then remap our windows */
 
     XtUnmapWidget(tool);
     XtUnmapWidget(window);
     app_flush();
 
     /* capture the screen area */
-    status = getImageData(&width, &height, &numcols, Red, Green, Blue);
+    status = getImageData(&width, &height, &type, &numcols, Red, Green, Blue);
 
     /* make sure server is ungrabbed if we're debugging */
     app_flush();
@@ -80,20 +78,21 @@ char *filename;
 	put_msg("Nothing Captured.");
 	app_flush();
 	captured = False;
- } else {
+    } else {
 	/* encode the image and write to the file */
-	put_msg("Writing binary PCX file...");
+	put_msg("Writing screenshot to PNG file...");
 
 	app_flush();
 
-	if ((pcxfile = fopen(filename,"wb"))==0) {
-	    file_msg("Cannot open PCX file %s for writing",filename);
-	    put_msg("Cannot open PCX file %s for writing",filename);
+	if ((pngfile = fopen(filename,"wb"))==0) {
+	    file_msg("Cannot open PNG file %s for writing",filename);
+	    put_msg("Cannot open PNG file %s for writing",filename);
 	    captured = False;
 	} else {
-	    /* write the pcx file */
-	    _write_pcx(pcxfile, data, Red, Green, Blue, numcols, width, height);
-	    fclose(pcxfile);
+	    /* write the png file */
+	    if (!write_png(pngfile, data, type, Red, Green, Blue, numcols, width, height))
+		file_msg("Problem writing PNG file from screen capture");
+	    fclose(pngfile);
 	    captured = True;
 	}
 
@@ -103,59 +102,177 @@ char *filename;
    return ( captured );
 }
 
+/*
+ * Get the image data from the screen
+ * width returned in w, height in h
+ * image type (IMAGE_RGB or IMAGE_PALETTE) stored in type
+ * colormap for IMAGE_PALETTE stored in Red, Green, Blue with
+ *		number of colors stored in nc
+ *
+ * Returns False on failure
+ */
+
+/* count how many bits to shift mask to the right to end up with a "1" in the lsb */
+
+int
+rshift(mask)
+    int		mask;
+{
+    register int i;
+
+    for (i=0; i<32; i++) {
+	if (mask&1)
+	    break;
+	mask >>= 1;
+    }
+    return i;
+}
 
 static Boolean
-getImageData(w, h, nc, Red, Green, Blue) /* returns False on failure */
-  int *w, *h, *nc;
+getImageData(w, h, type, nc, Red, Green, Blue) 
+  int *w, *h, *type, *nc;
   unsigned char Red[], Green[], Blue[];
 {
-  XColor colors[MAX_COLORMAP_SIZE];
-  int colused[MAX_COLORMAP_SIZE];
-  int mapcols[MAX_COLORMAP_SIZE];
+    XColor	colors[MAX_COLORMAP_SIZE];
+    int		colused[MAX_COLORMAP_SIZE];
+    int		mapcols[MAX_COLORMAP_SIZE];
+    int		red, green, blue;
+    int		red_mask, green_mask, blue_mask;
+    int		red_shift, green_shift, blue_shift;
 
-  int x, y, width, height;
-  Window cw;
-  static XImage *image;
+    int		x, y, width, height;
+    Window	cw;
+    static	XImage *image;
 
-  int i;
-  int numcols;
-  unsigned char *iptr, *dptr;
+    int		i, j;
+    int		numcols;
+    int		bytes_per_pixel, bit_order, byte_order;
+    int		byte_inc;
+    int		pix;
+    unsigned char *iptr, *rowptr, *dptr;
 
-  sleep(1);   /* in case he'd like to click on something */
-  if ( selectedRootArea( &x, &y, &width, &height, &cw ) == False )
-     return False;
+    sleep(1);   /* in case he'd like to click on something */
+    if ( selectedRootArea( &x, &y, &width, &height, &cw ) == False )
+	return False;
 
-  image = XGetImage(tool_d, XDefaultRootWindow(tool_d),
+    image = XGetImage(tool_d, XDefaultRootWindow(tool_d),
 				 x, y, width, height, AllPlanes, ZPixmap);
-  if (!image || !image->data) {
-    fprintf(stderr, "Cannot capture %dx%d area - memory problems?\n",
-								width,height);
-    return False;
-  }
+    if (!image || !image->data) {
+	file_msg("Cannot capture %dx%d area - memory problems?",
+							width,height);
+	return False;
+    }
 
 
-  /* if we get here we got an image! */
-  *w = width = image->width;
-  *h = height = image->height;
+    /* if we get here we got an image! */
+    *w = width = image->width;
+    *h = height = image->height;
 
-  numcols = getCurrentColors(XDefaultRootWindow(tool_d), colors);
-  if ( numcols <= 0 ) {  /* ought not to get here as capture button
-                 should not appear for these displays */
-    fprintf(stderr, "Cannot handle a display without a colormap.\n");
-    XDestroyImage( image );
-    return False;
-  }
+    if (tool_vclass == TrueColor) {
+	*type = IMAGE_RGB;
+	bytes_per_pixel = 3;
+    } else {
+	/* PseudoColor, get color table */
+	*type = IMAGE_PALETTE;
+	bytes_per_pixel = 1;
+	numcols = getCurrentColors(XDefaultRootWindow(tool_d), colors);
+	if ( numcols <= 0 ) {  /* ought not to get here as capture button
+			    should not appear for these displays */
+	    file_msg("Cannot handle a display without a colormap.");
+	    XDestroyImage( image );
+	    return False;
+	}
+    }
 
-  iptr = (unsigned char *) image->data;
-  dptr = data = (unsigned char *) malloc(height*width);
-  if ( !dptr ) {
-    fprintf(stderr, "Insufficient memory to convert image.\n");
-    XDestroyImage(image);
-    return False;
-  }
+    iptr = rowptr = (unsigned char *) image->data;
+    dptr = data = (unsigned char *) malloc(height*width*bytes_per_pixel);
+    if ( !dptr ) {
+	file_msg("Insufficient memory to convert image.");
+	XDestroyImage(image);
+	return False;
+    }
      
-  if (tool_cells  >  2) { /* color */
-	/* copy them to the Red, Green and Blue arrays */
+    if (tool_vclass == TrueColor) {
+	byte_order = image->byte_order;			/* MSBFirst or LSBFirst */
+	bit_order = image->bitmap_bit_order;		/* MSBFirst or LSBFirst */
+	red_mask = image->red_mask;
+	green_mask = image->green_mask;
+	blue_mask = image->blue_mask;
+	/* find how many bits we need to shift values */
+	red_shift = rshift(red_mask);
+	green_shift = rshift(green_mask);
+	blue_shift = rshift(blue_mask);
+	switch (image->bits_per_pixel) {
+	    case 8: byte_inc = 1;
+		    break;
+	    case 16: byte_inc = 2;
+		    break;
+	    case 24: byte_inc = 3;
+		    break;
+	    case 32: byte_inc = 4;
+		    break;
+	    default: byte_inc = 4;
+		    break;
+	}
+
+	for (i=0; i<image->height; i++) {
+	    for (j=0; j<image->width; j++) {
+		if (byte_order == MSBFirst) {
+		    switch (image->depth) {
+			case 8:
+				pix =  (unsigned char) *iptr;
+				break;
+			case 16: 
+				pix =  (short) (*iptr << 8);
+				pix += (unsigned char) *(iptr+1);
+				break;
+			case 24:
+			case 32:
+				pix =  (int) (*iptr << 16);
+				pix += (short) (*(iptr+1) << 8);
+				pix += (unsigned char) (*(iptr+2));
+				break;
+		    }
+		} else {
+		    /* LSBFirst */
+		    switch (image->depth) {
+			case 8:
+				pix =  (unsigned char) *iptr;
+				break;
+			case 16: 
+				pix =  (unsigned char) *iptr;
+				pix += (short) (*(iptr+1) << 8);
+				break;
+			case 24:
+			case 32:
+				pix =  (unsigned char) *iptr;
+				pix += (short) (*(iptr+1) << 8);
+				pix += (int) (*(iptr+2) << 16);
+				break;
+		    }
+		} /* if (byte_order ...) */
+
+		/* increment pixel pointer */
+		iptr += byte_inc;
+
+		/* now extract the red, green and blue values using the masks and shifting */
+
+		red   = (pix & red_mask) >> red_shift;
+		green = (pix & green_mask) >> green_shift;
+		blue  = (pix & blue_mask) >> blue_shift;
+		/* store in output data */
+		*(dptr++) = (unsigned char) red;
+		*(dptr++) = (unsigned char) green;
+		*(dptr++) = (unsigned char) blue;
+	    } /* for (j=0; j<image->width ... */
+
+	    /* advance to next scanline row */
+	    rowptr += image->bytes_per_line;
+	    iptr = rowptr;
+	} /* for (i=0; i<image->height ... */
+
+    } else if (tool_cells > 2) { 
+	/* color image with color table (PseudoColor) */
 	for (i=0; i<numcols; i++) {
 	    colused[i] = 0;
 	}
@@ -175,6 +292,7 @@ getImageData(w, h, nc, Red, Green, Blue) /* returns False on failure */
 	/* count the number of colors used */
 	*nc = numcols;
         numcols = 0;
+	/* and put them in the Red, Green and Blue arrays */
 	for (i=0; i< *nc; i++) {
 	    if (colused[i]) {
 		mapcols[i] =  numcols;
@@ -185,13 +303,13 @@ getImageData(w, h, nc, Red, Green, Blue) /* returns False on failure */
 	    }
 	}
 	/* remap the pixels */
-	for (i=0, dptr = data; i < width*height; i++, dptr++)
-	  {
+	for (i=0, dptr = data; i < width*height; i++, dptr++) {
 	    *dptr = mapcols[*dptr];
-	  }
+	}
+	*nc = numcols;
 
-  /* monochrome, copy bits to bytes */
-  } else {
+    /* monochrome, copy bits to bytes */
+    } else {
 	int	bitp;
 	x = 0;
 	for (i=0; i<image->bytes_per_line*height; i++, iptr++) {
@@ -227,13 +345,12 @@ getImageData(w, h, nc, Red, Green, Blue) /* returns False on failure */
 	    Blue[i]  = colors[i].blue >> 8;
 	}
 	numcols = 2;
-  }
-  *nc = numcols;
-
-  XDestroyImage(image);
-  return True;
+	*nc = numcols;
+    }
+    /* free the image structure */
+    XDestroyImage(image);
+    return True;
 }
-
 
 
 #define PTR_BUTTON_STATE( wx, wy, msk ) \
@@ -440,14 +557,14 @@ getCurrentColors(w, colors)
   XGetWindowAttributes(tool_d, w, &xwa);
 
   if (xwa.visual->class == TrueColor) {
-    fprintf(stderr,"TrueColor visual No colormap.\n");
+    file_msg("TrueColor visual No colormap.");
     return 0;
   }
 
   else if (!xwa.colormap) {
     XGetWindowAttributes(tool_d, XDefaultRootWindow(tool_d), &xwa);
     if (!xwa.colormap) {
-       fprintf(stderr,"no Colormap available.\n");
+       file_msg("no Colormap available.");
        return 0;
     }
   }
@@ -515,20 +632,13 @@ canHandleCapture( d )
     XGetWindowAttributes(d, XDefaultRootWindow(d), &xwa);
 
     if (!xwa.colormap) {
-      file_msg("Can't capture screen because no colormap found");
-      return False;
-    } else if (8 < xwa.depth) {
-      file_msg("Can't capture screen because its depth (%d) is more than 8bpp",
-	       xwa.depth);
-      return False;
-    } else if (xwa.visual->class == TrueColor) {
-      file_msg("Can't capture screen because its visual class is TrueColor");
-      return False;
+	file_msg("Can't capture screen because no colormap found");
+	return False;
     } else if (MAX_COLORMAP_SIZE < xwa.visual->map_entries) {
-      file_msg("Can't capture screen because colormap (%d) is larger than %d",
-	       xwa.visual->map_entries, MAX_COLORMAP_SIZE);
-      return False;
+	file_msg("Can't capture screen because colormap (%d) is larger than %d",
+				       xwa.visual->map_entries, MAX_COLORMAP_SIZE);
+	return False;
     } else {
-      return True;
+	return True;
     }
 }

@@ -1,16 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1999-2000 by Brian V. Smith
  * Parts Copyright (c) 1990 David Koblas
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  *
  */
 
@@ -40,7 +40,7 @@ static Boolean	DoGIFextension();
 static int	GetDataBlock();
 
 #define LOCALCOLORMAP		0x80
-#define	ReadOK(file,buffer,len)	(fread(buffer, len, 1, file) != 0)
+#define	ReadOK(file,buffer,len)	(fread((void *) buffer, (size_t) len, (size_t) 1, (FILE *) file) != 0)
 #define BitSet(byte, bit)	(((byte) & (bit)) == (bit))
 
 #define LM_to_uint(a,b)			(((b)<<8)|(a))
@@ -163,11 +163,11 @@ read_gif(file,filetype,pic)
 	}
 
 	/* save transparent indicator */
-	pic->transp = Gif89.transparent;
+	pic->pic_cache->transp = Gif89.transparent;
 
 	/* close it and open it again (it may be a pipe so we can't just rewind) */
-	close_picfile(file,filetype);
-	file = open_picfile(pic->file, &filetype, PIPEOK, pcxname);
+	close_picfile(file, filetype);
+	file = open_picfile(pic->pic_cache->file, &filetype, PIPEOK, pcxname);
 	
 	/* now call giftopnm and ppmtopcx */
 
@@ -177,6 +177,7 @@ read_gif(file,filetype,pic)
 	sprintf(buf, "giftopnm | ppmtopcx > %s 2> /dev/null", pcxname);
 	if ((giftopcx = popen(buf,"w" )) == 0) {
 	    file_msg("Cannot open pipe to giftopnm or ppmtopcx\n");
+	    close_picfile(file,filetype);
 	    return FileInvalid;
 	}
 	while ((size=fread(buf, 1, BUFLEN, file)) != 0) {
@@ -186,36 +187,36 @@ read_gif(file,filetype,pic)
 	pclose(giftopcx);
 	if ((giftopcx = fopen(pcxname, "rb")) == NULL) {
 	    file_msg("Can't open temp output file\n");
+	    close_picfile(file,filetype);
 	    return FileInvalid;
 	}
 	/* now call read_pcx to read the pcx file */
 	stat = read_pcx(giftopcx, filetype, pic);
-	pic->subtype = T_PIC_GIF;
+	pic->pic_cache->subtype = T_PIC_GIF;
 
-	/* remove temp file after closing it */
-	fclose(giftopcx);
+	/* remove temp file */
 	unlink(pcxname);
 
 	/* now match original transparent colortable index with possibly new 
 	   colortable from ppmtopcx */
-	if (pic->transp != TRANSP_NONE) {
+	if (pic->pic_cache->transp != TRANSP_NONE) {
 	    if (useGlobalColormap) {
-		red = GifScreen.ColorMap[pic->transp].red;
-		green = GifScreen.ColorMap[pic->transp].green;
-		blue = GifScreen.ColorMap[pic->transp].blue;
+		red = GifScreen.ColorMap[pic->pic_cache->transp].red;
+		green = GifScreen.ColorMap[pic->pic_cache->transp].green;
+		blue = GifScreen.ColorMap[pic->pic_cache->transp].blue;
 	    } else {
-		red = localColorMap[pic->transp].red;
-		green = localColorMap[pic->transp].green;
-		blue = localColorMap[pic->transp].blue;
+		red = localColorMap[pic->pic_cache->transp].red;
+		green = localColorMap[pic->pic_cache->transp].green;
+		blue = localColorMap[pic->pic_cache->transp].blue;
 	    }
-	    for (i=0; i<pic->numcols; i++) {
-		if (pic->cmap[i].red == red &&
-		    pic->cmap[i].green == green &&
-		    pic->cmap[i].blue == blue)
+	    for (i=0; i<pic->pic_cache->numcols; i++) {
+		if (pic->pic_cache->cmap[i].red == red &&
+		    pic->pic_cache->cmap[i].green == green &&
+		    pic->pic_cache->cmap[i].blue == blue)
 			break;
 	    }
-	    if (i < pic->numcols)
-		pic->transp = i;
+	    if (i < pic->pic_cache->numcols)
+		pic->pic_cache->transp = i;
 	}
 
 	return stat;

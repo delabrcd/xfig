@@ -1,11 +1,11 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
 <html>
 <head>
-<title>XFIG User Manual - Fig Format 3.2</title>
+<title>Fig Format 3.2</title>
 </head>
 
 <body>
-<a href="contents.html"><img src="images/xfig-title.gif"
+<a href="contents.html"><img src="images/xfig-title.png"
   alt="XFIG Users Manual" border=0></a>
 
 <hr>
@@ -13,7 +13,7 @@
 <h1>Fig Format 3.2</h1>
 
 This is a description of the <i>Fig Format 3.2</i>,
-which is copied from <tt>xfig.3.2.x/Doc/FORMAT3.2</tt> 
+which is a copy of <tt>xfig.3.2.x/Doc/FORMAT3.2</tt> 
 in the <b>xfig 3.2.x</b> source distribution.
 
 <p>
@@ -21,21 +21,18 @@ in the <b>xfig 3.2.x</b> source distribution.
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-1999 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  */
 
 The new components in protocol 3.2 are the paper size, magnification,
@@ -61,9 +58,11 @@ that the converted curves are not exactly the same as the original ones.
 Though the translation usually provides almost identical curves, some
 hand-fitting may be needed in some pathological cases.
 
--------------------------------------------------------------------------------
-Description of the Fig Format Follows
--------------------------------------------------------------------------------
+</pre>
+<hr>
+<h2>Description of the Fig Format Follows</h2>
+<hr>
+<pre>
 
 (1) The very first line is a comment line containing the name and version:
 	#FIG 3.2
@@ -76,6 +75,7 @@ Description of the Fig Format Follows
     are associated.  In the case of the "whole figure comments" mentioned
     below, they immediately precede the (resolution,coord_system) line.
 
+<hr>
 (2) The first non-comment line consists of the following:
 
 	string	orientation		("Landscape" or "Portrait")
@@ -87,8 +87,8 @@ Description of the Fig Format Follows
 	float	magnification		(export and print magnification, %)
 	string	multiple-page		("Single" or "Multiple" pages)
 	int	transparent color	(color number for transparent color for GIF
-					 export. -2=None, -1=background, 0-31 for
-					 standard colors or 32- for user colors)
+					 export. -3=background, -2=None, -1=Default,
+					 0-31 for standard colors or 32- for user colors)
 	# optional comment		(An optional set of comments may be here,
 					 which are associated with the whole figure)
 	int	resolution coord_system	(Fig units/inch and coordinate system:
@@ -109,20 +109,23 @@ Description of the Fig Format Follows
     upper-left corner.
 
     ** Coordinates are given in "fig_resolution" units.
-    ** Line thicknesses are given in 80-ths of an inch ("display units").
+    ** Line thicknesses are given in 1/80 inch (0.3175mm) or 1 screen pixel.
+       When exporting to EPS, PostScript or any bitmap format (e.g. GIF),  the
+       line thickness is reduced to 1/160 inch (0.159mm) to "lighten" the look.
     ** dash-lengths/dot-gaps are given in 80-ths of an inch.
 
 
+<hr>
 (3) The rest of the file contains various objects.  An object can be one
     of six classes (or types).
 
 	0)	Color pseudo-object.
-	1)	Arc.
-	2)	Ellipse which is a generalization of circle.
-	3)	Polyline which includes polygon and box.
-	4)	Spline which includes 
+	1)	Ellipse which is a generalization of circle.
+	2)	Polyline which includes polygon and box.
+	3)	Spline which includes
 		closed/open approximated/interpolated/x-spline spline.
-	5)	Text.
+	4)	Text.
+	5)	Arc.
 	6)	Compound object which is composed of one or more objects.
 
     In the following elaboration on object formats, every value of fig
@@ -158,6 +161,11 @@ Description of the Fig Format Follows
 	 values from 32 to 543 (512 total) are user colors and
 	 are defined in color pseudo-objects (type 0)
 
+	 Your X server may limit the number of colors to something less
+	 than this, especially on a 8-bit PseudoColor visual, where
+	 the number of usable colors will be 256 minus the number of colors
+	 xfig preallocates for itself and the 32 standard colors (about 48).
+
     For WHITE color, the area fill field is defined as follows:
 	
 	-1 = not filled
@@ -192,16 +200,22 @@ Description of the Fig Format Follows
 	44 = 45 degree left diagonal pattern
 	45 = 45 degree right diagonal pattern
 	46 = 45 degree crosshatch
-	47 = bricks
-	48 = circles
+	47 = horizontal bricks
+	48 = vertical bricks
 	49 = horizontal lines
 	50 = vertical lines
 	51 = crosshatch
-	52 = fish scales
-	53 = small fish scales
-	54 = octagons
-	55 = horizontal "tire treads"
-	56 = vertical "tire treads"
+	52 = horizontal "shingles" skewed to the right
+	53 = horizontal "shingles" skewed to the left
+	54 = vertical "shingles" skewed one way
+	55 = vertical "shingles"skewed the other way
+	56 = fish scales
+	57 = small fish scales
+	58 = circles
+	59 = hexagons
+	60 = octagons
+	61 = horizontal "tire treads"
+	62 = vertical "tire treads"
 
     The depth field is defined as follows:
 
@@ -225,8 +239,8 @@ Description of the Fig Format Follows
     The join_style field is defined FOR LINES only as follows:
 
 	 0 = Miter (the default in xfig 2.1 and earlier)
-	 1 = Bevel
-	 2 = Round
+	 1 = Round
+	 2 = Bevel
 
     The cap_style field is defined FOR LINES, OPEN SPLINES and ARCS only as follows:
 
@@ -283,7 +297,11 @@ Description of the Fig Format Follows
 	 0 = Hollow (actually filled with white)
 	 1 = Filled with pen_color
 
-(3.0) OBJECT DEFINITION:
+</pre>
+<hr>
+<h3>(3.0) Object Definitions</h3>
+<hr>
+<pre>
 
     (3.1) Color Pseudo-objects (user-defined colors)
 	  This is used to define arbitrary colors beyond the 32 standard colors.
@@ -297,14 +315,15 @@ Description of the Fig Format Follows
      hex string	rgb values		(hexadecimal string describing red,
 					 green and blue values (e.g. #330099) )
 
+<hr>
     (3.2) ARC
 
     First line:
 	type	name			(brief description)
 	----	----			-------------------
 	int	object_code		(always 5)
-	int	sub_type		(0: pie-wedge (closed)
-					 1: open ended arc)
+	int	sub_type		(1: open ended arc
+					 2: pie-wedge (closed) )
 	int	line_style		(enumeration type)
 	int	line_thickness		(1/80 inch)
 	int	pen_color		(enumeration type, pen color)
@@ -316,7 +335,7 @@ Description of the Fig Format Follows
 	int	cap_style		(enumeration type)
 	int	direction		(0: clockwise, 1: counterclockwise)
 	int	forward_arrow		(0: no forward arrow, 1: on)
-	int	backward_arrow		(0: no forward arrow, 1: on)
+	int	backward_arrow		(0: no backward arrow, 1: on)
 	float	center_x, center_y	(center of the arc)
 	int	x1, y1			(Fig units, the 1st point the user entered)
 	int	x2, y2			(Fig units, the 2nd point)
@@ -340,6 +359,7 @@ Description of the Fig Format Follows
 	float	arrow_width		(Fig units)
 	float	arrow_height		(Fig units)
 
+<hr>
     (3.3) COMPOUND
 
     A line with object code 6 signifies the start of a compound.
@@ -365,6 +385,7 @@ Description of the Fig Format Follows
     Last line:
 	-6
 
+<hr>
     (3.4) ELLIPSE
 
     First line:
@@ -390,6 +411,7 @@ Description of the Fig Format Follows
 	int	start_x, start_y	(Fig units; the 1st point entered)
 	int	end_x, end_y		(Fig units; the last point entered)
 
+<hr>
     (3.5) POLYLINE
 
     First line:
@@ -420,7 +442,14 @@ Description of the Fig Format Follows
 
     Backward arrow line: same as ARC object
 
-    Points line:
+    For picture (type 5) the following line follows:
+	type	name			(brief description)
+	----	----			-------------------
+	boolean	flipped			orientation = normal (0) or flipped (1)
+	char	file[]			name of picture file to import
+
+    Points line(s).  The x,y coordinates follow, any number to a line, with
+    as many lines as are necessary:
 	type	name			(brief description)
 	----	----			-------------------
 	int	x1, y1			(Fig units)
@@ -430,23 +459,18 @@ Description of the Fig Format Follows
 	int	xnpoints ynpoints	(this will be the same as the 1st
 					point for polygon and box)
 
-    PIC line:
-	type	name			(brief description)
-	----	----			-------------------
-	boolean	flipped			orientation = normal (0) or flipped (1)
-	char	file[]			name of picture file to import
-
+<hr>
     (3.6) SPLINE
 
     First line:
 	type	name			(brief description)
 	----	----			-------------------
 	int	object_code		(always 3)
-	int	sub_type		(0: opened approximated spline
+	int	sub_type		(0: open approximated spline
 					     1: closed approximated spline
-					     2: opened interpolated spline
+					     2: open   interpolated spline
 					     3: closed interpolated spline
-					     4: opened x-spline 
+					     4: open   x-spline 
 					     5: closed x-spline)
 	int	line_style		(See the end of this section)
 	int	thickness		(1/80 inch)
@@ -476,6 +500,7 @@ Description of the Fig Format Follows
     control point, except when the value of	the factor is 0 for which
     there is a first-order discontinuity (i.e. angular point).
 
+<hr>
     (3.7) TEXT
 	type	name			(brief description)
 	----	----			-------------------

@@ -1,18 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2000 by Brian V. Smith
+ * Parts Copyright (c) 1989-2002 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons who receive
- * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.
- *
+ * rights to use, copy, modify, merge, publish and/or distribute copies of
+ * the Software, and to permit persons who receive copies from any such 
+ * party to do so, with the only requirement being that this copyright 
+ * notice remain intact.
  */
 
 /********************** DECLARATIONS ********************/
@@ -30,6 +29,7 @@
 #include "u_list.h"
 #include "w_canvas.h"
 #include "w_cursor.h"
+#include "w_drawprim.h"
 #include "w_msgpanel.h"
 #include "w_mousefun.h"
 #include "u_geom.h"
@@ -37,6 +37,8 @@
 /* EXPORT */
 
 F_pos		point[3];
+F_pos		center_point;
+Boolean		center_marked;
 
 /* LOCAL */
 
@@ -45,9 +47,12 @@ static void	get_arcpoint();
 static void	init_arc_drawing();
 static void	cancel_arc();
 static void	init_arc_c_drawing();
+static void	resizing_arc();
 
-static Boolean	center_marked;
-F_pos	center_point;
+static F_arc	*tmparc = 0;
+static F_pos	tpoint[3];
+
+static Boolean save_shownums;
 
 void
 arc_drawing_selected()
@@ -63,43 +68,46 @@ arc_drawing_selected()
     reset_action_on();
 }
 
-static int save_cur_x, save_fix_x, save_cur_y, save_fix_y;
-
 static void
 init_arc_drawing(x, y)
-    int		    x, y;
+    int		x, y;
 {
+    int		i;
     if (center_marked) {
-	save_cur_x = cur_x;
-	save_fix_x = fix_x;
-	save_cur_y = cur_y;
-	save_fix_y = fix_y;
-	set_mousefun("mid angle", "", "cancel", "", "", "");
-	canvas_locmove_proc = unconstrained_line;
-	d_line(center_point.x, center_point.y, 
-		(int)(0.2*(x-center_point.x)+x),
-		(int)(0.2*(y-center_point.y)+y));
+	/* erase the circle */
+	elastic_cbr();
+	/* save and turn off showing vertex numbers */
+	save_shownums   = appres.shownums;
+	appres.shownums = False;
+	set_mousefun("direction", "", "cancel", "", "", "");
+	tmparc = create_arc();
+	tmparc->thickness = 1;
+	tmparc->center.x = center_point.x;
+	tmparc->center.y = center_point.y;
+	/* initialize points in elastic arc */
+	for (i=0; i<3; i++) {
+	    tpoint[i].x = x;
+	    tpoint[i].y = y;
+	}
+	/* start the arc */
+	elastic_arc();
+	canvas_locmove_proc = resizing_arc;
     } else {
 	set_mousefun("mid point", "", "cancel", "", "", "");
     }
     draw_mousefun_canvas();
     canvas_rightbut_proc = cancel_arc;
-    num_point = 0;
-    point[num_point].x = fix_x = cur_x = x;
-    point[num_point++].y = fix_y = cur_y = y;
-    if (!center_marked)
+    point[0].x = fix_x = cur_x = x;
+    point[0].y = fix_y = cur_y = y;
+    num_point = 1;
+    if (!center_marked) {
 	canvas_locmove_proc = unconstrained_line;
+	elastic_line();
+    }
     canvas_leftbut_proc = get_arcpoint;
     canvas_middlebut_proc = null_proc;
-    elastic_line();
     set_cursor(null_cursor);
     set_action_on();
-}
-
-d_line(x1,y1,x2,y2)
-    int x1,y1,x2,y2;
-{
-    pw_vector(canvas_win, x1, y1, x2, y2, INV_PAINT, 1, RUBBER_LINE, 0.0, RED);
 }
 
 static void
@@ -115,44 +123,38 @@ init_arc_c_drawing(x, y)
     center_point.y = fix_y = cur_y = y;
     center_marked = TRUE;
     center_marker(center_point.x, center_point.y);
+    set_action_on();
     num_point = 0;
 }
 
 static void
 cancel_arc()
 {
-    if (!center_marked || num_point > 0)
-	elastic_line();
-    /* erase any length info if appres.showlengths is true */
-    erase_lengths();
-    if (num_point == 2) {
-	/* erase initial part of line */
-	cur_x = point[0].x;
-	cur_y = point[0].y;
-	elastic_line();
-    }
     if (center_marked) {
-	if (num_point >= 1) {
-	    d_line(center_point.x, center_point.y,
-		(int)(0.2*(point[0].x-center_point.x)+point[0].x),
-		(int)(0.2*(point[0].y-center_point.y)+point[0].y));
-	}
-	if (num_point == 2) {
-	    d_line(center_point.x, center_point.y,
-		(int)(0.2*(point[1].x-center_point.x)+point[1].x),
-		(int)(0.2*(point[1].y-center_point.y)+point[1].y));
-	}
 	/* erase circle */
-	if (canvas_locmove_proc != resizing_cbr) {
-	    /* restore saved circle if we already made one or more points */
-	    cur_x = save_cur_x;
-	    fix_x = save_fix_x;
-	    cur_y = save_cur_y;
-	    fix_y = save_fix_y;
+	if (num_point == 0)
+	    elastic_cbr();
+	else
+	    elastic_arc();
+	/* free the temporary arc */
+	if (tmparc) {
+	    free_arc(tmparc);
+	    tmparc = (F_arc *) 0;
 	}
-	elastic_cbr();
 	center_marked = FALSE;
 	center_marker(center_point.x, center_point.y);  /* clear center marker */
+	/* restore shownums */
+	appres.shownums = save_shownums;
+    } else {
+      /* erase any length info if appres.showlengths is true */
+      erase_lengths();
+	elastic_line();
+	if (num_point == 2) {
+	    /* erase initial part of line */
+	    cur_x = point[0].x;
+	    cur_y = point[0].y;
+	    elastic_line();
+	}
     }
     arc_drawing_selected();
     draw_mousefun_canvas();
@@ -168,34 +170,22 @@ get_arcpoint(x, y)
     if (num_point == 1) {
 	if (center_marked) {
   	    set_mousefun("final angle", "", "cancel", "", "", "");
-	    d_line(center_point.x, center_point.y,
-		(int)(0.2*(x-center_point.x)+x),
-		(int)(0.2*(y-center_point.y)+y));
 	} else {
 	    set_mousefun("final point", "", "cancel", "", "", "");
 	}
 	draw_mousefun_canvas();
+	canvas_leftbut_proc = create_arcobject;
     }
-    if (num_point == 2) {
-	if (center_marked) {
-	    /* erase circle */
-	    cur_x = save_cur_x;
-	    fix_x = save_fix_x;
-	    cur_y = save_cur_y;
-	    fix_y = save_fix_y;
-	    elastic_cbr();
-	}
-	/* create the arc */
-	create_arcobject(x, y);
-	return;
-    }
-    elastic_line();
+    if (!center_marked)
+	elastic_line();
     cur_x = x;
     cur_y = y;
-    elastic_line();
+    if (!center_marked)
+	elastic_line();
     point[num_point].x = fix_x = x;
     point[num_point++].y = fix_y = y;
-    elastic_line();
+    if (!center_marked)
+	elastic_line();
 }
 
 static void
@@ -206,40 +196,29 @@ create_arcobject(lx, ly)
     int		    x, y, i;
     float	    xx, yy;
 
+    /* erase last line segment */
     if (!center_marked)
 	elastic_line();
+    else /* restore shownums */
+	appres.shownums = save_shownums;
     /* erase any length info if appres.showlengths is true */
     erase_lengths();
-    cur_x = lx;
-    cur_y = ly;
-    if (!center_marked)
-	elastic_line();
     point[num_point].x = lx;
     point[num_point++].y = ly;
     x = point[0].x;
     y = point[0].y;
-    /* erase previous line segment(s) if necessary */
-    for (i = 1; i < num_point; i++) {
-	pw_vector(canvas_win, x, y, point[i].x, point[i].y, INV_PAINT,
-		  1, RUBBER_LINE, 0.0, DEFAULT);
-	x = point[i].x;
-	y = point[i].y;
-    }
-
     if (center_marked) {
 	double theta, r;
 
-	center_marker(center_point.x, center_point.y);  /* clear center marker */
-	/* clear away the two guide lines */
-	d_line(center_point.x, center_point.y,
-		(int)(0.2*(point[0].x-center_point.x)+point[0].x),
-		(int)(0.2*(point[0].y-center_point.y)+point[0].y));
-	d_line(center_point.x, center_point.y,
-		(int)(0.2*(point[1].x-center_point.x)+point[1].x),
-		(int)(0.2*(point[1].y-center_point.y)+point[1].y));
+	/* erase the center marker */
+	center_marker(center_point.x, center_point.y);
 
-	r = sqrt((point[0].x - center_point.x) * (point[0].x - center_point.x)
-	       + (point[0].y - center_point.y) * (point[0].y - center_point.y));
+	/* free the temporary arc */
+	free_arc(tmparc);
+
+	/* recompute the second and last points to put them on the arc */
+	r = sqrt((double)(point[0].x - center_point.x) * (point[0].x - center_point.x)
+	       + (double)(point[0].y - center_point.y) * (point[0].y - center_point.y));
 
 	theta = compute_angle((double)(point[1].x - center_point.x),
 			    (double)(point[1].y - center_point.y));
@@ -250,6 +229,10 @@ create_arcobject(lx, ly)
 			    (double)(point[2].y - center_point.y));
 	point[2].x = center_point.x + r * cos(theta);
 	point[2].y = center_point.y + r * sin(theta);
+    } else {
+	/* erase previous line segment */
+	pw_vector(canvas_win, x, y, point[1].x, point[1].y, INV_PAINT,
+		  1, RUBBER_LINE, 0.0, DEFAULT);
     }
 
     if (!compute_arccenter(point[0], point[1], point[2], &xx, &yy)) {
@@ -269,7 +252,7 @@ create_arcobject(lx, ly)
     arc->thickness = cur_linewidth;
     /* scale dash length according to linethickness */
     arc->style_val = cur_styleval * (cur_linewidth + 1) / 2;
-    arc->pen_style = 0;
+    arc->pen_style = -1;
     arc->fill_style = cur_fillstyle;
     arc->pen_color = cur_pencolor;
     arc->fill_color = cur_fillcolor;
@@ -307,3 +290,60 @@ create_arcobject(lx, ly)
     draw_mousefun_canvas();
 }
 
+static void
+resizing_arc(x, y)
+	int x, y;
+{
+    F_point	p3;
+    double	alpha;
+
+    elastic_arc();
+    cur_x = x;
+    cur_y = y;
+    p3.x = x;
+    p3.y = y;
+    if (num_point == 0)
+	length_msg(MSG_RADIUS);
+    else {
+	compute_3p_angle(&tpoint[0], &center_point, &p3, &alpha);
+	put_msg("1st angle = %.2f degrees", (float) alpha*180.0/M_PI);
+    }
+    elastic_arc();
+}
+
+void
+elastic_arc()
+{
+	register int i;
+	register double	r, theta1, theta2;
+
+	tpoint[2].x = cur_x;
+	tpoint[2].y = cur_y;
+	/* if user hasn't entered second point yet, make it average of endpoints */
+	if (num_point <= 1) {
+	    tpoint[1].x = (tpoint[0].x + cur_x)/2;
+	    tpoint[1].y = (tpoint[0].y + cur_y)/2;
+	}
+
+	if (tpoint[0].x == tpoint[2].x && tpoint[0].y == tpoint[2].y)
+		return;
+
+	r = sqrt((double)(tpoint[0].x - center_point.x) * (tpoint[0].x - center_point.x)
+	       + (double)(tpoint[0].y - center_point.y) * (tpoint[0].y - center_point.y));
+
+	theta1 = compute_angle((double)(tpoint[1].x - center_point.x),
+			    (double)(tpoint[1].y - center_point.y));
+	tpoint[1].x = center_point.x + r * cos(theta1);
+	tpoint[1].y = center_point.y + r * sin(theta1);
+      
+	theta2 = compute_angle((double)(tpoint[2].x - center_point.x),
+			    (double)(tpoint[2].y - center_point.y));
+	tpoint[2].x = center_point.x + r * cos(theta2);
+	tpoint[2].y = center_point.y + r * sin(theta2);
+
+	for (i=0; i<3; i++)
+	    tmparc->point[i] = tpoint[i];
+	tmparc->direction = compute_direction(tpoint[0], tpoint[1], tpoint[2]);
+
+	draw_arc(tmparc, INV_PAINT);
+}
