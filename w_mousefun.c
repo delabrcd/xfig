@@ -1,19 +1,27 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
 #include "figx.h"
 #include "resources.h"
+#include <X11/keysym.h>
 #include "w_util.h"
+#include "w_icons.h"	/* for kbd_ic */
 #include "w_drawprim.h"
 #include "w_mousefun.h"
 #include "w_setup.h"
@@ -145,6 +153,33 @@ set_mousefun(left, middle, right)
     strcpy(mousefun_r, right);
 }
 
+#define KBD_POS_X 210
+#define KBD_POS_Y 1
+
+void
+draw_mousefun_kbd()
+{
+    XPutImage(tool_d, mousefun_pm, mouse_button_gc, &kbd_ic,
+              0, 0, MOUSEFUN_WD-10-kbd_ic.width, KBD_POS_Y, 
+	      kbd_ic.width, kbd_ic.height);
+    FirstArg(XtNbackgroundPixmap, 0);
+    SetValues(mousefun);
+    FirstArg(XtNbackgroundPixmap, mousefun_pm);
+    SetValues(mousefun);
+}
+
+void
+clear_mousefun_kbd()
+{
+    XFillRectangle(tool_d, mousefun_pm, mouse_blank_gc,
+              MOUSEFUN_WD-10-kbd_ic.width, KBD_POS_Y, 
+	      kbd_ic.width, kbd_ic.height);
+    FirstArg(XtNbackgroundPixmap, 0);
+    SetValues(mousefun);
+    FirstArg(XtNbackgroundPixmap, mousefun_pm);
+    SetValues(mousefun);
+}
+
 void
 draw_mousefun_mode()
 {
@@ -164,15 +199,37 @@ draw_mousefun_unitbox()
 }
 
 void
-draw_mousefun_topruler()
+draw_mousefun_topruler(w, event, params, num_params)
+Widget w;
+XEvent *event;
+String *params;
+Cardinal *num_params;
 {
-    draw_mousefun("Pan Left", "Drag", "Pan Right");
+    if (event->type == KeyPress) {
+	KeySym	    key;
+	XKeyEvent  *xkey = (XKeyEvent *)event;
+	key = XLookupKeysym(xkey, 0);
+	if (key == XK_Shift_L || key == XK_Shift_R)
+	    draw_mousefun("Pan Left x5", "Drag x5", "Pan Right x5");
+    } else
+	draw_mousefun("Pan Left", "Drag", "Pan Right");
 }
 
 void
-draw_mousefun_sideruler()
+draw_mousefun_sideruler(w, event, params, num_params)
+Widget w;
+XEvent *event;
+String *params;
+Cardinal *num_params;
 {
-    draw_mousefun("Pan Up", "Drag", "Pan Down");
+    if (event->type == KeyPress) {
+	KeySym	    key;
+	XKeyEvent *xkey = (XKeyEvent *)event;
+	key = XLookupKeysym(xkey, 0);
+	if (key == XK_Shift_L || key == XK_Shift_R)
+	    draw_mousefun("Pan Up x5", "Drag x5", "Pan Down x5");
+    } else
+	draw_mousefun("Pan Up", "Drag", "Pan Down");
 }
 
 void
@@ -201,13 +258,15 @@ draw_mousefun(left, middle, right)
     draw_mousefn2(left, middle, right);
 }
 
+#define MOUSE_LR_Y 32
+#define MOUSE_MID_Y 10
 void
 draw_mousefn2(left, middle, right)
     char	   *left, *middle, *right;
 {
-    draw_mousefun_msg(left, MOUSE_LEFT_CTR, 30);
-    draw_mousefun_msg(middle, MOUSE_MID_CTR, 11);
-    draw_mousefun_msg(right, MOUSE_RIGHT_CTR, 30);
+    draw_mousefun_msg(left, MOUSE_LEFT_CTR, MOUSE_LR_Y);
+    draw_mousefun_msg(middle, MOUSE_MID_CTR, MOUSE_MID_Y);
+    draw_mousefun_msg(right, MOUSE_RIGHT_CTR, MOUSE_LR_Y);
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(mousefun);
     FirstArg(XtNbackgroundPixmap, mousefun_pm);
@@ -217,7 +276,7 @@ draw_mousefn2(left, middle, right)
 void
 notused_middle()
 {
-    draw_mousefun_msg("Not Used", MOUSE_MID_CTR, 11);
+    draw_mousefun_msg("Not Used", MOUSE_MID_CTR, MOUSE_MID_Y);
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(mousefun);
     FirstArg(XtNbackgroundPixmap, mousefun_pm);
@@ -227,7 +286,7 @@ notused_middle()
 void
 clear_middle()
 {
-    draw_mousefun_msg(mid_blank, MOUSE_MID_CTR, 11);
+    draw_mousefun_msg(mid_blank, MOUSE_MID_CTR, MOUSE_MID_Y);
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(mousefun);
     FirstArg(XtNbackgroundPixmap, mousefun_pm);
@@ -237,7 +296,7 @@ clear_middle()
 void
 notused_right()
 {
-    draw_mousefun_msg("Not Used", MOUSE_RIGHT_CTR, 30);
+    draw_mousefun_msg("Not Used", MOUSE_RIGHT_CTR, MOUSE_LR_Y);
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(mousefun);
     FirstArg(XtNbackgroundPixmap, mousefun_pm);
@@ -247,7 +306,7 @@ notused_right()
 void
 clear_right()
 {
-    draw_mousefun_msg(mid_blank, MOUSE_RIGHT_CTR, 30);
+    draw_mousefun_msg(mid_blank, MOUSE_RIGHT_CTR, MOUSE_LR_Y);
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(mousefun);
     FirstArg(XtNbackgroundPixmap, mousefun_pm);
@@ -260,4 +319,24 @@ clear_mousefun()
     draw_mousefn2(lr_blank, mid_blank, lr_blank);
     /* redraw the title in case the blanks overwrite it */
     mouse_title();
+}
+
+static XtActionsRec	kbd_actions[] =
+{
+    {"DrawMousefunKbd", (XtActionProc) draw_mousefun_kbd},
+    {"ClearMousefunKbd", (XtActionProc) clear_mousefun_kbd},
+};
+
+String          kbd_translations =
+	"<EnterNotify>: DrawMousefunKbd()\n\
+	<LeaveNotify>: ClearMousefunKbd()\n";
+
+static int	actions_added=0;
+
+void init_kbd_actions()
+{
+    if (!actions_added) {
+	actions_added = 1;
+	XtAppAddActions(tool_app, kbd_actions, XtNumber(kbd_actions));
+    }
 }

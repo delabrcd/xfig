@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
- * Copyright (c) 1992 by Brian V. Smith
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ *
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -45,7 +52,7 @@ static int	base_x, base_y;
 static PIX_FONT canvas_zoomed_font;
 
 static int	is_newline;
-static int	work_psflag, work_font, work_fontsize, work_textjust;
+static int	work_font, work_fontsize, work_flags, work_psflag, work_textjust;
 static PIX_FONT work_fontstruct;
 static float	work_angle;		/* in RADIANS */
 static double	sin_t, cos_t;		/* sin(work_angle) and cos(work_angle) */
@@ -73,6 +80,7 @@ text_drawing_selected()
     canvas_leftbut_proc = init_text_input;
     canvas_rightbut_proc = null_proc;
     set_mousefun("posn cursor", "", "");
+    clear_mousefun_kbd();
     set_cursor(pencil_cursor);
     is_newline = 0;
 }
@@ -156,9 +164,10 @@ wrap_up()
 	    if ((new_t->cstring = new_string(leng_prefix + 1)) != NULL)
 		strcpy(new_t->cstring, prefix);
 	}
-	size = pf_textwidth(canvas_font, leng_prefix, prefix);
-	new_t->height = size.y;
-	new_t->length = size.x; /* in pixels */
+	size = textsize(canvas_font, leng_prefix, prefix);
+	new_t->ascent = size.ascent;
+	new_t->descent = size.descent;
+	new_t->length = size.length;
 	cur_t = new_t;
     }
     draw_text(cur_t, PAINT);
@@ -178,6 +187,7 @@ init_text_input(x, y)
 
     set_action_on();
     set_mousefun("reposn cursor", "finish text", "cancel");
+    draw_mousefun_kbd();
     draw_mousefun_canvas();
     canvas_kbd_proc = char_handler;
     canvas_middlebut_proc = finish_text_input;
@@ -204,6 +214,7 @@ init_text_input(x, y)
 	    work_fontsize = cur_fontsize;
 	    work_font     = using_ps ? cur_ps_font : cur_latex_font;
 	    work_psflag   = using_ps;
+	    work_flags    = cur_textflags;
 	    work_textjust = cur_textjust;
 	    work_angle    = cur_elltextangle*M_PI/180.0;
 	    while (work_angle < 0.0)
@@ -217,7 +228,7 @@ init_text_input(x, y)
 			   work_fontsize);
 	    /* get the ZOOMED font for actually drawing on the canvas */
 	    canvas_zoomed_font = lookfont(x_fontnum(work_psflag, work_font), 
-			   round(work_fontsize*zoomscale));
+			   round(work_fontsize*display_zoomscale));
 	    /* save the working font structure */
 	    work_fontstruct = canvas_zoomed_font;
 	}
@@ -232,7 +243,8 @@ init_text_input(x, y)
 	work_font = cur_t->font;
 	work_fontstruct = canvas_zoomed_font = cur_t->fontstruct;
 	work_fontsize = cur_t->size;
-	work_psflag   = cur_t->flags;
+	work_psflag   = cur_t->flags & PSFONT_TEXT;
+	work_flags    = cur_t->flags;
 	work_textjust = cur_t->type;
 	work_angle    = cur_t->angle;
 	while (work_angle < 0.0)
@@ -271,13 +283,13 @@ init_text_input(x, y)
 	leng_suffix -= leng_prefix;
 	cpy_n_char(prefix, cur_t->cstring, leng_prefix);
 	strcpy(suffix, &cur_t->cstring[leng_prefix]);
-	tsize = pf_textwidth(canvas_font, leng_prefix, prefix);
+	tsize = textsize(canvas_font, leng_prefix, prefix);
 
-	cur_x = round(base_x + tsize.x * cos_t);
-	cur_y = round(base_y - tsize.x * sin_t);
+	cur_x = round(base_x + tsize.length * cos_t);
+	cur_y = round(base_y - tsize.length * sin_t);
     }
     put_msg("Ready for text input (from keyboard)");
-    char_ht = char_height(canvas_font);
+    char_ht = ZOOM_FACTOR * max_char_height(canvas_font);
     initialize_char_handler(canvas_win, finish_text_input,
 			    base_x, base_y);
     draw_char_string();
@@ -302,13 +314,14 @@ new_text()
     text->fontstruct = work_fontstruct;
     text->size = work_fontsize;
     text->angle = work_angle;
-    text->flags = cur_textflags;
-    text->color = cur_color;
+    text->flags = work_flags;
+    text->color = cur_pencolor;
     text->depth = cur_depth;
-    text->pen = 0;
-    size = pf_textwidth(canvas_font, leng_prefix, prefix);
-    text->length = size.x;	/* in pixels */
-    text->height = size.y;	/* in pixels */
+    text->pen_style = 0;
+    size = textsize(canvas_font, leng_prefix, prefix);
+    text->length = size.length;
+    text->ascent = size.ascent;
+    text->descent = size.descent;
     text->base_x = base_x;
     text->base_y = base_y;
     strcpy(text->cstring, prefix);
@@ -339,26 +352,26 @@ prefix_length(string, where_p)
     PR_SIZE	    size;
 
     len_c = strlen(string);
-    size = pf_textwidth(canvas_font, len_c, string);
-    len_p = size.x;
+    size = textsize(canvas_font, len_c, string);
+    len_p = size.length;
     if (where_p >= len_p)
 	return (len_c);		/* entire string is the prefix */
 
-    char_wid = char_width(canvas_font);
+    char_wid = ZOOM_FACTOR * char_width(canvas_font);
     where_c = where_p / char_wid;	/* estimated char position */
-    size = pf_textwidth(canvas_font, where_c, string);
-    l = size.x;			/* actual length (pixels) of string of
+    size = textsize(canvas_font, where_c, string);
+    l = size.length;		/* actual length (pixels) of string of
 				 * where_c chars */
     if (l < where_p) {
 	do {			/* add the width of next char to l */
-	    l += (char_wid = char_advance(canvas_font, 
+	    l += (char_wid = ZOOM_FACTOR * char_advance(canvas_font, 
 				(unsigned char) string[where_c++]));
 	} while (l < where_p);
 	if (l - (char_wid >> 1) >= where_p)
 	    where_c--;
     } else if (l > where_p) {
 	do {			/* subtract the width of last char from l */
-	    l -= (char_wid = char_advance(canvas_font, 
+	    l -= (char_wid = ZOOM_FACTOR * char_advance(canvas_font, 
 				(unsigned char) string[--where_c]));
 	} while (l > where_p);
 	if (l + (char_wid >> 1) <= where_p)
@@ -395,7 +408,7 @@ draw_cursor(x, y)
     pw_vector(pw, x, y, 
 		round(x-ch_height*sin_t),
 		round(y-ch_height*cos_t),
-		INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+		INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 }
 
 static int
@@ -411,7 +424,7 @@ initialize_char_handler(p, cr, bx, by)
     rcur_x = cur_x;
     rcur_y = cur_y;
 
-    ch_height = canvas_font->max_bounds.ascent;
+    ch_height = ZOOM_FACTOR * canvas_font->max_bounds.ascent;
     turn_on_blinking_cursor(draw_cursor, draw_cursor,
 			    cur_x, cur_y, (long) BLINK_INTERVAL);
 }
@@ -433,20 +446,20 @@ static int
 erase_char_string()
 {
     pw_text(pw, cbase_x, cbase_y, INV_PAINT, canvas_zoomed_font, 
-	    work_angle, prefix, DEFAULT_COLOR);
+	    work_angle, prefix, DEFAULT);
     if (leng_suffix)
 	pw_text(pw, cur_x, cur_y, INV_PAINT, canvas_zoomed_font, 
-		work_angle, suffix, DEFAULT_COLOR);
+		work_angle, suffix, DEFAULT);
 }
 
 static int
 draw_char_string()
 {
     pw_text(pw, cbase_x, cbase_y, INV_PAINT, canvas_zoomed_font, 
-	    work_angle, prefix, DEFAULT_COLOR);
+	    work_angle, prefix, DEFAULT);
     if (leng_suffix)
 	pw_text(pw, cur_x, cur_y, INV_PAINT, canvas_zoomed_font, 
-		work_angle, suffix, DEFAULT_COLOR);
+		work_angle, suffix, DEFAULT);
     move_blinking_cursor(cur_x, cur_y);
 }
 
@@ -455,7 +468,7 @@ draw_suffix()
 {
     if (leng_suffix)
 	pw_text(pw, cur_x, cur_y, PAINT, canvas_zoomed_font, 
-		work_angle, suffix, DEFAULT_COLOR);
+		work_angle, suffix, DEFAULT);
 }
 
 static int
@@ -463,7 +476,7 @@ erase_suffix()
 {
     if (leng_suffix)
 	pw_text(pw, cur_x, cur_y, INV_PAINT, canvas_zoomed_font, 
-		work_angle, suffix, DEFAULT_COLOR);
+		work_angle, suffix, DEFAULT);
 }
 
 static int
@@ -474,7 +487,7 @@ char	c;
     s[0]=c;
     s[1]='\0';
     pw_text(pw, cur_x, cur_y, INV_PAINT, canvas_zoomed_font, 
-	    work_angle, s, DEFAULT_COLOR);
+	    work_angle, s, DEFAULT);
 }
 
 char_handler(c)
@@ -492,8 +505,8 @@ char_handler(c)
     } else if (c == DEL || c == CTRL_H) {
 	if (leng_prefix > 0) {
 	    erase_char_string();
-	    cwidth = (float) char_advance(canvas_font, 
-			(unsigned char) prefix[leng_prefix - 1]);
+	    cwidth = (float) (ZOOM_FACTOR * char_advance(canvas_font, 
+			(unsigned char) prefix[leng_prefix - 1]));
 	    cw2 = cwidth/2.0;
 	    cwsin = cwidth*sin_t;
 	    cwcos = cwidth*cos_t;
@@ -530,9 +543,9 @@ char_handler(c)
 	    switch (work_textjust) {
 	    case T_CENTER_JUSTIFIED:
 		while (leng_prefix--) {	/* subtract char width/2 per char */
-		    rcur_x -= cos_t*char_advance(canvas_font,
+		    rcur_x -= ZOOM_FACTOR * cos_t*char_advance(canvas_font,
 					(unsigned char) prefix[leng_prefix]) / 2.0;
-		    rcur_y += sin_t*char_advance(canvas_font,
+		    rcur_y += ZOOM_FACTOR * sin_t*char_advance(canvas_font,
 					(unsigned char) prefix[leng_prefix]) / 2.0;
 		}
 		rbase_x = rcur_x;
@@ -566,7 +579,7 @@ char_handler(c)
     } else {	
 	draw_char_string();	/* erase current string */
 
-	cwidth = char_advance(canvas_font, (unsigned char) c);
+	cwidth = ZOOM_FACTOR * char_advance(canvas_font, (unsigned char) c);
 	cwsin = cwidth*sin_t;
 	cwcos = cwidth*cos_t;
 	cw2 = cwidth/2.0;
@@ -726,5 +739,5 @@ reload_text_fstruct(t)
     F_text	   *t;
 {
     t->fontstruct = lookfont(x_fontnum(t->flags, t->font), 
-			round(t->size*zoomscale));
+			round(t->size*display_zoomscale));
 }

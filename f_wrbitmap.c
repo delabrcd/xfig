@@ -2,12 +2,17 @@
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1992 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -22,24 +27,25 @@
 static int	create_n_write_bitmap();
 
 int
-write_bitmap(file_name)
+write_bitmap(file_name,mag)
     char	   *file_name;
+    float	    mag;
 {
     if (!ok_to_write(file_name, "EXPORT"))
 	return (1);
 
-    return (create_n_write_bitmap(file_name));	/* write the bitmap file */
+    return (create_n_write_bitmap(file_name,mag));  /* write the bitmap file */
 }
 
 static Boolean	havegcs = False;
 static GC	sav_fill_gc[NUMFILLPATS];
-static GC	sav_un_fill_gc[NUMFILLPATS];
 static unsigned long save_fg_color;
 static unsigned long save_bg_color;
 
 static int
-create_n_write_bitmap(filename)
+create_n_write_bitmap(filename,mag)
     char	   *filename;
+    float	    mag;
 {
     int		    xmin, ymin, xmax, ymax;
     int		    width, height;
@@ -59,27 +65,25 @@ create_n_write_bitmap(filename)
     put_msg("Capturing canvas image...");
     app_flush();
 
-    /* set the zoomscale to 1 and offset to origin */
-    zoomchanged = (zoomscale != 1.0);
+    /* set the zoomscale to the export magnification and offset to origin */
+    zoomchanged = (zoomscale != mag/ZOOM_FACTOR);
     savezoom = zoomscale;
     savexoff = zoomxoff;
     saveyoff = zoomyoff;
-    zoomscale = 1.0;
+    zoomscale = mag/ZOOM_FACTOR;  /* set to export magnification at screen resolution */
+    display_zoomscale = ZOOM_FACTOR*zoomscale;
     zoomxoff = zoomyoff = 0;
-    /* resize texts back to zoomscale 1 if necessary */
-    if (zoomchanged)
-	reload_text_fstructs();
 
     /* Assume that there is at least one object */
     compound_bound(&objects, &xmin, &ymin, &xmax, &ymax);
 
-    /* set the clipping to include ALL objects */
-    set_clip_window(xmin, ymin, xmax, ymax);
+    /* adjust limits for magnification */
+    xmin = round(xmin*zoomscale);
+    ymin = round(ymin*zoomscale);
+    xmax = round(xmax*zoomscale);
+    ymax = round(ymax*zoomscale);
 
-    if (appres.DEBUG) {
-	elastic_box(xmin, ymin, xmax, ymax);
-    }
-    /* provide a small margin */
+    /* provide a small margin (pixels) */
     if ((xmin -= 10) < 0)
 	xmin = 0;
     if ((ymin -= 10) < 0)
@@ -87,8 +91,15 @@ create_n_write_bitmap(filename)
     xmax += 10;
     ymax += 10;
 
+    if (appres.DEBUG) {
+	elastic_box(xmin, ymin, xmax, ymax);
+    }
+
     width = xmax - xmin + 1;
     height = ymax - ymin + 1;
+
+    /* set the clipping to include ALL objects */
+    set_clip_window(xmin, ymin, xmax, ymax);
 
     /* choose foreground/background colors as 1 and 0 respectively */
     /* that way we can just copy the lowest plane to make the bitmap */
@@ -99,7 +110,7 @@ create_n_write_bitmap(filename)
     XSetPlaneMask(tool_d, gccache[ERASE], (unsigned long) 1);
     XSetForeground(tool_d, gccache[ERASE], (unsigned long) 0);
     XSetBackground(tool_d, gccache[ERASE], (unsigned long) 0);
-    save_fg_color = x_color(cur_color);	/* save current colors */
+    save_fg_color = x_fg_color.pixel;	/* save current canvas colors */
     save_bg_color = x_bg_color.pixel;
     x_fg_color.pixel = 1;		/* set fore=1, back=0 */
     x_bg_color.pixel = 0;
@@ -108,18 +119,20 @@ create_n_write_bitmap(filename)
 	havegcs = True;
 	for (i = 0; i < NUMFILLPATS; i++) {	/* save current fill gc's */
 	    sav_fill_gc[i] = fill_gc[i];
-	    sav_un_fill_gc[i] = un_fill_gc[i];
 	}
 	init_fill_gc();		/* make some with 0/1 for colors */
-    } else
+    } else {
 	for (i = 0; i < NUMFILLPATS; i++) {
 	    xgc = sav_fill_gc[i];	/* swap our gc's with orig */
 	    sav_fill_gc[i] = fill_gc[i];
 	    fill_gc[i] = xgc;
-	    xgc = sav_un_fill_gc[i];
-	    sav_un_fill_gc[i] = un_fill_gc[i];
-	    un_fill_gc[i] = xgc;
 	}
+    }
+
+    /* resize texts */
+    reload_text_fstructs();
+    /* clear the fill patterns */
+    clear_patterns();
 
     /* create pixmap from (0,0) to (xmax,ymax) */
     largepm = XCreatePixmap(tool_d, canvas_win, xmax + 1, ymax + 1,
@@ -159,9 +172,6 @@ create_n_write_bitmap(filename)
 	xgc = sav_fill_gc[i];
 	sav_fill_gc[i] = fill_gc[i];
 	fill_gc[i] = xgc;
-	xgc = sav_un_fill_gc[i];
-	sav_un_fill_gc[i] = un_fill_gc[i];
-	un_fill_gc[i] = xgc;
     }
     if (XWriteBitmapFile(tool_d, filename, bitmap, width, height, -1, -1)
 	!= BitmapSuccess) {
@@ -173,14 +183,19 @@ create_n_write_bitmap(filename)
     }
     XFreePixmap(tool_d, largepm);
     XFreePixmap(tool_d, bitmap);
+    XFreeGC(tool_d, gc_bitmap);
     reset_cursor();
     /* restore the zoom */
     zoomscale = savezoom;
+    display_zoomscale = ZOOM_FACTOR*zoomscale;
     zoomxoff = savexoff;
     zoomyoff = saveyoff;
-    /* resize texts back to original if necessary */
-    if (zoomchanged)
-	reload_text_fstructs();
+
+    /* resize text */
+    reload_text_fstructs();
+    /* clear the fill patterns */
+    clear_patterns();
+
     /* reset the clipping to the canvas */
     reset_clip_window();
     return (status);

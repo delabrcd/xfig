@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -21,7 +28,7 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-extern float	compute_angle();
+extern double	compute_angle();
 
 /*************************** local declarations *********************/
 
@@ -70,8 +77,9 @@ create_regpoly(x, y)
     int		    x, y;
 {
     register float  angle;
-    register int    nx, ny, dx, dy, i;
-    float	    init_angle, mag;
+    register int    nx, ny, i;
+    double	    dx, dy;
+    double	    init_angle, mag;
     F_line	   *poly;
     F_point	   *point;
 
@@ -93,9 +101,12 @@ create_regpoly(x, y)
     poly->type = T_POLYGON;
     poly->style = cur_linestyle;
     poly->thickness = cur_linewidth;
-    poly->color = cur_color;
+    poly->pen_color = cur_pencolor;
+    poly->fill_color = cur_fillcolor;
     poly->depth = cur_depth;
-    poly->pen = 0;
+    poly->pen_style = 0;
+    poly->join_style = cur_joinstyle;
+    poly->cap_style = cur_capstyle;
     poly->fill_style = cur_fillstyle;
     /* scale dash length by line thickness */
     poly->style_val = cur_styleval * (cur_linewidth + 1) / 2;
@@ -104,16 +115,16 @@ create_regpoly(x, y)
 
     dx = x - fix_x;
     dy = y - fix_y;
-    mag = sqrt((double) (dx * dx + dy * dy));
-    init_angle = compute_angle((float) dx, (float) dy);
+    mag = sqrt(dx * dx + dy * dy);
+    init_angle = compute_angle(dx, dy);
 
     /* now append cur_numsides points */
     for (i = 1; i < cur_numsides; i++) {
-	angle = init_angle - M_2PI * (float) i / (float) cur_numsides;
+	angle = init_angle - M_2PI * (double) i / (double) cur_numsides;
 	if (angle < 0)
 	    angle += M_2PI;
-	nx = fix_x + round(mag * cos((double) angle));
-	ny = fix_y + round(mag * sin((double) angle));
+	nx = fix_x + round(mag * cos(angle));
+	ny = fix_y + round(mag * sin(angle));
 	append_point(nx, ny, &point);
     }
     append_point(x, y, &point);

@@ -1,23 +1,83 @@
+XCOMM Copyright (c) 1985 by Supoj Sutanthavibul
+XCOMM Copyright (c) 1994 by Brian V. Smith
+XCOMM Parts Copyright (c) 1991 by Paul King
+
+XCOMM The X Consortium, and any party obtaining a copy of these files from
+XCOMM the X Consortium, directly or indirectly, is granted, free of charge, a
+XCOMM full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+XCOMM nonexclusive right and license to deal in this software and
+XCOMM documentation files (the "Software"), including without limitation the
+XCOMM rights to use, copy, modify, merge, publish, distribute, sublicense,
+XCOMM and/or sell copies of the Software, and to permit persons who receive
+XCOMM copies from any such party to do so, with the only requirement being
+XCOMM that this copyright notice remain intact.  This license includes without
+XCOMM limitation a license to do the foregoing actions under any patents of
+XCOMM the party supplying this software to the X Consortium.
+
+XCOMM  NOTE: AS of X11R6 the official comment for Imakefile is the word XCOMM
+
 #ifdef InstallManPage
 #undef InstallManPage
 #endif
 #define InstallManPage(file,dest)                                       @@\
 InstallManPageLong(Doc/file,dest,file)
 
-# Uncomment the following if needed for DECstations running older X11R4 
-#INCROOT=/usr/include/mit
+XCOMM Uncomment the following definition for XAWLIB if you want to use
+XCOMM the 3d Athena Widget Set (highly recommended!)
+
+XCOMM XAWLIB = -lXaw3d
+
+XCOMM Uncomment the following if needed for DECstations running older X11R4 
+XCOMM INCROOT=/usr/include/mit
+
+XCOMM Uncomment the XPMDEFINES variable if you have the XPM (color pixmap)
+XCOMM package and you would like to use the following:
+XCOMM USE_XPM will allow import/export of XPM files
+XCOMM USE_XPM_ICON uses a color xpm icon for xfig itself
+XCOMM   You need XPM version 3.4c or newer.  This is available from ftp.x.org
+XCOMM   in /contrib/libraries.
+
+XCOMM XPMDEFINES = -DUSE_XPM -DUSE_XPM_ICON
+
+XCOMM If you want to use the XPM library change the following for your paths
+XCOMM and uncomment them:
+
+XCOMM XPMLIBDIR = -L/usr/local/X11/lib
+XCOMM XPMINCDIR = -I/usr/local/X11/include/xpm
+XCOMM XPMLIB = $(XPMLIBDIR) -lXpm
+
+EXTRA_INCLUDES = $(XPMINCDIR)
 
 SYS_LIBRARIES= 		-lm
 DEPLIBS = 		XawClientDepLibs
-# use the following if NOT using DPS
-LOCAL_LIBRARIES = 	XawClientLibs
-# use the following if using DPS, *** and add -DDPS to the DEFINES line ***
-#LOCAL_LIBRARIES = 	-ldps XawClientLibs
-# use (and change) the following if you want the multi-key data base file
-# somewhere other than the standard X11 library directory
-#XFIGLIBDIR =		/usr/local/lib/X11/xfig
-# use this if you want the multi-key data base file in the standard X11 tree
+
+XCOMM For Solaris: add "-lc" to the LOCAL_LIBRARIES variable in the Imakefile 
+XCOMM to link with /usr/lib/libc for the directory operations.
+
+XCOMM uncomment the following if using DPS (Display PostScript)
+
+XCOMM DPSLIB = -ldps
+XCOMM DPSDEF = -DDPS
+
+XCOMM uncomment the following if *NOT* using DPS (Display PostScript)
+
+XCOMM DPSLIB = 
+XCOMM DPSDEF = 
+
+XCOMM If using an input tablet uncomment the following
+
+XCOMM TABLIB = $(XILIB)
+XCOMM USETAB = -DUSE_TAB
+
+LOCAL_LIBRARIES = 	$(DPSLIB) $(XPMLIB) $(TABLIB) XawClientLibs
+
+XCOMM use (and change) the following if you want the multi-key data base file
+XCOMM somewhere other than the standard X11 library directory
+XCOMM XFIGLIBDIR =		/usr/local/lib/X11/xfig
+
+XCOMM use this if you want the multi-key data base file in the standard X11 tree
 XFIGLIBDIR =		$(LIBDIR)/xfig
+
 DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
 #if (defined(VaxArchitecture) && !defined(UltrixArchitecture)) || \
     (defined(RtArchitecture) && !defined(AIXArchitecture)) || \
@@ -26,56 +86,70 @@ DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
 STRSTRDEFINES = -DNOSTRSTR
 #endif
 
-# remove -DGSBIT from the DEFINES if you DON'T want to have gs (ghostscript)
-# generate a preview bitmap.  If you do use ghostscript you will need 
-# version 2.4 or later.
-#
-# For the rotated text code:
-#   Add one of `-DCACHE_XIMAGES' or `-DCACHE_BITMAPS' to decide what is
-#   cached.
-#
-#   Add `-DCACHE_SIZE_LIMIT=xxxx' where xxxx is the cache size in kilobytes.
-#   A cache size of zero turns caching off.
-#
-# For SYSV systems with BSD-style printer command which use lpr instead of 
-# lp (SGI is one such machine), add -DBSDLPR to the DEFINES variable
+XCOMM remove -DGSBIT from the DEFINES if you DON'T want to have gs (ghostscript)
+XCOMM generate a preview bitmap for Encapsulated PostScript objects if they
+XCOMM don't have one.  If you do use ghostscript you will need version 2.4 or
+XCOMM later, and it must have the 'gif8' and 'pbmraw' devices compiled in
+XCOMM besides any other device drivers you already use with it.
+XCOMM See the Ghostscript Makefile for details.
+XCOMM
+XCOMM For the rotated text code:
+XCOMM   Add one of `-DCACHE_XIMAGES' or `-DCACHE_BITMAPS' to decide what is
+XCOMM   cached.  If you are converned about memory usage in your X server (e.g.
+XCOMM   if you are using an X terminal) then you might want to cache Ximages,
+XCOMM   which reside on the client-side.  On the other hand it is much slower,
+XCOMM   so you might want to cache bitmaps (which reside in the X server)
+XCOMM   instead.
+XCOMM   Add `-DCACHE_SIZE_LIMIT=xxxx' where xxxx is the cache size in kilobytes.
+XCOMM   A cache size of zero turns caching off.
+XCOMM
+XCOMM For SYSV systems with BSD-style printer command which use lpr instead of 
+XCOMM lp (SGI is one such machine), add -DBSDLPR to the DEFINES variable
+XCOMM
+XCOMM If you have VERY large objects (e.g. polylines etc) you may want to
+XCOMM increase MAXNUMPTS, the maximum number of points that are displayed. The
+XCOMM default can be found in w_drawprim.h.  This option may be specified by
+XCOMM adding -DMAXNUMPTS=xxxx to the DEFINES line, where xxxx is the maximum
+XCOMM number of vertices.
 
 CACHE = -DCACHE_BITMAPS -DCACHE_SIZE_LIMIT=300
 
-DEFINES =             $(STRSTRDEFINES) -DGSBIT
+DEFINES =             $(STRSTRDEFINES) -DGSBIT $(XPMDEFINES) $(DPSDEF)
 
-XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_epsobj.c \
+XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
 		d_intspline.c d_line.c d_regpoly.c d_spline.c d_text.c \
 		e_addpt.c e_align.c e_arrow.c e_break.c \
 		e_convert.c e_copy.c e_delete.c e_deletept.c \
 		e_edit.c e_flip.c e_glue.c e_move.c \
 		e_movept.c e_rotate.c e_scale.c e_update.c \
-		f_load.c f_read.c f_epsobj.c \
-		f_readold.c f_save.c f_util.c f_xbitmap.c \
+		f_load.c f_neuclrtab.c f_read.c \
+		f_picobj.c f_readeps.c f_readxbm.c f_readxpm.c f_readgif.c \
+		f_readold.c f_save.c f_util.c f_wrgif.o f_wrbitmap.c f_wrpixmap.c \
 		main.c mode.c object.c resources.c \
 		u_bound.c u_create.c u_drag.c u_draw.c \
 		u_elastic.c u_error.c u_fonts.c u_free.c u_geom.c \
 		u_list.c u_markers.c u_pan.c u_print.c \
-		u_redraw.c u_search.c u_translate.c u_undo.c \
-		w_canvas.c w_cmdpanel.c w_cursor.c w_dir.c w_drawprim.c \
+		u_redraw.c u_scale.c u_search.c u_translate.c u_undo.c \
+		w_canvas.c w_cmdpanel.c w_color.c w_cursor.c w_dir.c w_drawprim.c \
 		w_export.c w_file.c w_fontbits.c w_fontpanel.c w_grid.c \
 		w_icons.c w_indpanel.c w_modepanel.c w_mousefun.c w_msgpanel.c \
 		w_print.c w_rottext.c w_rulers.c w_setup.c w_util.c w_zoom.c
 
-XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_epsobj.o \
+XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
 		d_intspline.o d_line.o d_regpoly.o d_spline.o d_text.o \
 		e_addpt.o e_align.o e_arrow.o e_break.o \
 		e_convert.o e_copy.o e_delete.o e_deletept.o \
 		e_edit.o e_flip.o e_glue.o e_move.o \
 		e_movept.o e_rotate.o e_scale.o e_update.o \
-		f_load.o f_read.o f_epsobj.o \
-		f_readold.o f_save.o f_util.o f_xbitmap.o \
+		f_load.o f_neuclrtab.o f_read.o \
+		f_picobj.o f_readeps.o f_readxbm.o f_readxpm.o f_readgif.o \
+		f_readold.o f_save.o f_util.o f_wrgif.o f_wrbitmap.o f_wrpixmap.o \
 		main.o mode.o object.o resources.o \
 		u_bound.o u_create.o u_drag.o u_draw.o \
 		u_elastic.o u_error.o u_fonts.o u_free.o u_geom.o \
 		u_list.o u_markers.o u_pan.o u_print.o \
-		u_redraw.o u_search.o u_translate.o u_undo.o \
-		w_canvas.o w_cmdpanel.o w_cursor.o w_dir.o w_drawprim.o \
+		u_redraw.o u_scale.o u_search.o u_translate.o u_undo.o \
+		w_canvas.o w_cmdpanel.o w_color.o w_cursor.o w_dir.o w_drawprim.o \
 		w_export.o w_file.o w_fontbits.o w_fontpanel.o w_grid.o \
 		w_icons.o w_indpanel.o w_modepanel.o w_mousefun.o w_msgpanel.o \
 		w_print.o w_rottext.o w_rulers.o w_setup.o w_util.o w_zoom.o
@@ -90,5 +164,6 @@ MakeDirectories(install,$(XFIGLIBDIR))
 InstallNonExec(CompKeyDB,$(XFIGLIBDIR))
 InstallAppDefaults(Fig)
 InstallAppDefaults(Fig-color)
-SpecialObjectRule(w_canvas.o, $(ICONXFIGFILES), $(DIR_DEFS))
-SpecialObjectRule(w_rottext.o, $(ICONXFIGFILES), $(CACHE))
+SpecialObjectRule(main.o, $(ICONXFIGFILES), $(USETAB) )
+SpecialObjectRule(w_canvas.o, , $(DIR_DEFS))
+SpecialObjectRule(w_rottext.o, , $(CACHE))

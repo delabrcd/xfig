@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -17,7 +24,7 @@
 #include "u_list.h"
 #include "w_zoom.h"
 
-#define TOLERANCE 3
+#define TOLERANCE (zoomscale>1?3:(int)(3/zoomscale))
 
 static		(*manipulate) ();
 static		(*handlerproc_left) ();
@@ -38,7 +45,7 @@ static F_spline *s;
 static F_text  *t;
 static F_compound *c;
 
-char
+Boolean
 next_arc_found(x, y, tolerance, px, py, shift)
     int		    x, y, tolerance, *px, *py;
     int		    shift;
@@ -68,7 +75,7 @@ next_arc_found(x, y, tolerance, px, py, shift)
 }
 
 
-char
+Boolean
 next_ellipse_found(x, y, tolerance, px, py, shift)
     int		    x, y, tolerance, *px, *py;
     int		    shift;
@@ -76,8 +83,8 @@ next_ellipse_found(x, y, tolerance, px, py, shift)
 				 * of an ellipse which is the closest to (x,
 				 * y)				 */
 
-    int		    a, b, dx, dy;
-    float	    dis, r, tol;
+    double	    a, b, dx, dy;
+    double	    dis, r, tol;
 
     if (!ellipse_in_mask())
 	return (0);
@@ -86,7 +93,7 @@ next_ellipse_found(x, y, tolerance, px, py, shift)
     else if (shift)
 	e = prev_ellipse(objects.ellipses, e);
 
-    tol = (float) tolerance;
+    tol = (double) tolerance;
     for (; e != NULL; e = prev_ellipse(objects.ellipses, e), n++) {
 	dx = x - e->center.x;
 	dy = y - e->center.y;
@@ -94,9 +101,9 @@ next_ellipse_found(x, y, tolerance, px, py, shift)
 	b = e->radiuses.y;
 	/* prevent sqrt(0) core dumps */
 	if (dx == 0 && dy == 0)
-	    dis = 0;		/* so we return below */
+	    dis = 0.0;		/* so we return below */
 	else
-	    dis = sqrt((double) (dx * dx + dy * dy));
+	    dis = sqrt(dx * dx + dy * dy);
 	if (dis < tol) {
 	    *px = e->center.x;
 	    *py = e->center.y;
@@ -113,19 +120,19 @@ next_ellipse_found(x, y, tolerance, px, py, shift)
 	    return (1);
 	}
 	if (a * dy == 0 && b * dx == 0)
-	    r = 0;		/* prevent core dumps */
+	    r = 0.0;		/* prevent core dumps */
 	else
-	    r = a * b * dis / sqrt((double) (1.0 * b * b * dx * dx + 1.0 * a * a * dy * dy));
+	    r = a * b * dis / sqrt(1.0 * b * b * dx * dx + 1.0 * a * a * dy * dy);
 	if (fabs(dis - r) <= tol) {
-	    *px = (int) (r * dx / dis + ((dx < 0) ? -.5 : .5)) + e->center.x;
-	    *py = (int) (r * dy / dis + ((dy < 0) ? -.5 : .5)) + e->center.y;
+	    *px = round(r * dx / dis + e->center.x);
+	    *py = round(r * dy / dis + e->center.y);
 	    return (1);
 	}
     }
     return (0);
 }
 
-char
+Boolean
 next_line_found(x, y, tolerance, px, py, shift)
     int		    x, y, tolerance, *px, *py, shift;
 {				/* return the pointer to lines object if the
@@ -171,7 +178,7 @@ next_line_found(x, y, tolerance, px, py, shift)
     return (0);
 }
 
-char
+Boolean
 next_spline_found(x, y, tolerance, px, py, shift)
     int		    x, y, tolerance, *px, *py;
     int		    shift;
@@ -211,12 +218,11 @@ next_spline_found(x, y, tolerance, px, py, shift)
     return (0);
 }
 
-char
+Boolean
 next_text_found(x, y, tolerance, px, py, shift)
     int		    x, y, tolerance, *px, *py;
     int		    shift;
 {
-    int		    txmin, txmax, tymin, tymax;
     int		    dum;
 
     if (!anytext_in_mask())
@@ -229,19 +235,16 @@ next_text_found(x, y, tolerance, px, py, shift)
     for (; t != NULL; t = prev_text(objects.texts, t))
 	if (validtext_in_mask(t)) {
 	    n++;
-	    text_bound(t, &txmin, &tymin, &txmax, &tymax,
-			&dum, &dum, &dum, &dum, &dum, &dum, &dum, &dum);
-	    if (x >= txmin-tolerance && x <= txmax+tolerance &&
-	        y >= tymin-tolerance && y <= tymax+tolerance) {
-			*px = x;
-			*py = y;
-			return (1);
+	    if (in_text_bound(t, x, y, &dum)) {
+		*px = x;
+		*py = y;
+		return (1);
 	    }
 	}
     return (0);
 }
 
-int
+Boolean
 next_compound_found(x, y, tolerance, px, py, shift)
     int		    x, y, tolerance, *px, *py;
     int		    shift;
@@ -359,7 +362,7 @@ do_object_search(x, y, shift)
     unsigned int    shift;	/* Shift Key Status from XEvent */
 {
     int		    px, py;
-    char	    found = 0;
+    Boolean	    found = False;
 
     init_search();
     for (n = 0; n < objectcount;) {
@@ -470,7 +473,7 @@ object_search_right(x, y, shift)
     do_object_search(x, y, shift);
 }
 
-char
+Boolean
 next_ellipse_point_found(x, y, tol, point_num, shift)
     int		    x, y, tol, shift, *point_num;
 
@@ -497,7 +500,7 @@ next_ellipse_point_found(x, y, tol, point_num, shift)
     return (0);
 }
 
-char
+Boolean
 next_arc_point_found(x, y, tol, point_num, shift)
     int		    x, y, tol, shift, *point_num;
 
@@ -524,7 +527,7 @@ next_arc_point_found(x, y, tol, point_num, shift)
     return (0);
 }
 
-char
+Boolean
 next_spline_point_found(x, y, tol, p, q, shift)
     int		    x, y, tol, shift;
     F_point	  **p, **q;
@@ -548,7 +551,7 @@ next_spline_point_found(x, y, tol, p, q, shift)
     return (0);
 }
 
-char
+Boolean
 next_line_point_found(x, y, tol, p, q, shift)
     int		    x, y, tol, shift;
     F_point	  **p, **q;
@@ -576,7 +579,7 @@ next_line_point_found(x, y, tol, p, q, shift)
     return (0);
 }
 
-char
+Boolean
 next_compound_point_found(x, y, tol, p, q, shift)
     int		    x, y, tol, shift, *p, *q;
 
@@ -793,9 +796,9 @@ in_text_bound(t, x, y, posn)
     yr = yo - (yo-y)*cost - (x-xo)*sint;
     /* now see if that point is in the text bounds of the unrotated text */
     l = text_length(t);
-    h = t->height;
+    h = t->ascent+t->descent;
     x1 = t->base_x;
-    y1 = t->base_y;
+    y1 = t->base_y+t->descent;
     if (t->type == T_CENTER_JUSTIFIED) {
 	x2 = x1 + l/2;
 	x1 = x1 - l/2;

@@ -1,16 +1,24 @@
-The figure files have been uuencoded so that they may be mailed
-to comp.sources.x without any problem with the ^A (control A)
-in the text objects.
+They figure files have been compressed to save space.  To uncompress them use
+the command "uncompress *" or "uncompress filename" for individual files.
 
-To decode them, do the following (csh):
+The have also been uuencoded so that they may be mailed to comp.sources.x
+without any problem with the ^A (control A) in the text objects.
+
+To decode them (if you don't have the .fig files), either run the csh script
+DECODE or do the following:
+
+for csh:
 
 foreach file (*.uu)
    uudecode $file
 end
 
-or the following (ksh):
+or for ksh:
 
 for file in *.uu
 do
     uudecode $file
 done
+
+
+Then uncompress them.

@@ -2,12 +2,17 @@
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -61,6 +66,7 @@ static TOOL	ps_fontpanes, ps_buttons;
 static TOOL	latex_fontpanes, latex_buttons;
 static TOOL	ps_fontpane[NUM_FONTS+1];
 static TOOL	latex_fontpane[NUM_LATEX_FONTS];
+static Boolean	first_fontmenu;
 
 init_fontmenu(tool)
     TOOL	    tool;
@@ -72,16 +78,18 @@ init_fontmenu(tool)
 
     DeclareArgs(8);
 
+    first_fontmenu = True;
+
     FirstArg(XtNborderWidth, POPUP_BW);
     NextArg(XtNmappedWhenManaged, False);
     NextArg(XtNtitle, "Xfig: Font menu");
 
-    ps_fontmenu = XtCreatePopupShell("xfig_ps_font_menu",
+    ps_fontmenu = XtCreatePopupShell("ps_font_menu",
 				     transientShellWidgetClass, tool,
 				     Args, ArgCount);
     XtOverrideTranslations(ps_fontmenu,
 			XtParseTranslationTable(fontpane_translations));
-    latex_fontmenu = XtCreatePopupShell("xfig_latex_font_menu",
+    latex_fontmenu = XtCreatePopupShell("latex_font_menu",
 					transientShellWidgetClass, tool,
 					Args, ArgCount);
     XtOverrideTranslations(latex_fontmenu,
@@ -89,10 +97,17 @@ init_fontmenu(tool)
     XtAppAddActions(tool_app, fontpane_actions, XtNumber(fontpane_actions));
 
     FirstArg(XtNvSpace, -INTERNAL_BW);
-    NextArg(XtNhSpace, 0);
+    NextArg (XtNhSpace, -INTERNAL_BW);
+    NextArg (XtNwidth, PS_FONTPANE_WD*2 + INTERNAL_BW*4);	/* two across */
+    NextArg (XtNhSpace, 0);
 
     ps_fontpanes = XtCreateManagedWidget("menu", boxWidgetClass,
 					 ps_fontmenu, Args, ArgCount);
+
+    FirstArg(XtNvSpace, -INTERNAL_BW);
+    NextArg (XtNhSpace, -INTERNAL_BW);
+    NextArg (XtNwidth, LATEX_FONTPANE_WD*2 + INTERNAL_BW*4);	/* two across */
+    NextArg (XtNhSpace, 0);
     latex_fontpanes = XtCreateManagedWidget("menu", boxWidgetClass,
 					    latex_fontmenu, Args, ArgCount);
 
@@ -110,39 +125,50 @@ init_fontmenu(tool)
 	latex_fontmenu_items[i].info = (caddr_t) i;	/* index for font # */
     }
 
-    FirstArg(XtNwidth, PS_FONTPANE_WD);
+    FirstArg(XtNwidth, PS_FONTPANE_WD*2);
     NextArg(XtNdefaultDistance, INTERNAL_BW);
     NextArg(XtNborderWidth, 0);
-    ps_buttons = XtCreateManagedWidget("buttons", formWidgetClass,
+    ps_buttons = XtCreateManagedWidget("ps_buttons", formWidgetClass,
 				       ps_fontpanes, Args, ArgCount);
-    latex_buttons = XtCreateManagedWidget("buttons", formWidgetClass,
+
+    FirstArg(XtNwidth, LATEX_FONTPANE_WD*2);
+    NextArg(XtNdefaultDistance, INTERNAL_BW);
+    NextArg(XtNborderWidth, 0);
+    latex_buttons = XtCreateManagedWidget("latex_buttons", formWidgetClass,
 					  latex_fontpanes, Args, ArgCount);
 
-    i = (int) ((PS_FONTPANE_WD - INTERNAL_BW) / 3);
-    FirstArg(XtNwidth, i);
+    FirstArg(XtNlabel, "Cancel");
+    NextArg(XtNwidth, PS_FONTPANE_WD);
+    NextArg(XtNheight, PS_FONTPANE_HT+4);
     NextArg(XtNborderWidth, 0);
     tmp_but = XtCreateManagedWidget("cancel", commandWidgetClass,
 				    ps_buttons, Args, ArgCount);
     XtAddEventHandler(tmp_but, ButtonReleaseMask, (Boolean) 0,
 		      fontpane_cancel, (XtPointer) NULL);
 
-    FirstArg(XtNfromHoriz, tmp_but);
-    NextArg(XtNwidth, PS_FONTPANE_WD - INTERNAL_BW - i);
+    FirstArg(XtNlabel, "Use LaTex Fonts");
+    NextArg(XtNfromHoriz, tmp_but);
+    NextArg(XtNwidth, PS_FONTPANE_WD);
+    NextArg(XtNheight, PS_FONTPANE_HT+4);
     NextArg(XtNborderWidth, 0);
     tmp_but = XtCreateManagedWidget("use_latex_fonts", commandWidgetClass,
 				    ps_buttons, Args, ArgCount);
     XtAddEventHandler(tmp_but, ButtonReleaseMask, (Boolean) 0,
 		      fontpane_swap, (XtPointer) NULL);
 
-    FirstArg(XtNwidth, i);
+    FirstArg(XtNlabel, "Cancel");
+    NextArg(XtNwidth, LATEX_FONTPANE_WD);
+    NextArg(XtNheight, LATEX_FONTPANE_HT+4);
     NextArg(XtNborderWidth, 0);
     tmp_but = XtCreateManagedWidget("cancel", commandWidgetClass,
 				    latex_buttons, Args, ArgCount);
     XtAddEventHandler(tmp_but, ButtonReleaseMask, (Boolean) 0,
 		      fontpane_cancel, (XtPointer) NULL);
 
-    FirstArg(XtNfromHoriz, tmp_but);
-    NextArg(XtNwidth, PS_FONTPANE_WD - INTERNAL_BW - i);
+    FirstArg(XtNlabel, "Use PostScript Fonts");
+    NextArg(XtNfromHoriz, tmp_but);
+    NextArg(XtNwidth, LATEX_FONTPANE_WD);
+    NextArg(XtNheight, LATEX_FONTPANE_HT+4);
     NextArg(XtNborderWidth, 0);
     tmp_but = XtCreateManagedWidget("use_postscript_fonts", commandWidgetClass,
 				    latex_buttons, Args, ArgCount);
@@ -153,7 +179,7 @@ init_fontmenu(tool)
 		<Btn1Up>:notify()unset()\n");
 
     FirstArg(XtNwidth, PS_FONTPANE_WD);
-    NextArg(XtNheight, PS_FONTPANE_HT);
+    NextArg(XtNheight, PS_FONTPANE_HT+4);
     NextArg(XtNcallback, pane_callbacks);
     NextArg(XtNbitmap, NULL);
     NextArg(XtNinternalWidth, 0);	/* space between pixmap and edge */
@@ -168,6 +194,15 @@ init_fontmenu(tool)
 					       ps_fontpanes, Args, ArgCount);
 	XtOverrideTranslations(ps_fontpane[i], pane_actions);
     }
+
+    FirstArg(XtNwidth, LATEX_FONTPANE_WD);
+    NextArg(XtNheight, LATEX_FONTPANE_HT+4);
+    NextArg(XtNcallback, pane_callbacks);
+    NextArg(XtNbitmap, NULL);
+    NextArg(XtNinternalWidth, 0);	/* space between pixmap and edge */
+    NextArg(XtNinternalHeight, 0);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    NextArg(XtNresize, False);	/* don't allow resize */
 
     for (i = 0; i < NUM_LATEX_FONTS; ++i) {
 	mi = &latex_fontmenu_items[i];
@@ -238,23 +273,27 @@ fontpane_popup(psfont_adr, latexfont_adr, psflag_adr, showfont_fn, show_widget)
 
 {
     DeclareArgs(2);
-    Position	    xposn, yposn, dummy;
+    Position	    xposn, yposn;
+    Widget	    widg;
 
     font_ps_sel = psfont_adr;
     font_latex_sel = latexfont_adr;
     flag_sel = psflag_adr;
     font_setimage = showfont_fn;
     font_widget = show_widget;
-    XtTranslateCoords(show_widget, (Position) 0, (Position) 0, &xposn, &dummy);
-    XtTranslateCoords(tool, (Position) 0, (Position) 0, &dummy, &yposn);
-    FirstArg(XtNx, xposn);
-    NextArg(XtNy, yposn - 20);	/* up a little bit from top of tool */
-    SetValues(ps_fontmenu);
-    SetValues(latex_fontmenu);
-    XtPopup(*flag_sel ? ps_fontmenu : latex_fontmenu, XtGrabExclusive);
-    XSetWMProtocols(XtDisplay(*flag_sel ? ps_fontmenu : latex_fontmenu),
-    		    XtWindow(*flag_sel ? ps_fontmenu : latex_fontmenu),
-		    &wm_delete_window, 1);
+    if (first_fontmenu) {
+	first_fontmenu = False;	/* don't reposition it if user has already popped it */
+	XtTranslateCoords(tool, CANVAS_WD/4, CANVAS_HT/4, &xposn, &yposn);
+	FirstArg(XtNx, xposn);	/* position about 1/4 from upper-left corner of canvas */
+	NextArg(XtNy, yposn);
+	SetValues(ps_fontmenu);
+	SetValues(latex_fontmenu);
+    }
+    widg = *flag_sel ? ps_fontmenu : latex_fontmenu;
+    XtPopup(widg, XtGrabExclusive);
+    /* insure that the most recent colormap is installed */
+    set_cmap(XtWindow(widg));
+    XSetWMProtocols(XtDisplay(widg), XtWindow(widg), &wm_delete_window, 1);
 }
 
 static void
@@ -263,7 +302,6 @@ fontpane_select(w, closure, call_data)
     XtPointer closure;
     XtPointer call_data;
 {
-    TOOL	    widget = (TOOL) w;
     MenuItemRec	   *mi = (MenuItemRec *) closure;
     char	   *font_name = mi->label;
 
@@ -287,12 +325,15 @@ fontpane_cancel()
 static void
 fontpane_swap()
 {
+    Widget widg;
+
     XtPopdown(*flag_sel ? ps_fontmenu : latex_fontmenu);
     *flag_sel = 1 - *flag_sel;
     /* put image of font in indicator window */
     (*font_setimage) (font_widget);
-    XtPopup(*flag_sel ? ps_fontmenu : latex_fontmenu, XtGrabExclusive);
-    XSetWMProtocols(XtDisplay(*flag_sel ? ps_fontmenu : latex_fontmenu),
-    		    XtWindow(*flag_sel ? ps_fontmenu : latex_fontmenu),
-		    &wm_delete_window, 1);
+    widg = *flag_sel ? ps_fontmenu : latex_fontmenu;
+    XtPopup(widg, XtGrabExclusive);
+    /* insure that the most recent colormap is installed */
+    set_cmap(XtWindow(widg));
+    XSetWMProtocols(XtDisplay(widg), XtWindow(widg), &wm_delete_window, 1);
 }

@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Henning Spruth
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include <X11/keysym.h>
@@ -40,7 +47,7 @@ static int	(*save_rightbut_proc) ();
 static Cursor	save_cur_cursor;
 static int	save_action_on;
 
-float		zoomscale = 1.0;
+float		zoomscale = 1.0/ZOOM_FACTOR;
 int		zoomxoff = 0;
 int		zoomyoff = 0;
 
@@ -63,7 +70,7 @@ zoom_selected(x, y, button)
 	    pan_origin();
 	    break;
 	case Button3:
-	    zoomscale = 1.0;
+	    display_zoomscale = 1.0;
 	    show_zoom(&ind_switches[ZOOM_SWITCH_INDEX]);
 	    break;
 	}
@@ -127,9 +134,12 @@ do_zoom(x, y)
     if (zoomyoff < 0)
 	zoomyoff = 0;
     if (dimx && dimy) {
-	scalex = CANVAS_WD / (float) dimx;
-	scaley = CANVAS_HT / (float) dimy;
-	zoomscale = (int)((scalex > scaley ? scaley : scalex)+.99);
+	scalex = ZOOM_FACTOR * CANVAS_WD / (float) dimx;
+	scaley = ZOOM_FACTOR * CANVAS_HT / (float) dimy;
+
+	display_zoomscale = (scalex > scaley ? scaley : scalex);
+	if (display_zoomscale <= 1.0)	/* keep to 0.1 increments */
+	    display_zoomscale = (int)((display_zoomscale+0.09)*10.0)/10.0 - 0.1;
 
 	show_zoom(&ind_switches[ZOOM_SWITCH_INDEX]);
     }

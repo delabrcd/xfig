@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -74,8 +81,8 @@ create_boxobject(x, y)
     if ((point = create_point()) == NULL)
 	return;
 
-    point->x = x;
-    point->y = y;
+    point->x = fix_x;
+    point->y = fix_y;
     point->next = NULL;
 
     if ((box = create_line()) == NULL) {
@@ -85,18 +92,21 @@ create_boxobject(x, y)
     box->type = T_BOX;
     box->style = cur_linestyle;
     box->thickness = cur_linewidth;
-    box->color = cur_color;
+    box->pen_color = cur_pencolor;
+    box->fill_color = cur_fillcolor;
     box->depth = cur_depth;
-    box->pen = 0;
+    box->pen_style = 0;
+    box->join_style = cur_joinstyle;
+    box->cap_style = cur_capstyle;
     box->fill_style = cur_fillstyle;
     /* scale dash length by line thickness */
     box->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     box->radius = 0;
     box->points = point;
     append_point(x, fix_y, &point);
-    append_point(fix_x, fix_y, &point);
-    append_point(fix_x, y, &point);
     append_point(x, y, &point);
+    append_point(fix_x, y, &point);
+    append_point(fix_x, fix_y, &point);
     draw_line(box, PAINT);
     add_line(box);
     box_drawing_selected();

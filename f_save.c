@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -43,7 +50,6 @@ int
 write_objects(fp)
     FILE	   *fp;
 {
-    extern char	    file_header[];
     F_arc	   *a;
     F_compound	   *c;
     F_ellipse	   *e;
@@ -52,13 +58,12 @@ write_objects(fp)
     F_text	   *t;
 
     /*
-     * Number 2 means that the origin (0,0) is at the upper left corner of
-     * the screen (2nd quadrant)
+     * A 2 for the orientation means that the origin (0,0) is at the upper 
+     * left corner of the screen (2nd quadrant).
      */
 
     put_msg("Writing . . .");
-    fprintf(fp, "%s\n", file_header);
-    fprintf(fp, "%d %d\n", PIX_PER_INCH, 2);
+    write_file_header(fp);
     for (a = objects.arcs; a != NULL; a = a->next) {
 	num_object++;
 	write_arc(fp, a);
@@ -92,26 +97,54 @@ write_objects(fp)
     return (0);
 }
 
+write_file_header(fp)
+    FILE	   *fp;
+{
+    fprintf(fp, "%s\n", file_header);
+    fprintf(fp, appres.landscape? "Landscape\n": "Portrait\n");
+    fprintf(fp, appres.flushleft? "Flush left\n": "Center\n");
+    fprintf(fp, appres.INCHES? "Inches\n": "Metric\n");
+    fprintf(fp, "%d %d\n", PIX_PER_INCH, 2);
+    /* write the user color definitions (if any) */
+    write_colordefs(fp);
+}
+
+/* write the user color definitions (if any) */
+write_colordefs(fp)
+    FILE	   *fp;
+{
+    int		    i;
+
+    for (i=0; i<num_usr_cols; i++) {
+	if (colorUsed[i])
+	    fprintf(fp, "0 %d #%02x%02x%02x\n", i+NUM_STD_COLS,
+		user_colors[i].red/256,
+		user_colors[i].green/256,
+		user_colors[i].blue/256);
+    }
+}
+
 write_arc(fp, a)
     FILE	   *fp;
     F_arc	   *a;
 {
     F_arrow	   *f, *b;
 
-    fprintf(fp, "%d %d %d %d %d %d %d %d %.3f %d %d %d %.3f %.3f %d %d %d %d %d %d\n",
-	    O_ARC, a->type, a->style, a->thickness,
-	    a->color, a->depth, a->pen, a->fill_style,
-	    a->style_val, a->direction,
+    /* externally, type 1=open arc, 2=pie wedge */
+    fprintf(fp, "%d %d %d %d %d %d %d %d %d %.3f %d %d %d %d %.3f %.3f %d %d %d %d %d %d\n",
+	    O_ARC, a->type+1, a->style, a->thickness,
+	    a->pen_color, a->fill_color, a->depth, a->pen_style, a->fill_style,
+	    a->style_val, a->cap_style, a->direction,
 	    ((f = a->for_arrow) ? 1 : 0), ((b = a->back_arrow) ? 1 : 0),
 	    a->center.x, a->center.y,
 	    a->point[0].x, a->point[0].y,
 	    a->point[1].x, a->point[1].y,
 	    a->point[2].x, a->point[2].y);
     if (f)
-	fprintf(fp, "\t%d %d %.3f %.3f %.3f\n", f->type, f->style,
+	fprintf(fp, "\t%d %d %.2f %.2f %.2f\n", f->type, f->style,
 		f->thickness, f->wid, f->ht);
     if (b)
-	fprintf(fp, "\t%d %d %.3f %.3f %.3f\n", b->type, b->style,
+	fprintf(fp, "\t%d %d %.2f %.2f %.2f\n", b->type, b->style,
 		b->thickness, b->wid, b->ht);
 }
 
@@ -150,9 +183,9 @@ write_ellipse(fp, e)
     if (e->radiuses.x == 0 || e->radiuses.y == 0)
 	return;
 
-    fprintf(fp, "%d %d %d %d %d %d %d %d %.5f %d %.3f %d %d %d %d %d %d %d %d\n",
+    fprintf(fp, "%d %d %d %d %d %d %d %d %d %.7f %d %.3f %d %d %d %d %d %d %d %d\n",
 	    O_ELLIPSE, e->type, e->style, e->thickness,
-	    e->color, e->depth, e->pen, e->fill_style,
+	    e->pen_color, e->fill_color, e->depth, e->pen_style, e->fill_style,
 	    e->style_val, e->direction, e->angle,
 	    e->center.x, e->center.y,
 	    e->radiuses.x, e->radiuses.y,
@@ -170,30 +203,35 @@ write_line(fp, l)
 
     if (l->points == NULL)
 	return;
-    fprintf(fp, "%d %d %d %d %d %d %d %d %.3f %d %d %d\n",
+    /* count number of points and put it in the object */
+    for (npts=0, p = l->points; p != NULL; p = p->next)
+	npts++;
+    fprintf(fp, "%d %d %d %d %d %d %d %d %d %.3f %d %d %d %d %d %d\n",
 	    O_POLYLINE, l->type, l->style, l->thickness,
-	 l->color, l->depth, l->pen, l->fill_style, l->style_val, l->radius,
-	    ((f = l->for_arrow) ? 1 : 0), ((b = l->back_arrow) ? 1 : 0));
+	    l->pen_color, l->fill_color, l->depth, l->pen_style, 
+	    l->fill_style, l->style_val, l->join_style, l->cap_style, 
+	    l->radius,
+	    ((f = l->for_arrow) ? 1 : 0), ((b = l->back_arrow) ? 1 : 0), npts);
     if (f)
-	fprintf(fp, "\t%d %d %.3f %.3f %.3f\n", f->type, f->style,
+	fprintf(fp, "\t%d %d %.2f %.2f %.2f\n", f->type, f->style,
 		f->thickness, f->wid, f->ht);
     if (b)
-	fprintf(fp, "\t%d %d %.3f %.3f %.3f\n", b->type, b->style,
+	fprintf(fp, "\t%d %d %.2f %.2f %.2f\n", b->type, b->style,
 		b->thickness, b->wid, b->ht);
-    if (l->type == T_EPS_BOX)
-	fprintf(fp, "\t%d %s\n", l->eps->flipped, l->eps->file);
+    if (l->type == T_PIC_BOX)
+	fprintf(fp, "\t%d %s\n", l->pic->flipped, l->pic->file);
 
     fprintf(fp, "\t");
     npts=0;
     for (p = l->points; p != NULL; p = p->next) {
 	fprintf(fp, " %d %d", p->x, p->y);
-	if (++npts >= 8 && p->next != NULL)
+	if (++npts >= 6 && p->next != NULL)
 		{
 		fprintf(fp,"\n\t");
 		npts=0;
 		}
     };
-    fprintf(fp, " 9999 9999\n");
+    fprintf(fp, "\n");
 }
 
 write_spline(fp, s)
@@ -207,34 +245,42 @@ write_spline(fp, s)
 
     if (s->points == NULL)
 	return;
-    fprintf(fp, "%d %d %d %d %d %d %d %d %.3f %d %d\n",
+    /* count number of points and put it in the object */
+    for (npts=0, p = s->points; p != NULL; p = p->next)
+	npts++;
+    fprintf(fp, "%d %d %d %d %d %d %d %d %d %.3f %d %d %d %d\n",
 	    O_SPLINE, s->type, s->style, s->thickness,
-	    s->color, s->depth, s->pen, s->fill_style, s->style_val,
-	    ((f = s->for_arrow) ? 1 : 0), ((b = s->back_arrow) ? 1 : 0));
+	    s->pen_color, s->fill_color, s->depth, s->pen_style, 
+	    s->fill_style, s->style_val, s->cap_style,
+	    ((f = s->for_arrow) ? 1 : 0), ((b = s->back_arrow) ? 1 : 0), npts);
     if (f)
-	fprintf(fp, "\t%d %d %.3f %.3f %.3f\n", f->type, f->style,
+	fprintf(fp, "\t%d %d %.2f %.2f %.2f\n", f->type, f->style,
 		f->thickness, f->wid, f->ht);
     if (b)
-	fprintf(fp, "\t%d %d %.3f %.3f %.3f\n", b->type, b->style,
+	fprintf(fp, "\t%d %d %.2f %.2f %.2f\n", b->type, b->style,
 		b->thickness, b->wid, b->ht);
     fprintf(fp, "\t");
+    npts=0;
     for (p = s->points; p != NULL; p = p->next) {
 	fprintf(fp, " %d %d", p->x, p->y);
+	if (++npts >= 6 && p->next != NULL) {
+		fprintf(fp,"\n\t");
+		npts=0;
+	}
     };
-    fprintf(fp, " 9999 9999\n");/* terminating code  */
+    fprintf(fp, "\n");
 
     if (s->controls == NULL)
 	return;
     fprintf(fp, "\t");
     npts=0;
     for (cp = s->controls; cp != NULL; cp = cp->next) {
-	fprintf(fp, " %.3f %.3f %.3f %.3f",
+	fprintf(fp, " %.2f %.2f %.2f %.2f",
 		cp->lx, cp->ly, cp->rx, cp->ry);
-	if (++npts >= 2 && cp->next != NULL)
-		{
+	if (++npts >= 2 && cp->next != NULL) {
 		fprintf(fp,"\n\t");
 		npts=0;
-		}
+	}
     };
     fprintf(fp, "\n");
 }
@@ -243,13 +289,35 @@ write_text(fp, t)
     FILE	   *fp;
     F_text	   *t;
 {
+    int		    l, len, lx, n;
+    char	    c;
+    char	    buf[4];
+
     if (t->length == 0)
 	return;
-    fprintf(fp, "%d %d %d %d %d %d %d %.5f %d %d %d %d %d %s\1\n",
-	    O_TEXT, t->type, t->font, t->size, t->pen,
-	    t->color, t->depth, t->angle,
-	    t->flags, t->height, t->length,
-	    t->base_x, t->base_y, t->cstring);
+    fprintf(fp, "%d %d %d %d %d %d %d %.7f %d %d %d %d %d ",
+	    O_TEXT, t->type, t->color, t->depth, t->pen_style,
+	    t->font, t->size, t->angle,
+	    t->flags, t->ascent+t->descent, t->length,
+	    t->base_x, t->base_y);
+    len = strlen(t->cstring);
+    for (l=0; l<len; l++) {
+	c = t->cstring[l];
+	if (c == '\\')
+	    fprintf(fp,"\\\\");		/* escape a '\' with another one */
+	else if ((unsigned int) c <= 255)
+	    putc(c,fp);			/* normal 7-bit ASCII */
+	else {
+	    n = ((int) c)&255;		/* 8-bit, make \xxx (octal) */
+	    buf[3]='\0';
+	    for (lx = 2; lx>=0; lx--) {
+		buf[lx] = '0'+(n%8);
+		n /= 8;
+	    }
+	    fprintf(fp,"\\%s",buf);
+	}
+    }
+    fprintf(fp,"\\001\n");		/* finish off with '\001' string */
 }
 
 emergency_save(file_name)

@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -27,12 +34,7 @@
  * Should really reset the sizes if the screen resizes.
  */
 
-/*
- * set maximum ruler size:
- * color servers for Vaxstations screw up the pixmaps if the rulers are
- * made too big (they can't handle pixmaps much larger than the screen)
- */
-
+/* height of ticks for fraction of inch/cm */
 #define			INCH_MARK		8
 #define			HALF_MARK		8
 #define			QUARTER_MARK		6
@@ -44,8 +46,8 @@
 #define			SRM_HT			16
 
 extern		pan_origin();
-GC		tr_gc, tr_xor_gc, tr_erase_gc;
-GC		sr_gc, sr_xor_gc, sr_erase_gc;
+extern	GC	tr_gc, tr_xor_gc, tr_erase_gc;
+extern	GC	sr_gc, sr_xor_gc, sr_erase_gc;
 
 static int	lasty = -100, lastx = -100;
 static int	troffx = -8, troffy = -10;
@@ -149,10 +151,11 @@ erase_rulermark()
     }
 }
 
-#define HINCH	(PIX_PER_INCH / 2)
-#define QINCH	(PIX_PER_INCH / 4)
-#define SINCH	(PIX_PER_INCH / 16)
-#define TWOMM	(PIX_PER_CM / 5)
+static int	HINCH = (PIX_PER_INCH / 2);
+static int	QINCH = (PIX_PER_INCH / 4);
+static int	SINCH = (PIX_PER_INCH / 16);
+static int	TWOMM = (PIX_PER_CM / 5);
+static int	ONEMM = (PIX_PER_CM / 10);
 
 /************************* UNITBOX ************************/
 
@@ -279,6 +282,7 @@ unit_panel_set(w, ev)
 	FirstArg(XtNlabel, appres.INCHES ? "in" : "cm");
 	SetValues(unitbox_sw);
 	reset_rulers();
+	setup_grid(cur_gridmode);
     }
     unit_panel_dismiss();
 }
@@ -320,9 +324,9 @@ rul_unit_select(w, new_unit, garbage)
     SetValues(rul_unit_panel);
     rul_unit_setting = (int) new_unit;
     if (rul_unit_setting)
-	put_msg("ruler scale : centimetres");
-    else
 	put_msg("ruler scale : inches");
+    else
+	put_msg("ruler scale : centimetres");
 }
 
 void
@@ -349,8 +353,9 @@ popup_unit_panel()
     FirstArg(XtNx, x_val);
     NextArg(XtNy, y_val);
     NextArg(XtNwidth, 240);
+    NextArg(XtNcolormap, tool_cm);
 
-    unit_popup = XtCreatePopupShell("xfig_set_unit_panel",
+    unit_popup = XtCreatePopupShell("set_unit_panel",
 				    transientShellWidgetClass, tool,
 				    Args, ArgCount);
     XtOverrideTranslations(unit_popup,
@@ -410,10 +415,12 @@ popup_unit_panel()
     NextArg(XtNfromHoriz, label);
     NextArg(XtNstring, cur_fig_units);
     NextArg(XtNinsertPosition, strlen(buf));
-    NextArg(XtNeditType, "append");
+    NextArg(XtNeditType, XawtextEdit);
     NextArg(XtNwidth, 40);
     user_unit_panel = XtCreateManagedWidget(buf, asciiTextWidgetClass,
-                                    form, Args, ArgCount);
+					form, Args, ArgCount);
+    XtOverrideTranslations(user_unit_panel,
+		XtParseTranslationTable(text_translations));
     below = user_unit_panel;
 
     /* make figure scale menu */
@@ -445,10 +452,12 @@ popup_unit_panel()
     NextArg(XtNfromHoriz, label);
     NextArg(XtNstring, buf);
     NextArg(XtNinsertPosition, strlen(buf));
-    NextArg(XtNeditType, "append");
+    NextArg(XtNeditType, XawtextEdit);
     NextArg(XtNwidth, 40);
     scale_factor_panel = XtCreateManagedWidget(buf, asciiTextWidgetClass,
                                         form, Args, ArgCount);
+    XtOverrideTranslations(scale_factor_panel,
+		XtParseTranslationTable(text_translations));
     below = scale_factor_panel;
 
     /* standard cancel/set buttons */
@@ -471,6 +480,8 @@ popup_unit_panel()
 		      (XtEventHandler)unit_panel_set, (XtPointer) NULL);
 
     XtPopup(unit_popup, XtGrabExclusive);
+    /* insure that the most recent colormap is installed */
+    set_cmap(XtWindow(unit_popup));
 
     XtSetSensitive(user_unit_lab, fig_unit_setting ? True : False);
     XtSetSensitive(user_unit_panel, fig_unit_setting ? True : False);
@@ -497,6 +508,8 @@ static String	topruler_translations =
     Meta <Btn3Motion>:EventTopRuler()\n\
     <EnterWindow>:EnterTopRuler()\n\
     <LeaveWindow>:LeaveTopRuler()\n\
+    <KeyPress>:EnterTopRuler()\n\
+    <KeyRelease>:EnterTopRuler()\n\
     <Expose>:ExposeTopRuler()\n";
 
 static
@@ -533,14 +546,14 @@ topruler_selected(tool, event, params, nparams)
 	}
 	switch (be->button) {
 	case Button1:
-	    pan_left();
+	    pan_left(event->state&ShiftMask);
 	    break;
 	case Button2:
 	    if (orig_zoomoff != zoomxoff)
 		setup_grid(cur_gridmode);
 	    break;
 	case Button3:
-	    pan_right();
+	    pan_right(event->state&ShiftMask);
 	    break;
 	}
 	XDefineCursor(tool_d, topruler_win, lr_arrow_cursor);
@@ -548,7 +561,8 @@ topruler_selected(tool, event, params, nparams)
     case MotionNotify:
 	if (event->x != last_drag_x)
 	    if ((zoomxoff != 0) || (event->x < last_drag_x)) {
-		zoomxoff -= (event->x - last_drag_x);
+		zoomxoff -= ((event->x - last_drag_x)/zoomscale*
+					(event->state&ShiftMask?5.0:1.0));
 		if (zoomxoff < 0)
 		    zoomxoff = 0;
 		reset_topruler();
@@ -692,46 +706,68 @@ reset_topruler()
 {
     register int    i, j;
     register Pixmap p = topruler_pm;
-    char	    number[4];
+    char	    number[4],clen;
     int		    X0;
+    float	    skip;
 
     /* top ruler, adjustments for digits are kludges based on 6x13 char */
     XFillRectangle(tool_d, p, tr_erase_gc, 0, 0, TOPRULER_WD, TOPRULER_HT);
+
+    clen = char_width(roman_font);
+    skip = 1;
+    if (display_zoomscale < 0.2 && !appres.INCHES)
+	skip = 10;
+    else if ((display_zoomscale < 0.2 && appres.INCHES) ||
+	     (display_zoomscale < 0.3 && !appres.INCHES))
+	        skip = 4;
+    else if ((display_zoomscale < 0.3 && appres.INCHES) ||
+	     (display_zoomscale < 0.7 && !appres.INCHES))
+		skip = 2;
+    else if (display_zoomscale >= 2.0 && appres.INCHES)
+		skip = 0.5;
 
     X0 = BACKX(0);
     if (appres.INCHES) {
 	X0 -= (X0 % SINCH);
 	for (i = X0+SINCH-1; i <= X0+round(TOPRULER_WD/zoomscale); i += SINCH) {
 	    j = i + 1;
+	    if ((int)(j/skip) % PIX_PER_INCH == 0) {
+		if (1.0*j/PIX_PER_INCH == (int)(j/PIX_PER_INCH))
+		    sprintf(number, "%-d", (int)(j / PIX_PER_INCH));
+		else
+		    sprintf(number, "%-.1f", 1.0 * j / PIX_PER_INCH);
+		XDrawString(tool_d, p, tr_gc, ZOOMX(i) - strlen(number)*clen/2,
+			TOPRULER_HT - INCH_MARK - 5, number, strlen(number));
+	    }
 	    if (j % PIX_PER_INCH == 0) {
 		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
 			  TOPRULER_HT - INCH_MARK - 1);
-		sprintf(number, "%d", j / PIX_PER_INCH);
-		XDrawString(tool_d, p, tr_gc, ZOOMX(i) - 3,
-			    TOPRULER_HT - INCH_MARK - 5, number,
-			    (j < PIX_PER_INCH*10)? 1 : (j<PIX_PER_INCH*100? 2:3));
 	    } else if (j % HINCH == 0)
 		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
 			  TOPRULER_HT - HALF_MARK - 1);
-	    else if (j % QINCH == 0)
+	    else if (j % QINCH == 0 && display_zoomscale >= 0.2)
 		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
 			  TOPRULER_HT - QUARTER_MARK - 1);
-	    else if (j % SINCH == 0)
+	    else if (j % SINCH == 0 && display_zoomscale >= 0.4)
 		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
 			  TOPRULER_HT - SIXTEENTH_MARK - 1);
 	}
     } else {
 	X0 -= (X0 % TWOMM);
-	for (i = X0+TWOMM-1; i <= X0+round(TOPRULER_WD/zoomscale); i++) {
+	for (i = X0+TWOMM-1; i <= X0+round(TOPRULER_WD/zoomscale); i += ONEMM) {
 	    j = i + 1;
-	    if (j % PIX_PER_CM == 0) {
+	    if ((int)(j/skip) % PIX_PER_CM == 0) {
+		if (1.0*j/PIX_PER_CM == (int)(j/PIX_PER_CM))
+		    sprintf(number, "%-d", (int)(j / PIX_PER_CM));
+		else
+		    sprintf(number, "%-.1f", 1.0 * j / PIX_PER_CM);
+		XDrawString(tool_d, p, tr_gc, ZOOMX(i) - strlen(number)*clen/2,
+			TOPRULER_HT - INCH_MARK - 5, number, strlen(number));
+	    }
+	    if (j % PIX_PER_CM == 0)
 		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
 			  TOPRULER_HT - INCH_MARK - 1);
-		sprintf(number, "%d", j / PIX_PER_CM);
-		XDrawString(tool_d, p, tr_gc, ZOOMX(i) - 3,
-			    TOPRULER_HT - INCH_MARK - 5, number,
-			    (j < PIX_PER_CM*10)? 1 : (j<PIX_PER_CM*100? 2:3));
-	    } else if (j % TWOMM == 0)
+	    else if (j % TWOMM == 0 && display_zoomscale >= 0.3)
 		XDrawLine(tool_d, p, tr_gc, ZOOMX(i), TOPRULER_HT - 1, ZOOMX(i),
 			  TOPRULER_HT - QUARTER_MARK - 1);
 	}
@@ -760,6 +796,8 @@ static String	sideruler_translations =
     Meta <Btn3Motion>:EventSideRuler()\n\
     <EnterWindow>:EnterSideRuler()\n\
     <LeaveWindow>:LeaveSideRuler()\n\
+    <KeyPress>:EnterSideRuler()\n\
+    <KeyRelease>:EnterSideRuler()\n\
     <Expose>:ExposeSideRuler()\n";
 
 static
@@ -796,14 +834,14 @@ sideruler_selected(tool, event, params, nparams)
 	}
 	switch (be->button) {
 	case Button1:
-	    pan_up();
+	    pan_up(event->state&ShiftMask);
 	    break;
 	case Button2:
 	    if (orig_zoomoff != zoomyoff)
 		setup_grid(cur_gridmode);
 	    break;
 	case Button3:
-	    pan_down();
+	    pan_down(event->state&ShiftMask);
 	    break;
 	}
 	XDefineCursor(tool_d, sideruler_win, ud_arrow_cursor);
@@ -811,7 +849,8 @@ sideruler_selected(tool, event, params, nparams)
     case MotionNotify:
 	if (event->y != last_drag_y)
 	    if ((zoomyoff != 0) || (event->y < last_drag_y)) {
-		zoomyoff -= (event->y - last_drag_y);
+		zoomyoff -= ((event->y - last_drag_y)/zoomscale*
+					(event->state&ShiftMask?5.0:1.0));
 		if (zoomyoff < 0)
 		    zoomyoff = 0;
 		reset_sideruler();
@@ -946,10 +985,23 @@ reset_sideruler()
     register Pixmap p = sideruler_pm;
     char	    number[4];
     int		    Y0;
+    float	    skip;
 
     /* side ruler, adjustments for digits are kludges based on 6x13 char */
     XFillRectangle(tool_d, p, sr_erase_gc, 0, 0, SIDERULER_WD,
 		   (int) (SIDERULER_HT));
+
+    skip = 1;
+    if (display_zoomscale < 0.2 && !appres.INCHES)
+	skip = 10;
+    else if ((display_zoomscale < 0.2 && appres.INCHES) ||
+	     (display_zoomscale < 0.3 && !appres.INCHES))
+	        skip = 4;
+    else if ((display_zoomscale < 0.3 && appres.INCHES) ||
+	     (display_zoomscale < 0.7 && !appres.INCHES))
+		skip = 2;
+    else if (display_zoomscale >= 2.0 && appres.INCHES)
+		skip = 0.5;
 
     Y0 = BACKY(0);
     if (appres.INCHES) {
@@ -960,19 +1012,24 @@ reset_sideruler()
 		if (j % PIX_PER_INCH == 0) {
 		    XDrawLine(tool_d, p, sr_gc, SIDERULER_WD - INCH_MARK,
 			      ZOOMY(i), SIDERULER_WD, ZOOMY(i));
-		    sprintf(number, "%3d", j / PIX_PER_INCH);
-		    XDrawString(tool_d, p, sr_gc,
+		    if ((int)(j/skip) % PIX_PER_INCH == 0) {
+			if (1.0*j/PIX_PER_INCH == (int)(j/PIX_PER_INCH))
+			    sprintf(number, "%d", (int)(j / PIX_PER_INCH));
+			else
+			    sprintf(number, "%.1f", j / PIX_PER_INCH);
+			XDrawString(tool_d, p, sr_gc,
 				SIDERULER_WD - INCH_MARK - 22, ZOOMY(i) + 3,
-				number, 3);
+				number, strlen(number));
+		    }
 		} else if (j % HINCH == 0)
 		    XDrawLine(tool_d, p, sr_gc,
 			      SIDERULER_WD - HALF_MARK, ZOOMY(i),
 			      SIDERULER_WD, ZOOMY(i));
-		else if (j % QINCH == 0)
+		else if (j % QINCH == 0 && display_zoomscale >= 0.2)
 		    XDrawLine(tool_d, p, sr_gc,
 			      SIDERULER_WD - QUARTER_MARK, ZOOMY(i),
 			      SIDERULER_WD, ZOOMY(i));
-		else if (j % SINCH == 0)
+		else if (j % SINCH == 0 && display_zoomscale >= 0.4)
 		    XDrawLine(tool_d, p, sr_gc,
 			      SIDERULER_WD - SIXTEENTH_MARK, ZOOMY(i),
 			      SIDERULER_WD, ZOOMY(i));
@@ -983,16 +1040,21 @@ reset_sideruler()
 		if (j % PIX_PER_INCH == 0) {
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
 			      INCH_MARK - 1, ZOOMY(i));
-		    sprintf(number, "%3d", j / PIX_PER_INCH);
-		    XDrawString(tool_d, p, sr_gc, INCH_MARK + 3,
-				ZOOMY(i) + 3, number, 3);
+		    if ((int)(j/skip) % PIX_PER_INCH == 0) {
+			if (1.0*j/PIX_PER_INCH == (int)(j/PIX_PER_INCH))
+			    sprintf(number, "%d", (int)(j / PIX_PER_INCH));
+			else
+			    sprintf(number, "%.1f", j / PIX_PER_INCH);
+		        XDrawString(tool_d, p, sr_gc, INCH_MARK + 3,
+				ZOOMY(i) + 3, number, strlen(number));
+		    }
 		} else if (j % HINCH == 0)
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
 			      HALF_MARK - 1, ZOOMY(i));
-		else if (j % QINCH == 0)
+		else if (j % QINCH == 0 && display_zoomscale >= 0.2)
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
 			      QUARTER_MARK - 1, ZOOMY(i));
-		else if (j % SINCH == 0)
+		else if (j % SINCH == 0 && display_zoomscale >= 0.4)
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
 			      SIXTEENTH_MARK - 1, ZOOMY(i));
 	    }
@@ -1005,11 +1067,16 @@ reset_sideruler()
 		if (j % PIX_PER_CM == 0) {
 		    XDrawLine(tool_d, p, sr_gc, SIDERULER_WD - INCH_MARK,
 			      ZOOMY(i), SIDERULER_WD, ZOOMY(i));
-		    sprintf(number, "%3d", j / PIX_PER_CM);
-		    XDrawString(tool_d, p, sr_gc,
+		    if ((int)(j/skip) % PIX_PER_CM == 0) {
+			if (1.0*j/PIX_PER_CM == (int)(j/PIX_PER_CM))
+			    sprintf(number, "%d", (int)(j / PIX_PER_CM));
+			else
+			    sprintf(number, "%.1f", j / PIX_PER_CM);
+			XDrawString(tool_d, p, sr_gc,
 				SIDERULER_WD - INCH_MARK - 14, ZOOMY(i) + 3,
-				number, 3);
-		} else if (j % TWOMM == 0)
+				number, strlen(number));
+		    }
+		} else if (j % TWOMM == 0 && display_zoomscale >= 0.3)
 		    XDrawLine(tool_d, p, sr_gc,
 			      SIDERULER_WD - QUARTER_MARK, ZOOMY(i),
 			      SIDERULER_WD, ZOOMY(i));
@@ -1020,10 +1087,15 @@ reset_sideruler()
 		if (j % PIX_PER_CM == 0) {
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
 			      INCH_MARK - 1, ZOOMY(i));
-		    sprintf(number, "%3d", j / PIX_PER_CM);
-		    XDrawString(tool_d, p, sr_gc, INCH_MARK + 3,
-				ZOOMY(i) + 3, number, 3);
-		} else if (j % TWOMM == 0)
+		    if ((int)(j/skip) % PIX_PER_CM == 0) {
+			if (1.0*j/PIX_PER_CM == (int)(j/PIX_PER_CM))
+			    sprintf(number, "%d", (int)(j / PIX_PER_CM));
+			else
+			    sprintf(number, "%.1f", j / PIX_PER_CM);
+			XDrawString(tool_d, p, sr_gc, INCH_MARK + 3,
+				ZOOMY(i) + 3, number, strlen(number));
+		    }
+		} else if (j % TWOMM == 0 && display_zoomscale >= 0.3)
 		    XDrawLine(tool_d, p, sr_gc, 0, ZOOMY(i),
 			      QUARTER_MARK - 1, ZOOMY(i));
 	    }

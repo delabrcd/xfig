@@ -2,14 +2,17 @@
 
 /* xvertext 5.0, Copyright (c) 1993 Alan Richardson (mppa3@uk.ac.sussex.syma)
  *
- * Permission to use, copy, modify, and distribute this software and its
- * documentation for any purpose and without fee is hereby granted, provided
- * that the above copyright notice appear in all copies and that both the
- * copyright notice and this permission notice appear in supporting
- * documentation.  All work developed as a consequence of the use of
- * this program should duly acknowledge such use. No representations are
- * made about the suitability of this software for any purpose.  It is
- * provided "as is" without express or implied warranty.
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 /* ********************************************************************** */
@@ -427,7 +430,7 @@ static int XRotPaintAlignedString(dpy, font, angle, drawable, gc, x, y, text,
     /* get a rotated bitmap */
     item=XRotRetrieveFromCache(dpy, font, angle, text, align);
     if(item==NULL)
-	return NULL;
+	return 0;
     
     /* this gc has similar properties to the user's gc */
     my_gc=XCreateGC(dpy, drawable, (unsigned long) 0, 0);
@@ -643,8 +646,6 @@ static int XRotDrawHorizontalString(dpy, font, drawable, gc, x, y, text,
     char *str2_a="\0", *str2_b="\n\0";
     int dir, asc, desc;
     XCharStruct overall;
-
-    DEBUG_PRINT1("**Horizontal text.\n");
 
     if (text == NULL || *text=='\0') {
 	DEBUG_PRINT1("Empty string, ignoring\n");
@@ -1428,8 +1429,7 @@ static XImage *XRotMagnifyImage(dpy, ximage)
 /* Calculate the bounding box some text will have when painted            */
 /**************************************************************************/
 
-XPoint *XRotTextExtents(dpy, font, angle, x, y, text, align)
-    Display *dpy;
+XPoint *XRotTextExtents(font, angle, x, y, text, align)
     XFontStruct *font;
     float angle;
     int x, y;

@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 /*********************** IMPORTS ************************/
@@ -118,7 +125,8 @@ XtActionsRec	canvas_actions[] =
     {"EraseRulerMark", (XtActionProc) erase_rulermark},
 };
 
-/* need the ~Meta for the EventCanv action so that the accelerators still work */
+/* need the ~Meta for the EventCanv action so that the accelerators still work 
+   during text input */
 static String	canvas_translations =
 "<Motion>:EventCanv()\n\
     Any<BtnDown>:EventCanv()\n\
@@ -160,7 +168,7 @@ init_canvas(tool)
      */
     fixcolors[0] = x_fg_color;
     fixcolors[1] = x_bg_color;
-    XQueryColors(tool_d, DefaultColormapOfScreen(tool_s), fixcolors, 2);
+    XQueryColors(tool_d, tool_cm, fixcolors, 2);
     x_fg_color = fixcolors[0];
     x_bg_color = fixcolors[1];
 
@@ -186,7 +194,9 @@ init_canvas(tool)
 
 setup_canvas()
 {
-    canvas_win = XtWindow(canvas_sw);
+    /* keep real_canvas for the case when we set a temporary cursor and
+       the canvas_win is set to a 1-bit deep pixmap for X11 bitmap export */
+    real_canvas = canvas_win = XtWindow(canvas_sw);
     init_grid();
     reset_clip_window();
 }
@@ -285,25 +295,33 @@ canvas_selected(tool, event, params, nparams)
 	    key == XK_Down ||
 	    key == XK_Home ||
 	    key == XK_Multi_key ||
-	    key == XK_Alt_L ) {
+	    key == XK_Meta_L ||
+	    key == XK_Meta_R ||
+	    key == XK_Alt_L ||
+	    key == XK_Alt_R ||
+	    key == XK_Escape ) {
 	        switch (key) {
 		    case XK_Left:
-			pan_left();
+			pan_left(event->state&ShiftMask);
 			break;
 		    case XK_Right:
-			pan_right();
+			pan_right(event->state&ShiftMask);
 			break;
 		    case XK_Up:
-			pan_up();
+			pan_up(event->state&ShiftMask);
 			break;
 		    case XK_Down:
-			pan_down();
+			pan_down(event->state&ShiftMask);
 			break;
 		    case XK_Home:
 			pan_origin();
 			break;
 		    case XK_Multi_key:
+		    case XK_Meta_L:
+		    case XK_Meta_R:
 		    case XK_Alt_L:
+		    case XK_Alt_R:
+		    case XK_Escape:
 			compose_key = 1;
 			break;
 		}
@@ -514,8 +532,11 @@ readComposeKey()
 
 		if (strlen(p3) == 1)
 		    compKeyPtr->key = *p3;
-		else
-		    compKeyPtr->key = strtol(p3, NULL, 16);
+		else {
+		    int x;
+		    sscanf(p3, "%i", &x);
+		    compKeyPtr->key = (char) x;
+		}
 		compKeyPtr->first = XStringToKeysym(p1);
 		compKeyPtr->second = XStringToKeysym(p2);
 		compKeyPtr->next = NULL;

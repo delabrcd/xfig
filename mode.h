@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #define		F_NULL			0
@@ -27,7 +34,7 @@
 #define		F_CLOSED_INTSPLINE	13
 #define		F_ARC_BOX		14
 #define		F_REGPOLY		15
-#define		F_EPSOBJ		16
+#define		F_PICOBJ		16
 #define	    FIRST_EDIT_MODE	    F_GLUE
 #define		F_GLUE			30
 #define		F_BREAK			31
@@ -61,6 +68,9 @@ extern int	cur_mode;
 #define		ALIGN_CENTER		2
 #define		ALIGN_RIGHT		3
 #define		ALIGN_BOTTOM		3
+#define		ALIGN_DISTRIB_C		4
+#define		ALIGN_DISTRIB_E		5
+#define		ALIGN_ABUT		6
 
 extern int	cur_halign;
 extern int	cur_valign;
@@ -91,21 +101,23 @@ extern int	autobackwardarrow_mode;
 #define		GRID_0			0
 #define		GRID_1			1
 #define		GRID_2			2
+#define		GRID_3			3
 
 extern int	cur_gridmode;
+extern int	grid_fine[GRID_3 + 1];
+extern int	grid_coarse[GRID_3 + 1];
+extern char    *grid_name[GRID_3 + 1];
 
 /* point position */
 #define		P_ANY			0
 #define		P_MAGNET		1
 #define		P_GRID1			2
 #define		P_GRID2			3
+#define		P_GRID3			4
 
 extern int	cur_pointposn;
 extern int	posn_rnd[P_GRID2 + 1];
 extern int	posn_hlf[P_GRID2 + 1];
-extern int	grid_fine[P_GRID2 + 1];
-extern int	grid_coarse[P_GRID2 + 1];
-extern char    *grid_name[P_GRID2 + 1];
 
 /* rotn axis */
 #define		UD_FLIP			1
@@ -127,6 +139,9 @@ extern int	aborting;
 extern int	anypointposn;
 extern int	figure_modified;
 extern int	cur_numsides;
+extern int	cur_numcopies;
+extern int	cur_numxcopies;
+extern int	cur_numycopies;
 extern char	cur_fig_units[32];
 extern Boolean	warnexist;
 
@@ -144,15 +159,18 @@ extern int	min_num_points;
 
 extern Boolean	export_flushleft;	/* flush left (true) or center (false) */
 
-/***************************  Print Settings  ****************************/
-
-extern int	print_landscape;/* def. orientation for printer */
-extern Boolean	print_flushleft; /* flush left (true) or center (false) */
-
-#define NUM_EXP_LANG	15	/* number of export languages */
+#ifdef USE_XPM
+#define NUM_EXP_LANG	17	/* number of export languages */
+#else
+#define NUM_EXP_LANG	16	/* number of export languages */
+#endif
 #define LANG_EPS	7	/* position of eps starting from 0 */
 #define LANG_PS		8	/* position of ps starting from 0 */
 #define LANG_XBITMAP	14	/* position of xbm starting from 0 */
+#ifdef USE_XPM
+#define LANG_XPIXMAP	15	/* position of xpm starting from 0 */
+#endif
+#define LANG_GIF	16	/* position of gif starting from 0 */
 
 extern int	cur_exp_lang;
 extern char    *lang_items[NUM_EXP_LANG];

@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -17,6 +24,9 @@
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
+
+extern	setcenter, setcenter_x, setcenter_y;
+extern	setanchor, setanchor_x, setanchor_y;
 
 /*
  * Support for rendering based on correct object depth.	 A simple depth based
@@ -119,6 +129,10 @@ redisplay_objects(objects)
 
     /* show the markers if they are on */
     toggle_markers_in_compound(objects);
+    if (setcenter)
+	center_marker(setcenter_x, setcenter_y);
+    if (setanchor)
+	center_marker(setanchor_x, setanchor_y);
 }
 
 /*
@@ -401,10 +415,10 @@ redisplay_region(xmin, ymin, xmax, ymax)
 {
     set_temp_cursor(wait_cursor);
     /* kludge so that markers are redrawn */
-    xmin -= 8;
-    ymin -= 8;
-    xmax += 8;
-    ymax += 8;
+    xmin -= 10;
+    ymin -= 10;
+    xmax += 10;
+    ymax += 10;
     set_clip_window(xmin, ymin, xmax, ymax);
     clear_canvas();
     redisplay_objects(&objects);

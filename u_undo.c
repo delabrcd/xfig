@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 /**************** IMPORTS ****************/
@@ -35,9 +42,9 @@
  * all the "next" fields of objects pointed to by object_tails to NULL.
  */
 
-F_compound	saved_objects = {0, { 0, 0 }, { 0, 0 }, 
+F_compound	saved_objects = {0, 0, { 0, 0 }, { 0, 0 }, 
 				NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-F_compound	object_tails = {0, { 0, 0 }, { 0, 0 }, 
+F_compound	object_tails = {0, 0, { 0, 0 }, { 0, 0 }, 
 				NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 int		last_action = F_NULL;
 
@@ -418,6 +425,7 @@ undo_load()
     strcpy(save_filename, ctemp);
     redisplay_canvas();
     set_modifiedflag();
+    swap_colors();
     last_action = F_LOAD;
 }
 
@@ -512,14 +520,19 @@ clean_up()
 	    free_text(&saved_objects.texts);
 	    break;
 	}
-    } else if (last_action == F_DELETE_POINT) {
-	free((char *) last_selected_point);
+    } else if (last_action == F_DELETE_POINT || last_action == F_ADD_POINT) {
+	if (last_action == F_DELETE_POINT) {
+	    free((char *) last_selected_point);
+	    last_next_point = NULL;
+	}
 	last_prev_point = NULL;
 	last_selected_point = NULL;
-	last_next_point = NULL;
-    } else if (last_action == F_ADD_POINT) {
-	last_prev_point = NULL;
-	last_selected_point = NULL;
+	saved_objects.arcs = NULL;
+	saved_objects.compounds = NULL;
+	saved_objects.ellipses = NULL;
+	saved_objects.lines = NULL;
+	saved_objects.splines = NULL;
+	saved_objects.texts = NULL;
     } else if (last_action == F_LOAD) {
 	free_arc(&saved_objects.arcs);
 	free_compound(&saved_objects.compounds);

@@ -7,7 +7,7 @@
 #
 
 # -------------------------------------------------------------------------
-# Makefile generated from "Imake.tmpl" and </tmp/IIf.a23979>
+# Makefile generated from "Imake.tmpl" and <Imakefile>
 # $XConsortium: Imake.tmpl,v 1.139 91/09/16 08:52:48 rws Exp $
 #
 # Platform-specific parameters may be set in the appropriate <vendor>.cf
@@ -34,6 +34,9 @@
 
 # $XConsortium: sunLib.rules,v 1.7 91/12/20 11:19:47 rws Exp $
 
+.c.o:
+	$(CC) -c $(CFLAGS) $*.c
+
 # -------------------------------------------------------------------------
 # site-specific configuration parameters that go after
 # the platform-specific parameters - edit site.def to change
@@ -47,12 +50,12 @@
 
                AR = ar clq
   BOOTSTRAPCFLAGS =
-               CC = cc
+               CC = gcc -fstrength-reduce -fpcc-struct-return
                AS = as
 
          COMPRESS = compress
               CPP = /lib/cpp $(STD_CPP_DEFINES)
-    PREPROCESSCMD = cc -E $(STD_CPP_DEFINES)
+    PREPROCESSCMD = gcc -fstrength-reduce -fpcc-struct-return -E $(STD_CPP_DEFINES)
           INSTALL = install
                LD = ld
              LINT = lint
@@ -74,7 +77,7 @@
      STD_INCLUDES =
   STD_CPP_DEFINES =
       STD_DEFINES =
- EXTRA_LOAD_FLAGS =
+ EXTRA_LOAD_FLAGS = -B/usr/bin/
   EXTRA_LIBRARIES =
              TAGS = ctags
 
@@ -266,72 +269,139 @@ PICFLAGS = -pic
 # -------------------------------------------------------------------------
 # start of Imakefile
 
+# Copyright (c) 1985 by Supoj Sutanthavibul
+# Copyright (c) 1994 by Brian V. Smith
+# Parts Copyright (c) 1991 by Paul King
+
+# The X Consortium, and any party obtaining a copy of these files from
+# the X Consortium, directly or indirectly, is granted, free of charge, a
+# full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+# nonexclusive right and license to deal in this software and
+# documentation files (the "Software"), including without limitation the
+# rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons who receive
+# copies from any such party to do so, with the only requirement being
+# that this copyright notice remain intact.  This license includes without
+# limitation a license to do the foregoing actions under any patents of
+# the party supplying this software to the X Consortium.
+
+#  NOTE: AS of X11R6 the official comment for Imakefile is the word #
+
+# Uncomment the following definition for XAWLIB if you want to use
+# the 3d Athena Widget Set (highly recommended!)
+
+# XAWLIB = -lXaw3d
+
 # Uncomment the following if needed for DECstations running older X11R4
-#INCROOT=/usr/include/mit
+# INCROOT=/usr/include/mit
+
+# Uncomment the XPMDEFINES variable if you have the XPM (color pixmap)
+# package and you would like to use the following:
+# USE_XPM will allow import/export of XPM files
+# USE_XPM_ICON uses a color xpm icon for xfig itself
+#   You need XPM version 3.4c or newer.  This is available from ftp.x.org
+#   in /contrib/libraries.
+
+# XPMDEFINES = -DUSE_XPM -DUSE_XPM_ICON
+
+# If you want to use the XPM library change the following for your paths
+# and uncomment them:
+
+# XPMLIBDIR = -L/usr/local/X11/lib
+# XPMINCDIR = -I/usr/local/X11/include/xpm
+# XPMLIB = $(XPMLIBDIR) -lXpm
+
+EXTRA_INCLUDES = $(XPMINCDIR)
 
 SYS_LIBRARIES= 		-lm
 DEPLIBS = 		$(DEPXAWLIB) $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
-# use the following if NOT using DPS
-LOCAL_LIBRARIES = 	$(XAWLIB) $(XMULIB) $(XTOOLLIB) $(XLIB)
-# use the following if using DPS, *** and add -DDPS to the DEFINES line ***
-#LOCAL_LIBRARIES = 	-ldps $(XAWLIB) $(XMULIB) $(XTOOLLIB) $(XLIB)
+
+# For Solaris: add "-lc" to the LOCAL_LIBRARIES variable in the Imakefile
+# to link with /usr/lib/libc for the directory operations.
+
+# uncomment the following if using DPS (Display PostScript)
+
+# DPSLIB = -ldps
+# DPSDEF = -DDPS
+
+# uncomment the following if *NOT* using DPS (Display PostScript)
+
+# DPSLIB =
+# DPSDEF =
+
+# If using an input tablet uncomment the following
+
+# TABLIB = $(XILIB)
+# USETAB = -DUSE_TAB
+
+LOCAL_LIBRARIES = 	$(DPSLIB) $(XPMLIB) $(TABLIB) $(XAWLIB) $(XMULIB) $(XTOOLLIB) $(XLIB)
+
 # use (and change) the following if you want the multi-key data base file
 # somewhere other than the standard X11 library directory
-#XFIGLIBDIR =		/usr/local/lib/X11/xfig
+# XFIGLIBDIR =		/usr/local/lib/X11/xfig
+
 # use this if you want the multi-key data base file in the standard X11 tree
 XFIGLIBDIR =		$(LIBDIR)/xfig
+
 DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
 
-# remove -DGSBIT from the DEFINES if you DON'T want to have gs (ghostscript)
-# generate a preview bitmap.  If you do use ghostscript you will need
-# version 2.4 or later.
-#
 # For the rotated text code:
 #   Add one of `-DCACHE_XIMAGES' or `-DCACHE_BITMAPS' to decide what is
-#   cached.
-#
+#   cached.  If you are converned about memory usage in your X server (e.g.
+#   if you are using an X terminal) then you might want to cache Ximages,
+#   which reside on the client-side.  On the other hand it is much slower,
+#   so you might want to cache bitmaps (which reside in the X server)
+#   instead.
 #   Add `-DCACHE_SIZE_LIMIT=xxxx' where xxxx is the cache size in kilobytes.
 #   A cache size of zero turns caching off.
 #
 # For SYSV systems with BSD-style printer command which use lpr instead of
 # lp (SGI is one such machine), add -DBSDLPR to the DEFINES variable
+#
+# If you have VERY large objects (e.g. polylines etc) you may want to
+# increase MAXNUMPTS, the maximum number of points that are displayed. The
+# default can be found in w_drawprim.h.  This option may be specified by
+# adding -DMAXNUMPTS=xxxx to the DEFINES line, where xxxx is the maximum
+# number of vertices.
 
 CACHE = -DCACHE_BITMAPS -DCACHE_SIZE_LIMIT=300
 
-DEFINES =             $(STRSTRDEFINES) -DGSBIT
+DEFINES =             $(STRSTRDEFINES) $(XPMDEFINES) $(DPSDEF)
 
-XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_epsobj.c \
+XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
 		d_intspline.c d_line.c d_regpoly.c d_spline.c d_text.c \
 		e_addpt.c e_align.c e_arrow.c e_break.c \
 		e_convert.c e_copy.c e_delete.c e_deletept.c \
 		e_edit.c e_flip.c e_glue.c e_move.c \
 		e_movept.c e_rotate.c e_scale.c e_update.c \
-		f_load.c f_read.c f_epsobj.c \
-		f_readold.c f_save.c f_util.c f_xbitmap.c \
+		f_load.c f_neuclrtab.c f_read.c \
+		f_picobj.c f_readeps.c f_readxbm.c f_readxpm.c f_readgif.c \
+		f_readold.c f_save.c f_util.c f_wrgif.o f_wrbitmap.c f_wrpixmap.c \
 		main.c mode.c object.c resources.c \
 		u_bound.c u_create.c u_drag.c u_draw.c \
 		u_elastic.c u_error.c u_fonts.c u_free.c u_geom.c \
 		u_list.c u_markers.c u_pan.c u_print.c \
-		u_redraw.c u_search.c u_translate.c u_undo.c \
-		w_canvas.c w_cmdpanel.c w_cursor.c w_dir.c w_drawprim.c \
+		u_redraw.c u_scale.c u_search.c u_translate.c u_undo.c \
+		w_canvas.c w_cmdpanel.c w_color.c w_cursor.c w_dir.c w_drawprim.c \
 		w_export.c w_file.c w_fontbits.c w_fontpanel.c w_grid.c \
 		w_icons.c w_indpanel.c w_modepanel.c w_mousefun.c w_msgpanel.c \
 		w_print.c w_rottext.c w_rulers.c w_setup.c w_util.c w_zoom.c
 
-XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_epsobj.o \
+XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
 		d_intspline.o d_line.o d_regpoly.o d_spline.o d_text.o \
 		e_addpt.o e_align.o e_arrow.o e_break.o \
 		e_convert.o e_copy.o e_delete.o e_deletept.o \
 		e_edit.o e_flip.o e_glue.o e_move.o \
 		e_movept.o e_rotate.o e_scale.o e_update.o \
-		f_load.o f_read.o f_epsobj.o \
-		f_readold.o f_save.o f_util.o f_xbitmap.o \
+		f_load.o f_neuclrtab.o f_read.o \
+		f_picobj.o f_readeps.o f_readxbm.o f_readxpm.o f_readgif.o \
+		f_readold.o f_save.o f_util.o f_wrgif.o f_wrbitmap.o f_wrpixmap.o \
 		main.o mode.o object.o resources.o \
 		u_bound.o u_create.o u_drag.o u_draw.o \
 		u_elastic.o u_error.o u_fonts.o u_free.o u_geom.o \
 		u_list.o u_markers.o u_pan.o u_print.o \
-		u_redraw.o u_search.o u_translate.o u_undo.o \
-		w_canvas.o w_cmdpanel.o w_cursor.o w_dir.o w_drawprim.o \
+		u_redraw.o u_scale.o u_search.o u_translate.o u_undo.o \
+		w_canvas.o w_cmdpanel.o w_color.o w_cursor.o w_dir.o w_drawprim.o \
 		w_export.o w_file.o w_fontbits.o w_fontpanel.o w_grid.o \
 		w_icons.o w_indpanel.o w_modepanel.o w_mousefun.o w_msgpanel.o \
 		w_print.o w_rottext.o w_rulers.o w_setup.o w_util.o w_zoom.o
@@ -395,11 +465,15 @@ install:: Fig-color.ad
 	else (set -x; $(MKDIRHIER) $(DESTDIR)$(XAPPLOADDIR)); fi
 	$(INSTALL) -c $(INSTAPPFLAGS) Fig-color.ad $(DESTDIR)$(XAPPLOADDIR)/Fig-color
 
-w_canvas.o:  $(ICONXFIGFILES)
+main.o:  $(ICONXFIGFILES)
+	$(RM) $@
+	$(CC) -c $(CFLAGS)  $(USETAB)  $*.c
+
+w_canvas.o:
 	$(RM) $@
 	$(CC) -c $(CFLAGS)  $(DIR_DEFS) $*.c
 
-w_rottext.o:  $(ICONXFIGFILES)
+w_rottext.o:
 	$(RM) $@
 	$(CC) -c $(CFLAGS)  $(CACHE) $*.c
 

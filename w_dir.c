@@ -1,5 +1,20 @@
 /* This file is part of xdir, an X-based directory browser.
  *
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
+ *
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
+ *
  *	Created: 13 Aug 88
  *
  *	Win Treese
@@ -32,7 +47,7 @@
  * used in advertising or publicity pertaining to distribution of the
  * software without specific, written prior permission.
  *
- *	Modified: 4 Dec 91 - Paul King (king@cs.uq.oz.au)
+ *
  */
 
 #include "w_util.h"
@@ -42,7 +57,7 @@
 #include "mode.h"
 #include "w_dir.h"
 #include "w_setup.h"
-#include "w_drawprim.h"		/* for char_height */
+#include "w_drawprim.h"		/* for max_char_height */
 #ifdef USE_DIRENT
 #include <dirent.h>
 #else
@@ -174,8 +189,7 @@ SetDir(widget, event, params, num_params)
 	parseuserpath(ndir,longdir);
 	ndir=longdir;
 	}
-    strcpy(cur_dir, ndir);
-    DoChangeDir(cur_dir);
+    DoChangeDir(ndir);
 }
 
 /* make the full path from ~/partialpath */
@@ -204,7 +218,7 @@ char *path,*longpath;
 	strcpy(longpath,path);
     } else {
 	strcpy(longpath,who->pw_dir);
-	p=index(path,'/');
+	p=strchr(path,'/');
 	if (p)
 		strcat(longpath,p);	/* attach stuff after the / */
     }
@@ -223,9 +237,12 @@ static XtActionsRec actionTable[] = {
 
 static int      actions_added=0;
 
+/* the file_exp parm just changes the vertical offset for the Rescan button */
+
 void
-create_dirinfo(parent, below, ret_beside, ret_below,
+create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
 	       mask_w, dir_w, flist_w, dlist_w)
+    Boolean	    file_exp;
     Widget	    parent, below, *ret_beside, *ret_below, *mask_w, *dir_w,
 		   *flist_w, *dlist_w;
 
@@ -243,14 +260,14 @@ create_dirinfo(parent, below, ret_beside, ret_below,
 
     get_directory(cur_dir);
 
-    FirstArg(XtNlabel, "     Alternatives:");
+    FirstArg(XtNlabel, "     Alternatives");
     NextArg(XtNfromVert, below);
     NextArg(XtNborderWidth, 0);
     w = XtCreateManagedWidget("file_alt_label", labelWidgetClass,
 			      parent, Args, ArgCount);
     FirstArg(XtNfont, &temp_font);
     GetValues(w);
-    char_ht = char_height(temp_font) + 2;
+    char_ht = max_char_height(temp_font) + 2;
 
     FirstArg(XtNallowVert, True);
     NextArg(XtNfromHoriz, w);
@@ -261,7 +278,7 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     file_viewport = XtCreateManagedWidget("vport", viewportWidgetClass,
 					  parent, Args, ArgCount);
 
-    FirstArg(XtNlabel, "    Filename Mask:");
+    FirstArg(XtNlabel, "    Filename Mask");
     NextArg(XtNborderWidth, 0);
     NextArg(XtNfromVert, file_viewport);
     w = XtCreateManagedWidget("mask_label", labelWidgetClass, 
@@ -286,7 +303,7 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     if (MakeFileList(cur_dir, dirmask, &dir_list, &file_list) == False)
 	file_msg("No files in directory?");
 
-    FirstArg(XtNlabel, "Current Directory:");
+    FirstArg(XtNlabel, "Current Directory");
     NextArg(XtNborderWidth, 0);
     NextArg(XtNfromVert, *mask_w);
     NextArg(XtNvertDistance, 15);
@@ -308,7 +325,7 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     XtOverrideTranslations(*dir_w,
 			   XtParseTranslationTable(dir_translations));
 
-    FirstArg(XtNlabel, "     Alternatives:");
+    FirstArg(XtNlabel, "     Alternatives");
     NextArg(XtNborderWidth, 0);
     NextArg(XtNfromVert, *dir_w);
     dir_alt = XtCreateManagedWidget("dir_alt_label", labelWidgetClass,
@@ -358,7 +375,7 @@ create_dirinfo(parent, below, ret_beside, ret_below,
     FirstArg(XtNlabel, "Rescan");
     NextArg(XtNfromVert, dir_viewport);
     NextArg(XtNborderWidth, INTERNAL_BW);
-    NextArg(XtNvertDistance, 15);
+    NextArg(XtNvertDistance, file_exp? 35: 15);	/* more space for file menu */
     NextArg(XtNhorizDistance, 45);
     NextArg(XtNheight, 25);
     w = XtCreateManagedWidget("rescan", commandWidgetClass, parent,
@@ -505,7 +522,7 @@ DoChangeDir(dir)
 	    if (*ndir == '\0')
 		return;			/* no current directory, */
 					/* can't do anything unless absolute path */
-	    p = rindex(ndir, '/');
+	    p = strrchr(ndir, '/');
 	    *p = EOS;
 	    if (ndir[0] == EOS)
 		strcpy(ndir, "/");
@@ -514,8 +531,10 @@ DoChangeDir(dir)
 		strcat(ndir, "/");
 	    strcat(ndir, dir);
 	}
+    } else {
+	strcpy(ndir, dir);		/* abs path copy to ndir */
     }
-    strcpy(tmpdir, cur_dir);
+    strcpy(tmpdir, cur_dir);		/* save cur_dir in case ndir is bad */
     strcpy(cur_dir, ndir);
     if (change_directory(cur_dir) != 0 ) {
 	file_msg("Can't change to directory %s", cur_dir);

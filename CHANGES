@@ -1,5 +1,196 @@
+=============================================================================
+Version 2.2
+=============================================================================
+
+Patchlevel 0 (XXX X, XXXX)
+Changes to Version 2.1.8:
+
+NEW FEATURES:
+
+o changes to the file format (protocol).  See Doc/FORMAT2.2 for details.  This
+	means you must also get transfig 2.2.  Xfig will still read older Fig
+	format files but will always write the new format.
+ These are the new features related to the new file format:
+-----------------------------------------------------------------------------
+   o resolution is increased from 80 ppi to 1200 ppi.  This decreases jaggies.
+	A side effect is that xfig can now read fig files of any resolution,
+	although it converts the file to 1200ppi internally, and saves it in
+	that resolution.
+	from Ross Martin (martin@trcsun3.eas.asu.edu)
+   o Portrait/Landscape, Print Justification (center or flush left) and Metric/
+	Inches indicators saved with figure file now - xfig automatically
+	switches to correct mode when reading file
+   o separate pen and fill colors for all objects except text.
+   o there are now 32 "standard" colors - new ones are: gold, three shades each
+	of blue, green, cyan, red, magenta, brown and pink.
+   o in addition, there are now user-definable colors which may be defined by
+	using RGB (Red, Green, Blue) or HSV (Hue, Saturation, Value) slider bars
+	or by hexadecimal values. These are stored in the figure file as pseudo-
+	objects of type 0 which define the rgb values in hexadecimal.  The color
+	numbers range from 32 to 543.
+   o more fill options - colors transition from black to full saturation
+	(shades) and on to full white (tints, i.e. pastels).
+	Or you can use one of 16 fill patterns - diagonal lines, bricks,
+	shingles, crosshatch etc.
+   o two arc styles: open (original) and pie-wedge (closed)
+   o three line-join styles: miter (default style), round and bevel (see
+	PostScript or Xlib reference for description)
+   o three line-cap styles: butt (default style), round and projecting (see
+	PostScript or Xlib reference for description)
+   o three new arrowhead types (both hollow and solid)
+	and the tips of the arrowheads are now pointed, as they should be
+-----------------------------------------------------------------------------
+Features which are independent of the new file format:
+
+o EPS objects have been changed to "picture objects" to include GIF images,
+	X11 bitmap images and the XPM3 (color pixmaps) besides Encapsulated
+	PostScript.  Compressed (.Z) and gzipped (.z or .gz) files are also
+	handled.  Future versions of xfig may include TIFF, etc.  X11 bitmap
+	picture objects use the pen color component.  The popup edit panel
+	shows the image type, size and number of colors used, if applicable.
+	See the Examples/pictures.fig for examples of XPM, XBM and GIF.
+	You must have version 3.4c or newer of the XPM library.  This is
+	available from ftp.x.org in /contrib/libraries.
+
+	A Floyd-Steinberg dithering is applied to color images for monochrome
+	displays.
+
+	For EPS files, if ghostscript is used to generate the preview, an 8-bit
+	color preview is generated if xfig is running on an color display.
+	The command-line option -dSAFER is used when calling ghostscript which
+	prevents any files being written by the postscript code.
+
+	The color quantization algorithm to minimize the number of colors
+	needed for the color images uses a neural network scheme written by
+	Anthony Dekker (dekker@ozemail.com.au).  
+	[NEUQUANT Neural-Net quantization algorithm by Anthony Dekker, 1994.
+	See "Kohonen neural networks for optimal colour quantization"
+	in "Network: Computation in Neural Systems" Vol. 5 (1994) pp 351-367.
+	for a discussion of the algorithm.]
+
+o when moving an object on the canvas the straight-line (sqrt(x^2 + y^2))
+	distance from the original position is reported in the message panel
+	along with the X and Y distances.
+	from Uwe Bonnes (bon@lte.e-technik.uni-erlangen.de)
+o rotate or flip objects around a chosen anchor point - see FLIP and ROTATE
+	sections in the man pages.
+	from Uwe Bonnes (bon@lte.e-technik.uni-erlangen.de)
+o make multiple copies of object as you rotate or copy it - see COPY section in
+	the man pages
+	from Uwe Bonnes (bon@lte.e-technik.uni-erlangen.de)
+o new command panel button to switch canvas between Portrait and Landscape mode
+o new option in file load/merge panel to load/merge figure with offset on canvas
+o new option to export file with offset on page in inches or cm
+o OE and oe characters possible now; though not visible on the canvas because
+	they don't exist in the X11 fonts they will print in PostScript
+	from Serge Lacourte (lacourte@bikini.imag.fr)
+o starting textstep, fillstyle, linewidth and gridmode can all be specified
+	with command-line args or resources now (see man pages)
+	from Serge Lacourte (lacourte@bikini.imag.fr)
+o larger grid (1 inch or 20 mm)
+o when zooming very small, number of grid lines are reduced to avoid clutter
+o more keys available for multi-key sequence: Alt_L, Alt_R and Escape besided
+	the usual Meta key
+	from Serge Lacourte (lacourte@bikini.imag.fr)
+o in update mode, the control panel doesn't scroll with the indicator buttons
+	but stays on the left side all the time
+o rulers are a little smarter - fewer labels and ticks when zoom scale is small,
+	0.5 inch marks for inches scale when large enough
+o minor changes to names of some widgets - "xfig_" prefix removed from those
+	having it
+o can use "box-scale" on ellipses and circles now besides "scale about center"
+o new alignment options - Distribute objects evenly horizontally, vertically
+	or both, spacing either their edges or centers evenly, or abutting
+	their edges
+	from Matthew Leditschke (mcl@eikona.eng.monash.edu.au)
+o keyboard icon appears in mousefun window when text entry is required
+	works during canvas text entry and in ASCII widgets in popups
+o carriage return in any ASCII widget in edit popup applies changes
+o zoom in and zoom out accelerators (Z (zoomin) and z (zoomout) defaults)
+o popup font menu is now two entries wide to reduce overall height
+o panning is proportional to zoom factor, i.e. pan step is 1/2 inch in canvas
+	units, not drawing units
+	from Anthony Smith
+o holding down the Shift key while panning pans 5x as far
+o fill style indicator shows current color now
+o two new Example files: illusion.fig and recycle.fig
+	from Vivek Khera (khera@cs.duke.edu)
+o four new clip-art files (Examples directory): clp_bldgs.fig, clp_network.fig,
+	clp_computer.fig and clipart.fig
+	from William J. Chimiak (chim@relito.medeng.wfu.edu)
+o new export languages - X11 Pixmap (color X pixmaps) - must have the XPM3 package
+	and GIF output
+	XPM3 code from Karel van Houten (K.H.C.vanHouten@research.ptt.nl)
+o can handle eps files with %%BoundingBox: (atend)
+	from Paul Hodgkinson (hodgkin@physchem.ox.ac.uk)
+o no need for the -DNOSTRTOL flag anymore if your system doesn't have strtol()
+o export magnification factor added for X11 bitmap/pixmap output
+o MAXNUMPTS (the maximum number of points displayed for large objects) may be
+	specified in the Imakefile with -DMAXNUMPTS=xxxx, if desired
+
+BUG FIXES:
+
+o first/opposite corner designation for box objects was reversed in popup edit
+o line count correct when reporting any errors reading figure file
+	from Andreas Bagge (Andreas_Bagge@h2.maus.de)
+o when scaling box object, size of box now shown with first click when using
+	middle button
+o more sanity checks on starting values (e.g. -startfillstyle < 0 etc)
+o changes in dot/dash spacing were sometimes delayed in effect.  Fixed.
+o if printer name came from env variable, it didn't show up in print panel until
+	first figure was printed
+o smarter redraw of underlying objects when rotating objects or moving, adding
+	or deleting points of an object
+o metric scale is now correct size when printing
+	from Hans Werner Strube (strube@swing.physik3.gwdg.de)
+o temporary file for importing EPS objects wasn't honoring XFIGTMPDIR
+o text angle was written with only 5 decimal places - causes rounding errors
+o after adding/deleting a point from a poly object, copying a compound object
+	would cause xfig to hang (loop in linked list)
+o grid wasn't reset when changing to/from Imperial/Metric scale
+o "Ruler units" message was incorrect when changing to/from Imperial/Metric
+o file_msg() routine now uses varargs
+	old method was causing crashes to occur on a 64 bit machine
+o toggle of update masks wasn't using correct variable
+o when drawing a dotted line with only two points which are coincident, some
+	servers die and others give BadLength error.  A call to draw a point
+	is substituted in this case.
+o bug in changing directory using ".." in text panel for "Curent Directory" in
+	file and export popups
+o in monochrome mode, popup color choice panel black/white reversed from
+	indicator button for blue-yellow
+o first section of man pages didn't mention IBM-GL language in reference to
+	fig2dev
+o filled objects didn't show the fill pattern in monochrome mode
+o seg fault when xfig used default font when desired font could not be found
+o fixed some memory hog problems with accelerators
+o some typos in the class names of bold/normal/button fonts in man pages
+o double clicking on a filename to load it sometimes resulted in garbage or
+	blank filename in file name panel.
+o remnants of #ifndef NO_SIBGUS (note typo) fixed.  NOW there is no need for
+	#define NO_SIGBUS if your system doesn't have SIGBUS.  Automatic now.
+o typo in fig.h check for #ifdef(SYS) instead #ifdef(SYSV).
+o added check for SCO3.2r4 which needs stdlib.h for atof() and getenv()
+o switching between LaTeX and PostScript fonts while entering text object
+	caused illegal font to be created in text object
+o GC's tr_gc, tr_xor_gc, tr_erase_gc, sr_gc, sr_xor_gc and tr_erase_gc declared
+	in resources.c and in w_rulers.c
+o cur_cursor set to arrow_cursor before arrow_cursor was created
+o experimental color definitions in resources in main.c clobbered variables
+	because array wasn't large enough.
+o false query about overwriting existing fig file fixed
+o shifted keyboard accelerators work with caps lock besides shift key
+o text bounds fixed
+o smarter text locator when moving rotated text
+o missing "return 1" in bitmapDPS procedure (Display PostScript machines)
+o type mismatch in w_rottext.c ("return NULL" changed to "return 0") in
+	XRotPaintAlignedString()
+o bug in memory allocation for font name when desired font doesn't exist
+o increased memory allocation for large, rotated ellipses
+
+=============================================================================
 Version 2.1
-===========
+=============================================================================
 
 Patchlevel 8 (Oct 1, 1993)
 Changes to Patchlevel 7:
@@ -112,15 +303,15 @@ Changes to Patchlevel 6:
 NEW FEATURES:
 
 o Vertical and upside-down text - text with angles of 90, 180 and 270 degrees
-	supported. Text between those angles will be drawn with the next 
+	supported. Text between those angles will be drawn with the next
 	higher angle (e.g. 130 degree text will be drawn at 180 degrees).
 	from Alan Richardson (mppa3@uk.ac.sussex.syma)
 o message panel uses asciiTextWidget so one may select text from it
 o does not ask if it is OK to write an existing file during save if it is the
 	current figure file that is being saved.  Same for export.
-o accelerators to Save or Load file without popping up file menu 
+o accelerators to Save or Load file without popping up file menu
 	(default: Meta-S to Save and Meta-L to Load)
-o PRINTER environment variable is used if no resource is set for 
+o PRINTER environment variable is used if no resource is set for
 	Fig*printer*string
 o if an ellipse is scaled such that the radii become equal it is "converted"
 	to a circle
@@ -139,15 +330,15 @@ o compiles/runs on DEC Alpha with OSF/1 now
 o text widget in the print popup to pass extra parameters to print program
 	(lp or lpr as the case may be)
 o indicator shows the number of figures in the batch print file in print popup
-o automatic on-screen generation of preview bitmap for EPS objects if you have 
+o automatic on-screen generation of preview bitmap for EPS objects if you have
 	gs (ghostscript) - compile with -DGSBIT flag
-	from Michael C. Grant (mcgrant@rascals.stanford.edu) 
+	from Michael C. Grant (mcgrant@rascals.stanford.edu)
 	adapted from
 	Marc Goldburg's (marcg@rascals.stanford.edu) original idea and code.
 o indicator in upper-left corner (under Quit button) shows current filename
 o print button changes message from "print FIGURE to printer" to "print BATCH to
 	printer" if there are figures in batch file
-o when drawing objects or moving/adding points the length/radius/diameter is 
+o when drawing objects or moving/adding points the length/radius/diameter is
 	displayed in the message window
 o feature to shift figure on page if it is off the page has been disabled until
 	it can be done with option or explicit command
@@ -163,7 +354,7 @@ o if user asks for scalable fonts but server doesn't support them, xfig auto-
 	matically switches to non-scalable fonts
 o when printing to batch file, incorrect filename appeared in message panel
 o undo of a text move didn't redraw the text
-o <unistd.h> included unnecessarily in f_util.c (X11/Xos.h includes it if 
+o <unistd.h> included unnecessarily in f_util.c (X11/Xos.h includes it if
 	necessary). Also, various cleanups with multiply defined cursors etc.
 	From Casey Leedom (casey@gauss.llnl.gov)
 o internalborderwidth resource should be integer not float
@@ -183,7 +374,7 @@ o rotated ellipses panned incorrectly
 o centering/flush-left options in Export menu were reversed
 o flipped EPS objects weren't being flipped properly when reading in figure
 o GC's weren't being freed when xfig finished
-o added Titan OS (Stardent) to list of machines needing getenv() and atof() 
+o added Titan OS (Stardent) to list of machines needing getenv() and atof()
 	explicitely defined (not in /usr/include/... file )
 	from Joachim Wiesel (wiesel@ipf.bau-verm.uni-karlsruhe.de)
 o underscores weren't showing in text line in popup edit
@@ -214,7 +405,7 @@ o action changed from "cancel" to "dismiss" for print menu accelerator
 o bug in Intrinsics? on Sun Monochrome prevented side ruler from scrolling
 o was using ellipse routine to draw circles - was choppy for small circles
 o cast comparison function argument to qsort
-o rotated ellipses don't become coarse as they are zoomed 
+o rotated ellipses don't become coarse as they are zoomed
 
 ------------------------------------------------------------------------------
 Patchlevel 5 (Nov 1992)
@@ -227,17 +418,17 @@ o support for two button mouse - use META + Button 3 to simulate button 2
 o new resource "textoutline" (class "TextOutline") and command-line argument
 	"-textoutline" which will outline text in red to show the bounding box
 	that the text will occupy when printed (useful for rotated text)
-o print popup stays up until dismissed - can still pop up file/export menues, 
-	draw etc. while print popup is up.  HOWEVER, while file or export 
+o print popup stays up until dismissed - can still pop up file/export menues,
+	draw etc. while print popup is up.  HOWEVER, while file or export
 	popups are up, the print panel is not active.
 o can align all objects to canvas, not just to compound - use mouse button 2
 	idea from Jon Forrest
 o ellipses may now be rotated by an arbitrary angle and show their rotation
 	from Janes Tough (jamest@cs.heriot-watt.ac.uk)
 o new -iconGeometry command-line argument
-o new command-line argument and resource -exportLanguage to specify default 
+o new command-line argument and resource -exportLanguage to specify default
 	Export language.  See man pages.
-o new command-line argument and resource -flushleft to set default printing to 
+o new command-line argument and resource -flushleft to set default printing to
 	flush left on page. See man pages.
 o keyboard accelerators! Resource file has defaults for file, export and print
 	popup panels and top command panel accelerators; <Meta>f will popup file
@@ -248,7 +439,7 @@ o one may now batch together several xfig files for printing with one print job.
 o new label in the mouse function window & more obvious default color (yellow)
 o added scrollbar for indicator panel when buttons won't all fit on screen
 o can now edit sizes of arrowheads using popup edit panel
-o "make install" now automatically installs Fig.ad and Fig-color.ad in 
+o "make install" now automatically installs Fig.ad and Fig-color.ad in
 	app-defaults directory
 o WM_DELETE_WINDOW now supported by popups - cancels popup function
 	WM_DELETE_WINDOW in main canvas saves figure in xfig.SAVE and quits
@@ -263,7 +454,7 @@ o depth wasn't being updated for splines and texts using update button
 o more cleanup with respect to procedure/variable types/casts
 	from Don Sharp (dws@mari.co.uk)
 o fixed text bounds calculation to take into account any rotation when reading
-	in figure from a file to decide whether to shift figure to keep on 
+	in figure from a file to decide whether to shift figure to keep on
 	canvas
 	(fig2dev 2.1.5 is also fixed so figures with rotated text near edges
 	should center properly now)
@@ -293,14 +484,14 @@ o includes copy of X11/Xfuncs.h now to use correct routines for zeroing/copying
 o zooming to 0.1 no longer gives X error (dash list was null)
 o filenames in File/Export windows weren't sorted correctly
 	from Simon Marshall (S.Marshall@sequent.cc.hull.ac.uk)
-o more explicit note about object depth in the man pages in the "GRAPHICAL 
+o more explicit note about object depth in the man pages in the "GRAPHICAL
 	OBJECTS" section
 o scaling vertical or horizontal line no longer causes floating point exception
 	from Steve Tynor (tynor@prism.gatech.edu)
-o null strings in text objects now produce warning message when reading from 
+o null strings in text objects now produce warning message when reading from
 	file but xfig continues to read rest of file
 o scrollbars in File and Export popups reset to top when changing directories
-o default output filename in Export popup now changes to reflect current 
+o default output filename in Export popup now changes to reflect current
 	figure filename
 o default colors in Fig-color are a little nicer :-)
 o checking for file writablity now uses access() call
@@ -311,10 +502,10 @@ o XtAppAddActions() only called once now for each action
 	from David Wexelblat (dwex@mtgzfs3.att.com)
 o changed cfree() calls to free() for those machines that don't have it
 	from Anthony Datri (datri@concave.convex.com)
-o moved static function definitions outside of procedures for those machines 
+o moved static function definitions outside of procedures for those machines
 	which can't handle them
 	from Anthony Datri (datri@concave.convex.com)
-o added second line to Imakefile to put the xfig directory containing the 
+o added second line to Imakefile to put the xfig directory containing the
 	CompKeyDB (multi-key) database file in the standard X11 library
 o fixed bug introduced in 2.1.1 which incorrectly placed radius marker of
 	circles created by radius
@@ -330,7 +521,7 @@ o moved #include Xaw... directives to figx.h to speed up compilation
 o added conditional for Sun 3 and SunOs 4.0.3
 	from Peter Scott (pjs@euclid.jpl.nasa.gov)
 o fixed typo in FORMAT2.1 file describing values for types of splines
-o more lint cleanup and print file name "protection" in case filename has 
+o more lint cleanup and print file name "protection" in case filename has
 	any shell meta characters
 	from Jonathan Kamens (jik@MIT.Edu)
 o epsf file wasn't closed after reading if there was no preview bitmap
@@ -347,8 +538,8 @@ Changes to Patchlevel 3:
 o keyFile resource allows ANY path for compose key data base, not just relative
 	to $XFIGLIBDIR
 	from Pete Kaiser (kaiser@heron.enet.dec.com)
-o simple edit arrowhead feature in the popup edit for lines - can add/delete 
-	arrow heads.  No adjustment of arrow size yet - uses current linewidth 
+o simple edit arrowhead feature in the popup edit for lines - can add/delete
+	arrow heads.  No adjustment of arrow size yet - uses current linewidth
 	from indicator panel
 o Example figure files have all been converted to 2.1 file format
 o if any object coordinates are negative, the whole figure is shifted to keep it
@@ -372,9 +563,9 @@ o changes to the file popup:
 	o new "Home" button changes directory to $HOME
 	o ~ (username) operator allowed in the current directory ascii widget
 	o new label widget shows the current figure filename
-	o presssing "Load", "Save" or "Merge Read" will operate on the 
+	o presssing "Load", "Save" or "Merge Read" will operate on the
 	  filename in the "Filename" window.  If that name is empty the
-	  operation is done on the file specified in the "Current Filename" 
+	  operation is done on the file specified in the "Current Filename"
 	  window.
 	o additionally, the "Load" operation will copy the name (if any)
 	  from the "Filename" window to the "Current Filename" window
@@ -383,7 +574,7 @@ o changes to the file popup:
 o changes to the export popup:
 	o new "Home" button changes directory to $HOME
 	o ~ (username) operator allowed in the current directory ascii widget
-	o pressing return in the "list of files" window in the popup Export 
+	o pressing return in the "list of files" window in the popup Export
 	  panel will "Export" the file
 o Pre-2.1 fig files now have text flags set to PostScript mode when reading into
 	xfig 2.1.4
@@ -391,7 +582,7 @@ o 1.4-TFX fig files now have text flags set to PostScript mode PLUS Special
 o font names now include "ISO-8859" to insure that ISO Latin characters are used
 	from Thierry EXCOFFIER (exco@ligiahp.univ-lyon1.fr)
 o -debug no longer runs xfig synchronously - use standard toolkit option -sync
-o control points for spline objects now span multiple lines in output file if 
+o control points for spline objects now span multiple lines in output file if
 	there are many points
 o scrollable x-y points panel in the popup edit panel for objects with many
 	points (mwm didn't display the x-y values when the popup was taller than
@@ -402,20 +593,20 @@ o If you have Display Postscript in your server, compile xfig with -DDPS
 	!!! WARNING: this has only been tested on IBM's AIX 3.2 (X11R4) on
 	an RS/6000 !!!
 	from Dave Hale (dhale@green.mines.colorado.edu)
-o fixed bug in error return from system() - now popups error message when 
+o fixed bug in error return from system() - now popups error message when
 	can't export/print figure
 o unused function clear_char_string() deleted from w_canvas.c
-o current depth is now in an indicator window and may be set like line 
+o current depth is now in an indicator window and may be set like line
 	thickness, color etc.
 o added update tags to control which object components are modified/copied
 	when using the update button.  Button appears in upper-right corner
-	of indicator button (e.g linewidth) when in update mode.  Clicking 
-	on the update tag enables/disables components (e.g. linewidth) from 
+	of indicator button (e.g linewidth) when in update mode.  Clicking
+	on the update tag enables/disables components (e.g. linewidth) from
 	being copied to/from objects when using update.
 o fixed exporting of pstex_t and pstex (used to give Postscript for both)
 o FIG 1.4-TFX file area_fill values now correctly translated to 2.1 format
 o deleted duplicate #include <math.h> from u_geom.c and w_export.c
-o changed ^U (control U) in w_canvas.c to \023 for mailers which clobber 
+o changed ^U (control U) in w_canvas.c to \023 for mailers which clobber
 	control chars
 o added possibility of wider top ruler and taller side ruler by using
 	-DMAX_TOPRULER_WD=value and -DMAX_SIDERULER_HT=value in Imakefile
@@ -424,7 +615,7 @@ o added function strtol() for those systems that don't have it.
 o added note about -DNOSTRSTR and -DNOSTRTOL for those systems that don't
 	have strstr() and/or strtol() respectively.
 o fixed type mismatch and bug in call to getenv in main().
-o type mismatch fixed for X11R5 in call to XtAppInitialize(). 
+o type mismatch fixed for X11R5 in call to XtAppInitialize().
 	from Jonathan Kamens (jik@rtfm.MIT.EDU)
 o small performance fix in u_draw.c in add_point() when reallocating points
 	from Dave Hale (dhale@green.Mines.Colorado.EDU)
@@ -433,14 +624,14 @@ o small performance fix in u_draw.c in add_point() when reallocating points
 Patchlevel 3 (Jan 1992)
 Changes to Patchlevel 2:
 
-o pressing carriage return in value part of popup indicator buttons that take 
+o pressing carriage return in value part of popup indicator buttons that take
 	integer or float (e.g. line width) now sets the value and pops down
 o added foreground colors to Text*, Menu* and List* widgets in default Fig-color.ad
 	this fixes problem of white-on-white text when using inverse video
 o changes two resource names -
-	"xfig_export_menu.export_panel.just_label.flush left" to 
-	"xfig_export_menu.export_panel.just_label.justify" 
-	and 
+	"xfig_export_menu.export_panel.just_label.flush left" to
+	"xfig_export_menu.export_panel.just_label.justify"
+	and
 	"xfig_print_menu.print_panel.just_label.flush left" to
 	"xfig_print_menu.print_panel.just_label.justify"
 o some type castings fixed
@@ -473,7 +664,7 @@ o limit on depth of objects to 1000 when reading figure file. Fixes problems
 	Also sets depth to zero (0) when reading files older than 2.1.
 o xfig.man now tells man to run tbl so that regular tables can be used
 	from James B. Davis (james@solbourne.com)
-o fixed Meta-Y (insert current selection), ^Y (unkill) and ^G (multiply reset) 
+o fixed Meta-Y (insert current selection), ^Y (unkill) and ^G (multiply reset)
 	in CompKeyDB
 o added capability to delete whole text line from text widgets with ^X
 	from Brian Boyter (pyrdc!bimbo!boyter@uunet.UU.NET)
@@ -492,7 +683,7 @@ o directory code fixed to work with SVR4
 	from David Elliot (dce@krusty.smsc.sony.com)
 o cleaned up function declarations for event handlers
 	from Anthony Datri (datri@lovecraft.convex.com)
-o renamed Fig-co.ad to Fig-color.ad for color customization under X11R5 (see 
+o renamed Fig-co.ad to Fig-color.ad for color customization under X11R5 (see
 	README). Fig-co.ad can be deleted (if you have an older copy of xfig)
 	from David Elliot (dce@krusty.smsc.sony.com)
 
@@ -501,7 +692,7 @@ Patchlevel 2 (Dec 1991)
 Changes to Patchlevel 1:
 
 o the font flag (LaTeX, PostScript) wasn't being changed correctly in the
-	UPDATE text object operation when switching from LaTeX to PostScript 
+	UPDATE text object operation when switching from LaTeX to PostScript
 	or vice versa.
 o the textstep value may now be entered in floating point in the popup menu
 o the eps-bitmap icon was renamed to eps-object because it can be any
@@ -510,17 +701,17 @@ o the eps-bitmap icon was renamed to eps-object because it can be any
 	were also changed to reflect this.
 o there is now a more general glue mechanism for compounding objects
 o text pasting into canvas now possible with F18 function key or any translation
-	desired by user.  F18 is hardwired default in program; F20 also 
+	desired by user.  F18 is hardwired default in program; F20 also
 	programmed in Fig.ad to paste text.
 	Brian Boyter (pyrdc!bimbo!boyter@uunet.UU.NET)
-o DEFAULT fill_style caused core dump 
+o DEFAULT fill_style caused core dump
 	from Jeffry R. Abramson (jra@violin.att.com)
 o made the mouse-tracking markers hollow so as not to be visually obtrusive
 	as suggested by Stephen Gildea (gildea@expo.lcs.mit.edu)
 o removed extraneous call to free() in add_point() (u_draw.c)
 	from Per Fogelstr|m (pf@diab.se)
 o cleaned up gcc compiler warnings about type mismatches etc.
-o compound objects may be rotated by arbitrary angles if there are no boxes, 
+o compound objects may be rotated by arbitrary angles if there are no boxes,
 	arc-boxes, ellipses or circles contained within.
 o text rotation support is improved - markers are now shown rotated and
 	the angle attribute is set by the relevant rotate operations.
@@ -533,7 +724,7 @@ o Default font for Postscript fonts may now be selected and objects that
 o FASTSERVER flag removed; now always uses smart redrawing when available
 	Additionally, smart redrawing is available more often
 o fixed bug in regular polygon where some vertices were off by one pixel
-o added "Use orig. size" button for eps objects to set object to original 
+o added "Use orig. size" button for eps objects to set object to original
 	size in popup edit
 	from Peter Scott (pjs@euclid.jpl.nasa.gov)
 o international characters supported (umlauts, accents, cedilla etc) using
@@ -569,7 +760,7 @@ o compound object was rounded to next larger grid even if objects inside were
 	already on the grid
 o Examples/logo.fig included Logo.eps instead of logo.eps
 o cancellation of line drawing left single dot on screen
-o filename in File popup menu didn't get set until first popup - file save 
+o filename in File popup menu didn't get set until first popup - file save
 	shortcut would save to unnamed.fig even if xfig was started with file name
 o bug fixed in not being able to delete points from certain objects
 o typo in FORMAT2.1 file (and all previous) stating that text angle is int when
@@ -577,7 +768,7 @@ o typo in FORMAT2.1 file (and all previous) stating that text angle is int when
 o can now change corners of compound object with edit popup
 	also shows number of objects inside compound
 o file menu now shows number of objects in figure
-o some bugs fixed in calculating bounding boxes after scaling ellipses and 
+o some bugs fixed in calculating bounding boxes after scaling ellipses and
 	compounds
 o "#ifdefined SYSV" now reads "#if defined(SYSV) || defined(SVR4)" because X11R5
 	doesn't define SYSV if SVR4 is defined
@@ -610,7 +801,7 @@ USER INTERFACE
 o The buttons are now grouped into three panels:
 
     COMMAND panel:
-        Quit, Delete all, Undo, Redraw, Paste, File popup, Export popup and 
+        Quit, Delete all, Undo, Redraw, Paste, File popup, Export popup and
 		Print popup buttons.  See man pages for details.
 		(see "Drawing Modes", below for description of Cut)
     MODE panel:
@@ -625,7 +816,7 @@ o The buttons are now grouped into three panels:
 o Pan figure by using left/middle/right button in the rulers in addition to
 	the previously supported arrow keys.  Also a pan to origin operation
 	is available by clicking in the units window (or using HOME key).
-o May now print figure that hasn't been saved (i.e. print what is on the 
+o May now print figure that hasn't been saved (i.e. print what is on the
 	canvas, not the file)
 o Zoom up or down with zoom button.
 o Mouse function window shows function of active buttons

@@ -1,13 +1,19 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -24,8 +30,13 @@ extern		erase_objecthighlight();
 extern		emptyfigure();
 extern Boolean	query_save();
 extern		do_print(), do_print_batch(), do_export(), do_save();
-extern void	undo(), redisplay_canvas();
+extern void	change_orient(), undo(), redisplay_canvas();
 extern void	popup_print_panel(), popup_file_panel(), popup_export_panel();
+
+/* need to change their labels when reading in file */
+extern Widget	export_orient_panel;
+extern Widget	print_orient_panel;
+
 
 void		init_cmd_panel();
 void		setup_cmd_panel();
@@ -61,6 +72,7 @@ cmd_sw_info cmd_switches[] = {
     {"Quit",	   "quit", quit, null_proc, null_proc, "Quit", ""},
     {"Delete ALL", "delete_all", delete_all_cmd, null_proc, null_proc, 
 				"Delete all", ""},
+    {"Port/Land",  "orient", change_orient, null_proc, null_proc, "Change Orient.", ""},
     {"Undo",	   "undo", undo, null_proc, null_proc, "Undo", ""},
     {"Redraw",	   "redraw", redisplay_canvas, null_proc, null_proc, 
 				"Redraw", ""},
@@ -79,6 +91,7 @@ static XtActionsRec cmd_actions[] =
 {
     {"LeaveCmdSw", (XtActionProc) clear_mousefun},
     {"quit", (XtActionProc) quit},
+    {"orient", (XtActionProc) change_orient},
     {"delete_all", (XtActionProc) delete_all_cmd},
     {"undo", (XtActionProc) undo},
     {"redraw", (XtActionProc) redisplay_canvas},
@@ -219,6 +232,7 @@ quit(w)
 	XtSetSensitive(w, True);
 	return;		/* cancel, do not quit */
     }
+    aborting = 0;
     goodbye();		/* finish up and exit */
 }
 
@@ -234,14 +248,20 @@ goodbye()
 
     /* free all the GC's */
     free_GCs();
+    /* free all the loaded X-Fonts*/
+    free_Fonts();
+
     XtDestroyWidget(tool);
+    /* generate a fault to cause core dump */
+    if (aborting)
+	abort();
     exit(0);
 }
 
 void
 paste()
 {
-    merge_file(cut_buf_name);
+    merge_file(cut_buf_name, 0, 0);	/* maybe have x/y offset in the future */
 }
 
 void
@@ -254,4 +274,42 @@ delete_all_cmd()
     delete_all();
     put_msg("Immediate Undo will restore the figure");
     redisplay_canvas();
+}
+
+/* Toggle canvas orientation from Portrait to Landscape or vice versa */
+
+void
+change_orient()
+{
+    Dimension	formw, formh;
+    int		dx, dy;
+
+    /* get the current size of the canvas */
+    FirstArg(XtNwidth, &formw);
+    NextArg(XtNheight, &formh);
+    GetValues(canvas_sw);
+
+    if (appres.landscape) {
+	dx = DEF_CANVAS_WD_PORT - formw;
+	dy = DEF_CANVAS_HT_PORT - formh;
+	TOOL_WD += dx;
+	TOOL_HT += dy;
+	XtResizeWidget(tool, TOOL_WD, TOOL_HT, 0);
+	resize_all((int) (DEF_CANVAS_WD_PORT), (int) (DEF_CANVAS_HT_PORT));
+	appres.landscape = False;
+    } else {
+	dx = DEF_CANVAS_WD_LAND - formw;
+	dy = DEF_CANVAS_HT_LAND - formh;
+	TOOL_WD += dx;
+	TOOL_HT += dy;
+	XtResizeWidget(tool, TOOL_WD, TOOL_HT, 0);
+	resize_all((int) (DEF_CANVAS_WD_LAND), (int) (DEF_CANVAS_HT_LAND));
+	appres.landscape = True;
+    }
+    /* and the printer and export orientation labels */
+    FirstArg(XtNlabel, orient_items[appres.landscape]);
+    if (print_orient_panel)
+	SetValues(print_orient_panel);
+    if (export_orient_panel)
+	SetValues(export_orient_panel);
 }

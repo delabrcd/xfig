@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -41,7 +48,6 @@ static int	relocate_arcpoint();
 static int	relocate_ellipsepoint();
 static int	relocate_linepoint();
 static int	relocate_splinepoint();
-static int	assign_newboxpoint();
 
 static int	init_move_point();
 static int	init_arb_move_point();
@@ -267,7 +273,8 @@ fix_movedellipsepoint(x, y)
     new_e = copy_ellipse(cur_e);
     relocate_ellipsepoint(new_e, cur_x, cur_y, movedpoint_num);
     change_ellipse(cur_e, new_e);
-    toggle_ellipsemarker(new_e);
+    /* redraw anything under the old ellipse */
+    redisplay_ellipse(cur_e);
     wrapup_movepoint();
 }
 
@@ -276,7 +283,7 @@ relocate_ellipsepoint(ellipse, x, y, point_num)
     F_ellipse	   *ellipse;
     int		    x, y, point_num;
 {
-    int		    dx, dy;
+    double	    dx, dy;
 
     set_temp_cursor(wait_cursor);
     draw_ellipse(ellipse, ERASE);
@@ -300,7 +307,7 @@ relocate_ellipsepoint(ellipse, x, y, point_num)
     case T_CIRCLE_BY_RAD:
 	dx = fix_x - x;
 	dy = fix_y - y;
-	ellipse->radiuses.x = sqrt((double) (dx * dx + dy * dy)) + .5;
+	ellipse->radiuses.x = round(sqrt(dx * dx + dy * dy));
 	ellipse->radiuses.y = ellipse->radiuses.x;
 	break;
     case T_ELLIPSE_BY_DIA:
@@ -310,11 +317,11 @@ relocate_ellipsepoint(ellipse, x, y, point_num)
 	ellipse->radiuses.y = abs(ellipse->center.y - fix_y);
 	break;
     case T_CIRCLE_BY_DIA:
-	dx = ellipse->center.x = (fix_x + x) / 2 + .5;
-	dy = ellipse->center.y = (fix_y + y) / 2 + .5;
+	dx = ellipse->center.x = round((fix_x + x) / 2);
+	dy = ellipse->center.y = round((fix_y + y) / 2);
 	dx -= x;
 	dy -= y;
-	ellipse->radiuses.x = sqrt((double) (dx * dx + dy * dy)) + .5;
+	ellipse->radiuses.x = round(sqrt(dx * dx + dy * dy));
 	ellipse->radiuses.y = ellipse->radiuses.x;
 	break;
     }
@@ -364,7 +371,8 @@ fix_movedarcpoint(x, y)
     new_a = copy_arc(cur_a);
     relocate_arcpoint(new_a, x, y, movedpoint_num);
     change_arc(cur_a, new_a);
-    toggle_arcmarker(new_a);
+    /* redraw anything under the old arc */
+    redisplay_arc(cur_a);
     wrapup_movepoint();
 }
 
@@ -466,7 +474,8 @@ fix_movedsplinepoint(x, y)
     set_action_object(F_CHANGE, O_SPLINE);
     old_s->next = cur_s;
     relocate_splinepoint(cur_s, cur_x, cur_y, moved_point);
-    toggle_splinemarker(cur_s);
+    /* redraw anything under the old spline */
+    redisplay_spline(old_s);
     wrapup_movepoint();
 }
 
@@ -589,7 +598,7 @@ init_linepointmoving()
 
     case T_BOX:
     case T_ARC_BOX:
-    case T_EPS_BOX:
+    case T_PIC_BOX:
 	if (right_point->next == NULL) {	/* point 4 */
 	    fix_x = cur_l->points->next->x;
 	    fix_y = cur_l->points->next->y;
@@ -625,21 +634,21 @@ init_linepointmoving()
 		    draw_arrow(cur_x, cur_y,
 			       left_point->x, left_point->y,
 			       cur_l->back_arrow, ERASE,
-			       cur_l->color);
+			       cur_l->pen_color);
 	    }
 	} else if (cur_l->back_arrow)	/* backward arrow  */
 	    draw_arrow(right_point->x, right_point->y,
 		       cur_x, cur_y, cur_l->back_arrow, ERASE,
-		       cur_l->color);
+		       cur_l->pen_color);
 	if (right_point != NULL) {
 	    if (cur_l->for_arrow && right_point->next == NULL)
 		draw_arrow(cur_x, cur_y, right_point->x, right_point->y,
 			   cur_l->for_arrow, ERASE,
-			   cur_l->color);
+			   cur_l->pen_color);
 	} else if (cur_l->for_arrow)	/* f arrow */
 	    draw_arrow(left_point->x, left_point->y,
 		       cur_x, cur_y, cur_l->for_arrow, ERASE,
-		       cur_l->color);
+		       cur_l->pen_color);
 	if (left_point == NULL || right_point == NULL) {
 	    if (left_point != NULL) {
 		fix_x = left_point->x;
@@ -688,22 +697,23 @@ fix_box(x, y)
     adjust_box_pos(x, y, from_x, from_y, &x, &y);
     new_l = copy_line(cur_l);
     draw_line(cur_l, ERASE);
-    if (new_l->type == T_EPS_BOX) {
+    if (new_l->type == T_PIC_BOX) {
 	if (signof(fix_x - from_x) != signof(fix_x - x))
-	    new_l->eps->flipped = 1 - new_l->eps->flipped;
+	    new_l->pic->flipped = 1 - new_l->pic->flipped;
 	if (signof(fix_y - from_y) != signof(fix_y - y))
-	    new_l->eps->flipped = 1 - new_l->eps->flipped;
+	    new_l->pic->flipped = 1 - new_l->pic->flipped;
     }
     assign_newboxpoint(new_l, fix_x, fix_y, x, y);
     if (new_l->type == T_ARC_BOX)	/* don't scale radius unless too large */
 	scale_radius(new_l, new_l);
     change_line(cur_l, new_l);
+    /* redraw anything under the old line */
+    redisplay_line(cur_l);
     draw_line(new_l, PAINT);
     toggle_linemarker(new_l);
     wrapup_movepoint();
 }
 
-static
 assign_newboxpoint(b, x1, y1, x2, y2)
     F_line	   *b;
     int		    x1, y1, x2, y2;
@@ -761,7 +771,8 @@ fix_movedlinepoint(x, y)
     old_l->next = cur_l;
     /* now change the original to become the new object */
     relocate_linepoint(cur_l, cur_x, cur_y, moved_point, left_point);
-    toggle_linemarker(cur_l);
+    /* redraw anything under the old line */
+    redisplay_line(old_l);
     wrapup_movepoint();
 }
 

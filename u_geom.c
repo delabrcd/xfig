@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 /*
@@ -116,8 +123,8 @@ close_to_vector(x1, y1, x2, y2, xp, yp, d, dd, px, py)
     dy = ((float) yp) - y;
     D2 = dx * dx + dy * dy;
     if (D2 < dd) {
-	*px = (int) (x + .5);
-	*py = (int) (y + .5);
+	*px = round(x);
+	*py = round(y);
 	return (1);
     }
     return (0);
@@ -140,7 +147,8 @@ compute_arccenter(p1, p2, p3, x, y)
     F_pos	    p1, p2, p3;
     float	   *x, *y;
 {
-    float	    s12, s13, len1, len2, len3, dx12, dy12, dx13, dy13;
+    double	    s12, s13, len1, len2, len3, dx12, dy12, dx13, dy13;
+    double	    resx, resy;
 
     if (p1.x == p3.x && p1.y == p3.y)
 	return 0;
@@ -150,20 +158,22 @@ compute_arccenter(p1, p2, p3, x, y)
     dx13 = p1.x - p3.x;
     dy13 = p1.y - p3.y;
 
-    s12 = asin((double) (dy12 / sqrt((double) (dx12 * dx12 + dy12 * dy12))));
-    s13 = asin((double) (dy13 / sqrt((double) (dx13 * dx13 + dy13 * dy13))));
+    s12 = asin(dy12 / sqrt(dx12 * dx12 + dy12 * dy12));
+    s13 = asin(dy13 / sqrt(dx13 * dx13 + dy13 * dy13));
     if (fabs(s12 - s13) < .01)
 	return 0;
 
-    len1 = p1.x * p1.x + p1.y * p1.y;
-    len2 = p2.x * p2.x + p2.y * p2.y;
-    len3 = p3.x * p3.x + p3.y * p3.y;
-    *y = (dx12 * (len3 - len1) - dx13 * (len2 - len1)) /
+    len1 = (double)p1.x * (double)p1.x + (double)p1.y * (double)p1.y;
+    len2 = (double)p2.x * (double)p2.x + (double)p2.y * (double)p2.y;
+    len3 = (double)p3.x * (double)p3.x + (double)p3.y * (double)p3.y;
+    resy = (dx12 * (len3 - len1) - dx13 * (len2 - len1)) /
 	(2 * (dx13 * dy12 - dx12 * dy13));
     if (p1.x != p3.x)
-	*x = (len3 + 2 * (*y) * dy13 - len1) / (2 * (-dx13));
+	resx = (len3 + 2 * (resy) * dy13 - len1) / (2 * (-dx13));
     else
-	*x = (len2 + 2 * (*y) * dy12 - len1) / (2 * (-dx12));
+	resx = (len2 + 2 * (resy) * dy12 - len1) / (2 * (-dx12));
+    *x = (float) resx;
+    *y = (float) resy;
     return 1;
 }
 
@@ -176,11 +186,11 @@ Return value : the angle of the vector in the range [0, 2PI)
 
 *************************************************************/
 
-float
+double
 compute_angle(dx, dy)		/* compute the angle between 0 to 2PI  */
-    float	    dx, dy;
+    double	    dx, dy;
 {
-    float	    alpha;
+    double	    alpha;
 
     if (dx == 0) {
 	if (dy > 0)
@@ -193,7 +203,7 @@ compute_angle(dx, dy)		/* compute the angle between 0 to 2PI  */
 	else
 	    alpha = M_PI;
     } else {
-	alpha = atan((double) (dy / dx));	/* range = -PI/2 to PI/2 */
+	alpha = atan(dy / dx);	/* range = -PI/2 to PI/2 */
 	if (dx < 0)
 	    alpha += M_PI;
 	else if (dy < 0)
@@ -219,7 +229,7 @@ int
 compute_direction(p1, p2, p3)
     F_pos	    p1, p2, p3;
 {
-    float	    diff, dx, dy, alpha, theta;
+    double	    diff, dx, dy, alpha, theta;
 
     dx = p2.x - p1.x;
     dy = p1.y - p2.y;		/* because origin of the screen is on the

@@ -1,13 +1,19 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -22,6 +28,7 @@
 #include "w_drawprim.h"
 #include "w_indpanel.h"
 #include "w_mousefun.h"
+#include "w_setup.h"
 
 extern		update_current_settings();
 extern PIX_FONT lookfont();
@@ -62,6 +69,26 @@ get_arrow_mode(object)
 }
     
 static
+get_arrow_type(object)
+    F_line	   *object;
+{
+    int		    type;
+
+    /* have to pick one or the other */
+    if (object->for_arrow)
+	type = object->for_arrow->type*2 - 1 + object->for_arrow->style;
+    else if (object->back_arrow)
+	type =  object->back_arrow->type*2 - 1 + object->back_arrow->style;
+    else
+	type = 0;
+    if (type < 0)
+	type = 0;
+    return type;
+}
+    
+/* update the indicator buttons FROM the selected object */
+
+static
 init_update_settings(p, type, x, y, px, py)
     char	   *p;
     int		    type;
@@ -76,14 +103,20 @@ init_update_settings(p, type, x, y, px, py)
 	return;
     case O_POLYLINE:
 	cur_l = (F_line *) p;
-	if (cur_l->type != T_EPS_BOX) {
+	if (cur_l->type != T_PIC_BOX) {
 		up_part(cur_linewidth, cur_l->thickness, I_LINEWIDTH);
 		up_part(cur_fillstyle, cur_l->fill_style, I_FILLSTYLE);
-		up_part(cur_color, cur_l->color, I_COLOR);
+		up_part(cur_pencolor, cur_l->pen_color, I_PEN_COLOR);
+		up_part(cur_fillcolor, cur_l->fill_color, I_FILL_COLOR);
 		up_part(cur_linestyle, cur_l->style, I_LINESTYLE);
+		up_part(cur_joinstyle, cur_l->join_style, I_JOINSTYLE);
+		up_part(cur_capstyle, cur_l->cap_style, I_CAPSTYLE);
 		up_part(cur_styleval, cur_l->style_val, I_LINESTYLE);
 		up_part(cur_arrowmode, get_arrow_mode(cur_l), I_ARROWMODE);
+		up_part(cur_arrowtype, get_arrow_type(cur_l), I_ARROWTYPE);
 		}
+	else if (cur_l->pic->subtype == T_PIC_BITMAP)	/* only XBM pictures have color */
+		up_part(cur_pencolor, cur_l->pen_color, I_PEN_COLOR);
 	up_part(cur_depth, cur_l->depth, I_DEPTH);
 	if (cur_l->type == T_ARC_BOX)
 	    up_part(cur_boxradius, cur_l->radius, I_BOXRADIUS);
@@ -91,7 +124,7 @@ init_update_settings(p, type, x, y, px, py)
     case O_TEXT:
 	cur_t = (F_text *) p;
 	up_part(cur_textjust, cur_t->type, I_TEXTJUST);
-	up_part(cur_color, cur_t->color, I_COLOR);
+	up_part(cur_pencolor, cur_t->color, I_PEN_COLOR);
 	up_part(cur_depth, cur_t->depth, I_DEPTH);
 	up_part(cur_elltextangle, cur_t->angle/M_PI*180.0, I_ELLTEXTANGLE);
 	old_psfont_flag = (cur_t->flags & PSFONT_TEXT);
@@ -116,7 +149,8 @@ init_update_settings(p, type, x, y, px, py)
 	up_part(cur_linewidth, cur_e->thickness, I_LINEWIDTH);
 	up_part(cur_elltextangle, cur_e->angle/M_PI*180.0, I_ELLTEXTANGLE);
 	up_part(cur_fillstyle, cur_e->fill_style, I_FILLSTYLE);
-	up_part(cur_color, cur_e->color, I_COLOR);
+	up_part(cur_pencolor, cur_e->pen_color, I_PEN_COLOR);
+	up_part(cur_fillcolor, cur_e->fill_color, I_FILL_COLOR);
 	up_part(cur_linestyle, cur_e->style, I_LINESTYLE);
 	up_part(cur_styleval, cur_e->style_val, I_LINESTYLE);
 	up_part(cur_depth, cur_e->depth, I_DEPTH);
@@ -125,21 +159,29 @@ init_update_settings(p, type, x, y, px, py)
 	cur_a = (F_arc *) p;
 	up_part(cur_linewidth, cur_a->thickness, I_LINEWIDTH);
 	up_part(cur_fillstyle, cur_a->fill_style, I_FILLSTYLE);
-	up_part(cur_color, cur_a->color, I_COLOR);
+	up_part(cur_pencolor, cur_a->pen_color, I_PEN_COLOR);
+	up_part(cur_fillcolor, cur_a->fill_color, I_FILL_COLOR);
+	up_part(cur_arctype, cur_a->type, I_ARCTYPE);
 	up_part(cur_linestyle, cur_a->style, I_LINESTYLE);
 	up_part(cur_styleval, cur_a->style_val, I_LINESTYLE);
+	up_part(cur_capstyle, cur_a->cap_style, I_CAPSTYLE);
 	up_part(cur_depth, cur_a->depth, I_DEPTH);
 	up_part(cur_arrowmode, get_arrow_mode(cur_a), I_ARROWMODE);
+	up_part(cur_arrowtype, get_arrow_type(cur_a), I_ARROWTYPE);
 	break;
     case O_SPLINE:
 	cur_s = (F_spline *) p;
 	up_part(cur_linewidth, cur_s->thickness, I_LINEWIDTH);
 	up_part(cur_fillstyle, cur_s->fill_style, I_FILLSTYLE);
-	up_part(cur_color, cur_s->color, I_COLOR);
+	up_part(cur_pencolor, cur_s->pen_color, I_PEN_COLOR);
+	up_part(cur_fillcolor, cur_s->fill_color, I_FILL_COLOR);
 	up_part(cur_linestyle, cur_s->style, I_LINESTYLE);
 	up_part(cur_styleval, cur_s->style_val, I_LINESTYLE);
+	if (cur_s->type == T_OPEN_NORMAL || cur_s->type == T_OPEN_INTERP)
+	    up_part(cur_capstyle, cur_s->cap_style, I_CAPSTYLE);
 	up_part(cur_depth, cur_s->depth, I_DEPTH);
 	up_part(cur_arrowmode, get_arrow_mode(cur_s), I_ARROWMODE);
+	up_part(cur_arrowtype, get_arrow_type(cur_s), I_ARROWTYPE);
 	break;
     default:
 	return;
@@ -227,8 +269,10 @@ update_ellipse(ellipse)
     up_part(ellipse->style_val, cur_styleval * (cur_linewidth + 1) / 2, 
 	    I_LINESTYLE);
     up_part(ellipse->fill_style, cur_fillstyle, I_FILLSTYLE);
-    up_part(ellipse->color, cur_color, I_COLOR);
+    up_part(ellipse->pen_color, cur_pencolor, I_PEN_COLOR);
+    up_part(ellipse->fill_color, cur_fillcolor, I_FILL_COLOR);
     up_part(ellipse->depth, cur_depth, I_DEPTH);
+    fix_fillstyle(ellipse);	/* make sure it has legal fill style if color changed */
     draw_ellipse(ellipse, PAINT);
 }
 
@@ -241,24 +285,13 @@ update_arc(arc)
     up_part(arc->style_val, cur_styleval * (cur_linewidth + 1) / 2, 
 	    I_LINESTYLE);
     up_part(arc->fill_style, cur_fillstyle, I_FILLSTYLE);
-    up_part(arc->color, cur_color, I_COLOR);
+    up_part(arc->type, cur_arctype, I_ARCTYPE);
+    up_part(arc->cap_style, cur_capstyle, I_CAPSTYLE);
+    up_part(arc->pen_color, cur_pencolor, I_PEN_COLOR);
+    up_part(arc->fill_color, cur_fillcolor, I_FILL_COLOR);
     up_part(arc->depth, cur_depth, I_DEPTH);
-    if (autoforwardarrow_mode)
-	{	/* must use {} because macro has 'if' */
-	up_part(arc->for_arrow, forward_arrow(), I_ARROWMODE);
-	}
-    else
-	{	/* must use {} because macro has 'if' */
-	up_part(arc->for_arrow, NULL, I_ARROWMODE);
-	}
-    if (autobackwardarrow_mode)
-	{	/* must use {} because macro has 'if' */
-	up_part(arc->back_arrow, backward_arrow(), I_ARROWMODE);
-	}
-    else
-	{	/* must use {} because macro has 'if' */
-	up_part(arc->back_arrow, NULL, I_ARROWMODE);
-	}
+    up_arrow(arc);
+    fix_fillstyle(arc);	/* make sure it has legal fill style if color changed */
     draw_arc(arc, PAINT);
 }
 
@@ -266,34 +299,24 @@ update_line(line)
     F_line	   *line;
 {
     draw_line(line, ERASE);
-    if (line->type != T_EPS_BOX) {
 	up_part(line->thickness, cur_linewidth, I_LINEWIDTH);
+    if (line->type != T_PIC_BOX) {
 	up_part(line->style, cur_linestyle, I_LINESTYLE);
 	up_part(line->style_val, cur_styleval * (cur_linewidth + 1) / 2, 
 		I_LINESTYLE);
-	up_part(line->color, cur_color, I_COLOR);
+	up_part(line->join_style, cur_joinstyle, I_JOINSTYLE);
+	up_part(line->cap_style, cur_capstyle, I_CAPSTYLE);
+	up_part(line->pen_color, cur_pencolor, I_PEN_COLOR);
+	up_part(line->fill_color, cur_fillcolor, I_FILL_COLOR);
 	up_part(line->radius, cur_boxradius, I_BOXRADIUS);
 	up_part(line->fill_style, cur_fillstyle, I_FILLSTYLE);
 	}
+    else if (line->pic->subtype != T_PIC_EPS)	/* pictures except eps have color */
+	up_part(line->pen_color, cur_pencolor, I_PEN_COLOR);
     up_part(line->depth, cur_depth, I_DEPTH);
-    if (line->type == T_POLYLINE && line->points->next != NULL) {
-	if (autoforwardarrow_mode)
-	    {	/* must use {} because macro has 'if' */
-	    up_part(line->for_arrow, forward_arrow(), I_ARROWMODE);
-	    }
-	else
-	    {	/* must use {} because macro has 'if' */
-	    up_part(line->for_arrow, NULL, I_ARROWMODE);
-	    }
-	if (autobackwardarrow_mode)
-	    {	/* must use {} because macro has 'if' */
-	    up_part(line->back_arrow, backward_arrow(), I_ARROWMODE);
-	    }
-	else
-	    {	/* must use {} because macro has 'if' */
-	    up_part(line->back_arrow, NULL, I_ARROWMODE);
-	    }
-    }
+    if (line->type == T_POLYLINE && line->points->next != NULL)
+	up_arrow(line);
+    fix_fillstyle(line);	/* make sure it has legal fill style if color changed */
     draw_line(line, PAINT);
 }
 
@@ -315,12 +338,13 @@ update_text(text)
 	text->flags |= old_psfont_flag;
     up_part(text->size, cur_fontsize, I_FONTSIZE);
     up_part(text->angle, cur_elltextangle*M_PI/180.0, I_ELLTEXTANGLE);
-    up_part(text->color, cur_color, I_COLOR);
+    up_part(text->color, cur_pencolor, I_PEN_COLOR);
     up_part(text->depth, cur_depth, I_DEPTH);
-    size = pf_textwidth(lookfont(x_fontnum(text->flags, text->font), text->size),
+    size = textsize(lookfont(x_fontnum(text->flags, text->font), text->size),
 			strlen(text->cstring), text->cstring);
-    text->length = size.x;	/* in pixels */
-    text->height = size.y;	/* in pixels */
+    text->ascent = size.ascent;
+    text->descent = size.descent;
+    text->length = size.length;
     reload_text_fstruct(text);	/* make sure fontstruct is current */
     draw_text(text, PAINT);
 }
@@ -333,28 +357,80 @@ update_spline(spline)
     up_part(spline->style, cur_linestyle, I_LINESTYLE);
     up_part(spline->style_val, cur_styleval * (cur_linewidth + 1) / 2, 
 	    I_LINESTYLE);
+    if (spline->type == T_OPEN_NORMAL || spline->type == T_OPEN_INTERP)
+	up_part(spline->cap_style, cur_capstyle, I_CAPSTYLE);
     up_part(spline->fill_style, cur_fillstyle, I_FILLSTYLE);
-    up_part(spline->color, cur_color, I_COLOR);
+    up_part(spline->pen_color, cur_pencolor, I_PEN_COLOR);
+    up_part(spline->fill_color, cur_fillcolor, I_FILL_COLOR);
     up_part(spline->depth, cur_depth, I_DEPTH);
-    if (open_spline(spline)) {
-	if (autoforwardarrow_mode)
-	    {	/* must use {} because macro has 'if' */
-	    up_part(spline->for_arrow, forward_arrow(), I_ARROWMODE);
-	    }
-	else
-	    {	/* must use {} because macro has 'if' */
-	    up_part(spline->for_arrow, NULL, I_ARROWMODE);
-	    }
-	if (autobackwardarrow_mode)
-	    {	/* must use {} because macro has 'if' */
-	    up_part(spline->back_arrow, backward_arrow(), I_ARROWMODE);
-	    }
-	else
-	    {	/* must use {} because macro has 'if' */
-	    up_part(spline->back_arrow, NULL, I_ARROWMODE);
-	    }
-    }
+    if (open_spline(spline))
+	up_arrow(spline);
+    fix_fillstyle(spline);	/* make sure it has legal fill style if color changed */
     draw_spline(spline, PAINT);
+}
+
+/* check that the fill style is legal for the color in the object */
+/* WARNING: this procedure assumes that splines, lines, arcs and ellipses
+	    all have the same structure up to the fill_style and color */
+
+fix_fillstyle(object)
+    F_line	   *object;
+{
+    if (object->fill_color == BLACK || object->fill_color == DEFAULT ||
+	object->fill_color == DEFAULT) {
+	    if (object->fill_style >= NUMSHADEPATS && 
+		object->fill_style < NUMSHADEPATS+NUMTINTPATS)
+			object->fill_style = UNFILLED;
+    }
+    /* a little sanity check */
+    if (object->fill_color < DEFAULT)
+	object->fill_color = DEFAULT;
+    if (object->fill_color >= NUMFILLPATS)
+	object->fill_color = NUMFILLPATS;
+}
+
+up_arrow(object)
+    F_line	   *object;
+{
+    if (object->for_arrow) {
+	up_part(object->for_arrow->type, ARROW_TYPE(cur_arrowtype), I_ARROWTYPE);
+	up_part(object->for_arrow->style, ARROW_STYLE(cur_arrowtype), I_ARROWTYPE);
+    }
+    if (object->back_arrow) {
+	up_part(object->back_arrow->type, ARROW_TYPE(cur_arrowtype), I_ARROWTYPE);
+	up_part(object->back_arrow->style, ARROW_STYLE(cur_arrowtype), I_ARROWTYPE);
+    }
+
+    if (! (cur_updatemask & I_ARROWMODE))
+	return;
+
+    if (autoforwardarrow_mode) {
+	if (object->for_arrow) {
+	    object->for_arrow->thickness = (float) cur_linewidth;
+	    object->for_arrow->wid = cur_linewidth * 4 * ZOOM_FACTOR;
+	    object->for_arrow->ht = cur_linewidth * 8 * ZOOM_FACTOR;
+	} else	/* no arrowhead at all yet, create a new one */
+	    up_part(object->for_arrow, forward_arrow(), I_ARROWMODE);
+    } else {	/* delete arrowhead if one exists */
+	if (object->for_arrow) {
+	    free((char *) object->for_arrow);
+	    object->for_arrow = NULL;
+	}
+    }
+    if (autobackwardarrow_mode) {
+	if (object->back_arrow) {
+	    object->back_arrow->thickness = (float) cur_linewidth;
+	    object->back_arrow->wid = cur_linewidth * 4 * ZOOM_FACTOR;
+	    object->back_arrow->ht = cur_linewidth * 8 * ZOOM_FACTOR;
+	} else {	/* no arrowhead at all yet, create a new one */
+	    up_part(object->back_arrow, backward_arrow(), I_ARROWMODE);
+	}
+    } else {	/* delete arrowhead if one exists */
+	if (object->back_arrow) {
+	    free((char *) object->back_arrow);
+	    object->back_arrow = NULL;
+	}
+    }
 }
 
 update_compound(compound)

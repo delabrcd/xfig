@@ -1,4 +1,5 @@
-The following is the format of fig output (fig 2.1).
+NOTE: THIS FILE FORMAT IS OBSOLETE.  THIS DOCUMENT IS ONLY PROVIDED
+	FOR BACKWARD COMPATIBILITY AND INFORMATION.
 
 (1) The very first line is a comment line containing the name and version:
 	#FIG 2.1
@@ -9,12 +10,14 @@ The following is the format of fig output (fig 2.1).
 (2) The first non-comment line consists of two numbers :
 
 	int	fig_resolution		(pixels/inch)
-	int	coordinate_system	(1 : origin is at the lower left corner
+	int	coordinate_system	(1 : origin is the lower left corner (NOT USED)
 					 2 : Upper left)
 
     Fig_resolution is the resolution fig is using for the current file.
     It must always be 80 for compatibility with this version of Fig.
     Pixels are assumed to be square.
+
+    Xfig only uses the upper-left coordinate system (2).
 
 (3) The rest of the file contains various objects.  An object can be one
     of six classes (or types).
@@ -177,13 +180,19 @@ The following is the format of fig output (fig 2.1).
 	int	pen			(not used)
 	int	area_fill		(enumeration type)
 	float	style_val		(pixels)
-	int	radius			(pixels)
+	int	radius			(pixels, radius of arc-boxes)
 	int	forward_arrow		(0: off, 1: on)
 	int	backward_arrow		(0: off, 1: on)
 
     Forward arrow line : same as ARC object
 
     Backward arrow line : same as ARC object
+
+    EPS line :
+	type	name			(brief description)
+	----	----			-------------------
+	boolean	flipped			orientation = normal (0) or flipped (1)
+	char	file[]			name of eps file to import
 
     Points line :
 	type	name			(brief description)
@@ -196,12 +205,6 @@ The following is the format of fig output (fig 2.1).
 					point for polygon and box)
 	int	x, y			(always 9999, 9999; marks the end of
 					point for polygon and box)
-
-    EPS line :
-	type	name			(brief description)
-	----	----			-------------------
-	boolean	flipped			orientation = normal (0) or flipped (1)
-	char	file[]			name of eps file to import
 
     (3.5) SPLINE
 

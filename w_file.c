@@ -1,13 +1,19 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1991 by Brian V. Smith
+ * Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -15,27 +21,37 @@
 #include "resources.h"
 #include "object.h"
 #include "mode.h"
-#include "w_drawprim.h"		/* for char_height */
+#include "w_drawprim.h"		/* for max_char_height */
 #include "w_dir.h"
 #include "w_util.h"
 #include "w_setup.h"
 
 extern Boolean	file_msg_is_popped;
 extern Widget	file_msg_popup;
+extern Widget	make_popup_menu();
+extern char    *panel_get_value();
 
-extern String	text_translations;
 static char	load_msg[] = "The current figure is modified.\nDo you want to discard it and load the new file?";
 static char	buf[40];
+
+static char    *offset_unit_items[] = {
+        " Inches  ", " Centim. ", "Fig Units" };
+static float    offset_unit_conv[] = {
+	(float)PIX_PER_INCH, (float)PIX_PER_CM, 1.0 };
 
 DeclareStaticArgs(12);
 static Widget	file_status, num_objects;
 static Widget	cfile_lab, cfile_text;
 static Widget	cancel, save, merge, load;
 static Widget	file_w;
+static Widget	fig_offset_x, fig_offset_y;
+static Widget	file_xoff_unit_panel, file_xoff_unit_menu;
+static Widget	file_yoff_unit_panel, file_yoff_unit_menu;
+static int	xoff_unit_setting, yoff_unit_setting;
 static Position xposn, yposn;
 static String	file_list_translations =
 	"<Btn1Down>,<Btn1Up>: Set()Notify()\n\
-	<Btn1Down>(2): load()\n\
+	<Btn1Up>(2): load()\n\
 	<Key>Return: load()\n";
 static String	file_name_translations =
 	"<Key>Return: load()\n";
@@ -78,6 +94,24 @@ file_panel_dismiss()
     file_up = False;
 }
 
+/* get x/y offsets from panel */
+
+file_getxyoff(ixoff,iyoff)
+    int		   *ixoff,*iyoff;
+{
+    float xoff, yoff;
+    *ixoff = *iyoff = 0;
+    /* if no file panel yet, use 0, 0 for offsets */
+    if (fig_offset_x == (Widget) 0 ||
+	fig_offset_y == (Widget) 0)
+	    return;
+
+    sscanf(panel_get_value(fig_offset_x),"%f",&xoff);
+    *ixoff = round(xoff*offset_unit_conv[xoff_unit_setting]);
+    sscanf(panel_get_value(fig_offset_y),"%f",&yoff);
+    *iyoff = round(yoff*offset_unit_conv[yoff_unit_setting]);
+}
+
 static void
 do_merge(w, ev)
     Widget	    w;
@@ -85,6 +119,7 @@ do_merge(w, ev)
 {
     char	    filename[200];
     char	   *fval, *dval;
+    int		    xoff, yoff;
 
     FirstArg(XtNstring, &fval);
     GetValues(file_selfile);	/* check the ascii widget for a filename */
@@ -100,7 +135,8 @@ do_merge(w, ev)
     strcpy(filename, dval);
     strcat(filename, "/");
     strcat(filename, fval);
-    if (merge_file(filename) == 0)
+    file_getxyoff(&xoff,&yoff);	/* get x/y offsets from panel */
+    if (merge_file(filename, xoff, yoff) == 0)
 	file_panel_dismiss();
 }
 
@@ -110,6 +146,7 @@ do_load(w, ev)
     XButtonEvent   *ev;
 {
     char	   *fval, *dval;
+    int		    xoff, yoff;
 
     /* first check if the figure was modified before reloading it */
     if (!emptyfigure() && figure_modified) {
@@ -122,6 +159,7 @@ do_load(w, ev)
 	}
     }
     if (file_popup) {
+	app_flush();			/* make sure widget is updated (race condition) */
 	FirstArg(XtNstring, &dval);
 	GetValues(file_dir);
 	FirstArg(XtNstring, &fval);
@@ -131,18 +169,18 @@ do_load(w, ev)
 	if (emptyname_msg(fval, "LOAD"))
 	    return;
 	if (change_directory(dval) == 0) {
-	    if (load_file(fval) == 0) {
+	    file_getxyoff(&xoff,&yoff);	/* get x/y offsets from panel */
+	    if (load_file(fval, xoff, yoff) == 0) {
 		FirstArg(XtNlabel, fval);
 		SetValues(cfile_text);		/* set the current filename */
-		if (fval != cur_filename)
-			update_cur_filename(fval);	/* and update cur_filename */
-		update_def_filename();		/* and the default export filename */
+		update_def_filename();		/* update default export filename */
 		XtSetSensitive(load, True);
 		file_panel_dismiss();
 	    }
 	}
     } else {
-	(void) load_file(cur_filename);
+	file_getxyoff(&xoff,&yoff);
+	(void) load_file(cur_filename, xoff, yoff);
     }
 }
 
@@ -162,10 +200,9 @@ do_save(w)
 	    fval = cur_filename;	/* "Filename" widget empty, use current filename */
 	    warnexist = False;		/* don't warn if this file exists */
 	/* copy the name from the file_name widget to the current filename */
-	} else
-	    {
+	} else if (strcmp(cur_filename, fval) != 0) {
 	    warnexist = True;			/* warn if this file exists */
-	    }
+	}
 
 	if (emptyname_msg(fval, "Save"))
 	    return;
@@ -229,29 +266,53 @@ file_panel_cancel(w, ev)
 popup_file_panel(w)
     Widget	    w;
 {
-    extern Atom     wm_delete_window;
+	extern Atom     wm_delete_window;
 
-    set_temp_cursor(wait_cursor);
-    XtSetSensitive(w, False);
-    file_up = True;
+	set_temp_cursor(wait_cursor);
+	XtSetSensitive(w, False);
+	file_up = True;
 
-    if (!file_popup)
-	create_file_panel(w);
-    else
-	Rescan(0, 0, 0, 0);
+	if (!file_popup)
+	    create_file_panel(w);
+	else
+	    Rescan(0, 0, 0, 0);
 
-    FirstArg(XtNlabel, (figure_modified ? "      File Status: Modified    " :
+	FirstArg(XtNlabel, (figure_modified ? "      File Status: Modified    " :
 					  "      File Status: Not modified"));
-    SetValues(file_status);
-    sprintf(buf, "Number of Objects: %d", object_count(&objects));
-    FirstArg(XtNlabel, buf);
-    SetValues(num_objects);
-    XtPopup(file_popup, XtGrabNonexclusive);
-    (void) XSetWMProtocols(XtDisplay(file_popup), XtWindow(file_popup),
+	SetValues(file_status);
+	sprintf(buf, "Number of Objects: %d", object_count(&objects));
+	FirstArg(XtNlabel, buf);
+	SetValues(num_objects);
+	XtPopup(file_popup, XtGrabNonexclusive);
+	/* insure that the most recent colormap is installed */
+	set_cmap(XtWindow(file_popup));
+	(void) XSetWMProtocols(XtDisplay(file_popup), XtWindow(file_popup),
 			   &wm_delete_window, 1);
-    if (file_msg_is_popped)
-	XtAddGrab(file_msg_popup, False, False);
-    reset_cursor();
+	if (file_msg_is_popped)
+	    XtAddGrab(file_msg_popup, False, False);
+	reset_cursor();
+}
+
+static void
+file_xoff_unit_select(w, new_unit, garbage)
+    Widget          w;
+    XtPointer       new_unit, garbage;
+{
+    DeclareArgs(2);
+    FirstArg(XtNlabel, XtName(w));
+    SetValues(file_xoff_unit_panel);
+    xoff_unit_setting = (int) new_unit;
+}
+
+static void
+file_yoff_unit_select(w, new_unit, garbage)
+    Widget          w;
+    XtPointer       new_unit, garbage;
+{
+    DeclareArgs(2);
+    FirstArg(XtNlabel, XtName(w));
+    SetValues(file_yoff_unit_panel);
+    yoff_unit_setting = (int) new_unit;
 }
 
 create_file_panel(w)
@@ -266,7 +327,8 @@ create_file_panel(w)
 	FirstArg(XtNx, xposn);
 	NextArg(XtNy, yposn + 50);
 	NextArg(XtNtitle, "Xfig: File menu");
-	file_popup = XtCreatePopupShell("xfig_file_menu",
+	NextArg(XtNcolormap, tool_cm);
+	file_popup = XtCreatePopupShell("file_menu",
 					transientShellWidgetClass,
 					tool, Args, ArgCount);
 	XtOverrideTranslations(file_popup,
@@ -292,7 +354,7 @@ create_file_panel(w)
 	num_objects = XtCreateManagedWidget("num_objects", labelWidgetClass,
 					    file_panel, Args, ArgCount);
 
-	FirstArg(XtNlabel, " Current Filename:");
+	FirstArg(XtNlabel, "Current Filename:");
 	NextArg(XtNfromVert, num_objects);
 	NextArg(XtNvertDistance, 15);
 	NextArg(XtNjustify, XtJustifyLeft);
@@ -310,7 +372,7 @@ create_file_panel(w)
 	cfile_text = XtCreateManagedWidget("cur_file_name", labelWidgetClass,
 					   file_panel, Args, ArgCount);
 
-	FirstArg(XtNlabel, "         Filename:");
+	FirstArg(XtNlabel, "         Filename");
 	NextArg(XtNvertDistance, 15);
 	NextArg(XtNfromVert, cfile_lab);
 	NextArg(XtNborderWidth, 0);
@@ -320,8 +382,8 @@ create_file_panel(w)
 	GetValues(file);
 
 	FirstArg(XtNwidth, 350);
-	NextArg(XtNheight, char_height(temp_font) * 2 + 4);
-	NextArg(XtNeditType, "edit");
+	NextArg(XtNheight, max_char_height(temp_font) * 2 + 4);
+	NextArg(XtNeditType, XawtextEdit);
 	NextArg(XtNstring, cur_filename);
 	NextArg(XtNinsertPosition, strlen(cur_filename));
 	NextArg(XtNfromHoriz, file);
@@ -341,7 +403,8 @@ create_file_panel(w)
 	    XtAppAddActions(tool_app, file_name_actions, XtNumber(file_name_actions));
 	}
 
-	create_dirinfo(file_panel, file_selfile, &beside, &below,
+	/* make the directory list etc */
+	create_dirinfo(True, file_panel, file_selfile, &beside, &below,
 		       &file_mask, &file_dir, &file_flist, &file_dlist);
 
 	/* make <return> in the filename window load the file */
@@ -352,21 +415,21 @@ create_file_panel(w)
 	XtAugmentTranslations(file_flist,
 			   XtParseTranslationTable(file_list_translations));
 	FirstArg(XtNlabel, "Cancel");
-	NextArg(XtNvertDistance, 15);
-	NextArg(XtNhorizDistance, 25);
-	NextArg(XtNheight, 25);
 	NextArg(XtNfromHoriz, beside);
+	NextArg(XtNhorizDistance, 25);
 	NextArg(XtNfromVert, below);
+	NextArg(XtNvertDistance, 35);
+	NextArg(XtNheight, 25);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
 				       file_panel, Args, ArgCount);
 	XtAddEventHandler(cancel, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler)file_panel_cancel, (XtPointer) NULL);
 
-	FirstArg(XtNlabel, "Save");
+	FirstArg(XtNlabel, " Save ");
 	NextArg(XtNfromHoriz, cancel);
+	NextArg(XtNvertDistance, 35);
 	NextArg(XtNfromVert, below);
-	NextArg(XtNvertDistance, 15);
 	NextArg(XtNhorizDistance, 25);
 	NextArg(XtNheight, 25);
 	NextArg(XtNborderWidth, INTERNAL_BW);
@@ -375,11 +438,11 @@ create_file_panel(w)
 	XtAddEventHandler(save, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler)do_save, (XtPointer) NULL);
 
-	FirstArg(XtNlabel, "Load");
+	FirstArg(XtNlabel, " Load ");
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNfromHoriz, save);
+	NextArg(XtNvertDistance, 35);
 	NextArg(XtNfromVert, below);
-	NextArg(XtNvertDistance, 15);
 	NextArg(XtNhorizDistance, 25);
 	NextArg(XtNheight, 25);
 	load = XtCreateManagedWidget("load", commandWidgetClass,
@@ -387,17 +450,80 @@ create_file_panel(w)
 	XtAddEventHandler(load, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler)do_load, (XtPointer) NULL);
 
-	FirstArg(XtNlabel, "Merge Read");
+	FirstArg(XtNlabel, "Merge");
 	NextArg(XtNfromHoriz, load);
-	NextArg(XtNfromVert, below);
-	NextArg(XtNborderWidth, INTERNAL_BW);
-	NextArg(XtNvertDistance, 15);
 	NextArg(XtNhorizDistance, 25);
+	NextArg(XtNfromVert, below);
+	NextArg(XtNvertDistance, 35);
+	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNheight, 25);
 	merge = XtCreateManagedWidget("merge", commandWidgetClass,
 				      file_panel, Args, ArgCount);
 	XtAddEventHandler(merge, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler)do_merge, (XtPointer) NULL);
+
+	FirstArg(XtNlabel, "Load/Merge Figure Offset");
+	NextArg(XtNfromVert, below);
+	NextArg(XtNvertDistance, 10);
+	NextArg(XtNborderWidth, 0);
+	beside = XtCreateManagedWidget("fig_offset_label", labelWidgetClass,
+				     file_panel, Args, ArgCount);
+
+	FirstArg(XtNlabel, "X");
+	NextArg(XtNfromHoriz, beside);
+	NextArg(XtNhorizDistance, 10);
+	NextArg(XtNfromVert, below);
+	NextArg(XtNvertDistance, 10);
+	NextArg(XtNborderWidth, 0);
+	beside = XtCreateManagedWidget("fig_offset_lbl_x", labelWidgetClass,
+				     file_panel, Args, ArgCount);
+
+	FirstArg(XtNwidth, 50);
+	NextArg(XtNeditType, XawtextEdit);
+	NextArg(XtNstring, "0");
+	NextArg(XtNinsertPosition, 1);
+	NextArg(XtNfromHoriz, beside);
+	NextArg(XtNfromVert, below);
+	NextArg(XtNvertDistance, 10);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
+	fig_offset_x = XtCreateManagedWidget("fig_offset_x", asciiTextWidgetClass,
+					     file_panel, Args, ArgCount);
+	FirstArg(XtNfromHoriz, fig_offset_x);
+	NextArg(XtNfromVert, below);
+	NextArg(XtNvertDistance, 10);
+	file_xoff_unit_panel = XtCreateManagedWidget(offset_unit_items[appres.INCHES? 0: 1],
+				menuButtonWidgetClass, file_panel, Args, ArgCount);
+	file_xoff_unit_menu = make_popup_menu(offset_unit_items, XtNumber(offset_unit_items),
+				     file_xoff_unit_panel, file_xoff_unit_select);
+
+	FirstArg(XtNlabel, "Y");
+	NextArg(XtNfromHoriz, file_xoff_unit_panel);
+	NextArg(XtNhorizDistance, 10);
+	NextArg(XtNfromVert, below);
+	NextArg(XtNvertDistance, 10);
+	NextArg(XtNborderWidth, 0);
+	beside = XtCreateManagedWidget("fig_offset_lbl_x", labelWidgetClass,
+				     file_panel, Args, ArgCount);
+
+	FirstArg(XtNwidth, 50);
+	NextArg(XtNeditType, XawtextEdit);
+	NextArg(XtNstring, "0");
+	NextArg(XtNinsertPosition, 1);
+	NextArg(XtNfromHoriz, beside);
+	NextArg(XtNfromVert, below);
+	NextArg(XtNvertDistance, 10);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
+	fig_offset_y = XtCreateManagedWidget("fig_offset_x", asciiTextWidgetClass,
+					     file_panel, Args, ArgCount);
+	FirstArg(XtNfromHoriz, fig_offset_y);
+	NextArg(XtNfromVert, below);
+	NextArg(XtNvertDistance, 10);
+	file_yoff_unit_panel = XtCreateManagedWidget(offset_unit_items[appres.INCHES? 0: 1],
+				menuButtonWidgetClass, file_panel, Args, ArgCount);
+	file_yoff_unit_menu = make_popup_menu(offset_unit_items, XtNumber(offset_unit_items),
+				     file_yoff_unit_panel, file_yoff_unit_select);
 
 	XtInstallAccelerators(file_panel, cancel);
 	XtInstallAccelerators(file_panel, save);

@@ -1,0 +1,3 @@
+To make the ps file:
+
+psroff -t -man xfig.man > xfig.ps

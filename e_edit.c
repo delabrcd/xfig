@@ -3,13 +3,20 @@
  * Copyright (c) 1985 by Supoj Sutanthavibul
  * Change function implemented by Frank Schmuck (schmuck@svax.cs.cornell.edu)
  * X version by Jon Tombs <jon@uk.ac.oxford.robots>
+ * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -26,22 +33,29 @@
 #include "w_drawprim.h"
 #include "w_icons.h"
 #include "w_util.h"
+#include "w_indpanel.h"
 #include "w_mousefun.h"
+#include "w_setup.h"
 
+extern choice_info arrowtype_choices[];
 extern char    *panel_get_value();
 extern PIX_FONT lookfont();
 Widget		make_popup_menu();
+static Widget	make_popup_menu_images();
 static Widget	make_color_popup_menu();
 
 extern Pixmap	psfont_menu_bitmaps[];
 extern Pixmap	latexfont_menu_bitmaps[];
 extern void	Quit();
 extern		fontpane_popup();
+extern F_arrow *create_arrow();
 
 static void	new_generic_values();
 static void	new_arrow_values();
 static		generic_window();
 static		font_image_panel();
+static		pen_color_selection_panel();
+static		fill_color_selection_panel();
 static		color_selection_panel();
 static		float_panel();
 static		float_label();
@@ -56,13 +70,20 @@ static		get_points();
 int		panel_set_value();
 static XtCallbackProc done_button(), apply_button(), cancel_button();
 static XtCallbackProc toggle_for_arrow(), toggle_back_arrow();
+static void	arc_type_select();
+static void	cap_style_select();
+static void	join_style_select();
 static void	line_style_select();
+static void	for_arrow_type_select();
+static void	back_arrow_type_select();
 static void	textjust_select();
 static void	fill_style_select();
-static void	flip_eps_select();
+static void	flip_pic_select();
 static void	hidden_text_select();
 static void	rigid_text_select();
 static void	special_text_select();
+static void	pen_color_select();
+static void	fill_color_select();
 static void	color_select();
 static void	set_color_name();
 static Widget	popup, form;
@@ -81,19 +102,23 @@ static Widget	origsize;
 static Widget	shrink, expand;
 static Widget	label;
 static Widget	thickness_panel;
-static Widget	color_panel;
 static Widget	depth_panel;
 static Widget	angle_panel;
 static Widget	textjust_panel;
 static Widget	hidden_text_panel;
 static Widget	rigid_text_panel;
 static Widget	special_text_panel;
-static Widget	fill_style_panel;
-static Widget	flip_eps_panel;
-static Widget	style_val_label;
-static Widget	fill_style_label;
-static Widget	style_panel;
-static Widget	style_val_panel;
+static Widget	fill_style_panel, fill_style_label;
+static Widget	fill_pat_panel, fill_pat_label;
+static Widget	flip_pic_panel;
+static Widget	arc_type_panel;
+static Widget	cap_style_panel;
+static Widget	join_style_panel;
+static Widget	line_style_panel;
+static Widget	for_arrow_type_panel;
+static Widget	back_arrow_type_panel;
+static Widget	for_toggle, back_toggle;
+static Widget	style_val_panel, style_val_label;
 static Widget	for_arrow_height,for_arrow_width,for_arrow_thick;
 static Widget	back_arrow_height,back_arrow_width,back_arrow_thick;
 static Widget	for_thick_label,for_height_label,for_width_label;
@@ -103,7 +128,7 @@ static Widget	back_thick_val,back_height_val,back_width_val;
 static Boolean	for_arrow, back_arrow;
 
 static Widget	text_panel;
-static Widget	eps_name_panel;
+static Widget	pic_name_panel;
 static Widget	x1_panel, y1_panel;
 static Widget	x2_panel, y2_panel;
 static Widget	x3_panel, y3_panel;
@@ -118,27 +143,38 @@ static Widget	menu, hidden_text_menu, textjust_menu;
 static Widget	special_text_menu, rigid_text_menu;
 static Widget	but1;
 
-DeclareStaticArgs(12);
+/* for PIC object type */
+static Widget	pic_size, pic_type, pic_colors;
+
+static Widget	pen_color_panel;
+static Widget	fill_color_panel;
+
+DeclareStaticArgs(20);
 static char	buf[64];
 
 static Widget	px_panel[MAXNUMPTS];
 static Widget	py_panel[MAXNUMPTS];
 
+static char	*pic_names[] = {"--","EPS","XBM","XPM","GIF"};
+
 static int	ellipse_flag;
 static int	fill_flag;
-static int	flip_eps_flag;
+static int	flip_pic_flag;
 static int	(*done_proc) ();
 static int	button_result;
 static int	textjust;
-static Color	color;
+static Color	pen_color, fill_color;
 static int	hidden_text_flag;
 static int	special_text_flag;
 static int	rigid_text_flag;
 static int	new_ps_font, new_latex_font;
 static int	new_psflag;
 static int	changed;
+static Boolean  file_changed;
 
-static String   edit_translations =
+static int	actions_added=0;
+/******* actions and translations for edit cancel *******/
+static String   edit_popup_translations =
 	"<Message>WM_PROTOCOLS: DoneEdit()\n";
 static void     edit_cancel();
 static XtActionsRec     edit_actions[] =
@@ -146,50 +182,150 @@ static XtActionsRec     edit_actions[] =
     {"DoneEdit", (XtActionProc) edit_cancel},
 };
 
+/******* actions and translations for text widgets *******/
+/* don't allow newlines in text until we handle multiple line texts */
+static String         edit_text_translations =
+	"<Key>Return: apply()\n\
+	Ctrl<Key>J: no-op(RingBell)\n\
+	Ctrl<Key>M: no-op(RingBell)\n\
+	Ctrl<Key>X: EmptyTextKey()\n\
+	Ctrl<Key>U: multiply(4)\n\
+	<Key>F18: PastePanelKey()\n";
+
+static XtActionsRec     text_actions[] =
+{
+    {"apply", (XtActionProc) apply_button},
+};
 
 #define CANCEL		0
 #define DONE		1
 #define APPLY		2
 
 static struct {
-    int		    thickness;
-    Color	    color;
-    int		    depth;
-    int		    style;
-    float	    style_val;
-    int		    pen;
-    int		    fill_style;
-    F_arrow	   *for_arrow;
-    F_arrow	   *back_arrow;
-}		generic_vals;
+    int		thickness;
+    Color	pen_color;
+    Color	fill_color;
+    int		depth;
+    int		arc_type;
+    int		cap_style;
+    int		join_style;
+    int		style;
+    float	style_val;
+    int		pen_style;
+    int		fill_style;
+    F_arrow	for_arrow;
+    F_arrow	back_arrow;
+}	generic_vals;
 
 #define put_generic_vals(x) \
 	generic_vals.thickness	= x->thickness; \
-	generic_vals.color	= x->color; \
+	generic_vals.pen_color	= x->pen_color; \
+	generic_vals.fill_color	= x->fill_color; \
 	generic_vals.depth	= x->depth; \
 	generic_vals.style	= x->style; \
 	generic_vals.style_val	= x->style_val; \
-	generic_vals.pen	= x->pen; \
+	generic_vals.pen_style	= x->pen_style; \
 	generic_vals.fill_style = x->fill_style
 
 #define get_generic_vals(x) \
 	new_generic_values(); \
 	x->thickness	= generic_vals.thickness; \
-	x->color	= generic_vals.color; \
+	x->pen_color	= generic_vals.pen_color; \
+	x->fill_color	= generic_vals.fill_color; \
 	x->depth	= generic_vals.depth; \
 	x->style	= generic_vals.style; \
 	x->style_val	= generic_vals.style_val; \
-	x->pen		= generic_vals.pen; \
+	x->pen_style	= generic_vals.pen_style; \
 	x->fill_style	= generic_vals.fill_style
 
-#define put_generic_arrows(x) \
-	generic_vals.for_arrow	= x->for_arrow; \
-	generic_vals.back_arrow = x->back_arrow
+#define put_join_style(x) \
+	generic_vals.join_style = x->join_style;
 
-#define get_generic_arrows(x) \
-	new_arrow_values(); \
-	x->for_arrow  = (for_arrow?  generic_vals.for_arrow  : NULL); \
-	x->back_arrow = (back_arrow? generic_vals.back_arrow : NULL)
+#define get_join_style(x) \
+	x->join_style = generic_vals.join_style;
+
+#define put_cap_style(x) \
+	generic_vals.cap_style = x->cap_style;
+
+#define get_cap_style(x) \
+	x->cap_style = generic_vals.cap_style;
+
+#define put_arc_type(x) \
+	generic_vals.arc_type = x->type;
+
+#define get_arc_type(x) \
+	x->type = generic_vals.arc_type;
+
+/* NOTE: This procedure requires that the structure components for f_arc, f_line
+	and f_spline are in the same order up to and including the arrows */
+
+put_generic_arrows(x)
+   F_line	*x;
+{
+    for_arrow = (x->for_arrow != NULL);
+    back_arrow = (x->back_arrow != NULL);
+    if (for_arrow) {
+	generic_vals.for_arrow.type	= x->for_arrow->type;
+	generic_vals.for_arrow.style	= x->for_arrow->style;
+	generic_vals.for_arrow.thickness = x->for_arrow->thickness;
+	generic_vals.for_arrow.wid	= x->for_arrow->wid;
+	generic_vals.for_arrow.ht	= x->for_arrow->ht;
+    } else {
+	generic_vals.for_arrow.type	= ARROW_TYPE(cur_arrowtype);
+	generic_vals.for_arrow.style	= ARROW_STYLE(cur_arrowtype);
+	generic_vals.for_arrow.thickness = (float) cur_linewidth;
+	generic_vals.for_arrow.wid	= (float) cur_linewidth * DEF_ARROW_WID;
+	generic_vals.for_arrow.ht	= (float) cur_linewidth * DEF_ARROW_HT;
+    }
+    if (back_arrow) {
+	generic_vals.back_arrow.type	= x->back_arrow->type;
+	generic_vals.back_arrow.style	= x->back_arrow->style;
+	generic_vals.back_arrow.thickness = x->back_arrow->thickness;
+	generic_vals.back_arrow.wid	= x->back_arrow->wid;
+	generic_vals.back_arrow.ht	= x->back_arrow->ht;
+    } else {
+	generic_vals.back_arrow.type	= ARROW_TYPE(cur_arrowtype);
+	generic_vals.back_arrow.style	= ARROW_STYLE(cur_arrowtype);
+	generic_vals.back_arrow.thickness = (float) cur_linewidth;
+	generic_vals.back_arrow.wid	= (float) cur_linewidth * DEF_ARROW_WID;
+	generic_vals.back_arrow.ht	= (float) cur_linewidth * DEF_ARROW_HT;
+    }
+}
+
+/* NOTE: This procedure requires that the structure components for f_arc, f_line
+	and f_spline are in the same order up to and including the arrows */
+
+get_generic_arrows(x)
+   F_line	*x;
+{
+	new_arrow_values();
+	if (for_arrow) {
+		if (!x->for_arrow)
+		    x->for_arrow = create_arrow();
+		x->for_arrow->type = generic_vals.for_arrow.type;
+		x->for_arrow->style = generic_vals.for_arrow.style;
+		x->for_arrow->thickness = generic_vals.for_arrow.thickness;
+		x->for_arrow->wid = generic_vals.for_arrow.wid;
+		x->for_arrow->ht = generic_vals.for_arrow.ht;
+	} else {
+		if (x->for_arrow)
+			free(x->for_arrow);
+		x->for_arrow = NULL;
+	}
+	if (back_arrow) {
+		if (!x->back_arrow)
+		    x->back_arrow = create_arrow();
+		x->back_arrow->type = generic_vals.back_arrow.type;
+		x->back_arrow->style = generic_vals.back_arrow.style;
+		x->back_arrow->thickness = generic_vals.back_arrow.thickness;
+		x->back_arrow->wid = generic_vals.back_arrow.wid;
+		x->back_arrow->ht = generic_vals.back_arrow.ht;
+	} else {
+		if (x->back_arrow)
+			free(x->back_arrow);
+		x->back_arrow = NULL;
+	}
+}
 
 int		edit_item();
 
@@ -236,20 +372,22 @@ edit_item(p, type, x, y)
     }
 
     XtPopup(popup, XtGrabExclusive);
+    /* insure that the most recent colormap is installed */
+    set_cmap(XtWindow(popup));
     (void) XSetWMProtocols(XtDisplay(popup), XtWindow(popup),
 	  		   &wm_delete_window, 1);
 
 }
 
 static void
-expand_eps(w, ev)
+expand_pic(w, ev)
     Widget	    w;
     XButtonEvent   *ev;
 {
     struct f_point  p1, p2;
     int		    dx, dy, rotation;
     float	    ratio;
-    register float  orig_ratio = new_l->eps->hw_ratio;
+    register float  orig_ratio = new_l->pic->hw_ratio;
 
     p1.x = atoi(panel_get_value(x1_panel));
     p1.y = atoi(panel_get_value(y1_panel));
@@ -266,8 +404,8 @@ expand_eps(w, ev)
 	rotation = 90;
     if (dx == 0 || dy == 0 || orig_ratio == 0.0)
 	return;
-    if (((rotation == 0 || rotation == 180) && !flip_eps_flag) ||
-	(rotation != 0 && rotation != 180 && flip_eps_flag)) {
+    if (((rotation == 0 || rotation == 180) && !flip_pic_flag) ||
+	(rotation != 0 && rotation != 180 && flip_pic_flag)) {
 	ratio = fabs((float) dy / (float) dx);
 	if (ratio < orig_ratio)
 	    p2.y = p1.y + signof(dy) * (int) (fabs((float) dx) * orig_ratio);
@@ -290,14 +428,14 @@ expand_eps(w, ev)
 }
 
 static void
-shrink_eps(w, ev)
+shrink_pic(w, ev)
     Widget	    w;
     XButtonEvent   *ev;
 {
     struct f_point  p1, p2;
     int		    dx, dy, rotation;
     float	    ratio;
-    register float  orig_ratio = new_l->eps->hw_ratio;
+    register float  orig_ratio = new_l->pic->hw_ratio;
 
     p1.x = atoi(panel_get_value(x1_panel));
     p1.y = atoi(panel_get_value(y1_panel));
@@ -314,8 +452,8 @@ shrink_eps(w, ev)
 	rotation = 90;
     if (dx == 0 || dy == 0 || orig_ratio == 0.0)
 	return;
-    if (((rotation == 0 || rotation == 180) && !flip_eps_flag) ||
-	(rotation != 0 && rotation != 180 && flip_eps_flag)) {
+    if (((rotation == 0 || rotation == 180) && !flip_pic_flag) ||
+	(rotation != 0 && rotation != 180 && flip_pic_flag)) {
 	ratio = fabs((float) dy / (float) dx);
 	if (ratio > orig_ratio)
 	    p2.y = p1.y + signof(dy) * (int) (fabs((float) dx) * orig_ratio);
@@ -338,13 +476,13 @@ shrink_eps(w, ev)
 }
 
 static void
-origsize_eps(w, ev)
+origsize_pic(w, ev)
     Widget	    w;
     XButtonEvent   *ev;
 {
     struct f_point  p1, p2;
     int		    dx, dy;
-    register float  orig_ratio = new_l->eps->hw_ratio;
+    register float  orig_ratio = new_l->pic->hw_ratio;
 
     p1.x = atoi(panel_get_value(x1_panel));
     p1.y = atoi(panel_get_value(y1_panel));
@@ -356,8 +494,8 @@ origsize_eps(w, ev)
     if (dx == 0 || dy == 0 || orig_ratio == 0.0)
 	return;
 
-    p2.x = p1.x + signof(dx) * new_l->eps->size_x;
-    p2.y = p1.y + signof(dy) * new_l->eps->size_y;
+    p2.x = p1.x + signof(dx) * new_l->pic->size_x;
+    p2.y = p1.y + signof(dy) * new_l->pic->size_y;
     sprintf(buf, "%d", p2.x);
     panel_set_value(x2_panel, buf);
     sprintf(buf, "%d", p2.y);
@@ -368,7 +506,7 @@ origsize_eps(w, ev)
 }
 
 
-static char    *flip_eps_items[] = {"Normal            ",
+static char    *flip_pic_items[] = {"Normal            ",
 "Flipped about diag"};
 
 make_window_compound(c)
@@ -378,7 +516,7 @@ make_window_compound(c)
     mask_toggle_compoundmarker(c);
     new_c = copy_compound(c);
     new_c->next = c;
-    generic_window("COMPOUND", "", &glue_ic, done_compound, 0, 0);
+    generic_window("COMPOUND", "", &glue_ic, done_compound, 0, False);
     f_pos_panel(&c->nwcorner, "Top Left Corner", &x1_panel, &y1_panel);
     f_pos_panel(&c->secorner, "Bottom Right Corner", &x2_panel, &y2_panel);
     int_label(object_count(c), "Num Objects ", &num_objects);
@@ -458,40 +596,99 @@ make_window_line(l)
     set_temp_cursor(panel_cursor);
     mask_toggle_linemarker(l);
     new_l = copy_line(l);
-    new_l->next = l;
+    old_l = l;
+
     put_generic_vals(new_l);
-    color = new_l->color;
+    put_cap_style(new_l);
+    put_join_style(new_l);
+    pen_color = new_l->pen_color;
+    fill_color = new_l->fill_color;
     switch (new_l->type) {
     case T_POLYLINE:
 	put_generic_arrows(new_l);
-	generic_window("POLYLINE", "Polyline", &line_ic, done_line, 1, 1);
+	generic_window("POLYLINE", "Polyline", &line_ic, done_line, True, True);
 	points_panel(new_l->points, 0);
 	break;
     case T_POLYGON:
-	generic_window("POLYLINE", "Polygon", &polygon_ic, done_line, 1, 0);
+	generic_window("POLYLINE", "Polygon", &polygon_ic, done_line, True, False);
 	points_panel(new_l->points, 1);
 	break;
     case T_BOX:
-	generic_window("POLYLINE", "Box", &box_ic, done_line, 1, 0);
+	generic_window("POLYLINE", "Box", &box_ic, done_line, True, False);
 	p1 = *new_l->points;
 	p2 = *new_l->points->next->next;
 	xy_panel(p1.x, p1.y, "First Corner", &x1_panel, &y1_panel);
 	xy_panel(p2.x, p2.y, "Opposite Corner", &x2_panel, &y2_panel);
 	break;
     case T_ARC_BOX:
-	generic_window("POLYLINE", "ArcBox", &arc_box_ic, done_line, 1, 0);
+	generic_window("POLYLINE", "ArcBox", &arc_box_ic, done_line, True, False);
 	p1 = *new_l->points;
 	p2 = *new_l->points->next->next;
+	int_panel(new_l->radius, form, "Corner Radius =", &radius);
 	xy_panel(p1.x, p1.y, "First Corner", &x1_panel, &y1_panel);
 	xy_panel(p2.x, p2.y, "Opposite Corner", &x2_panel, &y2_panel);
-	int_panel(new_l->radius, form, "Radius =", &radius);
 	break;
-    case T_EPS_BOX:
-	generic_window("POLYLINE", "EPS", &epsobj_ic, done_line, 0, 0);
+    case T_PIC_BOX:
+	old_l->type = T_BOX;	/* so colors of old won't be included in new */
+	generic_window("POLYLINE", "Picture Object", &picobj_ic, done_line, False, False);
+	pen_color_selection_panel();
 	int_panel(new_l->depth, form, "Depth =", &depth_panel);
-	if (!strcmp(new_l->eps->file, EMPTY_EPS))
-	    new_l->eps->file[0] = '\0';
-	str_panel(new_l->eps->file, "EPS Filename =", &eps_name_panel);
+	if (!strcmp(new_l->pic->file, EMPTY_PIC))
+	    new_l->pic->file[0] = '\0';
+	str_panel(new_l->pic->file, "Filename =", &pic_name_panel);
+	FirstArg(XtNfromVert, below);
+	NextArg(XtNborderWidth, 0);
+	beside = XtCreateManagedWidget("Type =", labelWidgetClass,
+				       form, Args, ArgCount);
+	if (new_l->pic != 0)
+	    strcpy(buf,pic_names[new_l->pic->subtype]);
+	else
+	    strcpy(buf,"--");
+	FirstArg(XtNfromVert, below);
+	NextArg(XtNfromHoriz, beside);
+	NextArg(XtNresizable, True);
+	NextArg(XtNborderWidth, 0);
+	NextArg(XtNlabel, buf);
+	beside = pic_type = XtCreateManagedWidget("pic_type", labelWidgetClass,
+				       form, Args, ArgCount);
+	FirstArg(XtNfromVert, below);
+	NextArg(XtNfromHoriz, beside);
+	NextArg(XtNhorizDistance, 20);
+	NextArg(XtNborderWidth, 0);
+	beside = XtCreateManagedWidget("Size =", labelWidgetClass,
+				       form, Args, ArgCount);
+
+	if (new_l->pic != 0 && new_l->pic->subtype != 0)
+	    sprintf(buf,"%d x %d",new_l->pic->bit_size.x,new_l->pic->bit_size.y);
+	else
+	    strcpy(buf,"--");
+	FirstArg(XtNfromVert, below);
+	NextArg(XtNfromHoriz, beside);
+	NextArg(XtNresizable, True);
+	NextArg(XtNborderWidth, 0);
+	NextArg(XtNlabel, buf);
+	pic_size = XtCreateManagedWidget("pic_size", labelWidgetClass,
+				       form, Args, ArgCount);
+	below = pic_type;
+	FirstArg(XtNfromVert, below);
+	NextArg(XtNborderWidth, 0);
+	beside = XtCreateManagedWidget("Number of colors =", labelWidgetClass,
+				       form, Args, ArgCount);
+	/* although the EPS may have colors, the actual number is not known */
+	if (new_l->pic != 0 && 
+	    (new_l->pic->subtype == T_PIC_PIXMAP || new_l->pic->subtype == T_PIC_GIF))
+		sprintf(buf,"%d",new_l->pic->numcols);
+	else
+		strcpy(buf,"--");
+	FirstArg(XtNfromVert, below);
+	NextArg(XtNfromHoriz, beside);
+	NextArg(XtNresizable, True);
+	NextArg(XtNborderWidth, 0);
+	NextArg(XtNlabel, buf);
+	pic_colors = XtCreateManagedWidget("pic_colors", labelWidgetClass,
+				       form, Args, ArgCount);
+	below = pic_colors;
+
 	p1 = *new_l->points;
 	p2 = *new_l->points->next->next;
 	xy_panel(p1.x, p1.y, "First Corner", &x1_panel, &y1_panel);
@@ -504,13 +701,13 @@ make_window_line(l)
 				       form, Args, ArgCount);
 	FirstArg(XtNfromVert, below);
 	NextArg(XtNfromHoriz, beside);
-	flip_eps_flag = new_l->eps->flipped;
-	flip_eps_panel = XtCreateManagedWidget(
-	       flip_eps_items[flip_eps_flag ? 1 : 0], menuButtonWidgetClass,
+	flip_pic_flag = new_l->pic->flipped;
+	flip_pic_panel = XtCreateManagedWidget(
+	       flip_pic_items[flip_pic_flag ? 1 : 0], menuButtonWidgetClass,
 					       form, Args, ArgCount);
-	below = flip_eps_panel;
-	menu = make_popup_menu(flip_eps_items, XtNumber(flip_eps_items),
-			       flip_eps_panel, flip_eps_select);
+	below = flip_pic_panel;
+	menu = make_popup_menu(flip_pic_items, XtNumber(flip_pic_items),
+			       flip_pic_panel, flip_pic_select);
 
 	dx = p2.x - p1.x;
 	dy = p2.y - p1.y;
@@ -523,27 +720,27 @@ make_window_line(l)
 	    rotation = 90;
 	if (dx == 0 || dy == 0)
 	    ratio = 0.0;
-	else if (((rotation == 0 || rotation == 180) && !flip_eps_flag) ||
-		 (rotation != 0 && rotation != 180 && flip_eps_flag))
+	else if (((rotation == 0 || rotation == 180) && !flip_pic_flag) ||
+		 (rotation != 0 && rotation != 180 && flip_pic_flag))
 	    ratio = fabs((float) dy / (float) dx);
 	else
 	    ratio = fabs((float) dx / (float) dy);
 
 	int_label(rotation, "Rotation =       ", &rotn_panel);
 	float_label(ratio, "Curr h/w Ratio =", &hw_ratio_panel);
-	float_label(new_l->eps->hw_ratio, "Orig h/w Ratio =", &orig_hw_panel);
+	float_label(new_l->pic->hw_ratio, "Orig h/w Ratio =", &orig_hw_panel);
 	below = orig_hw_panel;
 	FirstArg(XtNfromVert, below);
 	NextArg(XtNborderWidth, 0);
 	beside = XtCreateManagedWidget("Change h/w ratio", labelWidgetClass,
 				       form, Args, ArgCount);
 	FirstArg(XtNfromVert, below);
-	NextArg(XtNsensitive, new_l->eps->hw_ratio ? True : False);
+	NextArg(XtNsensitive, new_l->pic->hw_ratio ? True : False);
 	NextArg(XtNfromHoriz, beside);
 	shrink = XtCreateManagedWidget("Shrink to orig", commandWidgetClass,
 				       form, Args, ArgCount);
 	XtAddEventHandler(shrink, ButtonReleaseMask, (Boolean) 0,
-			  (XtEventHandler)shrink_eps, (XtPointer) NULL);
+			  (XtEventHandler)shrink_pic, (XtPointer) NULL);
 	beside = shrink;
 
 	ArgCount--;
@@ -551,16 +748,16 @@ make_window_line(l)
 	expand = XtCreateManagedWidget("Expand to orig", commandWidgetClass,
 				       form, Args, ArgCount);
 	XtAddEventHandler(expand, ButtonReleaseMask, (Boolean) 0,
-			  (XtEventHandler)expand_eps, (XtPointer) NULL);
+			  (XtEventHandler)expand_pic, (XtPointer) NULL);
 
 	below = expand;
 	FirstArg(XtNfromVert, below);
-	NextArg(XtNsensitive, new_l->eps->hw_ratio ? True : False);
+	NextArg(XtNsensitive, new_l->pic->hw_ratio ? True : False);
 	origsize = XtCreateManagedWidget("Use orig. size",
 					 commandWidgetClass, form, Args,
 					 ArgCount);
 	XtAddEventHandler(origsize, ButtonReleaseMask, (Boolean) 0,
-			  (XtEventHandler)origsize_eps, (XtPointer) NULL);
+			  (XtEventHandler)origsize_pic, (XtPointer) NULL);
 	break;
     }
 }
@@ -576,24 +773,29 @@ get_new_line_values()
     switch (new_l->type) {
     case T_POLYLINE:
 	get_generic_vals(new_l);
+	get_cap_style(new_l);
+	get_join_style(new_l);
 	get_generic_arrows(new_l);
 	get_points(new_l->points, False);
 	return;
     case T_POLYGON:
 	get_generic_vals(new_l);
+	get_join_style(new_l);
 	get_points(new_l->points, True);
 	return;
     case T_ARC_BOX:
 	new_l->radius = atoi(panel_get_value(radius));
     case T_BOX:
 	get_generic_vals(new_l);
+	get_join_style(new_l);
 	p1.x = atoi(panel_get_value(x1_panel));
 	p1.y = atoi(panel_get_value(y1_panel));
 	p2.x = atoi(panel_get_value(x2_panel));
 	p2.y = atoi(panel_get_value(y2_panel));
 	break;
-    case T_EPS_BOX:
-	new_l->color = color;
+    case T_PIC_BOX:
+	new_l->pen_color = pen_color;
+	new_l->fill_color = fill_color;
 	new_l->depth = atoi(panel_get_value(depth_panel));
 	p1.x = atoi(panel_get_value(x1_panel));
 	p1.y = atoi(panel_get_value(y1_panel));
@@ -611,8 +813,8 @@ get_new_line_values()
 	    rotation = 90;
 	if (dx == 0 || dy == 0)
 	    ratio = 0.0;
-	else if (((rotation == 0 || rotation == 180) && !flip_eps_flag) ||
-		 (rotation != 0 && rotation != 180 && flip_eps_flag))
+	else if (((rotation == 0 || rotation == 180) && !flip_pic_flag) ||
+		 (rotation != 0 && rotation != 180 && flip_pic_flag))
 	    ratio = fabs((float) dy / (float) dx);
 	else
 	    ratio = fabs((float) dx / (float) dy);
@@ -620,27 +822,78 @@ get_new_line_values()
 	sprintf(buf, "%d", rotation);
 	FirstArg(XtNlabel, buf);
 	SetValues(rotn_panel);
-	new_l->eps->flipped = flip_eps_flag;
+	new_l->pic->flipped = flip_pic_flag;
 	sprintf(buf, "%1.1f", ratio);
 	FirstArg(XtNlabel, buf);
 	SetValues(hw_ratio_panel);
-	s = panel_get_value(eps_name_panel);
+	s = panel_get_value(pic_name_panel);
 	if (s[0] == '\0')
-	    s = EMPTY_EPS;
-	if (strcmp(s, new_l->eps->file)) {
-	    if (new_l->eps->bitmap) {
-		free((char *) new_l->eps->bitmap);
-		new_l->eps->bitmap = NULL;
-	    }
-	    strcpy(new_l->eps->file, s);
-	    new_l->eps->hw_ratio = 0.0;
-	    if (strcmp(new_l->eps->file, EMPTY_EPS))
-		read_epsf(new_l->eps);
+	    s = EMPTY_PIC;
+	/* if user typed tilde, parse user path and put in string panel */
+	if (s[0] == '~') {
+	    char longdir[PATH_MAX];
+	    parseuserpath(s,longdir);
+	    panel_set_value(pic_name_panel, longdir);
+	    strcpy(s,longdir);
 	}
-	sprintf(buf, "%1.1f", new_l->eps->hw_ratio);
+	file_changed = False;
+	/* if the filename changed */
+	if (strcmp(s, new_l->pic->file)) {
+	    file_changed = True;
+	    if (new_l->pic->bitmap) {
+		free((unsigned char *) new_l->pic->bitmap);
+		new_l->pic->bitmap = NULL;
+	    }
+	    strcpy(new_l->pic->file, s);
+	    new_l->pic->hw_ratio = 0.0;
+	    if (strcmp(new_l->pic->file, EMPTY_PIC))
+		read_picobj(new_l->pic,new_l->pen_color);
+	}
+	/* update bitmap size */
+	if (new_l->pic->subtype != 0)
+	    sprintf(buf,"%d x %d",new_l->pic->bit_size.x,new_l->pic->bit_size.y);
+	else
+	    strcpy(buf,"--");
+	FirstArg(XtNlabel, buf);
+	SetValues(pic_size);
+
+	/* pic type */
+	strcpy(buf,pic_names[new_l->pic->subtype]);
+	FirstArg(XtNlabel, buf);
+	SetValues(pic_type);
+
+	/* number of colors */
+	/* although the EPS may have colors, the actual number is not known */
+	if (new_l->pic->subtype == T_PIC_PIXMAP || new_l->pic->subtype == T_PIC_GIF)
+		sprintf(buf,"%d",new_l->pic->numcols);
+	else
+		strcpy(buf,"--");
+	FirstArg(XtNlabel, buf);
+	SetValues(pic_colors);
+
+	/* h/w ratio */
+	sprintf(buf, "%1.1f", new_l->pic->hw_ratio);
 	FirstArg(XtNlabel, buf);
 	SetValues(orig_hw_panel);
-	FirstArg(XtNsensitive, new_l->eps->hw_ratio ? True : False);
+	app_flush();
+
+	/* recolor and redraw all GIFs/XPMs if this is one */
+	if (file_changed && !appres.monochrome &&
+	   (new_l->pic->numcols > 0) && (new_l->pic->bitmap != 0)) {
+		/* reallocate the colors for this GIF and all on the canvas */
+		remap_image_two(&objects, new_l);
+		/* and redraw all of the EPS/XPM and GIFs already on the canvas */
+		redraw_images(&objects);
+		put_msg("Read %s image of %dx%d pixels OK",
+			new_l->pic->subtype == T_PIC_PIXMAP? "XPM":
+			    new_l->pic->subtype == T_PIC_GIF? "GIF":
+				new_l->pic->subtype == T_PIC_EPS? "EPS":
+				    "Unknown",
+			new_l->pic->bit_size.x, new_l->pic->bit_size.y);
+		app_flush();
+	}
+
+	FirstArg(XtNsensitive, new_l->pic->hw_ratio ? True : False);
 	SetValues(shrink);
 	SetValues(expand);
 	SetValues(origsize);
@@ -666,7 +919,6 @@ get_new_line_values()
 static
 done_line()
 {
-    old_l = new_l->next;
     switch (button_result) {
     case APPLY:
 	changed = 1;
@@ -677,15 +929,23 @@ done_line()
     case DONE:
 	get_new_line_values();
 	new_l->next = NULL;
+	if (new_l->type == T_PIC_BOX)
+	    old_l->type = T_PIC_BOX;		/* restore type */
 	change_line(old_l, new_l);
 	redisplay_lines(old_l, new_l);
 	reset_cursor();
 	break;
     case CANCEL:
-	if (changed)
+	if (new_l->type == T_PIC_BOX) {
+	    old_l->type = T_PIC_BOX;		/* restore type */
+	    if (file_changed)
+		remap_imagecolors(&objects);	/* and restore colors */
+	}
+	if (changed) {
 	    redisplay_lines(old_l, new_l);
-	else
+	} else {
 	    mask_toggle_linemarker(old_l);
+	}
 	new_l->next = NULL;
 	free_line(&new_l);
 	reset_cursor();
@@ -718,17 +978,17 @@ make_window_text(t)
     special_text_flag = special_text(new_t) ? 1 : 0;
     new_ps_font = cur_ps_font;
     new_latex_font = cur_latex_font;
-    generic_vals.color = new_t->color;
+    generic_vals.pen_color = new_t->color;
 
-    color = new_t->color;
+    pen_color = new_t->color;
     if (new_psflag)
 	new_ps_font = new_t->font;	/* get current font */
     else
 	new_latex_font = new_t->font;	/* get current font */
-    generic_window("TEXT", "", &text_ic, done_text, 0, 0);
+    generic_window("TEXT", "", &text_ic, done_text, False, False);
 
     int_panel(new_t->size, form, "Size  =", &cur_fontsize_panel);
-    color_selection_panel();
+    pen_color_selection_panel();
     int_panel(new_t->depth, form, "Depth =", &depth_panel);
     int_panel(round(180 / M_PI * new_t->angle), form, "Angle (degrees) =",
 	      &angle_panel);
@@ -803,7 +1063,7 @@ make_window_text(t)
 
     xy_panel(new_t->base_x, new_t->base_y, "Origin", &x1_panel, &y1_panel);
     font_image_panel(new_psflag ? psfont_menu_bitmaps[new_t->font + 1] :
-		 latexfont_menu_bitmaps[new_t->font], "Font", &font_panel);
+		latexfont_menu_bitmaps[new_t->font], "Font", &font_panel);
     str_panel(new_t->cstring, "Text", &text_panel);
 }
 
@@ -828,10 +1088,10 @@ get_new_text_values()
 	new_t->size = 1;
 	panel_set_value(cur_fontsize_panel, "1");
     }
-    new_t->color = color;
+    new_t->color = pen_color;
     new_t->depth = atoi(panel_get_value(depth_panel));
     new_t->angle = M_PI / 180 * atoi(panel_get_value(angle_panel));
-    fixangle(&new_t->angle);	/* keep between 0 and 2PI */
+    fix_angle(&new_t->angle);	/* keep between 0 and 2PI */
     new_t->base_x = atoi(panel_get_value(x1_panel));
     new_t->base_y = atoi(panel_get_value(y1_panel));
     if (new_t->cstring)
@@ -840,11 +1100,12 @@ get_new_text_values()
     new_t->cstring = new_string(strlen(s) + 1);
     strcpy(new_t->cstring, s);
     /* get the fontstruct for zoom = 1 to get the size of the string */
-    canvas_font = lookfont(x_fontnum(new_t->flags, new_t->font), 
+    canvas_font = lookfont(x_fontnum(new_t->flags, new_t->font),
 			new_t->size);
-    size = pf_textwidth(canvas_font, strlen(s), s);
-    new_t->height = size.y;
-    new_t->length = size.x;
+    size = textsize(canvas_font, strlen(s), s);
+    new_t->ascent = size.ascent;
+    new_t->descent = size.descent;
+    new_t->length = size.length;
     /* now set the fontstruct for this zoom scale */
     reload_text_fstruct(new_t);
 }
@@ -899,7 +1160,8 @@ make_window_ellipse(e)
     toggle_ellipsemarker(e);
     new_e = copy_ellipse(e);
     new_e->next = e;
-    color = new_e->color;
+    pen_color = new_e->pen_color;
+    fill_color = new_e->fill_color;
     switch (new_e->type) {
     case T_ELLIPSE_BY_RAD:
 	s1 = "ELLIPSE";
@@ -927,7 +1189,7 @@ make_window_ellipse(e)
 	break;
     }
     put_generic_vals(new_e);
-    generic_window(s1, s2, image, done_ellipse, 1, 0);
+    generic_window(s1, s2, image, done_ellipse, True, False);
     int_panel(round(180 / M_PI * new_e->angle), form, "Angle (degrees) =",
 	      &angle_panel);
 
@@ -949,7 +1211,7 @@ get_new_ellipse_values()
 {
     get_generic_vals(new_e);
     new_e->angle = M_PI / 180 * atoi(panel_get_value(angle_panel));
-    fixangle(&new_e->angle);	/* keep between 0 and 2PI */
+    fix_angle(&new_e->angle);	/* keep between 0 and 2PI */
     get_f_pos(&new_e->center, x1_panel, y1_panel);
     if (ellipse_flag)
 	get_f_pos(&new_e->radiuses, x2_panel, y2_panel);
@@ -1008,10 +1270,13 @@ make_window_arc(a)
     toggle_arcmarker(a);
     new_a = copy_arc(a);
     new_a->next = a;
-    color = new_a->color;
+    pen_color = new_a->pen_color;
+    fill_color = new_a->fill_color;
     put_generic_vals(new_a);
     put_generic_arrows(new_a);
-    generic_window("ARC", "Specified by 3 points", &arc_ic, done_arc, 1, 1);
+    put_arc_type(new_a);
+    put_cap_style(new_a);
+    generic_window("ARC", "Specified by 3 points", &arc_ic, done_arc, True, True);
     f_pos_panel(&new_a->point[0], "p1", &x1_panel, &y1_panel);
     f_pos_panel(&new_a->point[1], "p2", &x2_panel, &y2_panel);
     f_pos_panel(&new_a->point[2], "p3", &x3_panel, &y3_panel);
@@ -1025,6 +1290,8 @@ get_new_arc_values()
 
     get_generic_vals(new_a);
     get_generic_arrows(new_a);
+    get_cap_style(new_a);
+    get_arc_type(new_a);
     get_f_pos(&p0, x1_panel, y1_panel);
     get_f_pos(&p1, x2_panel, y2_panel);
     get_f_pos(&p2, x3_panel, y3_panel);
@@ -1080,28 +1347,30 @@ make_window_spline(s)
     toggle_splinemarker(s);
     new_s = copy_spline(s);
     new_s->next = s;
-    color = new_s->color;
+    pen_color = new_s->pen_color;
+    fill_color = new_s->fill_color;
     put_generic_vals(new_s);
     put_generic_arrows(new_s);
+    put_cap_style(new_s);
     switch (new_s->type) {
     case T_OPEN_NORMAL:
 	generic_window("SPLINE", "Normal open", &spl_ic,
-		       done_spline, 1, 1);
+		       done_spline, True, True);
 	points_panel(new_s->points, 0);
 	break;
     case T_CLOSED_NORMAL:
 	generic_window("SPLINE", "Normal closed", &c_spl_ic,
-		       done_spline, 1, 1);
+		       done_spline, True, True);
 	points_panel(new_s->points, 1);
 	break;
     case T_OPEN_INTERP:
 	generic_window("SPLINE", "Interpolated open", &intspl_ic,
-		       done_spline, 1, 1);
+		       done_spline, True, True);
 	points_panel(new_s->points, 0);
 	break;
     case T_CLOSED_INTERP:
 	generic_window("SPLINE", "Interpolated closed", &c_intspl_ic,
-		       done_spline, 1, 1);
+		       done_spline, True, True);
 	points_panel(new_s->points, 1);
 	break;
     }
@@ -1117,6 +1386,7 @@ done_spline()
 	changed = 1;
 	get_generic_vals(new_s);
 	get_generic_arrows(new_s);
+	get_cap_style(new_s);
 	get_points(new_s->points, closed_spline(new_s));
 	if (int_spline(new_s))
 	    remake_control_points(new_s);
@@ -1126,6 +1396,7 @@ done_spline()
 	draw_spline(new_s, ERASE);
 	get_generic_vals(new_s);
 	get_generic_arrows(new_s);
+	get_cap_style(new_s);
 	get_points(new_s->points, closed_spline(new_s));
 	if (int_spline(new_s))
 	    remake_control_points(new_s);
@@ -1155,39 +1426,63 @@ new_generic_values()
     char	   *val;
 
     generic_vals.thickness = atoi(panel_get_value(thickness_panel));
-    generic_vals.color = color;
+    generic_vals.pen_color = pen_color;
+    generic_vals.fill_color = fill_color;
     generic_vals.depth = atoi(panel_get_value(depth_panel));
     /* include dash length in panel, too */
     generic_vals.style_val = (float) atof(panel_get_value(style_val_panel));
-    if (fill_flag) {
+    if (generic_vals.style == DASH_LINE || generic_vals.style == DOTTED_LINE)
+        if (generic_vals.style_val <= 0.0) {
+	    generic_vals.style_val = ((generic_vals.style == DASH_LINE)?
+					     cur_dashlength: cur_dotgap)*
+					(generic_vals.thickness + 1) / 2;
+	    sprintf(buf, "%1.1f", generic_vals.style_val);
+	    panel_set_value(style_val_panel, buf);
+	}
+	
+    if (fill_flag==1) {		/* fill color */
 	val = panel_get_value(fill_style_panel);
 	if (*val >= ' ' && *val <= '9') {
-	    if ((fill = atoi(val)) > 100)
+	    if ((fill = atoi(val)) > 200)
 		fill = 100;
-	    generic_vals.fill_style = (fill / (100 / (NUMFILLPATS - 1))) + 1;
+	    generic_vals.fill_style = fill / (200 / (NUMSHADEPATS+NUMTINTPATS - 1));
 	}
-	fill = (generic_vals.fill_style - 1) * (100 / (NUMFILLPATS - 1));
+	fill = generic_vals.fill_style * (200 / (NUMSHADEPATS+NUMTINTPATS - 1));
 	sprintf(buf, "%d", fill);
 	panel_set_value(fill_style_panel, buf);
-    } else
-	generic_vals.fill_style = 0;
+    } else if (fill_flag==2) {	/* fill pattern */
+	val = panel_get_value(fill_pat_panel);
+	if (*val >= ' ' && *val <= '9') {
+	    if ((fill = atoi(val)) >= NUMPATTERNS)
+		fill = NUMPATTERNS-1;
+	    generic_vals.fill_style = fill+NUMSHADEPATS+NUMTINTPATS;
+	}
+	sprintf(buf, "%d", fill);
+	panel_set_value(fill_pat_panel, buf);
+    } else {
+	generic_vals.fill_style = -1;		/* no fill */
+    }
 }
 
 static void
 new_arrow_values()
 {
-	generic_vals.for_arrow->thickness = 
+	if (for_arrow) {
+	    generic_vals.for_arrow.thickness =
 				(float) atof(panel_get_value(for_arrow_thick));
-	generic_vals.for_arrow->wid = 
+	    generic_vals.for_arrow.wid =
 				(float) atof(panel_get_value(for_arrow_width));
-	generic_vals.for_arrow->ht = 
+	    generic_vals.for_arrow.ht =
 				(float) atof(panel_get_value(for_arrow_height));
-	generic_vals.back_arrow->thickness = 
+	}
+	if (back_arrow) {
+	    generic_vals.back_arrow.thickness =
 				(float) atof(panel_get_value(back_arrow_thick));
-	generic_vals.back_arrow->wid = 
+	    generic_vals.back_arrow.wid =
 				(float) atof(panel_get_value(back_arrow_width));
-	generic_vals.back_arrow->ht = 
+	    generic_vals.back_arrow.ht =
 				(float) atof(panel_get_value(back_arrow_height));
+	}
 }
 
 static		XtCallbackProc
@@ -1232,8 +1527,8 @@ edit_cancel(w, ev)
 
 
 /*
- * the following pix_table entries are guaranteed to be initialized to 0 by
- * the compiler
+ * the following pix_table and arrow_table entries are guaranteed to be 
+ * initialized to 0 by the compiler
  */
 
 static struct {
@@ -1241,12 +1536,15 @@ static struct {
     Pixmap	    image_pm;
 }		pix_table[NUM_IMAGES];
 
+static Pixmap	    arrow_table[NUM_ARROW_TYPES];
+
 static
 generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
     char	   *object_type, *sub_type;
     PIXRECT	    icon;
     int		    (*d_proc) ();
-    int		    generics, arrows;
+    Boolean	    generics;
+    Boolean	    arrows;
 
 {
     Position	    x_val, y_val;
@@ -1256,12 +1554,11 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
     int		    i, fill, dist;
     Widget	    image;
     Pixmap	    image_pm;
-    static int      actions_added=0;
 
+    static char	   *joinstyle_items[] = {
+			"Miter", "Round", "Bevel"};
     static char	   *linestyle_items[] = {
-    "Solid Line ", "Dashed Line", "Dotted Line"};
-    static char	   *fill_style_items[] = {
-    "No fill", "Filled "};
+			"Solid Line ", "Dashed Line", "Dotted Line"};
 
     FirstArg(XtNwidth, &width);
     NextArg(XtNheight, &height);
@@ -1272,13 +1569,16 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
     FirstArg(XtNx, x_val);
     NextArg(XtNy, y_val);
     NextArg(XtNtitle, "Xfig: Edit panel");
-    popup = XtCreatePopupShell("xfig_edit_panel",
+    NextArg(XtNcolormap, tool_cm);
+    popup = XtCreatePopupShell("edit_panel",
 			       transientShellWidgetClass, tool,
 			       Args, ArgCount);
-    XtOverrideTranslations(popup,
-			XtParseTranslationTable(edit_translations));
+    XtAugmentTranslations(popup,
+			XtParseTranslationTable(edit_popup_translations));
+    init_kbd_actions();
     if (!actions_added) {
         XtAppAddActions(tool_app, edit_actions, XtNumber(edit_actions));
+	XtAppAddActions(tool_app, text_actions, XtNumber(text_actions));
 	actions_added = 1;
     }
 
@@ -1363,47 +1663,53 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
     below = XtCreateManagedWidget(" ", labelWidgetClass, form, Args, ArgCount);
 
     if (generics) {
+	if (!strcmp(object_type,"ARC"))
+		arc_type_menu();
 	int_panel(generic_vals.thickness, form, "Width =", &thickness_panel);
 
-	/* make color menu */
-	color_selection_panel();
+	/* make color menues */
+	pen_color_selection_panel();
+	fill_color_selection_panel();
 
 	int_panel(generic_vals.depth, form, "Depth =", &depth_panel);
 
-	if (generic_vals.fill_style == 0) {
-	    fill = 0;
-	    fill_flag = False;
-	} else {
-	    fill = (generic_vals.fill_style - 1) * (100 / (NUMFILLPATS - 1));
-	    fill_flag = True;
+	if (generic_vals.fill_style == -1) {
+	    fill = -1;
+	    fill_flag = 0;
+	} else if (generic_vals.fill_style < NUMSHADEPATS+NUMTINTPATS) {
+	    fill = generic_vals.fill_style * (200 / (NUMSHADEPATS+NUMTINTPATS - 1));
+	    fill_flag = 1;
+	} else {	/* fill pattern */
+	    fill = generic_vals.fill_style - NUMSHADEPATS - NUMTINTPATS;
+	    fill_flag = 2;
 	}
 
 	/* make popup fill style menu */
-	FirstArg(XtNfromVert, below);
-	NextArg(XtNborderWidth, 0);
-	beside = XtCreateManagedWidget("Fill style =", labelWidgetClass,
-				       form, Args, ArgCount);
-	FirstArg(XtNfromVert, below);
-	NextArg(XtNfromHoriz, beside);
-	fill_flag_panel = XtCreateManagedWidget(
-		 fill_style_items[fill_flag ? 1 : 0], menuButtonWidgetClass,
-						form, Args, ArgCount);
-	below = fill_flag_panel;
-	menu = make_popup_menu(fill_style_items, XtNumber(fill_style_items),
-			       fill_flag_panel, fill_style_select);
+	fill_style_menu(fill);
 
-	if (generic_vals.color==BLACK)
-	    int_panel(fill, form, "Fill density % =", &fill_style_panel);
-	else
-	    int_panel(fill, form, "Fill intensity % =", &fill_style_panel);
-	fill_style_label = beside;	/* save pointer to fill label */
-	FirstArg(XtNsensitive, fill_flag ? True : False);
-	SetValues(fill_style_panel);
-	NextArg(XtNhorizDistance, 30);
-	SetValues(fill_style_label);
-	/* if fill is off, blank out fill % value */
-	if (!fill_flag)
-	    panel_clear_value(fill_style_panel);
+	/* if a polyline, arc or open spline make a panel for cap style */
+
+	if (!strcmp(object_type,"ARC") || 
+	    (!strcmp(object_type,"SPLINE")&&strstr(sub_type,"open")) ||
+	    (!strcmp(object_type,"POLYLINE")&&!strcmp(sub_type,"Polyline")))
+		cap_style_panel_menu();
+
+	/* make popup join style menu */
+	if (!strcmp(sub_type,"Polyline") || !strcmp(sub_type,"Polygon") ||
+		!strcmp(sub_type,"Box")) {
+	    FirstArg(XtNfromVert, below);
+	    NextArg(XtNborderWidth, 0);
+	    beside = XtCreateManagedWidget("Join style =", labelWidgetClass,
+				       form, Args, ArgCount);
+	    FirstArg(XtNfromVert, below);
+	    NextArg(XtNfromHoriz, beside);
+	    join_style_panel = XtCreateManagedWidget(
+		 joinstyle_items[generic_vals.join_style], menuButtonWidgetClass,
+					    form, Args, ArgCount);
+	    below = join_style_panel;
+	    menu = make_popup_menu(joinstyle_items, XtNumber(joinstyle_items),
+			       join_style_panel, join_style_select);
+	}
 
 	/* make popup line style menu */
 	FirstArg(XtNfromVert, below);
@@ -1412,12 +1718,12 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
 				       form, Args, ArgCount);
 	FirstArg(XtNfromVert, below);
 	NextArg(XtNfromHoriz, beside);
-	style_panel = XtCreateManagedWidget(
+	line_style_panel = XtCreateManagedWidget(
 		 linestyle_items[generic_vals.style], menuButtonWidgetClass,
 					    form, Args, ArgCount);
-	below = style_panel;
+	below = line_style_panel;
 	menu = make_popup_menu(linestyle_items, XtNumber(linestyle_items),
-			       style_panel, line_style_select);
+			       line_style_panel, line_style_select);
 
 	/* new field for style_val */
 	float_panel(generic_vals.style_val, form, "Dash length/Dot gap =",
@@ -1434,56 +1740,100 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
 	    panel_clear_value(style_val_panel);
 	}
 
+	/* make the arrow panels */
+
 	if (arrows) {
 	    Widget	arrow_label,for_aform,back_aform,w;
+	    int		type;
 
+	    /* create the 1-plane bitmaps of the arrow images */
+	    /* these will go in the "left bitmap" part of the menu */
+	    if (arrow_table[0] == 0) {
+		char *image;
+		for (i=0; i<NUM_ARROW_TYPES; i++) {
+		    if (i==0) image = (char*) arrow0_image;
+		    else if (i==1) image = (char*) arrow1_image;
+		    else if (i==2) image = (char*) arrow2_image;
+		    else if (i==3) image = (char*) arrow3_image;
+		    else if (i==4) image = (char*) arrow4_image;
+		    else if (i==5) image = (char*) arrow5_image;
+		    else if (i==6) image = (char*) arrow6_image;
+		    arrow_table[i] = XCreateBitmapFromData(tool_d,canvas_win,
+					image, 32, 32); 
+		}
+	    }
+		
 	    FirstArg(XtNfromVert, below);
 	    NextArg(XtNborderWidth, 0);
 	    arrow_label = XtCreateManagedWidget("Arrows", labelWidgetClass,
 				       form, Args, ArgCount);
 	    FirstArg(XtNfromVert, arrow_label);
-	    for_aform = XtCreateManagedWidget("arrow_form", formWidgetClass, 
+	    for_aform = XtCreateManagedWidget("arrow_form", formWidgetClass,
 					  form, Args, ArgCount);
+
+	    /****** FIRST THE FORWARD ARROW ******/
+
 	    FirstArg(XtNborderWidth, 0);
 	    w = XtCreateManagedWidget("Forward", labelWidgetClass,
 				       for_aform, Args, ArgCount);
 	    FirstArg(XtNfromHoriz, w);
 	    NextArg(XtNhorizDistance, 10);
 	    NextArg(XtNlabel, "->");
-	    NextArg(XtNstate, (generic_vals.for_arrow? True: False));
-	    beside = XtCreateManagedWidget("for.arrow", toggleWidgetClass,
+	    NextArg(XtNstate, for_arrow);
+	    for_toggle = XtCreateManagedWidget("for_arrow", toggleWidgetClass,
 					   for_aform, Args, ArgCount);
+	    beside = for_toggle;
 	    XtAddCallback(beside, XtNcallback, (XtCallbackProc) toggle_for_arrow,
 			  (XtPointer) NULL);
 	    below = w;
-	    for_arrow=True;
-	    if (!generic_vals.for_arrow)
-		{
-		for_arrow=False;
-		generic_vals.for_arrow = forward_arrow();
-		}
-	    float_panel(generic_vals.for_arrow->thickness, for_aform, 
+
+	    /* make popup arrow style menu */
+	    FirstArg(XtNfromVert, below);
+	    NextArg(XtNborderWidth, 0);
+	    beside = XtCreateManagedWidget("Type", labelWidgetClass,
+				       for_aform, Args, ArgCount);
+	    type = generic_vals.for_arrow.type*2 - 1 + generic_vals.for_arrow.style;
+	    if (type < 0)
+		type = 0;
+	    FirstArg(XtNfromVert, below);
+	    NextArg(XtNfromHoriz, beside);
+	    NextArg(XtNlabel, "");
+	    NextArg(XtNheight, 32);
+	    NextArg(XtNwidth, 32);
+	    NextArg(XtNbackgroundPixmap, arrowtype_choices[type].normalPM);
+	    for_arrow_type_panel = XtCreateManagedWidget("Arrowtype",
+					    menuButtonWidgetClass,
+					    for_aform, Args, ArgCount);
+	    below = for_arrow_type_panel;
+
+	    /* make popup menu with arrow type images */
+	    menu = make_popup_menu_images(arrowtype_choices,
+			NUM_ARROW_TYPES, arrow_table, 
+			for_arrow_type_panel, for_arrow_type_select);
+
+	    float_panel(generic_vals.for_arrow.thickness, for_aform,
 			"Thick  =", &for_arrow_thick);
 	    for_thick_label = beside;
 	    for_thick_val = below;
-	    float_panel(generic_vals.for_arrow->wid, for_aform, 
+	    float_panel(generic_vals.for_arrow.wid, for_aform,
 			"Width  =", &for_arrow_width);
 	    for_width_label = beside;
 	    for_width_val = below;
-	    float_panel(generic_vals.for_arrow->ht, for_aform, 
+	    float_panel(generic_vals.for_arrow.ht, for_aform,
 			"Height =", &for_arrow_height);
 	    for_height_label = beside;
 	    for_height_val = below;
-	    if (!for_arrow)	/* make insensitive */
-		{
+	    if (!for_arrow) {	/* make insensitive */
 		for_arrow = True;
 		toggle_for_arrow((Widget)0, (XtPointer)0, (XtPointer)0);
 		for_arrow = False;
-		}
+	    }
+
+	    /****** NOW THE BACK ARROW ******/
 
 	    FirstArg(XtNfromVert, arrow_label);
 	    NextArg(XtNfromHoriz, for_aform);
-	    back_aform = XtCreateManagedWidget("arrow_form", formWidgetClass, 
+	    back_aform = XtCreateManagedWidget("arrow_form", formWidgetClass,
 					  form, Args, ArgCount);
 	    FirstArg(XtNborderWidth, 0);
 	    w = XtCreateManagedWidget("Backward", labelWidgetClass,
@@ -1491,39 +1841,153 @@ generic_window(object_type, sub_type, icon, d_proc, generics, arrows)
 	    FirstArg(XtNfromHoriz, w);
 	    NextArg(XtNhorizDistance, 10);
 	    NextArg(XtNlabel, "<-");
-	    NextArg(XtNstate, (generic_vals.back_arrow? True: False));
-	    beside = XtCreateManagedWidget("back.arrow", toggleWidgetClass,
+	    NextArg(XtNstate, back_arrow);
+	    back_toggle = XtCreateManagedWidget("back.arrow", toggleWidgetClass,
 					   back_aform, Args, ArgCount);
+	    beside = back_toggle;
 	    XtAddCallback(beside, XtNcallback, (XtCallbackProc) toggle_back_arrow,
 			  (XtPointer) NULL);
 	    below = w;
-	    back_arrow=True;
-	    if (!generic_vals.back_arrow)
-		{
-		back_arrow=False;
-		generic_vals.back_arrow = backward_arrow();
-		}
-	    float_panel(generic_vals.back_arrow->thickness, back_aform, 
+
+	    /* make popup arrow style menu */
+	    FirstArg(XtNfromVert, below);
+	    NextArg(XtNborderWidth, 0);
+	    beside = XtCreateManagedWidget("Type", labelWidgetClass,
+				       back_aform, Args, ArgCount);
+	    type = generic_vals.back_arrow.type*2 - 1 + generic_vals.back_arrow.style;
+	    if (type < 0)
+		type = 0;
+	    FirstArg(XtNfromVert, below);
+	    NextArg(XtNfromHoriz, beside);
+	    NextArg(XtNlabel, "");
+	    NextArg(XtNheight, 32);
+	    NextArg(XtNwidth, 32);
+	    NextArg(XtNbackgroundPixmap, arrowtype_choices[type].normalPM);
+	    back_arrow_type_panel = XtCreateManagedWidget("Arrowtype",
+					    menuButtonWidgetClass,
+					    back_aform, Args, ArgCount);
+	    below = back_arrow_type_panel;
+
+	    /* make popup menu with arrow type images */
+	    menu = make_popup_menu_images(arrowtype_choices,
+			NUM_ARROW_TYPES, arrow_table, 
+			back_arrow_type_panel, back_arrow_type_select);
+
+	    float_panel(generic_vals.back_arrow.thickness, back_aform,
 			"Thick  =", &back_arrow_thick);
 	    back_thick_label = beside;
 	    back_thick_val = below;
-	    float_panel(generic_vals.back_arrow->wid, back_aform, 
+	    float_panel(generic_vals.back_arrow.wid, back_aform,
 			"Width  =", &back_arrow_width);
 	    back_width_label = beside;
 	    back_width_val = below;
-	    float_panel(generic_vals.back_arrow->ht, back_aform, 
+	    float_panel(generic_vals.back_arrow.ht, back_aform,
 			"Height =", &back_arrow_height);
 	    back_height_label = beside;
 	    back_height_val = below;
-	    if (!back_arrow)	/* make insensitive */
-		{
+	    if (!back_arrow) {	/* make insensitive */
 		back_arrow = True;
 		toggle_back_arrow((Widget)0, (XtPointer)0, (XtPointer)0);
 		back_arrow = False;
-		}
+	    }
 	    below = for_aform;	/* for the widget that follows us in the panel */
 	}
     }
+}
+
+/* make popup fill style menu */
+
+fill_style_menu(fill)
+	int	fill;
+{
+	static char	   *fill_style_items[] = {
+			"No fill", "Filled ", "Pattern"};
+
+	FirstArg(XtNfromVert, below);
+	NextArg(XtNborderWidth, 0);
+	beside = XtCreateManagedWidget("Fill style =", labelWidgetClass,
+				       form, Args, ArgCount);
+	FirstArg(XtNfromVert, below);
+	NextArg(XtNfromHoriz, beside);
+	fill_flag_panel = XtCreateManagedWidget(
+		 fill_style_items[fill_flag], menuButtonWidgetClass,
+						form, Args, ArgCount);
+	below = fill_flag_panel;
+	menu = make_popup_menu(fill_style_items, XtNumber(fill_style_items),
+			       fill_flag_panel, fill_style_select);
+
+	if (generic_vals.fill_color==BLACK)
+	    int_panel(fill, form, "Fill density % =", &fill_style_panel);
+	else
+	    int_panel(fill, form, "Fill intensity % =", &fill_style_panel);
+	fill_style_label = beside;	/* save pointer to fill label */
+
+	int_panel(generic_vals.fill_style-NUMSHADEPATS-NUMTINTPATS,
+			form, "Fill pattern = ", &fill_pat_panel);
+	fill_pat_label = beside;	/* save pointer to fill label */
+	FirstArg(XtNsensitive, fill_flag ?
+			((generic_vals.fill_style < NUMSHADEPATS+NUMTINTPATS)?
+				True : False) : False);
+	SetValues(fill_style_panel);
+	NextArg(XtNhorizDistance, 30);
+	SetValues(fill_style_label);
+	/* if fill is off or a pattern, blank out fill % value */
+	if (!fill_flag || generic_vals.fill_style >= (NUMSHADEPATS+NUMTINTPATS))
+	    panel_clear_value(fill_style_panel);
+
+	/* make fill pattern panel insensitive if not a fill pattern */
+	FirstArg(XtNsensitive, fill_flag ?
+			((generic_vals.fill_style >= NUMSHADEPATS+NUMTINTPATS)?
+				True : False) : False);
+	SetValues(fill_pat_panel);
+	NextArg(XtNhorizDistance, 30);
+	SetValues(fill_pat_label);
+
+	/* and blank value if not filled or not a pattern */
+	if (!fill_flag || generic_vals.fill_style < (NUMSHADEPATS+NUMTINTPATS))
+		panel_clear_value(fill_pat_panel);
+}
+
+/* make a popup arc type menu */
+arc_type_menu()
+{
+	static char	   *arc_type_items[] = {
+			 "Open    ", "Pie Wedge"};
+
+	FirstArg(XtNfromVert, below);
+	NextArg(XtNborderWidth, 0);
+	beside = XtCreateManagedWidget("Arc type  =", labelWidgetClass,
+				       form, Args, ArgCount);
+	FirstArg(XtNfromVert, below);
+	NextArg(XtNfromHoriz, beside);
+	arc_type_panel = XtCreateManagedWidget(
+			arc_type_items[generic_vals.arc_type],
+			menuButtonWidgetClass,
+			form, Args, ArgCount);
+	below = arc_type_panel;
+	menu = make_popup_menu(arc_type_items, XtNumber(arc_type_items),
+			       arc_type_panel, arc_type_select);
+}
+
+/* make a popup cap style menu */
+cap_style_panel_menu()
+{
+	static char	   *capstyle_items[] = {
+			"Butt      ", "Round     ", "Projecting"};
+
+	FirstArg(XtNfromVert, below);
+	NextArg(XtNborderWidth, 0);
+	beside = XtCreateManagedWidget("Cap style  =", labelWidgetClass,
+				       form, Args, ArgCount);
+	FirstArg(XtNfromVert, below);
+	NextArg(XtNfromHoriz, beside);
+	cap_style_panel = XtCreateManagedWidget(
+			capstyle_items[generic_vals.cap_style],
+			menuButtonWidgetClass,
+			form, Args, ArgCount);
+	below = cap_style_panel;
+	menu = make_popup_menu(capstyle_items, XtNumber(capstyle_items),
+			       cap_style_panel, cap_style_select);
 }
 
 static
@@ -1535,6 +1999,8 @@ toggle_for_arrow(w, dummy, dummy2)
 {
     /* either add or delete arrowhead */
     for_arrow = !for_arrow;
+    if (for_arrow)
+	new_arrow_values();
     FirstArg(XtNsensitive, (for_arrow? True: False));
     SetValues(for_arrow_thick);
     SetValues(for_thick_label);
@@ -1556,6 +2022,8 @@ toggle_back_arrow(w, dummy, dummy2)
 {
     /* either add or delete arrowhead */
     back_arrow = !back_arrow;
+    if (back_arrow)
+	new_arrow_values();
     FirstArg(XtNsensitive, (back_arrow? True: False));
     SetValues(back_arrow_thick);
     SetValues(back_thick_label);
@@ -1643,27 +2111,78 @@ make_popup_menu(entries, nent, parent, callback)
     return pop_menu;
 }
 
-static
-color_selection_panel()
+/*
+ * make a popup menu with "nent" button entries (PIXMAPS) that call "callback"
+ * when pressed
+ */
+
+static		Widget
+make_popup_menu_images(entries, nent, images, parent, callback)
+    choice_info	    entries[];
+    Cardinal	    nent;
+    Pixmap	   *images[];
+    Widget	    parent;
+    XtCallbackProc  callback;
+
 {
+    Widget	    pop_menu, entry;
+    int		    i;
+
+    pop_menu = XtCreatePopupShell("menu", simpleMenuWidgetClass, parent,
+				  NULL, ZERO);
+
+    for (i = 0; i < nent; i++) {
+	FirstArg(XtNleftBitmap, images[i]);	/* image of object */
+	NextArg(XtNleftMargin, 32);
+	NextArg(XtNvertSpace, 80);		/* height 180% of font */
+	NextArg(XtNlabel, "");
+	sprintf(buf,"%d",i);
+	entry = XtCreateManagedWidget(buf, smeBSBObjectClass, pop_menu,
+				      Args, ArgCount);
+	XtAddCallback(entry, XtNcallback, callback, (XtPointer) &entries[i]);
+    }
+    return pop_menu;
+}
+
+static
+pen_color_selection_panel()
+{
+    color_selection_panel("Pen color  = ","border_colors", &pen_color_panel,
+			generic_vals.pen_color, pen_color_select);
+}
+
+static
+fill_color_selection_panel()
+{
+    color_selection_panel("Fill color = ","fill_colors", &fill_color_panel,
+			generic_vals.fill_color, fill_color_select);
+}
+
+static
+color_selection_panel(label, name, widget, color, callback)
+    char	   *label, *name;
+    Widget	   *widget;
+    Color	    color;
+    XtCallbackProc  callback;
+{
+
     FirstArg(XtNfromVert, below);
     NextArg(XtNborderWidth, 0);
-    beside = XtCreateManagedWidget("Drawing color =", labelWidgetClass,
+    beside = XtCreateManagedWidget(label, labelWidgetClass,
 				   form, Args, ArgCount);
-    /* warning: set_color_names uses FirstArg() etc. - put it here */
-    set_color_name(generic_vals.color);
+    set_color_name(color);
     FirstArg(XtNfromVert, below);
     NextArg(XtNfromHoriz, beside);
-    color_panel = XtCreateManagedWidget(
-		     "colors", menuButtonWidgetClass, form, Args, ArgCount);
+    *widget = XtCreateManagedWidget(
+		     name, menuButtonWidgetClass, form, Args, ArgCount);
     /*
      * cheat a little - set the initial fore/background colors by calling the
      * callback
      */
     /* also set the label */
-    color_select(color_panel, generic_vals.color, NULL);
-    below = color_panel;
-    menu = make_color_popup_menu(color_panel, color_select);
+    (callback)(*widget, (XtPointer) color, NULL);
+    below = *widget;
+    menu = make_color_popup_menu(*widget, callback);
 }
 
 
@@ -1679,17 +2198,17 @@ make_color_popup_menu(parent, callback)
     pop_menu = XtCreatePopupShell("menu", simpleMenuWidgetClass, parent,
 				  NULL, ZERO);
 
-    for (i = 0; i < NUMCOLORS; i++) {
+    for (i = 0; i < NUM_STD_COLS+num_usr_cols; i++) {
 	set_color_name(i);
 	if (all_colors_available)
-	    FirstArg(XtNforeground, appres.color[i])
-		else
+	    FirstArg(XtNforeground, colors[i])
+	else
 	    ArgCount = 0;
 	entry = XtCreateManagedWidget(buf, smeBSBObjectClass, pop_menu,
 				      Args, ArgCount);
 	XtAddCallback(entry, XtNcallback, callback, (XtPointer) i);
     }
-    set_color_name(DEFAULT_COLOR);
+    set_color_name(DEFAULT);
     FirstArg(XtNforeground, x_fg_color.pixel);
     entry = XtCreateManagedWidget(buf, smeBSBObjectClass, pop_menu,
 				  Args, ArgCount);
@@ -1712,11 +2231,12 @@ int_panel(x, parent, label, pi_x)
     sprintf(buf, "%d", x);
     ArgCount = 1;
     NextArg(XtNstring, buf);
-    NextArg(XtNinsertPosition, strlen(buf));
     NextArg(XtNfromHoriz, beside);
-    NextArg(XtNeditType, "append");
+    NextArg(XtNinsertPosition, strlen(buf));
+    NextArg(XtNeditType, XawtextEdit);
     NextArg(XtNwidth, 40);
     *pi_x = XtCreateManagedWidget(label, asciiTextWidgetClass, parent, Args, ArgCount);
+    text_transl(*pi_x);
     below = *pi_x;
 }
 
@@ -1735,12 +2255,13 @@ float_panel(x, parent, label, pi_x)
     sprintf(buf, "%1.1f", x);
     FirstArg(XtNfromVert, below);
     NextArg(XtNstring, buf);
-    NextArg(XtNinsertPosition, strlen(buf));
     NextArg(XtNfromHoriz, beside);
-    NextArg(XtNeditType, "append");
+    NextArg(XtNinsertPosition, strlen(buf));
+    NextArg(XtNeditType, XawtextEdit);
     NextArg(XtNwidth, 40);
     *pi_x = XtCreateManagedWidget(label, asciiTextWidgetClass, parent,
 				  Args, ArgCount);
+    text_transl(*pi_x);
     below = *pi_x;
 }
 
@@ -1788,15 +2309,6 @@ int_label(x, label, pi_x)
     below = *pi_x;
 }
 
-/* don't allow newlines in text until we handle multiple line texts */
-String		text_translations =
-	"<Key>Return: no-op(RingBell)\n\
-	Ctrl<Key>J: no-op(RingBell)\n\
-	Ctrl<Key>M: no-op(RingBell)\n\
-	Ctrl<Key>X: EmptyTextKey()\n\
-	Ctrl<Key>U: multiply(4)\n\
-	<Key>F18: PastePanelKey()\n";
-
 static
 str_panel(string, name, pi_x)
     char	   *string;
@@ -1808,7 +2320,7 @@ str_panel(string, name, pi_x)
     PIX_FONT	    temp_font;
     char	   *labelname, *textname;
 
-    /* make the labels of the widgets xxx_lab for the label part and xxx_text for 
+    /* make the labels of the widgets xxx_lab for the label part and xxx_text for
 	the asciiwidget part */
     labelname = (char *) malloc(strlen(name)+5);
     textname = (char *) malloc(strlen(name)+6);
@@ -1839,23 +2351,21 @@ str_panel(string, name, pi_x)
     }
     if (nlines > 4)	/* limit to displaying 4 lines and show scrollbars */
 	nlines = 4;
-    if (nlines == 1)	/* if only one line, allow space for scrollbar */
-	nlines = 2;
     FirstArg(XtNfromVert, below);
     NextArg(XtNstring, string);
     NextArg(XtNinsertPosition, strlen(string));
     NextArg(XtNfromHoriz, beside);
-    NextArg(XtNeditType, "edit");
+    NextArg(XtNeditType, XawtextEdit);
     NextArg(XtNwidth, width);
     /* allow enough height for scrollbar */
-    NextArg(XtNheight, char_height(temp_font) * nlines + 10);
+    NextArg(XtNheight, max_char_height(temp_font) * nlines + 20);
     NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
     NextArg(XtNscrollVertical, XawtextScrollWhenNeeded);
 
     *pi_x = XtCreateManagedWidget(textname, asciiTextWidgetClass, form, Args, ArgCount);
 
-    /* make Newline do nothing for now */
-    XtOverrideTranslations(*pi_x, XtParseTranslationTable(text_translations));
+    /* make CR do nothing for now */
+    text_transl(*pi_x);
 
     /* read personal key configuration */
     XtOverrideTranslations(*pi_x, XtParseTranslationTable(local_translations));
@@ -1885,11 +2395,12 @@ xy_panel(x, y, label, pi_x, pi_y)
     sprintf(buf, "%d", x);
     ArgCount = 1;
     NextArg(XtNstring, buf);
-    NextArg(XtNinsertPosition, strlen(buf));
     NextArg(XtNfromHoriz, beside);
-    NextArg(XtNeditType, "append");
+    NextArg(XtNinsertPosition, strlen(buf));
+    NextArg(XtNeditType, XawtextEdit);
     NextArg(XtNwidth, 40);
     *pi_x = XtCreateManagedWidget(label, asciiTextWidgetClass, form, Args, ArgCount);
+    text_transl(*pi_x);
 
     ArgCount = 1;
     NextArg(XtNlabel, "Y =");
@@ -1902,9 +2413,10 @@ xy_panel(x, y, label, pi_x, pi_y)
     NextArg(XtNstring, buf);
     NextArg(XtNfromHoriz, beside);
     NextArg(XtNinsertPosition, strlen(buf));
-    NextArg(XtNeditType, "append");
+    NextArg(XtNeditType, XawtextEdit);
     NextArg(XtNwidth, 40);
     *pi_y = XtCreateManagedWidget(label, asciiTextWidgetClass, form, Args, ArgCount);
+    text_transl(*pi_y);
 
     below = *pi_x;
 }
@@ -1926,11 +2438,12 @@ f_pos_panel(fp, label, pi_x, pi_y)
     sprintf(buf, "%d", fp->x);
     ArgCount = 1;
     NextArg(XtNstring, buf);
-    NextArg(XtNinsertPosition, strlen(buf));
     NextArg(XtNfromHoriz, beside);
-    NextArg(XtNeditType, "append");
+    NextArg(XtNinsertPosition, strlen(buf));
+    NextArg(XtNeditType, XawtextEdit);
     NextArg(XtNwidth, 40);
     *pi_x = XtCreateManagedWidget(label, asciiTextWidgetClass, form, Args, ArgCount);
+    text_transl(*pi_x);
     ArgCount = 1;
     NextArg(XtNlabel, "Y =");
     NextArg(XtNborderWidth, 0);
@@ -1939,11 +2452,12 @@ f_pos_panel(fp, label, pi_x, pi_y)
     sprintf(buf, "%d", fp->y);
     ArgCount = 1;
     NextArg(XtNstring, buf);
-    NextArg(XtNinsertPosition, strlen(buf));
     NextArg(XtNfromHoriz, beside);
-    NextArg(XtNeditType, "append");
+    NextArg(XtNinsertPosition, strlen(buf));
+    NextArg(XtNeditType, XawtextEdit);
     NextArg(XtNwidth, 40);
     *pi_y = XtCreateManagedWidget(label, asciiTextWidgetClass, form, Args, ArgCount);
+    text_transl(*pi_y);
     below = *pi_x;
 }
 
@@ -1996,12 +2510,13 @@ points_panel(p, closed)
 	sprintf(bufxy, "%d", p->x);
 	ArgCount = 1;
 	NextArg(XtNstring, bufxy);
-	NextArg(XtNinsertPosition, strlen(bufxy));
 	NextArg(XtNfromHoriz, beside);
-	NextArg(XtNeditType, "append");
+	NextArg(XtNinsertPosition, strlen(bufxy));
+	NextArg(XtNeditType, XawtextEdit);
 	NextArg(XtNwidth, 40);
 	px_panel[i] = XtCreateManagedWidget("xy", asciiTextWidgetClass,
 					    formw, Args, ArgCount);
+	text_transl(px_panel[i]);
 
 	sprintf(buf, "Y%d =", i);
 	ArgCount = 1;
@@ -2013,13 +2528,14 @@ points_panel(p, closed)
 	sprintf(bufxy, "%d", p->y);
 	ArgCount = 1;
 	NextArg(XtNstring, bufxy);
-	NextArg(XtNinsertPosition, strlen(bufxy));
 	NextArg(XtNfromHoriz, beside);
-	NextArg(XtNeditType, "append");
+	NextArg(XtNinsertPosition, strlen(bufxy));
+	NextArg(XtNeditType, XawtextEdit);
 	NextArg(XtNwidth, 40);
 
 	py_panel[i] = XtCreateManagedWidget("xy", asciiTextWidgetClass,
 					    formw, Args, ArgCount);
+	text_transl(py_panel[i]);
 	below = px_panel[i];
 
 	p = p->next;
@@ -2095,12 +2611,85 @@ panel_set_value(widg, val)
 }
 
 static void
+arc_type_select(w, new_style, garbage)
+    Widget	    w;
+    XtPointer	    new_style, garbage;
+{
+    FirstArg(XtNlabel, XtName(w));
+    SetValues(arc_type_panel);
+
+    generic_vals.arc_type = (int) new_style;
+}
+
+static void
+cap_style_select(w, new_style, garbage)
+    Widget	    w;
+    XtPointer	    new_style, garbage;
+{
+    FirstArg(XtNlabel, XtName(w));
+    SetValues(cap_style_panel);
+
+    generic_vals.cap_style = (int) new_style;
+}
+
+static void
+join_style_select(w, new_style, garbage)
+    Widget	    w;
+    XtPointer	    new_style, garbage;
+{
+    FirstArg(XtNlabel, XtName(w));
+    SetValues(join_style_panel);
+
+    generic_vals.join_style = (int) new_style;
+}
+
+static void
+for_arrow_type_select(w, new_type, garbage)
+    Widget	    w;
+    XtPointer	    new_type, garbage;
+{
+    choice_info	    *choice;
+
+    choice = (choice_info *) new_type;
+    FirstArg(XtNbackgroundPixmap, choice->normalPM);
+    SetValues(for_arrow_type_panel);
+    if (!for_arrow) {
+	toggle_for_arrow(w, garbage, garbage);
+	FirstArg(XtNstate, True);
+	SetValues(for_toggle);
+    }
+
+    generic_vals.for_arrow.type = ARROW_TYPE(choice->value);
+    generic_vals.for_arrow.style = ARROW_STYLE(choice->value);
+}
+
+static void
+back_arrow_type_select(w, new_type, garbage)
+    Widget	    w;
+    XtPointer	    new_type, garbage;
+{
+    choice_info	    *choice;
+
+    choice = (choice_info *) new_type;
+    FirstArg(XtNbackgroundPixmap, choice->normalPM);
+    SetValues(back_arrow_type_panel);
+    if (!back_arrow) {
+	toggle_back_arrow(w, garbage, garbage);
+	FirstArg(XtNstate, True);
+	SetValues(back_toggle);
+    }
+
+    generic_vals.back_arrow.type = ARROW_TYPE(choice->value);
+    generic_vals.back_arrow.style = ARROW_STYLE(choice->value);
+}
+
+static void
 line_style_select(w, new_style, garbage)
     Widget	    w;
     XtPointer	    new_style, garbage;
 {
     FirstArg(XtNlabel, XtName(w));
-    SetValues(style_panel);
+    SetValues(line_style_panel);
 
     generic_vals.style = (int) new_style;
 
@@ -2114,15 +2703,15 @@ line_style_select(w, new_style, garbage)
 	 * if style_val contains no useful value, set it to the default
 	 * dashlength, scaled by the line thickness
 	 */
-	if (generic_vals.style_val < 0.1)
-	    generic_vals.style_val = cur_dashlength * (cur_linewidth + 1) / 2;
+	if (generic_vals.style_val <= 0.0)
+	    generic_vals.style_val = cur_dashlength * (generic_vals.thickness + 1) / 2;
 	sprintf(buf, "%1.1f", generic_vals.style_val);
 	panel_set_value(style_val_panel, buf);
 	FirstArg(XtNsensitive, True);
 	break;
     case DOTTED_LINE:
-	if (generic_vals.style_val < 0.1)
-	    generic_vals.style_val = cur_dotgap * (cur_linewidth + 1) / 2;
+	if (generic_vals.style_val <= 0.0)
+	    generic_vals.style_val = cur_dotgap * (generic_vals.thickness + 1) / 2;
 	sprintf(buf, "%1.1f", generic_vals.style_val);
 	panel_set_value(style_val_panel, buf);
 	FirstArg(XtNsensitive, True);
@@ -2134,16 +2723,33 @@ line_style_select(w, new_style, garbage)
 }
 
 static void
-color_select(w, new_color, garbage)
+pen_color_select(w, new_color, garbage)
     Widget	    w;
     XtPointer	    new_color, garbage;
+{
+    pen_color = (Color) new_color;
+    color_select(pen_color_panel, new_color);
+}
+
+static void
+fill_color_select(w, new_color, garbage)
+    Widget	    w;
+    XtPointer	    new_color, garbage;
+{
+    fill_color = (Color) new_color;
+    color_select(fill_color_panel, new_color);
+}
+
+static void
+color_select(w, color)
+    Widget	    w;
+    Color	    color;
 {
     XFontStruct	   *f;
     int		    len;
 
     FirstArg(XtNlabel, XtName(w));
-    SetValues(color_panel);
-    color = (Color) new_color;
+    SetValues(w);
     set_color_name(color);
     FirstArg(XtNfont, &f);
     GetValues(w);
@@ -2157,29 +2763,31 @@ color_select(w, new_color, garbage)
 	Pixel		col;
 
 	/* foreground in the color selected */
-	col = (color < 0 || color >= NUMCOLORS) ? x_fg_color.pixel : appres.color[color];
+	col = (color < 0 || color >= NUM_STD_COLS+num_usr_cols) ?
+			x_fg_color.pixel : colors[color];
 	NextArg(XtNforeground, col);
 	xcolor.pixel = col;
 	/* get RGB of the color to check intensity */
-	XQueryColor(tool_d, DefaultColormapOfScreen(tool_s), &xcolor);
+	XQueryColor(tool_d, tool_cm, &xcolor);
 	/* set the background in a contrasting color (white or black) */
-	if ((0.3 * xcolor.red + 0.59 * xcolor.green + 0.11 * xcolor.blue) < 0.55 * (255 << 8))
-	    col = appres.color[WHITE];
+	if ((0.3 * xcolor.red + 0.59 * xcolor.green + 0.11 * xcolor.blue) <
+			0.55 * (255 << 8))
+	    col = colors[WHITE];
 	else
-	    col = appres.color[BLACK];
+	    col = colors[BLACK];
 	NextArg(XtNbackground, col);
     }
-    SetValues(color_panel);
+    SetValues(w);
 }
 
 static void
 set_color_name(color)
     Color	    color;
 {
-    if (color == DEFAULT_COLOR || (color >= 0 && color < NUMCOLORS))
-	sprintf(buf, "%s", colorNames[color + 1]);
+    if (color == DEFAULT || (color >= 0 && color < NUM_STD_COLS))
+	sprintf(buf, "%s", colorNames[color + 1].name);
     else
-	sprintf(buf, "%d", color);
+	sprintf(buf, "User %d", color);
 }
 
 static void
@@ -2223,7 +2831,7 @@ textjust_select(w, new_textjust, garbage)
 }
 
 static void
-flip_eps_select(w, new_flipflag, garbage)
+flip_pic_select(w, new_flipflag, garbage)
     Widget	    w;
     XtPointer	    new_flipflag, garbage;
 {
@@ -2232,8 +2840,8 @@ flip_eps_select(w, new_flipflag, garbage)
     float	    ratio;
 
     FirstArg(XtNlabel, XtName(w));
-    SetValues(flip_eps_panel);
-    flip_eps_flag = (int) new_flipflag;
+    SetValues(flip_pic_panel);
+    flip_pic_flag = (int) new_flipflag;
     p1.x = atoi(panel_get_value(x1_panel));
     p1.y = atoi(panel_get_value(y1_panel));
     p2.x = atoi(panel_get_value(x2_panel));
@@ -2249,8 +2857,8 @@ flip_eps_select(w, new_flipflag, garbage)
 	rotation = 90;
     if (dx == 0 || dy == 0)
 	ratio = 0.0;
-    else if (((rotation == 0 || rotation == 180) && !flip_eps_flag) ||
-	     (rotation != 0 && rotation != 180 && flip_eps_flag))
+    else if (((rotation == 0 || rotation == 180) && !flip_pic_flag) ||
+	     (rotation != 0 && rotation != 180 && flip_pic_flag))
 	ratio = fabs((float) dy / (float) dx);
     else
 	ratio = fabs((float) dx / (float) dy);
@@ -2270,21 +2878,40 @@ fill_style_select(w, new_fillflag, garbage)
     SetValues(fill_flag_panel);
     fill_flag = (int) new_fillflag;
 
-    if (fill_flag) {
-	fill = (generic_vals.fill_style - 1) * (100 / (NUMFILLPATS - 1));
+    if (fill_flag == 0) { /* no fill; blank out fill density value and pattern */
+	panel_clear_value(fill_style_panel);
+	panel_clear_value(fill_pat_panel);
+    } else if (fill_flag == 1) { /* filled with color or gray */
+	fill = generic_vals.fill_style * (200 / (NUMSHADEPATS+NUMTINTPATS - 1));
 	if (fill < 0)
-	    fill = 0;
-	/* if no fill, blank out fill density value */
+	    fill = 100;
+	if (fill > 200)
+	    fill = 100;
 	sprintf(buf, "%d", fill);
 	panel_set_value(fill_style_panel, buf);
-    } else {
+	/* make fill% panel sensitive */
+	FirstArg(XtNsensitive, True);
+	SetValues(fill_style_panel);
+	SetValues(fill_style_label);
+	/* make fill pattern panel insensitive */
+	FirstArg(XtNsensitive, False);
+	SetValues(fill_pat_panel);
+	SetValues(fill_pat_label);
+	panel_clear_value(fill_pat_panel);
+    } else {	/* filled with pattern */
+	fill = 0;
+	sprintf(buf, "%d", fill);
+	panel_set_value(fill_pat_panel, buf);
+	/* make fill pattern panel sensitive */
+	FirstArg(XtNsensitive, True);
+	SetValues(fill_pat_panel);
+	SetValues(fill_pat_label);
+	/* make fill% panel sensitive */
+	FirstArg(XtNsensitive, False);
+	SetValues(fill_style_panel);
+	SetValues(fill_style_label);
 	panel_clear_value(fill_style_panel);
     }
-
-    /* make fill% panel sensitive or insensitive depending on fill flag */
-    FirstArg(XtNsensitive, fill_flag ? True : False);
-    SetValues(fill_style_panel);
-    SetValues(fill_style_label);
 }
 
 void clear_text_key(w)
@@ -2331,4 +2958,14 @@ int *format;
 	}
 	XtFree(buf);
 	panel_set_value(client_data, s);
+}
+
+text_transl(w)
+Widget w;
+{
+	/* make CR do nothing for now */
+	XtOverrideTranslations(w, XtParseTranslationTable(edit_text_translations));
+
+	/* enable mousefun kbd display */
+	XtAugmentTranslations(w, XtParseTranslationTable(kbd_translations));
 }

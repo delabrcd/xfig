@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -20,7 +27,7 @@
 #include "w_setup.h"
 #include "w_zoom.h"
 
-extern float	compute_angle();
+extern double	compute_angle();
 
 /********************** EXPORTS **************/
 
@@ -44,14 +51,10 @@ elastic_box(x1, y1, x2, y2)
     int		    x1, y1, x2, y2;
 {
     /* line_style = RUBBER_LINE so that we don't scale it */
-    pw_vector(canvas_win, x1, y1, x1, y2, INV_PAINT, 1, RUBBER_LINE, 0.0,
-	      DEFAULT_COLOR);
-    pw_vector(canvas_win, x1, y2, x2, y2, INV_PAINT, 1, RUBBER_LINE, 0.0,
-	      DEFAULT_COLOR);
-    pw_vector(canvas_win, x2, y2, x2, y1, INV_PAINT, 1, RUBBER_LINE, 0.0,
-	      DEFAULT_COLOR);
-    pw_vector(canvas_win, x2, y1, x1, y1, INV_PAINT, 1, RUBBER_LINE, 0.0,
-	      DEFAULT_COLOR);
+    pw_vector(canvas_win, x1, y1, x1, y2, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
+    pw_vector(canvas_win, x1, y2, x2, y2, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
+    pw_vector(canvas_win, x2, y2, x2, y1, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
+    pw_vector(canvas_win, x2, y1, x1, y1, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 }
 
 elastic_movebox()
@@ -72,6 +75,7 @@ moving_box(x, y)
     elastic_movebox();
     adjust_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
     elastic_movebox();
+    length_msg(MSG_DIST);
 }
 
 resizing_box(x, y)
@@ -81,7 +85,7 @@ resizing_box(x, y)
     cur_x = x;
     cur_y = y;
     elastic_box(fix_x, fix_y, cur_x, cur_y);
-    boxsize_msg();
+    boxsize_msg(1);
 }
 
 constrained_resizing_box(x, y)
@@ -90,7 +94,7 @@ constrained_resizing_box(x, y)
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     adjust_box_pos(x, y, from_x, from_y, &cur_x, &cur_y);
     elastic_box(fix_x, fix_y, cur_x, cur_y);
-    boxsize_msg();
+    boxsize_msg(1);
 }
 
 scaling_compound(x, y)
@@ -104,21 +108,23 @@ scaling_compound(x, y)
 elastic_scalecompound(c)
     F_compound	   *c;
 {
-    int		    newx, newy, oldx, oldy, x1, y1, x2, y2;
-    float	    newd, oldd, scalefact;
+    double	    newx, newy, oldx, oldy;
+    double	    newd, oldd, scalefact;
+    int		    x1, y1, x2, y2;
 
     newx = cur_x - fix_x;
     newy = cur_y - fix_y;
-    newd = sqrt((double) (newx * newx + newy * newy));
+    newd = sqrt(newx * newx + newy * newy);
     oldx = from_x - fix_x;
     oldy = from_y - fix_y;
-    oldd = sqrt((double) (oldx * oldx + oldy * oldy));
+    oldd = sqrt(oldx * oldx + oldy * oldy);
     scalefact = newd / oldd;
-    x1 = fix_x + (c->secorner.x - fix_x) * scalefact;
-    y1 = fix_y + (c->secorner.y - fix_y) * scalefact;
-    x2 = fix_x + (c->nwcorner.x - fix_x) * scalefact;
-    y2 = fix_y + (c->nwcorner.y - fix_y) * scalefact;
+    x1 = fix_x + round((c->secorner.x - fix_x) * scalefact);
+    y1 = fix_y + round((c->secorner.y - fix_y) * scalefact);
+    x2 = fix_x + round((c->nwcorner.x - fix_x) * scalefact);
+    y2 = fix_y + round((c->nwcorner.y - fix_y) * scalefact);
     elastic_box(x1, y1, x2, y2);
+    boxsize_msg(2);
 }
 
 /*************************** LINES *************************/
@@ -126,7 +132,7 @@ elastic_scalecompound(c)
 elastic_line()
 {
     pw_vector(canvas_win, fix_x, fix_y, cur_x, cur_y,
-	      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+	      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 }
 
 freehand_line(x, y)
@@ -159,7 +165,7 @@ latex_line(x, y)
 constrainedangle_line(x, y)
     int		    x, y;
 {
-    float	    angle, dx, dy;
+    double	    angle, dx, dy;
 
     length_msg(MSG_LENGTH);
     if (x == cur_x && y == cur_y)
@@ -168,12 +174,12 @@ constrainedangle_line(x, y)
     dx = x - fix_x;
     dy = fix_y - y;
     /* only move if the pointer has moved at least 2 pixels */
-    if (sqrt((double) (dx * dx + dy * dy)) < 2.0)
+    if (sqrt(dx * dx + dy * dy) < 2.0)
 	return;
     if (dx == 0)
 	angle = -90.0;
     else
-	angle = 180.0 * atan((double) (dy / dx)) / M_PI;
+	angle = 180.0 * atan(dy / dx) / M_PI;
 
     elastic_line();
     if (manhattan_mode) {
@@ -264,11 +270,11 @@ elastic_linelink()
 {
     if (left_point != NULL) {
 	pw_vector(canvas_win, left_point->x, left_point->y,
-	       cur_x, cur_y, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+	       cur_x, cur_y, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
     }
     if (right_point != NULL) {
 	pw_vector(canvas_win, right_point->x, right_point->y,
-	       cur_x, cur_y, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+	       cur_x, cur_y, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
     }
 }
 
@@ -278,6 +284,7 @@ moving_line(x, y)
     elastic_moveline(new_l->points);
     adjust_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
     elastic_moveline(new_l->points);
+    length_msg(MSG_DIST);
 }
 
 elastic_moveline(pts)
@@ -289,7 +296,7 @@ elastic_moveline(pts)
     p = pts;
     if (p->next == NULL) {	/* dot */
 	pw_vector(canvas_win, cur_x, cur_y, cur_x, cur_y,
-		  INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+		  INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
     } else {
 	dx = cur_x - fix_x;
 	dy = cur_y - fix_y;
@@ -299,7 +306,7 @@ elastic_moveline(pts)
 	    xx = p->x + dx;
 	    yy = p->y + dy;
 	    pw_vector(canvas_win, x, y, xx, yy, INV_PAINT, 1,
-		      RUBBER_LINE, 0.0, DEFAULT_COLOR);
+		      RUBBER_LINE, 0.0, DEFAULT);
 	}
     }
     elastic_links(dx, dy, 1.0, 1.0);
@@ -319,29 +326,29 @@ elastic_links(dx, dy, sx, sy)
 	if (k->prevpt == NULL) {/* dot */
 	    pw_vector(canvas_win, k->endpt->x, k->endpt->y,
 		      k->endpt->x, k->endpt->y,
-		      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+		      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 	} else {
 	    if (cur_linkmode == SMART_MOVE)
 		pw_vector(canvas_win, k->endpt->x + dx, k->endpt->y + dy,
 			  k->prevpt->x, k->prevpt->y,
-			  INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+			  INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 	    else if (cur_linkmode == SMART_SLIDE) {
 		if (k->endpt->x == k->prevpt->x) {
 		    if (!k->two_pts)
 			pw_vector(canvas_win, k->prevpt->x,
 			      k->prevpt->y, k->prevpt->x + dx, k->prevpt->y,
-			     INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+			     INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 		    pw_vector(canvas_win, k->endpt->x + dx,
 			  k->endpt->y + dy, k->prevpt->x + dx, k->prevpt->y,
-			      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+			      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 		} else {
 		    if (!k->two_pts)
 			pw_vector(canvas_win, k->prevpt->x,
 			      k->prevpt->y, k->prevpt->x, k->prevpt->y + dy,
-			     INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+			     INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 		    pw_vector(canvas_win, k->endpt->x + dx,
 			  k->endpt->y + dy, k->prevpt->x, k->prevpt->y + dy,
-			      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+			      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 		}
 	    }
 	}
@@ -353,7 +360,8 @@ scaling_line(x, y)
     elastic_scalepts(cur_l->points);
     adjust_box_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
     elastic_scalepts(cur_l->points);
-    /* could add check for box here and do a boxsize_msg */
+    if (cur_l->type == T_BOX || cur_l->type == T_PIC_BOX)
+	boxsize_msg(2);
 }
 
 scaling_spline(x, y)
@@ -368,26 +376,27 @@ elastic_scalepts(pts)
     F_point	   *pts;
 {
     F_point	   *p;
-    int		    newx, newy, oldx, oldy, ox, oy, xx, yy;
-    float	    newd, oldd, scalefact;
+    double	    newx, newy, oldx, oldy;
+    double	    newd, oldd, scalefact;
+    int		    ox, oy, xx, yy;
 
     p = pts;
     newx = cur_x - fix_x;
     newy = cur_y - fix_y;
-    newd = sqrt((double) (newx * newx + newy * newy));
+    newd = sqrt(newx * newx + newy * newy);
 
     oldx = from_x - fix_x;
     oldy = from_y - fix_y;
-    oldd = sqrt((double) (oldx * oldx + oldy * oldy));
+    oldd = sqrt(oldx * oldx + oldy * oldy);
 
     scalefact = newd / oldd;
-    ox = fix_x + (p->x - fix_x) * scalefact;
-    oy = fix_y + (p->y - fix_y) * scalefact;
+    ox = fix_x + round((p->x - fix_x) * scalefact);
+    oy = fix_y + round((p->y - fix_y) * scalefact);
     for (p = p->next; p != NULL; ox = xx, oy = yy, p = p->next) {
-	xx = fix_x + (p->x - fix_x) * scalefact;
-	yy = fix_y + (p->y - fix_y) * scalefact;
+	xx = fix_x + round((p->x - fix_x) * scalefact);
+	yy = fix_y + round((p->y - fix_y) * scalefact);
 	pw_vector(canvas_win, ox, oy, xx, yy, INV_PAINT, 1,
-		  RUBBER_LINE, 0.0, DEFAULT_COLOR);
+		  RUBBER_LINE, 0.0, DEFAULT);
     }
 }
 
@@ -395,31 +404,32 @@ elastic_poly(x1, y1, x2, y2, numsides)
     int		    x1, y1, x2, y2, numsides;
 {
     register float  angle;
-    register int    nx, ny, dx, dy, i;
-    float	    init_angle, mag;
+    register int    nx, ny, i; 
+    double	    dx, dy;
+    double	    init_angle, mag;
     int		    ox, oy;
 
     dx = x2 - x1;
     dy = y2 - y1;
-    mag = sqrt((double) (dx * dx + dy * dy));
-    init_angle = compute_angle((float) dx, (float) dy);
+    mag = sqrt(dx * dx + dy * dy);
+    init_angle = compute_angle(dx, dy);
     ox = x2;
     oy = y2;
 
     /* now append numsides points */
     for (i = 1; i < numsides; i++) {
-	angle = init_angle - M_2PI * (float) i / (float) numsides;
+	angle = (float)(init_angle - M_2PI * (double) i / (double) numsides);
 	if (angle < 0)
 	    angle += M_2PI;
 	nx = x1 + round(mag * cos((double) angle));
 	ny = y1 + round(mag * sin((double) angle));
 	pw_vector(canvas_win, nx, ny, ox, oy, INV_PAINT, 1,
-		  RUBBER_LINE, 0.0, DEFAULT_COLOR);
+		  RUBBER_LINE, 0.0, DEFAULT);
 	ox = nx;
 	oy = ny;
     }
     pw_vector(canvas_win, ox, oy, x2, y2, INV_PAINT, 1,
-	      RUBBER_LINE, 0.0, DEFAULT_COLOR);
+	      RUBBER_LINE, 0.0, DEFAULT);
 }
 
 resizing_poly(x, y)
@@ -444,14 +454,14 @@ elastic_ebr()
     ry = cur_y - fix_y;
     if (cur_angle != 0.0) {
 	angle_ellipse(fix_x, fix_y, rx, ry, cur_angle, INV_PAINT, 1, 
-	     RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+	     RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT);
     } else {
 	x1 = fix_x + rx;
 	x2 = fix_x - rx;
 	y1 = fix_y + ry;
 	y2 = fix_y - ry;
 	pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, 1,
-	     RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+	     RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
     }
 }
 
@@ -482,10 +492,10 @@ elastic_ebd()
     if (cur_angle != 0.0) {
 	angle_ellipse(centx, centy, abs(cur_x-fix_x)/2, 
 		  abs(cur_y-fix_y)/2, cur_angle,
-		  INV_PAINT, 1, RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+		  INV_PAINT, 1, RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT);
     } else {
 	pw_curve(canvas_win, fix_x, fix_y, cur_x, cur_y,
-	     INV_PAINT, 1, RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+	     INV_PAINT, 1, RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
     }
     length_msg(MSG_DIAM);
 }
@@ -511,17 +521,18 @@ constrained_resizing_ebd(x, y)
 
 elastic_cbr()
 {
-    register int    radius, x1, y1, x2, y2, rx, ry;
+    register int    radius, x1, y1, x2, y2;
+    double	    rx, ry;
 
     rx = cur_x - fix_x;
     ry = cur_y - fix_y;
-    radius = round(sqrt((double) (rx * rx + ry * ry)));
+    radius = round(sqrt(rx * rx + ry * ry));
     x1 = fix_x + radius;
     x2 = fix_x - radius;
     y1 = fix_y + radius;
     y2 = fix_y - radius;
     pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, 1,
-	     RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+	     RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
 }
 
 resizing_cbr(x, y)
@@ -537,17 +548,18 @@ resizing_cbr(x, y)
 elastic_cbd()
 {
     register int    x1, y1, x2, y2;
-    int		    radius, rx, ry;
+    int		    radius;
+    double	    rx, ry;
 
     rx = (cur_x - fix_x) / 2;
     ry = (cur_y - fix_y) / 2;
-    radius = round(sqrt((double) (rx * rx + ry * ry)));
+    radius = round(sqrt(rx * rx + ry * ry));
     x1 = fix_x + rx + radius;
     x2 = fix_x + rx - radius;
     y1 = fix_y + ry + radius;
     y2 = fix_y + ry - radius;
     pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, 1,
-	     RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+	     RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
 }
 
 resizing_cbd(x, y)
@@ -579,10 +591,10 @@ elastic_moveellipse()
     y2 = cur_y + y2off;
     if (cur_angle != 0.0) {
 	angle_ellipse((x1+x2)/2, (y1+y2)/2, abs(x1-x2)/2, abs(y1-y2)/2, cur_angle,
-		  INV_PAINT, 1, RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+		  INV_PAINT, 1, RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT);
     } else {
 	pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, 1,
-	     RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+	     RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
     }
 }
 
@@ -592,6 +604,7 @@ moving_ellipse(x, y)
     elastic_moveellipse();
     adjust_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
     elastic_moveellipse();
+    length_msg(MSG_DIST);
 }
 
 elastic_scaleellipse(e)
@@ -599,31 +612,31 @@ elastic_scaleellipse(e)
 {
     register int    x1, y1, x2, y2;
     int		    rx, ry;
-    int		    newx, newy, oldx, oldy;
+    double	    newx, newy, oldx, oldy;
     float	    newd, oldd, scalefact;
 
     newx = cur_x - fix_x;
     newy = cur_y - fix_y;
-    newd = sqrt((double) (newx * newx + newy * newy));
+    newd = sqrt(newx * newx + newy * newy);
 
     oldx = from_x - fix_x;
     oldy = from_y - fix_y;
-    oldd = sqrt((double) (oldx * oldx + oldy * oldy));
+    oldd = sqrt(oldx * oldx + oldy * oldy);
 
     scalefact = newd / oldd;
 
-    rx = e->radiuses.x * scalefact;
-    ry = e->radiuses.y * scalefact;
+    rx = round(e->radiuses.x * scalefact);
+    ry = round(e->radiuses.y * scalefact);
     if (cur_angle != 0.0) {
 	angle_ellipse(e->center.x, e->center.y, rx, ry, cur_angle,
-		  INV_PAINT, 1, RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+		  INV_PAINT, 1, RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT);
     } else {
 	x1 = fix_x + rx;
 	x2 = fix_x - rx;
 	y1 = fix_y + ry;
 	y2 = fix_y - ry;
 	pw_curve(canvas_win, x1, y1, x2, y2, INV_PAINT, 1,
-	     RUBBER_LINE, 0.0, 0, DEFAULT_COLOR);
+	     RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
     }
 }
 
@@ -633,6 +646,10 @@ scaling_ellipse(x, y)
     elastic_scaleellipse(cur_e);
     adjust_box_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
     elastic_scaleellipse(cur_e);
+    if (cur_e->type == 1 || cur_e->type == 3)
+	length_msg(MSG_RADIUS);
+    else
+	length_msg(MSG_DIAM);
 }
 
 /*************************** ARCS *************************/
@@ -661,20 +678,17 @@ elastic_arclink()
     case 0:
 	pw_vector(canvas_win, cur_x, cur_y,
 		  cur_a->point[1].x, cur_a->point[1].y,
-		  INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+		  INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 	break;
     case 1:
 	pw_vector(canvas_win, cur_a->point[0].x, cur_a->point[0].y,
-		  cur_x, cur_y, INV_PAINT, 1, RUBBER_LINE, 0.0,
-		  DEFAULT_COLOR);
+		  cur_x, cur_y, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 	pw_vector(canvas_win, cur_a->point[2].x, cur_a->point[2].y,
-		  cur_x, cur_y, INV_PAINT, 1, RUBBER_LINE, 0.0,
-		  DEFAULT_COLOR);
+		  cur_x, cur_y, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 	break;
     default:
 	pw_vector(canvas_win, cur_a->point[1].x, cur_a->point[1].y,
-		  cur_x, cur_y, INV_PAINT, 1, RUBBER_LINE, 0.0,
-		  DEFAULT_COLOR);
+		  cur_x, cur_y, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
     }
 }
 
@@ -684,6 +698,7 @@ moving_arc(x, y)
     elastic_movearc(new_a);
     adjust_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
     elastic_movearc(new_a);
+    length_msg(MSG_DIST);
 }
 
 elastic_movearc(a)
@@ -695,10 +710,10 @@ elastic_movearc(a)
     dy = cur_y - fix_y;
     pw_vector(canvas_win, a->point[0].x + dx, a->point[0].y + dy,
 	      a->point[1].x + dx, a->point[1].y + dy,
-	      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+	      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
     pw_vector(canvas_win, a->point[1].x + dx, a->point[1].y + dy,
 	      a->point[2].x + dx, a->point[2].y + dy,
-	      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+	      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 }
 
 scaling_arc(x, y)
@@ -712,34 +727,35 @@ scaling_arc(x, y)
 elastic_scalearc(a)
     F_arc	   *a;
 {
-    int		    newx, newy, oldx, oldy;
-    float	    newd, oldd, scalefact;
+    double	    newx, newy, oldx, oldy;
+    double	    newd, oldd, scalefact;
     F_pos	    p0, p1, p2;
 
     newx = cur_x - fix_x;
     newy = cur_y - fix_y;
-    newd = sqrt((double) (newx * newx + newy * newy));
+    newd = sqrt(newx * newx + newy * newy);
 
     oldx = from_x - fix_x;
     oldy = from_y - fix_y;
-    oldd = sqrt((double) (oldx * oldx + oldy * oldy));
+    oldd = sqrt(oldx * oldx + oldy * oldy);
 
     scalefact = newd / oldd;
 
     p0 = a->point[0];
     p1 = a->point[1];
     p2 = a->point[2];
-    p0.x = fix_x + (p0.x - fix_x) * scalefact;
-    p0.y = fix_y + (p0.y - fix_y) * scalefact;
-    p1.x = fix_x + (p1.x - fix_x) * scalefact;
-    p1.y = fix_y + (p1.y - fix_y) * scalefact;
-    p2.x = fix_x + (p2.x - fix_x) * scalefact;
-    p2.y = fix_y + (p2.y - fix_y) * scalefact;
+    p0.x = fix_x + round((p0.x - fix_x) * scalefact);
+    p0.y = fix_y + round((p0.y - fix_y) * scalefact);
+    p1.x = fix_x + round((p1.x - fix_x) * scalefact);
+    p1.y = fix_y + round((p1.y - fix_y) * scalefact);
+    p2.x = fix_x + round((p2.x - fix_x) * scalefact);
+    p2.y = fix_y + round((p2.y - fix_y) * scalefact);
 
     pw_vector(canvas_win, p0.x, p0.y, p1.x, p1.y,
-	      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+	      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
     pw_vector(canvas_win, p1.x, p1.y, p2.x, p2.y,
-	      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+	      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
+    length_msg2(p0.x, p0.y, p2.x, p2.y, p1.x, p1.y);
 }
 
 /*************************** TEXT *************************/
@@ -750,6 +766,7 @@ moving_text(x, y)
     elastic_movetext();
     adjust_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
     elastic_movetext();
+    length_msg(MSG_DIST);
 }
 
 elastic_movetext()
@@ -768,6 +785,7 @@ moving_spline(x, y)
     elastic_moveline(new_s->points);
     adjust_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
     elastic_moveline(new_s->points);
+    length_msg(MSG_DIST);
 }
 
 /*********** AUXILIARY FUNCTIONS FOR CONSTRAINED MOVES ******************/

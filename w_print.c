@@ -1,13 +1,19 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -18,28 +24,28 @@
 #include "w_setup.h"
 #include "w_util.h"
 
-extern String	text_translations;
 extern Widget	make_popup_menu();
 extern char    *panel_get_value();
 extern char     batch_file[];
 extern Boolean  batch_exists;
 extern char    *shell_protect_string();
 
+/* from w_export.c */
+extern Widget		export_orient_panel;
+extern Widget		export_just_panel;
+
+/* global so w_cmdpanel.c and w_export.c can access it */
+Widget		print_orient_panel;
+/* global so f_read.c and w_export.c can access it */
+Widget		print_just_panel;
+
 /* LOCAL */
 
-static char    *orient_items[] = {
-    "portrait ",
-    "landscape"};
-
-static char    *just_items[] = {
-    "Centered  ",
-    "Flush left"};
-
 static void	orient_select();
-static Widget	orient_panel, orient_menu, orient_lab;
+static Widget	orient_menu, orient_lab;
 
 static void	just_select();
-static Widget	just_panel, just_menu, just_lab;
+static Widget	just_menu, just_lab;
 
 static Widget	print_panel, print_popup, dismiss, print, 
 		printer_text, param_text, printer_lab, param_lab, clear_batch, print_batch, 
@@ -92,17 +98,6 @@ do_print(w)
 
 	FirstArg(XtNstring, &printer_val);
 	GetValues(printer_text);
-	/* no printer name specified in resources, get PRINTER environment
-	   var and put it into the widget */
-	if (emptyname(printer_val)) {
-		printer_val=getenv("PRINTER");
-		if (printer_val == NULL) {
-			printer_val = "";
-		} else {
-			FirstArg(XtNstring, printer_val);
-			SetValues(printer_text);
-		}
-	}
 	FirstArg(XtNstring, &param_val);
 	GetValues(param_text);
 	if (batch_exists)
@@ -115,7 +110,7 @@ do_print(w)
 	    }
 	else
 	    {
-	    print_to_printer(printer_val, mag, print_flushleft, param_val);
+	    print_to_printer(printer_val, mag, appres.flushleft, param_val);
 	    }
 }
 
@@ -137,7 +132,7 @@ gen_print_cmd(cmd,file,printer,pr_params)
 		shell_protect_string(file));
 #endif
 	put_msg("Printing figure on default printer in %s mode ...     ",
-		print_landscape ? "LANDSCAPE" : "PORTRAIT");
+		appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     } else {
 #if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
 	sprintf(cmd, "lp %s, -d%s -oPS %s",
@@ -152,7 +147,7 @@ gen_print_cmd(cmd,file,printer,pr_params)
 		shell_protect_string(file));
 #endif
 	put_msg("Printing figure on printer %s in %s mode ...     ",
-		printer, print_landscape ? "LANDSCAPE" : "PORTRAIT");
+		printer, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     }
     app_flush();		/* make sure message gets displayed */
 }
@@ -187,9 +182,9 @@ do_print_batch(w)
 	if (mag <= 0.0)
 	    mag = 1.0;
 
-	print_to_file(tmp_exp_file, "ps", mag, print_flushleft);
+	print_to_file(tmp_exp_file, "ps", mag, appres.flushleft, 0, 0);
 	put_msg("Appending to batch file \"%s\" (%s mode) ... done",
-		    batch_file, print_landscape ? "LANDSCAPE" : "PORTRAIT");
+		    batch_file, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
 	app_flush();		/* make sure message gets displayed */
 
 	/* now append that to the batch file */
@@ -254,8 +249,11 @@ orient_select(w, new_orient, garbage)
     DeclareArgs(1);
 
     FirstArg(XtNlabel, XtName(w));
-    SetValues(orient_panel);
-    print_landscape = (int) new_orient;
+    SetValues(print_orient_panel);
+    /* set export panel too if it exists */
+    if (export_orient_panel)
+	SetValues(export_orient_panel);
+    appres.landscape = (int) new_orient;
 }
 
 static void
@@ -266,8 +264,11 @@ just_select(w, new_just, garbage)
     DeclareArgs(1);
 
     FirstArg(XtNlabel, XtName(w));
-    SetValues(just_panel);
-    print_flushleft = (new_just? True: False);
+    SetValues(print_just_panel);
+    /* change export justification if it exists */
+    if (export_just_panel)
+	SetValues(export_just_panel);
+    appres.flushleft = (new_just? True: False);
 }
 
 popup_print_panel(w)
@@ -280,6 +281,8 @@ popup_print_panel(w)
     if (!print_popup)
 	create_print_panel(w);
     XtPopup(print_popup, XtGrabNone);
+    /* insure that the most recent colormap is installed */
+    set_cmap(XtWindow(print_popup));
     (void) XSetWMProtocols(XtDisplay(print_popup), XtWindow(print_popup),
                            &wm_delete_window, 1);
     reset_cursor();
@@ -292,7 +295,8 @@ create_print_panel(w)
 	Widget	    image;
 	Pixmap	    p;
 	DeclareArgs(10);
-	unsigned long fg, bg;
+	unsigned    long fg, bg;
+	char	   *printer_val;
 
 	print_w = w;
 	XtTranslateCoords(w, (Position) 0, (Position) 0, &xposn, &yposn);
@@ -300,7 +304,8 @@ create_print_panel(w)
 	FirstArg(XtNx, xposn);
 	NextArg(XtNy, yposn + 50);
 	NextArg(XtNtitle, "Xfig: Print menu");
-	print_popup = XtCreatePopupShell("xfig_print_menu",
+	NextArg(XtNcolormap, tool_cm);
+	print_popup = XtCreatePopupShell("print_menu",
 					 transientShellWidgetClass,
 					 tool, Args, ArgCount);
         XtOverrideTranslations(print_popup,
@@ -339,7 +344,7 @@ create_print_panel(w)
 	FirstArg(XtNwidth, 40);
 	NextArg(XtNfromVert, image);
 	NextArg(XtNfromHoriz, mag_lab);
-	NextArg(XtNeditType, "edit");
+	NextArg(XtNeditType, XawtextEdit);
 	NextArg(XtNstring, "100");
 	NextArg(XtNinsertPosition, 3);
 	NextArg(XtNborderWidth, INTERNAL_BW);
@@ -358,33 +363,33 @@ create_print_panel(w)
 	FirstArg(XtNfromHoriz, orient_lab);
 	NextArg(XtNfromVert, mag_text);
 	NextArg(XtNborderWidth, INTERNAL_BW);
-	orient_panel = XtCreateManagedWidget(orient_items[print_landscape],
+	print_orient_panel = XtCreateManagedWidget(orient_items[appres.landscape],
 					     menuButtonWidgetClass,
 					     print_panel, Args, ArgCount);
 	orient_menu = make_popup_menu(orient_items, XtNumber(orient_items),
-				      orient_panel, orient_select);
+				      print_orient_panel, orient_select);
 
 	FirstArg(XtNlabel, "   Justification:");
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
-	NextArg(XtNfromVert, orient_panel);
+	NextArg(XtNfromVert, print_orient_panel);
 	just_lab = XtCreateManagedWidget("just_label", labelWidgetClass,
 					 print_panel, Args, ArgCount);
 
-	FirstArg(XtNlabel, just_items[print_flushleft? 1 : 0]);
+	FirstArg(XtNlabel, just_items[appres.flushleft? 1 : 0]);
 	NextArg(XtNfromHoriz, just_lab);
-	NextArg(XtNfromVert, orient_panel);
+	NextArg(XtNfromVert, print_orient_panel);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNresizable, True);
-	just_panel = XtCreateManagedWidget("justify",
+	print_just_panel = XtCreateManagedWidget("justify",
 					   menuButtonWidgetClass,
 					   print_panel, Args, ArgCount);
 	just_menu = make_popup_menu(just_items, XtNumber(just_items),
-				    just_panel, just_select);
+				    print_just_panel, just_select);
 
 
 	FirstArg(XtNlabel, "         Printer:");
-	NextArg(XtNfromVert, just_panel);
+	NextArg(XtNfromVert, print_just_panel);
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
 	printer_lab = XtCreateManagedWidget("printer_label", labelWidgetClass,
@@ -395,9 +400,9 @@ create_print_panel(w)
 	 */
 
 	FirstArg(XtNwidth, 100);
-	NextArg(XtNfromVert, just_panel);
+	NextArg(XtNfromVert, print_just_panel);
 	NextArg(XtNfromHoriz, printer_lab);
-	NextArg(XtNeditType, "edit");
+	NextArg(XtNeditType, XawtextEdit);
 	NextArg(XtNinsertPosition, 0);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	printer_text = XtCreateManagedWidget("printer", asciiTextWidgetClass,
@@ -405,6 +410,21 @@ create_print_panel(w)
 
 	XtOverrideTranslations(printer_text,
 			       XtParseTranslationTable(text_translations));
+
+	/* put the printer name in the label if resource isn't set */
+	FirstArg(XtNstring, &printer_val);
+	GetValues(printer_text);
+	/* no printer name specified in resources, get PRINTER environment
+	   var and put it into the widget */
+	if (emptyname(printer_val)) {
+		printer_val=getenv("PRINTER");
+		if (printer_val == NULL) {
+			printer_val = "";
+		} else {
+			FirstArg(XtNstring, printer_val);
+			SetValues(printer_text);
+		}
+	}
 
 	FirstArg(XtNlabel, "Print Job Params:");
 	NextArg(XtNfromVert, printer_text);
@@ -420,7 +440,7 @@ create_print_panel(w)
 	FirstArg(XtNwidth, 100);
 	NextArg(XtNfromVert, printer_text);
 	NextArg(XtNfromHoriz, param_lab);
-	NextArg(XtNeditType, "edit");
+	NextArg(XtNeditType, XawtextEdit);
 	NextArg(XtNinsertPosition, 0);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	param_text = XtCreateManagedWidget("job_params", asciiTextWidgetClass,

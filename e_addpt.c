@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -109,9 +116,9 @@ cancel_line_pointadding()
 {
     if (left_point != NULL && right_point != NULL)
 	pw_vector(canvas_win, left_point->x, left_point->y,
-		  right_point->x, right_point->y, INV_PAINT,
+		  right_point->x, right_point->y, PAINT,
 		  cur_l->thickness, cur_l->style, cur_l->style_val,
-		  cur_l->color);
+		  cur_l->pen_color);
     cancel_pointadding();
 }
 
@@ -172,7 +179,9 @@ splinepoint_adding(spline, left_point, added_point, right_point)
     }
     set_temp_cursor(wait_cursor);
     mask_toggle_splinemarker(spline);
-    draw_spline(spline, ERASE); /* erase old spline */
+    /* delete it and redraw underlying objects */
+    list_delete_spline(&objects.splines, spline);
+    redisplay_spline(spline);
     if (left_point == NULL) {
 	added_point->next = spline->points;
 	spline->points = added_point;
@@ -186,6 +195,8 @@ splinepoint_adding(spline, left_point, added_point, right_point)
 	spline->controls = c;
 	remake_control_points(spline);
     }
+    /* put it back in the list and draw the new spline */
+    list_add_spline(&objects.splines, spline);
     draw_spline(spline, PAINT); /* draw the modified spline */
     mask_toggle_splinemarker(spline);
     clean_up();
@@ -217,7 +228,7 @@ init_linepointadding(px, py)
 	pw_vector(canvas_win, left_point->x, left_point->y,
 		  right_point->x, right_point->y, ERASE,
 		  cur_l->thickness, cur_l->style, cur_l->style_val,
-		  cur_l->color);
+		  cur_l->pen_color);
 
     canvas_leftbut_proc = fix_linepoint_adding;
     canvas_rightbut_proc = cancel_line_pointadding;
@@ -246,7 +257,9 @@ linepoint_adding(line, left_point, added_point)
     F_point	   *left_point, *added_point;
 {
     mask_toggle_linemarker(line);
-    draw_line(line, ERASE);
+    /* delete it and redraw underlying objects */
+    list_delete_line(&objects.lines, line);
+    redisplay_line(line);
     if (left_point == NULL) {
 	added_point->next = line->points;
 	line->points = added_point;
@@ -254,6 +267,8 @@ linepoint_adding(line, left_point, added_point)
 	added_point->next = left_point->next;
 	left_point->next = added_point;
     }
+    /* put it back in the list and draw the new line */
+    list_add_line(&objects.lines, line);
     draw_line(line, PAINT);
     clean_up();
     mask_toggle_linemarker(line);

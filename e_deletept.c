@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -92,9 +99,11 @@ splinepoint_deleting(spline, prev_point, selected_point)
 
     next_point = selected_point->next;
     set_temp_cursor(wait_cursor);
+    mask_toggle_splinemarker(spline);
+    /* delete it and redraw underlying objects */
+    list_delete_spline(&objects.splines, spline);
+    redisplay_spline(spline);
     if (closed_spline(spline)) {
-	mask_toggle_splinemarker(spline);
-	draw_spline(spline, ERASE);	/* erase the spline */
 	if (prev_point == NULL) {
 	    /* The deleted point is the first point */
 	    spline->points = next_point;
@@ -117,8 +126,6 @@ splinepoint_deleting(spline, prev_point, selected_point)
 	} else
 	    prev_point->next = next_point;
     } else {			/* open spline */
-	mask_toggle_splinemarker(spline);
-	draw_spline(spline, ERASE);	/* erase the spline */
 	if (prev_point == NULL)
 	    spline->points = next_point;
 	else
@@ -133,6 +140,8 @@ splinepoint_deleting(spline, prev_point, selected_point)
 	free((char *) c);
 	remake_control_points(spline);
     }
+    /* put it back in the list and draw the new spline */
+    list_add_spline(&objects.splines, spline);
     draw_spline(spline, PAINT);
     mask_toggle_splinemarker(spline);
     clean_up();
@@ -161,7 +170,9 @@ linepoint_deleting(line, prev_point, selected_point)
 
     next_point = selected_point->next;
     mask_toggle_linemarker(line);
-    draw_line(line, ERASE);	/* erase the line */
+    /* delete it and redraw underlying objects */
+    list_delete_line(&objects.lines, line);
+    redisplay_line(line);
     if (line->type == T_POLYGON) {
 	if (prev_point == NULL) {
 	    /* The deleted point is the first point */
@@ -190,6 +201,8 @@ linepoint_deleting(line, prev_point, selected_point)
 	else
 	    prev_point->next = next_point;
     }
+    /* put it back in the list and draw the new line */
+    list_add_line(&objects.lines, line);
     draw_line(line, PAINT);
     mask_toggle_linemarker(line);
     clean_up();

@@ -1,42 +1,35 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
 #include "resources.h"
 #include "object.h"
 #include "u_create.h"
+#include "w_setup.h"
 
 extern int	cur_linewidth;
 
-/* LOCAL */
-
-static float	forward_arrow_wid = 4;
-static float	forward_arrow_ht = 8;
-static int	forward_arrow_type = 0;
-static int	forward_arrow_style = 0;
-static float	forward_arrow_thickness = 1;
-
-static float	backward_arrow_wid = 4;
-static float	backward_arrow_ht = 8;
-static int	backward_arrow_type = 0;
-static int	backward_arrow_style = 0;
-static float	backward_arrow_thickness = 1;
-
-static F_arrow *create_arrow();
 static char	Err_mem[] = "Running out of memory.";
 
 /****************** ARROWS ****************/
 
-static F_arrow *
+F_arrow *
 create_arrow()
 {
     F_arrow	   *a;
@@ -54,11 +47,11 @@ forward_arrow()
     if ((a = create_arrow()) == NULL)
 	return (NULL);
 
-    a->type = forward_arrow_type;
-    a->style = forward_arrow_style;
-    a->thickness = forward_arrow_thickness = (float) cur_linewidth;
-    a->wid = forward_arrow_thickness * forward_arrow_wid;
-    a->ht = forward_arrow_thickness * forward_arrow_ht;
+    a->type = ARROW_TYPE(cur_arrowtype);
+    a->style = ARROW_STYLE(cur_arrowtype);
+    a->thickness = (float) cur_linewidth;
+    a->wid = a->thickness * DEF_ARROW_WID;
+    a->ht = a->thickness * DEF_ARROW_HT;
     return (a);
 }
 
@@ -70,11 +63,11 @@ backward_arrow()
     if ((a = create_arrow()) == NULL)
 	return (NULL);
 
-    a->type = backward_arrow_type;
-    a->style = backward_arrow_style;
-    a->thickness = backward_arrow_thickness = (float) cur_linewidth;
-    a->wid = backward_arrow_thickness * backward_arrow_wid;
-    a->ht = backward_arrow_thickness * backward_arrow_ht;
+    a->type = ARROW_TYPE(cur_arrowtype);
+    a->style = ARROW_STYLE(cur_arrowtype);
+    a->thickness = (float) cur_linewidth;
+    a->wid = a->thickness * DEF_ARROW_WID;
+    a->ht = a->thickness * DEF_ARROW_HT;
     return (a);
 }
 
@@ -245,7 +238,7 @@ create_line()
     if ((l = (F_line *) malloc(LINOBJ_SIZE)) == NULL)
 	put_msg(Err_mem);
     l->tagged = 0;
-    l->eps = NULL;
+    l->pic = NULL;
     l->next = NULL;
     l->for_arrow = NULL;
     l->back_arrow = NULL;
@@ -254,13 +247,14 @@ create_line()
     return (l);
 }
 
-F_eps	       *
-create_eps()
+F_pic	       *
+create_pic()
 {
-    F_eps	   *e;
+    F_pic	   *e;
 
-    if ((e = (F_eps *) malloc(EPS_SIZE)) == NULL)
+    if ((e = (F_pic *) malloc(PIC_SIZE)) == NULL)
 	put_msg(Err_mem);
+    e->subtype = 0;
     return (e);
 }
 
@@ -299,21 +293,25 @@ copy_line(l)
 	free_linestorage(line);
 	return (NULL);
     }
-    if (l->eps != NULL) {
-	if ((line->eps = create_eps()) == NULL) {
+    if (l->pic != NULL) {
+	if ((line->pic = create_pic()) == NULL) {
 	    free((char *) line);
 	    return (NULL);
 	}
-	bcopy(l->eps, line->eps, EPS_SIZE);
-	if (l->eps->bitmap != NULL) {
-	    nbytes = (line->eps->bit_size.x + 7) / 8 * line->eps->bit_size.y;
-	    line->eps->bitmap = (unsigned char *) malloc(nbytes);
-	    if (line->eps->bitmap == NULL)
+	bcopy(l->pic, line->pic, PIC_SIZE);
+	if (l->pic->bitmap != NULL) {
+	    /* color is one byte per pixel */
+	    if (l->pic->numcols > 0 && !appres.monochrome)
+		    nbytes = line->pic->bit_size.x * line->pic->bit_size.y;
+	    else
+		    nbytes = (line->pic->bit_size.x + 7) / 8 * line->pic->bit_size.y;
+	    line->pic->bitmap = (unsigned char *) malloc(nbytes);
+	    if (line->pic->bitmap == NULL)
 		fprintf(stderr, "xfig: out of memory in function copy_line");
-	    bcopy(l->eps->bitmap, line->eps->bitmap, nbytes);
-	    line->eps->pix_width = 0;
-	    line->eps->pix_height = 0;
-	    line->eps->pixmap = 0;
+	    bcopy(l->pic->bitmap, line->pic->bitmap, nbytes);
+	    line->pic->pix_width = 0;
+	    line->pic->pix_height = 0;
+	    line->pic->pixmap = 0;
 	}
     }
     return (line);

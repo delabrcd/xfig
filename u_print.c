@@ -1,18 +1,26 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
 #include "mode.h"
 #include "resources.h"
+#include "w_setup.h"
 
 /*
  * Beware!  The string returned by this function is static and is
@@ -54,17 +62,18 @@ print_to_printer(printer, mag, flushleft, params)
 {
     char	    prcmd[2*PATH_MAX+200], translator[60];
     char	    syspr[2*PATH_MAX+200];
-    char	    tmpfile[32];
+    char	    tmpfile[PATH_MAX];
 
     sprintf(tmpfile, "%s/%s%06d", TMPDIR, "xfig-print", getpid());
     warnexist = False;
     if (write_file(tmpfile))
 	return;
 
-    sprintf(translator, "fig2dev -Lps %s -P -m %f %s",
+    sprintf(translator, "fig2dev -Lps %s -P -m %f %s -n %s",
 	    flushleft ? "" : "-c" ,
 	    mag,
-	    print_landscape ? "-l xxx" : " ");
+	    appres.landscape ? "-l xxx" : "-p xxx",
+	    cur_filename);
 
 
     if (emptyname(printer)) {	/* send to default printer */
@@ -74,7 +83,7 @@ print_to_printer(printer, mag, flushleft, params)
 	sprintf(syspr, "lpr %s -J %s", params, shell_protect_string(cur_filename));
 #endif
 	put_msg("Printing figure on default printer in %s mode ...     ",
-		print_landscape ? "LANDSCAPE" : "PORTRAIT");
+		appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     } else {
 #if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
 	sprintf(syspr, "lp %s -d%s -oPS", params, printer);
@@ -83,7 +92,7 @@ print_to_printer(printer, mag, flushleft, params)
 		printer);
 #endif
 	put_msg("Printing figure on printer %s in %s mode ...     ",
-		printer, print_landscape ? "LANDSCAPE" : "PORTRAIT");
+		printer, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     }
     app_flush();		/* make sure message gets displayed */
 
@@ -94,22 +103,25 @@ print_to_printer(printer, mag, flushleft, params)
     else {
 	if (emptyname(printer))
 	    put_msg("Printing figure on printer %s in %s mode ... done",
-		    printer, print_landscape ? "LANDSCAPE" : "PORTRAIT");
+		    printer, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
 	else
 	    put_msg("Printing figure on printer %s in %s mode ... done",
-		    printer, print_landscape ? "LANDSCAPE" : "PORTRAIT");
+		    printer, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     }
     unlink(tmpfile);
 }
 
-print_to_file(file, lang, mag, flushleft)
+/* xoff and yoff are in fig2dev print units (1/72 inch) */
+
+print_to_file(file, lang, mag, flushleft, xoff, yoff)
     char	   *file, *lang;
     float	    mag;
     Boolean	    flushleft;
+    int		    xoff, yoff;
 {
     char	    prcmd[2*PATH_MAX+200];
     char	    tmp_name[PATH_MAX];
-    char	    tmp_fig_file[32];
+    char	    tmp_fig_file[PATH_MAX];
     char	   *outfile;
     int		    tlen;
 
@@ -125,20 +137,22 @@ print_to_file(file, lang, mag, flushleft)
     outfile = shell_protect_string(file);
 
     put_msg("Exporting figure to file \"%s\" in %s mode ...     ",
-	    file, print_landscape ? "LANDSCAPE" : "PORTRAIT");
+	    file, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     app_flush();		/* make sure message gets displayed */
 
     if (!strcmp(lang, "ps"))
-	sprintf(prcmd, "fig2dev -Lps %s -P -m %f %s %s %s", flushleft ? "" : "-c" ,
-		mag, print_landscape ? "-l xxx" : " ", tmp_fig_file,
-		outfile);
+	sprintf(prcmd, "fig2dev -Lps %s -P -m %f %s -n %s -x %d -y %d %s %s", 
+		flushleft ? "" : "-c" ,
+		mag, appres.landscape ? "-l xxx" : "-p xxx", cur_filename,
+		xoff, yoff,
+		tmp_fig_file, outfile);
     else if (!strcmp(lang, "eps"))
-	sprintf(prcmd, "fig2dev -Lps -m %f %s %s %s",
-		mag, print_landscape ? "-l xxx" : " ", tmp_fig_file,
-		outfile);
+	sprintf(prcmd, "fig2dev -Lps -m %f %s -n %s %s %s",
+		mag, appres.landscape ? "-l xxx" : "-p xxx",
+		cur_filename, tmp_fig_file, outfile);
     else if (!strcmp(lang, "ibmgl"))
 	sprintf(prcmd, "fig2dev -Libmgl -m %f %s %s %s",
-		mag, print_landscape ? " " : "-P", tmp_fig_file,
+		mag, appres.landscape ? "-L" : "-P", tmp_fig_file,
 		outfile);
     else if (!strcmp(lang, "pstex_t")) {
 	/* make it automatically input the postscript part */
@@ -156,11 +170,13 @@ print_to_file(file, lang, mag, flushleft)
     } else
 	sprintf(prcmd, "fig2dev -L%s -m %f %s %s", lang,
 		mag, tmp_fig_file, outfile);
+    if (appres.DEBUG)
+	fprintf(stderr,"execing: %s\n",prcmd);
     if (system(prcmd) != 0)
 	file_msg("Error during EXPORT (check standard error output)");
     else
 	put_msg("Exporting figure to file \"%s\" in %s mode ... done",
-		file, print_landscape ? "LANDSCAPE" : "PORTRAIT");
+		file, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
 
     unlink(tmp_fig_file);
     return (0);

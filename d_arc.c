@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 /********************** DECLARATIONS ********************/
@@ -121,7 +128,7 @@ create_arcobject(lx, ly)
     /* erase previous line segment(s) if necessary */
     for (i = 1; i < num_point; i++) {
 	pw_vector(canvas_win, x, y, point[i].x, point[i].y, INV_PAINT,
-		  1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
+		  1, RUBBER_LINE, 0.0, DEFAULT);
 	x = point[i].x;
 	y = point[i].y;
     }
@@ -136,14 +143,16 @@ create_arcobject(lx, ly)
 	draw_mousefun_canvas();
 	return;
     }
-    arc->type = T_3_POINTS_ARC;
+    arc->type = cur_arctype;
     arc->style = cur_linestyle;
     arc->thickness = cur_linewidth;
     /* scale dash length according to linethickness */
     arc->style_val = cur_styleval * (cur_linewidth + 1) / 2;
-    arc->pen = 0;
+    arc->pen_style = 0;
     arc->fill_style = cur_fillstyle;
-    arc->color = cur_color;
+    arc->pen_color = cur_pencolor;
+    arc->fill_color = cur_fillcolor;
+    arc->cap_style = cur_capstyle;
     arc->depth = cur_depth;
     arc->direction = compute_direction(point[0], point[1], point[2]);
     if (autoforwardarrow_mode)

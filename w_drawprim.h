@@ -1,29 +1,41 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
-extern pr_size	pf_textwidth();
+extern pr_size	textsize();
 extern PIX_FONT bold_font;
 extern PIX_FONT roman_font;
 extern PIX_FONT button_font;
 extern PIX_FONT canvas_font;
 
 /* Maximum number of points for polygons etc */
-#define		MAXNUMPTS	10000
+/* This may be overridden by adding -DMAXNUMPTS=xxxx in the Imakefile/Makefile */
+#ifndef MAXNUMPTS
+#define		MAXNUMPTS	25000
+#endif /* MAXNUMPTS */
+
+#define MAXLINEWIDTH 500
 
 #define		NORMAL_FONT	"fixed"
 #define		BOLD_FONT	"8x13bold"
 #define		BUTTON_FONT	"6x13"
 
-#define		char_height(font) \
+#define		max_char_height(font) \
 		((font)->max_bounds.ascent + (font)->max_bounds.descent)
 
 #define		char_width(font) ((font)->max_bounds.width)
@@ -35,12 +47,4 @@ extern PIX_FONT canvas_font;
 
 #define set_x_color(gc,col) XSetForeground(tool_d,gc,\
 	(!all_colors_available? (col==WHITE?x_bg_color.pixel:x_fg_color.pixel): \
-		(col<0||col>=NUMCOLORS)? x_fg_color.pixel:appres.color[col]))
-
-#define set_fill_color(gc,col) XSetForeground(tool_d,gc,\
-	(!all_colors_available? (col==BLACK?x_fg_color.pixel:x_bg_color.pixel): \
-		(col<0||col>=NUMCOLORS)? x_fg_color.pixel:appres.color[col]))
-
-#define x_color(col)\
-	(!all_colors_available? (col==WHITE?x_bg_color.pixel:x_fg_color.pixel): \
-		(col<0||col>=NUMCOLORS)? x_fg_color.pixel:appres.color[col])
+		(col<0||col>=NUM_STD_COLS+num_usr_cols)? x_fg_color.pixel:colors[col]))

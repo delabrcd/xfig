@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -22,12 +29,22 @@
 #include "w_mousefun.h"
 #include "w_setup.h"
 #include "w_util.h"
+#ifdef USE_XPM_ICON
+#include <X11/xpm.h>
+#endif /* USE_XPM_ICON */
+
+/* input extensions for an input tablet */
+#ifdef USE_TAB
+#include "X11/extensions/XInput.h"
+#endif
 
 /************** EXTERNAL functions **************/
 
 extern void	quit(), undo(), paste(), redisplay_canvas(), delete_all_cmd();
 extern void	popup_print_panel(), popup_file_panel(), popup_export_panel();
 extern void	do_load(), do_save(), popup_unit_panel();
+extern void	inc_zoom(), dec_zoom();
+extern Boolean	switch_colormap();
 
 extern void	setup_cmd_panel();
 extern		X_error_handler();
@@ -41,6 +58,7 @@ extern int	latexfontnum();
 Pixmap		fig_icon;
 
 static char	tool_name[100];
+static int	screen_res;
 
 /************** FIG options ******************/
 
@@ -48,9 +66,11 @@ static char    *filename = NULL;
 
 static Boolean	true = True;
 static Boolean	false = False;
+static int	Idefault = DEFAULT;
 static int	Izero = 0;
-static float	Fone = 1.0;
+static int	Ione = 1;
 static int	Itwo = 2;
+static float	Fone = 1.0;
 
 /* actions so that we may install accelerators at the top level */
 static XtActionsRec	main_actions[] =
@@ -103,47 +123,20 @@ static XtResource application_resources[] = {
     XtOffset(appresPtr, startfontsize), XtRInt, (caddr_t) & Izero},
     {"internalborderwidth", "InternalBorderWidth", XtRInt, sizeof(int),
     XtOffset(appresPtr, internalborderwidth), XtRInt, (caddr_t) & Izero},
+    {"starttextstep", "StartTextStep", XtRFloat, sizeof(float),
+    XtOffset(appresPtr, starttextstep), XtRInt, (caddr_t) & Izero},
+    {"startfillstyle", "StartFillStyle", XtRInt, sizeof(int),
+    XtOffset(appresPtr, startfillstyle), XtRInt, (caddr_t) & Idefault},
+    {"startlinewidth", "StartLineWidth", XtRInt, sizeof(int),
+    XtOffset(appresPtr, startlinewidth), XtRInt, (caddr_t) & Ione},
+    {"startgridmode", "StartGridMode", XtRInt, sizeof(int),
+    XtOffset(appresPtr, startgridmode), XtRInt, (caddr_t) & Izero},
     {"latexfonts", "Latexfonts", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, latexfonts), XtRBoolean, (caddr_t) & false},
     {"specialtext", "SpecialText", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, specialtext), XtRBoolean, (caddr_t) & false},
     {"scalablefonts", "ScalableFonts", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, SCALABLEFONTS), XtRBoolean, (caddr_t) & true},
-    {"color0", "Color0", XtRPixel, sizeof(Pixel),
-    XtOffset(appresPtr, color[0]), XtRString, (caddr_t) "black"},
-    {"color1", "Color1", XtRPixel, sizeof(Pixel),
-    XtOffset(appresPtr, color[1]), XtRString, (caddr_t) "blue"},
-    {"color2", "Color2", XtRPixel, sizeof(Pixel),
-    XtOffset(appresPtr, color[2]), XtRString, (caddr_t) "green"},
-    {"color3", "Color3", XtRPixel, sizeof(Pixel),
-    XtOffset(appresPtr, color[3]), XtRString, (caddr_t) "cyan"},
-    {"color4", "Color4", XtRPixel, sizeof(Pixel),
-    XtOffset(appresPtr, color[4]), XtRString, (caddr_t) "red"},
-    {"color5", "Color5", XtRPixel, sizeof(Pixel),
-    XtOffset(appresPtr, color[5]), XtRString, (caddr_t) "magenta"},
-    {"color6", "Color6", XtRPixel, sizeof(Pixel),
-    XtOffset(appresPtr, color[6]), XtRString, (caddr_t) "yellow"},
-    {"color7", "Color7", XtRPixel, sizeof(Pixel),
-    XtOffset(appresPtr, color[7]), XtRString, (caddr_t) "white"},
-    /* don't get any ideas about using the following colors yet */
-    /* the protocol needs modification before we can do that */
-    {"color8", "Color8", XtRPixel, sizeof(Pixel),
-    XtOffset(appresPtr, color[8]), XtRString, (caddr_t) "lightblue"},
-    {"color9", "Color9", XtRPixel, sizeof(Pixel),
-    XtOffset(appresPtr, color[9]), XtRString, (caddr_t) "darkgreen"},
-    {"color10", "Color10", XtRPixel, sizeof(Pixel),
-    XtOffset(appresPtr, color[10]), XtRString, (caddr_t) "brown"},
-    {"color11", "Color11", XtRPixel, sizeof(Pixel),
-    XtOffset(appresPtr, color[11]), XtRString, (caddr_t) "orange"},
-    {"color12", "Color12", XtRPixel, sizeof(Pixel),
-    XtOffset(appresPtr, color[12]), XtRString, (caddr_t) "purple"},
-    {"color13", "Color13", XtRPixel, sizeof(Pixel),
-    XtOffset(appresPtr, color[13]), XtRString, (caddr_t) "pink"},
-    {"color14", "Color14", XtRPixel, sizeof(Pixel),
-    XtOffset(appresPtr, color[14]), XtRString, (caddr_t) "firebrick"},
-    {"color15", "Color15", XtRPixel, sizeof(Pixel),
-    XtOffset(appresPtr, color[15]), XtRString, (caddr_t) "gold"},
-
     {"monochrome", "Monochrome", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, monochrome), XtRBoolean, (caddr_t) & false},
     {"latexfonts", "Latexfonts", XtRBoolean, sizeof(Boolean),
@@ -162,6 +155,14 @@ static XtResource application_resources[] = {
     XtOffset(appresPtr, user_unit), XtRString, (caddr_t) ""},
     {"but_per_row", "But_per_row", XtRInt, sizeof(int),
     XtOffset(appresPtr, but_per_row), XtRInt, (caddr_t) & Itwo},
+    {"max_image_colors", "Max_image_colors", XtRInt, sizeof(int),
+    XtOffset(appresPtr, max_image_colors), XtRInt, (caddr_t) & Izero},
+    {"dont_switch_cmap", "Dont_switch_cmap", XtRBoolean, sizeof(Boolean),
+    XtOffset(appresPtr, dont_switch_cmap), XtRBoolean, (caddr_t) & false},
+#ifdef USE_TAB
+    {"tablet", "Tablet", XtRBoolean, sizeof(Boolean),
+    XtOffset(appresPtr, tablet), XtRBoolean, (caddr_t) & false},
+#endif
 };
 
 static XrmOptionDescRec options[] =
@@ -205,22 +206,18 @@ static XrmOptionDescRec options[] =
     {"-userscale", ".userscale", XrmoptionSepArg, 0},
     {"-userunit", ".userunit", XrmoptionSepArg, 0},
     {"-but_per_row", ".but_per_row", XrmoptionSepArg, 0},
+    {"-starttextstep", ".starttextstep",  XrmoptionSepArg, 0},
+    {"-startfillstyle", ".startfillstyle", XrmoptionSepArg, 0},
+    {"-startlinewidth", ".startlinewidth", XrmoptionSepArg, 0},
+    {"-startgridmode", ".startgridmode",  XrmoptionSepArg, 0},
+    {"-maximagecolors", ".max_image_colors", XrmoptionSepArg, 0},
+    {"-dontswitchcmap", ".dont_switch_cmap", XrmoptionNoArg, "False"},
+#ifdef USE_TAB
+    {"-tablet", ".tablet", XrmoptionNoArg, "True"},
+#endif
 };
 
 Atom wm_delete_window;
-
-static XtCallbackRec callbacks[] =
-{
-    {NULL, NULL},
-};
-
-static Arg	form_args[] =
-{
-    {XtNcallback, (XtArgVal) callbacks},
-    {XtNinput, (XtArgVal) True},
-    {XtNdefaultDistance, (XtArgVal) 0},
-    {XtNresizable, (XtArgVal) False},
-};
 
 static void	check_for_resize();
 static void	check_colors();
@@ -255,7 +252,7 @@ main(argc, argv)
     int		    ichild;
     int		    init_canv_wd, init_canv_ht;
     XWMHints	   *wmhints;
-    char	    i;
+    int		    i;
     char	   *userhome;
     Dimension	    w, h;
     XGCValues	    gcv;
@@ -297,22 +294,26 @@ main(argc, argv)
     XtGetApplicationResources(tool, &appres, application_resources,
 			      XtNumber(application_resources), NULL, 0);
 
-    i = 1;
-    while (argc-- > 1) {
-	if (*argv[i] != '-') {	/* search for non - name */
-	    filename = argv[i];
-	    break;
-	}
-	i++;
+    /* All option args have now been deleted, leaving other args. (from Gordon Ross) */
+    if (argc > 1) {
+	    filename = argv[1];
     }
 
     tool_d = XtDisplay(tool);
     tool_s = XtScreen(tool);
+    tool_cm = DefaultColormapOfScreen(tool_s);
     tool_sn = DefaultScreen(tool_d);
+    tool_cells = CellsOfScreen(tool_s);
+    screen_res = (int) ((float) WidthOfScreen(tool_s) /
+			((appres.INCHES) ?
+			    ((float) WidthMMOfScreen(tool_s)/2.54) :
+				     WidthMMOfScreen(tool_s) ));
+
+    /* filled in later */
+    tool_w = (Window) NULL;
 
     if (appres.iconGeometry != (char *) 0) {
         int scr, x, y, junk;
-        Arg args[2];
 
         for(scr = 0;
             tool_s != ScreenOfDisplay(tool_d, scr);
@@ -320,13 +321,10 @@ main(argc, argv)
 
         XGeometry(tool_d, scr, appres.iconGeometry,
                   "", 0, 0, 0, 0, 0, &x, &y, &junk, &junk);
-        XtSetArg(args[0], XtNiconX, x);
-        XtSetArg(args[1], XtNiconY, y);
-        XtSetValues(tool, args, XtNumber(args));
+        FirstArg(XtNiconX, x);
+        NextArg(XtNiconY, y);
+        SetValues(tool);
     }
-
-    print_flushleft = export_flushleft = appres.flushleft;	/* set both resources */
-    print_landscape = appres.landscape; /* match print and screen format to start */
 
     /* turn off PSFONT_TEXT flag if user specified -latexfonts */
     if (appres.latexfonts)
@@ -343,31 +341,36 @@ main(argc, argv)
     else
 	cur_fig_units[0] = '\0';
 
-    if (CellsOfScreen(tool_s) == 2 && appres.INVERSE) {
-	XrmValue	value;
-	XrmDatabase	newdb = (XrmDatabase) 0, old;
+    /* assume color to start */
+    all_colors_available = True;
 
-	value.size = sizeof("White");
-	value.addr = "White";
-	XrmPutResource(&newdb, "xfig*borderColor", "String",
-		       &value);
-	value.size = sizeof("White");
-	value.addr = "White";
-	XrmPutResource(&newdb, "xfig*foreground", "String",
-		       &value);
-	value.size = sizeof("Black");
-	value.addr = "Black";
-	XrmPutResource(&newdb, "xfig*background", "String",
-		       &value);
-	old = XtDatabase(tool_d);
-	XrmMergeDatabases(newdb, &old);
+    /* check if monochrome screen */
+    if (tool_cells == 2 || appres.monochrome) {
+	all_colors_available = False;
+	if (appres.INVERSE) {
+	    XrmValue	value;
+	    XrmDatabase	newdb = (XrmDatabase) 0, old;
 
-	/* now set the tool part, since its already created */
-	FirstArg(XtNborderColor, WhitePixelOfScreen(tool_s));
-	NextArg(XtNforeground, WhitePixelOfScreen(tool_s));
-	NextArg(XtNbackground, BlackPixelOfScreen(tool_s));
-	SetValues(tool);
+	    value.size = sizeof("White");
+	    value.addr = "White";
+	    XrmPutResource(&newdb, "xfig*borderColor", "String", &value);
+	    value.size = sizeof("White");
+	    value.addr = "White";
+	    XrmPutResource(&newdb, "xfig*foreground", "String", &value);
+	    value.size = sizeof("Black");
+	    value.addr = "Black";
+	    XrmPutResource(&newdb, "xfig*background", "String", &value);
+	    old = XtDatabase(tool_d);
+	    XrmMergeDatabases(newdb, &old);
+
+	    /* now set the tool part, since its already created */
+	    FirstArg(XtNborderColor, WhitePixelOfScreen(tool_s));
+	    NextArg(XtNforeground, WhitePixelOfScreen(tool_s));
+	    NextArg(XtNbackground, BlackPixelOfScreen(tool_s));
+	    SetValues(tool);
+	}
     }
+
     init_font();
 
     gc = DefaultGC(tool_d, tool_sn);
@@ -381,14 +384,23 @@ main(argc, argv)
     XCopyGC(tool_d, gc, ~GCFont, button_gc);
 
     /*
-     * check if the NUMCOLORS drawing colors could be allocated and have
+     * check if the NUM_STD_COLS drawing colors could be allocated and have
      * different palette entries
      */
     check_colors();
 
     init_cursor();
+    FirstArg(XtNinput, (XtArgVal) True);
+    NextArg(XtNdefaultDistance, (XtArgVal) 0);
+    NextArg(XtNresizable, (XtArgVal) False);
+    /* if we have already switched colormaps in check_colors() */
+    if (tool_cm)
+	NextArg(XtNcolormap, tool_cm);
     form = XtCreateManagedWidget("form", formWidgetClass, tool,
-				 form_args, XtNumber(form_args));
+				 Args, ArgCount);
+
+    if (appres.max_image_colors == 0)
+	appres.max_image_colors = DEF_MAX_IMAGE_COLS;
 
     if (cur_fontsize == 0)
 	cur_fontsize = (int) appres.startfontsize;
@@ -400,6 +412,18 @@ main(argc, argv)
 
     if (cur_ps_font == 0)
 	cur_ps_font = psfontnum (appres.startpsFont);
+
+    if (appres.starttextstep > 0.0)
+	cur_textstep = appres.starttextstep;
+
+    if (appres.startfillstyle >= 0)
+	cur_fillstyle = min2(appres.startfillstyle,NUMFILLPATS-1);
+
+    if (appres.startlinewidth >= 0)
+	cur_linewidth = min2(appres.startlinewidth,MAXLINEWIDTH);
+
+    if (appres.startgridmode >= 0)
+	cur_gridmode = min2(appres.startgridmode,GRID_3);
 
     if (INTERNAL_BW == 0)
 	INTERNAL_BW = appres.internalborderwidth;
@@ -414,9 +438,9 @@ main(argc, argv)
 	SW_PER_ROW = 6;
 
     init_canv_wd = appres.tmp_width *
-	(appres.INCHES ? PIX_PER_INCH : PIX_PER_CM);
+	(appres.INCHES ? PIX_PER_INCH : PIX_PER_CM)/ZOOM_FACTOR;
     init_canv_ht = appres.tmp_height *
-	(appres.INCHES ? PIX_PER_INCH : PIX_PER_CM);
+	(appres.INCHES ? PIX_PER_INCH : PIX_PER_CM)/ZOOM_FACTOR;
 
     if (init_canv_wd == 0)
 	init_canv_wd = appres.landscape ? DEF_CANVAS_WD_LAND :
@@ -447,7 +471,7 @@ main(argc, argv)
     children[ichild++] = unitbox_sw;	/* box containing units */
     children[ichild++] = sideruler_sw;	/* side ruler */
     children[ichild++] = canvas_sw;	/* main drawing canvas */
-    children[ichild++] = ind_viewp;	/* current settings indicators */
+    children[ichild++] = ind_panel;	/* current settings indicators */
 
     /*
      * until the following XtRealizeWidget() is called, there are NO windows
@@ -456,22 +480,59 @@ main(argc, argv)
 
     XtManageChildren(children, NCHILDREN);
     XtRealizeWidget(tool);
+    tool_w = XtWindow(tool);
+
+    /* make sure we have the most current colormap */
+    set_cmap(tool_w);
 
     wm_delete_window = XInternAtom(XtDisplay(tool), "WM_DELETE_WINDOW", False);
-    (void) XSetWMProtocols(XtDisplay(tool), XtWindow(tool),
-			   &wm_delete_window, 1);
+    (void) XSetWMProtocols(XtDisplay(tool), tool_w, &wm_delete_window, 1);
 
-    fig_icon = XCreateBitmapFromData(tool_d, XtWindow(tool),
+    /* use the XPM color icon for color display */
+#ifdef USE_XPM_ICON
+    if (all_colors_available) {
+	Pixmap		dum;
+	Window		iconWindow;
+	int		status;
+
+	/*  make a window for the icon */
+	iconWindow = XCreateSimpleWindow(tool_d, RootWindowOfScreen(tool_s),
+					 0, 0, 1, 1, 0,
+					 BlackPixelOfScreen(tool_s),
+					 BlackPixelOfScreen(tool_s));
+	xfig_icon_attr.valuemask = XpmReturnPixels | XpmCloseness;
+	xfig_icon_attr.colormap = tool_cm;
+	/* flag whether or not to free colors when quitting xfig */
+	xfig_icon_attr.npixels = 0;
+	status = XpmCreatePixmapFromData(tool_d, iconWindow,
+				     fig_c_icon_X, &fig_icon, &dum, &xfig_icon_attr);
+	/* if all else fails, use standard monochrome bitmap for icon */
+	if (status == XpmSuccess) {
+	    XResizeWindow(tool_d, iconWindow,
+			  xfig_icon_attr.width,
+			  xfig_icon_attr.height);
+	    XSetWindowBackgroundPixmap(tool_d, iconWindow, fig_icon);
+	    XtVaSetValues(tool, XtNiconWindow, iconWindow, NULL);
+	} else {
+	    fig_icon = XCreateBitmapFromData(tool_d, tool_w,
 				     (char *) fig_bits, fig_width, fig_height);
+	}
+    } else {
+#endif /* USE_XPM_ICON */
+	fig_icon = XCreateBitmapFromData(tool_d, tool_w,
+				     (char *) fig_bits, fig_width, fig_height);
+#ifdef USE_XPM_ICON
+    }
+#endif /* USE_XPM_ICON */
 
     FirstArg(XtNtitle, tool_name);
     NextArg(XtNiconPixmap, fig_icon);
     SetValues(tool);
     /* Set the input field to true to allow keyboard input */
-    wmhints = XGetWMHints(tool_d, XtWindow(tool));
+    wmhints = XGetWMHints(tool_d, tool_w);
     wmhints->flags |= InputHint;/* add in input hint */
     wmhints->input = True;
-    XSetWMHints(tool_d, XtWindow(tool), wmhints);
+    XSetWMHints(tool_d, tool_w, wmhints);
     XFree((char *) wmhints);
 
     if (appres.RHS_PANEL) {	/* side button panel is on right size */
@@ -538,6 +599,8 @@ main(argc, argv)
     XtInstallAllAccelerators(topruler_sw, tool);
     XtInstallAllAccelerators(sideruler_sw, tool);
     XtInstallAllAccelerators(unitbox_sw, tool);
+    XtInstallAllAccelerators(ind_panel, tool);
+    XtInstallAllAccelerators(mode_panel, tool);
 
     FirstArg(XtNwidth, &w);
     NextArg(XtNheight, &h);
@@ -549,8 +612,11 @@ main(argc, argv)
     XtOverrideTranslations(tool, XtParseTranslationTable(tool_translations));
     XtOverrideTranslations(form, XtParseTranslationTable(form_translations));
 
-    XSetErrorHandler(X_error_handler);
-    XSetIOErrorHandler((XIOErrorHandler) X_error_handler);
+    if (!appres.DEBUG) {
+	XSetErrorHandler(X_error_handler);
+	XSetIOErrorHandler((XIOErrorHandler) X_error_handler);
+    }
+
     (void) signal(SIGHUP, error_handler);
     (void) signal(SIGFPE, error_handler);
 #ifdef SIGBUS
@@ -578,12 +644,167 @@ main(argc, argv)
     if (filename == NULL)
 	strcpy(cur_filename, DEF_NAME);
     else
-	load_file(filename);
+	load_file(filename,0,0);
     update_cur_filename(cur_filename);
 
     app_flush();
 
-    XtAppMainLoop(tool_app);
+#ifdef USE_TAB
+    /* If the user requests a tablet then do the set up for it */
+    /*   and handle the tablet XInput extension events */
+    /*   in a custom XtAppMainLoop gjl */
+    if (appres.tablet) {
+#define TABLETINCHES 11.7
+#define SETBUTEVT(d, e) ((d).serial = (e)->serial, \
+	(d).window 	= (e)->window, (d).root = (e)->root, \
+	(d).subwindow 	= (e)->subwindow, (d).time = (e)->time, \
+	(d).x 		= (e)->axis_data[0] / max2(tablet_res, 0.1), \
+	(d).state 	= (e)->state, \
+	(d).y 		= ((int) ht - (e)->axis_data[1] / max2(tablet_res, 0.1)), \
+	(d).button 	= (e)->button)
+/* Switch buttons because of the layout of the buttons on the mouse */
+#define SWITCHBUTTONS(d) ((d).button = ((d).button == Button2) ? Button1 : \
+        ((d).button == Button1) ? Button2 : \
+        ((d).button == Button4) ? Button3 : Button4)
+
+	XEventClass eventList[3];
+	XEvent event;
+	XDeviceMotionEvent *devmotevt;
+	XDeviceButtonEvent *devbutevt;
+	XDevice		*tablet;
+	XDeviceState	*tabletState;
+	XValuatorState	*valState;
+	int i, numDevs, motiontype, butprstype, butreltype, dum;
+	long  minval, maxval;
+
+	/* Get the device list */
+	XDeviceInfo *devPtr, *devInfo;
+	/* tablet_res is ratio between the tablet res and the screen res */
+	float tablet_res = 10.0;
+	/* ht is the height of the tablet at 100dpi */
+	Dimension ht, wd;
+
+	XButtonEvent xprs, xrel;
+
+	xprs.type = ButtonPress, xrel.type = ButtonRelease;
+	xprs.send_event = xprs.same_screen =
+	  xrel.send_event = xrel.same_screen = True;
+	xprs.button = xrel.button = Button1;
+
+	/* check if the XInputExtension exists */
+	if (!XQueryExtension(tool_d, INAME, &dum, &dum, &dum))
+		goto notablet;
+
+	/* now search the device list for the tablet */
+        devInfo = XListInputDevices(tool_d, &numDevs);
+	if (numDevs == 0)
+		goto notablet;
+    
+	/* Open the tablet device and select the event types */
+	for (i = 0, devPtr = devInfo; i < numDevs; i++, devPtr++)
+	  if (! strcmp(devPtr->name, XI_TABLET))
+	    if ((tablet = XOpenDevice(tool_d, devPtr->id)) == NULL)
+	      printf("Unable to open tablet\n");
+
+	    else {
+	      DeviceMotionNotify(tablet,  motiontype, eventList[0]);
+	      DeviceButtonPress(tablet,   butprstype, eventList[1]);
+	      DeviceButtonRelease(tablet, butreltype, eventList[2]);
+
+	      if (XSelectExtensionEvent(tool_d,
+	             XtWindow(canvas_sw), eventList, 3))
+	        printf("Bad status on XSelectExtensionEvent\n");
+	    }
+
+	XFreeDeviceList(devInfo);
+
+	/* Get the valuator data which should give the resolution */
+	/*   of the tablet in absolute mode (the default / what we want) */
+	/*   Problem with sgi array index (possibly word size related ) */
+	tabletState = XQueryDeviceState(tool_d, tablet);
+	valState = (XValuatorState *) tabletState->data;
+	for (i = 0; i < tabletState->num_classes; i++)
+	  if ((int) valState->class == ValuatorClass)
+	  {
+	    if (valState->num_valuators)
+	    {
+#if sgi
+	      minval = valState->valuators[4];
+	      maxval = valState->valuators[5];
+#else
+	      minval = valState->valuators[0];
+	      maxval = valState->valuators[1];
+#endif
+	      tablet_res = ((float) maxval / TABLETINCHES / screen_res);
+	      if (tablet_res <= 0.0 || tablet_res > 100.0)
+	        tablet_res = 12.0;
+
+              if (appres.DEBUG)
+	        printf("TABLET: Res: %f %d %d %d %d\n", tablet_res,
+	          valState->valuators[8], valState->valuators[10],
+	          minval, maxval);
+	    }
+	  }
+	  else
+	    valState = (XValuatorState *)
+	      ((long) valState + (int) valState->length);
+
+	XFreeDeviceState(tabletState);
+
+	xprs.display = xrel.display = tool_d;
+        FirstArg(XtNheight, &ht);
+        NextArg(XtNwidth, &wd);
+        GetValues(canvas_sw);
+	
+	/* "XtAppMainLoop" customized for extension events */
+        /* For tablet puck motion events use the location */
+        /* info to warp the cursor to the corresponding screen */
+        /* position.  For puck button events switch the buttons */
+        /* to correspond to the mouse buttons and send a mouse */
+        /* button event to the server so the program will just */
+        /* think it is getting a mouse button event and act */
+        /* appropriately */
+	for (;;) {
+	  XtAppNextEvent(tool_app, &event);
+	  if (event.type == motiontype) {
+	    devmotevt = (XDeviceMotionEvent *) &event;
+            devmotevt->axis_data[0] /= tablet_res;
+            devmotevt->axis_data[1] /= tablet_res;
+
+            /* Keep the pointer within the canvas window */
+            FirstArg(XtNheight, &ht);
+            NextArg(XtNwidth, &wd);
+            GetValues(canvas_sw);
+	    XWarpPointer(tool_d, None, XtWindow(canvas_sw), None, None, 0, 0,
+		 min2(devmotevt->axis_data[0], (int) wd),
+		 max2((int) ht - devmotevt->axis_data[1], 0));
+	  }
+	  else if (event.type == butprstype) {
+	    devbutevt = (XDeviceButtonEvent *) &event;
+	    SETBUTEVT(xprs, devbutevt);
+            SWITCHBUTTONS(xprs);
+	    XSendEvent(tool_d, PointerWindow, True,
+	       ButtonPressMask, (XEvent *) &xprs);
+	  }
+	  else if (event.type == butreltype) {
+	    devbutevt = (XDeviceButtonEvent *) &event;
+	    SETBUTEVT(xrel, devbutevt);
+            SWITCHBUTTONS(xrel);
+	    XSendEvent(tool_d, PointerWindow, True, 
+	       ButtonReleaseMask, (XEvent *) &xrel);
+	  }
+	  else
+	    XtDispatchEvent(&event);
+	}
+notablet:
+	file_msg("No input tablet present");
+	XtAppMainLoop(tool_app);
+    }
+    else
+#endif USE_TAB
+
+	XtAppMainLoop(tool_app);
+    return 0;
 }
 
 static void
@@ -593,19 +814,27 @@ check_for_resize(tool, event, params, nparams)
     String	   *params;
     Cardinal	   *nparams;
 {
-    XConfigureEvent *xc = (XConfigureEvent *) event;
-    Dimension	    b;
     int		    dx, dy;
-
-    DeclareArgs(3);
+    XConfigureEvent *xc = (XConfigureEvent *) event;
 
     if (xc->width == TOOL_WD && xc->height == TOOL_HT)
-	return;			/* no size change */
+	return;		/* no size change */
     dx = xc->width - TOOL_WD;
     dy = xc->height - TOOL_HT;
     TOOL_WD = xc->width;
     TOOL_HT = xc->height;
-    setup_sizes(CANVAS_WD + dx, CANVAS_HT + dy);
+    resize_all(CANVAS_WD + dx, CANVAS_HT + dy);
+}
+
+/* resize whole shebang given new canvas size (width,height) */
+
+resize_all(width, height)
+    int width, height;
+{
+    DeclareArgs(3);
+    Dimension	    b;
+
+    setup_sizes(width, height);
 
     XawFormDoLayout(form, False);
     ignore_exp_cnt++;		/* canvas is resized twice - redraw only once */
@@ -647,29 +876,49 @@ check_for_resize(tool, event, params, nparams)
     XawFormDoLayout(form, True);
 }
 
-
 static void
 check_colors()
 {
-    int		    i, j;
+    int		    i;
+    XColor	    dum,color;
+
+    /* no need to allocate black and white specially */
+    colors[BLACK] = BlackPixelOfScreen(tool_s);
+    colors[WHITE] = WhitePixelOfScreen(tool_s);
+    /* fill the colors array with black (except for white) */
+    for (i=0; i<NUM_STD_COLS; i++)
+	if (i != BLACK && i != WHITE)
+		colors[i] = colors[BLACK];
+
+    /* initialize user color cells */
+    for (i=0; i<MAX_USR_COLS; i++) {
+	    colorFree[i] = True;
+	    n_colorFree[i] = True;
+	    num_usr_cols = 0;
+    }
 
     /* if monochrome resource is set, do not even check for colors */
-    if (appres.monochrome) {
-	all_colors_available = false;
+    if (!all_colors_available || appres.monochrome) {
 	return;
     }
-    all_colors_available = true;
 
-    /* check if the drawing colors have different palette entries */
-    for (i = 0; i < NUMCOLORS - 1; i++) {
-	for (j = i + 1; j < NUMCOLORS; j++) {
-	    if (appres.color[i] == appres.color[j]) {
-		all_colors_available = false;
-		break;
+    for (i=0; i<NUM_STD_COLS; i++) {
+	/* skip black and white */
+	if (i == BLACK || i==WHITE)
+		continue;
+	/* try to allocate another named color */
+	if (!XAllocNamedColor(tool_d, tool_cm, colorNames[i+1].rgb,&color,&dum)) {
+	    /* can't allocate it, switch colormaps try again */
+	    if (!switch_colormap() || 
+	        (!XAllocNamedColor(tool_d, tool_cm, colorNames[i+1].rgb,&color,&dum))) {
+		    fprintf(stderr, "Not enough colormap entries available for basic colors\n");
+		    fprintf(stderr, "using monochrome mode.\n");
+		    all_colors_available = False;
+		    return;
 	    }
 	}
-	if (!all_colors_available)
-	    break;
+	/* put the colorcell number in the color array */
+	colors[i] = color.pixel;
     }
 }
 
@@ -699,123 +948,5 @@ char *strstr(s1, s2)
 	if (strncmp(stmp, s2, len2)==0)
 	    return stmp;
     return NULL;
-}
-#endif
- 
-#ifdef NOSTRTOL
-/*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms are permitted
- * provided that: (1) source distributions retain this entire copyright
- * notice and comment, and (2) distributions including binaries display
- * the following acknowledgement:  ``This product includes software
- * developed by the University of California, Berkeley and its contributors''
- * in the documentation or other materials provided with the distribution
- * and in all advertising materials mentioning features or use of this
- * software. Neither the name of the University nor the names of its
- * contributors may be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strtol.c	5.3 (Berkeley) 5/17/90";
-#endif /* LIBC_SCCS and not lint */
-
-#include <ctype.h>
-#include <errno.h>
-
-#define	ULONG_MAX	0xffffffff	/* max value for an unsigned long */
-#define	LONG_MAX	0x7fffffff	/* max value for a long */
-#define	LONG_MIN	0x80000000	/* min value for a long */
-
-/*
- * Convert a string to a long integer.
- *
- * Ignores `locale' stuff.  Assumes that the upper and lower case
- * alphabets and digits are each contiguous.
- */
-long
-strtol(nptr, endptr, base)
-	char *nptr, **endptr;
-	register int base;
-{
-	register char *s = nptr;
-	register unsigned long acc;
-	register int c;
-	register unsigned long cutoff;
-	register int neg = 0, any, cutlim;
-
-	/*
-	 * Skip white space and pick up leading +/- sign if any.
-	 * If base is 0, allow 0x for hex and 0 for octal, else
-	 * assume decimal; if base is already 16, allow 0x.
-	 */
-	do {
-		c = *s++;
-	} while (isspace(c));
-	if (c == '-') {
-		neg = 1;
-		c = *s++;
-	} else if (c == '+')
-		c = *s++;
-	if ((base == 0 || base == 16) &&
-	    c == '0' && (*s == 'x' || *s == 'X')) {
-		c = s[1];
-		s += 2;
-		base = 16;
-	}
-	if (base == 0)
-		base = c == '0' ? 8 : 10;
-
-	/*
-	 * Compute the cutoff value between legal numbers and illegal
-	 * numbers.  That is the largest legal value, divided by the
-	 * base.  An input number that is greater than this value, if
-	 * followed by a legal input character, is too big.  One that
-	 * is equal to this value may be valid or not; the limit
-	 * between valid and invalid numbers is then based on the last
-	 * digit.  For instance, if the range for longs is
-	 * [-2147483648..2147483647] and the input base is 10,
-	 * cutoff will be set to 214748364 and cutlim to either
-	 * 7 (neg==0) or 8 (neg==1), meaning that if we have accumulated
-	 * a value > 214748364, or equal but the next digit is > 7 (or 8),
-	 * the number is too big, and we will return a range error.
-	 *
-	 * Set any if any `digits' consumed; make it negative to indicate
-	 * overflow.
-	 */
-	cutoff = neg ? -(unsigned long)LONG_MIN : LONG_MAX;
-	cutlim = cutoff % (unsigned long)base;
-	cutoff /= (unsigned long)base;
-	for (acc = 0, any = 0; c = *s++; ) {
-		if (isdigit(c))
-			c -= '0';
-		else if (isalpha(c))
-			c -= isupper(c) ? 'A' - 10 : 'a' - 10;
-		else
-			break;
-		if (c >= base)
-			break;
-		if (any < 0 || acc > cutoff || acc == cutoff && c > cutlim)
-			any = -1;
-		else {
-			any = 1;
-			acc *= base;
-			acc += c;
-		}
-	}
-	if (any < 0) {
-		acc = neg ? LONG_MIN : LONG_MAX;
-		errno = ERANGE;
-	} else if (neg)
-		acc = -acc;
-	if (endptr != 0)
-		*endptr = any ? s - 1 : nptr;
-	return (acc);
 }
 #endif

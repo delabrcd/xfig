@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -20,8 +27,9 @@
 extern int	num_object;
 
 int
-load_file(file)
+load_file(file, xoff, yoff)
     char	   *file;
+    int		    xoff, yoff;
 {
     int		    s;
     F_compound	    c;
@@ -34,7 +42,7 @@ load_file(file)
     c.texts = NULL;
     c.next = NULL;
     set_temp_cursor(wait_cursor);
-    s = read_fig(file, &c);
+    s = read_fig(file, &c, False, xoff, yoff);
     if (s == 0) {		/* Successful read */
 	clean_up();
 	(void) strcpy(save_filename, cur_filename);
@@ -67,8 +75,9 @@ load_file(file)
 }
 
 int
-merge_file(file)
+merge_file(file, xoff, yoff)
     char	   *file;
+    int		    xoff, yoff;
 {
     F_compound	    c;
     int		    s;
@@ -82,8 +91,8 @@ merge_file(file)
     c.next = NULL;
     set_temp_cursor(wait_cursor);
 
-    s = read_fig(file, &c);
-    if (s == 0) {		/* Successful read */
+    s = read_fig(file, &c, True, xoff, yoff);	/* merging */
+    if (s == 0) {			/* Successful read */
 	int		xmin, ymin, xmax, ymax;
 
 	compound_bound(&c, &xmin, &ymin, &xmax, &ymax);
@@ -91,6 +100,9 @@ merge_file(file)
 	saved_objects = c;
 	tail(&objects, &object_tails);
 	append_objects(&objects, &saved_objects, &object_tails);
+	/* must remap all EPS/GIF/XPMs now */
+	remap_imagecolors(&objects);
+	redraw_images(&objects);
 	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
 	put_msg("%d object(s) read from \"%s\"", num_object, file);
 	set_action_object(F_ADD, O_ALL_OBJECT);

@@ -10,7 +10,8 @@ allow inclusion in LaTeX documents).
 
 This file contains some notes about installing xfig, the directory
 'Examples' contains some example figures and the 'Doc' directory contains
-some further documentation including the manual in troff -man format.
+some further documentation including the manual in troff -man format
+and PostScript.
 
 Please report any bugs, fixes, contributions, etc. to:
 
@@ -22,22 +23,39 @@ INSTALLATION NOTES:
 ===================
 
 1. Edit the Imakefile if you need to customize it (see following notes)
-2. Type "make Makefile" or "xmkmf" if you have xmkmf
+2. Type "xmkmf" to create the Makefile from the Imakefile
+   2a. For a 3D look, see NOTE below
 3. Type "make install" (if you don't do this step, be sure to install resources)
 4. Type "make install.man"
 5. For X11R5 color implementations, specify "*customization: -color" in your 
 	.Xdefaults or .Xresources file.
 	NOTE: this only works under X11R5.
 
+If you have the XPM3 package (X11 color pixmaps) you can export your figures
+   in that format.  Also, you can import xpm files as picture objects.
+   Uncomment the XPMDEFINES and related variables in the Imakefile in that case.
+   You need version 3.4c or newer.  This is available from ftp.x.org in
+   /contrib/libraries.
+If you have ghostscript, enable the -DGSBIT flag in the Imakefile and xfig will
+   attempt to use it to interpret any encapsulated Postscript (EPS) files you
+   import.  Ghostscript must be compiled with with the "gif8" and "pbmraw"
+   drivers.  The pbm driver is used when you run xfig on a monochrome display
+   and the gif8 driver is used on a color display.
 If your system doesn't have strstr(), add the flag -DNOSTRSTR in the Imakefile
    in the DEFINES line.
-If your system doesn't have strtol(), add the flag -DNOSTRTOL in the Imakefile
-   in the DEFINES line.
-If you are running on an IBM RS/6000 with AIX 3.2, add the flag -DDPS in the
-   Imakefile and uncomment the line that says 
-	LOCAL_LIBRARIES = -ldps XawClientLibs
-   and you will see the full PostScript object when using EPS objects.
+If you are running on an IBM RS/6000 with AIX 3.2, uncomment the lines that
+   define DPSLIB and DPSDEF in the Imakefile and you will see the full
+   PostScript object when using EPS objects.
+If you have an input tablet and your X server supports the XInputExtension
+   uncomment the lines that define TABLIB and USETAB in the Imakefile.
+   Start xfig with -tablet or define the resource Fig.Tablet to use it.
  
+NOTE: For a 3D look, I recommend using Kaleb Keithley's 3D Athena Widget set,
+a direct replacement for the Xaw library.  After you compile and install that
+package, and after step 1 above, just uncomment the definition of XAWLIB in
+the Imakefile and it will use the 3D widget set.
+This set is available from ftp.x.org.
+
 The maximum width of the top ruler is set to 1020 pixels and the height of the
 side ruler to 860 pixels.  If your server can handle pixmaps larger than this
 and you need longer/taller rulers, you may set the maximum allowed in your
@@ -73,6 +91,13 @@ If you have a SYSV system but use BSD-style printing (lpr instead of lp) you
 must define -DBSDLPR in the Imakefile/Makefile.
 
 -----------------
+Solaris users
+-----------------
+
+Add "-lc" to the LOCAL_LIBRARIES variable in the Imakefile to link with 
+/usr/lib/libc for the directory operations.
+
+-----------------
 OpenWindows users
 -----------------
 
@@ -104,7 +129,7 @@ POSSIBLE CAUSE AND SOLUTION:
 	Increase the height of the indicator panel by changing init_ind_panel()
 	where it says:
 
-        i = DEF_IND_SW_HT+4*INTERNAL_BW+14;   /* allow for thickness of scrollbar */
+        i = DEF_IND_SW_HT+4*INTERNAL_BW+14;  /* allow for thickness of scrollbar */
 
 	Try increasing the 14 to 16 or 20 and see if that fixes it.  Please
 	send me email if you have to do this and tell me the value you used.
@@ -176,18 +201,6 @@ POSSIBLE CAUSE AND SOLUTION:
 	    tail(&objects, &object_tails);
 ________________________________________________________________________________
 PROBLEMS:
-	o Ellipses are rotated in the wrong direction when printing.
-
-	o When exporting a figure to Encapsulated Postscript, it always
-	  comes out in Portrait mode even if you select Landscape.
-
-	o When batching together several figures and printing as one file, 
-	  only the first one prints.
-
-POSSIBLE CAUSE AND SOLUTION:
-	Get the newest version of TransFig (version 2.1.5 or later).
-________________________________________________________________________________
-PROBLEMS:
 	On HP machines, the capitalization of some letters in the text window 
 	in the edit popup for text objects are wrong.
 
@@ -195,3 +208,10 @@ POSSIBLE CAUSE AND SOLUTION:
 	Make sure that the CompKeyDB file has the lowercase letter definitions
 	BEFORE the uppercase definitions.  This should be the case for the 
 	CompKeyDB file shipped with xfig 2.1.5 and later.
+________________________________________________________________________________
+PROBLEMS:
+	On HP computers using cc compiler version A.09.61 there is a problem with
+	level 3 optimization. 
+
+POSSIBLE CAUSE AND SOLUTION:
+	Use level 2 instead.

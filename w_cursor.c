@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -18,7 +25,6 @@
 init_cursor()
 {
     register Display *d = tool_d;
-    cur_cursor		= arrow_cursor;  /* current cursor */
 
     arrow_cursor	= XCreateFontCursor(d, XC_left_ptr);
     bull_cursor		= XCreateFontCursor(d, XC_circle);
@@ -36,6 +42,8 @@ init_cursor()
     ud_arrow_cursor	= XCreateFontCursor(d, XC_sb_v_double_arrow);
     u_arrow_cursor	= XCreateFontCursor(d, XC_sb_up_arrow);
     d_arrow_cursor	= XCreateFontCursor(d, XC_sb_down_arrow);
+
+    cur_cursor		= arrow_cursor;  /* current cursor */
 }
 
 recolor_cursors()
@@ -62,19 +70,22 @@ recolor_cursors()
 
 reset_cursor()
 {
-    XDefineCursor(tool_d, canvas_win, cur_cursor);
+    XDefineCursor(tool_d, real_canvas, cur_cursor);
+    app_flush();
 }
 
 set_temp_cursor(cursor)
     Cursor	    cursor;
 {
-    XDefineCursor(tool_d, canvas_win, cursor);
+    XDefineCursor(tool_d, real_canvas, cursor);
+    app_flush();
 }
 
 set_cursor(cursor)
     Cursor	    cursor;
 {
     cur_cursor = cursor;
-    XDefineCursor(tool_d, canvas_win, cursor);
+    XDefineCursor(tool_d, real_canvas, cursor);
+    app_flush();
 }
 

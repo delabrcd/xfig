@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -115,7 +122,7 @@ update_cur_filename(newname)
 	XtUnmanageChild(name_panel);
 	strcpy(cur_filename,newname);
 
-
+	/* store the new filename in the name_panel widget */
 	FirstArg(XtNlabel, newname);
 	SetValues(name_panel);
 	/* get the new size of the name_panel */
@@ -138,11 +145,12 @@ update_cur_filename(newname)
 	SetValues(msg_form);
 	XtManageChild(msg_form);
 	/* put the filename being edited in the icon */
-	XSetIconName(tool_d, XtWindow(tool), basename(cur_filename));
+	XSetIconName(tool_d, tool_w, basename(cur_filename));
 }
 
 /* VARARGS1 */
-int put_msg(va_alist) va_dcl
+int
+put_msg(va_alist) va_dcl
 {
     va_list ap;
     char *format;
@@ -161,13 +169,14 @@ clear_message()
     SetValues(msg_panel);
 }
 
-boxsize_msg()
+boxsize_msg(fact)
+    int fact;
 {
     float dx, dy;
 
-    dx = (float) abs(cur_x - fix_x) /
+    dx = (float) fact * abs(cur_x - fix_x) /
 		(float)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
-    dy = (float) abs(cur_y - fix_y) /
+    dy = (float) fact * abs(cur_y - fix_y) /
 		(float)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
     put_msg("Width = %.2f, Length = %.2f %s",
 		dx*appres.user_scale, dy*appres.user_scale, cur_fig_units);
@@ -187,15 +196,19 @@ int type;
 altlength_msg(type, fx, fy)
 int type;
 {
-    float len,dx,dy;
+    float	len;
+    double	dx,dy;
 
-    dx = cur_x - fx;
-    dy = cur_y - fy;
-    len = (float)(sqrt((double)dx*(double)dx + (double)dy*(double)dy)/
-		(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM));
-    put_msg("%s = %.2f %s", (type==MSG_RADIUS? "Radius":
-                (type==MSG_DIAM? "Diameter": "Length")),
-		len*appres.user_scale, cur_fig_units);
+    dx = (cur_x - fx)/(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
+    dy = (cur_y - fy)/(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
+    len = (float)sqrt(dx*dx + dy*dy);
+    put_msg("%s = %.2f %s, x = %.2f %s, y = %.2f %s",
+		(type==MSG_RADIUS? "Radius":
+                  (type==MSG_DIAM? "Diameter":
+		  (type==MSG_LENGTH? "Length": "Distance"))),
+		len*appres.user_scale, cur_fig_units,
+		(float)dx*appres.user_scale, cur_fig_units,
+		(float)dy*appres.user_scale, cur_fig_units);
 }
 
 /*
@@ -207,19 +220,20 @@ int type;
 length_msg2(x1,y1,x2,y2,x3,y3)
 int x1,y1,x2,y2,x3,y3;
 {
-    float len1,len2,dx1,dy1,dx2,dy2;
+    float	len1,len2;
+    double	dx1,dy1,dx2,dy2;
 
     len1=len2=0.0;
     if (x1 != -999) {
 	    dx1 = x3 - x1;
 	    dy1 = y3 - y1;
-	    len1 = (float)(sqrt((double)dx1*(double)dx1 + (double)dy1*(double)dy1)/
+	    len1 = (float)(sqrt(dx1*dx1 + dy1*dy1)/
 		(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM));
     }
     if (x2 != -999) {
 	    dx2 = x3 - x2;
 	    dy2 = y3 - y2;
-	    len2 = (float)(sqrt((double)dx2*(double)dx2 + (double)dy2*(double)dy2)/
+	    len2 = (float)(sqrt(dx2*dx2 + dy2*dy2)/
 		(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM));
     }
     put_msg("Length 1 = %.2f, Length 2 = %.2f %s",

@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -22,11 +29,20 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-extern float	compute_angle();
+extern double	compute_angle();
+
+int	setcenter;
+int	setcenter_x;
+int	setcenter_y;
+int	setanchor;
+int	setanchor_x;
+int	setanchor_y;
 
 static int	copy;
 static int	rotn_dirn;
+static int	act_rotnangle;
 static int	init_rotate();
+static int	set_unset_center();
 static int	init_copynrotate();
 static int	rotate_selected();
 static int	rotate_search();
@@ -36,27 +52,65 @@ static int	init_rotatetext();
 rotate_cw_selected()
 {
     rotn_dirn = 1;
+    /* erase any existing center */
+    if (setcenter)
+	center_marker(setcenter_x, setcenter_y);
+    /* and any anchor */
+    if (setanchor)
+	center_marker(setanchor_x, setanchor_y);
+    setcenter = 0;
+    setanchor = 0;
     rotate_selected();
 }
 
 rotate_ccw_selected()
 {
     rotn_dirn = -1;
+    /* erase any existing center */
+    if (setcenter)
+	center_marker(setcenter_x, setcenter_y);
+    /* and any anchor */
+    if (setanchor)
+	center_marker(setanchor_x, setanchor_y);
+    setcenter = 0;
+    setanchor = 0;
     rotate_selected();
 }
 
 static
 rotate_selected()
 {
-    set_mousefun("rotate object", "copy & rotate", "");
+    set_mousefun("rotate object", "copy & rotate", "set center");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_rotate);
     init_searchproc_middle(init_copynrotate);
     canvas_leftbut_proc = object_search_left;
     canvas_middlebut_proc = object_search_middle;
-    canvas_rightbut_proc = null_proc;
+    canvas_rightbut_proc = set_unset_center;
     set_cursor(pick15_cursor);
+}
+
+static
+set_unset_center(x, y)
+    int		    x, y;
+{
+    if (setcenter) {
+      set_mousefun("rotate object", "copy & rotate", "set center");
+      draw_mousefun_canvas();
+      setcenter = 0;
+      center_marker(setcenter_x,setcenter_y);
+      /* second call to center_mark on same position deletes */
+    }
+    else {
+      set_mousefun("rotate object", "copy & rotate", "unset center");
+      draw_mousefun_canvas();
+      setcenter = 1;
+      setcenter_x = x;
+      setcenter_y = y;
+      center_marker(setcenter_x,setcenter_y);
+    }
+      
 }
 
 static
@@ -67,7 +121,12 @@ init_rotate(p, type, x, y, px, py)
     int		    px, py;
 {
     copy = 0;
-    rotate_search(p, type, x, y, px, py);
+    act_rotnangle = cur_rotnangle;
+    if (setcenter) 
+        rotate_search(p, type, x, y,setcenter_x,setcenter_y );
+      /* remember rotation center, e.g for multiple rotation*/
+    else
+        rotate_search(p, type, x, y, px, py);
 }
 
 static
@@ -77,8 +136,16 @@ init_copynrotate(p, type, x, y, px, py)
     int		    x, y;
     int		    px, py;
 {
+    int i;
     copy = 1;
-    rotate_search(p, type, x, y, px, py);
+    act_rotnangle = cur_rotnangle;
+    for ( i = 1; i <= cur_numcopies; act_rotnangle += cur_rotnangle, i++) {
+      if (setcenter) 
+	rotate_search(p, type, x, y,setcenter_x,setcenter_y );
+      /* remember rotation center */
+      else
+        rotate_search(p, type, x, y, px, py);
+    }
 }
 
 static
@@ -127,7 +194,7 @@ init_rotateline(l, px, py)
 
     set_temp_cursor(wait_cursor);
     line = copy_line(l);
-    rotate_line(line, px, py, rotn_dirn);
+    rotate_line(line, px, py);
     if (copy) {
 	add_line(line);
     } else {
@@ -135,6 +202,8 @@ init_rotateline(l, px, py)
 	draw_line(l, ERASE);
 	change_line(l, line);
     }
+    /* redisplay objects under this object before it was rotated */
+    redisplay_line(l);
     draw_line(line, PAINT);
     toggle_linemarker(line);
     reset_cursor();
@@ -149,7 +218,7 @@ init_rotatetext(t, px, py)
 
     set_temp_cursor(wait_cursor);
     text = copy_text(t);
-    rotate_text(text, px, py, rotn_dirn);
+    rotate_text(text, px, py);
     if (copy) {
 	add_text(text);
     } else {
@@ -157,6 +226,8 @@ init_rotatetext(t, px, py)
 	draw_text(t, ERASE);
 	change_text(t, text);
     }
+    /* redisplay objects under this object before it was rotated */
+    redisplay_text(t);
     draw_text(text, PAINT);
     toggle_textmarker(text);
     reset_cursor();
@@ -170,7 +241,7 @@ init_rotateellipse(e, px, py)
 
     set_temp_cursor(wait_cursor);
     ellipse = copy_ellipse(e);
-    rotate_ellipse(ellipse, px, py, rotn_dirn);
+    rotate_ellipse(ellipse, px, py);
     if (copy) {
 	add_ellipse(ellipse);
     } else {
@@ -178,6 +249,8 @@ init_rotateellipse(e, px, py)
 	draw_ellipse(e, ERASE);
 	change_ellipse(e, ellipse);
     }
+    /* redisplay objects under this object before it was rotated */
+    redisplay_ellipse(e);
     draw_ellipse(ellipse, PAINT);
     toggle_ellipsemarker(ellipse);
     reset_cursor();
@@ -191,7 +264,7 @@ init_rotatearc(a, px, py)
 
     set_temp_cursor(wait_cursor);
     arc = copy_arc(a);
-    rotate_arc(arc, px, py, rotn_dirn);
+    rotate_arc(arc, px, py);
     if (copy) {
 	add_arc(arc);
     } else {
@@ -199,6 +272,8 @@ init_rotatearc(a, px, py)
 	draw_arc(a, ERASE);
 	change_arc(a, arc);
     }
+    /* redisplay objects under this object before it was rotated */
+    redisplay_arc(a);
     draw_arc(arc, PAINT);
     toggle_arcmarker(arc);
     reset_cursor();
@@ -212,7 +287,7 @@ init_rotatespline(s, px, py)
 
     set_temp_cursor(wait_cursor);
     spline = copy_spline(s);
-    rotate_spline(spline, px, py, rotn_dirn);
+    rotate_spline(spline, px, py);
     if (copy) {
 	add_spline(spline);
     } else {
@@ -220,6 +295,8 @@ init_rotatespline(s, px, py)
 	draw_spline(s, ERASE);
 	change_spline(s, spline);
     }
+    /* redisplay objects under this object before it was rotated */
+    redisplay_spline(s);
     draw_spline(spline, PAINT);
     toggle_splinemarker(spline);
     reset_cursor();
@@ -235,10 +312,9 @@ init_rotatecompound(c, px, py)
 	put_msg("Invalid rotation angle for this compound object");
 	return;
     }
-
     set_temp_cursor(wait_cursor);
     compound = copy_compound(c);
-    rotate_compound(compound, px, py, rotn_dirn);
+    rotate_compound(compound, px, py);
     if (copy) {
 	add_compound(compound);
     } else {
@@ -246,20 +322,22 @@ init_rotatecompound(c, px, py)
 	draw_compoundelements(c, ERASE);
 	change_compound(c, compound);
     }
+    /* redisplay objects under this object before it was rotated */
+    redisplay_compound(c);
     draw_compoundelements(compound, PAINT);
     toggle_compoundmarker(compound);
     reset_cursor();
 }
 
-rotate_line(l, x, y, rotn_dirn)
+rotate_line(l, x, y)
     F_line	   *l;
-    int		    x, y, rotn_dirn;
+    int		    x, y;
 {
     F_point	   *p;
     int		    dx;
 
     /* for speed we treat 90 degrees as a special case */
-    if (cur_rotnangle == 90) {
+    if (act_rotnangle == 90) {
 	for (p = l->points; p != NULL; p = p->next) {
 	    dx = p->x - x;
 	    p->x = x + rotn_dirn * (y - p->y);
@@ -267,20 +345,20 @@ rotate_line(l, x, y, rotn_dirn)
 	}
     } else {
 	for (p = l->points; p != NULL; p = p->next)
-	    rotate_point(p, x, y, rotn_dirn);
+	    rotate_point(p, x, y);
     }
 }
 
-rotate_spline(s, x, y, rotn_dirn)
+rotate_spline(s, x, y)
     F_spline	   *s;
-    int		    x, y, rotn_dirn;
+    int		    x, y;
 {
     F_point	   *p;
     F_control	   *cp;
     int		    dx;
 
     /* for speed we treat 90 degrees as a special case */
-    if (cur_rotnangle == 90) {
+    if (act_rotnangle == 90) {
 	for (p = s->points; p != NULL; p = p->next) {
 	    dx = p->x - x;
 	    p->x = x + rotn_dirn * (y - p->y);
@@ -296,26 +374,26 @@ rotate_spline(s, x, y, rotn_dirn)
 	}
     } else {
 	for (p = s->points; p != NULL; p = p->next)
-	    rotate_point(p, x, y, rotn_dirn);
+	    rotate_point(p, x, y);
 	if (int_spline(s))
 	    remake_control_points(s);
     }
 }
 
-rotate_text(t, x, y, rotn_dirn)
+rotate_text(t, x, y)
     F_text	   *t;
-    int		    x, y, rotn_dirn;
+    int		    x, y;
 {
     int		    dx;
 
-    if (cur_rotnangle == 90) { /* treat 90 degs as special case for speed */
+    if (act_rotnangle == 90) { /* treat 90 degs as special case for speed */
 	dx = t->base_x - x;
 	t->base_x = x + rotn_dirn * (y - t->base_y);
 	t->base_y = y + rotn_dirn * dx;
     } else {
-	rotate_xy(&t->base_x, &t->base_y, x, y, rotn_dirn);
+	rotate_xy(&t->base_x, &t->base_y, x, y);
     }
-    t->angle -= (float) (rotn_dirn * cur_rotnangle * M_PI / 180.0);
+    t->angle -= (float) (rotn_dirn * act_rotnangle * M_PI / 180.0);
     if (t->angle < 0.0)
 	t->angle += M_2PI;
     else if (t->angle >= M_2PI - 0.001)
@@ -323,13 +401,13 @@ rotate_text(t, x, y, rotn_dirn)
     reload_text_fstruct(t);
 }
 
-rotate_ellipse(e, x, y, rotn_dirn)
+rotate_ellipse(e, x, y)
     F_ellipse	   *e;
-    int		    x, y, rotn_dirn;
+    int		    x, y;
 {
     int		    dxc,dxs,dxe;
 
-    if (cur_rotnangle == 90) { /* treat 90 degs as special case for speed */
+    if (act_rotnangle == 90) { /* treat 90 degs as special case for speed */
 	dxc = e->center.x - x;
 	dxs = e->start.x - x;
 	dxe = e->end.x - x;
@@ -340,27 +418,27 @@ rotate_ellipse(e, x, y, rotn_dirn)
 	e->end.x = x + rotn_dirn * (y - e->end.y);
 	e->end.y = y + rotn_dirn * dxe;
     } else {
-	rotate_point(&e->center, x, y, rotn_dirn);
-	rotate_point(&e->start, x, y, rotn_dirn);
-	rotate_point(&e->end, x, y, rotn_dirn);
+	rotate_point(&e->center, x, y);
+	rotate_point(&e->start, x, y);
+	rotate_point(&e->end, x, y);
     }
-    e->angle -= (float) (rotn_dirn * cur_rotnangle * M_PI / 180);
+    e->angle -= (float) (rotn_dirn * act_rotnangle * M_PI / 180);
     if (e->angle < 0.0)
 	e->angle += M_2PI;
     else if (e->angle >= M_2PI - 0.001)
 	e->angle -= M_2PI;
 }
 
-rotate_arc(a, x, y, rotn_dirn)
+rotate_arc(a, x, y)
     F_arc	   *a;
-    int		    x, y, rotn_dirn;
+    int		    x, y;
 {
     int		    dx;
     F_pos	    p[3];
     float	    xx, yy;
 
     /* for speed we treat 90 degrees as a special case */
-    if (cur_rotnangle == 90) {
+    if (act_rotnangle == 90) {
 	dx = a->center.x - x;
 	a->center.x = x + rotn_dirn * (y - a->center.y);
 	a->center.y = y + rotn_dirn * dx;
@@ -377,9 +455,9 @@ rotate_arc(a, x, y, rotn_dirn)
 	p[0] = a->point[0];
 	p[1] = a->point[1];
 	p[2] = a->point[2];
-	rotate_point(&p[0], x, y, rotn_dirn);
-	rotate_point(&p[1], x, y, rotn_dirn);
-	rotate_point(&p[2], x, y, rotn_dirn);
+	rotate_point(&p[0], x, y);
+	rotate_point(&p[1], x, y);
+	rotate_point(&p[2], x, y);
 	if (compute_arccenter(p[0], p[1], p[2], &xx, &yy)) {
 	    a->point[0].x = p[0].x;
 	    a->point[0].y = p[0].y;
@@ -394,7 +472,7 @@ rotate_arc(a, x, y, rotn_dirn)
     }
 }
 
-/* checks to see if the objects within c can be rotated by cur_rotnangle */
+/* checks to see if the objects within c can be rotated by act_rotnangle */
 
 valid_rot_angle(c)
     F_compound     *c;
@@ -402,7 +480,7 @@ valid_rot_angle(c)
     F_line         *l;
     F_compound     *c1;
 
-    if (cur_rotnangle == 90)
+    if (act_rotnangle == 90)
 	return 1; /* always valid */
     for (l = c->lines; l != NULL; l = l->next)
 	if (l->type == T_ARC_BOX || l->type == T_BOX)
@@ -413,9 +491,9 @@ valid_rot_angle(c)
     return 1;
 }
 
-rotate_compound(c, x, y, rotn_dirn)
+rotate_compound(c, x, y)
     F_compound	   *c;
-    int		    x, y, rotn_dirn;
+    int		    x, y;
 {
     F_line	   *l;
     F_arc	   *a;
@@ -425,17 +503,17 @@ rotate_compound(c, x, y, rotn_dirn)
     F_compound	   *c1;
 
     for (l = c->lines; l != NULL; l = l->next)
-	rotate_line(l, x, y, rotn_dirn);
+	rotate_line(l, x, y);
     for (a = c->arcs; a != NULL; a = a->next)
-	rotate_arc(a, x, y, rotn_dirn);
+	rotate_arc(a, x, y);
     for (e = c->ellipses; e != NULL; e = e->next)
-	rotate_ellipse(e, x, y, rotn_dirn);
+	rotate_ellipse(e, x, y);
     for (s = c->splines; s != NULL; s = s->next)
-	rotate_spline(s, x, y, rotn_dirn);
+	rotate_spline(s, x, y);
     for (t = c->texts; t != NULL; t = t->next)
-	rotate_text(t, x, y, rotn_dirn);
+	rotate_text(t, x, y);
     for (c1 = c->compounds; c1 != NULL; c1 = c1->next)
-	rotate_compound(c1, x, y, rotn_dirn);
+	rotate_compound(c1, x, y);
 
     /*
      * Make the bounding box exactly match the dimensions of the compound.
@@ -444,53 +522,53 @@ rotate_compound(c, x, y, rotn_dirn)
 		   &c->secorner.x, &c->secorner.y);
 }
 
-rotate_point(p, x, y, rotn)
+rotate_point(p, x, y)
     F_point	   *p;
-    int		    x, y, rotn;
+    int		    x, y;
 {
     /* rotate point p about coordinate (x, y) */
-    int		    dx, dy;
-    float	    cosa, sina, mag, theta;
+    double	    dx, dy;
+    double	    cosa, sina, mag, theta;
 
     dx = p->x - x;
     dy = y - p->y;
     if (dx == 0 && dy == 0)
 	return;
 
-    theta = compute_angle((float) dx, (float) dy);
-    theta -= (float) (rotn_dirn * cur_rotnangle * M_PI / 180.0);
+    theta = compute_angle(dx, dy);
+    theta -= (double) (rotn_dirn * act_rotnangle * M_PI / 180.0);
     if (theta < 0.0)
 	theta += M_2PI;
     else if (theta >= M_2PI - 0.001)
 	theta -= M_2PI;
-    mag = sqrt((double) (dx * dx + dy * dy));
-    cosa = mag * cos((double) theta);
-    sina = mag * sin((double) theta);
-    p->x = x + cosa;
-    p->y = y - sina;
+    mag = sqrt(dx * dx + dy * dy);
+    cosa = mag * cos(theta);
+    sina = mag * sin(theta);
+    p->x = round(x + cosa);
+    p->y = round(y - sina);
 }
 
-rotate_xy(orig_x, orig_y, x, y, rotn)
-    int             *orig_x, *orig_y, x, y, rotn;
+rotate_xy(orig_x, orig_y, x, y)
+    int             *orig_x, *orig_y, x, y;
 {
     /* rotate coord (orig_x, orig_y) about coordinate (x, y) */
-    int             dx, dy;
-    float           cosa, sina, mag, theta;
+    double	    dx, dy;
+    double	    cosa, sina, mag, theta;
 
     dx = *orig_x - x;
     dy = y - *orig_y;
     if (dx == 0 && dy == 0)
 	return;
 
-    theta = compute_angle((float) dx, (float) dy);
-    theta -= (float) (rotn_dirn * cur_rotnangle * M_PI / 180.0);
+    theta = compute_angle(dx, dy);
+    theta -= (double) (rotn_dirn * cur_rotnangle * M_PI / 180.0);
     if (theta < 0.0)
 	theta += M_2PI;
     else if (theta >= M_2PI - 0.001)
 	theta -= M_2PI;
-    mag = sqrt((double) (dx * dx + dy * dy));
-    cosa = mag * cos((double) theta);
-    sina = mag * sin((double) theta);
-    *orig_x = x + cosa;
-    *orig_y = y - sina;
+    mag = sqrt(dx * dx + dy * dy);
+    cosa = mag * cos(theta);
+    sina = mag * sin(theta);
+    *orig_x = round(x + cosa);
+    *orig_y = round(y - sina);
 }

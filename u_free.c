@@ -1,18 +1,32 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
 #include "resources.h"
 #include "object.h"
+#include "u_fonts.h"
+
+extern struct _xfstruct x_fontinfo[];	/* X11 fontnames */
+extern PIX_FONT	bold_font;
+extern PIX_FONT	roman_font;
+extern PIX_FONT	button_font;
+extern PIX_FONT	canvas_font;
 
 free_arc(list)
     F_arc	  **list;
@@ -128,12 +142,12 @@ free_linestorage(l)
 	free((char *) l->for_arrow);
     if (l->back_arrow)
 	free((char *) l->back_arrow);
-    if (l->eps) {
-	if (l->eps->bitmap)
-	    free((char *) l->eps->bitmap);
-	if (l->eps->pixmap != 0)
-	    XFreePixmap(tool_d, l->eps->pixmap);
-	free((char *) l->eps);
+    if (l->pic) {
+	if (l->pic->bitmap)
+	    free((unsigned char *) l->pic->bitmap);
+	if (l->pic->pixmap != 0)
+	    XFreePixmap(tool_d, l->pic->pixmap);
+	free((char *) l->pic);
     }
     free((char *) l);
 }
@@ -166,11 +180,18 @@ free_linkinfo(list)
 
 free_GCs()
 	{
-	int i;
-
+#ifdef USE_XPM
+	/* free any colors from the xfig xpm icon (if used) */
+	if (xfig_icon_attr.npixels > 0) {
+	    XFreeColors(tool_d, tool_cm, 
+			xfig_icon_attr.pixels, xfig_icon_attr.npixels,
+			(unsigned long) 0);
+	}
+#endif /* USE_XPM */
 	XFreeGC(tool_d, gc);
 	XFreeGC(tool_d, button_gc);
-	XFreeGC(tool_d, color_gc);
+	XFreeGC(tool_d, fill_color_gc);
+	XFreeGC(tool_d, pen_color_gc);
 	XFreeGC(tool_d, ind_button_gc);
 	XFreeGC(tool_d, ind_blank_gc);
 	XFreeGC(tool_d, blank_gc);
@@ -181,6 +202,31 @@ free_GCs()
 	XFreeGC(tool_d, tr_xor_gc);
 	XFreeGC(tool_d, sr_gc);
 	XFreeGC(tool_d, sr_erase_gc);
+}
+/* free up all the Fonts before leaving xfig */
+
+free_Fonts()
+{
+  int i;
+  struct xfont   *nf;
+
+
+  for (i=0; i<NUM_FONTS; i++) {
+    for (nf = x_fontinfo[i].xfontlist; nf != NULL;) {
+      XUnloadFont(tool_d, nf->fid);
+      XFreeFont(tool_d, nf->fstruct); 
+      nf = nf->next;
+    } 
+  }
+  if (bold_font!=NULL) {
+    XFreeFont(tool_d, bold_font); 
+  }
+  if (roman_font!=NULL) {
+    XFreeFont(tool_d, roman_font); 
+  };
+  if (button_font!=NULL) {
+    XFreeFont(tool_d, button_font); 
+  };
 	XFreeGC(tool_d, sr_xor_gc);
 
 	for (i=0; i<NUMOPS; i++) {
@@ -188,6 +234,5 @@ free_GCs()
 	}
 	for (i=0; i<NUMFILLPATS; i++) {
 		XFreeGC(tool_d, fill_gc[i]);
-		XFreeGC(tool_d, un_fill_gc[i]);
 	}
 }

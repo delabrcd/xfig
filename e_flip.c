@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -22,10 +29,18 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
+int	setanchor;
+int	setanchor_x;
+int	setanchor_y;
+int	setcenter;
+int	setcenter_x;
+int	setcenter_y;
+
 static int	flip_axis;
 static int	copy;
 static int	init_flip();
 static int	init_copynflip();
+static int	set_unset_anchor();
 static int	init_fliparc();
 static int	init_flipcompound();
 static int	init_flipellipse();
@@ -37,27 +52,65 @@ static int	flip_search();
 flip_ud_selected()
 {
     flip_axis = UD_FLIP;
+    /* erase any existing anchor */
+    if (setanchor)
+	center_marker(setanchor_x, setanchor_y);
+    /* and any center */
+    if (setcenter)
+	center_marker(setcenter_x, setcenter_y);
+    setcenter = 0;
+    setanchor = 0;
     flip_selected();
 }
 
 flip_lr_selected()
 {
     flip_axis = LR_FLIP;
+    /* erase any existing anchor */
+    if (setanchor)
+	center_marker(setanchor_x, setanchor_y);
+    /* and any center */
+    if (setcenter)
+	center_marker(setcenter_x, setcenter_y);
+    setcenter = 0;
+    setanchor = 0;
     flip_selected();
 }
 
 static
 flip_selected()
 {
-    set_mousefun("flip", "copy & flip", "");
+    set_mousefun("flip", "copy & flip", "set anchor");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_flip);
     init_searchproc_middle(init_copynflip);
     canvas_leftbut_proc = object_search_left;
     canvas_middlebut_proc = object_search_middle;
-    canvas_rightbut_proc = null_proc;
+    canvas_rightbut_proc = set_unset_anchor;
     set_cursor(pick15_cursor);
+}
+
+static
+set_unset_anchor(x, y)
+    int		    x, y;
+{
+    if (setanchor) {
+      set_mousefun("flip", "copy & flip", "set anchor");
+      draw_mousefun_canvas();
+      setanchor = 0;
+      center_marker(setanchor_x,setanchor_y);
+      /* second call to center_mark on same position deletes */
+    }
+    else {
+      set_mousefun("flip", "copy & flip", "unset anchor");
+      draw_mousefun_canvas();
+      setanchor = 1;
+      setanchor_x = x;
+      setanchor_y = y;
+      center_marker(setanchor_x,setanchor_y);
+    }
+      
 }
 
 static
@@ -68,6 +121,10 @@ init_flip(p, type, x, y, px, py)
     int		    px, py;
 {
     copy = 0;
+    if (setanchor) 
+      flip_search(p, type, x, y,setanchor_x,setanchor_y );
+      /* remember rotation center, e.g for multiple rotation*/
+    else
     flip_search(p, type, x, y, px, py);
 }
 
@@ -79,6 +136,10 @@ init_copynflip(p, type, x, y, px, py)
     int		    px, py;
 {
     copy = 1;
+    if (setanchor) 
+      flip_search(p, type, x, y,setanchor_x,setanchor_y );
+      /* remember rotation center, e.g for multiple rotation*/
+    else
     flip_search(p, type, x, y, px, py);
 }
 
@@ -234,8 +295,8 @@ flip_line(l, x, y, flip_axis)
 	    p->x = x + (x - p->x);
 	break;
     }
-    if (l->type == T_EPS_BOX)
-	l->eps->flipped = 1 - l->eps->flipped;
+    if (l->type == T_PIC_BOX)
+	l->pic->flipped = 1 - l->pic->flipped;
 }
 
 flip_spline(s, x, y, flip_axis)

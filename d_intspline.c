@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -68,14 +75,16 @@ create_intsplineobject(x, y)
     spline->style = cur_linestyle;
     spline->thickness = cur_linewidth;
     spline->style_val = cur_styleval * (cur_linewidth + 1) / 2;
-    spline->color = cur_color;
+    spline->pen_color = cur_pencolor;
+    spline->fill_color = cur_fillcolor;
+    spline->cap_style = cur_capstyle;
     spline->depth = cur_depth;
     spline->fill_style = cur_fillstyle;
     /*
      * The current fill style is saved in all intspline objects (but support
      * for filling may not be available in all fig2dev languages).
      */
-    spline->pen = 0;
+    spline->pen_style = 0;
     spline->points = first_point;
     spline->controls = NULL;
     spline->next = NULL;
@@ -97,12 +106,6 @@ create_intsplineobject(x, y)
     }
     make_control_points(spline);
     draw_intspline(spline, PAINT);
-    if (appres.DEBUG) {
-	int		xmin, ymin, xmax, ymax;
-
-	spline_bound(spline, &xmin, &ymin, &xmax, &ymax);
-	elastic_box(xmin, ymin, xmax, ymax);
-    }
     add_spline(spline);
     intspline_drawing_selected();
     draw_mousefun_canvas();
@@ -159,9 +162,9 @@ compute_cp(points, controls, path)
 {
     F_control	   *cp, *cpn;
     F_point	   *p, *p2, *pk;/* Pk is the next-to-last point. */
-    float	    dx, dy;
-    float	    x1, y1, x2, y2, x3, y3;
-    float	    l1, l2, theta1, theta2;
+    double	    dx, dy;
+    double	    x1, y1, x2, y2, x3, y3;
+    double	    l1, l2, theta1, theta2;
 
     x1 = points->x;
     y1 = points->y;
@@ -174,18 +177,18 @@ compute_cp(points, controls, path)
 
     dx = x1 - x2;
     dy = y2 - y1;
-    l1 = sqrt((double) (dx * dx + dy * dy));
+    l1 = sqrt(dx * dx + dy * dy);
     if (l1 == 0.0)
 	theta1 = 0.0;
     else
-	theta1 = atan2((double) dy, (double) dx);
+	theta1 = atan2(dy, dx);
     dx = x3 - x2;
     dy = y2 - y3;
-    l2 = sqrt((double) (dx * dx + dy * dy));
+    l2 = sqrt(dx * dx + dy * dy);
     if (l2 == 0.0)
 	theta2 = 0.0;
     else
-	theta2 = atan2((double) dy, (double) dx);
+	theta2 = atan2(dy, dx);
     /* -PI <= theta1, theta2 <= PI */
     if (theta1 < 0)
 	theta1 += _2xPI;
@@ -219,11 +222,11 @@ compute_cp(points, controls, path)
 	y3 = p->y;
 	dx = x3 - x2;
 	dy = y2 - y3;
-	l2 = sqrt((double) (dx * dx + dy * dy));
+	l2 = sqrt(dx * dx + dy * dy);
 	if (l2 == 0.0)
 	    theta2 = 0.0;
 	else
-	    theta2 = atan2((double) dy, (double) dx);
+	    theta2 = atan2(dy, dx);
 	if (theta2 < 0)
 	    theta2 += _2xPI;
 	cp = cp->next;
@@ -233,8 +236,8 @@ compute_cp(points, controls, path)
     if (path == CLOSED_PATH) {
 	dx = p2->x - x2;
 	dy = y2 - p2->y;
-	l2 = sqrt((double) (dx * dx + dy * dy));
-	theta2 = atan2((double) dy, (double) dx);
+	l2 = sqrt(dx * dx + dy * dy);
+	theta2 = atan2(dy, dx);
 	if (theta2 < 0)
 	    theta2 += _2xPI;
 	cp = cp->next;
@@ -263,18 +266,18 @@ control_points(x, y, l1, l2, theta1, theta2, t, cp)
     float	    x, y, l1, l2, theta1, theta2, t;
     F_control	   *cp;
 {
-    float	    s, theta, r = 1 - t;
+    double	    s, theta, r = 1 - t;
 
     /* 0 <= theta1, theta2 < 2PI */
 
     theta = (theta1 + theta2) / 2;
 
     if (theta1 > theta2) {
-	s = sin((double) (theta - theta2));
+	s = sin(theta - theta2);
 	theta1 = theta + M_PI_2;
 	theta2 = theta - M_PI_2;
     } else {
-	s = sin((double) (theta2 - theta));
+	s = sin(theta2 - theta);
 	theta1 = theta - M_PI_2;
 	theta2 = theta + M_PI_2;
     }
@@ -283,8 +286,8 @@ control_points(x, y, l1, l2, theta1, theta2, t, cp)
     s *= r;
     l1 *= s;
     l2 *= s;
-    cp->lx = x + l1 * cos((double) theta1);
-    cp->ly = y - l1 * sin((double) theta1);
-    cp->rx = x + l2 * cos((double) theta2);
-    cp->ry = y - l2 * sin((double) theta2);
+    cp->lx = x + l1 * cos(theta1);
+    cp->ly = y - l1 * sin(theta1);
+    cp->rx = x + l2 * cos(theta2);
+    cp->ry = y - l2 * sin(theta2);
 }

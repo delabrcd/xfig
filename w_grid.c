@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -23,8 +30,8 @@
 #define null_width 32
 #define null_height 32
 
-#define MMTOPIX 3
-#define IN16TOPIX 5
+#define MMTOPIX   3*ZOOM_FACTOR
+#define IN16TOPIX 5*ZOOM_FACTOR
 
 static char	null_bits[null_width * null_height / 8] = {0};
 
@@ -46,33 +53,39 @@ init_grid()
     }
 
     if (appres.INCHES) {
-	posn_rnd[P_MAGNET] = 5; /* 1 x 1/8" */
-	posn_hlf[P_MAGNET] = 3;
-	posn_rnd[P_GRID1] = 20; /* 4 x 1/8" */
-	posn_hlf[P_GRID1] = 10;
-	posn_rnd[P_GRID2] = 40; /* 8 x 1/8" */
-	posn_hlf[P_GRID2] = 20;
-	grid_name[P_MAGNET] = "1/16 in";
-	grid_name[P_GRID1] = "1/4 in";
-	grid_name[P_GRID2] = "1/2 in";
-	grid_fine[P_GRID1] = 1 * IN16TOPIX;	/* 1 x 1/16" */
-	grid_coarse[P_GRID1] = 4 * IN16TOPIX;	/* 4 x 1/16" */
-	grid_fine[P_GRID2] = 1 * IN16TOPIX;	/* 1 x 1/16" */
-	grid_coarse[P_GRID2] = 8 * IN16TOPIX;	/* 8 x 1/16" */
+	posn_rnd[P_MAGNET] = 5*ZOOM_FACTOR; /* 1 x 1/8" */
+	posn_hlf[P_MAGNET] = 3*ZOOM_FACTOR;
+	posn_rnd[P_GRID1] = 20*ZOOM_FACTOR; /* 4 x 1/8" */
+	posn_hlf[P_GRID1] = 10*ZOOM_FACTOR;
+	posn_rnd[P_GRID2] = 40*ZOOM_FACTOR; /* 8 x 1/8" */
+	posn_hlf[P_GRID2] = 20*ZOOM_FACTOR;
+	grid_name[P_MAGNET] = "1/16 in";	/* only used for points positioning */
+	grid_name[GRID_1] = "1/4 in";
+	grid_name[GRID_2] = "1/2 in";
+	grid_name[GRID_3] = "1 in";
+	grid_fine[GRID_1] = 1 * IN16TOPIX;	/* 1 x 1/16" */
+	grid_coarse[GRID_1] = 4 * IN16TOPIX;	/* 4 x 1/16" */
+	grid_fine[GRID_2] = 1 * IN16TOPIX;	/* 1 x 1/16" */
+	grid_coarse[GRID_2] = 8 * IN16TOPIX;	/* 8 x 1/16" */
+	grid_fine[GRID_3] = 2 * IN16TOPIX;	/* 2 x 1/16" */
+	grid_coarse[GRID_3] = 16 * IN16TOPIX;	/* 16 x 1/16" */
     } else {
-	posn_rnd[P_MAGNET] = 3; /* 1 mm */
-	posn_hlf[P_MAGNET] = 2;
-	posn_rnd[P_GRID1] = 15; /* 5 mm */
-	posn_hlf[P_GRID1] = 7;
-	posn_rnd[P_GRID2] = 30; /* 10 mm */
-	posn_hlf[P_GRID2] = 15;
-	grid_name[P_MAGNET] = "1 mm";
-	grid_name[P_GRID1] = "5 mm";
-	grid_name[P_GRID2] = "10 mm";
-	grid_fine[P_GRID1] = 1 * MMTOPIX;	/* 1 mm */
-	grid_coarse[P_GRID1] = 5 * MMTOPIX;	/* 5 mm */
-	grid_fine[P_GRID2] = 2 * MMTOPIX;	/* 2 mm */
-	grid_coarse[P_GRID2] = 10 * MMTOPIX;	/* 10 mm */
+	posn_rnd[P_MAGNET] = 3*ZOOM_FACTOR; /* 1 mm */
+	posn_hlf[P_MAGNET] = 2*ZOOM_FACTOR;
+	posn_rnd[P_GRID1] = 15*ZOOM_FACTOR; /* 5 mm */
+	posn_hlf[P_GRID1] = 7*ZOOM_FACTOR;
+	posn_rnd[P_GRID2] = 30*ZOOM_FACTOR; /* 10 mm */
+	posn_hlf[P_GRID2] = 15*ZOOM_FACTOR;
+	grid_name[P_MAGNET] = "1 mm";		/* only used for points positioning */
+	grid_name[GRID_1] = "5 mm";
+	grid_name[GRID_2] = "10 mm";
+	grid_name[GRID_3] = "20 mm";
+	grid_fine[GRID_1] = 1 * MMTOPIX;	/* 1 mm */
+	grid_coarse[GRID_1] = 5 * MMTOPIX;	/* 5 mm */
+	grid_fine[GRID_2] = 2 * MMTOPIX;	/* 2 mm */
+	grid_coarse[GRID_2] = 10 * MMTOPIX;	/* 10 mm */
+	grid_fine[GRID_3] = 5 * MMTOPIX;	/* 2 mm */
+	grid_coarse[GRID_3] = 20 * MMTOPIX;	/* 10 mm */
     }
 }
 
@@ -91,12 +104,12 @@ setup_grid(grid)
     if (grid == GRID_0) {
 	FirstArg(XtNbackgroundPixmap, null_pm);
     } else {
-	if (grid == GRID_1) {
-	    coarse = grid_coarse[P_GRID1] * zoomscale;
-	    fine = grid_fine[P_GRID1] * zoomscale;
-	} else {
-	    coarse = grid_coarse[P_GRID2] * zoomscale;
-	    fine = grid_fine[P_GRID2] * zoomscale;
+	coarse = grid_coarse[grid] * zoomscale;
+	fine = grid_fine[grid] * zoomscale;
+	/* if zoom is small, use larger grid */
+	while (coarse < 8 && ++grid <= GRID_3) {
+	    coarse = grid_coarse[grid] * zoomscale;
+	    fine = grid_fine[grid] * zoomscale;
 	}
 
 	if (coarse==0.0 && fine==0.0) { /* grid values both zero */
@@ -116,11 +129,11 @@ setup_grid(grid)
 	XSetForeground(tool_d, gc, bg);
 	XFillRectangle(tool_d, grid_pm, gc, 0, 0, dim, dim);
 	XSetForeground(tool_d, gc, fg);
-	x0c = round(-round(zoomscale * zoomxoff) % round(coarse) - zoomscale);
-	y0c = round(-round(zoomscale * zoomyoff) % round(coarse) - zoomscale);
+	x0c = -fmod(zoomscale * zoomxoff, coarse)-round(display_zoomscale);
+	y0c = -fmod(zoomscale * zoomyoff, coarse)-round(display_zoomscale);
 	if (fine != 0.0) {
-	    x0f = round(-round(zoomscale * zoomxoff) % round(fine) - zoomscale);
-	    y0f = round(-round(zoomscale * zoomyoff) % round(fine) - zoomscale);
+	    x0f = -fmod(zoomscale * zoomxoff, fine)-round(display_zoomscale);
+	    y0f = -fmod(zoomscale * zoomyoff, fine)-round(display_zoomscale);
 	    for (x = x0c; x < dim; x += coarse)
 		for (y = y0f; y < dim; y += fine)
 		    {

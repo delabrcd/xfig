@@ -1,22 +1,52 @@
 ! some sample settings you may want to change
 
 Fig.internalborderwidth:	2
-Fig.geometry:			+0+0
-Fig.iconX:			+0
-Fig.iconY:			-0
+! font for the buttons
+Fig.buttonFont:			6x13
+! font for the rulers and message window
+Fig.normalFont:			6x13
+! font for the file name and popup query widgets
+Fig.boldFont:			8x13bold
+
 ! the following should fix the problem that some have had with
 ! their window manager fighting with xfig over the geometry
 Fig*allowShellResize:		False
-! pick a nice font for the popup edit window for text objects
-Fig*Text_text*font:		-*-times-medium-r-normal--14-*
+
 ! filename mask for the file popup browser
 Fig*file_panel*mask*string:	*.fig
+
+! default export language
+Fig.exportLanguage:		eps
+
 ! filename mask for the export popup browser
 Fig*export_panel*mask*string:	*ps
+
 ! printer name
 ! If the following resource is NOT set, xfig will use the PRINTER 
 ! shell environment variable for the printer name
 !Fig*printer*string:		ps
+
+! Set the maximum number of colors to use for color images (EPS,GIF,XPM)
+! xfig will try to install a private colormap if needed to get this
+! nubmer of colors UNLESS -dontswitchcmap (resource Fig.dont_switch_cmap)
+! is set.
+Fig.max_image_colors:		64
+
+! If you are using the 3d Athena widget set (which looks very nice)
+! and you want the scrollbars to be 3d (even though they look funny)
+! then comment out the following four resources.
+Fig*horizontal.shadowWidth: 0
+Fig*horizontal.topShadow: black
+Fig*horizontal.bottomShadow: white
+! the following is done so the widget set doesn't try to make shades of
+! the scrollbar shadows (even though the width is 0 it takes more colors)
+Fig*Scrollbar.shadowWidth: 0
+Fig*Scrollbar.topShadow: black
+Fig*Scrollbar.bottomShadow: white
+! this is for the standard color buttons in the color panel
+Fig*stdColor.shadowWidth: 0
+Fig*stdColor.topShadow: black
+Fig*stdColor.bottomShadow: white
 
 ! make the F20 key paste text in the canvas
 Fig*translations: #override \n\
@@ -28,14 +58,6 @@ Fig*translations: #override \n\
 !
 !Fig*ComposeKeyDB:	~/.xfig.Compose-key
 
-! let's make these buttons oval in the edit panel
-Fig.xfig_edit_panel*done.label:		Done
-Fig.xfig_edit_panel*done.ShapeStyle:	oval
-Fig.xfig_edit_panel*apply.label:	Apply
-Fig.xfig_edit_panel*apply.ShapeStyle:	oval
-Fig.xfig_edit_panel*cancel.label:	Cancel
-Fig.xfig_edit_panel*cancel.ShapeStyle:	oval
-
 ! keyboard accelerators
 
 
@@ -43,6 +65,8 @@ Fig*quit*accelerators: \
 	Meta<Key>q: quit()\n
 Fig*delete_all*accelerators: \
 	Meta<Key>d: delete_all()\n
+Fig*orient*accelerators: \
+	Meta<Key>o: orient()\n
 Fig*undo*accelerators: \
 	Meta<Key>u: undo()\n
 Fig*redraw*accelerators: \
@@ -54,7 +78,7 @@ Fig*file*accelerators: \
 	Meta<Key>s: SaveFile()\n\
 	Meta<Key>l: LoadFile()\n\
 	Meta<Key>f: file()\n
-Fig*xfig_file_menu*accelerators: \
+Fig*file_menu*accelerators: \
 	Meta<Key>c: cancel()\n\
 	Meta<Key>l: load()\n\
 	Meta<Key>m: merge()\n\
@@ -62,21 +86,24 @@ Fig*xfig_file_menu*accelerators: \
 	Meta<Key>s: save()\n
 Fig*export*accelerators: \
 	Meta<Key>e: export()\n
-Fig*xfig_export_menu*accelerators: \
+Fig*export_menu*accelerators: \
 	Meta<Key>c: cancel()\n\
 	Meta<Key>e: export()\n\
 	Meta<Key>r: rescan()\n
 Fig*print*accelerators: \
 	Meta<Key>p: print()\n
-Fig*xfig_print_menu*accelerators: \
+Fig*print_menu*accelerators: \
 	Meta<Key>d: dismiss()\n\
 	Meta<Key>b: print_batch()\n\
 	Meta<Key>x: clear_batch()\n\
 	<Key>Return: print()\n\
 	Meta<Key>p: print()\n
-Fig*xfig_set_unit_panel*accelerators: \
+Fig*set_unit_panel*accelerators: \
 	Meta<Key>c: QuitUnits()\n\
 	Meta<Key>s: SetUnits()\n
+Fig*ind_panel*accelerators: \
+	Shift<Key>Z: ZoomIn()\n\
+	<Key>z: ZoomOut()\n
 Fig*mode_panel*accelerators: \
 	None<Key>m: ModeMoveObject()\n\
 	Ctrl<Key>c: ModeCopyObject()\n\
@@ -104,7 +131,7 @@ Fig*mode_panel*accelerators: \
 	Shift<Key>b: ModeArcBox()\n\
 	None<Key>p: ModePoly()\n\
 	Shift<Key>p: ModeRegPoly()\n\
-	Ctrl<Key>p: ModeEPS()\n\
+	Ctrl<Key>p: ModePIC()\n\
 	None<Key>r: ModeArc()\n\
 	None<Key>s: ModeSpline()\n\
 	Shift<Key>s: ModeClSpline()\n\

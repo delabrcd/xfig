@@ -1,5 +1,20 @@
 /* This file is part of xdir, an X-based directory browser.
  *
+ * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ *
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
+ *
  *	Created: 13 Aug 88
  *
  *	Win Treese
@@ -30,7 +45,6 @@
  * used in advertising or publicity pertaining to distribution of the
  * software without specific, written prior permission.
  *
- *	Modified: 4 Dec 91 - Paul King (king@cs.uq.oz.au)
  */
 
 /* From the C library. */

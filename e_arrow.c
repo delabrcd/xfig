@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -96,7 +103,7 @@ add_linearrow(line, prev_point, selected_point)
 	mask_toggle_linemarker(line);
 	draw_arrow(selected_point->next->x, selected_point->next->y,
 		   selected_point->x, selected_point->y, line->back_arrow,
-		   PAINT, line->color);
+		   PAINT, line->pen_color);
 	mask_toggle_linemarker(line);
     } else if (selected_point->next == NULL) {	/* forward arrow */
 	if (line->for_arrow)
@@ -104,7 +111,8 @@ add_linearrow(line, prev_point, selected_point)
 	line->for_arrow = forward_arrow();
 	mask_toggle_linemarker(line);
 	draw_arrow(prev_point->x, prev_point->y, selected_point->x,
-		   selected_point->y, line->for_arrow, PAINT, line->color);
+		   selected_point->y, line->for_arrow, 
+		   PAINT, line->pen_color);
 	mask_toggle_linemarker(line);
     } else
 	return;
@@ -121,6 +129,8 @@ add_arcarrow(arc, point_num)
     int		    point_num;
 {
 
+    if (arc->type == T_PIE_WEDGE_ARC)
+	return;;
     if (point_num == 0) {	/* backward arrow  */
 	if (arc->back_arrow)
 	    return;
@@ -160,12 +170,12 @@ add_splinearrow(spline, prev_point, selected_point)
 	if (normal_spline(spline)) {
 	    draw_arrow(p->x, p->y, selected_point->x,
 		       selected_point->y, spline->back_arrow, PAINT,
-		       spline->color);
+		       spline->pen_color);
 	} else {
 	    c = spline->controls;
 	    draw_arrow(round(c->rx), round(c->ry), selected_point->x,
 		       selected_point->y, spline->back_arrow, PAINT,
-		       spline->color);
+		       spline->pen_color);
 	}
 	mask_toggle_splinemarker(spline);
     } else if (selected_point->next == NULL) {	/* add forward arrow */
@@ -177,12 +187,12 @@ add_splinearrow(spline, prev_point, selected_point)
 	    draw_arrow(prev_point->x, prev_point->y,
 		       selected_point->x, selected_point->y,
 		       spline->for_arrow, PAINT,
-		       spline->color);
+		       spline->pen_color);
 	} else {
 	    for (c = spline->controls; c->next != NULL; c = c->next);
 	    draw_arrow(round(c->lx), round(c->ly), selected_point->x,
 		       selected_point->y, spline->for_arrow, PAINT,
-		       spline->color);
+		       spline->pen_color);
 	}
 	mask_toggle_splinemarker(spline);
     }
@@ -207,7 +217,7 @@ delete_linearrow(line, prev_point, selected_point)
 	mask_toggle_linemarker(line);
 	draw_arrow(selected_point->next->x, selected_point->next->y,
 	      selected_point->x, selected_point->y, line->back_arrow, ERASE,
-		   line->color);
+		   line->pen_color);
 	free((char *) line->back_arrow);
 	line->back_arrow = NULL;
 	draw_line(line, PAINT);
@@ -218,7 +228,7 @@ delete_linearrow(line, prev_point, selected_point)
 	mask_toggle_linemarker(line);
 	draw_arrow(prev_point->x, prev_point->y, selected_point->x,
 		   selected_point->y, line->for_arrow, ERASE,
-		   line->color);
+		   line->pen_color);
 	free((char *) line->for_arrow);
 	line->for_arrow = NULL;
 	draw_line(line, PAINT);
@@ -237,6 +247,8 @@ delete_arcarrow(arc, point_num)
     F_arc	   *arc;
     int		    point_num;
 {
+    if (arc->type == T_PIE_WEDGE_ARC)
+	return;;
     if (point_num == 0) {	/* backward arrow  */
 	if (!arc->back_arrow)
 	    return;
@@ -280,7 +292,7 @@ delete_splinearrow(spline, prev_point, selected_point)
 	if (normal_spline(spline)) {
 	    draw_arrow(p->x, p->y, selected_point->x,
 		       selected_point->y, spline->back_arrow, ERASE,
-		       spline->color);
+		       spline->pen_color);
 	    free((char *) spline->back_arrow);
 	    spline->back_arrow = NULL;
 	    draw_spline(spline, PAINT);
@@ -290,7 +302,7 @@ delete_splinearrow(spline, prev_point, selected_point)
 	    a = spline->controls;
 	    draw_arrow(round(a->rx), round(a->ry), selected_point->x,
 		       selected_point->y, spline->back_arrow, ERASE,
-		       spline->color);
+		       spline->pen_color);
 	    free((char *) spline->back_arrow);
 	    spline->back_arrow = NULL;
 	    draw_spline(spline, PAINT);
@@ -304,7 +316,7 @@ delete_splinearrow(spline, prev_point, selected_point)
 	    draw_arrow(prev_point->x, prev_point->y,
 		       selected_point->x, selected_point->y,
 		       spline->for_arrow, ERASE,
-		       spline->color);
+		       spline->pen_color);
 	    free((char *) spline->for_arrow);
 	    spline->for_arrow = NULL;
 	    draw_spline(spline, PAINT);
@@ -315,7 +327,7 @@ delete_splinearrow(spline, prev_point, selected_point)
 	    for (b = a->next; b->next != NULL; a = b, b = b->next);
 	    draw_arrow(round(b->lx), round(b->ly), selected_point->x,
 		       selected_point->y, spline->for_arrow, ERASE,
-		       spline->color);
+		       spline->pen_color);
 	    free((char *) spline->for_arrow);
 	    spline->for_arrow = NULL;
 	    draw_spline(spline, PAINT);

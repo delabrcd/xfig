@@ -1,3 +1,5 @@
+/* The following XBM image is used for the icon on a monochrome display */
+
 #define fig_width 64
 #define fig_height 64
 #define fig_x_hot -1
@@ -46,3 +48,83 @@ static unsigned char fig_bits[] = {
    0x01, 0x0e, 0x0f, 0x00, 0x00, 0x00, 0x00, 0x80, 0x01, 0xf8, 0x01, 0x00,
    0x00, 0x00, 0x00, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80,
    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
+
+#ifdef USE_XPM_ICON
+/* The following XPM image is used for the icon on a color display */
+
+/* XPM */
+static char * fig_c_icon_X[] = {
+"64 64 6 1",
+" 	c #000000000000",
+".	c #4747BABAE1E1",
+"X	c #9999CACA3131",
+"o	c #A1A151512828",
+"O	c #1E1E8E8E1A1A",
+"+	c #FFFFFFFFFFFF",
+"                                                                ",
+" .............................................................. ",
+" ..............................................  .............. ",
+" .......       ..   ...     .................  X  ............. ",
+" ........ .... ... ... .... ................ XXXXX ............ ",
+" ........ .. ..... ... ....................  XXXXXX ........... ",
+" ........    ..... ... ..    ............. XXXXXXXX ........... ",
+" ........ .. ..... ... .... .............. XXXXXXXXX .......... ",
+" ........ ........ ... .... ............  XXXXXXXXXX .......... ",
+" ........ ........ ... ...  ............ XXXXXXXXXXX .......... ",
+" .......   ......   ...   . ........... XXXXXXXXXXXX .......... ",
+" ...................................... XXXXXXXXXXX ....  ..... ",
+" ..................................... XXXXXXXXXXXX ... XX  ... ",
+" ....  ............................... XXXXXXXXXXXX .. XXXXX    ",
+" .... o    ........................... XXXXXXX XXXX   XXXXXXXX  ",
+" .... ooooo    ....................   XXXXXXX XXXXXXXXXXXXXXXXX ",
+" .... ooooooooo    .......         ooo XXXXXX XXXXXXXXXXXXXXXXX ",
+" ....   ooooooooooo       ooooooooooo  XXXXX XXXXXXXXXXX XXXXXX ",
+" .......    ooooooooooooooooooooo    XXXXX  XXXXXXXX X  XXXXXXX ",
+" ...........    ooooo   ooooo      XXXX XXXXXXXXX  XXXXXXXXXXXX ",
+" ...............      O         XXXXXX + XXX    XXXXXXXXXXXXXXX ",
+" ................... OO ...   XXXXXXX X X  XXXXXXXXXXXXXXXXXXXX ",
+" ..................  O .... XXXXXXXXXXX XXX XXXXXXXXXXXXXXXXXXX ",
+" .................. OO .... XXXXXXX  XXX XXX XXXXXXXXXXXXXXXXXX ",
+" .................  OO .... XXXXXX XXXXX XXXX XXXXXXX     XXXXX ",
+" ................ OOO .... XXXXX  XXXXXX XXXXX XXXXX .... XXXXX ",
+" ............... OOOO ... XXXXXXXXXXXXXX XXXXXXXXXXX ..... XXXX ",
+" ............... OOO ... XXXXXXXXXXXXXXX XXXXXX  XXXX   .. XX   ",
+" .............. OOOO .. XXXXXXXXXX   XXXXXXXXXXX XXXXXXX ..  .. ",
+" .............. OOOO .. XXXXXXX   ... XX XXXXXXXX XXXXXXX ..... ",
+" ............. OOOOO ..  XXXXXX ...   XX XXXXXXXX XXXXXXX ..... ",
+" ............ OOOOOO ...       ... XXXXX XXXXXXXXX XXXXXXX .... ",
+" ........... OOOOOOOO ........... XXXXX XXXXXXXXXX XXXXXXX .... ",
+" .......... OOOOOOOOO .........  XXXXXX XXXXXXXXXXXXXXXXXXX ... ",
+" .......... OOOOOOOOOO ....... XXXXXXXX XXXXXXXXXXX XXXXXXXX .. ",
+" ......... OOOOOOOOOOO ....... XXXXXXX XXXXXXXXXXXXXXXXXXXXX .. ",
+" ........ OOOOOOOOOOOOO ...... XXXXXX XXXX  XXXXXXXX XXXXXXX .. ",
+" ....... OOOOOOOOOOOOOO ..... XXXXXX XXXX .. XXXXXXX XXXXXXXX . ",
+" ....... OOOOOOOOOOOOOOO .... XXXXXXXXXX ... XXXXXXX XXXXXXXX . ",
+" ...... OOOOO OOOOOOOOOO ...  XXXXXXXXXX .. XXXXXXXX XXXXXXXX . ",
+" ...... OOOO OOOOOOOOOOOO .. XXXXXXXXXXX .. XXXXXXXXXXXXXXXXX . ",
+" ..... OOOOOOOOOOOOOOOOOO .. XXXXXXXXXXX . XXXXXXXXXX XXXXXXX . ",
+" ..... OOOO OOOOOOOOOOOOO .. XXXXXXXXXX .. XXXXXXXXXXXXXXXXXX . ",
+" .... OOOOOOOOOOOOOOOOOOO .. XXXXXXXXX ... XXXXXXXXXX XXXXXXX . ",
+" .... OOOO OOOOOOOOOOOOOOO . XXXXXXXX .... XXXXXXXXXX XXXXXXX . ",
+" ... OOOOOOOOOOOOOOOOOOOOO .. XXXXX  ..... XXXXXXXXXXXXXXXXXX . ",
+" ... OOOOO OOOOOOOOOOOOOOO ...     ....... XXXXXXXXXXXXXXXXXX . ",
+" ... OOOOOOOOOOOOOOOOOOOOO ............... XXXXXXXXXXXXXXXXX .. ",
+" .. OOOOOO OOOOOOOOOOOOOOOO .............. XXXXXXXXXXXXXXXXX .. ",
+" .. OOOOOOOOOOOOOOOOOOOOOOO .............. XXXXXXXXXXXXXXXX  .. ",
+" .. OOOOOOO OOOOOOOOOOOOOOO ............... XXXXXXXXXXXXXXX ... ",
+" ... OOOOOOOOOOOOOOOOOOOOOO ...............  XXXXXXXXXXXXXX ... ",
+" ... OOOOOOOOOOOOOOOOOOOOOO ................ XXXXXXXXXXXXX .... ",
+" ... OOOOOOOOOOOOOOOOOOOOO .................. XXXXXXXXXXX  .... ",
+" ... OOOOOOOO   OOOOOOOOOO ..................  XXXXXXXXX ...... ",
+" .... OOOOOOO ++ OOOOOOOO .....................  XXXXXX ....... ",
+" .... OOOOOOOO  OOOOOOOO ....................... XXXXX  ....... ",
+" ..... OOOOOOOOOOOOOOOO ......................... XXX  ........ ",
+" ...... OOOOOOOOOOOOOO  ..........................   .......... ",
+" ....... OOOOOOOOOOO   ........................................ ",
+" ........   OOOO    ........................................... ",
+" ..........      .............................................. ",
+" .............................................................. ",
+"                                                                "};
+
+#endif /* USE_XPM_ICON */

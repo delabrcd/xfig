@@ -73,6 +73,8 @@
 :Meta<Key>q: form-paragraph()
 :Ctrl<Key>t: transpose-characters()
 :Ctrl<Key>y: insert-selection(CUT_BUFFER1)
+:<Key>Multi_key,:<Key>o,:<Key>e: insert-string(0x98)
+:<Key>Multi_key,:<Key>O,:<Key>E: insert-string(0x99)
 :<Key>Multi_key,:<Key>exclam,:<Key>exclam: insert-string(0xA1)
 :<Key>Multi_key,:<Key>C,:<Key>slash: insert-string(0xA2)
 :<Key>Multi_key,:<Key>L,:<Key>minus: insert-string(0xA3)

@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -149,37 +156,12 @@ init_delete_to_scrap(p, type, x, y, px, py)
     int		    x, y;
     int		    px, py;
 {
-    extern char	    cut_buf_name[];
-    extern char	    file_header[];
-
     FILE	   *fp;
-    struct stat	    file_status;
+    FILE	   *open_cut_file();
 
-    if (stat(cut_buf_name, &file_status) == 0) {	/* file exists */
-	if (file_status.st_mode & S_IFDIR) {
-	    put_msg("Error: \"%s\" is a directory", cut_buf_name);
-	    return;
-	}
-	if (file_status.st_mode & S_IWRITE) {	/* writing is permitted */
-	    if (file_status.st_uid != geteuid()) {
-		put_msg("Error: access denied to cut file");
-		return;
-	    }
-	} else {
-	    put_msg("Error: cut file is read only");
-	    return;
-	}
-    } else if (errno != ENOENT) {
-	put_msg("Error: cut file didn't pass stat check");
-	return;			/* file does exist but stat fails */
-    }
-    if ((fp = fopen(cut_buf_name, "w")) == NULL) {
-	put_msg("Error: couldn't open cut file %s", sys_errlist[errno]);
+    if ((fp=open_cut_file())==NULL)
 	return;
-    } else {
-	(void) fprintf(fp, "%s\n", file_header);
-	(void) fprintf(fp, "%d %d\n", PIX_PER_INCH, 2);
-    }
+    write_file_header(fp);
 
     switch (type) {
     case O_COMPOUND:
@@ -224,6 +206,39 @@ init_delete_to_scrap(p, type, x, y, px, py)
     }
     put_msg("Object deleted to scrapfile %s",cut_buf_name);
     fclose(fp);
+}
+
+FILE *
+open_cut_file()
+{
+    extern char	    cut_buf_name[];
+
+    FILE	   *fp;
+    struct stat	    file_status;
+
+    if (stat(cut_buf_name, &file_status) == 0) {	/* file exists */
+	if (file_status.st_mode & S_IFDIR) {
+	    put_msg("Error: \"%s\" is a directory", cut_buf_name);
+	    return NULL;
+	}
+	if (file_status.st_mode & S_IWRITE) {	/* writing is permitted */
+	    if (file_status.st_uid != geteuid()) {
+		put_msg("Error: access denied to cut file");
+		return NULL;
+	    }
+	} else {
+	    put_msg("Error: cut file is read only");
+	    return NULL;
+	}
+    } else if (errno != ENOENT) {
+	put_msg("Error: cut file didn't pass stat check");
+	return NULL;			/* file does exist but stat fails */
+    }
+    if ((fp = fopen(cut_buf_name, "w")) == NULL) {
+	put_msg("Error: couldn't open cut file %s", sys_errlist[errno]);
+	return NULL;
+    }
+    return fp;
 }
 
 delete_all()

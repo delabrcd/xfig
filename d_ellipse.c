@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -91,9 +98,10 @@ create_ellipsebyrad(x, y)
     ellipse->thickness = cur_linewidth;
     ellipse->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     ellipse->angle = cur_elltextangle/180.0*M_PI;	/* convert to radians */
-    ellipse->color = cur_color;
+    ellipse->pen_color = cur_pencolor;
+    ellipse->fill_color = cur_fillcolor;
     ellipse->depth = cur_depth;
-    ellipse->pen = 0;
+    ellipse->pen_style = 0;
     ellipse->fill_style = cur_fillstyle;
     ellipse->direction = 1;
     ellipse->center.x = fix_x;
@@ -166,9 +174,10 @@ create_ellipsebydia(x, y)
     ellipse->thickness = cur_linewidth;
     ellipse->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     ellipse->angle = cur_elltextangle/180.0*M_PI;	/* convert to radians */
-    ellipse->color = cur_color;
+    ellipse->pen_color = cur_pencolor;
+    ellipse->fill_color = cur_fillcolor;
     ellipse->depth = cur_depth;
-    ellipse->pen = 0;
+    ellipse->pen_style = 0;
     ellipse->fill_style = cur_fillstyle;
     ellipse->direction = 1;
     ellipse->center.x = (fix_x + x) / 2;
@@ -231,7 +240,7 @@ create_circlebyrad(x, y)
     int		    x, y;
 {
     F_ellipse	   *c;
-    int		    rx, ry;
+    double	    rx, ry;
 
     elastic_cbr();
     center_marker(fix_x, fix_y);
@@ -243,16 +252,17 @@ create_circlebyrad(x, y)
     c->thickness = cur_linewidth;
     c->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     c->angle = 0.0;
-    c->color = cur_color;
+    c->pen_color = cur_pencolor;
+    c->fill_color = cur_fillcolor;
     c->depth = cur_depth;
-    c->pen = 0;
+    c->pen_style = 0;
     c->fill_style = cur_fillstyle;
     c->direction = 1;
     c->center.x = fix_x;
     c->center.y = fix_y;
     rx = fix_x - x;
     ry = fix_y - y;
-    c->radiuses.x = c->radiuses.y = round(sqrt((double) (rx * rx + ry * ry)));
+    c->radiuses.x = c->radiuses.y = round(sqrt(rx * rx + ry * ry));
     c->start.x = fix_x;
     c->start.y = fix_y;
     c->end.x = x;
@@ -307,7 +317,7 @@ create_circlebydia(x, y)
     int		    x, y;
 {
     F_ellipse	   *c;
-    int		    rx, ry;
+    double	    rx, ry;
 
     elastic_cbd();
     center_marker(fix_x, fix_y);
@@ -319,16 +329,17 @@ create_circlebydia(x, y)
     c->thickness = cur_linewidth;
     c->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     c->angle = 0.0;
-    c->color = cur_color;
+    c->pen_color = cur_pencolor;
+    c->fill_color = cur_fillcolor;
     c->depth = cur_depth;
-    c->pen = 0;
+    c->pen_style = 0;
     c->fill_style = cur_fillstyle;
     c->direction = 1;
-    c->center.x = (fix_x + x) / 2 + .5;
-    c->center.y = (fix_y + y) / 2 + .5;
+    c->center.x = round((fix_x + x) / 2);
+    c->center.y = round((fix_y + y) / 2);
     rx = x - c->center.x;
     ry = y - c->center.y;
-    c->radiuses.x = c->radiuses.y = round(sqrt((double) (rx * rx + ry * ry)));
+    c->radiuses.x = c->radiuses.y = round(sqrt(rx * rx + ry * ry));
     c->start.x = fix_x;
     c->start.y = fix_y;
     c->end.x = x;

@@ -1,13 +1,20 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -137,10 +144,10 @@ read_1_3_arcobject(fp)
     if ((a = create_arc()) == NULL)
 	return (NULL);
 
-    a->type = T_3_POINTS_ARC;
-    a->color = BLACK;
+    a->pen_color = a->fill_color = BLACK;
     a->depth = 0;
-    a->pen = 0;
+    a->pen_style = 0;
+    a->cap_style = CAP_BUTT;
     a->for_arrow = NULL;
     a->back_arrow = NULL;
     a->next = NULL;
@@ -151,6 +158,7 @@ read_1_3_arcobject(fp)
 	       &a->point[0].x, &a->point[0].y,
 	       &a->point[1].x, &a->point[1].y,
 	       &a->point[2].x, &a->point[2].y);
+    a->type = T_OPEN_ARC;
     if (n != 17) {
 	file_msg("Incomplete arc data");
 	free((char *) a);
@@ -281,11 +289,11 @@ read_1_3_ellipseobject(fp)
     if ((e = create_ellipse()) == NULL)
 	return (NULL);
 
-    e->color = BLACK;
+    e->pen_color = e->fill_color = BLACK;
     e->angle = 0.0;
     e->depth = 0;
-    e->pen = 0;
-    e->fill_style = 0;
+    e->pen_style = 0;
+    e->fill_style = UNFILLED;
     e->next = NULL;
     n = fscanf(fp, " %d %d %d %f %d %d %d %d %d %d %d %d %d\n",
 	       &t, &e->style,
@@ -321,10 +329,12 @@ read_1_3_lineobject(fp)
     if ((l = create_line()) == NULL)
 	return (NULL);
 
-    l->color = BLACK;
+    l->pen_color = l->fill_color = DEFAULT;
     l->depth = 0;
-    l->pen = 0;
-    l->fill_style = 0;
+    l->pen_style = 0;
+    l->join_style = JOIN_MITER;
+    l->cap_style = CAP_BUTT;
+    l->fill_style = UNFILLED;
     l->for_arrow = NULL;
     l->back_arrow = NULL;
     l->next = NULL;
@@ -387,10 +397,11 @@ read_1_3_splineobject(fp)
     if ((s = create_spline()) == NULL)
 	return (NULL);
 
-    s->color = BLACK;
+    s->pen_color = s->fill_color = BLACK;
     s->depth = 0;
-    s->pen = 0;
-    s->fill_style = 0;
+    s->pen_style = 0;
+    s->fill_style = UNFILLED;
+    s->cap_style = CAP_BUTT;
     s->for_arrow = NULL;
     s->back_arrow = NULL;
     s->controls = NULL;
@@ -459,11 +470,12 @@ read_1_3_textobject(fp)
     t->flags = RIGID_TEXT;
     t->color = BLACK;
     t->depth = 0;
-    t->pen = 0;
+    t->pen_style = 0;
     t->angle = 0.0;
     t->next = NULL;
+    /* ascent and length will be recalculated later */
     n = fscanf(fp, " %d %d %d %d %d %d %d %[^\n]", &t->font,
-	       &t->size, &t->flags, &t->height, &t->length,
+	       &t->size, &t->flags, &t->ascent, &t->length,
 	       &t->base_x, &t->base_y, buf);
     if (n != 8) {
 	file_msg("Incomplete text data");

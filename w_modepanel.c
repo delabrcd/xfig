@@ -1,13 +1,19 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * "Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both the copyright
- * notice and this permission notice appear in supporting documentation. 
- * No representations are made about the suitability of this software for 
- * any purpose.  It is provided "as is" without express or implied warranty."
+ * The X Consortium, and any party obtaining a copy of these files from
+ * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.  This license includes without
+ * limitation a license to do the foregoing actions under any patents of
+ * the party supplying this software to the X Consortium.
  */
 
 #include "fig.h"
@@ -34,7 +40,7 @@ extern          box_drawing_selected();
 extern          arcbox_drawing_selected();
 extern          line_drawing_selected();
 extern          regpoly_drawing_selected();
-extern          epsobj_drawing_selected();
+extern          picobj_drawing_selected();
 extern          text_drawing_selected();
 extern          arc_drawing_selected();
 extern          spline_drawing_selected();
@@ -66,7 +72,7 @@ static stub_arcbox_drawing_selected();
 static stub_line_drawing_selected();
 static stub_poly_drawing_selected();
 static stub_regpoly_drawing_selected();
-static stub_epsobj_drawing_selected();
+static stub_picobj_drawing_selected();
 static stub_text_drawing_selected();
 static stub_arc_drawing_selected();
 static stub_spline_drawing_selected();
@@ -91,6 +97,7 @@ static stub_convert_selected();
 static stub_arrow_head_selected();
 static stub_edit_item_selected();
 static stub_update_selected();
+static void stub_enter_mode_btn();
 
 /**************	    local variables and routines   **************/
 
@@ -118,9 +125,9 @@ static void     turn_on();
 
 static mode_sw_info mode_switches[] = {
     {&cirrad_ic, F_CIRCLE_BY_RAD, circlebyradius_drawing_selected, M_NONE,
-    I_BOX, "CIRCLE drawing: specify RADIUS",},
+    I_CIRCLE, "CIRCLE drawing: specify RADIUS",},
     {&cirdia_ic, F_CIRCLE_BY_DIA, circlebydiameter_drawing_selected, M_NONE,
-    I_BOX, "CIRCLE drawing: specify DIAMETER",},
+    I_CIRCLE, "CIRCLE drawing: specify DIAMETER",},
     {&ellrad_ic, F_ELLIPSE_BY_RAD, ellipsebyradius_drawing_selected, M_NONE,
     I_ELLIPSE, "ELLIPSE drawing: specify RADII",},
     {&elldia_ic, F_ELLIPSE_BY_DIA, ellipsebydiameter_drawing_selected, M_NONE,
@@ -136,7 +143,7 @@ static mode_sw_info mode_switches[] = {
     {&polygon_ic, F_POLYGON, line_drawing_selected, M_NONE,
     I_CLOSED, "POLYGON drawing",},
     {&line_ic, F_POLYLINE, line_drawing_selected, M_NONE,
-    I_OPEN, "POLYLINE drawing",},
+    I_LINE, "POLYLINE drawing",},
     {&box_ic, F_BOX, box_drawing_selected, M_NONE,
     I_BOX, "Rectangular BOX drawing",},
     {&arc_box_ic, F_ARC_BOX, arcbox_drawing_selected, M_NONE,
@@ -145,8 +152,8 @@ static mode_sw_info mode_switches[] = {
     I_REGPOLY, "Regular Polygon",},
     {&arc_ic, F_CIRCULAR_ARC, arc_drawing_selected, M_NONE,
     I_ARC, "ARC drawing: specify three points on the arc",},
-    {&epsobj_ic, F_EPSOBJ, epsobj_drawing_selected, M_NONE,
-    I_EPSOBJ, "Encapsulated Postscript Object",},
+    {&picobj_ic, F_PICOBJ, picobj_drawing_selected, M_NONE,
+    I_PICOBJ, "Picture Object",},
     {&text_ic, F_TEXT, text_drawing_selected, M_TEXT_NORMAL,
     I_TEXT, "TEXT input (from keyboard)",},
     {&glue_ic, F_GLUE, compound_selected, M_ALL,
@@ -164,7 +171,7 @@ static mode_sw_info mode_switches[] = {
     {&addpt_ic, F_ADD_POINT, point_adding_selected, M_VARPTS_OBJECT,
     I_ADDMOVPT, "ADD POINTs (to lines, polygons and splines)",},
     {&copy_ic, F_COPY, copy_selected, M_ALL,
-    I_MIN3, "COPY objects",},
+    I_COPY, "COPY objects",},
     {&deletept_ic, F_DELETE_POINT, delete_point_selected, M_VARPTS_OBJECT,
     I_MIN1, "DELETE POINTs (from lines, polygons and splines)",},
     {&delete_ic, F_DELETE, delete_selected, M_ALL,
@@ -185,7 +192,7 @@ static mode_sw_info mode_switches[] = {
 	(M_POLYLINE_LINE | M_POLYLINE_POLYGON | M_SPLINE_INTERP), I_MIN1,
     "CONVERT lines (polygons) into splines (closed-splines) or vice versa",},
     {&autoarrow_ic, F_AUTOARROW, arrow_head_selected, M_OPEN_OBJECT,
-    I_MIN1 | I_LINEWIDTH, "ADD/DELETE ARROWs",},
+    I_MIN1 | I_LINEWIDTH | I_ARROWTYPE, "ADD/DELETE ARROWs",},
 };
 
 int	NUM_MODE_SW = (sizeof(mode_switches) / sizeof(mode_sw_info));
@@ -204,9 +211,21 @@ static Arg      button_args[] =
      /* 6 */ {XtNbackgroundPixmap, (XtArgVal) NULL},
 };
 
+static void
+stub_enter_mode_btn(widget, closure, event, continue_to_dispatch)
+    Widget          widget;
+    XtPointer     closure;
+    XEvent*       event;
+    Boolean*      continue_to_dispatch;
+{
+    FirstArg(XtNhighlightThickness, 2);
+    SetValues(widget);
+    draw_mousefun_mode();
+}
+
 static XtActionsRec mode_actions[] =
 {
-    {"EnterModeSw", (XtActionProc) draw_mousefun_mode},
+    {"EnterModeSw", (XtActionProc) stub_enter_mode_btn},
     {"LeaveModeSw", (XtActionProc) clear_mousefun},
     {"PressMiddle", (XtActionProc) notused_middle},
     {"ReleaseMiddle", (XtActionProc) clear_middle},
@@ -221,7 +240,7 @@ static XtActionsRec mode_actions[] =
     {"ModeLine", (XtActionProc) stub_line_drawing_selected},
     {"ModePoly", (XtActionProc) stub_poly_drawing_selected},
     {"ModeRegPoly", (XtActionProc) stub_regpoly_drawing_selected},
-    {"ModeEPS", (XtActionProc) stub_epsobj_drawing_selected},
+    {"ModePIC", (XtActionProc) stub_picobj_drawing_selected},
     {"ModeText", (XtActionProc) stub_text_drawing_selected},
     {"ModeArc", (XtActionProc) stub_arc_drawing_selected},
     {"ModeSpline", (XtActionProc) stub_spline_drawing_selected},
@@ -258,11 +277,22 @@ static String   mode_translations =
     <Btn3Up>:ReleaseRight()\n\
     <LeaveWindow>:LeaveModeSw()unhighlight()\n";
 
+static String   active_mode_translations =
+"<EnterWindow>:EnterModeSw()unhighlight()\n\
+    <Btn1Down>:\n\
+    <Btn1Up>:unhighlight()\n\
+    <Btn2Down>:PressMiddle()\n\
+    <Btn2Up>:ReleaseMiddle()\n\
+    <Btn3Down>:PressRight()\n\
+    <Btn3Up>:ReleaseRight()\n\
+    <LeaveWindow>:LeaveModeSw()highlight()\n";
+
+
 int
 init_mode_panel(tool)
     TOOL            tool;
 {
-    register int    i, numindraw;
+    register int    i;
     register mode_sw_info *sw;
 
     FirstArg(XtNwidth, MODEPANEL_WD);
@@ -295,7 +325,6 @@ init_mode_panel(tool)
 	    d_label = XtCreateManagedWidget("label", labelWidgetClass,
 					    mode_panel, Args, ArgCount);
 	} else if (sw->mode == FIRST_EDIT_MODE) {
-	    numindraw = i;	/* this is the number of btns in drawing mode area */
 	    /* assume Args still set up from d_label */
 	    ArgCount -= 2;
 	    NextArg(XtNheight, (MODEPANEL_SPACE) / 2);
@@ -362,13 +391,7 @@ setup_mode_panel()
 	msw->reversePM = XCreatePixmapFromBitmapData(d, XtWindow(msw->widget),
 		       (char *) msw->icon->data, msw->icon->width, msw->icon->height,
 				   but_bg, but_fg, DefaultDepthOfScreen(s));
-	/* install the accelerators in the buttons */
-	XtInstallAllAccelerators(msw->widget, tool);
     }
-    /* install the accelerators for the surrounding parts */
-    XtInstallAllAccelerators(mode_panel, tool);
-    XtInstallAllAccelerators(d_label, tool);
-    XtInstallAllAccelerators(e_label, tool);
 
     XDefineCursor(d, XtWindow(mode_panel), arrow_cursor);
     FirstArg(XtNmappedWhenManaged, True);
@@ -404,14 +427,31 @@ sel_mode_but(widget, closure, event, continue_to_dispatch)
 	if (msw->mode == F_UPDATE) {	/* map the set/clr/toggle button for update */
 	    if (cur_mode != F_UPDATE) {
 		update_indpanel(0);	/* first remove ind buttons */
+		XtUnmanageChild(ind_panel);
 		XtManageChild(upd_ctrl);
+		/* get the width of the update control panel */
+		if (UPD_CTRL_WD == 0) {
+		    FirstArg(XtNwidth, &UPD_CTRL_WD);
+		    GetValues(upd_ctrl);
+		}
+		/* now put the ind_panel to our right */
+		FirstArg(XtNfromHoriz, upd_ctrl);
+		NextArg(XtNwidth, INDPANEL_WD-UPD_CTRL_WD-2*INTERNAL_BW); /* resize it */
+		SetValues(ind_panel);
+		XtManageChild(ind_panel);
 		update_indpanel(msw->indmask);	/* now manage the relevant buttons */
 	    }
 	} else { 	/* turn off the update boxes if not in update mode */
 	    if (cur_mode == F_UPDATE) {	/* if previous mode is update and current */
 		update_indpanel(0);	/* is not, first remove ind buttons */
 		unmanage_update_buts();
+		XtUnmanageChild(ind_panel);
 		XtUnmanageChild(upd_ctrl);
+		/* now put the ind_panel to the right of the canvas */
+		FirstArg(XtNfromHoriz, NULL);
+		NextArg(XtNwidth, INDPANEL_WD);	/* resize it */
+		SetValues(ind_panel);
+		XtManageChild(ind_panel);
 		update_indpanel(msw->indmask);	/* now manage the relevant buttons */
 	    } else {
 		update_indpanel(msw->indmask);	/* just update indicator buttons */
@@ -469,6 +509,8 @@ turn_on(msw)
 {
     FirstArg(XtNbackgroundPixmap, msw->reversePM);
     SetValues(msw->widget);
+    XtOverrideTranslations(msw->widget,
+		XtParseTranslationTable(active_mode_translations));
 }
 
 turn_on_current()
@@ -480,6 +522,8 @@ turn_on_current()
 turn_off_current()
 {
     if (current) {
+	XtOverrideTranslations(current->widget,
+		XtParseTranslationTable(mode_translations));
 	FirstArg(XtNbackgroundPixmap, current->normalPM);
 	SetValues(current->widget);
     }
@@ -544,9 +588,9 @@ static stub_regpoly_drawing_selected()
 	change_mode(&regpoly_ic);
 }
 
-static stub_epsobj_drawing_selected()
+static stub_picobj_drawing_selected()
 {
-	change_mode(&epsobj_ic);
+	change_mode(&picobj_ic);
 }
 
 static stub_text_drawing_selected()

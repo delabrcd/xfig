@@ -1,3 +1,18 @@
+.\" FIG : Facility for Interactive Generation of figures
+.\" Copyright (c) 1985 by Supoj Sutanthavibul
+.\" Parts Copyright (c) 1994 by Brian V. Smith
+.\" Parts Copyright (c) 1991 by Paul King
+.\" The X Consortium, and any party obtaining a copy of these files from
+.\" the X Consortium, directly or indirectly, is granted, free of charge, a
+.\" full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+.\" nonexclusive right and license to deal in this software and
+.\" documentation files (the "Software"), including without limitation the
+.\" rights to use, copy, modify, merge, publish, distribute, sublicense,
+.\" and/or sell copies of the Software, and to permit persons who receive
+.\" copies from any such party to do so, with the only requirement being
+.\" that this copyright notice remain intact.  This license includes without
+.\" limitation a license to do the foregoing actions under any patents of
+.\" the party supplying this software to the X Consortium.
 .\"-------
 .\" Man page portability notes
 .\"
@@ -81,9 +96,9 @@
 .PD
 ..
 .\"-------
-.TH XFIG 1 "Release 2.1(.8) (Protocol 2.1)"
+.TH XFIG 1 "Release 3.0(.0) (Protocol 3.0)"
 .SH NAME
-xfig \(em Facility for Interactive Generation of figures under X11
+xfig - Facility for Interactive Generation of figures under X11
 .SH SYNOPSIS
 .B xfig
 .RI [ options ]
@@ -91,7 +106,7 @@ xfig \(em Facility for Interactive Generation of figures under X11
 .SH DESCRIPTION
 .I Xfig
 is a menu-driven tool that allows the user to draw and manipulate
-objects interactively in an X window.
+objects interactively under the X Window System.
 .B It runs under X version 11
 .B release 4 or higher
 and requires a two- or three-button mouse.
@@ -105,29 +120,23 @@ When using a two-button mouse use the
 key and the right button at the same time to effect
 the action of the middle button.
 .PP
+.I Xfig
+is available via anonymous ftp from
+.I ftp.x.org
+in
+.BI /contrib/applications/drawing_tools/xfig\-fixes/xfig.2.1. X\c
+.BR .tar.Z ,
+where the
+.I X
+is the current patchlevel.
+.PP
 The
 .I TransFig
-package is used to print or export the output from
+package is used when printing or exporting the output from
 .IR xfig .
-.PP
-Note for previous
-.I xfig
-users:
-.PP
-The
-.I f2p
-and
-.I f2ps
-translators have been phased out
-because the
-.I TransFig
-package from Micah Beck is a more general
-purpose translator for more graphics languages.
-The
-.I TransFig
-package can be used as a back-end processor to
-.I xfig
-to produce various types of output:
+It is automatically called by
+.IR xfig
+as a back-end processor to produce various types of output:
 .nr n \w'PostScript\0\0\0\0'+1n-1/1n
 .IP LaTeX \nn
 .I "fig2dev \-L latex"
@@ -140,8 +149,13 @@ picture environment commands which can be processed along with other
 commands.
 .IP PostScript
 .I "fig2dev \-L ps"
+produces an
+.I "Encapsulated PostScript"
+output.
+.IP IBM-GL
+.I "fig2dev \-L ibmgl"
 produces a
-.I PostScript
+.I IBM-GL (HP/GL)
 output.
 .IP Pic
 .I "fig2dev \-L pic"
@@ -171,18 +185,13 @@ and
 The
 .I TransFig
 package is available via anonymous ftp from
-.I export.lcs.mit.edu
+.I ftp.x.org
 in
-.BI /contrib/R5fixes/transfig\-fixes/transfig.2.1. X\c
+.BI /contrib/applications/drawing_tools/transfig\-fixes/transfig.2.1. X\c
 .BR .tar.Z ,
 where the
 .I X
 is the current patchlevel.
-.LP
-Note:
-.I TransFig
-versions 2.1.4 and later support color output for
-.IR PostScript .
 .SH OPTIONS
 .\"-------
 .At
@@ -190,15 +199,17 @@ versions 2.1.4 and later support color output for
 .Ap
 Make
 .I xfig
-come up in landscape mode (10" x 8").
-This is the default.
+come up in landscape mode (10.5" x 8").
+This is the default; however as the orientation is stored with Fig files,
+when you load a Fig file the orientation will change as required.
+This is only true for files of version 3.0 or higher.
 .\"-------
 .At
 .BR \-P [ ortrait ]
 .Ap
 Make
 .I xfig
-come up in portrait mode (8" x 9").
+come up in portrait mode (8.5" x 9").  See note about landscape mode.
 .\"-------
 .At
 .BI \-bg " color"
@@ -211,7 +222,8 @@ as the background color for the canvas and buttons.
 .BR \-bol [ d ]
 .I font
 .Ap
-Cause the font used for displaying confirmation messages to be
+Cause the font used for displaying the file name and
+confirmation messages to be
 .I font
 (default = 8x13bold).
 .\"-------
@@ -237,6 +249,13 @@ parameter to reduce the canvas height for small screens.
 .Ap
 Turn on debugging mode.
 Prints various debugging messages like font names etc.
+.\"-------
+.At
+.BR \-do [ ntswitchcmap ]
+.Ap
+Prevents xfig from switching to a private colormap if there aren't
+enough colors available in the default colormap.  See also
+.BR \-maximagecolors.
 .\"-------
 .At
 .BR \-e [ xportLanguage ]
@@ -278,6 +297,8 @@ textyl\&	Textyl special commands
 tpic\&\&	TPIC
 pic\&\&\&	PIC
 xbm\&\&\&	X11 Bitmap
+xpm\&\&\&	X11 Pixmap (XPM3 package)
+gif\&\&\&	GIF
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
 .DT
@@ -316,6 +337,13 @@ Specifies the position for the icon.
 .BR \-inc [ hes ]
 .Ap
 Make inches the unit of choice (default).
+.\"-------
+.At
+.BR \-ma [ ximagecolors ]
+.I numcols
+.Ap
+Limit the number of colors used for EPS, GIF or XPM images to
+.I numcols.
 .\"-------
 .At
 .BR \-me [ tric ]
@@ -398,10 +426,10 @@ Use black and white only.
 .BR \-nor [ mal ]
 .I font
 .Ap
-Cause the font used for the message panel and ruler numbers to be
+Cause the font used for the message window and ruler numbers to be
 .IR font .
 This font is also used on the canvas when the selected font is not
-available in an X11 font (default = fixed).
+available in an X11 font (default = 6x13).
 .\"-------
 .At
 .BR \-not [ rack ]
@@ -410,23 +438,27 @@ Turn off cursor (mouse) tracking arrows.
 .\"-------
 .At
 .BR \-ph [ eight ]
-.I units
+.I height
 .Ap
-Make
+Make the
 .I xfig
-come up
-.I units
-high (where units are either cm or in).
+canvas
+.I height
+high (where
+.I height
+is either cm or in, depending on the -metric setting).
 .\"-------
 .At
 .BR \-pw [ idth ]
-.I units
+.I width
 .Ap
-Make
+Make the
 .I xfig
-come up
-.I units
-wide (where units are either cm or in).
+canvas
+.I width
+wide (where
+.I width
+is either cm or in, depending on the -metric setting).
 .\"-------
 .At
 .BR \-ri [ ght ]
@@ -439,7 +471,7 @@ Change the position of the side panel window to the right of the canvas window
 .Ap
 Allows use of the X11R5 or OpenWindows scalable fonts (this is the default).
 If the scalable fonts aren't available
-.I xfig 
+.I xfig
 will automatically switch to non-scaling fonts.
 .\"-------
 .At
@@ -479,18 +511,42 @@ with the
 mode for text objects.
 .\"-------
 .At
-.BR \-startf [ ontsize ]
+.BR \-startfi [ llstyle ]
+.I stylenumber
+.Ap
+Set the starting fill style for area fill (-1 to 21).
+.\"-------
+.At
+.BR \-startfo [ ntsize ]
 .I pointsize
 .Ap
 Set the default font size for text objects (default = 12pt).
 .\"-------
 .At
-.BR \-startl [ atexFont ]
+.BR \-startg [ ridmode ]
+.I modenumber
+.Ap
+Set the starting grid mode (0 to 3).
+.\"-------
+.At
+.BR \-startla [ texFont ]
 .I font
 .Ap
 Set the starting font name for
 .I LaTeX
 fonts.
+.\"-------
+.At
+.BR \-startt [ extstep ]
+.I stepsize
+.Ap
+Set the starting text step.
+.\"-------
+.At
+.BR \-startli [ newidth ]
+.I width
+.Ap
+Set the starting line width.
 .\"-------
 .At
 .BR \-startp [ sFont ]
@@ -499,6 +555,14 @@ fonts.
 Set the starting font name for
 .I PostScript
 fonts.
+.\"-------
+.At
+.BR \-ta [ blet ]
+.Ap
+Specifies that xfig should use the input tablet instead of the mouse
+for drawing.  You must have the XInputExtension in your X server and
+an input tablet for this to work.  Also, you must modify the Imakefile
+to include the USETAB and TABLIB variables.
 .\"-------
 .At
 .BR \-te [ xtoutline ]
@@ -568,7 +632,7 @@ The primitive objects are:
 .IR ELLIPSE ,
 .IR POLYLINE ,
 .IR POLYGON ,
-.IR "ENCAPSULATED POSTSCRIPT" ,
+.IR PICTURE ,
 .IR BOX ,
 .IR ARC-BOX ,
 .IR SPLINE ,
@@ -630,6 +694,11 @@ This and all other accelerators are defined in the
 .I app-defaults
 file and may be changed if desired.
 .TP
+.I "Port/Land"
+Change shape of xfig canvas from/to portrait/landscape.  Note:  the canvas
+will automatically change to the portrait/landscape configuration
+specified in Fig files of version 3.0 or higher when loading those files.
+.TP
 .I "Delete ALL"
 Delete all objects from the canvas window (may be undone).
 The accelerator
@@ -641,9 +710,16 @@ Undo the last object creation, deletion or modification.
 The accelerator
 .I <Meta>u
 will also perform this function.
+If an undo of a
+.I Paste
+or file
+.I Merge
+is done, any user-defined colors in the figure pasted in or the 
+file just merged will NOT be undefined.
 .TP
 .I Redraw
-Redraw the canvas.  There are also two accelerators which do a redraw -
+Redraw the canvas.
+There are also two accelerators which do a redraw \(em
 .I <Meta>r
 and
 .I <Ctrl>l.
@@ -730,6 +806,14 @@ Pressing mouse button 3 in either the file or
 .I "Directory Alternatives"
 window will do a ``change directory'' to the parent directory.
 .TP
+.I "Load/Merge figure offset"
+These two editable AsciiTextWidgets allow one to load or merge
+a figure with an offset on the canvas.
+The figure will be offset by the amounts specified (in Fig units)
+in the X and Y panels.  A negative value in the X offset will shift
+the figure to the left, and a negative value in the Y offset will
+shift the figure up.
+.TP
 .I Home
 Pressing this button will change the directory to the
 .I $HOME
@@ -781,6 +865,8 @@ menu item
 or the name specified in the
 .I "Current Filename"
 if the former is empty.
+The figure will be offset by the amounts specified (Fig units)
+in the X and Y load/merge offset widgets.
 If there is a figure currently on the canvas and any modifications
 have been made to it and not saved, a popup query
 window will first appear asking if the user wishes to discard the current
@@ -826,6 +912,15 @@ specified in the
 .I "Current Filename"
 if the former is empty,
 and merge it with the figure already shown on the canvas.
+The figure will be offset by the amounts specified (Fig units)
+in the X and Y load/merge offset widgets.
+Any user-defined colors in the file being merged will be renumbered
+if necessary to unique values so as not to conflict with any user-defined
+colors already defined.  There is
+.I no
+comparison of the color values of the existing user-defined colors with
+the colors being merged in so there may be identical colors with different
+numbers.
 .IP \&
 See
 .I Load
@@ -858,7 +953,8 @@ This button will toggle the output orientation between Landscape (horizontal)
 and Portrait (vertical).
 The default orientation is the same as the mode that
 .I xfig
-was started with.
+was started with, or the orientation in the Fig file when loading a Fig
+file of version 3.0 or higher.
 .TP
 .I Justification
 This window will only be sensitive when the language selected is ``ps''
@@ -869,6 +965,15 @@ or
 .I centered
 in the
 output file.
+.I "Export Offset"
+These two editable AsciiTextWidgets allow one to export
+a figure with an offset.
+The figure will be offset by the amounts specified (in inches or cm)
+in the X and Y panels.  A negative value in the X offset will shift
+the figure to the left, and a negative value in the Y offset will
+shift the figure up.
+These offsets are in addition to any centering done with the
+centering option.
 .TP
 .I Language
 The translation language to use for
@@ -877,9 +982,18 @@ output when output is directed to a file.
 The default is
 .IR PostScript .
 The figure may be saved as an X11 bitmap by choosing
-.I Xbitmap
+.I "X11 Bitmap"
 as the output language.
-The bitmap is created from the figure, the size of which is determined
+The bitmap(pixmap) is created from the figure, the size of which is determined
+by the enclosing rectangle of all the figure plus a small border.
+The figure may also be saved as an color X11 pixmap
+(using the XPM3 package) by choosing
+.I "X11 Pixmap"
+as the output language.
+Finally, the figure may be saved as a
+.I GIF
+file.
+The pixmap is created from the figure, the size of which is determined
 by the enclosing rectangle of all the figure plus a small border.
 .TP
 .I "Default Output Filename"
@@ -1010,7 +1124,8 @@ This button will toggle the output orientation between Landscape (horizontal)
 and Portrait (vertical).
 The default orientation is the same as the mode that
 .I xfig
-was started with.
+was started with, or the orientation in the Fig file when loading a Fig
+file of version 3.0 or higher.
 .TP
 .I Justification
 This button will bring up a sub-menu from which you may choose
@@ -1141,7 +1256,7 @@ define the opposite corner of the zoom rectangle.
 .TP
 .I "GRID MODE"
 With this button the user may select no grid,
-1/4 inch (5mm in metric mode) grid or 1/2 inch (10mm) grid.
+1/4 inch (5mm in metric mode) grid 1/2 inch (10mm) grid, or 1 inch (20mm).
 .TP
 .I "POINT POSITION"
 This button controls the coarseness of object placement on the canvas.
@@ -1176,6 +1291,18 @@ The number of sides used in creating a
 .I "REGULAR POLYGON"
 is set with this button.
 .TP
+.I "NUMBER OF COPIES"
+The number of copies to make when doing a
+.I "COPY & ROTATE"
+function on an object.  Each copy will be rotated an additional
+.I "ROTATION ANGLE"
+angle from the previous.
+.TP
+.I "NUMBER OF X (or Y) COPIES"
+The number of copies to make in the X (or Y) direction when doing a
+.I COPY
+function on an object.
+.TP
 .I "SMART-LINKS MODE"
 This button controls the smart-links mode.
 When turned on, lines which
@@ -1209,7 +1336,8 @@ This sets the vertical alignment mode for the
 .I ALIGN
 button in the editing mode panel.
 The choices are no vertical alignment, align to top edge,
-middle or bottom edge of compound.
+middle or bottom edge of compound, distribute the centres or edges
+evenly, or abut the vertical edges together.
 The
 .I "HORIZONTAL ALIGN"
 and
@@ -1222,7 +1350,8 @@ This sets the horizontal alignment mode for the
 .I ALIGN
 button in the editing mode panel.
 The choices are no horizontal alignment, align to left edge,
-middle or right edge of compound.
+middle or right edge of compound, distribute the centres or edges
+evenly, or abut the horizonaal edges together.
 The
 .I "HORIZONTAL ALIGN"
 and
@@ -1281,26 +1410,103 @@ The name comes from the pointed shape of mountains.
 .nr LL 6.5i
 .TP
 .I "FILL STYLE"
-This button allows the user to select the area fill darkness (grey scale)
-for all objects except
+This button allows the user to select the area fill darkness (grey scale
+or color intensity) or fill patterns for all objects except
 .I TEXT
 and
-.IR "ENCAPSULATED POSTSCRIPT" ,
+.IR PICTURE ,
 or to turn off area fill altogether.
+.sp
+There are 21 ``shades'' going from black to full saturation of the fill color,
+and 21 more ``tints'' from full saturation + 1 to white.
+In addition, there are 16 patterns:
+.in +.5i
+.nf
+30 degree left-leaning diagonal lines,
+30 degree right-leaning diagonal lines,
+30 degree crosshatch,
+45 degree left-leaning diagonal lines,
+45 degree right-leaning diagonal lines,
+45 degree crosshatch,
+bricks,
+circles
+horizontal lines,
+vertical lines,
+90 degree crosshatch,
+fishscales,
+small fishscales,
+octagons,
+horizontal ``sawtooth'' and
+vertical ``sawtooth''.
+.fi
+.in
 .TP
-.I COLOR
-The user may select one of eight predefined colors to draw with, or select
-that the
-.I default
-.RB ( \-fg )
-color is to be used.
-The eight colors are black, blue, green, cyan, red, magenta, yellow and white.
+.I "PEN COLOR"
+This button is used to select one of 32 standard colors for the borders
+of objects, or one of the user-defined colors
+.TP
+.I "FILL COLOR"
+This button is used to select one of 32 standard colors or user-defined
+color to fill objects with if they have a fill style.
+.sp
+Pressing mouse button 1 on either the fill or pen color buttons will popup
+an extended color panel, allowing the user to select either a standard
+color or a user-defined color from menus.
+.sp
+The 32 standard colors are black, yellow, white, gold,
+five shades of blue, four shades of green,
+four shades of cyan, four shades of red, five shades of magenta,
+four shades of brown, and four shades of pink.
+.sp
+To select one of the standard colors either click mouse button 1 on the
+desired color and either press Return or click mouse button 1 on the "Ok" button.
+The latter step will pop down the color panel.
+You may also double click mouse button 1 on the desired color to select
+it and pop down the color panel in one step.
+.sp
+To add a user-defined color press mouse button on the ``Add Color'' button
+in the ``User Defined Colors'' section.  User defined colors are assigned
+values sequentially starting from 32 for a maximum of 512 colors.
+.sp
+A user color may be deleted by pressing mouse button 1 on the color box to
+select it and then pressing the ``Del Color'' button.
+.sp
+The last color deleted may be undeleted by pressing the ``UnDel Color'' button.
+.sp
+To edit a user color first select the color square by pressing mouse button 1
+on the desired square. A solid or dashed line will be drawn around the box to show
+that it is selected.  Then choose the color either by
+using the RGB (red, green, blue) or the HSV (hue, saturation, value) sliders.
+or by typing a hexadecimal value into the window under the pen or fill
+color boxes representing the red,
+green and blue components (00 to FF).  If the latter is used, typing carriage
+return in the hexadecimal window will set the color.
+.sp
+Additionally, there is a button above each of the RGB sliders which when
+activated will ``lock'' two or more sliders together at their current setting
+and allow you to increase or decrease their values together with the ``lock''
+slider.
+.sp
+If the user color being edited was just created, a dashed line will be drawn
+around the box instead of a solid line to indicate that it is new.  The color
+that is currently in the pen or fill boxes will be copied into the user color
+cell for modification.  In this way you may start with a standard color or other
+user color and modify it from there.
+.sp
+The user color is said to be ``defined'' when any of the sliders is moved or
+a carriage return is typed into the hexadecimal window.  This will be shown
+by a solid line being drawn around the square instead of dashed.
+.sp
+The pen or fill color choice is activated when the panel is popped up by
+the respective button in the indicator panel, but you may switch to editing the
+other color by pressing either the ``Edit Pen'' or ``Edit Fill'' button.
+.sp
 Note that
 .I TransFig
-versions 2.1.4 and later support color output for
+supports color output for
 .IR PostScript .
 On monochrome screens the objects are created with the selected color,
-but black is used to draw the objects on the canvas.
+but black (or white) is used to draw the objects on the canvas.
 .TP
 .I "LINE WIDTH"
 The width of lines may be selected with this button.
@@ -1314,10 +1520,30 @@ to change the length of dashes or the spacing of dots respectively.
 The dash length and dot gap can be changed from the default
 using the popup menu.
 .TP
-.I "BOX CURVE"
-The radius of the corners on
-.I ARC-BOX
-objects may be set with this button.
+.I "JOIN STYLE"
+Lines may be joined with a
+.IR miter ,
+.I rounded
+or
+.I bevel
+joint.  This is only used for
+.I POLYLINE
+or
+.I POLYGON
+objects.
+.TP
+.I "CAP STYLE"
+The ends of lines may be capped with
+.IR butt ,
+.I round
+or
+.I projecting
+cap.  This is only used for
+.IR POLYLINE ,
+.I SPLINE
+or
+.I "OPEN ARC"
+objects.
 .TP
 .I "ARROW MODE"
 This button selects the auto-arrow mode for drawing lines.
@@ -1328,8 +1554,17 @@ arrow heads are automatically drawn when drawing
 .IR POLYLINE ,
 .I SPLINE
 or
-.I ARC
+.I "OPEN ARC"
 objects.
+.TP
+.I "ARROW TYPE"
+There are four types of arrows which may be filled with
+white or the object color.
+.TP
+.I "BOX CURVE"
+The radius of the corners on
+.I ARC-BOX
+objects may be set with this button.
 .TP
 .I "TEXT JUSTIFICATION"
 The adjustment of text may be set to
@@ -1467,6 +1702,7 @@ Create an arc.
 Specify three points using mouse button 1.
 The first and last points will form the endpoints of the arc
 and the second specifies any point on the arc.
+There are two types of arcs, open and pie-wedge.
 .TP
 .I BOX
 Create rectangular boxes.
@@ -1491,16 +1727,47 @@ Click mouse button 1 again to finish the circle.
 .I ELLIPSE
 Create ellipses using the same procedure as for the drawing of circles.
 .TP
-.I "ENCAPSULATED POSTSCRIPT OBJECT (EPS)"
-Click mouse button 1 on any corner
-for the
-.I EPS
+.I "PICTURE OBJECT (PIC)"
+This has been changed from the previous (2.1) version to be more generic,
+allowing GIF files, X11 bitmap (monochrome) files and
+X11 pixmap (XPM3) color files in 
+addition to Encapsulated PostScript files to be
+imported.  In the future, more formats will be included.
+Compressed (.Z) and gzipped (.z or .gz) files are also handled.
+You must have the XPM3 libraries installed to use the XPM import/export
+features.  See the README and Imakefile files.
+.Sp
+A Floyd-Steinberg dithering is applied to color images for monochrome displays.
+.Sp
+For EPS files, xfig will attempt to use
+.I Ghostscript
+to generate a 
+color image if xfig is running on an color display.
+.I Ghostscript
+must be compiled with with the "gif8" and "pbmraw" drivers.
+The pbm driver is used when you run xfig on a monochrome display and the gif8
+driver is used on a color display.
+.Sp
+.I Ghostscript
+is available from
+.IR prep.ai.mit.edu .
+.Sp
+A neural network color allocation scheme is used when the number of colors
+for all the color images on the canvas exceeds the lesser of 
+the number of free colorcells or the value in the resource Max_image_colors
+(command-line parameter -maximagecolors).  Whenever a new color image
+is added to the canvas, the colors for all the images on the canvas are
+reallocated and the images are redrawn.  No reallocation is done when
+images are deleted from the canvas.
+.Sp
+Click mouse button 1 on any corner for the
+.I PIC
 object and finish by clicking mouse button 1
 again on the diagonally opposite corner.
 The
 .I EDIT
 popup panel will appear and the file name of the
-.I EPS
+.I PIC
 object may be entered.
 After pressing
 .I DONE
@@ -1513,41 +1780,40 @@ panel for the difference between the
 and
 .I APPLY
 buttons) the bitmap part of the
-.I EPS
+.I PIC
 object will appear in the box just created.
 If no
-.I EPS
-file is available yet or no name is entered or there is no
+.I PIC
+file is available yet or no name is entered or
+in the case of an Encapsulated PostScript file
+there is no
 .I "preview bitmap"
-in the
-.I EPS
-file, pressing
+pressing
 .I DONE
 will pop down the edit panel and the word
 .I <empty>
 or the
-.I EPS
+.I PIC
 file name will remain in the
-.I EPS
-box.
-Later, when the name of the
-.I EPS
+.I PIC
+box.  Later, when the name of the
+.I PIC
 file is known or the file is available,
 you may re-read the
-.I EPS
+.I PIC
 file using the popup edit panel and the bitmap part of the
-.I EPS
+.I PIC
 file will replace the name in the box.
 .Sp
 If you want the original size of the
-.I EPS
+.I PIC
 object, press the
 ``Use orig size'' button and the eps bitmap will enlarge or shrink to
 the size specified in the preview bitmap of the
-.I EPS
+.I PIC
 file.
 If you want the
-.I EPS
+.I PIC
 object to be approximately the size of
 the rectangle specified with the mouse but want the aspect ratio
 to be same as the original, press either ``Shrink to orig'' or
@@ -1555,28 +1821,6 @@ to be same as the original, press either ``Shrink to orig'' or
 You must press the
 .I APPLY
 button to see these effects.
-.Sp
-If the
-.I EPS
-file has no preview bitmap, but has a
-.I %%BoundingBox
-comment and
-.I xfig
-has been compiled
-with the
-.B \-DGSBIT
-flag and
-you have
-.I Ghostscript
-.RI ( gs )
-version 2.4 or newer then
-.I xfig
-will call
-.I Ghostscript
-to produce a preview bitmap on the screen.
-.I Ghostscript
-is available from
-.IR prep.ai.mit.edu .
 .TP
 .I "INTERPOLATED SPLINE"
 Create (cubic spline) spline objects.
@@ -1767,12 +2011,14 @@ O^	O accent circumflex
 O~	O accent tilde
 O"	O dieresis
 O/	O slash
+OE	OE
 o`	o accent grave
 o/	o accent acute
 o^	o accent circumflex
 o~	o accent tilde
 o"	o dieresis
 o/	o slash
+oe	oe
 P|	Thorn
 p|	thorn
 ss	German ss (s-zed)
@@ -1791,6 +2037,9 @@ y"	y dieresis
 .if t \l'\nnu'
 .DT
 .fi
+.sp
+Note: the two special characters OE and oe are not displayed
+on the screen, but they are printed by fig2dev.
 .\"--------------------------------------------------------------------
 .\" Table End
 .\"--------------------------------------------------------------------
@@ -1883,18 +2132,21 @@ setting in the
 and
 .I "HORIZONTAL ALIGN"
 indicators.
+Note that alignment with respect to the canvas doesn't work for
+distributing or abutting.
 The choices are the cumulative effect
 of vertically aligning the objects to the
 .IR TOP ,
-.IR MIDDL E
+.I MIDDLE
 or
-.IR BOTTO M
+.I BOTTOM
 edge and horizontally aligning to the
-.IR LEF T,
-.IR MIDDL E
+.IR LEFT ,
+.I MIDDLE
 or
-.IR RIGH T
-edge of the compound.
+.I RIGHT
+edge of the compound, along with distributing or abutting the objects
+vertically or horizontally.
 .TP
 .I "MOVE POINT"
 Modify the position of a point of any object except
@@ -1963,6 +2215,12 @@ and
 objects, mouse may also be clicked on their circumferences).
 The object will be duplicated and then moved exactly as in
 .IR MOVE .
+.sp
+If the number of X or Y copies is non-zero (from the bottom panel)
+then that many copies will be made in each respective direction,
+spaced evenly by the amount of the distance the object is placed
+from the original object.
+.sp
 If mouse button 3 is clicked on an object, that object is copied
 to the cut buffer for pasting into this or another figure.
 The file used for the cut buffer is called
@@ -2041,53 +2299,54 @@ The following table shows which settings are used for the different objects.
 .\"--------------------------------------------------------------------
 .nr t0 \w'Polygon\0\0\0'u
 .nr t1 \n(t0+\w'Angle\0'u
-.nr t2 \n(t1+\w'Area\0\0'u
+.nr t2 \n(t1+\w'Style\0\0'u
 .nr t3 \n(t2+\w'Width\0'u
 .nr t4 \n(t3+\w'Style\0'u
-.nr t5 \n(t4+\w'Curve\0'u
-.nr t6 \n(t5+\w'Depth\|\(dd\0'u
-.nr t7 \n(t6+\w'Color\0'u
-.nr t8 \n(t7+\w'Radius\0'u
-.nr t9 \n(t8+\w'Text Font/\0'u
-.ta \n(t0u \n(t1u \n(t2u \n(t3u \n(t4u \n(t5u \n(t6u \n(t7u \n(t8u \n(t9u
+.nr t5 \n(t4+\w'Style\0'u
+.nr t6 \n(t5+\w'Style\0'u
+.nr t7 \n(t6+\w'Curve\0'u
+.nr t8 \n(t7+\w'Color\0'u
+.nr t9 \n(t8+\w'Color\0'u
+.nr ta \n(t9+\w'Radius\0'u
+.ta \n(t0u \n(t1u \n(t2u \n(t3u \n(t4u \n(t5u \n(t6u \n(t7u \n(t8u \n(t9u \n(tau
 .ds Bu \0\0\(bu
 .if n .RS -1i
 .if t .RS
 .nf
 .ne 14
-Object	Angle\&\&\&	Area	Line	Line	Box	Depth\|\(dd	Color	Radius	Text Font/
+Object	Angle\&\&\&	Fill	Line	Line	Cap	Join	Box	Pen	Fill	Radius
 .nr n \n(.nu
-	\&\&\&\&	Fill	Width	Style	Curve	\&\&\&\&	\&	\&	Just./Size
+	\&\&\&\&	Style	Width	Style	Style	Style	Curve	Color	Color
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
-Arc	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\&	\&\&\*(Bu	\*(Bu
+Arc	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\*(Bu	\&	\&	\*(Bu	\*(Bu
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
-Arc-Box	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\*(Bu	\&\&\*(Bu	\*(Bu
+Arc-Box	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\&	\&	\*(Bu	\*(Bu	\*(Bu
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
-Circle	\&\&\&\*(Bu	\*(Bu	\*(Bu	\*(Bu	\&	\&\&\*(Bu	\*(Bu	\*(Bu
+Circle	\&\&\&\*(Bu	\*(Bu	\*(Bu	\*(Bu	\&	\&	\&	\*(Bu	\*(Bu	\*(Bu
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
-Ellipse	\&\&\&\*(Bu	\*(Bu	\*(Bu	\*(Bu	\&	\&\&\*(Bu	\*(Bu	\*(Bu
+Ellipse	\&\&\&\*(Bu	\*(Bu	\*(Bu	\*(Bu	\&	\&	\&	\*(Bu	\*(Bu	\*(Bu
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
-EPS	\&\&\&\&	\&	\&	\&	\&	\&\&\*(Bu	\*(Bu
+PIC*	\&\&\&\&	\&	\&	\&	\&	\&	\&	\*(Bu	\&
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
-Box	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\&	\&\&\*(Bu	\*(Bu
+Box	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\&	\*(Bu	\&	\*(Bu	\*(Bu
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
-Polygon	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\&	\&\&\*(Bu	\*(Bu
+Polygon	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\&	\*(Bu	\&	\*(Bu	\*(Bu
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
-Line	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\&	\&\&\*(Bu	\*(Bu
+Line	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\*(Bu	\*(Bu	\&	\*(Bu	\*(Bu
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
-Spline	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\&	\&\&\*(Bu	\*(Bu
+Spline	\&\&\&\&	\*(Bu	\*(Bu	\*(Bu	\*(Bu	\&	\&	\*(Bu	\*(Bu
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
-Text	\&\&\&\*(Bu	\&	\&	\&	\&	\&\&\*(Bu	\*(Bu	\&	\*(Bu
+Text	\&\&\&\*(Bu	\&	\&	\&	\&	\&	\&	\*(Bu
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
 .DT
@@ -2095,10 +2354,9 @@ Text	\&\&\&\*(Bu	\&	\&	\&	\&	\&\&\*(Bu	\*(Bu	\&	\*(Bu
 .if n .RE
 .if t .RE
 .IP \&
-\(dd The depth defines how overlapping objects are displayed.
-Objects with a greater depth value are obstructed
-by objects with smaller depth value.
-The maximum depth allowed is 1000.
+* Encapsulated PostScript picture objects don't use any of the above attributes.
+The PostScript image is self-defined.  However, X11 bitmap picture objects use
+the pen color for coloring the bitmap image.
 .\"--------------------------------------------------------------------
 .\" Table End
 .\"--------------------------------------------------------------------
@@ -2128,12 +2386,22 @@ Flip the object up/down (mouse button 1) or copy the object and flip it
 (mouse button 2).
 Point to part of the object, click the appropriate button.
 That object will be flipped vertically about that point.
+.sp
+Optionally, mouse button 3 may be pressed on the canvas to 
+set an anchor point about which the object will be flipped.
+A crosshair indicates the anchor point on the canvas.
+Pressing this button again will unset the anchor point.
 .TP
 .I "FLIP HORIZONTALLY"
 Flip the object left/right (mouse button 1) or copy the object and flip it
 (mouse button 2).
 Point to part of the object, click the appropriate button.
 That object will be flipped horizontally about that point.
+.sp
+Optionally, mouse button 3 may be pressed on the canvas to 
+set an anchor point about which the object will be flipped.
+A crosshair indicates the anchor point on the canvas.
+Pressing this button again will unset the anchor point.
 .TP
 .I "ROTATE CLOCKWISE"
 Rotate the object (mouse button 1) or copy and rotate it
@@ -2143,13 +2411,19 @@ degrees (clockwise), where
 .I N
 is the amount set in the rotation indicator button.
 The object is rotated about the chosen point.
+.sp
+Optionally, mouse button 3 may be pressed on the canvas to 
+set a rotation point about which the object will be rotated.
+A crosshair indicates the rotation point on the canvas.
+Pressing this button again will unset the rotation point.
+.sp
 Not all objects can be rotated,
 and not all can be rotated at arbitrary angles.
 For example,
 .IR BOX ,
 .I ARC-BOX
 and
-.I EPS
+.I PIC
 objects may only be rotated by 90 degrees.
 Text objects may be rotated to any angle and will be displayed at any
 angle now.
@@ -2165,6 +2439,11 @@ degrees (counter-clockwise), where
 .I N
 is the amount set in the rotation indicator button.
 The object is rotated about the chosen point.
+.sp
+Optionally, mouse button 3 may be pressed on the canvas to 
+set a rotation point about which the object will be rotated.
+A crosshair indicates the rotation point on the canvas.
+Pressing this button again will unset the rotation point.
 .TP
 .I "SPLINE <\-> POLYLINE"
 Turn
@@ -2179,7 +2458,7 @@ object.
 .TP
 .I "ADD/DELETE ARROWS"
 Add or delete arrow heads of
-.IR ARC ,
+.IR "OPEN ARC" ,
 .I POLYLINE
 or
 .I SPLINE
@@ -2199,9 +2478,16 @@ By pressing and
 mouse button 2 the user may drag the ruler by the amount desired,
 thus panning the image by that amount.
 .PP
+If the Shift key is held down while panning the movement is five (5)
+times the normal rate.
+.PP
 The figure is panned up and down in the same way by clicking the mouse
 in the ruler on the right of the canvas.
-Also, the figure can be returned to its origin
+.PP
+If the Shift key is held down while panning the movement is five (5)
+times the normal rate.
+.PP
+The figure can be returned to its origin
 by clicking mouse button 1 in the units
 (e.g.
 .I cm
@@ -2261,13 +2547,18 @@ inches\&\&\&\&\&	Inches\&\&\&\&\&	boolean	true\&\&\&\&\&\&	\-inches,
 reverseVideo\&\&	ReverseVideo\&\&	boolean	off\&\&\&\&\&\&\&	\-inverse
 debug\&\&\&\&\&\&	Debug\&\&\&\&\&\&	boolean	off\&\&\&\&\&\&\&	\-debug
 latexfonts\&\&\&	Latexfonts\&\&\&	boolean	off\&\&\&\&\&\&\&	\-latexfonts
-normalFont\&\&\&	NormalFont\&\&\&	string	fixed\&\&\&\&\&\&	\-normal
-boldFont\&\&\&\&	ButtonFont\&\&\&	string	8x13bold\&\&\&\&	\-bold
+normalFont\&\&\&	Font\&\&\&	string	6x13\&\&\&\&\&\&	\-normal
+boldFont\&\&\&\&	Font\&\&\&	string	8x13bold\&\&\&\&	\-bold
+buttonFont\&\&\&\&	Font\&\&\&	string	6x13\&\&\&\&	\-button
 startfontsize\&\&	StartFontSize\&\&	float	12\&\&\&\&\&\&\&	\-startfontsize
 startpsFont\&\&\&	StartpsFont\&\&\&	string	Times\-Roman\&\&\&	\-startpsFont
 startlatexFont\&	StartlatexFont\&	string	Default\&\&\&\&\&	\-startlatexFont
 showallbuttons\&	ShowAllButtons\&	boolean	false\&\&\&\&\&\&	\-showallbuttons
 internalborderwidth	InternalBorderWidth	integer	1\&\&\&\&\&\&\&\&	\-internalBW
+starttextstep\&\&	startTextStep\&\&	float	1.2\&\&\&\&\&\&\&	\-starttextstep
+startfillstyle\&\&	startFillStyle\&	integer	0\&\&\&\&\&\&\&\&	\-startfillstyle
+startlinewidth\&	startLineWidth\&	integer	1\&\&\&\&\&\&\&\&	\-startlinewidth
+startgridmode\&\&	startGridMode\&\&	integer	0\&\&\&\&\&\&\&\&	\-startgridmode
 scalablefonts\&\&	ScalableFonts\&\&	boolean	true\&\&\&\&\&\&	\-scalablefonts
 specialtext\&\&\&	SpecialText\&\&\&	boolean	false\&\&\&\&\&\&	\-specialtext
 monochrome\&\&\&\&	Monochrome\&\&\&	boolean	false\&\&\&\&\&\&	\-monochrome
@@ -2277,14 +2568,8 @@ flushleft\&\&\&\&	FlushLeft\&\&\&\&	boolean	false\&\&\&\&\&\&	\-flushleft
 textoutline\&\&\&	TextOutline\&\&\&	boolean	false\&\&\&\&\&\&	\-textoutline
 userscale\&\&\&\&	UserScale\&\&\&\&	float	1.0\&\&\&\&\&\&\&	\-userscale
 userunit\&\&\&\&	UserUnit\&\&\&\&	string	in(cm)\&\&\&\&\&	\-userunit
-color0\&\&\&\&\&	Color0\&\&\&\&\&	pixel	black
-color1\&\&\&\&\&	Color1\&\&\&\&\&	pixel	blue
-color2\&\&\&\&\&	Color2\&\&\&\&\&	pixel	green
-color3\&\&\&\&\&	Color3\&\&\&\&\&	pixel	cyan
-color4\&\&\&\&\&	Color4\&\&\&\&\&	pixel	red
-color5\&\&\&\&\&	Color5\&\&\&\&\&	pixel	magenta
-color6\&\&\&\&\&	Color6\&\&\&\&\&	pixel	yellow
-color7\&\&\&\&\&	Color7\&\&\&\&\&	pixel	white
+dont_switch_cmap	Dont_switch_cmap	boolean	false\&\&\&\&\&\&	\-dontswitchcmap
+max_image_colors\&	Max_image_colors	integer	100\&\&\&\&\&\&	\-maximagecolors
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
 .if n .RE
@@ -2370,7 +2655,7 @@ app-defaults file:
 	<Shift>b	Draw arcbox
 	<Shift>p	Draw regular polygon
 	<None>r	Draw arc
-	<Ctrl>p	Draw EPS object
+	<Ctrl>p	Draw picture object
 	<None>t	Draw text
 
 	<None>g	Glue compound
@@ -2411,6 +2696,7 @@ Fig  xfig
 		Form  commands
 			Command  quit
 			Command  delete_all
+			Command  orient
 			Command  undo
 			Command  redraw
 			Command  paste
@@ -2430,34 +2716,36 @@ Fig  xfig
 		Label  canvas
 		Label  unitbox
 		Label  sideruler
-		Viewport ind_viewport
+		Box  upd_ctrl_form
+			Label upd_ctrl_label
+			Box   upd_ctrl_btns
+				Command  set_upd
+				Command  clr_upd
+				Command  tog_upd
+		Viewport ind_panel
 			Core  clip
 			Scrollbar  horizontal
-			Box  ind_panel
-				Box  upd_ctrl
-					Command  set_upd
-					Command  clr_upd
-					Command  tog_upd
+			Box  ind_box
 				Form  button_form (one for each of the 22 indicator buttons)
 					Command  button
 					Toggle  update (only those indicators that affect creation
 							of objects have update toggles)
 .Sp
-		TransientShell  xfig_ps_font_menu
+		TransientShell  ps_font_menu
 			Box  menu
-				Form  buttons
+				Form  ps_buttons
 					Command  cancel
 					Command  use_latex_fonts
 				Command  pane (one for each of the 35 PostScript font panes)
 .Sp
-		TransientShell  xfig_latex_font_menu
+		TransientShell  latex_font_menu
 			Box  menu
-				Form  buttons
+				Form  latex_buttons
 					Command  cancel
 					Command  use_postscript_fonts
 				Command  pane (one for each of the 6 LaTeX font panes)
 .Sp
-	TransientShell  xfig_file_menu
+	TransientShell  file_menu
 		Form  file_panel
 			Label  file_status
 			Label  num_objects
@@ -2486,15 +2774,15 @@ Fig  xfig
 			Command  load
 			Command  merge
 .Sp
-	TransientShell  xfig_export_menu
+	TransientShell  export_menu
 		Form  export_panel
 			Label  mag_label
 			Text  magnification
 			Label  orient_label
 			MenuButton  orientation
 				SimpleMenu  menu
-					SmeBSB  Portrait
-					SmeBSB  Landscape
+					SmeBSB  portrait
+					SmeBSB  landscape
 			Label  just_label
 			MenuButton  justify
 				SimpleMenu  menu
@@ -2518,6 +2806,8 @@ Fig  xfig
 					SmeBSB  TPIC
 					SmeBSB  PIC
 					SmeBSB  X11 Bitmap
+					SmeBSB  X11 Pixmap
+					SmeBSB  GIF
 			Label  def_file_label
 			Label  def_file_name
 			Label  out_file_name
@@ -2541,7 +2831,7 @@ Fig  xfig
 			Command  cancel
 			Command  export
 .Sp
-	TransientShell  xfig_print_menu
+	TransientShell  print_menu
 		Form  print_panel
 			Label  printer_image
 			Label  mag_label
@@ -2556,7 +2846,7 @@ Fig  xfig
 				SimpleMenu  menu
 					SmeBSB  flush left
 					SmeBSB  centered
-			Label  print_label
+			Label  printer_label
 			Text  printer
 			Label  job_params_label
 			Text  job_params
@@ -2567,7 +2857,7 @@ Fig  xfig
 			Command  print_batch
 			Command  clear_batch
 .Sp
-	TransientShell  xfig_file_msg
+	TransientShell  file_msg
 		Form  file_msg_panel
 			Text  file_msg_win
 			Command  dismiss
@@ -2579,7 +2869,7 @@ Fig  xfig
 			Command  no
 			Command  cancel
 .Sp
-	TransientShell  xfig_set_unit_panel
+	TransientShell  set_unit_panel
 		Form  form
 			Label        Unit/Scale settings
 			Label  Ruler Units  =
@@ -2603,6 +2893,49 @@ Fig  xfig
 			Text  1.0
 			Command  cancel
 			Command  set
+.Sp
+Popup color panel:
+	TransientShell  set_indicator_panel
+		Form  form
+			Label  Colors
+			Command  cancel
+			Command  set_color_ok
+			Form  mixedForm (for Pen Color)
+				Toggle  mixedEdit
+				Core  mixedColor
+				Text  tripleValue
+			Form  mixedForm (for Fill Color)
+				Toggle  mixedEdit
+				Core  mixedColor
+				Text  tripleValue
+			Label  stdLabel
+			Form  stdForm
+				Command  stdColor (one for each of 33 std colors)
+			Label  userLabel
+			Form  userForm
+				Viewport  userViewport
+					Core  clip
+					Scrollbar  horizontal
+					Box  userBox
+					   Label  colorMemory (one for each user color)
+				Command  addColor
+				Command  delColor
+				Command  undelColor
+				Form  mixingForm
+					Label  redLocked
+					Label  greenLocked
+					Label  blueLocked
+					Label  lockedLabel
+					Scrollbar  redScroll
+					Scrollbar  greenScroll
+					Scrollbar  blueScroll
+					Scrollbar  lockedScroll
+					Label  hueLabel
+					Label  satLabel
+					Label  valLabel
+					Scrollbar  hueScroll
+					Scrollbar  satScroll
+					Scrollbar  valScroll
 .fi
 .Sp
 NOTE:  The following is a
@@ -2612,17 +2945,29 @@ popup edit panel (for
 The panel will be different for other objects.
 .Sp
 .nf
-	TransientShell  xfig_edit_panel
+	TransientShell  edit_panel
 		Form  form
 			Label  POLYLINE:ArcBox
 			Label  image
 			Command  done
 			Command  apply
 			Command  cancel
-			Label   
+			Label
 			Label  Width =
 			Text  Width =
-			Label  Drawing color =
+			Label  Border color =
+			MenuButton  colors
+				SimpleMenu  menu
+					SmeBSB  Black
+					SmeBSB  Blue
+					SmeBSB  Green
+					SmeBSB  Cyan
+					SmeBSB  Red
+					SmeBSB  Magenta
+					SmeBSB  Yellow
+					SmeBSB  White
+					SmeBSB  Default
+			Label  Fill color =
 			MenuButton  colors
 				SimpleMenu  menu
 					SmeBSB  Black
@@ -2640,13 +2985,13 @@ The panel will be different for other objects.
 			MenuButton  No fill
 				SimpleMenu  menu
 					SmeBSB  No fill
-					SmeBSB  Filled 
+					SmeBSB  Filled
 			Label  Fill intensity % =
 			Text  Fill intensity % =
 			Label  Line style =
-			MenuButton  Solid Line 
+			MenuButton  Solid Line
 				SimpleMenu  menu
-					SmeBSB  Solid Line 
+					SmeBSB  Solid Line
 					SmeBSB  Dashed Line
 					SmeBSB  Dotted Line
 			Label  Dash length/Dot gap =
@@ -2741,7 +3086,7 @@ implied warranty.
 is a trademark of Adobe Systems Incorporated.
 .SH FILES
 .ft B
-.nr n \w'DOC/FORMAT2.1\0\0\0\0'+1n-1/1n
+.nr n \w'DOC/FORMAT3.0\0\0\0\0'+1n-1/1n
 .ft P
 .TP \nn
 .B CompKeyDB
@@ -2755,7 +3100,7 @@ or X toolkit resource keyFile.
 See the
 .IR Imakefile .
 .TP
-.B Doc/FORMAT2.1
+.B Doc/FORMAT3.0
 Description of Fig file format.
 .TP
 .B CHANGES
@@ -2766,6 +3111,9 @@ Many people have contributed to
 Here is a list of the people who
 have contributed the most (in chronological order):
 .sp
+.B "Version 1:"
+.sp 2
+.in +4
 Original author:
 .br
 Supoj Sutanthavibul, University of Texas at Austin
@@ -2788,12 +3136,16 @@ Cleanup of color port to X11 by:
 .br
 John T. Kohl, MIT
 .sp
+.in -4
 .B "Version 2.0:"
-.br
+.in +4
+.sp 2
 Area fill, multiple line thicknesses, multiple fonts and font sizes,
-bottom panel, line style/thickness modification of objects by:
+bottom panel, line style/thickness,
+(and anything else that wasn't written by the others)
+by:
 .br
-Brian V. Smith, Lawrence Berkeley Laboratory
+Brian Smith
 .br
 (standard disclaimer applies)
 .br
@@ -2819,8 +3171,10 @@ Cut/Paste by:
 .br
 Tom Tkacik
 .sp
+.in -4
 .B "Version 2.1:"
-.br
+.in +4
+.sp 2
 Indicator panel, file menu popup, print menu popup,
 panning with rulers, mouse function window, regular polygon,
 rubberbanding of circles/ellipses, filled splines on canvas,
@@ -2838,7 +3192,7 @@ Paul King (king@cs.uq.oz.au)
 .br
 with help from:
 .br
-Brian V. Smith (bvsmith@lbl.gov)
+Brian Smith
 and Micah Beck (beck@cs.utk.edu)
 .sp
 Encapsulated
@@ -2847,7 +3201,7 @@ importing by:
 .br
 Brian Boyter
 .sp
-Color implementation and pan/zoom with ctrl key/mouse by:
+Pan/zoom with ctrl key/mouse by:
 .br
 Henning Spruth
 .sp
@@ -2876,10 +3230,54 @@ Paul King (king@cs.uq.oz.au)
 .sp
 Extensive man page formatting revisions by:
 .br
-DaviD W. Sanderson (dws@ssec.wisc.edu)
+David W. Sanderson
+.in -4
+.sp
+.B "Version 3.0:"
+.in +4
+.sp 2
+.br
+New arrowhead types, separate pen/fill colors, new file protocol,
+more colors with extended color popup panel, new arc style,
+new fill patterns (bricks, etc), new line- join and cap styles,
+export offset and file load offset, XPM/GIF/XBM import and export
+(and anything else that wasn't written by the others) by:
+.br
+Brian Smith
+.br
+(Note: the color popup panel was based on
+.I xcoloredit
+by Richard Hesketh)
+.sp
+Higher figure resolution (1200dpi) by:
+.br
+Ross Martin (martin@trcsun3.eas.asu.edu)
+.sp
+Color quantization using neural network by:
+.br
+Anthony Dekker (dekker@ozemail.com.au)
+.br
+[NEUQUANT Neural-Net quantization algorithm by Anthony Dekker, 1994.
+See "Kohonen neural networks for optimal colour quantization"
+in "Network: Computation in Neural Systems" Vol. 5 (1994) pp 351-367.
+for a discussion of the algorithm.]
+.sp
+Floyd-Steinberg algorithm for dithering color images on monochrome
+displays lifted from the Pbmplus package by Jef Poskanser.
+.sp
+rotate/flip objects around/about selected anchor point and multiple
+copies of objects by:
+.br
+Uwe Bonnes (bon@lte.e-technik.uni-erlangen.de)
+.in -4
 .sp
 Many bug fixes/cleanups etc. by a host of faithful users
+.sp
 .br
 See the
 .B CHANGES
 file for all the credits
+.sp
+The
+.I TransFig
+package was written by Micah Beck and is maintained by Brian Smith

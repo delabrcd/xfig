@@ -1,3 +1,6 @@
+NOTE: THIS FILE FORMAT IS OBSOLETE.  THIS DOCUMENT IS ONLY PROVIDED
+	FOR BACKWARD COMPATIBILITY AND INFORMATION.
+
 The following is the format of fig output for Protocol version 2.0:
 
 (1) The very first line is a comment line containing the name and version:
