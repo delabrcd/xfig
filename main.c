@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -27,13 +22,30 @@
 #include "resources.h"
 #include "object.h"
 #include "mode.h"
+#include "e_edit.h"
+#include "d_text.h"
+#include "u_error.h"
 #include "u_fonts.h"
+#include "u_redraw.h"
+#include "u_undo.h"
 #include "w_color.h"
+#include "w_canvas.h"
+#include "w_cmdpanel.h"
 #include "w_drawprim.h"
+#include "w_file.h"
+#include "w_export.h"
+#include "w_indpanel.h"
+#include "w_library.h"
+#include "w_msgpanel.h"
 #include "w_mousefun.h"
+#include "w_print.h"
+#include "w_rulers.h"
+#include "w_srchrepl.h"
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
+#include "fig.icon.X"
+
 #ifdef USE_XPM_ICON
 #include <xpm.h>
 #endif /* USE_XPM_ICON */
@@ -45,36 +57,14 @@
 
 #ifdef I18N
 #include <locale.h>
-
-extern XIC xim_ic;
-extern Boolean xim_active;
 #endif  /* I18N */
-
-/************** EXTERNAL functions **************/
-
-extern void	quit(), undo(), paste(), redisplay_canvas(), delete_all_cmd();
-extern void	popup_print_panel(), popup_file_panel(), popup_export_panel();
-extern void	do_load(), do_save(), popup_unit_panel(), popup_search_panel();
-extern void	inc_zoom(), dec_zoom();
-
-extern void	setup_cmd_panel();
-extern		X_error_handler();
-extern void	error_handler();
-extern void	my_quit();
-extern void	quit();
-extern int	ignore_exp_cnt;
-extern int	psfontnum();
-extern int	latexfontnum();
-
-#include "fig.icon.X"
-Pixmap		fig_icon;
 
 static char	tool_name[100];
 static int	screen_res;
 
 /************** FIG options ******************/
 
-static char    *filename = NULL;
+char    *arg_filename = NULL;
 
 static Boolean	true = True;
 static Boolean	false = False;
@@ -103,18 +93,10 @@ XtResource resources[] =
 /* actions so that we may install accelerators at the top level */
 static XtActionsRec	main_actions[] =
 {
-    {"Quit", (XtActionProc) quit},
-    {"Delete_all", (XtActionProc) delete_all_cmd},
-    {"Undo", (XtActionProc) undo},
-    {"Redraw", (XtActionProc) redisplay_canvas},
-    {"Paste", (XtActionProc) paste},
-    {"File", (XtActionProc) popup_file_panel},
-      {"LoadFile", (XtActionProc) do_load},
-      {"SaveFile", (XtActionProc) do_save},
-    {"Export", (XtActionProc) popup_export_panel},
-    {"Print", (XtActionProc) popup_print_panel},
-    {"Units", (XtActionProc) popup_unit_panel},
+    {"LoadFile", (XtActionProc) load_request},
+    {"SaveFile", (XtActionProc) save_request},
     {"Search", (XtActionProc) popup_search_panel},
+    {"ShowLengths", (XtActionProc) toggle_show_lengths},
 };
 
 static XtResource application_resources[] = {
@@ -134,14 +116,10 @@ static XtResource application_resources[] = {
       XtOffset(appresPtr, RHS_PANEL), XtRBoolean, (caddr_t) & false},
     {"landscape",   XtCOrientation, XtRBoolean, sizeof(Boolean),
       XtOffset(appresPtr, landscape), XtRBoolean, (caddr_t) & true},
-    {"debug", "Debug",   XtRBoolean, sizeof(Boolean),
-      XtOffset(appresPtr, DEBUG), XtRBoolean, (caddr_t) & false},
     {"pwidth",   XtCWidth, XtRFloat, sizeof(float),
       XtOffset(appresPtr, tmp_width), XtRFloat, (caddr_t) & Fzero},
     {"pheight",   XtCHeight, XtRFloat, sizeof(float),
       XtOffset(appresPtr, tmp_height), XtRFloat, (caddr_t) & Fzero},
-    {XtNreverseVideo,   XtCReverseVideo, XtRBoolean, sizeof(Boolean),
-      XtOffset(appresPtr, INVERSE), XtRBoolean, (caddr_t) & false},
     {"trackCursor", "Track",   XtRBoolean, sizeof(Boolean),
       XtOffset(appresPtr, TRACKING), XtRBoolean, (caddr_t) & true},
     {"inches", "Inches",   XtRBoolean, sizeof(Boolean),
@@ -208,14 +186,29 @@ static XtResource application_resources[] = {
       XtOffset(appresPtr, paper_size), XtRString, (caddr_t) NULL},
     {"multiple",   XtCOrientation, XtRBoolean, sizeof(Boolean),
       XtOffset(appresPtr, multiple), XtRBoolean, (caddr_t) & false},
-    {"show_balloons",   "ShowBalloons", XtRBoolean, sizeof(Boolean),
-      XtOffset(appresPtr, show_balloons), XtRBoolean, (caddr_t) & true},
+    {"showballoons",   "ShowBalloons", XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, showballoons), XtRBoolean, (caddr_t) & true},
+    {"balloon_delay", "Balloon_delay", XtRInt, sizeof(int),
+      XtOffset(appresPtr, balloon_delay), XtRImmediate, (caddr_t) 500},
     {"spellcheckcommand", "spellCheckCommand",   XtRString, sizeof(char *),
       XtOffset(appresPtr, spellcheckcommand), XtRString, (caddr_t) "spell %s"},
     {"jpeg_quality", "Quality", XtRInt, sizeof(int),
       XtOffset(appresPtr, jpeg_quality), XtRImmediate, (caddr_t) 0},
     {"transparent", "Transparent", XtRInt, sizeof(int),
       XtOffset(appresPtr, transparent), XtRImmediate, (caddr_t) -2 },
+    {"library_dir", "Directory", XtRString, sizeof(char *),
+      XtOffset(appresPtr, library_dir), XtRString, (caddr_t) OBJLIBDIR},
+    {"debug", "Debug",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, DEBUG), XtRBoolean, (caddr_t) & false},
+    {"showlengths", "Debug",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, showlengths), XtRBoolean, (caddr_t) & false},
+    {"shownums", "Debug",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, shownums), XtRBoolean, (caddr_t) & false},
+    {"browser", "Browser", XtRString, sizeof(char *),
+      XtOffset(appresPtr, browser), XtRString, (caddr_t) NULL},
+    {"pdfviewer", "Viewer", XtRString, sizeof(char *),
+      XtOffset(appresPtr, pdf_viewer), XtRString, (caddr_t) NULL},
+
 #ifdef I18N
     {"international", "International", XtRBoolean, sizeof(Boolean),
        XtOffset(appresPtr, international), XtRBoolean, (caddr_t) & false},
@@ -255,6 +248,7 @@ static XrmOptionDescRec options[] =
     {"-visual", "*visual", XrmoptionSepArg, NULL},
     {"-depth", "*depth", XrmoptionSepArg, NULL},
 
+    {"-balloon_delay", ".balloon_delay", XrmoptionSepArg, 0},
     {"-boldFont", ".boldFont", XrmoptionSepArg, 0},
     {"-buttonFont", ".buttonFont", XrmoptionSepArg, 0},
     {"-but_per_row", ".but_per_row", XrmoptionSepArg, 0},
@@ -263,7 +257,8 @@ static XrmOptionDescRec options[] =
     {"-centimeters", ".inches", XrmoptionNoArg, "False"},
     {"-cfg", ".canvasForeground", XrmoptionSepArg, (caddr_t) NULL},
     {"-debug", ".debug", XrmoptionNoArg, "True"},
-    {"-dontshowballoons", ".show_balloons", XrmoptionNoArg, "False"},
+    {"-dontshowballoons", ".showballoons", XrmoptionNoArg, "False"},
+    {"-dontshowlengths", ".showlengths", XrmoptionNoArg, "False"},
     {"-dontswitchcmap", ".dont_switch_cmap", XrmoptionNoArg, "True"},
     {"-exportLanguage", ".exportLanguage", XrmoptionSepArg, 0},
     {"-flushleft", ".flushleft", XrmoptionNoArg, "True"},
@@ -273,13 +268,13 @@ static XrmOptionDescRec options[] =
     {"-inches", ".inches", XrmoptionNoArg, "True"},
     {"-internalBorderWidth", ".internalborderwidth", XrmoptionSepArg, 0},
     {"-internalBW", ".internalborderwidth", XrmoptionSepArg, 0},
-    {"-inverse", ".reverseVideo", XrmoptionNoArg, "True"},
     {"-jpeg_quality", ".jpeg_quality", XrmoptionSepArg, 0},
     {"-keyFile", ".keyFile", XrmoptionSepArg, 0},
     {"-Landscape", ".landscape", XrmoptionNoArg, "True"},
     {"-landscape", ".landscape", XrmoptionNoArg, "True"},
     {"-latexfonts", ".latexfonts", XrmoptionNoArg, "True"},
     {"-left", ".justify", XrmoptionNoArg, "False"},
+    {"-library_dir", ".library_dir", XrmoptionSepArg, 0},
     {"-magnification", ".magnification", XrmoptionSepArg, 0},
     {"-max_image_colors", ".max_image_colors", XrmoptionSepArg, 0},
     {"-metric", ".inches", XrmoptionNoArg, "False"},
@@ -297,7 +292,9 @@ static XrmOptionDescRec options[] =
     {"-rulerthick", ".rulerthick", XrmoptionSepArg, 0},
     {"-scalablefonts", ".scalablefonts", XrmoptionNoArg, "True"},
     {"-showallbuttons", ".showallbuttons", XrmoptionNoArg, "True"},
-    {"-showballoons", ".show_balloons", XrmoptionNoArg, "True"},
+    {"-showballoons", ".showballoons", XrmoptionNoArg, "True"},
+    {"-showlengths", ".showlengths", XrmoptionNoArg, "True"},
+    {"-shownums", ".shownums", XrmoptionNoArg, "True"},
     {"-single", ".multiple", XrmoptionNoArg, "False"},
     {"-specialtext", ".specialtext", XrmoptionNoArg, "True"},
     {"-spellcheckcommand", ".spellcheckcommand", XrmoptionSepArg, 0},
@@ -312,6 +309,7 @@ static XrmOptionDescRec options[] =
     {"-starttextstep", ".starttextstep",  XrmoptionSepArg, 0},
     {"-tablet", ".tablet", XrmoptionNoArg, "True"},
     {"-track", ".trackCursor", XrmoptionNoArg, "True"},
+    {"-transparent_color", ".transparent", XrmoptionSepArg, 0},
     {"-userscale", ".userscale", XrmoptionSepArg, 0},
     {"-userunit", ".userunit", XrmoptionSepArg, 0},
     {"-zoom", ".zoom", XrmoptionSepArg, 0},
@@ -333,6 +331,7 @@ xfig [-h[elp]] \
 [-flushleft] \
 [-debug] \
 [-dontshowballoons] \
+[-dontshowlengths] \
 \n     \
 [-dontswitchcmap] \
 [-exportLanguage <language>] \
@@ -344,13 +343,13 @@ xfig [-h[elp]] \
 [-internalBW <width>] \
 \n     \
 [-internalBorderWidth <width>] \
-[-inverse] \
 [-jpeg_quality <quality>] \
-\n     \
 [-keyFile <file>] \
+\n     \
 [-landscape] \
 [-latexfonts] \
 [-left] \
+[-library_dir <directory>] \
 \n     \
 [-magnification <print/export_mag>] \
 [-max_image_colors <number>] \
@@ -368,11 +367,12 @@ xfig [-h[elp]] \
 \n     \
 [-pwidth <width>] \
 [-right] \
-[-rulerwidth <width>] \
+[-rulerthick <width>] \
 [-scalablefonts] \
 \n     \
 [-showallbuttons] \
 [-showballoons] \
+[-showlengths] \
 [-single] \
 [-specialtext] \
 \n     \
@@ -390,8 +390,9 @@ xfig [-h[elp]] \
 [-starttextstep <number>] \
 [-tablet] \
 [-track] \
-[-userscale <scale>] \
+[-transparent_color <xfig color number>] \
 \n     \
+[-userscale <scale>] \
 [-userunit <units>] \
 [-visual <visual>] \
 [file] \
@@ -409,8 +410,6 @@ XtActionsRec	form_actions[] =
     {"Quit", (XtActionProc) my_quit},
 };
 
-extern void clear_text_key();
-extern void paste_panel_key();
 static XtActionsRec text_panel_actions[] =
 {
     {"PastePanelKey", (XtActionProc) paste_panel_key} ,
@@ -429,6 +428,12 @@ struct geom {
 #define NCHILDREN	9
 static Widget	form;
 
+static Arg	    args[10];
+static int	    cnt;
+
+int	xargc;		/* keeps copies of the command-line arguments */
+char	**xargv;
+
 main(argc, argv)
     int		    argc;
     char	   *argv[];
@@ -438,42 +443,36 @@ main(argc, argv)
     int		    ichild;
     int		    init_canv_wd, init_canv_ht;
     XWMHints	   *wmhints;
-    int		    i,j,n;
+    int		    i,j;
     char	   *userhome;
     Dimension	    w, h, w1, h1;
     XGCValues	    gcv;
-    Colormap	    colormap;		/* created colormap */
-    XVisualInfo	    vinfo;		/* template for find visual */
-    XVisualInfo	   *vinfo_list;		/* returned list of visuals */
-    int		    count;		/* number of matchs (only 1?) */
-    int		    cnt;		/* for the Xt args */
-    Arg		    args[10];
-    int		    xargc;		/* keeps copies of the command-line arguments */
-    char	  **xargv;
     XColor	    dumcolor;
     char	    version[30];
     Boolean	    geomspec;
     struct geom	    geom;
-    XPixmapFormatValues *pmf;
 
     DeclareArgs(5);
 
     geomspec = False;
    
-    /* version number only */
-    if (argc > 1 && strcasecmp(argv[1],"-v")==0) {
-	(void) fprintf(stderr, " XFIG %s patchlevel %s (Protocol %s)\n",
-		   FIG_VERSION, PATCHLEVEL, PROTOCOL_VERSION);
-	exit(0);
+    /* generate version string for various uses */
+    sprintf(xfig_version, "Xfig %s patchlevel %s (Protocol %s)",
+	   FIG_VERSION, PATCHLEVEL, PROTOCOL_VERSION);
 
-    /* help message only */
-    } else if (argc > 1 && 
-	((strcmp(argv[1],"-help")==0) || (strcmp(argv[1],"-h")==0))) {
-	    fprintf(stderr,"%s",help_list);
-	    exit(0);
+    /* help or version number only */
+    if (argc > 1 && (strcasecmp(argv[1],"-v")==0 || 
+		    ((strcmp(argv[1],"-help")==0) || (strcmp(argv[1],"-h")==0)))) {
+	    /* print the version info in both cases */
+	    fprintf(stderr,"%s\n",xfig_version);
+	    if ((strcmp(argv[1],"-help")==0) || (strcmp(argv[1],"-h")==0))
+		fprintf(stderr,"\n%s",help_list);
+	exit(0);
     } else if (argc > 1) {
 	char *p1,*p2,*p;
-	/* make sure that if he uses the -geom argument it only has the position */
+	/* If the user uses the -geom argument parse out the position from the size.
+	   We'll allow the system to use the position part, but we'll set the size later
+	   when the window sizes have been computed correctly. */
 	for (i=1; i<argc; i++) {
 	    if (strncmp(argv[i],"-ge",3)==0) {
 		if (i+1 < argc) {
@@ -492,7 +491,7 @@ main(argc, argv)
 			p = p1;
 		    else
 			p = min2(p1,p2);
-		    strcpy(argv[i+1],p);
+		    safe_strcpy(argv[i+1],p);
 		    break;
 		}
 		/* only specified geometry and not offset, get rid of it altogether */
@@ -500,8 +499,6 @@ main(argc, argv)
 		    argv[i] = argv[j];
 		}
 		argc -= 2;
-		fprintf(stderr,
-			"Do not use -geometry, use -pwidth and -pheight to set canvas size\n");
 		break;
 	    }
 	}
@@ -513,113 +510,28 @@ main(argc, argv)
     XtSetLanguageProc(NULL, NULL, NULL);
 #endif  /* I18N */
 
-/* start of visual check/set */
+    /*
+     * save the command line arguments
+     */
 
-	/*
-	 * save the command line arguments
-	 */
+    xargc = argc;
+    xargv = (char **) XtMalloc ((argc+1) * sizeof (char *));
+    bcopy ((char *) argv, (char *) xargv, argc * sizeof (char *));
 
-	xargc = argc;
-	xargv = (char **) XtMalloc (argc * sizeof (char *));
-	bcopy ((char *) argv, (char *) xargv, argc * sizeof (char *));
+    /* for some reason Solaris version of XtAppCreateShell references the following */
+    xargv[argc]=NULL;
 
-	/*
-	 * The following creates a _dummy_ toplevel widget so we can
-	 * retrieve the appropriate visual resource.
-	 */
-	tool = XtAppInitialize (&tool_app, "Fig", options, XtNumber (options), &argc, argv,
-			       (String *) NULL, args, 0);
-	/* save important info */
-	tool_d = XtDisplay(tool);
-	tool_s = XtScreen(tool);
-	tool_sn = DefaultScreen(tool_d);
+    /* get all the visual stuff and depth */
+    setup_visual(&argc, argv);
 
-	XtGetApplicationResources (tool, &Options, resources,
-				   XtNumber (resources), args, 0);
-	cnt = 0;
-	if ((Options.visual && Options.visual != DefaultVisualOfScreen (tool_s)) ||
-	    (Options.depth && Options.depth != DefaultDepthOfScreen (tool_s))) {
-		if (! Options.visual) {
-		    /* no visual specified by the user, use default */
-		    Options.visual = DefaultVisual(tool_d,tool_sn);
-		}
-		if (Options.depth == 0) {
-		    /* no depth specified by the user, use default */
-		    Options.depth = DefaultDepthOfScreen(tool_s);
-		}
-
-		XtSetArg (args[cnt], XtNvisual, Options.visual); ++cnt;
-		/*
-		 * Now we create an appropriate colormap.  We could
-		 * use a default colormap based on the class of the
-		 * visual; we could examine some property on the
-		 * rootwindow to find the right colormap; we could
-		 * do all sorts of things...
-		 */
-		tool_cm = XCreateColormap (tool_d,
-					    RootWindowOfScreen (tool_s),
-					    Options.visual,
-					    AllocNone);
-		XtSetArg (args[cnt], XtNcolormap, tool_cm); ++cnt;
-
-		/*
-		 * Now find some information about the visual.
-		 */
-		vinfo.visualid = XVisualIDFromVisual (Options.visual);
-		vinfo_list = XGetVisualInfo (tool_d, VisualIDMask, &vinfo, &count);
-		if (vinfo_list && count > 0) {
-			XtSetArg (args[cnt], XtNdepth, vinfo_list[0].depth);
-			++cnt;
-			XFree ((XPointer) vinfo_list);
-			/* save the depth of the visual */
-			tool_dpth = vinfo_list[0].depth;
-		}
-		/* save the visual */
-		tool_v = Options.visual;
-	} else {
-		/* no visual specified by the user, use default */
-		tool_v = DefaultVisual(tool_d,tool_sn);
-		/* same for colormap */
-		tool_cm = DefaultColormapOfScreen(tool_s);
-		tool_dpth = DefaultDepthOfScreen(tool_s);
-	}
-	/* and save the class */
-	tool_vclass = tool_v->class;
-
-	/* now get the pixmap formats supported and find the bits-per-pixel
-	   for the depth we are using */
-	
-	pmf = XListPixmapFormats (tool_d, &n);
-	image_bpp = 0;
-	if (pmf) {
-	    for (i = 0; i < n; i++) {
-		if (pmf[i].depth == tool_dpth) {
-		    /* calculate bytes per pixel from bits per pixel */
-		    if ((image_bpp = pmf[i].bits_per_pixel/8)==0)
-			image_bpp = 1;
-		}
-	    }
-	    XFree ((char *) pmf);
-	} else {
-	    fprintf(stderr,"*????* NO supported pixmap formats (from XListPixmapFormats)?\n");
-	    fprintf(stderr,"Report this to your vendor\n");
-	}
-	if (image_bpp == 0) {
-	    file_msg("Can't find bits per pixel from Pixmap formats, using 8");
-	    image_bpp = 1;
-	}
-
-	XtDestroyWidget (tool);
-
-	/*
-	 * Now create the real toplevel widget.
-	 */
-	XtSetArg (args[cnt], XtNargv, xargv); ++cnt;
-	XtSetArg (args[cnt], XtNargc, xargc); ++cnt;
-	tool = XtAppCreateShell ((String) "xfig", (String) "Fig",
+    /*
+     * Now create the real toplevel widget.
+     */
+    XtSetArg (args[cnt], XtNargv, xargv); ++cnt;
+    XtSetArg (args[cnt], XtNargc, xargc); ++cnt;
+    tool = XtAppCreateShell ((String) "xfig", (String) "Fig",
 				applicationShellWidgetClass,
 				tool_d, args, cnt);
-/* end of visual check/set */
 
     /* we are not writing the figure to the bitmap */
     writing_bitmap = False;
@@ -631,8 +543,8 @@ main(argc, argv)
     if ((TMPDIR = getenv("XFIGTMPDIR"))==NULL)
 	TMPDIR = "/tmp";
 
-    (void) sprintf(tool_name, " XFIG %s patchlevel %s (Protocol %s)",
-		   FIG_VERSION, PATCHLEVEL, PROTOCOL_VERSION);
+    /* make a copy of the version */
+    (void) strcpy(tool_name, xfig_version);
     (void) strcat(file_header, PROTOCOL_VERSION);
 
     /* install actions to get to the functions with accelerators */
@@ -648,7 +560,14 @@ main(argc, argv)
 
     /* the Fig filename is the only option now */
     if (argc > 1) {
-	filename = argv[1];
+	if (argv[1][0] == '-') {
+	  fprintf(stderr, "xfig: unknown option or missing parameter: %s\n", argv[1]);
+	  exit(0);
+	} else if (argc > 2) {
+	  fprintf(stderr, "xfig: too many parameters: %s\n", argv[2]);
+	  exit(0);
+	}
+	arg_filename = argv[1];
     }
 
 #ifdef I18N
@@ -660,8 +579,12 @@ main(argc, argv)
     tool_cells = CellsOfScreen(tool_s);
     screen_res = (int) ((float) WidthOfScreen(tool_s) /
 			((appres.INCHES) ?
-			    ((float) WidthMMOfScreen(tool_s)/2.54) :
+			    ((float) WidthMMOfScreen(tool_s)/25.4) :
 				     WidthMMOfScreen(tool_s) ));
+
+    /* make sure balloon_delay is non-negative */
+    if (appres.balloon_delay < 0)
+	appres.balloon_delay = 0;
 
     /* set zoom factor for resolution chosen */
     if (appres.zoom <= 0.0)
@@ -675,7 +598,12 @@ main(argc, argv)
     if (appres.jpeg_quality <= 0 || appres.jpeg_quality > 100)
 	appres.jpeg_quality = DEF_JPEG_QUALITY;	/* user didn't specify or chose bad value */
 
+    /* ratio of Fig units to display resolution (80ppi) */
     ZOOM_FACTOR = PIX_PER_INCH/DISPLAY_PIX_PER_INCH;
+
+    /* PIC_FACTOR is the number of Fig units (1200dpi) per printer's points (1/72 inch) */
+    /* it changes with Metric and Imperial */
+    PIC_FACTOR  = (appres.INCHES ? (float)PIX_PER_INCH : 2.54*PIX_PER_CM)/72.0;
 
     display_zoomscale = appres.zoom;
     zoomscale=display_zoomscale/ZOOM_FACTOR;
@@ -756,13 +684,13 @@ main(argc, argv)
 	cur_fillstyle = min2(appres.startfillstyle,NUMFILLPATS-1);
 
     if (appres.startlinewidth >= 0)
-	cur_linewidth = min2(appres.startlinewidth,MAXLINEWIDTH);
+	cur_linewidth = min2(appres.startlinewidth,MAX_LINE_WIDTH);
 
     if (appres.startgridmode >= 0)
-	cur_gridmode = min2(appres.startgridmode,GRID_3);
+	cur_gridmode = min2(appres.startgridmode,GRID_4);
 
     if (appres.startposnmode >= 0)
-	cur_pointposn = min2(appres.startposnmode,P_GRID3);
+	cur_pointposn = min2(appres.startposnmode,P_GRID4);
 
     /* turn off PSFONT_TEXT flag if user specified -latexfonts */
     if (appres.latexfonts)
@@ -783,31 +711,8 @@ main(argc, argv)
     all_colors_available = True;
 
     /* check if monochrome screen */
-    if (tool_cells == 2 || appres.monochrome) {
+    if (tool_cells == 2 || appres.monochrome)
 	all_colors_available = False;
-	if (appres.INVERSE) {
-	    XrmValue	value;
-	    XrmDatabase	newdb = (XrmDatabase) 0, old;
-
-	    value.size = sizeof("White");
-	    value.addr = "White";
-	    XrmPutResource(&newdb, "xfig*borderColor", "String", &value);
-	    value.size = sizeof("White");
-	    value.addr = "White";
-	    XrmPutResource(&newdb, "xfig*foreground", "String", &value);
-	    value.size = sizeof("Black");
-	    value.addr = "Black";
-	    XrmPutResource(&newdb, "xfig*background", "String", &value);
-	    old = XtDatabase(tool_d);
-	    XrmMergeDatabases(newdb, &old);
-
-	    /* now set the tool part, since it's already created */
-	    FirstArg(XtNborderColor, white_color.pixel);
-	    NextArg(XtNforeground, white_color.pixel);
-	    NextArg(XtNbackground, black_color.pixel);
-	    SetValues(tool);
-	}
-    }
 
     init_font();
 
@@ -826,6 +731,29 @@ main(argc, argv)
      * different palette entries
      */
     check_colors();
+
+    /* get two grays for insensitive spinners */
+    if (tool_cells == 2 || appres.monochrome) {
+	/* use black to gray out an insensitive spinner */
+	dk_gray_color = colors[BLACK];
+	lt_gray_color = colors[BLACK];
+    } else {
+	XColor x_gray_color;
+	/* get a dark gray for making certain spinners insensitive */
+	XParseColor(tool_d, tool_cm, "gray60", &x_gray_color);
+	if (XAllocColor(tool_d, tool_cm, &x_gray_color)==0) {
+	    dk_gray_color = colors[WHITE];
+	} else {
+	    dk_gray_color = x_gray_color.pixel;
+	}
+	/* get a lighter one too */
+	XParseColor(tool_d, tool_cm, "gray80", &x_gray_color);
+	if (XAllocColor(tool_d, tool_cm, &x_gray_color)==0) {
+	    lt_gray_color = colors[WHITE];
+	} else {
+	    lt_gray_color = x_gray_color.pixel;
+	}
+    }
 
     /* make the top-level widget */
     FirstArg(XtNinput, (XtArgVal) True);
@@ -889,10 +817,9 @@ main(argc, argv)
 	}
     }
 	
-
     setup_sizes(init_canv_wd, init_canv_ht);
     (void) init_cmd_panel(form);
-    (void) init_msg(form,filename);
+    (void) init_msg(form,arg_filename);
     (void) init_mousefun(form);
     (void) init_mode_panel(form);
     (void) init_topruler(form);
@@ -944,10 +871,10 @@ main(argc, argv)
     /* and recolor the cursors */
     recolor_cursors();
 
-    (void) init_fontmenu(form); /* printer font menu */
-    (void) init_unitbox(form);
-    (void) init_sideruler(form);
-    (void) init_ind_panel(form);
+    init_fontmenu(form); /* printer font menu */
+    init_unitbox(form);
+    init_sideruler(form);
+    init_ind_panel(form);
 
     ichild = 0;
     children[ichild++] = cmd_panel;	/* command buttons */
@@ -968,6 +895,9 @@ main(argc, argv)
     XtManageChildren(children, NCHILDREN);
     XtRealizeWidget(tool);
     tool_w = XtWindow(tool);
+
+    /* create some global bitmaps like arrows, etc */
+    create_bitmaps();
 
 #ifdef I18N
     if (appres.international) {
@@ -993,8 +923,10 @@ main(argc, argv)
     (void) XSetWMProtocols(XtDisplay(tool), tool_w, wm_protocols, 1);
 #endif
 
-    /* use the XPM color icon for color display */
 #ifdef USE_XPM_ICON
+    /********************************************/
+    /* use the XPM color icon for color display */
+    /********************************************/
     if (all_colors_available) {
 	Pixmap		dum;
 	Window		iconWindow;
@@ -1129,6 +1061,9 @@ main(argc, argv)
 	    CANVAS_HT_PORT = geom.ht - h;
 	    resize_all((int) (CANVAS_WD_PORT), (int) (CANVAS_HT_PORT));
 	}
+    } else {
+	    /* this really settles things to the right size */
+	    resize_all(CANVAS_WD, CANVAS_HT);
     }
 
     /* get the current directory */
@@ -1198,13 +1133,14 @@ main(argc, argv)
 	sprintf(cut_buf_name, "%s%06d", "/tmp/xfig", getpid());
     }
 
-    if (filename == NULL)
-	strcpy(cur_filename, DEF_NAME);
-    else
-	load_file(filename,0,0);
-    update_cur_filename(cur_filename);
+    /* let things settle down */
+    process_pending();
 
-    app_flush();
+    if (arg_filename == NULL)
+	cur_filename[0] = '\0';
+    else
+	load_file(arg_filename,0,0);
+    update_cur_filename(cur_filename);
 
     /* If the user requests a tablet then do the set up for it */
     /*   and handle the tablet XInput extension events */
@@ -1369,7 +1305,6 @@ notablet:
     else
 #ifdef I18N
     if (xim_ic != NULL) {
-      extern canvas_selected();
       XEvent event;
       for (;;) {
 	XtAppNextEvent(tool_app, &event);
@@ -1389,7 +1324,110 @@ notablet:
 #endif  /* I18N */
 	XtAppMainLoop(tool_app);
     return 0;
-}
+
+}	/* end of main() */
+
+/* setup all the visual and depth stuff */
+
+setup_visual(argc_p, argv)
+	int	      *argc_p;
+	char	      *argv[];
+{
+	int	       i, n;
+	int	       count;		/* number of matchs (only 1?) */
+	XPixmapFormatValues *pmf;
+	XVisualInfo    vinfo;		/* template for find visual */
+	XVisualInfo   *vinfo_list;	/* returned list of visuals */
+
+	/*
+	 * The following creates a _dummy_ toplevel widget so we can
+	 * retrieve the appropriate visual resource.
+	 */
+	tool = XtAppInitialize (&tool_app, "Fig", options, XtNumber (options), argc_p, argv,
+			       (String *) NULL, args, 0);
+	/* save important info */
+	tool_d = XtDisplay(tool);
+	tool_s = XtScreen(tool);
+	tool_sn = DefaultScreen(tool_d);
+
+	XtGetApplicationResources (tool, &Options, resources,
+				   XtNumber (resources), args, 0);
+	cnt = 0;
+	if ((Options.visual && Options.visual != DefaultVisualOfScreen (tool_s)) ||
+	    (Options.depth && Options.depth != DefaultDepthOfScreen (tool_s))) {
+		if (! Options.visual) {
+		    /* no visual specified by the user, use default */
+		    Options.visual = DefaultVisual(tool_d,tool_sn);
+		}
+		if (Options.depth == 0) {
+		    /* no depth specified by the user, use default */
+		    Options.depth = DefaultDepthOfScreen(tool_s);
+		}
+
+		XtSetArg (args[cnt], XtNvisual, Options.visual); ++cnt;
+		/*
+		 * Now we create an appropriate colormap.  We could
+		 * use a default colormap based on the class of the
+		 * visual; we could examine some property on the
+		 * rootwindow to find the right colormap; we could
+		 * do all sorts of things...
+		 */
+		tool_cm = XCreateColormap (tool_d,
+					    RootWindowOfScreen (tool_s),
+					    Options.visual,
+					    AllocNone);
+		XtSetArg (args[cnt], XtNcolormap, tool_cm); ++cnt;
+
+		/*
+		 * Now find some information about the visual.
+		 */
+		vinfo.visualid = XVisualIDFromVisual (Options.visual);
+		vinfo_list = XGetVisualInfo (tool_d, VisualIDMask, &vinfo, &count);
+		if (vinfo_list && count > 0) {
+			XtSetArg (args[cnt], XtNdepth, vinfo_list[0].depth);
+			++cnt;
+			XFree ((XPointer) vinfo_list);
+			/* save the depth of the visual */
+			tool_dpth = vinfo_list[0].depth;
+		}
+		/* save the visual */
+		tool_v = Options.visual;
+	} else {
+		/* no visual specified by the user, use default */
+		tool_v = DefaultVisual(tool_d,tool_sn);
+		/* same for colormap */
+		tool_cm = DefaultColormapOfScreen(tool_s);
+		tool_dpth = DefaultDepthOfScreen(tool_s);
+	}
+	/* and save the class */
+	tool_vclass = tool_v->class;
+
+	/* now get the pixmap formats supported and find the bits-per-pixel
+	   for the depth we are using */
+	
+	pmf = XListPixmapFormats (tool_d, &n);
+	image_bpp = 0;
+	if (pmf) {
+	    for (i = 0; i < n; i++) {
+		if (pmf[i].depth == tool_dpth) {
+		    /* calculate bytes per pixel from bits per pixel */
+		    if ((image_bpp = pmf[i].bits_per_pixel/8)==0)
+			image_bpp = 1;
+		}
+	    }
+	    XFree ((char *) pmf);
+	} else {
+	    fprintf(stderr,"*????* NO supported pixmap formats (from XListPixmapFormats)?\n");
+	    fprintf(stderr,"Report this to your vendor\n");
+	}
+	if (image_bpp == 0) {
+	    file_msg("Can't find bits per pixel from Pixmap formats, using 8");
+	    image_bpp = 1;
+	}
+
+	XtDestroyWidget (tool);
+
+}	/* end of setup_visual() */
 
 static void
 check_for_resize(tool, event, params, nparams)

@@ -1,28 +1,24 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
 #include "fig.h"
 #include "resources.h"
 #include "object.h"
+#include "f_read.h"
 #include "u_create.h"
 #include "u_fonts.h"
 #include "w_drawprim.h"
@@ -48,9 +44,6 @@ static F_text  *read_1_3_textobject();
 static F_spline *read_1_3_splineobject();
 static F_arc   *read_1_3_arcobject();
 static F_compound *read_1_3_compoundobject();
-
-extern int	line_no;
-extern int	num_object;
 
 int
 read_1_3_objects(fp, buf, obj)
@@ -173,12 +166,12 @@ read_1_3_arcobject(fp)
     }
     if (f) {
 	a->for_arrow = forward_arrow();
-	a->for_arrow->wid = w;
+	a->for_arrow->wd = w;
 	a->for_arrow->ht = h;
     }
     if (b) {
 	a->back_arrow = backward_arrow();
-	a->back_arrow->wid = w;
+	a->back_arrow->wd = w;
 	a->back_arrow->ht = h;
     }
     return (a);
@@ -366,12 +359,12 @@ read_1_3_lineobject(fp)
 	l->type = T_BOX;
     if (f) {
 	l->for_arrow = forward_arrow();
-	l->for_arrow->wid = w;
+	l->for_arrow->wd = w;
 	l->for_arrow->ht = h;
     }
     if (b) {
 	l->back_arrow = backward_arrow();
-	l->back_arrow->wid = w;
+	l->back_arrow->wd = w;
 	l->back_arrow->ht = h;
     }
     for (;;) {
@@ -433,12 +426,12 @@ read_1_3_splineobject(fp)
 	s->type = T_OPEN_APPROX;
     if (f) {
 	s->for_arrow = forward_arrow();
-	s->for_arrow->wid = w;
+	s->for_arrow->wd = w;
 	s->for_arrow->ht = h;
     }
     if (b) {
 	s->back_arrow = backward_arrow();
-	s->back_arrow->wid = w;
+	s->back_arrow->wd = w;
 	s->back_arrow->ht = h;
     }
     for (;;) {
@@ -480,7 +473,6 @@ read_1_3_textobject(fp)
     int		    n;
     int		    dum;
     char	    buf[128];
-    extern PIX_FONT lookfont();
     PR_SIZE	    tx_dim;
 
     if ((t = create_text()) == NULL)

@@ -1,25 +1,29 @@
-#ifndef W_ICONS_H
-#define W_ICONS_H
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
+
+#ifndef W_ICONS_H
+#define W_ICONS_H
+
+#ifdef USE_SMALL_ICONS
+#define		MODE_SW_HT	22	/* height of a small mode switch icon */
+#define		MODE_SW_WD	22	/* width of a small mode switch icon */
+#else
+#define		MODE_SW_HT	32	/* height of a mode switch icon */
+#define		MODE_SW_WD	36	/* width of a mode switch icon */
+#endif
 
 typedef struct _icon_struct {
     int	    width, height;
@@ -32,7 +36,6 @@ extern icon_struct	addpt_ic;
 extern icon_struct	raise_ic;
 #endif
 
-extern icon_struct	kbd_ic;
 extern icon_struct	smartoff_ic;
 extern icon_struct	smartmove_ic;
 extern icon_struct	smartslide_ic;
@@ -50,6 +53,7 @@ extern icon_struct	c_xspl_ic;
 extern icon_struct	copy_ic;
 extern icon_struct	glue_ic;
 extern icon_struct	break_ic;
+extern icon_struct	library_ic;
 extern icon_struct	open_comp_ic;
 extern icon_struct	joinmiter_ic;
 extern icon_struct	joinround_ic;
@@ -69,9 +73,7 @@ extern icon_struct	elldia_ic;
 extern icon_struct	flip_x_ic;
 extern icon_struct	flip_y_ic;
 extern icon_struct	forarrow_ic;
-extern icon_struct	grid1_ic;
-extern icon_struct	grid2_ic;
-extern icon_struct	grid3_ic;
+extern icon_struct	grid1_ic, grid2_ic, grid3_ic, grid3_ic, grid4_ic;
 extern icon_struct	intspl_ic;
 extern icon_struct	c_intspl_ic;
 extern icon_struct	line_ic;
@@ -114,7 +116,6 @@ extern icon_struct	blank_ic;
 extern icon_struct	textL_ic;
 extern icon_struct	textC_ic;
 extern icon_struct	textR_ic;
-extern icon_struct	printer_ic;
 extern icon_struct	noarrows_ic;
 extern icon_struct	farrows_ic;
 extern icon_struct	barrows_ic;
@@ -122,4 +123,13 @@ extern icon_struct	fbarrows_ic;
 extern icon_struct	open_arc_ic;
 extern icon_struct	pie_wedge_arc_ic;
 extern icon_struct	xspl_ic;
+
+/* misc icons */
+extern icon_struct	arrow0_ic, arrow1_ic, arrow2_ic, arrow3_ic;
+extern icon_struct	arrow4_ic, arrow5_ic, arrow6_ic;
+extern unsigned char	arrow0_bits[], arrow1_bits[], arrow2_bits[], arrow3_bits[];
+extern unsigned char	arrow4_bits[], arrow5_bits[], arrow6_bits[];
+extern icon_struct	kbd_ic;
+extern icon_struct	printer_ic;
+
 #endif /* W_ICONS_H */

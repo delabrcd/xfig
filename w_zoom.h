@@ -1,35 +1,36 @@
-#ifndef W_ZOOM_H
-#define W_ZOOM_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Henning Spruth
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
+
+#ifndef W_ZOOM_H
+#define W_ZOOM_H
 
 extern float	zoomscale;
 extern float	display_zoomscale;
 extern int	zoomxoff;
 extern int	zoomyoff;
 extern Boolean	zoom_in_progress;
+extern Boolean	integral_zoom;
 
 typedef struct { int x,y; } zXPoint ;
 
+/* convert Fig units to pixels at current zoom */
 #define ZOOMX(x) round(zoomscale*((x)-zoomxoff))
 #define ZOOMY(y) round(zoomscale*((y)-zoomyoff))
+
+/* convert pixels to Fig units at current zoom */
 #define BACKX(x) round(x/zoomscale+zoomxoff)
 #define BACKY(y) round(y/zoomscale+zoomyoff)
 

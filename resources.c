@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -71,6 +66,12 @@ char		*short_clrNames[] = {
 
 XColor		black_color, white_color;
 
+/* for the xfig icon */
+Pixmap		fig_icon;
+
+/* version string - generated in main() */
+char		xfig_version[100];
+
 /* original directory where xfig started */
 char	orig_dir[PATH_MAX+2];
 
@@ -89,6 +90,7 @@ Boolean		colorUsed[MAX_USR_COLS];
 Boolean		colorFree[MAX_USR_COLS];
 Boolean		n_colorFree[MAX_USR_COLS];
 Boolean		all_colors_available;
+Pixel		dk_gray_color, lt_gray_color;
 
 /* number of colors we want to use for pictures */
 /* this will be determined when the first picture is used.  We will take
@@ -100,7 +102,9 @@ int		avail_image_cols = -1;
 XColor		image_cells[MAX_COLORMAP_SIZE];
 
 appresStruct	appres;
-Window		real_canvas, canvas_win, msg_win, sideruler_win, topruler_win;
+Window		main_canvas;		/* main canvas window */
+Window		canvas_win;		/* current canvas */
+Window		msg_win, sideruler_win, topruler_win;
 
 Cursor		cur_cursor;
 Cursor		arrow_cursor, bull_cursor, buster_cursor, crosshair_cursor,
@@ -148,6 +152,8 @@ unsigned long	ind_but_fg, ind_but_bg;
 unsigned long	mouse_but_fg, mouse_but_bg;
 
 float		ZOOM_FACTOR;	/* assigned in main.c */
+float		PIC_FACTOR;	/* assigned in main.c, updated in unit_panel_set() and 
+					update_settings() when reading figure file */
 
 /* will be filled in with environment variable XFIGTMPDIR */
 char	       *TMPDIR;
@@ -175,21 +181,20 @@ char    *just_items[] = {
 		to change the PAPER_xx definitions in resources.h */
 
 struct	paper_def paper_sizes[] = {
-    {"Letter  ", "Letter  (8.5\" x 11\")",   10200, 13200}, 
-    {"Legal   ", "Legal   (8.5\" x 14\")",   10200, 16800}, 
-    {"Ledger  ", "Ledger  ( 17\" x 11\")",   20400, 13200}, 
-    {"Tabloid ", "Tabloid ( 11\" x 17\")",   13200, 20400}, 
-    {"A       ", "A       (8.5\" x 11\")",   10200, 13200}, 
-    {"B       ", "B       ( 11\" x 17\")",   13200, 20400}, 
-    {"C       ", "C       ( 17\" x 22\")",   20400, 26400}, 
-    {"D       ", "D       ( 22\" x 34\")",   26400, 40800}, 
-    {"E       ", "E       ( 34\" x 44\")",   40800, 52800}, 
-    {"A4      ", "A4      (210mm x  297mm)",  9921, 14031}, 
-    {"A3      ", "A3      (297mm x  420mm)", 14031, 19843}, 
-    {"A2      ", "A2      (420mm x  594mm)", 19843, 28063}, 
-    {"A1      ", "A1      (594mm x  841mm)", 28063, 39732}, 
-    {"A0      ", "A0      (841mm x 1189mm)", 39732, 56173}, 
-    {"B5(JIS) ", "B5(JIS) (182mm x  257mm)",  8598, 12142}, 
+    {"Letter  ", "Letter  (8.5\" x 11\" / 216 x 279 mm)",   10200, 13200}, 
+    {"Legal   ", "Legal   (8.5\" x 14\" / 216 x 356 mm)",   10200, 16800}, 
+    {"Tabloid ", "Tabloid ( 11\" x 17\" / 279 x 432 mm)",   13200, 20400}, 
+    {"A       ", "ANSI A  (8.5\" x 11\" / 216 x 279 mm)",   10200, 13200}, 
+    {"B       ", "ANSI B  ( 11\" x 17\" / 279 x 432 mm)",   13200, 20400}, 
+    {"C       ", "ANSI C  ( 17\" x 22\" / 432 x 559 mm)",   20400, 26400}, 
+    {"D       ", "ANSI D  ( 22\" x 34\" / 559 x 864 mm)",   26400, 40800}, 
+    {"E       ", "ANSI E  ( 34\" x 44\" / 864 x 1118 mm)",   40800, 52800}, 
+    {"A4      ", "ISO A4  (210mm x  297mm)",  9921, 14031}, 
+    {"A3      ", "ISO A3  (297mm x  420mm)", 14031, 19843}, 
+    {"A2      ", "ISO A2  (420mm x  594mm)", 19843, 28063}, 
+    {"A1      ", "ISO A1  (594mm x  841mm)", 28063, 39732}, 
+    {"A0      ", "ISO A0  (841mm x 1189mm)", 39732, 56173}, 
+    {"B5      ", "JIS B5  (182mm x  257mm)",  8598, 12142}, 
     };
 
 char    *multiple_pages[] = {

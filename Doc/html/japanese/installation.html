@@ -1,0 +1,424 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html>
+<head>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=EUC-JP">
+<title>XFIG User Manual - Installation</title>
+<link rev="made" href="mailto:VEF00200@nifty.ne.jp">
+</head>
+
+<body>
+<img src="../images/xfig-title.gif" alt="XFIG Users Manual">
+<p>
+[ <a href="../index.html">English Version</a>
+ | <b>Japanese Version</b> ]
+<p>
+[ <a href="index.html">Contents</a>
+ | <a href="introduction.html">Operating Manual</a>
+ | <a href="features_bugs.html">New Features and Bugs Fixed</a><br>
+ | <b>Technical Informations</b>
+ | <a href="authors.html">Authors</a> ]
+<p>
+[ <a href="options.html">オプション、及びリソース</a>
+ | <b>インストール</b>
+ | <a href="faq.html">FAQ</a><br>
+ | <a href="i18n.html">日本語への対応 (あるいは国際化?)</a>
+ | <a href="fig-format.html">Fig Format 3.2</a> ]
+
+<p>
+<hr>
+
+<h1>インストール</h1>
+
+<h2><a name="install-xfig">xfig のインストール</a></h2>
+
+<b>xfig</b> のインストールの手順は、おおむね次のようになります。
+詳細については <tt>README</tt> ファイルなどを参照して下さい。
+また、日本語対応機能を有効とする方法については
+<a href="i18n.html">日本語への対応 (あるいは国際化?)</a> 
+も参照して下さい。
+<p>
+<ol>
+<li><b>xfig</b> のソース (<tt>xfig.3.2.1.tar.gz</tt>) を入手して、展開します。
+<p>
+<b>xfig</b> のソースは、
+<a href="ftp://www-epb.lbl.gov/xfig/"><i>www-epb.lbl.gov/xfig</i></a>、
+<a href="ftp://ftp.x.org/contrib/applications/drawing_tools/xfig/"><i>ftp.x.org</i></a> 
+やその <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a> 
+の <tt>/contrib/applications/drawing_tools/xfig</tt>、
+もしくは任意の CTAN マシン 
+(例えば <a href="ftp://ftp.tex.ac.uk/pub/archive/graphics/"><i>ftp.tex.ac.uk</i></a>) の
+<tt>/pub/archive/graphics</tt> から入手することができます。
+
+<p>
+<li>通常は、<a href="#ghostscript">GhostScript</a> も
+インストールしておく必要があります。
+<p>
+GhostScript は、pbmraw、ppmraw、pcx256、jpeg、及び tiff24nc ドライバを
+組み込んでコンパイルされている必要があります。
+
+<p>
+<li>必要に応じて <tt>Imakefile</tt> を編集します。
+<p>
+<ul>
+<li><a href="authors.html#gif-patent">GIF サポート機能</a>
+を使用しない場合には、``<tt>#define USEGIF</tt>'' を
+<tt>XCOMM</tt> ディレクティブを用いてコメント・アウト 
+(<tt>XCOMM #define USEGIF</tt>) します。
+
+<p>
+<li>JPEG サポート機能を使用しない場合には、``<tt>#define USEJPEG</tt>'' を
+<tt>XCOMM</tt> ディレクティブを用いてコメント・アウトします。
+<p>
+JPEG サポート機能を使用する場合には 
+``<tt>#define USEJPEG</tt>'' がコメント・アウトされていないことを確認し、
+また必要に応じて <tt>USEINSTALLEDJPEG</tt>、
+<tt>JPEGLIBDIR</tt> などの設定を変更します。
+この機能を使用するためには、
+<a href="#jpeg">JPEG ライブラリ</a> (Version 5b 以降のもの) が必要となります。
+
+<p>
+<li>XPM サポート機能を使用しない場合には、``<tt>#define USEXPM</tt>'' を
+<tt>XCOMM</tt> ディレクティブを用いてコメント・アウトします。
+<p>
+XPM サポート機能を使用する場合には 
+``<tt>#define USEXPM</tt>'' がコメント・アウトされていないことを確認し、
+また必要に応じて <tt>XPMLIBDIR</tt> などの設定を変更します。
+この機能を使用するためには、
+<a href="#xpm">XPM3 パッケージ</a> (Version 3.4c 以降のもの) が必要となります。
+
+<p>
+<li><a href="#xaw3d">Xaw3d (Three-D Athena Widget)</a> ライブラリ
+を使用する場合には、
+``<tt>XAWLIB = -lXaw3d</tt>'' のコメント・アウトを解除します。
+Xaw の代わりに Xaw3d を用いるとボタンなどの表示が立体的となります。
+Xaw3d は、<tt>-DARROW_SCROLLBAR</tt> を指定せずに
+コンパイルされていなければなりません。
+
+<p>
+<li>小さいディスプレイ (例えば 800x600 程度の) を使っている場合には、
+<b>xfig</b> のボタンを小さくしたいと思われるかも知れません。
+もしそうであれば、``<tt>#define USESMALLICONS</tt>'' の
+コメント・アウトを解除して下さい。
+</ul>
+<p>
+より詳細な情報は、<tt>README</tt> ファイルなどを参照して下さい。
+
+<p>
+<li><kbd>xmkmf</kbd> を実行し、<tt>Makefile</tt> を生成します。
+
+<p>
+<li><kbd>make</kbd> を実行し、<b>xfig</b> をコンパイルします。
+
+<p>
+<li>コンパイルが完了したならば <kbd>make install</kbd> を実行し、
+作成したコマンドなどを所定のディレクトリにコピーします。
+<p>
+<tt>make install</tt> を行なわず、ファイルを手でコピーする場合には:
+<p>
+<ul>
+<li><tt>xfig</tt> コマンド (実行可能ファイル) は、
+コマンド検索パスに含まれているディレクトリにコピーする
+<li><tt>Fig.ad</tt>、及び <tt>Fig-color.ad</tt> を、
+<tt>app-defaults</tt> ディレクトリに、
+それぞれ <tt>Fig</tt>、及び <tt>Fig-color</tt> という名前でコピーする
+<li><tt>CompKeyDB</tt> は、
+<tt>Imakefile</tt> の <tt>XFIGLIBDIR</tt> で指定されたディレクトリにコピーする
+</ul>
+
+
+<p>
+<li><kbd>make install.man</kbd> を実行し、
+マニュアル・ページを所定のディレクトリにコピーします。
+</ol>
+
+
+<h2><a name="install-fig2dev">transfig/fig2dev のインストール</a></h2>
+
+<b>transfig</b> (<b>fig2dev</b>) のインストールの手順は、
+おおむね次のようになります。
+詳細については <tt>README</tt> ファイルなどを参照して下さい。
+また、日本語対応機能を有効とする方法については
+<a href="i18n.html">日本語への対応 (あるいは国際化?)</a> 
+も参照して下さい。
+<p>
+<ol>
+<li><b>transfig</b> のソース (<tt>transfig.3.2.1.tar.gz</tt>) を入手して、
+展開します。
+これは、<b>xfig</b> と同じサイトから入手することができます。
+
+<p>
+<li>必要に応じて <tt>fig2dev/Imakefile</tt>、
+及び <tt>fig2dev/dev/Imakefile</tt> を編集します。
+<p>
+<ul>
+<li>LaTeX での出力に際して NFSS2 フォントを使用しない場合には、
+``<tt>DDNFSS = -DNFSS</tt>'' を
+<tt>XCOMM</tt> ディレクティブを用いてコメント・アウトします。
+また、LaTeX2e の <tt>epsfig</tt> マクロを使用しない場合には、
+``<tt>DDEPSF = -DEPSF</tt>'' をコメント・アウトします。
+<p>
+おそらく、LaTeX2e のユーザーはこれらの双方を指定し、
+また LaTeX 2.09 のユーザーはいずれも指定しないべきでしょう。
+
+<p>
+<li>JPEG サポート機能を使用しないならば、``<tt>#define USEJPEG</tt>'' を
+<tt>XCOMM</tt> ディレクティブを用いてコメント・アウトします。
+<p>
+JPEG サポート機能を使用するならば、
+``<tt>#define USEJPEG</tt>'' がコメント・アウトされていないことを確認し、
+必要に応じて <tt>USEINSTALLEDJPEG</tt>、及び <tt>JPEGLIBDIR</tt> の定義を変更します。
+この機能を使用するためには、
+<a href="#jpeg">JPEG ライブラリ</a> (Version 5b 以降のもの) が必要となります。
+JPEG ライブラリが既にシステムにインストールされている場合には、
+``<tt>#define USEINSTALLEDJPEG</tt>'' がコメント・アウトされていないことを確認します。
+
+<p>
+<li>XPM サポート機能を使用しない場合には、
+``<tt>#define USEXPM</tt>'' をコメント・アウトします。
+<p>
+XPM サポート機能を使用する場合には 
+``<tt>#define USEXPM</tt>'' がコメント・アウトされていないことを確認し、
+また必要に応じて <tt>XPMLIBDIR</tt> などの設定を変更します。
+この機能を使用するためには、
+<a href="#xpm">XPM3 パッケージ</a> (Version 3.4c 以降のもの) が必要となります。
+
+<p>
+<li>DBM ルーチンが独立したライブラリに含まれている場合には、
+``<tt>DBMLIB = -lgdbm</tt>'' のコメント・アウトを解除します。
+<p>
+<tt>DBMLIB</tt> は、RedHat Linux においては <tt>-ldb</tt>、
+Slackware Linux においては <tt>-lgdbm</tt>、
+その他のいくつかの Linux においては <tt>-ldbm</tt> 
+に設定する必要があるかも知れません。
+
+<p>
+<li>システムが <tt>strcasecmp()</tt>、
+及び/もしくは <tt>strncasecmp()</tt> をサポートしていないならば、
+``<tt>HAVE_NO_STRCASECMP = -DHAVE_NO_STRCASECMP</tt>''、
+及び/もしくは ``<tt>HAVE_NO_STRNCASECMP = -DHAVE_NO_STRNCASECMP</tt>'' 
+のコメント・アウトを解除します。
+
+<p>
+<li>システムが <tt>strstr()</tt> をサポートしていないならば、
+``<tt>#define NOSTRSTR</tt>'' のコメント・アウトを解除します。
+
+<p>
+<li>システムが <tt>strerror()</tt> をサポートしている 
+(<tt>sys_errlist</tt> をサポートしていない) ならば、
+``<tt>NEED_STRERROR = -DNEED_STRERROR</tt>'' のコメント・アウトを解除します。
+
+<p>
+<li>Solaris 2 においては、
+<tt>LOCAL_LIBRARIES</tt> に <tt>-lnsl</tt> を追加する必要があります。
+また、HP-UX においては、
+最適化のレベルを <tt>+O2</tt> に下げることが必要となるかも知れません。
+</ul>
+<p>
+詳細は、<tt>README</tt> や <tt>Imakefile</tt> を参照して下さい。
+
+<p>
+<li><kbd>xmkmf</kbd> を実行します。
+
+<p>
+<li><kbd>make Makefiles</kbd> を実行します。
+
+<p>
+<li><kbd>make</kbd> を実行し、
+<b>transfig</b>、及び <b>fig2dev</b> をコンパイルします。
+
+<p>
+<li>コンパイルが完了したならば <kbd>make install</kbd> を実行し、
+作成したコマンドなどを所定のディレクトリにコピーします。
+
+<p>
+<li><kbd>make install.man</kbd> を実行し、
+マニュアル・ページを所定のディレクトリにコピーします。
+</ol>
+
+
+<hr>
+
+<h1><a name="related-software">関連するソフトウェア</a></h1>
+
+<h2>ライブラリ</h2>
+
+<ul>
+<li><b><a name="xaw3d">Xaw3d (Three-D Athena Widget) ライブラリ</a></b><br>
+通常の <b>Xaw</b> の代わりに <b>Xaw3d</b> を用いると、
+ボタンなどを立体的に表示することが可能となります。
+これは、<a href="ftp://ftp.x.org/contrib/widgets/"><i>ftp.x.org</i></a> や
+その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a> 
+の <tt>/contrib/widgets</tt> から入手することができます。
+
+<p>
+<li><b><a name="xpm">XPM3 パッケージ</a></b><br>
+XPM フォーマットのイメージを取り扱うためのパッケージです。
+これは、<a href="ftp://ftp.x.org/contrib/libraries/"><i>ftp.x.org</i></a> や
+その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a> 
+の <tt>/contrib/libraries</tt> から入手することができます。
+
+<p>
+<li><b><a name="jpeg">JPEG ライブラリ</a></b><br>
+JPEG フォーマットのイメージを取り扱うためのパッケージです。
+この公式ディストリビューション・サイトは
+<a href="ftp://ftp.uu.net/graphics/jpeg/"><i>ftp.uu.net</i></a> の 
+<tt>/graphics/jpeg</tt> です。
+これは、<a href="ftp://ftp.x.org/contrib/libraries/"><i>ftp.x.org</i></a> や
+その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a> 
+の <tt>/contrib/libraries</tt> から入手することもできます。
+</ul>
+
+
+<h2><a name="related-apps">アプリケーション</a></h2>
+
+ここでは、関連するアプリケーションのリストを示します。
+<a href="http://SAL.KachinaTech.COM">
+<i>Scientific Applications on Linux (SAL)</i></a> からは、
+<a href="http://www.linux.or.jp">Linux</a> 用のアプリケーション 
+(その多くは、他の UNIX 互換プラットホーム上でも動作するかも知れない) 
+についての情報を得ることができます。
+
+<p>
+<ul>
+<li><b>fig2dev (transfig)</b><br>
+<a href="#install-fig2dev">fig2dev</a> は、
+<b>xfig</b> で作成した図を種々のフォーマットに変換する機能を提供します。
+<b>xfig</b> は <a href="command-panel.html#export">Export</a> や 
+<a href="command-panel.html#print">Print</a> に際して
+<b>fig2dev</b> を呼び出しますので、これは必須となります。
+<b>fig2dev</b> は <b>transfig</b> パッケージの一部であり、
+<b>xfig</b> と同様の場所から入手することができます。
+
+<p>
+<li><a name="ghostscript"><b>GhostScript</b></a><br>
+<b>xfig</b> は、<a href="drawing-mode.html#picture">PostScript のイメージ</a>
+の表示などに際して <b>GhostScript</b> (<tt>gs</tt> コマンド) を呼び出します。
+<b>GhostScript</b> は 
+<a href="http://www.fsf.org/">Free Software Foundations</a> 
+のプロダクトであり、
+<a href="ftp://prep.ai.mit.edu/"><i>prep.ai.mit.edu</i></a> 
+やその<a href="http://www.fsf.org/order/ftp.html">ミラー・サイト</a>、
+あるいは 
+<a href="ftp://ftp.cs.wisc.edu/ghost/aladdin">ftp://ftp.cs.wisc.edu/ghost/aladdin</a> 
+などから入手することができます。
+
+<p>
+<li><a name="netpbm"><b>netpbm</b></a><br>
+<b>fig2dev</b> は、図のビットマップ形式での
+<a href="command-panel.html#export">エクスポート</a> に際して 
+<b>netpbm</b> パッケージの所定のコマンドを呼び出します。
+<b>netpbm</b> は、
+<a href="ftp://ftp.x.org/contrib/utilities/"><i>ftp.x.org</i></a> 
+やその <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a> 
+の <tt>/contrib/utilities</tt>、
+あるいは <a href="ftp://ftp.cdrom.com/pub/X11/contrib/utilities/"><i>ftp.cdrom.com</i></a> 
+の <tt>/pub/X11/contrib/utilities</tt> から入手することができます。
+
+<p>
+<li><a name="gzip"><b>gzip (gunzip)</b></a><br>
+<b>xfig</b> は、<b>gzip</b> によって圧縮されたファイルの読み込みに際して 
+<b>gunzip</b> を呼び出します。
+<b>gzip</b> (<b>gunzip</b>) は 
+<a href="http://www.fsf.org/">Free Software Foundations</a> 
+のプロダクトであり、
+<a href="ftp://prep.ai.mit.edu/"><i>prep.ai.mit.edu</i></a> 
+やその<a href="http://www.fsf.org/order/ftp.html">ミラー・サイト</a>
+から入手することができます。
+
+<p>
+<li><a name="xv"><b>xv</b></a><br>
+<b>xv</b> は、種々のフォーマットのイメージを表示し、
+また種々の操作を行なうために用いることができます。
+デフォルトでは、<b>xfig</b> は
+<a href="editing-mode.html#edit-pict-panel">PICTURE オブジェクトの編集</a>
+に際して <b>xv</b> を起動します。
+<b>xv</b> はシェアウェアであり、anonymous ftp によって入手することができます。
+
+<p>
+<li><a name="xpaint"><b>xpaint</b></a><br>
+<b>xpaint</b> は X11 上で動作するペイント・プログラムです。
+これは、
+<a href="http://www.danbbs.dk/~torsten/xpaint">
+http://www.danbbs.dk/~torsten/xpaint</a> や、
+<a href="ftp://sunsite.unc.edu/pub/Linux/apps/graphics/draw/">
+ftp://sunsite.unc.edu/pub/Linux/apps/graphics/draw/</a> 
+などの任意の SunSite から入手することができます。
+<p>
+<a href="http://www.gimp.org/">http://www.gimp.org/</a> からは、
+フリーの強力なイメージ操作ソフトウェアである 
+<b>GIMP</b> についての情報を得ることができます。
+
+<p>
+<li><a name="gnuplot"><b>gnuplot</b></a><br>
+<b>gnuplot</b> はグラフ作成パッケージであり、
+Fig フォーマットやその他のフォーマットでの出力を生成することができます。
+公式のディストリビューション・サイトは 
+<a href="ftp://ftp.dartmouth.edu/pub/gnuplot/"><i>ftp.dartmouth.edu</i></a> ですが、
+近くの <tt>comp.sources.misc</tt> アーカイブから入手することなども可能です。
+
+<p>
+<li><a name="xgraph"><b>xgraph</b></a><br>
+<b>xgraph</b> は X11 上で動作するグラフ作成パッケージです。
+<a href="ftp://iworks.ecn.uiowa.edu/"><i>iworks.ecn.uiowa.edu</i></a> の 
+<tt>comp.hp</tt> には、
+Fig ファイルを生成することのできるバージョンが含まれています。
+
+<p>
+<li><b>mifXfig</b><br>
+<b>mifXfig</b> は MIF フォーマット (Framemaker(TM) のファイル) と 
+Fig フォーマットとのコンバータです。
+詳細は、
+<a href="http://www.ida.liu.se/~vaden/teaching/m2f/">http://www.ida.liu.se/
+~vaden/teaching/m2f/</a>
+を参照して下さい。
+
+<p>
+<li><a name="pstoedit"><b>pstoedit</b></a><br>
+<b>pstoedit</b> は、PostScript ファイルを 
+fig フォーマットに変換するために用いることができます。
+これは、
+<a href="ftp://ftp.x.org/contrib/applications/tgif/pstoedit/"><i>ftp.x.org</i></a> 
+やその <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a> 
+の <tt>/contrib/applications/tgif/pstoedit</tt> から入手することができます。
+
+<p>
+<li><a name="hp2xx"><b>hp2xx</b></a><br>
+<b>hp2xx</b> を用いると、HP-GL ファイルを 
+PostScript、LaTeX、Fig などのフォーマットに変換することが可能です。
+これは、
+<a href="ftp://ftp.engr.usask.ca/pub/hp2xx/">ftp://ftp.engr.usask.ca/pub/hp2xx/</a> 
+から入手することができます。
+
+<p>
+<li><b>pic2fig</b><br>
+troff や ditroff などで用いられる 
+PIC フォーマットから Fig フォーマットへの変換プログラムです。
+これは、
+<a href="ftp://ftp.cs.orst.edu/localsrc/graphics/"><i>ftp.cs.orst.edu</i></a> の 
+<tt>/localsrc/graphics</tt> や、
+<a href="ftp://ftp.x.org/contrib/utilities/"><i>ftp.x.org</i></a> 
+やその <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a> 
+の <tt>/contrib/utilities</tt> から入手することができます。
+
+<p>
+<li><b>plot2fig</b><br>
+UNIX の plot フォーマットから Fig フォーマットへの変換プログラムです。
+これは任意の GNU サイトから入手することができます。
+
+<p>
+<li><b>cdraw2fig</b><br>
+``Cheap Draw'' フォーマットから Fig フォーマットへの変換プログラムです。
+Cheap Draw 2.0 は Bob Pratt によって作成されたものであり、
+osu-cis の UNIXPC アーカイブから入手することが可能です。
+</ul>
+
+<p>
+<hr>
+
+Goto <a href="index.html">TOP</a>
+
+<p>
+<a href="authors.html#manual"><i>written by us</i></a>
+
+</body>
+</html>

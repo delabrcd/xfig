@@ -1,18 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Copyright (c) 1989-1998 by Brian V. Smith
+ * GIFencode Copyright E. Chernyaev (chernaev@mx.decnet.ihep.su)
+ *
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  * Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
  * be included if xfig is to be sold, due to the patent held by Unisys Corp.
@@ -20,191 +18,8 @@
  */
 
 #include "fig.h"
-#include "resources.h"
-#include "mode.h"
-#include "object.h"
-#include "paintop.h"
-#include "w_setup.h"
-#include "w_drawprim.h"
-#include "w_zoom.h"
-#include <stdio.h>
-#include <stdlib.h>
-
-extern Pixmap	init_write_color_image();
-static Boolean	create_n_write_gif();
 
 long	GIFencode();
-
-Boolean
-write_gif(file_name,mag,transparent,margin)
-    char	   *file_name;
-    float	    mag;
-    int		    transparent,margin;
-{
-    if (!ok_to_write(file_name, "EXPORT"))
-	return False;
-
-    return create_n_write_gif(file_name,mag/100.0,transparent,margin);	/* write the gif file */
-}
-
-static Boolean
-create_n_write_gif(filename,mag,transparent,margin)
-    char	   *filename;
-    float	    mag;
-    int		    transparent,margin;
-{
-    Boolean	    status;
-    int		    i, x;
-    int		    width, height;
-    Pixmap	    pixmap;
-    XImage	   *image;
-    unsigned char  *data, *iptr, *dptr;
-    long	    giflen;
-    int		    numcols;
-    int		    transp;
-    XColor	    colors[MAX_COLORMAP_SIZE];
-    int		    mapcols[MAX_COLORMAP_SIZE],
-		    colused[MAX_COLORMAP_SIZE];
-    unsigned char   Red[MAX_COLORMAP_SIZE],
-		    Green[MAX_COLORMAP_SIZE],
-		    Blue[MAX_COLORMAP_SIZE];
-
-    if (tool_dpth > 8) {
-	file_msg("Exporting to GIF not working for screen depths > 8");
-	file_msg("Please export to JPEG or start your X server with a depth of 8");
-	return False;
-    }
-
-    /* setup the canvas, pixmap and zoom */
-    if ((pixmap = init_write_color_image(4096,mag,&width,&height,margin)) == 0)
-	return False;
-
-    put_msg("Mapping colors...");
-    app_flush();
-
-    /* get the pixmap back in an XImage */
-    image = XGetImage(tool_d, pixmap, 0, 0, width, height, AllPlanes, ZPixmap);
-
-    iptr = (unsigned char *) image->data;
-    dptr = data = (unsigned char *) malloc(height*width);
-    /* get the rgb values for ALL pixels */
-    for (i=0; i<tool_cells; i++) {
-	colors[i].pixel = i;
-	colors[i].flags = DoRed | DoGreen | DoBlue;
-    }
-    XQueryColors(tool_d, tool_cm, colors, tool_cells);
-
-    /* color */
-    if (tool_cells > 2) {
-	/* copy them to the Red, Green and Blue arrays */
-	for (i=0; i<tool_cells; i++) {
-	    colused[i] = 0;
-	}
-
-	/* now map the pixel values to 0..numcolors */
-	x = 0;
-	for (i=0; i<image->bytes_per_line*height; i++, iptr++) {
-	    if (x >= image->bytes_per_line)
-		x=0;
-	    if (x < width) {
-		colused[*iptr]++;	/* mark this color as used */
-		*dptr++ = *iptr;
-	    }
-	    x++;
-	}
-	/* count the number of colors used */
-	numcols = 0;
-	for (i=0; i<tool_cells; i++) {
-	    if (colused[i]) {
-		mapcols[i] = numcols;
-		Red[numcols]   = colors[i].red >> 8;
-		Green[numcols] = colors[i].green >> 8;
-		Blue[numcols]  = colors[i].blue >> 8;
-		numcols++;
-	    }
-	}
-	dptr = data;
-	/* remap the pixels */
-	for (i=0; i<width*height; i++) {
-	    *dptr = mapcols[*dptr];
-	    dptr++;
-	}
-
-    /* monochrome, copy bits to bytes */
-    } else {
-	int	bitp;
-	x = 0;
-	if (image->bitmap_bit_order == LSBFirst) {
-	    for (i=0; i<image->bytes_per_line*height; i++, iptr++) {
-		if (x >= image->bytes_per_line*8)
-		    x=0;
-		for (bitp=1; bitp<256; bitp<<=1) {
-		    if (x < width) {
-			if (*iptr & bitp)
-			    *dptr = 1;		/* white */
-			else
-			    *dptr = 0;		/* black */
-			dptr++;
-		    }
-		    x++;
-		}
-	    }
-	} else {  /* MSB first */
-	    for (i=0; i<image->bytes_per_line*height; i++, iptr++) {
-		if (x >= image->bytes_per_line*8)
-		    x=0;
-		for (bitp=128; bitp>0; bitp>>=1) {
-		    if (x < width) {
-			if (*iptr & bitp)
-			    *dptr = 1;		/* white */
-			else
-			    *dptr = 0;		/* black */
-			dptr++;
-		    }
-		    x++;
-		}
-	    }
-	}
-	for (i=0; i<2; i++) {
-	    Red[i]   = colors[i].red >> 8;
-	    Green[i] = colors[i].green >> 8;
-	    Blue[i]  = colors[i].blue >> 8;
-	}
-	numcols = 2;
-    }
-
-    /* now encode the image and write to the file */
-    put_msg("Writing GIF file...");
-    app_flush();
-
-    /* use the mapped color for the transparent color */
-    /* the color was mapped from  Fig.color -> X.color -> mapped.color */
-    transp = transparent;
-    if (transp == TRANSP_NONE)
-	transp = -1;
-    if (transp >= TRANSP_BACKGROUND) {
-	/* make background transparent */
-	if (transp == TRANSP_BACKGROUND)
-	    transp = mapcols[x_bg_color.pixel];
-	/* make other color transp */
-	else
-	    transp = mapcols[x_color(transp)];
-    }
-    if ((giflen=GIFencode(filename, width, height, numcols, transp,
-	 Red, Green, Blue, data)) == (long) 0) {
-	    file_msg("Couldn't write GIF file");
-	    status = False;
-    } else {
-	    put_msg("%dx%d GIF written to %s", width, height, filename);
-	    status = True;
-    }
-    free(data);
-    XDestroyImage(image);
-
-    /* free pixmap and restore the mouse cursor */
-    finish_write_color_image(pixmap);
-    return status;
-}
 
 #define G_BITS	12			/* largest code size */
 #define THELIMIT 4096			/* NEVER generate this */

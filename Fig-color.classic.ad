@@ -3,8 +3,6 @@
 
 #include "Fig"
 
-#ifdef COLOR
-
 !popup describing drawing/editing mode function
 Fig.mode_report_popup.box.label.background:	yellow
 Fig.mode_report_popup.box.label.foreground:	blue
@@ -262,4 +260,3 @@ Fig.mouse_report_popup.box.label.foreground:	black
 !   rbg/hsv scrollbar form in color panel
 	Fig*set_indicator_panel.form*mixingForm.background:	grey95
 	Fig*set_indicator_panel.form*mixingForm.foreground:	black
-#endif

@@ -1,20 +1,15 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1991 by Brian V. Smith
+ * Copyright (c) 1989-1998 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -30,11 +25,7 @@ struct _xfstruct x_fontinfo[NUM_FONTS] = {
     {"-adobe-times-medium-i-normal--", (struct xfont*) NULL},
     {"-adobe-times-bold-r-normal--", (struct xfont*) NULL},
     {"-adobe-times-bold-i-normal--", (struct xfont*) NULL},
-#ifndef dontkludge
-    {"-bitstream-charter-medium-r-normal--", (struct xfont*) NULL},   /* kludge to get scaled font */
-#else
-    {"-schumacher-clean-medium-r-normal--", (struct xfont*) NULL},	/* closest to Avant-Garde */
-#endif
+    {"-schumacher-clean-medium-r-normal--", (struct xfont*) NULL}, /* closest to Avant-Garde */
     {"-schumacher-clean-medium-i-normal--", (struct xfont*) NULL},
     {"-schumacher-clean-bold-r-normal--", (struct xfont*) NULL},
     {"-schumacher-clean-bold-i-normal--", (struct xfont*) NULL},
@@ -120,6 +111,10 @@ x_fontnum(psflag, fnum)
 {
     int x_font;
 
+    if ((psflag && fnum >= NUM_FONTS) || (!psflag && fnum >= NUM_LATEX_FONTS)) {
+	file_msg("Illegal font number, using font 0");
+	fnum = 0;
+    }
     x_font = (psflag ?  ps_fontinfo[fnum + 1].xfontnum :
 			latex_fontinfo[fnum].xfontnum);
     return x_font;

@@ -1,26 +1,22 @@
-#ifndef MODE_H
-#define MODE_H
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
+
+#ifndef MODE_H
+#define MODE_H
 
 #define		F_NULL			0
 #define	    FIRST_DRAW_MODE	    F_CIRCLE_BY_RAD
@@ -67,6 +63,7 @@
 #define		F_EXIT_COMP		52
 #define		F_EXIT_ALL_COMP		53
 #define		F_OPEN_CLOSE		54
+#define		F_PLACE_LIB_OBJ		55
 
 extern int	cur_mode;
 
@@ -111,6 +108,7 @@ extern int	autobackwardarrow_mode;
 #define		GRID_1			1
 #define		GRID_2			2
 #define		GRID_3			3
+#define		GRID_4			4
 
 extern int	cur_gridmode;
 extern int	grid_fine[];
@@ -123,6 +121,7 @@ extern char    *grid_name[];
 #define		P_GRID1			2
 #define		P_GRID2			3
 #define		P_GRID3			4
+#define		P_GRID4			5
 
 extern int	cur_pointposn;
 extern int	posn_rnd[];
@@ -193,6 +192,7 @@ enum {
 	LANG_JPEG,
 #endif
 	LANG_TIFF,
+	LANG_TK,
 	LANG_XBM,
 #ifdef USE_XPM
 	LANG_XPM,
@@ -215,6 +215,7 @@ extern char     batch_file[];
 
 extern int	cur_objmask;
 extern int	cur_updatemask;
+extern int	new_objmask;
 extern int	cur_depth;
 
 /***************************  Text Settings  ****************************/
@@ -243,6 +244,13 @@ extern int	cur_fillstyle;
 extern int	cur_penstyle;
 extern int	cur_arrowmode;
 extern int	cur_arrowtype;
+extern float	cur_arrowwidth;
+extern float	cur_arrowheight;
+extern float	cur_arrowthick;
+extern float	cur_arrow_multwidth;
+extern float	cur_arrow_multheight;
+extern float	cur_arrow_multthick;
+extern Boolean	use_abs_arrowvals;
 extern int	cur_arctype;
 extern char	EMPTY_PIC[8];
 

@@ -1,22 +1,21 @@
 /* This file is part of xdir, an X-based directory browser.
- *
+
+/*
+ * FIG : Facility for Interactive Generation of figures
+ * Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1990 by Digital Equipment Corporation
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
+ * Original xdir code:
  *
  *	Created: 13 Aug 88
  *
@@ -55,12 +54,15 @@
 
 #include "fig.h"
 #include "figx.h"
-#include "w_util.h"
 #include "resources.h"
 #include "mode.h"
+#include "w_browse.h"
 #include "w_dir.h"
-#include "w_setup.h"
 #include "w_drawprim.h"		/* for max_char_height */
+#include "w_export.h"
+#include "w_file.h"
+#include "w_setup.h"
+#include "w_util.h"
 #ifdef USE_DIRENT
 #include <dirent.h>
 #else
@@ -69,7 +71,7 @@
 
 /* Static variables */
 
-DeclareStaticArgs(10);
+DeclareStaticArgs(15);
 static String	dir_translations =
 	"<Key>Return: SetDir()\n\
 	Ctrl<Key>X: EmptyTextKey()\n\
@@ -86,16 +88,6 @@ static char    *dirmask;
 static Widget	hidden;
 static Boolean	show_hidden = False;
 
-/* External variables */
-
-extern Widget	exp_selfile, file_selfile, exp_dir, file_dir, exp_flist,
-		file_flist, exp_dlist, file_dlist, exp_mask, file_mask;
-extern Widget	browse_selfile, browse_dir, browse_flist,
-		browse_dlist, browse_mask;
-
-extern Boolean	file_up, export_up, browse_up;
-extern char	export_cur_dir[], browse_cur_dir[];
-
 /* Functions */
 
 void		DoChangeDir(),
@@ -108,6 +100,7 @@ static void	ParentDir();
 /* Function:	FileSelected() is called when the user selects a file.
  *		Set the global variable "CurrentSelectionName"
  *		and set either the export or file panel file name, whichever is popped up
+ *		Also, for the file popup, show a preview of the figure.
  * Arguments:	Standard Xt callback arguments.
  * Returns:	Nothing.
  * Notes:
@@ -126,6 +119,9 @@ FileSelected(w, client_data, ret_val)
     if (file_up) {
 	SetValues(file_selfile);
 		XawTextSetInsertionPoint(file_selfile, strlen(CurrentSelectionName));
+	/* and show a preview of the figure in the preview canvas */
+	preview_figure(CurrentSelectionName, file_popup, preview_widget,
+			preview_size, preview_pixmap);
     } else if (export_up) {
 	SetValues(exp_selfile);
 		XawTextSetInsertionPoint(exp_selfile, strlen(CurrentSelectionName));
@@ -266,19 +262,22 @@ static XtActionsRec actionTable[] = {
 static int      actions_added=0;
 
 /* the file_exp parm just changes the vertical offset for the Rescan button */
+/* make the filename list file_width wide */
 
 void
 create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
-	       mask_w, dir_w, flist_w, dlist_w)
+	       mask_w, dir_w, flist_w, dlist_w, file_width, file_panel)
     Boolean	    file_exp;
     Widget	    parent, below, *ret_beside, *ret_below, *mask_w, *dir_w,
 		   *flist_w, *dlist_w;
+    int		    file_width;
+    Boolean	    file_panel;
 
 {
     Widget	    w,dir_alt,home;
     Widget	    file_viewport;
     Widget	    dir_viewport;
-    PIX_FONT	    temp_font;
+    XFontStruct	   *temp_font;
     int		    char_ht,char_wd;
 
     dir_entry_cnt = NENTRIES;
@@ -288,9 +287,13 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
 
     get_directory(cur_dir);
 
-    FirstArg(XtNlabel, "     Alternatives");
+    FirstArg(XtNlabel, " Alternatives");
     NextArg(XtNfromVert, below);
     NextArg(XtNborderWidth, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainTop);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     w = XtCreateManagedWidget("file_alt_label", labelWidgetClass,
 			      parent, Args, ArgCount);
 
@@ -299,20 +302,33 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     char_ht = max_char_height(temp_font) + 2;
     char_wd = char_width(temp_font) + 2;
 
+    /* make a viewport to hold the list widget of filenames */
     FirstArg(XtNallowVert, True);
     NextArg(XtNfromHoriz, w);
     NextArg(XtNfromVert, below);
     NextArg(XtNborderWidth, INTERNAL_BW);
-    NextArg(XtNwidth, FILE_WIDTH);
-    NextArg(XtNheight, char_ht * 10);
+    NextArg(XtNwidth, file_width);
+    NextArg(XtNheight, char_ht * 14);	/* show first 14 filenames */
+    NextArg(XtNtop, XtChainTop);	/* chain the viewport resizes fully */
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainRight);
     file_viewport = XtCreateManagedWidget("vport", viewportWidgetClass,
 					  parent, Args, ArgCount);
 
-    FirstArg(XtNlabel, "    Filename Mask");
+    /* label for filename mask */
+
+    FirstArg(XtNlabel, "Filename Mask");
     NextArg(XtNborderWidth, 0);
     NextArg(XtNfromVert, file_viewport);
+    NextArg(XtNtop, XtChainBottom);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     w = XtCreateManagedWidget("mask_label", labelWidgetClass, 
 				parent, Args, ArgCount);
+
+    /* text widget for the filename mask */
 
     FirstArg(XtNeditType, XawtextEdit);
     NextArg(XtNscrollHorizontal, XawtextScrollNever);
@@ -322,42 +338,58 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     NextArg(XtNwidth, FILE_WIDTH);
     NextArg(XtNfromHoriz, w);
     NextArg(XtNfromVert, file_viewport);
+    NextArg(XtNtop, XtChainBottom);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainRight);
     *mask_w = XtCreateManagedWidget("mask", asciiTextWidgetClass, 
 					parent, Args, ArgCount);
-    XtOverrideTranslations(*mask_w,
-			   XtParseTranslationTable(mask_text_translations));
+    XtOverrideTranslations(*mask_w, XtParseTranslationTable(mask_text_translations));
 
     /* get the first directory listing */
+
     FirstArg(XtNstring, &dirmask);
     GetValues(*mask_w);
     if (MakeFileList(cur_dir, dirmask, &dir_list, &file_list) == False)
 	file_msg("No files in directory?");
 
-    FirstArg(XtNlabel, "Current Directory");
+    FirstArg(XtNlabel, "  Current Dir");
     NextArg(XtNborderWidth, 0);
     NextArg(XtNfromVert, *mask_w);
-    NextArg(XtNvertDistance, 15);
+    NextArg(XtNtop, XtChainBottom);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     w = XtCreateManagedWidget("dir_label", labelWidgetClass,
 			      parent, Args, ArgCount);
+
     FirstArg(XtNstring, cur_dir);
-	NextArg(XtNinsertPosition, strlen(cur_dir));
+    NextArg(XtNinsertPosition, strlen(cur_dir));
     NextArg(XtNheight, char_ht * 2);
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
     NextArg(XtNeditType, XawtextEdit);
     NextArg(XtNfromVert, *mask_w);
-    NextArg(XtNvertDistance, 15);
     NextArg(XtNfromHoriz, w);
     NextArg(XtNwidth, FILE_WIDTH);
+    NextArg(XtNtop, XtChainBottom);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainRight);
     *dir_w = XtCreateManagedWidget("dir_name", asciiTextWidgetClass,
 				   parent, Args, ArgCount);
 
-    XtOverrideTranslations(*dir_w,
-			   XtParseTranslationTable(dir_translations));
+    XtOverrideTranslations(*dir_w, XtParseTranslationTable(dir_translations));
 
-    FirstArg(XtNlabel, "     Alternatives");
+    /* directory alternatives */
+
+    FirstArg(XtNlabel, " Alternatives");
     NextArg(XtNborderWidth, 0);
     NextArg(XtNfromVert, *dir_w);
+    NextArg(XtNtop, XtChainBottom);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     dir_alt = XtCreateManagedWidget("dir_alt_label", labelWidgetClass,
 			      parent, Args, ArgCount);
 
@@ -367,8 +399,11 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     NextArg(XtNfromHoriz, dir_alt);
     NextArg(XtNhorizDistance, -(char_wd * 5));
     NextArg(XtNborderWidth, INTERNAL_BW);
-    home = XtCreateManagedWidget("home", commandWidgetClass, 
-				parent, Args, ArgCount);
+    NextArg(XtNtop, XtChainBottom);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    home = XtCreateManagedWidget("home", commandWidgetClass, parent, Args, ArgCount);
     XtAddCallback(home, XtNcallback, GoHome, (XtPointer) NULL);
 
     /* put a button for showing/hiding hidden files below the Home button */
@@ -378,6 +413,10 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     NextArg(XtNfromHoriz, dir_alt);
     NextArg(XtNhorizDistance, (int) -(char_wd * 10.5));
     NextArg(XtNborderWidth, INTERNAL_BW);
+    NextArg(XtNtop, XtChainBottom);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     hidden = XtCreateManagedWidget("hidden", commandWidgetClass, 
 				parent, Args, ArgCount);
     XtAddCallback(hidden, XtNcallback, ShowHidden, (XtPointer) NULL);
@@ -388,14 +427,22 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNwidth, FILE_WIDTH);
     NextArg(XtNheight, char_ht * 5);
+    NextArg(XtNtop, XtChainBottom);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainRight);
     dir_viewport = XtCreateManagedWidget("dirvport", viewportWidgetClass,
 					 parent, Args, ArgCount);
 
     FirstArg(XtNlist, file_list);
+    /* for file panel use only one column */
+    if (file_panel) {
+	NextArg(XtNforceColumns, True);
+	NextArg(XtNdefaultColumns, 1);
+    }
     *flist_w = XtCreateManagedWidget("file_list_panel", listWidgetClass,
 				     file_viewport, Args, ArgCount);
-    XtAddCallback(*flist_w, XtNcallback, FileSelected,
-		  (XtPointer) NULL);
+    XtAddCallback(*flist_w, XtNcallback, FileSelected, (XtPointer) NULL);
     XtOverrideTranslations(*flist_w,
 			   XtParseTranslationTable(list_panel_translations));
 
@@ -405,8 +452,7 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
 
     XtOverrideTranslations(*dlist_w,
 			   XtParseTranslationTable(list_panel_translations));
-    XtAddCallback(*dlist_w, XtNcallback, DirSelected,
-		  (XtPointer) NULL);
+    XtAddCallback(*dlist_w, XtNcallback, DirSelected, (XtPointer) NULL);
 
     if (!actions_added) {
 	XtAppAddActions(tool_app, actionTable, XtNumber(actionTable));
@@ -415,10 +461,14 @@ create_dirinfo(file_exp, parent, below, ret_beside, ret_below,
 
     FirstArg(XtNlabel, "Rescan");
     NextArg(XtNfromVert, dir_viewport);
+    NextArg(XtNvertDistance, 15);
     NextArg(XtNborderWidth, INTERNAL_BW);
-    NextArg(XtNvertDistance, file_exp? 35: 15);	/* more space for file menu */
     NextArg(XtNhorizDistance, 45);
     NextArg(XtNheight, 25);
+    NextArg(XtNtop, XtChainBottom);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
     w = XtCreateManagedWidget("rescan", commandWidgetClass, parent,
 			      Args, ArgCount);
     XtAddCallback(w, XtNcallback, CallbackRescan, NULL);
@@ -654,7 +704,7 @@ Rescan(widget, event, params, num_params)
 	GetValues(exp_dir);
 	if (change_directory(dir))	/* make sure we are there */
 	    return;
-	strcpy(export_cur_dir,dir);		/* save in global var */
+	strcpy(export_cur_dir,dir);	/* save in global var */
 	(void) MakeFileList(dir, dirmask, &dir_list, &file_list);
 	NewList(exp_flist, file_list);
 	NewList(exp_dlist, dir_list);
@@ -665,26 +715,24 @@ Rescan(widget, event, params, num_params)
 	GetValues(browse_dir);
 	if (change_directory(dir))	/* make sure we are there */
 	    return;
-	strcpy(browse_cur_dir,dir);		/* save in global var */
+	strcpy(browse_cur_dir,dir);	/* save in global var */
 	(void) MakeFileList(dir, dirmask, &dir_list, &file_list);
 	NewList(browse_flist, file_list);
 	NewList(browse_dlist, dir_list);
     }
 }
 
-static String null_entry = " ";
-static String *null_list = { &null_entry };
-
 NewList(listwidget, list)
     Widget    listwidget;
     String   *list;
 {
+
 	/* delete scrollbars because of a bug in the viewport widget */
 	FirstArg(XtNallowVert, False);
 	NextArg(XtNallowHoriz, False);
 	SetValues(XtParent(listwidget));
 
-	/* make the scrollbar reset to the top */
+	/* install the new list */
 	XawListChange(listwidget, list, 0, 0, True);
 
 	/* re-enable the scrollbars */
@@ -694,7 +742,6 @@ NewList(listwidget, list)
 
 	XawListChange(listwidget, list, 0, 0, True);
 }
-
 
 /* Function:	SaveString() creates a copy of a string.
  * Arguments:	string: String to save.

@@ -1,0 +1,398 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<title>XFIG User Manual - Drawing Mode Panel</title>
+<link rev="made" href="mailto:VEF00200@niftyserve.or.jp">
+</head>
+
+<body>
+<img src="images/xfig-title.gif" alt="XFIG Users Manual">
+<p>
+[ <b>English Version</b>
+ | <a href="japanese/index.html">Japanese Version</a> ]
+<p>
+[ <a href="index.html">Contents</a>
+ | <a href="introduction.html">Operating Manual</a>
+ | <b>New Features and Bugs Fixed</b>
+ | <a href="options.html">Technical Information</a>
+ | <a href="authors.html">Authors</a> ]
+<p>
+[ <a href="introduction.html">Introduction</a>
+ | <a href="command-panel.html">Command Panel</a>
+ | <a href="Drawing Mode Panel"</a>
+ | <a href="editing-mode.html">Editing Mode Panel</a><br>
+ | <a href="indicator-panel.html">Indicator Panel</a>
+ | <a href="misc-panel.html">Miscellaneous Panels</a>
+ | <a href="accelerators.html">Keyboard Accelerators</a> ]
+
+<p>
+<hr>
+
+<a name="newfeatures">
+<h1>New Features in <i>xfig 3.2.1</i></h1> </a>
+
+<ul>
+<br><img src="images/blueballdot.gif">
+<a href="command-panel.html#file">Preview</a> of figure is created
+	when you single click on a filename
+	  in the popup file panel. It also shows the size of the figure.
+<br><img src="images/blueballdot.gif">
+Library feature - load a library of Fig objects and pick and place
+	  objects from the library on the canvas where you want.
+	See the section on <a href="drawing-mode.html#library">Libraries</a>,
+	and see Examples/Libraries for some
+	  examples.  From Stephane Mancini <mancini@elecsrv.enst.fr> with
+	  modifications by Brian V. Smith
+<br><img src="images/blueballdot.gif">
+Preview of library objects in library popup similar to figure preview
+	  by Brian Smith
+<br><img src="images/blueballdot.gif">
+The library objects in the Electrical and Logic libraries were done
+	  by Peter Hiscocks (phiscock@ee.ryerson.ca)
+<br><img src="images/blueballdot.gif">
+	Xfig tutorial (PDF) in Doc/xfig-howto.ps or click here
+	<a href=../xfig-howto.pdf>xfig-howto.pdf</a> for PDF file.
+	Also available from the
+	  Help menu. Written by Peter Hiscocks (phiscock@ee.ryerson.ca)
+<br><img src="images/blueballdot.gif">
+"make install" installs the Fig object libraries to the library
+	  directory.  
+	  The default is $XFIGLIBDIR/Libraries (/usr/lib/X11/xfig/Libraries),
+	  which may be changed in the Imakefile.
+<br><img src="images/blueballdot.gif">
+When pasting a Fig object from the <b>xfig</b> cut buffer it appears under
+	  the mouse (or near the mouse if pressing the 
+	<a href="command-panel.html#paste">Paste</a> button) where
+	  it may then be moved around on the canvas before pressing mouse
+	  button 1 to place it.
+<br><img src="images/blueballdot.gif">
+Unit box in upper-right corner now shows the scale (e.g. 1cm=3km)
+	  This necessitated making the top ruler a little narrower to make the
+	  unitbox fit.  If the mode panel is on the right side, the side ruler
+	  is made wider to fit the unit box above it.
+<br><img src="images/blueballdot.gif">
+The path of imported pictures is saved as relative path if picture is
+	  in subdirectory of main figure file, else it is saved as absolute.
+	  from T. Sato
+<br><img src="images/blueballdot.gif">
+When drawing a line, moving a point on a line, or adding a point to
+	  the end of a line, the angle to horizontal is shown in the message
+	  window 
+<br><img src="images/blueballdot.gif">
+Pressing <Meta>-I turns on and off new feature that draws red
+	  horizontal and vertical lines near the line you are drawing, or point 
+	  you are moving, to indicate rise and run.  Also, the length is shown
+	  next to and above the horizontal and vertical line respectively, and
+	  the actual length of the line is shown near the line itself.
+	  The command-line argument -showlengths (resource Fig.showlengths) will
+	  enable this feature as <b>xfig</b> starts.
+<br><img src="images/blueballdot.gif">
+Print popup button is active even when print panel is up which makes
+	  it easy to force it to the top of the window stack if it is hidden
+<br><img src="images/blueballdot.gif">
+Pressing the File button in the command panel while the Export panel
+	  is up will popdown the export panel and popup the file panel.  The
+	  converse is also true - if the Export button is pressed while the file
+	  panel is up, the file panel will be popped down and the export panel
+	  is popped up.
+<br><img src="images/blueballdot.gif">
+When merging a file/figure into the current figure it is made into
+	  a compound object first
+<br><img src="images/blueballdot.gif">
+Merging a figure keeps the file panel up to be able to merge more
+	  figures
+<br><img src="images/blueballdot.gif">
+Better memory allocation for temporary arrays when drawing objects -
+	  may be slightly faster now
+	  from T. Sato
+<br><img src="images/blueballdot.gif">
+Freehand line/polygon drawing - use mouse button 2 to start after
+	  choosing polyline.  As the mouse is moved points are added to the
+	  line or polygon.
+	See <a href="drawing-mode.html#polyline">POLYLINES</a>.
+	  NOTE - this changes the line drawing behaviour:  Mouse button 3 is
+	  now used to create a single-point object.
+<br><img src="images/blueballdot.gif">
+Whole window screen capture in addition to area capture in picture
+	  object popup.  The behaviour of the mouse has changed with this -
+	  Mouse button 1 captures whole window now and mouse button 2 is used
+	  to capture area of screen.
+<br><img src="images/blueballdot.gif">
+Characters added to Fig*browse_panel*mask*string to include .tif
+	  and .sld files
+<br><img src="images/blueballdot.gif">
+If <b>xfig</b> is started without a filename, the default filename is empty
+	  instead of unnamed.fig.  This forces the file panel popup when save
+	  is done, to enter a new file name.
+<br><img src="images/blueballdot.gif">
+Variable time delay for popup information balloons, specified in
+	  milliseconds (-balloon_delay; resource Fig.balloon_delay)
+<br><img src="images/blueballdot.gif">
+If you enlarge the File, Export or Library panels only the file list
+	  area is enlarged to show more files
+<br><img src="images/blueballdot.gif">
+New "spinner" widgets to increment/decrement values in popup indicator
+	  entries (e.g. line thickness indicator popup)
+<br><img src="images/blueballdot.gif">
+Option of using either absolute values for arrowhead sizes or multiple
+	  of current line length (see arrow size popup)
+<br><img src="images/blueballdot.gif">
+Arrowhead thickness, width and height can be set explicitely in
+  	  bottom panel for creating arrowheads.  Update button also copies
+  	  arrowhead size info to/from objects and indicator panel.
+	<br><img src="images/pict-new.gif">The arrowhead width and height
+	parameters are now the same units as the arrowhead thickness,
+	which is units of line thickness, not 1/1200 inch as 
+	they were in previous versions of <b>xfig</b>.
+<br><img src="images/blueballdot.gif">
+Color popup menu in popup edit panel handles lots of colors better
+<br><img src="images/blueballdot.gif">
+Option of smaller icons for the mode panel (left side) by compiling with
+	  USESMALLICONS in Imakefile.  See the Imakefile for details. Also see
+	  Fig.ad.  Look for "icons".
+	  From Andrew Morgan <morgan@physics.ucla.edu>
+<br><img src="images/blueballdot.gif">
+Default depth for creating new objects is now 100 to make it easier to
+	  put new objects on top without having to remember to start the older
+	  objects at a depth > 0.
+<br><img src="images/blueballdot.gif">
+New grid and point positioning setting at 1/8" (or 2mm in metric mode)
+<br><img src="images/blueballdot.gif">
+When moving, copying, moving a point of or adding a point to objects,
+	  all the "grab corners" of the other objects in the figure disappear
+	  to make the figure less cluttered.  They reappear when the operation
+	  is complete.
+<br><img src="images/blueballdot.gif">
+Pull-down menu buttons have an arrow icon to show that it is a pull-down:
+<img src="images/pull-down.gif" align=top>
+<br><img src="images/blueballdot.gif">
+Units such as "i" for inches and "c" for cm may be entered following
+	  coordinates in popup edit panel for editing objects (e.g. 3c for 3 cm)
+	  From Rick Richardson <rick@dgii.com>
+<br><img src="images/blueballdot.gif">
+When importing a picture file (eps, GIF, etc) <b>xfig</b> is more intelligent
+	  and faster about deciding the format
+<br><img src="images/blueballdot.gif">
+<a href="indicator-panel.html#zoom-scale">"Integer area zoom"</a>
+	option in zoom popup - if checked, when using the
+	  mouse to zoom an area of the canvas, the zoom amount will be an integral
+	  value (e.g. 2, 3, 4)
+<br><img src="images/blueballdot.gif">
+Compose key LED may be turned on for multi-key characters (e.g.
+	  a-umlaut etc) on Sun Sparcstations.  See README file about COMP_LED.
+	  from Hans Werner Strube (strube@swing.physik3.gwdg.de)
+<br><img src="images/blueballdot.gif">
+New <b>fig2dev</b> driver for tk (tcl/tk) - Generates tk canvas and canvas
+	  objects.  From Mike Markowski (mm@udel.edu)
+<br><img src="images/blueballdot.gif">
+Added "Alt" key definitions to the accelerators in Fig.ad to accomodate
+	  those machines which don't have a Meta key 
+</ul>
+
+<hr>
+<a name="bugsfixed">
+<h1>Bugs Fixed in <i>xfig 3.2.1</i></h1> </a>
+
+<ul>
+<br><img src="images/blueballdot.gif">
+Line width is scaled with object scaling now
+<br><img src="images/blueballdot.gif">
+Arrowheads are scaled when scaling lines, splines and arcs now
+<br><img src="images/blueballdot.gif">
+Screen_res was incorrect for drawing tablets
+<br><img src="images/blueballdot.gif">
+When scaling a compound by using the "move point" edit mode, undoing
+	  the scale didn't work properly because of rounding problems.  A 
+	  proper "undo" is now performed.
+<br><img src="images/blueballdot.gif">
+Note: the -inverse (reverse video) option has been removed because
+	  the same effect can be achieved using "-cbg black -cfg white"
+<br><img src="images/blueballdot.gif">
+Made the export_panel*mask*string same as browse_panel*mask*string
+<br><img src="images/blueballdot.gif">
+User-defined colors weren't being merged properly in compound objects
+<br><img src="images/blueballdot.gif">
+If Paste was performed while opening a compound object, some objects
+	  outside the opened compound object may have been lost and <b>xfig</b> may
+	  have crashed with a segfault later.
+<br><img src="images/blueballdot.gif">
+ARC-BOX corner radius scaled incorrectly when box was scaled
+<br><img src="images/blueballdot.gif">
+ARC-BOX corner radius is now only scaled with Scale operation, not
+	  move point
+<br><img src="images/blueballdot.gif">
+Busy cursor wasn't being reset when reading some figures
+<br><img src="images/blueballdot.gif">
+Refreshing the screen while creating a Fig object (e.g. POLYLINE)
+	  refreshes that object correctly now
+<br><img src="images/blueballdot.gif">
+Updated pointer for hp2xx and additional pointer to Fig related apps
+	  in FIGAPPS file. From Ian MacPhedran
+<br><img src="images/blueballdot.gif">
+Declaration of clrtab array incorrect in f_neuclrtab.h - caused
+	  problems on Digital Unix. From Ian MacPhedran
+<br><img src="images/blueballdot.gif">
+When loading a figure that changes the canvas orientation (Portrait/
+	  Landscape), the file modified flag was not cleared
+<br><img src="images/blueballdot.gif">
+When it can't save to a file, <b>xfig</b> now rings the bell and puts the
+	  error message in the *popup* message window
+<br><img src="images/blueballdot.gif">
+Trying to use the external image editor in the edit panel for an
+	  imported picture failed if the file was compressed 
+<br><img src="images/blueballdot.gif">
+When switching to a private colormap because of importing a picture,
+	  <b>xfig</b> is better about matching the colormap of the popup edit panel
+<br><img src="images/blueballdot.gif">
+Objects not aligned correctly in large drawings due to bad choice
+	  of starting min/max values (use INT_MIN and INT_MAX now)
+<br><img src="images/blueballdot.gif">
+When running "xfig -right" (mode/edit panel on right-side) the popup
+	  balloons were too long, never showed the message and popped up and
+	  down because they appeared under the mouse.
+<br><img src="images/blueballdot.gif">
+Cleanup of many, many function declarations (mostly type void)
+<br><img src="images/blueballdot.gif">
+Inadvertantly used incorrect font for Avant-Garde
+<br><img src="images/blueballdot.gif">
+When undo'ing load figure, any objects using user-defined colors may
+	  not have been displayed correctly until doing a "Redraw".  Also,
+	  non-existant user colors may have stayed in pen and/or fill color
+	  indicators.
+<br><img src="images/blueballdot.gif">
+Bug in size of imported Picture when clicking on "Use orig size" -
+	  image was slightly too small.  Also bug when clicking "Use orig size"
+	  in metric mode - even worse scaling.
+<br><img src="images/blueballdot.gif">
+Code to check for bad font numbers when reading Fig file was in wrong
+	  place
+<br><img src="images/blueballdot.gif">
+Bug in pcx decoder - odd-width images caused seg fault.  This would
+	  also affect importing eps files since <b>xfig</b> uses pcx output from gs.
+<br><img src="images/blueballdot.gif">
+Another bug in pcx decoder - wasn't allocating correct amount of memory
+	  for the image buffer.  This would of course, cause segfaults.
+<br><img src="images/blueballdot.gif">
+Bug in "Fit-to-page" in metric mode fixed
+	  from Hans Werner Strube (strube@swing.physik3.gwdg.de)
+<br><img src="images/blueballdot.gif">
+Cleaned up mode button icons to fit within button area better
+<br><img src="images/blueballdot.gif">
+An old feature to prevent an expose event on the canvas from erasing
+	  a newly imported image while still in the picture editor is no longer
+	  needed and prevented screen refreshing
+<br><img src="images/blueballdot.gif">
+If screen capture is attempted with no Fig filename (e.g. when
+	  starting <b>xfig</b> with no file name) seg fault occurred.
+	  from T. Sato
+<br><img src="images/blueballdot.gif">
+Small correction to I18N draw_string routine
+	  from T. Sato
+<br><img src="images/blueballdot.gif">
+Not all calls to <b>fig2dev</b> had I18N localization options passed
+	  from T. Sato
+<br><img src="images/blueballdot.gif">
+If you create a new figure (no name yet) and try to export before
+	  saving, <b>xfig</b> asked you if you wanted to save the figure first.  If
+	  you said yes, it would popup the file panel to choose a name and save.
+	  After that though, it wouldn't do the export as you first requested.
+	  This has been fixed.
+<br><img src="images/blueballdot.gif">
+Added && !defined(__GLIBC__) to declarations of random and srandom for
+	  systems with glibc
+<br><img src="images/blueballdot.gif">
+Imported eps files containing "initgraphics" commands weren't working
+	  correctly.  This has been fixed by defining initgraphics and
+	  initmatrix as {}.
+<br><img src="images/blueballdot.gif">
+Yet another #if added to the never-ending list.  This one is for
+	  sys_errlist.  FreeBSD systems already define it in stdio.h.
+<br><img src="images/blueballdot.gif">
+Inconsistent declaration uncompress_file (static)
+<br><img src="images/blueballdot.gif">
+Missing braces around initializers for headers structure for imported
+	  bitmap file types
+<br><img src="images/blueballdot.gif">
+Some unused variables and procedures removed
+<br><img src="images/blueballdot.gif">
+Incorrect casts in e_align.c
+<br><img src="images/blueballdot.gif">
+Bug in figure size in export and print panels - bounding variable
+	  was clobbered soon after being calculated
+<br><img src="images/blueballdot.gif">
+Allowed saving over a read-only file if file panel wasn't created
+<br><img src="images/blueballdot.gif">
+Various problems with New figure->Export->File popup sequence either
+	  segfaulting or permanently disabling <b>xfig</b> buttons and canvas fixed.
+<br><img src="images/blueballdot.gif">
+GC wasn't properly setup for dragging rectangle on screen for screen
+	  capture for some systems.
+<br><img src="images/blueballdot.gif">
+Very small arcs "blew up" making very large arcs on screen
+<br><img src="images/blueballdot.gif">
+Bug in draw_arc() - would free unallocated memory if arc was small
+<br><img src="images/blueballdot.gif">
+Imakefile had w_icons.o in XFIGSRC instead of w_icons.c
+<br><img src="images/blueballdot.gif">
+Fixed annoying warning about StartScroll action not found on Linux
+	  systems that use the "modified" Xaw3d widget set (ARROW_SCROLLBAR
+	  defined, which makes the scrollbars look like the Windows scrollbars)
+<br><img src="images/blueballdot.gif">
+Mouse indicator was leaving bits of old text behind for long messages
+<br><img src="images/blueballdot.gif">
+Removed call to rint() because gcc can't find it on HP-UX
+<br><img src="images/blueballdot.gif">
+Move_point_selected() called set_mousefun() with too few args
+<br><img src="images/blueballdot.gif">
+Variable "text_translations" multiply defined
+<br><img src="images/blueballdot.gif">
+Fixed some bugs relating to updating dash-length/dot-gap in indicator
+	  panel from dashed/dotted lines
+<br><img src="images/blueballdot.gif">
+Bug fixed where update indicator (red box) didn't always toggle correctly
+<br><img src="images/blueballdot.gif">
+Undo of spline<->line conversion and box<_>arc_box fixed
+<br><img src="images/blueballdot.gif">
+For some reason, the Solaris version of XtAppCreateShell references
+	  an argument beyond what the users specifies in the command line,
+	  causing a seg fault.
+	  Fixed by Martin Pahl <pahl@tnt.uni-hannover.de>
+<br><img src="images/blueballdot.gif">
+Renamed suffix for AutoCad Slide export to ".sld" (was ".acad")
+<br><img src="images/blueballdot.gif">
+Needed #ifdef USE_JPEG in w_export.c for compiling without JPEG
+	  support
+<br><img src="images/blueballdot.gif">
+Transparent color was not passed to <b>fig2dev</b> for GIF output (new -t
+	  option in <b>fig2dev</b> do do this)
+<br><img src="images/blueballdot.gif">
+Inappropriate arguments to sqrt() in spline calculations (not double)
+<br><img src="images/blueballdot.gif">
+The radius value displayed in the message window was incorrect when
+	  drawing ellipses
+<br><img src="images/blueballdot.gif">
+Both radii are reported now when drawing ellipses
+<br><img src="images/blueballdot.gif">
+Now checks whether Fig file is read-only before renaming to .bak and
+	  allowing user to save. (after second save, original, read-only file
+	  would be gone)
+<br><img src="images/blueballdot.gif">
+New #ifdef for glibc which already has sys_errlist and random() defined
+<br><img src="images/blueballdot.gif">
+Conflict with definition M_PI (3.14159....) on RedHat systems fixed
+<br><img src="images/blueballdot.gif">
+Interpolated splines in Fig version 2.1 files were read incorrectly
+	  fixed by Onno Roep <O.A.Roep@twi.tudelft.nl>
+<br><img src="images/blueballdot.gif">
+If you had a line with arrowhead(s) and deleted all the points to make
+	  it a single point object, then undid the last delete point, the
+	  arrowhead(s) didn't reappear.  This has been fixed.
+<br><img src="images/blueballdot.gif">
+Less multiple redrawing of figure when starting <b>xfig</b> with filename and
+	  it needs to change orientation (portrait/landscape)
+<br><img src="images/blueballdot.gif">
+"Ledger" paper size removed from list of paper sizes.  It is really
+	  "Tabloid" size in landscape mode.
+<br><img src="images/blueballdot.gif">
+Undo of align to canvas wasn't refreshing display
+</ul>

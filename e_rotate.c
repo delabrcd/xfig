@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -25,35 +20,36 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "e_flip.h"
 #include "u_draw.h"
+#include "u_geom.h"
 #include "u_search.h"
 #include "u_create.h"
 #include "u_list.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-extern double	compute_angle();
-
-/* from e_flip.c */
-extern int	setanchor;
-extern int	setanchor_x;
-extern int	setanchor_y;
+/* EXPORTS  */
 
 int		setcenter;
 int		setcenter_x;
 int		setcenter_y;
+int		rotn_dirn;
+int		act_rotnangle;
+
+/* LOCAL */
 
 static int	copy;
-static int	rotn_dirn;
-static int	act_rotnangle;
-static int	init_rotate();
-static int	set_unset_center();
-static int	init_copynrotate();
-static int	rotate_selected();
-static int	rotate_search();
-static int	init_rotateline();
-static int	init_rotatetext();
 
+static void	init_rotate();
+static void	set_unset_center();
+static void	init_copynrotate();
+static void	rotate_selected();
+static void	rotate_search();
+static void	init_rotateline();
+static void	init_rotatetext();
+
+void
 rotate_cw_selected()
 {
     rotn_dirn = 1;
@@ -68,6 +64,7 @@ rotate_cw_selected()
     rotate_selected();
 }
 
+void
 rotate_ccw_selected()
 {
     rotn_dirn = -1;
@@ -82,10 +79,11 @@ rotate_ccw_selected()
     rotate_selected();
 }
 
-static
+static void
 rotate_selected()
 {
-    set_mousefun("rotate object", "copy & rotate", "set center", "", "", "");
+    set_mousefun("rotate object", "copy & rotate", "set center", 
+			LOC_OBJ, LOC_OBJ, "set center");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_rotate);
@@ -96,19 +94,21 @@ rotate_selected()
     set_cursor(pick15_cursor);
 }
 
-static
+static void
 set_unset_center(x, y)
     int		    x, y;
 {
     if (setcenter) {
-      set_mousefun("rotate object", "copy & rotate", "set center", "", "", "");
+      set_mousefun("rotate object", "copy & rotate", "set center", 
+			LOC_OBJ, LOC_OBJ, "set center");
       draw_mousefun_canvas();
       setcenter = 0;
       center_marker(setcenter_x,setcenter_y);
       /* second call to center_mark on same position deletes */
     }
     else {
-      set_mousefun("rotate object", "copy & rotate", "unset center", "", "", "");
+      set_mousefun("rotate object", "copy & rotate", "unset center", 
+			LOC_OBJ, LOC_OBJ, "unset center");
       draw_mousefun_canvas();
       setcenter = 1;
       setcenter_x = x;
@@ -118,9 +118,9 @@ set_unset_center(x, y)
       
 }
 
-static
+static void
 init_rotate(p, type, x, y, px, py)
-    char	   *p;
+    F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
@@ -134,28 +134,29 @@ init_rotate(p, type, x, y, px, py)
         rotate_search(p, type, x, y, px, py);
 }
 
-static
+static void
 init_copynrotate(p, type, x, y, px, py)
-    char	   *p;
+    F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
 {
-    int i;
+    int		    i;
+
     copy = 1;
     act_rotnangle = cur_rotnangle;
     for ( i = 1; i <= cur_numcopies; act_rotnangle += cur_rotnangle, i++) {
-      if (setcenter) 
-	rotate_search(p, type, x, y,setcenter_x,setcenter_y );
-      /* remember rotation center */
-      else
-        rotate_search(p, type, x, y, px, py);
+	if (setcenter) 
+	    rotate_search(p, type, x, y,setcenter_x,setcenter_y );
+	/* remember rotation center */
+	else
+            rotate_search(p, type, x, y, px, py);
     }
 }
 
-static
+static void
 rotate_search(p, type, x, y, px, py)
-    char	   *p;
+    F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
@@ -190,7 +191,7 @@ rotate_search(p, type, x, y, px, py)
     }
 }
 
-static
+static void
 init_rotateline(l, px, py)
     F_line	   *l;
     int		    px, py;
@@ -214,7 +215,7 @@ init_rotateline(l, px, py)
     reset_cursor();
 }
 
-static
+static void
 init_rotatetext(t, px, py)
     F_text	   *t;
     int		    px, py;
@@ -352,6 +353,22 @@ rotate_line(l, x, y)
 	for (p = l->points; p != NULL; p = p->next)
 	    rotate_point(p, x, y);
     }
+
+}
+
+rotate_figure(f, x, y)
+     F_compound *f;
+     int x, y;
+{
+  int old_rotn_dirn, old_act_rotnangle;
+
+  old_rotn_dirn= rotn_dirn;
+  old_act_rotnangle= act_rotnangle;
+  rotn_dirn= -1;
+  act_rotnangle=90;
+  rotate_compound(f,x,y);
+  rotn_dirn=old_rotn_dirn;
+  act_rotnangle=old_act_rotnangle;
 }
 
 rotate_spline(s, x, y)

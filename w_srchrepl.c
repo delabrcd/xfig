@@ -1,21 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Parts Copyright (c) 1997 by T. Sato
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1997 by T. Sato
+ * Parts Copyright (c) 1997-1998 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -49,13 +44,14 @@ There is currently no way to undo replace/update operations.
 #include "figx.h"
 #include "resources.h"
 #include "object.h"
+#include "d_text.h"
+#include "e_edit.h"
+#include "e_update.h"
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_drawprim.h"
 #include "u_create.h"
 #include <varargs.h>
-
-extern char *panel_get_value();
 
 static String search_panel_translations =
         "<Message>WM_PROTOCOLS: QuitSearchPanel()\n";
@@ -180,7 +176,6 @@ static Boolean replace_text_in_compound(com, pattern, dst)
 
 static void do_update()
 {
-  extern update_text();
   if (0 < found_text_cnt) {
     search_text_in_compound(&objects,
             panel_get_value(search_text_widget), update_text);
@@ -204,7 +199,6 @@ static void found_text_panel_dismiss()
 
 static void popup_found_text_panel()
 {
-  extern Atom wm_delete_window;
   Widget form, dismiss_button;
   Position x_val, y_val;
   
@@ -260,6 +254,8 @@ static void popup_found_text_panel()
   }
 
   XtPopup(found_text_panel, XtGrabExclusive);
+  /* if the file message window is up add it to the grab */
+  file_msg_add_grab();
   XSetWMProtocols(XtDisplay(found_text_panel), XtWindow(found_text_panel),
                   &wm_delete_window, 1);
   set_cmap(XtWindow(found_text_panel));
@@ -385,9 +381,10 @@ static Boolean search_text_in_compound(com, pattern, proc)
   return processed;
 }
 
+static void write_text_in_compound();
+
 static void spell_text()
 {
-  static void write_text_in_compound();
   char filename[PATH_MAX];
   char cmd[PATH_MAX + 100];
   char str[300];
@@ -469,21 +466,21 @@ void popup_search_panel()
   static Boolean actions_added = False;
   Widget below = None;
   Widget form, label, dismiss_button;
-  Window rw, cw;
-  int rx, ry, cx, cy;
-  unsigned int mask;
+  int rx,ry;
+
+  /* don't paste if in the middle of drawing/editing */
+  if (check_action_on())
+	return;
 
   /* don't make another one if one already exists */
   if (search_panel)
 	return;
   put_msg("Search & Replace");
 
-  XQueryPointer(XtDisplay(tool), XtWindow(tool),
-                &rw, &cw, &rx, &ry, &cx, &cy, &mask);
+  get_pointer_root_xy(&rx, &ry);
 
-  FirstArg(XtNx, rx);
-  NextArg(XtNy, ry);
- /* NextArg(XtNwidth, 400);*/
+  FirstArg(XtNx, (Position) rx);
+  NextArg(XtNy, (Position) ry);
   NextArg(XtNcolormap, tool_cm);
   NextArg(XtNtitle, "Xfig: Search & Replace");
   

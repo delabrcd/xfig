@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Henning Spruth
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -28,52 +23,46 @@
 #include "paintop.h"
 #include "u_create.h"
 #include "u_elastic.h"
+#include "u_pan.h"
 #include "w_canvas.h"
 #include "w_setup.h"
+#include "w_util.h"
 #include "w_zoom.h"
 #include "w_indpanel.h"
-
-extern		elastic_box();
-extern		show_zoom();
-extern		pan_origin();
 
 /* global for w_canvas.c */
 
 Boolean	zoom_in_progress = False;
 
-static		do_zoom(), cancel_zoom();
-static		init_zoombox_drawing();
+static void	do_zoom(), cancel_zoom();
+static void	init_zoombox_drawing();
 
-static int	(*save_kbd_proc) ();
-static int	(*save_locmove_proc) ();
-static int	(*save_leftbut_proc) ();
-static int	(*save_middlebut_proc) ();
-static int	(*save_rightbut_proc) ();
+static void	(*save_kbd_proc) ();
+static void	(*save_locmove_proc) ();
+static void	(*save_leftbut_proc) ();
+static void	(*save_middlebut_proc) ();
+static void	(*save_rightbut_proc) ();
 static int	save_action_on;
 
 float		display_zoomscale;	/* both zoomscales initialized in main() */
 float		zoomscale;
 int		zoomxoff = 0;
 int		zoomyoff = 0;
+Boolean		integral_zoom = False;	/* integral zoom flag for area zoom (mouse) */
 
 /* used for private box drawing functions */
 static int	my_fix_x, my_fix_y;
 static int	my_cur_x, my_cur_y;
 
+void
 zoom_selected(x, y, button)
     int		    x, y;
     unsigned int    button;
 {
     /* if trying to zoom while drawing an object, don't allow it */
-    if (action_on && button != Button2) {	/* panning is ok */
-	if (cur_mode == F_TEXT)
-	    finish_text_input();		/* finish up any text input */
-	else {
-	    put_msg("Finish (or cancel) the current operation before zooming");
-	    beep();
-	    return;
-	}
-    }
+    if ((button != Button2) && check_action_on()) /* panning is ok */
+	return;
+
     if (!zoom_in_progress) {
 	switch (button) {
 	case Button1:
@@ -95,7 +84,7 @@ zoom_selected(x, y, button)
 }
 
 
-static
+static void
 my_box(x, y)
     int		    x, y;
 {
@@ -106,20 +95,12 @@ my_box(x, y)
 }
 
 
-
-static
+static void
 init_zoombox_drawing(x, y)
     int		    x, y;
 {
-    if (action_on) {
-	if (cur_mode == F_TEXT)
-	    finish_text_input();	/* finish up any text input */
-	else {
-	    put_msg("Finish (or cancel) the current operation before zooming");
-	    beep();
-	    return;
-	}
-    }
+    if (check_action_on())
+	return;
     save_kbd_proc = canvas_kbd_proc;
     save_locmove_proc = canvas_locmove_proc;
     save_leftbut_proc = canvas_leftbut_proc;
@@ -140,7 +121,7 @@ init_zoombox_drawing(x, y)
     zoom_in_progress = True;
 }
 
-static
+static void
 do_zoom(x, y)
     int		    x, y;
 {
@@ -164,6 +145,9 @@ do_zoom(x, y)
 	if (display_zoomscale <= 1.0)	/* keep to 0.1 increments */
 	    display_zoomscale = (int)((display_zoomscale+0.09)*10.0)/10.0 - 0.1;
 
+	/* round if integral zoom is on (indicator panel in zoom popup) */
+	if (integral_zoom)
+	    display_zoomscale = round(display_zoomscale);
 	show_zoom(&ind_switches[ZOOM_SWITCH_INDEX]);
     }
     /* restore state */
@@ -177,7 +161,7 @@ do_zoom(x, y)
     zoom_in_progress = False;
 }
 
-static
+static void
 cancel_zoom()
 {
     elastic_box(my_fix_x, my_fix_y, my_cur_x, my_cur_y);

@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -24,14 +19,22 @@
 #include "resources.h"
 #include "mode.h"
 #include "object.h"
+#include "f_read.h"
 #include "u_create.h"
 #include "w_setup.h"
 #include "w_zoom.h"
 
+static int write_tmpfile=0;
 
+init_write_tmpfile()
+{
+  write_tmpfile=1;
+}
 
-extern int	num_object;
-
+end_write_tmpfile()
+{
+  write_tmpfile=0;
+}
 
 write_file(file_name)
     char	   *file_name;
@@ -42,12 +45,14 @@ write_file(file_name)
 	return (-1);
 
     if ((fp = fopen(file_name, "w")) == NULL) {
-	put_msg("Couldn't open file %s, %s", file_name, sys_errlist[errno]);
+	file_msg("Couldn't open file %s, %s", file_name, sys_errlist[errno]);
+	beep();
 	return (-1);
     }
     num_object = 0;
     if (write_objects(fp)) {
-	put_msg("Error writing file %s, %s", file_name, sys_errlist[errno]);
+	file_msg("Error writing file %s, %s", file_name, sys_errlist[errno]);
+	beep();
 	exit (2);
 	return (-1);
     }
@@ -161,10 +166,10 @@ write_arc(fp, a)
 	    a->point[2].x, a->point[2].y);
     if (f)
 	fprintf(fp, "\t%d %d %.2f %.2f %.2f\n", f->type, f->style,
-		f->thickness, f->wid, f->ht);
+		f->thickness, f->wd*15.0, f->ht*15.0);
     if (b)
 	fprintf(fp, "\t%d %d %.2f %.2f %.2f\n", b->type, b->style,
-		b->thickness, b->wid, b->ht);
+		b->thickness, b->wd*15.0, b->ht*15.0);
 }
 
 write_compound(fp, com)
@@ -222,6 +227,15 @@ write_line(fp, l)
 
     if (l->points == NULL)
 	return;
+#ifdef V4_0
+    if ( (write_tmpfile) && (l->type == T_PICTURE) && (l->pic!=NULL)) {
+	if ((l->pic->subtype==T_PIC_FIG) && (l->pic->figure!=NULL)) {
+	    write_compound(fp, l->pic->figure);
+	    return;
+	}
+    }
+#endif /* V4_0 */
+
     /* count number of points and put it in the object */
     for (npts=0, p = l->points; p != NULL; p = p->next)
 	npts++;
@@ -233,13 +247,24 @@ write_line(fp, l)
 	    ((f = l->for_arrow) ? 1 : 0), ((b = l->back_arrow) ? 1 : 0), npts);
     if (f)
 	fprintf(fp, "\t%d %d %.2f %.2f %.2f\n", f->type, f->style,
-		f->thickness, f->wid, f->ht);
+		f->thickness, f->wd*15.0, f->ht*15.0);
     if (b)
 	fprintf(fp, "\t%d %d %.2f %.2f %.2f\n", b->type, b->style,
-		b->thickness, b->wid, b->ht);
-    if (l->type == T_PICTURE)
-	fprintf(fp, "\t%d %s\n", l->pic->flipped, 	/* prevent no filename */
-		((l->pic->file && *l->pic->file)? l->pic->file: "<empty>"));
+		b->thickness, b->wd*15.0, b->ht*15.0);
+    if (l->type == T_PICTURE) {
+	char *s1;
+	if (l->pic->file == NULL || strlen(l->pic->file) == 0) {
+	    s1 = "<empty>";
+	} else if (strncmp(l->pic->file, cur_dir, strlen(cur_dir)) == 0) {
+	    /* use relative path if the file is under current directory */
+	    s1 = l->pic->file + strlen(cur_dir);
+	    while (*s1 == '/')
+		s1++;
+	} else {
+	    s1 = l->pic->file;
+	}
+	fprintf(fp, "\t%d %s\n", l->pic->flipped, s1);
+    }
 
     fprintf(fp, "\t");
     npts=0;
@@ -277,10 +302,10 @@ write_spline(fp, s)
 	    ((f = s->for_arrow) ? 1 : 0), ((b = s->back_arrow) ? 1 : 0), npts);
     if (f)
 	fprintf(fp, "\t%d %d %.2f %.2f %.2f\n", f->type, f->style,
-		f->thickness, f->wid, f->ht);
+		f->thickness, f->wd*15.0, f->ht*15.0);
     if (b)
 	fprintf(fp, "\t%d %d %.2f %.2f %.2f\n", b->type, b->style,
-		b->thickness, b->wid, b->ht);
+		b->thickness, b->wd*15.0, b->ht*15.0);
     fprintf(fp, "\t");
     npts=0;
     for (p = s->points; p != NULL; p = p->next) {
@@ -311,39 +336,32 @@ write_spline(fp, s)
     fprintf(fp, "\n");
 }
 
-write_text(fp, t)
-    FILE	   *fp;
-    F_text	   *t;
-{
-    int		    l, len, lx, n;
-    char	    c;
-    char	    buf[4];
 
-    if (t->length == 0)
-	return;
-    fprintf(fp, "%d %d %d %d %d %d %d %.4f %d %d %d %d %d ",
-	    O_TEXT, t->type, t->color, t->depth, t->pen_style,
-	    t->font, t->size, t->angle,
-	    t->flags, t->ascent+t->descent, t->length,
-	    t->base_x, t->base_y);
-    len = strlen(t->cstring);
-    for (l=0; l<len; l++) {
-	c = t->cstring[l];
-	if (c == '\\')
-	    fprintf(fp,"\\\\");		/* escape a '\' with another one */
-	else if ((unsigned int) c <= 255)
-	    putc(c,fp);			/* normal 7-bit ASCII */
-	else {
-	    n = ((int) c)&255;		/* 8-bit, make \xxx (octal) */
-	    buf[3]='\0';
-	    for (lx = 2; lx>=0; lx--) {
-		buf[lx] = '0'+(n%8);
-		n /= 8;
-	    }
-	    fprintf(fp,"\\%s",buf);
+write_text(fp, t)
+        FILE           *fp;
+        F_text         *t;
+{
+	int		l, len;
+	unsigned char   c;
+
+	if (t->length == 0)
+	    return;
+	fprintf(fp, "%d %d %d %d %d %d %d %.4f %d %d %d %d %d ",
+			O_TEXT, t->type, t->color, t->depth, t->pen_style,
+			t->font, t->size, t->angle,
+			t->flags, t->ascent+t->descent, t->length,
+			t->base_x, t->base_y);
+	len = strlen(t->cstring);
+	for (l=0; l<len; l++) {
+	    c = t->cstring[l];
+	    if (c == '\\')
+		fprintf(fp,"\\\\");	 /* escape a '\' with another one */
+	    else if (c < 0x80)
+		putc(c,fp);  /* normal 7-bit ASCII */
+	    else
+		fprintf(fp, "\\%o", c);  /* 8-bit, make \xxx (octal) */
 	}
-    }
-    fprintf(fp,"\\001\n");		/* finish off with '\001' string */
+	fprintf(fp,"\\001\n");		      /* finish off with '\001' string */
 }
 
 emergency_save(file_name)

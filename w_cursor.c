@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -34,6 +29,7 @@ static unsigned char magnify_bits[] = {
    0xff, 0x1f, 0x42, 0x08, 0x42, 0x08, 0x46, 0x0c, 0x4c, 0x1e, 0xf8, 0x3f,
    0x40, 0x7c, 0x00, 0xf8, 0x00, 0xf0, 0x00, 0x60};
 
+void
 init_cursor()
 {
     register Display *d = tool_d;
@@ -67,6 +63,7 @@ init_cursor()
     cur_cursor		= arrow_cursor;  /* current cursor */
 }
 
+void
 recolor_cursors()
 {
     register Display *d = tool_d;
@@ -92,32 +89,35 @@ recolor_cursors()
 
 static Cursor active_cursor = None;
 
+void
 reset_cursor()
 {
     if (active_cursor != cur_cursor) {
 	active_cursor = cur_cursor;
-	XDefineCursor(tool_d, real_canvas, cur_cursor);
+	XDefineCursor(tool_d, main_canvas, cur_cursor);
 	app_flush();
     }
 }
 
+void
 set_temp_cursor(cursor)
     Cursor            cursor;
 {
   if (active_cursor != cursor) {
     active_cursor = cursor;
-    XDefineCursor(tool_d, real_canvas, cursor);
+    XDefineCursor(tool_d, main_canvas, cursor);
     app_flush();
   }
 }
 
+void
 set_cursor(cursor)
     Cursor            cursor;
 {
   cur_cursor = cursor;
   if (active_cursor != cur_cursor) {
     active_cursor = cur_cursor;
-    XDefineCursor(tool_d, real_canvas, cursor);
+    XDefineCursor(tool_d, main_canvas, cursor);
     app_flush();
   }
 }

@@ -213,28 +213,28 @@ Description of the Fig Format Follows
 	 0 = Stick-type (the default in xfig 2.1 and earlier)
 	 1 = Closed triangle:
 		|\
-		|  \
-		|    \
-		|    /
-		|  /
+		|   \
+		|      \
+		|      /
+		|   /
 		|/
 	 2 = Closed with "indented" butt:
 		|\
-		\  \
-		 \   \
-		  \    \
-		  /    /
-		 /   /
-		/  /
+		\   \
+		 \     \
+		  \       \
+		  /       /
+		 /     /
+		/   /
 		|/
 	 3 = Closed with "pointed" butt:
 		   |\
-		  /   \
-		 /      \
-		/         \
-		\         /
-		 \      /
-		  \   /
+		  /    \
+		 /        \
+		/            \
+		\            /
+		 \        /
+		  \    /
 		   |/
 
     The arrow_style field is defined for LINES, ARCS and OPEN SPLINES
@@ -331,7 +331,7 @@ Description of the Fig Format Follows
 	type	name			(brief description)
 	----	----			-------------------
 	int	object_code		(always 1)
-	int	sub_type		(1: ellipse defined by radiuses
+	int	sub_type		(1: ellipse defined by radii
 					 2: ellipse defined by diameters
 					 3: circle defined by radius
 					 4: circle defined by diameter)

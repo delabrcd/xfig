@@ -1,21 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1995 Jim Daley (jdaley@cix.compulink.co.uk)
- * Parts Copyright (c) 1995 by Brian V. Smith
+ * Parts Copyright (c) 1995-1998 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -24,18 +19,26 @@
 #include "resources.h"
 #include "object.h"
 #include "mode.h"
-#include "w_drawprim.h"		/* for max_char_height */
+#include "e_edit.h"
+#include "w_drawprim.h"
 #include "w_dir.h"
 #include "w_util.h"
 #include "w_setup.h"
 
-extern Boolean	file_msg_is_popped;
-extern Widget	file_msg_popup;
-extern Widget   pic_name_panel;
-extern String	text_translations;
+/* EXPORTS */
+
+char		browse_cur_dir[PATH_MAX];	/* current directory for browsing */
+
+Widget		browse_selfile,	/* selected file widget */
+		browse_mask,	/* mask widget */
+		browse_dir,	/* current directory widget */
+		browse_flist,	/* file list wiget */
+		browse_dlist;	/* dir list wiget */
+Boolean		browse_up;
+
 
 DeclareStaticArgs(12);
-static Widget	cfile_lab, cfile_text;
+static Widget	cfile_lab;
 static Widget	closebtn, apply;
 static Widget	browse_parent;
 static Position xposn, yposn;
@@ -69,18 +72,6 @@ static XtActionsRec	file_actions[] =
 
 static char browse_filename[PATH_MAX];
 static char local_dir[PATH_MAX];
-
-/* Global so w_dir.c can access us */
-
-char		browse_cur_dir[PATH_MAX];	/* current directory for browsing */
-
-Widget		browse_selfile,	/* selected file widget */
-		browse_mask,	/* mask widget */
-		browse_dir,	/* current directory widget */
-		browse_flist,	/* file list wiget */
-		browse_dlist;	/* dir list wiget */
-
-Boolean		browse_up;
 
 static void
 browse_panel_dismiss()
@@ -143,7 +134,6 @@ browse_panel_close(w, ev)
 popup_browse_panel(w)
     Widget	    w;
 {
-    extern Atom     wm_delete_window;
     char *fval, *pval;
 
     set_temp_cursor(wait_cursor);
@@ -186,8 +176,8 @@ popup_browse_panel(w)
     set_cmap(XtWindow(browse_popup));  /* ensure most recent cmap is installed */
     (void) XSetWMProtocols(XtDisplay(browse_popup), XtWindow(browse_popup),
 			   &wm_delete_window, 1);
-    if (file_msg_is_popped)
-	XtAddGrab(file_msg_popup, False, False);
+    /* if the file message window is up add it to the grab */
+    file_msg_add_grab();
     reset_cursor();
 }
 
@@ -195,7 +185,7 @@ create_browse_panel(w)
 	Widget		   w;
 {
 	Widget		   file, beside, below;
-	PIX_FONT	   temp_font;
+	XFontStruct	  *temp_font;
 	static int	   actions_added=0;
 
 	XtTranslateCoords(w, (Position) 0, (Position) 0, &xposn, &yposn);
@@ -216,6 +206,8 @@ create_browse_panel(w)
 	FirstArg(XtNlabel, "         Filename");
 	NextArg(XtNvertDistance, 15);
 	NextArg(XtNborderWidth, 0);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
 	file = XtCreateManagedWidget("file_label", labelWidgetClass,
 				     browse_panel, Args, ArgCount);
 	FirstArg(XtNfont, &temp_font);
@@ -231,6 +223,8 @@ create_browse_panel(w)
 	NextArg(XtNvertDistance, 15);
 	NextArg(XtNfromVert, cfile_lab);
 	NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
 	browse_selfile = XtCreateManagedWidget("file_name", asciiTextWidgetClass,
 					     browse_panel, Args, ArgCount);
 	XtOverrideTranslations(browse_selfile,
@@ -243,8 +237,8 @@ create_browse_panel(w)
 	    XtAppAddActions(tool_app, file_name_actions, XtNumber(file_name_actions));
 	}
 
-	create_dirinfo(False, browse_panel, browse_selfile, &beside, &below,
-		       &browse_mask, &browse_dir, &browse_flist, &browse_dlist);
+	create_dirinfo(False, browse_panel, browse_selfile, &beside, &below, &browse_mask,
+		       &browse_dir, &browse_flist, &browse_dlist, FILE_WIDTH, False);
 
 	/* make <return> in the filename window apply the file */
 	XtOverrideTranslations(browse_selfile,
@@ -260,6 +254,8 @@ create_browse_panel(w)
 	NextArg(XtNfromHoriz, beside);
 	NextArg(XtNfromVert, below);
 	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNtop, XtChainBottom);
+	NextArg(XtNbottom, XtChainBottom);
 	closebtn = XtCreateManagedWidget("close", commandWidgetClass,
 				       browse_panel, Args, ArgCount);
 	XtAddEventHandler(closebtn, ButtonReleaseMask, (Boolean) 0,
@@ -273,6 +269,8 @@ create_browse_panel(w)
 	NextArg(XtNvertDistance, 15);
 	NextArg(XtNhorizDistance, 25);
 	NextArg(XtNheight, 25);
+	NextArg(XtNtop, XtChainBottom);
+	NextArg(XtNbottom, XtChainBottom);
 	apply = XtCreateManagedWidget("apply", commandWidgetClass,
 				     browse_panel, Args, ArgCount);
 	XtAddEventHandler(apply, ButtonReleaseMask, (Boolean) 0,

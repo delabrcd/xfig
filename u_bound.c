@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -324,10 +319,10 @@ ellipse_bound(e, xmin, ymin, xmax, ymax)
 	    *ymax = ycen + b + half_wd;
 	    /* show the boundaries */
 	    if (appres.DEBUG) {
-		pw_vector(canvas_win, *xmin, *ymin, *xmax, *ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
-		pw_vector(canvas_win, *xmax, *ymin, *xmax, *ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
-		pw_vector(canvas_win, *xmax, *ymax, *xmin, *ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
-		pw_vector(canvas_win, *xmin, *ymax, *xmin, *ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
+		pw_vector(canvas_win,*xmin,*ymin,*xmax,*ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
+		pw_vector(canvas_win,*xmax,*ymin,*xmax,*ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
+		pw_vector(canvas_win,*xmax,*ymax,*xmin,*ymax, PAINT, 1, RUBBER_LINE, 0.0, RED);
+		pw_vector(canvas_win,*xmin,*ymax,*xmin,*ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
 	    }
 	    return;
 	}
@@ -416,7 +411,10 @@ line_bound(l, xmin, ymin, xmax, ymax)
 {
     points_bound(l->points, (l->thickness / 2), xmin, ymin, xmax, ymax);
     /* now add in the arrow (if any) boundaries */
-    arrow_bound(O_POLYLINE, l, xmin, ymin, xmax, ymax);
+    /* but only if there are two or more points in the line */
+    if (l->points->next) {
+	arrow_bound(O_POLYLINE, l, xmin, ymin, xmax, ymax);
+    }
 }
 
 spline_bound(s, xmin, ymin, xmax, ymax)
@@ -617,10 +615,10 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
     int		    bxmin, bymin, bxmax, bymax;
     F_point	   *p, *q;
     F_arc	   *a;
-    int		    p1x, p1y, p2x, p2y, opx, opy;
+    int		    p1x, p1y, p2x, p2y;
     int		    dum;
     zXPoint	    arrowpts[6];
-    int		    npts, i, wd;
+    int		    npts, i;
 
     if (obj->for_arrow) {
 	if (objtype == O_ARC) {
@@ -640,10 +638,8 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 	    p2x = p->x;
 	    p2y = p->y;
 	}
-	opx = p2x;
-	opy = p2y;
 	calc_arrow(p1x, p1y, p2x, p2y, &dum, &dum, &dum, &dum,
-			objtype, obj->for_arrow, arrowpts, &npts);
+			obj->thickness, obj->for_arrow, arrowpts, &npts);
 	fxmin=fymin=100000;
 	fxmax=fymax=-100000;
 	for (i=0; i<npts; i++) {
@@ -652,12 +648,6 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 	    fxmax = max2(fxmax, arrowpts[i].x);
 	    fymax = max2(fymax, arrowpts[i].y);
 	}
-	/* the original endpoint of the line is further */
-	wd = obj->for_arrow->thickness*ZOOM_FACTOR;
-	fxmin = min2(fxmin, opx) - wd;
-	fxmax = max2(fxmax, opx) + wd;
-	fymin = min2(fymin, opy) - wd;
-	fymax = max2(fymax, opy) + wd;
 	*xmin = min2(*xmin, fxmin);
 	*xmax = max2(*xmax, fxmax);
 	*ymin = min2(*ymin, fymin);
@@ -682,10 +672,8 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 	    p2x = obj->points->x;	/* first point (forward tip) */
 	    p2y = obj->points->y;
 	}
-	opx = p2x;
-	opy = p2y;
 	calc_arrow(p1x, p1y, p2x, p2y, &dum, &dum, &dum, &dum,
-			objtype, obj->back_arrow, arrowpts, &npts);
+			obj->thickness, obj->back_arrow, arrowpts, &npts);
 	bxmin=bymin=100000;
 	bxmax=bymax=-100000;
 	for (i=0; i<npts; i++) {
@@ -694,12 +682,6 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 	    bxmax = max2(bxmax, arrowpts[i].x);
 	    bymax = max2(bymax, arrowpts[i].y);
 	}
-	/* the original endpoint of the line is further */
-	wd = obj->back_arrow->thickness*ZOOM_FACTOR;
-	bxmin = min2(bxmin, opx) - wd;
-	bxmax = max2(bxmax, opx) + wd;
-	bymin = min2(bymin, opy) - wd;
-	bymax = max2(bymax, opy) + wd;
 	*xmin = min2(*xmin, bxmin);
 	*xmax = max2(*xmax, bxmax);
 	*ymin = min2(*ymin, bymin);
@@ -711,44 +693,4 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 	  pw_vector(canvas_win,bxmin,bymax,bxmin,bymin,PAINT,1,RUBBER_LINE,0.0,MAGENTA);
 	}
     }
-}
-
-/* calculate the width of an arrow in the direction going from (x1,y1) to (x2,y2) */
-
-calc_arrow_width(type, wid, ht, x1, y1, x2, y2, xmin, ymin, xmax, ymax)
-    int		    type, x1, y1, x2, y2;
-    int		   *xmin, *ymin, *xmax, *ymax;
-    float	    wid, ht;
-{
-    double	    l, sina, cosa, xb, yb, xc, yc, xd, yd;
-    double	    x, y, dx, dy;
-
-    dx = x2 - x1;
-    dy = y1 - y2;
-    l = sqrt(dx * dx + dy * dy);
-    if (l == 0)
-	return;
-    sina = dy / l;
-    cosa = dx / l;
-    xb = x2 * cosa - y2 * sina;
-    yb = x2 * sina + y2 * cosa;
-    /* lengthen the "height" if type 2 */
-    if (type == 2)
-	x = xb - ht * 1.2;
-    /* shorten the "height" if type 3*/
-    else if (type == 3)
-	x = xb - ht * 0.8;
-    else
-	x = xb - ht;
-    y = yb - wid / 2;
-    xc = round( x * cosa + y * sina);
-    yc = round(-x * sina + y * cosa);
-    y = yb + wid / 2;
-    xd = round( x * cosa + y * sina);
-    yd = round(-x * sina + y * cosa);
-
-    *xmin = min3(xc, xd, x2);
-    *xmax = max3(xc, xd, x2);
-    *ymin = min3(yc, yd, y2);
-    *ymax = max3(yc, yd, y2);
 }

@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -24,6 +19,8 @@
 #include "resources.h"
 #include "object.h"
 #include "paintop.h"
+#include "e_copy.h"
+#include "u_drag.h"
 #include "u_draw.h"
 #include "u_elastic.h"
 #include "u_list.h"
@@ -34,17 +31,16 @@
 #include "w_drawprim.h"
 #include "w_zoom.h"
 
-static int	array_place_line(), place_line(), cancel_line();
-static int	array_place_arc(), place_arc(), cancel_arc();
-static int	array_place_spline(), place_spline(), cancel_spline();
-static int	array_place_ellipse(), place_ellipse(), cancel_ellipse();
-static int	array_place_text(), place_text(), cancel_text();
-static int	array_place_compound(), place_compound(), cancel_compound();
-
-extern int	copy_selected();
+static void	array_place_line(), place_line(), cancel_line();
+static void	array_place_arc(), place_arc(), cancel_drag_arc();
+static void	array_place_spline(), place_spline(), cancel_spline();
+static void	array_place_ellipse(), place_ellipse(), cancel_ellipse();
+static void	array_place_text(), place_text(), cancel_text();
+static void	array_place_compound(), place_compound(), cancel_drag_compound();
 
 /***************************** ellipse section ************************/
 
+void
 init_ellipsedragging(e, x, y)
     F_ellipse	   *e;
     int		    x, y;
@@ -65,7 +61,7 @@ init_ellipsedragging(e, x, y)
     elastic_moveellipse();
 }
 
-static
+static void
 cancel_ellipse()
 {
     elastic_moveellipse();
@@ -75,50 +71,54 @@ cancel_ellipse()
 	list_add_ellipse(&objects.ellipses, new_e);
 	redisplay_ellipse(new_e);
     }
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     (*return_proc) ();
     draw_mousefun_canvas();
 }
 
-static
+static void
 array_place_ellipse(x, y)
     int		    x, y;
 {
-   int		    i, j, delta_x, delta_y, start_x, start_y;
-   F_ellipse	   *save_ellipse;
+    int		    i, j, delta_x, delta_y, start_x, start_y;
+    F_ellipse	   *save_ellipse;
 
-   tail(&objects, &object_tails);
-   save_ellipse = new_e;
+    tail(&objects, &object_tails);
+    save_ellipse = new_e;
 
-   if ((!cur_numxcopies) && (!cur_numycopies)) {
-     place_ellipse(x, y);
-   }
-   else {
-     delta_x = x - fix_x;
-     delta_y = y - fix_y;
-     if ((!cur_numxcopies) || (! cur_numycopies))  /* special cases */
-       for ( i=1; i <= cur_numxcopies+cur_numycopies; i++, x += delta_x, y += delta_y)
-	 {
-	   place_ellipse(x, y);
-	   new_e = copy_ellipse(cur_e);
-	 }
-     else {
-       start_x = x - delta_x;
-       start_y = y - delta_y;
-       for (i = 0, x = start_x;  i < cur_numxcopies; i++, x+=delta_x) {
-	 for (j = 0, y = start_y;  j < cur_numycopies; j++, y+=delta_y) 
-	   if (i || j ) {
-	     place_ellipse(x, y);
-	     new_e = copy_ellipse(cur_e);
-	   }
-       }
-     }
-   }
-   /* put all new ellipses in the saved objects structure for undo */
-   saved_objects.ellipses = save_ellipse;
-   set_action_object(F_ADD, O_ALL_OBJECT);
+    if ((!cur_numxcopies) && (!cur_numycopies)) {
+	place_ellipse(x, y);
+    }
+    else {
+	delta_x = x - fix_x;
+	delta_y = y - fix_y;
+	if ((!cur_numxcopies) || (! cur_numycopies)) {  /* special cases */
+	    for ( i=1; i <= cur_numxcopies+cur_numycopies; i++, x += delta_x, y += delta_y) {
+		place_ellipse(x, y);
+		new_e = copy_ellipse(cur_e);
+	    } 
+	} else {
+	    start_x = x - delta_x;
+	    start_y = y - delta_y;
+	    for (i = 0, x = start_x;  i < cur_numxcopies; i++, x+=delta_x) {
+		for (j = 0, y = start_y;  j < cur_numycopies; j++, y+=delta_y) {
+		    if (i || j ) {
+			place_ellipse(x, y);
+			new_e = copy_ellipse(cur_e);
+		    }
+		}
+	    }
+	}
+    }
+    /* put all new ellipses in the saved objects structure for undo */
+    saved_objects.ellipses = save_ellipse;
+    set_action_object(F_ADD, O_ALL_OBJECT);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
 }
 
-static
+static void
 place_ellipse(x, y)
     int		    x, y;
 {
@@ -141,12 +141,15 @@ place_ellipse(x, y)
 	set_modifiedflag();
     }
     redisplay_ellipse(new_e);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     (*return_proc) ();
     draw_mousefun_canvas();
 }
 
 /*****************************	arc  section  *******************/
 
+void
 init_arcdragging(a, x, y)
     F_arc	   *a;
     int		    x, y;
@@ -157,13 +160,13 @@ init_arcdragging(a, x, y)
     canvas_locmove_proc = moving_arc;
     canvas_leftbut_proc = place_arc;
     canvas_middlebut_proc = array_place_arc;
-    canvas_rightbut_proc = cancel_arc;
+    canvas_rightbut_proc = cancel_drag_arc;
     set_action_on();
     elastic_movearc(new_a);
 }
 
-static
-cancel_arc()
+static void
+cancel_drag_arc()
 {
     elastic_movearc(new_a);
     if (return_proc == copy_selected) {
@@ -172,11 +175,13 @@ cancel_arc()
 	list_add_arc(&objects.arcs, new_a);
 	redisplay_arc(new_a);
     }
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     (*return_proc) ();
     draw_mousefun_canvas();
 }
 
-static
+static void
 array_place_arc(x, y)
     int		    x, y;
 {
@@ -213,9 +218,11 @@ array_place_arc(x, y)
    /* put all new arcs in the saved objects structure for undo */
    saved_objects.arcs = save_arc;
    set_action_object(F_ADD, O_ALL_OBJECT);
+   /* turn back on all relevant markers */
+   update_markers(new_objmask);
 }
 
-static
+static void
 place_arc(x, y)
     int		    x, y;
 {
@@ -238,12 +245,15 @@ place_arc(x, y)
 	set_modifiedflag();
     }
     redisplay_arc(new_a);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     (*return_proc) ();
     draw_mousefun_canvas();
 }
 
 /*************************  line  section  **********************/
 
+void
 init_linedragging(l, x, y)
     F_line	   *l;
     int		    x, y;
@@ -265,7 +275,7 @@ init_linedragging(l, x, y)
     elastic_moveline(new_l->points);
 }
 
-static
+static void
 cancel_line()
 {
     elastic_moveline(new_l->points);
@@ -276,11 +286,13 @@ cancel_line()
 	list_add_line(&objects.lines, new_l);
 	redisplay_line(new_l);
     }
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     (*return_proc) ();
     draw_mousefun_canvas();
 }
 
-static
+static void
 array_place_line(x, y)
    int		    x, y;
 {
@@ -316,9 +328,11 @@ array_place_line(x, y)
    /* put all new lines in the saved objects structure for undo */
    saved_objects.lines = save_line;
    set_action_object(F_ADD, O_ALL_OBJECT);
+   /* turn back on all relevant markers */
+   update_markers(new_objmask);
 }
 
-static
+static void
 place_line(x, y)
     int		    x, y;
 {
@@ -350,6 +364,8 @@ place_line(x, y)
     }
     set_modifiedflag();
     redisplay_line(new_l);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     (*return_proc) ();
     draw_mousefun_canvas();
 }
@@ -358,6 +374,7 @@ place_line(x, y)
 
 static PR_SIZE	txsize;
 
+void
 init_textdragging(t, x, y)
     F_text	   *t;
     int		    x, y;
@@ -396,7 +413,7 @@ init_textdragging(t, x, y)
     set_action_on();
 }
 
-static
+static void
 array_place_text(x, y)
     int		    x, y;
 {
@@ -433,9 +450,11 @@ array_place_text(x, y)
    /* put all new texts in the saved objects structure for undo */
    saved_objects.texts = save_text;
    set_action_object(F_ADD, O_ALL_OBJECT);
+   /* turn back on all relevant markers */
+   update_markers(new_objmask);
 }
 
-static
+static void
 cancel_text()
 {
     elastic_movetext();
@@ -445,11 +464,13 @@ cancel_text()
 	list_add_text(&objects.texts, new_t);
 	redisplay_text(new_t);
     }
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     (*return_proc) ();
     draw_mousefun_canvas();
 }
 
-static
+static void
 place_text(x, y)
     int		    x, y;
 {
@@ -472,12 +493,15 @@ place_text(x, y)
 	set_modifiedflag();
     }
     redisplay_text(new_t);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     (*return_proc) ();
     draw_mousefun_canvas();
 }
 
 /*************************  spline  section  **********************/
 
+void
 init_splinedragging(s, x, y)
     F_spline	   *s;
     int		    x, y;
@@ -493,7 +517,7 @@ init_splinedragging(s, x, y)
     elastic_moveline(new_s->points);
 }
 
-static
+static void
 cancel_spline()
 {
     elastic_moveline(new_s->points);
@@ -503,11 +527,13 @@ cancel_spline()
 	list_add_spline(&objects.splines, new_s);
 	redisplay_spline(new_s);
     }
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     (*return_proc) ();
     draw_mousefun_canvas();
 }
 
-static
+static void
 array_place_spline(x, y)
     int		    x, y;
 {
@@ -544,9 +570,11 @@ array_place_spline(x, y)
    /* put all new splines in the saved objects structure for undo */
    saved_objects.splines = save_spline;
    set_action_object(F_ADD, O_ALL_OBJECT);
+   /* turn back on all relevant markers */
+   update_markers(new_objmask);
 }
 
-static
+static void
 place_spline(x, y)
     int		    x, y;
 {
@@ -569,12 +597,15 @@ place_spline(x, y)
 	set_modifiedflag();
     }
     redisplay_spline(new_s);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     (*return_proc) ();
     draw_mousefun_canvas();
 }
 
 /*****************************	Compound section  *******************/
 
+void
 init_compounddragging(c, x, y)
     F_compound	   *c;
     int		    x, y;
@@ -589,14 +620,14 @@ init_compounddragging(c, x, y)
     canvas_locmove_proc = moving_box;
     canvas_leftbut_proc = place_compound;
     canvas_middlebut_proc = array_place_compound;
-    canvas_rightbut_proc = cancel_compound;
+    canvas_rightbut_proc = cancel_drag_compound;
     set_action_on();
     get_interior_links(c->nwcorner.x, c->nwcorner.y, c->secorner.x, c->secorner.y);
     elastic_movebox();
 }
 
-static
-cancel_compound()
+static void
+cancel_drag_compound()
 {
     elastic_movebox();
     free_linkinfo(&cur_links);
@@ -606,11 +637,13 @@ cancel_compound()
 	list_add_compound(&objects.compounds, new_c);
 	redisplay_compound(new_c);
     }
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     (*return_proc) ();
     draw_mousefun_canvas();
 }
 
-static
+static void
 array_place_compound(x, y)
     int		    x, y;
 {
@@ -647,9 +680,11 @@ array_place_compound(x, y)
    /* put all new compounds in the saved objects structure for undo */
    saved_objects.compounds = save_compound;
    set_action_object(F_ADD, O_ALL_OBJECT);
+   /* turn back on all relevant markers */
+   update_markers(new_objmask);
 }
 
-static
+static void
 place_compound(x, y)
     int		    x, y;
 {
@@ -681,6 +716,8 @@ place_compound(x, y)
     }
     set_modifiedflag();
     redisplay_compound(new_c);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     (*return_proc) ();
     draw_mousefun_canvas();
 }

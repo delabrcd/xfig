@@ -1,0 +1,1217 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html>
+<head>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=EUC-JP">
+<title>XFIG User Manual - Options</title>
+<link rev="made" href="mailto:VEF00200@nifty.ne.jp">
+</head>
+
+<body>
+<img src="../images/xfig-title.gif" alt="XFIG Users Manual">
+<p>
+[ <a href="../index.html">English Version</a>
+ | <b>Japanese Version</b> ]
+<p>
+[ <a href="index.html">Contents</a>
+ | <a href="introduction.html">Operating Manual</a>
+ | <a href="features_bugs.html">New Features and Bugs Fixed</a><br>
+ | <b>Technical Informations</b>
+ | <a href="authors.html">Authors</a> ]
+<p>
+[ <b>オプション、及びリソース</b>
+ | <a href="installation.html">インストール</a>
+ | <a href="faq.html">FAQ</a><br>
+ | <a href="i18n.html">日本語への対応 (あるいは国際化?)</a>
+ | <a href="fig-format.html">Fig Format 3.2</a> ]
+
+<p>
+<hr>
+
+<h1>オプション、及びリソース</h1>
+
+<h2><a name="options">コマンド行オプション</a></h2>
+
+<b>xfig</b> は、以下に示すコマンド行オプションを受け付けることができます。
+これらは、<b>xfig</b> の起動に際して、
+``<kbd>xfig -portrait -metric</kbd>'' のように指定します。
+<p>
+コマンド行オプションの代わりに、
+<a href="#resource">リソース</a> を用いることも可能です。
+<b>xfig</b> に関係するいくつかの<a href="#env-variable">環境変数</a>もあります。
+
+<h3>モードなどの設定</h3>
+
+<dl>
+<dt><kbd>-landscape </kbd> (<kbd>-L</kbd>)
+<dd><b>xfig</b> を landscape モード (11inch × 8inch) で起動します。
+これがデフォルトです。
+<tt>-portrait</tt> オプションも参照して下さい。
+<br>
+このモードは、起動した後に 
+<a href="command-panel.html#port-land">Port/Land</a> ボタン
+を用いて変更することもできます。
+また、Version 3.0 以降の Fig ファイルには
+オリエンテーションの指定が含まれており、
+それらの Fig ファイルをロードした際には
+このモードはその指定に応じて変更されます。
+
+<p>
+<dt><kbd>-portrait </kbd> (<kbd>-P</kbd>)
+<dd><b>xfig</b> を portrait モード (8.5inch × 9inch) で起動します。
+デフォルトでは landscape モードとなります。
+<tt>-landscape</tt> オプションも参照して下さい。
+
+<p>
+<dt><kbd>-inches </kbd> (<kbd>-inc</kbd>, <kbd>-imperial</kbd>)
+<dd>単位として inch を選択します。
+これがデフォルトです。
+<tt>-metric</tt> オプション、
+及び<a href="misc-panel.html#set-unit">寸法の単位の設定</a> 
+も参照して下さい。
+
+<p>
+<dt><kbd>-metric </kbd> (<kbd>-me</kbd>, <kbd>-centimeters</kbd>)
+<dd>単位として cm を選択します。
+デフォルトは inch です。
+<tt>-inches</tt> オプション、
+及び<a href="misc-panel.html#set-unit">寸法の単位の設定</a> 
+も参照して下さい。
+
+<p>
+<dt><kbd>-userscale </kbd> <i>scale</i> (<kbd>-users</kbd>)
+<dd>寸法を表示する際の倍率を設定します。
+<a href="misc-panel.html#set-unit">寸法の単位の設定</a> 
+も参照して下さい。
+
+<p>
+<dt><kbd>-userunit </kbd> <i>units</i> (<kbd>-useru</kbd>)
+<dd>寸法の表示に用いる単位を設定します。
+<a href="misc-panel.html#set-unit">寸法の単位の設定</a> 
+も参照して下さい。
+
+<p>
+<dt><kbd>-latexfonts </kbd> (<kbd>-lat</kbd>)
+<dd>LaTeX フォントを選択した状態で起動するようにします。
+デフォルトでは PostScript フォントが選択されます。
+
+<p>
+<dt><kbd>-specialtext </kbd> (<kbd>-sp</kbd>)
+<dd><a href="indicator-panel.html#text-flags">TEXT FLAGS</a> 
+の <i>Special</i> フラグを on にします。
+デフォルトは off です。
+
+<p>
+<dt><kbd>-startfontsize </kbd> <i>pointsize</i> (<kbd>-startfo</kbd>)
+<dd><a href="indicator-panel.html#text-size">TEXT SIZE</a> 
+の初期値を設定します。
+デフォルトは 12pt です。
+
+<p>
+<dt><kbd>-startpsFont </kbd> <i>font</i> (<kbd>-startp</kbd>)
+<dd><a href="indicator-panel.html#text-font">TEXT FONT</a> で、
+指定された PostScript フォントを選択します。
+デフォルトは <i>Times-Roman</i> です。
+
+<p>
+<dt><kbd>-startlatexFont </kbd> <i>font</i> (<kbd>-startla</kbd>)
+<dd><a href="indicator-panel.html#text-font">TEXT FONT</a> で、
+指定された LaTeX フォントを選択します。
+これは、<tt>-latexfonts</tt> オプションが
+指定されている場合に限って有効となります。
+デフォルトは <i>Default</i> です。
+
+<p>
+<dt><kbd>-starttextstep </kbd> <i>stepsize</i> (<kbd>-startt</kbd>)
+<dd><a href="indicator-panel.html#text-step">TEXT STEP</a> 
+の初期値を設定します。
+デフォルトは 1.2 です。
+
+<p>
+<dt><kbd>-startfillstyle </kbd> <i>stylenumber</i> (<kbd>-startfi</kbd>)
+<dd><a href="indicator-panel.html#fill-style">FILL STYLE</a> 
+の初期値 (-1〜21) を設定します。
+デフォルトは -1 (<i>No fill</i>) です。
+
+<p>
+<dt><kbd>-startgridmode </kbd> <i>modenumber</i> (<kbd>-startg</kbd>)
+<dd><a href="indicator-panel.html#grid-mode">GRID MODE</a> 
+の初期値 (0〜4) を設定します。
+モード 0 は <i>None</i> です。
+単位としてインチが選択されている場合には、
+モード 1 は 1/8 インチ、モード 2 は 1/4 インチ、
+モード 3 は 1/2 インチ、モード 4 は 1 インチとなります。
+単位としてセンチメートルが選択されている場合には、
+モード 1 は 2mm、モード 2 は 5mm、
+モード 3 は 1cm、モード 4 は 2cm となります。
+デフォルトはモード 0 (<i>None</i>) です。
+
+<p>
+<dt><kbd>-startposnmode </kbd> <i>modenumber</i> (<kbd>-startpo</kbd>)
+<dd><a href="indicator-panel.html#point-position">POINT POSITION</a> 
+の初期値 (0〜5) を設定します。
+モード 0 は <i>Any</i> です。
+単位としてインチが選択されている場合には、
+モード 1 は 1/16 インチ、モード 2 は 1/8 インチ、モード 3 は 1/4 インチ、
+モード 4 は 1/2 インチ、モード 5 は 1 インチとなります。
+単位としてセンチメートルが選択されている場合には、
+モード 1 は 1mm、モード 2 は 2mm、モード 3 は 5mm、
+モード 4 は 1cm、モード 5 は 2cm となります。
+デフォルトはモード 1 (1/16インチ、もしくは 1mm) です。
+
+<p>
+<dt><kbd>-startlinewidth </kbd> <i>width</i> (<kbd>-startli</kbd>)
+<dd><a href="indicator-panel.html#line-width">LINE WIDTH</a> 
+の初期値を設定します。
+デフォルトは 1 です。
+
+<p>
+<dt><kbd>-zoom </kbd> <i>zoomscale</i>
+<dd><a href="indicator-panel.html#zoom-scale">ZOOM SCALE</a> 
+の初期値を設定します。
+デフォルトは 1.0 です。
+</dl>
+
+
+<h3>PRINT や EXPORT の設定</h3>
+
+<dl>
+<dt><kbd>-exportLanguage </kbd> <i>language</i> (<kbd>-e</kbd>)
+<dd><a href="command-panel.html#export">Export</a> における 
+デフォルトのフォーマットを指定します。
+<i>language</i> としては、以下のものを指定することができます。
+<br>
+<pre>
+      box        LaTeX box (figure boundary)
+      latex      LaTeX picture
+      epic       LaTeX picture + epic macros
+      eepic      LaTeX picture + eepic macros
+      eepicemu   LaTeX picture + eepicemu macros
+      pictex     PiCTeX macros
+      ibmgl      IBMGL (or HPGL)
+      eps        Encapsulated PostScript
+      ps         PostScript
+      pstex      Combined PS/LaTeX (PS part)
+      pstex_t    Combined PS/LaTeX (LaTeX part)
+      textyl     Textyl special commands
+      tpic       TPIC
+      pic        PIC
+      mf         MF (MetaFont)
+      acad       ACAD (AutoCAD Slide format)
+      gif        GIF
+      pcx        PCX
+      png        PNG (Portable Network Graphics)
+      jpg        JPEG (JFIF)
+      tif        TIFF (no compression)
+      tk         TK
+      pbm        PBM (Portable Bitmap)
+      xbm        X11 Bitmap
+      xpm        X11 Pixmap (XPM3 package)
+</pre>
+デフォルトは <tt>eps</tt> です。
+
+<p>
+<dt><kbd>-center </kbd> (<kbd>-cente</kbd>)
+<dd><a href="command-panel.html#export">Export</a> や 
+<a href="command-panel.html#print">Print</a> における 
+<i>Justification</i> の設定を <i>Centered</i> とします。
+これがデフォルトです。
+
+<p>
+<dt><kbd>-flushleft </kbd> (<kbd>-fl</kbd>)
+<dd><a href="command-panel.html#export">Export</a> や 
+<a href="command-panel.html#print">Print</a> における 
+<i>Justification</i> の設定を <i>Flush Left</i> とします。
+デフォルトでは <i>Centered</i> が選択されます。
+
+<p>
+<dt><kbd>-magnification </kbd> <i>mag</i> (<kbd>-mag</kbd>)
+<dd><a href="command-panel.html#export">Export</a> や 
+<a href="command-panel.html#print">Print</a> における 
+<i>Magnification</i> を設定します。
+設定は % 単位で行ないます。
+デフォルトは 100% です。
+
+<p>
+<dt><kbd>-multiple </kbd> (<kbd>-mu</kbd>)
+<dd><a href="command-panel.html#export">Export</a> や 
+<a href="command-panel.html#print">Print</a> における 
+<i>Pages</i> の設定を <i>Multiple</i> とします。
+デフォルトでは <i>Single</i> が選択されます。
+
+<p>
+<dt><kbd>-single </kbd> (<kbd>-si</kbd>)
+<dd><a href="command-panel.html#export">Export</a> や 
+<a href="command-panel.html#print">Print</a> における 
+<i>Pages</i> の設定を <i>Single</i> とします。
+これがデフォルトです。
+
+<p>
+<dt><kbd>-paper_size </kbd> <i>size</i> (<kbd>-pa</kbd>)
+<dd><a href="command-panel.html#export">Export</a> や 
+<a href="command-panel.html#print">Print</a> における 
+紙の大きさの初期値を設定します。
+<i>size</i> としては、以下のものを指定することができます。
+<br>
+<pre>
+      Letter      8.5in x 11in
+      Legal       8.5in x 14in
+      Tabloid     17in x 11in
+      ANSI A      8.5in x 11in
+      ANSI B      11in x 17in
+      ANSI C      17in x 22in
+      ANSI D      22in x 34in
+      ANSI E      34in x 44in
+      ISO A4      21 cm x 29.7cm
+      ISO A3      29.7cm x 42 cm
+      ISO A2      42 cm x 59.4cm
+      ISO A1      59.4cm x 84 cm
+      ISO A0      84 cm x 118.8cm
+      JIS B5      18.2cm x 25.7cm
+</pre>
+
+<p>
+<dt><kbd>-jpeg_quality </kbd> <i>quality</i> (<kbd>-j</kbd>)
+<dd>JPEG (JFIF) フォーマットで <a href="command-panel.html#export">Export</a> 
+する際の品質を設定します。
+
+<p>
+<dt><kbd>-transparent_color </kbd> <i>xfig color number</i> (<kbd>-tran</kbd>)
+<dd>GIF フォーマットでの <a href="command-panel.html#export">Export</a> 
+に際しての ``透明'' な色を設定します。
+これは、<b>xfig</b> の色の番号であり、
+-3 (Background)、-2 (None)、-1 (Default)、0 (Black)、1 (Blue)、... 
+のような値となっています。
+<a href="fig-format.html#colors">Fig フォーマットの Colors の項</a>
+も参照して下さい。
+</dl>
+
+
+<h3>フォントや色の設定</h3>
+
+<dl>
+<dt><kbd>-boldFont </kbd> <i>font</i> (<kbd>-bol</kbd>)
+<dd>ファイル名や確認メッセージの表示に使用するフォントを指定します。
+デフォルトは <tt>8x13bold</tt> です。
+
+<p>
+<dt><kbd>-buttonFont </kbd> <i>font</i> (<kbd>-butt</kbd>)
+<dd>大部分のボタンに使用するフォントを指定します。
+デフォルトは <tt>6x13</tt> です。
+
+<p>
+<dt><kbd>-normalFont </kbd> <i>font</i> (<kbd>-nor</kbd>)
+<dd>メッセージ・ウィンドウなどで使用するフォントを指定します。
+このフォントは、選択されたフォントが使用可能でなかった場合に
+キャンバス上でも使用されます。
+デフォルト は <tt>6x13</tt> です。
+
+<p>
+<dt><kbd>-scalablefonts </kbd> (<kbd>-sc</kbd>)
+<dd>X11R5、もしくは OpenWindows の
+スケーラブル・フォントの使用を許可します。
+これがデフォルトです。
+スケーラブル・フォントが使用できない場合には、
+<b>xfig</b> は自動的にスケーリングしないフォントに切り替えます。
+
+<p>
+<dt><kbd>-noscalablefonts </kbd> (<kbd>-nos</kbd>)
+<dd>X11R5、もしくは OpenWindows の
+スケーラブル・フォントの使用を禁止します。
+これは、デバッグなどの際に必要となるかも知れません。
+
+<p>
+<dt><kbd>-cbg </kbd> <i>color</i>
+<dd>キャンバスの背景色を指定します。
+もし <b>xfig</b> 全体 (メニューなど) の背景色を設定したいのであれば、
+一般的な <tt>-bg</tt> オプションを使用して下さい。
+
+<p>
+<dt><kbd>-cfg </kbd> <i>color</i>
+<dd>オブジェクトのデフォルトの色を指定します。
+もし <b>xfig</b> 全体 (メニューなど) の前景色を設定したいのであれば、
+一般的な <tt>-fg</tt> オプションを使用して下さい。
+
+<p>
+<dt><kbd>-inverse </kbd> (<kbd>-inv</kbd>)
+<dd>表示を反転 (white on black) します。
+
+<p>
+<dt><kbd>-monochrome </kbd> (<kbd>-mo</kbd>)
+<dd>表示を、黒、及び白のみを用いて行なうようにします。
+
+<p>
+<dt><kbd>-max_image_colors </kbd> <i>numcols</i> (<kbd>-max</kbd>)
+<dd>EPS、GIF、JPEG などのイメージの表示に使用する色を、
+最大 <i>numcols</i> 色に制限します。
+デフォルトは 64 です。
+
+<p>
+<dt><kbd>-dontswitchcmap </kbd> (<kbd>-dontsw</kbd>)
+<dd>通常はデフォルト・カラーマップでは
+充分なカラーを確保することができない場合には
+プライベート・カラーマップに切り替えますが、
+このオプションはそれを禁止します。
+<tt>-max_image_colors</tt> オプションも参照して下さい。
+
+<p>
+<dt><kbd>-visual </kbd> <i>visualname</i>
+<dd>ビジュアルとして <i>visualname</i> を使用します。
+<i>visualname</i> は、
+TrueColor、StaticColor、DirectColor、StaticGray、GrayScale、
+及び PseudoColor のいずれかです。
+これが指定されなかった場合、<b>xfig</b> はデフォルト・ビジュアルを使用します。
+<br>
+サーバーがどのビジュアルと深さをサポートしているかは、
+<tt>xdpyinfo</tt> を用いて知ることができます。
+<tt>-depth</tt> オプションも参照して下さい。
+
+<p>
+<dt><kbd>-depth </kbd> (<kbd>-dep</kbd>)
+<dd>ビジュアルの深さを選択します。
+<br>
+サーバーがどのビジュアルと深さをサポートしているかは、
+<tt>xdpyinfo</tt> を用いて知ることができます。
+<tt>-visual</tt> オプションも参照して下さい。
+</dl>
+
+
+<h3>ウィンドウの大きさなどの指定</h3>
+
+<dl>
+<dt><kbd>-geometry </kbd> 
+  [<i>W</i><kbd>x</kbd><i>H</i><kbd>]+</kbd><i>x</i><kbd>+</kbd><i>y</i> (<kbd>-geom</kbd>)
+<dd><b>xfig</b> のメイン・ウィンドウの大きさ、及び位置を設定します。
+<b>xfig</b> のウィンドウの大きさは、
+これを用いてウィンドウの大きさを指定するか、
+あるいは <tt>-pwidth</tt>、及び <tt>-pheight</tt> オプションを用いて
+キャンバスの大きさを inch、もしくは cm 単位で指定することができます。
+
+<p>
+<dt><kbd>-iconGeometry </kbd> <kbd>+</kbd><i>x</i><kbd>+</kbd><i>y</i> (<kbd>-iconG</kbd>)
+<dd><b>xfig</b> のアイコンの位置を指定します。
+
+<p>
+<dt><kbd>-pheight </kbd> <i>height</i> (<kbd>-ph</kbd>)
+<dd><b>xfig</b> のキャンバスの高さを <i>height</i> とします。
+<i>height</i> は、単位の設定に応じて cm、もしくは inch 単位となります。
+
+<p>
+<dt><kbd>-pwidth </kbd> <i>width</i> (<kbd>-pw</kbd>)
+<dd><b>xfig</b> のキャンバスの幅を <i>width</i> とします。
+<i>width</i> は、単位の設定に応じて cm、もしくは inch 単位となります。
+
+<p>
+<dt><kbd>-but_per_row </kbd> <i>number</i> (<kbd>-but_</kbd>)
+<dd>モード・パネルのボタンの列の数を指定します。
+これは、<tt>-pheight</tt> オプションと組み合わせて
+小さい画面のためにウィンドウの高さを制限する際に有用です。
+デフォルトは 2 です。
+
+<p>
+<dt><kbd>-left </kbd> (<kbd>-le</kbd>)
+<dd>描画/編集モード・パネルを、キャンバスの左側に置くようにします。
+これがデフォルトです。
+
+<p>
+<dt><kbd>-right </kbd> (<kbd>-ri</kbd>)
+<dd>描画/編集モード・パネルを、キャンバスの右側に置くようにします。
+デフォルトでは左側となります。
+
+<p>
+<dt><kbd>-showallbuttons </kbd> (<kbd>-sh</kbd>)
+<dd>現在の描画モードに関係したインジケータ・ボタンのみを表示する代わりに、
+常にすべてのインジケータ・ボタンを表示するようにします。
+これは、画面上のスペースをより多く必要としますが、
+ユーザーがすべての設定可能なパラメータを見ることを可能とします。
+通常は、それぞれのインジケータ・ボタンは、
+現在の描画モードに関係がある場合にのみ表示されます。
+
+<p>
+<dt><kbd>-internalBW </kbd> <i>width</i>
+<dd>全てのボタンやパネルの間に引く線の太さを設定します。
+デフォルトは 1 です。
+</dl>
+
+
+<h3>その他</h3>
+
+<dl>
+<dt><kbd>-help</kbd> (<kbd>-h</kbd>)
+<dd><b>xfig</b> の全てのコマンド行オプションを表示し、終了します。
+
+<p>
+<dt><kbd>-debug </kbd> (<kbd>-deb</kbd>)
+<dd>デバッグ用機能を有効とします。
+のオプションを指定した場合、
+フォント名などの種々のデバッグ用情報が出力されるようになります。
+
+<p>
+<dt><kbd>-image_editor </kbd> (<kbd>-ima</kbd>)
+<dd>PICTURE オブジェクトに対する 
+<a href="editing-mode.html#edit-pict-panel">Edit パネル</a> の 
+<a href="editing-mode.html#edit-image"><i>Edit Image ボタン</i></a> 
+が押された際に起動するプログラムを指定します。
+
+<p>
+<dt><kbd>-library_dir </kbd> (<kbd>-li</kbd>)
+<dd><a href="drawing-mode.html#makelibrary">Fig オブジェクトのライブラリ</a>
+が置いてあるディレクトリを指定します。
+<a href="drawing-mode.html#library">Library ボタン</a> が押された時、
+このディレクトリの中の Fig ファイルとサブ・ディレクトリが検索されます。
+それぞれのサブ・ディレクトリはオブジェクト・ライブラリとして扱われ、
+Library ポップアップ・パネルのメニューに含められます。
+
+<p>
+<dt><kbd>-showballoons </kbd> (<kbd>-showb</kbd>)<br>
+<kbd>-dontshowballoons </kbd> (<kbd>-dontshowb</kbd>)
+<dd>カーソルがボタンなどの上にある時にバルーン・メッセージを表示するように、
+あるいは表示しないように指示します。
+デフォルトではバルーン・メッセージは表示されます。
+<br>
+<img src="../images/balloons-example.gif" alt="[Balloons]">
+
+<p>
+<dt><kbd>-balloon_delay </kbd> <i>msec</i> (<kbd>-bal</kbd>)
+<dd>バルーン・メッセージが表示されるまでの時間をミリ秒単位で指定します。
+デフォルトは 500ms です。
+
+<p>
+<dt><kbd>-showlengths </kbd> (<kbd>-showl</kbd>)<br>
+<kbd>-dontshowlengths </kbd> (<kbd>-dontshowl</kbd>)
+<dd>線の入力に際して、線の近くにその線の長さを表示するようにします。
+さらに、その線分を斜辺とする三角形が表示され、
+残りの２つの辺の長さ (つまり垂直、及び水平の距離) も表示されます。
+<br>
+<img src="../images/show-lengths.gif" alt="[Show Lengths]">
+
+<p>
+<dt><kbd>-spellcheck </kbd> <i>spell-check-command</i> (<kbd>-spel</kbd>)
+<dd>TEXT オブジェクトのスペル・チェックに用いるプログラムを指定します。
+デフォルトは `<tt>spell</tt>' です。
+
+<p>
+<dt><kbd>-tablet </kbd> (<kbd>-ta</kbd>)
+<dd>マウスの代わりにタブレットを使用するようにします。
+これを機能させるためには XInputExtension をサポートした X サーバーと
+入力用タブレットが必要であり、
+かつその <b>xfig</b> がタブレットの使用を可能とするように 
+<tt>Imakefile</tt> で <tt>TABLIB</tt> と <tt>USETAB</tt> を指定して
+コンパイルされていなければなりません。
+
+<p>
+<dt><kbd>-keyFile </kbd> <i>compose-key-file</i> (<kbd>-k</kbd>)
+<dd>compose key データーベースとして、
+<tt>CompKeyDB</tt> の代わりに <i>compose-key-file</i> を使用します。
+ファイル名に ``<tt>/</tt>'' が含まれていない場合には、
+ファイルは <b>xfig</b> のライブラリ・ディレクトリ <i>$XFIGLIBDIR</i> 
+(通常は <tt>/usr/local/lib/X11/xfig</tt>) 
+に置かれていなければなりません。
+ファイル名に ``<tt>/</tt>''が含まれている場合、そのファイル名は
+そのまま (<i>$XFIGLIBDIR</i> を基準としてではなく) 使用されます。
+ファイル名が ``<tt>~/</tt>'' で始まっている場合、
+それはユーザーのホーム・ディレクトリに置き換えられます。
+
+<p>
+<dt><kbd>-track </kbd> (<kbd>-tr</kbd>)<br>
+<kbd>-notrack </kbd> (<kbd>-not</kbd>)
+<dd>カーソル (マウス) の位置を示す矢印の表示をオン、もしくはオフとします。
+通常は、縦、及び横の目盛の上にカーソルの位置が表示されます。
+<tt>-track</tt> オプションも参照して下さい。
+<br>
+<img src="../images/ruler.gif" alt="[Ruler]">
+
+<p>
+<dt><kbd>-international</kbd> <img src="../images/pict-japanese.gif" alt="[JAPANESE]">
+<dd>日本語化機能を有効とします。
+このオプションは、
+<a href="i18n.html">日本語対応機能</a>を有効とした <b>xfig</b> にのみ含まれます。
+日本語対応機能を有効とした <b>xfig</b> で実際に日本語を使用するためには、
+起動に際してこのオプションを指定するか、
+もしくは <tt>international</tt> リソースを on に設定する必要があります。
+</dl>
+
+<p>
+<hr>
+
+<h2><a name="resource">リソース</a></h2>
+
+以下に、<b>xfig</b> のカスタマイズを行なうために用いることのできる
+主なリソースを示します。
+これらの指定は、通常は <b>xfig</b> のリソース・データベース・ファイル 
+(<tt>/usr/X11/lib/app-defaults/Fig</tt> のような) に追加するか、
+あるいは <tt>xrdb</tt> によって読み込まれる
+ユーザー自身のリソース・ファイルに書き込むことによって行ないます。
+
+<h3><img src="../images/pict-info.gif" alt="">カラー・リソースについての注意</h3>
+
+一般に、カラー・ディスプレイを使用する場合には、
+ユーザーは共通のリソース `<tt>*customization: -color</tt>' を
+指定することが必要となります。
+これは、X システム (X11R4 以降) に、
+アプリケーション・デフォルト・ディレクトリの 
+`<tt>XXX-color</tt>' app-defaults ファイルを参照するように指示します。
+そのファイル (例えば `<tt>Fig-color</tt>') では、色の定義を行ない、
+またメインの app-defaults ファイル `<tt>Fig</tt>' を取り込むようにします。
+
+<h3>モードなどの設定</h3>
+
+<dl>
+<dt><kbd>landscape </kbd> (<kbd>Orientation</kbd>)
+<dd>これを on に設定すると landscape モードに、
+off に設定すると portrait モードになります。
+<br>
+<b>Option:</b> <tt>-landscape</tt>、<tt>-portrait</tt>
+<br>
+<b>Default:</b> on (landscape)
+
+<p>
+<dt><kbd>inches </kbd> (<kbd>Inches</kbd>)
+<dd>これを on に設定すると単位として inch が、
+off に設定すると単位として cm が選択されます。
+<br>
+<b>Option:</b> <tt>-inches</tt> (<tt>-imperial</tt>)、
+  <tt>-metric</tt> (<tt>-centimeters</tt>)
+<br>
+<b>Default:</b> on (inch)
+
+<p>
+<dt><kbd>userscale </kbd> (<kbd>UserScale</kbd>)
+<dd>寸法を表示する際の倍率を設定します。
+<br>
+<b>Option:</b> <tt>-userscale</tt>
+<br>
+<b>Default:</b> 1.0
+
+<p>
+<dt><kbd>userunit </kbd> (<kbd>UserUnit</kbd>)
+<dd>寸法の表示に用いる単位を設定します。
+<br>
+<b>Option:</b> <tt>-userunit</tt>
+<br>
+<b>Default:</b> <tt>in</tt> (もしくは <tt>cm</tt>)
+
+<p>
+<dt><kbd>latexfonts </kbd> (<kbd>Latexfonts</kbd>)
+<dd>これを on に設定すると LaTeX フォントが、
+さもなくば PostScript フォントが選択されます。
+<br>
+<b>Option:</b> <tt>-latexfonts</tt>
+<br>
+<b>Default:</b> off
+
+<p>
+<dt><kbd>startpsFont </kbd> (<kbd>StartpsFont</kbd>)
+<dd><a href="indicator-panel.html#text-font">TEXT FONT</a> で、
+指定された PostScript フォントを選択します。
+<br>
+<b>Option:</b> <tt>-startpsFont</tt>
+<br>
+<b>Default:</b> <tt>Times-Roman</tt>
+
+<p>
+<dt><kbd>startlatexFont </kbd> (<kbd>StartlatexFont</kbd>)
+<dd><a href="indicator-panel.html#text-font">TEXT FONT</a> で、
+指定された LaTeX フォントを選択します。
+<br>
+<b>Option:</b> <tt>-startlatexFont</tt>
+<br>
+<b>Default:</b> <tt>Default</tt>
+
+<p>
+<dt><kbd>startfontsize </kbd> (<kbd>StartFontSize</kbd>)
+<dd><a href="indicator-panel.html#text-size">TEXT SIZE</a> 
+の初期値を設定します。
+<br>
+<b>Option:</b> <tt>-startfontsize</tt>
+<br>
+<b>Default:</b> 12
+
+<p>
+<dt><kbd>starttextstep </kbd> (<kbd>StartTextStep</kbd>)
+<dd><a href="indicator-panel.html#text-step">TEXT STEP</a> 
+の初期値を設定します。
+<br>
+<b>Option:</b> <tt>-starttextstep</tt>
+<br>
+<b>Default:</b> 1.2
+
+<p>
+<dt><kbd>specialtext </kbd> (<kbd>SpecialText</kbd>)
+<dd><a href="indicator-panel.html#text-flags">TEXT FLAGS</a> 
+の <i>Special</i> フラグの初期値を設定します。
+<br>
+<b>Option:</b> <tt>-specialtext</tt>
+<br>
+<b>Default:</b> off
+
+<p>
+<dt><kbd>startfillstyle </kbd> (<kbd>StartFillStyle</kbd>)
+<dd><a href="indicator-panel.html#fill-style">FILL STYLE</a> 
+の初期値 (-1〜21) を設定します。
+<br>
+<b>Option:</b> <tt>-startfillstyle</tt>
+<br>
+<b>Default:</b> -1 (None)
+
+<p>
+<dt><kbd>startgridmode </kbd> (<kbd>StartGridMode</kbd>)
+<dd><a href="indicator-panel.html#grid-mode">GRID MODE</a> 
+の初期値 (0〜4) を設定します。
+<br>
+<b>Option:</b> <tt>-startgridmode</tt>
+<br>
+<b>Default:</b> 0 (None)
+
+<p>
+<dt><kbd>startposnmode </kbd> (<kbd>StartPosnMode</kbd>)
+<dd><a href="indicator-panel.html#point-position">POINT POSITION</a> 
+の初期値 (0〜5) を設定します。
+<br>
+<b>Option:</b> <tt>-startposnmode</tt>
+<br>
+<b>Default:</b> 1 (1/16インチ、もしくは 1mm)
+
+<p>
+<dt><kbd>startlinewidth </kbd> (<kbd>StartLineWidth</kbd>)
+<dd><a href="indicator-panel.html#line-width">LINE WIDTH</a> 
+の初期値を設定します。
+<br>
+<b>Option:</b> <tt>-startlinewidth</tt>
+<br>
+<b>Default:</b> 1
+
+<p>
+<dt><kbd>zoom </kbd> (<kbd>Zoom</kbd>)
+<dd><a href="indicator-panel.html#zoom-scale">ZOOM SCALE</a> 
+の初期値を設定します。
+<br>
+<b>Option:</b> <tt>-zoom</tt>
+<br>
+<b>Default:</b> 1.0
+</dl>
+
+<h3>PRINT や EXPORT の設定</h3>
+
+<dl>
+<dt><kbd>exportLanguage </kbd> (<kbd>ExportLanguage</kbd>)
+<dd><a href="command-panel.html#export">Export</a> における
+<i>Language</i> の初期値を設定します。
+<br>
+<b>Option:</b> <tt>-exportLanguage</tt>
+<br>
+<b>Default:</b> <tt>eps</tt> (Encapsulated PostScript)
+
+<p>
+<dt><kbd>flushleft </kbd> (<kbd>FlushLeft</kbd>)
+<dd><a href="command-panel.html#export">Export</a> や 
+<a href="command-panel.html#print">Print</a> における 
+<i>Justification</i> の初期値を設定します。
+<br>
+<b>Option:</b> <tt>-flushleft</tt>
+<br>
+<b>Default:</b> off (Centered)
+
+<p>
+<dt><kbd>magnification </kbd> (<kbd>Magnification</kbd>)
+<dd><a href="command-panel.html#export">Export</a> や 
+<a href="command-panel.html#print">Print</a> における 
+<i>Magnification</i> の初期値を設定します。
+<br>
+<b>Option:</b> <tt>-magnification</tt>
+<br>
+<b>Default:</b> 100
+
+<p>
+<dt><kbd>multiple </kbd> (<kbd>Multiple</kbd>)
+<dd><a href="command-panel.html#export">Export</a> や 
+<a href="command-panel.html#print">Print</a> における 
+<i>Pages</i> の初期値を設定します。
+<br>
+<b>Option:</b> <tt>-multiple</tt>
+<br>
+<b>Default:</b> off (Single)
+
+<p>
+<dt><kbd>page_size </kbd> (<kbd>Pagesize</kbd>)
+<dd><a href="command-panel.html#export">Export</a> や 
+<a href="command-panel.html#print">Print</a> における 
+<i>Paper Size</i> の初期値を設定します。
+<dd>
+<b>Option:</b> <tt>-page_size</tt>
+<br>
+<b>Default:</b> Letter (単位が inch の場合)、もしくは A4 (単位が cm の場合)
+
+<p>
+<dt><kbd>jpeg_quality </kbd> <i>quality</i> (<kbd>Quality</kbd>)
+<dd>JPEG (JFIF) フォーマットで <a href="command-panel.html#export">Export</a> 
+する際の品質を設定します。
+<br>
+<b>Option:</b> <tt>-jpeg_quality</tt>
+<br>
+<b>Default:</b> 75
+
+<p>
+<dt><kbd>transparent </kbd> <i>xfig color number</i> (<kbd>Transparent</kbd>)
+<dd>GIF フォーマットでの <a href="command-panel.html#export">Export</a> 
+に際しての ``透明'' な色を設定します。
+これは、<b>xfig</b> の色の番号であり、
+-3 (Background)、-2 (None)、-1 (Default)、0 (Black)、1 (Blue)、... 
+のような値となっています。
+<a href="fig-format.html#colors">Fig フォーマットの Colors の項</a>
+も参照して下さい。
+<br>
+<b>Option:</b> <tt>-transparent_color</tt>
+<br>
+<b>Default:</b> -2 (None)
+</dl>
+
+<h3>フォントや色の設定</h3>
+
+<dl>
+<dt><kbd>boldFont </kbd> (<kbd>Font</kbd>)
+<dd>ファイル名や確認メッセージの表示に使用するフォントを指定します。
+<br>
+<b>Option:</b> <tt>-bold</tt>
+<br>
+<b>Default:</b> <tt>8x13bold</tt>
+
+<p>
+<dt><kbd>buttonFont </kbd> (<kbd>Font</kbd>)
+<dd>大部分のボタンに使用するフォントを指定します。
+<br>
+<b>Option:</b> <tt>-button</tt>
+<br>
+<b>Default:</b> <tt>6x13</tt>
+
+<p>
+<dt><kbd>normalFont </kbd> (<kbd>Font</kbd>)
+<dd>メッセージ・ウィンドウなどで使用するフォントを指定します。
+<br>
+<b>Option:</b> <tt>-normal</tt>
+<br>
+<b>Default:</b> <tt>6x13</tt>
+
+<p>
+<dt><kbd>scalablefonts </kbd> (<kbd>ScalableFonts</kbd>)
+<dd>これを on に設定すると、
+X11R5、もしくは OpenWindows の
+スケーラブル・フォントを使用するようになります。
+<br>
+<b>Option:</b> <tt>-scalablefonts</tt>
+<br>
+<b>Default:</b> on
+
+<p>
+<dt><kbd>canvasBackground </kbd> (<kbd>Background</kbd>)
+<dd>キャンバスの背景色を指定します。
+<br>
+<b>Option:</b> <tt>-cbg</tt>
+<br>
+<b>Default:</b> <tt>white</tt>
+
+<p>
+<dt><kbd>canvasForeground </kbd> (<kbd>Foreground</kbd>)
+<dd>オブジェクトのデフォルトの色を指定します。
+<br>
+<b>Option:</b> <tt>-cfg</tt>
+<br>
+<b>Default:</b> <tt>black</tt>
+
+<p>
+<dt><kbd>reverseVideo </kbd> (<kbd>ReverseVideo</kbd>)
+<dd>これを on に設定すると、表示が反転します。
+<br>
+<b>Option:</b> <tt>-inverse</tt>
+<br>
+<b>Default:</b> off
+
+<p>
+<dt><kbd>monochrome </kbd> (<kbd>Monochrome</kbd>)
+<dd>これを on に設定すると、
+表示を黒、及び白のみを用いて行なうようになります。
+<br>
+<b>Option:</b> <tt>-monochrome</tt>
+<br>
+<b>Default:</b> off
+
+<p>
+<dt><kbd>dont_switch_cmap </kbd> (<kbd>Dont_switch_cmap</kbd>)
+<dd>これを on に設定すると、
+デフォルト・カラーマップでは充分なカラーを確保することができない場合でも
+プライベート・カラーマップに切り替えないようになります。
+<br>
+<b>Option:</b> <tt>-dontswitchcmap</tt>
+<br>
+<b>Default:</b> off
+
+<p>
+<dt><kbd>visual </kbd> (<kbd>Visual</kbd>)
+<dd>ビジュアルとして <i>visualname</i> を使用します。
+<br>
+<b>Option:</b> <tt>-visual</tt>
+<br>
+<b>Default:</b> スクリーンのデフォルト・ビジュアル
+
+<p>
+<dt><kbd>depth </kbd> (<kbd>Depth</kbd>)
+<dd>ビジュアルの深さを選択します。
+<br>
+<b>Option:</b> <tt>-depth</tt>
+<br>
+<b>Default:</b> スクリーンのデフォルトの深さ
+</dl>
+
+<h3>ウィンドウの大きさなどの設定</h3>
+
+<dl>
+<dt><kbd>pheight </kbd> (<kbd>Height</kbd>)
+<dd>キャンバスの高さを設定します。
+<br>
+<b>Option:</b> <tt>-pheight</tt>
+<br>
+<b>Default:</b> 8.5inch (Portrait モードでは 9inch)
+
+<p>
+<dt><kbd>pwidth </kbd> (<kbd>Width</kbd>)
+<dd>キャンバスの幅を設定します。
+<br>
+<b>Option:</b> <tt>-pwidth</tt>
+<br>
+<b>Default:</b> 11inch (Portrait モードでは 8.5inch)
+
+<p>
+<dt><kbd>but_per_row </kbd> (<kbd>But_per_row</kbd>)
+<dd>モード・パネルのボタンの列の数を指定します。
+<br>
+<b>Option:</b> <tt>-but_per_row</tt>
+<br>
+<b>Default:</b> 2
+
+<p>
+<dt><kbd>justify </kbd> (<kbd>Justify</kbd>)
+<dd>これを on に設定すると、
+描画/編集モード・パネルがキャンバスの右側に置かれます。
+<br>
+<b>Option:</b> <tt>-left</tt>、<tt>-right</tt>
+<br>
+<b>Default:</b> off (left)
+
+<p>
+<dt><kbd>showallbuttons </kbd> (<kbd>ShowAllButtons</kbd>)
+<dd>これを on に設定すると、
+現在の描画モードに関係したインジケータ・ボタンのみを表示する代わりに、
+常にすべてのインジケータ・ボタンを表示するようにします。
+<br>
+<b>Option:</b> <tt>-showallbuttons</tt>
+<br>
+<b>Default:</b> off
+
+<p>
+<dt><kbd>internalborderwidth </kbd> (<kbd>InternalBorderWidth</kbd>)
+<dd>全てのボタンやパネルの間に引く線の太さを設定します。
+<br>
+<b>Option:</b> <tt>-internalBW</tt>
+<br>
+<b>Default:</b> 1
+
+<p>
+<dt><kbd>rulerthick </kbd> (<kbd>RulerThick</kbd>)
+<dd>目盛の幅を設定します。
+<br>
+<b>Option:</b> <tt>-rulerthick</tt>
+<br>
+<b>Default:</b> 24
+<br>
+<b>Minimum:</b> 24
+</dl>
+
+<h3>その他</h3>
+
+<dl>
+<dt><kbd>debug </kbd> (<kbd>Debug</kbd>)
+<dd>これを on に設定すると、デバッグ用機能が有効となります。
+<br>
+<b>Option:</b> <tt>-debug</tt>
+<br>
+<b>Default:</b> off
+
+<p>
+<dt><kbd>showballoons </kbd> (<kbd>showBalloons</kbd>)
+<dd>これを on に設定すると、
+カーソルがボタンなどの上にある時にバルーン・メッセージが表示されます。
+<br>
+<b>Option:</b> <tt>-showballoons / -dontshowballoons</tt>
+<br>
+<b>Default:</b> on (show balloons)
+
+<p>
+<dt><kbd>balloon_delay </kbd> (<kbd>Balloon_Delay</kbd>)
+<dd>バルーン・メッセージが表示されるまでの時間をミリ秒単位で指定します。
+<br>
+<b>Option:</b> <tt>-balloon_delay</tt>
+<br>
+<b>Default:</b> 500
+
+<p>
+<dt><kbd>showlengths </kbd> (<kbd>Debug</kbd>)
+<dd>これを on に設定すると、
+線の入力に際して、線の近くにその線の長さが表示されるようになります。
+さらに、その線分を斜辺とする三角形が表示され、
+残りの２つの辺の長さ (つまり垂直、及び水平の距離) も表示されます。
+<br>
+<b>Option:</b> <tt>-showlengths / -dontshowlengths</tt>
+<br>
+<b>Default:</b> off
+
+<p>
+<dt><kbd>image_editor </kbd> (<kbd>ImageEditor</kbd>)
+<dd>PICTURE オブジェクトに対する 
+<a href="editing-mode.html#edit-pict-panel">Edit パネル</a> の 
+<a href="editing-mode.html#edit-image"><i>Edit Image ボタン</i></a> 
+が押された際に起動するプログラムを指定します。
+<br>
+<b>Option:</b> <tt>-image_editor</tt>
+<br>
+<b>Default:</b> <tt>xv</tt>
+
+<p>
+<dt><kbd>library_dir </kbd> (<kbd>libraryDirectory</kbd>)
+<dd><a href="drawing-mode.html#makelibrary">Fig オブジェクトのライブラリ</a>
+が置いてあるディレクトリを指定します。
+<a href="drawing-mode.html#library">Library ボタン</a> が押された時、
+このディレクトリの中の Fig ファイルとサブ・ディレクトリが検索されます。
+それぞれのサブ・ディレクトリはオブジェクト・ライブラリとして扱われ、
+Library ポップアップ・パネルのメニューに含められます。
+<br>
+<b>Option:</b> <tt>-library_dir</tt>
+<br>
+<b>Default:</b> <tt>$XFIGLIBDIR/Libraries</tt>
+
+<p>
+<dt><kbd>keyFile </kbd> (<kbd>KeyFile</kbd>)
+<dd>compose key データーベースとして使用するファイルを指定します。
+<br>
+<b>Option:</b> <tt>-keyFile</tt>
+<br>
+<b>Default:</b> <tt>$XFIGLIBDIR/CompKeyDB</tt>
+
+<p>
+<dt><kbd>max_image_colors </kbd> (<kbd>Max_image_colors</kbd>)
+<dd>EPS、GIF、JPEG などのイメージの表示に使用する色の数の
+上限を設定します。
+<br>
+<b>Option:</b> <tt>-max_image_colors</tt>
+<br>
+<b>Default:</b> 64
+
+<p>
+<dt><kbd>trackCursor </kbd> (<kbd>Track</kbd>)
+<dd>これを on とすると、
+カーソル (マウス) の位置を示す矢印が表示されるようになります。
+<br>
+<b>Option:</b> <tt>-track</tt>、もしくは <tt>-notrack</tt>
+<br>
+<b>Default:</b> on
+
+<p>
+<dt><kbd>Fig*file_panel*mask*string</kbd>
+<dd><a href="command-panel.html#file">File パネル</a> の 
+<i>Filename Mask</i> フィールドの初期値を設定します。
+<br>
+<b>Default:</b> <tt>*.fig*</tt>
+
+<p>
+<dt><kbd>Fig*browse_panel*mask*string</kbd>
+<dd><a href="editing-mode.html#browse-panel">Browse パネル</a> の 
+<i>Filename Mask</i> フィールドの初期値を設定します。
+<br>
+<b>Default:</b> <tt>*.[gjxepst][ipbcl][fgmsxd]*</tt>
+(これは eps、gif、jpg、pcx、sld、tif、xbm、及び xpm ファイルにマッチしますが、
+ps、mf、及び tk ファイルはサフィックスに２文字しか含まないためにマッチしません)
+
+<p>
+<dt><kbd>Fig*export_panel*mask*string</kbd>
+<dd><a href="command-panel.html#export">Export パネル</a> の 
+<i>Filename Mask</i> フィールドの初期値を設定します。
+<br>
+<b>Default:</b> <tt>*ps</tt>
+
+<p>
+<dt><kbd>Fig*printer*string</kbd>
+<dd><a href="command-panel.html#print">Print パネル</a> の 
+<i>PostScript Printer</i> フィールドの初期値を設定します。
+このリソースが設定されておらず、
+かつ環境変数 <tt>$PRINTER</tt> が設定されている場合には、
+その変数の内容が初期値となります。
+これには、通常出力に使用するプリンタのプリンタ名を
+設定しておくことができます。
+<br>
+<b>Default:</b> ""
+
+<p>
+<dt><kbd>Fig*job_params*string</kbd>
+<dd><a href="command-panel.html#print">Print パネル</a> の 
+<i>Print Job Params</i> フィールドの初期値を設定します。
+これには、出力をプリンタへ送る際に 
+<tt>lpr</tt> (System V システムにおいては <tt>lp</tt>) に渡す必要がある
+オプションを設定しておくことができます。
+<br>
+<b>Default:</b> ""
+</dl>
+
+<h3>日本語化 (国際化) 機能
+  <img src="../images/pict-japanese.gif" align="top" alt="[JAPANESE]"></h3>
+
+これらのリソースは、
+<a href="i18n.html">日本語対応機能</a>を有効とした <b>xfig</b> 
+においてのみ意味を持ちます。
+<dl>
+<dt><kbd>international</kbd> (<kbd>International</kbd>)
+<dd>日本語化機能を有効とするかどうかを設定します。
+<br>
+<b>Option:</b> <tt>-international</tt>
+<br>
+<b>Default:</b> off
+
+<p>
+<dt><kbd>japanese</kbd>
+<dd>これが on に設定されている場合、
+これは、<a href="indicator-panel.html#text-font">TEXT FONT</a> の 
+``<i>Times-Roman</i>'' が ``<i>Times-Roman + 明朝</i>'' に、
+また ``<i>Times-Bold</i>'' が ``<i>Times-Bold + ゴシック</i>'' に
+置き換えられます。
+これは、日本語化機能を有効とした場合に限って意味を持ちます。
+<br>
+<b>Default:</b> on
+
+<p>
+<dt><kbd>eucEncoding</kbd>
+<dd>これが on に設定されている場合には、
+日本語テキストのエンコーディングとして 
+EUC が用いられているものと想定されます。
+通常は、EUC を用いるべきです。
+これは、日本語化機能を有効とした場合に限って意味を持ちます。
+<br>
+<b>Default:</b> on
+
+<p>
+<dt><kbd>fixedFontSet</kbd> (<kbd>FontSet</kbd>)
+<dd>Off the Spot や Over the Spot での入力を行なう際の、
+確定前の文字列やステータスの表示に用いるフォント・セットを指定します。
+これは、日本語化機能を有効とした場合に限って意味を持ちます。
+<br>
+<b>Default:</b> <tt>-*-times-medium-r-normal--16-*-*-*-*-*-*-*,
+    -*-*-medium-r-normal--16-*-*-*-*-*-*-*,
+    -*-*-*-r-*--16-*-*-*-*-*-*-*</tt>
+
+<p>
+<dt><kbd>normalFontSet</kbd> (<kbd>NormalFontSet</kbd>)
+<dd>フォントとして <i>Times-Roman</i> が選択されている場合に
+日本語テキストの描画に用いるフォント・セットを指定します。
+これは、日本語化機能を有効とした場合に限って意味を持ちます。
+<tt>boldFontSet</tt>、及び <tt>fontSetSize</tt> も参照して下さい。
+<br>
+<b>Default:</b> <tt>-*-times-medium-r-normal--16-*-*-*-*-*-*-*,
+    -*-*-medium-r-normal--16-*-*-*-*-*-*-*,
+    -*-*-*-r-*--16-*-*-*-*-*-*-*</tt>
+
+<p>
+<dt><kbd>boldFontSet</kbd> (<kbd>BoldFontSet</kbd>)
+<dd>フォントとして <i>Times-Bold</i> が選択されている場合に
+日本語テキストの描画に用いるフォント・セットを指定します。
+これは、日本語化機能を有効とした場合に限って意味を持ちます。
+<tt>normalFontSet</tt>、及び <tt>fontSetSize</tt> も参照して下さい。
+<br>
+<b>Default:</b> <tt>-*-times-bold-r-normal--16-*-*-*-*-*-*-*,
+    -*-*-bold-r-normal--16-*-*-*-*-*-*-*,
+    -*-*-*-r-*--16-*-*-*-*-*-*-*</tt>
+
+<p>
+<dt><kbd>fontSetSize</kbd>
+<dd><tt>normalFontSet</tt>、及び <tt>boldFontSet</tt> で
+指定したフォントの大きさを設定します。
+これは、日本語化機能を有効とした場合に限って意味を持ちます。
+<br>
+<b>Default:</b> 16
+
+<p>
+<dt><kbd>inputStyle</kbd>
+<dd>入力メソッドを用いて
+<a href="i18n.html#input-japanese">日本語テキストの入力</a>を行なう際の、
+入力のスタイルを指定します。
+スタイルとしては、<tt>OffTheSpot</tt>、<tt>OverTheSpot</tt>、
+及び <tt>Root</tt> のいずれかを指定することができます。
+<tt>None</tt> を指定すると、
+入力メソッドを用いた入力を行なわないようになります。
+これは、日本語化機能を有効とした場合に限って意味を持ちます。
+<br>
+<b>Default:</b> <tt>OffTheSpot</tt>
+
+<p>
+<dt><kbd>textPreedit</kbd>
+<dd><a href="i18n.html#input-japanese">日本語テキストの入力</a>
+のために起動すべき前編集プログラムを指定します。
+これは、日本語化機能を有効とした場合に限って意味を持ちます。
+入力メソッドを用いた入力が可能な場合には、
+これは不要であるものと思われます。
+<br>
+<b>Default:</b> ""
+
+<p>
+<dt><kbd>fig2devLocalizeOption</kbd>
+<dd><a href="installation.html#related-software"><b>fig2dev</b></a> プログラム
+の実行に際して付け加えるオプションを指定します。
+これは日本語化機能を有効とした場合に限って意味を持ち、
+その場合には <b>fig2dev</b> プログラムの実行に際して
+この文字列がオプションとして付け加えられます。
+<br>
+<b>Default:</b> <tt>-j</tt>
+</dl>
+
+<p>
+<hr>
+
+<h2><a name="env-variable">環境変数</a></h2>
+
+<dl>
+<dt><tt>XFIGTMPDIR</tt>
+<dd>テンポラリ・ファイルを作成するディレクトリを指定します。
+これが設定されていない場合には <tt>/tmp</tt> ディレクトリが使用されます。
+
+<p>
+<dt><tt>PRINTER</tt>
+<dd><a href="command-panel.html#print">Print</a> 機能で図の印刷を行なう際の、
+デフォルトでの出力先を指定します。
+<tt>Fig*printer*string</tt> リソースが設定されている場合には、
+この内容は無視されます。
+
+<p>
+<dt><tt>LANG</tt> <img src="../images/pict-japanese.gif" alt="[JAPANESE]">
+<dd>使用する言語を指定します。
+日本語に対しては、
+<tt>japanese</tt> や <tt>ja_JP.eucJP</tt> などのロケール名が使用されます。
+
+<p>
+<dt><tt>XMODIFIERS</tt> <img src="../images/pict-japanese.gif" alt="[JAPANESE]">
+<dd>日本語テキストの入力に用いる
+入力メソッドを指定します。
+これが設定されていない場合には、デフォルトの入力メソッドが用いられます。
+
+<p>
+<dt><tt>FIG2DEV_LIBDIR</tt> <img src="../images/pict-japanese.gif" alt="[JAPANESE]">
+<dd><a href="i18n.html">日本語対応 <b>fig2dev</b></a> が必要とするファイル 
+(<tt>japanese.ps</tt>) が置かれているディレクトリを指定します。
+これが設定されていない場合には、
+<b>fig2dev</b> のコンパイルの際の指定が有効となります。
+</dl>
+
+<p>
+<hr>
+
+Goto <a href="index.html">TOP</a>
+
+<p>
+<a href="authors.html#manual"><i>written by us</i></a>
+
+</body>
+</html>

@@ -1,43 +1,41 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Copyright (c) 1990 by Brian V. Smith
- * Copyright (c) 1992 by James Tough
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1992 by James Tough
+ * Parts Copyright (c) 1998 by Georg Stemmer
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
 #include "fig.h"
 #include "resources.h"
+#include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "d_text.h"
+#include "f_util.h"
 #include "u_bound.h"
 #include "u_create.h"
 #include "u_draw.h"
+#include "u_fonts.h"
+#include "u_error.h"
 #include "u_list.h"
 #include "w_canvas.h"
 #include "w_drawprim.h"
+#include "w_file.h"
 #include "w_setup.h"
 #include "w_zoom.h"
-
-extern PIX_FONT lookfont();
-extern		X_error_handler();
-
-extern char * basname();
 
 /* declarations for splines */
 
@@ -90,85 +88,69 @@ static int	max_points;
 static int	allocstep;
 
 
-static		Boolean
-init_point_array(init_size, step_size)
-    int		    init_size, step_size;
-{
-    npoints = 0;
-    max_points = init_size;
-    allocstep = step_size;
-    if (max_points > MAXNUMPTS) {
-	max_points = MAXNUMPTS;
-    }
-    if ((points = (zXPoint *) malloc(max_points * sizeof(zXPoint))) == 0) {
-	fprintf(stderr, "xfig: insufficient memory to allocate point array\n");
-	return False;
-    }
-    return True;
-}
 
-
-too_many_points()
-{
-	put_msg("Too many points, recompile with MAXNUMPTS > %d in w_drawprim.h",
-		MAXNUMPTS);
-}
-
-
-static		Boolean
-add_point(x, y)
-    int		    x, y;
-{
-    if (npoints >= max_points) {
-	zXPoint	       *tmp_p;
-
-	if (max_points >= MAXNUMPTS) {
-	    max_points = MAXNUMPTS;
-	    return False;		/* stop; it is not closing */
-	}
-	max_points += allocstep;
-	if (max_points >= MAXNUMPTS)
-	    max_points = MAXNUMPTS;
-
-	if ((tmp_p = (zXPoint *) realloc(points,
-					max_points * sizeof(zXPoint))) == 0) {
-	    fprintf(stderr,
-		    "xfig: insufficient memory to reallocate point array\n");
-	    return False;
-	}
-	points = tmp_p;
-    }
-    /* ignore identical points */
-    if (npoints > 0 &&
-	points[npoints-1].x == x && points[npoints-1].y == y)
-		return True;
-    points[npoints].x = x;
-    points[npoints].y = y;
-    npoints++;
-    return True;
-}
-
-/*
-   although the "pnts" array is usually just the global "points" array,
-   draw_arc() and possibly others call this procedure with a pointer to
-   other than the first point in that array.
-   The real array points is freed at the end of this procedure
-*/
-
+static zXPoint *points = NULL;
+static int max_points = 0;
+static int allocstep = 200;
 
 static void
-draw_point_array(w, op, line_width, line_style, style_val, 
-	join_style, cap_style, fill_style, pen_color, fill_color)
-    Window	    w;
-    int		    op;
-    int		    line_width, line_style, cap_style;
-    float	    style_val;
-    int		    join_style, fill_style;
-    Color	    pen_color, fill_color;
+init_point_array()
 {
-    pw_lines(w, points, npoints, op, line_width, line_style, style_val,
-		join_style, cap_style, fill_style, pen_color, fill_color);
-    free((char *) points);
+  npoints = 0;
+}
+
+static Boolean
+add_point(x, y)
+	int     x, y;
+{
+	if (npoints >= max_points) {
+	    int tmp_n;
+	    zXPoint *tmp_p;
+	    tmp_n = max_points + allocstep;
+	    /* too many points, return false */
+	    if (tmp_n > MAXNUMPTS) {
+		if (appres.DEBUG)
+		    fprintf(stderr,"add_point - reached MAXNUMPTS (%d)\n",tmp_n);
+	    	return False;
+	    }
+	    if (max_points == 0) {
+		tmp_p = (zXPoint *) malloc(tmp_n * sizeof(zXPoint));
+		if (appres.DEBUG)
+		    fprintf(stderr,"add_point - alloc %d points\n",tmp_n);
+	    } else {
+		tmp_p = (zXPoint *) realloc(points, tmp_n * sizeof(zXPoint));
+		if (appres.DEBUG)
+		    fprintf(stderr,"add_point - realloc %d points\n",tmp_n);
+	    }
+	    if (tmp_p == NULL) {
+		fprintf(stderr,
+		      "xfig: insufficient memory to allocate point array\n");
+		return False;
+	    }
+	    points = tmp_p;
+	    max_points = tmp_n;
+	}
+	/* ignore identical points */
+	if (npoints > 0 && points[npoints-1].x == x && points[npoints-1].y == 
+y)
+		    return True;
+	points[npoints].x = x;
+	points[npoints].y = y;
+	npoints++;
+	return True;
+}
+
+draw_point_array(w, op, line_width, line_style, style_val, 
+	    join_style, cap_style, fill_style, pen_color, fill_color)
+    Window          w;
+    int             op;
+    int             line_width, line_style, cap_style;
+    float           style_val;
+    int             join_style, fill_style;
+    Color           pen_color, fill_color;
+{
+	pw_lines(w, points, npoints, op, line_width, line_style, style_val,
+		    join_style, cap_style, fill_style, pen_color, fill_color);
 }
 
 /* these are for the arrowheads */
@@ -184,7 +166,6 @@ draw_arc(a, op)
     double	    rx, ry;
     int		    radius;
     int		    xmin, ymin, xmax, ymax;
-    int		    x, y;
 
     arc_bound(a, &xmin, &ymin, &xmax, &ymax);
     if (!overlapping(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax),
@@ -197,13 +178,14 @@ draw_arc(a, op)
 
     /* fill points array but don't display the points yet */
 
-    curve(canvas_win, round(a->point[0].x - a->center.x),
+    curve(canvas_win, 
+    	  round(a->point[0].x - a->center.x),
 	  round(a->center.y - a->point[0].y),
 	  round(a->point[2].x - a->center.x),
 	  round(a->center.y - a->point[2].y),
 	  False,
 	  (a->type == T_PIE_WEDGE_ARC),
-	  a->direction, 500, radius, radius,
+	  a->direction, radius, radius,
 	  round(a->center.x), round(a->center.y), op,
 	  a->thickness, a->style, a->style_val, a->fill_style,
 	  a->pen_color, a->fill_color, a->cap_style);
@@ -223,10 +205,12 @@ draw_arc(a, op)
 
     /* draw the arrowheads, if any */
     if (a->type != T_PIE_WEDGE_ARC) {
-      if (a->for_arrow)
+      if (a->for_arrow) {
 	    draw_arrow(a, a->for_arrow, farpts, nfpts, op);
-      if (a->back_arrow)
+      }
+      if (a->back_arrow) {
 	    draw_arrow(a, a->back_arrow, barpts, nbpts, op);
+      }
     }
 
 }
@@ -254,7 +238,7 @@ draw_ellipse(e, op)
 	a = e->radiuses.x;
 	b = e->radiuses.y;
 	curve(canvas_win, a, 0, a, 0, True, False, e->direction,
-		(int)(7*max2(a,b)*zoomscale), (b * b), (a * a),
+		(b * b), (a * a),
 		e->center.x, e->center.y, op,
 		e->thickness, e->style, e->style_val, e->fill_style,
 		e->pen_color, e->fill_color, CAP_ROUND);
@@ -520,11 +504,12 @@ draw_line(line, op)
     int		    op;
 {
     F_point	   *point;
-    int		    xx, yy, x, y;
+    int		    i, xx, yy, x, y;
     int		    xmin, ymin, xmax, ymax;
     char	   *string;
     F_point	   *p0, *p1, *p2;
     PR_SIZE	    txt;
+    char	    bufx[10];
 
     line_bound(line, &xmin, &ymin, &xmax, &ymax);
     if (!overlapping(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax),
@@ -536,11 +521,17 @@ draw_line(line, op)
 	draw_arcbox(line, op);
 	return;
     }
-    /* is it a picture object? */
+    /* is it a picture object or a Fig figure? */
     if (line->type == T_PICTURE) {
 	if (line->pic->bitmap != NULL) {
 	    draw_pic_pixmap(line, op);
 	    return;
+#ifdef V4_0
+        /* check for Fig file */
+        } else if ((line->pic->subtype == T_PIC_FIG)&&(line->pic->figure != NULL)) {
+	    draw_figure(line, op);
+	    return;
+#endif /* V4_0 */
 	} else {		/* label empty pic bounding box */
 	    if (line->pic->file[0] == '\0')
 		string = EMPTY_PIC;
@@ -571,18 +562,28 @@ draw_line(line, op)
 	/* draw but don't fill */
 	pw_point(canvas_win, x, y, line->thickness,
 		 op, line->pen_color, line->cap_style);
+	/* label the point number above the point */
+	if (appres.shownums) {
+	    sprintf(bufx,"1");
+	    pw_text(canvas_win, x, round(y-3.0/zoomscale), PAINT, roman_font, 0.0, bufx, RED);
+	}
 	return;
     }
 
     /* accumulate the points in an array - start with 50 */
-    if (!init_point_array(50, 50))
-	return;
+    init_point_array();
 
+    i=1;
     for (point = line->points; point != NULL; point = point->next) {
 	xx = x;
 	yy = y;
 	x = point->x;
 	y = point->y;
+	/* label the point number above the point */
+	if (appres.shownums) {
+	    sprintf(bufx,"%d",i++);
+	    pw_text(canvas_win, x, round(y-3.0/zoomscale), PAINT, roman_font, 0.0, bufx, RED);
+	}
 	if (!add_point(x, y)) {
 	    too_many_points();
 	    break;
@@ -731,6 +732,9 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 	    if ((!flipped && (rotation == 0 || rotation == 180)) ||
 		(flipped && !(rotation == 0 || rotation == 180))) {
 		for (j = 0; j < height; j++) {
+		    /* check if user pressed cancel button */
+		    if (check_cancel())
+			break;
 		    jbit = cheight * j / height * bbytes;
 		    for (i = 0; i < width; i++) {
 			ibit = cwidth * i / width;
@@ -741,6 +745,9 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 		}
 	    } else {
 		for (j = 0; j < height; j++) {
+		    /* check if user pressed cancel button */
+		    if (check_cancel())
+			break;
 		    ibit = cwidth * j / height;
 		    for (i = 0; i < width; i++) {
 			jbit = cheight * i / width * bbytes;
@@ -754,6 +761,9 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 	    /* horizontal swap */
 	    if (rotation == 180 || rotation == 270)
 		for (j = 0; j < height; j++) {
+		    /* check if user pressed cancel button */
+		    if (check_cancel())
+			break;
 		    jnb = j*nbytes;
 		    bzero((char*)tdata, nbytes);
 		    for (i = 0; i < width; i++)
@@ -790,36 +800,46 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 	    box->pic->pixmap = XCreatePixmapFromBitmapData(tool_d, canvas_win,
 					data, width, height, fg,bg, tool_dpth);
 	    free(data);
-            free(tdata);
+	    free(tdata);
 
       /* EPS, PCX, XPM, GIF or JPEG on color display */
       /* It is important to note that the Cmap pixels are unsigned long. */
       /* Therefore all manipulation of the image data should be as unsigned long. */
       /* bpl = bytes per line */
       } else {
-            unsigned char	*pixel, *cpixel, *p1, *p2, tmp;
-            int			 bpl, cbpp, cbpl;
-            unsigned int	*Lpixel;
-            unsigned short	*Spixel;
-            unsigned char	*Cpixel;
+	    unsigned char	*pixel, *cpixel, *p1, *p2, tmp;
+	    int			 bpl, cbpp, cbpl;
+	    unsigned int	*Lpixel;
+	    unsigned short	*Spixel;
+	    unsigned char	*Cpixel;
 	    struct Cmap		*cmap = box->pic->cmap;
 
-            cbpp = 1;
-            cbpl = cwidth * cbpp;
-            bpl = width * image_bpp;
+	    cbpp = 1;
+	    cbpl = cwidth * cbpp;
+	    bpl = width * image_bpp;
 	    data = (unsigned char *) malloc(bpl * height);
 	    bzero((char*)data, bpl * height);
 	    if ((!flipped && (rotation == 0 || rotation == 180)) ||
 		(flipped && !(rotation == 0 || rotation == 180))) {
-                for( j=0; j<height; j++ ){
-                  p1 = data + (j * bpl);
-                  p2 = box->pic->bitmap + (j * cheight / height * cbpl);
-                  for( i=0; i<width; i++ ){
-                    pixel = p1 + (i * image_bpp);
-                    cpixel = p2 + (i * cbpl / width );
+		for( j=0; j<height; j++ ){
+		  /* check if user pressed cancel button */
+		  if (check_cancel())
+			break;
+		  p1 = data + (j * bpl);
+		  p2 = box->pic->bitmap + (j * cheight / height * cbpl);
+		  for( i=0; i<width; i++ ){
+		    pixel = p1 + (i * image_bpp);
+		    cpixel = p2 + (i * cbpl / width );
 		    if (image_bpp == 4) {
 			Lpixel = (unsigned int *) pixel;
 			*Lpixel = (unsigned int)(cmap[*cpixel].pixel);
+		    } else if (image_bpp == 3) {
+		       unsigned char *p;
+		       Cpixel = (unsigned char *) pixel;
+		       p = (unsigned char *)&(cmap[*cpixel].pixel);
+		       *Cpixel++ = *p++;
+		       *Cpixel++ = *p++;
+		       *Cpixel++ = *p++;
 		    } else if (image_bpp == 2) {
 			Spixel = (unsigned short *) pixel;
 			*Spixel = (unsigned short)cmap[*cpixel].pixel;
@@ -827,18 +847,28 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 			Cpixel = (unsigned char *) pixel;
 			*Cpixel = (unsigned char)cmap[*cpixel].pixel;
 		    }
-                  }
-                }
+		  }
+		}
 	    } else {
-                for( j=0; j<height; j++ ){
-                  p1 = data + (j * bpl);
-                  p2 = box->pic->bitmap + (j * cbpl / height);
-                  for( i=0; i<width; i++ ){
-                    pixel = p1 + (i * image_bpp);
-                    cpixel = p2 + (i * cheight / width * cbpl);
+		for( j=0; j<height; j++ ){
+		  /* check if user pressed cancel button */
+		  if (check_cancel())
+			break;
+		  p1 = data + (j * bpl);
+		  p2 = box->pic->bitmap + (j * cbpl / height);
+		  for( i=0; i<width; i++ ){
+		    pixel = p1 + (i * image_bpp);
+		    cpixel = p2 + (i * cheight / width * cbpl);
 		    if (image_bpp == 4) {
 			Lpixel = (unsigned int *) pixel;
 			*Lpixel = (unsigned int)cmap[*cpixel].pixel;
+		    } else if (image_bpp == 3) {
+		       unsigned char *p;
+		       Cpixel = (unsigned char *) pixel;
+		       p = (unsigned char *)&(cmap[*cpixel].pixel);
+		       *Cpixel++ = *p++;
+		       *Cpixel++ = *p++;
+		       *Cpixel++ = *p++;
 		    } else if (image_bpp == 2) {
 			Spixel = (unsigned short *) pixel;
 			*Spixel = (unsigned short)cmap[*cpixel].pixel;
@@ -846,40 +876,43 @@ create_pic_pixmap(box, rotation, width, height, flipped)
 			Cpixel = (unsigned char *) pixel;
 			*Cpixel = (unsigned char)cmap[*cpixel].pixel;
 		    }
-                  }
-                }
+		  }
+		}
 	    }
 
 	    /* horizontal swap */
 	    if (rotation == 180 || rotation == 270){
-                for( j=0; j<height; j++ ){
-                  p1 = data + (j * bpl);
-                  p2 = p1 + ((width - 1) * image_bpp);
-                  for( i=0; i<width/2; i++, p2 -= 2*image_bpp ){
-                    for( k=0; k<image_bpp; k++, p1++, p2++ ){
-                      tmp = *p1;
-                      *p1 = *p2;
-                      *p2 = tmp;
-                    }
-                  }
-                }
-            }
+		for( j=0; j<height; j++ ){
+		  /* check if user pressed cancel button */
+		  if (check_cancel())
+			break;
+		  p1 = data + (j * bpl);
+		  p2 = p1 + ((width - 1) * image_bpp);
+		  for( i=0; i<width/2; i++, p2 -= 2*image_bpp ){
+		    for( k=0; k<image_bpp; k++, p1++, p2++ ){
+		      tmp = *p1;
+		      *p1 = *p2;
+		      *p2 = tmp;
+		    }
+		  }
+		}
+	    }
 
 	    /* vertical swap */
 	    if ((!flipped && (rotation == 90 || rotation == 180)) ||
 		( flipped && (rotation == 90 || rotation == 180))){
-                for( i=0; i<width; i++ ){
-                  p1 = data + (i * image_bpp);
-                  p2 = p1 + ((height - 1) * bpl);
-                  for( j=0; j<height/2; j++, p1 += (width-1)*image_bpp, p2 -= (width+1)*image_bpp ){
-                    for( k=0; k<image_bpp; k++, p1++, p2++ ){
-                      tmp = *p1;
-                      *p1 = *p2;
-                      *p2 = tmp;
-                    }
-                  }
-                }
-            }
+		for( i=0; i<width; i++ ){
+		  p1 = data + (i * image_bpp);
+		  p2 = p1 + ((height - 1) * bpl);
+		  for( j=0; j<height/2; j++, p1 += (width-1)*image_bpp, p2 -= (width+1)*image_bpp ){
+		    for( k=0; k<image_bpp; k++, p1++, p2++ ){
+		      tmp = *p1;
+		      *p1 = *p2;
+		      *p2 = tmp;
+		    }
+		  }
+		}
+	    }
 
 	    image = XCreateImage(tool_d, tool_v, tool_dpth,
 				ZPixmap, 0, data, width, height, 8, 0);
@@ -895,6 +928,104 @@ create_pic_pixmap(box, rotation, width, height, flipped)
     box->pic->pix_height = height;
     box->pic->pix_flipped = flipped;
     reset_cursor();
+}
+
+draw_figure(line, op)
+     F_line *line;
+     int op;
+{
+
+  F_pos origin;
+  F_pos opposite;
+  F_pos point;
+  F_pos nw,se,nw2,se2,m;
+  int i,rotation;
+  
+  origin.x=line->points->x;
+  origin.y=line->points->y;
+  opposite.x=line->points->next->next->x;
+  opposite.y=line->points->next->next->y;  
+
+  point.x=line->points->next->x;
+  point.y=line->points->next->y;
+
+  nw.x = min2(origin.x, opposite.x);
+  nw.y = min2(origin.y, opposite.y);
+  se.x = max2(origin.x, opposite.x);
+  se.y = max2(origin.y, opposite.y);
+
+  /* flip figure */
+  if (line->pic->flipped!=line->pic->pix_flipped) {
+    line->pic->pix_flipped=line->pic->flipped;
+    
+    if (line->pic->flipped==1) {
+      flip_compound(line->pic->figure, 
+			min2(line->pic->figure->nwcorner.x, line->pic->figure->secorner.x),
+			min2(line->pic->figure->nwcorner.y, line->pic->figure->secorner.y),
+			LR_FLIP);
+      rotate_figure(line->pic->figure,
+			min2(line->pic->figure->secorner.x, line->pic->figure->nwcorner.x),
+			min2(line->pic->figure->secorner.y, line->pic->figure->nwcorner.y));
+      line->pic->pix_rotation=360-line->pic->pix_rotation%360;
+    } else {
+      flip_compound(line->pic->figure,
+			max2(line->pic->figure->nwcorner.x, line->pic->figure->secorner.x),
+			min2(line->pic->figure->nwcorner.y, line->pic->figure->secorner.y),
+			LR_FLIP);
+      rotate_figure(line->pic->figure,
+			min2(line->pic->figure->secorner.x, line->pic->figure->nwcorner.x),
+			min2(line->pic->figure->secorner.y, line->pic->figure->nwcorner.y));
+      line->pic->pix_rotation=360-line->pic->pix_rotation%360;
+    }
+  }
+  
+  /*  compute rotation angle */
+  rotation = 0;
+  if (!line->pic->flipped) {
+    if (origin.x > opposite.x && origin.y > opposite.y)
+      rotation = 180;
+    if (origin.x > opposite.x && origin.y <= opposite.y)
+      rotation = 270;
+    if (origin.x <= opposite.x && origin.y > opposite.y)
+      rotation = 90;
+  } else {
+    if ((origin.x > opposite.x && origin.y > opposite.y) && 
+	((point.y==origin.y)||(point.x==origin.x)))
+	    rotation = 180;
+    if ((origin.x > opposite.x && origin.y <= opposite.y) &&
+	((point.y==origin.y) || (point.x==origin.x)))
+	   rotation = 270;
+    if ((origin.x <= opposite.x && origin.y > opposite.y) && 
+	(( point.y==origin.y)|| (point.x==origin.x)))
+	   rotation = 90;
+  }
+  /* rotate the figure */
+  while ((rotation!=line->pic->pix_rotation)) {
+    rotate_figure(line->pic->figure,origin.x,origin.y);
+    line->pic->pix_rotation=((line->pic->pix_rotation+90)%360);
+  }
+  
+  /* translate the nwcorner of the figure into the nwcorner of the box*/
+  translate_compound(line->pic->figure, 
+		-line->pic->figure->nwcorner.x+nw.x,
+		nw.y-line->pic->figure->nwcorner.y);
+  
+  nw2.x=min2(line->pic->figure->nwcorner.x,line->pic->figure->secorner.x);
+  nw2.y=min2(line->pic->figure->nwcorner.y,line->pic->figure->secorner.y);
+  se2.x=max2(line->pic->figure->nwcorner.x,line->pic->figure->secorner.x);
+  se2.y=max2(line->pic->figure->nwcorner.y,line->pic->figure->secorner.y);
+  
+  /*  scale figure */
+  scale_compound(
+		 line->pic->figure,
+		 ((float)(-nw.x+se.x)/(float)(se2.x-nw2.x)),
+		 ((float)(-nw.y+se.y)/(float)(se2.y-nw2.y)),
+		 nw.x,nw.y);
+  
+  /* draw figure */
+  draw_compoundelements(line->pic->figure,op);
+  
+  return;
 }
 
 /*********************** SPLINE ***************************/
@@ -949,8 +1080,7 @@ compute_open_spline(spline, precision)
   F_point   *p0, *p1, *p2, *p3;
   F_sfactor *s0, *s1, *s2, *s3;
 
-  if (!init_point_array(300, 200))
-      return False;
+  init_point_array();
 
   COPY_CONTROL_POINT(p0, s0, spline->points, spline->sfactors);
   COPY_CONTROL_POINT(p1, s1, p0, s0);
@@ -988,14 +1118,12 @@ compute_closed_spline(spline, precision)
      F_spline	   *spline;
      float         precision;
 {
-  int k, npoints = num_points(spline->points), i;
+  int k, i;
   float     step;
-  double    t;
   F_point   *p0, *p1, *p2, *p3, *first;
   F_sfactor *s0, *s1, *s2, *s3, *s_first;
 
-  if (!init_point_array(300, 200))
-      return False;
+  init_point_array();
 
   INIT_CONTROL_POINTS(spline, p0, s0, p1, s1, p2, s2, p3, s3);
   COPY_CONTROL_POINT(first, s_first, p0, s0); 
@@ -1031,8 +1159,7 @@ quick_draw_spline(spline, operator)
   F_point   *p0, *p1, *p2, *p3;
   F_sfactor *s0, *s1, *s2, *s3;
   
-  if (!init_point_array(300, 200))
-    return;
+  init_point_array();
 
   INIT_CONTROL_POINTS(spline, p0, s0, p1, s1, p2, s2, p3, s3);
  
@@ -1161,7 +1288,7 @@ compute_arcarrow_angle(x1, y1, x2, y2, direction, arrow, x, y)
 
     h = (double) arrow->ht;
     /* lpt is the amount the arrowhead extends beyond the end of the line */
-    lpt = arrow->thickness*15/2.0/(arrow->wid/h/2.0);
+    lpt = arrow->thickness/2.0/(arrow->wd/h/2.0);
     /* add this to the length */
     h += lpt;
 
@@ -1349,10 +1476,10 @@ clip_arrows(obj, objtype, op, skip)
 
 ****************************************************************/
 
-calc_arrow(x1, y1, x2, y2, c1x, c1y, c2x, c2y, objthick, arrow, points, npoints)
+calc_arrow(x1, y1, x2, y2, c1x, c1y, c2x, c2y, thick, arrow, points, npoints)
     int		    x1, y1, x2, y2;
     int		   *c1x, *c1y, *c2x, *c2y;
-    int		    objthick;
+    int		    thick;
     F_arrow	   *arrow;
     zXPoint	    points[];
     int		   *npoints;
@@ -1364,10 +1491,9 @@ calc_arrow(x1, y1, x2, y2, c1x, c1y, c2x, c2y, objthick, arrow, points, npoints)
     double	    alpha;
     int		    xc, yc, xd, yd, xs, ys;
     int		    xg, yg, xh, yh;
-    float	    wid = arrow->wid;
-    float	    ht = arrow->ht;
+    float	    wd = arrow->wd*ZOOM_FACTOR;
+    float	    ht = arrow->ht*ZOOM_FACTOR;
     int		    type = arrow->type;
-    int		    style = arrow->style;
 
     *npoints = 0;
     dx = x2 - x1;
@@ -1378,11 +1504,11 @@ calc_arrow(x1, y1, x2, y2, c1x, c1y, c2x, c2y, objthick, arrow, points, npoints)
     /* lpt is the amount the arrowhead extends beyond the end of the
        line because of the sharp point (miter join) */
     if (type == 2)
-      lpt = arrow->thickness*15 / (2.0 * sin(atan(wid / (2.4 * ht))));
+      lpt = arrow->thickness*ZOOM_FACTOR / (2.0 * sin(atan(wd / (2.4 * ht))));
     else if (type == 3)
-      lpt = arrow->thickness*15 / (2.0 * sin(atan(wid / (1.6 * ht))));
+      lpt = arrow->thickness*ZOOM_FACTOR / (2.0 * sin(atan(wd / (1.6 * ht))));
     else
-      lpt = arrow->thickness*15 / (2.0 * sin(atan(wid / (2.0 * ht))));
+      lpt = arrow->thickness*ZOOM_FACTOR / (2.0 * sin(atan(wd / (2.0 * ht))));
 
     /* alpha is the angle the line is relative to horizontal */
     alpha = atan2(dy,-dx);
@@ -1417,7 +1543,7 @@ calc_arrow(x1, y1, x2, y2, c1x, c1y, c2x, c2y, objthick, arrow, points, npoints)
 	x = xb - ht;
 
     /* half the width of the arrowhead */
-    y = yb - wid / 2;
+    y = yb - wd / 2;
 
     /* xc,yc is one point of arrowhead tail */
     xc =  x * cosa + y * sina + .5;
@@ -1428,12 +1554,12 @@ calc_arrow(x1, y1, x2, y2, c1x, c1y, c2x, c2y, objthick, arrow, points, npoints)
 
     /* xg,yg is one corner of the box enclosing the arrowhead */
     /* allow extra for a round line cap */
-    xxb = xxb+objthick*ZOOM_FACTOR;
+    xxb = xxb+thick*ZOOM_FACTOR;
 
     xg =  xxb * cosa + y * sina + .5;
     yg = -xxb * sina + y * cosa + .5;
 
-    y = yb + wid / 2;
+    y = yb + wd / 2;
     /* xd,yd is other point of arrowhead tail */
     xd =  x * cosa + y * sina + .5;
     yd = -x * sina + y * cosa + .5;
@@ -1517,12 +1643,12 @@ draw_arrow(obj, arrow, points, npoints, op)
 ****************************************************************/
 
 curve(window, xstart, ystart, xend, yend, draw_points, draw_center,
-	direction, estnpts, a, b, xoff, yoff, op, thick,
+	direction, a, b, xoff, yoff, op, thick,
 	style, style_val, fill_style, pen_color, fill_color, cap_style)
     Window	    window;
     int		    xstart, ystart, xend, yend, a, b, xoff, yoff;
     Boolean	    draw_points, draw_center;
-    int		    direction, estnpts, op, thick, style, fill_style;
+    int		    direction, op, thick, style, fill_style;
     float	    style_val;
     Color	    pen_color, fill_color;
     int		    cap_style;
@@ -1548,10 +1674,10 @@ curve(window, xstart, ystart, xend, yend, draw_points, draw_center,
 	yoff = round(yoff * zoom);
     }
 
-    if (a == 0 || b == 0)
-	return;
+    init_point_array();
 
-    if (!init_point_array(estnpts,estnpts/2)) /* estimate of number of points */
+    /* this must be AFTER init_point_array() */
+    if (a == 0 || b == 0)
 	return;
 
     x = xstart;
@@ -1575,9 +1701,9 @@ curve(window, xstart, ystart, xend, yend, draw_points, draw_center,
 	test_succeed = margin = 3;
     }
 
-    if (!add_point(round((xoff + x)/zoom), round((yoff - y)/zoom)))
-	/* (error) */ ;
-    else
+    if (!add_point(round((xoff + x)/zoom), round((yoff - y)/zoom))) {
+	return;
+    } else {
       while (test_succeed) {
 	deltax = (dfy < 0) ? inc : dec;
 	deltay = (dfx < 0) ? dec : inc;
@@ -1601,12 +1727,16 @@ curve(window, xstart, ystart, xend, yend, draw_points, draw_center,
 	y += deltay;
 	dfx += (dfxx * deltax);
 	dfy += (dfyy * deltay);
-	if (!add_point(round((xoff + x)/zoom), round((yoff - y)/zoom)))
+
+	if (!add_point(round((xoff + x)/zoom), round((yoff - y)/zoom))) {
 	    break;
+	}
 
 	if ((abs(x - xend) < margin && abs(y - yend) < margin) &&
 	    (x != xend || y != yend))
 		test_succeed--;
+      }
+
     }
 
     if (xstart == xend && ystart == yend)	/* end points should touch */
@@ -1622,9 +1752,10 @@ curve(window, xstart, ystart, xend, yend, draw_points, draw_center,
 		too_many_points();
     }
 	
-    if (draw_points)
+    if (draw_points) {
 	draw_point_array(window, op, thick, style, style_val, JOIN_BEVEL,
 			cap_style, fill_style, pen_color, fill_color);
+    }
 }
 
 /********************* CURVES FOR SPLINES *****************************
@@ -1638,7 +1769,7 @@ curve(window, xstart, ystart, xend, yend, draw_points, draw_center,
 
 ***********************************************************************/
 
-#define Q(s)  (-(s)/2.0)
+#define Q(s)  (-(s))	/* changed from (-(s)/2.0) B. Smith 12/15/97 */
 #define EQN_NUMERATOR(dim) \
   (A_blend[0]*p0->dim+A_blend[1]*p1->dim+A_blend[2]*p2->dim+A_blend[3]*p3->dim)
 
@@ -1833,7 +1964,7 @@ step_computing(k, p0, p1, p2, p3, s1, s2, precision)
 
   scal_prod = xv1*xv2 + yv1*yv2;
   
-  sides_length_prod = sqrt((xv1*xv1 + yv1*yv1)*(xv2*xv2 + yv2*yv2));
+  sides_length_prod = (float) sqrt((double)((xv1*xv1 + yv1*yv1)*(xv2*xv2 + yv2*yv2)));
 
   /* compute cosinus of origin-middle-extremity angle, which approximates the
      curve of the spline segment */
@@ -1845,10 +1976,10 @@ step_computing(k, p0, p1, p2, p3, s1, s2, precision)
   xlength = xend - xstart;
   ylength = yend - ystart;
 
-  start_to_end_dist = sqrt(xlength*xlength + ylength*ylength);
+  start_to_end_dist = (int) sqrt((double)(xlength*xlength + ylength*ylength));
 
   /* more steps if segment's origin and extremity are remote */
-  number_of_steps = sqrt(start_to_end_dist)/2;
+  number_of_steps = (int) sqrt((double)start_to_end_dist)/2;
 
   /* more steps if the curve is high */
   number_of_steps += (int)((1 + angle_cos)*10);
@@ -1935,6 +2066,12 @@ redraw_images(obj)
 	if (l->type == T_PICTURE && l->pic->numcols > 0)
 		redisplay_line(l);
     }
+}
+
+too_many_points()
+{
+	put_msg("Too many points, recompile with MAXNUMPTS > %d in w_drawprim.h",
+		MAXNUMPTS);
 }
 
 

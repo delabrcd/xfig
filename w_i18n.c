@@ -1,6 +1,16 @@
 /*
- * w_i18n.c (for xfig version 3.1.3)
- * by T.Sato, 1995/7/29, 8/13, 8/17, 1996/12/10
+ * FIG : Facility for Interactive Generation of figures
+ * Copyright (c) by T. Sato, 1995/7/29, 8/13, 8/17, 1996/12/10
+ *
+ * Any party obtaining a copy of these files is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and
+ * documentation files (the "Software"), including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
+ *
  */
 
 #ifdef I18N
@@ -191,8 +201,6 @@ unsigned char Bold_and_Gothic_bits[] = {
    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
    0x00,0x00,0x00,0x00};
-
-#define MAX(a, b)  ((a) < (b)) ? (b) : (a)
 
 /* check if str include i18n character */
 static Boolean is_i18n_text(str)
@@ -398,14 +406,14 @@ void i18n_draw_string(dpy, drawable, gc, x, y, str, len)
 
       XmbTextExtents(fontset, str, len, &ink, &logical);
       base_width = logical.width + 1;
-      base_height = MAX(logical.height + 1, appres.fontset_size);
+      base_height = max2(logical.height + 1, appres.fontset_size);
 
       scale = (double)font_size / (double)appres.fontset_size;
-      width = base_width * scale;
-      height = base_height * scale;
-      ascent = (-logical.y + 1) * scale;
+      width = base_width * scale + 0.5;
+      height = base_height * scale + 0.5;
+      ascent = (-logical.y + 1) * scale + 0.5;
       AllocTextBitmapAndScaleBuf(dpy, drawable,
-			 MAX(base_width, width), MAX(base_height, height));
+			 max2(base_width, width), max2(base_height, height));
       if (depth_one_gc == None) {
 	depth_one_gc = XCreateGC(dpy, text_bitmap, (unsigned long)0, 0);
 	XSetBackground(dpy, depth_one_gc, 0);

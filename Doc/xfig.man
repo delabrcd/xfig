@@ -24,9 +24,7 @@
 .\" copyright notice and this permission notice appear in supporting
 .\" documentation.  This software is provided "as is" without express or
 .\" implied warranty.
-.\"
 .\" END OF Copyright notice for pbmplus code
-
 .\"-------
 .\" Man page portability notes
 .\"
@@ -57,7 +55,7 @@
 .\" troff will supply the correct intersentence spacing, but only if
 .\" the sentences end at the end of a line.  Explicit spaces, if given,
 .\" are apparently honored and the normal intersentence spacing is
-.\" supressed.
+.\" suppressed.
 .\"
 .\" DaviD W. Sanderson
 .\"-------
@@ -96,7 +94,7 @@
 .\"-------
 .\" Ap - argument description paragraph
 .\" It's an indented paragraph starting immediately after the
-.\" preceeding text (with no intervening blank line).
+.\" preceding text (with no intervening blank line).
 .\" The reason for having this is so that we can construct the
 .\" ``tag'' for the paragraph (which describes a command argument)
 .\" using more than one line of -man macros.  The regular .TP
@@ -110,7 +108,7 @@
 .PD
 ..
 .\"-------
-.TH XFIG 1 "Release 3.2) (Protocol 3.2)"
+.TH XFIG 1 "Version 3.2 Patchlevel 1 (Protocol 3.2, July 1, 1998)"
 .SH NAME
 xfig - Facility for Interactive Generation of figures under X11
 .SH SYNOPSIS
@@ -126,8 +124,18 @@ objects interactively under the X Window System.
 and requires a two- or three-button mouse.
 .I file
 specifies the name of a file to be edited.
-The description of objects in the file will be read at the start of
+The objects in the file will be read at the start of
 .IR xfig .
+.PP
+For a HTML-based
+.IR xfig
+reference guide, see
+.IR index.html
+provided with the
+.IR xfig
+distribution, usually in the 
+.IR Doc/www
+directory.  There are both English and Japanese versions.
 .PP
 When using a two-button mouse use the
 .I <Meta>
@@ -136,15 +144,18 @@ the action of the middle button.
 .PP
 .I Xfig
 is available via anonymous ftp from
-.I ftp.x.org
-in
-.BI /contrib/applications/drawing_tools/xfig .
+ftp://ftp.x.org/contrib/applications/drawing_tools/xfig
+and usually from ftp://epb1.lbl.gov/xfig .
 .PP
 The
 .I TransFig
 package is used when printing or exporting the output from
 .IR xfig .
-It is automatically called by
+The
+.IR fig2dev
+program from the 
+.IR TransFig
+package is automatically called by
 .IR xfig
 as a back-end processor to produce various types of output:
 .nr n \w'PostScript\0\0\0\0'+1n-1/1n
@@ -167,6 +178,16 @@ output.
 produces an
 .I "Encapsulated PostScript"
 output.
+.I "fig2dev \-L tk"
+produces a
+.I "tk"
+output.  This is for the tcl/tk tool command language/tool kit package.
+Canvas objects are generated from the Fig primitives and a toplevel 
+canvas is created.
+.IP Bitmaps
+.I fig2dev
+can also convert Fig to GIF, JPEG, PCX, PNG, PPM, TIFF (no compression),
+XBM, XPM, and AutoCAD Slide.
 .IP IBM-GL
 .I "fig2dev \-L ibmgl"
 produces a
@@ -210,21 +231,12 @@ in
 .Ap
 Print all command-line options for xfig and quit.
 .At
-.BR \-L [ andscape ]
+.BR \-bal [ loon_delay ]
+.I msec
 .Ap
-Make
-.I xfig
-come up in landscape mode (10.5" x 8").
-This is the default; however as the orientation is stored with Fig files,
-when you load a Fig file the orientation will change as required.
-This is only true for files of version 3.0 or higher.
-.\"-------
-.At
-.BR \-P [ ortrait ]
-.Ap
-Make
-.I xfig
-come up in portrait mode (8.5" x 9").  See note about landscape mode.
+Cause popup information balloons to be delayed by
+.I msec
+milliseconds.  The default is 500 milliseconds.
 .\"-------
 .At
 .BR \-bol [ d ]
@@ -262,6 +274,17 @@ If you want to set the background of everything in xfig
 (e.g. menus, etc.) use the general -bg option.
 .\"-------
 .At
+.BR \-center
+.Ap
+Set the print option to print the figure centered on the page.
+This is the default.
+.\"-------
+.At
+.BR \-centim [ ers ]
+.Ap
+Make centimeters the unit of choice.  See also -metric.
+.\"-------
+.At
 .BI \-cfg " color"
 .Ap
 Use
@@ -289,7 +312,13 @@ See also the
 option.
 .\"-------
 .At
-.BR \-do [ ntswitchcmap ]
+.BR \-dontsh [ owballoons ]
+.Ap
+Prevents xfig from popping up the information balloons.
+See also -showballoons.
+.\"-------
+.At
+.BR \-dontsw [ itchcmap ]
 .Ap
 Prevents xfig from switching to a private colormap if there aren't
 enough colors available in the default colormap.  See also
@@ -340,6 +369,7 @@ png\&\&\&	PNG
 gif\&\&\&	GIF*
 jpeg\&\&	JPEG (JFIF)
 tiff\&\&	TIFF
+tk\&\&\&	TK
 ppm\&\&\&	PPM (portable pixmap package)
 xbm\&\&\&	X11 Bitmap
 xpm\&\&\&	X11 Pixmap (XPM3 package)
@@ -362,14 +392,11 @@ The default is to center the figure on the page.
 .\"-------
 .At
 .BR \-geom [ etry ]
-.RI + X + Y
+.RI [ WxH ] [+X+Y]
 .Ap
-Do not use the -geometry option or resource to
-.I size xfig.
-It may only be used to position the
-.I xfig
-window.
-Use -pwidth and/or -pheight
+You may use the -geometry option or resource to
+.I size and/or position the xfig window,
+or you may use -pwidth and/or -pheight
 to specify the canvas size in inches or centimeters.
 .\"-------
 .At
@@ -377,6 +404,13 @@ to specify the canvas size in inches or centimeters.
 .RI + X + Y
 .Ap
 Specifies the position for the icon.
+.\"-------
+.At
+.BR \-im [ age_editor ]
+.I editor
+.Ap
+Specify bitmap editor to use when ``Edit Image'' button is pressed
+in Picture Object panel.
 .\"-------
 .At
 .BR \-inc [ hes ]
@@ -389,11 +423,6 @@ Make inches the unit of choice (default).
 Use lines of width
 .I width
 between all buttons and panels (default = 1).
-.\"-------
-.At
-.BR \-inv [ erse ]
-.Ap
-Use inverse video (white on black).
 .\"-------
 .At
 .BR \-k [ eyFile ]
@@ -423,6 +452,18 @@ in the string then the
 is expanded to the user's home directory.
 .\"-------
 .At
+.BR \-lan [ dscape ]
+.Ap
+Make
+.I xfig
+come up in landscape mode (10.5" x 8").
+This is the default; however as the orientation is stored with Fig files,
+when you load a Fig file the orientation will change as required.
+This is only true for files of version 3.0 or higher.
+.br
+See also -portrait.
+.\"-------
+.At
 .BR \-lat [ exfonts ]
 .Ap
 Start
@@ -444,6 +485,13 @@ Change the position of the side panel window to the left of the canvas window.
 This is the default.
 .\"-------
 .At
+.BR \-li [ brary_dir ]
+.I directory
+.Ap
+Specify directory where Fig object libraries are located.  There may be sub-directories
+there and sub-sub-directories, etc.
+.\"-------
+.At
 .BR \-mag [ nification ]
 .I mag
 .Ap
@@ -458,7 +506,7 @@ Limit the number of colors used for EPS, GIF, JPEG, PCX or XPM images to
 .At
 .BR \-me [ tric ]
 .Ap
-Make centimeters the unit of choice.
+Make centimeters the unit of choice.  Also -centimeters.
 .IP \&
 After
 .I xfig
@@ -540,6 +588,13 @@ high (where
 is either cm or in, depending on the -metric setting).
 .\"-------
 .At
+.BR \-po [ rtrait ]
+.Ap
+Make
+.I xfig
+come up in portrait mode (8.5" x 9").  See note about landscape mode.
+.\"-------
+.At
 .BR \-pw [ idth ]
 .I width
 .Ap
@@ -566,7 +621,7 @@ If the scalable fonts aren't available
 will automatically switch to non-scaling fonts.
 .\"-------
 .At
-.BR \-sh [ owallbuttons ]
+.BR \-showa [ llbuttons ]
 .Ap
 Show all the
 .I xfig
@@ -585,6 +640,24 @@ option makes all
 of the indicator buttons visible at all times.
 This takes up more screen real estate,
 but allows the user to see all settable parameters.
+.\"-------
+.At
+.BR \-showb [ alloons ]
+.Ap
+Forces xfig to pop up the information balloons when the mouse
+passws over a button. This is the default. See also -dontshowballoons.
+.\"-------
+.At
+.BR \-showl [ engths ]
+.Ap
+Makes xfig show the lengths of lines being drawn, in red text near the
+line itself.  Also, when points are moved or added.  In addition, imagine
+a triangle formed with the line segment as the hypotenuse,
+and a vertical and horizontal line forming the other two sides.  These
+lines and their lengths are also drawn in red as the point is moved or added.
+This mode is ignored when drawing in freehand mode.
+.br
+This flag may be toggled by pressing <Meta>i (default).
 .\"-------
 .At
 .BR \-si [ ngle ]
@@ -887,8 +960,9 @@ and
 .I <Ctrl>l.
 .TP
 .I Paste
-Paste the object previously copied into the cut/paste file into the current
-figure (at its original position).
+Paste the object previously copied into the cut/paste file into the current figure.
+The object will appear on the canvas under or near the mouse
+where it may then be moved and placed by pressing mouse button 1.
 The accelerator
 .I <Meta>t
 will also perform this function.
@@ -933,9 +1007,10 @@ files that have .Z, .z or .gz as the suffix.
 .TP
 .I "(File) Alternatives"
 Pressing mouse button 1 on a filename in the file alternatives
-window will select that file by copying the filename into
+window will copy the filename into
 .I Filename
-window.
+window and show a preview of the figure in the file.  It also shows
+the size of the figure in its drawing units (in or cm).
 Pressing return in this window will
 .I Load
 the file specified in the
@@ -1075,7 +1150,7 @@ This window can be popped down by clicking the mouse button on the
 .I Dismiss
 button.
 .TP
-.I "Merge Read"
+.I "Merge"
 Pressing this button or
 .I <Meta>r
 will read the figure from the filename
@@ -1087,7 +1162,8 @@ or the name
 specified in the
 .I "Current Filename"
 if the former is empty,
-and merge it with the figure already shown on the canvas.
+and merge it with the figure already on the canvas.
+It is first made into a compound object so it may be easily moved later.
 The figure will be offset by the amounts specified (Fig units)
 in the X and Y load/merge offset widgets.
 Any user-defined colors in the file being merged will be renumbered
@@ -1191,11 +1267,6 @@ shift the figure up.
 These offsets are in addition to any centering done with the
 centering option.
 .TP
-.I "Margin Width"
-For the bitmap type export languages such as GIF, JPEG, etc. an optional
-white border may be added around the figure by specifying the margin width
-(in pixels).
-.TP
 .I Language
 The translation language to use for
 .I xfig
@@ -1206,7 +1277,7 @@ Encapsulated PostScript as xfig is distributed.
 Several languages are available; PostScript, Encapsulated PostScript,
 LaTeX, TPIC, PIC, Textyl, IBM/GL (HP/GL), MetaFont, and serveral bitmap
 formats; GIF, JPEG (JFIF), PNG, PCX (PC Paintbrush), ACAD (AutoCad slide),
-TIFF (no compression), PPM (Portable Pixmap package),
+TIFF (no compression), tk (tcl/tk), PPM (Portable Pixmap package),
 XBM (X11 monochrome bitmap) and XPM (XPM3 package,
 producing color pixmaps).
 .br
@@ -1476,6 +1547,39 @@ Pressing this button or
 will erase the accumulated figures from the batch file.
 .PP
 .po -.5i
+
+.nr LL 6.5i
+.TP
+.I Help
+The 
+.I Help
+button pulls down a menu to view various help information.
+.PP
+The first entry will launch an external 
+.I HTML
+browser specified by the Fig.browser resource to view
+the xfig html reference manual written by T. Sato.
+.I netscape
+is the default browser.
+.PP
+The next entry will launch an external 
+.I PDF
+viewer specified by the Fig.pdfviewer resource to view the
+.I Xfig How-to Guide
+written by Peter Hiscocks.
+.I acroread
+is the default viewer.
+.PP
+The third entry will launch an external 
+.I PDF
+viewer to view
+the xfig pdf man pages.  However, the HTML pages are much better.
+.PP
+The last entry will popup a window showing the xfig version and copyright 
+information.
+
+.po -.5i
+
 .nr LL 6.5i
 .SH "INDICATOR PANEL COMMAND DESCRIPTIONS"
 .PP
@@ -1499,18 +1603,27 @@ in the other direction.
 The canvas zoom scale may be set/increased/decreased with this button.
 The zoom scale is displayed within the zoom button.
 Ruler, grid and linewidth are scaled, too.
+.br
+Pressing mouse button 1 will popup a panel where the zoom amount may
+be entered manually.  There is also a checkbox that if checked, will force
+zooming with the mouse to use integral zoom values (e.g. 2, 3, 4).
+.br
 Pressing mouse button 2 will decrease the zoom factor by 1.0 unless it
 is less than 1.0 already in which case it will reduce to the nearest 0.25.
+.br
 Pressing mouse button 3 will increase the zoom factor by 1.0 unless it
 is less than 1.0 in which case it will increase it to the nearest 0.25.
+.br
 Pressing the control key and mouse button 3 together will
 set the zoom scale to 1.
 .Sp
-The figure may also be zoomed by defining a zoom rectangle by pressing
-the Control key and mouse button 1 together.
+The figure may also be zoomed by defining a zoom rectangle on the canvas
+by pressing the Control key and mouse button 1 together.
 This will define one corner of the zoom rectangle.
 Move the mouse and click mouse button 1 again to
 define the opposite corner of the zoom rectangle.
+If the ``Integral area zoom'' checkbox in the zoom popup is checked,
+the area will be zoomed by an integral value (e.g. 2, 3, 4).
 .TP
 .I "GRID MODE"
 With this button the user may select no grid,
@@ -1610,7 +1723,7 @@ This sets the horizontal alignment mode for the
 button in the editing mode panel.
 The choices are no horizontal alignment, align to left edge,
 middle or right edge of compound, distribute the centres or edges
-evenly, or abut the horizonaal edges together.
+evenly, or abut the horizontal edges together.
 The
 .I "HORIZONTAL ALIGN"
 and
@@ -1679,7 +1792,7 @@ or to turn off area fill altogether.
 There are 21 ``shades'' going from black to full saturation of the fill color,
 and 21 more ``tints'' from full saturation + 1 to white.
 In addition, there are 16 patterns (currently only available for PostScript,
-GIF, JPEG, PNG, PCX, ACAD, TIFF, PPM, XPM and XBM output):
+GIF, JPEG, PNG, PCX, ACAD, TIFF, TK, PPM, XPM and XBM output):
 .in +.5i
 .nf
 30 degree left-leaning diagonal lines,
@@ -1822,6 +1935,20 @@ objects.
 There are four types of arrows which may be filled with
 white or the object color.
 .TP
+.I "ARROW SIZE"
+Clicking mouse button 1 here will popup a panel 
+where you may set the arrow head
+thickness, width and height (length) either as absolute
+values or as multiples of the current line thickness.
+Check the box labelled ``Absolute Values'' to use absolute values (the default)
+or the box labelled ``Multiple of Line Width'' to use that feature.
+The values to change are under their respective check boxes.
+The arrow measurements are in the same units as line widths (1/80 inch).
+This has changed from earlier versions where the width and height were
+in Fig units.
+Clicking on mouse buttons 2 or 3 here will cycle through displaying
+the current thickness, width, and height settings.
+.TP
 .I "BOX CURVE"
 The radius of the corners on
 .I ARC-BOX
@@ -1955,9 +2082,6 @@ mouse button 1 is again pressed for the next point.
 For those objects which may have more than two points (e.g. a line),
 mouse button 1 may be pressed for each successive point, and
 mouse button 2 must be pressed to finish the object.
-To create a single point using the
-.I POLYLINE
-button, press and release mouse button 2.
 If the cap style is rounded, the point object will be a filled circle.
 Newly created points may be deleted by pressing the shift key and mouse button 1.
 For the
@@ -1999,14 +2123,28 @@ Click mouse button 1 again to finish the circle.
 Create ellipses using the same procedure as for the drawing of circles.
 .TP
 \fIIMPORTING PICTURE OBJECTS\fR
-This has been changed from the previous (2.1) version to be more generic,
-allowing GIF files, JPEG (JFIF) files, PCX (PC Paintbrush),
-X11 bitmap (monochrome) files and
-X11 pixmap (XPM3) color files in
-addition to Encapsulated PostScript files to be imported.
+.br
+.nf
+The following picture types may be imported into a figure:
+
+\(bu Encapsulated PostScript files
+\(bu GIF files
+\(bu JPEG (JFIF) files
+\(bu PCX (PC Paintbrush)
+\(bu X11 bitmap (monochrome) files
+\(bu X11 pixmap (XPM3) color files
+.fi
+.Sp
 Compressed (.Z) and gzipped (.z or .gz) files are also handled.
 You must have the XPM3 libraries installed to use the XPM import/export
 features.  See the README and Imakefile files.
+.Sp
+As it says, you may now import Fig (xfig) files as picture objects.  These may not
+be edited, but may be scaled and rotated.
+.Sp
+Import is by reference for all picture types.  This means that the picture
+file is not copied into the Fig file, only the picture file name is stored with
+the Fig file.
 .Sp
 A Floyd-Steinberg dithering is applied to color images for monochrome displays.
 .Sp
@@ -2083,6 +2221,9 @@ object, press the
 the size specified in the preview bitmap of the
 .I PIC
 file.
+Or, to scale as a percentage of the original size, enter a percentage
+value and press the ``Scale by %'' button.
+.Sp
 If you want the
 .I PIC
 object to be approximately the size of
@@ -2095,14 +2236,18 @@ button to see these effects.
 .Sp
 The
 .I Screen Capture
-button will unmap the xfig windows, allowing you to capture a rectangular
-section of the screen to a GIF* file, which becomes the current import
-file.  After pressing the
+button will unmap the xfig windows, allowing you to capture either the contents
+of a window or a rectangular section of the screen to a GIF* file,
+which becomes the current import file.
+After pressing the
 .I Screen Capture
-button you press and release mouse button 1 at one corner of the area of the
-screen you want to capture, drag out the rectangle and press and release
-mouse button 1 to finish.  You may cancel the operation by pressing
-either of the two other mouse buttons.  The filename given to the capture
+button, if you press and release mouse button 1 on a window (or the root window)
+it will capture that window (without any window manager frame).
+To capture a rectangular area of the screen, you press and release mouse button 2
+at one corner of the area 
+you want to capture, drag out the rectangle and press and release
+mouse button 2 to finish.  You may cancel the operation by pressing
+either of the two other mouse buttons (1 or 3).  The filename given to the capture
 file is the base of the figure name plus the time in seconds since 00:00:00 GMT,
 Jan 1, 1970 (from the Unix time() call), e.g. myfigure_828065129.gif.
 .Sp
@@ -2135,10 +2280,19 @@ Create polylines (line segments connecting a sequence of points).
 Enter points by clicking mouse button 1 at the desired positions on the
 canvas window.
 Click mouse button 2 to finish.
-A single point object may be created by simply pressing mouse button 2.
+.Sp
+To create a freehand line press mouse button 2 to start drawing.  As the
+mouse is moved points will be added to the line without having to click
+the mouse buttons.  
+To finish the freehand line press mouse button 2 again.
+.Sp
+For both modes, newly created points may be deleted by pressing the Shift
+key and mouse button 1 before pressing mouse button 2.
+The message window shows how many points have been
+created as you add points to the line.
+.Sp
+A single point object may be created by simply pressing mouse button 3.
 If the cap style is rounded, the point object will be a filled circle.
-Newly created points may be deleted by pressing the shift key and mouse button 1
-before pressing mouse button 2.
 .TP
 .I POLYGON
 The function is similar to
@@ -2233,12 +2387,12 @@ Or, use the popup
 .I EDIT
 mode to modify the text.
 .Sp
-Eight-bit characters may be entered using the meta (compose) key.
+Eight-bit (8-bit) characters may be entered using the meta (compose) key.
 For example, to create an ``a umlaut'', press and release either the Meta key,
 the Alt key or the Compose key, then the letter ``a'', then " (quote).
 To create a ``c cedilla'', use <meta>c followed by comma.
 .Sp
-When modifying text in the popup eidt panel, only the Compose key will work.
+When modifying text in the popup edit panel, only the Compose key will work.
 .Sp
 The following is a list of all special characters available using the Meta,
 Alt or Compose keys:
@@ -2389,6 +2543,7 @@ the bottom indicator panel.
 If the search pattern is empty all text objects will be listed.
 If the Update button is pressed in that case,
 all text objects will be updated.
+
 .SH "EDITING MODE PANEL COMMAND DESCRIPTIONS"
 When a button in the editing mode panel is pressed, any
 objects that may be affected by that editing operation will show their
@@ -2472,6 +2627,98 @@ compound anymore.  You may use this to remove objects from a compound.
 .Sp
 Conversely, if you delete an object from the canvas, open a compound then
 undo the delete of the original object, it will now be part of the open compound.
+.TP
+.I "PLACE LIBRARY OBJECT"
+Pressing this button will popup a library panel where you may load
+a library from a list of libraries.  The default library directory is
+.I XFIGLIBDIR/Libraries
+which is defined in the Imakefile.  This directory contains libraries which
+are defined by sub-directories.
+The command-line argument 
+.I -library_dir 
+(resource 
+.I Fig.library_dir
+) may be used to specify a different directory.
+The choice of libraries is presented in a pull-down menu. After choosing
+the library, the objects from the library will be loaded.  The status line
+shows how many objects or any error messages that may occur.
+Once a library is loaded if you single-click on an object name
+in the listbox area it will show a preview of the object in the right side preview window.
+If you double-click on one of the object names or single-click on one and press the
+.I "Select object"
+button, this will pop down the library panel and you will immediately see the
+chosen object appear under the mouse on the canvas, where it may be dragged
+around and placed by pressing mouse button 1 at the desired location.
+You may place as many of these objects as you wish by simply moving to the
+new location and pressing mouse button 1 each time.
+.Sp
+If mouse button 2 is pressed, the library panel pops up again where either
+a different object or library may be selected.
+.Sp
+Pressing moust button 3 will cancel the library mode altogether.
+.Sp
+Pressing Shift and mouse button 1 at the same time
+will switch from drawing the object itself as it is
+dragged, to only drawing the outline of the bounding box of the object.
+This second mode is desirable on slow machines or with complex objects.
+.Sp
+A library is simply a directory with .fig files, each containing one library
+object.  When xfig loads the .fig files as library objects, it makes each 
+one into a compound object so it may be moved, scaled, etc. as a unit.
+.Sp
+There are two ways to create your own libraries in xfig.
+For the first method, create the file 
+.I xfiglib
+in your home directory (~/xfiglib).  Each line of the
+.I xfiglib
+file contains the absolute path of the
+directory containing the .fig files in that library,
+followed by the name of the library, which may be multiple words with whitespace.
+There may be at most 50 libraries.  The length of the library name (not the path)
+may be at most 40 characters long, and any library may have no more than 400 objects,
+each of whose name (the name of the .fig file) may not be more than 40 characters.
+.Sp
+You must then either start xfig with ``
+.I -library_dir 
+~/xfiglib'', or set the resource ``Fig.library_dir: ~/xfiglib''.
+.Sp
+Here is an example:
+.Sp
+.nf
+/xfig/Examples/Libraries/Electrical/Physical	Electrical Parts
+/xfig/Examples/Libraries/Electrical/Schematic	Electrical Schematic Components
+/xfig/Examples/Libraries/Logic		Logic Symbols
+/xfig/Examples/Libraries/Flowchart		Flowchart Elements
+/xfig/Examples/Libraries/Buildings		Buildings
+.fi
+.Sp
+The other method is to use the X resource
+.I Fig.library_dir
+or command-line argument
+.I -library_dir
+to point to a directory which may contain Fig files (.fig) and sub-directories, each
+of which may also contain .fig files and sub-directories if desired.
+.Sp
+To link your libraries with the ones that come with xfig, simply make a symlink
+for each xfig library in your library directory or make one symlink to the top-level
+xfig library directory in your library directory.
+.Sp
+This is more versatile than using the xfiglib file because you can add more directories
+in the top-level directory (or sub-directories) and there is no need to edit the xfiglib file.
+Using this method, the names of the libraries are simply the names of the directories,
+e.g. if the resource 
+.I "Fig.library_dir: /xfig/Examples/Libraries"
+is defined, the 
+.I /xfig/Examples/Libraries/Electrical
+directory will result in the library name 
+.I Electrical.
+.Sp
+It is hoped that users will contribute Fig objects to the libraries to
+expand and enhance them for all xfig users.
+If you wish to contribute any Fig objects to existing or new libraries, please send
+them to me at xfigmail@epb1.lbl.gov.  You may restrict their usage by users if you
+wish, but all will benefit if you allow free usage, i.e. copying, using them
+in published reports, etc.
 .TP
 .I "SCALE OBJECT"
 Any object may be scaled.
@@ -2666,6 +2913,9 @@ These are editable Ascii\%TextWidgets and allow cut and paste.
 Others pop up a sub-menu of multiple choices when pressed and held.
 Yet others are buttons which toggle a setting on or off (e.g. arrow
 heads on lines).
+For the coordinates of an object's points, you may enter either 
+Fig units (1/1200 inch) or inches or centimeters by following the
+value with an ``i'' or ``c'' respectively.
 .IP \&
 Press the ``done'' button to apply the changes to the object and finish.
 Press the ``apply'' button to apply the changes but keep the menu up for
@@ -2734,9 +2984,8 @@ Text	\&\&\&\*(Bu	\&	\&	\&	\&	\&	\&	\*(Bu
 .if n .RE
 .if t .RE
 .IP \&
-* Encapsulated PostScript picture objects don't use any of the above attributes.
-The PostScript image is self-defined.  However, X11 bitmap picture objects use
-the pen color for coloring the bitmap image.
+* Only the X11 bitmap picture type uses the pen color for coloring the bitmap image.
+The other picture types don't use any of these settings.
 .\"--------------------------------------------------------------------
 .\" Table End
 .\"--------------------------------------------------------------------
@@ -2849,8 +3098,8 @@ or
 objects.
 Add an arrow head by clicking mouse button 1 on the endpoint of the object.
 Delete an arrow head by clicking mouse button 2 on the endpoint or arrow head.
-The length and thickness of the arrowheads may be modified
-using the popup edit panel.
+The length and thickness of the arrowheads may be set using the arrow size 
+button in the indicator panel.
 .SH PANNING
 The figure may be panned by clicking mouse button 1, 2 or 3 in the rulers.
 Clicking mouse button 1 in the top ruler will pan the image to the left
@@ -2916,6 +3165,7 @@ Name\&\&\&\&\&\&	Class\&\&\&\&\&\&	Type	Default\&\&\&\&\&	Command-line
 .\"-------
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
+balloon_delay\&\&	Balloon_delay\&\&	integer	500msec\&\&\&\&\&	\-balloon_delay
 boldFont\&\&\&\&	Font\&\&\&	string	8x13bold\&\&\&\&	\-bold
 but_per_row\&\&\&	But_per_row\&\&\&	int	2\&\&\&\&\&\&\&\&	\-but_per_row
 buttonFont\&\&\&\&	Font\&\&\&	string	6x13\&\&\&\&	\-button
@@ -2938,6 +3188,7 @@ keyFile\&\&\&\&\&	KeyFile\&\&\&\&\&	string	CompKeyDB\&\&\&\&	\-keyFile
 landscape\&\&\&\&	Orientation\&\&\&	boolean	true\&\&\&\&\&\&	\-Landscape,
 \&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-Portrait
 latexfonts\&\&\&	Latexfonts\&\&\&	boolean	off\&\&\&\&\&\&\&	\-latexfonts
+library_dir\&\&\&	Directory\&\&\&\&	string	~/xfiglib\&\&\&\&	\-library_dir
 magnification\&\&	Magnification\&\&	float	100\&\&\&\&\&\&\&	\-magnification
 max_image_colors\&	Max_image_colors	integer	64\&\&\&\&\&\&\&	\-max_image_colors
 monochrome\&\&\&\&	Monochrome\&\&\&	boolean	false\&\&\&\&\&\&	\-monochrome
@@ -2946,11 +3197,11 @@ normalFont\&\&\&	Font\&\&\&	string	6x13\&\&\&\&\&\&	\-normal
 page_size\&\&\&\&	Pagesize	string	Letter/A4\&\&\&\&	\-page_size
 pheight\&\&\&\&\&	Height\&\&\&\&\&	float	8(9.5)\&\&\&\&\&	\-pheight
 pwidth\&\&\&\&\&	Width\&\&\&\&\&\&	float	10(8)\&\&\&\&\&\&	\-pwidth
-reverseVideo\&\&	ReverseVideo\&\&	boolean	off\&\&\&\&\&\&\&	\-inverse
 rulerthick\&\&\&	RulerThick\&\&\&	integer	24\&\&\&\&\&\&\&	\-rulerthick
 scalablefonts\&\&	ScalableFonts\&\&	boolean	true\&\&\&\&\&\&	\-scalablefonts
 showallbuttons\&	ShowAllButtons\&	boolean	false\&\&\&\&\&\&	\-showallbuttons
-show_balloons\&\&	Showballoons\&\&	boolean	true\&\&\&\&\&\&	\-showballoons
+showballoons\&\&	ShowBalloons\&\&	boolean	true\&\&\&\&\&\&	\-showballoons
+showlengths\&\&\&	ShowLengths\&\&\&	boolean	false\&\&\&\&\&\&	\-showlengths
 \&\&\&\&\&\&\&\&	\&\&\&\&\&\&\&\&	\&\&\&	\&\&\&\&\&\&\&\&	\-dontshowballoons
 single\&\&\&\&\&	Single\&\&\&\&\&	boolean	true\&\&\&\&\&\&\&	\-single
 specialtext\&\&\&	SpecialText\&\&\&	boolean	false\&\&\&\&\&\&	\-specialtext
@@ -3033,7 +3284,7 @@ app-defaults file:
 	<Meta>m	Merge read into current figure
 .Sp
 (Popup export panel)
-	<Meta>r	Rescan current dirctory
+	<Meta>r	Rescan current directory
 	<Meta>c	Cancel
 	<Meta>e	Export figure
 .Sp
@@ -3064,6 +3315,7 @@ app-defaults file:
 	<None>g	Glue compound
 	<Shift>g	Break compound
 	<None>o	Open compound
+	<Shift>l	Place library object
 	<Ctrl>s	Scale object
 	<None>a	Align object in compound
 	<Shift>m	Move point
@@ -3093,30 +3345,38 @@ Below is the widget structure of
 The widget class name is given first, followed by the widget instance name.
 .nf
 .if t .ta .5i +.5i +.5i +.5i +.5i +.5i +.5i +.5i +.5i
-.if n .ta 2n  +2n  +2n  +2n  +2n  +2n  +2n  +2n  +2n
+.if n .ta 3n  +3n  +3n  +3n  +3n  +3n  +3n  +3n  +3n
 .Sp
 Fig  xfig
 .Sp
 	Form  form
 		Form  commands
 			Command  quit
-			Command  delete_all
+			Command  new
 			Command  orient
 			Command  undo
 			Command  redraw
 			Command  paste
 			Command  file
 			Command  export
+			Command  library
 			Command  print
+			MenuButton  help
+				SimpleMenu  menu
+					SmeBSB  Xfig Reference (HTML)
+					SmeBSB  How-To Guide (PDF)
+					SmeBSB  Man pages (PDF)
+					SmeBSB  About Xfig
 		Form msg_form
 			Text  message
 			Label  file_name
+			Toggle  balloon_toggle
 		Label  mouse_panel
 		Box  mode_panel
 			Label  label
-			Command  button (one for each of the 16 drawing mode buttons)
+			Command  button (one for each of the 17 drawing mode buttons)
 			Label  label
-			Command  button (one for each of the 18 editing mode buttons)
+			Command  button (one for each of the 19 editing mode buttons)
 		Label  topruler
 		Label  canvas
 		Label  unitbox
@@ -3151,11 +3411,29 @@ Fig  xfig
 				Command  pane (one for each of the 6 LaTeX font panes)
 .Sp
 	TransientShell  file_menu
+		VendorShellExt  shellext
 		Form  file_panel
+			Label  file_status_label
 			Label  file_status
+			Label  num_objects_label
 			Label  num_objects
+			Label  fig_offset_label
+			Label  fig_offset_lbl_x
+			Text  fig_offset_x
+			MenuButton   Inches
+				SimpleMenu  menu
+					SmeBSB   Inches
+					SmeBSB   Centim.
+					SmeBSB  Fig Units
+			Label  fig_offset_lbl_y
+			Text  fig_offset_y
+			MenuButton   Inches
+				SimpleMenu  menu
+					SmeBSB   Inches
+					SmeBSB   Centim.
+					SmeBSB  Fig Units
 			Label  cur_file_label
-			Text  cur_file_name
+			Label  cur_file_name
 			Label  file_label
 			Text  file_name
 			Label file_alt_label
@@ -3169,35 +3447,51 @@ Fig  xfig
 			Text  dir_name
 			Label  dir_alt_label
 			Command home
+			Command hidden
 			Viewport  dirvport
 				Core  clip
 				Scrollbar  vertical
 				List  dir_list_panel
+			Form  preview_form
+				Label  preview_label
+				Label  preview_size
+				Label  preview_name
+				Label  preview_widget
 			Command  rescan
 			Command  cancel
 			Command  save
 			Command  load
 			Command  merge
-			Label  fig_offset_label
-			Label  fig_offset_lbl_x
-			Text  fig_offset_x
-			MenuButton   Inches
-				SimpleMenu  menu
-					SmeBSB   Inches
-					SmeBSB   Centim.
-					SmeBSB  Fig Units
-			Label  fig_offset_lbl_x
-			Text  fig_offset_x
-			MenuButton   Inches
-				SimpleMenu  menu
-					SmeBSB   Inches
-					SmeBSB   Centim.
-					SmeBSB  Fig Units
 .Sp
 	TransientShell  export_menu
+		VendorShellExt  shellext
 		Form  export_panel
 			Label  mag_label
-			Text  magnification
+			Box  spinner_box
+				Text  magnification
+				Box  spinner_frame
+					Command  spinup
+					Command  spindown
+			Command  fitpage
+			Label  size_label
+			Label  papersize_label
+			MenuButton  papersize
+				SimpleMenu  menu
+					SmeBSB  Letter  (8.5" x 11")
+					SmeBSB  Legal   (8.5" x 14")
+					SmeBSB  Ledger  ( 17" x 11")
+					SmeBSB  Tabloid ( 11" x 17")
+					SmeBSB  A       (8.5" x 11")
+					SmeBSB  B       ( 11" x 17")
+					SmeBSB  C       ( 17" x 22")
+					SmeBSB  D       ( 22" x 34")
+					SmeBSB  E       ( 34" x 44")
+					SmeBSB  A4      (210mm x  297mm)
+					SmeBSB  A3      (297mm x  420mm)
+					SmeBSB  A2      (420mm x  594mm)
+					SmeBSB  A1      (594mm x  841mm)
+					SmeBSB  A0      (841mm x 1189mm)
+					SmeBSB  B5(JIS) (182mm x  257mm)
 			Label  orient_label
 			MenuButton  orientation
 				SimpleMenu  menu
@@ -3208,6 +3502,11 @@ Fig  xfig
 				SimpleMenu  menu
 					SmeBSB  Flush left
 					SmeBSB  Centered
+			Label  multiple_label
+			MenuButton  multiple_pages
+				SimpleMenu  menu
+					SmeBSB  Single  
+					SmeBSB  Multiple
 			Label  export_offset_label
 			Label  export_offset_lbl_x
 			Text  export_offset_x
@@ -3246,9 +3545,30 @@ Fig  xfig
 					SmeBSB  GIF
 					SmeBSB  JPEG
 					SmeBSB  TIFF (no compression)
-					SmeBSB  PPM
+					SmeBSB  TK
 					SmeBSB  X11 Bitmap (XBM)
 					SmeBSB  X11 Pixmap (XPM)
+					SmeBSB  Portable Pixmap (PPM)
+			Label  transp_label
+			MenuButton  transparent
+				SimpleMenu  menu
+					SmeBSB  Background
+					SmeBSB  None
+					SmeLine  None
+					SmeBSB  Black
+					SmeBSB  Blue
+					SmeBSB  Green
+					SmeBSB  Cyan
+					[more colors here]
+					SmeBSB  Gold
+					SmeBSB  Default
+			Label  quality_label
+			Box  spinner_box
+				Text quality_text
+				Box spinner_frame
+					Command  spinup
+					Command  spindown
+			Text  quality_text
 			Label  def_file_label
 			Label  def_file_name
 			Label  out_file_name
@@ -3257,6 +3577,7 @@ Fig  xfig
 			Viewport  vport
 				Core  clip
 				Scrollbar  vertical
+				Scrollbar  horizontal
 				List  file_list_panel
 			Label  mask_label
 			Text  mask
@@ -3264,6 +3585,7 @@ Fig  xfig
 			Text  dir_name
 			Label  dir_alt_label
 			Command home
+			Command hidden
 			Viewport  dirvport
 				Core  clip
 				Scrollbar  vertical
@@ -3273,21 +3595,51 @@ Fig  xfig
 			Command  export
 .Sp
 	TransientShell  print_menu
+		VendorShellExt  shellext
 		Form  print_panel
 			Label  printer_image
 			Label  print_label
 			Label  mag_label
-			Text  magnification
+			Box  spinner_box
+				Text  magnification
+				Box  spinner_frame
+					Command  spinup
+					Command  spindown
+			Command  fitpage
+			Label  size_label
+			Label  papersize_label
+			MenuButton  papersize
+				SimpleMenu  menu
+					SmeBSB  Letter  (8.5" x 11")
+					SmeBSB  Legal   (8.5" x 14")
+					SmeBSB  Ledger  ( 17" x 11")
+					SmeBSB  Tabloid ( 11" x 17")
+					SmeBSB  A       (8.5" x 11")
+					SmeBSB  B       ( 11" x 17")
+					SmeBSB  C       ( 17" x 22")
+					SmeBSB  D       ( 22" x 34")
+					SmeBSB  E       ( 34" x 44")
+					SmeBSB  A4      (210mm x  297mm)
+					SmeBSB  A3      (297mm x  420mm)
+					SmeBSB  A2      (420mm x  594mm)
+					SmeBSB  A1      (594mm x  841mm)
+					SmeBSB  A0      (841mm x 1189mm)
+					SmeBSB  B5(JIS) (182mm x  257mm)
 			Label  orient_label
 			MenuButton  landscape
 				SimpleMenu  menu
-					SmeBSB  portrait
+					SmeBSB  portrait 
 					SmeBSB  landscape
 			Label  just_label
 			MenuButton  justify
 				SimpleMenu  menu
-					SmeBSB  flush left
-					SmeBSB  centered
+					SmeBSB  Centered  
+					SmeBSB  Flush left
+			Label  multiple_label
+			MenuButton  multiple_pages
+				SimpleMenu  menu
+					SmeBSB  Single  
+					SmeBSB  Multiple
 			Label  printer_label
 			Text  printer
 			Label  job_params_label
@@ -3300,6 +3652,7 @@ Fig  xfig
 			Command  clear_batch
 .Sp
 	TransientShell  file_msg
+		VendorShellExt  shellext
 		Form  file_msg_panel
 			Text  file_msg_win
 			Command  dismiss
@@ -3337,7 +3690,38 @@ Fig  xfig
 			Command  cancel
 			Command  set
 .Sp
+Library panel:
+	TransientShell  library_menu
+		VendorShellExt  shellext
+		Form  library_panel
+			Label  library_intro
+			Label  library_label
+			MenuButton  library
+				SimpleMenu  menu
+					SmeBSB  Electrical - Physical
+					SmeBSB  Electrical - Schematic
+					SmeBSB  Logic
+					SmeBSB  Flowchart
+					[ one for each library ]
+			Label  status_label
+			Text  status
+			Label  cur_library_label
+			Label  cur_library)
+			Label  cur_lib_object_label
+			Label  cur_lib_object
+			Viewport  object_vport
+				Core  clip
+				List  object_list_panel
+				Scrollbar  horizontal
+				Scrollbar  vertical
+			Label  library_preview_label
+			Label  library_object_label
+			Label  library_preview_widget
+			Command  select
+			Command  cancel
+.Sp
 Popup color panel:
+	VendorShellExt  shellext
 	TransientShell  set_indicator_panel
 		Form  form
 			Label  Colors
@@ -3345,11 +3729,11 @@ Popup color panel:
 			Command  set_color_ok
 			Form  mixedForm (for Pen Color)
 				Toggle  mixedEdit
-				Core  mixedColor
+				Label  mixedColor
 				Text  tripleValue
 			Form  mixedForm (for Fill Color)
 				Toggle  mixedEdit
-				Core  mixedColor
+				Label  mixedColor
 				Text  tripleValue
 			Label  stdLabel
 			Form  stdForm
@@ -3363,6 +3747,7 @@ Popup color panel:
 					   Label  colorMemory (one for each user color)
 				Command  addColor
 				Command  delColor
+				Command  lookupColor
 				Command  undelColor
 				Form  mixingForm
 					Label  redLocked
@@ -3382,28 +3767,34 @@ Popup color panel:
 .Sp
 Close compound popup:
 	TransientShell  close_compound_popup
+		VendorShellExt  shellext
 		Form  close_compound_form
 			Command  close_compound
 			Command  close_all_compounds
 .Sp
 	TransientShell  cmd_balloon_popup
+		VendorShellExt  shellext
 		Box  box
 			Label  l_label
 			Label  r_label
 .Sp
 	TransientShell  mode_balloon_popup
+		VendorShellExt  shellext
 		Box  box
 			Label  label
 .Sp
 	TransientShell  unit_balloon_popup
+		VendorShellExt  shellext
 		Box  box
 			Label  label
 .Sp
 	TransientShell  mouse_balloon_popup
+		VendorShellExt  shellext
 		Box  box
 			Label  label
 .Sp
 	TransientShell  toggle_balloon_popup
+		VendorShellExt  shellext
 		Box  box
 			Label  label
 .Sp
@@ -3437,6 +3828,7 @@ The panel will be different for other objects.
 .Sp
 .nf
 	TransientShell  edit_panel
+		VendorShellExt  shellext
 		Form  form
 			Label  POLYLINE:ArcBox
 			Label  image
@@ -3444,10 +3836,20 @@ The panel will be different for other objects.
 			Command  apply
 			Command  cancel
 			Label
-			Label  Width =
-			Text  Width =
-			Label  Border color =
-			MenuButton  colors
+			Label  Width
+			Box  spinner_box
+				Text       Width
+				Box  spinner_frame
+					Command  spinup
+					Command  spindown
+			Label       Depth
+			Box  spinner_box
+				Text       Depth
+				Box  spinner_frame
+					Command  spinup
+					Command  spindown
+			Label  Pen color
+			MenuButton  pen_colors
 				SimpleMenu  menu
 					SmeBSB  Black
 					SmeBSB  Blue
@@ -3460,8 +3862,8 @@ The panel will be different for other objects.
 					SmeBSB  Blue4
 					[22 more colors]
 					SmeBSB  Default
-			Label  Fill color =
-			MenuButton  colors
+			Label  Fill color
+			MenuButton  fill_colors
 				SimpleMenu  menu
 					SmeBSB  Black
 					SmeBSB  Blue
@@ -3474,28 +3876,42 @@ The panel will be different for other objects.
 					SmeBSB  Blue4
 					[22 more colors]
 					SmeBSB  Default
-			Label  Depth =
-			Text  Depth =
-			Label  Fill style =
+			Label  Fill style
 			MenuButton  No fill
 				SimpleMenu  menu
 					SmeBSB  No fill
 					SmeBSB  Filled
 					SmeBSB  Pattern
-			Label  Fill intensity % =
-			Text  Fill intensity % =
-			Label  Fill pattern =
-			Text  Fill pattern =
-			Label  Line style =
+			Label  Fill intensity %
+			Box  spinner_box
+				Text  Fill intensity %
+				Box  spinner_frame
+					Command  spinup
+					Command  spindown
+			Label  Fill pattern    
+			Box  spinner_box
+				Text  Fill pattern    
+				Box  spinner_frame
+					Command  spinup
+					Command  spindown
+			Label  Line style
 			MenuButton  Solid Line
 				SimpleMenu  menu
 					SmeBSB  Solid Line
 					SmeBSB  Dashed Line
 					SmeBSB  Dotted Line
-			Label  Dash length/Dot gap =
-			Text  Dash length/Dot gap =
-			Label  Radius =
-			Text  Radius =
+			Label  Dash length/Dot gap
+			Box  spinner_box
+				Text  Dash length/Dot gap
+				Box  spinner_frame
+					Command  spinup
+					Command  spindown
+			Label  Corner Radius
+			Box  spinner_box
+				Text  Corner Radius
+				Box  spinner_frame
+					Command  spinup
+					Command  spindown
 			Label  First Corner
 			Label  First Corner
 			Text  First Corner
@@ -3510,6 +3926,7 @@ The panel will be different for other objects.
 .Sp
 Popup edit spline point panel:
 	TransientShell  edit_spline_point_panel
+		VendorShellExt  shellext
 		Form  form
 			ScrollBar control_bar
 			Label    Use scrollbar to modify tension
@@ -3526,6 +3943,7 @@ edit popup.
 .Sp
 .nf
 	TransientShell  xfig_browse_menu
+		VendorShellExt  shellext
 		Form  browse_panel
 			Label  file_label
 			Text  file_name
@@ -3534,12 +3952,14 @@ edit popup.
 				Core  clip
 				List  file_list_panel
 				Scrollbar  vertical
+				Scrollbar  horizontal
 			Label  mask_label
 			Text  mask
 			Label  dir_label
 			Text  dir_name
 			Label  dir_alt_label
 			Command  home
+			Command  hidden
 			Viewport  dirvport
 				Core  clip
 				List  dir_list_panel
@@ -3680,6 +4100,12 @@ or X toolkit resource keyFile.
 See the
 .IR Imakefile .
 .TP
+.B ~/xfiglib
+This file must be in the login directory of the user or must be a symbolic
+link to a file containing the library definitions.
+See "PLACE LIBRARY OBJECT" in the "EDITING MODE PANEL COMMAND DESCRIPTIONS" section
+for the format of this file.
+.TP
 .B Fig.ad and Fig-color.ad
 Application defaults files which are automatically installed
 in the system app-defaults directory with the
@@ -3691,6 +4117,7 @@ Description of Fig file format.
 .TP
 .B CHANGES
 Description of bug fixes/new features.
+
 .SH AUTHORS
 Many people have contributed to
 .IR xfig .
@@ -3942,6 +4369,27 @@ Open/close compound feature written by
 .br
 Bill Taylor (bill@mainstream.com)
 .sp
+.br
+Library feature written by 
+.br
+Stephane Mancini (mancini@elecsrv.enst.fr)
+(object preview by Brian V. Smith)
+.sp
+.br
+The library objects in the Electrical and Logic libraries were done by
+.br
+Peter Hiscocks (phiscock@ee.ryerson.ca)
+.sp
+.br
+The library objects in the Computer, Networks, and Hospital-Equipment
+libraries were extracted from the clipart example files by
+.br
+Bill Chimiak (chim@bgsm.edu)
+.sp
+Importing of Fig files as picture objects by
+.br
+Georg Stemmer, with supervision and discussion by 
+Ruediger Bess (bess@informatik.uni-erlangen.de)
 .SH NOTES
 .nf
 Many bug fixes/cleanups etc. by a host of faithful users

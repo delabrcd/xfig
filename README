@@ -15,6 +15,7 @@ and PostScript.
 Xfig and its postprocessor fig2dev (part of the TransFig package) are available
 from ftp.x.org in /contrib/applications/drawing_tools and from any CTAN machine
 (e.g. ftp.tex.ac.uk) in /pub/archive/graphics.
+The site ftp.cdrom.com also has it in /pub/X11/contrib/applications/drawing_tools
 
 ***************************************************************************
 Please send email about any questions/bug fixes/contributions etc. about
@@ -40,6 +41,22 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
 OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 
+And here is the copyright notice that you will find on every source file:
+
+ FIG : Facility for Interactive Generation of figures
+ Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ Parts Copyright (c) 1989-1998 by Brian V. Smith
+ Parts Copyright (c) 1991 by Paul King
+ 
+ Any party obtaining a copy of these files is granted, free of charge, a
+ full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ nonexclusive right and license to deal in this software and
+ documentation files (the "Software"), including without limitation the
+ rights to use, copy, modify, merge, publish, distribute, sublicense,
+ and/or sell copies of the Software, and to permit persons who receive
+ copies from any such party to do so, with the only requirement being
+ that this copyright notice remain intact.
+
 ______________________________________________________________________________
 
 NOTE 1: Because Unisys has stated that they will not charge royalties for the
@@ -49,13 +66,13 @@ NOTE 1: Because Unisys has stated that they will not charge royalties for the
 	However, be aware that if you sell xfig, for example as part of
 	a CD-ROM package with freeware, you may be liable for paying royalties
 	to Unisys.
-	It is recommended that you comment out the "#define USEGIF" line in the 
+	It is recommended that you comment out the "#define USEGIF" line in the
 	Imakefile before compiling and selling xfig.
-	*** The authors of xfig and the Lawrence Berkeley Laboratory cannot be held
-	responsible in any case. ***
+	*** The authors of xfig and the Lawrence Berkeley Laboratory cannot be
+	held responsible in any case. ***
 
 NOTE 2: For exporting Fig files to any of the bitmap formats (e.g. GIF, JPEG)
-	you will need to get a version of ghostscript that has JPEG, PCX256,
+	you will need to get a version of ghostscript that has jpeg, pcx256,
 	pbmraw, ppmraw and tiff24nc drivers.  Ghostscript is available from
 	ftp.cs.wisc.edu in /ghost/aladdin.
 	fig2dev uses ghostscript for exporting and xfig uses it for importing
@@ -67,21 +84,6 @@ NOTE 2: For exporting Fig files to any of the bitmap formats (e.g. GIF, JPEG)
 	in the Imakefile to make xfig add one pixel to the width of an
 	odd-width image when it reads in the pcx output from Ghostscript.
 
-++++++++++++++++++++++
-NOTE about version 3.0
-
-  An error in version 3.0 incorrectly positioned objects on the canvas
-  when reading older fig files.  New objects entered with 3.0 are
-  correctly positioned.  A warning will popup when you load a version 3.0
-  file with version 3.1 that says you might need to offset your figure by
-  14 fig units in X and Y when you load it.  This is done by setting the
-  X and Y offset in the popup File panel.
-  I apologize for the inconvenience.
-
-  This is also why the file version number has changed.
-
-++++++++++++++++++++++
-
 ===================
 INSTALLATION NOTES:
 ===================
@@ -89,21 +91,41 @@ INSTALLATION NOTES:
 1. Edit the Imakefile if you need to customize it (see following notes).
 	Specifically, if you want to install xfig in a directory other than
 	the default X11 binary directory, add "BINDIR=<directory>" at the
-	top of the Imakefile, where <directory> is the full path of the 
+	top of the Imakefile, where <directory> is the full path of the
 	directory in which you want xfig to be installed.
+
 2. Type "xmkmf" to create the Makefile from the Imakefile.  If you don't have
 	xmkmf you can do "make Makefile".  In either case you must have imake,
 	which can be found at the X Consortium site, ftp.x.org.
+
 3. Type "make"         (**** This MUST be done before "make install" ****).
 	Note: The "configure" script will be automatically run in the JPEG
-	directory if you haven't enabled the USEINSTALLEDJPEG variable (i.e.
-	you have defined the JPEGLIBDIR and other variables).
+	directory if you have commented out the USEINSTALLEDJPEG variable
+	(i.e. you have defined the JPEGLIBDIR and other variables).
 	This will create the Makefile in the JPEG directory from your system
-	configuration.  
+	configuration.
 	If for whatever reason, the configure script doesn't run, go into the
 	JPEG directory and type "./configure" then "make".  Then go back to
 	the xfig directory and continue with "make".
+
 4. Type "make install"
+	This will install the executable (xfig) into the execute directory,
+	and the documentation files into xfig's library directory XFIGLIBDIR.
+	There is a reference in HTML, a tutorial in PDF format, and the man 
+	pages in PDF format, although the HTML files are much better than the
+	man pages.  The Help menu in xfig will launch the browser to read the
+	HTML files and the PDF viewer to view the other two.  The programs
+	that are used for these are specified in the app-defaults file under
+	Fig.browser and Fig.pdfviewer respectively.  The default for HTML is
+	"netscape" and "acroread" for the PDF files.
+	If your Netscape can read PDF files you may want to change the 
+	Fig.pdfviewer resource to say "netscape" instead of "acroread".
+	You can get both Netscape and Acroread for just about every platform.
+	Netscape is available from Netscape Communications at:
+		http://home.netscape.com
+	and Acroread is available from Adobe at:
+		http://www.adobe.com/prodindex/acrobat/readstep.html
+
    ****	If you don't do this step, be sure to install the app-defaults files
 	Fig.ad and Fig-color.ad in the system app-defaults directory (usually
 	/usr/lib/X11/app-defaults) as "Fig" and "Fig-color" respectively, and
@@ -113,18 +135,35 @@ INSTALLATION NOTES:
 	color scheme (blues for the buttons and primary colors for OK/CANCEL
 	buttons) and a new one provided by Joel D. Young (jdyoung@afit.af.mil)
 	which looks more like tcl, and I think is a little nicer.  It looks
-	best when used with Xaw3d.1.0, which can show 3d relief for labels, 
+	best when used with Xaw3d.1.0, which can show 3d relief for labels,
 	not just buttons.  This new color set is the default.
 	If you want the "classic" colors, copy Fig-color.classic.ad to your
 	app-defaults directory as "Fig-color".
+
+	If you can't install xfig in your system directories you may put it
+	anywhere in your search path.  The app-defaults files (Fig.ad and
+	Fig-color.ad) may be put into any directory as Fig and Fig-color
+	respectively, and pointed to by setting the shell environment
+	variable XAPPLRESDIR.  You may also put the CompKeyDB file in that
+	directory and compile xfig with XFIGLIBDIR (in the Imakefile) pointing
+	there.
+
 5. Type "make install.man".
-6. For X11R5 and later color implementations, specify "*customization: -color"
-	in your .Xdefaults or .Xresources file.
+
+6. For X11R5 and later color X servers, specify "*customization: -color" in
+	your .Xdefaults or .Xresources file.  This will make the system look
+	in "Fig-color" for the resources, which then includes "Fig" for the
+	non-color related resources.
 	NOTE: this only works under X11R5 and later.
+
 
 ------------------------------
 NOTES on changes to Imakefile:
 ------------------------------
+
+o If you have a small screen (e.g. 800x600) you may want to uncomment
+  the line with USESMALLICONS in the Imakefile to use smaller icons for the
+  mode panel.
 
 o For a 3D look, I recommend using Kaleb Keithley's 3D Athena Widget set, a
   direct replacement for the Xaw library.  After you compile and install that
@@ -132,27 +171,32 @@ o For a 3D look, I recommend using Kaleb Keithley's 3D Athena Widget set, a
   the Imakefile and it will use the 3D widget set.  This set is available from
   ftp.x.org in /contrib/widgets.
 
-o If you *don't* want JPEG import/export, comment out the #define USEJPEG
-  line in the Imakefile.
+o If you *don't* want JPEG support, comment out the #define USEJPEG line in
+  the Imakefile.
 
 o If you *want* JPEG then:
-  o If you already have a JPEG library on your system uncomment
-    the "#define USEINSTALLEDJPEG" line in the Imakefile.
+  o If you already have a JPEG library in your system library directory leave
+    the "#define USEINSTALLEDJPEG" line (don't comment it out) in the Imakefile.
+  o If you don't have it installed, get it from one of the following places,
+    comment out the #define USEINSTALLEDJPEG line in the Imakefile (using XCOMM)
+    and point JPEGLIBDIR to the diredctory where the source is.  The default is
+    ../jpeg (relative to the xfig source directory).
   o You must have version 5b or newer of the JPEG library.
   o The JPEG library is available from several places.  The official
     archive site is ftp.uu.net in /graphics/jpeg.
-    Another is ftp.x.org in /contrib/libaries.
+    Another is ftp.x.org in /contrib/libraries.
   o ** Make sure you delete or rename any older version of the JPEG
     library you might have on your system.  Some Linux systems come
     with an older version which is incompatible with xfig.
 
-o If you have the XPM3 package (X11 color pixmaps) you can export your figures
-  in that format.  Also, you can import xpm files as picture objects.
-  Uncomment the #define USEXPM line in the Imakefile in that case.
-  Additionally, if you want to use the color icon for xfig (which is in XPM
-  format) uncomment the #define USEXPM_ICON line in the Imakefile.
+o If you want to use the XPM3 package (X11 color pixmaps) uncomment the
+  #define USEXPM line (using XCOMM) in the Imakefile.
+  With XPM support you can import xpm files as picture objects, and export
+  figures as XPM files.
+  Additionally, if you want to use the color icon for xfig (which is in
+  XPM format) uncomment the #define USEXPM_ICON line in the Imakefile.
   You need xpm version 3.4c or newer.  This is available from ftp.x.org in
-  /contrib/libraries.
+  /contrib/libraries. XPM usually comes with most Linux installations.
 
 o If you have Ghostscript, xfig will attempt to use it to interpret any
   encapsulated Postscript (EPS) files you import.  Ghostscript must be compiled
@@ -181,7 +225,7 @@ o If you have an input tablet and your X server supports the XInputExtension
 o The maximum width of the top ruler is set to 1020 pixels and the height of the
   side ruler to 860 pixels.  If your server can handle pixmaps larger than this
   and you need longer/taller rulers, you may set the maximum allowed in your
-  Imakefile with -DMAX_TOPRULER_WD=1160 (or whatever value you wish) and 
+  Imakefile with -DMAX_TOPRULER_WD=1160 (or whatever value you wish) and
   -DMAX_SIDERULER_HT=1024 (or whatever value you wish).
 
 o The SMOOTHMOTION option toggles between two methods for tracking the
@@ -197,6 +241,11 @@ o The SMOOTHMOTION option toggles between two methods for tracking the
   The SMOOTHMOTION flag MIGHT be necessary for older versions of OpenWindows on
   certain machines if the performance is slow when moving or drawing objects.
 
+o If you have a Sun Sparcstation and would like the Compose LED (light) turned
+  on when you are entering multi-key characters (like a-umlaut, c-cedilla, etc), 
+  uncomment the line: COMP_LED = -DCOMP_LED=3
+  (Note: older versions of X11, e.g. R5 may use 1 instead of 3 for the LED)
+
 o Look for any other comments in the Imakefile which describe options.
 
 --------------
@@ -204,14 +253,14 @@ General NOTES:
 --------------
 
 The pattern shading (e.g. bricks, shingles, etc.) only work for PostScript,
-GIF, JPEG, TIFF, ACAD, PCX, XPM and X11 Bitmap output.
+and the bitmap output formats (e.g. GIF, JPEG, etc.).
 
 Unless you have an image (picture object) in your figure, you may not gain
 very much by exporting in JPEG over GIF because of the nature of compression
 used in both methods.  GIF is usually better for line drawings or drawings
 with large blocks of continuous color (e.g. filled polygons).  JPEG is usually
-better for compressing images.
- 
+better for compressing (photograpic) images.
+
 If you have the default paper size for Ghostscript as A4 (metric) change the
 following (in gs_init.ps):
 
@@ -282,7 +331,7 @@ POSSIBLE CAUSE AND SOLUTION:
 	You didn't install the app-defaults files.
 ________________________________________________________________________________
 PROBLEM:
-	X error occurs with X_SetClipRectangles as the Request code 
+	X error occurs with X_SetClipRectangles as the Request code
 
 	or:
 
@@ -316,7 +365,7 @@ POSSIBLE CAUSE AND SOLUTION:
 ________________________________________________________________________________
 PROBLEM:
 	When using LaTeX fonts in Xfig I always end up with postscript
-	fonts instead rather than, say, Computer Modern. 
+	fonts instead rather than, say, Computer Modern.
 
 POSSIBLE CAUSE AND SOLUTION:
 	To put fonts under the control of LaTeX when generating PS, you must
@@ -333,7 +382,7 @@ POSSIBLE CAUSE AND SOLUTION:
 	Set the optimization level to -O1 at least for that file.
 ________________________________________________________________________________
 PROBLEM:
-	On Sun machines the linker may give erroneous error messages about 
+	On Sun machines the linker may give erroneous error messages about
 	the following symbols being undefined:
 
 	ld: Undefined symbol
@@ -372,7 +421,7 @@ POSSIBLE CAUSE AND SOLUTION:
 	Change the resource to be specific to the programs which need it,
 	or set the following resource:
  		Fig*allowShellResize: false
-	Note: this is in the Fig.ad file that comes with xfig, which is 
+	Note: this is in the Fig.ad file that comes with xfig, which is
 	      installed when you do a "make install".
 ________________________________________________________________________________
 PROBLEM:
@@ -408,12 +457,12 @@ POSSIBLE CAUSE AND SOLUTION:
 	    tail(&objects, &object_tails);
 ________________________________________________________________________________
 PROBLEM:
-	On HP machines, the capitalization of some letters in the text window 
+	On HP machines, the capitalization of some letters in the text window
 	in the edit popup for text objects are wrong.
 
 POSSIBLE CAUSE AND SOLUTION:
 	Make sure that the CompKeyDB file has the lowercase letter definitions
-	BEFORE the uppercase definitions.  This should be the case for the 
+	BEFORE the uppercase definitions.  This should be the case for the
 	CompKeyDB file shipped with xfig 2.1.5 and later.
 ________________________________________________________________________________
 PROBLEM:
@@ -439,7 +488,7 @@ POSSIBLE CAUSE AND SOLUTION:
 	/usr/local/include/jpegdata.h)
 ________________________________________________________________________________
 PROBLEM:
-	Arc-boxes don't appear correct when viewing exported PostScript with 
+	Arc-boxes don't appear correct when viewing exported PostScript with
 	ghostview or ghostscript.
 
 POSSIBLE CAUSE AND SOLUTION:
@@ -465,7 +514,7 @@ rfxc.fig	RFX Strike/Recon Fighter	http://www.cs.monash.edu.au/~carlo/archive/MIL
 greenpig.fig	F/RF-111C/G Tactical Fighter
 lidar.fig	Sidelooking battlefield surveillance LIDAR
 
-Linuxlogo.fig	This was an entry in the	Philipp Reisner
+linuxlogo.fig	This was an entry in the	Philipp Reisner
 		Linux 2.0 Logo contest
 
 clp_computer.fig computer clipart		W. Chimiak (chim@tachyon.medeng.wfu.edu)
@@ -480,16 +529,12 @@ flowchart.fig	flowchart building blocks	Tim P. Starrin (noid@cyborg.larc.nasa.go
 logo.fig	first fig file using imported	Bryan Boyter (original author of eps
 		eps object			import code for xfig)
 transit.fig	transit map of Saint John,	Robort Ford (rford@mailserv.mta.ca)
-		New Brunswick (Canada) Don't
-		use it for locating transit routes - it is only good
-		through July 1996 and only shows non-rush-hour routes
+		New Brunswick (Canada)
+		** Don't use it for locating transit routes. It is only good
+		through July 1996 and only shows non-rush-hour routes **
 aircraft.fig	light aircraft			Peter Hiscocks (phiscock@ee.ryerson.ca)
 ps-foil.fig	power supply circuit board foil layout
-ps-foil.fig	power supply circuit board schematic
-Linuxlogo.fig	the only entry in the		Philipp Reisner (Austria)  
-		Linux 2.0 Logo contest to be
-		rendered with xfig. Unfortunately,
-		it didn't win :-(
+ps-schematic.fig  power supply circuit board schematic
 clp_computer.fig various computers, monitors etc.  W. Chimiak (chim@tachyon.medeng.wfu.edu)
 clp_network.fig	computer network components
 	

@@ -1,21 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1991 by Brian V. Smith
- * Parts Copyright (c) 1991 by Paul King
+ * Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -24,6 +19,8 @@
 #include "resources.h"
 #include "object.h"
 #include "mode.h"
+#include "e_edit.h"
+#include "u_print.h"
 #include "w_export.h"
 #include "w_print.h"
 #include "w_icons.h"
@@ -31,10 +28,6 @@
 #include "w_util.h"
 
 /* EXPORTS */
-extern char    *panel_get_value();
-extern char     batch_file[];
-extern Boolean  batch_exists;
-extern char    *shell_protect_string();
 
 Widget		print_popup;	/* the main export popup */
 Widget		print_orient_panel;
@@ -45,6 +38,8 @@ Widget		print_mag_text;
 void		print_update_figure_size();
 
 /* LOCAL */
+
+DeclareStaticArgs(15);
 
 static void	orient_select();
 static Widget	orient_menu, orient_lab;
@@ -77,6 +72,13 @@ static void	get_magnif();
 static XtCallbackProc update_mag();
 void		do_print(), do_print_batch();
 
+/* callback list to keep track of magnification window */
+
+static XtCallbackRec mag_callback[] = {
+	{(XtCallbackProc)update_mag, (XtPointer)NULL},
+	{(XtCallbackProc)NULL, (XtPointer)NULL},
+	};
+
 String  print_translations =
         "<Key>Return: UpdateMag()\n\
 	Ctrl<Key>J: UpdateMag()\n\
@@ -95,13 +97,6 @@ static XtActionsRec     prn_actions[] =
     {"UpdateMag", (XtActionProc) update_mag},
 };
 
-/* callback list to keep track of magnification window */
-
-static XtCallbackRec mag_callback[] = {
-	{(XtCallbackProc)update_mag, (XtPointer)NULL},
-	{(XtCallbackProc)NULL, (XtPointer)NULL},
-	};
-
 static void
 print_panel_dismiss(w, ev)
     Widget	    w;
@@ -112,7 +107,6 @@ print_panel_dismiss(w, ev)
        updated because they are from menus */
     get_magnif();
     XtPopdown(print_popup);
-    XtSetSensitive(print_w, True);
 }
 
 static char	print_msg[] = "PRINT";
@@ -121,11 +115,14 @@ void
 do_print(w)
     Widget	    w;
 {
-	DeclareArgs(2);
 	char	   *printer_val;
 	char	   *param_val;
 	char	    cmd[255],cmd2[255];
-	char	   *c1, *c2;
+	char	   *c1;
+
+	/* don't print if in the middle of drawing/editing */
+	if (check_action_on())
+		return;
 
 	if (emptyfigure_msg(print_msg) && !batch_exists)
 		return;
@@ -173,7 +170,6 @@ fit_page()
 	int	lx,ly,ux,uy;
 	float	wd,ht,pwd,pht;
 	char	buf[60];
-	DeclareArgs(2);
 
 	/* get current size of figure */
 	compound_bound(&objects, &lx, &ly, &ux, &uy);
@@ -201,9 +197,12 @@ fit_page()
 	    appres.magnification = 100.0*pwd/wd;
 	else
 	    appres.magnification = 100.0*pht/ht;
+	/* adjust for difference in real metric vs "xfig metric" */
+	if(!appres.INCHES)
+	    appres.magnification *= PIX_PER_CM * 2.54/PIX_PER_INCH;
 
 	/* update the magnification widget */
-	sprintf(buf,"%.2f",appres.magnification);
+	sprintf(buf,"%.1f",appres.magnification);
 	FirstArg(XtNstring, buf);
 	SetValues(print_mag_text);
 
@@ -217,13 +216,12 @@ static void
 get_magnif()
 {
 	char buf[60];
-	DeclareArgs(2);
 
 	appres.magnification = (float) atof(panel_get_value(print_mag_text));
 	if (appres.magnification <= 0.0)
 	    appres.magnification = 100.0;
 	/* write it back to the widget in case it had a bad value */
-	sprintf(buf,"%.2f",appres.magnification);
+	sprintf(buf,"%.1f",appres.magnification);
 	FirstArg(XtNstring, buf);
 	SetValues(print_mag_text);
 }
@@ -247,13 +245,12 @@ static void
 update_figure_size()
 {
     char buf[60];
-    DeclareArgs(2);
 
     print_update_figure_size();
     /* update the export panel's indicators too */
     if (export_popup) {
 	export_update_figure_size();
-	sprintf(buf,"%.2f",appres.magnification);
+	sprintf(buf,"%.1f",appres.magnification);
 	FirstArg(XtNstring, buf);
 	SetValues(export_mag_text);
     }
@@ -334,7 +331,6 @@ do_clear_batch(w)
 update_batch_count()
 {
 	char	    num[10];
-	DeclareArgs(2);
 
 	sprintf(num,"%3d",num_batch_figures);
 	FirstArg(XtNlabel,num);
@@ -368,7 +364,6 @@ just_select(w, new_just, garbage)
     Widget	    w;
     XtPointer	    new_just, garbage;
 {
-    DeclareArgs(2);
 
     FirstArg(XtNlabel, XtName(w));
     SetValues(print_just_panel);
@@ -383,7 +378,6 @@ papersize_select(w, new_papersize, garbage)
     Widget	    w;
     XtPointer	    new_papersize, garbage;
 {
-    DeclareArgs(2);
     int papersize = (int) new_papersize;
 
     FirstArg(XtNlabel, paper_sizes[papersize].fname);
@@ -399,7 +393,6 @@ multiple_select(w, new_multiple, garbage)
     Widget	    w;
     XtPointer	    new_multiple, garbage;
 {
-    DeclareArgs(2);
     int multiple = (int) new_multiple;
 
     FirstArg(XtNlabel, multiple_pages[multiple]);
@@ -435,7 +428,6 @@ print_update_figure_size()
 	char	*unit;
 	char	buf[40];
 	int	ux,uy,lx,ly;
-	DeclareArgs(2);
 
 	if (!print_popup)
 	    return;
@@ -449,19 +441,17 @@ print_update_figure_size()
 	SetValues(size_lab);
 }
 
+void
 popup_print_panel(w)
     Widget	    w;
 {
-    extern	    Atom wm_delete_window;
     char	    buf[30];
-    DeclareArgs(2);
 
     set_temp_cursor(wait_cursor);
-    XtSetSensitive(w, False);
     if (print_popup) {
 	/* the print popup already exists, but the magnification may have been
 	   changed in the export popup */
-	sprintf(buf,"%.2f",appres.magnification);
+	sprintf(buf,"%.1f",appres.magnification);
 	FirstArg(XtNstring, buf);
 	SetValues(print_mag_text);
 	/* also the figure size (magnification * bounding_box) */
@@ -482,9 +472,8 @@ create_print_panel(w)
     Widget	    w;
 {
 	Widget	    image;
-	Widget	    entry;
+	Widget	    entry,mag_spinner;
 	Pixmap	    p;
-	DeclareArgs(10);
 	unsigned    long fg, bg;
 	char	   *printer_val;
 	char	    buf[50];
@@ -543,18 +532,14 @@ create_print_panel(w)
 	mag_lab = XtCreateManagedWidget("mag_label", labelWidgetClass,
 					print_panel, Args, ArgCount);
 
-	FirstArg(XtNwidth, 60);
-	NextArg(XtNfromVert, image);
-	NextArg(XtNfromHoriz, mag_lab);
-	NextArg(XtNeditType, XawtextEdit);
-	sprintf(buf, "%.2f", appres.magnification);
-	NextArg(XtNstring, buf);
-	NextArg(XtNinsertPosition, 3);
-	NextArg(XtNborderWidth, INTERNAL_BW);
+	/* make a spinner entry for the mag */
+	/* note: this was called "magnification" */
+	sprintf(buf, "%.1f", appres.magnification);
+	mag_spinner = MakeFloatSpinnerEntry(print_panel, &print_mag_text, "magnification",
+				image, mag_lab, mag_callback, buf, 0.0, 10000.0);
+
 	/* we want to track typing here to update figure size label */
-	NextArg(XtNcallback, mag_callback);
-	print_mag_text = XtCreateManagedWidget("magnification", asciiTextWidgetClass,
-					 print_panel, Args, ArgCount);
+
 	XtOverrideTranslations(print_mag_text,
 			       XtParseTranslationTable(print_translations));
 
@@ -562,7 +547,7 @@ create_print_panel(w)
 
 	FirstArg(XtNlabel, "Fit to Page");
 	NextArg(XtNfromVert, image);
-	NextArg(XtNfromHoriz, print_mag_text);
+	NextArg(XtNfromHoriz, mag_spinner);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	fitpage = XtCreateManagedWidget("fitpage", commandWidgetClass,
 				       print_panel, Args, ArgCount);
@@ -601,6 +586,7 @@ create_print_panel(w)
 	NextArg(XtNfromVert, fitpage);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNresizable, True);
+	NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
 	print_papersize_panel = XtCreateManagedWidget("papersize",
 					   menuButtonWidgetClass,
 					   print_panel, Args, ArgCount);
@@ -626,6 +612,7 @@ create_print_panel(w)
 	FirstArg(XtNfromHoriz, orient_lab);
 	NextArg(XtNfromVert, print_papersize_panel);
 	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
 	print_orient_panel = XtCreateManagedWidget(orient_items[appres.landscape],
 					     menuButtonWidgetClass,
 					     print_panel, Args, ArgCount);
@@ -643,6 +630,7 @@ create_print_panel(w)
 	NextArg(XtNfromHoriz, just_lab);
 	NextArg(XtNfromVert, print_orient_panel);
 	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
 	print_just_panel = XtCreateManagedWidget("justify",
 					   menuButtonWidgetClass,
 					   print_panel, Args, ArgCount);
@@ -662,6 +650,7 @@ create_print_panel(w)
 	NextArg(XtNfromHoriz, multiple_lab);
 	NextArg(XtNfromVert, print_just_panel);
 	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
 	print_multiple_panel = XtCreateManagedWidget("multiple_pages",
 					   menuButtonWidgetClass,
 					   print_panel, Args, ArgCount);

@@ -1,6 +1,12 @@
 The following are applications which can produce Fig files as their output:
 
 ************************************************************************
+figbuild - figbuild reads xfig files (Version 3.x, tested with 3.1, 3.2) plus
+	its own config file for heights, and generates a Radiance input
+	file. Written by Peter Apian-Bennewitz at Fraunhofer ISE, Germany
+	see:
+	http://www.ise.fhg.de/radiance/pabs-toolbox/figbuild/figbuild.html
+************************************************************************
 xfigbar and xfigpie - Two C programs to produce bar and pie charts as Fig
 	files.  Written by John Conover <john@johncon.johncon.com>,
 	these programs are available by sending email thus:
@@ -28,7 +34,7 @@ pstoedit - converts Postscript(TM) files to other vector graphic formats
 ************************************************************************
 hp2xx - converts HPGL to EPS, LaTex, Fig or simplified HPGL converter
 	From Ian MacPhedran <macphed@engr.USask.Ca> in 
-	ftp://ftp.engr.usask.ca/pub/hp2xx/
+	http://duke.usask.ca/~macphed/soft/fig/hp2xx/
 
 ************************************************************************
 xgraph - plotting package for X - version on iworks.ecn.uiowa.edu in
@@ -75,53 +81,49 @@ pic2fig - converts PIC (used with troff/ditroff/etc) to Fig.
 	at ftp.x.org in /contrib/utilities.
 
 ************************************************************************
-plot2fig - converts Unix PLOT language to Fig
+plotutils - includes a graphing application (graph-fig),
+	a plot filter (plot2fig), and a library for drawing 2-D vector
+	graphics (libplotfig), all of which produce output in xfig format.
 
-This is the README file for plot2fig.
-
-plot2fig is a utility for converting unix plot files into the fig file format.
-fig files may be editied using fig, or xfig.  They can be converted to other
-formats using the transfig package.
-
-A copy of the GNU General Public License is in the file named COPYING. See it
-for copyright, license, warranty and distribution details.
-
-This software has yet to be thoroughly tested.  Any comments or bug fixes
-would be greatly appreciated.  Please send them to rich@rice.edu.
-
-Rich Murphey           rich@rice.edu
+	Available from any GNU mirror site.
+	by Robert S. Maier
 
 ************************************************************************
 cdraw2fig - converts cdraw to Fig
 
-Here is the cdraw README file:
+	Here is the cdraw README file:
 
-cdraw2fig translates pictures from "Cheap Draw" format to Fig format.
-The TransFig package can then be used for translation to the desired
-output format.  Currently supported formats include PIC, (E)EPIC, LaTeX,
-PostScript, and several others.
+	cdraw2fig translates pictures from "Cheap Draw" format to Fig format.
+	The TransFig package can then be used for translation to the desired
+	output format.  Currently supported formats include PIC, (E)EPIC, LaTeX,
+	PostScript, and several others.
 
-cdraw2fig is implemented in the awk programming language.  Most Cheap
-Draw operations are handled in some way, although some of the transla-
-tions are somewhat arbitrary.  Note that some output formats are con-
-siderably less expressive than Cheap Draw (and Fig).  PIC, for example,
-supports neither shading or rotated text.  In addition, precise text
-spacing is problematic across the different output formats.
+	cdraw2fig is implemented in the awk programming language.  Most Cheap
+	Draw operations are handled in some way, although some of the transla-
+	tions are somewhat arbitrary.  Note that some output formats are con-
+	siderably less expressive than Cheap Draw (and Fig).  PIC, for example,
+	supports neither shading or rotated text.  In addition, precise text
+	spacing is problematic across the different output formats.
 
-The following files are included in this distribution:
+	The following files are included in this distribution:
 
-       README          - this file
-       cdraw2fig.uu    - ksh script with self-contained awk program
-                         (uuencoded)
-       example         - sample "Cheap Draw" file (from the original
-                         Cheap Draw distribution)
+	       README          - this file
+	       cdraw2fig.uu    - ksh script with self-contained awk program
+				 (uuencoded)
+	       example         - sample "Cheap Draw" file (from the original
+				 Cheap Draw distribution)
 
-To translate a Cheap Draw file to PIC (for example):
+	To translate a Cheap Draw file to PIC (for example):
 
-       $ cdraw2fig example > example.fig
-       $ fig2dev -Lpic example.fig > example.pic
+	       $ cdraw2fig example > example.fig
+	       $ fig2dev -Lpic example.fig > example.pic
 
-Cheap Draw 2.0 was written by Bob Pratt and is available from the UNIXPC
-archives at osu-cis.  
+	Cheap Draw 2.0 was written by Bob Pratt and is available from the UNIXPC
+	archives at osu-cis.  
+
+************************************************************************
+
+As well, there are pointers to other FIG and Xfig related items at:
+http://duke.usask.ca/~macphed/soft/fig/
 
 ************************************************************************

@@ -1,20 +1,15 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1991 by Brian V. Smith
+ * Copyright (c) 1989-1998 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -22,28 +17,17 @@
 #include "figx.h"
 #include "resources.h"
 #include "u_fonts.h"		/* printer font names */
+#include "w_fontbits.h"
 #include "w_setup.h"
 #include "w_util.h"
 
-/********************  global variables	 ***************************/
-
-extern char    *psfont_menu_bits[];
-extern char    *latexfont_menu_bits[];
-extern Pixmap	psfont_menu_bitmaps[];
-extern Pixmap	latexfont_menu_bitmaps[];
-extern Atom	wm_delete_window;
-extern struct _fstruct ps_fontinfo[];	  /* PostScript/OpenWindows font names */
-extern struct _fstruct latex_fontinfo[];  /* LaTeX font names */
-
-/* LOCAL VARIABLES */
+/********************  local variables	***************************/
 
 static int     *font_ps_sel;	/* ptr to store selected ps font in */
 static int     *font_latex_sel; /* ptr to store selected latex font */
 static int     *flag_sel;	/* pointer to store ps/latex flag */
 static Widget	font_widget;	/* widget adr to store font image in */
-static int	(*font_setimage) ();
-
-/********************  local variables	***************************/
+static void	(*font_setimage) ();
 
 static MenuItemRec ps_fontmenu_items[NUM_FONTS + 1];
 static MenuItemRec latex_fontmenu_items[NUM_LATEX_FONTS];
@@ -71,6 +55,7 @@ static Widget	ps_fontpane[NUM_FONTS+1];
 static Widget	latex_fontpane[NUM_LATEX_FONTS];
 static Boolean	first_fontmenu;
 
+void
 init_fontmenu(tool)
     Widget	    tool;
 {
@@ -214,12 +199,11 @@ init_fontmenu(tool)
 					   latex_fontpanes, Args, ArgCount);
 	XtOverrideTranslations(latex_fontpane[i], pane_actions);
     }
-
-    return (1);
 }
 
 /* create the bitmaps for the font menu */
 
+void
 setup_fontmenu()
 {
     register int    i;
@@ -281,7 +265,7 @@ setup_fontmenu()
 void
 fontpane_popup(psfont_adr, latexfont_adr, psflag_adr, showfont_fn, show_widget)
     int		   *psfont_adr, *latexfont_adr, *psflag_adr;
-    int		    (*showfont_fn) ();
+    void	    (*showfont_fn) ();
     Widget	    show_widget;
 
 {
@@ -304,6 +288,8 @@ fontpane_popup(psfont_adr, latexfont_adr, psflag_adr, showfont_fn, show_widget)
     }
     widg = *flag_sel ? ps_fontmenu : latex_fontmenu;
     XtPopup(widg, XtGrabExclusive);
+    /* if the file message window is up add it to the grab */
+    file_msg_add_grab();
     /* insure that the most recent colormap is installed */
     set_cmap(XtWindow(widg));
     XSetWMProtocols(XtDisplay(widg), XtWindow(widg), &wm_delete_window, 1);
@@ -346,6 +332,8 @@ fontpane_swap()
     (*font_setimage) (font_widget);
     widg = *flag_sel ? ps_fontmenu : latex_fontmenu;
     XtPopup(widg, XtGrabExclusive);
+    /* if the file message window is up add it to the grab */
+    file_msg_add_grab();
     /* insure that the most recent colormap is installed */
     set_cmap(XtWindow(widg));
     XSetWMProtocols(XtDisplay(widg), XtWindow(widg), &wm_delete_window, 1);

@@ -1,12 +1,20 @@
 !Don't change the following string - xfig uses it to determine
 ! if you have the newest app-defaults files installed
 
-Fig.version:			3.2.0-beta4
+Fig.version:			3.2.1
 
 ! some sample settings you may want to change
 
 ! Image editor - can edit imported image
 Fig.image_editor:		xv -rw
+
+! Browser - put your favorite browser here.  
+! 		This is for viewing the xfig html reference.
+Fig.browser:			netscape
+
+! pdfviewer - put your favorite pdf viewer here.  
+!		This is for viewing the xfig how-to guide and man pages
+Fig.pdfviewer:			acroread
 
 ! Spacing between buttons
 Fig.internalborderwidth:	2
@@ -30,6 +38,9 @@ Fig*unitbox.font:		6x13
 ! font for everything else
 Fig*Font:			7x13bold
 
+! delay (milliseconds) before popping up info balloon 
+Fig*balloon_delay:		500
+
 ! the following should fix the problem that some have had with
 ! their window manager fighting with xfig over the geometry
 Fig*allowShellResize:		False
@@ -41,10 +52,10 @@ Fig*file_panel*mask*string:	*.fig*
 Fig.exportLanguage:		eps
 
 ! filename mask for the export popup browser
-Fig*export_panel*mask*string:	*ps
+Fig*export_panel*mask*string:	*.[gjxepst][ipbcl][fgmsxd]*
 
 ! filename mask for the image popup browser
-Fig*browse_panel*mask*string:	*.[gjxep][ipbc][fgmsx]*
+Fig*browse_panel*mask*string:	*.[gjxepst][ipbcl][fgmsxd]*
 
 ! printer name
 ! If the following resource is NOT set, xfig will use the PRINTER 
@@ -81,6 +92,7 @@ Fig.max_image_colors:		80
 	Fig*horizontal.bottomShadowPixel: white
 	Fig*horizontal.topShadow: black
 	Fig*horizontal.bottomShadow: white
+
 ! the following is done so the widget set doesn't try to make shades of
 ! the scrollbar shadows (even though the width is 0 it takes more colors)
 	Fig*Scrollbar.shadowWidth: 0
@@ -94,22 +106,31 @@ Fig.max_image_colors:		80
 	Fig*stdColor.bottomShadow: white
 	Fig*stdColor.topShadowPixel: black
 	Fig*stdColor.bottomShadowPixel: white
+
 ! You may need or want to adjust the highlight thickness for the mode
 ! and indicator panels depending on the results.  If it is too thick
 ! it will erase part of the button graphics.
 	Fig*mode_panel*highlightThickness: 1
 	Fig*ind_panel.ind_box.button_form.button.highlightThickness: 1
+
+! If you use the 3D Athena widget set and the small icons for the mode panel
+! (because you have a small screen; see Imakefile) you may want to reduce
+! the shadow width to 1 or 0.  Uncomment the following in that case:
+!	Fig*mode_panel*shadowWidth: 1
+
 ! The following is for the update marker in the upper-right corner of the
 ! indicator buttons.  You may not want any highlight thickness because
 ! the boxes are so small.
 	Fig*ind_panel.ind_box.button_form.update.highlightThickness: 0
 
+! You probably don't want the "spinners" for the settings panels to have shadows
+	Fig*spinup.shadowWidth: 0
+	Fig*spindown.shadowWidth: 0
+
 !if on monochrome server, or no Fig-color app-defaults file
-#ifndef COLOR
 !  This background resource shows between the buttons like a border
 	Fig*mode_panel.background:	black
 	Fig*mode_panel.foreground:	black
-#endif
 
 ! make the F20 key paste text in the canvas
 Fig*canvas.translations: #override \n\
@@ -134,76 +155,97 @@ Fig*accelerators: \
 	Ctrl<Key>l: redraw()\n\
 	Meta<Key>t: paste()\n\
 	Meta<Key>s: SaveFile()\n\
-	Meta<Key>l: LoadFile()\n
+	Meta<Key>l: LoadFile()\n\
+	Meta<Key>i: ShowLengths()\n
 !
 ! The following accelerators must be in the Fig*XXX*accelerators hierarchy
 ! or the Quit button looks like it has been activated when the user uses
 ! an accelerator like Alt-F (popup file panel)
 !
 Fig*quit*accelerators: \
-	Meta<Key>q: quit()\n
+	Meta<Key>q: quit()\n\
+	Alt<Key>q: quit()\n
 Fig*file*accelerators: \
-	Meta<Key>f: file()\n
+	Meta<Key>f: file()\n\
+	Alt<Key>f: file()\n
 Fig*export*accelerators: \
-	Meta<Key>e: popup_export()\n
+	Meta<Key>e: popup_export()\n\
+	Alt<Key>e: popup_export()\n
 Fig*print*accelerators: \
-	Meta<Key>p: popup_print()\n
+	Meta<Key>p: popup_print()\n\
+	Alt<Key>p: popup_print()\n
 Fig*file_menu*accelerators: \
 	Meta<Key>c: file_cancel()\n\
 	Meta<Key>l: load()\n\
 	Meta<Key>m: merge()\n\
 	Meta<Key>r: rescan()\n\
-	Meta<Key>s: save()\n
+	Meta<Key>s: save()\n\
+	Alt<Key>c: file_cancel()\n\
+	Alt<Key>l: load()\n\
+	Alt<Key>m: merge()\n\
+	Alt<Key>r: rescan()\n\
+	Alt<Key>s: save()\n
 Fig*export_menu*accelerators: \
 	Meta<Key>c: export_cancel()\n\
 	Meta<Key>e: export()\n\
-	Meta<Key>r: rescan()\n
+	Meta<Key>r: rescan()\n\
+	Alt<Key>c: export_cancel()\n\
+	Alt<Key>e: export()\n\
+	Alt<Key>r: rescan()\n
 Fig*print_menu*accelerators: \
 	Meta<Key>c: dismiss()\n\
 	Meta<Key>d: dismiss()\n\
 	Meta<Key>b: print_batch()\n\
 	Meta<Key>x: clear_batch()\n\
-	Meta<Key>p: print()\n
+	Meta<Key>p: print()\n\
+	Alt<Key>c: dismiss()\n\
+	Alt<Key>d: dismiss()\n\
+	Alt<Key>b: print_batch()\n\
+	Alt<Key>x: clear_batch()\n\
+	Alt<Key>p: print()\n
 Fig*set_unit_panel*accelerators: \
 	Meta<Key>c: QuitUnits()\n\
+	Alt<Key>c: QuitUnits()\n\
 	Meta<Key>s: SetUnits()\n\
+	Alt<Key>s: SetUnits()\n\
 	<Key>Return: SetUnits()\n
 Fig*ind_panel*accelerators: \
 	Shift<Key>z: ZoomIn()\n\
 	<Key>z: ZoomOut()\n
 Fig*mode_panel*accelerators: \
-	None<Key>m: ModeMoveObject()\n\
-	Ctrl<Key>c: ModeCopyObject()\n\
+	Ctrl<Key>a: ModeAddPoint()\n\
 	None<Key>a: ModeAlign()\n\
-	Ctrl<Key>s: ModeScale()\n\
+	None<Key>r: ModeArc()\n\
+	Shift<Key>b: ModeArcBox()\n\
+	Shift<Key>a: ModeArrow()\n\
+	None<Key>b: ModeBox()\n\
+	Shift<Key>g: ModeBreakCompound()\n\
+	Shift<Key>c: ModeCircleD()\n\
+	None<Key>c: ModeCircleR()\n\
+	Shift<Key>i: ModeClIntSpline()\n\
+	Shift<Key>s: ModeClSpline()\n\
+	None<Key>g: ModeCompound()\n\
+	None<Key>v: ModeConvertObject()\n\
+	Ctrl<Key>c: ModeCopyObject()\n\
 	None<Key>d: ModeDeleteObject()\n\
 	Shift<Key>d: ModeDeletePoint()\n\
-	Shift<Key>m: ModeMovePoint()\n\
 	Ctrl<Key>e: ModeEditObject()\n\
-	None<Key>g: ModeCompound()\n\
-	Shift<Key>g: ModeBreakCompound()\n\
-	None<Key>o: ModeOpenCompound()\n\
-	Ctrl<Key>r: ModeRotateObjectCW()\n\
-	Shift<Key>r: ModeRotateObjectCCW()\n\
-	None<Key>f: ModeFlipObjectUD()\n\
-	Shift<Key>f: ModeFlipObjectLR()\n\
-	Shift<Key>a: ModeArrow()\n\
-	Ctrl<Key>A: ModeAddPoint()\n\
-	None<Key>l: ModeLine()\n\
-	None<Key>t: ModeText()\n\
-	None<Key>c: ModeCircleR()\n\
-	Shift<Key>c: ModeCircleD()\n\
-	None<Key>e: ModeEllipseR()\n\
 	Shift<Key>e: ModeEllipseD()\n\
-	None<Key>b: ModeBox()\n\
-	Shift<Key>b: ModeArcBox()\n\
+	None<Key>e: ModeEllipseR()\n\
+	Shift<Key>f: ModeFlipObjectLR()\n\
+	None<Key>f: ModeFlipObjectUD()\n\
+	None<Key>i: ModeIntSpline()\n\
+	None<Key>l: ModeLine()\n\
+	None<Key>m: ModeMoveObject()\n\
+	Shift<Key>m: ModeMovePoint()\n\
+	None<Key>o: ModeOpenCompound()\n\
+	Ctrl<Key>p: ModePIC()\n\
+	Shift<Key>l: ModePopupLibrary()\n\
 	None<Key>p: ModePoly()\n\
 	Shift<Key>p: ModeRegPoly()\n\
-	Ctrl<Key>p: ModePIC()\n\
-	None<Key>r: ModeArc()\n\
+	Shift<Key>r: ModeRotateObjectCCW()\n\
+	Ctrl<Key>r: ModeRotateObjectCW()\n\
+	Ctrl<Key>s: ModeScale()\n\
 	None<Key>s: ModeSpline()\n\
-	Shift<Key>s: ModeClSpline()\n\
-	None<Key>i: ModeIntSpline()\n\
-	Shift<Key>i: ModeClIntSpline()\n\
-	None<Key>u: ModeUpdateObject()\n\
-	None<Key>v: ModeConvertObject()\n
+	None<Key>t: ModeText()\n\
+	None<Key>u: ModeUpdateObject()\n

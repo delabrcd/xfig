@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -28,30 +23,24 @@
 #include "mode.h"
 #include "paintop.h"
 #include <X11/keysym.h>
+#include "d_text.h"
 #include "e_edit.h"
 #include "u_bound.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
+#include "w_rulers.h"
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
 
 #ifndef SYSV
 #include <sys/time.h>
-#endif
+#endif /* SYSV */
 #include <X11/Xatom.h>
-
-extern		erase_rulermark();
-extern		erase_objecthighlight();
-extern		char_handler();
-
-#ifdef I18N
-extern XIC xim_ic;
-extern i18n_char_handler();
-#endif
 
 /************** LOCAL STRUCTURE ***************/
 
+#ifndef NO_COMPKEYDB
 typedef struct _CompKey CompKey;
 
 struct _CompKey {
@@ -60,36 +49,42 @@ struct _CompKey {
     unsigned char   second;
     CompKey	   *next;
 };
+#endif /* NO_COMPKEYDB */
 
 /*********************** EXPORTS ************************/
 
-int		(*canvas_kbd_proc) ();
-int		(*canvas_locmove_proc) ();
-int		(*canvas_leftbut_proc) ();
-int		(*canvas_middlebut_proc) ();
-int		(*canvas_middlebut_save) ();
-int		(*canvas_rightbut_proc) ();
-int		(*return_proc) ();
-int		null_proc();
+void		(*canvas_kbd_proc) ();
+void		(*canvas_locmove_proc) ();
+void		(*canvas_leftbut_proc) ();
+void		(*canvas_middlebut_proc) ();
+void		(*canvas_middlebut_save) ();
+void		(*canvas_rightbut_proc) ();
+void		(*return_proc) ();
+void		null_proc();
+
 int		clip_xmin, clip_ymin, clip_xmax, clip_ymax;
 int		clip_width, clip_height;
 int		cur_x, cur_y;
+int		fix_x, fix_y;
+int		last_x, last_y;	/* last position of mouse */
 
 String		local_translations = "";
 
 /*********************** LOCAL ************************/
 
+#ifndef NO_COMPKEYDB
 static CompKey *allCompKey = NULL;
-#ifdef I18N
-extern		canvas_selected();
-#else
-static		canvas_selected();
-#endif
 static unsigned char getComposeKey();
-static		readComposeKey();
+static void	readComposeKey();
+#endif /* NO_COMPKEYDB */
+/* for Sun keyboard, define COMP_LED 2 */
+#ifdef COMP_LED
+static void setCompLED();
+#endif /* COMP_LED */
 
 int		ignore_exp_cnt = 2;	/* we get 2 expose events at startup */
 
+void
 null_proc()
 {
     /* almost does nothing */
@@ -163,10 +158,8 @@ init_canvas(tool)
     NextArg(XtNfromHoriz, mode_panel);
     NextArg(XtNhorizDistance, -INTERNAL_BW);
     NextArg(XtNfromVert, topruler_sw);
-    NextArg(XtNvertDistance, -INTERNAL_BW);
     NextArg(XtNtop, XtChainTop);
     NextArg(XtNleft, XtChainLeft);
-    NextArg(XtNborderWidth, INTERNAL_BW);
 
     canvas_sw = XtCreateWidget("canvas", labelWidgetClass, tool,
 			       Args, ArgCount);
@@ -177,42 +170,48 @@ init_canvas(tool)
     XtAppAddActions(tool_app, canvas_actions, XtNumber(canvas_actions));
     XtAugmentTranslations(canvas_sw,
 			   XtParseTranslationTable(canvas_translations));
-
+#ifndef NO_COMPKEYDB
     readComposeKey();
+#endif /* NO_COMPKEYDB */
 
     return (1);
 }
 
+/* at this point, the canvas widget is realized so we can get the window from it */
+
 setup_canvas()
 {
-    /* keep real_canvas for the case when we set a temporary cursor and
-       the canvas_win is set to a 1-bit deep pixmap for X11 bitmap export */
-    real_canvas = canvas_win = XtWindow(canvas_sw);
+    /* keep main_canvas for the case when we set a temporary cursor and
+       the canvas_win is set the figure preview (when loading figures) */
+    main_canvas = canvas_win = XtWindow(canvas_sw);
     init_grid();
     reset_clip_window();
 }
 
-#ifndef I18N
-static
-#endif
 canvas_selected(tool, event, params, nparams)
     Widget	    tool;
     XButtonEvent   *event;
     String	   *params;
     Cardinal	   *nparams;
 {
-    register int    x, y;
     KeySym	    key;
     static int	    sx = -10000, sy = -10000;
     char	    buf[1];
     XButtonPressedEvent *be = (XButtonPressedEvent *) event;
-    XKeyPressedEvent *ke = (XKeyPressedEvent *) event;
+    XKeyPressedEvent *kpe = (XKeyPressedEvent *) event;
     Window	    rw, cw;
     int		    rx, ry, cx, cy;
     unsigned int    mask;
+    register int    x, y;
+
 
     static char	    compose_buf[2];
+#ifdef NO_COMPKEYDB
+    static XComposeStatus compstat;
+#define compose_key compstat.chars_matched
+#else
     static char	    compose_key = 0;
+#endif /* NO_COMPKEYDB */
     unsigned char   c;
 
     switch (event->type) {
@@ -243,8 +242,8 @@ canvas_selected(tool, event, params, nparams)
 
 	if (cx == sx && cy == sy)
 		break;
-	x = sx = cx;	/* these are zoomed */
-	y = sy = cy;	/* coordinates!	    */
+	last_x = x = sx = cx;	/* these are zoomed */
+	last_y = y = sy = cy;	/* coordinates!	    */
 #endif /* SMOOTHMOTION */
 
 	set_rulermark(x, y);
@@ -252,8 +251,8 @@ canvas_selected(tool, event, params, nparams)
 	break;
     case ButtonPress:
 	/* translate from zoomed coords to object coords */
-	x = BACKX(event->x);
-	y = BACKY(event->y);
+	last_x = x = BACKX(event->x);
+	last_y = y = BACKY(event->y);
 
 	/* Convert Alt-Button3 to Button2 */
 	if (be->button == Button3 && be->state & Mod1Mask) {
@@ -290,7 +289,7 @@ canvas_selected(tool, event, params, nparams)
 			&rw, &cw, &rx, &ry, &cx, &cy, &mask);
 	/* we might want to check action_on */
 	/* if arrow keys are pressed, pan */
-	key = XLookupKeysym(ke, 0);
+	key = XLookupKeysym(kpe, 0);
 
 	/* do the mouse function stuff first */
 	if (zoom_in_progress) {
@@ -309,10 +308,7 @@ canvas_selected(tool, event, params, nparams)
 		}
 	} else if (mask & ShiftMask) {
 		reset_cursor();
-		if (cur_mode >= FIRST_EDIT_MODE)
-		  draw_mousefun("Locate object", "Locate object", "");
-		else
-		  draw_shift_mousefun_canvas();
+		draw_shift_mousefun_canvas();
 	} else {
 		reset_cursor();
 		draw_mousefun_canvas();
@@ -342,6 +338,11 @@ canvas_selected(tool, event, params, nparams)
 			break;
 		}
 	} else if 
+#ifdef NO_COMPKEYDB
+	     (key == XK_Multi_key && action_on && cur_mode == F_TEXT &&
+		!XLookupString(kpe, buf, sizeof(buf), NULL, &compstat) &&
+		compose_key) {
+#else
 	     ((key == XK_Multi_key || /* process the following *only* if in text input mode */
 	      key == XK_Meta_L ||
 	      key == XK_Meta_R ||
@@ -349,13 +350,34 @@ canvas_selected(tool, event, params, nparams)
 	      key == XK_Alt_R ||
 	      key == XK_Escape) && action_on && cur_mode == F_TEXT) {
 			compose_key = 1;
+#endif /* NO_COMPKEYDB */
+#ifdef COMP_LED
+			setCompLED(kpe, 1);
+#endif /* COMP_LED */
 			break;
 	} else {
 	    if (canvas_kbd_proc != null_proc) {
 		if (key == XK_Left || key == XK_Right || key == XK_Home || key == XK_End) {
-			(*canvas_kbd_proc) ((unsigned char) 0, key);
+#ifdef COMP_LED
+		    if (compose_key)
+			setCompLED(kpe, 0);
+#endif /* COMP_LED */
+		    (*canvas_kbd_proc) (kpe, (unsigned char) 0, key);
 		    compose_key = 0;	/* in case Meta was followed with cursor movement */
 		} else {
+#ifdef NO_COMPKEYDB
+#ifdef COMP_LED
+		    int oldstat = compose_key;
+#endif /* COMP_LED */
+		    if (XLookupString(kpe, &compose_buf[0], 1, NULL, &compstat) > 0) {
+#ifdef COMP_LED
+		    	if (oldstat)
+			    setCompLED(kpe, 0);
+#endif /* COMP_LED */
+			(*canvas_kbd_proc) (kpe, (unsigned char) compose_buf[0], (KeySym) 0);
+			compose_key = 0;
+		    }
+#else /* NO_COMPKEYDB */
 		    switch (compose_key) {
 			case 0:
 #ifdef I18N
@@ -370,12 +392,12 @@ canvas_selected(tool, event, params, nparams)
 				 lbuf_size = 100;
 				 lbuf = malloc(lbuf_size + 1);
 			       }
-			       len = XmbLookupString(xim_ic, ke, lbuf, lbuf_size,
+			       len = XmbLookupString(xim_ic, kpe, lbuf, lbuf_size,
 						     &key_sym, &status);
 			       if (status == XBufferOverflow) {
 				 lbuf_size = len;
 				 lbuf = realloc(lbuf, lbuf_size + 1);
-				 len = XmbLookupString(xim_ic, ke, lbuf, lbuf_size,
+				 len = XmbLookupString(xim_ic, kpe, lbuf, lbuf_size,
 						       &key_sym, &status);
 			       }
 			       if (status == XBufferOverflow) {
@@ -387,46 +409,56 @@ canvas_selected(tool, event, params, nparams)
 				   i18n_char_handler(lbuf);
 				 } else {
 				   for (i = 0; i < len; i++) {
-				     (*canvas_kbd_proc) (lbuf[i], (KeySym) 0);
+				     (*canvas_kbd_proc) (kpe, lbuf[i], (KeySym) 0);
 				   }
 				 }
 			       }
 			    } else
 #endif  /* I18N */
-			    if (XLookupString(ke, buf, sizeof(buf), NULL, NULL) > 0)
-				(*canvas_kbd_proc) (buf[0], (KeySym) 0);
+			    if (XLookupString(kpe, buf, sizeof(buf), NULL, NULL) > 0)
+				(*canvas_kbd_proc) (kpe, buf[0], (KeySym) 0);
 			    break;
+			/* first char of multi-key sequence has been typed here */
 			case 1:
-			    if (XLookupString(ke, &compose_buf[0], 1, NULL, NULL) > 0)
-				compose_key = 2;
+			    if (XLookupString(kpe, &compose_buf[0], 1, NULL, NULL) > 0)
+				compose_key = 2;	/* got first char, on to state 2 */
 			    break;
+			/* last char of multi-key sequence has been typed here */
 			case 2:
-			    if (XLookupString(ke, &compose_buf[1], 1, NULL, NULL) > 0) {
+			    if (XLookupString(kpe, &compose_buf[1], 1, NULL, NULL) > 0) {
 				if ((c = getComposeKey(compose_buf)) != '\0')
-				    (*canvas_kbd_proc) (c, (KeySym) 0);
+				    (*canvas_kbd_proc) (kpe, c, (KeySym) 0);
 				else {
-				    (*canvas_kbd_proc) ((unsigned char) compose_buf[0], (KeySym) 0);
-				    (*canvas_kbd_proc) ((unsigned char) compose_buf[1], (KeySym) 0);
+				    (*canvas_kbd_proc) (kpe, (unsigned char) compose_buf[0],
+								(KeySym) 0);
+				    (*canvas_kbd_proc) (kpe, (unsigned char) compose_buf[1],
+								(KeySym) 0);
 				}
-				compose_key = 0;
+#ifdef COMP_LED
+				setCompLED(kpe, 0);	/* turn off the compose LED */
+#endif /* COMP_LED */
+				compose_key = 0;	/* back to state 0 */
 			    }
 			    break;
 		    } /* switch */
+#endif /* NO_COMPKEYDB */
 		}
 	    } else {
 		/* Be cheeky... we aren't going to do anything, so pass the
 		 * key on to the mode_panel window by rescheduling the event
 		 * The message window might treat it as a hotkey!
 		 */
-		ke->window = XtWindow(mode_panel);
-		ke->subwindow = 0;
-		XPutBackEvent(ke->display,(XEvent *)ke);
+		kpe->window = XtWindow(mode_panel);
+		kpe->subwindow = 0;
+		XPutBackEvent(kpe->display,(XEvent *)kpe);
 	    }
 	  }
 	  break;
 	}
     }
 }
+
+/* clear the canvas - this can't be called to clear a pixmap, only a window */
 
 clear_canvas()
 {
@@ -476,12 +508,13 @@ int *format;
 
 	c = (unsigned char *) buf;
 	for (i=0; i<*length; i++) {
-           canvas_kbd_proc(*c, (KeySym) 0);
+           canvas_kbd_proc((XKeyEvent *) 0, *c, (KeySym) 0);
            c++;
 	}
 	XtFree(buf);
 }
 
+#ifndef NO_COMPKEYDB
 static unsigned char
 getComposeKey(buf)
     char	   *buf;
@@ -498,7 +531,7 @@ getComposeKey(buf)
     return ('\0');
 }
 
-static
+static void
 readComposeKey()
 {
     FILE	   *st;
@@ -597,3 +630,17 @@ readComposeKey()
     fclose(st);
 
 }
+#endif /* !NO_COMPKEYDB */
+
+#ifdef COMP_LED
+static void
+setCompLED(kpe, on)
+XKeyPressedEvent *kpe;
+int on;
+{
+	XKeyboardControl values;
+	values.led = COMP_LED;
+	values.led_mode = on ? LedModeOn : LedModeOff;
+	XChangeKeyboardControl(kpe->display, KBLed|KBLedMode, &values);
+}
+#endif

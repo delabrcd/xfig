@@ -1,0 +1,479 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<title>XFIG User Manual - Installation</title>
+<link rev="made" href="mailto:VEF00200@niftyserve.or.jp">
+</head>
+
+<body>
+<img src="images/xfig-title.gif" alt="XFIG Users Manual">
+<p>
+[ <b>English Version</b>
+ | <a href="japanese/index.html">Japanese Version</a> ]
+<p>
+[ <a href="index.html">Contents</a>
+ | <a href="introduction.html">Operating Manual</a>
+ | <a href="features_bugs.html">New Features and Bugs Fixed</a>
+ | <b>Technical Information</b>
+ | <a href="authors.html">Authors</a> ]
+<p>
+[ <a href="options.html">Options and Resources</a>
+ | <b>Installation</b>
+ | <a href="faq.html">FAQ</a><br>
+ | <a href="i18n.html">Japanese Support (or Internationalization)</a>
+ | <a href="fig-format.html">Fig Format 3.2</a> ]
+
+<p>
+<hr>
+
+<h1>Installation</h1>
+
+<h2><font color="aa00aa"><a name="install-xfig">Installling xfig</a></h2></font>
+
+This is the installation procedure of <b>xfig</b>.
+See <tt>README</tt> file for more details.
+For information about how to use Japanese support facility,
+see also <a href="i18n.html">Japanese Support (or Internationalization)</a>.
+
+<p>
+<ol>
+<li>Get the source of <b>xfig</b>(<tt>xfig.3.2.1.tar.gz</tt>)
+and <i>gunzip</i> and <i>untar</i> the file.
+<p>
+<a name="getting_xfig">
+You can get the source from
+<a href="ftp://www-epb.lbl.gov/xfig/">www-epb.lbl.gov/xfig</a>,
+&nbsp;
+<a href="ftp://ftp.x.org/contrib/applications/drawing_tools/xfig/"><i>ftp.x.org</i></a> 
+and its <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">mirror sites</a> 
+in <tt>/contrib/applications/drawing_tools/xfig</tt>,
+or from any CTAN machine
+(<a href="ftp://ftp.tex.ac.uk/pub/archive/graphics/"><i>ftp.tex.ac.uk</i></a>,
+for example)
+in <tt>/pub/archive/graphics</tt>.
+<p>
+<a name="get_ghost">
+<li>
+You also need ghostscript which can be found at 
+<a href="ftp://prep.ai.mit.edu/pub/gnu/"><i>prep.ai.mit.edu</i></a> 
+and its <a href="http://www.fsf.org/order/ftp.html">mirror sites</a>,
+or at
+<a href="ftp://ftp.cs.wisc.edu/ghost/aladdin">ftp.cs.wisc.edu/ghost/aladdin</a>.
+<br>
+It must be compiled with the pbmraw, ppmraw, pcx256, jpeg, and tiff24nc drivers.
+
+<p>
+<li>Edit the <tt>Imakefile</tt> if you need to customize it.
+<ul>
+<img src="images/redball.gif" align=bottom>
+If you don't want <a href="authors.html#gif-patent">GIF support</a>,
+comment out `<tt>#define USEGIF</tt>' 
+using the <tt>XCOMM</tt> comment directive (e.g. <tt>XCOMM #define USEGIF</tt>).
+
+<p>
+<img src="images/redball.gif" align=bottom>
+To enable JPEG support, uncomment `<tt>#define USEJPEG</tt>' (this is the default)
+and modify the definition of <tt>USEINSTALLEDJPEG</tt> and <tt>JPEGLIBDIR</tt> 
+if necessary.
+To use JPEG, you must have <a href="#jpeg">JPEG library</a> (Version 5b or later).
+If you already if the JPEG library installed in your system area then make
+sure the USEINSTALLEDJPEG variable is uncommented (the default).
+If you don't have jpeg installed, get the source from
+<a href="ftp://ftp.uu.net/graphics/jpeg">ftp://ftp.uu.net/graphics/jpeg</a>
+or <a href="ftp://ftp.x.org/contrib/libraries">ftp://ftp.x.org/contrib/libraries</a>
+<p>
+<img src="images/redball.gif" align=bottom>
+If you don't want JPEG support,
+comment out `<tt>#define USEJPEG</tt>'.
+using the <tt>XCOMM</tt> comment directive (e.g. <tt>XCOMM #define USEGIF</tt>).
+
+<p>
+<img src="images/redball.gif" align=bottom>
+To enable XPM support, uncomment `<tt>#define USEXPM</tt>'
+and modify the definition of <tt>XPMLIBDIR</tt> if necessary.
+To use XPM, you must have <a href="#xpm">XPM3 package</a> (Version 3.4c or later).
+<p>
+<img src="images/redball.gif" align=bottom>
+If you don't want XPM support,
+comment out `<tt>#define USEXPM</tt>',
+using the <tt>XCOMM</tt> comment directive (e.g. <tt>XCOMM #define USEGIF</tt>).
+This is the default.
+<p>
+<img src="images/redball.gif" align=bottom>
+If you want to use <a href="#xaw3d">Xaw3d (Three-D Athena Widget)</a> library,
+uncomment `<tt>XAWLIB = -lXaw3d</tt>'.
+When <b>Xaw3d</b> is used instead of <b>Xaw</b>,
+the buttons will appear 3 dimensional.
+The <b>Xaw3d</b> library should be compiled without <tt>-DARROW_SCROLLBAR</tt>.
+<p>
+<a name="smallicons"></a><img src="images/redball.gif" align=bottom>
+Small Icons -
+If you have a small screen (e.g. 800x600 or so) you may want to use the small 
+mode panel buttons for <b>xfig</b>.  
+If so, uncomment the `<tt>#define USESMALLICONS</tt>' line.
+</ul>
+<br>
+Check the <tt>README</tt> file for more information about specific systems.
+
+<p>
+<li>Type <font color="aa00aa"><kbd>xmkmf</kbd></font> to generate a <tt>Makefile</tt> for your system.
+
+<p>
+<li>Type <font color="aa00aa"><kbd>make</kbd></font> to compile <b>xfig</b>.
+
+<p>
+<li>After the compilation has finished, type 
+<font color="aa00aa"><kbd>make install</kbd> </font>
+to copy the files to the appropriate directories.
+
+<p>
+If you don't use <tt>make install</tt> and copy files manually,
+note that:
+<ul>
+<img src="images/blueballdot.gif" align=bottom>
+the <tt>xfig</tt> executable should go in your command search path,
+<br>
+<img src="images/blueballdot.gif" align=bottom>
+<tt>Fig.ad</tt> and <tt>Fig-color.ad</tt> should go in the <tt>app-defaults</tt>
+directory with the names <tt>Fig</tt> and <tt>Fig-color</tt> respectively,
+<br>
+<img src="images/blueballdot.gif" align=bottom>
+The <tt>CompKeyDB</tt> file , the <tt>Doc/html</tt> directory, and the
+<tt>xfig-howto.pdf</tt> and <tt>xfig.pdf</tt> files should be copied into 
+the directory specified by the <tt>XFIGLIBDIR</tt> variable in the <tt>Imakefile</tt>
+</ul>
+
+<p>
+<li>Type <font color="aa00aa"><kbd>make install.man</kbd></font>
+to copy the manual pages to the appropriate directory.
+</ol>
+
+<hr>
+
+<h2><font color="aa00aa"><a name="install-fig2dev">Installing TransFig/fig2dev</a></h2></font>
+
+Here is the installation procedure for <b>TransFig</b> (<b>fig2dev</b>).
+See <tt>README</tt> file in for details.
+<p>
+<ol>
+<li>Get the source of <b>TransFig</b> (<tt>transfig.3.2.tar.gz</tt>),
+and <i>untar</i> the file.
+It should be available at the same site as <b>xfig</b>.
+
+<p>
+<li>
+You shouldn't need to change the toplevel 
+<tt>Imakefile</tt> or the <tt>Imakefile</tt> in <tt>fig2dev/dev</tt>.
+<br>
+Edit <tt>fig2dev/Imakefile</tt> if you need to customize it:
+<p>
+<ul>
+<img src="images/redball.gif" align=bottom>
+If you don't want to use NFSS2 font selection for LaTeX text,
+comment out `<tt>DDNFSS = -DNFSS</tt>' using the <tt>XCOMM</tt> directive.
+If you don't want to use <tt>epsfig</tt> macros as distributes with LaTeX2e,
+comment out `<tt>DDEPSF = -DEPSF</tt>' in the same way.
+<p>
+<ul>
+Hint: Users of LaTeX2e will probably want to include both of these
+options; users of LaTeX 2.09 will probably want to include neither.
+</ul>
+
+<p>
+<img src="images/redball.gif" align=bottom>
+To enable JPEG support, uncomment `<tt>#define USEJPEG</tt>' (this is the default)
+and modify the definition of <tt>USEINSTALLEDJPEG</tt> and <tt>JPEGLIBDIR</tt> 
+if necessary.
+To use JPEG,
+you must have <a href="#jpeg">JPEG library</a> (Version 5b or later).
+If you already if the JPEG library installed in your system area then make
+sure the USEINSTALLEDJPEG variable is uncommented (the default).
+If you don't have jpeg installed, get the source from
+<a href="ftp://ftp.uu.net/graphics/jpeg">ftp://ftp.uu.net/graphics/jpeg</a>
+or <a href="ftp://ftp.x.org/contrib/libraries">ftp://ftp.x.org/contrib/libraries</a>
+<p>
+<img src="images/redball.gif" align=bottom>
+If you don't want JPEG support,
+comment out `<tt>#define USEJPEG</tt>'.
+using the <tt>XCOMM</tt> comment directive (e.g. <tt>XCOMM #define USEGIF</tt>).
+
+<p>
+<img src="images/redball.gif" align=bottom>
+To enable XPM support, uncomment `<tt>#define USEXPM</tt>' 
+and change <tt>XPMLIBDIR</tt> if necessary.
+To use this facility,
+you must have <a href="#xpm">XPM3 package</a> (Version 3.4c or later).
+<p>
+<img src="images/redball.gif" align=bottom>
+If you don't want XPM support, comment out `<tt>#define USEXPM</tt>'.
+This is the default.
+
+<p>
+<img src="images/redball.gif" align=bottom>
+If your system DBM routines are in a separate library,
+uncomment `<tt>DBMLIB = -lgdbm</tt>'.
+<ul>
+<img src="images/blueballdot.gif" align=bottom>
+For the Redhat distributions of Linux you may have to change
+it to <tt>`DBMLIB to -ldb'</tt>.
+<br>
+<img src="images/blueballdot.gif" align=bottom>
+For some Linuxes you may need to change it to `<tt>DBMLIB = -ldbm'</tt>.
+<br>
+<img src="images/blueballdot.gif" align=bottom>
+Slackware Linuxes use <tt>-lgdbm</tt>.
+</ul>
+
+<p>
+<img src="images/redball.gif" align=bottom>
+If your system doesn't have <tt>strcasecmp()</tt> 
+and/or <tt>strncasecmp()</tt>, uncomment 
+<ul>
+<br>
+`<tt>HAVE_NO_STRCASECMP = -DHAVE_NO_STRCASECMP</tt>' 
+<br>
+and/or
+<br>
+`<tt>HAVE_NO_STRNCASECMP = -DHAVE_NO_STRNCASECMP</tt>'.
+</ul>
+
+<p>
+<img src="images/redball.gif" align=bottom>
+If your system doesn't have <tt>strstr()</tt>,
+uncomment `<tt>#define NOSTRSTR</tt>'.
+
+<p>
+<img src="images/redball.gif" align=bottom>
+If your system doesn't have <tt>strerror()</tt> 
+(but support <tt>sys_errlist</tt>),
+uncomment `<tt>NEED_STRERROR = -DNEED_STRERROR</tt>'.
+
+<p>
+<img src="images/redball.gif" align=bottom>
+On Solaris 2,
+you must add <tt>-lnsl</tt> to <tt>LOCAL_LIBRARIES</tt>.
+On HP-UX, you may need to reduce optimization level to <tt>+O2</tt>.
+</ul>
+<p>
+See <tt>README</tt> and <tt>Imakefile</tt> for more details.
+
+<p>
+<li>Type <font color="aa00aa"><kbd>xmkmf</kbd></font> to generate the <tt>Makefile</tt>.
+
+<p>
+<li>Type <font color="aa00aa"><kbd>make Makefiles</kbd></font> to generate the
+<tt>Makefile</tt>s.  Note the ``s'' in ``Makefiles''.
+
+<p>
+<li>Type <font color="aa00aa"><kbd>make</kbd></font> to compile
+<b>TransFig</b> and <b>fig2dev</b>.
+
+<p>
+<li>Type <font color="aa00aa"><kbd>make install</kbd></font>
+to copy the executable and files to the appropriate directories.
+
+<p>
+<li>Type <font color="aa00aa"><kbd>make install.man</kbd></font>
+to copy the manual pages to the appropriate directory.
+</ol>
+
+
+<hr>
+
+<h1><a name="related-software">Related Software</a></h1>
+
+<h2>Libraries</h2>
+
+<ul>
+<img src="images/greenball.gif" align=bottom>
+<b><a name="xaw3d">Xaw3d (Three-D Athena Widget) library</a></b><br>
+If <b>Xaw3d</b> is used instead of normal <b>Xaw</b>,
+widgets such as buttons will have 3-D appearance.
+It is available from 
+<a href="ftp://ftp.x.org/contrib/widgets/"><i>ftp.x.org</i></a> 
+and its <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">mirror sites</a> 
+in <tt>/contrib/widgets</tt>.
+
+<p>
+<img src="images/greenball.gif" align=bottom>
+<b><a name="xpm">XPM3 package</a></b><br>
+This package provides facilities to handle images in XPM format.
+It is available from
+<a href="ftp://ftp.x.org/contrib/libraries/"><i>ftp.x.org</i></a> 
+and its <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">mirror sites</a> 
+in <tt>/contrib/libraries</tt>.
+
+<p>
+<img src="images/greenball.gif" align=bottom>
+<b><a name="jpeg">JPEG library</a></b><br>
+This package provides facilities to handle images in JPEG format.
+The official distribution site is
+<a href="ftp://ftp.uu.net/graphics/jpeg/"><i>ftp.uu.net</i></a> 
+in <tt>/graphics/jpeg</tt>.
+It is also available from
+<a href="ftp://ftp.x.org/contrib/libraries/"><i>ftp.x.org</i></a> 
+and its <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">mirror sites</a> 
+in <tt>/contrib/libraries</tt>.
+</ul>
+
+<hr>
+
+<h2><a name="related-apps">Applications</a></h2>
+
+Here is a list of related applications.
+See also <a href="http://SAL.KachinaTech.COM">
+<i>Scientific Applications on Linux (SAL)</i></a>
+for more applications for <a href="http://www.linux.org">Linux</a>
+(many of them may also work on another UNIX-compatible platforms).
+
+<ul>
+<img src="images/redball.gif" align=bottom>
+<b>fig2dev (TransFig)</b><br>
+<a href="#install-fig2dev">fig2dev</a> provides the facility to
+convert figures created with <b>xfig</b> into various formats.
+You must have <b>fig2dev</b> because
+<b>xfig</b> invokes it when
+<a href="command-panel.html#export">Exporting</a>
+or <a href="command-panel.html#print">Printing</a>.
+<b>fig2dev</b> is part of the <b>TransFig</b> package.
+
+<p>
+<img src="images/redball.gif" align=bottom>
+<b>GhostScript</b><br>
+<b>xfig</b> will invoke <b>GhostScript</b> (the <tt>gs</tt> command) 
+when displaying an imported <a href="drawing-mode.html#picture">PostScript image</a>.
+<b>GhostScript</b> is a product of the
+<a href="http://www.fsf.org/">Free Software Foundation</a>
+(Aladdin Enterprises owns the copyright),
+and it is available from
+<a href="ftp://prep.ai.mit.edu/pub/gnu"><i>prep.ai.mit.edu</i></a> 
+and its <a href="http://www.fsf.org/order/ftp.html">mirror sites</a>,
+or <a href="ftp://ftp.cs.wisc.edu/ghost/aladdin">ftp.cs.wisc.edu/ghost/aladdin</a>.
+
+<p>
+<img src="images/redball.gif" align=bottom>
+<b>cdraw2fig</b><br>
+Converts `Cheap Draw' format to <b>Fig</b> format.
+Cheap Draw 2.0 was written by Bob Pratt and is available from the UNIXPC
+archives at osu-cis.  
+
+<p>
+<img src="images/redball.gif" align=bottom>
+<a name="GIMP"><b>GIMP</b></a><br>
+A comprehensive image manipulation program, GIMP (Gnu Image Manipulation Program)
+is freely available from <a href="http://www.gimp.org/">http://www.gimp.org/</a>.
+
+<p>
+<img src="images/redball.gif" align=bottom>
+<a name="gnuplot"><b>gnuplot</b></a><br>
+<b>gnuplot</b> is a plotting package which can output in <b>Fig</b> and other formats.
+The official distribution site is
+<a href="ftp://ftp.dartmouth.edu/pub/gnuplot/"><i>ftp.dartmouth.edu</i></a>,
+but you can also get it from the <tt>comp.sources.misc</tt> archive newsgroup.
+
+<p>
+<img src="images/redball.gif" align=bottom>
+<a name="gzip"><b>gzip (gunzip)</b></a><br>
+<b>xfig</b> will invoke <b>gunzip</b> when reading <b>gzip</b>ped files.
+<b>gzip</b> (<b>gunzip</b>) is a product of the
+<a href="http://www.fsf.org/">Free Software Foundation</a>,
+and is available from
+<a href="ftp://prep.ai.mit.edu/"><i>prep.ai.mit.edu</i></a> 
+and its <a href="http://www.fsf.org/order/ftp.html">mirror sites</a>.
+
+<p>
+<img src="images/redball.gif" align=bottom>
+<a name="hp2xx"><b>hp2xx</b></a><br>
+<b>hp2xx</b> can convert HP-GL files into other formats
+such as PostScript, LaTeX or <b>Fig</b>.
+It is available from
+<a href="ftp://ftp.engr.usask.ca/pub/hp2xx/">ftp://ftp.engr.usask.ca/pub/hp2xx/</a>.
+
+<p>
+<img src="images/redball.gif" align=bottom>
+<b>mifXfig</b><br>
+<b>mifXfig</b> will convert files
+between MIF format (of Framemaker(TM)) and <b>Fig</b> format.
+See 
+<a href="http://www.ida.liu.se/~vaden/teaching/m2f/">http://www.ida.liu.se/~vaden/teaching/m2f/</a>
+ for details.
+
+<p>
+<img src="images/redball.gif" align=bottom>
+<b>netpbm</b><br>
+<b>fig2dev</b> will invoke the appropriate command from the <b>netpbm</b> package
+when <a href="command-panel.html#export">exporting</a> figures
+to bitmap formats.
+<b>netpbm</b> is available from
+<a href="ftp://ftp.x.org/contrib/applications/drawing_tools/xfig/"><i>ftp.x.org</i></a> 
+and its <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">mirror sites</a>
+or from
+<a href="ftp://ftp.cdrom.com/pub/X11/contrib/utilities/"><i>ftp.cdrom.com</i></a>.
+
+<p>
+<img src="images/redball.gif" align=bottom>
+<b>pic2fig</b><br>
+Convertes PIC format (used with troff, ditroff, etc) to <b>Fig</b> format.
+It is available from
+<a href="ftp://ftp.cs.orst.edu/localsrc/graphics/"><i>ftp.cs.orst.edu</i></a> 
+or <a href="ftp://ftp.x.org/contrib/utilities/"><i>ftp.x.org</i></a> 
+and its <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">mirror sites</a> 
+in <tt>/contrib/utilities</tt>.
+
+<p>
+<img src="images/redball.gif" align=bottom>
+<b>plot2fig</b><br>
+Converts UNIX plot format to <b>Fig</b> format.
+Available from any GNU site.
+
+<p>
+<img src="images/redball.gif" align=bottom>
+<a name="pstoedit"><b>pstoedit</b></a><br>
+<b>pstoedit</b> can convert PostScript files into <b>Fig</b> format.
+It is available from
+<a href="ftp://ftp.x.org/contrib/applications/tgif/pstoedit/"><i>ftp.x.org</i></a> 
+and its <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">mirror sites</a> 
+in <tt>/contrib/applications/tgif/pstoedit</tt>.
+
+<p>
+<img src="images/redball.gif" align=bottom>
+<a name="xgraph"><b>xgraph</b></a><br>
+<b>xgraph</b> is a plotting package which runs in X11.
+The version on
+<a href="ftp://iworks.ecn.uiowa.edu/"><i>iworks.ecn.uiowa.edu</i></a> 
+in <tt>comp.hp</tt> can output <b>Fig</b> files.
+
+<p>
+<img src="images/redball.gif" align=bottom>
+<a name="xpaint"><b>xpaint</b></a><br>
+<b>xpaint</b> is a paint program which runs under X11.
+It is available from
+<a href="http://www.danbbs.dk/~torsten/xpaint">
+http://www.danbbs.dk/~torsten/xpaint</a> 
+and any SunSite machines such as
+<a href="ftp://sunsite.unc.edu/pub/Linux/apps/graphics/draw/">
+ftp://sunsite.unc.edu/pub/Linux/apps/graphics/draw/</a>. 
+
+<p>
+<img src="images/redball.gif" align=bottom>
+<b>xv</b><br>
+<b>xv</b> can be used to display images in various formats
+and allows some editing of those images (cropping, color editing scaling/rotating etc).
+By default, <b>xfig</b> will invoke <b>xv</b> 
+when the Edit Image button is pressed
+in the <a href="editing-mode.html#edit-pict-panel">edit PICTURE object</a> panel.
+<b>xv</b> is shareware and is available via anonymous ftp from 
+<a href="ftp://ftp.cis.upenn.edu/pub/xv">ftp://ftp.cis.upenn.edu/pub/xv</a>.
+
+</ul>
+
+<p>
+<hr>
+
+Goto <a href="index.html">TOP</a>
+
+<p>
+<a href="authors.html#manual"><i>written by us</i></a>
+
+</body>
+</html>

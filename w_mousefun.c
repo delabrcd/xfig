@@ -1,21 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -45,8 +40,8 @@ static char	mousefun_sh_l[MOUSEFUN_MAX];
 static char	mousefun_sh_m[MOUSEFUN_MAX];
 static char	mousefun_sh_r[MOUSEFUN_MAX];
 
-/* labels for the left and right buttons have 15 chars max */
-static char	lr_blank[] = "               ";
+/* labels for the left and right buttons have 17 chars max */
+static char	lr_blank[] = "                 ";
 
 /* give the middle button label a bit more space - 18 chars max */
 static char	mid_blank[] = "                  ";
@@ -54,24 +49,20 @@ static Pixmap	mousefun_pm;
 static Pixmap	keybd_pm;
 
 /* popup message over button when mouse enters it */
-static void     mouse_balloon();
+static void     mouse_balloon_trigger();
 static void     mouse_unballoon();
 
 void
 init_mousefun(tool)
     Widget	    tool;
 {
-    FirstArg(XtNwidth, MOUSEFUN_WD);
     /* start with nominal height and adjust later */
-    NextArg(XtNheight, MSGFORM_HT);
+    FirstArg(XtNheight, MSGFORM_HT);
+    NextArg(XtNwidth, MOUSEFUN_WD);
     NextArg(XtNfromHoriz, cmd_panel);
     NextArg(XtNhorizDistance, -INTERNAL_BW);
     NextArg(XtNfromVert, NULL);
     NextArg(XtNvertDistance, 0);
-    NextArg(XtNleft, XtChainLeft);
-    NextArg(XtNright, XtChainLeft);
-    NextArg(XtNtop, XtChainTop);
-    NextArg(XtNbottom, XtChainTop);
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNbackgroundPixmap, NULL);
     NextArg(XtNmappedWhenManaged, False);
@@ -81,7 +72,7 @@ init_mousefun(tool)
 				     tool, Args, ArgCount);
     /* popup when mouse passes over button */
     XtAddEventHandler(mousefun, EnterWindowMask, (Boolean) 0,
-		      mouse_balloon, (XtPointer) mousefun);
+		      mouse_balloon_trigger, (XtPointer) mousefun);
     XtAddEventHandler(mousefun, LeaveWindowMask, (Boolean) 0,
 		      mouse_unballoon, (XtPointer) mousefun);
 }
@@ -90,36 +81,50 @@ init_mousefun(tool)
 
 static	Widget mouse_balloon_popup = (Widget) 0;
 
+static	XtIntervalId balloon_id = (XtIntervalId) 0;
+static	Widget balloon_w;
+
+XtTimerCallbackProc mouse_balloon();
+
 static void
-mouse_balloon(widget, closure, event, continue_to_dispatch)
+mouse_balloon_trigger(widget, closure, event, continue_to_dispatch)
     Widget        widget;
     XtPointer	  closure;
     XEvent*	  event;
     Boolean*	  continue_to_dispatch;
 {
-	Widget	  box, balloon_label;
+	if (!appres.showballoons)
+		return;
+	balloon_w = widget;
+	balloon_id = XtAppAddTimeOut(tool_app, appres.balloon_delay,
+			(XtTimerCallbackProc) mouse_balloon, (XtPointer) NULL);
+}
+
+XtTimerCallbackProc
+mouse_balloon()
+{
 	Position  x, y;
 	XtWidgetGeometry xtgeom,comp;
 	Dimension wpop;
+	Widget box, balloon_label;
 
-	if (!appres.show_balloons)
-	    return;
-
-	XtTranslateCoords(widget, 0, 0, &x, &y);
+	XtTranslateCoords(balloon_w, 0, 0, &x, &y);
 	FirstArg(XtNx, x);
 	NextArg(XtNy, y);
-	mouse_balloon_popup = XtCreatePopupShell("mouse_balloon_popup",overrideShellWidgetClass,
-				tool, Args, ArgCount);
+	mouse_balloon_popup = XtCreatePopupShell("mouse_balloon_popup",
+					overrideShellWidgetClass, tool, Args, ArgCount);
 	FirstArg(XtNborderWidth, 0);
 	NextArg(XtNhSpace, 0);
 	NextArg(XtNvSpace, 0);
-	box = XtCreateManagedWidget("box", boxWidgetClass, mouse_balloon_popup, Args, ArgCount);
+	box = XtCreateManagedWidget("box", boxWidgetClass, mouse_balloon_popup,
+					Args, ArgCount);
 	FirstArg(XtNborderWidth, 0);
 	NextArg(XtNlabel, "Shows which mouse buttons\nare active in each mode");
 	balloon_label = XtCreateManagedWidget("label", labelWidgetClass,
-				    box, Args, ArgCount);
+				box, Args, ArgCount);
 
 	XtRealizeWidget(mouse_balloon_popup);
+
 	/* get width of popup with label in it */
 	FirstArg(XtNwidth, &wpop);
 	GetValues(balloon_label);
@@ -130,6 +135,8 @@ mouse_balloon(widget, closure, event, continue_to_dispatch)
 	(void) XtMakeGeometryRequest(mouse_balloon_popup, &xtgeom, &comp);
 	SetValues(balloon_label);
 	XtPopup(mouse_balloon_popup,XtGrabNone);
+	XtRemoveTimeOut(balloon_id);
+	balloon_id = (XtIntervalId) 0;
 }
 
 /* come here when the mouse leaves a button in the mouse panel */
@@ -141,9 +148,13 @@ mouse_unballoon(widget, closure, event, continue_to_dispatch)
     XEvent*	    event;
     Boolean*	    continue_to_dispatch;
 {
-    if (mouse_balloon_popup != (Widget) 0)
+    if (balloon_id) 
+	XtRemoveTimeOut(balloon_id);
+    balloon_id = (XtIntervalId) 0;
+    if (mouse_balloon_popup != (Widget) 0) {
 	XtDestroyWidget(mouse_balloon_popup);
-    mouse_balloon_popup = 0;
+	mouse_balloon_popup = (Widget) 0;
+    }
 }
 
 static void
@@ -244,8 +255,8 @@ resize_mousefun()
 
 void
 set_mousefun(left, middle, right, sh_left, sh_middle, sh_right)
-    char	   *left, *middle, *right;
-    char	   *sh_left, *sh_middle, *sh_right;
+    char   *left, *middle, *right;
+    char   *sh_left, *sh_middle, *sh_right;
 {
     strcpy(mousefun_l, left);
     strcpy(mousefun_m, middle);
@@ -261,7 +272,6 @@ set_mousefun(left, middle, right, sh_left, sh_middle, sh_right)
 void
 draw_mousefun_kbd()
 {
-    XGCValues	    values;
     if (keybd_pm == 0) {
 	keybd_pm = XCreatePixmapFromBitmapData(tool_d, canvas_win, 
 				kbd_ic.bits, kbd_ic.width, kbd_ic.height, 

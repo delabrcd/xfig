@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -25,6 +20,7 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "d_line.h"
 #include "u_bound.h"
 #include "u_create.h"
 #include "u_draw.h"
@@ -35,18 +31,20 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-static		create_compoundobject(), cancel_tag_region(),
+static void	create_compoundobject(), cancel_tag_region(),
 		init_tag_region(), tag_region(), tag_object();
-static		get_arc(), sel_arc();
-static		get_compound(), sel_compound();
-static		get_ellipse(), sel_ellipse();
-static		get_line(), sel_line();
-static		get_spline(), sel_spline();
-static		get_text(), sel_text();
+static void	get_arc(), sel_arc();
+static void	get_compound(), sel_compound();
+static void	get_ellipse(), sel_ellipse();
+static void	get_line(), sel_line();
+static void	get_spline(), sel_spline();
+static void	get_text(), sel_text();
 
+void
 compound_selected()
 {
-    set_mousefun("tag object", "tag region", "compound tagged", "", "", "");
+    set_mousefun("tag object", "tag region", "compound tagged", 
+			LOC_OBJ, "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(tag_object);
@@ -57,9 +55,9 @@ compound_selected()
     reset_action_on();
 }
 
-static
+static void
 tag_object(p, type, x, y, px, py)
-    char           *p;
+    F_line           *p;
     int             type;
     int             x, y;
     int             px, py;
@@ -100,7 +98,7 @@ tag_object(p, type, x, y, px, py)
     }
 }
 
-static
+static void
 init_tag_region(x, y)
     int		    x, y;
 {
@@ -112,7 +110,7 @@ init_tag_region(x, y)
     canvas_rightbut_proc = cancel_tag_region;
 }
 
-static
+static void
 cancel_tag_region()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
@@ -120,7 +118,7 @@ cancel_tag_region()
     draw_mousefun_canvas();
 }
 
-static
+static void
 tag_region(x, y)
     int		    x, y;
 {
@@ -136,7 +134,7 @@ tag_region(x, y)
     draw_mousefun_canvas();
 }
 
-static
+static void
 create_compoundobject(x, y)
     int		    x, y;
 {
@@ -161,19 +159,13 @@ create_compoundobject(x, y)
     /* if zero width or height in the compound, adjust to next positioning 
        grid point or a few pixels if positioning grid is "ANY" */
     if (c->nwcorner.x == c->secorner.x) {
-	if (cur_pointposn == P_ANY) {
-	    c->secorner.x += MARK_SIZ+1;  /* just enough to clear the markers */
-	}
-	else {
+	if (cur_pointposn != P_ANY) {
 	    c->secorner.x += posn_rnd[cur_pointposn];
 	    ceil_coords(c->secorner.x);
 	}
     }
     if (c->nwcorner.y == c->secorner.y) {
-	if (cur_pointposn == P_ANY) {
-	    c->secorner.y += MARK_SIZ+1;  /* just enough to clear the markers */
-	}
-	else {
+	if (cur_pointposn != P_ANY) {
 	    c->secorner.y += posn_rnd[cur_pointposn];
 	    ceil_coords(c->secorner.y);
 	}
@@ -232,7 +224,7 @@ compose_compound(c)
     return (0);
 }
 
-static
+static void
 sel_ellipse(xmin, ymin, xmax, ymax)
     int		    xmin, ymin, xmax, ymax;
 {
@@ -252,7 +244,7 @@ sel_ellipse(xmin, ymin, xmax, ymax)
     }
 }
 
-static
+static void
 get_ellipse(list)
     F_ellipse	  **list;
 {
@@ -278,7 +270,7 @@ get_ellipse(list)
     }
 }
 
-static
+static void
 sel_arc(xmin, ymin, xmax, ymax)
     int		    xmin, ymin, xmax, ymax;
 {
@@ -300,7 +292,7 @@ sel_arc(xmin, ymin, xmax, ymax)
     }
 }
 
-static
+static void
 get_arc(list)
     F_arc	  **list;
 {
@@ -325,7 +317,7 @@ get_arc(list)
     }
 }
 
-static
+static void
 sel_line(xmin, ymin, xmax, ymax)
     int		    xmin, ymin, xmax, ymax;
 {
@@ -354,7 +346,7 @@ sel_line(xmin, ymin, xmax, ymax)
     }
 }
 
-static
+static void
 get_line(list)
     F_line	  **list;
 {
@@ -379,7 +371,7 @@ get_line(list)
     }
 }
 
-static
+static void
 sel_spline(xmin, ymin, xmax, ymax)
     int		    xmin, ymin, xmax, ymax;
 {
@@ -401,7 +393,7 @@ sel_spline(xmin, ymin, xmax, ymax)
     }
 }
 
-static
+static void
 get_spline(list)
     F_spline	  **list;
 {
@@ -426,7 +418,7 @@ get_spline(list)
     }
 }
 
-static
+static void
 sel_text(xmin, ymin, xmax, ymax)
     int		    xmin, ymin, xmax, ymax;
 {
@@ -445,7 +437,7 @@ sel_text(xmin, ymin, xmax, ymax)
     }
 }
 
-static
+static void
 get_text(list)
     F_text	  **list;
 {
@@ -470,7 +462,7 @@ get_text(list)
     }
 }
 
-static
+static void
 sel_compound(xmin, ymin, xmax, ymax)
     int		    xmin, ymin, xmax, ymax;
 {
@@ -490,7 +482,7 @@ sel_compound(xmin, ymin, xmax, ymax)
     }
 }
 
-static
+static void
 get_compound(list)
     F_compound	  **list;
 {

@@ -1,23 +1,18 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -28,12 +23,17 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "e_addpt.h"
+#include "e_arrow.h"
 #include "e_convert.h"
 #include "u_draw.h"
 #include "u_elastic.h"
 #include "u_list.h"
 #include "u_undo.h"
+#include "w_canvas.h"
+#include "w_file.h"
 #include "w_setup.h"
+#include "w_zoom.h"
 
 /*************** EXPORTS *****************/
 
@@ -72,46 +72,46 @@ void
 undo()
 {
     switch (last_action) {
-	case F_ADD:
+      case F_ADD:
 	undo_add();
 	break;
-    case F_DELETE:
+      case F_DELETE:
 	undo_delete();
 	break;
-    case F_MOVE:
+      case F_MOVE:
 	undo_move();
 	break;
-    case F_CHANGE:
+      case F_CHANGE:
 	undo_change();
 	break;
-    case F_GLUE:
+      case F_GLUE:
 	undo_glue();
 	break;
-    case F_BREAK:
+      case F_BREAK:
 	undo_break();
 	break;
-    case F_LOAD:
+      case F_LOAD:
 	undo_load();
 	break;
-    case F_SCALE:
+      case F_SCALE:
 	undo_scale();
 	break;
-    case F_ADD_POINT:
+      case F_ADD_POINT:
 	undo_addpoint();
 	break;
-    case F_DELETE_POINT:
+      case F_DELETE_POINT:
 	undo_deletepoint();
 	break;
-    case F_ADD_ARROW_HEAD:
+      case F_ADD_ARROW_HEAD:
 	undo_add_arrowhead();
 	break;
-    case F_DELETE_ARROW_HEAD:
+      case F_DELETE_ARROW_HEAD:
 	undo_delete_arrowhead();
 	break;
-    case F_CONVERT:
+      case F_CONVERT:
 	undo_convert();
 	break;
-    case F_OPEN_CLOSE:
+      case F_OPEN_CLOSE:
 	undo_open_close();
 	break;
     default:
@@ -135,14 +135,17 @@ undo_deletepoint()
 {
     last_action = F_NULL;	/* to avoid doing a clean-up during adding */
 
-    if (last_object == O_POLYLINE)
+    if (last_object == O_POLYLINE) {
 	linepoint_adding(saved_objects.lines, last_prev_point,
 			 last_selected_point);
+	/* turn back on all relevant markers */
+	update_markers(new_objmask);
 
-    else                        /* last_object is a spline */
+    } else {	/* last_object is a spline */
 	splinepoint_adding(saved_objects.splines, last_prev_point,
 			 last_selected_point, last_next_point,
 			 last_selected_sfactor->s);
+    }
 
     last_next_point = NULL;
 }
@@ -171,20 +174,15 @@ undo_glue()
 undo_convert()
 {
     switch (last_object) {
-    case O_POLYLINE:
-	spline_line(saved_objects.splines);
+      case O_POLYLINE:
+	if (saved_objects.lines->type == T_BOX ||
+	    saved_objects.lines->type == T_ARC_BOX)
+		box_2_box(saved_objects.lines);
+	else
+		spline_line(saved_objects.splines);
 	break;
-    case O_SPLINE:
+      case O_SPLINE:
 	line_spline(saved_objects.lines, saved_objects.splines->type);
-	/**********
-	draw_line(saved_objects.lines,ERASE);
-	list_add_spline(&objects.splines,saved_objects.splines);
-        list_delete_line(&objects.lines,saved_objects.lines);
-	(saved_objects.lines)->for_arrow = (saved_objects.lines)->back_arrow = NULL;
-	(saved_objects.lines)->points = NULL;
-	draw_spline(saved_objects.splines,PAINT);
-	set_action_object(F_CONVERT, O_POLYLINE);
-	************/
 	break;
     }
 }
@@ -192,18 +190,18 @@ undo_convert()
 undo_add_arrowhead()
 {
     switch (last_object) {
-    case O_POLYLINE:
+      case O_POLYLINE:
 	delete_linearrow(saved_objects.lines,
 			 last_prev_point, last_selected_point);
 	break;
-    case O_SPLINE:
+      case O_SPLINE:
 	delete_splinearrow(saved_objects.splines,
 			   last_prev_point, last_selected_point);
 	break;
-    case O_ARC:
+      case O_ARC:
 	delete_arcarrow(saved_objects.arcs, last_arcpointnum);
 	break;
-    default:
+      default:
 	return;
     }
     last_action = F_DELETE_ARROW_HEAD;
@@ -212,28 +210,28 @@ undo_add_arrowhead()
 undo_delete_arrowhead()
 {
     switch (last_object) {
-    case O_POLYLINE:
+      case O_POLYLINE:
 	if (saved_for_arrow)
 	    saved_objects.lines->for_arrow = saved_for_arrow;
 	if (saved_back_arrow)
 	    saved_objects.lines->back_arrow = saved_back_arrow;
 	redisplay_line(saved_objects.lines);
 	break;
-    case O_SPLINE:
+      case O_SPLINE:
 	if (saved_for_arrow)
 	    saved_objects.splines->for_arrow = saved_for_arrow;
 	if (saved_back_arrow)
 	    saved_objects.splines->back_arrow = saved_back_arrow;
 	redisplay_spline(saved_objects.splines);
 	break;
-    case O_ARC:
+      case O_ARC:
 	if (saved_for_arrow)
 	    saved_objects.arcs->for_arrow = saved_for_arrow;
 	if (saved_back_arrow)
 	    saved_objects.arcs->back_arrow = saved_back_arrow;
 	redisplay_arc(saved_objects.arcs);
 	break;
-    default:
+      default:
 	return;
     }
     last_action = F_ADD_ARROW_HEAD;
@@ -250,43 +248,43 @@ undo_change()
 
     last_action = F_NULL;	/* to avoid a clean-up during "unchange" */
     switch (last_object) {
-    case O_POLYLINE:
+      case O_POLYLINE:
 	new_l = saved_objects.lines;	/* the original */
 	old_l = saved_objects.lines->next;	/* the changed object */
 	change_line(old_l, new_l);
 	redisplay_lines(new_l, old_l);
 	break;
-    case O_ELLIPSE:
+      case O_ELLIPSE:
 	new_e = saved_objects.ellipses;
 	old_e = saved_objects.ellipses->next;
 	change_ellipse(old_e, new_e);
 	redisplay_ellipses(new_e, old_e);
 	break;
-    case O_TEXT:
+      case O_TEXT:
 	new_t = saved_objects.texts;
 	old_t = saved_objects.texts->next;
 	change_text(old_t, new_t);
 	redisplay_texts(new_t, old_t);
 	break;
-    case O_SPLINE:
+      case O_SPLINE:
 	new_s = saved_objects.splines;
 	old_s = saved_objects.splines->next;
 	change_spline(old_s, new_s);
 	redisplay_splines(new_s, old_s);
 	break;
-    case O_ARC:
+      case O_ARC:
 	new_a = saved_objects.arcs;
 	old_a = saved_objects.arcs->next;
 	change_arc(old_a, new_a);
 	redisplay_arcs(new_a, old_a);
 	break;
-    case O_COMPOUND:
+      case O_COMPOUND:
 	new_c = saved_objects.compounds;
 	old_c = saved_objects.compounds->next;
 	change_compound(old_c, new_c);
 	redisplay_compounds(new_c, old_c);
 	break;
-    case O_ALL_OBJECT:
+      case O_ALL_OBJECT:
 	swp_comp = objects;
 	objects = saved_objects;
 	saved_objects = swp_comp;
@@ -294,7 +292,7 @@ undo_change()
 	old_c = &saved_objects;
 	set_action_object(F_CHANGE, O_ALL_OBJECT);
 	set_modifiedflag();
-	redisplay_zoomed_region(0, 0, CANVAS_WD, CANVAS_HT);
+	redisplay_zoomed_region(0, 0, BACKX(CANVAS_WD), BACKY(CANVAS_HT));
 	break;
     }
 }
@@ -319,38 +317,40 @@ undo_add()
     char	    ctemp[PATH_MAX];
 
     switch (last_object) {
-    case O_POLYLINE:
+      case O_POLYLINE:
 	list_delete_line(&objects.lines, saved_objects.lines);
 	redisplay_line(saved_objects.lines);
 	break;
-    case O_ELLIPSE:
+      case O_ELLIPSE:
 	list_delete_ellipse(&objects.ellipses, saved_objects.ellipses);
 	redisplay_ellipse(saved_objects.ellipses);
 	break;
-    case O_TEXT:
+      case O_TEXT:
 	list_delete_text(&objects.texts, saved_objects.texts);
 	redisplay_text(saved_objects.texts);
 	break;
-    case O_SPLINE:
+      case O_SPLINE:
 	list_delete_spline(&objects.splines, saved_objects.splines);
 	redisplay_spline(saved_objects.splines);
 	break;
-    case O_ARC:
+      case O_ARC:
 	list_delete_arc(&objects.arcs, saved_objects.arcs);
 	redisplay_arc(saved_objects.arcs);
 	break;
-    case O_COMPOUND:
+      case O_COMPOUND:
 	list_delete_compound(&objects.compounds, saved_objects.compounds);
 	redisplay_compound(saved_objects.compounds);
 	break;
-    case O_ALL_OBJECT:
+      case O_ALL_OBJECT:
 	cut_objects(&objects, &object_tails);
 	compound_bound(&saved_objects, &xmin, &ymin, &xmax, &ymax);
 	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
 	/* restore filename if necessary (from undo of "New" command) */
-	strcpy(ctemp, cur_filename);
-	update_cur_filename(save_filename);
-	strcpy(save_filename, ctemp);
+	if (save_filename[0] != '\0') {
+	    strcpy(ctemp, cur_filename);
+	    update_cur_filename(save_filename);
+	    strcpy(save_filename, ctemp);
+	}
 	break;
     }
     last_action = F_DELETE;
@@ -362,40 +362,42 @@ undo_delete()
     char	    ctemp[PATH_MAX];
 
     switch (last_object) {
-    case O_POLYLINE:
+      case O_POLYLINE:
 	list_add_line(&objects.lines, saved_objects.lines);
 	redisplay_line(saved_objects.lines);
 	break;
-    case O_ELLIPSE:
+      case O_ELLIPSE:
 	list_add_ellipse(&objects.ellipses, saved_objects.ellipses);
 	redisplay_ellipse(saved_objects.ellipses);
 	break;
-    case O_TEXT:
+      case O_TEXT:
 	list_add_text(&objects.texts, saved_objects.texts);
 	redisplay_text(saved_objects.texts);
 	break;
-    case O_SPLINE:
+      case O_SPLINE:
 	list_add_spline(&objects.splines, saved_objects.splines);
 	redisplay_spline(saved_objects.splines);
 	break;
-    case O_ARC:
+      case O_ARC:
 	list_add_arc(&objects.arcs, saved_objects.arcs);
 	redisplay_arc(saved_objects.arcs);
 	break;
-    case O_COMPOUND:
+      case O_COMPOUND:
 	list_add_compound(&objects.compounds, saved_objects.compounds);
 	redisplay_compound(saved_objects.compounds);
 	break;
-    case O_ALL_OBJECT:
+      case O_ALL_OBJECT:
 	saved_objects.next = NULL;
 	compound_bound(&saved_objects, &xmin, &ymin, &xmax, &ymax);
 	tail(&objects, &object_tails);
 	append_objects(&objects, &saved_objects, &object_tails);
 	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
 	/* restore filename if necessary (from "New" command) */
-	strcpy(ctemp, cur_filename);
-	update_cur_filename(save_filename);
-	strcpy(save_filename, ctemp);
+	if (save_filename[0] != '\0') {
+	    strcpy(ctemp, cur_filename);
+	    update_cur_filename(save_filename);
+	    strcpy(save_filename, ctemp);
+	}
     }
     last_action = F_ADD;
 }
@@ -410,7 +412,7 @@ undo_move()
     dx = last_position.x - new_position.x;
     dy = last_position.y - new_position.y;
     switch (last_object) {
-    case O_POLYLINE:
+      case O_POLYLINE:
 	line_bound(saved_objects.lines, &xmin1, &ymin1, &xmax1, &ymax1);
 	translate_line(saved_objects.lines, dx, dy);
 	line_bound(saved_objects.lines, &xmin2, &ymin2, &xmax2, &ymax2);
@@ -418,14 +420,14 @@ undo_move()
 	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
 			  xmin2, ymin2, xmax2, ymax2);
 	break;
-    case O_ELLIPSE:
+      case O_ELLIPSE:
 	ellipse_bound(saved_objects.ellipses, &xmin1, &ymin1, &xmax1, &ymax1);
 	translate_ellipse(saved_objects.ellipses, dx, dy);
 	ellipse_bound(saved_objects.ellipses, &xmin2, &ymin2, &xmax2, &ymax2);
 	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
 			  xmin2, ymin2, xmax2, ymax2);
 	break;
-    case O_TEXT:
+      case O_TEXT:
 	text_bound(saved_objects.texts, &xmin1, &ymin1, &xmax1, &ymax1,
 		&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
 	translate_text(saved_objects.texts, dx, dy);
@@ -434,21 +436,21 @@ undo_move()
 	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
 			  xmin2, ymin2, xmax2, ymax2);
 	break;
-    case O_SPLINE:
+      case O_SPLINE:
 	spline_bound(saved_objects.splines, &xmin1, &ymin1, &xmax1, &ymax1);
 	translate_spline(saved_objects.splines, dx, dy);
 	spline_bound(saved_objects.splines, &xmin2, &ymin2, &xmax2, &ymax2);
 	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
 			  xmin2, ymin2, xmax2, ymax2);
 	break;
-    case O_ARC:
+      case O_ARC:
 	arc_bound(saved_objects.arcs, &xmin1, &ymin1, &xmax1, &ymax1);
 	translate_arc(saved_objects.arcs, dx, dy);
 	arc_bound(saved_objects.arcs, &xmin2, &ymin2, &xmax2, &ymax2);
 	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
 			  xmin2, ymin2, xmax2, ymax2);
 	break;
-    case O_COMPOUND:
+      case O_COMPOUND:
 	compound_bound(saved_objects.compounds, &xmin1, &ymin1, &xmax1, &ymax1);
 	translate_compound(saved_objects.compounds, dx, dy);
 	compound_bound(saved_objects.compounds, &xmin2, &ymin2, &xmax2, &ymax2);
@@ -465,14 +467,23 @@ undo_load()
     F_compound	    temp;
     char	    ctemp[PATH_MAX];
 
+    /* swap objects in current figure/figure we're restoring */
     temp = objects;
     objects = saved_objects;
     saved_objects = temp;
+    /* swap filenames */
     strcpy(ctemp, cur_filename);
     update_cur_filename(save_filename);
     strcpy(save_filename, ctemp);
-    redisplay_canvas();
+    /* restore colors for the figure we are restoring */
     swap_colors();
+    colors_are_swapped = False;
+    /* in case current figure doesn't have the colors shown in the fill/pen colors */
+    current_memory = -1;
+    show_pencolor();
+    show_fillcolor();
+    /* redisply that figure */
+    redisplay_canvas();
     last_action = F_LOAD;
 }
 
@@ -557,52 +568,52 @@ clean_up()
 {
     if (last_action == F_CHANGE) {
 	switch (last_object) {
-	case O_ARC:
+	  case O_ARC:
 	    saved_objects.arcs->next = NULL;
 	    free_arc(&saved_objects.arcs);
 	    break;
-	case O_COMPOUND:
+	  case O_COMPOUND:
 	    saved_objects.compounds->next = NULL;
 	    free_compound(&saved_objects.compounds);
 	    break;
-	case O_ELLIPSE:
+	  case O_ELLIPSE:
 	    saved_objects.ellipses->next = NULL;
 	    free_ellipse(&saved_objects.ellipses);
 	    break;
-	case O_POLYLINE:
+	  case O_POLYLINE:
 	    saved_objects.lines->next = NULL;
 	    free_line(&saved_objects.lines);
 	    break;
-	case O_SPLINE:
+	  case O_SPLINE:
 	    saved_objects.splines->next = NULL;
 	    free_spline(&saved_objects.splines);
 	    break;
-	case O_TEXT:
+	  case O_TEXT:
 	    saved_objects.texts->next = NULL;
 	    free_text(&saved_objects.texts);
 	    break;
 	}
     } else if (last_action == F_DELETE) {
 	switch (last_object) {
-	case O_ARC:
+	  case O_ARC:
 	    free_arc(&saved_objects.arcs);
 	    break;
-	case O_COMPOUND:
+	  case O_COMPOUND:
 	    free_compound(&saved_objects.compounds);
 	    break;
-	case O_ELLIPSE:
+	  case O_ELLIPSE:
 	    free_ellipse(&saved_objects.ellipses);
 	    break;
-	case O_POLYLINE:
+	  case O_POLYLINE:
 	    free_line(&saved_objects.lines);
 	    break;
-	case O_SPLINE:
+	  case O_SPLINE:
 	    free_spline(&saved_objects.splines);
 	    break;
-	case O_TEXT:
+	  case O_TEXT:
 	    free_text(&saved_objects.texts);
 	    break;
-	case O_ALL_OBJECT:
+	  case O_ALL_OBJECT:
 	    free_arc(&saved_objects.arcs);
 	    free_compound(&saved_objects.compounds);
 	    free_ellipse(&saved_objects.ellipses);

@@ -1,22 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
- * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -33,23 +27,33 @@
 #include "w_mousefun.h"
 #include "w_setup.h"
 
-static int	init_align(), init_align_canvas();
 static int	llx, lly, urx, ury;
 static int	xcmin, ycmin, xcmax, ycmax;
 static int	dx, dy;
-static int	align_arc();
-static int	align_ellipse();
-static int	align_line();
-static int	align_spline();
-static int	align_text();
-static int	align_compound();
-static int	get_dx_dy();
-static int	distribute_horizontally();
-static int	distribute_vertically();
 
+static Boolean	pos_arc();
+static Boolean	pos_ellipse();
+static Boolean	pos_line();
+static Boolean	pos_spline();
+static Boolean	pos_text();
+static Boolean	pos_compound();
+
+static void	init_align();
+static void	init_align_canvas();
+static void	align_arc();
+static void	align_ellipse();
+static void	align_line();
+static void	align_spline();
+static void	align_text();
+static void	align_compound();
+static void	get_dx_dy();
+static void	distribute_horizontally();
+static void	distribute_vertically();
+
+void
 align_selected()
 {
-    set_mousefun("align compound", "align canvas", "", "", "", "");
+    set_mousefun("align compound", "align canvas", "", LOC_OBJ, "", LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_align);
@@ -61,7 +65,7 @@ align_selected()
 
 /* align objects to the whole canvas */
 
-static
+static void
 init_align_canvas(x, y, shift)
     int		    x, y;
     unsigned int    shift;	/* Shift Key Status from XEvent */
@@ -106,9 +110,9 @@ init_align_canvas(x, y, shift)
     set_modifiedflag();
 }
 
-static
+static void
 init_align(p, type, x, y, px, py)
-    char	   *p;
+    F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
@@ -151,7 +155,7 @@ init_align(p, type, x, y, px, py)
     set_modifiedflag();
 }
 
-static int
+static void
 align_ellipse()
 {
     F_ellipse	   *e;
@@ -163,7 +167,7 @@ align_ellipse()
     }
 }
 
-static int
+static void
 align_arc()
 {
     F_arc	   *a;
@@ -175,7 +179,7 @@ align_arc()
     }
 }
 
-static int
+static void
 align_line()
 {
     F_line	   *l;
@@ -187,7 +191,7 @@ align_line()
     }
 }
 
-static int
+static void
 align_spline()
 {
     F_spline	   *s;
@@ -199,7 +203,7 @@ align_spline()
     }
 }
 
-static int
+static void
 align_compound()
 {
     F_compound	   *c;
@@ -211,7 +215,7 @@ align_compound()
     }
 }
 
-static int
+static void
 align_text()
 {
     F_text	   *t;
@@ -225,7 +229,7 @@ align_text()
     }
 }
 
-static int
+static void
 get_dx_dy()
 {
     switch (cur_valign) {
@@ -279,7 +283,7 @@ get_dx_dy()
  * of the passed in parameter.  Also set the width/height if smaller.
  * If dir == 0, handle horizontal, otherwise vertical.
  */
-static int
+static Boolean
 pos_arc (a, min, size, dir)
   F_arc *a;
   int *min, *size, dir;
@@ -305,9 +309,9 @@ pos_arc (a, min, size, dir)
       *size = abs(urx - llx);
     else
       *size = abs(ury - lly);
-    return 1;
+    return True;
   } else
-    return 0;
+    return False;
 } /* pos_arc */
 
 
@@ -318,7 +322,7 @@ pos_arc (a, min, size, dir)
  * value of the passed in parameter.  Also set the width/height if smaller.
  * If dir == 0, handle horizontal, otherwise vertical.
  */
-static int
+static Boolean
 pos_ellipse (e, min, size, dir)
   F_ellipse *e;
   int *min, *size, dir;
@@ -344,9 +348,9 @@ pos_ellipse (e, min, size, dir)
       *size = abs(urx - llx);
     else
       *size = abs(ury - lly);
-    return 1;
+    return True;
   } else
-    return 0;
+    return False;
 } /* pos_ellipse */
 
 
@@ -357,7 +361,7 @@ pos_ellipse (e, min, size, dir)
  * of the passed in parameter.  Also set the width/height if smaller.
  * If dir == 0, handle horizontal, otherwise vertical.
  */
-static int
+static Boolean
 pos_line (l, min, size, dir)
   F_line *l;
   int *min, *size, dir;
@@ -383,9 +387,9 @@ pos_line (l, min, size, dir)
       *size = abs(urx - llx);
     else
       *size = abs(ury - lly);
-    return 1;
+    return True;
   } else
-    return 0;
+    return False;
 } /* pos_line */
 
 
@@ -396,7 +400,7 @@ pos_line (l, min, size, dir)
  * of the passed in parameter.  Also set the width/height if smaller.
  * If dir == 0, handle horizontal, otherwise vertical.
  */
-static int
+static Boolean
 pos_spline (s, min, size, dir)
   F_spline *s;
   int *min, *size, dir;
@@ -422,9 +426,9 @@ pos_spline (s, min, size, dir)
       *size = abs(urx - llx);
     else
       *size = abs(ury - lly);
-    return 1;
+    return True;
   } else
-    return 0;
+    return False;
 } /* pos_spline */
 
 
@@ -435,7 +439,7 @@ pos_spline (s, min, size, dir)
  * of the passed in parameter.  Also set the width/height if smaller.
  * If dir == 0, handle horizontal, otherwise vertical.
  */
-static int
+static Boolean
 pos_text (t, min, size, dir)
   F_text *t;
   int *min, *size, dir;
@@ -462,9 +466,9 @@ pos_text (t, min, size, dir)
       *size = abs(urx - llx);
     else
       *size = abs(ury - lly);
-    return 1;
+    return True;
   } else
-    return 0;
+    return False;
 } /* pos_text */
 
 
@@ -474,7 +478,7 @@ pos_text (t, min, size, dir)
  * value of the passed in parameter.  Also set the width/height if smaller.
  * If dir == 0, handle horizontal, otherwise vertical.
  */
-static int
+static Boolean
 pos_compound (c, min, size, dir)
   F_compound *c;
   int *min, *size, dir;
@@ -500,9 +504,9 @@ pos_compound (c, min, size, dir)
       *size = abs(urx - llx);
     else
       *size = abs(ury - lly);
-    return 1;
+    return True;
   } else
-    return 0;
+    return False;
 } /* pos_compound */
 
 
@@ -539,8 +543,8 @@ init_distrib_centres (min, max, dir)
   F_text	*t;
   int		 num_objects = 0;
 
-  *min = 30000;
-  *max = 0;
+  *min = INT_MAX;
+  *max = INT_MIN;
 
   for (e = cur_c->ellipses; e != NULL; e = e->next) {
     num_objects++;
@@ -631,8 +635,8 @@ init_distrib_edges (min, max, sum, dir)
   F_text	*t;
   int		 num_objects = 0;
 
-  *min = 30000;
-  *max = 0;
+  *min = INT_MAX;
+  *max = INT_MIN;
   *sum = 0;
 
   for (e = cur_c->ellipses; e != NULL; e = e->next) {
@@ -731,14 +735,11 @@ init_distrib_edges (min, max, sum, dir)
 } /* init_distrib_edges */
 
 
-
-
-
-static int
+static void
 adjust_object_pos (obj_ptr, obj_type, delta_x, delta_y)
-  char *obj_ptr;
-  int obj_type;
-  int delta_x, delta_y;
+  F_line	   *obj_ptr;
+  int		   obj_type;
+  int		   delta_x, delta_y;
 {
   F_ellipse	   *e;
   F_arc		   *a;
@@ -785,11 +786,7 @@ adjust_object_pos (obj_ptr, obj_type, delta_x, delta_y)
 
 } /* adjust_object_pos */
 
-
-
-
-
-static int
+static void
 distribute_horizontally()
 {
   int		 num_objects = 0;
@@ -803,7 +800,7 @@ distribute_horizontally()
   int		 min_x, max_x;
   int		 obj1, obj2;
   int		 obj_type;
-  char		*obj_ptr;
+  F_line	*obj_ptr;
   int		 min_left, min_width;
   int		 req_pos;
   int		 sum_obj_width;
@@ -831,26 +828,26 @@ distribute_horizontally()
    * left-most, ...
    */
   for (obj1=0; obj1<num_objects; obj1++) {
-    min_left = 30000;
+    min_left = INT_MAX;
     for (obj2=0; obj2<num_objects; obj2++) {
       for (e = cur_c->ellipses; e != NULL; e = e->next)
 	if (pos_ellipse(e, &min_left, &min_width, 0))
-	  { obj_ptr = (char *)e; obj_type = O_ELLIPSE; }
+	  { obj_ptr = (F_line *) e; obj_type = O_ELLIPSE; }
       for (a = cur_c->arcs; a != NULL; a = a->next)
 	if (pos_arc(a, &min_left, &min_width, 0))
-	  { obj_ptr = (char *)a; obj_type = O_ARC; }
+	  { obj_ptr = (F_line *) a; obj_type = O_ARC; }
       for (l = cur_c->lines; l != NULL; l = l->next)
 	if (pos_line(l, &min_left, &min_width, 0))
-	  { obj_ptr = (char *)l; obj_type = O_POLYLINE; }
+	  { obj_ptr = l; obj_type = O_POLYLINE; }
       for (s = cur_c->splines; s != NULL; s = s->next)
 	if (pos_spline(s, &min_left, &min_width, 0))
-	  { obj_ptr = (char *)s; obj_type = O_SPLINE; }
+	  { obj_ptr = (F_line *) s; obj_type = O_SPLINE; }
       for (c = cur_c->compounds; c != NULL; c = c->next)
 	if (pos_compound(c, &min_left, &min_width, 0))
-	  { obj_ptr = (char *)c; obj_type = O_COMPOUND; }
+	  { obj_ptr = (F_line *) c; obj_type = O_COMPOUND; }
       for (t = cur_c->texts; t != NULL; t = t->next)
 	if (pos_text(t, &min_left, &min_width, 0))
-	  { obj_ptr = (char *)t; obj_type = O_TEXT; }
+	  { obj_ptr = (F_line *) t; obj_type = O_TEXT; }
     }
 
     /* Determine the new horizontal position of the object */
@@ -866,11 +863,7 @@ distribute_horizontally()
   } /* next object */
 } /* distribute_horizontally */
 
-
-
-
-
-static int
+static void
 distribute_vertically()
 {
   int		 num_objects = 0;
@@ -884,7 +877,7 @@ distribute_vertically()
   int		 min_y, max_y;
   int		 obj1, obj2;
   int		 obj_type;
-  char		*obj_ptr;
+  F_line	*obj_ptr;
   int		 min_top, min_height;
   int		 req_pos;
   int		 sum_obj_height;
@@ -912,26 +905,26 @@ distribute_vertically()
    * top-most, ...
    */
   for (obj1=0; obj1<num_objects; obj1++) {
-    min_top = 30000;
+    min_top = INT_MAX;
     for (obj2=0; obj2<num_objects; obj2++) {
       for (e = cur_c->ellipses; e != NULL; e = e->next)
 	if (pos_ellipse(e, &min_top, &min_height, 1))
-	  { obj_ptr = (char *)e; obj_type = O_ELLIPSE; }
+	  { obj_ptr = (F_line *) e; obj_type = O_ELLIPSE; }
       for (a = cur_c->arcs; a != NULL; a = a->next)
 	if (pos_arc(a, &min_top, &min_height, 1))
-	  { obj_ptr = (char *)a; obj_type = O_ARC; }
+	  { obj_ptr = (F_line *) a; obj_type = O_ARC; }
       for (l = cur_c->lines; l != NULL; l = l->next)
 	if (pos_line(l, &min_top, &min_height, 1))
-	  { obj_ptr = (char *)l; obj_type = O_POLYLINE; }
+	  { obj_ptr = (F_line *) l; obj_type = O_POLYLINE; }
       for (s = cur_c->splines; s != NULL; s = s->next)
 	if (pos_spline(s, &min_top, &min_height, 1))
-	  { obj_ptr = (char *)s; obj_type = O_SPLINE; }
+	  { obj_ptr = (F_line *) s; obj_type = O_SPLINE; }
       for (c = cur_c->compounds; c != NULL; c = c->next)
 	if (pos_compound(c, &min_top, &min_height, 1))
-	  { obj_ptr = (char *)c; obj_type = O_COMPOUND; }
+	  { obj_ptr = (F_line *) c; obj_type = O_COMPOUND; }
       for (t = cur_c->texts; t != NULL; t = t->next)
 	if (pos_text(t, &min_top, &min_height, 1))
-	  { obj_ptr = (char *)t; obj_type = O_TEXT; }
+	  { obj_ptr = (F_line *) t; obj_type = O_TEXT; }
     }
 
     /* Determine the new vertical position of the object */

@@ -1,26 +1,22 @@
-#ifndef FIG_H
-#define FIG_H
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
+
+#ifndef FIG_H
+#define FIG_H
 
 /* For the X stuff, include only Xlib.h and Intrinsic.h here - 
    use figx.h for widget stuff */
@@ -47,10 +43,10 @@
 #include <ctype.h>
 #include <errno.h>
 
-#if !defined(__bsdi__) && !defined(__NetBSD__)
+#if !defined(__bsdi__) && !defined(__NetBSD__) && !defined(__GNU_LIBRARY__)
 extern int	errno;
 extern int	sys_nerr;
-#if (! (defined(BSD) && (BSD >= 199306)))
+#if ( !(defined(BSD) && (BSD >= 199306)) && !defined(__NetBSD__) && !defined(__FreeBSD__))
 extern char    *sys_errlist[];
 #endif
 #endif
@@ -329,14 +325,13 @@ extern char *getenv();
 #endif /* MAXPATHLEN */
 #endif /* PATH_MAX */
 
-#ifndef M_PI
+/* use my own PI because GNUC has a long double and others have something else */
+#undef M_PI
+#undef M_PI_2
+#undef M_2PI
 #define M_PI	3.14159265358979323846
 #define M_PI_2	1.57079632679489661923
-#endif
-
-#ifndef M_2PI
 #define M_2PI	6.28318530717958647692
-#endif
 
 #define		min2(a, b)	(((a) < (b)) ? (a) : (b))
 #define		max2(a, b)	(((a) > (b)) ? (a) : (b))
@@ -344,8 +339,6 @@ extern char *getenv();
 #define		max3(a,b,c)	((((a>b)?a:b)>c)?((a>b)?a:b):c)
 #define		round(a)	(int)(((a)<0.0)?(a)-.5:(a)+.5)
 #define		signof(a)	(((a) < 0) ? -1 : 1)
-
-#define		DEF_NAME	"unnamed.fig"
 
 #ifdef USE_INLINE
 #define INLINE inline
@@ -372,12 +365,11 @@ extern	double		drand48();
 #define	random()	lrand48()
 #define	frandom()	drand48()
 
-#elif defined(linux)
+#elif (defined(linux) && !defined(glibc) && !defined(__GLIBC__))
 extern	long		random();
 extern	void		srandom(unsigned int);
 
 #elif !defined(__osf__)
-extern	long		random();
 extern	void		srandom();
 
 #endif

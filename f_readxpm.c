@@ -1,20 +1,15 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1989-1998 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -25,14 +20,16 @@
 #include "w_setup.h"
 
 /* attempt to read a XPM (color pixmap) file */
+/* the filename is passed since XpmReadFileToXpmImage needs a name 
+   instead of a FILE pointer.  This is fine because it handles compressed files */
 
 /* return codes:  PicSuccess (1) : success
 		  FileInvalid (-2) : invalid file
 */
 
 int
-read_xpm(file,filetype,pic)
-    FILE	   *file;
+read_xpm(filename,filetype,pic)
+    char	   *filename;
     int		    filetype;
     F_pic	   *pic;
 {
@@ -42,12 +39,12 @@ read_xpm(file,filetype,pic)
     char	   *c;
     XColor	    exact_def;
 
-    /* make scale factor larger for metric */
+    /* make scale factor smaller for metric */
     float scale = (appres.INCHES ?
 			(float)PIX_PER_INCH :
 			2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
 
-    status = XpmReadFileToXpmImage(pic->file, &image, NULL);
+    status = XpmReadFileToXpmImage(filename, &image, NULL);
     /* if out of colors, try switching colormaps and reading again */
     if (status == XpmColorFailed) {
 	if (!switch_colormap())

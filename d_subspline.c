@@ -1,21 +1,19 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Copyright (c) 1990 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Copyright (c) 1992 by James Tough
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons who receive
  * copies from any such party to do so, with the only requirement being
- * that this copyright notice remain intact.  This license includes without
- * limitation a license to do the foregoing actions under any patents of
- * the party supplying this software to the X Consortium.
+ * that this copyright notice remain intact.
+ *
  */
 
 #include "fig.h"
@@ -26,16 +24,12 @@
 #include "u_draw.h"
 #include "u_list.h"
 
-
+/*************************** local declarations *********************/
 
 #define MIN_NUMPOINTS_FOR_QUICK_REDRAW     2
 
-
 static INLINE Boolean  add_subspline_point();
-
 static F_spline       *extract_subspline();
-
-
 
 F_spline     *
 create_subspline(num_pts, spline, point, sfactor, sub_sfactor)

@@ -1,18 +1,116 @@
 This file contains some possible things to do in future versions of xfig.
 
+Ideas for next version (4.0):
+
+o New command panel:
+
+  File            Edit          View          Help
+    New		    Undo	  Landscape	Xfig HTML Reference
+    Load/Merge      Paste	  Portrait	Xfig tutorial in pdf
+    Save	    Find	  Redraw	Xfig man pages in pdf
+    Save As	    Replace			About Xfig
+    Export	    Spell Check
+    Print
+    Exit
+
+------------------
+FORMAT 4.0 example
+------------------
+
+#FIG 4.0
+Res	1200
+Orient	Landscape
+Units	Metric
+Uscale	3cm=1ft		(screen ruler scale)
+Pjust	Center		(page justification)
+Psize	A4
+Pmag	.9		(print/export magnification)
+Pages	Multiple
+Smag	.4		(screen magnification [zoom])
+Backg	ivory		(canvas background color which is used by fig2dev too)
+GIFTransp None		(GIF transparent color)
+JPGQual	75		(JPEG quality)
+
+UCol 35 #440033		(User colors)
+
+Line ...		(PolyLine separate from Box and Polygon)
+Box			(three subtypes)
+  Box-Arcbox ...	
+  Box-Normal ...
+  Box-Picture ...
+Pgon ...
+Spline ...
+Arc			(three subtypes)
+   Arc-Open ...
+   Arc-Pie-Wedge ...
+   Arc-Elliptical ...
+Text ...
+Ellipse ...
+
+Layer FirstFloor 10	(number is drawing order or depth)
+....
+ENDLayer FirstFloor
+
+Compound ...
+...
+ENDCompound
+
+o look for #ifdef V4_0 and remove the #ifdefs
+
+********* NOTES about FORMAT 4.0 *********
+
+
+Separate dash/dot length from the gap
+New arrowhead type  ----<>  diamond point for UML diagrams
+Allow different arrow head tips (miter, round, bevel)
+	*** Be sure to save arrowhead width and height "as is" instead 
+	    of multiplying them by 15.0 in f_save.c ***
+
+Enhance pattern fill allow "transparent" fill so that only the pattern lines
+	fill the shape, not the background color.
+Enhance all objects to have cap_style type for dotted lines
+Allow selecting linecap type for dotted lines for closed splines, boxes
+	and ellipses
+Rotatable boxes - store width, height, upper-left corner and angle only
+Honor fractional text sizes (float).  Currently, xfig reads the size as float
+	but converts to integer internally.
+No need for duplicating first point at end for polygon in file itself
+Use PIX_PER_CM = 470 instead of 450 (w_setup.h)
+	Need to rescale older (3.2.0 and older) metric figures by difference
+Add canvas background color to Fig file
+	Also add option to fig2dev to override this
+	add option to specify default color in fig2dev
+Add elliptical arcs
+Split/join two objects together (e.g. end of one line attached to the beginning
+	of another line to make single, new line).  
+fig2dev - user colors aren't working on imported Fig files as pictures
+
+Add new font choices done by Ian Cameron Smith (clint@hermit.org http://www.hermit.org/)
+
+Some kind of color pallette which is global (remains around between drawings)
+   o Also library of color pallettes? 
+
+Add these items to a popup global settings panel:
+	checkbutton	mouse tracking (ruler arrows)
+	checkbutton	show balloons
+	entry		  balloon delay
+	checkbutton	show lengths of lines
+	checkbutton	show point numbers above polyline points
+	int entry	max image colors
+	str entry	image editor
+	str entry	spelling checker
+	checkbutton	debug flag
+
+*** END OF V4.0 IDEAS ***
+
 --------------------------------------------------------------------
 The following items would require a change to the Fig file protocol:
 --------------------------------------------------------------------
 
-Separate dash/dot length from the gap
-Allow different arrow head points (miter, round, bevel)
-Enhance all objects to have cap_style type for dotted lines
-Allow selecting linecap type for dotted lines for closed splines, boxes
-	and ellipses
-Rotatable boxes - store width, height, upper-left corner and angle only?
 Allow multiple pages of figures
 Store page size with file
 Super/subscripts for text objects
+Text blocks in text frame
 Composite objects (ala PostScript) that can be filled if wanted
 	e.g. polyline joined with arc and filled:
 	 _______
@@ -25,67 +123,37 @@ Text that is connected to objects which appears in popup near object
 The following DON'T require a change to the file protocol:
 ----------------------------------------------------------
 
-Libraries of Fig objects to allow drag-and-drop of objects onto the canvas
+"File watch" feature so that xfig will re-read figure file when time-stamp
+	changes (file has been updated by external program).  Probably should
+	add "end of file"  marker so we know when it is complete.
+Have "static objects" which aren't erased when new figure is loaded.  This way
+	you can have a template into which figures may be merged.
 "Slide show" feature by hitting Alt-N to load next .fig file in the current
 	directory.  Also, say Tab in file menu would go to the next file
 	in the directory, loading that filename into the Filename slot.
 	Credit Alec Muffett (Alec.Muffett@UK.Sun.COM) for the idea.
 Option for grid to be constant screen-size (independent of zooming)
 Allow define arc by center and two points on radius
-Allow picking of points off the positioning grid
+Allow picking of points that aren't on the positioning grid
 Recursively uncompound objects with one click
 Show position of mouse in Fig coordinates in new indicator window
-Text blocks in text frame
 Make CGM export option for fig2dev
 Automatic pan of canvas when drawing at an edge.
 Make a simple way to create quarter-circle and half-circle using arc
-Allow specifing center and two points on radius for arc besides current method
 Possibly use already allocated colors when importing GIF/XPM figures
 	(e.g. black, red, etc)
 Re-render EPS file (using gs) at new resolution when zooming LARGER
 Moving object when point_posn mode is on should first move object to closest
 	positioning grid position then allow movement from there.
 	Cancel should restore original coords.
-Confirm Delete All/Save Figure so user doesn't save over old file
-  e.g.	1) Work on existing file
-	2) save file
-	3) delete all to start new figure (filename is old one however)
-	4) save new figure should confirm save on old name
 Look in ../AppPlusS/XCC.c for code to allocate colors using any
 	valid visual/depth/colormap.
-When deleting (or adding) an arrowhead the object should be deleted
-	from the objects list so the redisplay can be done properly then
-	added back in to the list with the arrowhead deleted (or added)
-Bug: -pwidth/-pheight values ignored when switching Landscape/Portrait
-	This is hard to fix - what if the user wants -pwidth 11 and -pheight 5
-	and switches to Portrait mode.  Should the window be made 11 inches tall?
-	That is very tall for most displays.
-Use already allocated colors when importing GIF/XPM figures (e.g. black, red, etc)
-Option for smaller icons for mode panel for smaller screens
-Make <Shift>middle mouse button DELETE previous points just created during
-	create POLYobject/ARC/Ellipse etc.  That way, one may backup when
-	creating objects.
-Undo should undo multiple copy, rotate/copy etc.
-Should arrow size change in update mode when linewidth changes?
-	Easier method to set/change arrow size
 Mode to rotate objects using only the mouse (requires new mode button)
-Split/join two objects together (e.g. end of one line attached to the beginning
-	of another line to make single, new line).  This would only make sense
-	for lines/splines?
-Make zooming only rescale texts which are visible in the new zoom.  This may be
-	a problem because the bounding box of the text at the new size isn't
-	known until the font is rescaled.
-Make it smart about duplicate GIFs:
-	o Same GIFs on canvas use same bitmap[]
+Make it smart about duplicate PICs:
+	o Same PICs on canvas use same bitmap[]
 	  (each has its own pixmap in case different rotation, size etc)
 	o Thus, they all share the same colors
-Have "freehand" line drawing mode (draws points as long as mouse button
-	is down)
 Allow printing of grid in figure (actually fig2dev option)
-Make the rulers understand the real screen resolution according to the server
-Add the concept of "layers" for each depth.  That way a user may work on
-	certain layers at one time, masking out or overlaying the other layers
-	as desired.
 Create resource for "print" command (e.g. lp, lpr, whatever) which uses meta-
 	notation to place filename (e.g.  print_command: "lpr -P%p %f" where %p
 	is the printer string and %f is the filename)
@@ -103,12 +171,7 @@ Allow vertically-aligned text
         descenders.
 Have common edit popup for all four splines to allow conversion between all
 Save modified_flag before file operations and restore if undo used
-Change eps_bitmaps so that background is transparent; i.e. stipple (needs to
-	work in normal and reverse-video modes)
-Make popup windows come up so that they don't overlap the figure (if possible).
-	An edit popup window should at least not overlap the
-	object being edited (again only if possible).
-Use fill pattern (grey-shading) to mimic color objects on monochrome systems.
+Change eps_bitmaps so that background is transparent; i.e. stipple
 Extend smart links to work for SCALE, MOVEPT and perhaps EDIT, UPDATE.
 	Could also extend them to work for arc-type links and for
 	ellipse/circle objects and objects inside compound objects.
@@ -132,36 +195,13 @@ Still need to think about how point positioning should be utilized with
 	point posn indicator mid-move.  It has the disadvantage that you
 	may not be able to pick up an object which isn't on the grid points.
 	I think e) is the next best but it won't let you mimick b).
-Use clipping rectangles in more places:
-	use the redisplay_* routines as necessary.
-Allow popup menus to be pinned?
 Make arcs use pw_curve to speed them up.
 Add bounding box to every F_object definition, useful for:
 	1) faster drawing of rubber objects
 	2) handling the selective redrawing of figures better after they become
 	   the innocent victim during an expose or erasure of another object
-Things like pan/zoom/resize/iconify will still leave junk on the screen
-	or mess up the figure if you are in the middle of drawing it:
-	One solution is to call canvas_rightbut_proc whenever the
-	action_on flag is set and one of the above functions is called.
-	This forces the operation being performed to be cancelled - probably
-	not a good idea for panning - we might be trying to pan a little
-	bit to place the last point in a large object.
-	Another solution is to have a big case statement which performs
-	a single elastic draw of whatever object is being drawn/moved etc.
-	The function would need to be called before an iconify (or
-	whatever) and again after the operation was completed.  This
-	would allow drawing operations to be continued after window functions
-	had been performed.
-	A third solution is to use a canvas_elasticdraw_save parameter
-	instead of using a case statement - it would need to be set
-	prior to every elastic draw operation.
 Generalize align mode (like glue mode) to allow arbitrary tagged objects to be
 	aligned rather than just compounds.
-Some facility to provide better support for small screens.
-	e.g. scrollable mode button list or automatic resizing
-	to have several rows as needed.  A good test is to limit the total
-	space to 640x480 so that it is still useable on an IBM-PC VGA screen.
 Make a raise/lower depth feature:
 	the raise_ic icon is already in w_icons.c
 Make xfig understand depth better:
@@ -171,15 +211,9 @@ Make xfig understand depth better:
 	This would involve finding the depth of all overlapping (filled?)
 	objects and setting the depth to be one less.
 	What about support for negative depth values?
-Honor fractional text sizes (float).  Currently, xfig reads the size as float
-	but converts to integer internally.
 Allow direct modification of the tension of a X-spline point from the Edit
 	Object window, or at least, allow to copy the tension value from
 	one point to another.
-In version 3.2, closed X-splines don't have their first point
-	duplicated at the end of the list, because a circular list is
-	simulated. This technique should also be applied to a polygon object,
-	which still duplicates its first point.
 A 'gravity' mode whereby points placed by aiming and clicking are brought not
 	to the closest fiducial point of a figure, but to the closest continuous
 	point on the figure (applies only to circles, arcs, and straight lines),
@@ -198,12 +232,12 @@ Clean up array-place copy:
 	If only y is set, it is like x, but the first copy (when y is 2) is not
 	drawn properly.
 
---------------------------------------------------------------------
---------------------------------------------------------------------
+---------------------------------------------------------------------------
+------------- note about restructuring xfig data structures ---------------
+---------------------------------------------------------------------------
 What really needs to be done is a major rework of the list structures used
 	to store xfig objects.  Here are some comments involving the change.
 
--------- note about restructuring xfig data structures -------------
 Rather than having a depth attribute for objects, you can use the order
 in which objects are entered to determine their depth:  later objects
 appear on the top.  A raise/lower depth operation would allow you to
@@ -238,4 +272,6 @@ of changing the underlying list structure and changing the first_arc,
 next_arc routines.  Then as we had time we could replace whichever
 sets of six loops by a single loop which did
         for (o=first_obj(); o!=NULL; o=next_obj(o)) ...
+---------------------------------------------------------------------------
 -------- end of note about restructuring xfig data structures -------------
+---------------------------------------------------------------------------

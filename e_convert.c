@@ -1,23 +1,18 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -40,7 +35,7 @@ static void	init_convert_open_closed();
 
 convert_selected()
 {
-    set_mousefun("spline<->line", "", "open<->closed", "", "", "");
+    set_mousefun("spline<->line", "", "open<->closed", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_convert_line_spline);
@@ -53,7 +48,7 @@ convert_selected()
 
 static void
 init_convert_open_closed(obj, type, x, y, p, q)
-     char	   *obj;
+     F_line	   *obj;
      int	    type, x, y;
      F_point       *p, *q;
 {
@@ -73,7 +68,7 @@ init_convert_open_closed(obj, type, x, y, p, q)
 
 static void
 init_convert_line_spline(p, type, x, y, px, py)
-    char	   *p;
+    F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
@@ -123,18 +118,15 @@ box_2_box(l)
     }
 
     /* now we have finished creating the new one, we can get rid of the old one */
-    /* first off the screen */
-    mask_toggle_linemarker(l);
-    draw_line(l, ERASE);
-    list_delete_line(&objects.lines, l);
+    delete_line(l);
 
     /* now put back the new line */
-    draw_line(newl, PAINT);
     mask_toggle_linemarker(newl);
     list_add_line(&objects.lines, newl);
-    clean_up();
+    redisplay_line(newl);
     set_action_object(F_CONVERT, O_POLYLINE);
     set_latestline(newl);
+    set_modifiedflag();
     return;
 }
 void
@@ -154,9 +146,9 @@ line_spline(l, type_value)
     s->type = type_value;
 
     if (l->type == T_POLYGON)
-	s->points = l->points->next;
+	s->points = copy_points(l->points->next);
     else
-	s->points = l->points;
+	s->points = copy_points(l->points);
 
     s->style = l->style;
     s->thickness = l->thickness;
@@ -167,11 +159,29 @@ line_spline(l, type_value)
     s->cap_style = l->cap_style;
     s->pen_style = l->pen_style;
     s->fill_style = l->fill_style;
-    s->for_arrow = l->for_arrow;
-    s->back_arrow = l->back_arrow;
     s->sfactors = NULL;
     s->next = NULL;
 
+    if (l->for_arrow) {
+	s->for_arrow = create_arrow();
+	s->for_arrow->type = l->for_arrow->type;
+	s->for_arrow->style = l->for_arrow->style;
+	s->for_arrow->thickness = l->for_arrow->thickness;
+	s->for_arrow->wd = l->for_arrow->wd;
+	s->for_arrow->ht = l->for_arrow->ht;
+    } else {
+	s->for_arrow = NULL;
+    }
+    if (l->back_arrow) {
+	s->back_arrow = create_arrow();
+	s->back_arrow->type = l->back_arrow->type;
+	s->back_arrow->style = l->back_arrow->style;
+	s->back_arrow->thickness = l->back_arrow->thickness;
+	s->back_arrow->wd = l->back_arrow->wd;
+	s->back_arrow->ht = l->back_arrow->ht;
+    } else {
+	s->back_arrow = NULL;
+    }
     /* A spline must have an s parameter for each point */
     if (!make_sfactors(s)) {
 	free_spline(s);
@@ -179,20 +189,11 @@ line_spline(l, type_value)
     }
 
     /* Get rid of the line and draw the new spline */
-    mask_toggle_linemarker(l);
-    draw_line(l, ERASE);
-    list_delete_line(&objects.lines, l);
-    /* for spline we reuse the arrows and points, so 'detach' them from the line */
-    l->for_arrow = l->back_arrow = NULL;
-    l->points = NULL;
-    /* now get rid of the rest */
-    free_linestorage(l);
-
+    delete_line(l);
     /* now put back the new spline */
     mask_toggle_splinemarker(s);
     list_add_spline(&objects.splines, s);
     redisplay_spline(s);
-    clean_up();
     set_action_object(F_CONVERT, O_POLYLINE);
     set_latestspline(s);
     set_modifiedflag();
@@ -219,7 +220,7 @@ spline_line(s)
 	tmppoint = last_point(s->points);
 	l->points->x = tmppoint->x;
 	l->points->y = tmppoint->y;
-	l->points->next = s->points;
+	l->points->next = copy_points(s->points);
     }
     l->style = s->style;
     l->thickness = s->thickness;
@@ -232,25 +233,34 @@ spline_line(s)
     l->pen_style = s->pen_style;
     l->radius = DEFAULT;
     l->fill_style = s->fill_style;
-    l->for_arrow = s->for_arrow;
-    l->back_arrow = s->back_arrow;
+    if (s->for_arrow) {
+	l->for_arrow = create_arrow();
+	l->for_arrow->type = s->for_arrow->type;
+	l->for_arrow->style = s->for_arrow->style;
+	l->for_arrow->thickness = s->for_arrow->thickness;
+	l->for_arrow->wd = s->for_arrow->wd;
+	l->for_arrow->ht = s->for_arrow->ht;
+    } else {
+	l->back_arrow = NULL;
+    }
+    if (s->back_arrow) {
+	l->back_arrow = create_arrow();
+	l->back_arrow->type = s->back_arrow->type;
+	l->back_arrow->style = s->back_arrow->style;
+	l->back_arrow->thickness = s->back_arrow->thickness;
+	l->back_arrow->wd = s->back_arrow->wd;
+	l->back_arrow->ht = s->back_arrow->ht;
+    } else {
+	l->back_arrow = NULL;
+    }
 
     /* now we have finished creating the line, we can get rid of the spline */
-    /* first off the screen */
-    mask_toggle_splinemarker(s);
-    draw_spline(s, ERASE);
-    list_delete_spline(&objects.splines, s);
-    /* we reuse the arrows and points, so `detach' them from the spline */
-    s->for_arrow = s->back_arrow = NULL;
-    s->points = NULL;
-    /* now get rid of the rest */
-    free_splinestorage(s);
+    delete_spline(s);
 
     /* and put in the new line */
     mask_toggle_linemarker(l);
     list_add_line(&objects.lines, l);
     redisplay_line(l);
-    clean_up();
     set_action_object(F_CONVERT, O_SPLINE);
     set_latestline(l);
     set_modifiedflag();

@@ -1,27 +1,21 @@
-/* 
+/*
  * FIG : Facility for Interactive Generation of figures
- *
- * Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1994-1998 by Brian V. Smith
  * Parts Copyright 1990,1992 Richard Hesketh
  *          Computing Lab. University of Kent at Canterbury, UK
+ *
  * Pixel Grab color lookup Copyright 1993, David Koblas (koblas@netcom.com)
  * and Copyright 1995, 1996 Torsten Martinsen (bullestock@dk-online.dk)
  * (full copyright and permission notice appears above code)
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
- *
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  ****************************************************************************
  *
@@ -73,12 +67,7 @@
 #include "w_indpanel.h"
 #include "w_setup.h"
 
-ind_sw_info *pen_color_button, *fill_color_button;
-
 DeclareStaticArgs(20);
-extern Atom	wm_delete_window;
-extern Widget	choice_popup;
-extern ind_sw_info *fill_style_sw;
 
 /* callback routines */
 static void cancel_color_popup();
@@ -213,22 +202,14 @@ static String edit_translations =
 	<Btn1Down>,<Btn1Up>: set() notify()\n";
 
 static String rgbl_scroll_translations =
-	 "<Btn1Down>: border() StartScroll(Forward) \n\
-	  <Btn2Down>: border() StartScroll(Continuous) MoveThumb() NotifyThumb() \n\
-	  <Btn3Down>: border() StartScroll(Backward) \n\
-	  <Btn2Motion>: MoveThumb() NotifyThumb() \n\
-	  <BtnUp>: border(reset) NotifyScroll(Proportional) EndScroll() update_scrl_triple()\n";
+	"<BtnUp>: border(reset) update_scrl_triple()\n";
 
 static String hsv_scroll_translations =
-	 "<Btn1Down>: set_scroll(red) set_scroll(green) set_scroll(blue) \
-			StartScroll(Forward) \n\
-	  <Btn2Down>: set_scroll(red) set_scroll(green) set_scroll(blue) \
-			StartScroll(Continuous) MoveThumb() NotifyThumb() \n\
-	  <Btn3Down>: set_scroll(red) set_scroll(green) set_scroll(blue) \
-			StartScroll(Backward) \n\
-	  <Btn2Motion>: MoveThumb() NotifyThumb() \n\
+	 "<Btn1Down>: set_scroll(red) set_scroll(green) set_scroll(blue) \n\
+	  <Btn2Down>: set_scroll(red) set_scroll(green) set_scroll(blue) \n\
+	  <Btn3Down>: set_scroll(red) set_scroll(green) set_scroll(blue) \n\
 	  <BtnUp>: stop_scroll(red) stop_scroll(green) stop_scroll(blue) \
-			NotifyScroll(Proportional) EndScroll() update_scrl_triple()\n";
+				update_scrl_triple()\n";
 
 static String redLocked_translations =
 	"<Btn1Down>: lock_toggle(red)\n";
@@ -265,8 +246,7 @@ XColor *color;
 		XAllocColor(tool_d,colormap,color);
 		break;
 	    default:
-		if (appres.DEBUG)
-		    fprintf(stderr,"Unknown Visual Class\n");
+		fprintf(stderr,"Unknown Visual Class\n");
 	}
 }
 
@@ -508,6 +488,10 @@ ind_sw_info	*isw;
 	    
 	    /* pick contrasting color for label in cell */
 	    XQueryColor(tool_d, tool_cm, &user_colors[i]);
+	    /* keep lower 8 bits 0 */
+	    user_colors[i].red &= 0xff00;
+	    user_colors[i].green &= 0xff00;
+	    user_colors[i].blue &= 0xff00;
 	    if ((0.30 * user_colors[i].red +
 		 0.59 * user_colors[i].green +
 		 0.11 * user_colors[i].blue) < 0.5 * (255 << 8))
@@ -667,13 +651,13 @@ ind_sw_info	*isw;
 
 	/* install the same translations on the four (R/G/B/Locked) scrollbars */
 
-	XtOverrideTranslations(redScroll,
+	XtAugmentTranslations(redScroll,
 			       XtParseTranslationTable(rgbl_scroll_translations));
-	XtOverrideTranslations(greenScroll,
+	XtAugmentTranslations(greenScroll,
 			       XtParseTranslationTable(rgbl_scroll_translations));
-	XtOverrideTranslations(blueScroll,
+	XtAugmentTranslations(blueScroll,
 			       XtParseTranslationTable(rgbl_scroll_translations));
-	XtOverrideTranslations(lockedScroll,
+	XtAugmentTranslations(lockedScroll,
 			       XtParseTranslationTable(rgbl_scroll_translations));
 
 	FirstArg(XtNlabel, "H");
@@ -724,11 +708,11 @@ ind_sw_info	*isw;
 
 	/* install the same translations on the H/S/V scrollbars */
 
-	XtOverrideTranslations(hueScroll,
+	XtAugmentTranslations(hueScroll,
 			       XtParseTranslationTable(hsv_scroll_translations));
-	XtOverrideTranslations(satScroll,
+	XtAugmentTranslations(satScroll,
 			       XtParseTranslationTable(hsv_scroll_translations));
-	XtOverrideTranslations(valScroll,
+	XtAugmentTranslations(valScroll,
 			       XtParseTranslationTable(hsv_scroll_translations));
 
 	original_background = values.foreground;
@@ -760,7 +744,10 @@ ind_sw_info	*isw;
 	FirstArg(XtNthumb, None);
 	SetValues(sb);
 
-	XtPopup(choice_popup, XtGrabExclusive);
+	XtPopup(choice_popup, (appres.DEBUG? XtGrabNone: XtGrabExclusive));
+	/* if the file message window is up add it to the grab */
+	file_msg_add_grab();
+
 	(void) XSetWMProtocols(XtDisplay(choice_popup), XtWindow(choice_popup),
                            &wm_delete_window, 1);
 	/* insure that the most recent colormap is installed */
@@ -806,6 +793,13 @@ restore_mixed_colors()
 	mixed_color[0].pixel = x_color(cur_pencolor);
 	mixed_color[1].pixel = x_color(cur_fillcolor);
 	XQueryColors(tool_d, tool_cm, mixed_color, 2);
+	/* keep lower 8 bits 0 */
+	mixed_color[0].red &= 0xff00;
+	mixed_color[0].green &= 0xff00;
+	mixed_color[0].blue &= 0xff00;
+	mixed_color[1].red &= 0xff00;
+	mixed_color[1].green &= 0xff00;
+	mixed_color[1].blue &= 0xff00;
 	
 	/* put the color name or number in the indicators */
 	set_mixed_name(0, cur_pencolor);
@@ -1053,10 +1047,10 @@ XtPointer closure, ptr;
     xcol.flags = DoRed | DoGreen | DoBlue;
     XQueryColor(XtDisplay(w), cmap, &xcol);
 
-    /* and store the chosen color */
-    user_colors[current_memory].red = xcol.red;
-    user_colors[current_memory].green = xcol.green;
-    user_colors[current_memory].blue = xcol.blue;
+    /* and store the chosen color (keep lower 8 bits 0) */
+    user_colors[current_memory].red   = xcol.red   & 0xff00;
+    user_colors[current_memory].green = xcol.green & 0xff00;
+    user_colors[current_memory].blue  = xcol.blue  & 0xff00;
     user_colors[current_memory].flags = DoRed|DoGreen|DoBlue;
     set_user_color(current_memory);
 }
@@ -1076,7 +1070,6 @@ int	r,g,b;
 	int	i;
 	char	labl[5];
 	Boolean	new;
-	Pixel	cell_fg;
 
 	if (all_colors_available) {
 	    /* try to get a colorcell */
@@ -1355,11 +1348,11 @@ XButtonEvent	*ev;
 
 	if (modified[0]) {
 	    cur_pencolor = mixed_color_indx[0];
-	    show_pen_color(); /* update the button in the indicator panel */
+	    show_pencolor(); /* update the button in the indicator panel */
 	}
 	if (modified[1]) {
 	    cur_fillcolor = mixed_color_indx[1];
-	    show_fill_color(); /* update the button in the indicator panel */
+	    show_fillcolor(); /* update the button in the indicator panel */
 	}
 	modified[0] = modified[1] = False;
 	choice_panel_dismiss();
@@ -1393,6 +1386,10 @@ XButtonEvent	*ev;
 	/* look up color rgb values given the pixel number */
 	if (all_colors_available) {
 	    XQueryColor(tool_d, tool_cm, &mixed_color[edit_fill]);
+	    /* keep lower 8 bits 0 */
+	    mixed_color[edit_fill].red &= 0xff00;
+	    mixed_color[edit_fill].green &= 0xff00;
+	    mixed_color[edit_fill].blue &= 0xff00;
 	} else {
 	    /* look up color rgb values from the name */
 	    if (color == DEFAULT) {
@@ -1821,7 +1818,9 @@ Cardinal *num_params;
 
 	int change;
 	float pass_value;
-	int red_pos, green_pos, blue_pos;
+	int red_pos = 0;
+	int green_pos = 0;
+	int blue_pos = 0;
 
 	if (buttons_down == 0)
 		return;
@@ -2000,7 +1999,7 @@ XtPointer closure, ptr;
 	double top = (double) per;
 	XEvent event;
 
-	mix = (int) ((1.0 - top) * 256.0 * 256.0);
+	mix = ((int) ((1.0 - top) * 256.0)) << 8;
 	if (mix > 0xFFFF)
 		mix = 0xFFFF;
 
@@ -2054,7 +2053,8 @@ move_lock()
 	XawScrollbarSetThumb(lockedScroll, locked_top, (float)THUMB_H);
 }
 
-next_pen_color(sw)
+void
+next_pencolor(sw)
     ind_sw_info	   *sw;
 {
     while ((++cur_pencolor < NUM_STD_COLS+num_usr_cols) && 
@@ -2062,22 +2062,24 @@ next_pen_color(sw)
 		;
     if (cur_pencolor >= NUM_STD_COLS+num_usr_cols)
 	cur_pencolor = DEFAULT;
-    show_pen_color();
+    show_pencolor();
 }
 
-prev_pen_color(sw)
+void
+prev_pencolor(sw)
     ind_sw_info	   *sw;
 {
     if (cur_pencolor <= DEFAULT)
 	cur_pencolor = NUM_STD_COLS+num_usr_cols;
     while ((--cur_pencolor >= NUM_STD_COLS) && colorFree[cur_pencolor-NUM_STD_COLS])
 		;
-    show_pen_color();
+    show_pencolor();
 }
 
 /* Update the Pen COLOR in the indicator button */
 
-show_pen_color()
+void
+show_pencolor()
 {
     int		    color;
     char	    colorname[10];
@@ -2096,7 +2098,7 @@ show_pen_color()
        because the user may have changed to/from black and other color.  Do this
        because the tints must be either created or deleted. */
     fill_style_sw->panel = (Widget) NULL;
-    show_fill_style(fill_style_sw);
+    show_fillstyle(fill_style_sw);
     if (cur_pencolor < NUM_STD_COLS) {
 	strcpy(colorname,colorNames[cur_pencolor + 1].name);
 	put_msg("Pen color set to %s", colorNames[cur_pencolor + 1].name);
@@ -2114,14 +2116,19 @@ show_pen_color()
     /* and put the color name in the button also */
     XDrawImageString(tool_d, pen_color_button->pixmap, ind_button_gc, 3, 25,
 	      colorname, strlen(colorname));
+    if (pen_color_button->updbut && update_buts_managed)
+       XtUnmanageChild(pen_color_button->updbut);
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(pen_color_button->button);
     /* put the pixmap in the widget background */
     FirstArg(XtNbackgroundPixmap, pen_color_button->pixmap);
     SetValues(pen_color_button->button);
+    if (pen_color_button->updbut && update_buts_managed)
+       XtManageChild(pen_color_button->updbut);
 }
 
-next_fill_color(sw)
+void
+next_fillcolor(sw)
     ind_sw_info	   *sw;
 {
     while ((++cur_fillcolor < NUM_STD_COLS+num_usr_cols) && 
@@ -2129,22 +2136,24 @@ next_fill_color(sw)
 		;
     if (cur_fillcolor >= NUM_STD_COLS+num_usr_cols)
 	cur_fillcolor = DEFAULT;
-    show_fill_color();
+    show_fillcolor();
 }
 
-prev_fill_color(sw)
+void
+prev_fillcolor(sw)
     ind_sw_info	   *sw;
 {
     if (cur_fillcolor <= DEFAULT)
 	cur_fillcolor = NUM_STD_COLS+num_usr_cols;
     while ((--cur_fillcolor >= NUM_STD_COLS) && colorFree[cur_fillcolor-NUM_STD_COLS])
 		;
-    show_fill_color();
+    show_fillcolor();
 }
 
 /* Update the Fill COLOR in the indicator button */
 
-show_fill_color()
+void
+show_fillcolor()
 {
     int		    color;
     char	    colorname[10];
@@ -2163,7 +2172,7 @@ show_fill_color()
        because the user may have changed to/from black and other color.  Do this
        because the tints must be either created or deleted. */
     fill_style_sw->panel = (Widget) NULL;
-    show_fill_style(fill_style_sw);
+    show_fillstyle(fill_style_sw);
     if (cur_fillcolor < NUM_STD_COLS) {
 	put_msg("Fill color set to %s", colorNames[cur_fillcolor + 1].name);
 	strcpy(colorname,colorNames[cur_fillcolor + 1].name);
@@ -2181,17 +2190,21 @@ show_fill_color()
     /* and put the color name in the button also */
     XDrawImageString(tool_d, fill_color_button->pixmap, ind_button_gc, 3, 25,
 	      colorname, strlen(colorname));
+    if (fill_color_button->updbut && update_buts_managed)
+       XtUnmanageChild(fill_color_button->updbut);
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(fill_color_button->button);
     /* put the pixmap in the widget background */
     FirstArg(XtNbackgroundPixmap, fill_color_button->pixmap);
     SetValues(fill_color_button->button);
+    if (fill_color_button->updbut && update_buts_managed)
+       XtManageChild(fill_color_button->updbut);
 }
 
 /* inform the window manager that we have a (possibly) new colormap */
 
 set_cmap(window)
-Window window;
+    Window window;
 {
     XSetWindowColormap(tool_d, window, tool_cm);
 }

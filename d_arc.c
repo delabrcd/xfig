@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -29,21 +24,27 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "d_arc.h"
 #include "u_create.h"
 #include "u_elastic.h"
 #include "u_list.h"
 #include "w_canvas.h"
+#include "w_cursor.h"
+#include "w_msgpanel.h"
 #include "w_mousefun.h"
 
-/* LOCAL */
+/* EXPORT */
 
 F_pos		point[3];
 
-static int	create_arcobject();
-static int	get_arcpoint();
-static int	init_arc_drawing();
-static int	cancel_arc();
+/* LOCAL */
 
+static void	create_arcobject();
+static void	get_arcpoint();
+static void	init_arc_drawing();
+static void	cancel_arc();
+
+void
 arc_drawing_selected()
 {
     set_mousefun("first point", "", "", "", "", "");
@@ -56,7 +57,7 @@ arc_drawing_selected()
     reset_action_on();
 }
 
-static
+static void
 init_arc_drawing(x, y)
     int		    x, y;
 {
@@ -66,18 +67,20 @@ init_arc_drawing(x, y)
     num_point = 0;
     point[num_point].x = fix_x = cur_x = x;
     point[num_point++].y = fix_y = cur_y = y;
-    canvas_locmove_proc = freehand_line;
+    canvas_locmove_proc = unconstrained_line;
     canvas_leftbut_proc = get_arcpoint;
     canvas_middlebut_proc = null_proc;
     elastic_line();
-    set_temp_cursor(null_cursor);
+    set_cursor(null_cursor);
     set_action_on();
 }
 
-static
+static void
 cancel_arc()
 {
     elastic_line();
+    /* erase any length info if appres.showlengths is true */
+    erase_lengths();
     if (num_point == 2) {
 	/* erase initial part of line */
 	cur_x = point[0].x;
@@ -88,7 +91,7 @@ cancel_arc()
     draw_mousefun_canvas();
 }
 
-static
+static void
 get_arcpoint(x, y)
     int		    x, y;
 {
@@ -112,7 +115,7 @@ get_arcpoint(x, y)
     elastic_line();
 }
 
-static
+static void
 create_arcobject(lx, ly)
     int		    lx, ly;
 {
@@ -121,6 +124,8 @@ create_arcobject(lx, ly)
     float	    xx, yy;
 
     elastic_line();
+    /* erase any length info if appres.showlengths is true */
+    erase_lengths();
     cur_x = lx;
     cur_y = ly;
     elastic_line();
@@ -176,6 +181,7 @@ create_arcobject(lx, ly)
     arc->point[2].y = point[2].y;
     arc->next = NULL;
     add_arc(arc);
+    reset_action_on(); /* this signals redisplay_curobj() not to refresh */
     /* draw it and anything on top of it */
     redisplay_arc(arc);
     arc_drawing_selected();

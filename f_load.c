@@ -1,33 +1,33 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
 #include "fig.h"
+#include "figx.h"
 #include "resources.h"
 #include "mode.h"
 #include "object.h"
+#include "f_read.h"
+#include "u_create.h"
 #include "u_undo.h"
+#include "w_export.h"
+#include "w_file.h"
+#include "w_print.h"
+#include "w_util.h"
 #include "w_setup.h"
-
-extern int	num_object;
 
 int
 load_file(file, xoff, yoff)
@@ -36,6 +36,7 @@ load_file(file, xoff, yoff)
 {
     int		    s;
     F_compound	    c;
+    fig_settings    settings;
 
     put_msg("Loading file %s...",file);
     c.parent = NULL;
@@ -48,7 +49,8 @@ load_file(file, xoff, yoff)
     c.texts = NULL;
     c.next = NULL;
     set_temp_cursor(wait_cursor);
-    s = read_fig(file, &c, False, xoff, yoff);
+
+    s = read_figc(file, &c, False, True, xoff, yoff, &settings);
     if (s == 0) {		/* Successful read */
 	clean_up();
 	(void) strcpy(save_filename, cur_filename);
@@ -61,6 +63,9 @@ load_file(file, xoff, yoff)
 	put_msg("Current figure \"%s\" (%d objects)", file, num_object);
 	set_action(F_LOAD);
 	reset_cursor();
+	/* update the settings in appres.xxx from the settings struct returned from read_fig */
+	update_settings(&settings);
+	/* reset modified flag in case any change in orientation set it */
 	reset_modifiedflag();
 	return (0);
     } else if (s == ENOENT) {
@@ -82,46 +87,126 @@ load_file(file, xoff, yoff)
     return (1);
 }
 
-int
+update_settings(settings)
+    fig_settings  *settings;
+{
+	DeclareArgs(4);
+	char    buf[30];
+
+	/* set landscape flag oppositely and change_orient() will toggle it */
+	if (settings->landscape != (int) appres.landscape) {
+		/* change_orient toggles */
+		appres.landscape = ! ((Boolean) settings->landscape);
+		/* now change the orientation of the canvas */
+		change_orient();
+		/* and flush to let things settle out */
+		app_flush();
+	}
+	/* set the printer and export justification labels */
+	FirstArg(XtNlabel, just_items[settings->flushleft]);
+	if (export_popup)
+		SetValues(export_just_panel);
+	if (print_popup)
+		SetValues(print_just_panel);
+
+	/* set the units string for the length messages */
+	strcpy(cur_fig_units, settings->units ? "in" : "cm");
+	/* and set the rulers/grid accordingly */
+	if (settings->units != (int) appres.INCHES) {
+	    appres.INCHES = (Boolean) settings->units;
+	    /* PIC_FACTOR is the number of Fig units per printer points (1/72 inch) */
+	    /* it changes with Metric and Imperial */
+	    PIC_FACTOR  = (appres.INCHES ? (float)PIX_PER_INCH : 2.54*PIX_PER_CM)/72.0;
+	    /* make sure we aren't previewing a figure in the file panel */
+	    if (canvas_win == main_canvas) {
+		reset_rulers();
+		init_grid();
+		setup_grid(cur_gridmode);
+		/* change the label in the units widget */
+		FirstArg(XtNlabel, appres.INCHES ? "in" : "cm");
+		SetValues(unitbox_sw);
+	    }
+	}
+	/* paper size */
+	if ((appres.papersize = settings->papersize) < 0) {
+	    file_msg("Illegal paper size in file, using default");
+	    appres.papersize = (appres.INCHES? PAPER_LETTER: PAPER_A4);
+	}
+	/* and the print and export paper size menus */
+	FirstArg(XtNlabel, paper_sizes[appres.papersize].fname);
+	if (export_popup)
+	    SetValues(export_papersize_panel);
+	if (print_popup)
+	    SetValues(print_papersize_panel);
+
+	appres.magnification = settings->magnification;
+	/* set the magnification in the export and print panels */
+	sprintf(buf,"%.2f",appres.magnification);
+	FirstArg(XtNstring, buf);
+	if (export_popup)
+	    SetValues(export_mag_text);
+	if (print_popup) {
+	    SetValues(print_mag_text);
+	    print_update_figure_size();
+	}
+
+	/* multi-page setting */
+	appres.multiple = settings->multiple;
+	FirstArg(XtNlabel, multiple_pages[appres.multiple]);
+	if (export_popup)
+	    SetValues(export_multiple_panel);
+	if (print_popup)
+	    SetValues(print_multiple_panel);
+
+	/* GIF transparent color */
+	appres.transparent = settings->transparent;
+	/* make colorname from number */
+	set_color_name(appres.transparent, buf);
+	FirstArg(XtNlabel, buf);
+	if (export_popup)
+	    SetValues(export_transp_panel);
+}
+
 merge_file(file, xoff, yoff)
     char	   *file;
     int		    xoff, yoff;
 {
-    F_compound	    c;
+    F_compound	   *c;
     int		    s;
+    fig_settings    settings;
 
-    c.arcs = NULL;
-    c.compounds = NULL;
-    c.ellipses = NULL;
-    c.lines = NULL;
-    c.splines = NULL;
-    c.texts = NULL;
-    c.next = NULL;
+    if ((c = create_compound()) == NULL)
+	return;
+    c->arcs = NULL;
+    c->compounds = NULL;
+    c->ellipses = NULL;
+    c->lines = NULL;
+    c->splines = NULL;
+    c->texts = NULL;
+    c->next = NULL;
+
     set_temp_cursor(wait_cursor);
 
     /* clear picture object read flag */
     pic_obj_read = False;
-    s = read_fig(file, &c, True, xoff, yoff);	/* merging */
+    s = read_figc(file, c, True, False, xoff, yoff, &settings);	/* merging */
     if (s == 0) {			/* Successful read */
-	int		xmin, ymin, xmax, ymax;
-
-	compound_bound(&c, &xmin, &ymin, &xmax, &ymax);
+	compound_bound(c, &c->nwcorner.x, &c->nwcorner.y,
+		   &c->secorner.x, &c->secorner.y);
 	clean_up();
-	saved_objects = c;
-	tail(&objects, &object_tails);
-	append_objects(&objects, &saved_objects, &object_tails);
+	list_add_compound(&objects.compounds, c);
+	set_latestcompound(c);
 	/* must remap all EPS/GIF/XPMs now if any new pic objects were read */
 	if (pic_obj_read)
 	    remap_imagecolors(&objects);
 	redraw_images(&objects);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
+	redisplay_zoomed_region(c->nwcorner.x, c->nwcorner.y, 
+				c->secorner.x, c->secorner.y);
 	put_msg("%d object(s) read from \"%s\"", num_object, file);
-	set_action_object(F_ADD, O_ALL_OBJECT);
+	set_action_object(F_ADD, O_COMPOUND);
 	reset_cursor();
 	set_modifiedflag();
-	return (0);
     }
     read_fail_message(file, s);
     reset_cursor();
-    return (1);
 }

@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -25,6 +20,8 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "d_text.h"
+#include "e_scale.h"
 #include "u_create.h"
 #include "u_draw.h"
 #include "u_elastic.h"
@@ -33,44 +30,54 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-static int	init_box_scale();
 static Boolean	init_boxscale_ellipse();
 static Boolean	init_boxscale_line();
 static Boolean	init_boxscale_compound();
-static int	boxrelocate_ellipsepoint();
+static Boolean	init_scale_arc();
+static Boolean	init_scale_ellipse();
+static Boolean	init_scale_line();
+static Boolean	init_scale_spline();
 
-static int	init_center_scale();
-static int	init_scale_arc();
-static int	init_scale_compound();
-static int	init_scale_ellipse();
-static int	init_scale_line();
-static int	init_scale_spline();
-static int	rescale_points();
-static int	relocate_ellipsepoint();
-static int	relocate_arcpoint();
+static void	scale_line();
+static void	scale_spline();
+static void	scale_arc();
+static void	scale_ellipse();
+static void	scale_text();
+static void	scale_arrows();
+static void	scale_arrow();
 
-static int	fix_scale_arc();
-static int	fix_scale_spline();
-static int	fix_scale_line();
-static int	fix_scale_ellipse();
-static int	fix_boxscale_ellipse();
-static int	fix_boxscale_line();
-static int	fix_scale_compound();
-static int	fix_boxscale_compound();
+static void	init_box_scale();
+static void	boxrelocate_ellipsepoint();
+static void	init_center_scale();
+static void	init_scale_compound();
+static void	rescale_points();
+static void	relocate_ellipsepoint();
+static void	relocate_arcpoint();
 
-static int	cancel_scale_arc();
-static int	cancel_scale_spline();
-static int	cancel_scale_line();
-static int	cancel_scale_ellipse();
-static int	cancel_boxscale_ellipse();
-static int	cancel_boxscale_line();
-static int	cancel_scale_compound();
-static int	cancel_boxscale_compound();
-static int	prescale_compound();
+static void	fix_scale_arc();
+static void	fix_scale_spline();
+static void	fix_scale_line();
+static void	fix_scale_ellipse();
+static void	fix_boxscale_ellipse();
+static void	fix_boxscale_line();
+static void	fix_scale_compound();
+static void	fix_boxscale_compound();
 
+static void	cancel_scale_arc();
+static void	cancel_scale_spline();
+static void	cancel_scale_line();
+static void	cancel_scale_ellipse();
+static void	cancel_boxscale_ellipse();
+static void	cancel_boxscale_line();
+static void	cancel_scale_compound();
+static void	cancel_boxscale_compound();
+static void	prescale_compound();
+
+void
 scale_selected()
 {
-    set_mousefun("scale box", "scale about center", "", "", "", "");
+    set_mousefun("scale box", "scale about center", "", 
+			LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_box_scale);
@@ -85,9 +92,9 @@ scale_selected()
 char *BOX_SCL_MSG = "Can't use box scale on selected object";
 char *BOX_SCL2_MSG = "Can't use box scale on selected object; try putting it into a compound";
 
-static
+static void
 init_box_scale(obj, type, x, y, px, py)
-    char	   *obj;
+    F_line	   *obj;
     int		    type, x, y;
     int		    px, py;
 {
@@ -109,16 +116,17 @@ init_box_scale(obj, type, x, y, px, py)
 	break;
     default:
 	put_msg(BOX_SCL2_MSG);
+	beep();
 	return;
     }
-    set_mousefun("new posn", "", "cancel", "", "", "");
+    set_mousefun("new posn", "", "cancel", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     draw_mousefun_canvas();
     canvas_middlebut_proc = null_proc;
 }
 
-static
+static void
 init_center_scale(obj, type, x, y, px, py)
-    char	   *obj;
+    F_line	   *obj;
     int		    type, x, y, px, py;
 {
     double	    dx, dy, l;
@@ -159,12 +167,12 @@ init_center_scale(obj, type, x, y, px, py)
     cosa = fabs(dx / l);
     sina = fabs(dy / l);
 
-    set_mousefun("", "new posn", "cancel", "", "", "");
+    set_mousefun("", "new posn", "cancel", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     draw_mousefun_canvas();
     canvas_leftbut_proc = null_proc;
 }
 
-static
+static void
 wrapup_scale()
 {
     reset_action_on();
@@ -174,7 +182,7 @@ wrapup_scale()
 
 /*************************  ellipse  *******************************/
 
-static		Boolean
+static Boolean
 init_boxscale_ellipse(x, y)
     int		    x, y;
 {
@@ -204,6 +212,7 @@ init_boxscale_ellipse(x, y)
 
     if (cur_x == fix_x || cur_y == fix_y) {
 	put_msg(BOX_SCL2_MSG);
+	beep();
 	return False;
     }
     set_action_on();
@@ -215,7 +224,7 @@ init_boxscale_ellipse(x, y)
     cosa = fabs(dx / l);
     sina = fabs(dy / l);
 
-    set_temp_cursor(crosshair_cursor);
+    set_cursor(crosshair_cursor);
     if ((cur_e->type == T_CIRCLE_BY_DIA) ||
 	(cur_e->type == T_CIRCLE_BY_RAD)) {
 	canvas_locmove_proc = constrained_resizing_cbd;
@@ -229,7 +238,7 @@ init_boxscale_ellipse(x, y)
     return True;
 }
 
-static
+static void
 cancel_boxscale_ellipse()
 {
     if ((cur_e->type == T_CIRCLE_BY_DIA) ||
@@ -241,10 +250,12 @@ cancel_boxscale_ellipse()
     wrapup_scale();
 }
 
-static
+static void
 fix_boxscale_ellipse(x, y)
     int		    x, y;
 {
+    float	    dx, dy;
+
     if ((cur_e->type == T_CIRCLE_BY_DIA) ||
 	(cur_e->type == T_CIRCLE_BY_RAD))
 	elastic_cbd();
@@ -253,6 +264,11 @@ fix_boxscale_ellipse(x, y)
     adjust_box_pos(x, y, from_x, from_y, &cur_x, &cur_y);
     new_e = copy_ellipse(cur_e);
     boxrelocate_ellipsepoint(new_e, cur_x, cur_y);
+    /* find how much the radii changed */
+    dx = 1.0 * new_e->radiuses.x / cur_e->radiuses.x;
+    dy = 1.0 * new_e->radiuses.y / cur_e->radiuses.y;
+    /* scale the line thickness */
+    scale_linewidth(new_e, dx, dy);
     change_ellipse(cur_e, new_e);
     /* redraw anything under the old ellipse */
     redisplay_ellipse(cur_e);
@@ -261,7 +277,7 @@ fix_boxscale_ellipse(x, y)
     wrapup_scale();
 }
 
-static
+static void
 boxrelocate_ellipsepoint(ellipse, x, y)
     F_ellipse	   *ellipse;
     int		    x, y;
@@ -306,7 +322,7 @@ boxrelocate_ellipsepoint(ellipse, x, y)
     reset_cursor();
 }
 
-static
+static Boolean
 init_scale_ellipse()
 {
     fix_x = cur_e->center.x;
@@ -318,19 +334,21 @@ init_scale_ellipse()
     }
     set_action_on();
     toggle_ellipsemarker(cur_e);
-    set_temp_cursor(crosshair_cursor);
+    set_cursor(crosshair_cursor);
     canvas_locmove_proc = scaling_ellipse;
     elastic_scaleellipse(cur_e);
     canvas_middlebut_proc = fix_scale_ellipse;
     canvas_rightbut_proc = cancel_scale_ellipse;
-    if (cur_e->type == 1 || cur_e->type == 3)
+    if (cur_e->type == T_ELLIPSE_BY_RAD)
+	length_msg(MSG_RADIUS2);
+    else if (cur_e->type == T_CIRCLE_BY_RAD)
 	length_msg(MSG_RADIUS);
     else
 	length_msg(MSG_DIAM);
     return True;		/* all is Ok */
 }
 
-static
+static void
 cancel_scale_ellipse()
 {
     elastic_scaleellipse(cur_e);
@@ -338,7 +356,7 @@ cancel_scale_ellipse()
     wrapup_scale();
 }
 
-static
+static void
 fix_scale_ellipse(x, y)
     int		    x, y;
 {
@@ -354,7 +372,7 @@ fix_scale_ellipse(x, y)
     wrapup_scale();
 }
 
-static
+static void
 relocate_ellipsepoint(ellipse, x, y)
     F_ellipse	   *ellipse;
     int		    x, y;
@@ -372,6 +390,8 @@ relocate_ellipsepoint(ellipse, x, y)
     oldy = from_y - fix_y;
     oldd = sqrt(oldx * oldx + oldy * oldy);
     scalefact = newd / oldd;
+    /* scale the line thickness */
+    scale_linewidth(ellipse, scalefact, scalefact);
 
     ellipse->radiuses.x = round(ellipse->radiuses.x * scalefact);
     ellipse->radiuses.y = round(ellipse->radiuses.y * scalefact);
@@ -384,7 +404,7 @@ relocate_ellipsepoint(ellipse, x, y)
 
 /***************************  arc  *********************************/
 
-static
+static Boolean
 init_scale_arc()
 {
     fix_x = cur_a->center.x;
@@ -396,14 +416,14 @@ init_scale_arc()
     set_action_on();
     toggle_arcmarker(cur_a);
     elastic_scalearc(cur_a);
-    set_temp_cursor(crosshair_cursor);
+    set_cursor(crosshair_cursor);
     canvas_locmove_proc = scaling_arc;
     canvas_middlebut_proc = fix_scale_arc;
     canvas_rightbut_proc = cancel_scale_arc;
     return True;
 }
 
-static
+static void
 cancel_scale_arc()
 {
     elastic_scalearc(cur_a);
@@ -411,13 +431,30 @@ cancel_scale_arc()
     wrapup_scale();
 }
 
-static
+static void
 fix_scale_arc(x, y)
     int		    x, y;
 {
+    double	    newx, newy, oldx, oldy;
+    double	    newd, oldd, scalefact;
+
     elastic_scalearc(cur_a);
+
     adjust_box_pos(x, y, from_x, from_y, &x, &y);
     new_a = copy_arc(cur_a);
+
+    newx = cur_x - fix_x;
+    newy = cur_y - fix_y;
+    newd = sqrt(newx * newx + newy * newy);
+    oldx = from_x - fix_x;
+    oldy = from_y - fix_y;
+    oldd = sqrt(oldx * oldx + oldy * oldy);
+    scalefact = newd / oldd;
+    /* scale any arrowheads */
+    scale_arrows(new_a,scalefact,scalefact);
+    /* scale line width */
+    scale_linewidth(new_a,scalefact,scalefact);
+
     relocate_arcpoint(new_a, x, y);
     change_arc(cur_a, new_a);
     /* redraw anything under the old arc */
@@ -427,7 +464,7 @@ fix_scale_arc(x, y)
     wrapup_scale();
 }
 
-static
+static void
 relocate_arcpoint(arc, x, y)
     F_arc	   *arc;
     int		    x, y;
@@ -457,7 +494,6 @@ relocate_arcpoint(arc, x, y)
     p2.x = fix_x + round((p2.x - fix_x) * scalefact);
     p2.y = fix_y + round((p2.y - fix_y) * scalefact);
     if (compute_arccenter(p0, p1, p2, &xx, &yy)) {
-	set_temp_cursor(wait_cursor);
 	arc->point[0].x = p0.x;
 	arc->point[0].y = p0.y;
 	arc->point[1].x = p1.x;
@@ -467,14 +503,13 @@ relocate_arcpoint(arc, x, y)
 	arc->center.x = xx;
 	arc->center.y = yy;
 	arc->direction = compute_direction(p0, p1, p2);
-	reset_cursor();
     }
     set_modifiedflag();
 }
 
 /**************************  spline  *******************************/
 
-static
+static Boolean
 init_scale_spline()
 {
     int		    sumx, sumy, cnt;
@@ -495,7 +530,7 @@ init_scale_spline()
 	return False;
     }
     set_action_on();
-    set_temp_cursor(crosshair_cursor);
+    set_cursor(crosshair_cursor);
     toggle_splinemarker(cur_s);
     elastic_scalepts(cur_s->points);
     canvas_locmove_proc = scaling_spline;
@@ -504,7 +539,7 @@ init_scale_spline()
     return True;
 }
 
-static
+static void
 cancel_scale_spline()
 {
     elastic_scalepts(cur_s->points);
@@ -512,7 +547,7 @@ cancel_scale_spline()
     wrapup_scale();
 }
 
-static
+static void
 fix_scale_spline(x, y)
     int		    x, y;
 {
@@ -525,7 +560,7 @@ fix_scale_spline(x, y)
     set_action_object(F_CHANGE, O_SPLINE);
     old_s->next = cur_s;
     /* now change the original to become the new object */
-    rescale_points(cur_s->points, x, y);
+    rescale_points(cur_s, x, y);
     /* redraw anything under the old spline */
     redisplay_spline(old_s);
     /* and the new one */
@@ -535,7 +570,7 @@ fix_scale_spline(x, y)
 
 /***************************  compound	********************************/
 
-static		Boolean
+static Boolean
 init_boxscale_compound(x, y)
     int		    x, y;
 {
@@ -549,11 +584,12 @@ init_boxscale_compound(x, y)
 
     if (xmin == xmax || ymin == ymax) {
 	put_msg(BOX_SCL_MSG);
+	beep();
 	return False;
     }
     set_action_on();
     toggle_compoundmarker(cur_c);
-    set_temp_cursor(crosshair_cursor);
+    set_cursor(crosshair_cursor);
 
     if (x == xmin) {
 	fix_x = xmax;
@@ -621,7 +657,7 @@ init_boxscale_compound(x, y)
     return True;
 }
 
-static
+static void
 cancel_boxscale_compound()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
@@ -629,7 +665,7 @@ cancel_boxscale_compound()
     wrapup_scale();
 }
 
-static
+static void
 fix_boxscale_compound(x, y)
     int		    x, y;
 {
@@ -649,21 +685,21 @@ fix_boxscale_compound(x, y)
     wrapup_scale();
 }
 
-static
+static void
 init_scale_compound()
 {
     fix_x = (cur_c->nwcorner.x + cur_c->secorner.x) / 2;
     fix_y = (cur_c->nwcorner.y + cur_c->secorner.y) / 2;
     set_action_on();
     toggle_compoundmarker(cur_c);
-    set_temp_cursor(crosshair_cursor);
+    set_cursor(crosshair_cursor);
     elastic_scalecompound(cur_c);
     canvas_locmove_proc = scaling_compound;
     canvas_middlebut_proc = fix_scale_compound;
     canvas_rightbut_proc = cancel_scale_compound;
 }
 
-static
+static void
 cancel_scale_compound()
 {
     elastic_scalecompound(cur_c);
@@ -671,7 +707,7 @@ cancel_scale_compound()
     wrapup_scale();
 }
 
-static
+static void
 fix_scale_compound(x, y)
     int		    x, y;
 {
@@ -692,7 +728,7 @@ fix_scale_compound(x, y)
     wrapup_scale();
 }
 
-static int
+static void
 prescale_compound(c, x, y)
     F_compound	   *c;
     int		    x, y;
@@ -710,6 +746,7 @@ prescale_compound(c, x, y)
     scale_compound(c, scalefact, scalefact, fix_x, fix_y);
 }
 
+void
 scale_compound(c, sx, sy, refx, refy)
     F_compound	   *c;
     double	    sx, sy;
@@ -752,6 +789,7 @@ scale_compound(c, sx, sy, refx, refy)
     }
 }
 
+void
 scale_line(l, sx, sy, refx, refy)
     F_line	   *l;
     float	    sx, sy;
@@ -778,8 +816,13 @@ scale_line(l, sx, sy, refx, refy)
 	if (l->radius == 0)
 		l->radius = 1;
     }
+    /* finally, scale any arrowheads */
+    scale_arrows(l,sx,sy);
+    /* scale line width */
+    scale_linewidth(l,sx,sy);
 }
 
+void
 scale_spline(s, sx, sy, refx, refy)
     F_spline	   *s;
     float	    sx, sy;
@@ -791,9 +834,13 @@ scale_spline(s, sx, sy, refx, refy)
 	p->x = round(refx + (p->x - refx) * sx);
 	p->y = round(refy + (p->y - refy) * sy);
     }
-
+    /* scale any arrowheads */
+    scale_arrows(s,sx,sy);
+    /* scale line width */
+    scale_linewidth(s,sx,sy);
 }
 
+void
 scale_arc(a, sx, sy, refx, refy)
     F_arc	   *a;
     float	    sx, sy;
@@ -829,10 +876,18 @@ scale_arc(a, sx, sy, refx, refy)
 	if (a->point[0].x == a->point[2].x &&
 	    a->point[0].y == a->point[2].y)
 		a->point[2].x++;
+	/* make up a center */
+	a->center.x = a->point[1].x;
+	a->center.y = a->point[1].y;
     }
     a->direction = compute_direction(a->point[0], a->point[1], a->point[2]);
+    /* scale any arrowheads */
+    scale_arrows(a,sx,sy);
+    /* scale line width */
+    scale_linewidth(a,sx,sy);
 }
 
+void
 scale_ellipse(e, sx, sy, refx, refy)
     F_ellipse	   *e;
     float	    sx, sy;
@@ -856,8 +911,11 @@ scale_ellipse(e, sx, sy, refx, refy)
 	if (e->radiuses.x == e->radiuses.y)
 	    e->type += 2;
     }
+    /* scale line width */
+    scale_linewidth(e,sx,sy);
 }
 
+void
 scale_text(t, sx, sy, refx, refy)
     F_text	   *t;
     float	    sx, sy;
@@ -878,7 +936,7 @@ scale_text(t, sx, sy, refx, refy)
 
 /***************************  line  ********************************/
 
-static		Boolean
+static Boolean
 init_boxscale_line(x, y)
     int		    x, y;
 {
@@ -890,6 +948,7 @@ init_boxscale_line(x, y)
 	cur_l->type != T_ARC_BOX &&
 	cur_l->type != T_PICTURE) {
 	put_msg(BOX_SCL2_MSG);
+	beep();
 	return False;
     }
     p0 = cur_l->points;
@@ -902,6 +961,7 @@ init_boxscale_line(x, y)
 
     if (xmin == xmax || ymin == ymax) {
 	put_msg(BOX_SCL_MSG);
+	beep();
 	return False;
     }
     set_action_on();
@@ -957,7 +1017,7 @@ init_boxscale_line(x, y)
 
     cur_x = from_x;
     cur_y = from_y;
-    set_temp_cursor(crosshair_cursor);
+    set_cursor(crosshair_cursor);
 
     if (constrained == BOX_SCALE) {
 	dx = (double) (cur_x - fix_x);
@@ -974,7 +1034,7 @@ init_boxscale_line(x, y)
     return True;
 }
 
-static
+static void
 cancel_boxscale_line()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
@@ -982,24 +1042,35 @@ cancel_boxscale_line()
     wrapup_scale();
 }
 
-static
+static void
 fix_boxscale_line(x, y)
     int		    x, y;
 {
+    int		owd,oht, nwd, nht;
+    float	scalex, scaley;
+
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     adjust_box_pos(x, y, from_x, from_y, &x, &y);
     new_l = copy_line(cur_l);
     draw_line(cur_l, ERASE);
     assign_newboxpoint(new_l, fix_x, fix_y, x, y);
+    owd = abs(cur_l->points->x - cur_l->points->next->next->x);
+    oht = abs(cur_l->points->y - cur_l->points->next->next->y);
+    nwd = abs(new_l->points->x - new_l->points->next->next->x);
+    nht = abs(new_l->points->y - new_l->points->next->next->y);
     if (new_l->type == T_PICTURE) {
 	if (signof(fix_x - from_x) != signof(fix_x - x))
 	    new_l->pic->flipped = 1 - new_l->pic->flipped;
 	if (signof(fix_y - from_y) != signof(fix_y - y))
 	    new_l->pic->flipped = 1 - new_l->pic->flipped;
     } else if (new_l->type == T_ARC_BOX) {	/* scale the radius also */
-	scale_radius(cur_l, new_l);
+	scale_radius(cur_l, new_l, owd, oht, nwd, nht);
     }
     change_line(cur_l, new_l);
+    scalex = 1.0 * nwd/owd;
+    scaley = 1.0 * nht/oht;
+    /* scale the line width */
+    scale_linewidth(new_l, scalex, scaley);
     /* redraw anything under the old line */
     redisplay_line(cur_l);
     /* and the new one */
@@ -1007,17 +1078,15 @@ fix_boxscale_line(x, y)
     wrapup_scale();
 }
 
-scale_radius(old, new)
+void
+scale_radius(old, new, owd, oht, nwd, nht)
     F_line	   *old, *new;
+    int owd, oht, nwd, nht;
 {
-	int owd,oht, nwd, nht;
 	float wdscale, htscale;
-	owd = abs(old->points->x - old->points->next->next->x);
-	oht = abs(old->points->y - old->points->next->next->y);
-	nwd = abs(new->points->x - new->points->next->next->x);
-	nht = abs(new->points->y - new->points->next->next->y);
-	wdscale = (float) nwd/owd;
-	htscale = (float) nht/oht;
+
+	wdscale = 1.0 * nwd/owd;
+	htscale = 1.0 * nht/oht;
 	/* scale by the average of height/width factor */
 	new->radius = round(new->radius * (wdscale+htscale)/2);
 	/* next, if the radius is larger than half the width, set it to the 
@@ -1029,7 +1098,7 @@ scale_radius(old, new)
 		new->radius = 1;
 }
 
-static
+static Boolean
 init_scale_line()
 {
     int		    sumx, sumy, cnt;
@@ -1051,7 +1120,7 @@ init_scale_line()
     }
     set_action_on();
     toggle_linemarker(cur_l);
-    set_temp_cursor(crosshair_cursor);
+    set_cursor(crosshair_cursor);
     if (cur_l->type == T_BOX || cur_l->type == T_PICTURE)
 	boxsize_msg(2);	/* factor of 2 because measurement is from midpoint */
     elastic_scalepts(cur_l->points);
@@ -1061,7 +1130,7 @@ init_scale_line()
     return True;
 }
 
-static
+static void
 cancel_scale_line()
 {
     elastic_scalepts(cur_l->points);
@@ -1069,10 +1138,12 @@ cancel_scale_line()
     wrapup_scale();
 }
 
-static
+static void
 fix_scale_line(x, y)
     int		    x, y;
 {
+    int		owd,oht, nwd, nht;
+
     elastic_scalepts(cur_l->points);
     adjust_box_pos(x, y, from_x, from_y, &x, &y);
     /* make a copy of the original and save as unchanged object */
@@ -1082,10 +1153,15 @@ fix_scale_line(x, y)
     set_action_object(F_CHANGE, O_POLYLINE);
     old_l->next = cur_l;
     /* now change the original to become the new object */
-    rescale_points(cur_l->points, x, y);
+    rescale_points(cur_l, x, y);
     /* and scale the radius if ARC_BOX */
-    if (cur_l->type == T_ARC_BOX)
-	scale_radius(old_l, cur_l);
+    if (cur_l->type == T_ARC_BOX) {
+	owd = abs(old_l->points->x - old_l->points->next->next->x);
+	oht = abs(old_l->points->y - old_l->points->next->next->y);
+	nwd = abs(cur_l->points->x - cur_l->points->next->next->x);
+	nht = abs(cur_l->points->y - cur_l->points->next->next->y);
+	scale_radius(cur_l, cur_l, owd, oht, nwd, nht);
+    }
     /* redraw anything under the old line */
     redisplay_line(old_l);
     /* and the new one */
@@ -1093,16 +1169,15 @@ fix_scale_line(x, y)
     wrapup_scale();
 }
 
-static
-rescale_points(pts, x, y)
-    F_point	   *pts;
+static void
+rescale_points(obj, x, y)
+    F_line	   *obj;
     int		    x, y;
 {
     F_point	   *p;
     int		    newx, newy, oldx, oldy;
     float	    newd, oldd, scalefact;
 
-    p = pts;
     newx = x - fix_x;
     newy = y - fix_y;
     newd = sqrt((double) (newx * newx + newy * newy));
@@ -1112,9 +1187,58 @@ rescale_points(pts, x, y)
     oldd = sqrt((double) (oldx * oldx + oldy * oldy));
 
     scalefact = newd / oldd;
-    for (p = pts; p != NULL; p = p->next) {
+    for (p = obj->points; p != NULL; p = p->next) {
 	p->x = fix_x + (p->x - fix_x) * scalefact;
 	p->y = fix_y + (p->y - fix_y) * scalefact;
     }
+    /* scale any arrows */
+    scale_arrows(obj,scalefact,scalefact);
+    /* scale line width */
+    scale_linewidth(obj,scalefact,scalefact);
     set_modifiedflag();
+}
+
+/* scale arrowheads on passed object by sx,sy */
+
+void
+scale_arrows(obj,sx,sy)
+    F_line	 *obj;
+    float	  sx,sy;
+{
+    scale_arrow(obj->for_arrow,sx,sy);
+    scale_arrow(obj->back_arrow,sx,sy);
+}
+	
+/* scale arrowhead by sx,sy - for now just use average
+   of sx,sy for scale factor */
+
+void
+scale_arrow(arrow,sx,sy)
+    F_arrow	 *arrow;
+    float	  sx,sy;
+{
+    if (arrow == 0)
+	return;
+    sx = (sx+sy)/2.0;
+    arrow->ht *= sx;
+    arrow->wd *= sx;
+    return;
+}
+
+/* scale line width - we can call the object a F_line because all
+   Fig object structures have the same components up until the style_val */
+
+scale_linewidth(l,sx,sy)
+    F_line	 *l;
+    float	  sx,sy;
+{
+    if (l->thickness == 0)
+	return;
+
+    /* scale the thickness by the average of the horizontal and vertical scale factors */
+    sx = (sx+sy)/2.0;
+    l->thickness *= sx;
+    /* don't allow underflow */
+    if (l->thickness == 0)
+	l->thickness = 1;
 }

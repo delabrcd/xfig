@@ -1,24 +1,21 @@
-#ifndef W_INDPANEL_H
-#define W_INDPANEL_H
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
+
+#ifndef W_INDPANEL_H
+#define W_INDPANEL_H
 
 #include "w_icons.h"
 
@@ -26,9 +23,9 @@
 #define		UPD_BITS	10	/* bits wide and high */
 #define		UPD_BORD	1	/* border width for update squares */
 #define		UPD_INT		2	/* internal spacing */
-#define		UPD_CTRL_HT	38 + UPD_BITS + 2*UPD_BORD + 2*UPD_INT
+#define		UPD_CTRL_HT	40 + UPD_BITS + 2*UPD_BORD + 2*UPD_INT
 
-extern	Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
+extern Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 
 /* number of arrow types (need to declare because it is used in both
    w_indpanel.c and e_edit.c */
@@ -40,7 +37,7 @@ extern	Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 #define I_ANGLEGEOM	0x00000001
 #define I_VALIGN	0x00000002
 #define I_HALIGN	0x00000004
-#define I_GRIDMODE	0x00000008
+#define I_ARROWSIZE	0x00000008
 #define I_POINTPOSN	0x00000010
 #define I_FILLSTYLE	0x00000020
 #define I_BOXRADIUS	0x00000040
@@ -51,7 +48,7 @@ extern	Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 #define I_FONTSIZE	0x00000800
 #define I_FONT		0x00001000
 #define I_TEXTSTEP	0x00002000
-#define I_ZOOM		0x00004000
+#define I_free1_____	0x00004000	/* this one is free for another ind */
 #define I_ROTNANGLE	0x00008000
 #define I_NUMSIDES	0x00010000
 #define I_PEN_COLOR	0x00020000
@@ -67,12 +64,13 @@ extern	Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 #define I_NUMCOPIES	0x08000000
 #define I_NUMXCOPIES	0x10000000
 #define I_NUMYCOPIES	0x20000000
+#define I_free2_____	0x40000000	/* this one is free for another ind */
+#define I_free3_____	0x80000000	/* same */
 
 #define I_NONE		0x00000000
-#define I_ALL		0x3fffffff
+#define I_ALL		0x3fffffff	/* be sure to update I_ALL if more buttons are added */
 
-#define I_MIN1		(I_GRIDMODE | I_ZOOM)
-#define I_MIN2		(I_MIN1 | I_POINTPOSN)
+#define I_MIN2		(I_POINTPOSN)
 #define I_MIN3		(I_MIN2 | I_LINKMODE)
 #define I_ADDMOVPT	(I_MIN2 | I_ANGLEGEOM)
 #define I_TEXT0		(I_TEXTJUST | I_FONT | I_FONTSIZE | I_PEN_COLOR | \
@@ -83,23 +81,26 @@ extern	Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 #define I_LINE1		(I_FILLSTYLE | I_LINESTYLE | I_JOINSTYLE | I_LINEWIDTH | \
 				I_PEN_COLOR | I_FILL_COLOR | I_DEPTH | I_CAPSTYLE)
 #define I_LINE		(I_MIN2 | I_LINE1 | I_DEPTH | I_ANGLEGEOM | \
-				I_ARROWMODE | I_ARROWTYPE)
+				I_ARROWMODE | I_ARROWTYPE | I_ARROWSIZE)
 #define I_BOX		(I_MIN2 | I_LINE1 | I_DEPTH)
 #define I_CIRCLE	(I_MIN2 | I_LINE0 | I_DEPTH)
 #define I_ELLIPSE	(I_MIN2 | I_LINE0 | I_DEPTH | I_ELLTEXTANGLE)
-#define I_ARC		(I_BOX | I_ARROWMODE | I_ARROWTYPE | I_CAPSTYLE | I_ARCTYPE)
+#define I_ARC		(I_BOX | I_ARROWMODE | I_ARROWTYPE | I_ARROWSIZE | \
+				I_CAPSTYLE | I_ARCTYPE)
 #define I_REGPOLY	(I_BOX | I_NUMSIDES)
 #define I_CLOSED	(I_BOX | I_ANGLEGEOM)
-#define I_OPEN		(I_CLOSED | I_ARROWMODE | I_ARROWTYPE | I_CAPSTYLE)
+#define I_OPEN		(I_CLOSED | I_ARROWMODE | I_ARROWTYPE | I_ARROWSIZE | I_CAPSTYLE)
 #define I_ARCBOX	(I_BOX | I_BOXRADIUS)
 #define I_PICOBJ	(I_MIN2 | I_DEPTH | I_PEN_COLOR)
-#define I_OBJECT	(I_MIN1 | I_TEXT0 | I_LINE1 | I_ARROWMODE | I_ARROWTYPE | \
+#define I_OBJECT	(I_TEXT0 | I_LINE1 | I_ARROWMODE | I_ARROWTYPE | I_ARROWSIZE | \
 				I_BOXRADIUS | I_DEPTH | I_ARCTYPE)
-#define I_ALIGN		(I_MIN1 | I_HALIGN | I_VALIGN)
+#define I_ALIGN		(I_HALIGN | I_VALIGN)
 #define I_ROTATE	(I_MIN2 | I_ROTNANGLE | I_NUMCOPIES)
 #define I_COPY   	(I_MIN3 | I_NUMXCOPIES | I_NUMYCOPIES)
+#define I_ADD_DEL_ARROW (I_LINEWIDTH | I_ARROWTYPE | I_ARROWSIZE)
+
 /* for checking which parts to update */
-#define I_UPDATEMASK	(I_OBJECT & ~I_GRIDMODE & ~I_ZOOM)
+#define I_UPDATEMASK	(I_OBJECT)
 
 typedef struct choice_struct {
     int		    value;
@@ -107,16 +108,20 @@ typedef struct choice_struct {
     Pixmap	    pixmap;
 }		choice_info;
 
+extern choice_info arrowtype_choices[];
+extern choice_info fillstyle_choices[];
+
 typedef struct ind_sw_struct {
     int		    type;	/* one of I_CHOICE .. I_FVAL */
     int		    func;
-    char	    line1[16], line2[8];
+    char	    line1[38], line2[8];
     int		    sw_width;
     int		   *i_varadr;
     float	   *f_varadr;
-    int		    (*inc_func) ();
-    int		    (*dec_func) ();
-    int		    (*show_func) ();
+    void	    (*inc_func) ();
+    void	    (*dec_func) ();
+    void	    (*show_func) ();
+    int		    min, max;	/* min, max values allowable */
     choice_info	   *choices;	/* specific to I_CHOICE */
     int		    numchoices; /* specific to I_CHOICE */
     int		    sw_per_row; /* specific to I_CHOICE */
@@ -129,12 +134,17 @@ typedef struct ind_sw_struct {
 }		ind_sw_info;
 
 #define ZOOM_SWITCH_INDEX	0	/* used by w_zoom.c */
+
+/* EXPORTS */
+
 extern ind_sw_info ind_switches[];
-
-extern unsigned char	arrow0_bits[], arrow1_bits[], arrow2_bits[], arrow3_bits[];
-extern unsigned char	arrow4_bits[], arrow5_bits[], arrow6_bits[];
-
-/* pointer to the color popup so it can be re-used in the popup edit panel */
+extern ind_sw_info *fill_style_sw;
+extern ind_sw_info *pen_color_button, *fill_color_button;
 extern ind_sw_info *color_popup;
+
+extern Boolean	update_buts_managed;
+extern Widget	choice_popup;
+extern void	show_zoom();
+extern void	show_fillstyle();
 
 #endif /* W_INDPANEL_H */

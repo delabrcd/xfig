@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -25,6 +20,7 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "e_addpt.h"
 #include "u_create.h"
 #include "u_draw.h"
 #include "u_elastic.h"
@@ -32,19 +28,19 @@
 #include "u_search.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
-extern void	force_positioning(), force_nopositioning();
-extern void	force_anglegeom(), force_noanglegeom();
+#include "w_modepanel.h"
 
-static int	init_point_adding();
-static int	fix_linepoint_adding();
-static int	fix_splinepoint_adding();
-static int	init_linepointadding();
-static int	init_splinepointadding();
-static int	find_endpoints();
+static void	init_point_adding();
+static void	fix_linepoint_adding();
+static void	fix_splinepoint_adding();
+static void	init_linepointadding();
+static void	init_splinepointadding();
+static void	find_endpoints();
 
+void
 point_adding_selected()
 {
-    set_mousefun("break/add here", "", "", "", "", "");
+    set_mousefun("break/add here", "", "", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_point_adding);
@@ -57,17 +53,17 @@ point_adding_selected()
     constrained = MOVE_ARB;
 }
 
-static int
+static void
 init_point_adding(p, type, x, y, px, py)
-    char	   *p;
+    F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
 {
     set_action_on();
-    set_mousefun("place new point", "", "cancel", "", "", "");
+    set_mousefun("place new point", "", "cancel", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     draw_mousefun_canvas();
-    set_temp_cursor(null_cursor);
+    set_cursor(null_cursor);
     switch (type) {
     case O_POLYLINE:
 	cur_l = (F_line *) p;
@@ -100,7 +96,7 @@ init_point_adding(p, type, x, y, px, py)
     canvas_locmove_proc = reshaping_line;
 }
 
-static
+static void
 wrapup_pointadding()
 {
     reset_action_on();
@@ -108,14 +104,16 @@ wrapup_pointadding()
     draw_mousefun_canvas();
 }
 
-static
+static void
 cancel_pointadding()
 {
     elastic_linelink();
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     wrapup_pointadding();
 }
 
-static
+static void
 cancel_line_pointadding()
 {
     if (left_point != NULL && right_point != NULL)
@@ -128,7 +126,7 @@ cancel_line_pointadding()
 
 /**************************  spline  *******************************/
 
-static int
+static void
 init_splinepointadding(px, py)
     int		    px, py;
 {
@@ -147,9 +145,11 @@ init_splinepointadding(px, py)
     }
     canvas_leftbut_proc = fix_splinepoint_adding;
     canvas_rightbut_proc = cancel_pointadding;
+    /* turn off all markers */
+    update_markers(0);
 }
 
-static
+static void
 fix_splinepoint_adding(x, y)
     int		    x, y;
 {
@@ -165,6 +165,8 @@ fix_splinepoint_adding(x, y)
     elastic_linelink();
     splinepoint_adding(cur_s, left_point, p, right_point,
 		   approx_spline(cur_s) ? S_SPLINE_APPROX : S_SPLINE_INTERP);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     wrapup_pointadding();
 }
 
@@ -175,6 +177,7 @@ fix_splinepoint_adding(x, y)
  * added_point will be appended to the end of the list.
  */
 
+void
 splinepoint_adding(spline, left_point, added_point, right_point, sfactor)
     F_spline	   *spline;
     F_point	   *left_point, *added_point, *right_point;
@@ -186,7 +189,6 @@ splinepoint_adding(spline, left_point, added_point, right_point, sfactor)
     if ((c = create_sfactor()) == NULL)
 	    return;
     set_temp_cursor(wait_cursor);
-    mask_toggle_splinemarker(spline);
     /* delete it and redraw underlying objects */
     list_delete_spline(&objects.splines, spline);
     redisplay_spline(spline);
@@ -233,7 +235,7 @@ splinepoint_adding(spline, left_point, added_point, right_point, sfactor)
 
 /***************************  line  ********************************/
 
-static int
+static void
 init_linepointadding(px, py)
     int		    px, py;
 {
@@ -255,9 +257,11 @@ init_linepointadding(px, py)
 
     canvas_leftbut_proc = fix_linepoint_adding;
     canvas_rightbut_proc = cancel_line_pointadding;
+    /* turn off all markers */
+    update_markers(0);
 }
 
-static
+static void
 fix_linepoint_adding(x, y)
     int x, y;
 {
@@ -272,14 +276,18 @@ fix_linepoint_adding(x, y)
     p->y = cur_y;
     elastic_linelink();
     linepoint_adding(cur_l, left_point, p);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     wrapup_pointadding();
 }
 
+void
 linepoint_adding(line, left_point, added_point)
     F_line	   *line;
     F_point	   *left_point, *added_point;
 {
-    mask_toggle_linemarker(line);
+    /* turn off all markers */
+    update_markers(0);
     /* delete it and redraw underlying objects */
     list_delete_line(&objects.lines, line);
     redisplay_line(line);
@@ -310,7 +318,7 @@ linepoint_adding(line, left_point, added_point)
  * to q.
  */
 
-static int
+static void
 find_endpoints(p, x, y, fp, sp)
     F_point	   *p, **fp, **sp;
     int		    x, y;

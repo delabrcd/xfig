@@ -1,21 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -24,6 +19,7 @@
 #include "object.h"
 #include "mode.h"
 #include "paintop.h"
+#include "d_text.h"
 #include "u_create.h"
 #include "u_list.h"
 #include "u_draw.h"
@@ -34,19 +30,18 @@
 #include "w_mousefun.h"
 #include "w_setup.h"
 
-extern		update_current_settings();
-extern PIX_FONT lookfont();
-static int	init_update_object();
-static int	init_update_settings();
-extern double update_line_styleval();
+static void	init_update_object();
+static void	init_update_settings();
 
 #define	up_part(lv,rv,mask) \
 		if (cur_updatemask & (mask)) \
 		    (lv) = (rv)
 
+void
 update_selected()
 {
-    set_mousefun("update object", "update settings", "", "", "", "");
+    set_mousefun("update object", "update settings", "",
+			LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_update_object);
@@ -59,7 +54,7 @@ update_selected()
     manage_update_buts();
 }
 
-static
+static int
 get_arrow_mode(object)
     F_line	   *object;
 {
@@ -73,7 +68,7 @@ get_arrow_mode(object)
 	return L_FBARROWS;
 }
     
-static
+static int
 get_arrow_type(object)
     F_line	   *object;
 {
@@ -93,9 +88,9 @@ get_arrow_type(object)
     
 /* update the indicator buttons FROM the selected object */
 
-static
+static void
 init_update_settings(p, type, x, y, px, py)
-    char	   *p;
+    F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
@@ -116,13 +111,16 @@ init_update_settings(p, type, x, y, px, py)
 		up_part(cur_linestyle, cur_l->style, I_LINESTYLE);
 		up_part(cur_joinstyle, cur_l->join_style, I_JOINSTYLE);
 		up_part(cur_capstyle, cur_l->cap_style, I_CAPSTYLE);
-		up_part(cur_styleval, 
-                   update_line_styleval((cur_l->style_val*2.) / (cur_l->thickness+1.)),
-		   I_LINESTYLE);
+		up_part(cur_styleval, cur_l->style_val*2./(cur_l->thickness+1.), I_LINESTYLE);
+		/* update the dash length/dot gap value for cur_styleval */
+		up_dashdot(cur_styleval, cur_l->style, I_LINESTYLE);
 		up_part(cur_arrowmode, get_arrow_mode(cur_l), I_ARROWMODE);
 		up_part(cur_arrowtype, get_arrow_type(cur_l), I_ARROWTYPE);
-		}
-	else if (cur_l->pic->subtype == T_PIC_XBM)	/* only XBM pictures have color */
+		if (cur_l->back_arrow)
+			up_from_arrow(cur_l->back_arrow,cur_l->thickness);
+		if (cur_l->for_arrow)
+			up_from_arrow(cur_l->for_arrow,cur_l->thickness);
+	} else if (cur_l->pic->subtype == T_PIC_XBM)	/* only XBM pictures have color */
 		up_part(cur_pencolor, cur_l->pen_color, I_PEN_COLOR);
 	up_part(cur_depth, cur_l->depth, I_DEPTH);
 	if (cur_l->type == T_ARC_BOX)
@@ -158,9 +156,9 @@ init_update_settings(p, type, x, y, px, py)
 	up_part(cur_pencolor, cur_e->pen_color, I_PEN_COLOR);
 	up_part(cur_fillcolor, cur_e->fill_color, I_FILL_COLOR);
 	up_part(cur_linestyle, cur_e->style, I_LINESTYLE);
-	up_part(cur_styleval, 
-            update_line_styleval((cur_e->style_val*2.) / (cur_e->thickness+1.)),
-	    I_LINESTYLE);
+	up_part(cur_styleval, (cur_e->style_val*2.)/(cur_e->thickness+1.), I_LINESTYLE);
+	/* update the dash length/dot gap value for cur_styleval */
+	up_dashdot(cur_styleval, cur_e->style, I_LINESTYLE);
 	up_part(cur_depth, cur_e->depth, I_DEPTH);
 	break;
     case O_ARC:
@@ -171,13 +169,17 @@ init_update_settings(p, type, x, y, px, py)
 	up_part(cur_fillcolor, cur_a->fill_color, I_FILL_COLOR);
 	up_part(cur_arctype, cur_a->type, I_ARCTYPE);
 	up_part(cur_linestyle, cur_a->style, I_LINESTYLE);
-	up_part(cur_styleval, 
-            update_line_styleval((cur_a->style_val*2.) / (cur_a->thickness+1.)),
-	    I_LINESTYLE);
+	up_part(cur_styleval, (cur_a->style_val*2.)/(cur_a->thickness+1.), I_LINESTYLE);
+	/* update the dash length/dot gap value for cur_styleval */
+	up_dashdot(cur_styleval, cur_a->style, I_LINESTYLE);
 	up_part(cur_capstyle, cur_a->cap_style, I_CAPSTYLE);
 	up_part(cur_depth, cur_a->depth, I_DEPTH);
 	up_part(cur_arrowmode, get_arrow_mode((F_line *)cur_a), I_ARROWMODE);
 	up_part(cur_arrowtype, get_arrow_type((F_line *)cur_a), I_ARROWTYPE);
+	if (cur_a->back_arrow)
+		up_from_arrow(cur_a->back_arrow,cur_a->thickness);
+	if (cur_a->for_arrow)
+		up_from_arrow(cur_a->for_arrow,cur_a->thickness);
 	break;
     case O_SPLINE:
 	cur_s = (F_spline *) p;
@@ -186,14 +188,18 @@ init_update_settings(p, type, x, y, px, py)
 	up_part(cur_pencolor, cur_s->pen_color, I_PEN_COLOR);
 	up_part(cur_fillcolor, cur_s->fill_color, I_FILL_COLOR);
 	up_part(cur_linestyle, cur_s->style, I_LINESTYLE);
-	up_part(cur_styleval, 
-            update_line_styleval((cur_s->style_val*2.) / (cur_s->thickness+1.)),
-	    I_LINESTYLE);
+	up_part(cur_styleval, (cur_s->style_val*2.)/(cur_s->thickness+1.), I_LINESTYLE);
+	/* update the dash length/dot gap value for cur_styleval */
+	up_dashdot(cur_styleval, cur_s->style, I_LINESTYLE);
 	if (cur_s->type == T_OPEN_APPROX || cur_s->type == T_OPEN_INTERP)
 	    up_part(cur_capstyle, cur_s->cap_style, I_CAPSTYLE);
 	up_part(cur_depth, cur_s->depth, I_DEPTH);
 	up_part(cur_arrowmode, get_arrow_mode((F_line *)cur_s), I_ARROWMODE);
 	up_part(cur_arrowtype, get_arrow_type((F_line *)cur_s), I_ARROWTYPE);
+	if (cur_s->back_arrow)
+		up_from_arrow(cur_s->back_arrow,cur_s->thickness);
+	if (cur_s->for_arrow)
+		up_from_arrow(cur_s->for_arrow,cur_s->thickness);
 	break;
     default:
 	return;
@@ -202,9 +208,27 @@ init_update_settings(p, type, x, y, px, py)
     put_msg("Settings UPDATED");
 }
 
-static
+up_from_arrow(arrow, thick)
+    F_arrow  *arrow;
+    int	      thick;
+{
+	up_part(cur_arrowthick, arrow->thickness,I_ARROWSIZE);
+	up_part(cur_arrowwidth, arrow->wd,I_ARROWSIZE);
+	up_part(cur_arrowheight,arrow->ht,I_ARROWSIZE);
+	up_part(cur_arrow_multthick, arrow->thickness,I_ARROWSIZE);
+	up_part(cur_arrow_multwidth, arrow->wd,I_ARROWSIZE);
+	up_part(cur_arrow_multheight,arrow->ht,I_ARROWSIZE);
+	if (cur_updatemask & I_ARROWSIZE) {
+	    /* now get multiple to line width of object */
+	    cur_arrow_multthick /= thick;
+	    cur_arrow_multwidth /= thick;
+	    cur_arrow_multheight /= thick;
+	}
+}
+
+static void
 init_update_object(p, type, x, y, px, py)
-    char	   *p;
+    F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
@@ -408,10 +432,28 @@ up_arrow(object)
     if (object->for_arrow) {
 	up_part(object->for_arrow->type, ARROW_TYPE(cur_arrowtype), I_ARROWTYPE);
 	up_part(object->for_arrow->style, ARROW_STYLE(cur_arrowtype), I_ARROWTYPE);
+	if (use_abs_arrowvals) {
+	    up_part(object->for_arrow->thickness,cur_arrowthick,I_ARROWSIZE);
+	    up_part(object->for_arrow->wd,cur_arrowwidth,I_ARROWSIZE);
+	    up_part(object->for_arrow->ht,cur_arrowheight,I_ARROWSIZE);
+	} else {
+	    up_part(object->for_arrow->thickness,cur_arrow_multthick*cur_linewidth,I_ARROWSIZE);
+	    up_part(object->for_arrow->wd,cur_arrow_multwidth*cur_linewidth,I_ARROWSIZE);
+	    up_part(object->for_arrow->ht,cur_arrow_multheight*cur_linewidth,I_ARROWSIZE);
+	}
     }
     if (object->back_arrow) {
 	up_part(object->back_arrow->type, ARROW_TYPE(cur_arrowtype), I_ARROWTYPE);
 	up_part(object->back_arrow->style, ARROW_STYLE(cur_arrowtype), I_ARROWTYPE);
+	if (use_abs_arrowvals) {
+	    up_part(object->back_arrow->thickness,cur_arrowthick,I_ARROWSIZE);
+	    up_part(object->back_arrow->wd,cur_arrowwidth,I_ARROWSIZE);
+	    up_part(object->back_arrow->ht,cur_arrowheight,I_ARROWSIZE);
+	} else {
+	    up_part(object->back_arrow->thickness,cur_arrow_multthick*cur_linewidth,I_ARROWSIZE);
+	    up_part(object->back_arrow->wd,cur_arrow_multwidth*cur_linewidth,I_ARROWSIZE);
+	    up_part(object->back_arrow->ht,cur_arrow_multheight*cur_linewidth,I_ARROWSIZE);
+	}
     }
 
     if (! (cur_updatemask & I_ARROWMODE))
@@ -419,9 +461,15 @@ up_arrow(object)
 
     if (autoforwardarrow_mode) {
 	if (object->for_arrow) {
-	    object->for_arrow->thickness = (float) cur_linewidth;
-	    object->for_arrow->wid = cur_linewidth * 4 * ZOOM_FACTOR;
-	    object->for_arrow->ht = cur_linewidth * 8 * ZOOM_FACTOR;
+	    if (use_abs_arrowvals) {
+		object->for_arrow->thickness = cur_arrowthick;
+		object->for_arrow->wd = cur_arrowwidth;
+		object->for_arrow->ht = cur_arrowheight;
+	    } else {
+		object->for_arrow->thickness = cur_arrow_multthick*cur_linewidth;
+		object->for_arrow->wd = cur_arrow_multwidth*cur_linewidth;
+		object->for_arrow->ht = cur_arrow_multheight*cur_linewidth;
+	    }
 	} else	/* no arrowhead at all yet, create a new one */
 	    up_part(object->for_arrow, forward_arrow(), I_ARROWMODE);
     } else {	/* delete arrowhead if one exists */
@@ -432,9 +480,15 @@ up_arrow(object)
     }
     if (autobackwardarrow_mode) {
 	if (object->back_arrow) {
-	    object->back_arrow->thickness = (float) cur_linewidth;
-	    object->back_arrow->wid = cur_linewidth * 4 * ZOOM_FACTOR;
-	    object->back_arrow->ht = cur_linewidth * 8 * ZOOM_FACTOR;
+	    if (use_abs_arrowvals) {
+		object->back_arrow->thickness = cur_arrowthick;
+		object->back_arrow->wd = cur_arrowwidth;
+		object->back_arrow->ht = cur_arrowheight;
+	    } else {
+		object->back_arrow->thickness = cur_arrow_multthick*cur_linewidth;
+		object->back_arrow->wd = cur_arrow_multwidth*cur_linewidth;
+		object->back_arrow->ht = cur_arrow_multheight*cur_linewidth;
+	    }
 	} else {	/* no arrowhead at all yet, create a new one */
 	    up_part(object->back_arrow, backward_arrow(), I_ARROWMODE);
 	}
@@ -511,4 +565,19 @@ update_texts(texts)
 
     for (t = texts; t != NULL; t = t->next)
 	update_text(t);
+}
+
+up_dashdot(styleval, style, mask)
+    float	    styleval;
+    int		    style;
+    unsigned int    mask;
+{
+	if ((style == DASH_LINE) ||
+	    (style == DASH_DOT_LINE) || 
+	    (style == DASH_2_DOTS_LINE) || 
+	    (style == DASH_3_DOTS_LINE)) {
+		cur_dashlength = styleval;
+	} else if (style == DOTTED_LINE) {
+		cur_dotgap = styleval;
+	}
 }

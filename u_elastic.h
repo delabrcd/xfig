@@ -1,26 +1,22 @@
-#ifndef U_ELASTIC_H
-#define U_ELASTIC_H
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
+
+#ifndef U_ELASTIC_H
+#define U_ELASTIC_H
 
 #define		MOVE_ARB	0
 #define		MOVE_HORIZ_VERT 1
@@ -29,65 +25,69 @@
 #define		BOX_VSTRETCH	4
 
 #define		MSG_RADIUS	0
-#define		MSG_DIAM	1
-#define		MSG_LENGTH	2
-#define		MSG_DIST	3
+#define		MSG_RADIUS2	1
+#define		MSG_DIAM	2
+#define		MSG_LENGTH	3
+#define		MSG_DIST	4
+#define		MSG_PNTS_LENGTH	5
 
 extern int	constrained;
-extern int	fix_x, fix_y, work_numsides;
 extern float	cur_angle;
+extern int	work_numsides;
 extern int	x1off, x2off, y1off, y2off;
 extern Cursor	cur_latexcursor;
 extern int	from_x, from_y;
 extern double	cosa, sina;
 extern int	movedpoint_num;
-extern int	latex_fix_x, latex_fix_y;
 extern F_point *left_point, *right_point;
 
-extern		elastic_box();
-extern		elastic_movebox();
-extern		resizing_box();
-extern		elastic_box_constrained();
-extern		constrained_resizing_box();
-extern		moving_box();
-extern		elastic_poly();
-extern		resizing_poly();
-extern		scaling_compound();
-extern		elastic_scalecompound();
+extern void	elastic_box();
+extern void	elastic_movebox();
+extern void	resizing_box();
+extern void	elastic_box_constrained();
+extern void	constrained_resizing_box();
+extern void	moving_box();
 
-extern		resizing_ebr(), resizing_ebd();
-extern		constrained_resizing_ebr(), constrained_resizing_ebd();
-extern		constrained_resizing_cbd(), resizing_cbr(), resizing_cbd();
-extern		elastic_moveellipse();
-extern		moving_ellipse();
-extern		elastic_scaleellipse();
-extern		scaling_ellipse();
+extern void	elastic_poly();
+extern void	resizing_poly();
+extern void	scaling_compound();
+extern void	elastic_scalecompound();
 
-extern		freehand_line();
-extern		latex_line();
-extern		constrainedangle_line();
-extern		elastic_moveline();
-extern		elastic_line();
-extern		moving_line();
-extern		reshaping_line();
-extern		reshaping_latexline();
-extern		elastic_linelink();
-extern		elastic_scalepts();
-extern		scaling_line();
+extern void	resizing_ebr(), resizing_ebd();
+extern void	constrained_resizing_ebr(), constrained_resizing_ebd();
+extern void	constrained_resizing_cbd(), resizing_cbr(), resizing_cbd();
+extern void	elastic_moveellipse();
+extern void	moving_ellipse();
+extern void	elastic_scaleellipse();
+extern void	scaling_ellipse();
 
-extern		moving_arc();
-extern		elastic_movearc();
-extern		reshaping_arc();
-extern		elastic_arclink();
-extern		scaling_arc();
-extern		elastic_scalearc();
+extern void	unconstrained_line();
+extern void	latex_line();
+extern void	constrainedangle_line();
+extern void	elastic_moveline();
+extern void	elastic_line();
+extern void	moving_line();
+extern void	reshaping_line();
+extern void	reshaping_latexline();
+extern void	elastic_linelink();
+extern void	elastic_scalepts();
+extern void	scaling_line();
 
-extern		moving_text();
-extern		draw_movingtext();
+extern void	moving_arc();
+extern void	elastic_movearc();
+extern void	reshaping_arc();
+extern void	elastic_arclink();
+extern void	scaling_arc();
+extern void	elastic_scalearc();
 
-extern		moving_spline();
-extern		scaling_spline();
+extern void	moving_text();
+extern void	draw_movingtext();
+extern void	elastic_movetext();
 
-extern		adjust_box_pos();
-extern		adjust_pos();
+extern void	moving_spline();
+extern void	scaling_spline();
+
+extern void	adjust_box_pos();
+extern void	adjust_pos();
+
 #endif /* U_ELASTIC_H */

@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -25,6 +20,7 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "e_rotate.h"
 #include "u_draw.h"
 #include "u_search.h"
 #include "u_create.h"
@@ -32,10 +28,7 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-/* from e_rotate.c */
-extern int	setcenter;
-extern int	setcenter_x;
-extern int	setcenter_y;
+/* EXPORTS */
 
 int		setanchor;
 int		setanchor_x;
@@ -43,17 +36,19 @@ int		setanchor_y;
 
 static int	flip_axis;
 static int	copy;
-static int	init_flip();
-static int	init_copynflip();
-static int	set_unset_anchor();
-static int	init_fliparc();
-static int	init_flipcompound();
-static int	init_flipellipse();
-static int	init_flipline();
-static int	init_flipspline();
-static int	flip_selected();
-static int	flip_search();
 
+static void	init_flip();
+static void	init_copynflip();
+static void	set_unset_anchor();
+static void	init_fliparc();
+static void	init_flipcompound();
+static void	init_flipellipse();
+static void	init_flipline();
+static void	init_flipspline();
+static void	flip_selected();
+static void	flip_search();
+
+void
 flip_ud_selected()
 {
     flip_axis = UD_FLIP;
@@ -68,6 +63,7 @@ flip_ud_selected()
     flip_selected();
 }
 
+void
 flip_lr_selected()
 {
     flip_axis = LR_FLIP;
@@ -82,10 +78,11 @@ flip_lr_selected()
     flip_selected();
 }
 
-static
+static void
 flip_selected()
 {
-    set_mousefun("flip", "copy & flip", "set anchor", "", "", "");
+    set_mousefun("flip", "copy & flip", "set anchor", 
+			LOC_OBJ, LOC_OBJ, "set anchor");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_flip);
@@ -96,19 +93,21 @@ flip_selected()
     set_cursor(pick15_cursor);
 }
 
-static
+static void
 set_unset_anchor(x, y)
     int		    x, y;
 {
     if (setanchor) {
-      set_mousefun("flip", "copy & flip", "set anchor", "", "", "");
+      set_mousefun("flip", "copy & flip", "set anchor", 
+			LOC_OBJ, LOC_OBJ, "set anchor");
       draw_mousefun_canvas();
       setanchor = 0;
       center_marker(setanchor_x,setanchor_y);
       /* second call to center_mark on same position deletes */
     }
     else {
-      set_mousefun("flip", "copy & flip", "unset anchor", "", "", "");
+      set_mousefun("flip", "copy & flip", "unset anchor", 
+			LOC_OBJ, LOC_OBJ, "unset anchor");
       draw_mousefun_canvas();
       setanchor = 1;
       setanchor_x = x;
@@ -118,39 +117,39 @@ set_unset_anchor(x, y)
       
 }
 
-static
+static void
 init_flip(p, type, x, y, px, py)
-    char	   *p;
+    F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
 {
     copy = 0;
     if (setanchor) 
-      flip_search(p, type, x, y,setanchor_x,setanchor_y );
-      /* remember rotation center, e.g for multiple rotation*/
+	flip_search(p, type, x, y,setanchor_x,setanchor_y );
+	/* remember rotation center, e.g for multiple rotation*/
     else
-    flip_search(p, type, x, y, px, py);
+	flip_search(p, type, x, y, px, py);
 }
 
-static
+static void
 init_copynflip(p, type, x, y, px, py)
-    char	   *p;
+    F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
 {
     copy = 1;
     if (setanchor) 
-      flip_search(p, type, x, y,setanchor_x,setanchor_y );
-      /* remember rotation center, e.g for multiple rotation*/
+	flip_search(p, type, x, y,setanchor_x,setanchor_y );
+	/* remember rotation center, e.g for multiple rotation*/
     else
-    flip_search(p, type, x, y, px, py);
+	flip_search(p, type, x, y, px, py);
 }
 
-static
+static void
 flip_search(p, type, x, y, px, py)
-    char	   *p;
+    F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
@@ -181,7 +180,7 @@ flip_search(p, type, x, y, px, py)
     }
 }
 
-static
+static void
 init_fliparc(old_a, px, py)
     F_arc	   *old_a;
     int		    px, py;
@@ -205,7 +204,7 @@ init_fliparc(old_a, px, py)
     reset_cursor();
 }
 
-static
+static void
 init_flipcompound(old_c, px, py)
     F_compound	   *old_c;
     int		    px, py;
@@ -229,7 +228,7 @@ init_flipcompound(old_c, px, py)
     reset_cursor();
 }
 
-static
+static void
 init_flipellipse(old_e, px, py)
     F_ellipse	   *old_e;
 {
@@ -250,7 +249,7 @@ init_flipellipse(old_e, px, py)
     redisplay_ellipse(new_e);
 }
 
-static
+static void
 init_flipline(old_l, px, py)
     F_line	   *old_l;
     int		    px, py;
@@ -272,7 +271,7 @@ init_flipline(old_l, px, py)
     redisplay_line(new_l);
 }
 
-static
+static void
 init_flipspline(old_s, px, py)
     F_spline	   *old_s;
     int		    px, py;

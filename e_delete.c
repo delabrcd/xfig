@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -25,6 +20,7 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "d_line.h"
 #include "u_create.h"
 #include "u_draw.h"
 #include "u_elastic.h"
@@ -35,27 +31,29 @@
 #include "w_mousefun.h"
 #include "w_setup.h"
 
-static int	init_delete();
-static int	init_delete_region(), delete_region(), cancel_delete_region();
-static int	init_delete_to_scrap();
+static void	init_delete();
+static void	init_delete_region(), delete_region(), cancel_delete_region();
+static void	init_delete_to_scrap();
 
+void
 delete_selected()
 {
-    set_mousefun("delete object", "delete region", "del to cut buf", "", "", "");
+    set_mousefun("delete object", "delete region", "del to cut buf",
+			LOC_OBJ, "", LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_delete);
     init_searchproc_right(init_delete_to_scrap);
     canvas_leftbut_proc = object_search_left;
-    canvas_rightbut_proc = object_search_right;
     canvas_middlebut_proc = init_delete_region;
+    canvas_rightbut_proc = object_search_right;
     set_cursor(buster_cursor);
     reset_action_on();
 }
 
-static
+static void
 init_delete(p, type, x, y, px, py)
-    char	   *p;
+    F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
@@ -96,7 +94,7 @@ init_delete(p, type, x, y, px, py)
     }
 }
 
-static
+static void
 init_delete_region(x, y)
     int		    x, y;
 {
@@ -108,7 +106,7 @@ init_delete_region(x, y)
     canvas_rightbut_proc = cancel_delete_region;
 }
 
-static
+static void
 cancel_delete_region()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
@@ -116,7 +114,7 @@ cancel_delete_region()
     draw_mousefun_canvas();
 }
 
-static
+static void
 delete_region(x, y)
     int		    x, y;
 {
@@ -152,9 +150,9 @@ delete_region(x, y)
     draw_mousefun_canvas();
 }
 
-static
+static void
 init_delete_to_scrap(p, type, x, y, px, py)
-    char	   *p;
+    F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
@@ -214,8 +212,6 @@ init_delete_to_scrap(p, type, x, y, px, py)
 FILE *
 open_cut_file()
 {
-    extern char	    cut_buf_name[];
-
     FILE	   *fp;
     struct stat	    file_status;
 

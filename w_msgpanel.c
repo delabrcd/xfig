@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -26,35 +21,29 @@
 
 #include "fig.h"
 #include "figx.h"
+#include <varargs.h>
 #include "resources.h"
 #include "object.h"
 #include "mode.h"
+#include "d_line.h"
+#include "f_read.h"
+#include "f_util.h"
 #include "paintop.h"
 #include "u_elastic.h"
 #include "w_canvas.h"
 #include "w_drawprim.h"
+#include "w_file.h"
+#include "w_msgpanel.h"
 #include "w_util.h"
 #include "w_setup.h"
-#include <varargs.h>
-
-/********************* IMPORTS *******************/
-
-extern char    *basname();
-extern char    *read_file_name;
-extern Widget	cfile_text;		/* widget for the current filename */
+#include "w_zoom.h"
 
 /********************* EXPORTS *******************/
 
-int		put_msg();
-int		init_msgreceiving();
 Boolean		popup_up = False;
-
-/* so w_file.c can access */
-Boolean	file_msg_is_popped=False;
-Widget	file_msg_popup;
-
-/* for f_read.c */
-Boolean	first_file_msg;
+Boolean		file_msg_is_popped=False;
+Widget		file_msg_popup;
+Boolean		first_file_msg;
 
 /************************  LOCAL ******************/
 
@@ -64,17 +53,17 @@ static char	prompt[BUF_SIZE];
 DeclareStaticArgs(12);
 
 /* for the balloon toggle window */
-static Widget	balloon_toggle;
+static Widget	balloon_form, balloon_toggle, balloon_label;
 
 /* turns on and off the balloons setting */
 static XtCallbackProc toggle_balloons();
 
 /* popup message over toggle window when mouse enters it */
-static void     toggle_balloon();
+static void     toggle_balloon_trigger();
 static void     toggle_unballoon();
 
 /* popup message over filename window when mouse enters it */
-static void     filename_balloon();
+static void     filename_balloon_trigger();
 static void     filename_unballoon();
 
 /* for the popup message (file_msg) window */
@@ -91,20 +80,6 @@ static XtActionsRec	file_msg_actions[] =
 {
     {"DismissFileMsg", (XtActionProc) file_msg_panel_dismiss},
 };
-
-#define balloons_on_width 16
-#define balloons_on_height 15
-static char balloons_on_bits[] = {
-   0x00, 0x00, 0xfe, 0x7f, 0xfe, 0x67, 0xfe, 0x63, 0xfe, 0x71, 0xfe, 0x79,
-   0xfe, 0x7c, 0xe2, 0x7c, 0x46, 0x7e, 0x0e, 0x7e, 0x0e, 0x7f, 0x1e, 0x7f,
-   0x9e, 0x7f, 0xfe, 0x7f, 0x00, 0x00};
-
-#define balloons_off_width 16
-#define balloons_off_height 15
-static char balloons_off_bits[] = {
-   0xff, 0xff, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80,
-   0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80, 0x01, 0x80,
-   0x01, 0x80, 0x01, 0x80, 0xff, 0xff};
 
 /* message window code begins */
 
@@ -125,7 +100,7 @@ init_msg(tool, filename)
     /* setup the file name widget first */
     FirstArg(XtNresizable, True);
     NextArg(XtNfont, bold_font);
-    NextArg(XtNlabel, (filename!=NULL? filename: DEF_NAME));
+    NextArg(XtNlabel, " ");
     NextArg(XtNtop, XtChainTop);
     NextArg(XtNbottom, XtChainTop);
     NextArg(XtNborderWidth, INTERNAL_BW);
@@ -133,7 +108,7 @@ init_msg(tool, filename)
 				      Args, ArgCount);
     /* popup when mouse passes over filename */
     XtAddEventHandler(name_panel, EnterWindowMask, (Boolean) 0,
-		      filename_balloon, (XtPointer) name_panel);
+		      filename_balloon_trigger, (XtPointer) name_panel);
     XtAddEventHandler(name_panel, LeaveWindowMask, (Boolean) 0,
 		      filename_unballoon, (XtPointer) name_panel);
 
@@ -148,31 +123,61 @@ init_msg(tool, filename)
     NextArg(XtNdisplayCaret, False);
     msg_panel = XtCreateManagedWidget("message", asciiTextWidgetClass, msg_form,
 				      Args, ArgCount);
+
     /* and finally, the button to turn on/off the popup balloon messages */
     /* the checkmark bitmap is created and set in setup_msg() */
-    FirstArg(XtNstate, appres.show_balloons);
+
+    /* Make a form to put the toggle and label */
+    FirstArg(XtNfromHoriz, msg_panel);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    NextArg(XtNhorizDistance, -INTERNAL_BW);
+    NextArg(XtNdefaultDistance, 0);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainRight);	/* prevent resizing */
+    NextArg(XtNright, XtChainRight);
+    balloon_form = XtCreateManagedWidget("balloon_form", formWidgetClass, msg_form,
+					Args, ArgCount);
+    /* now the toggle */
+    FirstArg(XtNstate, appres.showballoons);
+    NextArg(XtNwidth, 20);
+    NextArg(XtNheight, 20);
     NextArg(XtNinternalWidth, 1);
     NextArg(XtNinternalHeight, 1);
-    NextArg(XtNfromHoriz, msg_panel);
-    NextArg(XtNhorizDistance, -INTERNAL_BW);
     NextArg(XtNtop, XtChainTop);
-    NextArg(XtNbottom, XtChainTop);
-    NextArg(XtNleft, XtChainRight);
-    NextArg(XtNright, XtChainRight);
-    NextArg(XtNlabel, "Balloons   ");
-    NextArg(XtNborderWidth, INTERNAL_BW);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainLeft);
+    NextArg(XtNright, XtChainLeft);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNfont, bold_font);
+    NextArg(XtNlabel, " ");
     balloon_toggle = XtCreateManagedWidget("balloon_toggle", toggleWidgetClass,
-				   msg_form, Args, ArgCount);
+				   balloon_form, Args, ArgCount);
     /* popup when mouse passes over toggle */
     XtAddEventHandler(balloon_toggle, EnterWindowMask, (Boolean) 0,
-		      toggle_balloon, (XtPointer) balloon_toggle);
+		      toggle_balloon_trigger, (XtPointer) balloon_toggle);
     XtAddEventHandler(balloon_toggle, LeaveWindowMask, (Boolean) 0,
 		      toggle_unballoon, (XtPointer) balloon_toggle);
     XtAddCallback(balloon_toggle, XtNcallback, (XtCallbackProc) toggle_balloons,
 		  (XtPointer) NULL);
-}
 
-static	Pixmap balloons_on_bitmap=(Pixmap) 0, balloons_off_bitmap=(Pixmap) 0;
+    FirstArg(XtNlabel, "Balloons");
+    NextArg(XtNfromHoriz, balloon_toggle);
+    NextArg(XtNhorizDistance, 0);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNresizable, False);
+    NextArg(XtNtop, XtChainTop);
+    NextArg(XtNbottom, XtChainBottom);
+    NextArg(XtNleft, XtChainRight);
+    NextArg(XtNright, XtChainRight);
+    balloon_label = XtCreateManagedWidget("balloon_label", labelWidgetClass,
+				   balloon_form, Args, ArgCount);
+    /* popup when mouse passes over toggle */
+    XtAddEventHandler(balloon_label, EnterWindowMask, (Boolean) 0,
+		      toggle_balloon_trigger, (XtPointer) balloon_label);
+    XtAddEventHandler(balloon_label, LeaveWindowMask, (Boolean) 0,
+		      toggle_unballoon, (XtPointer) balloon_label);
+}
 
 /* at this point the widget has been realized so we can do more */
 
@@ -203,12 +208,7 @@ setup_msg()
     SetValues(name_panel);
     SetValues(balloon_toggle);
 
-    /* create two bitmaps to show on/off state */
-    balloons_on_bitmap = XCreateBitmapFromData(tool_d, tool_w, 
-			balloons_on_bits, balloons_on_width, balloons_on_height);
-    balloons_off_bitmap = XCreateBitmapFromData(tool_d, tool_w, 
-			balloons_off_bits, balloons_off_width, balloons_off_height);
-    FirstArg(XtNleftBitmap, appres.show_balloons? balloons_on_bitmap: balloons_off_bitmap);
+    FirstArg(XtNbitmap, appres.showballoons? check_pm: (Pixmap)NULL);
     SetValues(balloon_toggle);
 
     XtManageChild(msg_panel);
@@ -221,25 +221,39 @@ setup_msg()
 
 static	Widget filename_balloon_popup = (Widget) 0;
 
+/* balloon_id and balloon_w are also used by toggle_balloon stuff */
+static	XtIntervalId balloon_id = (XtIntervalId) 0;
+static	Widget balloon_w;
+
+XtTimerCallbackProc file_balloon();
+
 static void
-filename_balloon(widget, closure, event, continue_to_dispatch)
+filename_balloon_trigger(widget, closure, event, continue_to_dispatch)
     Widget        widget;
     XtPointer	  closure;
     XEvent*	  event;
     Boolean*	  continue_to_dispatch;
 {
-	Widget	  box, balloons_label;
+	if (!appres.showballoons)
+		return;
+	balloon_w = widget;
+	balloon_id = XtAppAddTimeOut(tool_app, appres.balloon_delay,
+			(XtTimerCallbackProc) file_balloon, (XtPointer) NULL);
+}
+
+XtTimerCallbackProc
+file_balloon()
+{
 	Position  x, y;
-	Dimension w;
+	Dimension w, h;
+	Widget box, balloons_label;
 
-	if (!appres.show_balloons)
-	    return;
-
-	/* get width of this window */
+	/* get width and height of this window */
 	FirstArg(XtNwidth, &w);
-	GetValues(widget);
-	/* find right edge + 5 pixels */
-	XtTranslateCoords(widget, w+5, 0, &x, &y);
+	NextArg(XtNheight, &h);
+	GetValues(balloon_w);
+	/* find right and lower edge */
+	XtTranslateCoords(balloon_w, w+2, h+2, &x, &y);
 
 	/* put popup there */
 	FirstArg(XtNx, x);
@@ -249,12 +263,12 @@ filename_balloon(widget, closure, event, continue_to_dispatch)
 	FirstArg(XtNborderWidth, 0);
 	NextArg(XtNhSpace, 0);
 	NextArg(XtNvSpace, 0);
-	box = XtCreateManagedWidget("box", boxWidgetClass, filename_balloon_popup, 
-			Args, ArgCount);
+	box = XtCreateManagedWidget("box", boxWidgetClass, 
+				filename_balloon_popup, Args, ArgCount);
 	FirstArg(XtNborderWidth, 0);
 	NextArg(XtNlabel, "Current filename");
 	balloons_label = XtCreateManagedWidget("label", labelWidgetClass,
-				    box, Args, ArgCount);
+				box, Args, ArgCount);
 	XtPopup(filename_balloon_popup,XtGrabNone);
 }
 
@@ -267,34 +281,49 @@ filename_unballoon(widget, closure, event, continue_to_dispatch)
     XEvent*	    event;
     Boolean*	    continue_to_dispatch;
 {
-    if (filename_balloon_popup != (Widget) 0)
+    if (balloon_id) 
+	XtRemoveTimeOut(balloon_id);
+    balloon_id = (XtIntervalId) 0;
+    if (filename_balloon_popup != (Widget) 0) {
 	XtDestroyWidget(filename_balloon_popup);
-    filename_balloon_popup = 0;
+	filename_balloon_popup = (Widget) 0;
+    }
 }
 
 /* come here when the mouse passes over the toggle window */
 
 static	Widget toggle_balloon_popup = (Widget) 0;
 
+XtTimerCallbackProc toggle_balloon();
+
 static void
-toggle_balloon(widget, closure, event, continue_to_dispatch)
+toggle_balloon_trigger(widget, closure, event, continue_to_dispatch)
     Widget        widget;
     XtPointer	  closure;
     XEvent*	  event;
     Boolean*	  continue_to_dispatch;
 {
+	if (!appres.showballoons)
+		return;
+	balloon_w = widget;
+	balloon_id = XtAppAddTimeOut(tool_app, appres.balloon_delay,
+			(XtTimerCallbackProc) toggle_balloon,
+				  (XtPointer) NULL);
+}
+
+XtTimerCallbackProc
+toggle_balloon()
+{
 	Widget	  box, balloons_label;
 	Position  x, y;
-	Dimension w;
+	Dimension w, h;
 
-	if (!appres.show_balloons)
-	    return;
-
-	/* get width of this button */
+	/* get width and height of this window */
 	FirstArg(XtNwidth, &w);
-	GetValues(widget);
-	/* find right edge + 5 pixels */
-	XtTranslateCoords(widget, w+5, 0, &x, &y);
+	NextArg(XtNheight, &h);
+	GetValues(balloon_w);
+	/* find right and lower edge */
+	XtTranslateCoords(balloon_w, w+2, h+2, &x, &y);
 
 	/* put popup there */
 	FirstArg(XtNx, x);
@@ -309,8 +338,10 @@ toggle_balloon(widget, closure, event, continue_to_dispatch)
 	FirstArg(XtNborderWidth, 0);
 	NextArg(XtNlabel, "Turn on and off balloon messages");
 	balloons_label = XtCreateManagedWidget("label", labelWidgetClass,
-				    box, Args, ArgCount);
+				box, Args, ArgCount);
 	XtPopup(toggle_balloon_popup,XtGrabNone);
+	XtRemoveTimeOut(balloon_id);
+	balloon_id = (XtIntervalId) 0;
 }
 
 /* come here when the mouse leaves the toggle window */
@@ -322,25 +353,28 @@ toggle_unballoon(widget, closure, event, continue_to_dispatch)
     XEvent*	    event;
     Boolean*	    continue_to_dispatch;
 {
-    if (toggle_balloon_popup != (Widget) 0)
+    if (balloon_id) 
+	XtRemoveTimeOut(balloon_id);
+    balloon_id = (XtIntervalId) 0;
+    if (toggle_balloon_popup != (Widget) 0) {
 	XtDestroyWidget(toggle_balloon_popup);
-    toggle_balloon_popup = 0;
+	toggle_balloon_popup = (Widget) 0;
+    }
 }
 
-static
-XtCallbackProc
+static XtCallbackProc
 toggle_balloons(w, dummy, dummy2)
     Widget	   w;
     XtPointer	   dummy;
     XtPointer	   dummy2;
 {
     /* toggle flag */
-    appres.show_balloons = !appres.show_balloons;
+    appres.showballoons = !appres.showballoons;
     /* and change bitmap to show state */
-    if (appres.show_balloons) {
-	FirstArg(XtNleftBitmap, balloons_on_bitmap);
+    if (appres.showballoons) {
+	FirstArg(XtNbitmap, check_pm);
     } else {
-	FirstArg(XtNleftBitmap, balloons_off_bitmap);
+	FirstArg(XtNbitmap, (Pixmap) NULL);
     }
     SetValues(w);
 }
@@ -356,30 +390,30 @@ toggle_balloons(w, dummy, dummy2)
 update_cur_filename(newname)
 	char	*newname;
 {
-	Dimension namwid,togwid;
+	Dimension namwid,balwid;
 
 	XtUnmanageChild(msg_form);
 	XtUnmanageChild(msg_panel);
 	XtUnmanageChild(name_panel);
-	XtUnmanageChild(balloon_toggle);
+	XtUnmanageChild(balloon_form);
 
 	strcpy(cur_filename,newname);
 
 	/* store the new filename in the name_panel widget */
 	FirstArg(XtNlabel, newname);
 	SetValues(name_panel);
-	if (cfile_text)			/* if the name widget in the file popup exists... */
+	if (cfile_text)		/* if the name widget in the file popup exists... */
 	    SetValues(cfile_text);
 
 	/* get the new size of the name_panel */
 	FirstArg(XtNwidth, &namwid);
 	GetValues(name_panel);
 	/* and the other two */
-	FirstArg(XtNwidth, &togwid);
-	GetValues(balloon_toggle);
+	FirstArg(XtNwidth, &balwid);
+	GetValues(balloon_form);
 
 	/* new size is form width minus all others */
-	MSGPANEL_WD = MSGFORM_WD-namwid-togwid;
+	MSGPANEL_WD = MSGFORM_WD-namwid-balwid;
 	if (MSGPANEL_WD <= 0)
 		MSGPANEL_WD = 100;
 	/* resize the message panel to fit with the new width of the name panel */
@@ -388,11 +422,11 @@ update_cur_filename(newname)
 	/* keep the height the same */
 	FirstArg(XtNheight, MSGFORM_HT);
 	SetValues(name_panel);
-	SetValues(balloon_toggle);
+	SetValues(balloon_form);
 
 	XtManageChild(msg_panel);
 	XtManageChild(name_panel);
-	XtManageChild(balloon_toggle);
+	XtManageChild(balloon_form);
 
 	/* now resize the whole form */
 	FirstArg(XtNwidth, MSGFORM_WD);
@@ -405,7 +439,7 @@ update_cur_filename(newname)
 }
 
 /* VARARGS1 */
-int
+void
 put_msg(va_alist)
     va_dcl
 {
@@ -420,30 +454,96 @@ put_msg(va_alist)
     SetValues(msg_panel);
 }
 
-clear_message()
-{
-    FirstArg(XtNstring, "\0");
-    SetValues(msg_panel);
-}
+static int	ox = 0,
+		oy = 0,
+		ofx = 0,
+		ofy = 0,
+		ot1x = 0,
+		ot1y = 0,
+		ot2x = 0,
+		ot2y = 0,
+		ot3x = 0,
+		ot3y = 0;
+static char	bufx[20], bufy[20], bufhyp[20];
 
+void
 boxsize_msg(fact)
     int fact;
 {
     float	dx, dy;
+    int		sdx, sdy;
+    int		t1x, t1y, t2x, t2y;
 
     dx = (float) fact * abs(cur_x - fix_x) /
-		(float)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
+		(float)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM)*appres.user_scale;
     dy = (float) fact * abs(cur_y - fix_y) /
-		(float)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
-    put_msg("Width = %.3lf %s, Length = %.3lf %s",
-		dx*appres.user_scale, cur_fig_units,
-		dy*appres.user_scale, cur_fig_units);
+		(float)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM)*appres.user_scale;
+    put_msg("Width = %.3lf %s, Height = %.3lf %s", 
+		dx, cur_fig_units, dy, cur_fig_units);
+    if (appres.showlengths && !freehand_line) {
+	if (dx < 0)
+	    sdx = -2.0/zoomscale;
+	else
+	    sdx = 2.0/zoomscale;
+	if (dy < 0)
+	    sdy = 2.0/zoomscale;
+	else
+	    sdy = -2.0/zoomscale;
+	/* erase old text */
+	pw_text(canvas_win, ot1x, ot1y, ERASE,roman_font,0.0,bufx,RED);
+	pw_text(canvas_win, ot2x, ot2y, ERASE,roman_font,0.0,bufy,RED);
+
+	/* draw new text */
+	/* dx first */
+	sprintf(bufx,"%.3f", fabs(dx*appres.user_scale));
+	t1x = (cur_x+fix_x)/2;
+	t1y = cur_y + sdy - 3.0/zoomscale;	/* just above the line */
+	pw_text(canvas_win, t1x, t1y, PAINT, roman_font, 0.0, bufx, RED);
+
+	/* then dy */
+	sprintf(bufy,"%.3f", fabs(dy*appres.user_scale));
+	t2x = fix_x + sdx + 4.0/zoomscale;		/* to the right of the line */
+	t2y = (cur_y+fix_y)/2+sdy;
+	pw_text(canvas_win, t2x, t2y, PAINT, roman_font, 0.0, bufy, RED);
+
+	/* now save new values */
+	ot1x = t1x;
+	ot1y = t1y;
+	ot2x = t2x;
+	ot2y = t2y;
+	ox = cur_x+sdx;
+	oy = cur_y+sdy;
+    }
 }
 
+erase_box_lengths()
+{
+    if (appres.showlengths && !freehand_line) {
+	/* erase old text */
+	pw_text(canvas_win, ot1x, ot1y, ERASE,roman_font,0.0,bufx,RED);
+	pw_text(canvas_win, ot2x, ot2y, ERASE,roman_font,0.0,bufy,RED);
+    }
+}
+
+void
 length_msg(type)
-int type;
+    int type;
 {
     altlength_msg(type, fix_x, fix_y);
+}
+
+erase_lengths()
+{
+    if (appres.showlengths && !freehand_line) {
+	/* erase old lines first */
+	pw_vector(canvas_win, ox, oy, ofx, oy, ERASE, 1, RUBBER_LINE, 0.0, RED);
+	pw_vector(canvas_win, ofx, oy, ofx, ofy, ERASE, 1, RUBBER_LINE, 0.0, RED);
+
+	/* erase old text */
+	pw_text(canvas_win, ot1x, ot1y, ERASE,roman_font,0.0,bufx,RED);
+	pw_text(canvas_win, ot2x, ot2y, ERASE,roman_font,0.0,bufy,RED);
+	pw_text(canvas_win, ot3x, ot3y, ERASE,roman_font,0.0,bufhyp,RED);
+    }
 }
 
 /*
@@ -451,22 +551,147 @@ int type;
 ** Distance will be measured from it to cur_x,cur_y.
 */
 
+void
 altlength_msg(type, fx, fy)
-int type;
+    int type;
 {
-    float	len;
-    double	dx,dy;
+  float		len;
+  double	dx,dy;
+  float	 	ang;
+  int		sdx, sdy;
+  int		t1x, t1y, t2x, t2y, t3x, t3y;
 
-    dx = (cur_x - fx)/(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
-    dy = (cur_y - fy)/(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
-    len = (float)sqrt(dx*dx + dy*dy);
-    put_msg("%s = %.3f %s, dx = %.3lf %s, dy = %.3lf %s",
-		(type==MSG_RADIUS? "Radius":
-                  (type==MSG_DIAM? "Diameter":
-		  (type==MSG_LENGTH? "Length": "Distance"))),
+  dx = (cur_x - fx)/(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
+  dy = (cur_y - fy)/(double)(appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
+  len = (float)sqrt(dx*dx + dy*dy);
+  if (dy != 0.0 || dx != 0.0) {
+	ang = (float) - atan2(dy,dx) * 180.0/M_PI;
+  } else {
+	ang = 0.0;
+  }
+  if (dx < 0)
+	sdx = 2.0/zoomscale;
+  else
+	sdx = -2.0/zoomscale;
+  if (dy < 0)
+	sdy = -2.0/zoomscale;
+  else
+	sdy = 2.0/zoomscale;
+
+  switch (type) {
+    case MSG_RADIUS:
+    case MSG_DIAM:
+	put_msg("%s = %.3f %s, dx = %.3lf %s, dy = %.3lf %s",
+                (type==MSG_RADIUS? "Radius": "Diameter"),
 		len*appres.user_scale, cur_fig_units,
 		(float)dx*appres.user_scale, cur_fig_units,
 		(float)dy*appres.user_scale, cur_fig_units);
+	break;
+    case MSG_RADIUS2:
+	put_msg("Radius1 = %.3f %s, Radius2 = %.3f %s",
+		(float)dx*appres.user_scale, cur_fig_units,
+		(float)dy*appres.user_scale, cur_fig_units);
+	break;
+    case MSG_PNTS_LENGTH:
+	put_msg("%d point%s, Length = %.3f %s, dx = %.3lf %s, dy = %.3lf %s (%.1f deg)",
+		num_point, ((num_point != 1)? "s": ""),
+		len*appres.user_scale, cur_fig_units,
+		(float)dx*appres.user_scale, cur_fig_units,
+		(float)dy*appres.user_scale, cur_fig_units,
+		ang );
+	break;
+    default:
+	put_msg("%s = %.3f %s, dx = %.3lf %s, dy = %.3lf %s (%.1f) deg",
+		(type==MSG_LENGTH? "Length": "Distance"),
+		len*appres.user_scale, cur_fig_units,
+		(float)dx*appres.user_scale, cur_fig_units,
+		(float)dy*appres.user_scale, cur_fig_units,
+		ang );
+	break;
+  }
+
+  /* now draw two lines to complete the triangle and label the two sides
+     with the lengths e.g.:
+			      |\
+			      | \
+			      |  \
+			2.531 |   \
+			      |    \
+			      |     \
+			      -------
+				1.341
+  */
+
+  if (appres.showlengths && !freehand_line) {
+    switch (type) {
+	case MSG_PNTS_LENGTH:
+	case MSG_LENGTH:
+	case MSG_DIST:
+		/* erase old lines first */
+		pw_vector(canvas_win, ox, oy, ofx, oy, ERASE, 1, RUBBER_LINE, 0.0, RED);
+		pw_vector(canvas_win, ofx, oy, ofx, ofy, ERASE, 1, RUBBER_LINE, 0.0, RED);
+
+		/* erase old text */
+		pw_text(canvas_win, ot1x, ot1y, ERASE,roman_font,0.0,bufx,RED);
+		pw_text(canvas_win, ot2x, ot2y, ERASE,roman_font,0.0,bufy,RED);
+		pw_text(canvas_win, ot3x, ot3y, ERASE,roman_font,0.0,bufhyp,RED);
+
+		/* draw new lines */
+		/* horizontal (dx) */
+		pw_vector(canvas_win, cur_x+sdx, cur_y+sdy, fx+sdx, cur_y+sdy, PAINT, 1, 
+				RUBBER_LINE, 0.0, RED);
+		/* vertical (dy) */
+		pw_vector(canvas_win, fx+sdx, cur_y+sdy, fx+sdx, fy+sdy, PAINT, 1, 
+				RUBBER_LINE, 0.0, RED);
+
+		/* draw new text */
+
+		/* dx first */
+		sprintf(bufx,"%.3f", fabs(dx*appres.user_scale));
+		t1x = (cur_x+fx)/2;
+		t1y = cur_y + sdy - 3.0/zoomscale;	/* just above the line */
+		pw_text(canvas_win, t1x, t1y, PAINT, roman_font, 0.0, bufx, RED);
+
+		/* then dy */
+		sprintf(bufy,"%.3f", fabs(dy*appres.user_scale));
+		t2x = fx + sdx + 4.0/zoomscale;		/* to the right of the line */
+		t2y = (cur_y+fy)/2+sdy;
+		pw_text(canvas_win, t2x, t2y, PAINT, roman_font, 0.0, bufy, RED);
+
+		/* then hypotenuse */
+		sprintf(bufhyp,"%.3f", len*appres.user_scale);
+		t3x = t1x + 4.0/zoomscale;		/* to the right of the hyp */
+		t3y = t2y;
+		pw_text(canvas_win, t3x, t3y, PAINT, roman_font, 0.0, bufhyp, RED);
+
+		break;
+
+	default:
+		break;
+    }
+  }
+
+  ot1x = t1x;
+  ot1y = t1y;
+  ot2x = t2x;
+  ot2y = t2y;
+  ot3x = t3x;
+  ot3y = t3y;
+  ox = cur_x+sdx;
+  oy = cur_y+sdy;
+  ofx = fx+sdx;
+  ofy = fy+sdy;
+}
+
+/* toggle the length lines when drawing or moving points */
+/* the default for this action is Meta-I */
+
+void
+toggle_show_lengths()
+{
+	appres.showlengths = !appres.showlengths;
+	beep();
+	put_msg("%s lengths in red next to lines ",appres.showlengths? "Show": "Don't show");
 }
 
 /*
@@ -475,8 +700,9 @@ int type;
 ** points 1 -> 3 and 2 -> 3.
 */
 
+void
 length_msg2(x1,y1,x2,y2,x3,y3)
-int x1,y1,x2,y2,x3,y3;
+    int x1,y1,x2,y2,x3,y3;
 {
     float	len1,len2;
     double	dx1,dy1,dx2,dy2;
@@ -501,21 +727,19 @@ int x1,y1,x2,y2,x3,y3;
 /* This is the section for the popup message window (file_msg) */
 
 /* VARARGS1 */
-int
+void
 file_msg(va_alist) va_dcl
 {
-    va_list arglist;
     XawTextBlock block;
     va_list ap;
     char *format;
 
     popup_file_msg();
-    if (first_file_msg)
-	{
+    if (first_file_msg) {
 	first_file_msg = False;
 	file_msg("---------------------");
 	file_msg("File %s:",read_file_name);
-	}
+    }
 
     va_start(ap);
     format = va_arg(ap, char *);
@@ -541,6 +765,7 @@ file_msg(va_alist) va_dcl
     file_msg_length += block.length;
 }
 
+static void
 clear_file_message(w, ev)
     Widget	    w;
     XButtonEvent   *ev;
@@ -575,39 +800,24 @@ clear_file_message(w, ev)
     file_msg_length = 0;
 }
 
-static Bool grabbed=False;
-
-static
-XtEventHandler
+static XtEventHandler
 file_msg_panel_dismiss(w, ev)
     Widget	    w;
     XButtonEvent   *ev;
 {
-	if ((grabbed) && (!popup_up))
-		XtAddGrab(file_msg_popup, False, False);
 	XtPopdown(file_msg_popup);
 	file_msg_is_popped=False;
 }
 
+void
 popup_file_msg()
 {
-	extern Atom wm_delete_window;
-
 	if (file_msg_popup) {
 	    if (!file_msg_is_popped) {
-		if (popup_up) {
-		    XtPopup(file_msg_popup, XtGrabNonexclusive);
-		    XSetWMProtocols(XtDisplay(file_msg_popup),
+		XtPopup(file_msg_popup, XtGrabNone);
+		XSetWMProtocols(XtDisplay(file_msg_popup),
 				    XtWindow(file_msg_popup),
 				    &wm_delete_window, 1);
-		    grabbed = True;
-		} else {
-		    XtPopup(file_msg_popup, XtGrabNone);
-		    XSetWMProtocols(XtDisplay(file_msg_popup),
-				    XtWindow(file_msg_popup),
-				    &wm_delete_window, 1);
-		    grabbed = False;
-		}
 	    }
 	    /* ensure that the most recent colormap is installed */
 	    set_cmap(XtWindow(file_msg_popup));
@@ -658,22 +868,10 @@ popup_file_msg()
 	XtAddEventHandler(file_msg_dismiss, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler)clear_file_message, (XtPointer) NULL);
 
-	if (popup_up)
-		{
-		XtPopup(file_msg_popup, XtGrabNonexclusive);
-    		XSetWMProtocols(XtDisplay(file_msg_popup),
-				XtWindow(file_msg_popup),
-			       	&wm_delete_window, 1);
-		grabbed = True;
-		}
-	else
-		{
-		XtPopup(file_msg_popup, XtGrabNone);
-    		XSetWMProtocols(XtDisplay(file_msg_popup),
-				XtWindow(file_msg_popup),
-			       	&wm_delete_window, 1);
-		grabbed = False;
-		}
+	XtPopup(file_msg_popup, XtGrabNone);
+	XSetWMProtocols(XtDisplay(file_msg_popup),
+			XtWindow(file_msg_popup),
+			&wm_delete_window, 1);
 	/* insure that the most recent colormap is installed */
 	set_cmap(XtWindow(file_msg_popup));
 }

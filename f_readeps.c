@@ -1,33 +1,25 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1992 by Brian Boyter
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
- *
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
 #include "fig.h"
 #include "resources.h"
 #include "object.h"
+#include "f_picobj.h"
 #include "w_setup.h"
-
-extern FILE	*open_picfile();
-extern void	 close_picfile();
 
 int	_read_pcx();
 
@@ -54,7 +46,6 @@ read_epsf(file,filetype,pic)
     char	    buf[300];
     int		    llx, lly, urx, ury, bad_bbox;
     unsigned char  *last;
-    float	    scale;
 #ifdef GSBIT
     int		    status;
     FILE	   *pixfile, *gsfile;
@@ -110,10 +101,9 @@ read_epsf(file,filetype,pic)
 	return FileInvalid;
     }
     pic->hw_ratio = (float) (ury - lly) / (float) (urx - llx);
-    /* make scale factor larger for metric */
-    scale = (appres.INCHES ? (float)PIX_PER_INCH : 2.54*PIX_PER_CM)/72.0;
-    pic->size_x = round((urx - llx) * scale);
-    pic->size_y = round((ury - lly) * scale);
+
+    pic->size_x = round((urx - llx + 1) * PIC_FACTOR);
+    pic->size_y = round((ury - lly + 1) * PIC_FACTOR);
     /* make 2-entry colormap here if we use monochrome */
     pic->cmap[0].red = pic->cmap[0].green = pic->cmap[0].blue = 0;
     pic->cmap[1].red = pic->cmap[1].green = pic->cmap[1].blue = 255;
@@ -209,7 +199,7 @@ read_epsf(file,filetype,pic)
     if ( useGS ) {
 	char	    tmpfile[PATH_MAX];
 	FILE	   *tmpfp;
-	char	   *psnam;
+	char	   *psnam,realname[PATH_MAX];
 
 	psnam = pic->file;
 	/* is the file a pipe? (This would mean that it is compressed) */
@@ -217,7 +207,7 @@ read_epsf(file,filetype,pic)
 	if (filetype == 1) {	/* yes, now we have to uncompress the file into a temp file */
 	    /* re-open the pipe */
 	    close_picfile(file, filetype);
-	    file = open_picfile(psnam, &filetype);
+	    file = open_picfile(psnam, &filetype, realname);
 	    sprintf(tmpfile, "%s/%s%06d", TMPDIR, "xfig-eps", getpid());
 	    if ((tmpfp = fopen(tmpfile, "w")) == NULL) {
 		file_msg("Couldn't open tmp file %s, %s", tmpfile, sys_errlist[errno]);
@@ -243,6 +233,8 @@ read_epsf(file,filetype,pic)
 	mark
 	/oldshowpage {showpage} bind def
 	/showpage {} def
+	/initgraphics {} def		<<< this nasty command should never be used!
+	/initmmatrix {} def		<<< this one too
 	(psfile) run
 	oldshowpage
 	% clean up stacks and dicts
@@ -256,6 +248,8 @@ read_epsf(file,filetype,pic)
 	fprintf(gsfile, "mark\n");
 	fprintf(gsfile, "/oldshowpage {showpage} bind def\n");
 	fprintf(gsfile, "/showpage {} def\n");
+	fprintf(gsfile, "/initgraphics {} def\n");
+	fprintf(gsfile, "/initmatrix {} def\n");
 	fprintf(gsfile, "(%s) run\n", psnam);
 	fprintf(gsfile, "oldshowpage\n");
 	fprintf(gsfile, "cleartomark\n");
@@ -269,6 +263,7 @@ read_epsf(file,filetype,pic)
 	if (status != 0 || ( pixfile = fopen(pixnam,"r") ) == NULL ) {
 	    FILE *errfile = fopen(errnam,"r");
 	    file_msg("Could not parse EPS file with ghostscript: %s", pic->file);
+	    file_msg("Look in %s for errors", errnam);
 	    if (errfile) {
 		file_msg("ERROR from ghostscript:");
 		while (fgets(buf, 300, errfile) != NULL) {
@@ -276,7 +271,6 @@ read_epsf(file,filetype,pic)
 		    file_msg("%s",buf);
 		}
 		fclose(errfile);
-		unlink(errnam);
 	    }
 	    free((char *) pic->bitmap);
 	    pic->bitmap = NULL;
@@ -293,6 +287,7 @@ read_epsf(file,filetype,pic)
 		while (buf[0] == '#');
 		if ( fread(pic->bitmap,nbitmap,1,pixfile) != 1 ) {
 		    file_msg("Error reading output (EPS problems?): %s", pixnam);
+		    file_msg("Look in %s for errors", errnam);
 		    fclose(pixfile);
 		    unlink(pixnam);
 		    free((char *) pic->bitmap);
@@ -311,7 +306,7 @@ read_epsf(file,filetype,pic)
 		/* save picture width/height because read_pcx will overwrite it */
 		wid = pic->size_x;
 		ht  = pic->size_y;
-		pcxfile = open_picfile(pixnam, &filtyp);
+		pcxfile = open_picfile(pixnam, &filtyp, realname);
 		status = _read_pcx(pcxfile,filtyp,pic);
 		close_picfile(pcxfile, filtyp);
 		/* restore width/height */
@@ -322,6 +317,7 @@ read_epsf(file,filetype,pic)
 		if (status != 1) {
 		    file_msg("Error reading output from ghostscript (EPS problems?): %s",
 			pixnam);
+		    file_msg("Look in %s for errors", errnam);
 		    unlink(pixnam);
 		    if (pic->bitmap)
 			free((char *) pic->bitmap);
@@ -331,6 +327,7 @@ read_epsf(file,filetype,pic)
 	}
 	fclose(pixfile);
 	unlink(pixnam);
+	unlink(errnam);
     }
 #endif /* GSBIT */
 
@@ -369,6 +366,8 @@ read_epsf(file,filetype,pic)
 	    }
 	}
     }
+    /* put in type */
+    pic->subtype = T_PIC_EPS;
     return PicSuccess;
 }
 

@@ -1,23 +1,18 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -26,56 +21,70 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "d_line.h"
+#include "d_spline.h"
 #include "u_create.h"
 #include "u_elastic.h"
 #include "u_list.h"
 #include "u_draw.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
-#include "d_spline.h"
 
+/*************************** local declarations *********************/
 
-static int	init_spline_drawing();
-static int 	   create_splineobject();
+static void	init_spline_drawing();
+static void	create_splineobject();
+static void	init_spline_freehand_drawing();
+static void	init_spline_drawing2();
 
-
-int
+void
 spline_drawing_selected()
 {
-    set_mousefun("first point", "", "", "", "", "");
+    set_mousefun("first point", "freehand", "", "", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     canvas_leftbut_proc = init_spline_drawing;
-    canvas_middlebut_proc = null_proc;
+    canvas_middlebut_proc = init_spline_freehand_drawing;
     canvas_rightbut_proc = null_proc;
     set_cursor(arrow_cursor);
     reset_action_on();
-    return 1;
 }
 
+static void
+init_spline_freehand_drawing(x, y)
+    int		    x, y;
+{
+    freehand_line = True;
+    init_spline_drawing2(x, y);
+}
 
-static
+static void
 init_spline_drawing(x, y)
     int		    x, y;
 {
-  if ((cur_mode == F_APPROX_SPLINE) || (cur_mode == F_INTERP_SPLINE))
-    {
-      min_num_points = OPEN_SPLINE_MIN_NUM_POINTS;
+    freehand_line = False;
+    init_spline_drawing2(x, y);
+}
+
+static void
+init_spline_drawing2(x, y)
+    int		    x, y;
+{
+    if ((cur_mode == F_APPROX_SPLINE) || (cur_mode == F_INTERP_SPLINE)) {
+	min_num_points = OPEN_SPLINE_MIN_NUM_POINTS;
 	init_trace_drawing(x, y);
 	canvas_middlebut_proc = create_splineobject;
-    }
-  else
-    {
-      min_num_points = CLOSED_SPLINE_MIN_NUM_POINTS;
-      init_trace_drawing(x, y);     
-      canvas_middlebut_save = create_splineobject;
+    } else {
+	min_num_points = CLOSED_SPLINE_MIN_NUM_POINTS;
+	init_trace_drawing(x, y);     
+	canvas_middlebut_save = create_splineobject;
     }
 
     return_proc = spline_drawing_selected;
 }
 
 
-static
+static void
 create_splineobject(x, y)
     int		    x, y;
 {
@@ -85,6 +94,8 @@ create_splineobject(x, y)
 	get_intermediatepoint(x, y, 0);
     }
     elastic_line();
+    /* erase any length info if appres.showlengths is true */
+    erase_lengths();
     if ((spline = create_spline()) == NULL) {
 	if (num_point == 1) {
 	    free((char *) cur_point);
@@ -134,6 +145,7 @@ create_splineobject(x, y)
     } else {
 	add_spline(spline);
     }
+    reset_action_on(); /* this signals redisplay_curobj() not to refresh */
 
     /* draw it and anything on top of it */
     redisplay_spline(spline);

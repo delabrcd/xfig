@@ -6,22 +6,18 @@
  * See "Kohonen neural networks for optimal colour quantization"
  * in "Network: Computation in Neural Systems" Vol. 5 (1994) pp 351-367.
  * for a discussion of the algorithm.]
-
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ *
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
+
 
 /*
  * Neural-Net quantization algorithm based on work of Anthony Dekker
@@ -30,6 +26,7 @@
 #include <stdio.h>
 #include "fig.h"
 #include "f_neuclrtab.h"
+#include "f_util.h"
 
 static	void initnet();
 static	void learn();
@@ -43,8 +40,9 @@ static	int  inxsearch();
 
 #define MAXNETSIZE	256
 
-		/* our color table (global) */
-extern BYTE	clrtab[256][3];
+/* our color table (global) */
+BYTE	clrtab[256][3];
+
 static int	netsize;
 
 #ifndef DEFSMPFAC

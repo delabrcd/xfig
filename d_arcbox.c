@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -29,13 +24,17 @@
 #include "u_elastic.h"
 #include "u_list.h"
 #include "w_canvas.h"
+#include "w_cursor.h"
+#include "w_msgpanel.h"
 #include "w_mousefun.h"
 
 /*************************** local procedures *********************/
 
-static int	create_arc_boxobject(), cancel_arc_boxobject();
-static int	init_arc_box_drawing();
+static void	create_arc_boxobject();
+static void	cancel_arc_boxobject();
+static void	init_arc_box_drawing();
 
+void
 arcbox_drawing_selected()
 {
     set_mousefun("corner point", "", "", "", "", "");
@@ -48,7 +47,7 @@ arcbox_drawing_selected()
     reset_action_on();
 }
 
-static
+static void
 init_arc_box_drawing(x, y)
     int		    x, y;
 {
@@ -61,11 +60,11 @@ init_arc_box_drawing(x, y)
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = cancel_arc_boxobject;
     elastic_box(fix_x, fix_y, cur_x, cur_y);
-    set_temp_cursor(null_cursor);
+    set_cursor(null_cursor);
     set_action_on();
 }
 
-static
+static void
 cancel_arc_boxobject()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
@@ -73,7 +72,7 @@ cancel_arc_boxobject()
     draw_mousefun_canvas();
 }
 
-static
+static void
 create_arc_boxobject(x, y)
     int		    x, y;
 {
@@ -112,6 +111,7 @@ create_arc_boxobject(x, y)
     append_point(fix_x, y, &point);
     append_point(x, y, &point);
     add_line(box);
+    reset_action_on(); /* this signals redisplay_curobj() not to refresh */
     /* draw it and anything on top of it */
     redisplay_line(box);
     arcbox_drawing_selected();

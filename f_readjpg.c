@@ -1,24 +1,60 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1995 by Brian V. Smith
+ * This software is copyright (C) 1991-1996, Thomas G. Lane.
+ * All Rights Reserved except as specified below.
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
 /* The following code is from the example.c file in the JPEG distribution */
+
+/* Here is their copyright notice:
+ *
+ * The authors make NO WARRANTY or representation, either express or implied,
+ * with respect to this software, its quality, accuracy, merchantability, or
+ * fitness for a particular purpose.  This software is provided "AS IS", and you,
+ * its user, assume the entire risk as to its quality and accuracy.
+ * 
+ * This software is copyright (C) 1991-1996, Thomas G. Lane.
+ * All Rights Reserved except as specified below.
+ * 
+ * Permission is hereby granted to use, copy, modify, and distribute this
+ * software (or portions thereof) for any purpose, without fee, subject to these
+ * conditions:
+ * (1) If any part of the source code for this software is distributed, then this
+ * README file must be included, with this copyright and no-warranty notice
+ * unaltered; and any additions, deletions, or changes to the original files
+ * must be clearly indicated in accompanying documentation.
+ * (2) If only executable code is distributed, then the accompanying
+ * documentation must state that "this software is based in part on the work of
+ * the Independent JPEG Group".
+ * (3) Permission for use of this software is granted only if the user accepts
+ * full responsibility for any undesirable consequences; the authors accept
+ * NO LIABILITY for damages of any kind.
+ * 
+ * These conditions apply to any software derived from or based on the IJG code,
+ * not just to the unmodified library.  If you use our work, you ought to
+ * acknowledge us.
+ * 
+ * Permission is NOT granted for the use of any IJG author's name or company name
+ * in advertising or publicity relating to this software or products derived from
+ * it.  This software may be referred to only as "the Independent JPEG Group's
+ * software".
+ * 
+ * We specifically permit and encourage the use of this software as the basis of
+ * commercial products, provided that all warranty or liability claims are
+ * assumed by the product vendor.
+ *
+ */
 
 #include "fig.h"
 #include "resources.h"
@@ -42,7 +78,7 @@ read_jpg(file,filetype,pic)
     int		    filetype;
     F_pic	   *pic;
 {
-	/* make scale factor larger for metric */
+	/* make scale factor smaller for metric */
 	float scale = (appres.INCHES ?
 				(float)PIX_PER_INCH :
 				2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;

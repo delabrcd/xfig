@@ -1,0 +1,202 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; I; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>XFIG User Manual - Introduction</TITLE>
+<LINK rev="made" href="mailto:VEF00200@niftyserve.or.jp">
+</HEAD>
+<BODY>
+<IMG SRC="images/xfig-title.gif" ALT="XFIG Users Manual" >
+<P>[ <B>English Version</B>
+ | <A HREF="japanese/index.html">Japanese Version</A> ]
+
+<P>[ <A HREF="index.html">Contents</A>
+ | <B>Operating Manual</B>
+ | <a href="features_bugs.html">New Features and Bugs Fixed</a>
+ | <A HREF="options.html">Technical Information</A>
+ | <A HREF="authors.html">Authors</A> ]
+
+<P>[ <B>Introduction</B>
+ | <A HREF="command-panel.html">Command Panel</A>
+ | <A HREF="drawing-mode.html">Drawing Mode Panel</A>
+ | <A HREF="editing-mode.html">Editing Mode Panel</A>
+<BR>| <A HREF="indicator-panel.html">Indicator Panel</A>
+ | <A HREF="misc-panel.html">Miscellaneous Panels</A>
+ | <A HREF="accelerators.html">Keyboard Accelerators</A> ]
+
+<P>
+<HR>
+<H1>
+Introduction</H1>
+
+<BLOCKQUOTE><A HREF="images/screen-image.gif"><IMG SRC="images/screen-image-small.gif" ALT="[Screen image of xfig]" ></A></BLOCKQUOTE>
+<B>xfig</B> is an interactive drawing tool which runs under <A HREF="http://www.opengroup.org/tech/desktop/x">X
+Window System</A> Version 11 Release 4 (X11R4) or later, on most UNIX-compatible
+platforms. It is <A HREF="authors.html">freeware</A>, and available via
+<A HREF="installation.html">anonymous ftp</A>.
+See the section <a href="installation.html#related-apps"><i>Applications</i></a>
+for information about other applications.
+
+<P>In <B>xfig</B>, users can draw figures using objects such as 
+<A HREF="drawing-mode.html#circle">circles</A>,
+<A HREF="drawing-mode.html#box">boxes</A>, <A HREF="drawing-mode.html#polyline">lines</A>,
+<A HREF="drawing-mode.html#spline">spline curves</A>, <A HREF="drawing-mode.html#text">texts</A>,
+etc. It is also possible to <A HREF="drawing-mode.html#picture">import
+mages</A> in formats such as GIF, JPEG, EPSF (PostScript), etc. Those objects
+can be <A HREF="drawing-mode.html">created</A>, <A HREF="editing-mode.html#delete">deleted</A>,
+<A HREF="editing-mode.html#move">moved</A> or <A HREF="editing-mode.html">modified</A>.
+<A HREF="indicator-panel.html">Attributes such as colors or line styles</A>
+can be selected from various options. For text, <A HREF="indicator-panel.html#font-panel">various
+fonts</A> are available. Text can include <A HREF="drawing-mode.html#compose-char">Latin-1
+characters</A> such as ``<IMG SRC="images/a-umlaut.gif" ALT="a umlaut" >'' or
+``<IMG SRC="images/c-cedilla.gif" ALT="c cedilla" >''.
+
+<P><B>xfig</B> saves figures in its native format, <I><A HREF="fig-format.html">Fig
+format</A></I>, but they may be <A HREF="command-panel.html#export">converted
+into various formats</A> such as PostScript, GIF, JPEG, HP-GL, etc. <B>xfig</B>
+has facility to <A HREF="command-panel.html#print">print figures to a PostScript
+printer</A>, too.
+
+<P>There are <A HREF="installation.html#related-software">some applications</A>
+which can produce output in the <I>Fig format</I>, the file format <B>xfig</B>
+can read. For example, <B>xfig</B> doesn't have a facility to create graphs,
+but tools such as <B><A HREF="installation.html#gnuplot">gnuplot</A></B>
+or <B><A HREF="installation.html#xgraph">xgraph</A></B> can create graphs
+and output them in <I>Fig format</I>. Even if your favorite application
+can't generate output for <B>xfig</B>, tools such as <B><A HREF="installation.html#pstoedit">pstoedit</A></B>
+or <B><A HREF="installation.html#hp2xx">hp2xx</A></B> may allow you to
+read and edit those figures with <B>xfig</B>. If you want to import images
+into the figure but you don't need to edit the image itself (like <A HREF="images/screen-image.gif">this
+example</A>), it is also possible to <A HREF="drawing-mode.html#picture">import
+images</A> in formats such as GIF, JPEG, EPSF (PostScript), etc.
+
+<P>Most operation are performed using the mouse, but some operations may
+also be performed using <A HREF="accelerators.html">keyboard accelerators</A>
+(shortcuts). Use of a three-button mouse is recommended, but it is also
+possible to use a two-button mouse (if you have a two-button mouse and
+your X server doesn't emulate a three-button mouse, press the Meta key
+and right mouse button together to simulate mouse button 2). Normally, mouse
+buttons 1 to 3 are assigned to the left, middle, and right buttons respectively.
+
+<P><B>xfig 3.2</B> and <B>fig2dev 3.2</B> include code to make it possible
+to use Japanese text in <B>xfig</B>. Although it is not tested for languages
+other than Japanese, it uses the standard internationalization (I18N) mechanism
+of X11R5, and it may work for <A HREF="i18n.html#i18n">other languages</A>
+with little or no changes. See <A HREF="i18n.html">Japanese Support (or
+Internationalization)</A> about this.
+
+<hr>
+
+<H2>
+<A NAME="starting-xfig"></A>Starting xfig</H2>
+<B>xfig</B> is started by the <TT>xfig</TT> command.
+<PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <TT>xfig&nbsp;</TT> [ <I>options</I>... ] [ <I>filename</I> ]</PRE>
+<I>options</I> are <A HREF="options.html">command line options</A> which
+may be used to customize <B>xfig</B>. It is also possible to use <A HREF="options.html#resource">X
+resources</A> instead of specifying command line options each time when
+starting <TT>xfig</TT>.
+
+<P>If <I>filename</I> is given, the file will be loaded when <B>xfig</B>
+is started.
+<H2>
+<A NAME="display-windows"></A>Display Windows</H2>
+The following components comprise the <A HREF="images/screen-image.gif"><B>xfig</B>
+window:</A>
+<DL>
+<DT>
+<img src="images/redballdot.gif" align=bottom>
+<A HREF="command-panel.html">Command Panel</A>:</DT>
+
+<DD>
+Has buttons for global operations; such as <A HREF="command-panel.html#file">load/save
+file</A>, <A HREF="command-panel.html#print">print</A> or <A HREF="command-panel.html#export">export</A>
+figures, <A HREF="command-panel.html#quit">quit <B>xfig</B></A>, etc.</DD>
+
+<DT>
+<img src="images/redballdot.gif" align=bottom>
+<A HREF="drawing-mode.html">Drawing Mode Panel</A>:</DT>
+
+<DD>
+Has buttons for drawing operations; such as <A HREF="drawing-mode.html#circle">circle</A>,
+<A HREF="drawing-mode.html#box">box</A>, <A HREF="drawing-mode.html#polyline">polyline</A>,
+<A HREF="drawing-mode.html#text">text</A>, etc.</DD>
+
+<DT>
+<img src="images/redballdot.gif" align=bottom>
+<A HREF="editing-mode.html">Editing Mode Panel</A>:</DT>
+
+<DD>
+Has buttons for editing operations; such as <A HREF="editing-mode.html#move">move</A>,
+<A HREF="editing-mode.html#copy">copy</A>, <A HREF="editing-mode.html#delete">delete</A>,
+<A HREF="editing-mode.html#scale">scale</A>, <A HREF="editing-mode.html#edit">edit
+attributes</A>, etc.</DD>
+
+<DT>
+<img src="images/redballdot.gif" align=bottom>
+<A HREF="indicator-panel.html">Indicator Panel</A>:</DT>
+
+<DD>
+Has buttons to set attributes of objects; such as <A HREF="indicator-panel.html#pen-color">color</A>,
+<A HREF="indicator-panel.html#line-width">line width</A>, <A HREF="indicator-panel.html#line-style">line
+style</A>, <A HREF="indicator-panel.html#text-font">text font</A>, <A HREF="indicator-panel.html#text-justification">text
+justification</A>, etc. There are also buttons for global settings such as 
+<A HREF="indicator-panel.html#zoom-scale">zoom scale</A> or 
+<A HREF="indicator-panel.html#grid-mode">grid mode</A>.</DD>
+
+<DT>
+<img src="images/redballdot.gif" align=bottom>
+<A HREF="misc-panel.html#mouse-indicator">Mouse Function Indicator</A>:</DT>
+
+<DD>
+The function of each mouse button is displayed here.&nbsp; This changes
+with the mode of the operation (drawing, editing, etc.) to reflect the function
+of each mouse button.</DD>
+
+<DT>
+<img src="images/redballdot.gif" align=bottom>
+<A HREF="misc-panel.html#ruler">Rulers</A>:</DT>
+
+<DD>
+Graduations in the selected units (e.g. inches or cm) are displayed on top 
+(horizontal) and side
+(vertical) ruler. The rulers are also used for scrolling the canvas.</DD>
+
+<DT>
+<img src="images/redballdot.gif" align=bottom>
+<A HREF="misc-panel.html#unit-box">UNIT Box</A>:</DT>
+
+<DD>
+The scale of the drawing is displayed here, e.g. 1cm = 3m. 
+It is also used to change the units and/or scale.</DD>
+
+<DT>
+<img src="images/redballdot.gif" align=bottom>
+<A NAME="message-panel"></A>Message Panel:</DT>
+
+<DD>
+Various messages are displayed here. For example, the size of objects will
+be displayed here when entering objects.</DD>
+
+<DT>
+<img src="images/redballdot.gif" align=bottom>
+<A HREF="misc-panel.html#balloons">Balloons Button</A>:</DT>
+
+<DD>
+If this button is set <I>ON</I>,&nbsp; messages (balloons) pop up as the
+mouse passes over buttons or areas of <b>xfig</b>.</DD>
+
+<DT>
+<img src="images/redballdot.gif" align=bottom>
+Canvas:</DT>
+
+<DD>
+Area to draw figures. The canvas may be scrolled with the <A HREF="misc-panel.html#ruler">top
+and side rulers</A> or the arrow keys on the keyboard.</DD>
+</DL>
+
+<HR>Goto <A HREF="index.html">TOP</A>
+
+<P><I><A HREF="authors.html#manual">written by us</A></I>
+</BODY>
+</HTML>

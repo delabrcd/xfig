@@ -1,20 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright, 1987, Massachusetts Institute of Technology
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -37,7 +33,7 @@ read_xbm(file,filetype,pic)
 {
     int status;
     unsigned int x, y;
-    /* make scale factor larger for metric */
+    /* make scale factor smaller for metric */
     float scale = (appres.INCHES ?
 			(float)PIX_PER_INCH :
 			2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
@@ -138,7 +134,7 @@ initHexTable()
 /*
  *	read next hex value in the input stream, return -1 if EOF
  */
-static
+static int
 NextInt(fstream)
     FILE *fstream;
 {

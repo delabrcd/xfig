@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -68,7 +63,10 @@ read_scale_line(line, mul, offset)
 	point->x = point->x * mul + offset;
 	point->y = point->y * mul + offset;
     }
-
+    if (line->type == T_PICTURE) {
+	line->pic->size_x = line->pic->size_x * mul + offset;
+	line->pic->size_y = line->pic->size_y * mul + offset;
+    }
 
     read_scale_arrow(line->for_arrow, mul, offset);
     read_scale_arrow(line->back_arrow, mul, offset);
@@ -91,13 +89,11 @@ read_scale_spline(spline, mul, offset)
     int		    offset;
 {
     F_point	   *point;
-    F_sfactor	   *cp;
 
     for (point = spline->points; point != NULL; point = point->next) {
 	point->x = point->x * mul + offset;
 	point->y = point->y * mul + offset;
     }
-
 
     read_scale_arrow(spline->for_arrow, mul, offset);
     read_scale_arrow(spline->back_arrow, mul, offset);
@@ -111,7 +107,7 @@ read_scale_arrow(arrow, mul, offset)
   if(!arrow)
     return;
 
-    arrow->wid  = arrow->wid * mul + offset;
+    arrow->wd  = arrow->wd * mul + offset;
     arrow->ht   = arrow->ht  * mul + offset;
 }
 

@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -25,6 +20,7 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "d_text.h"
 #include "u_create.h"
 #include "u_fonts.h"
 #include "u_list.h"
@@ -37,7 +33,11 @@
 #include "w_zoom.h"
 #include <X11/keysym.h>
 
-extern PIX_FONT lookfont();
+/* EXPORTS */
+
+void	char_handler();
+void	draw_char_string();
+void	erase_char_string();
 
 #define CTRL_A	'\001'
 #define CTRL_B	'\002'
@@ -52,35 +52,37 @@ extern PIX_FONT lookfont();
 #define SP	32
 #define DEL	127
 
-#define			BUF_SIZE	400
+#define		BUF_SIZE	400
 
 char		prefix[BUF_SIZE],	/* part of string left of mouse click */
 		suffix[BUF_SIZE];	/* part to right of click */
 int		leng_prefix, leng_suffix;
 static int	char_ht;
 static int	base_x, base_y;
-static PIX_FONT canvas_zoomed_font;
+static XFontStruct *canvas_zoomed_font;
 
 static int	is_newline;
 static int	work_font, work_fontsize, work_flags,
 		work_textcolor, work_psflag, work_textjust;
-static PIX_FONT work_fontstruct;
+static XFontStruct *work_fontstruct;
 static float	work_angle;		/* in RADIANS */
 static double	sin_t, cos_t;		/* sin(work_angle) and cos(work_angle) */
-static		finish_n_start();
-static		init_text_input(), cancel_text_input();
-static		wrap_up();
-int		char_handler();
+static void	finish_n_start();
+static void	init_text_input(), cancel_text_input();
 static F_text  *new_text();
 
+static void	new_text_line();
+static void	create_textobject();
+static void	draw_cursor();
+static void	move_cur();
+static void	move_text();
+static void	reload_compoundfont();
 static int	prefix_length();
-static int	initialize_char_handler();
-static int	terminate_char_handler();
-static int	erase_char_string();
-static int	draw_char_string();
-static int	turn_on_blinking_cursor();
-static int	turn_off_blinking_cursor();
-static int	move_blinking_cursor();
+static void	initialize_char_handler();
+static void	terminate_char_handler();
+static void	turn_on_blinking_cursor();
+static void	turn_off_blinking_cursor();
+static void	move_blinking_cursor();
 
 #ifdef I18N
 #include <sys/wait.h>
@@ -114,6 +116,7 @@ static Boolean is_preedit_running();
 #endif  /* I18N_NO_PREEDIT */
 #endif  /* I18N */
 
+void
 text_drawing_selected()
 {
     canvas_kbd_proc = null_proc;
@@ -121,17 +124,17 @@ text_drawing_selected()
     canvas_middlebut_proc = null_proc;
     canvas_leftbut_proc = init_text_input;
     canvas_rightbut_proc = null_proc;
-    set_mousefun("posn cursor", "", "", "", "", "");
+    set_mousefun("position cursor", "", "", "", "", "");
 #ifdef I18N
 #ifndef I18N_NO_PREEDIT
     if (appres.international && strlen(appres.text_preedit) != 0) {
       if (is_preedit_running()) {
 	canvas_middlebut_proc = paste_preedit_proc;
 	canvas_rightbut_proc = close_preedit_proc;
-	set_mousefun("posn cursor", "paste pre-edit", "close pre-edit", "", "", "");
+	set_mousefun("position cursor", "paste pre-edit", "close pre-edit", "", "", "");
       } else {
 	canvas_rightbut_proc = open_preedit_proc;
-	set_mousefun("posn cursor", "", "open pre-edit", "", "", "");
+	set_mousefun("position cursor", "", "open pre-edit", "", "", "");
       }
     }
 #endif  /* I18N_NO_PREEDIT */
@@ -141,21 +144,22 @@ text_drawing_selected()
     is_newline = 0;
 }
 
-static
+static void
 finish_n_start(x, y)
 {
-    wrap_up();
+    create_textobject();
     init_text_input(x, y);
 }
 
+void
 finish_text_input()
 {
-    wrap_up();
+    create_textobject();
     text_drawing_selected();
     draw_mousefun_canvas();
 }
 
-static
+static void
 cancel_text_input()
 {
     erase_char_string();
@@ -169,10 +173,10 @@ cancel_text_input()
     reset_action_on();
 }
 
-static
+static void
 new_text_line()
 {
-    wrap_up();
+    create_textobject();
     if (cur_t) {	/* use current text's position as ref */
 	cur_x = round(cur_t->base_x + char_ht*cur_textstep*sin_t);
 	cur_y = round(cur_t->base_y + char_ht*cur_textstep*cos_t);
@@ -184,8 +188,8 @@ new_text_line()
     init_text_input(cur_x, cur_y);
 }
 
-static
-wrap_up()
+static void
+create_textobject()
 {
     PR_SIZE	    size;
 
@@ -232,7 +236,7 @@ wrap_up()
     redisplay_text(cur_t);
 }
 
-static
+static void
 init_text_input(x, y)
     int		    x, y;
 {
@@ -364,8 +368,7 @@ init_text_input(x, y)
     draw_char_string();
 }
 
-static
-F_text	       *
+static F_text *
 new_text()
 {
     F_text	   *text;
@@ -475,7 +478,7 @@ static float	rbase_x, rbase_y, rcur_x, rcur_y;
 
 static		(*cr_proc) ();
 
-static
+static void
 draw_cursor(x, y)
     int		    x, y;
 {
@@ -485,7 +488,7 @@ draw_cursor(x, y)
 		INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 }
 
-static int
+static void
 initialize_char_handler(p, cr, bx, by)
     Window	    p;
     int		    (*cr) ();
@@ -511,7 +514,7 @@ initialize_char_handler(p, cr, bx, by)
 #endif
 }
 
-static int
+static void
 terminate_char_handler()
 {
     turn_off_blinking_cursor();
@@ -522,7 +525,7 @@ terminate_char_handler()
 #endif
 }
 
-static int
+void
 erase_char_string()
 {
     pw_text(pw, cbase_x, cbase_y, ERASE, canvas_zoomed_font, 
@@ -532,7 +535,7 @@ erase_char_string()
 		work_angle, suffix, work_textcolor);
 }
 
-static int
+void
 draw_char_string()
 {
 #ifdef I18N
@@ -587,39 +590,13 @@ draw_char_string()
     move_blinking_cursor(cur_x, cur_y);
 }
 
-static int
-draw_suffix()
-{
-    if (leng_suffix)
-	pw_text(pw, cur_x, cur_y, PAINT, canvas_zoomed_font, 
-		work_angle, suffix, work_textcolor);
-}
-
-static int
-erase_suffix()
-{
-    if (leng_suffix)
-	pw_text(pw, cur_x, cur_y, ERASE/*INV_PAINT*/, canvas_zoomed_font, 
-		work_angle, suffix, work_textcolor);
-}
-
-static int
-draw_char(c)
-char	c;
-{
-    char	s[2];
-    s[0]=c;
-    s[1]='\0';
-    pw_text(pw, cur_x, cur_y, PAINT/*INV_PAINT*/, canvas_zoomed_font, 
-	    work_angle, s, work_textcolor);
-}
-
-char_handler(c, keysym)
+void
+char_handler(kpe, c, keysym)
+    XKeyEvent	   *kpe;
     unsigned char   c;
     KeySym	    keysym;
 {
     register int    i;
-    register float  cw;
 
     if (cr_proc == NULL)
 	return;
@@ -878,6 +855,7 @@ char_handler(c, keysym)
 
 /* move the cursor left (-1) or right (1) by the width of char c divided by div */
 
+static void
 move_cur(dir, c, div)
     int		    dir;
     unsigned char   c;
@@ -899,6 +877,7 @@ move_cur(dir, c, div)
 /* move the base of the text left (-1) or right (1) by the width of
    char c divided by div */
 
+static void
 move_text(dir, c, div)
     int		    dir;
     unsigned char   c;
@@ -926,18 +905,18 @@ move_text(dir, c, div)
 
 static int	cursor_on, cursor_is_moving;
 static int	cursor_x, cursor_y;
-static int	(*erase) ();
-static int	(*draw) ();
+static void	(*erase) ();
+static void	(*draw) ();
 static XtTimerCallbackProc blink();
 static unsigned long blink_timer;
 static XtIntervalId blinkid;
 static int	stop_blinking = False;
 static int	cur_is_blinking = False;
 
-static int
+static void
 turn_on_blinking_cursor(draw_cursor, erase_cursor, x, y, msec)
-    int		    (*draw_cursor) ();
-    int		    (*erase_cursor) ();
+    void	    (*draw_cursor) ();
+    void	    (*erase_cursor) ();
     int		    x, y;
     unsigned long   msec;
 {
@@ -958,7 +937,7 @@ turn_on_blinking_cursor(draw_cursor, erase_cursor, x, y, msec)
     stop_blinking = False;
 }
 
-static int
+static void
 turn_off_blinking_cursor()
 {
     if (cursor_on)
@@ -990,7 +969,7 @@ blink(client_data, id)
     return (0);
 }
 
-static int
+static void
 move_blinking_cursor(x, y)
     int		    x, y;
 {
@@ -1012,6 +991,7 @@ move_blinking_cursor(x, y)
    current work_fontstruct.
  */
 
+void
 reload_text_fstructs()
 {
     F_text	   *t;
@@ -1027,6 +1007,7 @@ reload_text_fstructs()
  * Reload the font structure for texts in compounds.
  */
 
+static void
 reload_compoundfont(compounds)
     F_compound	   *compounds;
 {
@@ -1040,6 +1021,7 @@ reload_compoundfont(compounds)
     }
 }
 
+void
 reload_text_fstruct(t)
     F_text	   *t;
 {
@@ -1157,7 +1139,7 @@ Boolean xim_initialize(w)
     }
   }
   if (xim_style != preferred_style) {
-    fprintf(stderr, "xfig: this input-method don't support %s input style\n",
+    fprintf(stderr, "xfig: this input-method doesn't support %s input style\n",
 	    appres.xim_input_style);
     if (xim_style == 0) {
       fprintf(stderr, "xfig: it don't support ROOT input style, too...\n");
@@ -1323,16 +1305,18 @@ static open_preedit_proc(x, y)
     set_temp_cursor(wait_cursor);
     preedit_pid = fork();
     if (preedit_pid == -1) {  /* cannot fork */
-      fprintf(stderr, "Can't fork the process: %s\n", sys_errlist[errno]);
+        fprintf(stderr, "Can't fork the process: %s\n", sys_errlist[errno]);
     } else if (preedit_pid == 0) {  /* child process; execute xfig-preedit */
-      execlp(appres.text_preedit, appres.text_preedit, preedit_filename, NULL);
-      fprintf(stderr, "Can't execute %s\n", appres.text_preedit);
-      exit(-1);
+        execlp(appres.text_preedit, appres.text_preedit, preedit_filename, NULL);
+        fprintf(stderr, "Can't execute %s\n", appres.text_preedit);
+        exit(-1);
     } else {  /* parent process; wait until xfig-preedit is up */
-      for (i = 0; i < 10 && !is_preedit_running(); i++) sleep(1);
+        for (i = 0; i < 10 && !is_preedit_running(); i++) sleep(1);
     }
-    if (is_preedit_running()) put_msg("Pre-edit window opened");
-    else put_msg("Can't open pre-edit window");
+    if (is_preedit_running()) 
+	put_msg("Pre-edit window opened");
+    else
+	put_msg("Can't open pre-edit window");
     reset_cursor();
   }
   text_drawing_selected();
@@ -1344,14 +1328,15 @@ static paste_preedit_proc(x, y)
 {
   FILE *fp;
   char ch;
-  static new_text_line();
   if (!is_preedit_running()) {
     open_preedit_proc(x, y);
   } else if ((fp = fopen(preedit_filename, "r")) != NULL) {
     init_text_input(x, y);
     while ((ch = getc(fp)) != EOF) {
-      if (ch == '\\') new_text_line();
-      else prefix[leng_prefix++] = ch;
+      if (ch == '\\') 
+	new_text_line();
+      else
+	prefix[leng_prefix++] = ch;
     }
     prefix[leng_prefix] = '\0';
     finish_text_input();

@@ -1,26 +1,22 @@
-#ifndef OBJECT_H
-#define OBJECT_H
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
+
+#ifndef OBJECT_H
+#define OBJECT_H
 
 /* values to signify color used for transparent GIF color */
 
@@ -53,6 +49,8 @@
 /** VERY IMPORTANT:  The f_line, f_spline and f_arc objects all must have the
 		components up to and including the arrows in the same order.
 		This is for the get/put_generic_arrows() in e_edit.c.
+		In addition, the f_line and f_spline objects must have the
+		components up to and including the f_points in the same order.
 **/
 
 typedef struct f_point {
@@ -66,14 +64,14 @@ typedef struct f_pos {
 }
 		F_pos;
 
-#define DEF_ARROW_WID (4 * ZOOM_FACTOR)
-#define DEF_ARROW_HT (8 * ZOOM_FACTOR)
+#define DEF_ARROW_WID 4
+#define DEF_ARROW_HT 8
 
 typedef struct f_arrow {
     int		    type;
     int		    style;
     float	    thickness;
-    float	    wid;
+    float	    wd;
     float	    ht;
 }
 		F_arrow;
@@ -92,8 +90,8 @@ typedef struct f_ellipse {
     Color	    fill_color;
     int		    fill_style;
     int		    depth;
-    float	    style_val;
     int		    pen_style;
+    float	    style_val;
     float	    angle;
     int		    direction;
 #define					UNFILLED	-1
@@ -147,16 +145,18 @@ typedef struct f_arc {
 #define		DEF_DASHLENGTH		4
 #define		DEF_DOTGAP		3
 
-typedef struct f_pic {
-    char	    file[PATH_MAX];
-    int		    subtype;
+/***********************************************************************/
+/* NOTE: If you change this you must change _pic_names in e_edit.c too */
+/***********************************************************************/
 
-/* be sure to update NUM_PIC_TYPES if you add types */
 /* These values are used internally, so changing them doesn't
    affect any Fig files */
 
-enum {
+enum pictypes {
 	T_PIC_NONE,
+#ifdef V4_0
+	T_PIC_FIG,
+#endif
 	T_PIC_EPS,
 	T_PIC_GIF,
 #ifdef USE_JPEG
@@ -168,15 +168,18 @@ enum {
 	T_PIC_XPM,
 #endif
 	LAST_PIC
-     } _pic_types;
+     } ;
 
 #define NUM_PIC_TYPES LAST_PIC-1
 
 #define PicSuccess	1
 #define FileInvalid    -2
 
+typedef struct f_pic {
+    char	    file[PATH_MAX];
+    enum pictypes   subtype;
     int		    flipped;
-    unsigned char   *bitmap;
+    unsigned char  *bitmap;
     struct Cmap	    cmap[MAX_COLORMAP_SIZE];  /* for GIF/XPM/JPEG files */
     int		    numcols;		/* number of colors in cmap */
     float	    hw_ratio;
@@ -188,6 +191,7 @@ enum {
 		    pix_width,		/* current width of pixmap (pixels) */
 		    pix_height,		/* current height of pixmap (pixels) */
 		    pix_flipped;
+    struct f_compound *figure;		/* Fig compound if picture type == T_PIC_FIG */
 }
 		F_pic;
 
@@ -219,6 +223,9 @@ typedef struct f_line {
 /* THE PRECEDING VARS MUST BE IN THE SAME ORDER IN f_arc, f_line and f_spline */
 
     struct f_point *points;	/* this must immediately follow cap_style */
+
+/* THE PRECEDING VARS MUST BE IN THE SAME ORDER IN f_line and f_spline */
+
     int		    join_style;		/* join style - Miter, Round, Bevel */
 #define					JOIN_MITER	0
 #define					JOIN_ROUND	1
@@ -237,7 +244,7 @@ typedef struct f_text {
 #define					T_CENTER_JUSTIFIED	1
 #define					T_RIGHT_JUSTIFIED	2
     int		    font;
-    PIX_FONT	    fontstruct;
+    XFontStruct	   *fontstruct;
     float	    zoom;	/* to keep track of when it needs rescaling */
     int		    size;	/* point size */
     Color	    color;
@@ -330,6 +337,9 @@ typedef struct f_spline {
      * "points" are control points. Shape factors are stored in "sfactors".
      */
     struct f_point *points;	/* this must immediately follow cap_style */
+
+/* THE PRECEDING VARS MUST BE IN THE SAME ORDER IN f_line and f_spline */
+
     struct f_shape *sfactors;
     struct f_spline *next;
 }
@@ -418,7 +428,6 @@ typedef struct f_linkinfo {
 #define M_VARPTS_OBJECT (M_POLYLINE_LINE | M_POLYLINE_POLYGON | M_SPLINE)
 #define M_OPEN_OBJECT	(M_POLYLINE_LINE | M_SPLINE_O | M_ARC)
 #define M_ROTATE_ANGLE	(M_VARPTS_OBJECT | M_ARC | M_TEXT | M_COMPOUND | M_ELLIPSE)
-#define M_ELLTEXTANGLE	(M_ELLIPSE | M_TEXT)
 #define M_OBJECT	(M_ELLIPSE | M_POLYLINE | M_SPLINE | M_TEXT | M_ARC)
 #define M_NO_TEXT	(M_ELLIPSE | M_POLYLINE | M_SPLINE | M_COMPOUND | M_ARC)
 #define M_ALL		(M_OBJECT | M_COMPOUND)

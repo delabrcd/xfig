@@ -1,0 +1,421 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html>
+<head>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=EUC-JP">
+<title>XFIG User Manual - Japanese Support</title>
+<link rev="made" href="mailto:VEF00200@nifty.ne.jp">
+</head>
+
+<body>
+<img src="../images/xfig-title.gif" alt="XFIG Users Manual">
+<p>
+[ <a href="../index.html">English Version</a>
+ | <b>Japanese Version</b> ]
+<p>
+[ <a href="index.html">Contents</a>
+ | <a href="introduction.html">Operating Manual</a>
+ | <a href="features_bugs.html">New Features and Bugs Fixed</a><br>
+ | <b>Technical Informations</b>
+ | <a href="authors.html">Authors</a> ]
+<p>
+[ <a href="options.html">オプション、及びリソース</a>
+ | <a href="installation.html">インストール</a>
+ | <a href="faq.html">FAQ</a><br>
+ | <b>日本語への対応 (あるいは国際化?)</b>
+ | <a href="fig-format.html">Fig Format 3.2</a> ]
+
+<p>
+<hr>
+
+<h1>日本語への対応 (あるいは国際化?)</h1>
+
+<b>xfig 3.2</b>、及び <b>fig2dev 3.2</b> には
+日本語を含んだテキストを取り扱えるようにするためのコードが含まれています。
+これは日本語以外の言語についてはテストされていませんが、
+基本的には X11R5 の標準の国際化 (I18N) メカニズムを使用しており、
+僅かな変更で、もしくは変更を行なうことなく、
+<a href="#i18n">他の言語</a>を取り扱うこともできるかも知れません。
+<p>
+日本語対応機能に関する質問などは、
+<a href="mailto:VEF00200@nifty.ne.jp"><i>VEF00200@nifty.ne.jp</i></a> 
+へお送り下さい。
+日本のユーザーは、<b>xfig</b> そのものに関する質問なども
+この宛先へ送られても結構です。
+
+
+<h2>日本語への対応</h2>
+
+この日本語対応機能を用いると、
+<a href="#input-japanese">日本語の入力</a> に示したような方法で 
+<b>xfig</b> 上で日本語 (そして<a href="#i18n">他の言語も?</a>) 
+を含んだテキストを入力することが可能となります。
+
+<h3>環境</h3>
+
+日本語対応機能を使用するためには、以下の環境が必要です。
+<p>
+<ul>
+<li>X11R5、もしくは X11R6 のライブラリ、及び X サーバー
+<br>
+(これらは適切に国際化されており、
+かつ使用する入力メソッドとの接続が行なえるものでなければなりません。
+基本的には X11R6 の使用を推奨します。)
+
+<p>
+<li>適切な変換サーバー (<b>Canna</b> や <b>Wnn</b> など)、
+及び入力メソッド (<b>kinput2</b> や <b>htt</b> など)
+
+<p>
+<li>日本語のフォント (例えば <tt>jiskan16</tt>)
+</ul>
+
+
+<h3>インストール</h3>
+
+<h4>日本語 xfig のインストール</h4>
+
+<ol>
+<li><a href="installation.html"><b>xfig.3.2.1.tar.gz</b></a> を入手し、
+展開します。
+
+<p>
+<li><tt>xfig.3.2.1/Imakefile</tt> の、
+``<tt>#define I18N</tt>'' のコメント・アウトを解除 
+(<tt>XCOMM</tt> を削除) します。
+
+<p>
+<li>あなたのシステムの C ライブラリが日本語ロケールをサポートしているならば、
+<tt>I18N_DEFS</tt> の定義から <tt>-DSETLOCALE</tt> を取り除きます。
+C ライブラリが日本語ロケールをサポートしていないならば、
+<tt>-DSETLOCALE</tt> が指定されていることを確認します。
+
+<p>
+<li><b>xfig</b> を
+<a href="installation.html">通常の手順でコンパイル</a>し、インストールします。
+</ol>
+
+<h4>日本語 fig2dev のインストール</h4>
+
+<ol>
+<li><a href="installation.html"><b>transfig.3.2.1.tar.gz</b></a> を入手し、
+展開します。
+
+<p>
+<li><tt>transfig.3.2.1/fig2dev/Imakefile</tt> の、
+``<tt>#define I18N</tt>'' のコメント・アウトを解除 
+(<tt>XCOMM</tt> を削除) します。
+
+<p>
+<li><tt>japanese.ps</tt> ファイル (後述) を 
+<tt>/usr/local/lib/fig2dev</tt> 以外のディレクトリにインストールしたいならば、
+<tt>-DFIG2DEV_LIBDIR</tt> の指定を書き換えます。
+
+<p>
+<li><b>transfig</b> (<b>fig2dev</b>) を
+<a href="installation.html">通常の手順でコンパイル</a>し、インストールします。
+
+<p>
+<li><a name="japanese-ps">以下の内容を、</a>
+<tt>-DFIG2DEV_LIBDIR</tt> で設定されたディレクトリ 
+(通常は <tt>/usr/local/lib/fig2dev</tt>) に、
+日本語を示すロケール名に ``<tt>.ps</tt>'' を付けた名前 
+(<a href="japanese.ps"><tt>japanese.ps</tt></a>、
+<tt>ja_JP.eucJP.ps</tt> など) 
+のファイルとしてセーブします。
+<p>
+<pre>
+    % japanese.ps for fig2dev 3.2
+    16 dict begin
+      /FontName /CompositeRoman def    /FontType 0 def
+      /WMode 0 def    /FMapType 3 def    /FontMatrix matrix def
+      /Encoding [0 1] def
+      /FDepVector [ /Times-Roman findfont
+        /Ryumin-Light-EUC-H findfont ] def
+      FontName currentdict
+      end
+    definefont pop
+    16 dict begin
+      /FontName /CompositeBold def    /FontType 0 def
+      /WMode 0 def    /FMapType 3 def    /FontMatrix matrix def
+      /Encoding [0 1] def
+      /FDepVector [ /Times-Bold findfont
+        /GothicBBB-Medium-EUC-H findfont ] def
+      FontName currentdict
+      end
+    definefont pop
+    % end of japanese.ps
+</pre>
+</ol>
+
+
+<h3>起動</h3>
+
+<ol>
+<li>環境変数 <tt>LANG</tt> に、
+日本語を示すロケール名 (<tt>japanese</tt>、<tt>ja_JP.eucJP</tt> など) 
+を設定します。
+
+<p>
+<li>必要であれば、使用すべき入力メソッドを指定するために 
+環境変数 <tt>XMODIFIERS</tt> を設定します。
+
+<p>
+<li>適切な変換サーバー (Canna や Wnn など)、
+及び入力メソッド (kinput2 や htt など) が使用可能であることを確認します。
+
+<p>
+<li>``<kbd>xfig -international</kbd>'' を実行します。
+<p>
+<tt>-international</tt> オプションを指定しなかった場合には、
+通常の <b>xfig</b> と同様に動作します。
+リソース・ファイルに ``<tt>Fig.international: true</tt>'' 
+のような行を追加しておけば、
+<tt>-international</tt> オプションは不要となります。
+</ol>
+
+
+<h3><a name="input-japanese">日本語の入力</a></h3>
+
+日本語対応機能を有効とすると、日本語を含んだテキストを
+<a href="drawing-mode.html#text">TEXT</a> 機能を用いて
+入力することが可能となります。
+テキストに日本語を含める場合には、
+<a href="indicator-panel.html#text-font">TEXT FONT</a> で、
+``Times-Roman + 明朝''、もしくは ``Times-Bold + ゴシック'' 
+を選択しておく必要があります。
+<p>
+日本語の入力は、<a href="drawing-mode.html#text">TEXT</a> モードにおいて
+テキストを入力する状態となっている時に、
+日本語入力モードに切り替えるためのキーを押すことによって開始します。
+どのキーを押すと日本語入力モードに切り替えられるかは
+環境に依存しますが、
+Shift-SPACE、Control-SPACE、Control-O、Control-\ などの
+いずれかとなっていることが多いものと思われます。
+変換の方法なども環境に依存しますが、
+通常はその環境における他のアプリケーションでの操作と共通となります。
+<p>
+入力のスタイルとしては Off the Spot、Over the Spot、
+及び Root のいずれかを使用することができ、
+どのスタイルを使用するかは <tt>inputStyle</tt> リソース、
+もしくは <tt>-inputStyle</tt> オプションによって指定することができます。
+例えば、<tt>xfig -international -inputStyle OverTheSpot</tt> とすると、
+Over the Spot での入力を行なうようになります。
+<p>
+<dl>
+<dt><b>Off the Spot</b>:
+<dd>変換中のテキストはキャンバスの下端に表示されます。
+ほとんどの場合は、このスタイルを選択するのが無難でしょう。
+<p>
+<blockquote>
+  <img src="../images/xim-off-the-spot.gif" alt="[Input Style: Off-the-Spot]">
+</blockquote>
+
+<p>
+<dt><b>Over the Spot</b>:
+<dd>変換中のテキストは実際に入力を行なう箇所に表示され、
+その場で変換を行なうことができます。
+ただし、最終的な表示とは異なったフォントが使用されるため、
+入力中の表示はやや奇妙なものになります。
+また、環境などによっては、やや不自然な挙動を示したり、
+あるいはキャンバス上の表示が乱れたりする可能性もあります。
+<p>
+<blockquote>
+  <img src="../images/xim-over-the-spot.gif" alt="[Input Style: Over-the-Spot]">
+</blockquote>
+
+<p>
+<dt><b>Root</b>:    
+<dd>変換中のテキストは独立したウィンドウに表示されます。
+<p>
+<blockquote>
+  <img src="../images/xim-root.gif" alt="[Input Style: Root]">
+</blockquote>
+</dl>
+
+
+<h3>補足</h3>
+
+<h4>画面への表示に用いるフォントの変更</h4>
+
+デフォルトでは、画面への表示に用いるフォントの指定 
+(プログラムにハードコードされている) は、
+おおよそどのようなシステムでも確実にフォントを見付けられるように、
+かなり緩いものとしてあります:
+<p>
+<pre>
+    Fig.normalFontSet: -*-times-medium-r-normal--16-*-*-*-*-*-*-*,\
+	 -*-*-medium-r-normal--16-*-*-*-*-*-*-*,\
+	 -*-*-*-r-*--16-*-*-*-*-*-*-*
+    Fig.boldFontSet: -*-times-bold-r-normal--16-*-*-*-*-*-*-*,\
+	 -*-*-bold-r-normal--16-*-*-*-*-*-*-*,\
+	 -*-*-*-r-*--16-*-*-*-*-*-*-*
+</pre>
+<p>
+しかし、このデフォルトの指定では
+環境によってはあまり好ましくないフォントがロードされてしまう 
+(好ましくない字体で表示されたり、<b>xfig</b> の起動に時間がかかったりする) 
+可能性もあります。
+そのような場合には、リソース・ファイル (<tt>app-defaults/Fig</tt>) で
+フォントをより具体的に指定することによって、
+指定したフォントをロードさせることが可能です:
+<p>
+<pre>
+    Fig*FontSet: -misc-fixed-medium-r-normal--14-*-*-*-*-*-*-*
+    Fig.normalFontSet: -*-times-medium-r-normal--14-*-*-*-*-*-*-*,\
+        -misc-fixed-medium-r-normal--14-*-*-*-*-*-*-*
+    Fig.boldFontSet: -*-times-bold-r-normal--14-*-*-*-*-*-*-*,\
+        -misc-fixed-medium-r-normal--14-*-*-*-*-*-*-*
+    Fig.fontSetSize: 14
+</pre>
+<p>
+また、スケーラブルな日本語フォントが使用可能である場合 (例えば 
+<a href="http://karin.ip.titech.ac.jp/~takagi/X-VFlib/index.html">VFlib</a> 
+に対応した X サーバーを使用している場合など) 
+には、次のように大きなフォントを指定することによって
+文字の表示品質を改善することも可能です:
+<p>
+<pre>
+    Fig*FontSet: -*-times-medium-r-normal--16-*-*-*-*-*-*-*,\
+        -foobar-mincho-medium-r-normal--16-*-*-*-*-*-*-*
+    Fig.normalFontSet: -*-times-medium-r-normal--64-*-*-*-*-*-*-*,\
+        -foobar-mincho-medium-r-normal--64-*-*-*-*-*-*-*
+    Fig.boldFontSet: -*-times-bold-r-normal--64-*-*-*-*-*-*-*,\
+        -foobar-gothic-medium-r-normal--64-*-*-*-*-*-*-*
+    Fig.fontSetSize: 64
+</pre>
+<p>
+フォントの指定に際しては、
+<tt>normalFontSet</tt>、及び <tt>boldFontSet</tt> に
+同じサイズのフォントを指定し、かつ 
+<tt>fontSetSize</tt> にそのサイズを設定する必要があることに注意して下さい。
+
+<h4>PostScript 出力に用いるフォントの変更</h4>
+
+デフォルトでは、PostScript 出力に際しては、日本語のフォントとしては 
+Ryumin-Light、及び GothicBBB-Medium を用いるようになっています。
+<p>
+この指定は上記の <a href="#japanese-ps"><tt>japanese.ps</tt> ファイル</a> に
+書かれており、そのファイルを書き換えることによって
+他のフォントに変更することができます。
+<p>
+例えば、<tt>/Ryumin-Light-EUC-H</tt> を <tt>/HeiseiMin-W3-EUC-H</tt> に、
+<tt>/GothicBBB-Medium-EUC-H</tt> を <tt>/HeiseiKakuGo-W5-EUC-H</tt> に
+書き換えれば、明朝体のフォントとして HeiseiMin-W3 を、
+ゴシック体のフォントとして HeiseiKakuGo-W5 を使用するようになります。
+
+<h4>注意事項など</h4>
+
+<ul>
+<li><a href="editing-mode.html#edit-text-panel">Edit パネル</a>上で
+日本語テキストの編集を行なうことはできません。
+ただし、テキストの編集は、
+<a href="drawing-mode.html#text">TEXT</a> モードで
+キャンバス上で行なうことが可能です。
+
+<p>
+<li>テキストに日本語を含める場合には、
+<a href="indicator-panel.html#text-font">TEXT FONT</a> で、
+``Times-Roman + 明朝''、もしくは ``Times-Bold + ゴシック'' 
+を選択しておく必要があります。
+これ以外のフォントが選択されている場合には、
+通常の <b>xfig</b> と同様に 
+<a href="drawing-mode.html#compose-char">Latin-1 キャラクタ</a> 
+が使用可能となります。
+
+<p>
+<li>テキストに含めることができるのは、ASCII、及び JIS-X-0208 の文字のみです。
+環境がそれをサポートしている場合には 
+JIS-X-0201 のカナ (半角カナ) や JIS-X-0212 (補助漢字) の文字を 
+<b>xfig</b> 上で入力することはできますが、
+<b>fig2dev</b> はそれらの文字を取り扱うことはできません。
+
+<p>
+<li>原則として、マルチ・バイト文字列のエンコーディングとしては 
+EUC を使うようにして下さい。
+このためには、ロケール名 (環境変数 <tt>LANG</tt>) の指定を
+システムに応じて変える必要があるかも知れません。
+システムによっては、<tt>japanese</tt> では 
+EUC 以外のエンコーディングが選択される場合もあります。
+
+<p>
+<li><tt>international</tt> リソースを設定する際には 
+``<tt>*international: true</tt>'' や 
+``<tt>Fig*international: true</tt>'' ではなく、
+``<tt>Fig.international: true</tt>'' のように指定するようにして下さい。
+これは、Text ウィジェットの国際化機能を有効とすると、
+<b>xfig</b> が正常に動作しない場合があるためです。
+<p>
+<tt>.Xdefaults</tt> などで 
+``<tt>*international: true</tt>'' のような設定が行なわれている場合には、
+明示的に ``<tt>Fig*international: false</tt>'' と指定する
+必要があるかも知れません。
+
+<p>
+<li>残念ながら、X11R5 のシステムの多くにおいては、
+<b>xfig 3.2</b> の日本語入力機能を使用できるようにすることは難しいようです。
+Solaris 2 の OpenWindows、及び Solaris CDE での動作は確認されていますが、
+それ以外の X11R5 ベースのシステムでの動作については未確認です。
+</ul>
+
+<h4>動作確認済みの環境</h4>
+
+現時点において、以下の環境での動作が報告されています。
+<p>
+<pre>
+  --------------------------------------------------
+<i>     Operating System     X           Input Method</i>
+  --------------------------------------------------
+   SunOS 4.1            X11R6            kinput2
+   Solaris 2.5          X11R6            kinput2
+   Solaris 2.5-2.6      OpenWindows/CDE  htt/ATOK
+   HP-UX 10.20          X11R6            kinput2
+   IRIX 6.3*            X11R6            kinput2
+   FreeBSD 2.2          X11R6            kinput2
+   Slackware Linux 3.1  X11R6            kinput2
+   RedHat Linux 4.2     X11R6            kinput2
+  --------------------------------------------------
+</pre>
+<p>
+<blockquote>
+* IRIX 6.3 では、IRIX の純正の <tt>cc</tt> (<tt>gcc</tt> ではなく) を用いて、
+コンパイル・オプションとして <tt>-N32 -mips3</tt> を指定して
+コンパイルする必要があるかも知れません。
+また、IRIX に含まれている JPEG ライブラリを使用せずに、
+JPEG ライブラリのソースを入手してコンパイルする必要があるかも知れません。
+</blockquote>
+
+<p>
+<hr>
+
+<h2><a name="i18n">国際化?</a></h2>
+
+<b>xfig 3.2</b> の日本語対応機能は日本語以外についてはテストされていませんが、
+基本的には X11R5 の標準の国際化 (I18N) メカニズムを使用しており、
+僅かな変更で、もしくは変更を行なうことなく、
+他の言語も取り扱えるようになるものと思われます。
+実際には、中国語 (<tt>zh_CN.eucCN</tt>) や韓国語 (<tt>ko_KR.eucKR</tt>) 
+についても、その言語の文字の<b>表示</b>を行なえることのみは確認しております。
+<p>
+<blockquote>
+  <img src="../images/korean-text.gif" alt="[Korean Text]">
+</blockquote>
+<p>
+<b>fig2dev</b> はこれとは別ですが、
+その言語に対応した LaTeX、及び/もしくは PostScript プリンタがあるならば、
+僅かな変更でその言語に対応させられるものと思われます。
+<p>
+日本語以外の言語への対応を考えている方、
+もしくは日本語以外の言語での動作を確認された方は、
+<a href="mailto:VEF00200@nifty.ne.jp"><i>VEF00200@nifty.ne.jp</i></a> 
+に連絡して下さい。
+
+<p>
+<hr>
+
+Goto <a href="index.html">TOP</a>
+
+<p>
+<a href="authors.html#manual"><i>written by us</i></a>
+
+</body>
+</html>

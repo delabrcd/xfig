@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -25,25 +20,23 @@
 #include "resources.h"
 #include "object.h"
 #include "mode.h"
+#include "f_read.h"
 #include "u_fonts.h"
 #include "u_create.h"
 #include "version.h"
 #include "w_drawprim.h"
 #include "w_export.h"
+#include "w_file.h"
 #include "w_print.h"
 #include "w_indpanel.h"
+#include "w_msgpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
 
-/* EXPORTS */
-char    *read_file_name;
+char	*read_file_name;
 
-/* IMPORTS */
-
-/* from w_msgpanel.c */
-extern Boolean	first_file_msg;
-
+DeclareStaticArgs(4);
 static char	Err_incomp[] = "Incomplete %s object at line %d.";
 
 static void        read_colordef();
@@ -62,7 +55,6 @@ static void	   count_lines_correctly();
 
 #define		BUF_SIZE		1024
 
-DeclareStaticArgs(10);
 char		buf[BUF_SIZE];
 int		line_no;
 int		num_object;
@@ -97,6 +89,48 @@ read_fail_message(file, err)
 	file_msg("File \"%s\" is not accessable; %s.", file, sys_errlist[err]);
 }
 
+/* initialize the user color counter - then read figure file. 
+   Called from load_file(), merge_file(), preview_figure(), load_lib_obj(),
+   and paste(), but NOT from read_figure() (import Fig as picture) */
+
+int
+read_figc(file_name, obj, merge, remapimages, xoff, yoff, settings)
+    char	   *file_name;
+    F_compound	   *obj;
+    Boolean	    merge, remapimages;
+    int		    xoff, yoff;
+    fig_settings   *settings;
+{
+    int i,status;
+
+    n_num_usr_cols = -1;
+    for (i=0; i<MAX_USR_COLS; i++)
+	n_colorFree[i] = True;
+
+    /* now read the file */
+    status = read_fig(file_name, obj, merge, xoff, yoff, settings);
+
+    if (status != 0)
+	return status;
+
+    if (merge) {
+	/* merge any user colors from the new file just read into the current figure */
+	merge_colors(obj);
+    } else {
+	/* now swap old figure colors with new colors (if any) */
+	swap_colors();
+	current_memory = -1;
+	show_pencolor();
+	show_fillcolor();
+    }
+
+    /* and reallocate the colors for all EPS/XPM and GIFs in the object */
+    if (remapimages)
+	remap_imagecolors(obj);
+
+    return status;
+}
+
 /**********************************************************
 Read_fig returns :
 
@@ -104,6 +138,7 @@ Read_fig returns :
     -1 : File is in incorrect format
     -2 : File is empty
 err_no : if file can not be read for various reasons
+	(from /usr/include/sys/errno.h)
 
 The resolution (ppi) and the coordinate system (coord_sys) are
 stored in obj->nwcorner.x and obj->nwcorner.y respectively.
@@ -111,16 +146,20 @@ The coordinate system is 1 for lower left at 0,0 and
 2 for upper left at 0,0
 >>> xfig only uses 2 for the coordinate system. <<<
 
-If "merge" is False, the portrait/landscape flag and the
-inches/metric flag are set from the file.  merge_file calls
-us with merge=True to prevent this from happening.
+If "merge" is True, the user colors are merged into the color
+set, else they replace the current user colors.
+Also, if merging, if the file being merged into the main figure
+has different units (inches/cm) it is rescaled to match the
+main figure.
 **********************************************************/
 
-read_fig(file_name, obj, merge, xoff, yoff)
+int
+read_fig(file_name, obj, merge, xoff, yoff, settings)
     char	   *file_name;
     F_compound	   *obj;
     Boolean	    merge;
     int		    xoff, yoff;
+    fig_settings   *settings;
 {
     FILE	   *fp;
     int		    status;
@@ -128,12 +167,13 @@ read_fig(file_name, obj, merge, xoff, yoff)
     line_no = 0;
     read_file_name = file_name;
     first_file_msg = True;
-    uncompress_file(file_name);
+    if (uncompress_file(file_name) == False)
+	return ENOENT;		/* doesn't exist */
     if ((fp = fopen(file_name, "r")) == NULL)
 	return (errno);
     else {
 	put_msg("Reading objects from \"%s\" ...", file_name);
-	status = readfp_fig(fp, obj, merge, xoff, yoff);
+	status = readfp_fig(fp, obj, merge, xoff, yoff, settings);
 	/* so subsequent file_msg() calls don't print wrong file name */
 	first_file_msg = False;
 	return status;
@@ -142,13 +182,36 @@ read_fig(file_name, obj, merge, xoff, yoff)
 
 /* unzip/uncompress file if necessary */
 
+Boolean
 uncompress_file(name)
     char	   *name;
 {
-    char	   *compname = NULL;
+    char	    compname[PATH_MAX];
     char	    unc[PATH_MAX+20];	/* temp buffer for uncompress/gunzip command */
+    char	   *c;
     Boolean	    compr=False;
     struct stat	    status;
+
+    /* first see if file exists */
+    if (stat(name, &status)) {
+	strcpy(compname,name);
+	/* no, if it has a compression suffix (.Z .gz etc) remove it and try that */
+	if (strlen(name) > 2 && !strcmp(".Z", name + (strlen(name)-2)) ||
+	    (strlen(name) > 3 && !strcmp(".gz", name + (strlen(name)-3))) ||
+	    (strlen(name) > 2 && !strcmp(".z", name + (strlen(name)-2)))) {
+		c = strrchr(compname,'.');
+		if (c) {
+		    *c= '\0';
+		    if (stat(compname, &status)) {
+			file_msg("%s File doesn't exist",compname);
+			return False;
+		    }
+		    /* file doesn't have .gz etc suffix anymore, return modified name */
+		    strcpy(name,compname);
+		    return True;
+		}
+	}
+    }
 
     /* see if the filename ends with .Z */
     /* if so, generate uncompress command and use pipe (filetype = 1) */
@@ -162,7 +225,6 @@ uncompress_file(name)
 	compr = True;
     /* none of the above, see if the file with .Z or .gz or .z appended exists */
     } else {
-	compname = (char*) malloc(strlen(name)+4);
 	strcpy(compname, name);
 	strcat(compname, ".Z");
 	if (!stat(compname, &status)) {
@@ -187,36 +249,40 @@ uncompress_file(name)
 	    }
 	}
     }
+	
 
     /* do the uncompression/unzip if needed */
     if (compr) {
-	char *c;
 	system(unc);
 	/* strip off the trailing .Z, .z or .gz */
 	c = strrchr(name,'.');
 	*c= '\0';
-	if (compname)
-	    free(compname);
     }
+    return True;
 }
 
-readfp_fig(fp, obj, merge, xoff, yoff)
+int
+readfp_fig(fp, obj, merge, xoff, yoff, settings)
     FILE	   *fp;
     F_compound	   *obj;
     Boolean	    merge;
     int		    xoff, yoff;
+    fig_settings   *settings;
 {
     int		    status;
-    int		    fig_orient;
-    int		    fig_units;
     int		    i;
     char	    versstring[10];
 
-    num_object = 0;
-    n_num_usr_cols = -1;
-    for (i=0; i<MAX_USR_COLS; i++)
-	n_colorFree[i] = True;
+    /* initialize settings structure in case we read an older Fig format */
+    settings->landscape = appres.landscape;
+    settings->flushleft = appres.flushleft;
+    settings->units	= appres.INCHES;
+    settings->papersize	= appres.papersize;
+    settings->magnification = appres.magnification;
+    settings->multiple	= appres.multiple;
+    settings->transparent = appres.transparent;
 
+    num_object = 0;
     bzero((char*)obj, COMOBJ_SIZE);
     if (fgets(buf, BUF_SIZE, fp) == 0)	/* version */
 	return -2;
@@ -251,15 +317,7 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 		return -1;		/* error */
 	    }
 	    line_no++;
-	    /* set landscape flag oppositely and change_orient() will toggle it */
-	    if (!merge) {
-		fig_orient = (strncasecmp(buf,"landscape",9) == 0);
-		if (fig_orient != (int) appres.landscape) {
-		    appres.landscape = ! ((Boolean) fig_orient); /* change_orient toggles */
-		    /* now change the orientation of the canvas */
-		    change_orient();
-		}
-	    }
+	    settings->landscape = (strncasecmp(buf,"landscape",9) == 0);
 
 	    /* read Centering indicator now */
 	    if (read_line(fp) < 0) {
@@ -270,13 +328,7 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 	    if ((strncasecmp(buf,"center",6) == 0) || 
 		(strncasecmp(buf,"flush",5) == 0)) {
 		    /* use negative to ensure 1/0 (strcmp may return 3 or 4 for false) */
-		    appres.flushleft = !strncasecmp(buf,"flush",5);
-		    /* and the printer and export justification labels */
-		    FirstArg(XtNlabel, just_items[appres.flushleft]);
-		    if (export_popup)
-			SetValues(export_just_panel);
-		    if (print_popup)
-			SetValues(print_just_panel);
+		    settings->flushleft = !strncasecmp(buf,"flush",5);
 		    /* NOW read metric/inches indicator */
 		    if (read_line(fp) < 0) {
 			file_msg("No Metric/Inches specification");
@@ -285,21 +337,8 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 		    line_no++;
 	    }
 	    /* set metric/inches mode appropriately */
-	    fig_units = (strncasecmp(buf,"metric",5) != 0);
-	    if (!merge) {
-		/* set the units string for the length messages */
-		strcpy(cur_fig_units, fig_units ? "in" : "cm");
-		/* and set the rulers/grid accordingly */
-		if (fig_units != (int) appres.INCHES) {
-		    appres.INCHES = (Boolean) fig_units;
-		    reset_rulers();
-		    init_grid();
-		    setup_grid(cur_gridmode);
-		    /* change the label in the units widget */
-		    FirstArg(XtNlabel, appres.INCHES ? "in" : "cm");
-		    SetValues(unitbox_sw);
-		}
-	    }
+	    settings->units = (strncasecmp(buf,"metric",5) != 0);
+
 	    /* paper size, magnification, multiple page flag and transparent color
 	       (for GIF export) new in 3.2 */
 	    if (proto >= 32) {
@@ -309,16 +348,7 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 		    return -1;		/* error */
 		}
 		/* parse the paper size */
-		if ((appres.papersize = parse_papersize(buf)) < 0) {
-		    file_msg("Illegal paper size in file, using default");
-		    appres.papersize = (appres.INCHES? PAPER_LETTER: PAPER_A4);
-		}
-		/* and the print and export paper size menus */
-		FirstArg(XtNlabel, paper_sizes[appres.papersize].fname);
-		if (export_popup)
-		    SetValues(export_papersize_panel);
-		if (print_popup)
-		    SetValues(print_papersize_panel);
+		settings->papersize = parse_papersize(buf);
 		line_no++;
 
 		/* read magnification now */
@@ -326,16 +356,7 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 		    file_msg("No Magnification specification");
 		    return -1;		/* error */
 		}
-		appres.magnification = atoi(buf);
-		/* set the magnification in the export and print panels */
-		sprintf(buf,"%.2f",appres.magnification);
-		FirstArg(XtNstring, buf);
-		if (export_popup)
-		    SetValues(export_mag_text);
-		if (print_popup) {
-		    SetValues(print_mag_text);
-		    print_update_figure_size();
-		}
+		settings->magnification = atoi(buf);
 		line_no++;
 
 		/* read multiple page flag now */
@@ -348,12 +369,7 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 		    file_msg("No Multiple page flag specification");
 		    return -1;
 		}
-		appres.multiple = (strncasecmp(buf,"multiple",8) == 0);
-		FirstArg(XtNlabel, multiple_pages[appres.multiple]);
-		if (export_popup)
-		    SetValues(export_multiple_panel);
-		if (print_popup)
-		    SetValues(print_multiple_panel);
+		settings->multiple = (strncasecmp(buf,"multiple",8) == 0);
 		line_no++;
 
 		/* read transparent color now */
@@ -361,14 +377,7 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 		    file_msg("No Transparent color specification");
 		    return -1;		/* error */
 		}
-		appres.transparent = atoi(buf);
-#ifdef USE_GIF
-		/* make colorname from number */
-		set_color_name(appres.transparent, buf);
-		FirstArg(XtNlabel, buf);
-		if (export_popup)
-		    SetValues(export_transp_panel);
-#endif
+		settings->transparent = atoi(buf);
 		line_no++;
 	    }
 	}
@@ -388,22 +397,6 @@ readfp_fig(fp, obj, merge, xoff, yoff)
 	return (status);
 
     n_num_usr_cols++;	/* number of user colors = max index + 1 */
-    if (merge) {
-	/* merge any user colors from the new file just read into the current figure */
-	merge_colors(obj);
-    } else {
-	/* now swap old figure colors with new colors (if any) */
-	swap_colors();
-	current_memory = -1;
-	show_pen_color();
-	show_fill_color();
-    }
-
-    /* and reallocate the colors for all EPS/XPM and GIFs on the canvas */
-    /* however, if merging, remap colors after adding new objects into main */
-    if (!merge)
-	remap_imagecolors(obj);
-
     /*******************************************************************************
 	The older versions of xfig (1.3 to 2.1) used values that ended in 4 or 9
 	for coordinates on the "grid".  When multiplied by 15 for the 3.0
@@ -421,16 +414,17 @@ readfp_fig(fp, obj, merge, xoff, yoff)
        file_msg("converted from an older version of xfig.  See the File panel.");
        scale_figure(obj,((float)PIX_PER_INCH)/obj->nwcorner.x,0);
     } else if (obj->nwcorner.x != PIX_PER_INCH) {
-       if (proto == 21 && obj->nwcorner.x == 76 && !appres.INCHES)
+       if (proto == 21 && obj->nwcorner.x == 76 && !settings->units)
 	  scale_figure(obj,((float)PIX_PER_INCH)/80,15); /* for 2.1.8S, HWS */
        else
           scale_figure(obj,((float)PIX_PER_INCH)/obj->nwcorner.x,15);
     }
 
-    if (merge && (proto >= 30)) {		/* rescale for mixed units, HWS */
-       if (!fig_units && appres.INCHES)
+    /* if merging a figure with different units, rescale for mixed units, HWS */
+    if (merge && (proto >= 30)) {		
+       if (!appres.INCHES && settings->units)
 	   read_scale_compound(obj,((float)PIX_PER_INCH)/(2.54*PIX_PER_CM),0);
-       if (fig_units && !appres.INCHES)
+       if (appres.INCHES && !settings->units)
 	   read_scale_compound(obj,(2.54*PIX_PER_CM)/((float)PIX_PER_INCH),0);
     }
 
@@ -457,6 +451,9 @@ parse_papersize(size)
 	*c ='\0';
     }
     len = strlen(size);
+    /* change ledger (deprecated) to tabloid */
+    if (strncasecmp(size,"ledger",len) == 0)
+	strcpy(size,"tabloid");
     for (i=0; i<NUMPAPERSIZES; i++) {
 	if (strncasecmp(size,paper_sizes[i].sname,len) == 0)
 	    break;
@@ -601,7 +598,7 @@ read_arcobject(fp)
     F_arc	   *a;
     int		    n, fa, ba;
     int		    type, style;
-    float	    thickness, wid, ht;
+    float	    thickness, wd, ht;
 
     if ((a = create_arc()) == NULL)
 	return (NULL);
@@ -646,23 +643,25 @@ read_arcobject(fp)
     skip_comment(fp);
     if (fa) {
 	line_no++;
-	if (fscanf(fp, "%d%d%f%f%f", &type, &style, &thickness, &wid, &ht) != 5) {
+	if (fscanf(fp, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    fprintf(stderr, Err_incomp, "arc", line_no);
 	    return (NULL);
 	}
 	skip_line(fp);
-	a->for_arrow = new_arrow(type, style, thickness, wid, ht);
+	convert_arrow(&wd, &ht);
+	a->for_arrow = new_arrow(type, style, thickness, wd, ht);
 	skip_comment(fp);
     }
     skip_comment(fp);
     if (ba) {
 	line_no++;
-	if (fscanf(fp, "%d%d%f%f%f", &type, &style, &thickness, &wid, &ht) != 5) {
+	if (fscanf(fp, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    fprintf(stderr, Err_incomp, "arc", line_no);
 	    return (NULL);
 	}
 	skip_line(fp);
-	a->back_arrow = new_arrow(type, style, thickness, wid, ht);
+	convert_arrow(&wd, &ht);
+	a->back_arrow = new_arrow(type, style, thickness, wd, ht);
     }
     return (a);
 }
@@ -829,7 +828,7 @@ read_lineobject(fp)
     F_point	   *p, *q;
     int		    n, x, y, fa, ba, npts;
     int		    type, style, radius_flag;
-    float	    thickness, wid, ht;
+    float	    thickness, wd, ht;
     int		    ox, oy;
 
     if ((l = create_line()) == NULL)
@@ -885,35 +884,44 @@ read_lineobject(fp)
     skip_comment(fp);
     if (fa) {
 	line_no++;
-	if (fscanf(fp, "%d%d%f%f%f", &type, &style, &thickness, &wid, &ht) != 5) {
+	if (fscanf(fp, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    fprintf(stderr, Err_incomp, "line", line_no);
 	    return (NULL);
 	}
 	skip_line(fp);
-	l->for_arrow = new_arrow(type, style, thickness, wid, ht);
+	convert_arrow(&wd, &ht);
+	l->for_arrow = new_arrow(type, style, thickness, wd, ht);
 	skip_comment(fp);
     }
     if (ba) {
 	line_no++;
-	if (fscanf(fp, "%d%d%f%f%f", &type, &style, &thickness, &wid, &ht) != 5) {
+	if (fscanf(fp, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    fprintf(stderr, Err_incomp, "line", line_no);
 	    return (NULL);
 	}
 	skip_line(fp);
-	l->back_arrow = new_arrow(type, style, thickness, wid, ht);
+	convert_arrow(&wd, &ht);
+	l->back_arrow = new_arrow(type, style, thickness, wd, ht);
 	skip_comment(fp);
     }
     if (l->type == T_PICTURE) {
+	char s1[PATH_MAX];
 	line_no++;
 	if ((l->pic = create_pic()) == NULL) {
 	    free((char *) l);
 	    return (NULL);
 	}
-	if (fscanf(fp, "%d %s", &l->pic->flipped, l->pic->file) != 2) {
+	if (fscanf(fp, "%d %s", &l->pic->flipped, s1) != 2) {
 	    file_msg(Err_incomp, "Picture Object", line_no);
 	    fprintf(stderr, Err_incomp, "Picture Object", line_no);
 	    return (NULL);
 	}
+	/* if path is relative, convert it to absolute path */
+	if (s1[0] != '/')
+	    sprintf(l->pic->file, "%s/%s", cur_dir, s1);
+	else
+	    strcpy(l->pic->file, s1);
+
 	read_picobj(l->pic,l->pen_color);
 	/* we've read in a pic object - merge_file uses this info to decide
 	   whether or not to remap any picture colors in first figure */
@@ -988,8 +996,9 @@ read_splineobject(fp)
     F_sfactor	   *cp, *cq;
     int		    c, n, x, y, fa, ba, npts;
     int		    type, style;
-    float	    thickness, wid, ht;
-    double	    s_param,sbis;
+    float	    thickness, wd, ht;
+    double	    s_param;
+    float	    lx, ly, rx, ry;
 
     if ((s = create_spline()) == NULL)
 	return (NULL);
@@ -1026,22 +1035,24 @@ read_splineobject(fp)
     skip_comment(fp);
     if (fa) {
 	line_no++;
-	if (fscanf(fp, "%d%d%f%f%f", &type, &style, &thickness, &wid, &ht) != 5) {
+	if (fscanf(fp, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    fprintf(stderr, Err_incomp, "spline", line_no);
 	    return (NULL);
 	}
 	skip_line(fp);
-	s->for_arrow = new_arrow(type, style, thickness, wid, ht);
+	convert_arrow(&wd, &ht);
+	s->for_arrow = new_arrow(type, style, thickness, wd, ht);
 	skip_comment(fp);
     }
     if (ba) {
 	line_no++;
-	if (fscanf(fp, "%d%d%f%f%f", &type, &style, &thickness, &wid, &ht) != 5) {
+	if (fscanf(fp, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    fprintf(stderr, Err_incomp, "spline", line_no);
 	    return (NULL);
 	}
 	skip_line(fp);
-	s->back_arrow = new_arrow(type, style, thickness, wid, ht);
+	convert_arrow(&wd, &ht);
+	s->back_arrow = new_arrow(type, style, thickness, wd, ht);
 	skip_comment(fp);
     }
     line_no++;
@@ -1087,10 +1098,19 @@ read_splineobject(fp)
     skip_line(fp);
 
     if (proto <= 31) {		/* to read files from version 3.1 and older */
-	if int_spline(s)
-	  for (;c>00;c-=2)    /* 2 control points per point given by user in
-			      version 3.1 and older : don't read them */
-	    skip_line(fp);
+	if int_spline(s) {
+	                        /* 2 control points per point given by user in
+			           version 3.1 and older : don't read them */
+          while (c--) {
+            count_lines_correctly(fp);
+            if (fscanf(fp, "%f%f%f%f", &lx, &ly, &rx, &ry) != 4) {
+              file_msg(Err_incomp, "spline", line_no);
+              return (NULL);
+            }
+          }
+	  skip_line(fp); 
+          line_no++;
+        }
 	if (closed_spline(s)) {
 	    F_point *ptr   = s->points; 
 	    s->points = s->points->next;
@@ -1151,7 +1171,6 @@ read_textobject(fp)
     int		    ignore = 0;
     char	    s[BUF_SIZE], s_temp[BUF_SIZE], junk[2];
     float	    tx_size;
-    extern PIX_FONT lookfont();
     Boolean	    more;
     PR_SIZE	    tx_dim;
 
@@ -1266,6 +1285,13 @@ read_textobject(fp)
 		t->flags |= SPECIAL_TEXT;
     }
 
+    /* check for valid font number */
+    if (t->font >= MAXFONT(t)) {
+	file_msg("Invalid text font (%d) at line %d, setting to DEFAULT.",
+		t->font, line_no);
+	t->font = DEFAULT;
+    }
+
     /* get the UNZOOMED font struct */
     t->fontstruct = lookfont(x_fontnum(psfont_text(t), t->font), t->size);
 
@@ -1354,11 +1380,6 @@ read_textobject(fp)
 	t->type = T_LEFT_JUSTIFIED;
     }
 
-    if (t->font >= MAXFONT(t)) {
-	file_msg("Invalid text font (%d) at line %d, setting to DEFAULT.",
-		t->font, line_no);
-	t->font = DEFAULT;
-    }
     if (strlen(s) <= 1)
 	{
 	file_msg("Empty text string at line %d.", line_no);
@@ -1451,10 +1472,10 @@ fix_angle(angle)
 fix_depth(depth)
     int		  *depth;
 {
-    if (*depth>MAXDEPTH) {
-	    *depth=MAXDEPTH;
+    if (*depth>MAX_DEPTH) {
+	    *depth=MAX_DEPTH;
 	    file_msg("Depth > %d, setting to %d in line %d.",
-			MAXDEPTH,line_no,MAXDEPTH);
+			MAX_DEPTH,line_no,MAX_DEPTH);
 	}
 	else if (*depth<0 || proto<21) {
 	    *depth=0;
@@ -1536,7 +1557,7 @@ F_compound	   *obj;
 	    dy--;
 	}
     file_msg(
-	"Shifting entire figure %d pixels right and %d pixels down to keep on page.",
+	"Shifting entire figure %d units right and %d units down to keep on page.",
 	dx,dy);
     for (e = obj->ellipses; e != NULL; e = e->next)
 	translate_ellipse(e, dx, dy);
@@ -1591,14 +1612,19 @@ check_color(color)
 swap_colors()
 {
     int		i,num;
-    Boolean	SaveFree[MAX_USR_COLS];
+    Boolean	saveFree[MAX_USR_COLS];
+
+    if (appres.DEBUG)
+	fprintf(stderr,"Swapping colors. Before: colors_are_swapped = %d\n",colors_are_swapped);
+
+    colors_are_swapped = True;
 
     /* first save the current colors because del_color_cell destroys them */
     for (i=0; i<num_usr_cols; i++)
 	save_colors[i] = user_colors[i];
     /* and save Free entries */
     for (i=0; i<num_usr_cols; i++)
-	SaveFree[i] = colorFree[i];
+	saveFree[i] = colorFree[i];
     /* now free any previously defined user colors */
     for (i=0; i<num_usr_cols; i++) {
 	    del_color_cell(i);		/* remove widget and colormap entry */
@@ -1612,7 +1638,7 @@ swap_colors()
     for (i=0; i<n_num_usr_cols; i++)
 	colorFree[i] = n_colorFree[i];
     for (i=0; i<num_usr_cols; i++)
-	n_colorFree[i] = SaveFree[i];
+	n_colorFree[i] = saveFree[i];
 
     num = num_usr_cols;
     num_usr_cols = n_num_usr_cols;
@@ -1697,35 +1723,15 @@ merge_colors(objects)
     /* if any were in conflict, renumber them now */
     if (conflict) {
 	n_num_usr_cols = newval;	/* new upper limit on color number */
-	for (a = objects->arcs; a != NULL; a = a->next) {
-	    renumber(&a->fill_color);
-	    renumber(&a->pen_color);
-	}
-	for (t = objects->texts; t != NULL; t = t->next) {
-	    renumber(&t->color);
-	}
-	for (c = objects->compounds; c != NULL; c = c->next) {
-	    merge_colors(c);
-	}
-	for (e = objects->ellipses; e != NULL; e = e->next) {
-	    renumber(&e->fill_color);
-	    renumber(&e->pen_color);
-	}
-	for (l = objects->lines; l != NULL; l = l->next) {
-	    renumber(&l->fill_color);
-	    renumber(&l->pen_color);
-	}
-	for (s = objects->splines; s != NULL; s = s->next) {
-	    renumber(&s->fill_color);
-	    renumber(&s->pen_color);
-	}
+	renumber_comp(objects);
     }
     /* now create colorcells for the new colors */
     for (i=0; i<n_num_usr_cols; i++) {
 	if (!n_colorFree[i]) {
 	    user_colors[i] = n_user_colors[i];
 	    /* and add a widget and colormap entry */
-	    if (add_color_cell(True, i, user_colors[i].red/256,
+	    if (add_color_cell(True, i,
+		user_colors[i].red/256,
 		user_colors[i].green/256,
 		user_colors[i].blue/256) == -1) {
 		    file_msg("Can't allocate more than %d user colors, not enough colormap entries",
@@ -1737,6 +1743,42 @@ merge_colors(objects)
 	}
     }
     num_usr_cols = n_num_usr_cols;
+}
+
+renumber_comp(compound)
+	F_compound *compound;
+{
+	F_arc	   *a;
+	F_text	   *t;
+	F_compound *c;
+	F_ellipse  *e;
+	F_line	   *l;
+	F_spline   *s;
+
+	/* first renumber colors in the compounds */
+	for (c = compound->compounds; c != NULL; c = c->next)
+	    renumber_comp(c);
+
+	/* now the primitives */
+	for (a = compound->arcs; a != NULL; a = a->next) {
+	    renumber(&a->fill_color);
+	    renumber(&a->pen_color);
+	}
+	for (t = compound->texts; t != NULL; t = t->next) {
+	    renumber(&t->color);
+	}
+	for (e = compound->ellipses; e != NULL; e = e->next) {
+	    renumber(&e->fill_color);
+	    renumber(&e->pen_color);
+	}
+	for (l = compound->lines; l != NULL; l = l->next) {
+	    renumber(&l->fill_color);
+	    renumber(&l->pen_color);
+	}
+	for (s = compound->splines; s != NULL; s = s->next) {
+	    renumber(&s->fill_color);
+	    renumber(&s->pen_color);
+	}
 }
 
 renumber(color)
@@ -1775,28 +1817,14 @@ count_lines_correctly(fp)
     ungetc(cc,fp);
 }
 
+/* convert arrow width and height to same units as thickness */
+/* in V4.0 and later we will save the values in these units */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+convert_arrow(wd, ht)
+	float *wd, *ht;
+{
+    if (proto < 40) {
+	*wd /= ZOOM_FACTOR;
+	*ht /= ZOOM_FACTOR;
+    }
+}

@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -25,6 +20,7 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "e_deletept.h"
 #include "u_list.h"
 #include "u_search.h"
 #include "u_draw.h"
@@ -32,11 +28,12 @@
 #include "w_mousefun.h"
 #include "d_spline.h"
 
-static int	init_delete_point();
+static void	init_delete_point();
 
+void
 delete_point_selected()
 {
-    set_mousefun("delete point", "", "", "", "", "");
+    set_mousefun("delete point", "", "", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_delete_point);
@@ -46,9 +43,9 @@ delete_point_selected()
     set_cursor(pick9_cursor);
 }
 
-static
+static void
 init_delete_point(obj, type, x, y, p, q)
-    char	   *obj;
+    F_line	   *obj;
     int		    type, x, y;
     F_point	   *p, *q;
 {
@@ -62,11 +59,13 @@ init_delete_point(obj, type, x, y, p, q)
 	if (cur_l->type == T_POLYGON) {
 	    if (n <= 4) {	/* count first pt twice for closed object */
 		put_msg("A polygon cannot have less than 3 points");
+		beep();
 		return;
 	    }
 	} else if (n <= 1) {
 	    /* alternative would be to remove the dot altogether */
 	    put_msg("A dot must have at least 1 point");
+	    beep();
 	    return;
 	}
 	linepoint_deleting(cur_l, p, q);
@@ -78,11 +77,13 @@ init_delete_point(obj, type, x, y, p, q)
 	    if (n <= CLOSED_SPLINE_MIN_NUM_POINTS) {
 		put_msg("A closed spline cannot have less than %d points",
 			CLOSED_SPLINE_MIN_NUM_POINTS);
+		beep();
 		return;
 	    }
 	} else if (n <= OPEN_SPLINE_MIN_NUM_POINTS) {
 		put_msg("A spline cannot have less than %d points",
 			OPEN_SPLINE_MIN_NUM_POINTS);
+		beep();
 		return;
 	    }
 	splinepoint_deleting(cur_s, p, q);
@@ -94,6 +95,7 @@ init_delete_point(obj, type, x, y, p, q)
 
 /**************************  spline  *******************************/
 
+void
 splinepoint_deleting(spline, previous_point, selected_point)
     F_spline	   *spline;
     F_point	   *previous_point, *selected_point;
@@ -150,6 +152,8 @@ splinepoint_deleting(spline, previous_point, selected_point)
  * prev_point->selected_point->next_point except when selected_point is the
  * first point in the list, in which case prev_point will be NULL.
  */
+
+void
 linepoint_deleting(line, prev_point, selected_point)
     F_line	   *line;
     F_point	   *prev_point, *selected_point;
@@ -187,16 +191,6 @@ linepoint_deleting(line, prev_point, selected_point)
 	    line->points = next_point;
 	else
 	    prev_point->next = next_point;
-    }
-    /* if there is only one point remaining and there are any arrowheads,
-       delete the arrowheads */
-    if (line->points->next == NULL) {
-	if (line->for_arrow)
-		free((char *) line->for_arrow);
-	line->for_arrow = (F_arrow *) NULL;
-	if (line->back_arrow)
-		free((char *) line->back_arrow);
-	line->back_arrow = (F_arrow *) NULL;
     }
     /* put it back in the list and draw the new line */
     list_add_line(&objects.lines, line);

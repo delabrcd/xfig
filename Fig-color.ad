@@ -1,7 +1,5 @@
 #include "Fig"
 
-#ifdef COLOR
-
 Fig*beNiceToColormap: 			False
 
 Fig.internalborderwidth: 		0
@@ -34,6 +32,10 @@ Fig.toggle_balloon_popup*Label.foreground:	blue
 Fig.mode_balloon_popup*Label.background:	yellow
 Fig.mode_balloon_popup*Label.foreground:	blue
 
+!balloon describing indicator panel function
+Fig.ind_balloon_popup*Label.background:		yellow
+Fig.ind_balloon_popup*Label.foreground:		blue
+
 !balloon describing command panel button function
 Fig.cmd_balloon_popup*Label.background:		yellow
 Fig.cmd_balloon_popup*Label.foreground:		blue
@@ -47,6 +49,9 @@ Fig.mouse_balloon_popup*Label.background:	yellow
 Fig.mouse_balloon_popup*Label.foreground:	blue
 
 Fig*Text*background: 			linen
+
+! file preview form background (looks like a border)
+Fig*preview_form.background:		gray70
 
 Fig*Command*background:			navajowhite2
 Fig*button.background: 			navajowhite2
@@ -94,4 +99,8 @@ Fig*form*stdForm*stdColor.bottomShadowContrast: -10
 ! shadows for picture types in edit box
 Fig*pic_type_box.shadowWidth:		0
 
-#endif	/* COLOR */
+! use gray shadows for popup color panel from edit popup so 
+! we don't use up all color cells
+
+Fig*color_box*bottomShadowPixel:	gray50
+Fig*color_box*topShadowPixel:		gray80

@@ -1,34 +1,30 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
 #include "fig.h"
 #include "resources.h"
 #include "w_setup.h"
+#include "w_icons.h"
 #include "w_util.h"
 
-#define	NUM_DRAW_SW 16 /* kludge - shouldn't have to edit this by hand */
+#define	NUM_DRAW_SW 17 /* kludge - shouldn't have to edit this by hand */
 
 int		TOOL_WD, TOOL_HT;
-int		CMDPANEL_WD, CMDPANEL_HT = 22;
+int		CMDPANEL_WD, CMDPANEL_HT = 24;
 int		MODEPANEL_WD, MODEPANEL_HT;
 int		MODEPANEL_SPACE;
 int		MSGFORM_WD, MSGFORM_HT = 18;
@@ -61,9 +57,14 @@ setup_sizes(new_canv_wd, new_canv_ht)
     if (CANVAS_HT < 10)
 	CANVAS_HT = 10;
 
-    SIDERULER_WD = RULER_WD + 8;	/* allow for 100's numbers */
+    if (appres.RHS_PANEL) {
+	SIDERULER_WD = UNITBOX_WD - 3;	  /* must make side ruler wider to show unitbox */
+	TOPRULER_WD = CANVAS_WD-UNITBOX_WD+SIDERULER_WD - 2*INTERNAL_BW + 4;
+    } else {
+	SIDERULER_WD = DEF_RULER_WD + 8;  /* allow for 100's */
+	TOPRULER_WD = CANVAS_WD-UNITBOX_WD+SIDERULER_WD - 2*INTERNAL_BW + 2;
+    }
     TOPRULER_HT = RULER_WD;
-    TOPRULER_WD = CANVAS_WD;
     SIDERULER_HT = CANVAS_HT;
     if (TOPRULER_WD > MAX_TOPRULER_WD)
 	TOPRULER_WD = MAX_TOPRULER_WD;
@@ -72,9 +73,9 @@ setup_sizes(new_canv_wd, new_canv_ht)
 
     MODEPANEL_WD = (MODE_SW_WD + INTERNAL_BW) * SW_PER_ROW + INTERNAL_BW;
     NUM_CMD_SW = num_cmd_sw();	/* kludge - NUM_CMD_SW local to w_cmdpanel.c */
-    CMDPANEL_WD = (((2 * CANVAS_WD) / 3 + MODEPANEL_WD +
-		    SIDERULER_WD) / NUM_CMD_SW) * NUM_CMD_SW;
-    MOUSEFUN_WD = (MODEPANEL_WD + CANVAS_WD + SIDERULER_WD - CMDPANEL_WD);
+    CMDPANEL_WD = ( ((2 * CANVAS_WD) / 3 + MODEPANEL_WD + SIDERULER_WD) / NUM_CMD_SW ) *
+			NUM_CMD_SW;
+    MOUSEFUN_WD = MODEPANEL_WD + CANVAS_WD + SIDERULER_WD - CMDPANEL_WD - INTERNAL_BW + 2;
     while (MOUSEFUN_WD < MIN_MOUSEFUN_WD) {
 	MOUSEFUN_WD += NUM_CMD_SW;
 	CMDPANEL_WD -= NUM_CMD_SW;
@@ -82,10 +83,11 @@ setup_sizes(new_canv_wd, new_canv_ht)
     if (CMDPANEL_WD < 5 * NUM_CMD_SW)
 	CMDPANEL_WD = 5 * NUM_CMD_SW;
     MSGFORM_WD = CMDPANEL_WD;
-    INDPANEL_WD = MODEPANEL_WD + CANVAS_WD + SIDERULER_WD + INTERNAL_BW*2;
-    MODEPANEL_SPACE = CANVAS_HT + RULER_WD - (MODE_SW_HT + INTERNAL_BW) *
-	(ceil((double)NUM_DRAW_SW/SW_PER_ROW) +
-	ceil((double)(NUM_MODE_SW-NUM_DRAW_SW)/SW_PER_ROW));
+    INDPANEL_WD = MODEPANEL_WD + CANVAS_WD + SIDERULER_WD;
+    /* space for both modepanel titles (Drawing modes and Editing modes) */
+    MODEPANEL_SPACE = 1 + CANVAS_HT + RULER_WD - 
+	(MODE_SW_HT + INTERNAL_BW) * (ceil((double)NUM_DRAW_SW/SW_PER_ROW) +
+			ceil((double)(NUM_MODE_SW-NUM_DRAW_SW)/SW_PER_ROW));
     if (MODEPANEL_SPACE < 2)
 	MODEPANEL_SPACE = 2;
 }

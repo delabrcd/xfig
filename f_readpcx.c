@@ -1,23 +1,15 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1992 by Brian Boyter
- * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1996 by Brian V. Smith
+ * Copyright (c) 1989-1998 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
- *
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -38,10 +30,8 @@ read_pcx(file,filetype,pic)
     F_pic	   *pic;
 {
     int		    status;
-    int		    i, j, bptr;
-    int		    width, height, maxval;
 
-    /* make scale factor larger for metric */
+    /* make scale factor smaller for metric */
     float scale = (appres.INCHES ?
 		    (float)PIX_PER_INCH :
 		    2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
@@ -80,10 +70,8 @@ _read_pcx(pcxfile,filetype,pic)
     pcxheadr	        pcxhead;	/* PCX header */
     unsigned short	wid;		/* Width of image */
     unsigned short	ht;		/* Height of image */
-    unsigned short	length;		/* Length of uncompressed scan line */
     unsigned char	*buffer;	/* current input line */
-    unsigned short	ret;
-    int			i;
+    int			i, bufsize;
 
     /* Read the PCX image file header information */
     (void) readpcxhead(&pcxhead, pcxfile);
@@ -115,21 +103,22 @@ _read_pcx(pcxfile,filetype,pic)
     pic->bit_size.y = ht;
 
     /* allocate space for the image */
-    if ((pic->bitmap = (unsigned char*) 
-	malloc(wid * ht * sizeof(unsigned char))) == NULL)
-	    return FileInvalid;	/* couldn't alloc space for image */
+    bufsize = pcxhead.bppl * (wid+sizeof(unsigned char)-1) * 
+		ht / sizeof(unsigned char);
+    if ((pic->bitmap = (unsigned char*) malloc(bufsize)) == NULL)
+		    return FileInvalid;	/* couldn't alloc space for image */
 
     buffer = pic->bitmap;
 
     switch (pcxhead.bppl) {
-	case 1:   pcx_decode(pcxfile, buffer, 1, &pcxhead, wid, ht);
-		  break;
-	case 8:   pcx_decode(pcxfile, buffer, 8, &pcxhead, wid, ht);
-		  break;
+	case 1:   
+	case 8:   
+		pcx_decode(pcxfile, buffer, bufsize, pcxhead.bppl, &pcxhead, wid, ht);
+		break;
 	default:
-		  file_msg("Unsupported PCX format");
-		  free(pic->bitmap);
-		  return FileInvalid;
+		file_msg("Unsupported PCX format");
+		free(pic->bitmap);
+		return FileInvalid;
     }
 
     /* See if there is a VGA palette; read it into the pic->cmap */
@@ -192,73 +181,73 @@ FILE		*pcxfile;
 }
 
 void
-pcx_decode(file, image, planes, header, w, h)
-     FILE     *file;
-     unsigned  char *image;
-     int       planes;
-     pcxheadr *header;
-     int       w,h;
+pcx_decode(file, image, bufsize, planes, header, w, h)
+    FILE     *file;
+    unsigned  char *image;
+    int       bufsize, planes;
+    pcxheadr *header;
+    int       w,h;
 {
-  int		row, bcnt, bpl, pd;
-  int		i, j, b, cnt, mask, plane, pmsk;
-  unsigned char *oimage;
+    int	      row, bcnt, bpl, pd;
+    int       i, j, b, cnt;
+    unsigned char mask, plane, pmsk;
+    unsigned char *oimage;
 
-  /* clear area first */
-  bzero((char*)image,w*h*sizeof(unsigned char));
+    /* clear area first */
+    bzero((char*)image,bufsize);
  
-  bpl = header->blp;
-  if (planes == 1)
+    bpl = header->blp;
+    if (planes == 1)
 	pd = (bpl * 8) - w;
-  else
+    else
 	pd = bpl - w;
 
-  row = bcnt = 0;
+    row = bcnt = 0;
 
-  plane = 0;
-  pmsk = 1;
-  oimage = image;
+    plane = 0;
+    pmsk = 1;
+    oimage = image;
 
-  while ( (b=getc(file)) != EOF) {
-    if ((b & 0xC0) == 0xC0) {   /* this is a repitition count */
-      cnt = b & 0x3F;
-      b = getc(file);
-      if (b == EOF) {
-	getc(file);
-	return; 
-      }
-    } else
-      cnt = 1;
-    
-    for (i=0; i<cnt; i++) {
-      if (planes == 1) {
-	for (j=0, mask=0x80; j<8; j++) {
-	  *image++ |= ((b & mask) ? pmsk : 0);
-	  mask = mask >> 1;
-	}
-      }
-      else
-	  *image++ = (unsigned char) b;
-      
-      bcnt++;
+    while ( (b=getc(file)) != EOF) {
+	if ((b & 0xC0) == 0xC0) {   /* this is a repitition count */
+	    cnt = b & 0x3F;
+	    b = getc(file);
+	    if (b == EOF) {
+		getc(file);
+		return; 
+	    }
+	} else
+	    cnt = 1;
 	
-      if (bcnt == bpl) {     /* end of a scan line */
-	bcnt = 0;
-	plane++;  
+	for (i=0; i<cnt; i++) {
+	    if (planes == 1) {
+		for (j=0, mask=0x80; j<8; j++) {
+		    *image++ |= (unsigned char) (((b & mask) ? pmsk : 0));
+		    mask = mask >> 1;
+		}
+	    } else {
+		*image++ = (unsigned char) b;
+	    }
+	
+	    bcnt++;
+	
+	    if (bcnt == bpl) {     /* end of a scan line */
+		bcnt = 0;
+		plane++;  
 
-	if (plane >= (int) header->nplanes) {   /* go to the next row */
-	  plane = 0;
-	  image -= pd;
-	  oimage = image;
-	  row++;
-	  if (row >= h)
-		return;   /* done */
+		if (plane >= (int) header->nplanes) {   /* go to the next row */
+		    plane = 0;
+		    image -= pd;
+		    oimage = image;
+		    row++;
+		    if (row >= h) {
+			return;   /* done */
+		    }
+		} else {   /* new plane, same row */
+			image = oimage;
+		}	
+	    pmsk = 1 << plane;
+	    }
 	}
-	else {   /* new plane, same row */
-	  image = oimage;
-	}	
-
-	pmsk = 1 << plane;
-      }
     }
-  }
 }

@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -24,13 +19,15 @@
 #include "resources.h"
 #include "object.h"
 #include "paintop.h"
+#include "mode.h"
+#include "d_arc.h"
+#include "e_flip.h"
+#include "e_rotate.h"
 #include "u_draw.h"
+#include "w_canvas.h"
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
-
-extern	setcenter, setcenter_x, setcenter_y;
-extern	setanchor, setanchor_x, setanchor_y;
 
 /*
  * Support for rendering based on correct object depth.	 A simple depth based
@@ -38,7 +35,7 @@ extern	setanchor, setanchor_x, setanchor_y;
  * data structures that will percolate throughout program.
  *
  * One ``counts'' structure for each object type at each nesting depth from 0
- * to MAXDEPTH - 1.  We track both the number of objects per type per depth,
+ * to MAX_DEPTH - 1.  We track both the number of objects per type per depth,
  * as well as the number of objects drawn so far per type per depth to cut
  * down on search loop overhead.
  */
@@ -58,11 +55,11 @@ struct counts {
 };
 
 /*
- * The array of ``counts'' structures.	All objects at depth >= MAXDEPTH are
- * accounted for in the counts[MAXDEPTH] entry.
+ * The array of ``counts'' structures.	All objects at depth >= MAX_DEPTH are
+ * accounted for in the counts[MAX_DEPTH] entry.
  */
 
-struct counts	counts[MAXDEPTH + 1];
+struct counts	counts[MAX_DEPTH + 1];
 
 /*
  * Function to clear the array of object counts prior to each redraw.
@@ -73,7 +70,7 @@ clearcounts()
 {
     register struct counts *cp;
 
-    for (cp = &counts[0]; cp <= &counts[MAXDEPTH]; ++cp) {
+    for (cp = &counts[0]; cp <= &counts[MAX_DEPTH]; ++cp) {
 	cp->num_arcs = 0;
 	cp->num_lines = 0;
 	cp->num_ellipses = 0;
@@ -155,7 +152,7 @@ arc_depths(arcs)
 	if (maxdepth < fp->depth)
 	    maxdepth = fp->depth;
 
-	++counts[min2(fp->depth, MAXDEPTH)].num_arcs;
+	++counts[min2(fp->depth, MAX_DEPTH)].num_arcs;
     }
     return maxdepth;
 }
@@ -176,7 +173,7 @@ line_depths(lines)
 	if (maxdepth < fp->depth)
 	    maxdepth = fp->depth;
 
-	++counts[min2(fp->depth, MAXDEPTH)].num_lines;
+	++counts[min2(fp->depth, MAX_DEPTH)].num_lines;
     }
     return maxdepth;
 }
@@ -197,7 +194,7 @@ ellipse_depths(ellipses)
 	if (maxdepth < fp->depth)
 	    maxdepth = fp->depth;
 
-	++counts[min2(fp->depth, MAXDEPTH)].num_ellipses;
+	++counts[min2(fp->depth, MAX_DEPTH)].num_ellipses;
     }
     return maxdepth;
 }
@@ -218,7 +215,7 @@ spline_depths(splines)
 	if (maxdepth < fp->depth)
 	    maxdepth = fp->depth;
 
-	++counts[min2(fp->depth, MAXDEPTH)].num_splines;
+	++counts[min2(fp->depth, MAX_DEPTH)].num_splines;
     }
     return maxdepth;
 }
@@ -239,7 +236,7 @@ text_depths(texts)
 	if (maxdepth < fp->depth)
 	    maxdepth = fp->depth;
 
-	++counts[min2(fp->depth, MAXDEPTH)].num_texts;
+	++counts[min2(fp->depth, MAX_DEPTH)].num_texts;
     }
     return maxdepth;
 }
@@ -279,7 +276,7 @@ redisplay_arcobject(arcs, depth)
     int		    depth;
 {
     F_arc	   *arc;
-    struct counts  *cp = &counts[min2(depth, MAXDEPTH)];
+    struct counts  *cp = &counts[min2(depth, MAX_DEPTH)];
 
     arc = arcs;
     while (arc != NULL && cp->cnt_arcs < cp->num_arcs) {
@@ -302,7 +299,7 @@ redisplay_ellipseobject(ellipses, depth)
     int		    depth;
 {
     F_ellipse	   *ep;
-    struct counts  *cp = &counts[min2(depth, MAXDEPTH)];
+    struct counts  *cp = &counts[min2(depth, MAX_DEPTH)];
 
 
     ep = ellipses;
@@ -326,7 +323,7 @@ redisplay_lineobject(lines, depth)
     int		    depth;
 {
     F_line	   *lp;
-    struct counts  *cp = &counts[min2(depth, MAXDEPTH)];
+    struct counts  *cp = &counts[min2(depth, MAX_DEPTH)];
 
 
     lp = lines;
@@ -350,7 +347,7 @@ redisplay_splineobject(splines, depth)
     int		    depth;
 {
     F_spline	   *spline;
-    struct counts  *cp = &counts[min2(depth, MAXDEPTH)];
+    struct counts  *cp = &counts[min2(depth, MAX_DEPTH)];
 
     spline = splines;
     while (spline != NULL && cp->cnt_splines < cp->num_splines) {
@@ -373,7 +370,7 @@ redisplay_textobject(texts, depth)
     int		    depth;
 {
     F_text	   *text;
-    struct counts  *cp = &counts[min2(depth, MAXDEPTH)];
+    struct counts  *cp = &counts[min2(depth, MAX_DEPTH)];
 
     text = texts;
     while (text != NULL && cp->cnt_texts < cp->num_texts) {
@@ -414,6 +411,87 @@ redisplay_canvas()
     redisplay_region(0, 0, CANVAS_WD, CANVAS_HT);
 }
 
+/* redisplay the object currently being created by the user (if any) */
+
+redisplay_curobj()
+{
+    F_point	*p;
+    int		 rx,ry,i;
+
+    /* no object currently being created to refresh, return */
+    if (!action_on)
+	return;
+
+    /* find which type of object we need to refresh */
+
+    if (cur_mode >= FIRST_EDIT_MODE && canvas_locmove_proc != null_proc) {
+	(*canvas_locmove_proc)(last_x, last_y);
+    } else {
+      switch (cur_mode) {
+	case F_PICOBJ:
+	case F_ARC_BOX:
+	case F_BOX:
+	   elastic_box(fix_x, fix_y, cur_x, cur_y);
+	   break;
+	case F_CIRCLE_BY_RAD:
+	   elastic_cbr();
+	   break;
+	case F_CIRCLE_BY_DIA:
+	   elastic_cbd();
+	   break;
+	case F_ELLIPSE_BY_RAD:
+	   elastic_ebr();
+	   break;
+	case F_ELLIPSE_BY_DIA:
+	   elastic_ebd();
+	   break;
+	case F_POLYLINE:
+	case F_POLYGON:
+	case F_APPROX_SPLINE:
+	case F_CLOSED_APPROX_SPLINE:
+	case F_INTERP_SPLINE:
+	case F_CLOSED_INTERP_SPLINE:
+	    for (p = first_point; p != NULL; p = p->next) {
+		if (p->next) {
+		    rx = p->next->x;
+		    ry = p->next->y;
+		} else {
+		    /* no more points in the list, draw to current now */
+		    rx = cur_x;
+		    ry = cur_y;
+		}
+		pw_vector(canvas_win, p->x, p->y, rx, ry,
+		      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
+		/* erase endpoint because next seg will redraw it */
+		pw_vector(canvas_win, rx, ry, rx, ry,
+		      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
+	    }
+	    break;
+	case F_CIRCULAR_ARC:
+	    for (i=0; i<num_point; i++) {
+		if (i < num_point-1) {
+		    rx = point[i+1].x;
+		    ry = point[i+1].y;
+		} else {
+		    rx = cur_x;
+		    ry = cur_y;
+		}
+		pw_vector(canvas_win, point[i].x, point[i].y, rx, ry,
+		      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
+	    }
+	    break;
+	case F_TEXT:
+	    /* if the user is editing an existing string, erase the original
+	       because redisplay_objects just re-drew it */
+	    if (cur_t)
+		draw_text(cur_t, INV_PAINT);
+	    /* now refresh the temporary edit string */
+	    draw_char_string();
+	    break;
+      }
+    }
+}
+
 redisplay_region(xmin, ymin, xmax, ymax)
     int		    xmin, ymin, xmax, ymax;
 {
@@ -426,6 +504,7 @@ redisplay_region(xmin, ymin, xmax, ymax)
     set_clip_window(xmin, ymin, xmax, ymax);
     clear_canvas();
     redisplay_objects(&objects);
+    redisplay_curobj();
     reset_clip_window();
     reset_cursor();
 }

@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -25,6 +20,7 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "e_arrow.h"
 #include "u_create.h"
 #include "u_draw.h"
 #include "u_search.h"
@@ -32,12 +28,16 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-static		add_arrow_head();
-static		delete_arrow_head();
+static void	add_arrow_head();
+static void	delete_arrow_head();
+static void	add_linearrow();
+static void	add_arcarrow();
+static void	add_splinearrow();
 
+void
 arrow_head_selected()
 {
-    set_mousefun("add arrow", "delete arrow", "", "", "", "");
+    set_mousefun("add arrow", "delete arrow", "", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(add_arrow_head);
@@ -48,9 +48,9 @@ arrow_head_selected()
     set_cursor(pick9_cursor);
 }
 
-static
+static void
 add_arrow_head(obj, type, x, y, p, q)
-    char	   *obj;
+    F_line	   *obj;
     int		    type, x, y;
     F_point	   *p, *q;
 {
@@ -71,9 +71,9 @@ add_arrow_head(obj, type, x, y, p, q)
     }
 }
 
-static
+static void
 delete_arrow_head(obj, type, x, y, p, q)
-    char	   *obj;
+    F_line	   *obj;
     int		    type, x, y;
     F_point	   *p, *q;
 {
@@ -94,6 +94,7 @@ delete_arrow_head(obj, type, x, y, p, q)
     }
 }
 
+static void
 add_linearrow(line, prev_point, selected_point)
     F_line	   *line;
     F_point	   *prev_point, *selected_point;
@@ -121,6 +122,7 @@ add_linearrow(line, prev_point, selected_point)
     set_modifiedflag();
 }
 
+static void
 add_arcarrow(arc, point_num)
     F_arc	   *arc;
     int		    point_num;
@@ -147,6 +149,7 @@ add_arcarrow(arc, point_num)
     set_modifiedflag();
 }
 
+static void
 add_splinearrow(spline, prev_point, selected_point)
     F_spline	   *spline;
     F_point	   *prev_point, *selected_point;
@@ -173,6 +176,7 @@ add_splinearrow(spline, prev_point, selected_point)
     set_modifiedflag();
 }
 
+void
 delete_linearrow(line, prev_point, selected_point)
     F_line	   *line;
     F_point	   *prev_point, *selected_point;
@@ -210,6 +214,7 @@ delete_linearrow(line, prev_point, selected_point)
     set_modifiedflag();
 }
 
+void
 delete_arcarrow(arc, point_num)
     F_arc	   *arc;
     int		    point_num;
@@ -245,12 +250,11 @@ delete_arcarrow(arc, point_num)
     set_modifiedflag();
 }
 
+void
 delete_splinearrow(spline, prev_point, selected_point)
     F_spline	   *spline;
     F_point	   *prev_point, *selected_point;
 {
-    F_point	   *p;
-
     if (closed_spline(spline))
 	return;
     if (prev_point == NULL) {	/* selected_point is the first point */

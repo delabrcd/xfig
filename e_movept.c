@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -25,6 +20,7 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "e_scale.h"
 #include "u_draw.h"
 #include "u_search.h"
 #include "u_create.h"
@@ -33,45 +29,47 @@
 #include "u_markers.h"
 #include "u_undo.h"
 #include "w_canvas.h"
+#include "w_modepanel.h"
 #include "w_mousefun.h"
-
-extern void     force_anglegeom(), force_noanglegeom();
-extern		scale_radius();
 
 /* local routine declarations */
 
 static F_point *moved_point;
 
-static Boolean	init_ellipsepointmoving();
-static int	init_arcpointmoving();
-static int	init_linepointmoving();
-static int	init_splinepointmoving();
-static int	init_compoundpointmoving();
+static void	fix_movedcompoundpoint();
+static void	cancel_compound();
 
-static int	relocate_arcpoint();
-static int	relocate_ellipsepoint();
-static int	relocate_linepoint();
-static int	relocate_splinepoint();
+static Boolean	init_ellipsepointmoving();
+static void	init_arcpointmoving();
+static void	init_linepointmoving();
+static void	init_splinepointmoving();
+static void	init_compoundpointmoving();
+
+static void	relocate_arcpoint();
+static void	relocate_ellipsepoint();
+static void	relocate_linepoint();
+static void	relocate_splinepoint();
 
 static Boolean	init_move_point();
-static int	init_arb_move_point();
-static int	init_stretch_move_point();
+static void	init_arb_move_point();
+static void	init_stretch_move_point();
 
-static int	fix_movedarcpoint();
-static int	fix_movedellipsepoint();
-static int	fix_movedsplinepoint();
-static int	fix_box();
-static int	fix_movedlinepoint();
+static void	fix_movedarcpoint();
+static void	fix_movedellipsepoint();
+static void	fix_movedsplinepoint();
+static void	fix_box();
+static void	fix_movedlinepoint();
 
-static int	cancel_movedarcpoint();
-static int	cancel_movedellipsepoint();
-static int	cancel_movedsplinepoint();
-static int	cancel_box();
-static int	cancel_movedlinepoint();
+static void	cancel_movedarcpoint();
+static void	cancel_movedellipsepoint();
+static void	cancel_movedsplinepoint();
+static void	cancel_movept_box();
+static void	cancel_movedlinepoint();
 
 move_point_selected()
 {
-    set_mousefun("move point", "horiz/vert move", "", "", "", "");
+    set_mousefun("move point", "horiz/vert move", LOC_OBJ,
+			LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_arb_move_point);
@@ -83,21 +81,21 @@ move_point_selected()
     force_anglegeom();
 }
 
-static
+static void
 init_arb_move_point(obj, type, x, y, p, q)
-    char	   *obj;
+    F_line	   *obj;
     int		    type, x, y;
     F_point	   *p, *q;
 {
     constrained = MOVE_ARB;
     if (!init_move_point(obj, type, x, y, p, q))
 	return;
-    set_mousefun("new posn", "", "cancel", "", "", "");
+    set_mousefun("new posn", "", "cancel", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     draw_mousefun_canvas();
     canvas_middlebut_proc = null_proc;
 }
 
-static
+static void
 init_stretch_move_point(obj, type, x, y, p, q)
     F_line	   *obj;
     int		    type, x, y;
@@ -106,7 +104,7 @@ init_stretch_move_point(obj, type, x, y, p, q)
     constrained = MOVE_HORIZ_VERT;
     if (!init_move_point(obj, type, x, y, p, q))
 	return;
-    set_mousefun("", "new posn", "cancel", "", "", "");
+    set_mousefun("", "new posn", "cancel", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     draw_mousefun_canvas();
     canvas_middlebut_proc = canvas_leftbut_proc;
     canvas_leftbut_proc = null_proc;
@@ -114,7 +112,7 @@ init_stretch_move_point(obj, type, x, y, p, q)
 
 static Boolean
 init_move_point(obj, type, x, y, p, q)
-    char	   *obj;
+    F_line	   *obj;
     int		    type, x, y;
     F_point	   *p, *q;
 {
@@ -160,7 +158,7 @@ init_move_point(obj, type, x, y, p, q)
     return True;
 }
 
-static
+static void
 wrapup_movepoint()
 {
     reset_action_on();
@@ -205,7 +203,8 @@ init_ellipsepointmoving()
     }
     cur_angle = cur_e->angle;
     set_action_on();
-    toggle_ellipsemarker(cur_e);
+    /* turn off all markers */
+    update_markers(0);
     switch (cur_e->type) {
       case T_ELLIPSE_BY_RAD:
 	canvas_locmove_proc = constrained_resizing_ebr;
@@ -228,13 +227,13 @@ init_ellipsepointmoving()
     (canvas_locmove_proc)(cur_x, cur_y);
     from_x = cur_x;
     from_y = cur_y;
-    set_temp_cursor(crosshair_cursor);
+    set_cursor(crosshair_cursor);
     canvas_leftbut_proc = fix_movedellipsepoint;
     canvas_rightbut_proc = cancel_movedellipsepoint;
-    return True;		/* all is Ok */
+    return True;
 }
 
-static
+static void
 cancel_movedellipsepoint()
 {
     switch (cur_e->type) {
@@ -251,11 +250,12 @@ cancel_movedellipsepoint()
 	elastic_cbd();
 	break;
     }
-    toggle_ellipsemarker(cur_e);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     wrapup_movepoint();
 }
 
-static
+static void
 fix_movedellipsepoint(x, y)
     int		    x, y;
 {
@@ -281,10 +281,12 @@ fix_movedellipsepoint(x, y)
     redisplay_ellipse(cur_e);
     /* and the new one */
     redisplay_ellipse(new_e);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     wrapup_movepoint();
 }
 
-static
+static void
 relocate_ellipsepoint(ellipse, x, y, point_num)
     F_ellipse	   *ellipse;
     int		    x, y, point_num;
@@ -341,31 +343,33 @@ relocate_ellipsepoint(ellipse, x, y, point_num)
 
 /***************************  arc  *********************************/
 
-static
+static void
 init_arcpointmoving()
 {
     set_action_on();
-    toggle_arcmarker(cur_a);
+    /* turn off all markers */
+    update_markers(0);
     cur_x = cur_a->point[movedpoint_num].x;
     cur_y = cur_a->point[movedpoint_num].y;
-    set_temp_cursor(crosshair_cursor);
-    elastic_arclink();
+    set_cursor(crosshair_cursor);
     canvas_locmove_proc = reshaping_arc;
     canvas_leftbut_proc = fix_movedarcpoint;
     canvas_rightbut_proc = cancel_movedarcpoint;
+    elastic_arclink();
     /* show current length(s) */
     (canvas_locmove_proc)(cur_x, cur_y);
 }
 
-static
+static void
 cancel_movedarcpoint()
 {
     elastic_arclink();
-    toggle_arcmarker(cur_a);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     wrapup_movepoint();
 }
 
-static
+static void
 fix_movedarcpoint(x, y)
     int		    x, y;
 {
@@ -379,10 +383,12 @@ fix_movedarcpoint(x, y)
     redisplay_arc(cur_a);
     /* and the new one */
     redisplay_arc(new_a);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     wrapup_movepoint();
 }
 
-static
+static void
 relocate_arcpoint(arc, x, y, movedpoint_num)
     F_arc	   *arc;
     int		    x, y, movedpoint_num;
@@ -396,28 +402,25 @@ relocate_arcpoint(arc, x, y, movedpoint_num)
     p[movedpoint_num].x = x;
     p[movedpoint_num].y = y;
     if (compute_arccenter(p[0], p[1], p[2], &xx, &yy)) {
-	set_temp_cursor(wait_cursor);
 	arc->point[movedpoint_num].x = x;
 	arc->point[movedpoint_num].y = y;
 	arc->center.x = xx;
 	arc->center.y = yy;
 	arc->direction = compute_direction(p[0], p[1], p[2]);
-	reset_cursor();
     }
 }
 
 /**************************  spline  *******************************/
 
-static
+static void
 init_splinepointmoving()
 {
-    F_point	   *p;
-
     set_action_on();
-    toggle_splinemarker(cur_s);
+    /* turn off all markers */
+    update_markers(0);
     from_x = cur_x = moved_point->x;
     from_y = cur_y = moved_point->y;
-    set_temp_cursor(crosshair_cursor);
+    set_cursor(crosshair_cursor);
     if (open_spline(cur_s)) {
 	if (left_point == NULL || right_point == NULL) {
             if (left_point != NULL) {
@@ -461,15 +464,16 @@ init_splinepointmoving()
     canvas_rightbut_proc = cancel_movedsplinepoint;
 }
 
-static
+static void
 cancel_movedsplinepoint()
 {
     elastic_linelink();
-    toggle_splinemarker(cur_s);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     wrapup_movepoint();
 }
 
-static
+static void
 fix_movedsplinepoint(x, y)
     int		    x, y;
 {
@@ -485,27 +489,25 @@ fix_movedsplinepoint(x, y)
     redisplay_spline(old_s);
     /* and the new one */
     redisplay_spline(cur_s);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     wrapup_movepoint();
 }
 
-static
+static void
 relocate_splinepoint(s, x, y, moved_point)
     F_spline	   *s;
     int		    x, y;
     F_point	   *moved_point;
 {
-    set_temp_cursor(wait_cursor);
     moved_point->x = x;
     moved_point->y = y;
     set_modifiedflag();
-    reset_cursor();
 }
 
 /***************************  compound	********************************/
 
-static		fix_movedcompoundpoint(), cancel_compound();
-
-static
+static void
 init_compoundpointmoving()
 {
     double	    dx, dy, l;
@@ -521,8 +523,9 @@ init_compoundpointmoving()
 	fix_y = cur_c->nwcorner.y;
     from_x = cur_x;
     from_y = cur_y;
-    toggle_compoundmarker(cur_c);
-    set_temp_cursor(crosshair_cursor);
+    /* turn off all markers */
+    update_markers(0);
+    set_cursor(crosshair_cursor);
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     if (constrained) {
 	dx = cur_x - fix_x;
@@ -538,17 +541,16 @@ init_compoundpointmoving()
     (canvas_locmove_proc)(cur_x, cur_y);
 }
 
-static
+static void
 cancel_compound()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
-    toggle_compoundmarker(cur_c);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     wrapup_movepoint();
 }
 
-extern		scale_compound();
-
-static
+static void
 fix_movedcompoundpoint(x, y)
     int		    x, y;
 {
@@ -557,43 +559,44 @@ fix_movedcompoundpoint(x, y)
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     adjust_box_pos(x, y, from_x, from_y, &cur_x, &cur_y);
 
-    /* delete it temporarily */
-    list_delete_compound(&objects.compounds, cur_c);
-    /* redraw anything under the old compound */
-    redisplay_compound(cur_c);
-    /* put it back in the list */
-    list_add_compound(&objects.compounds, cur_c);
+    /* make a copy of the original and save as unchanged object */
+    old_c = copy_compound(cur_c);
+    clean_up();
+    old_c->next = cur_c;
+    set_latestcompound(old_c);
+    set_action_object(F_CHANGE, O_COMPOUND);
 
     scalex = ((float) (cur_x - fix_x)) / (from_x - fix_x);
     scaley = ((float) (cur_y - fix_y)) / (from_y - fix_y);
     /* scale the compound */
     scale_compound(cur_c, scalex, scaley, fix_x, fix_y);
 
-    /* redraw anything under the new compound */
+    /* redraw anything under the old compound */
+    redisplay_compound(old_c);
+    /* and the new compound */
     redisplay_compound(cur_c);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
 
     set_lastposition(from_x, from_y);
     set_newposition(cur_x, cur_y);
-    clean_up();
-    set_action_object(F_SCALE, O_COMPOUND);
-    set_latestcompound(cur_c);
     set_modifiedflag();
-    reset_cursor();
     wrapup_movepoint();
 }
 
 /***************************  line  ********************************/
 
-static
+static void
 init_linepointmoving()
 {
     F_point	   *p;
 
     set_action_on();
-    toggle_linemarker(cur_l);
+    /* turn off all markers */
+    update_markers(0);
     from_x = cur_x = moved_point->x;
     from_y = cur_y = moved_point->y;
-    set_temp_cursor(crosshair_cursor);
+    set_cursor(crosshair_cursor);
     switch (cur_l->type) {
     case T_POLYGON:
 	if (left_point == NULL)
@@ -628,7 +631,7 @@ init_linepointmoving()
 	elastic_box(fix_x, fix_y, cur_x, cur_y);
 	canvas_locmove_proc = constrained_resizing_box;
 	canvas_leftbut_proc = fix_box;
-	canvas_rightbut_proc = cancel_box;
+	canvas_rightbut_proc = cancel_movept_box;
 	/* show current length(s) */
 	(canvas_locmove_proc)(cur_x, cur_y);
 	return;
@@ -665,15 +668,16 @@ init_linepointmoving()
     (canvas_locmove_proc)(cur_x, cur_y);
 }
 
-static
-cancel_box()
+static void
+cancel_movept_box()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
-    toggle_linemarker(cur_l);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     wrapup_movepoint();
 }
 
-static
+static void
 fix_box(x, y)
     int		    x, y;
 {
@@ -687,13 +691,13 @@ fix_box(x, y)
 	    new_l->pic->flipped = 1 - new_l->pic->flipped;
     }
     assign_newboxpoint(new_l, fix_x, fix_y, x, y);
-    if (new_l->type == T_ARC_BOX)	/* don't scale radius unless too large */
-	scale_radius(new_l, new_l);
     change_line(cur_l, new_l);
     /* redraw anything under the old line */
     redisplay_line(cur_l);
     /* and the new line */
     redisplay_line(new_l);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     wrapup_movepoint();
 }
 
@@ -730,22 +734,23 @@ assign_newboxpoint(b, x1, y1, x2, y2)
 	p->y = y2;
 }
 
-static
+static void
 cancel_movedlinepoint()
 {
     elastic_linelink();
-    toggle_linemarker(cur_l);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     wrapup_movepoint();
 }
 
-static
+static void
 fix_movedlinepoint(x, y)
     int		    x, y;
 {
     (*canvas_locmove_proc) (x, y);
     elastic_linelink();
     if (cur_latexcursor != crosshair_cursor)
-	set_temp_cursor(crosshair_cursor);
+	set_cursor(crosshair_cursor);
     /* make a copy of the original and save as unchanged object */
     old_l = copy_line(cur_l);
     clean_up();
@@ -758,10 +763,12 @@ fix_movedlinepoint(x, y)
     redisplay_line(old_l);
     /* and the new line */
     redisplay_line(cur_l);
+    /* turn back on all relevant markers */
+    update_markers(new_objmask);
     wrapup_movepoint();
 }
 
-static
+static void
 relocate_linepoint(line, x, y, moved_point, left_point)
     F_line	   *line;
     int		    x, y;

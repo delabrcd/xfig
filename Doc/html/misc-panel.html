@@ -1,0 +1,247 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<title>XFIG User Manual - Misc Panels</title>
+<link rev="made" href="mailto:VEF00200@niftyserve.or.jp">
+</head>
+
+<body>
+<img src="images/xfig-title.gif" alt="XFIG Users Manual">
+<p>
+[ <b>English Version</b>
+ | <a href="japanese/index.html">Japanese Version</a> ]
+<p>
+[ <a href="index.html">Contents</a>
+ | <b>Operating Manual</b>
+ | <a href="features_bugs.html">New Features and Bugs Fixed</a>
+ | <a href="options.html">Technical Information</a>
+ | <a href="authors.html">Authors</a> ]
+<p>
+[ <a href="introduction.html">Introduction</a>
+ | <a href="command-panel.html">Command Panel</a>
+ | <a href="drawing-mode.html">Drawing Mode Panel</a>
+ | <a href="editing-mode.html">Editing Mode Panel</a><br>
+ | <a href="indicator-panel.html">Indicator Panel</a>
+ | <b>Miscellaneous Panels</b>
+ | <a href="accelerators.html">Keyboard Accelerators</a> ]
+
+<p>
+<hr>
+
+<h1>Miscellaneous Panels</h1>
+
+<h2><a name="mouse-indicator">Mouse Function Indicator</a></h2>
+
+<blockquote>
+  <img src="images/mouse-function-indicator.gif" alt="[Mouse Function Indicator]">
+</blockquote>
+<p>
+Mouse Function Indicator shows which functions are assigned
+to each mouse button.
+<p>
+Although the function of each mouse button changes
+depending on the state (selected mode, position of the mouse cursor,
+state of SHIFT key or CONTROL key, etc) at the time,
+the mouse function indicator shows the current function at all times.
+<p>
+If the <a href="drawing-mode.html#text">TEXT</a> mode is selected
+and it is ready to enter text from keyboard,
+the mouse function indicator shows that as a keyboard icon.
+<p>
+See also <a href="#balloons">Balloons Button</a>.
+
+<h2><a name="ruler">Rulers</a></h2>
+
+<blockquote>
+  <img src="images/ruler.gif" alt="[Rulers]">
+</blockquote>
+<p>
+The rulers are placed at the top and right
+(left, if the <a href="drawing-mode.html">drawing mode panel</a> is <i>right</i>)
+of the canvas, and the scale selected by
+<a href="#unit-box">UNIT Box</a> is displayed on them (i.e. inches or cm).
+Normally, triangular markers which show the mouse cursor position
+are also displayed on the rulers.
+The rulers may also be used to scroll the canvas.
+<p>
+To scroll the canvas, press mouse button 2 (`Drag') on the ruler
+and move cursor left/right or up/down;
+the ruler will be moved following the cursor,
+and the contents of canvas will be moved when mouse button is released.
+If the SHIFT key was pressed during this operation,
+the canvas will scroll five times further than the mouse movement.
+<p>
+Clicking on the ruler with mouse button 1 (`Pan Left' or `Pan Up')
+or mouse button 3 (`Pan Right' or `Pan Down')
+will scroll the canvas by 1/2 inch (1cm, if unit is cm).
+The arrow keys have the same effect, too.
+If the SHIFT key was pressed during those operations,
+amount of scroll will be five times further.
+<p>
+The canvas view will be moved to the origin
+if mouse button 1 (`Pan to Origin') is clicked
+on the <a href="#unit-box">UNIT Box</a>,
+or mouse button 2 (`Pan to Origin') is clicked
+on the canvas while the CONTROL key is down.
+
+
+<h2><a name="unit-box">UNIT Box</a></h2>
+
+<blockquote>
+  <img src="images/unit-box.gif" alt="[Unit Box]">
+</blockquote>
+<p>
+The UNIT Box is placed where the top and side rulers meet.
+The units of the ruler (<i>in</i> or <i>cm</i>) and the scale
+of the drawing (e.g. 1cm=3km) will be displayed here.
+
+<h3><a name="set-unit">Set Units</a></h3>
+
+Clicking on the UNIT Box with mouse button 3 (`Set Units/Scale')
+will pop up a panel to set the units.
+<p>
+<blockquote>
+  <img src="images/unit-panel.gif" alt="[Unit Panel]">
+</blockquote>
+
+<p>
+<dl>
+<dt>
+<img src="images/redballdot.gif" align=bottom>
+<i>Ruler units</i>
+<dd>Select <a href="#ruler">ruler</a> 
+unit from <i>Imperial (in)</i> and <i>Metric (cm)</i>.
+
+<p>
+<dt>
+<img src="images/redballdot.gif" align=bottom>
+<i>Figure units</i>
+<dd>Select unit
+which is used to display dimensions when entering or editing object,
+from <i>Ruler units</i> and <i>User defined</i>.
+If <i>User defined</i> is selected here,
+the string entered in <i>Unit name</i> will be displayed as the unit of dimension.
+
+<p>
+<dt>
+<img src="images/redballdot.gif" align=bottom>
+<i>Unit name</i>
+<dd>Set the name of the unit.
+This is effective only if
+<i>User defined</i> is selected in <i>Figure units</i>.
+
+<p>
+<dt>
+<img src="images/redballdot.gif" align=bottom>
+<i>Figure scale</i>
+<dd>Set the magnification
+which is used to display dimensions when entering or editing objects,
+from <i>Unity</i> and <i>User defined</i>.
+If <i>User defined</i> is selected here,
+the value specified by <i>Scale factor</i> will be multiplied by the dimensions
+displayed when drawing objects.
+
+<p>
+<dt>
+<img src="images/redballdot.gif" align=bottom>
+<i>Scale factor</i>
+<dd>Set the value which will be multiplied by the dimensions
+when displaying them.
+This is effective only if
+<i>User defined</i> is selected as <i>Figure scale</i>.
+</dl>
+<p>
+The default value can be set by
+<a href="options.html">command line options</a> 
+and <a href="options.html#resource">resources</a>.
+
+
+<h2><a name="balloons">Balloons Button</a></h2>
+
+<blockquote>
+  <img src="images/balloons-button.gif" alt="[Balloons Button]">
+</blockquote>
+<p>
+If this button is <i>ON</i>,
+`balloon' messages corresponding to the object the mouse is positioned
+over will popup after a predetermined time 
+(in milliseconds; resource <tt>Fig.balloon_delay</tt>).
+Here is an example:
+<blockquote>
+  <img src="images/balloons-example.gif" alt="[Balloons Example]">
+</blockquote>
+
+
+<h2><a name="search-text">Search and Replace Text</a></h2>
+
+Keyboard accelerator <tt>Meta-h</tt> will popup the
+Search &amp; Replace Panel.
+Using the Search &amp; Replace Panel,
+users can search, replace, and check the spelling of
+<a href="drawing-mode.html#text">text</a> in the figure.
+It is also possible to apply
+<a href="editing-mode.html#update">UPDATE</a> to searched texts.
+<p>
+<blockquote>
+  <img src="images/search-text-panel.gif" alt="[Search/Replace Panel]">
+</blockquote>
+
+<p>
+<dl>
+<dt>
+<img src="images/redballdot.gif" align=bottom>
+<i>Search</i>
+<dd>Specify the string to be searched.
+
+<p>
+<dt>
+<img src="images/redballdot.gif" align=bottom>
+<i>Case Sensitive</i>
+<dd>If this button is selected,
+upper-case and lower-case letters will be considered significant when searching.
+
+<p>
+<dt>
+<img src="images/redballdot.gif" align=bottom>
+<i>Replace with</i>
+<dd>Specify the string to replace the string
+entered in the <i>Search</i> field.
+
+<p>
+<dt>
+<img src="images/redballdot.gif" align=bottom>
+<i>Search/Replace/Update</i>
+<dd>Clicking this button will search for text objects
+containing the string specified by the <i>Search</i> field above.
+The results of the search will be displayed in another window.
+<p>
+If the <i>Replace</i> button in the results window is clicked after the search,
+the string specified in <i>Search</i> field will be replaced
+with the string specified in the <i>Replace with</i> field.
+If the <i>UPDATE</i> button is clicked after the search,
+the <a href="editing-mode.html#update">UPDATE</a> will be performed
+for those texts, applying settings in the
+<a href="indicator-panel.html">Indicator Panel</a>
+to the matched text objects.
+The <i>Undo</i> function does not work for text changed by the replace operation.
+
+<p>
+<dt>
+<img src="images/redballdot.gif" align=bottom>
+<i>Spell Check</i>
+<dd>Clicking this button will invoke a spell-checker
+(the <tt>spell</tt> command, usually) 
+and display the resulting list of (possibly) misspelled words in the 
+text objects in the figure.
+</dl>
+
+<p>
+<hr>
+
+Goto <a href="index.html">TOP</a>
+
+<p>
+<a href="authors.html#manual"><i>written by us</i></a>
+
+</body>
+</html>

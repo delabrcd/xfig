@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -38,11 +33,11 @@ int		autoforwardarrow_mode = 0;
 int		autobackwardarrow_mode = 0;
 int		cur_gridmode;
 int		cur_pointposn;
-int		posn_rnd[P_GRID3 + 1];
-int		posn_hlf[P_GRID3 + 1];
-int		grid_fine[GRID_3 + 1];
-int		grid_coarse[GRID_3 + 1];
-char	       *grid_name[GRID_3 + 1];
+int		posn_rnd[P_GRID4 + 1];
+int		posn_hlf[P_GRID4 + 1];
+int		grid_fine[GRID_4 + 1];
+int		grid_coarse[GRID_4 + 1];
+char	       *grid_name[GRID_4 + 1];
 int		cur_rotnangle = 90;
 int		cur_linkmode = 0;
 int		cur_numsides = 6;
@@ -78,7 +73,7 @@ char	       *lang_items[] = {
 #ifdef USE_JPEG
 	"jpeg",
 #endif /* USE_JPEG */
-	"tiff",  "xbm",
+	"tiff",  "tk", "xbm",
 #ifdef USE_XPM
 	"xpm",
 #endif /* USE_XPM */
@@ -108,6 +103,7 @@ char	       *lang_texts[] = {
 	"JPEG                           ",
 #endif /* USE_JPEG */
 	"TIFF (no compression)          ",
+	"Tk (Tcl/Tk toolkit)            ",
 	"X11 Bitmap (XBM)               ",
 #ifdef USE_XPM
 	"X11 Pixmap (XPM)               ",
@@ -119,7 +115,10 @@ char	       *lang_texts[] = {
 
 int		cur_objmask = M_NONE;
 int		cur_updatemask = I_UPDATEMASK;
-int		cur_depth = 0;
+int		new_objmask = M_NONE;
+/* start depth at 100 to make it easier to put new objects on top without
+   having to remember to increase the depth at startup */
+int		cur_depth = 100;
 
 /***************************  Texts ****************************/
 
@@ -147,6 +146,13 @@ int		cur_fillstyle	= UNFILLED;
 int		cur_penstyle	= NUMSHADEPATS;	/* solid color */
 int		cur_arrowmode	= L_NOARROWS;
 int		cur_arrowtype	= 0;
+float		cur_arrowthick	= 1.0;			/* pixels */
+float		cur_arrowwidth	= DEF_ARROW_WID;	/* pixels */
+float		cur_arrowheight	= DEF_ARROW_HT;		/* pixels */
+float		cur_arrow_multthick = 1.0;		/* values when using multiple of */
+float		cur_arrow_multwidth = DEF_ARROW_WID;		/* line width */
+float		cur_arrow_multheight = DEF_ARROW_HT;
+Boolean		use_abs_arrowvals = True;		/* start by using absolute values */
 int		cur_arctype	= T_OPEN_ARC;
 char		EMPTY_PIC[8]	= "<empty>";
 

@@ -1,23 +1,18 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -27,8 +22,6 @@
 #include "object.h"
 #include "u_create.h"
 #include "w_setup.h"
-
-extern int	cur_linewidth;
 
 static char	Err_mem[] = "Running out of memory.";
 
@@ -54,9 +47,15 @@ forward_arrow()
 
     a->type = ARROW_TYPE(cur_arrowtype);
     a->style = ARROW_STYLE(cur_arrowtype);
-    a->thickness = (float) (max2(1,cur_linewidth));
-    a->wid = a->thickness * DEF_ARROW_WID;
-    a->ht = a->thickness * DEF_ARROW_HT;
+    if (use_abs_arrowvals) {
+	a->thickness = cur_arrowthick;
+	a->wd = cur_arrowwidth;
+	a->ht = cur_arrowheight;
+    } else {
+	a->thickness = cur_arrow_multthick*cur_linewidth;
+	a->wd = cur_arrow_multwidth*cur_linewidth;
+	a->ht = cur_arrow_multheight*cur_linewidth;
+    }
     return (a);
 }
 
@@ -70,31 +69,37 @@ backward_arrow()
 
     a->type = ARROW_TYPE(cur_arrowtype);
     a->style = ARROW_STYLE(cur_arrowtype);
-    a->thickness = (float) (max2(1,cur_linewidth));
-    a->wid = a->thickness * DEF_ARROW_WID;
-    a->ht = a->thickness * DEF_ARROW_HT;
+    if (use_abs_arrowvals) {
+	a->thickness = cur_arrowthick;
+	a->wd = cur_arrowwidth;
+	a->ht = cur_arrowheight;
+    } else {
+	a->thickness = cur_arrow_multthick*cur_linewidth;
+	a->wd = cur_arrow_multwidth*cur_linewidth;
+	a->ht = cur_arrow_multheight*cur_linewidth;
+    }
     return (a);
 }
 
 F_arrow	       *
-new_arrow(type, style, thickness, wid, ht)
+new_arrow(type, style, thickness, wd, ht)
     int		    type, style;
-    float	    thickness, wid, ht;
+    float	    thickness, wd, ht;
 {
     F_arrow	   *a;
 
     if ((a = create_arrow()) == NULL)
 	return (NULL);
 
-    /* if thickness or width are 0.0, make reasonable values */
-    if (thickness==0.0)
-	thickness = (float) (max2(1,cur_linewidth));
-    if (wid==0.0)
-	wid = thickness * DEF_ARROW_WID;
+    /* if thickness or width are <= 0.0, make reasonable values */
+    if (thickness <= 0.0)
+	thickness = cur_arrowthick;
+    if (wd <= 0.0)
+	wd = cur_arrowwidth;
     a->type = type;
     a->style = style;
     a->thickness = thickness;
-    a->wid = wid;
+    a->wd = wd;
     a->ht = ht;
     return (a);
 }
@@ -322,6 +327,15 @@ copy_line(l)
 	    line->pic->pix_width = 0;
 	    line->pic->pix_height = 0;
 	    line->pic->pixmap = 0;
+	  }
+      
+    
+	if (l->pic->figure != NULL) {
+	  if ((line->pic->figure = copy_compound(l->pic->figure)) == NULL) {
+	    free((char *) line);
+	    return (NULL);
+	  }
+	  
 	}
     }
     return (line);
@@ -452,7 +466,22 @@ create_compound()
 
     if ((c = (F_compound *) malloc(COMOBJ_SIZE)) == NULL)
 	put_msg(Err_mem);
+    c->nwcorner.x = 0;
+    c->nwcorner.y = 0;
+    c->secorner.x = 0;
+    c->secorner.y = 0;
+    c->distrib = 0;
     c->tagged = 0;
+    c->arcs = NULL;
+    c->compounds = NULL;
+    c->ellipses = NULL;
+    c->lines = NULL;
+    c->splines = NULL;
+    c->texts = NULL;
+    c->parent = NULL;
+    c->GABPtr = NULL;
+    c->next = NULL;
+
     return (c);
 }
 

@@ -1,0 +1,236 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html>
+<head>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=EUC-JP">
+<title>XFIG User Manual - Introduction</title>
+<link rev="made" href="mailto:VEF00200@nifty.ne.jp">
+</head>
+
+<body>
+<img src="../images/xfig-title.gif" alt="XFIG Users Manual">
+<p>
+[ <a href="../index.html">English Version</a>
+ | <b>Japanese Version</b> ]
+<p>
+[ <a href="index.html">Contents</a>
+ | <b>Operating Manual</b>
+ | <a href="features_bugs.html">New Features and Bugs Fixed</a><br>
+ | <a href="options.html">Technical Informations</a>
+ | <a href="authors.html">Authors</a> ]
+<p>
+[ <b>概要</b>
+ | <a href="command-panel.html">コマンド・パネル</a>
+ | <a href="drawing-mode.html">描画モード・パネル</a>
+ | <a href="editing-mode.html">編集モード・パネル</a><br>
+ | <a href="indicator-panel.html">インジケータ・パネル</a>
+ | <a href="misc-panel.html">その他のパネル</a>
+ | <a href="accelerators.html">キーボード・アクセラレータ</a> ]
+
+<p>
+<hr>
+
+<h1>概要</h1>
+
+<blockquote>
+  <a href="../images/screen-image.gif"><img src="../images/screen-image-small.gif"
+    alt="[Screen image of xfig]"></a>
+</blockquote>
+
+<p>
+<b>xfig</b> は、
+大部分の UNIX 互換のプラットホーム上の、
+<a href="http://www.opengroup.org/tech/desktop/x">X Window System</a> 
+Version 11 Release 4 (X11R4) 以降の上で動作する、対話的な描画ツールです。
+これは<a href="authors.html">フリーウェア</a>であり、
+<a href="installation.html">anonymous ftp</a> によって入手することができます。
+他のアプリケーションについては、
+<a href="installation.html#related-apps"><i>アプリケーション</i></a> 
+の章を参照して下さい。
+
+<p>
+<b>xfig</b> では、
+<a href="drawing-mode.html#circle">円</a>、
+<a href="drawing-mode.html#box">矩形</a>、
+<a href="drawing-mode.html#polyline">折れ線</a>、
+<a href="drawing-mode.html#spline">スプライン曲線</a>、
+<a href="drawing-mode.html#text">テキスト</a>などの
+オブジェクトを組み合わせることによって図を作成します。
+また、GIF、JPEG、EPSF (PostScript) などで表現された
+<a href="drawing-mode.html#picture">イメージを張り付ける</a>
+ことも可能です。
+オブジェクトは、新たに
+<a href="drawing-mode.html">入力</a>したり、
+<a href="editing-mode.html#delete">削除</a>したり、
+<a href="editing-mode.html#move">移動</a>したり、
+<a href="editing-mode.html">変形</a>したりすることが可能です。
+<a href="indicator-panel.html">オブジェクトの色や線の形状など</a>は、
+多数の選択肢の中から選択することができます。
+テキストには、<a href="indicator-panel.html#font-panel">種々のフォント</a>
+を使用することができます。
+また、テキストに ``<img src="../images/a-umlaut.gif" alt="a umlaut">'' や 
+``<img src="../images/c-cedilla.gif" alt="c cedilla">'' などの
+<a href="drawing-mode.html#compose-char">Latin-1 キャラクタ</a>
+を含めることもできます。
+
+<p>
+<b>xfig</b> は、図をその独自のフォーマットである 
+<a href="fig-format.html"><i>Fig format</i></a> でセーブしますが、
+PostScript、GIF、JPEG、HP-GL などの
+<a href="command-panel.html#export">種々のフォーマットに変換する</a>
+ことも可能です。
+また、<b>xfig</b> は
+<a href="command-panel.html#print">図を PostScript プリンタへ出力する</a>
+ための機能も持っています。
+
+<p>
+図を <b>xfig</b> が読み込むことのできるファイル・フォーマットである 
+<i>Fig format</i> で出力することのできる
+<a href="installation.html#related-software">いくつかのアプリケーション</a>
+が存在します。
+例えば、<b>xfig</b> はグラフを作成するための機能を持っていませんが、
+<a href="installation.html#gnuplot"><b>gnuplot</b></a> 
+や <a href="installation.html#xgraph"><b>xgraph</b></a> などのツールは
+グラフを作成して <i>Fig format</i> で出力することができます。
+使用したいアプリケーションが 
+<b>xfig</b> で読み込めるような出力を生成できない場合でも、
+<a href="installation.html#pstoedit"><b>pstoedit</b></a> 
+や <a href="installation.html#hp2xx"><b>hp2xx</b></a> などのツールを用いれば、
+それらの図を <b>xfig</b> で読み込み、編集することができるかも知れません。
+単にイメージを図の中に貼り付けたいが、図そのものを編集する必要がない 
+(<a href="../images/screen-image.gif">この例</a> のように) 
+のであれば、GIF、JPEG、EPSF (PostScript) などの
+<a href="drawing-mode.html#picture">イメージを貼り付ける</a>ことも可能です。
+
+<p>
+操作は主にマウスによって行ないますが、
+一部の操作は <a href="accelerators.html">キーボード・アクセラレータ</a> 
+(ショートカット) を用いて行なうことも可能です。
+3ボタン・マウスの使用を推奨しますが、2ボタン・マウスも使用可能 
+(2ボタン・マウスを使用しており、
+X サーバーが3ボタン・マウスのエミュレーションを行なわない場合には、
+マウスボタン2の代わりに Meta キーとマウスボタン3を同時に押す) です。
+通常、マウスボタン1〜3は、
+それぞれ左ボタン、中ボタン、及び右ボタンに割り当てられています。
+
+<p>
+<b>xfig 3.2</b>、及び <b>fig2dev 3.2</b> には
+日本語を含んだテキストを取り扱えるようにするためのコードが含まれています。
+これは日本語以外ではテストされていませんが、
+基本的には X11R5 の標準の国際化 (I18N) メカニズムを使用しており、
+僅かな変更で、もしくは変更を行なうことなく、
+<a href="i18n.html#i18n">他の言語</a>も取り扱えるようになるものと思われます。
+これについては、
+<a href="i18n.html">日本語への対応 (あるいは国際化?)</a> を参照して下さい。
+
+<p>
+<hr>
+
+<h2><a name="starting-xfig">xfig の起動</a></h2>
+
+<b>xfig</b> は、<tt>xfig</tt> コマンドによって起動することができます。
+<p>
+<pre>
+      <kbd>xfig </kbd> [ <i>options</i>... ] [ <i>filename</i> ]
+</pre>
+<p>
+<tt><i>options...</i></tt> は 
+<a href="options.html">コマンド行オプション</a> であり、
+これを用いてある程度のカスタマイズを行なうことができます。
+また、<tt>xfig</tt> コマンドを実行する度にオプションを指定する代わりに、
+<a href="options.html#resource">リソース</a> を用いて
+設定を行なうことも可能です。
+<p>
+<tt><i>filename</i></tt> を指定すると <b>xfig</b> は
+そのファイルをロードした状態で起動します。
+
+
+<h2><a name="display-windows">ウィンドウの構成</a></h2>
+
+<a href="../images/screen-image.gif"><b>xfig</b> のウィンドウ</a>は、
+大きく次のような部分に分けられます。
+<p>
+<dl>
+<dt><a href="command-panel.html">コマンド・パネル</a>:
+<dd><a href="command-panel.html#file">ファイルのロード/セーブ</a>、
+図の<a href="command-panel.html#print">印刷</a>や
+<a href="command-panel.html#export">エクスポート</a>、
+<a href="command-panel.html#quit"><b>xfig</b> の終了</a>
+などの操作のためのボタンが置かれています。
+
+<p>
+<dt><a href="drawing-mode.html">描画モード・パネル</a>:
+<dd><a href="drawing-mode.html#circle">円</a>、
+<a href="drawing-mode.html#box">矩形</a>、
+<a href="drawing-mode.html#polyline">折れ線</a>、
+<a href="drawing-mode.html#text">テキスト</a>
+など、オブジェクトの入力のためのボタンが置かれています。
+
+<p>
+<dt><a href="editing-mode.html">編集モード・パネル</a>:
+<dd><a href="editing-mode.html#move">移動</a>、
+<a href="editing-mode.html#copy">コピー</a>、
+<a href="editing-mode.html#delete">削除</a>、
+<a href="editing-mode.html#scale">拡大/縮小</a>、
+<a href="editing-mode.html#edit">属性の編集</a>
+など、編集操作のためのボタンが置かれています。
+
+<p>
+<dt><a href="indicator-panel.html">インジケーター・パネル</a>:
+<dd><a href="indicator-panel.html#pen-color">色</a>、
+<a href="indicator-panel.html#line-width">線の太さ</a>、
+<a href="indicator-panel.html#line-style">線の形状</a>、
+<a href="indicator-panel.html#text-font">フォント</a>、
+<a href="indicator-panel.html#text-justification">テキストの配置</a>
+など、オブジェクトの属性などの設定のためのボタンが置かれています。
+ここには、
+<a href="indicator-panel.html#zoom-scale">表示の拡大率</a>や
+<a href="indicator-panel.html#grid-mode">グリッド</a>
+など、大域的な設定のためのボタンも置かれています。
+
+<p>
+<dt><a href="misc-panel.html#mouse-indicator">マウス機能インジケーター</a>:
+<dd>それぞれのマウスボタンの機能が表示されます。
+この表示は、操作モードの切り替え (描画、編集、その他) に応じて、
+マウスボタンの機能を示すために変更されます。
+
+<p>
+<dt><a href="misc-panel.html#ruler">ルーラー (ものさし)</a>:
+<dd>選択された単位での目盛が、
+上 (水平)、及び横 (垂直) のルーラーに表示されています。
+これはキャンバスの内容のスクロールのためにも用いられます。
+
+<p>
+<dt><a href="misc-panel.html#unit-box">UNIT ボックス</a>:
+<dd>寸法の単位が、例えば `1cm = 3m' のように表示されています。
+これは単位の変更などのためにも用いられます。
+
+<p>
+<dt><a name="message-panel">メッセージ・パネル:</a>
+<dd>ここには、種々のメッセージが表示されます。
+例えば、オブジェクトの入力などに際しては、
+そのオブジェクトの大きさが逐次表示されます。
+
+<p>
+<dt><a href="misc-panel.html#balloons">Balloons ボタン</a>:
+<dd>このボタンを <i>ON</i> にしておくと、
+カーソルがボタンなどの上にある時に、
+カーソルの位置に応じたバルーン・メッセージが
+カーソルの近くに表示されるようになります。
+
+<p>
+<dt>キャンバス:
+<dd>実際に図を描画する領域です。
+キャンバスは、<a href="misc-panel.html#ruler">上、及び横のルーラー</a> (ものさし) 
+やキーボードの矢印キーを用いてスクロールさせることができます。
+</dl>
+
+<p>
+<hr>
+
+Goto <a href="index.html">TOP</a>
+
+<p>
+<a href="authors.html#manual"><i>written by us</i></a>
+
+</body>
+</html>

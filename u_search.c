@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -427,7 +422,7 @@ do_object_search(x, y, shift)
 	show_objecthighlight();
     } else if (shift) {		/* show selected object */
 	show_objecthighlight();
-    } else {			/* user selected an object */
+    } else if (manipulate) {	/* user selected an object */
 	erase_objecthighlight();
 	switch (type) {
 	case O_ELLIPSE:
@@ -452,6 +447,7 @@ do_object_search(x, y, shift)
     }
 }
 
+void
 object_search_left(x, y, shift)
     int		    x, y;
     unsigned int    shift;	/* Shift Key Status from XEvent */
@@ -460,6 +456,7 @@ object_search_left(x, y, shift)
     do_object_search(x, y, shift);
 }
 
+void
 object_search_middle(x, y, shift)
     int		    x, y;
     unsigned int    shift;	/* Shift Key Status from XEvent */
@@ -468,6 +465,7 @@ object_search_middle(x, y, shift)
     do_object_search(x, y, shift);
 }
 
+void
 object_search_right(x, y, shift)
     int		    x, y;
     unsigned int    shift;	/* Shift Key Status from XEvent */
@@ -714,7 +712,7 @@ do_point_search(x, y, shift)
 	show_objecthighlight();
     } else if (shift) {
 	show_objecthighlight();
-    } else {
+    } else if (manipulate) {
 	erase_objecthighlight();
 	switch (type) {
 	case O_ELLIPSE:

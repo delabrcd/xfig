@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -26,16 +21,15 @@
 #include "object.h"
 #include "paintop.h"
 #include "u_elastic.h"
+#include "u_geom.h"
 #include "w_canvas.h"
 #include "w_setup.h"
 #include "w_zoom.h"
 
-extern double	compute_angle();
-
 /********************** EXPORTS **************/
 
 int		constrained;
-int		fix_x, fix_y, work_numsides;
+int		work_numsides;
 float		cur_angle;
 int		x1off, x2off, y1off, y2off;
 Cursor		cur_latexcursor;
@@ -47,9 +41,14 @@ F_point	       *left_point, *right_point;
 /**************** LOCAL ***********/
 
 static void	elastic_links();
+static void	angle0_line();
+static void	angle45_line();
+static void	angle90_line();
+static void	angle135_line();
 
 /*************************** BOXES *************************/
 
+void
 elastic_box(x1, y1, x2, y2)
     int		    x1, y1, x2, y2;
 {
@@ -62,6 +61,7 @@ elastic_box(x1, y1, x2, y2)
     zXDrawRectangle(tool_d, canvas_win, gccache[INV_PAINT],min2(x1,x2),min2(y1,y2),wid,ht);
 }
 
+void
 elastic_movebox()
 {
     register int    x1, y1, x2, y2;
@@ -74,15 +74,17 @@ elastic_movebox()
     elastic_links(cur_x - fix_x, cur_y - fix_y, 1.0, 1.0);
 }
 
+void
 moving_box(x, y)
     int		    x, y;
 {
     elastic_movebox();
     adjust_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
-    elastic_movebox();
     length_msg(MSG_DIST);
+    elastic_movebox();
 }
 
+void
 resizing_box(x, y)
     int		    x, y;
 {
@@ -93,6 +95,7 @@ resizing_box(x, y)
     boxsize_msg(1);
 }
 
+void
 constrained_resizing_box(x, y)
     int		    x, y;
 {
@@ -102,6 +105,7 @@ constrained_resizing_box(x, y)
     boxsize_msg(1);
 }
 
+void
 scaling_compound(x, y)
     int		    x, y;
 {
@@ -110,6 +114,7 @@ scaling_compound(x, y)
     elastic_scalecompound(cur_c);
 }
 
+void
 elastic_scalecompound(c)
     F_compound	   *c;
 {
@@ -134,22 +139,31 @@ elastic_scalecompound(c)
 
 /*************************** LINES *************************/
 
+void
 elastic_line()
 {
     pw_vector(canvas_win, fix_x, fix_y, cur_x, cur_y,
 	      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
+    /* erase endpoint because next seg will redraw it */
+    pw_vector(canvas_win, cur_x, cur_y, cur_x, cur_y,
+	      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 }
 
-freehand_line(x, y)
-    int		    x, y;
+/* this is only called by  get_intermediatepoint() for drawing lines and by 
+   the canvas_locmove_proc for drawing arcs */
+
+void
+unconstrained_line(x, y, numpoint)
+    int		    x, y, numpoint;
 {
     elastic_line();
     cur_x = x;
     cur_y = y;
+    length_msg(MSG_PNTS_LENGTH);
     elastic_line();
-    length_msg(MSG_LENGTH);
 }
 
+void
 latex_line(x, y)
     int		    x, y;
 {
@@ -158,8 +172,8 @@ latex_line(x, y)
     elastic_line();
     latex_endpoint(fix_x, fix_y, x, y, &cur_x, &cur_y, latexarrow_mode,
 		   (cur_pointposn == P_ANY) ? 1 : posn_rnd[cur_pointposn]);
-    elastic_line();
     length_msg(MSG_LENGTH);
+    elastic_line();
     c = (x == cur_x && y == cur_y) ? null_cursor : crosshair_cursor;
     if (c != cur_cursor) {
 	set_temp_cursor(c);
@@ -167,6 +181,7 @@ latex_line(x, y)
     }
 }
 
+void
 constrainedangle_line(x, y)
     int		    x, y;
 {
@@ -212,10 +227,11 @@ constrainedangle_line(x, y)
 	else
 	    angle45_line(x, y);
     }
-    elastic_line();
     length_msg(MSG_LENGTH);
+    elastic_line();
 }
 
+void
 angle0_line(x, y)
     int		    x, y;
 {
@@ -223,6 +239,7 @@ angle0_line(x, y)
     cur_y = fix_y;
 }
 
+void
 angle90_line(x, y)
     int		    x, y;
 {
@@ -230,6 +247,7 @@ angle90_line(x, y)
     cur_x = fix_x;
 }
 
+void
 angle45_line(x, y)
     int		    x, y;
 {
@@ -242,6 +260,7 @@ angle45_line(x, y)
     }
 }
 
+void
 angle135_line(x, y)
     int		    x, y;
 {
@@ -254,12 +273,12 @@ angle135_line(x, y)
     }
 }
 
+void
 reshaping_line(x, y)
     int		    x, y;
 {
     elastic_linelink();
     adjust_pos(x, y, from_x, from_y, &cur_x, &cur_y);
-    elastic_linelink();
     /* one or two lines moving with the move point? */
     if (left_point != NULL && right_point != NULL) {
 	length_msg2(left_point->x,left_point->y,
@@ -269,8 +288,10 @@ reshaping_line(x, y)
     } else if (right_point != NULL) {
 	altlength_msg(MSG_LENGTH,right_point->x,right_point->y);
     }
+    elastic_linelink();
 }
 
+void
 elastic_linelink()
 {
     if (left_point != NULL) {
@@ -283,15 +304,17 @@ elastic_linelink()
     }
 }
 
+void
 moving_line(x, y)
     int		    x, y;
 {
     elastic_moveline(new_l->points);
     adjust_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
-    elastic_moveline(new_l->points);
     length_msg(MSG_DIST);
+    elastic_moveline(new_l->points);
 }
 
+void
 elastic_moveline(pts)
     F_point	   *pts;
 {
@@ -312,9 +335,13 @@ elastic_moveline(pts)
 	    yy = p->y + dy;
 	    pw_vector(canvas_win, x, y, xx, yy, INV_PAINT, 1,
 		      RUBBER_LINE, 0.0, DEFAULT);
+	    /* erase endpoint of last segment because next will redraw it */
+	    if (p->next)
+		pw_vector(canvas_win, xx, yy, xx, yy, INV_PAINT, 1,
+		      RUBBER_LINE, 0.0, DEFAULT);
 	}
+	elastic_links(dx, dy, 1.0, 1.0);
     }
-    elastic_links(dx, dy, 1.0, 1.0);
 }
 
 static void
@@ -359,6 +386,7 @@ elastic_links(dx, dy, sx, sy)
 	}
 }
 
+void
 scaling_line(x, y)
     int		    x, y;
 {
@@ -369,6 +397,7 @@ scaling_line(x, y)
 	boxsize_msg(2);
 }
 
+void
 scaling_spline(x, y)
     int		    x, y;
 {
@@ -377,6 +406,7 @@ scaling_spline(x, y)
     elastic_scalepts(cur_s->points);
 }
 
+void
 elastic_scalepts(pts)
     F_point	   *pts;
 {
@@ -405,6 +435,7 @@ elastic_scalepts(pts)
     }
 }
 
+void
 elastic_poly(x1, y1, x2, y2, numsides)
     int		    x1, y1, x2, y2, numsides;
 {
@@ -437,6 +468,7 @@ elastic_poly(x1, y1, x2, y2, numsides)
 	      RUBBER_LINE, 0.0, DEFAULT);
 }
 
+void
 resizing_poly(x, y)
     int		    x, y;
 {
@@ -444,12 +476,13 @@ resizing_poly(x, y)
     cur_x = x;
     cur_y = y;
     work_numsides = cur_numsides;
-    elastic_poly(fix_x, fix_y, cur_x, cur_y, work_numsides);
     length_msg(MSG_LENGTH);
+    elastic_poly(fix_x, fix_y, cur_x, cur_y, work_numsides);
 }
 
 /*********************** ELLIPSES *************************/
 
+void
 elastic_ebr()
 {
     register int    x1, y1, x2, y2;
@@ -470,30 +503,35 @@ elastic_ebr()
     }
 }
 
+void
 resizing_ebr(x, y)
     int		    x, y;
 {
     elastic_ebr();
     cur_x = x;
     cur_y = y;
+    length_msg(MSG_RADIUS2);
     elastic_ebr();
-    length_msg(MSG_RADIUS);
 }
 
+void
 constrained_resizing_ebr(x, y)
     int		    x, y;
 {
     elastic_ebr();
     adjust_box_pos(x, y, from_x, from_y, &cur_x, &cur_y);
+    length_msg(MSG_RADIUS2);
     elastic_ebr();
-    length_msg(MSG_RADIUS);
 }
 
+void
 elastic_ebd()
 {
-    int		    centx,centy;
+    int	    centx,centy;
+
     centx = (fix_x+cur_x)/2;
     centy = (fix_y+cur_y)/2;
+    length_msg(MSG_DIAM);
     if (cur_angle != 0.0) {
 	angle_ellipse(centx, centy, abs(cur_x-fix_x)/2, 
 		  abs(cur_y-fix_y)/2, cur_angle,
@@ -502,28 +540,30 @@ elastic_ebd()
 	pw_curve(canvas_win, fix_x, fix_y, cur_x, cur_y,
 	     INV_PAINT, 1, RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
     }
-    length_msg(MSG_DIAM);
 }
 
+void
 resizing_ebd(x, y)
     int		    x, y;
 {
     elastic_ebd();
     cur_x = x;
     cur_y = y;
-    elastic_ebd();
     length_msg(MSG_DIAM);
+    elastic_ebd();
 }
 
+void
 constrained_resizing_ebd(x, y)
     int		    x, y;
 {
     elastic_ebd();
     adjust_box_pos(x, y, from_x, from_y, &cur_x, &cur_y);
-    elastic_ebd();
     length_msg(MSG_DIAM);
+    elastic_ebd();
 }
 
+void
 elastic_cbr()
 {
     register int    radius, x1, y1, x2, y2;
@@ -540,16 +580,18 @@ elastic_cbr()
 	     RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
 }
 
+void
 resizing_cbr(x, y)
     int		    x, y;
 {
     elastic_cbr();
     cur_x = x;
     cur_y = y;
-    elastic_cbr();
     length_msg(MSG_RADIUS);
+    elastic_cbr();
 }
 
+void
 elastic_cbd()
 {
     register int    x1, y1, x2, y2;
@@ -567,25 +609,28 @@ elastic_cbd()
 	     RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT, CAP_BUTT);
 }
 
+void
 resizing_cbd(x, y)
     int		    x, y;
 {
     elastic_cbd();
     cur_x = x;
     cur_y = y;
-    elastic_cbd();
     length_msg(MSG_DIAM);
+    elastic_cbd();
 }
 
+void
 constrained_resizing_cbd(x, y)
     int		    x, y;
 {
     elastic_cbd();
     adjust_box_pos(x, y, from_x, from_y, &cur_x, &cur_y);
-    elastic_cbd();
     length_msg(MSG_DIAM);
+    elastic_cbd();
 }
 
+void
 elastic_moveellipse()
 {
     register int    x1, y1, x2, y2;
@@ -603,15 +648,17 @@ elastic_moveellipse()
     }
 }
 
+void
 moving_ellipse(x, y)
     int		    x, y;
 {
     elastic_moveellipse();
     adjust_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
-    elastic_moveellipse();
     length_msg(MSG_DIST);
+    elastic_moveellipse();
 }
 
+void
 elastic_scaleellipse(e)
     F_ellipse	   *e;
 {
@@ -645,27 +692,30 @@ elastic_scaleellipse(e)
     }
 }
 
+void
 scaling_ellipse(x, y)
     int		    x, y;
 {
     elastic_scaleellipse(cur_e);
     adjust_box_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
-    elastic_scaleellipse(cur_e);
-    if (cur_e->type == 1 || cur_e->type == 3)
+    if (cur_e->type == T_ELLIPSE_BY_RAD)
+	length_msg(MSG_RADIUS2);
+    else if (cur_e->type == T_CIRCLE_BY_RAD)
 	length_msg(MSG_RADIUS);
     else
 	length_msg(MSG_DIAM);
+    elastic_scaleellipse(cur_e);
 }
 
 /*************************** ARCS *************************/
 
+void
 reshaping_arc(x, y)
     int		    x, y;
 {
     elastic_arclink();
     adjust_pos(x, y, cur_a->point[movedpoint_num].x,
 	       cur_a->point[movedpoint_num].y, &cur_x, &cur_y);
-    elastic_arclink();
     if (movedpoint_num == 1) {
 	/* middle point */
 	length_msg2(cur_a->point[0].x, cur_a->point[0].y,
@@ -675,8 +725,10 @@ reshaping_arc(x, y)
 	/* end point */
 	altlength_msg(MSG_LENGTH,cur_a->point[1].x,cur_a->point[1].y);
     }
+    elastic_arclink();
 }
 
+void
 elastic_arclink()
 {
     switch (movedpoint_num) {
@@ -697,15 +749,17 @@ elastic_arclink()
     }
 }
 
+void
 moving_arc(x, y)
     int		    x, y;
 {
     elastic_movearc(new_a);
     adjust_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
-    elastic_movearc(new_a);
     length_msg(MSG_DIST);
+    elastic_movearc(new_a);
 }
 
+void
 elastic_movearc(a)
     F_arc	   *a;
 {
@@ -721,6 +775,7 @@ elastic_movearc(a)
 	      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 }
 
+void
 scaling_arc(x, y)
     int		    x, y;
 {
@@ -729,6 +784,7 @@ scaling_arc(x, y)
     elastic_scalearc(cur_a);
 }
 
+void
 elastic_scalearc(a)
     F_arc	   *a;
 {
@@ -756,27 +812,29 @@ elastic_scalearc(a)
     p2.x = fix_x + round((p2.x - fix_x) * scalefact);
     p2.y = fix_y + round((p2.y - fix_y) * scalefact);
 
+    length_msg2(p0.x, p0.y, p2.x, p2.y, p1.x, p1.y);
     pw_vector(canvas_win, p0.x, p0.y, p1.x, p1.y,
 	      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
     pw_vector(canvas_win, p1.x, p1.y, p2.x, p2.y,
 	      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
-    length_msg2(p0.x, p0.y, p2.x, p2.y, p1.x, p1.y);
 }
 
 /*************************** TEXT *************************/
 
+void
 moving_text(x, y)
     int		    x, y;
 {
     elastic_movetext();
     adjust_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
-    elastic_movetext();
     length_msg(MSG_DIST);
+    elastic_movetext();
 }
 
 /* use x1off, y1off so that the beginning of the text isn't
    shifted under the cursor */
 
+void
 elastic_movetext()
 {
     pw_text(canvas_win, cur_x + x1off, cur_y + y1off, INV_PAINT,
@@ -787,17 +845,19 @@ elastic_movetext()
 
 /*************************** SPLINES *************************/
 
+void
 moving_spline(x, y)
     int		    x, y;
 {
     elastic_moveline(new_s->points);
     adjust_pos(x, y, fix_x, fix_y, &cur_x, &cur_y);
-    elastic_moveline(new_s->points);
     length_msg(MSG_DIST);
+    elastic_moveline(new_s->points);
 }
 
 /*********** AUXILIARY FUNCTIONS FOR CONSTRAINED MOVES ******************/
 
+void
 adjust_box_pos(curs_x, curs_y, orig_x, orig_y, ret_x, ret_y)
     int		    curs_x, curs_y, orig_x, orig_y;
     int		   *ret_x, *ret_y;
@@ -854,6 +914,7 @@ adjust_box_pos(curs_x, curs_y, orig_x, orig_y, ret_x, ret_y)
     } /* switch */
 }
 
+void
 adjust_pos(curs_x, curs_y, orig_x, orig_y, ret_x, ret_y)
     int		    curs_x, curs_y, orig_x, orig_y;
     int		   *ret_x, *ret_y;

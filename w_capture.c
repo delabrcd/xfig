@@ -1,21 +1,16 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1995 Jim Daley (jdaley@cix.compulink.co.uk)
- * Parts Copyright (c) 1995 by Brian V. Smith
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -27,6 +22,7 @@
 
 #include "fig.h"
 #include "resources.h"
+#include "object.h"
 #include "w_capture.h"
 
 static Boolean  getImageData();	  	/* returns zero on failure */
@@ -50,82 +46,82 @@ captureImage(window, filename)  	/* returns True on success */
 Widget window;
 char *filename;
 {
-unsigned char   Red[MAX_COLORMAP_SIZE],
-		Green[MAX_COLORMAP_SIZE],
-		Blue[MAX_COLORMAP_SIZE];
-int      	numcols;
-int      	captured;
-int      	width, height;
-Boolean		status;
+    unsigned char	Red[MAX_COLORMAP_SIZE],
+			Green[MAX_COLORMAP_SIZE],
+			Blue[MAX_COLORMAP_SIZE];
+    int      		numcols;
+    int      		captured;
+    int      		width, height;
+    Boolean		status;
 
 #ifdef USE_GIF
-  long		giflen;
+    long		giflen;
 #else
-  FILE		*pcxfile;
-  char		*dptr;
-  int		i,j;
+    FILE		*pcxfile;
+    char		*dptr;
+    int			i,j;
 #endif /* USE_GIF */
 
- if (!ok_to_write(filename, "EXPORT") )
-   return(False);
+    if (!ok_to_write(filename, "EXPORT") )
+	return(False);
 
-  /* unmap the xfig windows, capture a gif/pcx then remap our windows */
+    /* unmap the xfig windows, capture a gif/pcx then remap our windows */
 
-  XtUnmapWidget(tool);
-  XtUnmapWidget(window);
-  XSync(tool_d, False);
+    XtUnmapWidget(tool);
+    XtUnmapWidget(window);
+    XSync(tool_d, False);
 
-  /* capture the screen area */
-  status = getImageData(&width, &height, &numcols, Red, Green, Blue);
+    /* capture the screen area */
+    status = getImageData(&width, &height, &numcols, Red, Green, Blue);
 
-  /* make sure server is ungrabbed if we're debugging */
-  XSync(tool_d, False);
-  /* map our windows again */
-  XtMapWidget(tool);
-  XtMapWidget(window);
+    /* make sure server is ungrabbed if we're debugging */
+    XSync(tool_d, False);
+    /* map our windows again */
+    XtMapWidget(tool);
+    XtMapWidget(window);
 
-  if ( status == False ) {
-    put_msg("Nothing Captured.");
-    app_flush();
-    captured = False;
+    if ( status == False ) {
+	put_msg("Nothing Captured.");
+	app_flush();
+	captured = False;
  } else {
-   /* encode the image and write to the file */
+	/* encode the image and write to the file */
 #ifdef USE_GIF
-    put_msg("Writing GIF file...");
+	put_msg("Writing GIF file...");
 #else
-    put_msg("Writing binary PCX file...");
+	put_msg("Writing binary PCX file...");
 #endif /* USE_GIF */
 
-    app_flush();
+	app_flush();
 
 #ifdef USE_GIF
-    if ((giflen=GIFencode(filename, width, height, numcols, -1,
-	 Red, Green, Blue, data)) == (long) 0) {
-	    file_msg("Couldn't write GIF file %s",filename);
-	    put_msg("Couldn't write GIF file %s",filename);
-	    captured = False;
-    } else {
+	if ((giflen=GIFencode(filename, width, height, numcols, -1,
+	     Red, Green, Blue, data)) == (long) 0) {
+		file_msg("Couldn't write GIF file %s",filename);
+		put_msg("Couldn't write GIF file %s",filename);
+		captured = False;
+	} else {
 	    put_msg("%dx%d GIF written to \"%s\" (%ld bytes)",
 			width, height, filename,giflen);
 	    captured = True;
-    }
+	}
 #else	/* no GIF, write pcx file */
-    if ((pcxfile = fopen(filename,"w"))==0) {
-	file_msg("Cannot open PCX file %s for writing",filename);
-	put_msg("Cannot open PCX file %s for writing",filename);
-	captured = False;
-    } else {
-	/* write the pcx file */
-	_write_pcx(pcxfile, data, Red, Green, Blue, numcols, width, height);
-	fclose(pcxfile);
-	captured = True;
-    }
+	if ((pcxfile = fopen(filename,"w"))==0) {
+	    file_msg("Cannot open PCX file %s for writing",filename);
+	    put_msg("Cannot open PCX file %s for writing",filename);
+	    captured = False;
+	} else {
+	    /* write the pcx file */
+	    _write_pcx(pcxfile, data, Red, Green, Blue, numcols, width, height);
+	    fclose(pcxfile);
+	    captured = True;
+	}
 #endif /* USE_GIF */
 
-    free(data);
- }
+	free(data);
+   }
 
- return ( captured );
+   return ( captured );
 }
 
 
@@ -274,91 +270,118 @@ getImageData(w, h, nc, Red, Green, Blue) /* returns False on failure */
 
 static Boolean 
 selectedRootArea( x_r, y_r, w_r, h_r, cw )
-  int *x_r, *y_r, *w_r, *h_r;
-  Window *cw;
+    int *x_r, *y_r, *w_r, *h_r;
+    Window *cw;
 {
-int x1, y1;                  /* start point of user rect */
-int x, y, width, height;     /* current values for rect */
+    int		x1, y1;			/* start point of user rect */
+    int		x, y, width, height;	/* current values for rect */
 
-Window  root_r, child_r;     /* parameters for xQueryPointer */
-int     root_x, root_y;
-int	last_x, last_y;
-int	win_x,  win_y;
-unsigned int mask;
+    Window	root_r, child_r;	/* parameters for xQueryPointer */
+    int		root_x, root_y;
+    int		last_x, last_y;
+    int		win_x,  win_y;
+    int		dum;
+    unsigned	int mask;
+    XGCValues	gcv;
+    unsigned long gcmask;
 
-  /* set up our local globals for drawRect */ 
-  rectWindow = XDefaultRootWindow(tool_d);
-  rectGC     = DefaultGC(tool_d, tool_sn);
+    /* set up our local globals for drawRect */ 
+    rectWindow = XDefaultRootWindow(tool_d);
 
-  XGrabPointer(tool_d, rectWindow, False, 0L,
+    XGrabPointer(tool_d, rectWindow, False, 0L,
 	 	GrabModeAsync, GrabModeSync, None,
  			crosshair_cursor, CurrentTime);
 
 
-  while (PTR_BUTTON_STATE( win_x, win_y, mask ) == 0) {}
-  if ( !(mask & Button1Mask ) ) {
-    XUngrabPointer(tool_d, CurrentTime);
-    return False; 
-  } else {
-    while (PTR_BUTTON_STATE( win_x, win_y, mask ) != 0) 
+    while (PTR_BUTTON_STATE( win_x, win_y, mask ) == 0) 
 	;
-  }
 
-
-  /* if we're here we got a button 1 press  & release */
-  /* so initialise for tracking box across display    */ 
-
-  last_x = x1 = x = win_x;  
-  last_y = y1 = y = win_y;  
-  width = 0;
-  height = 0;
-
-
-  /* Nobble our GC to let us draw a box over everything */
-  XSetFunction(tool_d, rectGC, GXxor);
-  XSetSubwindowMode(tool_d, rectGC, IncludeInferiors);
-
-
-  /* Wait for button press while tracking rectangle on screen */
-  while ( PTR_BUTTON_STATE( win_x, win_y, mask ) == 0 ) {
-    if (win_x != last_x || win_y != last_y) {   
-      drawRect(x, y, width, height, False); /* remove any existing rectangle */
-
-      x = min2(x1, win_x);
-      y = min2(y1, win_y);
-      width  = abs(win_x - x1);
-      height = abs(win_y - y1);
-
-      last_x = win_x;
-      last_y = win_y;
-
-      if ((width > 1) && (height > 1))
-	  drawRect(x, y, width, height, True);  /* display rectangle */
+    /* button 1 pressed, get whole window under pointer */
+    if ( (mask & Button1Mask ) ) {
+	/* after user releases button */
+	while (PTR_BUTTON_STATE( win_x, win_y, mask ) != 0) 
+	    ;
+	XUngrabPointer(tool_d, CurrentTime);
+	if (child_r == None)
+	    child_r = root_r;
+	/* get the geometry right into the return vars */
+	XGetGeometry(tool_d, child_r, &root_r, x_r, y_r, w_r, h_r, &dum, &dum);
+	/* make sure area is on screen */
+	if (*x_r < 0)
+	    *x_r = 0;
+	else if (*x_r + *w_r > WidthOfScreen(tool_s))
+	    *w_r = WidthOfScreen(tool_s)-*x_r;
+	if (*y_r < 0)
+	    *y_r = 0;
+	else if (*y_r + *h_r > HeightOfScreen(tool_s))
+	    *h_r = HeightOfScreen(tool_s)-*y_r;
+	*cw = child_r;
+	return True;
     }
-  }
+
+	
+    /* button 2 pressed, wait for release */
+    if ( !(mask & Button2Mask ) ) {
+	XUngrabPointer(tool_d, CurrentTime);
+	return False; 
+    } else {
+	while (PTR_BUTTON_STATE( win_x, win_y, mask ) != 0) 
+	    ;
+    }
+
+    /* if we're here we got a button 2 press  & release */
+    /* so initialise for tracking box across display    */ 
+
+    last_x = x1 = x = win_x;  
+    last_y = y1 = y = win_y;  
+    width = 0;
+    height = 0;
+
+    /* Nobble our GC to let us draw a box over everything */
+    gcv.foreground = x_color(BLACK) ^ x_color(WHITE);
+    gcv.background = x_color(WHITE);
+    gcv.function = GXxor;
+    gcmask = GCFunction | GCForeground | GCBackground;
+    rectGC = XCreateGC(tool_d, XtWindow(canvas_sw), gcmask, &gcv);
+    XSetSubwindowMode(tool_d, rectGC, IncludeInferiors);
+
+    /* Wait for button press while tracking rectangle on screen */
+    while ( PTR_BUTTON_STATE( win_x, win_y, mask ) == 0 ) {
+	if (win_x != last_x || win_y != last_y) {   
+	    drawRect(x, y, width, height, False);	/* remove any existing rectangle */
+
+	    x = min2(x1, win_x);
+	    y = min2(y1, win_y);
+	    width  = abs(win_x - x1);
+	    height = abs(win_y - y1);
+
+	    last_x = win_x;
+	    last_y = win_y;
+
+	    if ((width > 1) && (height > 1))
+	    drawRect(x, y, width, height, True);	/* display rectangle */
+	}
+    }
  
-  drawRect(x, y, width, height, False);      /*  remove any remaining rect */
-  XUngrabPointer(tool_d, CurrentTime);   /*  & let go the pointer */
+    drawRect(x, y, width, height, False);		/*  remove any remaining rect */
+    XUngrabPointer(tool_d, CurrentTime);		/*  & let go the pointer */
 
-  /* put GC back to normal */
-  XSetFunction(tool_d, rectGC, GXcopy);
-  XSetSubwindowMode(tool_d, rectGC, ClipByChildren);
+    /* put GC back to normal */
+    XSetFunction(tool_d, rectGC, GXcopy);
+    XSetSubwindowMode(tool_d, rectGC, ClipByChildren);
 
+    if (width == 0 || height == 0 || !(mask & Button2Mask) )  
+	return False;	/* cancelled or selected nothing */
 
+    /* we have a rectangle - set up the return parameters */    
+    *x_r = x;     *y_r = y;
+    *w_r = width; *h_r = height;
+    if ( child_r == None )
+	*cw = root_r;
+    else
+	*cw = child_r;
 
-  if (width == 0 || height == 0 || !(mask & Button1Mask) )  
-    return False;  /* cancelled or selected nothing */
-
-
-  /* we have a rectangle - set up the return parameters */    
-  *x_r = x;     *y_r = y;
-  *w_r = width; *h_r = height;
-  if ( child_r == None )
-    *cw = root_r;
-  else
-    *cw = child_r;
-
-  return True;
+    return True;
 }
 
 
@@ -511,9 +534,9 @@ canHandleCapture( d )
     XGetWindowAttributes(d, XDefaultRootWindow(d), &xwa);
 
     if (( !xwa.colormap )   ||
-       ( xwa.depth > 8 )    ||
-         ( xwa.visual->class == TrueColor)   || 
-           ( xwa.visual->map_entries > MAX_COLORMAP_SIZE ))
+        ( xwa.depth > 8 )    ||
+        ( xwa.visual->class == TrueColor)   || 
+        ( xwa.visual->map_entries > MAX_COLORMAP_SIZE ))
 		return False;
     else
 		return True;

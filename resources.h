@@ -1,26 +1,22 @@
-#ifndef RESOURCES_H
-#define RESOURCES_H
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
+
+#ifndef RESOURCES_H
+#define RESOURCES_H
 
 #include "paintop.h"
 
@@ -29,17 +25,39 @@
 #define NUMPATTERNS	22
 #define NUMFILLPATS	NUMSHADEPATS+NUMTINTPATS+NUMPATTERNS
 
+/* min, max depth of objects on canvas */
+#define MIN_DEPTH	0
+#define MAX_DEPTH	999
+
+/* min, max font size (points) */
+#define MIN_FONT_SIZE	5
+#define MAX_FONT_SIZE	500
+
+/* maximum width of lines (Fig units) */
+#define MAX_LINE_WIDTH 500
+
+/* max number of sides for regular polygon */
+#define MIN_POLY_SIDES	3
+#define MAX_POLY_SIDES	200
+
+/* min, max vertical spacing when entering text (fraction of font size) */
+#define MIN_TEXT_STEP	0
+#define MAX_TEXT_STEP	100
+
+/* min, max arc-box corner radius (1/80 inch) */
+#define MIN_BOX_RADIUS	2
+#define MAX_BOX_RADIUS	1000
+
+/* number of standard colors */
 #define NUM_STD_COLS	32
+/* max number of user-defined colors */
 #define MAX_USR_COLS	512
 
 /* number of paper sizes (A4, B5, letter, etc. [see resources.c]) */
-#define NUMPAPERSIZES	15
+#define NUMPAPERSIZES	14
 /* define these positions so we can start with default paper size */
 #define PAPER_LETTER	0
-#define PAPER_A4	9
-/* define these positions so we can switch between them on port/landscape */
-#define PAPER_LEDGER	2
-#define PAPER_TABLOID	3
+#define PAPER_A4	8
 
 #define	Color		int
 
@@ -62,6 +80,12 @@ typedef struct {
 		char *name,
 		     *rgb;
 		} fig_colors ;
+
+/* for the xfig icon */
+extern Pixmap		 fig_icon;
+
+/* version string for xfig (generated in main() )*/
+extern char		 xfig_version[];
 
 /* these are allocated in main() in case we aren't using default colormap 
    (so we can't use BlackPixelOfScreen... */
@@ -88,6 +112,7 @@ extern Boolean		 colorUsed[MAX_USR_COLS];
 extern Boolean		 colorFree[MAX_USR_COLS];
 extern Boolean		 n_colorFree[MAX_USR_COLS];
 extern Boolean		 all_colors_available;
+extern Pixel		 dk_gray_color, lt_gray_color;
 
 /* number of colors we want to use for GIF/XPM images */
 extern int		avail_image_cols;
@@ -143,12 +168,18 @@ typedef struct _appres {
     int		    transparent;	/* transparent color for GIF export
 						(-2=none, -1=background) */
     float	    magnification;	/* export/print magnification */
-    Boolean	    show_balloons;	/* show popup messages when user passes over buttons */
+    Boolean	    showballoons;	/* show popup messages when user passes over buttons */
     char	   *spellcheckcommand;	/* spell check command e.g. 
 					   "spell %s" or  "ispell -l < %s | sort -u" */
     char	   *version;		/* version of the app-defaults file (compared with
 					   the version/patchlevel of xfig when starting */
     int		    jpeg_quality;	/* jpeg image quality */
+    int		    balloon_delay;	/* delay (milliseconds) before balloon pops up on */
+    char	   *library_dir;	/* for object library path */
+    Boolean	    showlengths;	/* length/width lines when drawing or moving */
+    Boolean	    shownums;		/* print point numbers above polyline points */
+    char	   *browser;		/* browser for viewing html docs */
+    char	   *pdf_viewer;		/* viewer for pdf docs */
 #ifdef I18N
     Boolean international;
     Boolean japanese;
@@ -198,14 +229,16 @@ struct paper_def {
 
 typedef struct Menu MenuRec;
 
-typedef XImage *PIXRECT;
-typedef XFontStruct *PIX_FONT;
-typedef pr_size PR_SIZE;
-typedef RectRec RECT;
+typedef XImage	*PIXRECT;
+typedef pr_size	PR_SIZE;
+typedef RectRec	RECT;
 
 extern float	ZOOM_FACTOR;
+extern float	PIC_FACTOR;
 
-extern Window	real_canvas, canvas_win, msg_win, sideruler_win, topruler_win;
+extern Window	main_canvas;		/* main canvas window */
+extern Window	canvas_win;		/* current canvas */
+extern Window	msg_win, sideruler_win, topruler_win;
 
 extern Cursor	cur_cursor;
 extern Cursor	arrow_cursor, bull_cursor, buster_cursor, crosshair_cursor,

@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -48,16 +43,12 @@
 #include "w_util.h"
 #include "w_zoom.h"
 
-extern struct _xfstruct x_fontinfo[];	/* X11 fontnames */
-extern struct _fstruct ps_fontinfo[];	/* PostScript/OpenWindow font names */
-extern choice_info fillstyle_choices[];
-
 /* EXPORTS */
 
-PIX_FONT	bold_font;
-PIX_FONT	roman_font;
-PIX_FONT	button_font;
-PIX_FONT	canvas_font;
+XFontStruct	*bold_font;
+XFontStruct	*roman_font;
+XFontStruct	*button_font;
+XFontStruct	*canvas_font;
 
 /* LOCAL */
 
@@ -211,11 +202,11 @@ parsesize(name)
  * close in size to "s"
  */
 
-PIX_FONT
+XFontStruct *
 lookfont(fnum, size)
     int		    fnum, size;
 {
-	PIX_FONT        fontst;
+	XFontStruct    *fontst;
 	char		fn[128];
 	char		template[200];
 	Boolean		found;
@@ -226,8 +217,10 @@ lookfont(fnum, size)
 	    fnum = 0;			/* pass back the -normal font font */
 	if (size < 0)
 	    size = DEF_FONTSIZE;	/* default font size */
-	if (size < 3)
-	    size = 3;			/* minimum allowable */
+	if (size < MIN_FONT_SIZE)
+	    size = MIN_FONT_SIZE;	/* minimum allowable */
+	else if (size > MAX_FONT_SIZE)
+	    size = MAX_FONT_SIZE;	/* maximum allowable */
 
 	/* see if we've already loaded that font size 'size'
 	   from the font family 'fnum' */
@@ -258,15 +251,11 @@ lookfont(fnum, size)
 	    strcpy(fn,nf->fname);  /* put the name in fn */
 	    if (size < nf->size)
 		put_msg("Font size %d not found, using larger %d point",size,nf->size);
-	    if (appres.DEBUG)
-		fprintf(stderr, "Located font %s\n", fn);
 	} else if (!appres.SCALABLEFONTS) {	/* not found, use largest available */
 	    nf = oldnf;
 	    strcpy(fn,nf->fname);  		/* put the name in fn */
 	    if (size > nf->size)
 		put_msg("Font size %d not found, using smaller %d point",size,nf->size);
-	    if (appres.DEBUG)
-		fprintf(stderr, "Using font %s for size %d\n", fn, size);
 	} else { /* SCALABLE; none yet of that size, alloc one and put it in the list */
 	    newfont = (struct xfont *) malloc(sizeof(struct xfont));
 	    /* add it on to the end of the list */
@@ -303,7 +292,11 @@ lookfont(fnum, size)
 	} /* scalable */
 	if (nf->fstruct == NULL) {
 	    if (appres.DEBUG)
-		fprintf(stderr, "Loading font %s\n", fn);
+		fprintf(stderr,"Loading font %s\n",fn);
+	    /* if we are previewing a figure and the user pressed Cancel,
+	       return now with the simple roman font */
+	    if (check_cancel())
+		return roman_font;
 	    set_temp_cursor(wait_cursor);
 	    fontst = XLoadQueryFont(tool_d, fn);
 	    reset_cursor();
@@ -330,33 +323,24 @@ lookfont(fnum, size)
 pw_text(w, x, y, op, fstruct, angle, string, color)
     Window	    w;
     int		    x, y, op;
-    PIX_FONT	    fstruct;
+    XFontStruct	   *fstruct;
     float	    angle;
     char	   *string;
     Color	    color;
 {
-    if (fstruct == NULL)
+    if (fstruct == NULL) {
 	fprintf(stderr,"Error, in pw_text, fstruct==NULL\n");
-    pwx_text(w, x, y, op, fstruct, angle, string, color);
-}
+	return;
+    }
 
-pwx_text(w, x, y, op, fstruct, angle, string, color)
-    Window	    w;
-    int		    x, y, op;
-    PIX_FONT	    fstruct;
-    float	    angle;
-    char	   *string;
-    Color	    color;
-{
     /* if we're drawing to the bitmap instead of the canvas
        map colors white => white, all others => black */
-    if (writing_bitmap)
-	{
+    if (writing_bitmap) {
 	if (color == WHITE)
-		color = 0;
+	    color = 0;
 	else
-		color = 1;
-	}
+	    color = 1;
+    }
     if (writing_bitmap? color != gc_color[op] : x_color(color) != gc_color[op]) {
 	if (op == PAINT) {	/* don't change the foreground for ERASE or INV_PAINT */
 	    if (writing_bitmap)
@@ -366,13 +350,18 @@ pwx_text(w, x, y, op, fstruct, angle, string, color)
 	    gc_color[op] = writing_bitmap? color : x_color(color);
 	}
     }
+
+    /* check for preview cancel here.  The text call may take some time if
+       a large font has to be rotated. */
+    if (check_cancel())
+	return ;
     zXRotDrawString(tool_d, fstruct, angle, w, gccache[op],
 		    x, y, string);
 }
 
 PR_SIZE
 textsize(fstruct, n, s)
-    PIX_FONT	    fstruct;
+    XFontStruct	   *fstruct;
     int		    n;
     char	   *s;
 {

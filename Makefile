@@ -269,26 +269,19 @@ PICFLAGS = -pic
 # -------------------------------------------------------------------------
 # start of Imakefile
 
-#  NOTE: AS of X11R6 the official comment for Imakefile is the word #
-
-# Copyright (c) 1985 by Supoj Sutanthavibul
-# Copyright (c) 1994 by Brian V. Smith
+# FIG : Facility for Interactive Generation of figures
+# Copyright (c) 1985-1988 by Supoj Sutanthavibul
+# Parts Copyright (c) 1989-1998 by Brian V. Smith
 # Parts Copyright (c) 1991 by Paul King
-
-# The X Consortium, and any party obtaining a copy of these files from
-# the X Consortium, directly or indirectly, is granted, free of charge, a
+#
+# Any party obtaining a copy of these files is granted, free of charge, a
 # full and unrestricted irrevocable, world-wide, paid up, royalty-free,
 # nonexclusive right and license to deal in this software and
 # documentation files (the "Software"), including without limitation the
 # rights to use, copy, modify, merge, publish, distribute, sublicense,
 # and/or sell copies of the Software, and to permit persons who receive
-# and/or sell copies of the Software subject to the restriction stated
-# below, and to permit persons who receive copies from any such party to
-# do so, with the only requirement being that this copyright notice remain
-# intact.
-# This license includes without limitation a license to do the foregoing
-# actions under any patents of the party supplying this software to the
-# X Consortium.
+# copies from any such party to do so, with the only requirement being
+# that this copyright notice remain intact.
 #
 # Restriction: The GIF encoding routine "GIFencode" in f_wrgif.c may NOT
 # be included if xfig is to be sold, due to the patent held by Unisys Corp.
@@ -297,43 +290,56 @@ PICFLAGS = -pic
 # by putting the word "XCOMM" in front of it.  Be sure to make a new
 # Makefile after that ("make Makefile").
 
-# If you don't have the JPEG library or don't want to use JPEG, comment
-# out the following line
+# If don't want to use JPEG, comment out the following line
 
-# If you have installed the jpeg library on your system, uncomment the
-# USEINSTALLEDJPEG variable, change the JPEGLIBDIR variable to the directory
-# where your jpeg library resides and change the JPEGINCDIR to the
-# directory where your jpeg header files (include) reside.
+# If you don't have the jpeg library in your system library area, comment
+# out the USEINSTALLEDJPEG variable (using #), change the JPEGLIBDIR
+# variable to the directory where your jpeg library resides and change
+# the JPEGINCDIR to the directory where your jpeg header files (include)
+# reside.
 # You must have version 5b or newer of the jpeg library.
-# If you haven't installed the jpeg library leave the XCOMM comment in and
-# set JPEGLIBDIR after the #else to the directory where you have the source
-# for jpeg.
+
+JPEGLIBDIR = /usr/local/lib
+
+# Uncomment the following definiton if you want to use the small icons
+# for the panel buttons.  Use this if you have a 800x600 or smaller screen.
+
+# #define USESMALLICONS
 
 # Uncomment the following definition for XAWLIB if you want to use
 # the 3d Athena Widget Set (highly recommended!)
 
-XAWLIB = -lXaw3d
+# XAWLIB = -lXaw3d
 
 # Uncomment the following if needed for DECstations running older X11R4
 # INCROOT=/usr/include/mit
 
-# Uncomment the #define for USEXPM if you have the XPM (color pixmap)
-# package and you would like to use the following:
-# USEXPM will allow import/export of XPM files
+# Uncomment the #define for USEXPM if you want to use the XPM
+# (color pixmap) package.
+#
+# USEXPM will allow import/export of XPM files.
 # USEXPM_ICON uses a color xpm icon for xfig itself (USEXPM must be
 #	defined if you use USEXPM_ICON)
 # You need XPM version 3.4c or newer.  This is available from ftp.x.org
 #   in /contrib/libraries.
-# Change XPMLIB if necessary to point to the xpm library (libXpm)
+# Change XPMLIBS if necessary to point to the xpm library (libXpm)
 # Change XPMINC if necessary to point to the include file for xpm (xpm.h)
 
-XPMLIBDIR = $(USRLIBDIR)
-XPMINC = -I$(INCDIR)
-XPMLIB = -L$(XPMLIBDIR) -lXpm
+# #define USEXPM
+# #define USEXPM_ICON
 
-JPEGLIBDIR = /usr/local/lib
-JPEGINCDIR = -I/usr/include/X11
-JPEGLIB = -L$(JPEGLIBDIR) -ljpeg
+# Uncomment the next line if you have a Sun Sparc and you would like the
+# Compose LED (light) turned on when you are entering multi-key characters
+# (like a-umlaut, c-cedilla, etc).  You may have to change the value from 2
+# to 1, 3, or 4 depending on your workstation model and X libraries.
+
+# COMP_LED = -DCOMP_LED=2
+
+# Uncomment the next line if you want use Japanese (i18n) on xfig.
+# If your setlocale() dosen't support the locale, you should
+# add -DSETLOCALE to I18N_DEFS.
+
+# #define I18N
 
 # If using an input tablet uncomment the following
 
@@ -348,12 +354,10 @@ JPEGLIB = -L$(JPEGLIBDIR) -ljpeg
 
 # use (and change) the following if you want the multi-key data base file
 # somewhere other than the standard X11 library directory
-# XFIGLIBDIR =		/usr/local/lib/X11/xfig
+# XFIGLIBDIR = /usr/local/lib/X11/xfig
 
 # use this if you want the multi-key data base file in the standard X11 tree
-XFIGLIBDIR =		$(LIBDIR)/xfig
-
-DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
+XFIGLIBDIR = $(LIBDIR)/xfig
 
 # If your system doesn't have strstr undefine the following definition
 # HAVE_NO_NOSTRSTR = -DNOSTRSTR
@@ -363,10 +367,6 @@ DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
 
 # HAVE_NO_STRCASECMP = -DHAVE_NO_STRCASECMP
 # HAVE_NO_STRNCASECMP = -DHAVE_NO_STRNCASECMP
-
-STRDEFINES = $(HAVE_NO_NOSTRSTR) \
-		$(HAVE_NO_STRNCASECMP) \
-		$(HAVE_NO_STRCASECMP)
 
 # For the rotated text code:
 #   Add one of `-DCACHE_XIMAGES' or `-DCACHE_BITMAPS' to decide what is
@@ -408,7 +408,24 @@ CACHE = -DCACHE_BITMAPS -DCACHE_SIZE_LIMIT=300
 
 # PCXBUG = -DPCXBUG
 
-# *** You shouldn't have to change anything below this point. ***
+# *****************************************************
+# *****************************************************
+# You shouldn't have to change anything below this line
+# *****************************************************
+# *****************************************************
+
+JPEGINCDIR = -I/usr/include/X11
+JPEGLIB = -L$(JPEGLIBDIR) -ljpeg
+
+DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
+
+# location of Fig object libraries
+OBJLIBDIR =		$(XFIGLIBDIR)/Libraries
+OBJLIB =		-DOBJLIBDIR=\"$(OBJLIBDIR)\"
+
+STRDEFINES = $(HAVE_NO_NOSTRSTR) \
+		$(HAVE_NO_STRNCASECMP) \
+		$(HAVE_NO_STRCASECMP)
 
 DUSEGIF = -DUSE_GIF
 WRGIFS = f_wrgif.c
@@ -417,61 +434,51 @@ WRGIFO = f_wrgif.o
 DUSEJPEG = -DUSE_JPEG
 READJPEGS = f_readjpg.c
 READJPEGO = f_readjpg.o
-WRJPEGS = f_wrjpg.c
-WRJPEGO = f_wrjpg.o
-
-DUSEXPM = -DUSE_XPM
-READXPMS = f_readxpm.c
-READXPMO = f_readxpm.o
-WRXPMS = f_wrxpm.c
-WRXPMO = f_wrxpm.o
-
-DUSEXPMICON = -DUSE_XPM_ICON
 
 DEFINES =             $(STRDEFINES) -DGSBIT $(USEINLINE) $(DUSEXPM) \
-			$(DUSEXPMICON) $(DUSEGIF) $(DUSEJPEG)
+			$(DUSEXPMICON) $(DUSEGIF) $(DUSEJPEG) $(I18N_DEFS)
 
 XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_picobj.c \
 		d_subspline.c d_line.c d_regpoly.c d_spline.c d_text.c \
 		e_addpt.c e_align.c e_arrow.c e_break.c e_compound.c \
 		e_convert.c e_copy.c e_delete.c e_deletept.c \
 		e_edit.c e_flip.c e_glue.c e_move.c \
-		e_movept.c e_rotate.c e_scale.c e_update.c \
+		e_movept.c e_placelib.c e_rotate.c e_scale.c e_update.c \
 		f_load.c f_neuclrtab.c f_picobj.c f_read.c f_readold.c \
 		f_readeps.c f_readxbm.c f_readgif.c $(READJPEGS) f_readpcx.c $(READXPMS) \
-		f_save.c f_util.c \
-		f_wrcom.c $(WRJPEGS) f_wrxbm.c f_wrpcx.c $(WRXPMS) $(WRGIFS) \
+		f_save.c f_util.c f_wrpcx.c $(WRGIFS) \
 		main.c mode.c object.c resources.c \
 		u_bound.c u_create.c u_drag.c u_draw.c \
 		u_elastic.c u_error.c u_fonts.c u_free.c u_geom.c \
 		u_list.c u_markers.c u_pan.c u_print.c \
 		u_redraw.c u_scale.c u_search.c u_translate.c u_undo.c \
-		w_browse.c w_capture.c w_srchrepl.c \
+		w_browse.c w_capture.c w_srchrepl.c w_help.c \
 		w_canvas.c w_cmdpanel.c w_color.c w_cursor.c w_dir.c w_drawprim.c \
-		w_export.c w_file.c w_fontbits.c w_fontpanel.c w_grid.c \
-		w_icons.c w_indpanel.c w_modepanel.c w_mousefun.c w_msgpanel.c \
-		w_print.c w_rottext.c w_rulers.c w_setup.c w_util.c w_zoom.c
+		w_export.c w_file.c w_fontbits.c w_fontpanel.c w_grid.c w_icons.c \
+		w_indpanel.c w_library.c w_modepanel.c w_mousefun.c w_msgpanel.c \
+		w_print.c w_rottext.c w_rulers.c w_setup.c w_util.c w_zoom.c \
+		$(I18N_SRC)
 
 XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
 		d_subspline.o d_line.o d_regpoly.o d_spline.o d_text.o \
 		e_addpt.o e_align.o e_arrow.o e_break.o e_compound.o \
 		e_convert.o e_copy.o e_delete.o e_deletept.o \
 		e_edit.o e_flip.o e_glue.o e_move.o \
-		e_movept.o e_rotate.o e_scale.o e_update.o \
+		e_movept.o e_placelib.o e_rotate.o e_scale.o e_update.o \
 		f_load.o f_neuclrtab.o f_picobj.o f_read.o f_readold.o \
 		f_readeps.o f_readxbm.o f_readgif.o $(READJPEGO) f_readpcx.o $(READXPMO) \
-		f_save.o f_util.o \
-		f_wrcom.o $(WRJPEGO) f_wrxbm.o f_wrpcx.o $(WRXPMO) $(WRGIFO) \
+		f_save.o f_util.o f_wrpcx.o $(WRGIFO) \
 		main.o mode.o object.o resources.o \
 		u_bound.o u_create.o u_drag.o u_draw.o \
 		u_elastic.o u_error.o u_fonts.o u_free.o u_geom.o \
 		u_list.o u_markers.o u_pan.o u_print.o \
 		u_redraw.o u_scale.o u_search.o u_translate.o u_undo.o \
-		w_browse.o w_capture.o w_srchrepl.o \
+		w_browse.o w_capture.o w_srchrepl.o w_help.o \
 		w_canvas.o w_cmdpanel.o w_color.o w_cursor.o w_dir.o w_drawprim.o \
-		w_export.o w_file.o w_fontbits.o w_fontpanel.o w_grid.o \
-		w_icons.o w_indpanel.o w_modepanel.o w_mousefun.o w_msgpanel.o \
-		w_print.o w_rottext.o w_rulers.o w_setup.o w_util.o w_zoom.o
+		w_export.o w_file.o w_fontbits.o w_fontpanel.o w_grid.o w_icons.o \
+		w_indpanel.o w_library.o w_modepanel.o w_mousefun.o w_msgpanel.o \
+		w_print.o w_rottext.o w_rulers.o w_setup.o w_util.o w_zoom.o \
+		$(I18N_OBJ)
 
 # Other dependencies should be handled by "make depend"
 
@@ -484,7 +491,7 @@ EXTRA_INCLUDES = $(JPEGINCDIR) $(XPMINC)
 DEPLIBS = $(DEPXAWLIB) $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
 
 LOCAL_LIBRARIES = 	$(JPEGLIB)
-SYS_LIBRARIES= 		-lm $(XPMLIB) $(TABLIB) $(XAWLIB) $(XMULIB) $(XTOOLLIB) $(XLIB)
+SYS_LIBRARIES= 		-lm $(XPMLIBS) $(TABLIB) $(XAWLIB) $(XMULIB) $(XTOOLLIB) $(XLIB)
 
 xfig: $(DEPLIBJPEG)
 
@@ -531,7 +538,7 @@ clean::
 
 install::
 	@case '${MFLAGS}' in *[i]*) set +e;; esac;
-	@for i in $(XFIGLIBDIR); do if [ -d $(DESTDIR)$$i ]; then \
+	@for i in $(XFIGLIBDIR) $(OBJLIBDIR); do if [ -d $(DESTDIR)$$i ]; then \
 	set +x; else (set -x; $(MKDIRHIER) $(DESTDIR)$$i); fi \
 	done
 
@@ -548,34 +555,304 @@ install:: Fig-color.ad
 	else (set -x; $(MKDIRHIER) $(DESTDIR)$(XAPPLOADDIR)); fi
 	$(INSTALL) -c $(INSTAPPFLAGS) Fig-color.ad $(DESTDIR)$(XAPPLOADDIR)/Fig-color
 
-main.o:  $(MAINDEPFILES)
-	$(RM) $@
-	$(CC) -c $(CFLAGS)  $(USETAB)  $*.c
-# f_read.c and u_error.c use version.h
+# Install the object libraries here
+install::
+	@echo Copying PDF documentation to $(XFIGLIBDIR)
+	@(cd Doc ; \
+	$(INSTALL) -c xfig-howto.pdf $(XFIGLIBDIR) ; \
+	$(INSTALL) -c xfig.pdf $(XFIGLIBDIR) ; \
+	$(INSTALL) -d $(XFIGLIBDIR)/html ; \
+	$(INSTALL) -d $(XFIGLIBDIR)/html/japanese ; \
+	$(INSTALL) -d $(XFIGLIBDIR)/html/images ; \
+	echo Copying html files to $(XFIGLIBDIR)/html ; \
+	(cd html ; $(INSTALL) -c *.* $(XFIGLIBDIR)/html ; ) ;\
+	echo "  Copying japanese html files" ; \
+	(cd html/japanese ; $(INSTALL) -c * $(XFIGLIBDIR)/html/japanese ; ) ; \
+	echo "  Copying image files for html" ; \
+	(cd html/images ; $(INSTALL) -c * $(XFIGLIBDIR)/html/images ; ) ; \
+	) ;
+	@echo "Copying Fig Object Libraries"
+	@(cd Examples/Libraries ; \
+	for d in * ;  do \
+	    (cd $$d ; \
+	    $(INSTALL) -d $(OBJLIBDIR)/$$d ; \
+	    echo "  Copying $$d library files to $(OBJLIBDIR)/$$d" ; \
+	    for f in * ;  do \
+		if [ -d $$f ]; then ( \
+		    echo "    Copying files to $(OBJLIBDIR)/$$d/$$f" ; \
+		    $(INSTALL) -d $(OBJLIBDIR)/$$d/$$f ; \
+		    cd $$f ; $(INSTALL) -c * $(OBJLIBDIR)/$$d/$$f ); \
+	        else ($(INSTALL) -c $$f $(OBJLIBDIR)/$$d ) ; fi ; \
+	    done ) ; \
+	done ; ) ;
 
-f_read.o:  $(MAINDEPFILES)
+main.o:  main.c $(MAINDEPFILES) mode.h
 	$(RM) $@
-	$(CC) -c $(CFLAGS)  $(USETAB)  $*.c
+	$(CC) -c $(CFLAGS)  $(USETAB) $(OBJLIB)  $*.c
 
-u_error.o:  $(MAINDEPFILES)
+f_read.o:  f_read.c $(MAINDEPFILES) mode.h
 	$(RM) $@
-	$(CC) -c $(CFLAGS)  $(USETAB)  $*.c
+	$(CC) -c $(CFLAGS)    $*.c
 
-resources.o:  resources.h
+u_error.o:  u_error.c $(MAINDEPFILES) mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)    $*.c
+
+resources.o:  resources.c resources.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)    $*.c
+
+f_readeps.o:  f_readeps.c
+	$(RM) $@
+	$(CC) -c $(CFLAGS)  $(PCXBUG)  $*.c
+
+w_help.o:  w_help.c
+	$(RM) $@
+	$(CC) -c $(CFLAGS)  $(DIR_DEFS)  $*.c
+
+w_canvas.o:  w_canvas.c mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)  $(DIR_DEFS) $(COMP_LED)  $*.c
+
+w_icons.o:  w_icons.c w_icons.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)  $(DUSESMALLICONS)  $*.c
+
+w_setup.o:  w_setup.c w_setup.h w_icons.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)  $(DUSESMALLICONS)  $*.c
+
+w_rottext.o:  w_rottext.c
+	$(RM) $@
+	$(CC) -c $(CFLAGS)  $(CACHE)  $*.c
+
+d_arc.o:  d_arc.c  mode.h
 	$(RM) $@
 	$(CC) -c $(CFLAGS)   $*.c
 
-f_readeps.o:
+d_arcbox.o:  d_arcbox.c  mode.h
 	$(RM) $@
-	$(CC) -c $(CFLAGS)  $(PCXBUG) $*.c
+	$(CC) -c $(CFLAGS)   $*.c
 
-w_canvas.o:
+d_box.o:  d_box.c  mode.h
 	$(RM) $@
-	$(CC) -c $(CFLAGS)  $(DIR_DEFS) $*.c
+	$(CC) -c $(CFLAGS)   $*.c
 
-w_rottext.o:
+d_ellipse.o:  d_ellipse.c  mode.h
 	$(RM) $@
-	$(CC) -c $(CFLAGS)  $(CACHE) $*.c
+	$(CC) -c $(CFLAGS)   $*.c
+
+d_line.o:  d_line.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+d_picobj.o:  d_picobj.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+d_regpoly.o:  d_regpoly.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+d_spline.o:  d_spline.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+d_text.o:  d_text.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_addpt.o:  e_addpt.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_align.o:  e_align.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_arrow.o:  e_arrow.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_break.o:  e_break.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_compound.o:  e_compound.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_convert.o:  e_convert.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_copy.o:  e_copy.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_delete.o:  e_delete.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_deletept.o:  e_deletept.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_edit.o:  e_edit.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_flip.o:  e_flip.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_glue.o:  e_glue.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_movept.o:  e_movept.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_placelib.o:  e_placelib.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_rotate.o:  e_rotate.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_scale.o:  e_scale.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+e_update.o:  e_update.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+f_load.o:  f_load.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+f_picobj.o:  f_picobj.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+f_save.o:  f_save.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+f_util.o:  f_util.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+mode.o:  mode.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+object.o:  object.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+u_bound.o:  u_bound.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+u_create.o:  u_create.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+u_drag.o:  u_drag.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+u_elastic.o:  u_elastic.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+u_list.o:  u_list.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+u_markers.o:  u_markers.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+u_pan.o:  u_pan.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+u_print.o:  u_print.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+u_search.o:  u_search.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+u_undo.o:  u_undo.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+w_browse.o:  w_browse.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+w_cmdpanel.o:  w_cmdpanel.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+w_color.o:  w_color.c  mode.h w_indpanel.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+w_dir.o:  w_dir.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+w_drawprim.o:  w_drawprim.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+w_export.o:  w_export.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+w_file.o:  w_file.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+w_grid.o:  w_grid.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+w_indpanel.o:  w_indpanel.c  mode.h w_indpanel.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+w_library.o:  w_library.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+w_modepanel.o:  w_modepanel.c  mode.h w_icons.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)  $(DUSESMALLICONS) $*.c
+
+w_msgpanel.o:  w_msgpanel.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+w_print.o:  w_print.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+w_rulers.o:  w_rulers.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
+
+w_zoom.o:  w_zoom.c  mode.h
+	$(RM) $@
+	$(CC) -c $(CFLAGS)   $*.c
 
 # -------------------------------------------------------------------------
 # common rules for all Makefiles - do not edit

@@ -1,0 +1,1236 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<title>XFIG User Manual - Command Line Options and Resources</title>
+<link rev="made" href="mailto:VEF00200@niftyserve.or.jp">
+</head>
+
+<body>
+<img src="images/xfig-title.gif" alt="XFIG Users Manual">
+<p>
+[ <b>English Version</b>
+ | <a href="japanese/index.html">Japanese Version</a> ]
+<p>
+[ <a href="index.html">Contents</a>
+ | <a href="introduction.html">Operating Manual</a>
+ | <a href="features_bugs.html">New Features and Bugs Fixed</a>
+ | <b>Technical Information</b>
+ | <a href="authors.html">Authors</a> ]
+<p>
+[ <b>Options and Resources</b>
+ | <a href="installation.html">Installation</a>
+ | <a href="faq.html">FAQ</a><br>
+ | <a href="i18n.html">Japanese Support (or Internationalization)</a>
+ | <a href="fig-format.html">Fig Format 3.2</a> ]
+
+<p>
+<hr>
+
+<FONT color = "#0000AA">
+<h1>Options and Resources</h1>
+</FONT>
+
+<FONT color = "#AA00AA">
+<h2><a name="options">Command Line Options</a></h2>
+</FONT>
+
+<b>xfig</b> will accept the following command-line options.
+They may specified such as `<kbd>xfig -portrait -metric</kbd>'
+when starting <b>xfig</b>.
+<p>
+It is also possible to use <a href="#resource">X resources</a> 
+instead of, or in addition to command-line options.
+There are also some <b>xfig</b>-related
+<a href="#env-variable">environment variables</a>.
+
+<FONT color = "#AA00AA">
+<h3>Mode Settings</h3>
+</FONT>
+
+<dl>
+<dt><kbd>-landscape </kbd> (<kbd>-lan</kbd>)
+<dd>Start <b>xfig</b> in <i>landscape</i> (11inch x 8.5inch) mode.
+This is the default.
+See also the <tt>-portrait</tt> option.
+<br>
+It is also possible to change the orientation using the
+<a href="command-panel.html#port-land">Port/Land</a> button after starting <b>xfig</b>.
+Fig files of version 3.0 and later contain the orientation information,
+and the mode will be changed as those files are loaded.
+
+<p>
+<dt><kbd>-portrait </kbd> (<kbd>-po</kbd>)
+<dd>Start <b>xfig</b> in <i>portrait</i> (8.5inch x 9inch) mode.
+The default is <i>landscape</i> mode.
+See also the <tt>-landscape</tt> option.
+
+<p>
+<dt><kbd>-inches </kbd> (<kbd>-inc</kbd>, <kbd>-imperial</kbd>)
+<dd>Make <i>inches</i> the unit of choice.
+This is the default.
+See also the <tt>-metric</tt> option
+and <a href="misc-panel.html#set-unit">Set Units</a>.
+
+<p>
+<dt><kbd>-metric </kbd> (<kbd>-me</kbd>, <kbd>-centimeters</kbd>)
+<dd>Make <i>centimeters</i> the unit of choice.
+The default is <i>inches</i>.
+See also the <tt>-inches</tt> option
+and <a href="misc-panel.html#set-unit">Set Units</a>.
+
+<p>
+<dt><kbd>-userscale </kbd> <i>scale</i> (<kbd>-users</kbd>)
+<dd>Set the multiplier used when displaying dimensions.
+See also <a href="misc-panel.html#set-unit">Set Units</a>.
+
+<p>
+<dt><kbd>-userunit </kbd> <i>units</i> (<kbd>-useru</kbd>)
+<dd>Set the unit name used when displaying dimensions.
+See also <a href="misc-panel.html#set-unit">Set Units</a>.
+
+<p>
+<dt><kbd>-latexfonts </kbd> (<kbd>-lat</kbd>)
+<dd>Select LaTeX fonts to start.
+Normally, PostScript fonts are selected.
+
+<p>
+<dt><kbd>-specialtext </kbd> (<kbd>-spec</kbd>)
+<dd>Set the <i>Special</i> flag of
+<a href="indicator-panel.html#text-flags">TEXT FLAGS</a> to <i>ON</i>.
+The default is <i>off</i>.
+
+<p>
+<dt><kbd>-startfontsize </kbd> <i>pointsize</i> (<kbd>-startfo</kbd>)
+<dd>Set the initial value of
+<a href="indicator-panel.html#text-size">TEXT SIZE</a>.
+The default is 12pt.
+
+<p>
+<dt><kbd>-startpsFont </kbd> <i>font</i> (<kbd>-startps</kbd>)
+<dd>Select the initial PostScript font as
+<a href="indicator-panel.html#text-font">TEXT FONT</a>.
+The default is <i>Times-Roman</i>.
+
+<p>
+<dt><kbd>-startlatexFont </kbd> <i>font</i> (<kbd>-startla</kbd>)
+<dd>Select the initial LaTeX font as
+<a href="indicator-panel.html#text-font">TEXT FONT</a>.
+This is effective only if <tt>-latexfonts</tt> option is given.
+The default is <i>Default</i>.
+
+<p>
+<dt><kbd>-starttextstep </kbd> <i>stepsize</i> (<kbd>-startt</kbd>)
+<dd>Set the initial value of
+<a href="indicator-panel.html#text-step">TEXT STEP</a>.
+The default is 1.2.
+
+<p>
+<dt><kbd>-startfillstyle </kbd> <i>stylenumber</i> (<kbd>-startfi</kbd>)
+<dd>Set the initial setting (-1 to 21) of
+<a href="indicator-panel.html#fill-style">FILL STYLE</a>.
+The default is -1 (<i>No fill</i>).
+
+<p>
+<dt><kbd>-startgridmode </kbd> <i>modenumber</i> (<kbd>-startg</kbd>)
+<dd>Set the initial
+<a href="indicator-panel.html#grid-mode">GRID MODE</a>.
+Mode 0 is <i>None</i>.
+When <i>unit</i> is inches,
+mode 1 1/8 inch, mode 2 is 1/4 inch, mode 3 is 1/2 inch, and mode 4 is 1 inch.
+When <i>unit</i> is centimeters,
+mode 1 2mm, mode 2 is 5mm, mode 3 is 1cm, and mode 4 is 2cm.
+The default is mode 0 (<i>no grid</i>).
+
+<p>
+<dt><kbd>-startposnmode </kbd> <i>modenumber</i> (<kbd>-startpo</kbd>)
+<dd>Set the initial
+<a href="indicator-panel.html#point-position">POINT POSITION</a>.
+Mode 0 is <i>Any</i>.
+When <i>unit</i> is inches, mode 1 is 1/16 inch, mode 2 is 1/8 inch, mode 3 is 1/4 inch,
+mode 4 is 1/2 inch, and mode 5 is 1 inch.
+When <i>unit</i> is centimeters, mode 1 is 1mm, mode 2 is 2mm, mode 3 is 5mm,
+mode 4 is 1cm, and mode 5 is 2cm.
+The default is mode 1 (1/16inch or 1mm).
+
+<p>
+<dt><kbd>-startlinewidth </kbd> <i>width</i> (<kbd>-startli</kbd>)
+<dd>Set the initial value of
+<a href="indicator-panel.html#line-width">LINE WIDTH</a>.
+The default is 1.
+
+<p>
+<dt><kbd>-zoom </kbd> <i>zoomscale</i>
+<dd>Set the initial value of
+<a href="indicator-panel.html#zoom-scale">ZOOM SCALE</a>.
+The default is 1.0.
+</dl>
+
+<hr>
+
+<FONT color = "#AA00AA">
+<h3>Settings related to PRINT or EXPORT</h3>
+</FONT>
+
+<dl>
+<dt><kbd>-exportLanguage </kbd> <i>language</i> (<kbd>-e</kbd>)
+<dd>Set the initial export language when
+<a href="command-panel.html#export">Exporting</a>.
+<i>Language</i> may be one of the following:
+<br>
+<pre>
+      box        LaTeX box (figure boundary)
+      latex      LaTeX picture
+      epic       LaTeX picture + epic macros
+      eepic      LaTeX picture + eepic macros
+      eepicemu   LaTeX picture + eepicemu macros
+      pictex     PiCTeX macros
+      ibmgl      IBMGL (or HPGL)
+      eps        Encapsulated PostScript
+      ps         PostScript
+      pstex      Combined PS/LaTeX (PS part)
+      pstex_t    Combined PS/LaTeX (LaTeX part)
+      textyl     Textyl special commands
+      tpic       TPIC
+      pic        PIC
+      mf         MF (MetaFont)
+      acad       ACAD (AutoCAD Slide format)
+      gif        GIF
+      pcx        PCX
+      png        PNG (Portable Network Graphics)
+      jpg        JPEG (JFIF)
+      tif        TIFF (no compression)
+      tk         Tk (ala Tcl/Tk)
+      pbm        PBM (Portable Bitmap)
+      xbm        X11 Bitmap
+      xpm        X11 Pixmap (XPM3 package)
+</pre>
+The default is eps.
+
+<p>
+<dt><kbd>-center </kbd> (<kbd>-cente</kbd>)
+<dd>Select <i>Center</i> as <i>Justification</i> 
+when <a href="command-panel.html#export">Exporting</a> 
+or <a href="command-panel.html#print">Printing</a>.
+This the the default.
+
+<p>
+<dt><kbd>-flushleft </kbd> (<kbd>-fl</kbd>)
+<dd>Select <i>Flush Left</i> as <i>Justification</i> 
+when <a href="command-panel.html#export">Exporting</a> 
+or <a href="command-panel.html#print">Printing</a>.
+The default is <i>Centered</i>.
+
+<p>
+<dt><kbd>-magnification </kbd> <i>mag</i> (<kbd>-mag</kbd>)
+<dd>Set <i>Magnification</i> when
+<a href="command-panel.html#export">Exporting</a> 
+or <a href="command-panel.html#print">Printing</a>.
+<i>mag</i> is magnification in %.
+The default is 100%.
+
+<p>
+<dt><kbd>-multiple </kbd> (<kbd>-mu</kbd>)
+<dd>Set <i>Pages</i> to <i>Multiple</i> 
+when <a href="command-panel.html#export">Exporting</a> 
+or <a href="command-panel.html#print">Printing</a>.
+The default is <i>Single</i>.
+
+<p>
+<dt><kbd>-single </kbd> (<kbd>-si</kbd>)
+<dd>Set <i>Pages</i> to <i>Single</i> 
+when <a href="command-panel.html#export">Exporting</a> 
+or <a href="command-panel.html#print">Printing</a>.
+This is the default.
+
+<p>
+<dt><kbd>-paper_size </kbd> <i>size</i> (<kbd>-pa</kbd>)
+<dd>Set the paper size
+when <a href="command-panel.html#export">Exporting</a> 
+or <a href="command-panel.html#print">Printing</a>.
+<i>size</i> can be one of follows:
+<br>
+<pre>
+      Letter      8.5in x 11in
+      Legal       8.5in x 14in
+      Tabloid     17in x 11in
+      ANSI A      8.5in x 11in
+      ANSI B      11in x 17in
+      ANSI C      17in x 22in
+      ANSI D      22in x 34in
+      ANSI E      34in x 44in
+      ISO A4      21 cm x 29.7cm
+      ISO A3      29.7cm x 42 cm
+      ISO A2      42 cm x 59.4cm
+      ISO A1      59.4cm x 84 cm
+      ISO A0      84 cm x 118.8cm
+      JIS B5      18.2cm x 25.7cm
+</pre>
+<p>
+<dt><kbd>-jpeg_quality </kbd> <i>quality</i> (<kbd>-j</kbd>)
+<dd>Set the quality used 
+when <a href="command-panel.html#export">Exporting</a> 
+to the JPEG (JFIF) image format.
+<p>
+<dt><kbd>-transparent_color </kbd> <i>xfig color number</i> (<kbd>-tran</kbd>)
+<dd>Set the ``transparent'' color 
+when <a href="command-panel.html#export">Exporting</a> 
+to the GIF image format.  This is one of the <b>xfig</b> colors, which are numbered
+from -3 (Background), -2 (None), -1 (Default), 0 (Black), 1 (Blue) etc.
+See <a href="fig-format.html#colors">Colors</a>.
+</dl>
+
+<hr>
+
+<FONT color = "#AA00AA">
+<h3>Setting of Fonts or Colors, etc</h3>
+</FONT>
+
+<dl>
+<dt><kbd>-boldFont </kbd> <i>font</i> (<kbd>-bol</kbd>)
+<dd>Set the font used to display file names or confirmation messages, etc.
+The default is <tt>8x13bold</tt>.
+
+<p>
+<dt><kbd>-buttonFont </kbd> <i>font</i> (<kbd>-butt</kbd>)
+<dd>Set the font used to display labels of most buttons.
+The default is <tt>6x13</tt>.
+
+<p>
+<dt><kbd>-normalFont </kbd> <i>font</i> (<kbd>-nor</kbd>)
+<dd>Set the font used in message windows, etc.
+This font will also be used on the canvas
+when the desired font is not available.
+The default is <tt>6x13</tt>.
+
+<p>
+<dt><kbd>-scalablefonts </kbd> (<kbd>-sc</kbd>)
+<dd>Allows use of the X11R5 or OpenWindows scalable fonts.
+This is the default.
+If the scalable fonts aren't available,
+<b>xfig</b> will automatically switch to non-scaling fonts.
+
+<p>
+<dt><kbd>-noscalablefonts </kbd> (<kbd>-nos</kbd>)
+<dd>Disable use of the X11R5 or OpenWindows scalable fonts.
+You might want to use this for debugging.
+
+<p>
+<dt><kbd>-cbg </kbd> <i>color</i>
+<dd>Set the background color of the canvas.
+If you want to set the background color of everything in <b>xfig</b> 
+(menus, etc), use the general <tt>-bg</tt> option.
+
+<p>
+<dt><kbd>-cfg </kbd> <i>color</i>
+<dd>Set the default color of objects.
+If you want to set the foreground color of everything in <b>xfig</b> 
+(menus, etc), use the general <tt>-fg</tt> option.
+
+<p>
+<dt><kbd>-monochrome </kbd> (<kbd>-mo</kbd>)
+<dd>Use black and white only for display.
+
+<p>
+<dt><kbd>-max_image_colors </kbd> <i>numcols</i> (<kbd>-max</kbd>)
+<dd>Limit the number of colors used for imported EPS, GIF, JPEG, etc.
+pictures to <i>numcols</i>.  The default is 64.
+<b>Xfig</b> uses a 
+<a href="http://www.ozemail.com.au/~dekker/HOMEPAGE.HTML">Kohonen neural net algorithm</a>
+to map the colors in imported pictures to the limited set available to it.
+
+<p>
+<dt><kbd>-dontswitchcmap </kbd> (<kbd>-dontsw</kbd>)
+<dd>Normaly, <b>xfig</b> will switch to a private colormap
+when not enough colors are available in the default colormap,
+but this option will inhibit the switch.
+See also <tt>-max_image_colors</tt>.
+
+<p>
+<dt><kbd>-visual </kbd> <i>visualname</i>
+<dd>Use <i>visualname</i> as the visual.
+<i>visualname</i> is one of
+TrueColor, StaticColor, DirectColor, StaticGray, GrayScale, 
+and PseudoColor.
+<b>xfig</b> uses the default visual unless this is specified.
+<br>
+Use the <tt>xdpyinfo</tt> command to see which visuals and depths are supported.
+See also <tt>-depth</tt> option.
+
+<p>
+<dt><kbd>-depth </kbd> (<kbd>-dep</kbd>)
+<dd>Choose depth of visual desired.
+<br>
+Use <tt>xdpyinfo</tt> to see what visuals and depths are supported.
+See also <tt>-visual</tt> option.
+</dl>
+
+<hr>
+
+<FONT color = "#AA00AA">
+<h3>Settings for the Size of Windows, etc.</h3>
+</FONT>
+
+<dl>
+<dt><kbd>-geometry </kbd>
+[<i>W</i><kbd>x</kbd><i>H</i><kbd>]+</kbd><i>x</i><kbd>+</kbd><i>y</i> (<kbd>-geom</kbd>)
+<dd>Set the <b>size</b> and/or <b>position</b> of the <b>xfig</b> window.
+You may use this to set the <b>size</b> of the main <b>xfig</b> window,
+or you may instead set the size of the drawing canvas in inches or cm using the 
+<tt>-pwidth</tt> and <tt>-pheight</tt> options.
+
+<p>
+<dt><kbd>-iconGeometry </kbd> <kbd>+</kbd><i>x</i><kbd>+</kbd><i>y</i> (<kbd>-iconG</kbd>)
+<dd>Set the position for the <b>xfig</b> icon on the display.
+
+<p>
+<dt><kbd>-pheight </kbd> <i>height</i> (<kbd>-ph</kbd>)
+<dd>Set the height of the <b>xfig</b> canvas to <i>height</i>.
+<i>height</i> is either cm or inches, depending on the selected unit.
+
+<p>
+<dt><kbd>-pwidth </kbd> <i>width</i> (<kbd>-pw</kbd>)
+<dd>Set the width of <b>xfig</b> canvas to <i>width</i>.
+<i>width</i> is either cm or inches, depending on the selected unit.
+
+<p>
+<dt><kbd>-but_per_row </kbd> <i>number</i> (<kbd>-but_</kbd>)
+<dd>Specify how many buttons wide the mode panel should be.
+This is useful in conjunction with the <tt>-pheight</tt> option
+to reduce the canvas height for small screens.
+The default is 2.  Also, <b>xfig</b> may be compiled to use smaller
+icons for the mode panel.  
+See <a href="installation.html#smallicons">Small Icons</a>.
+
+<p>
+<dt><kbd>-left </kbd> (<kbd>-le</kbd>)
+<dd>Put the drawing and editing mode panel on the left side of the canvas.
+This is the default.
+
+<p>
+<dt><kbd>-right </kbd> (<kbd>-ri</kbd>)
+<dd>Put the drawing and editing mode panel on the right of the canvas.
+The default is left.
+
+<p>
+<dt><kbd>-showallbuttons </kbd> (<kbd>-showa</kbd>)
+<dd>Always show all the indicator buttons
+instead of only those relevant to the current drawing or editing mode.
+This takes up more screen real estate,
+but allows the user to see all settable parameters.
+Normally, each indicator button will only appear
+when it is relevant to the current drawing mode.
+
+<p>
+<dt><kbd>-internalBW </kbd> <i>width</i>
+<dd>Set the width of lines between all buttons and panels.
+The default is 2.
+</dl>
+
+<hr>
+
+<FONT color = "#AA00AA">
+<h3>Other Settings</h3>
+</FONT>
+
+<dl>
+<dt><kbd>-help</kbd> (<kbd>-h</kbd>)
+<dd>Print all command-line options for <b>xfig</b> and quit.
+
+<p>
+<dt><kbd>-debug </kbd> (<kbd>-deb</kbd>)
+<dd>Turn on debugging mode.
+Print various debugging messages such as font names, etc.
+
+<p>
+<dt><kbd>-image_editor </kbd> (<kbd>-ima</kbd>)
+<dd>Specify the program to be invoked when the
+<i>Edit Image</i> button on the 
+<a href="editing-mode.html#edit-panel">Edit Panel</a> 
+for PICTURE object is clicked.
+
+<p>
+<dt><kbd>-library_dir </kbd> (<kbd>-li</kbd>)
+<dd>Specify the directory where <b>Fig</b> object (drawing) directories are stored.
+See <a href="drawing-mode.html#availablelibraries">available libraries</a>. 
+
+<p>
+<img src="images/balloons-example.gif"  align=right>
+<dt><kbd>-showballoons </kbd> (<kbd>-showb</kbd>)
+<dt><kbd>-dontshowballoons </kbd> (<kbd>-dontshowb</kbd>)
+<dd>Popup/don't popup  balloon messages when the cursor passes over buttons etc.
+The default is to show the balloons.
+
+<p>
+<dt><kbd>-balloon_delay </kbd> <i>msec</i> (<kbd>-bal</kbd>)
+<dd>Specify the delay time in milliseconds before the information balloons popup.
+The default is 500 milliseconds.
+
+<p>
+<a name="showlengths">
+<img src="images/show-lengths.gif"  align=right>
+<dt><kbd>-showlengths </kbd> (<kbd>-showl</kbd>)
+<dt><kbd>-dontshowlengths </kbd> (<kbd>-dontshowl</kbd>)</a>
+<dd>
+Makes <b>xfig</b> show the lengths of lines being drawn, in red text near the
+line itself.  Also, when points are moved or added.  In addition, imagine
+a triangle formed with the line segment being drawn as the hypotenuse,
+and a vertical and horizontal line forming the other two sides.  These
+lines and their lengths are also drawn in red as the point is moved or added.
+
+<p>
+<dt><kbd>-spellcheck </kbd> <i>spell-check-command</i> (<kbd>-spel</kbd>)
+<dd>Specify the spell check program to use when checking spelling
+of text objects.  The default is `spell'.
+<p>
+
+<dt><kbd>-tablet </kbd> (<kbd>-ta</kbd>)
+<dd>Specifies that <b>xfig</b> should use the input tablet
+instead of the mouse for drawing.
+You must have the XInputExtension in your X server
+and an input tablet for this to work,
+and <b>xfig</b> must be compiled with the <tt>TABLIB</tt> and <tt>USETAB</tt> 
+variables set in the <tt>Imakefile</tt> for it to use the tablet.
+<br>
+Use <tt>xdpyinfo</tt> to see if your server supports the XInputExtension.
+
+<p>
+<dt><kbd>-keyFile </kbd> <i>compose-key-file</i> (<kbd>-k</kbd>)
+<dd>Use <i>compose-key-file</i> instead of <tt>CompKeyDB</tt> 
+for compose key database.
+If there are no `<tt>/</tt>'s in the name,
+the file must reside in the <b>xfig</b> library directory <i>$XFIGLIBDIR</i> 
+(normally <tt>/usr/local/lib/X11/xfig</tt>).
+If there are any `<tt>/</tt>'s in the name
+it is taken as is (not relative to <i>$XFIGLIBDIR</i>).
+If the name is start with `<tt>~/</tt>',
+it will replaced to the user's home directory.
+
+<p>
+<img src="images/ruler.gif"  align=right>
+<dt><kbd>-track </kbd> (<kbd>-trac</kbd>)
+<dt><kbd>-notrack </kbd> (<kbd>-not</kbd>)
+<dd>Turn on or off cursor (mouse) tracking arrows.
+The default is to track the cursor position by displaying 
+arrows on the top and side ruler.
+
+<p>
+<dt><kbd>-international</kbd> <img src="images/pict-japanese.gif" alt="[JAPANESE]">
+<dd>Turn on Japanese (<i>internationalization</i>) facility.
+<b>Xfig</b> must be compiled with the
+<a href="i18n.html">Japanese support facility</a> .
+Japanese can't be used in Japanese-<b>xfig</b> 
+unless this option is specified when invoking <b>xfig</b> 
+or the <tt>international</tt> resource is set to <i>ON</i>.
+</dl>
+
+<img src="images/blueramp.gif" alt="">
+
+<FONT color = "#AA00AA">
+<h1><a name="resource">Resources</a></h1>
+</FONT>
+
+Here are resources which may be used to customize <b>xfig</b>.
+They are usually specified by putting lines
+into the resource database file of <b>xfig</b>,
+such as <tt>/usr/X11/lib/app-defaults/Fig</tt> or the user's
+own resource file which must be read by <tt>xrdb</tt>.
+
+<dl>
+<h3><img src="images/pict-info.gif" alt="">A note about <b>xfig</b> color resources:</h3>
+Generally, the user should have a common resource `<tt>*customization: -color</tt>'
+set if they have a color display.  This signals the X system (version 4 and later)
+to look for the <tt>XXX-color</tt> app-defaults file in the applications
+defaults directory.
+In that file (e.g. ``<tt>Fig-color</tt>'') the color definitions are used
+and it is responsible for including the main app-defaults file <tt>Fig</tt>.
+
+<hr>
+
+<FONT color = "#AA00AA">
+<h3>Mode Settings</h3>
+</FONT>
+
+<dl>
+<dt><kbd>landscape </kbd> (<kbd>Orientation</kbd>)
+<dd><i>landscape</i> orientation will be selected if this is set <i>ON</i>,
+<i>portrait</i> mode otherwise.
+<br>
+<b>Option:</b> <tt>-landscape</tt>, <tt>-portrait</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">on (landscape)</font>
+
+<p>
+<dt><kbd>inches </kbd> (<kbd>Inches</kbd>)
+<dd><i>inches</i> will be selected as the unit if this is set <i>ON</i>,
+<i>cm</i> otherwise.
+<br>
+<b>Option:</b> <tt>-inches</tt> (<tt>-imperial</tt>),
+  <tt>-metric</tt> (<tt>-centimeters</tt>)
+<br>
+<b>Default:</b> <FONT color="#AA00AA">on (inches)</font>
+
+<p>
+<dt><kbd>userscale </kbd> (<kbd>UserScale</kbd>)
+<dd>Set the multiplier used when displaying dimensions.
+<br>
+<b>Option:</b> <tt>-userscale</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">1.0</font>
+
+<p>
+<dt><kbd>userunit </kbd> (<kbd>UserUnit</kbd>)
+<dd>Set the unit name used when displaying dimensions.
+<br>
+<b>Option:</b> <tt>-userunit</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>in</tt> (or <tt>cm</tt>)</font>
+
+<p>
+<dt><kbd>latexfonts </kbd> (<kbd>Latexfonts</kbd>)
+<dd>LaTeX fonts will be used initially if this is set <i>ON</i>.  Otherwise
+PostScript fonts will be used.
+<br>
+<b>Option:</b> <tt>-latexfonts</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">off</font>
+
+<p>
+<dt><kbd>startpsFont </kbd> (<kbd>StartpsFont</kbd>)
+<dd>Select the specified PostScript font as the initial
+<a href="indicator-panel.html#text-font">TEXT FONT</a>.
+<br>
+<b>Option:</b> <tt>-startpsFont</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>Times-Roman</tt></font>
+
+<p>
+<dt><kbd>startlatexFont </kbd> (<kbd>StartlatexFont</kbd>)
+<dd>Select the specified LaTeX font as the initial
+<a href="indicator-panel.html#text-font">TEXT FONT</a>.
+<br>
+<b>Option:</b> <tt>-startlatexFont</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>Default</tt></font>
+
+<p>
+<dt><kbd>startfontsize </kbd> (<kbd>StartFontSize</kbd>)
+<dd>Set initial value of
+<a href="indicator-panel.html#text-size">TEXT SIZE</a>.
+<br>
+<b>Option:</b> <tt>-startfontsize</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">12</font>
+
+<p>
+<dt><kbd>starttextstep </kbd> (<kbd>StartTextStep</kbd>)
+<dd>Set initial value of
+<a href="indicator-panel.html#text-step">TEXT STEP</a>.
+<br>
+<b>Option:</b> <tt>-starttextstep</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">1.2</font>
+
+<p>
+<dt><kbd>specialtext </kbd> (<kbd>SpecialText</kbd>)
+<dd>Set initial value of the <i>Special</i> flag of the
+<a href="indicator-panel.html#text-flags">TEXT FLAGS</a>.
+<br>
+<b>Option:</b> <tt>-specialtext</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">off</font>
+
+<p>
+<dt><kbd>startfillstyle </kbd> (<kbd>StartFillStyle</kbd>)
+<dd>Set the initial value (-1 to 21) of
+<a href="indicator-panel.html#fill-style">FILL STYLE</a>.
+<br>
+<b>Option:</b> <tt>-startfillstyle</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">-1 (None)</font>
+
+<p>
+<dt><kbd>startgridmode </kbd> (<kbd>StartGridMode</kbd>)
+<dd>Set the initial value (0 to 4) of
+<a href="indicator-panel.html#grid-mode">GRID MODE</a>.
+<br>
+<b>Option:</b> <tt>-startgridmode</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">0 (None)</font>
+
+<p>
+<dt><kbd>startposnmode </kbd> (<kbd>StartPosnMode</kbd>)
+<dd>Set the initial value (0 to 5) of
+<a href="indicator-panel.html#point-position">POINT POSITION</a>.
+<br>
+<b>Option:</b> <tt>-startposnmode</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">1 (1/16inch, or 1mm)</font>
+
+<p>
+<dt><kbd>startlinewidth </kbd> (<kbd>StartLineWidth</kbd>)
+<dd>Set the initial value of
+<a href="indicator-panel.html#line-width">LINE WIDTH</a>.
+<br>
+<b>Option:</b> <tt>-startlinewidth</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">1</font>
+
+<p>
+<dt><kbd>zoom </kbd> (<kbd>Zoom</kbd>)
+<dd>Set the initial value of
+<a href="indicator-panel.html#zoom-scale">ZOOM SCALE</a>.
+<br>
+<b>Option:</b> <tt>-zoom</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">1.0</font>
+</dl>
+
+<hr>
+
+<FONT color = "#AA00AA">
+<h3>Settings related to PRINT or EXPORT</h3>
+</FONT>
+
+<dl>
+<dt><kbd>exportLanguage </kbd> (<kbd>ExportLanguage</kbd>)
+<dd>Set the initial export <i>Language</i> 
+when <a href="command-panel.html#export">Exporting</a>.
+<br>
+<b>Option:</b> <tt>-exportLanguage</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>eps</tt></font> (Encapsulated PostScript)
+
+<p>
+<dt><kbd>flushleft </kbd> (<kbd>FlushLeft</kbd>)
+<dd>Set the initial <i>Justification</i> 
+when <a href="command-panel.html#export">Exporting</a> 
+or <a href="command-panel.html#print">Printing</a>.
+<br>
+<b>Option:</b> <tt>-flushleft</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">off (Centered)</font>
+
+<p>
+<dt><kbd>magnification </kbd> (<kbd>Magnification</kbd>)
+<dd>Set the initial <i>Magnification</i> 
+when <a href="command-panel.html#export">Exporting</a> 
+or <a href="command-panel.html#print">Printing</a>.
+<br>
+<b>Option:</b> <tt>-magnification</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">100</font>
+
+<p>
+<dt><kbd>multiple </kbd> (<kbd>Multiple</kbd>)
+<dd>Set the initial selection of <i>Pages</i> 
+when <a href="command-panel.html#export">Exporting</a> 
+or <a href="command-panel.html#print">Printing</a>.
+<br>
+<b>Option:</b> <tt>-multiple</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">off</font>
+
+<p>
+<dt><kbd>page_size </kbd> (<kbd>Pagesize</kbd>)
+<dd>Set the initial <i>Paper Size</i> 
+when <a href="command-panel.html#export">Exporting</a> 
+or <a href="command-panel.html#print">Printing</a>.
+<dd>
+<b>Option:</b> <tt>-page_size</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">Letter</font> (when unit is inches), or 
+<font color="#AA00AA">A4</font> (when unit is cm)
+
+<p>
+<dt><kbd>jpeg_quality </kbd> <i>quality</i> (<kbd>Quality</kbd>)
+<dd>Set the quality used 
+when <a href="command-panel.html#export">Exporting</a> 
+to the JPEG (JFIF) image format.
+<br>
+<b>Option:</b> <tt>jpeg_quality</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">75</font>
+
+<p>
+<dt><kbd>transparent </kbd> <i>xfig color number</i> (<kbd>Transparent</kbd>)
+<dd>Set the ``transparent'' color 
+when <a href="command-panel.html#export">Exporting</a> 
+to the GIF image format.  This is one of the <b>xfig</b> colors, which are numbered
+from -3 (Background), -2 (None), -1 (Default), 0 (Black), 1 (Blue) etc.
+See <a href="fig-format.html#colors">Colors</a>.
+<br>
+<b>Option:</b> <tt>-transparent_color</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">-2 (None)</font>
+
+</dl>
+
+<hr>
+
+<FONT color = "#AA00AA">
+<h3>Setting of Fonts or Colors, etc</h3>
+</FONT>
+
+<dl>
+<dt><kbd>boldFont </kbd> (<kbd>Font</kbd>)
+<dd>Set the font to use for file names or confirmation messages, etc.
+<br>
+<b>Option:</b> <tt>-bold</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>8x13bold</tt></font>
+
+<p>
+<dt><kbd>buttonFont </kbd> (<kbd>Font</kbd>)
+<dd>Set the font to use for the labels of most buttons.
+<br>
+<b>Option:</b> <tt>-button</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>6x13</tt></font>
+
+<p>
+<dt><kbd>normalFont </kbd> (<kbd>Font</kbd>)
+<dd>Set the font used in message windows, etc.
+<br>
+<b>Option:</b> <tt>-normal</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>6x13</tt></font>
+
+<p>
+<dt><kbd>scalablefonts </kbd> (<kbd>ScalableFonts</kbd>)
+<dd>Setting this <i>ON</i> will allow
+use of the X11R5 or OpenWindows scalable fonts.
+<br>
+<b>Option:</b> <tt>-scalablefonts</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">on</font>
+
+<p>
+<dt><kbd>canvasBackground </kbd> (<kbd>Background</kbd>)
+<dd>Set the background color of the canvas.
+<br>
+<b>Option:</b> <tt>-cbg</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>ivory</tt></font>
+
+<p>
+<dt><kbd>canvasForeground </kbd> (<kbd>Foreground</kbd>)
+<dd>Set the default color of objects.
+<br>
+<b>Option:</b> <tt>-cfg</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>black</tt></font>
+
+<p>
+<dt><kbd>reverseVideo </kbd> (<kbd>ReverseVideo</kbd>)
+<dd>Setting this <i>ON</i> will make
+<b>xfig</b> use inverse video (white on black).
+<br>
+<b>Option:</b> <tt>-inverse</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">off</font>
+
+<p>
+<dt><kbd>monochrome </kbd> (<kbd>Monochrome</kbd>)
+<dd>Setting this <i>ON</i> will make
+<b>xfig</b> use black and white only for display.
+<br>
+<b>Option:</b> <tt>-monochrome</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">off</font>
+
+<p>
+<dt><kbd>dont_switch_cmap </kbd> (<kbd>Dont_switch_cmap</kbd>)
+<dd>Setting this <i>ON</i> will inhibit switching to a private colormap
+even if not enough colors are available in the default colormap.
+<br>
+<b>Option:</b> <tt>-dontswitchcmap</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">off</font>
+
+<p>
+<dt><kbd>visual </kbd> (<kbd>Visual</kbd>)
+<dd>Use <i>visualname</i> as visual.
+<br>
+<b>Option:</b> <tt>-visual</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">default screen visual</font>
+
+<p>
+<dt><kbd>depth </kbd> (<kbd>Depth</kbd>)
+<dd>Set depth of the visual.
+<br>
+<b>Option:</b> <tt>-depth</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">default screen depth</font>
+</dl>
+
+<hr>
+
+<FONT color = "#AA00AA">
+<h3>Setting the Size of Windows, etc.</h3>
+</FONT>
+
+<dl>
+<dt><kbd>pheight </kbd> (<kbd>Height</kbd>)
+<dd>Set the height of the canvas.
+<br>
+<b>Option:</b> <tt>-pheight</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">8.5 (inches) (9 inches in portrait mode)</font>
+
+<p>
+<dt><kbd>pwidth </kbd> (<kbd>Width</kbd>)
+<dd>Set the width of the canvas.
+<br>
+<b>Option:</b> <tt>-pwidth</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">11 (inches) (8.5 inches in portrait mode)</font>
+
+<p>
+<dt><kbd>but_per_row </kbd> (<kbd>But_per_row</kbd>)
+<dd>Specify the number of buttons wide the mode panel should be.
+<br>
+<b>Option:</b> <tt>-but_per_row</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">2</font>
+
+<p>
+<dt><kbd>justify </kbd> (<kbd>Justify</kbd>)
+<dd>If this is <i>ON</i>,
+drawing and editing mode panel will put to the right of the canvas.
+<br>
+<b>Option:</b> <tt>-left</tt>, <tt>-right</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">off (left)</font>
+
+<p>
+<dt><kbd>showallbuttons </kbd> (<kbd>ShowAllButtons</kbd>)
+<dd>If this is <i>ON</i>,
+<b>xfig</b> will always show all the indicator buttons
+instead of only those relevant to the current drawing mode.
+<br>
+<b>Option:</b> <tt>-showallbuttons</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">off</font>
+
+<p>
+<dt><kbd>internalborderwidth </kbd> (<kbd>InternalBorderWidth</kbd>)
+<dd>Set the width of lines between all buttons and panels.
+<br>
+<b>Option:</b> <tt>-internalBW</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">2</font> (pixels)
+
+<p>
+<dt><kbd>rulerthick </kbd> (<kbd>RulerThick</kbd>)
+<dd>Set the thickness of top and side rulers.
+<br>
+<b>Option:</b> <tt>-rulerthick</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">24</font> (pixels)
+<br>
+<b>Minimum:</b> <FONT color="#AA00AA"><tt>24</tt></font>
+</dl>
+
+<hr>
+
+<FONT color = "#AA00AA">
+<h3>Other Resources</h3>
+</FONT>
+
+<dl>
+<dt><kbd>debug </kbd> (<kbd>Debug</kbd>)
+<dd>Setting this <i>ON</i> will turn on debugging mode.
+<br>
+<b>Option:</b> <tt>-debug</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">off</font>
+
+<p>
+<dt><kbd>showballoons </kbd> (<kbd>showBalloons</kbd>)
+<dd>Popup popup balloon messages when the cursor passes over buttons etc.
+<br>
+<b>Option:</b> <tt>-showballoons / -dontshowballoons</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">on (show balloons)</font>
+
+<p>
+<dt><kbd>balloon_delay </kbd> (<kbd>Balloon_Delay</kbd>)
+<dd>Specify the delay time in milliseconds before the information balloons popup.
+<br>
+<b>Option:</b> <tt>-balloon_delay</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">500 milliseconds</font>
+
+<p>
+<dt><kbd>showlengths </kbd> (<kbd>Debug</kbd>)
+<dd>Makes <b>xfig</b> show the lengths of lines being drawn, in red text near the
+line itself.  Also, when points are moved or added.  In addition, imagine
+a triangle formed with the line segment as the hypotenuse,
+and a vertical and horizontal line forming the other two sides.  These
+lines and their lengths are also drawn in red as the point is moved or added.
+<br>
+<b>Option:</b> <tt>-showlengths / -dontshowlengths</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">off</font>
+
+<p>
+<dt><kbd>image_editor </kbd> (<kbd>ImageEditor</kbd>)
+<dd>Specify the program to be invoked when the
+<i>Edit Image</i> button on the 
+<a href="editing-mode.html#edit-panel">Edit Panel</a> 
+for PICTURE object is clicked.
+<br>
+<b>Option:</b> <tt>-image_editor</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>xv</tt></font>
+
+<p>
+<dt><kbd>library_dir </kbd> (<kbd>libraryDirectory</kbd>)
+<dd>Specify the directory where <b>Fig</b> object directories are stored.
+When the <a href="drawing-mode.html#library">Library</a> button
+is pressed this path will be parsed for <b>Fig</b> files and sub-directories.
+Each sub-directory found will be used as an object library and will
+appear in the pull-down menu in the library popup panel.
+<br>
+<b>Option:</b> <tt>-library_dir</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>~/xfiglib</tt></font>
+
+<p>
+<dt><kbd>keyFile </kbd> (<kbd>KeyFile</kbd>)
+<dd>Specify the file to be used as the compose key (international characters)
+database.
+<br>
+<b>Option:</b> <tt>-keyFile</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>$XFIGLIBDIR/CompKeyDB</tt></font>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp
+(where $XFIGLIBDIR is the variable in the Imakefile for <b>xfig</b>)
+
+<p>
+<dt><kbd>max_image_colors </kbd> (<kbd>Max_image_colors</kbd>)
+<dd>Limit the number of colors used for EPS, GIF, JPEG, etc.
+imported pictures.
+<br>
+<b>Option:</b> <tt>-max_image_colors</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">64</font>
+
+<p>
+<dt><kbd>trackCursor </kbd> (<kbd>Track</kbd>)
+<dd>Setting this <i>ON</i> will turn on cursor (mouse) tracking arrows.
+<br>
+<b>Option:</b> <tt>-track</tt> and <tt>-notrack</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">on</font>
+
+<p>
+<dt><kbd>Fig*file_panel*mask*string</kbd>
+<dd>Set the initial value of <i>Filename Mask</i> of
+<a href="command-panel.html#file">File Panel</a>.
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>*.fig*</tt></font>
+(this will match compressed and normal .fig files)
+
+<p>
+<dt><kbd>Fig*browse_panel*mask*string</kbd>
+<dd>Set the initial value of <i>Filename Mask</i> of
+<a href="editing-mode.html#browse-panel">Browse Panel</a>.
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>*.[gjxepst][ipbcl][fgmsxd]*</tt></font>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+(this will match eps, gif, jpg, pcx, sld, tif, xbm, and xpm files.
+It won't match ps, mf, and tk files because they have only two characters in
+the suffix)
+
+<p>
+<dt><kbd>Fig*export_panel*mask*string</kbd>
+<dd>Set the initial value of <i>Filename Mask</i> of
+<a href="command-panel.html#export">Export Panel</a>.
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>*.[gjxepst][ipbcl][fgmsxd]*</tt></font>
+
+<p>
+<dt><kbd>Fig*printer*string</kbd>
+<dd>Set the initial value of <i>PostScript Printer</i> of
+<a href="command-panel.html#print">Print Panel</a>.
+If this resource is not set
+and the environment variable <tt>$PRINTER</tt> is set,
+it is used as the initial value.
+<br>
+<b>Default:</b> <FONT color="#AA00AA">""</font>
+
+<p>
+<dt><kbd>Fig*job_params*string</kbd>
+<dd>Set the initial value of <i>Print Job Params</i> of
+<a href="command-panel.html#print">Print Panel</a>.
+This resource may be used to set any options
+which should given to <tt>lpr</tt> (<tt>lp</tt> on System V system)
+when printing.
+<br>
+<b>Default:</b> <FONT color="#AA00AA">""</font>
+</dl>
+
+<br>
+<img src="images/blueramp.gif" alt="">
+
+<FONT color = "#AA00AA">
+<h3>Resources for Japanese (International) Support
+  <img src="images/pict-japanese.gif" align="top" alt="[JAPANESE]"></h3>
+</FONT>
+
+These resources are effective
+only for <b>xfig</b> with <a href="i18n.html">Japanese enabled</a>
+(I18N Imakefile variable enabled).
+<dl>
+<dt><kbd>international</kbd> (<kbd>International</kbd>)
+<dd>Set if the Japanese (international) facility should be enabled.
+<br>
+<b>Option:</b> <tt>-international</tt>
+<br>
+<b>Default:</b> <FONT color="#AA00AA">off</font>
+
+<p>
+<dt><kbd>japanese</kbd>
+<dd>If this is <i>ON</i>, `<i>Times-Roman</i>' 
+of <a href="indicator-panel.html#text-font">TEXT FONT</a> 
+will be replaced by `<i>Times-Roman + Mincho</i>',
+and `<i>Times-Bold</i>'
+will be replaced by `<i>Times-Bold + Gothic</i>'.
+This is effective only if the Japanese (I18N) facility is enabled.
+<br>
+<b>Default:</b> <FONT color="#AA00AA">on</font>
+
+<p>
+<dt><kbd>eucEncoding</kbd>
+<dd>If this is <i>ON</i>,
+it is assumed that EUC encoding is used for Japanese (I18N) text.
+Normally, EUC should be used.
+This is effective only if Japanese (I18N) facility is enabled.
+<br>
+<b>Default:</b> <FONT color="#AA00AA">on</font>
+
+<p>
+<dt><kbd>fixedFontSet</kbd> (<kbd>FontSet</kbd>)
+<dd>Set the fontset used for displaying text in conversion or status
+when entering text with <i>Off the Spot</i> or <i>Over the Spot</i>.
+This is effective only if Japanese (I18N) facility is enabled.
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>-*-times-medium-r-normal--16-*-*-*-*-*-*-*,</font>
+    -*-*-medium-r-normal--16-*-*-*-*-*-*-*,
+    -*-*-*-r-*--16-*-*-*-*-*-*-*</tt>
+
+<p>
+<dt><kbd>normalFontSet</kbd> (<kbd>NormalFontSet</kbd>)
+<dd>Set the fontset used for drawing Japanese (I18N) text
+when <i>Times-Roman</i> is selected.
+This is effective only if Japanese (I18N) facility is enabled.
+See also <tt>boldFontSet</tt> and <tt>fontSetSize</tt>.
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>-*-times-medium-r-normal--16-*-*-*-*-*-*-*,</font>
+    -*-*-medium-r-normal--16-*-*-*-*-*-*-*,
+    -*-*-*-r-*--16-*-*-*-*-*-*-*</tt>
+
+<p>
+<dt><kbd>boldFontSet</kbd> (<kbd>BoldFontSet</kbd>)
+<dd>Set the fontset used for drawing Japanese (I18N) text
+when <i>Times-Bold</i> is selected.
+This is effective only if Japanese (I18N) facility is enabled.
+See also <tt>normalFontSet</tt> and <tt>fontSetSize</tt>.
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>-*-times-bold-r-normal--16-*-*-*-*-*-*-*,</font>
+    -*-*-bold-r-normal--16-*-*-*-*-*-*-*,
+    -*-*-*-r-*--16-*-*-*-*-*-*-*</tt>
+
+<p>
+<dt><kbd>fontSetSize</kbd>
+<dd>Specify the size of font
+specified by <tt>normalFontSet</tt> and <tt>boldFontSet</tt>.
+This is effective only if Japanese (I18N) facility is enabled.
+<br>
+<b>Default:</b> <FONT color="#AA00AA">16</font>
+
+<p>
+<dt><kbd>inputStyle</kbd>
+<dd>Set the input style when
+<a href="i18n.html#input-japanese">entering Japanese text</a> 
+with <i>input method</i>.
+The style may be selected from <tt>OffTheSpot</tt>,
+<tt>OverTheSpot</tt>, and <tt>Root</tt>.
+If this is set to <tt>None</tt>, input method will not used.
+This is effective only if Japanese (I18N) facility is enabled.
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>OffTheSpot</tt></font>
+
+<p>
+<dt><kbd>textPreedit</kbd>
+<dd>Specify the pre-edit program to be invoked for
+<a href="i18n.html#input-japanese">entering Japanese text</a>.
+This is effective only if Japanese (I18N) facility is enabled.
+If conversion with input method is available, this is not necessary.
+<br>
+<b>Default:</b> <FONT color="#AA00AA">""</font>
+
+<p>
+<dt><kbd>fig2devLocalizeOption</kbd>
+<dd>Specify the option to be added when invoking
+<a href="installation.html#related-software"><b>fig2dev</b></a>.
+This is effective only if Japanese (I18N) facility is enabled,
+and the string will added as an option
+when invoking <b>fig2dev</b>.
+<br>
+<b>Default:</b> <FONT color="#AA00AA"><tt>-j</tt></font>
+</dl>
+
+
+<img src="images/blueramp.gif" alt="">
+
+<FONT color = "#AA00AA">
+<h2><a name="env-variable">Environment Variables</a></h2>
+</FONT>
+
+<dl>
+<dt><tt>XFIGTMPDIR</tt>
+<dd>Specify the directory where temporary files should stored.
+If this is not set, the <tt>/tmp</tt> directory will be used.
+
+<p>
+<dt><tt>PRINTER</tt>
+<dd>Specify the default printer when printing figures
+with <a href="command-panel.html#print">Print</a>.
+If the <tt>Fig*printer*string</tt> resource is set,
+this variable will ignored.
+
+<p>
+<dt><tt>LANG</tt> <img src="images/pict-japanese.gif" alt="[JAPANESE]">
+<dd>Set the language to be used.
+For Japanese, a locale name like
+<tt>japanese</tt> or <tt>ja_JP.eucJP</tt> may be used.
+
+<p>
+<dt><tt>XMODIFIERS</tt> <img src="images/pict-japanese.gif" alt="[JAPANESE]">
+<dd>Specify the <i>input method</i> to be used for entering text.
+If this is not set, the default input method will be used.
+
+<p>
+<dt><tt>FIG2DEV_LIBDIR</tt> <img src="images/pict-japanese.gif" alt="[JAPANESE]">
+<dd>Specify the directory where the files
+needed by <a href="i18n.html">Japanese-<b>fig2dev</b></a> 
+(<tt>japanese.ps</tt>) are placed.
+If this is not set,
+the setting when compiling <b>fig2dev</b> will be used.
+</dl>
+
+<p>
+<hr>
+
+Goto <a href="index.html">TOP</a>
+
+<p>
+<a href="authors.html#manual"><i>written by us</i></a>
+
+</body>
+</html>

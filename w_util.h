@@ -1,26 +1,22 @@
-#ifndef W_UTIL_H
-#define W_UTIL_H
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
+
+#ifndef W_UTIL_H
+#define W_UTIL_H
 
 /* constant values used for popup_query */
 
@@ -34,6 +30,36 @@
 #define RESULT_YES	1
 #define RESULT_ALL	2
 #define RESULT_PART	3
+
+/* some consts used by both w_indpanel.c, w_export.c and w_print.c */
+
+#define I_CHOICE	0
+#define I_IVAL		1
+#define I_FVAL		2
+
+/* width/height of the color buttons */
+
+#define COLOR_BUT_WID	80
+#define COLOR_BUT_HT	20
+
+/* EXPORTS */
+
+extern	Boolean	check_action_on();
+
+extern	Widget	make_popup_menu();
+extern	Widget	make_color_popup_menu();
+extern	void	set_color_name();
+extern	Widget	MakeIntSpinnerEntry();
+extern	Widget	MakeFloatSpinnerEntry();
+extern	Pixmap	mouse_l, mouse_r;
+extern	Pixmap	check_pm, null_check_pm;
+extern	Pixmap	balloons_on_bitmap;
+extern	Pixmap	balloons_off_bitmap;
+extern	Pixmap	menu_arrow;
+
+extern	Boolean	user_colors_saved;
+
+extern	Boolean	nuser_colors_saved;
 
 /*
  * Author:	Doyle C. Davidson
@@ -75,7 +101,12 @@
 #define GetValues(n)	XtGetValues(n, Args, ArgCount)
 #define SetValues(n)	XtSetValues(n, Args, ArgCount)
 
-extern Widget	make_popup_menu();
-extern Widget	make_color_popup_menu();
-extern void	set_color_name();
+/* data structure passed to SpinnerEntry callback */
+
+typedef struct {
+	Widget	widget;		/* text widget inside spinner */
+	int	imin, imax;	/* int min, max values allowed */
+	float	fmin, fmax;	/* float min, max values allowed */
+} spin_struct;
+
 #endif /* W_UTIL_H */

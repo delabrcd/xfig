@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -33,19 +28,20 @@
 
 /*************************  local procedures  ********************/
 
-static int	init_ellipsebyradius_drawing();
-static int	init_ellipsebydiameter_drawing();
-static int	init_circlebyradius_drawing();
-static int	init_circlebydiameter_drawing();
-static int	create_ellipsebydia();
-static int	create_ellipsebyrad();
-static int	create_circlebyrad();
-static int	create_circlebydia();
-static int	cancel_ellipsebydia();
-static int	cancel_ellipsebyrad();
-static int	cancel_circlebyrad();
-static int	cancel_circlebydia();
+static void	init_ellipsebyradius_drawing();
+static void	init_ellipsebydiameter_drawing();
+static void	init_circlebyradius_drawing();
+static void	init_circlebydiameter_drawing();
+static void	create_ellipsebydia();
+static void	create_ellipsebyrad();
+static void	create_circlebyrad();
+static void	create_circlebydia();
+static void	cancel_ellipsebydia();
+static void	cancel_ellipsebyrad();
+static void	cancel_circlebyrad();
+static void	cancel_circlebydia();
 
+void
 ellipsebyradius_drawing_selected()
 {
     canvas_kbd_proc = null_proc;
@@ -58,7 +54,7 @@ ellipsebyradius_drawing_selected()
     reset_action_on();
 }
 
-static
+static void
 init_ellipsebyradius_drawing(x, y)
     int		    x, y;
 {
@@ -71,12 +67,12 @@ init_ellipsebyradius_drawing(x, y)
     canvas_locmove_proc = resizing_ebr;
     canvas_rightbut_proc = cancel_ellipsebyrad;
     canvas_leftbut_proc = create_ellipsebyrad;
-    set_temp_cursor(null_cursor);
+    set_cursor(null_cursor);
     elastic_ebr();
     set_action_on();
 }
 
-static
+static void
 cancel_ellipsebyrad()
 {
     elastic_ebr();
@@ -85,7 +81,7 @@ cancel_ellipsebyrad()
     draw_mousefun_canvas();
 }
 
-static
+static void
 create_ellipsebyrad(x, y)
     int		    x, y;
 {
@@ -117,6 +113,7 @@ create_ellipsebyrad(x, y)
     ellipse->end.y = y;
     ellipse->next = NULL;
     add_ellipse(ellipse);
+    reset_action_on(); /* this signals redisplay_curobj() not to refresh */
     /* draw it and anything on top of it */
     redisplay_ellipse(ellipse);
     ellipsebyradius_drawing_selected();
@@ -135,7 +132,7 @@ ellipsebydiameter_drawing_selected()
     reset_action_on();
 }
 
-static
+static void
 init_ellipsebydiameter_drawing(x, y)
     int		    x, y;
 {
@@ -148,12 +145,12 @@ init_ellipsebydiameter_drawing(x, y)
     canvas_locmove_proc = resizing_ebd;
     canvas_rightbut_proc = cancel_ellipsebydia;
     canvas_leftbut_proc = create_ellipsebydia;
-    set_temp_cursor(null_cursor);
+    set_cursor(null_cursor);
     elastic_ebd();
     set_action_on();
 }
 
-static
+static void
 cancel_ellipsebydia()
 {
     elastic_ebd();
@@ -162,7 +159,7 @@ cancel_ellipsebydia()
     draw_mousefun_canvas();
 }
 
-static
+static void
 create_ellipsebydia(x, y)
     int		    x, y;
 {
@@ -194,6 +191,7 @@ create_ellipsebydia(x, y)
     ellipse->end.y = y;
     ellipse->next = NULL;
     add_ellipse(ellipse);
+    reset_action_on(); /* this signals redisplay_curobj() not to refresh */
     /* draw it and anything on top of it */
     redisplay_ellipse(ellipse);
     ellipsebydiameter_drawing_selected();
@@ -214,7 +212,7 @@ circlebyradius_drawing_selected()
     reset_action_on();
 }
 
-static
+static void
 init_circlebyradius_drawing(x, y)
     int		    x, y;
 {
@@ -226,12 +224,12 @@ init_circlebyradius_drawing(x, y)
     canvas_locmove_proc = resizing_cbr;
     canvas_rightbut_proc = cancel_circlebyrad;
     canvas_leftbut_proc = create_circlebyrad;
-    set_temp_cursor(null_cursor);
+    set_cursor(null_cursor);
     elastic_cbr();
     set_action_on();
 }
 
-static
+static void
 cancel_circlebyrad()
 {
     elastic_cbr();
@@ -240,7 +238,7 @@ cancel_circlebyrad()
     draw_mousefun_canvas();
 }
 
-static
+static void
 create_circlebyrad(x, y)
     int		    x, y;
 {
@@ -274,6 +272,7 @@ create_circlebyrad(x, y)
     c->end.y = y;
     c->next = NULL;
     add_ellipse(c);
+    reset_action_on(); /* this signals redisplay_curobj() not to refresh */
     /* draw it and anything on top of it */
     redisplay_ellipse(c);
     circlebyradius_drawing_selected();
@@ -292,7 +291,7 @@ circlebydiameter_drawing_selected()
     reset_action_on();
 }
 
-static
+static void
 init_circlebydiameter_drawing(x, y)
     int		    x, y;
 {
@@ -304,12 +303,12 @@ init_circlebydiameter_drawing(x, y)
     canvas_locmove_proc = resizing_cbd;
     canvas_leftbut_proc = create_circlebydia;
     canvas_rightbut_proc = cancel_circlebydia;
-    set_temp_cursor(null_cursor);
+    set_cursor(null_cursor);
     elastic_cbd();
     set_action_on();
 }
 
-static
+static void
 cancel_circlebydia()
 {
     elastic_cbd();
@@ -318,7 +317,7 @@ cancel_circlebydia()
     draw_mousefun_canvas();
 }
 
-static
+static void
 create_circlebydia(x, y)
     int		    x, y;
 {
@@ -352,6 +351,7 @@ create_circlebydia(x, y)
     c->end.y = y;
     c->next = NULL;
     add_ellipse(c);
+    reset_action_on(); /* this signals redisplay_curobj() not to refresh */
     /* draw it and anything on top of it */
     redisplay_ellipse(c);
     circlebydiameter_drawing_selected();

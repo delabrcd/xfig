@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Parts Copyright (c) 1994 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -25,6 +20,7 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "d_line.h"
 #include "u_create.h"
 #include "u_elastic.h"
 #include "u_list.h"
@@ -32,56 +28,71 @@
 #include "w_mousefun.h"
 
 extern int	latex_endpoint();
+Boolean	freehand_line;
 
 /*************************** locally global variables *********************/
 
-static int	init_line_drawing();
-
-int		create_lineobject();
-int		get_intermediatepoint();
+static void	init_line_drawing();
+static void	init_line_freehand_drawing();
 
 /**********************	 polyline and polygon section  **********************/
 
+void
 line_drawing_selected()
 {
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     canvas_leftbut_proc = init_line_drawing;
-    canvas_rightbut_proc = null_proc;
+    canvas_middlebut_proc = init_line_freehand_drawing;
     set_cursor(arrow_cursor);
     reset_action_on();
     if (cur_mode == F_POLYGON) {
-	set_mousefun("first point", "", "", "", "", "");
+	set_mousefun("first point", "freehand", "", "", "", "");
 	min_num_points = 3;
-	canvas_middlebut_proc = null_proc;
+	canvas_rightbut_proc = null_proc;
     } else {
-	set_mousefun("first point", "single point", "", "", "", "");
+	set_mousefun("first point", "freehand", "single point", "", "", "");
 	min_num_points = 1;
 	num_point = 0;
 	fix_x = fix_y = -1;
-	canvas_middlebut_proc = create_lineobject;
+	canvas_rightbut_proc = create_lineobject;
     }
 }
 
-static
-init_line_drawing(x, y)
+static void
+init_line_freehand_drawing(x, y)
     int		    x, y;
 {
+    freehand_line = True;
     init_trace_drawing(x, y);
 }
 
+static void
+init_line_drawing(x, y)
+    int		    x, y;
+{
+    freehand_line = False;
+    canvas_middlebut_proc = null_proc;
+    init_trace_drawing(x, y);
+}
+
+void
 cancel_line_drawing()
 {
     elastic_line();
+    /* erase last lengths if appres.showlengths is true */
+    erase_lengths();
     cur_x = fix_x;
     cur_y = fix_y;
     if (cur_point != first_point)
 	elastic_moveline(first_point);	/* erase control vector */
     free_points(first_point);
+    first_point = NULL;
     return_proc();
     draw_mousefun_canvas();
 }
 
+void
 init_trace_drawing(x, y)
     int		    x, y;
 {
@@ -94,12 +105,16 @@ init_trace_drawing(x, y)
     cur_point->y = fix_y = cur_y = y;
     cur_point->next = NULL;
     length_msg(MSG_LENGTH);
-    if (latexline_mode || latexarrow_mode) {
-	canvas_locmove_proc = latex_line;
-    } else if (manhattan_mode || mountain_mode) {
-	canvas_locmove_proc = constrainedangle_line;
+    if (freehand_line) {
+	canvas_locmove_proc = freehand_get_intermediatepoint;
     } else {
-	canvas_locmove_proc = freehand_line;
+	if (latexline_mode || latexarrow_mode) {
+	    canvas_locmove_proc = latex_line;
+	} else if (manhattan_mode || mountain_mode) {
+	    canvas_locmove_proc = constrainedangle_line;
+	} else {
+	    canvas_locmove_proc = unconstrained_line;
+	}
     }
     canvas_leftbut_proc = get_intermediatepoint;
     canvas_middlebut_save = create_lineobject;
@@ -112,23 +127,40 @@ init_trace_drawing(x, y)
 	canvas_middlebut_proc = canvas_middlebut_save;
     }
     draw_mousefun_canvas();
-    set_temp_cursor(null_cursor);
-    cur_cursor = null_cursor;
+    set_cursor(null_cursor);
     elastic_line();
 }
 
+/* we have this extra proc to call get_intermediatepoint() with shift=0
+   because we come here from a canvas_locmove_proc which doesn't have a
+   shift value (its not a keypress event) */
+
+void
+freehand_get_intermediatepoint(x, y)
+    int		    x, y;
+{
+    get_intermediatepoint(x, y, 0);
+}
+    
+void
 get_intermediatepoint(x, y, shift)
     int		    x, y;
     int		    shift;
 {
-    (*canvas_locmove_proc) (x, y);
+    /* in freehand mode call unconstrained_line explicitely to move the mouse */
+    if (freehand_line) {
+	unconstrained_line(x,y);
+    } else {
+	/* otherwise call the (possibly) constrained movement procedure */
+	(*canvas_locmove_proc) (x, y);
+    }
+
     num_point++;
     fix_x = cur_x;
     fix_y = cur_y;
     elastic_line();
     if (cur_cursor != null_cursor) {
-	set_temp_cursor(null_cursor);
-	cur_cursor = null_cursor;
+	set_cursor(null_cursor);
     }
     if (shift != 0 && num_point > 2) {
 	F_point	*p;
@@ -153,7 +185,10 @@ get_intermediatepoint(x, y, shift)
 	append_point(fix_x, fix_y, &cur_point);
     }
     if (num_point == min_num_points - 1) {
-	set_mousefun("next point", "final point", "cancel", "del point", "", "");
+	if (freehand_line)
+	    set_mousefun("", "final point", "cancel", "del point", "", "");
+	else
+	    set_mousefun("next point", "final point", "cancel", "del point", "", "");
 	draw_mousefun_canvas();
 	canvas_middlebut_proc = canvas_middlebut_save;
     }
@@ -161,6 +196,7 @@ get_intermediatepoint(x, y, shift)
 
 /* come here upon pressing middle button (last point of lineobject) */
 
+void
 create_lineobject(x, y)
     int		    x, y;
 {
@@ -183,6 +219,8 @@ create_lineobject(x, y)
     }
     dot = (num_point == 1);
     elastic_line();
+    /* erase any length info if appres.showlengths is true */
+    erase_lengths();
     if ((line = create_line()) == NULL) {
 	line_drawing_selected();
 	draw_mousefun_canvas();
@@ -222,6 +260,7 @@ create_lineobject(x, y)
 	elastic_moveline(first_point);	/* erase temporary outline */
     }
     add_line(line);
+    reset_action_on(); /* this signals redisplay_curobj() not to refresh */
     /* draw it and anything on top of it */
     redisplay_line(line);
     line_drawing_selected();

@@ -1,22 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1994 by Brian V. Smith
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -31,11 +26,14 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-static int	init_break(), init_break_only(), init_break_tag();
+static void	init_break();
+static void	init_break_only();
+static void	init_break_tag();
 
+void
 break_selected()
 {
-    set_mousefun("break compound", "break and tag", "", "", "", "");
+    set_mousefun("break compound", "break and tag", "", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
     init_searchproc_left(init_break_only);
@@ -46,9 +44,9 @@ break_selected()
     set_cursor(pick15_cursor);
 }
 
-static
+static void
 init_break_only(p, type, x, y, px, py, loc_tag)
-    char	   *p;
+    F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
@@ -57,9 +55,9 @@ init_break_only(p, type, x, y, px, py, loc_tag)
     init_break(p, type, x, y, px, py, 0);
 }
 
-static
+static void
 init_break_tag(p, type, x, y, px, py, loc_tag)
-    char	   *p;
+    F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;
@@ -68,9 +66,9 @@ init_break_tag(p, type, x, y, px, py, loc_tag)
     init_break(p, type, x, y, px, py, 1);
 }
 
-static
+static void
 init_break(p, type, x, y, px, py, loc_tag)
-    char	   *p;
+    F_line	   *p;
     int		    type;
     int		    x, y;
     int		    px, py;

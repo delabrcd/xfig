@@ -1,23 +1,19 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Enter Compound written by Bill Taylor (bill@mainstream.com) 1994
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-1998 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1994 by Bill Taylor
- * Parts Copyright (c) 1994 by Brian V. Smith
+ *       "Enter Compound" written by Bill Taylor (bill@mainstream.com) 1994
  *
- * The X Consortium, and any party obtaining a copy of these files from
- * the X Consortium, directly or indirectly, is granted, free of charge, a
+ * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software subject to the restriction stated
- * below, and to permit persons who receive copies from any such party to
- * do so, with the only requirement being that this copyright notice remain
- * intact.
- * This license includes without limitation a license to do the foregoing
- * actions under any patents of the party supplying this software to the 
- * X Consortium.
+ * and/or sell copies of the Software, and to permit persons who receive
+ * copies from any such party to do so, with the only requirement being
+ * that this copyright notice remain intact.
  *
  */
 
@@ -44,20 +40,18 @@ Widget	close_compound_popup;
 Boolean	close_popup_isup = False;
 
 static void
-init_open_compound(p, type, x, y, px, py, loc_tag)
-    char	   *p;
+init_open_compound(c, type, x, y, px, py, loc_tag)
+    F_compound	   *c;
     int		    type;
     int		    x, y;
     int		    px, py;
     int 	    loc_tag;
 {
-  F_compound *c;
   F_compound *d;
 
   if (type != O_COMPOUND)
     return;
 
-  c = (F_compound *) p;
   mask_toggle_compoundmarker(c);
 
   c->parent = d = malloc(sizeof(F_compound));
@@ -75,11 +69,10 @@ open_compound()
   /* prepatory functions done for mode operations by sel_mode_but */
   update_markers((int)M_COMPOUND);
 
-  set_mousefun("open compound", "", "", "", "", "");
+  set_mousefun("open compound", "", "", LOC_OBJ, LOC_OBJ, LOC_OBJ);
   canvas_kbd_proc = null_proc;
   canvas_locmove_proc = null_proc;
   init_searchproc_left(init_open_compound);
-  init_searchproc_middle(null_proc);
   canvas_leftbut_proc = object_search_left;
   canvas_middlebut_proc = null_proc;
   canvas_rightbut_proc = null_proc;
@@ -93,15 +86,8 @@ close_compound()
   F_compound *d;		/* Destination */
 
   /* if trying to close compound while drawing an object, don't allow it */
-  if (action_on) {
-    if (cur_mode == F_TEXT)
-	finish_text_input();		/* finish up any text input */
-    else {
-	put_msg("Finish (or cancel) the current operation before closing compound");
-	beep();
+  if (check_action_on())
 	return;
-    }
-  }
   if (c = (F_compound *)objects.parent) {
     objects.parent = NULL;
     d = (F_compound *)objects.GABPtr;	/* Where this compound was */
@@ -133,15 +119,8 @@ close_all_compounds()
   F_compound *d;		/* Destination */
 
   /* if trying to close compound while drawing an object, don't allow it */
-  if (action_on) {
-    if (cur_mode == F_TEXT)
-	finish_text_input();		/* finish up any text input */
-    else {
-	put_msg("Finish (or cancel) the current operation before closing compounds");
-	beep();
+  if (check_action_on())
 	return;
-    }
-  }
   if (objects.parent) {
     while (c = (F_compound *)objects.parent) {
       objects.parent = NULL;
@@ -172,13 +151,11 @@ popup_close_compound()
     Widget	    close_compoundw, close_compound_allw;
     int		    xposn, yposn;
     Window	    win;
-    XEvent	    event;
-    extern Atom	    wm_delete_window;
 
     DeclareArgs(10);
 
     /* put the window in the upper-left corner of the canvas */
-    XTranslateCoordinates(tool_d, canvas_win, XDefaultRootWindow(tool_d),
+    XTranslateCoordinates(tool_d, main_canvas, XDefaultRootWindow(tool_d),
 			  20, 20, &xposn, &yposn, &win);
     FirstArg(XtNallowShellResize, True);
     NextArg(XtNx, xposn);
