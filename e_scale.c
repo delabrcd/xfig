@@ -4,14 +4,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -781,9 +777,15 @@ scale_ellipse(e, sx, sy, refx, refy)
     e->radiuses.x = abs(round(e->radiuses.x * sx));
     e->radiuses.y = abs(round(e->radiuses.y * sy));
     /* if this WAS a circle and is NOW an ellipse, change type to reflect */
-    if (e->type == T_CIRCLE_BY_RAD || e->type == T_CIRCLE_BY_DIA)
+    if (e->type == T_CIRCLE_BY_RAD || e->type == T_CIRCLE_BY_DIA) {
 	if (e->radiuses.x != e->radiuses.y)
 	    e->type -= 2;
+    }
+    /* conversely, if this WAS an ellipse and is NOW a circle, change type */
+    else if (e->type == T_ELLIPSE_BY_RAD || e->type == T_ELLIPSE_BY_DIA) {
+	if (e->radiuses.x == e->radiuses.y)
+	    e->type += 2;
+    }
 }
 
 scale_text(t, sx, sy, refx, refy)
@@ -798,6 +800,8 @@ scale_text(t, sx, sy, refx, refy)
 	t->height = round(t->height * sx);
 	t->length = round(t->length * sx);
     }
+    /* rescale font */
+    reload_text_fstruct(t);
 }
 
 

@@ -1,18 +1,13 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Added by Brian V. Smith
+ * Copyright (c) 1991 by Brian V. Smith
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -42,8 +37,8 @@ static int	(*font_setimage) ();
 
 /********************  local variables	***************************/
 
-static MENUITEM ps_fontmenu_items[NUM_PS_FONTS + 1];
-static MENUITEM latex_fontmenu_items[NUM_LATEX_FONTS];
+static MenuItemRec ps_fontmenu_items[NUM_PS_FONTS + 1];
+static MenuItemRec latex_fontmenu_items[NUM_LATEX_FONTS];
 
 static void	fontpane_select();
 static void	fontpane_cancel();
@@ -72,7 +67,7 @@ init_fontmenu(tool)
 {
     TOOL	    tmp_but;
     register int    i;
-    register MENUITEM *mi;
+    register MenuItemRec *mi;
     XtTranslations  pane_actions;
 
     DeclareArgs(8);
@@ -269,7 +264,7 @@ fontpane_select(w, closure, call_data)
     XtPointer call_data;
 {
     TOOL	    widget = (TOOL) w;
-    MENUITEM	   *mi = (MENUITEM *) closure;
+    MenuItemRec	   *mi = (MenuItemRec *) closure;
     char	   *font_name = mi->label;
 
     if (*flag_sel)

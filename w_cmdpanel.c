@@ -4,17 +4,11 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
-
-/* IMPORTS */
 
 #include "fig.h"
 #include "figx.h"
@@ -45,8 +39,8 @@ void		setup_cmd_panel();
 static void	sel_cmd_but();
 static void	enter_cmd_but();
 void		quit();
-static void	delete_all_cmd();
-static void	paste();
+void		delete_all_cmd();
+void		paste();
 
 /* cmd panel definitions */
 #define CMD_LABEL_LEN	16
@@ -166,7 +160,7 @@ setup_cmd_panel()
 	SetValues(sw->widget);
 	/* install the keyboard accelerators for this command button 
 	   from the resources */
-	XtInstallAllAccelerators(sw->widget, tool);
+	/*XtInstallAllAccelerators(sw->widget, tool);*/
     }
 }
 
@@ -249,17 +243,19 @@ quit(w)
     if (batch_exists)
 	unlink(batch_file);
 
+    /* free all the GC's */
+    free_GCs();
     XtDestroyWidget(tool);
     exit(0);
 }
 
-static void
+void
 paste()
 {
     merge_file(cut_buf_name);
 }
 
-static void
+void
 delete_all_cmd()
 {
     if (emptyfigure()) {

@@ -1,17 +1,13 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1991 by Brian V. Smith
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -27,9 +23,6 @@
 extern Boolean	file_msg_is_popped;
 extern Widget	file_msg_popup;
 
-/* global so we can update export filename */
-extern char	default_export_file[];
-
 extern String	text_translations;
 static char	load_msg[] = "The current figure is modified.\nDo you want to discard it and load the new file?";
 static char	buf[40];
@@ -41,12 +34,12 @@ static Widget	cancel, save, merge, load;
 static Widget	file_w;
 static Position xposn, yposn;
 static String	file_name_translations =
-	"<Key>Return: LoadFile()\n";
-static void	do_load(), file_panel_cancel(), do_merge();
-void		do_save();
+	"<Key>Return: load()\n";
+static void	file_panel_cancel(), do_merge();
+void		do_load(), do_save();
 static XtActionsRec	file_name_actions[] =
 {
-    {"LoadFile", (XtActionProc) do_load},
+    {"load", (XtActionProc) do_load},
 };
 static String	file_translations =
 	"<Message>WM_PROTOCOLS: DismissFile()\n";
@@ -107,41 +100,44 @@ do_merge(w, ev)
 	file_panel_dismiss();
 }
 
-static void
+void
 do_load(w, ev)
     Widget	    w;
     XButtonEvent   *ev;
 {
     char	   *fval, *dval;
 
-    FirstArg(XtNstring, &dval);
-    GetValues(file_dir);
-    FirstArg(XtNstring, &fval);
-    GetValues(file_selfile);	/* check the ascii widget for a filename */
-    if (emptyname(fval))
-	fval = cur_filename;	/* "Filename" widget empty, use current filename */
+    if (file_popup) {
+	FirstArg(XtNstring, &dval);
+	GetValues(file_dir);
+	FirstArg(XtNstring, &fval);
+	GetValues(file_selfile);	/* check the ascii widget for a filename */
+	if (emptyname(fval))
+	    fval = cur_filename;	/* "Filename" widget empty, use current filename */
 
-    if (emptyname_msg(fval, "LOAD"))
-	return;
-
-    if (!emptyfigure() && figure_modified) {
-	XtSetSensitive(load, False);
-	if (!popup_query(QUERY_YES, load_msg)) {
-	    XtSetSensitive(load, True);
+	if (emptyname_msg(fval, "LOAD"))
 	    return;
-	}
-	XtSetSensitive(load, True);
-    }
-    if (change_directory(dval) == 0) {
-	if (load_file(fval) == 0)
-	    {
-	    FirstArg(XtNlabel, fval);
-	    SetValues(cfile_text);		/* set the current filename */
-	    if (fval != cur_filename)
-		strcpy(cur_filename,fval);	/* and copy to cur_filename */
-	    update_def_filename();		/* and the default export filename */
-	    file_panel_dismiss();
+
+	if (!emptyfigure() && figure_modified) {
+	    XtSetSensitive(load, False);
+	    if (!popup_query(QUERY_YES, load_msg)) {
+		XtSetSensitive(load, True);
+		return;
 	    }
+	    XtSetSensitive(load, True);
+	}
+	if (change_directory(dval) == 0) {
+	    if (load_file(fval) == 0) {
+		FirstArg(XtNlabel, fval);
+		SetValues(cfile_text);		/* set the current filename */
+		if (fval != cur_filename)
+			update_cur_filename(fval);	/* and update cur_filename */
+		update_def_filename();		/* and the default export filename */
+		file_panel_dismiss();
+	    }
+	}
+    } else {
+	(void) load_file(cur_filename);
     }
 }
 
@@ -151,22 +147,22 @@ do_save(w)
 {
     char	   *fval, *dval;
 
+    if (emptyfigure_msg("Save"))
+	return;
+
     if (file_popup) {
 	FirstArg(XtNstring, &fval);
 	GetValues(file_selfile);	/* check the ascii widget for a filename */
-	if (emptyname(fval))
+	if (emptyname(fval)) {
 	    fval = cur_filename;	/* "Filename" widget empty, use current filename */
+	    warnexist = False;		/* don't warn if this file exists */
 	/* copy the name from the file_name widget to the current filename */
-	else
+	} else
 	    {
-	    FirstArg(XtNlabel, fval);
-	    SetValues(cfile_text);
-	    if (fval != cur_filename)
-		    strcpy(cur_filename,fval);	/* and copy to cur_filename */
-	    update_def_filename();		/* and the default export filename */
+	    warnexist = True;			/* warn if this file exists */
 	    }
 
-	if (emptyname_msg(fval, "SAVE"))
+	if (emptyname_msg(fval, "Save"))
 	    return;
 
 	/* get the directory from the ascii widget */
@@ -176,13 +172,20 @@ do_save(w)
 	if (change_directory(dval) == 0) {
 	    XtSetSensitive(save, False);
 	    if (write_file(fval) == 0) {
-		strcpy(cur_filename, fval);	/* save as current filename */
+		FirstArg(XtNlabel, fval);
+		SetValues(cfile_text);
+		if (strcmp(fval,cur_filename) != 0) {
+		    update_cur_filename(fval);	/* update cur_filename */
+		    update_def_filename();	/* update the default export filename */
+		}
 		reset_modifiedflag();
 		file_panel_dismiss();
 	    }
 	    XtSetSensitive(save, True);
 	}
     } else {
+	/* not using popup => filename not changed so ok to write existing file */
+	warnexist = False;			
 	if (write_file(cur_filename) == 0)
 	    reset_modifiedflag();
     }
@@ -229,6 +232,7 @@ create_file_panel(w)
 {
 	Widget		   file, dir, beside, below;
 	PIX_FONT	   temp_font;
+	static int	   actions_added=0;
 	file_w = w;
 	XtTranslateCoords(w, (Position) 0, (Position) 0, &xposn, &yposn);
 
@@ -240,7 +244,6 @@ create_file_panel(w)
 					tool, Args, ArgCount);
 	XtOverrideTranslations(file_popup,
 			   XtParseTranslationTable(file_translations));
-	XtAppAddActions(tool_app, file_actions, XtNumber(file_actions));
 
 	file_panel = XtCreateManagedWidget("file_panel", formWidgetClass,
 					   file_popup, NULL, ZERO);
@@ -304,8 +307,12 @@ create_file_panel(w)
 	XtOverrideTranslations(file_selfile,
 			   XtParseTranslationTable(text_translations));
 
-	/* add action to load file */
-	XtAppAddActions(tool_app, file_name_actions, XtNumber(file_name_actions));
+	if (!actions_added) {
+	    XtAppAddActions(tool_app, file_actions, XtNumber(file_actions));
+	    actions_added = 1;
+	    /* add action to load file */
+	    XtAppAddActions(tool_app, file_name_actions, XtNumber(file_name_actions));
+	}
 
 	/* make <return> in the filename window load the file */
 	XtOverrideTranslations(file_selfile,

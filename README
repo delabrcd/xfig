@@ -29,11 +29,13 @@ INSTALLATION NOTES:
 	.Xdefaults or .Xresources file.
 	NOTE: this only works under X11R5.
 
-If your system doesn't have strstr(), add the flag -DNOSTRSTR in your Imakefile
+If your system doesn't have the signal SIGBUS, add the flag -DNO_SIBGUS in the
+   Imakefile DEFINES line.
+If your system doesn't have strstr(), add the flag -DNOSTRSTR in the Imakefile
    in the DEFINES line.
-If your system doesn't have strtol(), add the flag -DNOSTRTOL in your Imakefile
+If your system doesn't have strtol(), add the flag -DNOSTRTOL in the Imakefile
    in the DEFINES line.
-If you are running on an IBM RS/6000 with AIX 3.2, add the flag -DDPS in your
+If you are running on an IBM RS/6000 with AIX 3.2, add the flag -DDPS in the
    Imakefile and uncomment the line that says 
 	LOCAL_LIBRARIES = -ldps XawClientLibs
    and you will see the full PostScript object when using EPS objects.
@@ -84,6 +86,14 @@ line for this problem.
 Possible problems encountered installing xfig:
 ----------------------------------------------
 
+PROBLEM:
+	On a DEC Alpha the compiler may complain about something like: ".mask
+	must have pcreg from .frame set if any bits are set in .mask or .fmask"
+	in the file u_bound.c.
+
+POSSIBLE CAUSE AND SOLUTION:
+	Set the optimization level to -O1 at least for that file.
+________________________________________________________________________________
 PROBLEM:
 	On Sun machines the linker may give erroneous error messages about 
 	the following symbols being undefined:

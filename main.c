@@ -4,28 +4,30 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
 #include "figx.h"
 #include "version.h"
 #include "patchlevel.h"
+#include "resources.h"
 #include "object.h"
 #include "mode.h"
-#include "resources.h"
 #include "u_fonts.h"
 #include "w_drawprim.h"
 #include "w_mousefun.h"
 #include "w_setup.h"
 #include "w_util.h"
+
+/************** EXTERNAL functions **************/
+
+extern void	quit(), undo(), paste(), redisplay_canvas(), delete_all_cmd();
+extern void	popup_print_panel(), popup_file_panel(), popup_export_panel();
+extern void	do_load(), do_save(), popup_unit_panel();
 
 extern void	setup_cmd_panel();
 extern		X_error_handler();
@@ -43,12 +45,28 @@ static		sigwinched();
 
 /************** FIG options ******************/
 
-TOOL		tool;
 static char    *filename = NULL;
 
 static Boolean	true = True;
 static Boolean	false = False;
 static int	zero = 0;
+static float	one = 1.0;
+
+/* actions so that we may install accelerators at the top level */
+static XtActionsRec	main_actions[] =
+{
+    {"Quit", (XtActionProc) quit},
+    {"Delete_all", (XtActionProc) delete_all_cmd},
+    {"Undo", (XtActionProc) undo},
+    {"Redraw", (XtActionProc) redisplay_canvas},
+    {"Paste", (XtActionProc) paste},
+    {"File", (XtActionProc) popup_file_panel},
+      {"LoadFile", (XtActionProc) do_load},
+      {"SaveFile", (XtActionProc) do_save},
+    {"Export", (XtActionProc) popup_export_panel},
+    {"Print", (XtActionProc) popup_print_panel},
+    {"Units", (XtActionProc) popup_unit_panel},
+};
 
 static XtResource application_resources[] = {
     {"iconGeometry",  "IconGeometry",  XtRString,  sizeof(char *),
@@ -71,19 +89,19 @@ static XtResource application_resources[] = {
     XtOffset(appresPtr, TRACKING), XtRBoolean, (caddr_t) & true},
     {"inches", "Inches", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, INCHES), XtRBoolean, (caddr_t) & true},
-    {"boldFont", "BoldFont", XtRString, sizeof(char *),
+    {"boldFont", "Font", XtRString, sizeof(char *),
     XtOffset(appresPtr, boldFont), XtRString, (caddr_t) NULL},
-    {"normalFont", "NormalFont", XtRString, sizeof(char *),
+    {"normalFont", "Font", XtRString, sizeof(char *),
     XtOffset(appresPtr, normalFont), XtRString, (caddr_t) NULL},
-    {"buttonFont", "ButtonFont", XtRString, sizeof(char *),
+    {"buttonFont", "Font", XtRString, sizeof(char *),
     XtOffset(appresPtr, buttonFont), XtRString, (caddr_t) NULL},
     {"startlatexFont", "StartlatexFont", XtRString, sizeof(char *),
     XtOffset(appresPtr, startlatexFont), XtRString, (caddr_t) NULL},
     {"startpsFont", "StartpsFont", XtRString, sizeof(char *),
     XtOffset(appresPtr, startpsFont), XtRString, (caddr_t) NULL},
-    {"startfontsize", "StartFontSize", XtRFloat, sizeof(float),
+    {"startfontsize", "StartFontSize", XtRInt, sizeof(int),
     XtOffset(appresPtr, startfontsize), XtRInt, (caddr_t) & zero},
-    {"internalborderwidth", "InternalBorderWidth", XtRFloat, sizeof(float),
+    {"internalborderwidth", "InternalBorderWidth", XtRInt, sizeof(int),
     XtOffset(appresPtr, internalborderwidth), XtRInt, (caddr_t) & zero},
     {"latexfonts", "Latexfonts", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, latexfonts), XtRBoolean, (caddr_t) & false},
@@ -119,6 +137,10 @@ static XtResource application_resources[] = {
     XtOffset(appresPtr, flushleft), XtRBoolean, (caddr_t) & false},
     {"textoutline", "TextOutline", XtRBoolean, sizeof(Boolean),
     XtOffset(appresPtr, textoutline), XtRBoolean, (caddr_t) & false},
+    {"userscale", "UserScale", XtRFloat, sizeof(float),
+    XtOffset(appresPtr, user_scale), XtRFloat, (caddr_t) & one},
+    {"userunit", "UserUnit", XtRString, sizeof(char *),
+    XtOffset(appresPtr, user_unit), XtRString, (caddr_t) ""},
 };
 
 static XrmOptionDescRec options[] =
@@ -151,6 +173,7 @@ static XrmOptionDescRec options[] =
     {"-latexfonts", ".latexfonts", XrmoptionNoArg, "True"},
     {"-specialtext", ".specialtext", XrmoptionNoArg, "True"},
     {"-scalablefonts", ".scalablefonts", XrmoptionNoArg, "True"},
+    {"-noscalablefonts", ".scalablefonts", XrmoptionNoArg, "False"},
     {"-monochrome", ".monochrome", XrmoptionNoArg, "True"},
     {"-internalBW", ".internalborderwidth", XrmoptionSepArg, 0},
     {"-internalBorderWidth", ".internalborderwidth", XrmoptionSepArg, 0},
@@ -158,6 +181,8 @@ static XrmOptionDescRec options[] =
     {"-exportLanguage", ".exportLanguage", XrmoptionSepArg, 0},
     {"-flushleft", ".flushleft", XrmoptionNoArg, "True"},
     {"-textoutline", ".textoutline", XrmoptionNoArg, "True"},
+    {"-userscale", ".userscale", XrmoptionSepArg, 0},
+    {"-userunit", ".userunit", XrmoptionSepArg, 0},
 };
 
 Atom wm_delete_window;
@@ -221,7 +246,7 @@ main(argc, argv)
     if ((TMPDIR = getenv("XFIGTMPDIR"))==NULL)
 	TMPDIR = "/tmp";
 
-    (void) sprintf(tool_name, " XFIG %s.%s  (protocol: %s)",
+    (void) sprintf(tool_name, " XFIG %s(.%s) (Protocol %s)",
 		   FIG_VERSION, PATCHLEVEL, PROTOCOL_VERSION);
     (void) strcat(file_header, PROTOCOL_VERSION);
     tool = XtAppInitialize(&tool_app, (String) "Fig", (XrmOptionDescList) options,
@@ -241,6 +266,9 @@ main(argc, argv)
 #endif
 			   (Cardinal) 0);
 
+
+    /* install actions to get to the functions with accelerators */
+    XtAppAddActions(tool_app, main_actions, XtNumber(main_actions));
 
     fix_converters();
     XtGetApplicationResources(tool, &appres, application_resources,
@@ -286,6 +314,11 @@ main(argc, argv)
     /* turn off PSFONT_TEXT flag if user specified -latexfonts */
     if (appres.latexfonts)
 	cur_textflags = cur_textflags & (~PSFONT_TEXT);
+
+    if (appres.user_unit)
+	strncpy(cur_fig_units, appres.user_unit, sizeof(cur_fig_units));
+    else
+	cur_fig_units[0] = '\0';
 
     if (CellsOfScreen(tool_s) == 2 && appres.INVERSE) {
 	XrmValue	value;
@@ -371,7 +404,7 @@ main(argc, argv)
     }
     setup_sizes(init_canv_wd, init_canv_ht);
     (void) init_cmd_panel(form);
-    (void) init_msg(form);
+    (void) init_msg(form,filename);
     (void) init_mousefun(form);
     (void) init_mode_panel(form);
     (void) init_topruler(form);
@@ -383,8 +416,8 @@ main(argc, argv)
 
     ichild = 0;
     children[ichild++] = cmd_panel;	/* command buttons */
-    children[ichild++] = msg_panel;	/* message window */
     children[ichild++] = mousefun;	/* labels for mouse fns */
+    children[ichild++] = msg_form;	/* message window form */
     children[ichild++] = mode_panel;	/* current mode */
     children[ichild++] = topruler_sw;	/* top ruler */
     children[ichild++] = unitbox_sw;	/* box containing units */
@@ -431,7 +464,7 @@ main(argc, argv)
 
 	FirstArg(XtNfromHoriz, 0);
 	NextArg(XtNhorizDistance, 0);
-	NextArg(XtNfromVert, msg_panel);
+	NextArg(XtNfromVert, msg_form);
 	NextArg(XtNleft, XtChainLeft);	/* chain to left of form */
 	NextArg(XtNright, XtChainLeft);
 	SetValues(unitbox_sw);
@@ -477,7 +510,7 @@ main(argc, argv)
 	accelerators are installed in their respective setup_xxx procedures */
     XtInstallAllAccelerators(canvas_sw, tool);
     XtInstallAllAccelerators(mousefun, tool);
-    XtInstallAllAccelerators(msg_panel, tool);
+    XtInstallAllAccelerators(msg_form, tool);
     XtInstallAllAccelerators(topruler_sw, tool);
     XtInstallAllAccelerators(sideruler_sw, tool);
     XtInstallAllAccelerators(unitbox_sw, tool);
@@ -496,7 +529,9 @@ main(argc, argv)
     XSetIOErrorHandler((XIOErrorHandler) X_error_handler);
     (void) signal(SIGHUP, error_handler);
     (void) signal(SIGFPE, error_handler);
+#ifndef NO_SIBGUS
     (void) signal(SIGBUS, error_handler);
+#endif
     (void) signal(SIGSEGV, error_handler);
     (void) signal(SIGINT, SIG_IGN);	/* in case user accidentally types
 					 * ctrl-c */
@@ -520,6 +555,7 @@ main(argc, argv)
 	strcpy(cur_filename, DEF_NAME);
     else
 	load_file(filename);
+    update_cur_filename(cur_filename);
 
     app_flush();
 
@@ -529,7 +565,7 @@ main(argc, argv)
 static void
 check_for_resize(tool, event, params, nparams)
     TOOL	    tool;
-    INPUTEVENT	   *event;
+    XButtonEvent   *event;
     String	   *params;
     Cardinal	   *nparams;
 {
@@ -554,13 +590,13 @@ check_for_resize(tool, event, params, nparams)
     /* first redo the top panels */
     GetValues(cmd_panel);
     XtResizeWidget(cmd_panel, CMDPANEL_WD, CMDPANEL_HT, b);
-    GetValues(msg_panel);
-    XtResizeWidget(msg_panel, MSGPANEL_WD, MSGPANEL_HT, b);
     GetValues(mousefun);
     XtResizeWidget(mousefun, MOUSEFUN_WD, MOUSEFUN_HT, b);
     XtUnmanageChild(mousefun);
     resize_mousefun();
     XtManageChild(mousefun);	/* so that it shifts with msg_panel */
+    /* resize the message form by setting the current filename */
+    update_cur_filename(cur_filename);
 
     /* now redo the center area */
     XtUnmanageChild(mode_panel);
@@ -732,7 +768,7 @@ strtol(nptr, endptr, base)
 	cutoff = neg ? -(unsigned long)LONG_MIN : LONG_MAX;
 	cutlim = cutoff % (unsigned long)base;
 	cutoff /= (unsigned long)base;
-	for (acc = 0, any = 0;; c = *s++) {
+	for (acc = 0, any = 0; c = *s++) {
 		if (isdigit(c))
 			c -= '0';
 		else if (isalpha(c))

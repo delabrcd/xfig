@@ -1,17 +1,13 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1991 by Paul King
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -128,11 +124,11 @@ static mode_sw_info mode_switches[] = {
     {&align_ic, F_ALIGN, align_selected, M_COMPOUND,
     I_ALIGN, "ALIGN objects within a COMPOUND or to CANVAS",},
     {&movept_ic, F_MOVE_POINT, move_point_selected, M_NO_TEXT,
-    I_MIN2, "MOVE POINTs",},
+    I_ADDMOVPT, "MOVE POINTs",},
     {&move_ic, F_MOVE, move_selected, M_ALL,
     I_MIN3, "MOVE objects",},
     {&addpt_ic, F_ADD_POINT, point_adding_selected, M_VARPTS_OBJECT,
-    I_MIN1, "ADD POINTs (to lines, polygons and splines)",},
+    I_ADDMOVPT, "ADD POINTs (to lines, polygons and splines)",},
     {&copy_ic, F_COPY, copy_selected, M_ALL,
     I_MIN3, "COPY objects",},
     {&deletept_ic, F_DELETE_POINT, delete_point_selected, M_VARPTS_OBJECT,
@@ -206,7 +202,7 @@ init_mode_panel(tool)
     NextArg(XtNvSpace, INTERNAL_BW);
     NextArg(XtNtop, XtChainTop);
     NextArg(XtNbottom, XtChainTop);
-    NextArg(XtNfromVert, msg_panel);
+    NextArg(XtNfromVert, msg_form);
     NextArg(XtNvertDistance, -INTERNAL_BW);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainLeft);
@@ -372,6 +368,18 @@ force_nopositioning()
 {
     update_indpanel(current->indmask & ~I_POINTPOSN);
     anypointposn = 1;
+}
+
+void
+force_anglegeom()
+{
+    update_indpanel(current->indmask | I_ANGLEGEOM);
+}
+
+void
+force_noanglegeom()
+{
+    update_indpanel(current->indmask & ~I_ANGLEGEOM);
 }
 
 static void

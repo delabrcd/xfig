@@ -6,14 +6,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -33,6 +29,7 @@
 #include "w_mousefun.h"
 
 extern char    *panel_get_value();
+extern PIX_ROT_FONT lookfont();
 Widget		make_popup_menu();
 static Widget	make_color_popup_menu();
 
@@ -808,7 +805,7 @@ make_window_text(t)
     xy_panel(new_t->base_x, new_t->base_y, "Origin:", &x1_panel, &y1_panel);
     font_image_panel(new_psflag ? psfont_menu_bitmaps[new_t->font + 1] :
 		 latexfont_menu_bitmaps[new_t->font], "Font:", &font_panel);
-    str_panel(new_t->cstring, "Text =", &text_panel);
+    str_panel(new_t->cstring, "Text:", &text_panel);
 }
 
 static
@@ -842,8 +839,10 @@ get_new_text_values()
     s = panel_get_value(text_panel);
     new_t->cstring = new_string(strlen(s) + 1);
     strcpy(new_t->cstring, s);
-    size = pf_textwidth(new_t->font, psfont_text(new_t), new_t->size,
-			strlen(s), s);
+    canvas_font = lookfont(x_fontnum(new_t->flags, new_t->font), 
+			new_t->size, new_t->angle*180.0/M_PI);
+    new_t->fontstruct = canvas_font;
+    size = pf_textwidth(canvas_font, strlen(s), s);
     new_t->height = size.y;
     new_t->length = size.x;
 }
@@ -1838,11 +1837,9 @@ str_panel(string, label, pi_x)
 	    nlines++;
 	}
     }
-    if (nlines > 6)		/* limit to displaying 6 lines and show
-				 * scrollbars */
-	nlines = 6;
-    if (nlines == 1)		/* if only one line, allow space for
-				 * scrollbar */
+    if (nlines > 4)	/* limit to displaying 4 lines and show scrollbars */
+	nlines = 4;
+    if (nlines == 1)	/* if only one line, allow space for scrollbar */
 	nlines = 2;
     FirstArg(XtNfromVert, below);
     NextArg(XtNstring, string);
@@ -1850,7 +1847,8 @@ str_panel(string, label, pi_x)
     NextArg(XtNfromHoriz, beside);
     NextArg(XtNeditType, "edit");
     NextArg(XtNwidth, width);
-    NextArg(XtNheight, char_height(temp_font) * nlines + 4);
+    /* allow enough height for scrollbar */
+    NextArg(XtNheight, char_height(temp_font) * nlines + 10);
     NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
     NextArg(XtNscrollVertical, XawtextScrollWhenNeeded);
 
@@ -2316,7 +2314,6 @@ int *format;
 	char *c, *p;
 	int i;
 	char s[256];
-	char *strchr();
 
 	strcpy (s, panel_get_value(client_data));
 	p = strchr(s, '\0');

@@ -4,14 +4,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -48,9 +44,9 @@
 #define			SRM_HT			16
 
 extern		pan_origin();
+GC		tr_gc, tr_xor_gc, tr_erase_gc;
+GC		sr_gc, sr_xor_gc, sr_erase_gc;
 
-static GC	tr_gc, tr_xor_gc, tr_erase_gc;
-static GC	sr_gc, sr_xor_gc, sr_erase_gc;
 static int	lasty = -100, lastx = -100;
 static int	troffx = -8, troffy = -10;
 static int	orig_zoomoff;
@@ -160,17 +156,30 @@ erase_rulermark()
 
 /************************* UNITBOX ************************/
 
+extern Widget   make_popup_menu();
+extern Atom     wm_delete_window;
+extern char    *panel_get_value();
+void popup_unit_panel();
+static int      rul_unit_setting, fig_unit_setting=0, fig_scale_setting=0;
+static Widget   rul_unit_panel, fig_unit_panel, fig_scale_panel;
+static Widget   rul_unit_menu, fig_unit_menu, fig_scale_menu;
+static Widget   scale_factor_lab, scale_factor_panel;
+static Widget   user_unit_lab, user_unit_panel;
+
+
 XtActionsRec	unitbox_actions[] =
 {
     {"EnterUnitBox", (XtActionProc) draw_mousefun_unitbox},
     {"LeaveUnitBox", (XtActionProc) clear_mousefun},
     {"HomeRulers", (XtActionProc) pan_origin},
+    {"PopupUnits", (XtActionProc) popup_unit_panel},
 };
 
 static String	unitbox_translations =
 "<EnterWindow>:EnterUnitBox()\n\
     <LeaveWindow>:LeaveUnitBox()\n\
-    <Btn1Down>:HomeRulers()\n";
+    <Btn1Down>:HomeRulers()\n\
+    <Btn3Down>:PopupUnits()\n";
 
 int
 init_unitbox(tool)
@@ -182,7 +191,7 @@ init_unitbox(tool)
     NextArg(XtNfont, button_font);
     NextArg(XtNfromHoriz, canvas_sw);
     NextArg(XtNhorizDistance, -INTERNAL_BW);
-    NextArg(XtNfromVert, mousefun);
+    NextArg(XtNfromVert, msg_form);
     NextArg(XtNvertDistance, -INTERNAL_BW);
     NextArg(XtNresizable, False);
     NextArg(XtNtop, XtChainTop);
@@ -190,6 +199,15 @@ init_unitbox(tool)
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainLeft);
     NextArg(XtNborderWidth, INTERNAL_BW);
+
+    if (strlen(cur_fig_units))
+	fig_unit_setting = 1;
+    else {
+	strcpy(cur_fig_units, appres.INCHES ? "in" : "cm");
+    }
+
+    if (appres.user_scale != 1.0)
+	fig_scale_setting = 1;
 
     unitbox_sw = XtCreateWidget("unitbox", labelWidgetClass, tool,
 				Args, ArgCount);
@@ -199,6 +217,267 @@ init_unitbox(tool)
     return (1);
 }
 
+static String   unit_translations =
+        "<Message>WM_PROTOCOLS: QuitUnits()\n";
+static void     unit_panel_cancel(), unit_panel_set();
+static XtActionsRec     unit_actions[] =
+{
+    {"QuitUnits", (XtActionProc) unit_panel_cancel},
+    {"SetUnit", (XtActionProc) unit_panel_set},
+};
+
+static Widget	unit_popup, form, cancel, set, beside, below, newvalue,
+		label;
+
+/* handle unit/scale settings */
+
+static void
+unit_panel_dismiss()
+{
+    XtDestroyWidget(unit_popup);
+    XtSetSensitive(unitbox_sw, True);
+}
+
+static void
+unit_panel_cancel(w, ev)
+    Widget	    w;
+    XButtonEvent   *ev;
+{
+    unit_panel_dismiss();
+}
+
+static void
+unit_panel_set(w, ev)
+    Widget	    w;
+    XButtonEvent   *ev;
+{
+    int old_rul_unit;
+    char	    buf[32];
+
+    old_rul_unit = appres.INCHES;
+    appres.INCHES = rul_unit_setting ? 1 : 0;
+    init_grid();	/* change point positioning messages if necessary */
+    if (fig_scale_setting)
+	appres.user_scale = (float) atof(panel_get_value(scale_factor_panel));
+    else
+	appres.user_scale = 1.0;
+
+    if (fig_unit_setting) {
+        strncpy(cur_fig_units,
+	    panel_get_value(user_unit_panel),
+	    sizeof(cur_fig_units));
+	put_msg("Ruler scale: %s,  Figure scale: 1 %s = %.2f %s",
+		appres.INCHES ? "in" : "cm",
+		appres.INCHES ? "in" : "cm",
+		appres.user_scale, cur_fig_units);
+    } else {
+	strcpy(cur_fig_units, appres.INCHES ? "in" : "cm");
+	put_msg("Ruler scale: %s,  Figure scale = 1:%.2f",
+		appres.INCHES ? "in" : "cm", appres.user_scale);
+    }
+
+    if (old_rul_unit != appres.INCHES)
+	reset_rulers();
+    unit_panel_dismiss();
+}
+
+static void
+fig_unit_select(w, new_unit, garbage)
+    Widget          w;
+    XtPointer       new_unit, garbage;
+{
+    FirstArg(XtNlabel, XtName(w));
+    SetValues(fig_unit_panel);
+    fig_unit_setting = (int) new_unit;
+    XtSetSensitive(user_unit_lab, fig_unit_setting ? True : False);
+    XtSetSensitive(user_unit_panel, fig_unit_setting ? True : False);
+    put_msg(fig_unit_setting ? "user defined figure units"
+			     : "figure units = ruler units");
+}
+
+static void
+fig_scale_select(w, new_scale, garbage)
+    Widget          w;
+    XtPointer       new_scale, garbage;
+{
+    FirstArg(XtNlabel, XtName(w));
+    SetValues(fig_scale_panel);
+    fig_scale_setting = (int) new_scale;
+    XtSetSensitive(scale_factor_lab, fig_scale_setting ? True : False);
+    XtSetSensitive(scale_factor_panel, fig_scale_setting ? True : False);
+    put_msg(fig_scale_setting ? "user defined scale factor"
+			     : "figure scale = 1:1");
+}
+
+static void
+rul_unit_select(w, new_unit, garbage)
+    Widget          w;
+    XtPointer       new_unit, garbage;
+{
+    FirstArg(XtNlabel, XtName(w));
+    SetValues(rul_unit_panel);
+    rul_unit_setting = (int) new_unit;
+    if (rul_unit_setting)
+	put_msg("ruler scale : centimetres");
+    else
+	put_msg("ruler scale : inches");
+}
+
+void
+popup_unit_panel()
+{
+    Position	    x_val, y_val;
+    Dimension	    width, height;
+    char	    buf[32];
+    static int      actions_added=0;
+    static char    *rul_unit_items[] = {
+    "Metric (cm)  ", "Imperial (in)"};
+    static char    *fig_unit_items[] = {
+    "Ruler units ", "User defined"};
+    static char    *fig_scale_items[] = {
+    "Unity       ", "User defined"};
+
+    FirstArg(XtNwidth, &width);
+    NextArg(XtNheight, &height);
+    GetValues(tool);
+    /* position the popup 2/3 in from left and 1/3 down from top */
+    XtTranslateCoords(tool, (Position) (2 * width / 3), (Position) (height / 3),
+		      &x_val, &y_val);
+
+    FirstArg(XtNx, x_val);
+    NextArg(XtNy, y_val);
+    NextArg(XtNwidth, 240);
+
+    unit_popup = XtCreatePopupShell("xfig_set_unit_panel",
+				    transientShellWidgetClass, tool,
+				    Args, ArgCount);
+    XtOverrideTranslations(unit_popup,
+                       XtParseTranslationTable(unit_translations));
+    if (!actions_added) {
+        XtAppAddActions(tool_app, unit_actions, XtNumber(unit_actions));
+	actions_added = 1;
+    }
+
+    form = XtCreateManagedWidget("form", formWidgetClass, unit_popup, NULL, 0);
+
+    FirstArg(XtNborderWidth, 0);
+    sprintf(buf, "      Unit/Scale settings");
+    label = XtCreateManagedWidget(buf, labelWidgetClass, form, Args, ArgCount);
+
+    /* make ruler units menu */
+
+    rul_unit_setting = appres.INCHES ? 1 : 0;
+    FirstArg(XtNfromVert, label);
+    NextArg(XtNborderWidth, 0);
+    beside = XtCreateManagedWidget("Ruler Units  =", labelWidgetClass,
+                                   form, Args, ArgCount);
+
+    FirstArg(XtNfromVert, label);
+    NextArg(XtNfromHoriz, beside);
+    rul_unit_panel = XtCreateManagedWidget(rul_unit_items[rul_unit_setting],
+				menuButtonWidgetClass, form, Args, ArgCount);
+    below = rul_unit_panel;
+    rul_unit_menu = make_popup_menu(rul_unit_items, XtNumber(rul_unit_items),
+                                     rul_unit_panel, rul_unit_select);
+
+    /* make figure units menu */
+
+    FirstArg(XtNfromVert, below);
+    NextArg(XtNborderWidth, 0);
+    beside = XtCreateManagedWidget("Figure units =", labelWidgetClass,
+                                   form, Args, ArgCount);
+
+    FirstArg(XtNfromVert, below);
+    NextArg(XtNfromHoriz, beside);
+    fig_unit_panel = XtCreateManagedWidget(fig_unit_items[fig_unit_setting],
+				menuButtonWidgetClass, form, Args, ArgCount);
+    below = fig_unit_panel;
+    fig_unit_menu = make_popup_menu(fig_unit_items, XtNumber(fig_unit_items),
+                                     fig_unit_panel, fig_unit_select);
+
+    /* user defined units */
+
+    FirstArg(XtNfromVert, below);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNlabel, "Unit Name =");
+    user_unit_lab = XtCreateManagedWidget("user_units",
+                                labelWidgetClass, form, Args, ArgCount);
+
+    FirstArg(XtNfromVert, below);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    NextArg(XtNfromHoriz, label);
+    NextArg(XtNstring, cur_fig_units);
+    NextArg(XtNinsertPosition, strlen(buf));
+    NextArg(XtNeditType, "append");
+    NextArg(XtNwidth, 40);
+    user_unit_panel = XtCreateManagedWidget(buf, asciiTextWidgetClass,
+                                    form, Args, ArgCount);
+    below = user_unit_panel;
+
+    /* make figure scale menu */
+
+    FirstArg(XtNfromVert, below);
+    NextArg(XtNborderWidth, 0);
+    beside = XtCreateManagedWidget("Figure scale =", labelWidgetClass,
+                                   form, Args, ArgCount);
+
+    FirstArg(XtNfromVert, below);
+    NextArg(XtNfromHoriz, beside);
+    fig_scale_panel = XtCreateManagedWidget(fig_scale_items[fig_scale_setting],
+				menuButtonWidgetClass, form, Args, ArgCount);
+    below = fig_scale_panel;
+    fig_scale_menu = make_popup_menu(fig_scale_items, XtNumber(fig_scale_items),
+                                     fig_scale_panel, fig_scale_select);
+
+    /* scale factor widget */
+
+    FirstArg(XtNfromVert, below);
+    NextArg(XtNborderWidth, 0);
+    NextArg(XtNlabel, "Scale factor =");
+    scale_factor_lab = XtCreateManagedWidget("scale_factor",
+                                labelWidgetClass, form, Args, ArgCount);
+
+    sprintf(buf, "%1.2f", appres.user_scale);
+    FirstArg(XtNfromVert, below);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    NextArg(XtNfromHoriz, label);
+    NextArg(XtNstring, buf);
+    NextArg(XtNinsertPosition, strlen(buf));
+    NextArg(XtNeditType, "append");
+    NextArg(XtNwidth, 40);
+    scale_factor_panel = XtCreateManagedWidget(buf, asciiTextWidgetClass,
+                                        form, Args, ArgCount);
+    below = scale_factor_panel;
+
+    /* standard cancel/set buttons */
+
+    FirstArg(XtNlabel, "cancel");
+    NextArg(XtNfromVert, below);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
+				   form, Args, ArgCount);
+    XtAddEventHandler(cancel, ButtonReleaseMask, (Boolean) 0,
+		      (XtEventHandler)unit_panel_cancel, (XtPointer) NULL);
+
+    FirstArg(XtNlabel, "set");
+    NextArg(XtNfromVert, below);
+    NextArg(XtNfromHoriz, cancel);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    set = XtCreateManagedWidget("set", commandWidgetClass,
+				form, Args, ArgCount);
+    XtAddEventHandler(set, ButtonReleaseMask, (Boolean) 0,
+		      (XtEventHandler)unit_panel_set, (XtPointer) NULL);
+
+    XtPopup(unit_popup, XtGrabExclusive);
+
+    XtSetSensitive(user_unit_lab, fig_unit_setting ? True : False);
+    XtSetSensitive(user_unit_panel, fig_unit_setting ? True : False);
+    XtSetSensitive(scale_factor_lab, fig_scale_setting ? True : False);
+    XtSetSensitive(scale_factor_panel, fig_scale_setting ? True : False);
+
+    (void) XSetWMProtocols(XtDisplay(unit_popup), XtWindow(unit_popup),
+                           &wm_delete_window, 1);
+}
 /************************* TOPRULER ************************/
 
 XtActionsRec	topruler_actions[] =
@@ -221,7 +500,7 @@ static String	topruler_translations =
 static
 topruler_selected(tool, event, params, nparams)
     TOOL	    tool;
-    INPUTEVENT	   *event;
+    XButtonEvent   *event;
     String	   *params;
     Cardinal	   *nparams;
 {
@@ -300,7 +579,7 @@ set_toprulermark(x)
 static
 topruler_exposed(tool, event, params, nparams)
     TOOL	    tool;
-    INPUTEVENT	   *event;
+    XButtonEvent   *event;
     String	   *params;
     Cardinal	   *nparams;
 {
@@ -323,7 +602,7 @@ init_topruler(tool)
     NextArg(XtNlabel, "");
     NextArg(XtNfromHoriz, mode_panel);
     NextArg(XtNhorizDistance, -INTERNAL_BW);
-    NextArg(XtNfromVert, msg_panel);
+    NextArg(XtNfromVert, msg_form);
     NextArg(XtNvertDistance, -INTERNAL_BW);
     NextArg(XtNresizable, False);
     NextArg(XtNtop, XtChainTop);
@@ -381,6 +660,7 @@ setup_topruler()
 				trm_pr.height, DefaultDepthOfScreen(tool_s));
     XPutImage(tool_d, toparrow_pm, tr_xor_gc, &trm_pr, 0, 0, 0, 0,
 	      trm_pr.width, trm_pr.height);
+    XFreeGC(tool_d, tr_xor_gc);
 
     /* now make the real xor gc */
     gcv.background = bg;
@@ -410,7 +690,7 @@ reset_topruler()
 {
     register int    i, j;
     register Pixmap p = topruler_pm;
-    char	    number[3];
+    char	    number[4];
     int		    X0;
 
     /* top ruler, adjustments for digits are kludges based on 6x13 char */
@@ -483,7 +763,7 @@ static String	sideruler_translations =
 static
 sideruler_selected(tool, event, params, nparams)
     TOOL	    tool;
-    INPUTEVENT	   *event;
+    XButtonEvent   *event;
     String	   *params;
     Cardinal	   *nparams;
 {
@@ -543,7 +823,7 @@ sideruler_selected(tool, event, params, nparams)
 static
 sideruler_exposed(tool, event, params, nparams)
     TOOL	    tool;
-    INPUTEVENT	   *event;
+    XButtonEvent   *event;
     String	   *params;
     Cardinal	   *nparams;
 {
@@ -633,6 +913,7 @@ setup_sideruler()
 	XPutImage(tool_d, sidearrow_pm, sr_xor_gc, &srrm_pr, 0, 0, 0, 0,
 		  srrm_pr.width, srrm_pr.height);
     }
+    XFreeGC(tool_d, sr_xor_gc);
 
     /* now make the real xor gc */
     gcv.background = bg;
@@ -661,7 +942,7 @@ reset_sideruler()
 {
     register int    i, j;
     register Pixmap p = sideruler_pm;
-    char	    number[3];
+    char	    number[4];
     int		    Y0;
 
     /* side ruler, adjustments for digits are kludges based on 6x13 char */

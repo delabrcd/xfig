@@ -4,14 +4,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -151,15 +147,19 @@ init_rotatetext(t, px, py)
 {
     F_text	   *text;
 
+    set_temp_cursor(wait_cursor);
     text = copy_text(t);
-    rotate_text(text, t->base_x, t->base_y, rotn_dirn);
+    rotate_text(text, px, py, rotn_dirn);
     if (copy) {
 	add_text(text);
     } else {
 	toggle_textmarker(t);
+	draw_text(t, ERASE);
 	change_text(t, text);
     }
+    draw_text(text, PAINT);
     toggle_textmarker(text);
+    reset_cursor();
 }
 
 init_rotateellipse(e, px, py)
@@ -315,11 +315,12 @@ rotate_text(t, x, y, rotn_dirn)
     } else {
 	rotate_xy(&t->base_x, &t->base_y, x, y, rotn_dirn);
     }
-    t->angle -= (float) (rotn_dirn * cur_rotnangle * M_PI / 180);
-    if (t->angle < 0)
-	t->angle += 2 * M_PI;
-    else if (t->angle >= 2 * M_PI)
-	t->angle -= 2 * M_PI;
+    t->angle -= (float) (rotn_dirn * cur_rotnangle * M_PI / 180.0);
+    if (t->angle < 0.0)
+	t->angle += M_2PI;
+    else if (t->angle >= M_2PI - 0.001)
+	t->angle -= M_2PI;
+    reload_text_fstruct(t);
 }
 
 rotate_ellipse(e, x, y, rotn_dirn)
@@ -344,10 +345,10 @@ rotate_ellipse(e, x, y, rotn_dirn)
 	rotate_point(&e->end, x, y, rotn_dirn);
     }
     e->angle -= (float) (rotn_dirn * cur_rotnangle * M_PI / 180);
-    if (e->angle < 0)
-	e->angle += 2 * M_PI;
-    else if (e->angle >= 2 * M_PI)
-	e->angle -= 2 * M_PI;
+    if (e->angle < 0.0)
+	e->angle += M_2PI;
+    else if (e->angle >= M_2PI - 0.001)
+	e->angle -= M_2PI;
 }
 
 rotate_arc(a, x, y, rotn_dirn)
@@ -457,11 +458,11 @@ rotate_point(p, x, y, rotn)
 	return;
 
     theta = compute_angle((float) dx, (float) dy);
-    theta -= (float) (rotn_dirn * cur_rotnangle * M_PI / 180);
-    if (theta < 0)
-	theta += 2 * M_PI;
-    else if (theta >= 2 * M_PI)
-	theta -= 2 * M_PI;
+    theta -= (float) (rotn_dirn * cur_rotnangle * M_PI / 180.0);
+    if (theta < 0.0)
+	theta += M_2PI;
+    else if (theta >= M_2PI - 0.001)
+	theta -= M_2PI;
     mag = sqrt((double) (dx * dx + dy * dy));
     cosa = mag * cos((double) theta);
     sina = mag * sin((double) theta);
@@ -482,11 +483,11 @@ rotate_xy(orig_x, orig_y, x, y, rotn)
 	return;
 
     theta = compute_angle((float) dx, (float) dy);
-    theta -= (float) (rotn_dirn * cur_rotnangle * M_PI / 180);
-    if (theta < 0)
-	theta += 2 * M_PI;
-    else if (theta >= 2 * M_PI)
-	theta -= 2 * M_PI;
+    theta -= (float) (rotn_dirn * cur_rotnangle * M_PI / 180.0);
+    if (theta < 0.0)
+	theta += M_2PI;
+    else if (theta >= M_2PI - 0.001)
+	theta -= M_2PI;
     mag = sqrt((double) (dx * dx + dy * dy));
     cosa = mag * cos((double) theta);
     sina = mag * sin((double) theta);

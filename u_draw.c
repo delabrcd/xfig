@@ -1,24 +1,15 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1990 by Brian V. Smith
+ * Copyright (c) 1992 by James Tough
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
- */
-
-/*
- * Routines for drawing and filling objects under the following headings:
- *	ARC, ELLIPSE, LINE, SPLINE, TEXT, COMPOUND,
- *	ARROWS, CURVES FOR ARCS AND ELLIPSES, CURVES FOR SPLINES.
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -33,8 +24,7 @@
 #include "w_zoom.h"
 
 typedef unsigned char byte;
-
-#define			PI		3.14159
+extern PIX_ROT_FONT lookfont();
 
 /************** POLYGON/CURVE DRAWING FACILITIES ****************/
 
@@ -123,7 +113,7 @@ draw_arc(a, op)
 	  round(a->center.y - a->point[0].y),
 	  round(a->point[2].x - a->center.x),
 	  round(a->center.y - a->point[2].y),
-	  a->direction, radius, radius,
+	  a->direction, 7*radius, radius, radius,
 	  round(a->center.x), round(a->center.y), op,
 	  a->thickness, a->style, a->style_val, a->fill_style, a->color);
 
@@ -147,12 +137,15 @@ draw_ellipse(e, op)
 	angle_ellipse(e->center.x, e->center.y, e->radiuses.x, e->radiuses.y, 
 		e->angle, op, e->thickness, e->style, 
 		e->style_val, e->fill_style, e->color);
+    /* it is much faster to use curve() for dashed and dotted lines that to
+       use the server's sloooow algorithms for that */
     } else if (op != ERASE && (e->style == DOTTED_LINE || e->style == DASH_LINE)) {
 	a = e->radiuses.x;
 	b = e->radiuses.y;
-	curve(canvas_win, a, 0, a, 0, e->direction, (b * b), (a * a),
+	curve(canvas_win, a, 0, a, 0, e->direction, 7*max2(a,b), (b * b), (a * a),
 	      e->center.x, e->center.y, op,
 	      e->thickness, e->style, e->style_val, e->fill_style, e->color);
+    /* however, for solid lines the server is muuuch faster even for thick lines */
     } else {
 	xmin = e->center.x - e->radiuses.x;
 	ymin = e->center.y - e->radiuses.y;
@@ -299,7 +292,7 @@ angle_ellipse(center_x, center_y, radius_x, radius_y, angle,
 	double	xleft, xright, d, asqr, bsqr;
 	int	ymax, yy=0;
 	int	k,m,dir;
-	float	savezoom;
+	float	savezoom, savexoff, saveyoff;
 	int	zoomthick;
 	XPoint	*ipnts;
 
@@ -317,7 +310,10 @@ angle_ellipse(center_x, center_y, radius_x, radius_y, angle,
 	if (zoomthick == 0 && thickness != 0)
 		zoomthick=1;
 	savezoom = zoomscale;
+	savexoff = zoomxoff;
+	saveyoff = zoomyoff;
 	zoomscale = 1.0;
+	zoomxoff = zoomyoff = 0.0;
 
 	cphi = cos((double)angle);
 	sphi = sin((double)angle);
@@ -383,6 +379,8 @@ angle_ellipse(center_x, center_y, radius_x, radius_y, angle,
 		 fill_style, color);
 
 	zoomscale = savezoom;
+	zoomxoff = savexoff;
+	zoomyoff = saveyoff;
 	return;
 }
 
@@ -455,11 +453,11 @@ draw_line(line, op)
 	    ymin = min3(p0->y, p1->y, p2->y);
 	    xmax = max3(p0->x, p1->x, p2->x);
 	    ymax = max3(p0->y, p1->y, p2->y);
-	    txt = pf_textwidth(0, 0, 12, strlen(string), string);
+	    canvas_font = lookfont(0, 12, 0.0);	/* get a size 12 font */
+	    txt = pf_textwidth(canvas_font, strlen(string), string);
 	    x = (xmin + xmax) / 2 - txt.x / 2;
 	    y = (ymin + ymax) / 2;
-	    pw_text(canvas_win, x, y, op, 0, 0, 12, string,
-		    DEFAULT_COLOR);
+	    pw_text(canvas_win, x, y, op, canvas_font, string, DEFAULT_COLOR);
 	    /* return; */
 	}
     }
@@ -833,12 +831,13 @@ draw_text(text, op)
     int		    op;
 {
     PR_SIZE	    size;
-    int		    x;
+    int		    x,y;
+    float	    angle;
     int		    xmin, ymin, xmax, ymax;
     int		    x1,y1, x2,y2, x3,y3, x4,y4;
 
-    if (appres.textoutline)
-	text_bound_actual(text, &xmin, &ymin, &xmax, &ymax, 
+    if (appres.textoutline)	/* get corners of rectangle at actual angle */
+	text_bound_both(text, &xmin, &ymin, &xmax, &ymax, 
 			  &x1,&y1, &x2,&y2, &x3,&y3, &x4,&y4);
     else
 	text_bound(text, &xmin, &ymin, &xmax, &ymax);
@@ -848,28 +847,47 @@ draw_text(text, op)
 	return;
 
     /* outline the text bounds in red if textoutline resource is set */
-    if (appres.textoutline) {
-	pw_vector(canvas_win, x1, y1, x2, y2, PAINT, 1, RUBBER_LINE, 0.0, 4);
-	pw_vector(canvas_win, x2, y2, x3, y3, PAINT, 1, RUBBER_LINE, 0.0, 4);
-	pw_vector(canvas_win, x3, y3, x4, y4, PAINT, 1, RUBBER_LINE, 0.0, 4);
-	pw_vector(canvas_win, x4, y4, x1, y1, PAINT, 1, RUBBER_LINE, 0.0, 4);
+    if (appres.textoutline && !hidden_text(text)) {
+	pw_vector(canvas_win, x1, y1, x2, y2, op, 1, RUBBER_LINE, 0.0, 4);
+	pw_vector(canvas_win, x2, y2, x3, y3, op, 1, RUBBER_LINE, 0.0, 4);
+	pw_vector(canvas_win, x3, y3, x4, y4, op, 1, RUBBER_LINE, 0.0, 4);
+	pw_vector(canvas_win, x4, y4, x1, y1, op, 1, RUBBER_LINE, 0.0, 4);
     }
 
     x = text->base_x;
+    y = text->base_y;
+    angle = text->angle*180.0/M_PI;
     if (text->type == T_CENTER_JUSTIFIED || text->type == T_RIGHT_JUSTIFIED) {
-	size = pf_textwidth(text->font, psfont_text(text), text->size,
-			    strlen(text->cstring), text->cstring);
-	if (text->type == T_CENTER_JUSTIFIED)
-	    x -= size.x / 2;
-	else
-	    x -= size.x;
+	size = pf_textwidth(text->fontstruct, strlen(text->cstring), 
+			    text->cstring);
+	size.x = size.x/zoomscale;
+	if (text->type == T_CENTER_JUSTIFIED) {
+	    if (angle < 90.0 - 0.001)
+		x -= size.x / 2;	/*   0 to  89 degrees */
+	    else if (angle < 180.0 - 0.001)
+		y += size.x / 2;	/*  90 to 179 degrees */
+	    else if (angle < 270.0 - 0.001)
+		x += size.x / 2;	/* 180 to 269 degrees */
+	    else 
+		y -= size.x / 2;	/* 270 to 359 degrees */
+
+	} else {	/* T_RIGHT_JUSTIFIED */
+	    if (angle < 90.0 - 0.001)
+		x -= size.x;		/*   0 to  89 degrees */
+	    else if (angle < 180.0 - 0.001)
+		y += size.x;		/*  90 to 179 degrees */
+	    else if (angle < 270.0 - 0.001)
+		x += size.x;		/* 180 to 269 degrees */
+	    else 
+		y -= size.x;		/* 270 to 359 degrees */
+	}
     }
     if (hidden_text(text))
-	pw_text(canvas_win, x, text->base_y, op, 0, 0, 12,
+	pw_text(canvas_win, x, y, op, lookfont(0,12,text->angle),
 		hidden_text_string, DEFAULT_COLOR);
     else
-	pw_text(canvas_win, x, text->base_y,
-		op, text->font, psfont_text(text), text->size, text->cstring, text->color);
+	pw_text(canvas_win, x, y, op, text->fontstruct,
+		text->cstring, text->color);
 }
 
 /*********************** COMPOUND ***************************/
@@ -886,7 +904,8 @@ draw_compoundelements(c, op)
     F_arc	   *a;
     F_compound	   *c1;
 
-    if (!overlapping(c->nwcorner.x, c->nwcorner.y, c->secorner.x, c->secorner.y,
+    if (!overlapping(ZOOMX(c->nwcorner.x), ZOOMY(c->nwcorner.y), 
+		     ZOOMX(c->secorner.x), ZOOMY(c->secorner.y),
 		     clip_xmin, clip_ymin, clip_xmax, clip_ymax))
 	return;
 
@@ -984,11 +1003,11 @@ draw_arcarrows(a, op)
 
 ****************************************************************/
 
-curve(window, xstart, ystart, xend, yend, direction,
+curve(window, xstart, ystart, xend, yend, direction, estnpts,
       a, b, xoff, yoff, op, thick, style, style_val, fill_style, color)
     Window	    window;
     int		    xstart, ystart, xend, yend, a, b, xoff, yoff;
-    int		    direction, op, thick, style, fill_style;
+    int		    direction, estnpts, op, thick, style, fill_style;
     float	    style_val;
     int		    color;
 {
@@ -1000,7 +1019,7 @@ curve(window, xstart, ystart, xend, yend, direction,
     if (a == 0 || b == 0)
 	return;
 
-    if (!init_point_array(a + b + 1, a + b))	/* the +1 is for end point */
+    if (!init_point_array(estnpts,estnpts/2)) /* estimate of number of points */
 	return;
 
     x = xstart;
@@ -1021,14 +1040,13 @@ curve(window, xstart, ystart, xend, yend, direction,
     if (xstart == xend && ystart == yend) {
 	test_succeed = margin = 1;
     } else {
-	test_succeed = 3;
-	margin = 3;
+	test_succeed = margin = 1;
     }
 
-    while (test_succeed) {
-	if (!add_point(xoff + x, yoff - y))
-	    break;
-
+    if (!add_point(xoff + x, yoff - y))
+	/* (error) */ ;
+    else
+      while (test_succeed) {
 	deltax = (dfy < 0) ? inc : dec;
 	deltay = (dfx < 0) ? dec : inc;
 	fx = falpha + dfx * deltax + a;
@@ -1051,11 +1069,14 @@ curve(window, xstart, ystart, xend, yend, direction,
 	y += deltay;
 	dfx += (dfxx * deltax);
 	dfy += (dfyy * deltay);
+	if (!add_point(xoff + x, yoff - y))
+	    break;
+
 	if (abs(x - xend) < margin && abs(y - yend) < margin)
 	    test_succeed--;
     }
 
-    if (margin == 1)		/* end points should touch */
+    if (xstart == xend && ystart == yend)	/* end points should touch */
 	add_point(xoff + xstart, yoff - ystart);
 
     draw_point_array(window, op, thick, style, style_val, fill_style, color);

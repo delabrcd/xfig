@@ -4,14 +4,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -22,7 +18,7 @@ char	       *colorNames[] = {"Default", "Black", "Blue", "Green", "Cyan",
 Boolean		all_colors_available;
 
 appresStruct	appres;
-PIXWIN		canvas_win, msg_win, sideruler_win, topruler_win;
+Window		canvas_win, msg_win, sideruler_win, topruler_win;
 
 Cursor		cur_cursor;
 Cursor		arrow_cursor, bull_cursor, buster_cursor, crosshair_cursor,
@@ -35,7 +31,8 @@ XtAppContext	tool_app;
 
 TOOLSW		canvas_sw, ps_fontmenu, /* printer font menu tool */
 		latex_fontmenu, /* printer font menu tool */
-		msg_panel, cmd_panel, mode_panel, d_label, e_label, mousefun,
+		msg_form, msg_panel, name_panel, cmd_panel, mode_panel, 
+		d_label, e_label, mousefun,
 		ind_viewp, ind_panel,	/* indicator panel */
 		unitbox_sw, sideruler_sw, topruler_sw;
 
@@ -44,11 +41,14 @@ Screen	       *tool_s;
 int		tool_sn;
 
 GC		gc, bold_gc, button_gc, ind_button_gc, color_gc, mouse_button_gc,
-		blank_gc, ind_blank_gc, mouse_blank_gc, gccache[0x10],
+		blank_gc, ind_blank_gc, mouse_blank_gc, gccache[NUMOPS],
 		fillgc, fill_gc[NUMFILLPATS],	/* fill style gc's */
 		black_fill_gc[NUMFILLPATS],
 		un_fill_gc[NUMFILLPATS],	/* unfill gc's */
-		black_un_fill_gc[NUMFILLPATS];
+		black_un_fill_gc[NUMFILLPATS],
+		tr_gc, tr_xor_gc, tr_erase_gc,	/* for the rulers */
+		sr_gc, sr_xor_gc, sr_erase_gc;
+
 Pixmap		fill_pm[NUMFILLPATS];
 XColor		x_fg_color, x_bg_color;
 Boolean		writing_bitmap;

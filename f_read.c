@@ -4,26 +4,23 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
 #include "figx.h"
+#include "resources.h"
 #include "object.h"
 #include "mode.h"
-#include "resources.h"
 #include "u_fonts.h"
 #include "u_create.h"
 #include "version.h"
 #include "w_setup.h"
 #include "w_util.h"
+#include "w_zoom.h"
 
 /* file popup information */
 extern Widget	file_popup;	/* the popup itself */
@@ -161,7 +158,8 @@ readfp_fig(fp, obj)
     }
 
     /* shift the figure on the page if there are negative coords */
-    shift_figure(obj);	
+    /**** DISABLE UNTIL WE PUT IN AN *OPTION* TO DO THIS */
+    /* shift_figure(obj); */
 
     fclose(fp);
     return (status);
@@ -713,6 +711,7 @@ read_textobject(fp)
     int		    ignore = 0;
     char	    s[BUF_SIZE], s_temp[BUF_SIZE], junk[2];
     float	    tx_size, tx_height, tx_length;
+    extern PIX_ROT_FONT lookfont();
 
     if ((t = create_text()) == NULL)
 	return (NULL);
@@ -743,6 +742,13 @@ read_textobject(fp)
 	t->size = DEFAULT;
     else
 	t->size = round(tx_size);
+    while (t->angle < 0.0)
+	t->angle += M_2PI;
+    while (t->angle > M_2PI)
+	t->angle -= M_2PI;
+    /* get the font struct */
+    t->fontstruct = lookfont(x_fontnum(t->flags, t->font), 
+			round(t->size*zoomscale), t->angle);  
     t->height = round(tx_height);
     t->length = round(tx_length);
     fixdepth(&t->depth);
@@ -894,7 +900,7 @@ F_compound	   *obj;
 	}
     for (t = obj->texts; t != NULL; t = t->next) {
 	int   dum;
-	text_bound_actual(t, &llx, &lly, &urx, &ury, 
+	text_bound_actual(t, t->angle, &llx, &lly, &urx, &ury, 
 			  &dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
 	lowx = min2(llx,lowx);
 	lowy = min2(lly,lowy);
@@ -1038,6 +1044,7 @@ popup_file_msg()
     				XSetWMProtocols(XtDisplay(file_msg_popup), 
 						XtWindow(file_msg_popup),
 			       			&wm_delete_window, 1);
+				grabbed = False;
 				}
 			}
 		file_msg_is_popped = True;
@@ -1100,5 +1107,6 @@ popup_file_msg()
     		XSetWMProtocols(XtDisplay(file_msg_popup), 
 				XtWindow(file_msg_popup),
 			       	&wm_delete_window, 1);
+		grabbed = False;
 		}
 }

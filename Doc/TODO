@@ -1,5 +1,10 @@
 This file contains some possible things to do in future versions of xfig.
 
+allow rotated boxes (not just polygons)
+reduce number of grid lines (if necessary) when zooming < 1.0
+fix grid rounding problems at 0.75 zoom factor
+allow printing of grid in figure
+make the rulers understand the real screen resolution according to the server
 add the concept of "layers" for each depth.  That way a user may work on 
 	certain layers at one time, masking out or overlaying the other layers
 	as desired.
@@ -9,14 +14,8 @@ make <Shift>middle mouse button DELETE previous points just created during
 create resource for "print" command (e.g. lp, lpr, whatever) which uses meta-
 	notation to place filename (e.g.  print_command: "lpr -P%p %f" where %p
 	is the printer string and %f is the filename)
-put text FLAGS in indicator buttons
-use floating point coordinates for objects (at least internally to xfig if not
-	in the figure file)
-super/subscripts for text objects
 make line counter update correctly when reading multiple-line POLYLINES and
 	SPLINES from input file
-add at least 90-degree rotated text using pixmaps
-fix grid rounding problems at 0.75 zoom factor
 allow vertically-aligned text
   "top" would mean the insertion point specifies the line over the top of the
         text
@@ -27,28 +26,22 @@ allow vertically-aligned text
         For example, g and j extend below the baseline.
   "bottom" would mean the time under the bottom of the text including
         descenders.
-allow background color for figure and store in fig file - also requires that
-	fig2dev knows about this background color
-allow printing of grid in figure
 have arc sub-type 2 for pie wedge-type arcs
 have common edit popup for all four splines to allow conversion between all
-allow fractional text sizes (float)
 save modified_flag before file operations and restore if undo used
 Should arrow size change in update mode when linewidth changes?
 investigate whether eps objects that don't have a preview bitmap
 	are scaled correctly
-add ability to change arrow size from edit panel
 change eps_bitmaps so that background is transparent (needs to work
 	in normal and reverse-video modes).
 Make popup windows come up so that they don't overlap the figure (if possible).
 	An edit popup window should at least not overlap the
 	object being edited (again only if possible).
-Possibly make extension to Fig protocol to handle several line 
-	cap/join styles (e.g. round, butt, miter)
 Use fill pattern (grey-shading) to mimic color objects on monochrome systems.
 Extend smart links to work for SCALE, MOVEPT and perhaps EDIT, UPDATE.
 	Could also extend them to work for arc-type links and for
-	ellipse/circle objects.  Also, at the moment smart-links
+	ellipse/circle objects and objects inside compound objects.  
+	Also, at the moment smart-links
 	only work for one end of a link if both ends of the link
 	happen to touch the object being operated on.  To fix this would
 	require changing the F_linkinfo structure to have left_endpt,
@@ -61,7 +54,7 @@ investigate if we should be setting initialResourcesPersistent to false for
 	widgets that are created and destroyed as required.
 Still need to think about how point positioning should be utilized with
 	many of the editing commands, e.g. if point positioning is set to
-	large grid and you atr trying to move an object, should:
+	large grid and you are trying to move an object, should:
 	a) it be ignored, b) you can pick up an object anywhere but
 	you must put the 'pick-up' point back on a grid posn,
 	c) you have to pick up and put down objects at grid posns,
@@ -108,10 +101,9 @@ Generalize align mode (like glue mode) to allow arbitrary tagged objects to be
 Additional align mode options for distributing objects evenly within a compound
 	or abutting them together: abutT, abutB, abutL, abutR, distH, distV
 Some facility to provide better support for small screens.
-	e.g. scrollable indicator button list or automatic resizing
-	to have several rows as needed.  Similarly for mode panel.
-	A good test is to limit the total space to 640x480 so that
-	it is still useable on an IBM-PC VGA screen.
+	e.g. scrollable mode button list or automatic resizing
+	to have several rows as needed.  A good test is to limit the total 
+	space to 640x480 so that it is still useable on an IBM-PC VGA screen.
 Make a raise/lower depth feature:
 	the raise_ic icon is already in w_icons.c
 Make xfig understand depth better:
@@ -121,8 +113,25 @@ Make xfig understand depth better:
 	This would involve finding the depth of all overlapping (filled?)
 	objects and setting the depth to be one less.
 	What about support for negative depth values?
+
+--------------------------------------------------------------------
+The following items would require a change to the Fig file protocol:
+--------------------------------------------------------------------
+
+extend color model to include 24-bit color
+use floating point coordinates for objects (at least internally to xfig if not
+	in the figure file)
+super/subscripts for text objects
+allow background color for figure and store in fig file - also requires that
+	fig2dev knows about this background color
+allow fractional text sizes (float)
+possibly make extension to Fig protocol to handle several line 
+	cap/join styles (e.g. round, butt, miter)
+
+--------------------------------------------------------------------
 What really needs to be done is a major rework of the list structures used
 	to store xfig objects.  Here are some comments involving the change.
+
 -------- note about restructuring xfig data structures -------------
 Rather than having a depth attribute for objects, you can use the order
 in which objects are entered to determine their depth:  later objects
@@ -159,3 +168,4 @@ next_arc routines.  Then as we had time we could replace whichever
 sets of six loops by a single loop which did
         for (o=first_obj(); o!=NULL; o=next_obj(o)) ...
 -------- end of note about restructuring xfig data structures -------------
+

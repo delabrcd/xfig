@@ -11,8 +11,10 @@
 	Fig*sideruler.background:	grey95
 	Fig*sideruler.foreground:	black
 ! Message panel
-	Fig*message.background:		white
-	Fig*message.foreground:		black
+	Fig*file_name.background:	lightskyblue
+	Fig*file_name.foreground:	black
+	Fig*message*background:		white
+	Fig*message*foreground:		black
 ! Command (top) panel
 	Fig*commands*background:	grey85
 	Fig*commands*foreground:	black

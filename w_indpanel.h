@@ -1,17 +1,13 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1991 by Paul King
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 /* indicator button selection */
@@ -37,14 +33,16 @@
 #define I_LINKMODE	0x040000
 #define I_DEPTH		0x080000
 #define I_ELLTEXTANGLE	0x100000
+#define I_TEXTFLAGS	0x200000
 
 #define I_NONE		0x000000
-#define I_ALL		0x0fffff
+#define I_ALL		0x3fffff
 #define I_MIN1		(I_GRIDMODE | I_ZOOM)
 #define I_MIN2		(I_MIN1 | I_POINTPOSN)
 #define I_MIN3		(I_MIN2 | I_LINKMODE)
+#define I_ADDMOVPT	(I_MIN2 | I_ANGLEGEOM)
 #define I_TEXT0		(I_TEXTJUST | I_FONT | I_FONTSIZE | I_COLOR | \
-				I_DEPTH | I_ELLTEXTANGLE)
+				I_DEPTH | I_ELLTEXTANGLE | I_TEXTFLAGS)
 #define I_TEXT		(I_MIN2 | I_TEXTSTEP | I_TEXT0)
 #define I_LINE0		(I_FILLSTYLE | I_LINESTYLE | I_LINEWIDTH | \
 				I_COLOR | I_DEPTH)

@@ -4,22 +4,18 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
+#include "resources.h"
 #include "object.h"
 #include "mode.h"
 #include "u_list.h"
 #include "w_zoom.h"
-#include "resources.h"
 
 #define TOLERANCE 3
 
@@ -215,12 +211,12 @@ next_spline_found(x, y, tolerance, px, py, shift)
 }
 
 char
-next_text_found(x, y, tolerance, dummy1, dummy2, shift)
-    int		    x, y;
-    int		    tolerance, dummy1, dummy2, shift;
+next_text_found(x, y, tolerance, px, py, shift)
+    int		    x, y, tolerance, *px, *py;
+    int		    shift;
 {
     int		    halflen, dx, dy;
-    int		    txmin, txmax, tymin, tymax, dum;
+    int		    txmin, txmax, tymin, tymax;
 
     if (!anytext_in_mask())
 	return (0);
@@ -232,15 +228,13 @@ next_text_found(x, y, tolerance, dummy1, dummy2, shift)
     for (; t != NULL; t = prev_text(objects.texts, t))
 	if (validtext_in_mask(t)) {
 	    n++;
-	    if (appres.textoutline) {
-		text_bound_actual(t, &txmin, &tymin, &txmax, &tymax,
-				&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
-	    } else {
-		text_bound(t, &txmin, &tymin, &txmax, &tymax);
-	    }
+	    text_bound(t, &txmin, &tymin, &txmax, &tymax);
 	    if (x >= txmin-tolerance && x <= txmax+tolerance &&
-	        y >= tymin-tolerance && y <= tymax+tolerance)
+	        y >= tymin-tolerance && y <= tymax+tolerance) {
+			*px = x;
+			*py = y;
 			return (1);
+	    }
 	}
     return (0);
 }
@@ -767,23 +761,13 @@ text_search(x, y)
     int		    x, y;
 {
     F_text	   *t;
-    int		    length;
+    int		    xmin, xmax, ymin, ymax;
 
     for (t = objects.texts; t != NULL; t = t->next) {
-	if (t->base_y - t->height > y)
-	    continue;
-	if (t->base_y < y)
-	    continue;
-	length = text_length(t);
-	if (((t->type == T_LEFT_JUSTIFIED) && t->base_x > x) ||
-	  ((t->type == T_CENTER_JUSTIFIED) && t->base_x - length / 2 > x) ||
-	    ((t->type == T_RIGHT_JUSTIFIED) && t->base_x - length > x))
-	    continue;
-	if (((t->type == T_LEFT_JUSTIFIED) && t->base_x + length < x) ||
-	  ((t->type == T_CENTER_JUSTIFIED) && t->base_x + length / 2 < x) ||
-	    ((t->type == T_RIGHT_JUSTIFIED) && t->base_x < x))
-	    continue;
-	return (t);
+	text_bound(t, &xmin, &ymin, &xmax, &ymax);
+	if (x >= xmin && x <= xmax &&
+	    y >= ymin && y <= ymax)
+		return(t);
     }
     return (NULL);
 }

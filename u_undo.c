@@ -4,14 +4,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 /**************** IMPORTS ****************/
@@ -379,13 +375,14 @@ undo_move()
 	if (appres.textoutline) {
 		text_bound_both(saved_objects.texts, &xmin1, &ymin1, &xmax1, &ymax1,
 			&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
+		translate_text(saved_objects.texts, dx, dy);
 		text_bound_both(saved_objects.texts, &xmin2, &ymin2, &xmax2, &ymax2,
 			&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
 	} else {
 		text_bound(saved_objects.texts, &xmin1, &ymin1, &xmax1, &ymax1);
+		translate_text(saved_objects.texts, dx, dy);
 		text_bound(saved_objects.texts, &xmin2, &ymin2, &xmax2, &ymax2);
 	}
-	translate_text(saved_objects.texts, dx, dy);
 	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
 			  xmin2, ymin2, xmax2, ymax2);
 	break;
@@ -424,7 +421,7 @@ undo_load()
     objects = saved_objects;
     saved_objects = temp;
     strcpy(ctemp, cur_filename);
-    strcpy(cur_filename, save_filename);
+    update_cur_filename(save_filename);
     strcpy(save_filename, ctemp);
     redisplay_canvas();
     set_modifiedflag();

@@ -1,17 +1,13 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1992 by Brian V. Smith
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -51,7 +47,12 @@ create_n_write_bitmap(filename)
     Pixmap	    largepm, bitmap;
     extern F_compound objects;
     int		    i;
-    GC		    xgc;
+    GC		    xgc, gc_bitmap;
+
+    /* this may take a while */
+    set_temp_cursor(wait_cursor);
+    put_msg("Capturing canvas image...");
+    app_flush();
 
     /* Assume that there is at least one object */
     compound_bound(&objects, &xmin, &ymin, &xmax, &ymax);
@@ -107,23 +108,15 @@ create_n_write_bitmap(filename)
     largepm = XCreatePixmap(tool_d, canvas_win, xmax + 1, ymax + 1,
 			    DefaultDepthOfScreen(tool_s));
     /* clear it */
-    XFillRectangle(tool_d, largepm, gccache[ERASE], xmin, ymin, width, height);
+    XFillRectangle(tool_d, largepm, gccache[ERASE], 0, 0, xmax+1, ymax+1);
     sav_canvas = canvas_win;	/* save current canvas window id */
     canvas_win = largepm;	/* make the canvas our pixmap */
     sav_objmask = cur_objmask;	/* save the point marker */
     cur_objmask = M_NONE;
     redisplay_objects(&objects);/* draw the figure into the pixmap */
-    XFlush(tool_d);
-    writing_bitmap = False;
-    canvas_win = sav_canvas;	/* go back to the real canvas */
-    cur_objmask = sav_objmask;	/* restore point marker */
-    bitmap = XCreatePixmap(tool_d, canvas_win, width, height,
-			   DefaultDepthOfScreen(tool_s));
-    /* set the foreground back to 1 */
-    XSetForeground(tool_d, gccache[PAINT], 1);
-    /* now copy one plane of the pixmap to a bitmap of the correct size */
-    XCopyPlane(tool_d, largepm, bitmap, gccache[PAINT],
-	       xmin, ymin, width, height, 0, 0, 1);
+    put_msg("Writing bitmap file...");
+    app_flush();
+
     x_fg_color.pixel = save_fg_color;	/* put colors back to normal */
     x_bg_color.pixel = save_bg_color;
     XSetPlaneMask(tool_d, gccache[PAINT], (unsigned long) AllPlanes);
@@ -132,6 +125,19 @@ create_n_write_bitmap(filename)
     XSetPlaneMask(tool_d, gccache[ERASE], (unsigned long) AllPlanes);
     XSetForeground(tool_d, gccache[ERASE], x_bg_color.pixel);
     XSetBackground(tool_d, gccache[ERASE], x_bg_color.pixel);
+
+    writing_bitmap = False;
+    canvas_win = sav_canvas;	/* go back to the real canvas */
+    cur_objmask = sav_objmask;	/* restore point marker */
+    bitmap = XCreatePixmap(tool_d, canvas_win, width, height, 1);
+    gc_bitmap = XCreateGC(tool_d, bitmap, 0L, NULL);
+    /* set the foreground back to 1 */
+    XSetForeground(tool_d, gc_bitmap, 1);
+    /* and the background back to 0 */
+    XSetBackground(tool_d, gc_bitmap, 0);
+    /* now copy one plane of the pixmap to a bitmap of the correct size */
+    XCopyPlane(tool_d, largepm, bitmap, gc_bitmap,
+	       xmin, ymin, width, height, 0, 0, 1);
     for (i = 0; i < NUMFILLPATS; i++) { /* swap back the fill gc's */
 	xgc = sav_fill_gc[i];
 	sav_fill_gc[i] = fill_gc[i];
@@ -145,11 +151,15 @@ create_n_write_bitmap(filename)
 	put_msg("Couldn't write bitmap file");
 	XFreePixmap(tool_d, largepm);
 	XFreePixmap(tool_d, bitmap);
+	/* all done */
+	reset_cursor();
 	return (1);
     } else {
 	put_msg("Bitmap written to \"%s\"", filename);
 	XFreePixmap(tool_d, largepm);
 	XFreePixmap(tool_d, bitmap);
+	/* all done */
+	reset_cursor();
 	return (0);
     }
 }

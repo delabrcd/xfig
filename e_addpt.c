@@ -4,14 +4,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -24,15 +20,14 @@
 #include "u_search.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
-extern void	force_positioning();
-extern void	force_nopositioning();
+extern void	force_positioning(), force_nopositioning();
+extern void	force_anglegeom(), force_noanglegeom();
 
 static int	init_point_adding();
 static int	fix_linepoint_adding();
-static int	mm_fix_linepoint_adding();
 static int	fix_splinepoint_adding();
-static int	init_splinepointadding();
 static int	init_linepointadding();
+static int	init_splinepointadding();
 static int	find_endpoints();
 
 point_adding_selected()
@@ -46,6 +41,7 @@ point_adding_selected()
     canvas_rightbut_proc = null_proc;
     set_cursor(pick9_cursor);
     force_nopositioning();
+    force_anglegeom();
     constrained = MOVE_ARB;
 }
 
@@ -56,6 +52,11 @@ init_point_adding(p, type, x, y, px, py)
     int		    x, y;
     int		    px, py;
 {
+    set_action_on();
+    set_mousefun("place new point", "", "cancel");
+    draw_mousefun_canvas();
+    set_temp_cursor(null_cursor);
+    win_setmouseposition(canvas_win, px, py);
     switch (type) {
     case O_POLYLINE:
 	cur_l = (F_line *) p;
@@ -70,6 +71,22 @@ init_point_adding(p, type, x, y, px, py)
 	return;
     }
     force_positioning();
+    /* draw in rubber-band line */
+    elastic_linelink();
+
+    if (left_point == NULL || right_point == NULL) {
+	if (latexline_mode || latexarrow_mode) {
+	    canvas_locmove_proc = latex_line;
+	    return;
+	}
+	if (mountain_mode || manhattan_mode) {
+	    canvas_locmove_proc = constrainedangle_line;
+	    return;
+	}
+    } else {
+	force_noanglegeom();
+    }
+    canvas_locmove_proc = reshaping_line;
 }
 
 static
@@ -104,22 +121,17 @@ static int
 init_splinepointadding(px, py)
     int		    px, py;
 {
-    set_action_on();
-    set_mousefun("place new point", "", "cancel");
-    draw_mousefun_canvas();
     find_endpoints(cur_s->points, px, py, &left_point, &right_point);
-    set_temp_cursor(null_cursor);
-    cur_x = px;
-    cur_y = py;
+
+    cur_x = fix_x = px;
+    cur_y = fix_y = py;
     if (left_point == NULL && closed_spline(cur_s)) {
 	/* The added_point is between the 1st and 2nd point. */
 	left_point = right_point;
 	right_point = right_point->next;
     }
-    elastic_linelink();
-    canvas_locmove_proc = extending_line;
     canvas_leftbut_proc = fix_splinepoint_adding;
-    canvas_rightbut_proc = cancel_pointadding;;
+    canvas_rightbut_proc = cancel_pointadding;
 }
 
 static
@@ -128,12 +140,13 @@ fix_splinepoint_adding(x, y)
 {
     F_point	   *p;
 
+    (*canvas_locmove_proc) (x, y);
     if ((p = create_point()) == NULL) {
 	wrapup_pointadding();
 	return;
     }
-    p->x = x;
-    p->y = y;
+    p->x = cur_x;
+    p->y = cur_y;
     elastic_linelink();
     splinepoint_adding(cur_s, left_point, p, right_point);
     wrapup_pointadding();
@@ -190,12 +203,7 @@ static int
 init_linepointadding(px, py)
     int		    px, py;
 {
-    set_action_on();
-    set_mousefun("place new point", "", "cancel");
-    draw_mousefun_canvas();
     find_endpoints(cur_l->points, px, py, &left_point, &right_point);
-    set_temp_cursor(null_cursor);
-    win_setmouseposition(canvas_win, px, py);
 
     /* set cur_x etc at new point coords */
     cur_x = fix_x = px;
@@ -211,45 +219,17 @@ init_linepointadding(px, py)
 		  cur_l->thickness, cur_l->style, cur_l->style_val,
 		  cur_l->color);
 
-    /* draw in rubber-band line */
-    elastic_linelink();
-    if (latexline_mode || latexarrow_mode) {
-	canvas_locmove_proc = latex_line;
-	canvas_leftbut_proc = mm_fix_linepoint_adding;
-    }
-    if ((mountain_mode || manhattan_mode) &&
-	(left_point == NULL || right_point == NULL)) {
-	canvas_locmove_proc = constrainedangle_line;
-	canvas_leftbut_proc = mm_fix_linepoint_adding;
-    } else {
-	canvas_locmove_proc = reshaping_line;
-	canvas_leftbut_proc = fix_linepoint_adding;
-    }
-    canvas_rightbut_proc = cancel_line_pointadding;;
+    canvas_leftbut_proc = fix_linepoint_adding;
+    canvas_rightbut_proc = cancel_line_pointadding;
 }
 
 static
 fix_linepoint_adding(x, y)
-    int		    x, y;
+    int x, y;
 {
     F_point	   *p;
 
-    if ((p = create_point()) == NULL) {
-	wrapup_pointadding();
-	return;
-    }
-    p->x = x;
-    p->y = y;
-    elastic_linelink();
-    linepoint_adding(cur_l, left_point, p);
-    wrapup_pointadding();
-}
-
-static
-mm_fix_linepoint_adding()
-{
-    F_point	   *p;
-
+    (*canvas_locmove_proc) (x, y);
     if ((p = create_point()) == NULL) {
 	wrapup_pointadding();
 	return;

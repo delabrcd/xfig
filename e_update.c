@@ -4,19 +4,15 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
-#include "object.h"
 #include "resources.h"
+#include "object.h"
 #include "mode.h"
 #include "paintop.h"
 #include "u_create.h"
@@ -71,6 +67,8 @@ init_update_settings(p, type, x, y, px, py)
     int		    x, y;
     int		    px, py;
 {
+    int		old_psfont_flag, new_psfont_flag;
+
     switch (type) {
     case O_COMPOUND:
 	put_msg("There is no support for updating settings from a compound object");
@@ -95,7 +93,13 @@ init_update_settings(p, type, x, y, px, py)
 	up_part(cur_color, cur_t->color, I_COLOR);
 	up_part(cur_depth, cur_t->depth, I_DEPTH);
 	up_part(cur_elltextangle, cur_t->angle/M_PI*180.0, I_ELLTEXTANGLE);
-	cur_textflags =  cur_t->flags;
+	old_psfont_flag = (cur_t->flags & PSFONT_TEXT);
+	new_psfont_flag = (cur_textflags & PSFONT_TEXT);
+	up_part(cur_textflags, cur_t->flags & ~PSFONT_TEXT, I_TEXTFLAGS);
+	if (cur_updatemask & I_FONT)
+	    cur_textflags |= new_psfont_flag;
+	else
+	    cur_textflags |= old_psfont_flag;
 	if (using_ps)
 	    {	/* must use {} because macro has 'if' */
 	    up_part(cur_ps_font, cur_t->font, I_FONT);
@@ -296,19 +300,27 @@ update_text(text)
     F_text	   *text;
 {
     PR_SIZE	    size;
+    int		old_psfont_flag, new_psfont_flag;
 
     draw_text(text, ERASE);
     up_part(text->type, cur_textjust, I_TEXTJUST);
     up_part(text->font, using_ps ? cur_ps_font : cur_latex_font, I_FONT);
-    text->flags = cur_textflags;  
+    old_psfont_flag = (text->flags & PSFONT_TEXT);
+    new_psfont_flag = (cur_textflags & PSFONT_TEXT);
+    up_part(text->flags, cur_textflags & ~PSFONT_TEXT, I_TEXTFLAGS);
+    if (cur_updatemask & I_FONT)
+	text->flags |= new_psfont_flag;
+    else
+	text->flags |= old_psfont_flag;
     up_part(text->size, cur_fontsize, I_FONTSIZE);
     up_part(text->angle, cur_elltextangle*M_PI/180.0, I_ELLTEXTANGLE);
     up_part(text->color, cur_color, I_COLOR);
     up_part(text->depth, cur_depth, I_DEPTH);
-    size = pf_textwidth(text->font, psfont_text(text), text->size,
-			strlen(text->cstring), text->cstring);
+    size = pf_textwidth(lookfont(x_fontnum(text->flags, text->font), text->size,
+			cur_elltextangle), strlen(text->cstring), text->cstring);
     text->length = size.x;	/* in pixels */
     text->height = size.y;	/* in pixels */
+    reload_text_fstruct(text);	/* make sure fontstruct is current */
     draw_text(text, PAINT);
 }
 

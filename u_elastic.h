@@ -4,14 +4,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #define		MOVE_ARB	0
@@ -19,6 +15,10 @@
 #define		BOX_SCALE	2
 #define		BOX_HSTRETCH	3
 #define		BOX_VSTRETCH	4
+
+#define		MSG_RADIUS	0
+#define		MSG_DIAM	1
+#define		MSG_LENGTH	2
 
 extern int	constrained;
 extern int	fix_x, fix_y, work_numsides;
@@ -58,7 +58,6 @@ extern		elastic_line();
 extern		moving_line();
 extern		reshaping_line();
 extern		reshaping_latexline();
-extern		extending_line();
 extern		elastic_linelink();
 extern		elastic_scalepts();
 extern		scaling_line();

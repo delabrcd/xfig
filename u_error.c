@@ -4,14 +4,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -43,9 +39,11 @@ error_handler(err_sig)
     case SIGFPE:
 	fprintf(stderr, "\nxfig: SIGFPE signal trapped\n");
 	break;
+#ifndef NO_SIBGUS
     case SIGBUS:
 	fprintf(stderr, "\nxfig: SIGBUS signal trapped\n");
 	break;
+#endif
     case SIGSEGV:
 	fprintf(stderr, "\nxfig: SIGSEGV signal trapped\n");
 	break;
@@ -73,7 +71,9 @@ emergency_quit()
     }
     signal(SIGHUP, SIG_DFL);
     signal(SIGFPE, SIG_DFL);
+#ifndef NO_SIBGUS
     signal(SIGBUS, SIG_DFL);
+#endif
     signal(SIGSEGV, SIG_DFL);
 
     aborting = 1;
@@ -101,5 +101,7 @@ Cardinal *num_params;
     {
 	return;
     }
+    /* free all the GC's */
+    free_GCs();
     emergency_quit();
 }

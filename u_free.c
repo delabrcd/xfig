@@ -4,19 +4,15 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
-#include "object.h"
 #include "resources.h"
+#include "object.h"
 
 free_arc(list)
     F_arc	  **list;
@@ -164,4 +160,35 @@ free_linkinfo(list)
 	free((char *) link);
     }
     *list = NULL;
+}
+
+/* free up all the GC's before leaving xfig */
+
+free_GCs()
+	{
+	int i;
+
+	XFreeGC(tool_d, gc);
+	XFreeGC(tool_d, bold_gc);
+	XFreeGC(tool_d, button_gc);
+	XFreeGC(tool_d, color_gc);
+	XFreeGC(tool_d, ind_button_gc);
+	XFreeGC(tool_d, ind_blank_gc);
+	XFreeGC(tool_d, blank_gc);
+	XFreeGC(tool_d, mouse_blank_gc);
+	XFreeGC(tool_d, mouse_button_gc);
+	XFreeGC(tool_d, tr_gc);
+	XFreeGC(tool_d, tr_erase_gc);
+	XFreeGC(tool_d, tr_xor_gc);
+	XFreeGC(tool_d, sr_gc);
+	XFreeGC(tool_d, sr_erase_gc);
+	XFreeGC(tool_d, sr_xor_gc);
+
+	for (i=0; i<NUMOPS; i++) {
+		XFreeGC(tool_d, gccache[i]);
+	}
+	for (i=0; i<NUMFILLPATS; i++) {
+		XFreeGC(tool_d, fill_gc[i]);
+		XFreeGC(tool_d, un_fill_gc[i]);
+	}
 }

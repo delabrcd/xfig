@@ -4,14 +4,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -32,10 +28,7 @@ extern int	latex_endpoint();
 static int	init_line_drawing();
 
 int		create_lineobject();
-int		create_latexobject();
-int		get_direction();
 int		get_intermediatepoint();
-int		get_latexpoint();
 
 /**********************	 polyline and polygon section  **********************/
 
@@ -90,19 +83,16 @@ init_trace_drawing(x, y)
     cur_point->x = fix_x = cur_x = x;
     cur_point->y = fix_y = cur_y = y;
     cur_point->next = NULL;
+    length_msg(MSG_LENGTH);
     if (latexline_mode || latexarrow_mode) {
 	canvas_locmove_proc = latex_line;
-	canvas_leftbut_proc = get_latexpoint;
-	canvas_middlebut_save = create_latexobject;
     } else if (manhattan_mode || mountain_mode) {
 	canvas_locmove_proc = constrainedangle_line;
-	canvas_leftbut_proc = get_direction;
-	canvas_middlebut_save = create_lineobject;
     } else {
 	canvas_locmove_proc = freehand_line;
-	canvas_leftbut_proc = get_intermediatepoint;
-	canvas_middlebut_save = create_lineobject;
     }
+    canvas_leftbut_proc = get_intermediatepoint;
+    canvas_middlebut_save = create_lineobject;
     canvas_rightbut_proc = cancel_line_drawing;
     return_proc = line_drawing_selected;
     num_point = 1;
@@ -117,61 +107,25 @@ init_trace_drawing(x, y)
     elastic_line();
 }
 
-get_direction(x, y)
+get_intermediatepoint(x, y)
     int		    x, y;
 {
     (*canvas_locmove_proc) (x, y);
-    canvas_locmove_proc = constrainedangle_line;
-    get_intermediatepoint(cur_x, cur_y);
-}
-
-get_latexpoint(x, y)
-    int		    x, y;
-{
-    elastic_latexline();
-    latex_endpoint(fix_x, fix_y, x, y, &cur_x, &cur_y, latexarrow_mode,
-		   (cur_pointposn == P_ANY) ? 1 : posn_rnd[cur_pointposn]);
-    elastic_latexline();
+    num_point++;
+    fix_x = cur_x;
+    fix_y = cur_y;
+    elastic_line();
     if (cur_cursor != null_cursor) {
 	set_temp_cursor(null_cursor);
 	cur_cursor = null_cursor;
     }
     win_setmouseposition(canvas_win, cur_x, cur_y);
-    get_intermediatepoint(cur_x, cur_y);
-}
-
-get_intermediatepoint(x, y)
-    int		    x, y;
-{
-    elastic_line();		/* erase elastic line */
-    cur_x = x;
-    cur_y = y;
-    elastic_line();
-    num_point++;
-    fix_x = x;
-    fix_y = y;
-    elastic_line();
     append_point(fix_x, fix_y, &cur_point);
     if (num_point == min_num_points - 1) {
 	set_mousefun("next point", "final point", "cancel");
 	draw_mousefun_canvas();
 	canvas_middlebut_proc = canvas_middlebut_save;
     }
-}
-
-create_latexobject(x, y)
-    int		    x, y;
-{
-    if (x != fix_x || y != fix_y) {
-	elastic_latexline();
-	latex_endpoint(fix_x, fix_y, x, y, &cur_x, &cur_y, latexarrow_mode,
-		    (cur_pointposn == P_ANY) ? 1 : posn_rnd[cur_pointposn]);
-	if (cur_cursor != null_cursor) {
-	    set_temp_cursor(null_cursor);
-	    cur_cursor = null_cursor;
-	}
-    }
-    create_lineobject(cur_x, cur_y);
 }
 
 /* come here upon pressing middle button (last point of lineobject) */
@@ -194,12 +148,7 @@ create_lineobject(x, y)
 	first_point->next = NULL;
 	num_point++;
     } else if (x != fix_x || y != fix_y) {
-	if (manhattan_mode || mountain_mode)
-	    get_direction(x, y);
-	else if (latexline_mode || latexarrow_mode)
-	    get_latexpoint(x, y);
-	else
-	    get_intermediatepoint(x, y);
+	get_intermediatepoint(x, y);
     }
     dot = (num_point == 1);
     elastic_line();

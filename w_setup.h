@@ -4,15 +4,12 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
+
 #define		PIX_PER_INCH		80
 #define		PIX_PER_CM		30	/* ((int)(PIX_PER_INCH / 2.54
 						 * + (5.0/2))) */
@@ -51,7 +48,8 @@ extern int	TOOL_WD, TOOL_HT;
 extern int	CMDPANEL_WD, CMDPANEL_HT;
 extern int	MODEPANEL_WD, MODEPANEL_HT;
 extern int	MODEPANEL_SPACE;
-extern int	MSGPANEL_WD, MSGPANEL_HT;
+extern int	MSGFORM_WD, MSGFORM_HT;
+extern int	MSGPANEL_WD;
 extern int	MOUSEFUN_WD, MOUSEFUN_HT;
 extern int	INDPANEL_WD;
 extern int	CANVAS_WD, CANVAS_HT;

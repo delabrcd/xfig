@@ -1,7 +1,103 @@
 Version 2.1
 ===========
 
-Patchlevel 6
+Patchlevel 7 (May 3, 1993)
+Changes to Patchlevel 6:
+
+NEW FEATURES:
+
+o Vertical and upside-down text - text with angles of 90, 180 and 270 degrees
+	supported. Text between those angles will be drawn with the next 
+	higher angle (e.g. 130 degree text will be drawn at 180 degrees).
+	from Alan Richardson (mppa3@uk.ac.sussex.syma)
+o message panel uses asciiTextWidget so one may select text from it
+o does not ask if it is OK to write an existing file during save if it is the
+	current figure file that is being saved.  Same for export.
+o accelerators to Save or Load file without popping up file menu 
+	(default: Meta-S to Save and Meta-L to Load)
+o PRINTER environment variable is used if no resource is set for 
+	Fig*printer*string
+o if an ellipse is scaled such that the radii become equal it is "converted"
+	to a circle
+o ablity to change to/from imperial and metric with popup menu by hitting
+	mouse button 3 in the units box (where rulers meet)
+	from Paul King (king@cs.uq.oz.au)
+o new command-line parameters -userscale (resource userscale) and -userunit
+	(resource userunit) which are used in the on-screen messages which
+	show the current length/diameter etc.  This provides a simple way of
+	doing scale drawings, e.g. 0.25 inch = 1 ft (userscale=0.25,
+	userunit="ft") or 1 cm = 1 m (userscale=1, userunit="m").  These may
+	be changed via the popup menu by hitting mouse button 3 in the units
+	box (where rulers meet)
+o new indicator button allows text flags to be viewed/set
+o compiles/runs on DEC Alpha with OSF/1 now
+o text widget in the print popup to pass extra parameters to print program
+	(lp or lpr as the case may be)
+o indicator shows the number of figures in the batch print file in print popup
+o automatic on-screen generation of preview bitmap for EPS objects if you have 
+	gs (ghostscript) - compile with -DGSBIT flag
+	from Michael C. Grant (mcgrant@rascals.stanford.edu) 
+	adapted from
+	Marc Goldburg's (marcg@rascals.stanford.edu) original idea and code.
+o indicator in upper-left corner (under Quit button) shows current filename
+o print button changes message from "print FIGURE to printer" to "print BATCH to
+	printer" if there are figures in batch file
+o when drawing objects or moving/adding points the length/radius/diameter is 
+	displayed in the message window
+o feature to shift figure on page if it is off the page has been disabled until
+	it can be done with option or explicit command
+o added -noscalablefonts command-line option to force scalable fonts OFF
+	(usually for debugging)
+
+BUG FIXES:
+
+o condition for OSF/1 added to use dirent
+	from Dave Hill (ddhill@zk2.dec.com)
+o Floating point values allowed for BoundingBox in EPS files
+o if user asks for scalable fonts but server doesn't support them, xfig auto-
+	matically switches to non-scalable fonts
+o when printing to batch file, incorrect filename appeared in message panel
+o undo of a text move didn't redraw the text
+o <unistd.h> included unnecessarily in f_util.c (X11/Xos.h includes it if 
+	necessary). Also, various cleanups with multiply defined cursors etc.
+	From Casey Leedom (casey@gauss.llnl.gov)
+o internalborderwidth resource should be integer not float
+o cancel when drawing latex line left unwanted garbage on screen
+o put_fmsg removed and put_msg uses varargs now so MIPS machines and others
+	should all work fine now
+o writing X11 bitmap still had bugs
+o text wasn't being rotated around mouse point with rotate mode
+o when moving end points of a (sp)line or when adding points to the end
+  of a (sp)line, the angle geometry button was not available
+o export directory now follows file directory when load/save figure is done
+o entering centered text with odd number of characters caused double image
+o fixed bug with incorrectly placing text with point positioning on when the
+	text was originally created with point positioning off
+o when moving centered or right-justified zoomed text grab point was shifted
+o rotated ellipses panned incorrectly
+o centering/flush-left options in Export menu were reversed
+o flipped EPS objects weren't being flipped properly when reading in figure
+o GC's weren't being freed when xfig finished
+o added Titan OS (Stardent) to list of machines needing getenv() and atof() 
+	explicitely defined (not in /usr/include/... file )
+	from Joachim Wiesel (wiesel@ipf.bau-verm.uni-karlsruhe.de)
+o underscores weren't showing in text line in popup edit
+	from Daniel Faigin (faigin@aero.org)
+o old text outline wasn't being erased
+	from Daniel Faigin (faigin@aero.org)
+o number[] array wasn't large enough for new 3-character numbers in the rulers
+	from Andrew Haylett (ajh@gec-mrc.co.uk)
+o check for X_NOT_STDC_ENV reversed in fig.h for inclusion of stdlib.h and
+	defs of getenv() and atof()
+	from Jonathan Kamens (jik@pit-manager.mit.edu)
+o SetDir() parameters added (but not used) to placate certain compilers
+o point positioning resolution wasn't available with add-point-in-object
+o angle geometry indicator appeared when moving/adding points but isn't used
+o problem fixed with file popup and grab
+	from David Brooke (BROOKE@leva.leeds.ac.uk)
+
+------------------------------------------------------------------------------
+Patchlevel 6 (Nov 1992)
 Changes to Patchlevel 5:
 
 NEW FEATURES:
@@ -15,7 +111,8 @@ o was using ellipse routine to draw circles - was choppy for small circles
 o cast comparison function argument to qsort
 o rotated ellipses don't become coarse as they are zoomed 
 
-Patchlevel 5
+------------------------------------------------------------------------------
+Patchlevel 5 (Nov 1992)
 Changes to Patchlevel 4:
 
 NEW FEATURES:
@@ -138,7 +235,8 @@ o fixed bug where certain objects inside compound weren't being drawn when
 o removed ISO8859 requirement for Symbol and ZapfDingbats fonts (those fonts
 	weren't being displayed)
 
-Patchlevel 4
+------------------------------------------------------------------------------
+Patchlevel 4 (April 1992)
 Changes to Patchlevel 3:
 
 o keyFile resource allows ANY path for compose key data base, not just relative
@@ -226,6 +324,7 @@ o type mismatch fixed for X11R5 in call to XtAppInitialize().
 o small performance fix in u_draw.c in add_point() when reallocating points
 	from Dave Hale (dhale@green.Mines.Colorado.EDU)
 
+------------------------------------------------------------------------------
 Patchlevel 3
 Changes to Patchlevel 2:
 

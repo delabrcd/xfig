@@ -4,17 +4,11 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
-
-/* IMPORTS */
 
 #include "fig.h"
 #include "figx.h"
@@ -28,9 +22,12 @@
 extern String	text_translations;
 extern Widget	make_popup_menu();
 extern char    *panel_get_value();
+extern Widget	file_popup;
+extern Widget	file_dir;
 
 /* global so w_file.c can access it */
 char		default_export_file[PATH_MAX];
+char		export_dir[PATH_MAX];
 
 /* LOCAL */
 
@@ -58,8 +55,8 @@ static char    *orient_items[] = {
     "Landscape"};
 
 static char    *just_items[] = {
-    "Flush left",
-    "Centered"};
+    "Centered",
+    "Flush left"};
 
 static void	orient_select();
 static Widget	orient_panel, orient_menu, orient_lab;
@@ -89,6 +86,10 @@ Boolean		export_up = False;
 static void
 export_panel_dismiss()
 {
+    DeclareArgs(1);
+
+    FirstArg(XtNstring, "\0");
+    SetValues(exp_selfile);		/* clear ascii widget string */
     XtPopdown(export_popup);
     XtSetSensitive(export_w, True);
     export_up = False;
@@ -110,8 +111,7 @@ do_export(w)
 {
 	DeclareArgs(1);
 	float	    mag;
-	char	   *fval, *dval;
-	char	    filename[100];
+	char	   *fval;
 
 	if (emptyfigure_msg(export_msg))
 		return;
@@ -120,31 +120,28 @@ do_export(w)
 		create_export_panel(w);
 	FirstArg(XtNstring, &fval);
 	GetValues(exp_selfile);
-	FirstArg(XtNstring, &dval);
-	GetValues(exp_dir);
-	if (emptyname(fval))		/* output filename is empty, use default */
+	if (emptyname(fval)) {		/* output filename is empty, use default */
 	    fval = default_export_file;
-
-	if (*fval == '/') {
-	    strcpy(filename, fval);
+	    warnexist = False;		/* don't warn if this file exists */
+	} else {
+	    warnexist = True;		/* otherwise warn if the file exists */
 	}
-	else {
-	    strcpy(filename, dval);
-	    strcat(filename, "/");
-	    strcat(filename, fval);
+
+	/* if not absolute path, change directory */
+	if (*fval != '/') {
+	    if (change_directory(export_dir) != 0)
+		return;
 	}
 
 	/* check for XBitmap first */
 	if (cur_exp_lang == LANG_XBITMAP) {
 	    XtSetSensitive(export_but, False);
-	    if (write_bitmap(filename) == 0)
+	    if (write_bitmap(fval) == 0)
 		{
 		FirstArg(XtNlabel, fval);
 		SetValues(dfile_text);		/* set the default filename */
-		if (fval != default_export_file)
+		if (strcmp(fval,default_export_file) != 0)
 		    strcpy(default_export_file,fval); /* and copy to default */
-		FirstArg(XtNstring, "\0");
-		SetValues(exp_selfile);		/* clear ascii widget string */
 		export_panel_dismiss();
 		}
 	    XtSetSensitive(export_but, True);
@@ -153,15 +150,13 @@ do_export(w)
 	    if (mag <= 0.0)
 		mag = 1.0;
 	    XtSetSensitive(export_but, False);
-	    if (print_to_file(filename, lang_items[cur_exp_lang],
+	    if (print_to_file(fval, lang_items[cur_exp_lang],
 			      mag, export_flushleft) == 0)
 		{
 		FirstArg(XtNlabel, fval);
 		SetValues(dfile_text);		/* set the default filename */
-		if (fval != default_export_file)
+		if (strcmp(fval,default_export_file) != 0)
 		    strcpy(default_export_file,fval); /* and copy to default */
-		FirstArg(XtNstring, "\0");
-		SetValues(exp_selfile);		/* clear ascii widget string */
 		export_panel_dismiss();
 		}
 	    XtSetSensitive(export_but, True);
@@ -240,8 +235,12 @@ popup_export_panel(w)
 
 	if (!export_popup)
 		create_export_panel(w);
-	else
-		Rescan(0, 0, 0, 0);
+
+	/* set the directory widget to the current export directory */
+	FirstArg(XtNstring, export_dir);
+	SetValues(exp_dir);
+
+	Rescan(0, 0, 0, 0);
 
 	FirstArg(XtNlabel, default_export_file);
 	NextArg(XtNwidth, 250);
@@ -316,7 +315,7 @@ create_export_panel(w)
 	just_lab = XtCreateManagedWidget("just_label", labelWidgetClass,
 					 export_panel, Args, ArgCount);
 
-	FirstArg(XtNlabel, just_items[export_flushleft? 0 : 1]);
+	FirstArg(XtNlabel, just_items[export_flushleft? 1 : 0]);
 	NextArg(XtNfromHoriz, just_lab);
 	NextArg(XtNfromVert, orient_panel);
 	NextArg(XtNborderWidth, INTERNAL_BW);
@@ -442,6 +441,8 @@ create_export_panel(w)
 update_def_filename()
 {
     int		    i;
+    DeclareArgs(1);
+    char	   *dval;
 
     (void) strcpy(default_export_file, cur_filename);
     if (default_export_file[0] != '\0') {
@@ -457,4 +458,10 @@ update_def_filename()
 	    default_export_file[i] = '\0';
 	else
 	    i = 0;
+    /* set the current directory from the file popup directory */
+    if (file_popup) {
+	FirstArg(XtNstring, &dval);
+	GetValues(file_dir);
+	strcpy(export_dir,dval);
+    }
 }

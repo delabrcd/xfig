@@ -1,17 +1,13 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1991 by Paul King
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -47,8 +43,9 @@ init_mousefun(tool)
     TOOL	    tool;
 {
     FirstArg(XtNwidth, MOUSEFUN_WD);
-    NextArg(XtNheight, MOUSEFUN_HT);
-    NextArg(XtNfromHoriz, msg_panel);
+    /* start with nominal height and adjust later */
+    NextArg(XtNheight, MSGFORM_HT);
+    NextArg(XtNfromHoriz, cmd_panel);
     NextArg(XtNhorizDistance, -INTERNAL_BW);
     NextArg(XtNfromVert, NULL);
     NextArg(XtNvertDistance, 0);
@@ -120,9 +117,16 @@ mouse_title()
 void
 setup_mousefun()
 {
+    XDefineCursor(tool_d, XtWindow(mousefun), arrow_cursor);
+    /* now that the message panel has the real height it needs (because of
+       the font size we can resize the mouse panel */
+    MOUSEFUN_HT = MSGFORM_HT + CMDPANEL_HT - INTERNAL_BW;
+    XtUnmanageChild(mousefun);
+    FirstArg(XtNheight, MOUSEFUN_HT);
+    SetValues(mousefun);
+    XtManageChild(mousefun);
     reset_mousefun();
     set_mousefun("", "", "");
-    XDefineCursor(tool_d, XtWindow(mousefun), arrow_cursor);
 }
 
 void
@@ -159,7 +163,7 @@ void
 draw_mousefun_unitbox()
 {
     clear_mousefun();
-    draw_mousefun("Pan to Origin", "", "");
+    draw_mousefun("Pan to Origin", "", "Set Units/Scale");
 }
 
 void

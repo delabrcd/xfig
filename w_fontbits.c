@@ -1,25 +1,22 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
- * Font additions: Copyright (c) 1989 by Brian V. Smith (bvsmith@lbl.gov)
+ * Copyright (c) 1991 by Brian V. Smith
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
+
 
 /* These are the bitmaps for the font menu panes */
 
 /* Part 1 of 3 */
 
-#include <X11/Xlib.h>
+#include "fig.h"
+#include "resources.h"
 #include "u_fonts.h"
 
 static unsigned char	AvantGarde_BookOblique_bits[] = {

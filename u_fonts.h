@@ -1,17 +1,13 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1991 by Brian V. Smith
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #define MIN_P_SIZE 6
@@ -36,10 +32,16 @@
 struct xfont {
     int		    size;	/* size in points */
     Font	    fid;	/* X font id */
-    XFontStruct	   *fstruct;	/* X font structure */
     char	   *fname;	/* actual name of X font found */
+    struct flist   *list;	/* list of fonts by angle */
     struct xfont   *next;	/* next in the list */
 };
+
+struct flist {
+    int		    dir;	/* direction (0=0 degrees, 1=90, 2=180, 3=270) */
+    XRotFontStruct *fstruct;	/* X font structure */
+    struct flist   *next;
+    };
 
 struct _fstruct {
     char	   *name;	/* Postscript font name */

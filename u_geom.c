@@ -4,14 +4,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 /*
@@ -21,9 +17,8 @@
  */
 
 #include "fig.h"
+#include "resources.h"
 #include "object.h"
-
-#define			PI		3.14159
 
 /*************************** COMPUTE NORMAL **********************
 
@@ -189,20 +184,20 @@ compute_angle(dx, dy)		/* compute the angle between 0 to 2PI  */
 
     if (dx == 0) {
 	if (dy > 0)
-	    alpha = PI / 2;
+	    alpha = M_PI_2;
 	else
-	    alpha = 3 * PI / 2;
+	    alpha = 3 * M_PI_2;
     } else if (dy == 0) {
 	if (dx > 0)
 	    alpha = 0;
 	else
-	    alpha = PI;
+	    alpha = M_PI;
     } else {
 	alpha = atan((double) (dy / dx));	/* range = -PI/2 to PI/2 */
 	if (dx < 0)
-	    alpha += PI;
+	    alpha += M_PI;
 	else if (dy < 0)
-	    alpha += 2 * PI;
+	    alpha += M_2PI;
     }
     return (alpha);
 }
@@ -237,7 +232,7 @@ compute_direction(p1, p2, p3)
     theta = compute_angle(dx, dy);
 
     diff = theta - alpha;
-    if ((0 < diff && diff < PI) || diff < -PI) {
+    if ((0 < diff && diff < M_PI) || diff < -M_PI) {
 	return (1);		/* counterclockwise */
     }
     return (0);			/* clockwise */

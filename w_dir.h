@@ -1,5 +1,4 @@
 /* This file is part of xdir, an X-based directory browser.
- * It contains general xdir definitions.
  *
  *	Created: 13 Aug 88
  *
@@ -8,12 +7,31 @@
  *	Digital Equipment Corporation
  *	treese@crl.dec.com
  *
- *	Modified: 4 Dec 91	Paul King (king@cs.uq.oz.au)
+ *	    COPYRIGHT 1990
+ *	  DIGITAL EQUIPMENT CORPORATION
+ *	   MAYNARD, MASSACHUSETTS
+ *	  ALL RIGHTS RESERVED.
  *
- *	$Source: /trx/u2/treese/Src/Xdir/RCS/xdir.h,v $
- *	$Athena: xdir.h,v 1.1 88/09/16 01:30:33 treese Locked $
+ * THE INFORMATION IN THIS SOFTWARE IS SUBJECT TO CHANGE WITHOUT NOTICE AND
+ * SHOULD NOT BE CONSTRUED AS A COMMITMENT BY DIGITAL EQUIPMENT CORPORATION.
+ * DIGITAL MAKES NO REPRESENTATIONS ABOUT THE SUITABILITY OF THIS SOFTWARE
+ * FOR ANY PURPOSE.  IT IS SUPPLIED "AS IS" WITHOUT EXPRESS OR IMPLIED
+ * WARRANTY.
+ *
+ * IF THE SOFTWARE IS MODIFIED IN A MANNER CREATING DERIVATIVE COPYRIGHT
+ * RIGHTS, APPROPRIATE LEGENDS MAY BE PLACED ON THE DERIVATIVE WORK IN
+ * ADDITION TO THAT SET FORTH ABOVE.
+ *
+ * Permission to use, copy, modify, and distribute this software and its
+ * documentation for any purpose and without fee is hereby granted, provided
+ * that the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of Digital Equipment Corporation not be
+ * used in advertising or publicity pertaining to distribution of the
+ * software without specific, written prior permission.
+ *
+ *	Modified: 4 Dec 91 - Paul King (king@cs.uq.oz.au)
  */
-
 
 /* From the C library. */
 

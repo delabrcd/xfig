@@ -71,6 +71,7 @@ extern Widget	file_panel, export_panel;
 extern Widget	exp_selfile, file_selfile, exp_dir, file_dir, exp_flist,
 		file_flist, exp_dlist, file_dlist, exp_mask, file_mask;
 extern Boolean	file_up, export_up;
+extern char	export_dir[];
 
 /* Functions */
 
@@ -145,8 +146,18 @@ GoHome(w, client_data, ret_val)
    Also, copy the dir to the current directory widget in the file popup
 */
 
+/* Function:  SetDir() changes to the parent directory.
+ * Arguments: Standard Xt action arguments.
+ * Returns:   Nothing.
+ * Notes:
+ */
+
 void
-SetDir()
+SetDir(widget, event, params, num_params)
+    Widget	    widget;
+    XEvent	   *event;
+    String	   *params;
+    Cardinal	   *num_params;
 {
     char	   *ndir;
 
@@ -154,8 +165,10 @@ SetDir()
     FirstArg(XtNstring, &ndir);
     if (file_up)
 	GetValues(file_dir);
-    else
+    else {
 	GetValues(exp_dir);
+	strcpy(export_dir,ndir);	/* save in global var */
+    }
     /* if there is a ~ in the directory, parse the username */
     if (ndir[0]=='~')
 	{
@@ -534,6 +547,7 @@ DoChangeDir(dir)
 	NewList(file_dlist,dirlist);
     } else {
 	SetValues(exp_dir);
+	strcpy(export_dir,cur_dir);	/* save in global var */
 	XawTextSetInsertionPoint(exp_dir, strlen(cur_dir));
 	NewList(exp_flist, filelist);
 	NewList(exp_dlist, dirlist);
@@ -576,6 +590,7 @@ Rescan(widget, event, params, num_params)
 	GetValues(exp_mask);
 	FirstArg(XtNstring, &dir);
 	GetValues(exp_dir);
+	strcpy(export_dir,dir);		/* save in global var */
 	(void) MakeFileList(dir, dirmask, &dir_list, &file_list);
 	NewList(exp_flist, file_list);
 	NewList(exp_dlist, dir_list);

@@ -1,7 +1,7 @@
 '\" t
 .\" the previous line makes man call tbl
 .if t .po .9i
-.TH XFIG 1 "Release 2.1.5 (Protocol 2.1)"
+.TH XFIG 1 "Release 2.1(.7) (Protocol 2.1)"
 .SH NAME
 xfig \- Facility for Interactive Generation of figures under X11
 .SH SYNOPSIS
@@ -9,30 +9,30 @@ xfig \- Facility for Interactive Generation of figures under X11
 [\fIoptions\fP]
 [\fIfile\fP]
 .SH DESCRIPTION
-.I Xfig 
+.I Xfig
 is a menu-driven tool that allows the user to draw and manipulate objects
-interactively in an X window.  
-.B It runs under X version 11 
+interactively in an X window.
+.B It runs under X version 11
 .B release 4 or higher
-and requires a two- or three-button mouse.  
-.I file 
+and requires a two- or three-button mouse.
+.I file
 specifies the name of a file to be edited. The description of objects in
-the file will be read at the start of \fIxfig\fP. 
+the file will be read at the start of \fIxfig\fP.
 .PP
 When using a two-button mouse
-use the <Meta> key and the right button at the same time to effect 
+use the <Meta> key and the right button at the same time to effect
 the action of the middle button.
 .PP
-The \fITransFig\fP package is used to print the output from \fIxfig\fP.
+The \fITransFig\fP package is used to print or export the output from \fIxfig\fP.
 .PP
 Note for previous \fIxfig\fP users:
 .PP
 The \fIf2p\fP and \fIf2ps\fP translators have been phased out
 because the \fITransFig\fP package from Micah Beck is a more general
 purpose translator for more graphics languages.
-The \fITransFig\fP package can be used as a back-end processor to \fIxfig\fP 
+The \fITransFig\fP package can be used as a back-end processor to \fIxfig\fP
 to produce various types of output:
-.IP "LaTeX - "12 
+.IP "LaTeX - "12
 \fIfig2dev -L latex\fP translates \fIxfig\fP to \fILaTeX\fP
 picture environment commands which can be
 processed along with other
@@ -59,28 +59,13 @@ or
 \fIeepic\fP,
 and \fIeepicemu\fP.
 .PP
-The \fITransFig\fP package is available via anonymous ftp from 
-export.lcs.mit.edu in /contrib/transfig.tar.Z.
+The \fITransFig\fP package is available via anonymous ftp from
+export.lcs.mit.edu in /contrib/R5fixes/transfig-fixes/transfig.2.1.X.tar.Z, 
+where the X is the current patchlevel.
 .LP
-Note: \fITransFig\fP versions 2.1.4 and later support color 
+Note: \fITransFig\fP versions 2.1.4 and later support color
 output for \fIPostScript\fP.
 .SH OPTIONS
-.TP
-\fB-geom[etry]\fP \fIWxH+X+Y\fP
-Specifies the geometry for Fig application.
-.TP
-\fB-iconG[eometry]\fP \fI+X+Y\fP
-Specifies the position for the icon.
-.TP
-.B \-ri[ght]
-Change the position of the side panel window to the right of the canvas window
-(default: left).
-.TP
-.B \-le[ft]
-Change the position of the side panel window to the left of the canvas window.
-.TP
-.B \-mo[nochrome]
-Use black and white only. 
 .TP
 .B \-L[andscape]
 Make \fIxfig\fP come up in landscape mode (10" x 8").  This is the default.
@@ -88,99 +73,22 @@ Make \fIxfig\fP come up in landscape mode (10" x 8").  This is the default.
 .B \-P[ortrait]
 Make \fIxfig\fP come up in portrait mode (8" x 9").
 .TP
-\fB-pw[idth]\fP \fIunits\fP
-Make \fIxfig\fP come up \fIunits\fP wide (where units are either cm or in).
-.TP
-\fB-ph[eight]\fP \fIunits\fP
-Make \fIxfig\fP come up \fIunits\fP high (where units are either cm or in).
-.TP
-.B \-tr[ack]
-Turn on cursor (mouse) tracking arrows (default).
-.TP
-.B \-not[rack]
-Turn off cursor (mouse) tracking arrows.
-.TP
-.B \-inc[hes]
-Make inches the unit of choice (default).
-.TP
-.B \-me[tric]
-Make centimeters the unit of choice.
-.TP
-.B \-inv[verse]
-Use inverse video (white on black).
-.TP
-.B \-fg \fIcolor\fP
-Use \fIcolor\fP as the foreground color and default color for objects.
 .B \-bg \fIcolor\fP
 Use \fIcolor\fP as the background color for the canvas and buttons.
 .TP
-.B \-de[bug]
-Turn on debugging mode.  Prints various debugging messages like font names etc.
-.TP
-\fB-nor[mal]\fP \fIfont\fP
-Cause the font used for the message panel and ruler numbers to be \fIfont\fP.
-This font is also used on the canvas when the selected font is not available
-in an X11 font (default = fixed).
+\fB-bol[d]\fP \fIfont\fP
+Cause the font used for displaying confirmation messages to be \fIfont\fP
+(default = 8x13bold).
 .TP
 \fB-bu[tton]\fP \fIfont\fP
 Cause the font used for most buttons to be \fIfont\fP (default = 6x13).
 .TP
-\fB-bol[d]\fP \fIfont\fP
-Cause the font used for displaying confirmation messages to be \fIfont\fP (default = 8x13bold).
-.TP
-\fB-startf[ontsize]\fP \fIpointsize\fP
-Set the default font size for text objects (default = 12pt).
-.TP
-\fB-startp[sFont]\fP \fIfont\fP
-Set the starting font name for \fIPostscript\fP fonts.
-.TP
-\fB-startl[atexFont]\fP \fIfont\fP
-Set the starting font name for \fILaTeX\fP fonts.
-.TP
-.B \-sh[owallbuttons]\fP
-Show all the \fIxfig\fP indicator buttons instead of only those relevant
-to the current drawing mode.  Normally, the buttons \fIline width\fP, 
-\fIarea-fill\fP, \fIgrid mode\fP, \fItext size\fP, etc. are only visible when 
-they are relevant to the current drawing mode.  
-The \fB-showallbuttons\fP option makes all
-of the indicator buttons visible at all times.  This takes up more screen
-real estate, but allows the user to see all settable parameters.
-.TP
-.B \-internalBW \fIwidth\fP
-Use lines of width \fIwidth\fP between all buttons and panels (default = 1).
-.TP
-.B \-lat[exfonts]
-Start \fIxfig\fP with \fILaTeX\fP font selection.  Normally, the \fIPostScript\fP fonts are
-available as the default.  This flag selects the \fILaTeX\fP fonts to start.
-.TP
-.B \-sp[ecialtext]
-Start \fIxfig\fP with the \fIspecial text\fP mode for text objects.
-.TP
-.B \-sc[alablefonts]
-Allows use of the X11R5 scalable fonts.
-.TP
-.B \-k[eyFile] \fIcompose-key-file\fP
-Use \fIcompose-key-file\fP instead of \fICompKeyDB\fP for compose (meta) key 
-database.  If there are no "/"s in the name, the file must reside in the \fIxfig\fP 
-library directory, \fI$XFIGLIBDIR\fP, usually /usr/local/lib/X11/xfig.
-If there are any "/"s in the name it is taken as is (not relative
-to \fI$XFIGLIBDIR\fP).
-If there is a leading "~/" in the string then the ~ is expanded to the 
-user's home directory.
-.TP
-.B \-fl[ushleft]
-Set the print option to print the figure flush left.  
-The default is to center the figure on the page.
-.TP
-.B \-te[xtoutline]
-Specifies that xfig will draw a red (on color machines) outline 
-of the "actual" bounding box of text objects.
-This is mostly useful for determining what rotated text will look like 
-since xfig doesn't show the text rotation on the canvas.
+.B \-de[bug]
+Turn on debugging mode.  Prints various debugging messages like font names etc.
 .TP
 .B \-e[xportLanguage] \fIlanguage\fP
 Specifies the language to be used for when exporting a fig file.
-Choices are: 
+Choices are:
 
 .TS
 l l.
@@ -201,18 +109,141 @@ tpic	TPIC
 pic	PIC
 xbm	X11 Bitmap
 .TE
+.TP
+.B \-fg \fIcolor\fP
+Use \fIcolor\fP as the foreground color and default color for objects.
+.TP
+.B \-fl[ushleft]
+Set the print option to print the figure flush left.
+The default is to center the figure on the page.
+.TP
+\fB-geom[etry]\fP \fIWxH+X+Y\fP
+Specifies the geometry for Fig application.
+.TP
+\fB-iconG[eometry]\fP \fI+X+Y\fP
+Specifies the position for the icon.
+.TP
+.B \-inc[hes]
+Make inches the unit of choice (default).
+.TP
+.B \-me[tric]
+Make centimeters the unit of choice.
+
+After \fIxfig\fP is started you may change the units from metric to
+imperial or vice versa from a popup menu available by pressing mouse
+button 3 in the \fIunits\fP box where the two rulers meet.
+.TP
+.B \-internalBW \fIwidth\fP
+Use lines of width \fIwidth\fP between all buttons and panels (default = 1).
+.TP
+.B \-inv[verse]
+Use inverse video (white on black).
+.TP
+.B \-k[eyFile] \fIcompose-key-file\fP
+Use \fIcompose-key-file\fP instead of \fICompKeyDB\fP for compose (meta) key
+database.  If there are no "/"s in the name, the file must reside in the \fIxfig\fP
+library directory, \fI$XFIGLIBDIR\fP, usually /usr/local/lib/X11/xfig.
+If there are any "/"s in the name it is taken as is (not relative
+to \fI$XFIGLIBDIR\fP).
+If there is a leading "~/" in the string then the ~ is expanded to the
+user's home directory.
+.TP
+.B \-lat[exfonts]
+Start \fIxfig\fP with \fILaTeX\fP font selection.  Normally, the \fIPostScript\fP
+fonts are available as the default.  This flag selects the \fILaTeX\fP
+fonts to start.
+.TP
+.B \-le[ft]
+Change the position of the side panel window to the left of the canvas window.
+.TP
+.B \-mo[nochrome]
+Use black and white only.
+.TP
+\fB-nor[mal]\fP \fIfont\fP
+Cause the font used for the message panel and ruler numbers to be \fIfont\fP.
+This font is also used on the canvas when the selected font is not available
+in an X11 font (default = fixed).
+.TP
+.B \-not[rack]
+Turn off cursor (mouse) tracking arrows.
+.TP
+\fB-ph[eight]\fP \fIunits\fP
+Make \fIxfig\fP come up \fIunits\fP high (where units are either cm or in).
+.TP
+\fB-pw[idth]\fP \fIunits\fP
+Make \fIxfig\fP come up \fIunits\fP wide (where units are either cm or in).
+.TP
+.B \-ri[ght]
+Change the position of the side panel window to the right of the canvas window
+(default: left).
+.TP
+.B \-sc[alablefonts]
+Allows use of the X11R5 scalable fonts.
+.TP
+.B \-nosc[alablefonts]
+Disables use of the X11R5 scalable fonts.  You might want to use this for
+debugging.
+.TP
+.B \-sh[owallbuttons]\fP
+Show all the \fIxfig\fP indicator buttons instead of only those relevant
+to the current drawing mode.  Normally, the buttons \fIline width\fP,
+\fIarea-fill\fP, \fIgrid mode\fP, \fItext size\fP, etc. are only visible when
+they are relevant to the current drawing mode.
+The \fB-showallbuttons\fP option makes all
+of the indicator buttons visible at all times.  This takes up more screen
+real estate, but allows the user to see all settable parameters.
+.TP
+.B \-sp[ecialtext]
+Start \fIxfig\fP with the \fIspecial text\fP mode for text objects.
+.TP
+\fB-startf[ontsize]\fP \fIpointsize\fP
+Set the default font size for text objects (default = 12pt).
+.TP
+\fB-startl[atexFont]\fP \fIfont\fP
+Set the starting font name for \fILaTeX\fP fonts.
+.TP
+\fB-startp[sFont]\fP \fIfont\fP
+Set the starting font name for \fIPostscript\fP fonts.
+.TP
+.B \-te[xtoutline]
+Specifies that xfig will draw a red (on color machines) outline
+of the "actual" bounding box of text objects.
+This is mostly useful for determining what rotated text will look like
+since xfig doesn't rotate the text (other than 0, 90, 180, or
+270 degrees) on the canvas.
+.TP
+.B \-tr[ack]
+Turn on cursor (mouse) tracking arrows (default).
+.TP
+\fB-users[cale]\fP \fIscale\fP
+Set the multiplier for displayed line lengths etc.  This factor is multiplied
+by the actual length, radius or diameter of the object currently
+being drawn on the canvas.  It is useful for making scale drawings, where
+e.g. 1 inch = 1 foot (userscale = 12.0) or 1cm = 1m (userscale = 100.0).
+.TP
+\fB-useru[nit]\fP \fIunits\fP
+The \fIunits\fP string is printed with the length information when drawing objects.
+For example if the \fIuserscale\fP = 1.0 and the \fIuserunit\fP = \fIft\fP 
+then a line which is 3 inches long on the canvas would be displayed as 
+"length = 3 ft" when it is being drawn.
+
+After \fIxfig\fP is started you may change the \fIuserscale\fP
+and the \fIuserunit\fP from a popup menu available by pressing mouse
+button 3 in the \fIunits\fP box where the two rulers meet.
+
 
 .SH "GRAPHICAL OBJECTS"
 The objects in \fIxfig\fP are divided into \fBprimitive objects\fP and
 \fBcompound objects\fP. The primitive objects are: \fIARC\fP, \fICIRCLE\fP,
 \fICLOSED SPLINE\fP, \fIELLIPSE\fP, \fIPOLYLINE\fP, \fIPOLYGON\fP,
-\fIENCAPSULATED POSTSCRIPT\fP, \fIBOX\fP, \fIARC-BOX\fP, \fISPLINE\fP, 
-and \fITEXT\fP.  
+\fIENCAPSULATED POSTSCRIPT\fP, \fIBOX\fP, \fIARC-BOX\fP, \fISPLINE\fP,
+and \fITEXT\fP.
 .PP
 A primitive object can be moved, rotated, flipped vertically or horizontally,
 scaled, copied, aligned within a compound object or erased.
-The TEXT primitive may not be flipped. It may be rotated but only the markers 
-show the rotation (on-screen).  Text IS rotated on \fIPostScript\fP output.
+The TEXT primitive may not be flipped. It may be rotated but only the markers
+show the rotation (on-screen) for angles other than 0, 90, 180 and 270 degrees.
+Text IS rotated on \fIPostScript\fP output.
 The attributes of any primitive object can be edited using a popup
 panel (discussed below), so you can, for instance, set the position
 of an object manually.
@@ -220,9 +251,8 @@ of an object manually.
 A compound object is composed of primitive objects. The primitive objects
 that constitute a compound can not be individually modified, but they can
 be manipulated as an entity; a compound can be moved, rotated, flipped
-vertically or horizontally, scaled, copied or erased.  A compound that 
-contains any boxes, arc-boxes, ellipses or circles may only be rotated by 
-90 degrees.
+vertically or horizontally, scaled, copied or erased.  A compound that
+contains any boxes or arc-boxes may only be rotated by 90 degrees.
 .PP
 Objects may overlap other objects according to their "depth".  Objects with
 larger depth number are obscured by objects with smaller depth.
@@ -231,21 +261,21 @@ larger depth number are obscured by objects with smaller depth.
 general \fIPOLYGON\fP is created as a result, which may then be modified, i.e.
 the individual vertices may be moved if desired.
 .SH "DISPLAY WINDOWS"
-Nine regions comprise the display area of \fIxfig\fP: the 
-command region, top ruler, side ruler, drawing mode region, 
-editing mode region, message region,
-indicator region with buttons to set and show current line thickness,
-line style, color, area-fill gray color and several other settings, mouse 
-function indicator region and canvas region. 
+Ten regions comprise the display area of \fIxfig\fP: the
+command region, top ruler, side ruler, drawing mode region,
+editing mode region, filename region, message region,
+mouse function indicator region and canvas region,
+and indicator region with buttons to set and show current line thickness,
+line style, color, area-fill gray color and several other settings.
 (The mouse function indicator region was inspired by the UPS
 debugger from the University of Kent.)
-The drawing and editing mode regions may be placed (together) to the left or 
+The drawing and editing mode regions may be placed (together) to the left or
 right of the the canvas window (default: left).
 .SH "COMMAND PANEL FUNCTIONS"
 .TP
 .I Quit
 Exit from \fIxfig\fP, discarding the figure. If the figure has been modified and
-not saved, the user will be asked to 
+not saved, the user will be asked to
 confirm the action, by clicking mouse button 1 on a confirm/cancel popup menu.
 .TP
 .I Delete ALL
@@ -258,14 +288,14 @@ Undo the last object creation, deletion or modification.
 Redraw the canvas.
 .TP
 .I Paste
-Paste the object previously copied into the cut/paste file into the current 
+Paste the object previously copied into the cut/paste file into the current
 figure (at its original position).
 .TP
 .I File
-Pressing mouse button 3 on this button invokes \fISave\fP function without 
+Pressing mouse button 3 on this button invokes \fISave\fP function without
 popping up the file panel.
 .br
-Mouse button 1 or \fI<Meta>f\fP pops up a panel which contains several 
+Mouse button 1 or \fI<Meta>f\fP pops up a panel which contains several
 file-related functions:
 .PP
 .po +.5i
@@ -292,15 +322,15 @@ Pressing return in this window will \fILoad\fP the file specified in the
 .I Filename Mask
 A wildcard mask may be typed into this editable AsciiTextWidget to restrict
 the search of filenames to a subset ala the \fIls\fP command.
-Pressing return in this window will automatically 
+Pressing return in this window will automatically
 rescan the current directory.
-This string may be set by setting the X toolkit resource 
+This string may be set by setting the X toolkit resource
 \fB*file_panel*mask*string\fP.
 .TP
 .I Current Directory
 This is an editable AsciiTextWidget which shows the current directory.
 It may be modified by the user to manually set a directory name.  When
-return is pressed in this window the directory specified is scanned for 
+return is pressed in this window the directory specified is scanned for
 files matching the \fIFilenamemask\fP, if any.
 
 The ~ (tilde) character may be used to specify a user's home directory, ala
@@ -310,8 +340,8 @@ unix shell tilde expansion.
 Pressing mouse button 1 on a directory name in the directory
 alternatives list will do a "change directory" to that directory.
 
-Pressing mouse button 3 in either the file or 
-\fIDirectory Alternatives\fP window will do a "change directory" to the 
+Pressing mouse button 3 in either the file or
+\fIDirectory Alternatives\fP window will do a "change directory" to the
 parent directory.
 .TP
 .I Home
@@ -319,47 +349,53 @@ Pressing this button will change the directory to the \f3$HOME\f1 directory
 of the user.
 .TP
 .I Rescan
-Pressing this button or \fI<Meta>r\fP will rescan the 
+Pressing this button or \fI<Meta>r\fP will rescan the
 current directory.
 .TP
 .I Cancel
-Pressing this button or \fI<Meta>c\fP will pop down the \fIFile\fP panel 
+Pressing this button or \fI<Meta>c\fP will pop down the \fIFile\fP panel
 without making any changes to the directory or file name.
 .TP
 .I Save
-Pressing this button or \fI<Meta>s\fP will save the current contents of the 
-canvas in the file specified in the 
-\fIFilename\fP window \fIif any\fP, or the name specified in the 
+Pressing this button or \fI<Meta>s\fP will save the current contents of the
+canvas in the file specified in the
+\fIFilename\fP window \fIif any\fP, or the name specified in the
 \fICurrent Filename\fP if the former is empty.
 If the file already exists a confirmation popup menu will appear
 asking the user to confirm or cancel the save.
 If there is a filename in the \fIFilename\fP window it is copied to the
 \fICurrent Filename\fP window.
+
+The current Export directory is updated to the current File directory when
+Save is pressed.
 .TP
 .I Load
-Pressing this button or \fI<Meta>l\fP will clear the canvas of any 
-current figure and read the figure from the filename specified 
-in the \fIFilename\fP menu item \fIif any\fP, or the name 
+Pressing this button or \fI<Meta>l\fP will clear the canvas of any
+current figure and read the figure from the filename specified
+in the \fIFilename\fP menu item \fIif any\fP, or the name
 specified in the \fICurrent Filename\fP if the former is empty.
-If there is a figure currently on the canvas and any modifications 
-have been made to it and not saved, a popup query 
-window will first appear asking if the user wishes to discard the current 
+If there is a figure currently on the canvas and any modifications
+have been made to it and not saved, a popup query
+window will first appear asking if the user wishes to discard the current
 figure or cancel the \fILoad\fP operation.
+
+The current Export directory is updated to the current File directory when
+Load is pressed.
 
 A popup message window will appear and diagnostic messages will be written
 if \fIxfig\fP changes any "illegal" object values to legal values.  For example,
-older versions of \fIxfig\fP were lax about initializing unused parts such as 
+older versions of \fIxfig\fP were lax about initializing unused parts such as
 \fIdepth\fP, and would produce very large, random values.
 \fIXfig\fP now will "clean up" bad values and inform you when it does so.
 Also, if you read in an older file format, \fIxfig\fP will inform you that
 it is converting it to the current format for that version of \fIxfig\fP.
 .br
-This window can be popped down by clicking the mouse button on the 
+This window can be popped down by clicking the mouse button on the
 \fIDismiss\fP button.
 .TP
 .I Merge Read
-Pressing this button or \fI<Meta>r\fP will read the figure from the filename 
-specified in the \fIFilename\fP window \fIif any\fP, or the name 
+Pressing this button or \fI<Meta>r\fP will read the figure from the filename
+specified in the \fIFilename\fP window \fIif any\fP, or the name
 specified in the \fICurrent Filename\fP if the former is empty,
 and merge it with the figure already shown on the canvas.
 
@@ -370,10 +406,10 @@ See \fILoad\fP above for a description of the popup message window.
 .TP
 .I Export
 Will let you export the figure to an output file in one of several formats.
-Pressing mouse button 3 on this button invokes \fIExport\fP function without 
+Pressing mouse button 3 on this button invokes \fIExport\fP function without
 popping up the export panel.
 .br
-Mouse button 1 or \fI<Meta>e\fP pops up a directory browser widget and 
+Mouse button 1 or \fI<Meta>e\fP pops up a directory browser widget and
 a menu with several export-related functions:
 .PP
 .po +.5i
@@ -394,7 +430,7 @@ You may choose that the figure is \fIflush left\fP or \fIcentered\fP in the
 output file.
 .TP
 .I Language
-The translation language to use for \fIxfig\fP output when output is 
+The translation language to use for \fIxfig\fP output when output is
 directed to a file.  The default is \fIPostScript\fP.
 The figure may be saved as an X11 bitmap by choosing \fIXbitmap\fP as the
 output language.
@@ -426,16 +462,19 @@ the name to the \fIDefault Output Filename\fP widget.
 .I Filename Mask
 A wildcard mask may be typed into this editable AsciiTextWidget to restrict
 the search of filenames to a subset ala the \fIls\fP command.
-Pressing return in this window will automatically 
+Pressing return in this window will automatically
 rescan the current directory.
-This string may be set by setting the X toolkit resource 
+This string may be set by setting the X toolkit resource
 \fB*export_panel*mask*string\fP.
 .TP
 .I Current Directory
 This is an editable AsciiTextWidget which shows the current directory.
 It may be modified by the user to manually set a directory name.  When
-return is pressed in this window the directory specified is scanned for 
+return is pressed in this window the directory specified is scanned for
 files matching the \fIFilenamemask\fP, if any.
+
+It is automatically updated
+to follow the current File directory when a File Load or Save is done.
 
 The ~ (tilde) character may be used to specify a user's home directory, ala
 unix shell tilde expansion.
@@ -444,8 +483,8 @@ unix shell tilde expansion.
 Pressing mouse button 1 on a directory name in the directory
 alternatives list will do a "change directory" to that directory.
 
-Pressing mouse button 3 in either the file or 
-\fIDirectory Alternatives\fP window will do a "change directory" to the 
+Pressing mouse button 3 in either the file or
+\fIDirectory Alternatives\fP window will do a "change directory" to the
 parent directory.
 .TP
 .I Home
@@ -456,24 +495,24 @@ of the user.
 Pressing this button or \fI<Meta>r\fP will rescan the current directory.
 .TP
 .I Cancel
-Pressing this button or \fI<Meta>c\fP will pop down the \fIExport\fP menu 
+Pressing this button or \fI<Meta>c\fP will pop down the \fIExport\fP menu
 without doing any print operation.
 .TP
 .I Export
-Pressing this button or \fI<Meta>e\fP will write (export) the figure 
+Pressing this button or \fI<Meta>e\fP will write (export) the figure
 to the file using the selected language.
-If the file already exists, a confirmation window will popup to ask the 
+If the file already exists, a confirmation window will popup to ask the
 user to confirm the write or cancel.
 Pressing return in the Output Filename window will also Export the file.
 .PP
 .po -.5i
 .nr LL 6.5i
 .TP
-.I Print 
-Pressing mouse button 3 on this button invokes \fIPrint to Printer\fP function 
-without popping up the print panel.  Pressing the \fIShift\fP key and 
+.I Print
+Pressing mouse button 3 on this button invokes \fIPrint to Printer\fP function
+without popping up the print panel.  Pressing the \fIShift\fP key and
 mouse button 3 invokes the \fIPrint to Batch\fP function.
-Pressing mouse button 1 or \fI<Meta>p\fP pops up a menu with several 
+Pressing mouse button 1 or \fI<Meta>p\fP pops up a menu with several
 print-related functions:
 .PP
 .po +.5i
@@ -494,73 +533,85 @@ This button will bring up a sub-menu from which you may choose
 default is \fIflush left\fP.
 .TP
 .I Printer
-This is an AsciiTextWidget which contains the printer to 
-use if output is directed to a printer.  The name of the printer may 
+This is an AsciiTextWidget which contains the printer to
+use if output is directed to a printer.  The name of the printer may
 be set setting the X toolkit resource \fB*printer*string\fP.
+If no resource is set, the environment variable \fBPRINTER\fP is used.
+.TP
+.I Print Job Params
+This is an AsciiTextWidget which into which you may put any extra
+command-line parameters that your lpr or lp program needs for printing.
+.TP
+.I Figures in batch
+This indicator shows how many figures have been put in the batch file
+for printing
 .TP
 .I Dismiss
 Pressing this button or \fI<Meta>c\fP will pop down the \fIPrint\fP menu.
 .TP
-.I Print to Batch
+.TP
+.I Print FIGURE/BATCH to Printer
+Pressing this button or \fI<Meta>p\fP will send the current figure
+(or the batch file if it is has any figures in it) to the printer,
+by passing it through \fIfig2dev\fP to convert it to PostScript
+then to the unix \fIlpr\fP (on BSD equivalent Unixes)
+or \fIlp\fP (on SYSV systems) program.  If the batch file is printed by this
+button then it is removed after printing.
+The message in the button changes to reflect whether the batch file
+will be printed (when there are any figures in the batch file)
+or the current figure.
+
+Note that the figure that is printed is what you see on the canvas,
+not necessarily the figure file.  I.e., if you haven't saved the figure
+since the last changes, the figure from the canvas is printed.
+\fIXfig\fP writes the figure to a temporary file to do this.
+The name of the file is \fIXFIGTMPDIR\fB/xfig-print\fR\fIPID\fP, where
+\fIXFIGTMPDIR\fP is the value of the environment variable by that name and
+\fIPID\fP is the process ID of \fIxfig\fP.  If the environment variable
+\fIXFIGTMPDIR\fP is empty or not set, the \fB/tmp\fR directory is used.
+.I Print FIGURE to Batch
 Pressing this button or \fI<Meta>b\fP will append the figure (in PostScript form)
 to a batch file.
 The \fIPrint to Printer\fP button will send the batch file to the printer.
 .TP
-.I Clear Batch File
-Pressing this button or \fI<Meta>x\fP will erase the accumulated figures from 
+.I Clear Batch
+Pressing this button or \fI<Meta>x\fP will erase the accumulated figures from
 the batch file.
-.TP
-.I Print to Printer
-Pressing this button or \fI<Meta>p\fP will send the current figure 
-(or the batch file if it is has any figures in it) to the printer, 
-by passing it through \fIfig2dev\fP to convert it to PostScript 
-then to the unix \fIlpr\fP (on BSD equivalent Unixes) 
-or \fIlp\fP (on SYSV systems) program.  If the batch file is printed by this
-button then it is removed after printing.
-
-Note that the figure that is printed is what you see on the canvas,
-not necessarily the figure file.  I.e., if you haven't saved the figure
-since the last changes, the figure from the canvas is printed.  
-\fIXfig\fP writes the figure to a temporary file to do this.  
-The name of the file is \fIXFIGTMPDIR\fB/xfig-print\fR\fIPID\fP, where 
-\fIXFIGTMPDIR\fP is the value of the environment variable by that name and
-\fIPID\fP is the process ID of \fIxfig\fP.  If the environment variable
-\fIXFIGTMPDIR\fP is empty or not set, the \fB/tmp\fR directory is used.
 .PP
 .po -.5i
 .nr LL 6.5i
 
 .SH "INDICATOR PANEL COMMAND DESCRIPTIONS"
 .PP
-The indicator panel contains buttons to set certain drawing parameters, such as
-line thickness, canvas grid, rotation angle etc.
-All of the buttons use the same mouse buttons for setting values.  
+The indicator panel contains buttons to set certain drawing parameters
+such as line thickness, canvas grid, rotation angle etc.
+All of the buttons use the same mouse buttons for setting values.
 Pressing mouse button 1 on the indicator will pop up a panel
 in which either a value may be typed (e.g. for a line thickness) or the
-mouse may be clicked on one of several buttons (e.g. for grid style or 
+mouse may be clicked on one of several buttons (e.g. for grid style or
 font name).  For those that expect a value, pressing return in the value
 part of the window will set the new value and pop down the menu.
 .PP
 Pressing mouse button 2 on an indicator will decrement the value
 (e.g. for line thickness)
-or cycle through the options in one direction (e.g. font names), while pressing 
+or cycle through the options in one direction (e.g. font names), while pressing
 mouse button 3 will increment the value or cycle through the options
 in the other direction.
 .TP
 .I ZOOM SCALE
 The canvas zoom scale may be set/increased/decreased with this button.
 The zoom scale is displayed within the zoom button. Ruler,
-grid and linewidth are scaled, too.  
+grid and linewidth are scaled, too.
 Pressing mouse button 2 will decrease the zoom factor by 1.0 unless it
 is less than 1.0 already in which case it will reduce to the nearest 0.25.
 Pressing mouse button 3 will increase the zoom factor by 1.0 unless it
 is less than 1.0 in which case it will increase it to the nearest 0.25.
-Pressing the control key and mouse button 3 together will 
+Pressing the control key and mouse button 3 together will
 set the zoom scale to 1.
 .sp
-The figure may also be zoomed by defining a zoom rectangle by pressing 
+The figure may also be zoomed by defining a zoom rectangle by pressing
 the control key and mouse button 1 together.  This will define one corner
-of the zoom rectangle.  Move the mouse and click mouse button 1 again to 
+of the zoom rectangle.  Move the mouse and click mouse button 1 again to
 define the opposite corner of the zoom rectangle.
 .TP
 .I GRID MODE
@@ -568,30 +619,30 @@ With this button the user may select no grid,
 1/4 inch (5mm in metric mode) grid or 1/2 inch (10mm) grid.
 .TP
 .I POINT POSITION
-This button controls the coarseness of object placement on the canvas. 
+This button controls the coarseness of object placement on the canvas.
 The options are exact (on pixel) placement, 1/16 inch (2mm in metric mode), 1/4
 inch (5mm) or 1/2 inch (10mm).  This allows the user to easily place objects
 in horizontal or vertical alignment.
 
 This also restricts which objects may be "picked up" by the mouse when editing.
 If a corner of an object is not positioned on the canvas on a multiple
-of the point positioning resolution you may not be able to pick it.  If this 
-happens, a black square will temporarily appear above the mouse cursor.  
+of the point positioning resolution you may not be able to pick it.  If this
+happens, a black square will temporarily appear above the mouse cursor.
 This square will also appear anytime the user tries to pick a nonexistent
 object.
 .TP
 .I ROTATION ANGLE
-The rotation angle for rotating objects may be set/increased/decreased with
-this button.
-Note that not all objects may be rotated, and certain objects may only be
-rotated by certain angles.
+The rotation angle for rotating objects may be set/increased/decreased
+with this button.
+Note that not all objects may be rotated, and certain objects
+may only be rotated by certain angles.
 Pressing mouse button 2 will decrease the angle in steps of 15 degrees,
 while mouse button 3 will increase the angle the same amount.
 To select other angles, press mouse button 1 and
 enter the angle in the popup menu.
 .TP
 .I DEPTH
-The depth at which new objects will be created may be set/increased/decreased 
+The depth at which new objects will be created may be set/increased/decreased
 with this button.
 .TP
 .I NUMBER OF POLYGON SIDES
@@ -617,15 +668,15 @@ the box being operated on, only one end of the link will be adjusted.)
 .I VERTICAL ALIGN
 This sets the vertical alignment mode for the \fIALIGN\fP button in the
 editing mode panel.  The choices are no vertical alignment, align to top edge,
-middle or bottom edge of compound.  
-The \fIHORIZONTAL ALIGN\fP and \fIVERTICAL ALIGN\fP indicator settings are 
+middle or bottom edge of compound.
+The \fIHORIZONTAL ALIGN\fP and \fIVERTICAL ALIGN\fP indicator settings are
 used together to align objects inside a compound or in canvas.
 .TP
 .I HORIZONTAL ALIGN
 This sets the horizontal alignment mode for the \fIALIGN\fP button in the
 editing mode panel.  The choices are no horizontal alignment, align to left edge,
 middle or right edge of compound.
-The \fIHORIZONTAL ALIGN\fP and \fIVERTICAL ALIGN\fP indicator settings are 
+The \fIHORIZONTAL ALIGN\fP and \fIVERTICAL ALIGN\fP indicator settings are
 used together to align objects inside a compound or in canvas.
 .TP
 .I ANGLE GEOMETRY
@@ -666,7 +717,7 @@ for all objects except \fITEXT\fP and \fIENCAPSULATED POSTSCRIPT\fP,
 or to turn off area fill altogether.
 .TP
 .I COLOR
-The user may select one of eight predefined colors to draw with, or select 
+The user may select one of eight predefined colors to draw with, or select
 that the \fIdefault\fP (-fg) color is to be used.  The eight colors are black,
 blue, green, cyan, red, magenta, yellow and white.  Note that \fITransFig\fP
 versions 2.1.4 and later support color output for \fIPostScript\fP.
@@ -681,7 +732,7 @@ drawn for the purpose of having filled areas without outlines.
 The choices for line style are solid, dashed and dotted.  Once created,
 a dashed or dotted line may be edited to change the length of dashes
 or the spacing of dots respectively.
-The dash length and dot gap can be changed from the default 
+The dash length and dot gap can be changed from the default
 using the popup menu.
 .TP
 .I BOX CURVE
@@ -691,12 +742,12 @@ button.
 .I ARROW MODE
 This button selects the auto-arrow mode for drawing lines.  The options are
 no arrow heads, backward-pointing arrow head, forward-pointing
-arrow head or both.  If one or both arrow head modes are turned on, then 
+arrow head or both.  If one or both arrow head modes are turned on, then
 arrow heads are automatically drawn when drawing
 \fIPOLYLINE\fP, \fISPLINE\fP or \fIARC\fP objects.
 .TP
 .I TEXT JUSTIFICATION
-The adjustment of text may be set to \fIleft\fP, \fIcenter\fP or 
+The adjustment of text may be set to \fIleft\fP, \fIcenter\fP or
 \fIright justification\fP.
 .TP
 .I TEXT SIZE
@@ -710,26 +761,43 @@ that will be placed between lines on hitting \fI<return>\fP.  The default
 is a factor of 1.2 times the current font size.
 .TP
 .I TEXT FONT
-This button allows a selection of 35 fonts available for most Apple 
+This button allows a selection of 35 fonts available for most Apple
 \fIPostScript\fP printers.
 There are two buttons at the top of the menu.  The \fIcancel\fP button pops
 down the menu without changing the current font.  The \fIuse latex fonts\fP
-will switch the menu to the \fILaTeX\fP font choices.  
+will switch the menu to the \fILaTeX\fP font choices.
 When the \fILaTeX\fP font menu is up, besides a \fIcancel\fP button
 there is a button to switch back to the \fIPostScript\fP fonts.
 
-The name of the font is printed in the font itself so that one may see 
+The name of the font is printed in the font itself so that one may see
 what that font looks like.
-If a corresponding X11 font exists, new text is created 
+If a corresponding X11 font exists, new text is created
 on the canvas using that font.
-\fIxfig\fP uses the size of X11 font closest to that selected 
+\fIxfig\fP uses the size of X11 font closest to that selected
 by the font size button.
-If the X11 font doesn't exist, \fIxfig\fP uses the font 
+If the X11 font doesn't exist, \fIxfig\fP uses the font
 selected by the "-normal" option.
 To abort selection of a font, click mouse button 1 on \fIcancel\fP.
+.TP
+.I TEXT FLAGS
+This button displays the current setting of the text flags.  You may use
+mouse buttons 2 and 3 to step back and forth through the three flag settings:
+\fIHidden\fP, \fIRigid\fP and \fISpecial\fP.  To change any of the flags
+you must use mouse button 1 to popup a menu from which you may change any
+or all of the flags.
+
+The \fIHidden\fP and \fISpecial\fP attributes of text objects are
+used with figures that will be incorporated into LaTeX.  Please see
+the documentation for LaTeX for further information.  The default for the
+\fIHidden\fP flag is \fIoff\fP.
+The default for the \fISpecial\fP flag is \fIoff\fP unless xfig is started
+with the command-line parameter \fI-specialtext\fP (resource specialtext).
+
+The \fIRigid\fP attribute forces text to remain the same size even if
+inside a compound object that is scaled up or down.  The default is \fIoff\fP.
 
 .SH "DRAWING AND EDITING MODE PANELS"
-Icons in the drawing and editing mode panel windows represent 
+Icons in the drawing and editing mode panel windows represent
 object manipulation functions,
 modes and other drawing or modification aids.
 Manipulation functions are selected by positioning the cursor over the icon
@@ -743,12 +811,12 @@ The drawing mode panel contains buttons used to create the various \fIxfig\fP
 objects.
 Once the drawing mode is selected, the object is created by moving
 the mouse to the point on the canvas where the object is to be placed
-and pressing and releasing mouse button 1.  
-After that the mouse is moved to the second point and 
-mouse button 1 is again pressed for the next point.  
-For those objects which may have more than two points (e.g. a line), 
-mouse button 1 may be pressed for each successive point, and 
-mouse button 2 must be pressed to finish the object.  
+and pressing and releasing mouse button 1.
+After that the mouse is moved to the second point and
+mouse button 1 is again pressed for the next point.
+For those objects which may have more than two points (e.g. a line),
+mouse button 1 may be pressed for each successive point, and
+mouse button 2 must be pressed to finish the object.
 To create a single point
 using the \fIPOLYLINE\fP button, press and release mouse button 2.
 For the \fIARC\fP object, which requires exactly three
@@ -758,25 +826,25 @@ At any time mouse button 3 may be pressed to cancel the
 creation of the object.
 .TP
 .I ARC
-Create an arc.  Specify three points using mouse button 1.  The first and 
-last points will form the endpoints of the arc and the second specifies 
+Create an arc.  Specify three points using mouse button 1.  The first and
+last points will form the endpoints of the arc and the second specifies
 any point on the arc.
 .TP
 .I BOX
-Create rectangular boxes.  
+Create rectangular boxes.
 Start by clicking mouse button 1 on any corner of the desired box and
-finish with the same mouse button on the diagonally opposite corner of 
+finish with the same mouse button on the diagonally opposite corner of
 the box.
 .TP
 .I ARC-BOX
-Create rectangular boxes with rounded corners.  
+Create rectangular boxes with rounded corners.
 Start and finish with mouse button 1 in the same way as \fIBOX\fP.
 The radius of the corners is selected by the \fIBOX CURVE\fP button.
 .TP
-.I CIRCLE 
+.I CIRCLE
 Create circles by specifying their radii or diameters.
 Click mouse button 1 on the center of the circle and drag the mouse
-until the desired radius or diameter is attained.  Click 
+until the desired radius or diameter is attained.  Click
 mouse button 1 again to finish the circle.
 .TP
 .I ELLIPSE
@@ -785,26 +853,34 @@ Create ellipses using the same procedure as for the drawing of circles.
 .I ENCAPSULATED POSTSCRIPT OBJECT (EPS)
 Click mouse button 1 on any corner
 for the \fIEPS\fP object and finish by clicking mouse button 1
-again on the diagonally opposite corner.  The \fIEDIT\fP 
+again on the diagonally opposite corner.  The \fIEDIT\fP
 popup panel will appear and the file name of the \fIEPS\fP object
-may be entered.  After pressing \fIDONE\fP or \fIAPPLY\fP 
-(see the description of the EDIT panel for the difference between 
+may be entered.  After pressing \fIDONE\fP or \fIAPPLY\fP
+(see the description of the EDIT panel for the difference between
 the \fIDONE\fP and \fIAPPLY\fP buttons) the bitmap
 part of the \fIEPS\fP object will appear in the box just created.  If no
 \fIEPS\fP file is available yet or no name is entered or there is no
-\fIpreview bitmap\fP in the \fIEPS\fP file, pressing \fIDONE\fP 
-will pop down the edit panel and the word 
+\fIpreview bitmap\fP in the \fIEPS\fP file, pressing \fIDONE\fP
+will pop down the edit panel and the word
 \fI<empty>\fP or the \fIEPS\fP file name will remain in the \fIEPS\fP box.
 Later, when the name of the \fIEPS\fP file is known or the file is available,
 you may re-read the \fIEPS\fP file using the popup edit panel and the bitmap
 part of the \fIEPS\fP file will replace the name in the box.
-.br
-If you want the original size of the \fIEPS\fP object, press the "Use orig size"
-button and the eps bitmap will enlarge or shrink to the size specified in the
-preview bitmap of the \fIEPS\fP file.  If you want the \fIEPS\fP object to
-be approximately the size of the rectangle specified with the mouse but want
-the aspect ratio to be same as the original, press either "Shrink to orig" or
-"Enlarge to orig" buttons.  You must press the APPLY button to see these effects.
+.sp
+If you want the original size of the \fIEPS\fP object, press the
+"Use orig size" button and the eps bitmap will enlarge or shrink to
+the size specified in the preview bitmap of the \fIEPS\fP file.
+If you want the \fIEPS\fP object to be approximately the size of
+the rectangle specified with the mouse but want the aspect ratio
+to be same as the original, press either "Shrink to orig" or
+"Enlarge to orig" buttons.  You must press the APPLY button to
+see these effects.
+.sp
+If the \fIEPS\fP file has no preview bitmap, but has a \fI%%BoundingBox\fP
+comment and xfig has been compiled \fIxfig\fP with the \fI-DGSBIT\fP flag and
+you have \fIgs\fP (ghostscript) version 2.4 or newer then xfig will 
+call \fIgs\fP to produce a preview bitmap on the screen.
+Ghostscript is available from \fIprep.ai.mit.edu\fR.
 .TP
 .I INTERPOLATED SPLINE
 Create (cubic spline) spline objects.
@@ -854,16 +930,16 @@ Create text strings. Click mouse button 1 at the desired position on
 the canvas window, then enter text from the keyboard.  Text may be pasted
 from the PRIMARY cut buffer (xterm cut/paste buffer) by pressing the
 \fIF18\fP function key (the \fIPaste\fP key on Sun keyboards)
-or any key/button defined in the translation 
+or any key/button defined in the translation
 table for the canvas.  See the default \fIFig.ad\fP file for example.
 Text is drawn using the current font, font size and justification settings.
-A DEL or ^H (backspace) will delete a character, while a ^X will 
+A DEL or ^H (backspace) will delete a character, while a ^X will
 erase the entire line.
-Finish by clicking mouse button 2 or typing the \fI<return>\fP key.  
+Finish by clicking mouse button 2 or typing the \fI<return>\fP key.
 If \fI<return>\fP is used, the text pointer automatically moves to the next "line",
 a distance of the font height times the value in the TEXT STEP button,
-and text input mode is re-entered.  To finish text fully, click 
-mouse button 2 or choose any panel button that changes 
+and text input mode is re-entered.  To finish text fully, click
+mouse button 2 or choose any panel button that changes
 modes (e.g. box, save, etc).
 To edit text, click on an existing text string with mouse button 1.
 Insertion of characters will take place at that point.  Or, use the popup
@@ -882,9 +958,9 @@ Keys	Character Name
 !!	upside-down exclamation point
 ??	upside-down question mark
 C/	cent sign
-L-	British pound
+L\-	British pound
 OX	currency
-Y-	yen
+Y\-	yen
 __	broken vertical bar
 SO	section
 ""	dieresis
@@ -894,10 +970,10 @@ _a	ordfeminine
 _o	ordmasculine
 <<	guillemotleft
 >>	guillemotright
--|	notsign
---	hyphen
-+-	plusminus
-^-	macron
+\-|	notsign
+\-\-	hyphen
++\-	plusminus
+^\-	macron
 ^*	degree
 ^.	periodcentered
 ^1	onesuperior
@@ -906,9 +982,9 @@ _o	ordmasculine
 14	onequarter
 12	onehalf
 34	threequarters
-\\	acute
+\e\e	acute
 **	multiply
--:	division
+\-:	division
 /u	mu
 P!	paragraph
 A`	A accent grave
@@ -927,8 +1003,8 @@ a*	a ring
 ae	ae
 C,	C cedilla
 c,	c cedilla
-D-	Eth
-d-	eth
+D\-	Eth
+d\-	eth
 E`	E accent grave
 E'	E accent acute
 E^	E accent circumflex
@@ -990,7 +1066,7 @@ that point. To select other objects, hold down the shift key while
 pressing mouse button 1: the markers of one object will be
 temporarily highlighted.  By repeatedly clicking mouse button 1 while
 holding down the shift key, it is possible to cycle through all candidates for
-selection at that point. To perform the selected action, e.g. 
+selection at that point. To perform the selected action, e.g.
 deleting one box, click on the point without holding down the
 shift key.  The operation will be performed on the highlighted object.
 
@@ -1015,7 +1091,7 @@ GLUE mode to some other mode (apart from BREAK) and back again.
 .TP
 .I BREAK COMPOUND
 Break a compound object to allow manipulation of its component parts.
-Click mouse button 1 on one of the corner markers of the compound 
+Click mouse button 1 on one of the corner markers of the compound
 object or along one of the imaginary lines defining the compound box.
 Clicking with mouse button 2 will achieve the same effect
 but will also tag the component parts (although you will not see the
@@ -1027,79 +1103,79 @@ Any object may be scaled.  If mouse button 1 is pressed on a
 \fIBOX\fP or \fIARC-BOX\fP object, then that object will be scaled
 proportionally to its aspect ratio.  If mouse button 2 is pressed
 on any object, that object will be scaled up or down about its center.
-Text may only be scaled if inside a compound object and then only if 
+Text may only be scaled if inside a compound object and then only if
 its \fIRIGID\fP flag is set to \fINORMAL\fP (using the popup edit panel).
 See the \fITransFig\fP manual for description of text options.
 .TP
 .I ALIGN
-Align objects.  Click mouse button 1 to align objects inside a compound object 
+Align objects.  Click mouse button 1 to align objects inside a compound object
 or mouse button 2 to align all objects on canvas according to the
-setting in the \fIVERTICAL ALIGN\fP and \fIHORIZONTAL ALIGN\fP indicators.  
-The choices are the cumulative effect of vertically aligning the objects 
-to the \fITOP\fP, \fIMIDDL\fPE or \fIBOTTO\fPM edge and horizontally aligning 
+setting in the \fIVERTICAL ALIGN\fP and \fIHORIZONTAL ALIGN\fP indicators.
+The choices are the cumulative effect of vertically aligning the objects
+to the \fITOP\fP, \fIMIDDL\fPE or \fIBOTTO\fPM edge and horizontally aligning
 to the \fILEF\fPT, \fIMIDDL\fPE or \fIRIGH\fPT edge of the compound.
 .TP
 .I MOVE POINT
-Modify the position of a point of any object except \fITEXT\fP and 
+Modify the position of a point of any object except \fITEXT\fP and
 \fICOMPOUND\fP objects.
-For unrestrained movement, click mouse button 1 over the desired 
+For unrestrained movement, click mouse button 1 over the desired
 point, reposition the point, and click the \fIleft\fP button again.
-For horizontally or vertically constrained move, click mouse button 2 
+For horizontally or vertically constrained move, click mouse button 2
 on the desired point and move either horizontally or vertically.
 Notice that once you choose the direction (horizontal or vertical), movement
 is constrained in that direction.  If, after moving the mouse initially, it
 is moved in the other direction a greater distance than the current position
 of the mouse relative to the starting point, then that will be the new
-constraint direction.  In otherwords if you first move the mouse 
-\fIhorizontally\fP one inch (say) then move it \fIvertically\fP 
-1.3 inches, the direction will switch to \fIvertical\fP until any 
+constraint direction.  In otherwords if you first move the mouse
+\fIhorizontally\fP one inch (say) then move it \fIvertically\fP
+1.3 inches, the direction will switch to \fIvertical\fP until any
 \fIhorizontal\fP motion exceeds 1.3 inches.
 When the object is positioned where desired, click mouse button 1 to
-place it if that button was used to start the move (unconstrained), 
+place it if that button was used to start the move (unconstrained),
 or mouse button 2 (constrained) if that button was used.
 .TP
 .I MOVE
 Move object.  Click mouse button 1 (unconstrained move) or mouse button 2
 (constrained move) on any corner marker of the object to be moved.
-The horizontal/vertical constrained movement (mouse button 2) works 
+The horizontal/vertical constrained movement (mouse button 2) works
 exactly as described for \fIMOVE POINT\fP.
 .TP
 .I ADD POINTS
 Add points to \fIPOLYLINE\fP, \fIPOLYGON\fP, \fISPLINE\fP,
 or \fICLOSED SPLINE\fP objects (points of a \fIBOX\fP can not be added
 or deleted).  Note that a \fIREGULAR POLYGON\fP is really an ordinary
-\fIPOLYGON\fP, so adding points to this object is allowed and does NOT keep 
+\fIPOLYGON\fP, so adding points to this object is allowed and does NOT keep
 the polygon regular.
 .TP
 .I COPY / CUT TO CUT BUFFER
-Copy object to canvas or cut buffer.  Click mouse button 1 (unconstrained 
-copy) or mouse button 2 (constrained copy) on any corner marker of 
+Copy object to canvas or cut buffer.  Click mouse button 1 (unconstrained
+copy) or mouse button 2 (constrained copy) on any corner marker of
 the object to be copied (for \fICIRCLE\fP and \fIELLIPSE\fP
 objects, mouse may also be clicked on their circumferences).
 The object will be duplicated and then moved exactly as in \fIMOVE\fP.
-If mouse button 3 is clicked on an object, that object is copied 
+If mouse button 3 is clicked on an object, that object is copied
 to the cut buffer for pasting into this or another figure.
 The file used for the cut buffer is called \f3.xfig\f1
 in the user's \f3$HOME\f1 directory.  This allows a user to run two or more
 xfig processes and cut/paste objects between them.
 If there is no \f3$HOME\f1, a file is created in a temporary directory
-called \f3xfig\f2PID\f1 where \f2PID\f1 is the xfig process ID.  
+called \f3xfig\f2PID\f1 where \f2PID\f1 is the xfig process ID.
 The temporary directory used is specified in the environment variable
 \fIXFIGTMPDIR/\fR.  If that variable is empty or not set then \fI/tmp\fP is used.
 .TP
 .I DELETE POINTS
 Delete points from \fIPOLYLINE\fP, \fIPOLYGON\fP, \fISPLINE\fP,
-or \fICLOSED SPLINE\fP.  Objects (points of a \fIBOX\fP or \fIARC-BOX\fP 
-can not be added or deleted).  
+or \fICLOSED SPLINE\fP.  Objects (points of a \fIBOX\fP or \fIARC-BOX\fP
+can not be added or deleted).
 Note that a \fIREGULAR POLYGON\fP is really an ordinary
-\fIPOLYGON\fP, so deleting points from this object is allowed and does NOT 
+\fIPOLYGON\fP, so deleting points from this object is allowed and does NOT
 keep the polygon regular.
 .TP
 .I DELETE
 Click mouse button 1 on an object to delete the object.
 Delete a \fIregion\fP of the canvas by clicking mouse button 2
 and dragging the mouse to define an area of objects to delete.
-Clicking mouse button 3 on an object will copy the object 
+Clicking mouse button 3 on an object will copy the object
 to the cut buffer (see \fICOPY/CUT TO CUT BUFFER\fP above).
 .TP
 .I EDIT OBJECT
@@ -1114,7 +1190,7 @@ heads on lines).
 
 Press the "done" button to apply the changes to the object and finish.
 Press the "apply" button to apply the changes but keep the menu up for
-further changes.  Press the "cancel" button to cancel the changes and 
+further changes.  Press the "cancel" button to cancel the changes and
 pop down the menu.
 
 The following table shows which settings are used for the different objects.
@@ -1123,7 +1199,7 @@ The following table shows which settings are used for the different objects.
 .nf
 .TS
 l c 1 c 1 c 1 c 1 c 1 c 1 c 1 c 1 c.
-Object	\(dgAngle	Area	Line	Line	Box	\(ddDepth	Color	Radius	Text Font/
+Object	Angle	Area	Line	Line	Box	\(ddDepth	Color	Radius	Text Font/
 		Fill	Width	Style	Curve				Just./Size
 _
 Arc		X	X	X		X	X
@@ -1136,65 +1212,65 @@ Ellipse	X	X	X	X		X	X	X
 _
 EPS						X	X
 _
-Box,Polygon,	X	X	X		X	X
+Box,Polygon,		X	X	X		X	X
 Line,Spline
 _
-Text	X					X	X		X
+Text	\(dgX					X	X		X
 _
 .TE
 .fi
 .if n .RE
 
-\(dg The angle may be set, but the object will only be rotated on \fIPostScript\fP
-output.
+\(dg The angle may be set, but the object will only be rotated on
+\fIPostScript\fP output for angles other than 0, 90, 180 and 270 degrees.
 
 \(dd The depth defines how overlapping objects are displayed. Objects with
-a greater depth value are obstructed by objects with smaller depth value. 
+a greater depth value are obstructed by objects with smaller depth value.
 The maximum depth allowed is 1000.
 
 .TP
 .I UPDATE
 By pressing mouse button 1 on an object, the current settings for
 the indicator buttons (line width, line style, area fill etc.) which
-have been selected for update are copied into that object.  
+have been selected for update are copied into that object.
 When \fIxfig\fP is started, all indicator buttons which are components of objects
 are selected for update.  To unselect an indicator, click on the update button
-and click mouse button 1 on the small button in the upper-right 
+and click mouse button 1 on the small button in the upper-right
 corner of the indicator.  When that indicator is selected the foreground color
 (default black) shows.  When it is unselected the background color (default white)
 shows.
 .sp
-If mouse button 2 is clicked on an object, the settings in the object 
+If mouse button 2 is clicked on an object, the settings in the object
 that are selected by the indicator buttons are copied into those indicator button
 settings.  Thus, one may copy selected attributes of one object to another.
 .TP
 .I FLIP VERTICALLY
 Flip the object up/down (mouse button 1) or copy the object and flip it
 (mouse button 2). Point to part of the object, click
-the appropriate button.  That object will be flipped vertically 
+the appropriate button.  That object will be flipped vertically
 about that point.
 .TP
 .I FLIP HORIZONTALLY
 Flip the object left/right (mouse button 1) or copy the object and flip it
 (mouse button 2). Point to part of the object, click
-the appropriate button.  That object will be flipped horizontally 
+the appropriate button.  That object will be flipped horizontally
 about that point.
 .TP
 .I ROTATE CLOCKWISE
-Rotate the object (mouse button 1) or copy and rotate it 
-(mouse button 2) -N degrees (clockwise), where N is the amount 
-set in the rotation indicator button.  The object is rotated about 
+Rotate the object (mouse button 1) or copy and rotate it
+(mouse button 2) -N degrees (clockwise), where N is the amount
+set in the rotation indicator button.  The object is rotated about
 the chosen point.
 Not all objects can be rotated, and not all can be rotated at arbitrary
 angles.  For example, \fIBOX\fP, \fIARC-BOX\fP and \fIEPS\fP objects may
 only be rotated by 90 degrees.
-Text objects may be rotated although only the markers are rotated on 
-the screen, but the text
-itself is not displayed rotated because of the limitations of the X11
-Window System.  Text IS rotated correctly on \fIPostScript\fP output, however.
+Text objects may be rotated, although for angles other than 0, 90, 180
+and 270 degrees only the markers are rotated on the screen
+because of the limitations of the X11 Window System.
+Text IS rotated correctly on \fIPostScript\fP output, however.
 .TP
 .I ROTATE COUNTER-CLOCKWISE
-Rotate the object (mouse button 1) or copy (mouse button 2) 
+Rotate the object (mouse button 1) or copy (mouse button 2)
 +N degrees (counter-clockwise), where N is the amount set in the rotation
 indicator button.  The object is rotated about the chosen
 point.
@@ -1205,26 +1281,26 @@ turn \fIPOLYLINE\fP into a \fIINTERPOLATED SPLINE\fP object.
 .TP
 .I ADD/DELETE ARROWS
 Add or delete arrow heads of \fIARC\fP, \fIPOLYLINE\fP or \fISPLINE\fP
-objects.  Add an arrow head by clicking mouse button 1 on the 
-endpoint of the object.  Delete an arrow head by clicking 
+objects.  Add an arrow head by clicking mouse button 1 on the
+endpoint of the object.  Delete an arrow head by clicking
 mouse button 2 on the endpoint or arrow head.  The length and thickness
 of the arrowheads may be modified using the popup edit panel.
 .SH "PANNING"
 The figure may be panned by clicking mouse button 1, 2 or 3
 in the rulers.  Clicking mouse button 1 in the top ruler
 will pan the image to left the by 1/2 inch (1cm in metric mode),
-adjusted for zoom factor. Clicking mouse button 3 in the top ruler 
+adjusted for zoom factor. Clicking mouse button 3 in the top ruler
 will pan the image right by the same amount.
 By pressing and \fIholding\fP mouse button 2 the user may drag
 the ruler by the amount desired, thus panning the image by that amount.
 .PP
 The figure is panned up and down in the same way by clicking the mouse
 in the ruler on the right of the canvas.  Also, the figure can be returned
-to its origin by clicking mouse button 1 in the units 
+to its origin by clicking mouse button 1 in the units
 (e.g. \fIcm\fP or \fIin\fP) box.
 .PP
 The arrow keys may also be used to pan the image and the home key to
-return the figure to the origin.  Also, pressing the Control Key and 
+return the figure to the origin.  Also, pressing the Control Key and
 mouse button 2 will pan the figure to the origin.
 
 .SH X DEFAULTS
@@ -1239,12 +1315,12 @@ Name	Class	Type	Default	Command-line
 _
 justify	Justify 	boolean	false	-left (false) and
 				   -right (true)
-landscape	Orientation 	boolean	true	-Landscape and 
+landscape	Orientation 	boolean	true	-Landscape and
 				   -Portrait
-pwidth	Width	integer	10(8)	-pwidth
-pheight	Height	integer	8(9.5)	-pheight
+pwidth	Width	float	10(8)	-pwidth
+pheight	Height	float	8(9.5)	-pheight
 trackCursor	Track	boolean	on	-track and -notrack
-inches	Inches	boolean	true	-inches, -imperial, 
+inches	Inches	boolean	true	-inches, -imperial,
 				   -centimeters and
 				   -metric
 reverseVideo	ReverseVideo	boolean	off	-inverse
@@ -1252,7 +1328,7 @@ debug	Debug	boolean	off	-debug
 latexfonts	Latexfonts	boolean	off	-latexfonts
 normalFont	NormalFont	string	fixed	-normal
 boldFont	ButtonFont	string	8x13bold	-bold
-startfontsize	StartFontSize	integer	12	-startfontsize
+startfontsize	StartFontSize	float	12	-startfontsize
 startpsFont	StartpsFont	string	Times-Roman	-startpsFont
 startlatexFont	StartlatexFont	string	Default	-startlatexFont
 showallbuttons	ShowAllButtons	boolean	false	-showallbuttons
@@ -1264,6 +1340,8 @@ keyFile	KeyFile	string	CompKeyDB	-keyFile
 exportLanguage	ExportLanguage	string	eps	-exportLanguage
 flushleft	FlushLeft	boolean	false	-flushleft
 textoutline	TextOutline	boolean	false	-textoutline
+userscale	UserScale	float	1.0	-userscale
+userunit	UserUnit	string	in(cm)	-userunit
 color0	Color0	pixel	black
 color1	Color1	pixel	blue
 color2	Color2	pixel	green
@@ -1274,7 +1352,7 @@ color6	Color6	pixel	yellow
 color7	Color7	pixel	white
 _
 .TE
-The following are the default keyboard accelerators as distributed 
+The following are the default keyboard accelerators as distributed
 in the Fig.ad app-defaults file:
 .TS
 l l.
@@ -1288,6 +1366,8 @@ Keys (Context)	Function
 <Meta>f	popup File menu
 <Meta>e	popup Export menu
 <Meta>p	popup Print menu
+<Meta>l	(re)Load figure from current file
+<Meta>s	Save figure to current file
 
 (Popup file panel)
 <Meta>r	Rescan current directory
@@ -1325,8 +1405,9 @@ Fig  xfig
 			Command  file
 			Command  export
 			Command  print
-		Label  message
-		Label  mouse_panel
+		Form msg_form
+			Label  file_name
+			Text  message
 		Box  mode_panel
 			Label  label
 			Command  button (one for each of the 16 drawing mode buttons)
@@ -1340,8 +1421,8 @@ Fig  xfig
 			Core  clip
 			Scrollbar  horizontal
 			Box  ind_panel
-				Form  button_form
-					Command  button (one for each of the 20 indicator buttons)
+				Form  button_form (one for each of the 22 indicator buttons)
+					Command  button
 					Toggle  update (only those indicators that affect creation
 							of objects have update toggles)
 
@@ -1395,15 +1476,15 @@ Fig  xfig
 			Label  orient_label
 			MenuButton  orientation
 				SimpleMenu  menu
-					SmeBSB  Portrait 
+					SmeBSB  Portrait
 					SmeBSB  Landscape
 			Label  just_label
 			MenuButton  justify
 				SimpleMenu  menu
 					SmeBSB  Flush left
-					SmeBSB  Centered  
+					SmeBSB  Centered
 			Label  lang_label
-			MenuButton  language     
+			MenuButton  language
 				SimpleMenu  menu
 					SmeBSB  LaTeX box (figure boundary)
 					SmeBSB  LaTeX picture
@@ -1416,14 +1497,14 @@ Fig  xfig
 					SmeBSB  Combined PS/LaTeX (PS part)
 					SmeBSB  Combined PS/LaTeX (LaTeX part)
 					SmeBSB  Textyl \especial commands
-					SmeBSB  TPIC 
+					SmeBSB  TPIC
 					SmeBSB  PIC
 					SmeBSB  X11 Bitmap
 			Label  export_mode_label
 			MenuButton  export_mode
 				SimpleMenu  menu
-					SmeBSB  Overwrite     
-					SmeBSB  Append    
+					SmeBSB  Overwrite
+					SmeBSB  Append
 			Label  def_file_label
 			Label  def_file_name
 			Label  out_file_name
@@ -1455,15 +1536,17 @@ Fig  xfig
 			Label  orient_label
 			MenuButton  landscape
 				SimpleMenu  menu
-					SmeBSB  portrait 
+					SmeBSB  portrait
 					SmeBSB  landscape
 			Label  just_label
 			MenuButton  justify
 				SimpleMenu  menu
 					SmeBSB  flush left
-					SmeBSB  centered  
-			Label  dir_label
+					SmeBSB  centered
+			Label  print_label
 			Text  printer
+			Label  num_batch_lab
+			Label  num_batch_val
 			Command  dismiss
 			Command  print_batch
 			Command  clear_batch
@@ -1481,6 +1564,31 @@ Fig  xfig
 			Command  no
 			Command  cancel
 
+	TransientShell  xfig_set_unit_panel
+		Form  form
+			Label        Unit/Scale settings
+			Label  Ruler Units  =
+			MenuButton  Imperial (in)
+				SimpleMenu  menu
+					SmeBSB  Metric (cm)
+					SmeBSB  Imperial (in)
+			Label  Figure units =
+			MenuButton  Ruler units
+				SimpleMenu  menu
+					SmeBSB  Ruler units
+					SmeBSB  User defined
+			Label  user_units
+			Text        Unit/Scale settings
+			Label  Figure scale =
+			MenuButton  User defined
+				SimpleMenu  menu
+					SmeBSB  Unity
+					SmeBSB  User defined
+			Label  scale_factor
+			Text  1.0
+			Command  cancel
+			Command  set
+
 	NOTE:  The following is a \fItypical\fP popup edit panel (for \fIARC-BOX\fP)
 	       The panel will be different for other objects.
 
@@ -1491,7 +1599,7 @@ Fig  xfig
 			Command  done
 			Command  apply
 			Command  cancel
-			Label   
+			Label
 			Label  Width =
 			Text  Width =
 			Label  Color =
@@ -1502,13 +1610,13 @@ Fig  xfig
 			MenuButton  No fill
 				SimpleMenu  menu
 					SmeBSB  No fill
-					SmeBSB  Filled 
+					SmeBSB  Filled
 			Label  Fill density % =
 			Text  Fill density % =
 			Label  Line style =
-			MenuButton  Solid Line 
+			MenuButton  Solid Line
 				SimpleMenu  menu
-					SmeBSB  Solid Line 
+					SmeBSB  Solid Line
 					SmeBSB  Dashed Line
 					SmeBSB  Dotted Line
 			Label  Dash length/Dot gap =
@@ -1544,7 +1652,7 @@ or wider than the screen width.  That is why there is a limit on the width
 of the top ruler and height of the side ruler.  If you need wider/taller
 rulers AND your server allows bigger pixmaps, you may define MAX_TOPRULER_WD
 and/or MAX_SIDERULER_HT in your Imakefile in the DEFINES line.  For example,
-to have a maximum top ruler width of 1160 pixels, add  
+to have a maximum top ruler width of 1160 pixels, add
 -DMAX_TOPRULER_WD=1160 to your DEFINES line in the Imakefile.
 .PP
 There is a bug in OpenWindows 2.0 which relates to pixmaps in widgets.
@@ -1555,10 +1663,11 @@ during the middle of an operation (e.g. while drawing a line), the picture
 will be distorted.  This can be corrected using \fIRedraw\fP after the
 operation is complete.
 .PP
-Rotated text will be displayed horizontally on the screen.  
-They will be rotated only when printed on \fIPostScript\fP output.
+Rotated text will be displayed horizontally or vertically (i.e. angles
+of 0, 90, 180 and 270 degrees) on the screen.
+They will be rotated correctly when printed on \fIPostScript\fP output.
 .PP
-Corners of object scaled with point positioning in one of the grid 
+Corners of object scaled with point positioning in one of the grid
 modes will not always fall on the grid line, but to the closest pixel.
 .SH "SEE ALSO"
 Brian W. Kernighan
@@ -1575,38 +1684,14 @@ Permission to use, copy, modify, distribute, and sell this software and its
 documentation for any purpose is hereby granted without fee, provided that
 the above copyright notice appear in all copies and that both that
 copyright notice and this permission notice appear in supporting
-documentation, and that the name of M.I.T. not be used in advertising or
-publicity pertaining to distribution of the software without specific,
-written prior permission.  M.I.T. makes no representations about the
-suitability of this software for any purpose.  It is provided "as is"
-without express or implied warranty.
+documentation. No representations are made about suitability of this
+software for any purpose.  It is provided "as is" without express or
+implied warranty.
 .PP
 \fIPostScript\fP is a trademark of Adobe Systems Incorporated.
-.PP
-The following copyright pertains to copies of the files Xosdefs.h and Xfuncs.h
-in the fig.h file.
-.sp
-Copyright 1991 Massachusetts Institute of Technology
-.sp
-Permission to use, copy, modify, distribute, and sell this software and its
-documentation for any purpose is hereby granted without fee, provided that
-the above copyright notice appear in all copies and that both that
-copyright notice and this permission notice appear in supporting
-documentation, and that the name of M.I.T. not be used in advertising or
-publicity pertaining to distribution of the software without specific,
-written prior permission.  M.I.T. makes no representations about the
-suitability of this software for any purpose.  It is provided "as is"
-without express or implied warranty.
-
-M.I.T. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL M.I.T.
-BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
-OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN 
-CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .SH FILES
 .TP
-CompKeyDB - Data base of compose (meta) key sequences for 8-bit characters.  
+CompKeyDB - Data base of compose (meta) key sequences for 8-bit characters.
 Must be installed in \fB$(XFIGLIBDIR)\fP with 'make install', or may be
 specified with command line option -keyFile or X toolkit resource keyFile.
 See the \fIImakefile\fP.
@@ -1620,7 +1705,7 @@ have contributed the most (in chronological order):
 .sp
 Original author:
 .br
-Supoj Sutanthavibul, University of Texas at Austin 
+Supoj Sutanthavibul, University of Texas at Austin
 .sp
 The \fILaTeX\fP line drawing modes were contributed by:
 .br
@@ -1653,7 +1738,7 @@ Popup change-object menu by:
 .br
 Jon Tombs
 .br
-Frank Schmuck 
+Frank Schmuck
 .sp
 Zooming and panning functions, shift key select mechanism by:
 .br
@@ -1675,7 +1760,7 @@ arbitrary angle rotation of objects, alignment in compound,
 object scaling, constrained copy/move, corner markers for compound,
 context sensitive corner markers, smarter redraw, undo for compound
 and point move for boxes, cancel object creation, point positioning
-to three resolutions, \fITransFig\fP scalable text, hidden text, 
+to three resolutions, \fITransFig\fP scalable text, hidden text,
 special text, save of figure on crash by:
 .sp
 Paul King (king@cs.uq.oz.au)
@@ -1704,6 +1789,15 @@ Win Treese, Digital Equipment Corporation
 Rotated ellipses by:
 .br
 James Tough, Dept. of Computer Science, Heriot-Watt University, Scotland
+.sp
+(Vertically) Rotated text by:
+.br
+Alan Richardson, Space Science Centre, School of MAPS,
+University of Sussex
+.sp
+Popup scale menu and dynamic switching between inches and cm by:
+.br
+Paul King (king@cs.uq.oz.au)
 .sp
 Many bug fixes/cleanups etc. by a host of faithful users
 .br

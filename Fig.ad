@@ -14,7 +14,9 @@ Fig*file_panel*mask*string:	*.fig
 ! filename mask for the export popup browser
 Fig*export_panel*mask*string:	*ps
 ! printer name
-Fig*printer*string:		ps
+! If the following resource is NOT set, xfig will use the PRINTER 
+! shell environment variable for the printer name
+!Fig*printer*string:		ps
 
 ! make the F20 key paste text in the canvas
 Fig*translations: #override \n\
@@ -36,6 +38,10 @@ Fig.xfig_edit_panel*cancel.ShapeStyle:	oval
 
 ! keyboard accelerators
 
+Fig*accelerators: \
+	Meta<Key>s: SaveFile()\n\
+	Meta<Key>l: LoadFile()\n
+
 Fig*quit*accelerators: \
 	Meta<Key>q: quit()\n
 Fig*delete_all*accelerators: \
@@ -48,6 +54,7 @@ Fig*paste*accelerators: \
 	Meta<Key>t: paste()\n
 Fig*file*accelerators: \
 	Meta<Key>f: file()\n
+
 Fig*xfig_file_menu*accelerators: \
 	Meta<Key>c: cancel()\n\
 	Meta<Key>l: load()\n\
@@ -68,3 +75,6 @@ Fig*xfig_print_menu*accelerators: \
 	Meta<Key>x: clear_batch()\n\
 	<Key>Return: print()\n\
 	Meta<Key>p: print()\n
+Fig*xfig_set_unit_panel*accelerators: \
+	Meta<Key>c: QuitUnits()\n\
+	Meta<Key>s: SetUnits()\n

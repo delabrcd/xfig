@@ -4,14 +4,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -226,19 +222,40 @@ init_textdragging(t, x, y)
     F_text	   *t;
     int		    x, y;
 {
+    int		   cw,cw2;
+    float	   angle;
 
     new_t = t;
+    /* adjust in case text was off positioning grid and positioning is now on */
+    round_coords(new_t->base_x,new_t->base_y);
     fix_x = cur_x = x;
     fix_y = cur_y = y;
-    x1off = t->base_x - x;
-    y1off = t->base_y - y;
+    x1off = new_t->base_x - x;
+    y1off = new_t->base_y - y;
     if (t->type == T_CENTER_JUSTIFIED || t->type == T_RIGHT_JUSTIFIED) {
-	txsize = pf_textwidth(t->font, psfont_text(t), t->size,
-			      strlen(t->cstring), t->cstring);
-	if (t->type == T_CENTER_JUSTIFIED)
-	    x1off -= round(txsize.x / 2 / zoomscale);
-	else
-	    x1off -= round(txsize.x / zoomscale);
+	txsize = pf_textwidth(t->fontstruct, strlen(t->cstring), t->cstring);
+	angle = t->angle*180.0/M_PI;
+	if (t->type == T_CENTER_JUSTIFIED) {
+	    cw2 = round(txsize.x/2/zoomscale);
+	    if (angle < 90.0 - 0.001)
+		x1off -= cw2;
+	    else if (angle < 180.0 - 0.001) 
+		y1off += cw2;
+	    else if (angle < 270.0 - 0.001) 
+		x1off += cw2;
+	    else 
+		y1off -= cw2;
+	} else { /* T_RIGHT_JUSTIFIED */
+	    cw = round(txsize.x/zoomscale);
+	    if (angle < 90.0 - 0.001)
+		x1off -= cw;
+	    else if (angle < 180.0 - 0.001) 
+		y1off += cw;
+	    else if (angle < 270.0 - 0.001) 
+		x1off += cw;
+	    else 
+		y1off -= cw;
+	}
     }
     canvas_locmove_proc = moving_text;
     canvas_leftbut_proc = place_text;

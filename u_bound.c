@@ -4,17 +4,14 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
+#include "resources.h"
 #include "object.h"
 #include "mode.h"
 #include "u_bound.h"
@@ -224,7 +221,7 @@ compound_bound(compound, xmin, ymin, xmax, ymax)
 
     for (t = compound->texts; t != NULL; t = t->next) {
 	int    dum;
-	text_bound_actual(t, &sx, &sy, &bx, &by, 
+	text_bound_actual(t, t->angle, &sx, &sy, &bx, &by, 
 			  &dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
 	if (first) {
 	    first = 0;
@@ -495,8 +492,8 @@ normal_spline_bound(s, xmin, ymin, xmax, ymax)
     }
 }
 
-/* This procedure calculates the bounding box for text that is
-   displayed horizontally (all text on the canvas in otherwords)
+/* This procedure calculates the bounding box for text that is displayed
+   horizontally or vertically (all text on the canvas in otherwords)
    Use text_bound_actual() to decide whether or not text would be off
    the PRINTED page (if rotated) */
 
@@ -504,44 +501,33 @@ text_bound(t, xmin, ymin, xmax, ymax)
     F_text	   *t;
     int		   *xmin, *ymin, *xmax, *ymax;
 {
-    int		    length, dx, dy, mx, my;
+    int		    length, dx, dy, mx, my, dum;
+    double	    angle;
 
-    /* adjust for text angle */
-    dy = (int) ((double) t->height * cos(t->angle));
-    dx = (int) ((double) t->height * sin(t->angle));
-    length = text_length(t);
-    *xmin = t->base_x;
-    *ymin = t->base_y - t->height;
-    *xmax = t->base_x + length;
-    *ymax = t->base_y;
-
-    if (t->type == T_RIGHT_JUSTIFIED) {
-	*xmin -= length;
-	*xmax -= length;
-    } else if (t->type == T_CENTER_JUSTIFIED) {
-	*xmin -= length / 2;
-	*xmax -= length / 2;
-    }
-    mx = t->base_x - dx;
-    my = t->base_y - dy;
-    *xmin = min2(*xmin, mx);
-    *xmax = max2(*xmax, mx);
-    *ymax = max2(*ymax, my);
+    angle = t->angle;
+    /* fix the angle to one of four - 0, 90, 180 or 270 */
+    if (angle < M_PI_2 - 0.001)
+	angle = 0.0;
+    else if (angle < M_PI - 0.001)
+	angle = M_PI_2;
+    else if (angle < 3*M_PI_2 - 0.001)
+	angle = M_PI;
+    else
+	angle = 3*M_PI_2;
+    text_bound_actual(t, angle, xmin, ymin, xmax, ymax,
+		  &dum, &dum, &dum, &dum, &dum, &dum, &dum, &dum);
 }
 
 /* this procedure calculates the bouding box for text ASSUMING that it 
-   will be DISPLAYED rotated (if it has any rotation angle).  It is called
-   from shift_figure() to decide if some text actually is off the canvas
-   or not. 
-   Use text_bound() for calculating the bounding box for text that is
-   displayed horizontally (all text on the canvas in otherwords)
+   will be DISPLAYED rotated (if it has any rotation angle).
    The actual corners of the rectangle are returned in (rx1,ry1)...(rx4,ry4)
    The min and max x and y are returned in (xmin, ymin) (xmax, ymax)
 */
 
-text_bound_actual(t, xmin, ymin, xmax, ymax, 
+text_bound_actual(t, angle, xmin, ymin, xmax, ymax, 
 		  rx1, ry1, rx2, ry2, rx3, ry3, rx4, ry4)
     F_text	   *t;
+    double	    angle;
     int		   *xmin, *ymin, *xmax, *ymax;
     int		   *rx1,*ry1, *rx2,*ry2, *rx3,*ry3, *rx4,*ry4;
 {
@@ -552,8 +538,8 @@ text_bound_actual(t, xmin, ymin, xmax, ymax,
 
     l = text_length(t);
     h = t->height;
-    cost = cos((double)t->angle);
-    sint = sin((double)t->angle);
+    cost = cos((double)angle);
+    sint = sin((double)angle);
     lcost = round(l*cost);
     lsint = round(l*sint);
     hcost = round(h*cost);
@@ -592,15 +578,20 @@ text_bound_actual(t, xmin, ymin, xmax, ymax,
 }
 
 /* this procedure calculates the union of the two types of bounding boxes */
+/* this is usually called by the redisplay code which needs the bounding
+   rectangle if the user is displaying the textoutline */
 
-text_bound_both(t, xmin, ymin, xmax, ymax)
-    int		   *xmin, *ymin, *xmax, *ymax;
+text_bound_both(t, xmin, ymin, xmax, ymax,
+		  rx1, ry1, rx2, ry2, rx3, ry3, rx4, ry4)
+    F_text	  *t;
+    int		  *xmin, *ymin, *xmax, *ymax;
+    int		   *rx1,*ry1, *rx2,*ry2, *rx3,*ry3, *rx4,*ry4;
 {
     int		   xmin1, ymin1, xmax1, ymax1;
     int		   xmin2, ymin2, xmax2, ymax2;
     int		   dum;
-    text_bound_actual(t, &xmin1, &ymin1, &xmax1, &ymax1, 
-		  &dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
+    text_bound_actual(t, t->angle, &xmin1, &ymin1, &xmax1, &ymax1, 
+		  rx1, ry1, rx2, ry2, rx3, ry3, rx4, ry4);
     text_bound(t, &xmin2, &ymin2, &xmax2, &ymax2);
     *xmin = min2(xmin1,xmin2);
     *xmax = max2(xmax1,xmax2);

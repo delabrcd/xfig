@@ -7,7 +7,7 @@
 #
 
 # -------------------------------------------------------------------------
-# Makefile generated from "Imake.tmpl" and </tmp/IIf.a12558>
+# Makefile generated from "Imake.tmpl" and </tmp/IIf.a12617>
 # $XConsortium: Imake.tmpl,v 1.139 91/09/16 08:52:48 rws Exp $
 #
 # Platform-specific parameters may be set in the appropriate <vendor>.cf
@@ -266,18 +266,26 @@ PICFLAGS = -pic
 # -------------------------------------------------------------------------
 # start of Imakefile
 
+# Uncomment the following if needed for DECstations running older X11R4
+#INCROOT=/usr/include/mit
+
 SYS_LIBRARIES= 		-lm
 DEPLIBS = 		$(DEPXAWLIB) $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
 # use the following if NOT using DPS
 LOCAL_LIBRARIES = 	$(XAWLIB) $(XMULIB) $(XTOOLLIB) $(XLIB)
-# use the following if using DPS
-#LOCAL_LIBRARIES = 	$(XAWLIB) $(XMULIB) $(XTOOLLIB) $(XLIB) -ldps
+# use the following if using DPS, *** and add -DDPS to the DEFINES line ***
+#LOCAL_LIBRARIES = 	-ldps $(XAWLIB) $(XMULIB) $(XTOOLLIB) $(XLIB)
 # use (and change) the following if you want the multi-key data base file
 # somewhere other than the standard X11 library directory
 #XFIGLIBDIR =		/usr/local/lib/X11/xfig
 # use this if you want the multi-key data base file in the standard X11 tree
 XFIGLIBDIR =		$(LIBDIR)/xfig
-DEFINES =		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
+DIR_DEFS=		-DXFIGLIBDIR=\"$(XFIGLIBDIR)\"
+
+# remove -DGSBIT from the DEFINES if you DON'T want to have gs (ghostscript)
+# generate a preview bitmap.  If you do use ghostscript you will need
+# version 2.4 or later.
+DEFINES =             $(STRSTRDEFINES) -DGSBIT
 
 XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_epsobj.c \
 		d_intspline.c d_line.c d_regpoly.c d_spline.c d_text.c \
@@ -292,10 +300,10 @@ XFIGSRC =	d_arc.c d_arcbox.c d_box.c d_ellipse.c d_epsobj.c \
 		u_elastic.c u_error.c u_fonts.c u_free.c u_geom.c \
 		u_list.c u_markers.c u_pan.c u_print.c \
 		u_redraw.c u_search.c u_translate.c u_undo.c \
-		w_canvas.c w_cmdpanel.c w_cursor.c w_dir.c w_drawprim.c w_export.c \
-		w_file.c w_fontbits.c w_fontpanel.c w_grid.c w_icons.c \
-		w_indpanel.c w_modepanel.c w_mousefun.c w_msgpanel.c \
-		w_print.c w_rulers.c w_setup.c w_util.c w_zoom.c
+		w_canvas.c w_cmdpanel.c w_cursor.c w_dir.c w_drawprim.c \
+		w_export.c w_file.c w_fontbits.c w_fontpanel.c w_grid.c \
+		w_icons.c w_indpanel.c w_modepanel.c w_mousefun.c w_msgpanel.c \
+		w_print.c w_rottext.c w_rulers.c w_setup.c w_util.c w_zoom.c
 
 XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_epsobj.o \
 		d_intspline.o d_line.o d_regpoly.o d_spline.o d_text.o \
@@ -310,10 +318,10 @@ XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_epsobj.o \
 		u_elastic.o u_error.o u_fonts.o u_free.o u_geom.o \
 		u_list.o u_markers.o u_pan.o u_print.o \
 		u_redraw.o u_search.o u_translate.o u_undo.o \
-		w_canvas.o w_cmdpanel.o w_cursor.o w_dir.o w_drawprim.o w_export.o \
-		w_file.o w_fontbits.o w_fontpanel.o w_grid.o w_icons.o \
-		w_indpanel.o w_modepanel.o w_mousefun.o w_msgpanel.o \
-		w_print.o w_rulers.o w_setup.o w_util.o w_zoom.o
+		w_canvas.o w_cmdpanel.o w_cursor.o w_dir.o w_drawprim.o \
+		w_export.o w_file.o w_fontbits.o w_fontpanel.o w_grid.o \
+		w_icons.o w_indpanel.o w_modepanel.o w_mousefun.o w_msgpanel.o \
+		w_print.o w_rottext.o w_rulers.o w_setup.o w_util.o w_zoom.o
 
 SRCS = $(XFIGSRC)
 OBJS = $(XFIGOBJ)
@@ -361,6 +369,20 @@ install::
 
 install:: CompKeyDB
 	$(INSTALL) -c $(INSTDATFLAGS) CompKeyDB $(DESTDIR)$(XFIGLIBDIR)
+
+install:: Fig.ad
+	@if [ -d $(DESTDIR)$(XAPPLOADDIR) ]; then set +x; \
+	else (set -x; $(MKDIRHIER) $(DESTDIR)$(XAPPLOADDIR)); fi
+	$(INSTALL) -c $(INSTAPPFLAGS) Fig.ad $(DESTDIR)$(XAPPLOADDIR)/Fig
+
+install:: Fig-color.ad
+	@if [ -d $(DESTDIR)$(XAPPLOADDIR) ]; then set +x; \
+	else (set -x; $(MKDIRHIER) $(DESTDIR)$(XAPPLOADDIR)); fi
+	$(INSTALL) -c $(INSTAPPFLAGS) Fig-color.ad $(DESTDIR)$(XAPPLOADDIR)/Fig-color
+
+w_canvas.o:  $(ICONFIGFILES)
+	$(RM) $@
+	$(CC) -c $(CFLAGS)  $(DIR_DEFS) $*.c
 
 # -------------------------------------------------------------------------
 # common rules for all Makefiles - do not edit

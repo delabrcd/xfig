@@ -4,14 +4,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -23,7 +19,8 @@ int		TOOL_WD, TOOL_HT;
 int		CMDPANEL_WD, CMDPANEL_HT = 22;
 int		MODEPANEL_WD, MODEPANEL_HT;
 int		MODEPANEL_SPACE;
-int		MSGPANEL_WD, MSGPANEL_HT = 18;
+int		MSGFORM_WD, MSGFORM_HT = 18;
+int		MSGPANEL_WD = 600;
 int		MOUSEFUN_WD, MOUSEFUN_HT;
 int		INDPANEL_WD;
 int		CANVAS_WD, CANVAS_HT;
@@ -70,8 +67,7 @@ setup_sizes(new_canv_wd, new_canv_ht)
     }
     if (CMDPANEL_WD < 5 * NUM_CMD_SW)
 	CMDPANEL_WD = 5 * NUM_CMD_SW;
-    MSGPANEL_WD = CMDPANEL_WD - INTERNAL_BW;
-    MOUSEFUN_HT = MSGPANEL_HT + CMDPANEL_HT - INTERNAL_BW;
+    MSGFORM_WD = CMDPANEL_WD;
 
     MODEPANEL_SPACE = CANVAS_HT + RULER_WD -
 	SW_PER_COL * (MODE_SW_HT + INTERNAL_BW);

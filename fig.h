@@ -4,136 +4,17 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include <X11/Xos.h>
 
-#ifndef X_NOT_STDC_ENV
-#include <string.h>
-#define index strchr
-#define rindex strrchr
+#if XtSpecificationRelease > 4
+#include <X11/Xfuncs.h>
 #else
-#ifdef SYSV
-#include <string.h>
-#define index strchr
-#define rindex strrchr
-#else
-#include <strings.h>
-#define strchr index
-#define strrchr rindex
-#endif
-#endif
-
-#include <sys/stat.h>
-
-#if defined(__convex__) && defined(__STDC__)
-#define S_IFDIR _S_IFDIR
-#define S_IWRITE _S_IWRITE
-#endif
-
-#ifndef SYSV
-#ifndef SVR4
-#include <fcntl.h>
-#endif
-#endif
-#include <pwd.h>
-#include <signal.h>
-
-#include <stdio.h>
-#include <ctype.h>
-#include <errno.h>
-
-extern int	errno;
-extern int	sys_nerr;
-extern char    *sys_errlist[];
-
-#include <math.h>	/* for sin(), cos() etc */
-
-#if defined(SYS) && defined(SYSV386)
-#if defined(__STDC__)
-#ifdef ISC
-extern double atof(char const *);
-#endif
-#ifdef SCO
-extern double atof(const char *);
-#else
-extern double atof();
-#endif
-#else
-extern double atof();
-#endif
-#else
-#ifndef X_NOT_STDC_ENV
-#if defined(sun) && !defined(sparc)
-extern double atof();
-extern char *getenv();
-#else
-#include <stdlib.h>	/* for atof() and getenv() */
-#endif
-#endif
-#endif
-
-#if defined(SYSV) || defined(SVR4)
-#define u_int uint
-#define USE_DIRENT
-#define DIRSTRUCT	struct dirent
-#else
-#define DIRSTRUCT	struct direct
-#endif
-
-/* define PATH_MAX if not already defined */
-/* taken from the X11R5 server/os/osfonts.c file */
-#ifndef X_NOT_POSIX
-#ifdef _POSIX_SOURCE
-#include <limits.h>
-#else
-#if !defined(sun) || defined(sparc)
-#define _POSIX_SOURCE
-#include <limits.h>
-#undef _POSIX_SOURCE
-#endif
-#endif
-#endif /* X_NOT_POSIX */
-
-#ifndef PATH_MAX
-#include <sys/param.h>
-#ifdef MAXPATHLEN
-#define PATH_MAX MAXPATHLEN
-#else
-#define PATH_MAX 1024
-#endif
-#endif /* PATH_MAX */
-
-#ifndef M_PI
-#define M_PI	3.14159265358979323846
-#define M_PI_2	1.57079632679489661923
-#endif
-
-#define		min2(a, b)	(((a) < (b)) ? (a) : (b))
-#define		max2(a, b)	(((a) > (b)) ? (a) : (b))
-#define		min3(a,b,c)	((((a<b)?a:b)<c)?((a<b)?a:b):c)
-#define		max3(a,b,c)	((((a>b)?a:b)>c)?((a>b)?a:b):c)
-#define		round(a)	(int)(((a)<0.0)?(a)-.5:(a)+.5)
-#define		signof(a)	(((a) < 0) ? -1 : 1)
-
-#define		DEF_NAME	"unnamed.fig"
-
-/* include only Xlib.h and Intrinsic.h here - use figx.h for widget stuff */
-
-#include <X11/Xlib.h>
-#include <X11/Intrinsic.h>
-
-#ifdef NOSTRSTR
-extern char *strstr();
-#endif
 
 /* The following is just a copy of X11/Xosdefs.h and X11/Xfuncs.h (and copyright
    notice).  I include it here so xfig can still be compiled under X11R4, since
@@ -288,3 +169,128 @@ int bcmp();
 #endif /* X_USEBFUNCS */
 
 #endif /* _XFUNCS_H_ */
+
+#endif /* XtSpecificationRelease > 4 */
+
+#ifndef X_NOT_STDC_ENV
+#include <string.h>
+#define index strchr
+#define rindex strrchr
+#else  /* X_NOT_STDC_ENV IS defined */
+#ifdef SYSV
+#include <string.h>
+#define index strchr
+#define rindex strrchr
+#else  /* NOT SYSV */
+#include <strings.h>
+#define strchr index
+#define strrchr rindex
+#endif  /* SYSV */
+#endif  /* X_NOT_STDC_ENV */
+
+#include <sys/stat.h>
+
+#if defined(__convex__) && defined(__STDC__)
+#define S_IFDIR _S_IFDIR
+#define S_IWRITE _S_IWRITE
+#endif
+
+#ifndef SYSV
+#ifndef SVR4
+#include <fcntl.h>
+#endif
+#endif
+
+#include <pwd.h>
+#include <signal.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <errno.h>
+
+extern int	errno;
+extern int	sys_nerr;
+extern char    *sys_errlist[];
+
+#include <math.h>	/* for sin(), cos() etc */
+
+#if defined(SYS) && defined(SYSV386)
+#if defined(__STDC__)
+#ifdef ISC
+extern double atof(char const *);
+#endif  /* ISC */
+#ifdef SCO
+extern double atof(const char *);
+#else  /* NOT SCO */
+extern double atof();
+#endif /* SCO */
+#else  /* NOT __STDC__ */
+extern double atof();
+#endif /* __STDC__ */
+#else  /* NOT defined(SYS) && defined(SYSV386) */
+#ifdef X_NOT_STDC_ENV
+#if defined(sun) && !defined(sparc) || defined(titan)
+extern double atof();
+extern char *getenv();
+#endif /* (sun) !(sparc) (titan) */
+#else  /* NOT X_NOT_STDC_ENV */
+#include <stdlib.h>	/* for atof() and getenv() */
+#endif /* X_NOT_STDC_ENV */
+#endif /* defined(SYS) && defined(SYSV386) */
+
+#if defined(SYSV) || defined(SVR4) || defined(__osf__) || defined(USE_DIRENT)
+#define u_int uint
+#define USE_DIRENT
+#define DIRSTRUCT	struct dirent
+#else
+#define DIRSTRUCT	struct direct
+#endif
+
+/* define PATH_MAX if not already defined */
+/* taken from the X11R5 server/os/osfonts.c file */
+#ifndef X_NOT_POSIX
+#ifdef _POSIX_SOURCE
+#include <limits.h>
+#else
+#if !defined(sun) || defined(sparc)
+#define _POSIX_SOURCE
+#include <limits.h>
+#undef _POSIX_SOURCE
+#endif /* !defined(sun) || defined(sparc) */
+#endif /* _POSIX_SOURCE */
+#endif /* X_NOT_POSIX */
+
+#ifndef PATH_MAX
+#include <sys/param.h>
+#ifdef MAXPATHLEN
+#define PATH_MAX MAXPATHLEN
+#else
+#define PATH_MAX 1024
+#endif /* MAXPATHLEN */
+#endif /* PATH_MAX */
+
+#ifndef M_PI
+#define M_PI	3.14159265358979323846
+#define M_PI_2	1.57079632679489661923
+#endif
+
+#ifndef M_2PI
+#define M_2PI	6.28318530717958647692
+#endif
+
+#define		min2(a, b)	(((a) < (b)) ? (a) : (b))
+#define		max2(a, b)	(((a) > (b)) ? (a) : (b))
+#define		min3(a,b,c)	((((a<b)?a:b)<c)?((a<b)?a:b):c)
+#define		max3(a,b,c)	((((a>b)?a:b)>c)?((a>b)?a:b):c)
+#define		round(a)	(int)(((a)<0.0)?(a)-.5:(a)+.5)
+#define		signof(a)	(((a) < 0) ? -1 : 1)
+
+#define		DEF_NAME	"unnamed.fig"
+
+/* include only Xlib.h and Intrinsic.h here - use figx.h for widget stuff */
+
+#include <X11/Xlib.h>
+#include <X11/Intrinsic.h>
+
+#ifdef NOSTRSTR
+extern char *strstr();
+#endif

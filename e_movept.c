@@ -4,14 +4,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -27,6 +23,8 @@
 #include "u_undo.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
+
+extern void     force_anglegeom(), force_noanglegeom();
 
 /* local routine declarations */
 
@@ -72,6 +70,7 @@ move_point_selected()
     canvas_middlebut_proc = point_search_middle;
     canvas_rightbut_proc = null_proc;
     set_cursor(pick9_cursor);
+    force_anglegeom();
 }
 
 static
@@ -121,6 +120,7 @@ init_move_point(obj, type, x, y, p, q)
 	init_splinepointmoving();
 	break;
     case O_ELLIPSE:
+	force_noanglegeom();
 	/* dirty trick - arcpoint_num is stored in p */
 	movedpoint_num = (int) p;
 	cur_e = (F_ellipse *) obj;
@@ -128,12 +128,14 @@ init_move_point(obj, type, x, y, p, q)
 	    return;
 	break;
     case O_ARC:
+	force_noanglegeom();
 	/* dirty trick - arcpoint_num is stored in p */
 	movedpoint_num = (int) p;
 	cur_a = (F_arc *) obj;
 	init_arcpointmoving();
 	break;
     case O_COMPOUND:
+	force_noanglegeom();
 	/* dirty trick - posn of corner is stored in p and q */
 	cur_x = (int) p;
 	cur_y = (int) q;
@@ -314,6 +316,11 @@ relocate_ellipsepoint(ellipse, x, y, point_num)
 	ellipse->radiuses.y = ellipse->radiuses.x;
 	break;
     }
+    /* if this WAS an ellipse and is NOW a circle (radii are equal), change type */
+    if (ellipse->type == T_ELLIPSE_BY_RAD || ellipse->type == T_ELLIPSE_BY_DIA) {
+	if (ellipse->radiuses.x == ellipse->radiuses.y)
+	    ellipse->type += 2;
+    }
     draw_ellipse(ellipse, PAINT);
     reset_cursor();
 }
@@ -395,13 +402,40 @@ init_splinepointmoving()
     from_x = cur_x = moved_point->x;
     from_y = cur_y = moved_point->y;
     set_temp_cursor(crosshair_cursor);
-    if (closed_spline(cur_s) && left_point == NULL) {
-	for (left_point = right_point, p = left_point->next;
-	     p->next != NULL;
-	     left_point = p, p = p->next);
+    if (open_spline(cur_s)) {
+	if (left_point == NULL || right_point == NULL) {
+            if (left_point != NULL) {
+                fix_x = left_point->x;
+                fix_y = left_point->y;
+            } else if (right_point != NULL) {
+                fix_x = right_point->x;
+                fix_y = right_point->y;
+            }
+	    if (latexline_mode || latexarrow_mode) {
+                canvas_locmove_proc = latex_line;
+                cur_latexcursor = crosshair_cursor;
+            } else if (mountain_mode || manhattan_mode) {
+                canvas_locmove_proc = constrainedangle_line;
+            } else {
+                /* freehand line */
+                canvas_locmove_proc = reshaping_line;
+            }
+	} else {
+            /* linelink, always freehand */
+	    force_noanglegeom();
+	    canvas_locmove_proc = reshaping_line;
+	}
+    } else {
+	/* must be closed spline */
+	force_noanglegeom();
+	canvas_locmove_proc = reshaping_line;
+	if (left_point == NULL) {
+	    for (left_point = right_point, p = left_point->next;
+		 p->next != NULL;
+		 left_point = p, p = p->next);
+	}
     }
     elastic_linelink();
-    canvas_locmove_proc = reshaping_line;
     canvas_leftbut_proc = fix_movedsplinepoint;
     canvas_rightbut_proc = cancel_movedsplinepoint;
 }
@@ -418,14 +452,14 @@ static
 fix_movedsplinepoint(x, y)
     int		    x, y;
 {
+    (*canvas_locmove_proc) (x, y);
     elastic_linelink();
-    adjust_pos(x, y, from_x, from_y, &x, &y);
     old_s = copy_spline(cur_s);
     clean_up();
     set_latestspline(old_s);
     set_action_object(F_CHANGE, O_SPLINE);
     old_s->next = cur_s;
-    relocate_splinepoint(cur_s, x, y, moved_point);
+    relocate_splinepoint(cur_s, cur_x, cur_y, moved_point);
     toggle_splinemarker(cur_s);
     wrapup_movepoint();
 }
@@ -528,14 +562,10 @@ prescale_compound(x, y)
 static
 init_linepointmoving()
 {
-    int		    box_case;
-    int		    latex_case;
     F_point	   *p;
 
     set_action_on();
     toggle_linemarker(cur_l);
-    box_case = 0;
-    latex_case = 0;
     from_x = cur_x = moved_point->x;
     from_y = cur_y = moved_point->y;
     set_temp_cursor(crosshair_cursor);
@@ -545,7 +575,10 @@ init_linepointmoving()
 	    for (left_point = right_point, p = left_point->next;
 		 p->next != NULL;
 		 left_point = p, p = p->next);
+        force_noanglegeom();
+	canvas_locmove_proc = reshaping_line;
 	break;
+
     case T_BOX:
     case T_ARC_BOX:
     case T_EPS_BOX:
@@ -557,8 +590,24 @@ init_linepointmoving()
 	    fix_y = right_point->next->y;
 	}
 	draw_line(cur_l, ERASE);
-	box_case = 1;
-	break;
+
+	if (constrained) {
+	    double		dx, dy, l;
+
+	    dx = cur_x - fix_x;
+	    dy = cur_y - fix_y;
+	    l = sqrt(dx * dx + dy * dy);
+	    cosa = fabs(dx / l);
+	    sina = fabs(dy / l);
+	}
+
+        force_noanglegeom();
+	elastic_box(fix_x, fix_y, cur_x, cur_y);
+	canvas_locmove_proc = constrained_resizing_box;
+	canvas_leftbut_proc = fix_box;
+	canvas_rightbut_proc = cancel_box;
+	return;
+
     case T_POLYLINE:
 	if (left_point != NULL) {
 	    if (left_point == cur_l->points) {
@@ -581,44 +630,33 @@ init_linepointmoving()
 	    draw_arrow(left_point->x, left_point->y,
 		       cur_x, cur_y, cur_l->for_arrow, ERASE,
 		       cur_l->color);
-	if (latexline_mode || latexarrow_mode) {
+	if (left_point == NULL || right_point == NULL) {
 	    if (left_point != NULL) {
-		latex_fix_x = left_point->x;
-		latex_fix_y = left_point->y;
-		latex_case = 1;
+		fix_x = left_point->x;
+		fix_y = left_point->y;
 	    } else if (right_point != NULL) {
-		latex_fix_x = right_point->x;
-		latex_fix_y = right_point->y;
-		latex_case = 1;
+		fix_x = right_point->x;
+		fix_y = right_point->y;
 	    }
+            if (latexline_mode || latexarrow_mode) {
+                canvas_locmove_proc = latex_line;
+		cur_latexcursor = crosshair_cursor;
+            } else if (mountain_mode || manhattan_mode) {
+                canvas_locmove_proc = constrainedangle_line;
+            } else {
+		/* freehand line */
+		canvas_locmove_proc = reshaping_line;
+	    }
+	} else {
+	    /* linelink, always freehand */
+            force_noanglegeom();
+	    canvas_locmove_proc = reshaping_line;
 	}
+	break;
     }
-    if (box_case) {
-	double		dx, dy, l;
-
-	if (constrained) {
-	    dx = cur_x - fix_x;
-	    dy = cur_y - fix_y;
-	    l = sqrt(dx * dx + dy * dy);
-	    cosa = fabs(dx / l);
-	    sina = fabs(dy / l);
-	}
-	elastic_box(fix_x, fix_y, cur_x, cur_y);
-	canvas_locmove_proc = constrained_resizing_box;
-	canvas_leftbut_proc = fix_box;
-	canvas_rightbut_proc = cancel_box;
-    } else if (latex_case) {
-	elastic_linelink();
-	canvas_locmove_proc = reshaping_latexline;
-	canvas_leftbut_proc = fix_movedlatexlinepoint;
-	canvas_rightbut_proc = cancel_movedlinepoint;
-	cur_latexcursor = crosshair_cursor;
-    } else {
-	elastic_linelink();
-	canvas_locmove_proc = reshaping_line;
-	canvas_leftbut_proc = fix_movedlinepoint;
-	canvas_rightbut_proc = cancel_movedlinepoint;
-    }
+    elastic_linelink();
+    canvas_leftbut_proc = fix_movedlinepoint;
+    canvas_rightbut_proc = cancel_movedlinepoint;
 }
 
 static
@@ -697,8 +735,10 @@ static
 fix_movedlinepoint(x, y)
     int		    x, y;
 {
+    (*canvas_locmove_proc) (x, y);
     elastic_linelink();
-    adjust_pos(x, y, from_x, from_y, &x, &y);
+    if (cur_latexcursor != crosshair_cursor)
+	set_temp_cursor(crosshair_cursor);
     /* make a copy of the original and save as unchanged object */
     old_l = copy_line(cur_l);
     clean_up();
@@ -706,27 +746,7 @@ fix_movedlinepoint(x, y)
     set_action_object(F_CHANGE, O_POLYLINE);
     old_l->next = cur_l;
     /* now change the original to become the new object */
-    relocate_linepoint(cur_l, x, y, moved_point, left_point);
-    toggle_linemarker(cur_l);
-    wrapup_movepoint();
-}
-
-static
-fix_movedlatexlinepoint(x, y)
-    int		    x, y;
-{
-    elastic_linelink();
-    adjust_pos(x, y, from_x, from_y, &x, &y);
-    latex_endpoint(latex_fix_x, latex_fix_y, x, y, &x, &y,
-    latexarrow_mode, (cur_pointposn == P_ANY) ? 1 : posn_rnd[cur_pointposn]);
-    if (cur_latexcursor != crosshair_cursor)
-	set_temp_cursor(crosshair_cursor);
-    old_l = copy_line(cur_l);
-    clean_up();
-    set_latestline(old_l);
-    set_action_object(F_CHANGE, O_POLYLINE);
-    old_l->next = cur_l;
-    relocate_linepoint(cur_l, x, y, moved_point, left_point);
+    relocate_linepoint(cur_l, cur_x, cur_y, moved_point, left_point);
     toggle_linemarker(cur_l);
     wrapup_movepoint();
 }

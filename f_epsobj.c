@@ -1,18 +1,19 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1992 by Brian Boyter
+ * DPS option Copyright 1992 by Dave Hale
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
+
+/* GS bitmap generation added: 13 Nov 1992, by Michael C. Grant
+*  (mcgrant@rascals.stanford.edu) adapted from Marc Goldburg's
+*  (marcg@rascals.stanford.edu) original idea and code. */
 
 #include "fig.h"
 #include "resources.h"
@@ -34,14 +35,27 @@ read_epsf(eps)
     unsigned int    hexnib;
     int		    flag,preview;
     char	    buf[300];
-    int		    llx, lly, urx, ury;
+    int		    llx, lly, urx, ury, bad_bbox;
     FILE	   *epsf;
     register unsigned char *last;
 #ifdef DPS
-    int dummy;
+    int dummy, useDPS;
 #endif
+#ifdef GSBIT
+    FILE           *ppmfile, *gsfile;
+    char           *ppmnam;
+    int            useGS;
+#endif
+    int            usePV;
+#ifdef DPS
+    useDPS = 0;
+#endif
+#ifdef GSBIT
+    useGS = 0;
+#endif
+    usePV = 0;
 
-    eps->flipped = 0;
+    /* don't touch the flipped flag - caller has already set it */
     eps->bitmap = (unsigned char *) NULL;
     eps->hw_ratio = 0.0;
     eps->size_x = 0;
@@ -62,12 +76,19 @@ read_epsf(eps)
     while (fgets(buf, 300, epsf) != NULL) {
 	lower(buf);
 	if (!strncmp(buf, "%%boundingbox", 13)) {
-	    if (sscanf(buf, "%%%%boundingbox: %d %d %d %d",
-		       &llx, &lly, &urx, &ury) < 4) {
+	    /* the Encapsulated PostScript Specifications (2.0) doesn't say
+	       that the values for the bounding box must be integers */
+	    float rllx, rlly, rurx, rury;
+	    if (sscanf(buf, "%%%%boundingbox: %f %f %f %f",
+		       &rllx, &rlly, &rurx, &rury) < 4) {
 		file_msg("Bad EPS file: %s", eps->file);
 		fclose(epsf);
 		return 0;
 	    }
+	    llx = round(rllx);
+	    lly = round(rlly);
+	    urx = round(rurx);
+	    ury = round(rury);
 	    break;
 	}
     }
@@ -76,7 +97,7 @@ read_epsf(eps)
     eps->size_x = (urx - llx) * PIX_PER_INCH / 72.0;
     eps->size_y = (ury - lly) * PIX_PER_INCH / 72.0;
 
-    if (ury - lly <= 0 || urx - llx <= 0) {
+    if ( bad_bbox = ( urx <= llx || ury <= lly ) ) {
 	file_msg("Bad values in EPS bounding box");
     }
     bitmapz = 0;
@@ -87,93 +108,134 @@ read_epsf(eps)
 	eps->bit_size.x = eps->size_x;
 	eps->bit_size.y = eps->size_y;
 	bitmapz = 1;
-
+	useDPS = 1;
     /* else if no Display PostScript */
     } else {
 #endif
 	/* look for a preview bitmap */
-	preview = 1;
 	while (fgets(buf, 300, epsf) != NULL) {
 	    lower(buf);
 	    if (!strncmp(buf, "%%beginpreview", 14)) {
 		sscanf(buf, "%%%%beginpreview: %d %d %d",
-		    &eps->bit_size.x, &eps->bit_size.y, &bitmapz);
-		preview = 0;
+		   &eps->bit_size.x, &eps->bit_size.y, &bitmapz);
+		bitmapz = 1;
+		usePV = 1;
 		break;
 	    }
 	}
-	if (preview) {
-	    file_msg("EPS object read OK, but no preview bitmap found");
-	    fclose(epsf);
-	    return 0;
+#ifdef GSBIT
+	/* if GhostScript exists */
+	if (!bitmapz && !bad_bbox && (gsfile = popen("gs -sDEVICE=bit -q -","w" ))) {
+	    ppmnam = tempnam(NULL,"xfig");
+	    eps->bit_size.x = urx - llx + 1;
+	    eps->bit_size.y = ury - lly + 1;
+	    bitmapz = 1;
+	    useGS = 1;
 	}
+#endif
 #ifdef DPS
     }
 #endif
-
-    if (eps->bit_size.x > 0 && eps->bit_size.y > 0 && bitmapz == 1) {
+    if (!bitmapz) {
+        file_msg("EPS object read OK, but no preview bitmap found/generated");
+        fclose(epsf);
+        return 0;
+    } else if ( eps->bit_size.x <= 0 || eps->bit_size.y <= 0 ) {
+        file_msg("Strange bounding-box/bitmap-size error, no bitmap found/generated");
+        fclose(epsf);
+#ifdef GSBIT
+        if ( useGS )
+            pclose( gsfile );
+#endif
+        return 0;
+    } else {
 	nbitmap = (eps->bit_size.x + 7) / 8 * eps->bit_size.y;
 	eps->bitmap = (unsigned char *) malloc(nbitmap);
 	if (eps->bitmap == NULL) {
 	    file_msg("Could not allocate %d bytes of memory for EPS bitmap\n",
-			nbitmap);
+                     nbitmap);
 	    fclose(epsf);
+#ifdef GSBIT
+            if ( useGS )
+                pclose( gsfile );
+#endif
 	    return 0;
 	}
     }
-
 #ifdef DPS
     /* if Display PostScript */
-    if (XQueryExtension(tool_d,"DPSExtension",&dummy,&dummy,&dummy)) {
+    if ( useDPS ) {
 	static int bitmapDPS (FILE*,int,int,int,int,int,int,int,unsigned char *);
-	if (eps->bitmap!=NULL) {
-	    if (!bitmapDPS(epsf,llx,lly,urx,ury,
-		eps->size_x,eps->size_y,nbitmap,eps->bitmap)) {
-		fclose(epsf);
-        	return 0;
-	    }
-	}
-
-    /* else if no Display PostScript */
-    } else {
-#endif
-
-	/* read for a preview bitmap */
-	if (eps->bitmap != NULL) {
-	    mp = eps->bitmap;
-	    bzero(mp, nbitmap);	/* init bitmap to zero */
-	    last = eps->bitmap + nbitmap;
-	    flag = True;
-	    while (fgets(buf, 300, epsf) != NULL && mp < last) {
-		lower(buf);
-		if (!strncmp(buf, "%%endpreview", 12) ||
-		    !strncmp(buf, "%%endimage", 10))
-		    break;
-		cp = buf;
-		if (*cp != '%')
-		    break;
-		cp++;
-		while (*cp != '\0') {
-		    if (isxdigit(*cp)) {
-		        hexnib = hex(*cp);
-		        if (flag) {
-			    flag = False;
-			    *mp = hexnib << 4;
-			} else {
-			    flag = True;
-			    *mp = *mp + hexnib;
-			    mp++;
-			    if (mp >= last)
-				break;
-			}
-		    }
-		    cp++;
-		}
-	    }
-	}
-#ifdef DPS
+        if (!bitmapDPS(epsf,llx,lly,urx,ury,
+                       eps->size_x,eps->size_y,nbitmap,eps->bitmap)) {
+            file_msg("DPS extension failed to generate EPS bitmap\n");
+            fclose(epsf);
+            return 0;
+        }
     }
 #endif
+#ifdef GSBIT
+    /* if GhostScript */
+    if ( useGS ) {
+        ppmnam = tempnam("/usr/tmp","xfig");
+ 	fprintf(gsfile, "[1 0 0 1 0 0] %d %d <ff 00>\n", eps->bit_size.x, 
+ 		eps->bit_size.y);
+ 	fprintf(gsfile, "makeimagedevice setdevice\n");
+ 	fprintf(gsfile, "0 %d translate 1 -1 scale\n", eps->bit_size.y);
+ 	fprintf(gsfile, "%d neg %d neg translate\n", llx, lly);
+ 	fprintf(gsfile, "/showpage {null exec} def (%s) run\n", eps->file);
+ 	fprintf(gsfile, "(%s) (w) file currentdevice writeppmfile quit\n",
+ 		ppmnam);        
+        if ( pclose(gsfile) != 0 || ( ppmfile = fopen(ppmnam,"r") ) == NULL ) {
+            put_msg( "Could not parse EPS file with GS: %s", eps->file);
+            free(eps->bitmap); eps->bitmap = NULL;
+            unlink(ppmnam);
+            return 0;
+        }
+        fgets(buf, 300, ppmfile);
+        fgets(buf, 300, ppmfile);
+        fgets(buf, 300, ppmfile);
+        if ( fread(eps->bitmap,nbitmap,1,ppmfile) != 1 ) {
+            put_msg("Error reading ppm file (EPS problems?): %s", ppmnam);
+            fclose(ppmfile); unlink(ppmnam);
+            free(eps->bitmap); eps->bitmap = NULL;
+            return 0;
+        }
+        fclose(ppmfile); unlink(ppmnam);
+    }
+#endif
+    if ( usePV ) {
+        mp = eps->bitmap;
+        bzero(mp, nbitmap);	/* init bitmap to zero */
+        last = eps->bitmap + nbitmap;
+        flag = True;
+        while (fgets(buf, 300, epsf) != NULL && mp < last) {
+            lower(buf);
+            if (!strncmp(buf, "%%endpreview", 12) ||
+                !strncmp(buf, "%%endimage", 10))
+                break;
+            cp = buf;
+            if (*cp != '%')
+                break;
+            cp++;
+            while (*cp != '\0') {
+                if (isxdigit(*cp)) {
+                    hexnib = hex(*cp);
+                    if (flag) {
+                        flag = False;
+                        *mp = hexnib << 4;
+                    } else {
+                        flag = True;
+                        *mp = *mp + hexnib;
+                        mp++;
+                        if (mp >= last)
+                            break;
+                    }
+                }
+                cp++;
+            }
+        }
+    }
     put_msg("EPS object read OK");
     fclose(epsf);
     return 1;
@@ -281,9 +343,9 @@ int bitmapDPS (FILE *fp, int llx, int lly, int urx, int ury,
         DPSPrintf(dps,"%f %f scale\n",PIX_PER_INCH/dppi,PIX_PER_INCH/dppi);
 
         /* paint white background */
-        DPSPrintf(dps, "gsave\n"
-		 "gsave\n 1 setgray\n 0 0 %d %d rectfill\n grestore\n",
-		 urx-llx+2,ury-lly+2);
+        DPSPrintf(dps,
+                  "gsave\n 1 setgray\n 0 0 %d %d rectfill\n grestore\n",
+                  urx-llx+2,ury-lly+2);
 
         /* translate */
         DPSPrintf(dps,"%d %d translate\n",-llx,-lly);

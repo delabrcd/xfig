@@ -1,17 +1,13 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1991 by Paul King
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -36,11 +32,14 @@ extern char    *panel_get_value();
 extern int	show_zoom();
 extern int	show_depth();
 extern int	cur_updatemask;
+extern Widget	make_popup_menu();
 
 /**************	    local variables and routines   **************/
 
 static int	cur_anglegeom = L_UNCONSTRAINED;
 static int	cur_indmask = I_MIN1;
+static int	cur_flagshown = 0;
+#define MAX_FLAGS 2 /* maximum value for cur_flagshown */
 
 static String	set_translations = 
 	"<Key>Return: SetValue()";
@@ -78,6 +77,7 @@ static int	show_boxradius(), inc_boxradius(), dec_boxradius();
 static int	show_fillstyle(), darken_fill(), lighten_fill();
 static int	show_color(), next_color(), prev_color();
 static int	show_font(), inc_font(), dec_font();
+static int	show_flags(), inc_flags(), dec_flags();
 static int	show_fontsize(), inc_fontsize(), dec_fontsize();
 static int	show_textstep(), inc_textstep(), dec_textstep();
 static int	inc_zoom(), dec_zoom();
@@ -89,7 +89,7 @@ static int	inc_depth(), dec_depth();
 static int	popup_fonts();
 static void	note_state();
 
-static char	indbuf[6];
+static char	indbuf[12];
 static float	old_zoomscale = -1.0;
 static int	old_rotnangle = -1;
 static float	old_elltextangle = -1.0;
@@ -244,6 +244,8 @@ ind_sw_info	ind_switches[] = {
     {I_FVAL, I_ELLTEXTANGLE, "Text/Ellipse", "Angle", XWIDE_IND_SW_WD,
 	NULL, &cur_elltextangle, inc_elltextangle, dec_elltextangle, 
 	show_elltextangle,},
+    {I_IVAL, I_TEXTFLAGS, "Text Flags", "", WIDE_IND_SW_WD,
+	&cur_fontsize, NULL, inc_flags, dec_flags, show_flags,},
     {I_IVAL, I_FONTSIZE, "Text", "Size", NARROW_IND_SW_WD,
 	&cur_fontsize, NULL, inc_fontsize, dec_fontsize, show_fontsize,},
     {I_FVAL, I_TEXTSTEP, "Text", "Step", NARROW_IND_SW_WD,
@@ -528,6 +530,8 @@ sel_ind_but(widget, closure, event, continue_to_dispatch)
     } else {			/* left button */
 	if (isw->func == I_FONT)
 	    popup_fonts(isw);
+	else if (isw->func == I_TEXTFLAGS)
+	    popup_flags_panel(isw);
 	else if (isw->type == I_IVAL || isw->type == I_FVAL)
 	    popup_nval_panel(isw);
 	else if (isw->type == I_CHOICE)
@@ -592,6 +596,7 @@ static Widget	nval_popup, form, cancel, set, beside, below, newvalue,
 static Widget	dash_length, dot_gap;
 static ind_sw_info *nval_i;
 
+/* handle choice settings */
 
 static void
 choice_panel_dismiss()
@@ -791,6 +796,215 @@ popup_choice_panel(isw)
                            &wm_delete_window, 1);
 
 }
+
+/* handle text flag settings */
+
+static int      hidden_text_flag, special_text_flag, rigid_text_flag;
+static Widget   hidden_text_panel, rigid_text_panel, special_text_panel;
+static Widget   hidden_text_menu, special_text_menu, rigid_text_menu;
+
+static void
+flags_panel_dismiss()
+{
+    XtDestroyWidget(nval_popup);
+    XtSetSensitive(nval_i->button, True);
+}
+
+static void
+flags_panel_cancel(w, ev)
+    Widget	    w;
+    XButtonEvent   *ev;
+{
+    flags_panel_dismiss();
+}
+
+static void
+flags_panel_set(w, ev)
+    Widget	    w;
+    XButtonEvent   *ev;
+{
+    int		    new_i_value;
+    float	    new_f_value;
+
+    if (hidden_text_flag)
+	cur_textflags |= HIDDEN_TEXT;
+    else
+	cur_textflags &= ~HIDDEN_TEXT;
+    if (special_text_flag)
+	cur_textflags |= SPECIAL_TEXT;
+    else
+	cur_textflags &= ~SPECIAL_TEXT;
+    if (rigid_text_flag)
+	cur_textflags |= RIGID_TEXT;
+    else
+	cur_textflags &= ~RIGID_TEXT;
+    flags_panel_dismiss();
+    show_action(nval_i);
+}
+
+static void
+hidden_text_select(w, new_hidden_text, garbage)
+    Widget          w;
+    XtPointer       new_hidden_text, garbage;
+{
+    FirstArg(XtNlabel, XtName(w));
+    SetValues(hidden_text_panel);
+    hidden_text_flag = (int) new_hidden_text;
+    if (hidden_text_flag)
+	put_msg("Text will be displayed as hidden");
+    else
+	put_msg("Text will be displayed normally");
+}
+
+static void
+rigid_text_select(w, new_rigid_text, garbage)
+    Widget          w;
+    XtPointer       new_rigid_text, garbage;
+{
+    FirstArg(XtNlabel, XtName(w));
+    SetValues(rigid_text_panel);
+    rigid_text_flag = (int) new_rigid_text;
+    if (rigid_text_flag)
+	put_msg("Text in compound group will not scale with compound");
+    else
+	put_msg("Text in compound group will scale with compound");
+}
+
+static void
+special_text_select(w, new_special_text, garbage)
+    Widget          w;
+    XtPointer       new_special_text, garbage;
+{
+    FirstArg(XtNlabel, XtName(w));
+    SetValues(special_text_panel);
+    special_text_flag = (int) new_special_text;
+    if (special_text_flag)
+	put_msg("Text will be printed as special during print/export");
+    else
+	put_msg("Text will be printed as normal during print/export");
+}
+
+popup_flags_panel(isw)
+    ind_sw_info	   *isw;
+{
+    Position	    x_val, y_val;
+    Dimension	    width, height;
+    char	    buf[32];
+    static int      actions_added=0;
+    static char    *hidden_text_items[] = {
+    "Normal ", "Hidden "};
+    static char    *rigid_text_items[] = {
+    "Normal ", "Rigid  "};
+    static char    *special_text_items[] = {
+    "Normal ", "Special"};
+
+    nval_i = isw;
+    XtSetSensitive(nval_i->button, False);
+    rigid_text_flag = (cur_textflags & RIGID_TEXT) ? 1 : 0;
+    special_text_flag = (cur_textflags & SPECIAL_TEXT) ? 1 : 0;
+    hidden_text_flag = (cur_textflags & HIDDEN_TEXT) ? 1 : 0;
+
+    FirstArg(XtNwidth, &width);
+    NextArg(XtNheight, &height);
+    GetValues(tool);
+    /* position the popup 1/3 in from left and 2/3 down from top */
+    XtTranslateCoords(tool, (Position) (width / 3), (Position) (2 * height / 3),
+		      &x_val, &y_val);
+
+    FirstArg(XtNx, x_val);
+    NextArg(XtNy, y_val);
+    NextArg(XtNwidth, 240);
+
+    nval_popup = XtCreatePopupShell("xfig_set_indicator_panel",
+				    transientShellWidgetClass, tool,
+				    Args, ArgCount);
+    XtOverrideTranslations(nval_popup,
+                       XtParseTranslationTable(nval_translations));
+    if (!actions_added) {
+        XtAppAddActions(tool_app, nval_actions, XtNumber(nval_actions));
+	actions_added = 1;
+    }
+
+    form = XtCreateManagedWidget("form", formWidgetClass, nval_popup, NULL, 0);
+
+    FirstArg(XtNborderWidth, 0);
+    sprintf(buf, "%s %s", isw->line1, isw->line2);
+    label = XtCreateManagedWidget(buf, labelWidgetClass, form, Args, ArgCount);
+
+    /* make hidden text menu */
+
+    FirstArg(XtNfromVert, label);
+    NextArg(XtNborderWidth, 0);
+    beside = XtCreateManagedWidget(" Hidden Flag     =", labelWidgetClass,
+                                   form, Args, ArgCount);
+
+    FirstArg(XtNfromVert, label);
+    NextArg(XtNfromHoriz, beside);
+    hidden_text_panel = XtCreateManagedWidget(
+                 hidden_text_items[hidden_text_flag], menuButtonWidgetClass,
+                                              form, Args, ArgCount);
+    below = hidden_text_panel;
+    hidden_text_menu = make_popup_menu(hidden_text_items,
+                                       XtNumber(hidden_text_items),
+                                     hidden_text_panel, hidden_text_select);
+
+    /* make rigid text menu */
+
+    FirstArg(XtNfromVert, below);
+    NextArg(XtNborderWidth, 0);
+    beside = XtCreateManagedWidget(" Rigid Flag      =", labelWidgetClass,
+                                   form, Args, ArgCount);
+
+    FirstArg(XtNfromVert, below);
+    NextArg(XtNfromHoriz, beside);
+    rigid_text_panel = XtCreateManagedWidget(
+                   rigid_text_items[rigid_text_flag], menuButtonWidgetClass,
+                                             form, Args, ArgCount);
+    below = rigid_text_panel;
+    rigid_text_menu = make_popup_menu(rigid_text_items,
+                                      XtNumber(rigid_text_items),
+                                      rigid_text_panel, rigid_text_select);
+
+    /* make special text menu */
+
+    FirstArg(XtNfromVert, below);
+    NextArg(XtNborderWidth, 0);
+    beside = XtCreateManagedWidget(" Special Flag    =", labelWidgetClass,
+                                   form, Args, ArgCount);
+
+    FirstArg(XtNfromVert, below);
+    NextArg(XtNfromHoriz, beside);
+    special_text_panel = XtCreateManagedWidget(
+                                      special_text_items[special_text_flag],
+                               menuButtonWidgetClass, form, Args, ArgCount);
+    below = special_text_panel;
+    special_text_menu = make_popup_menu(special_text_items,
+                                        XtNumber(special_text_items),
+                                   special_text_panel, special_text_select);
+
+    FirstArg(XtNlabel, "cancel");
+    NextArg(XtNfromVert, below);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
+				   form, Args, ArgCount);
+    XtAddEventHandler(cancel, ButtonReleaseMask, (Boolean) 0,
+		      (XtEventHandler)flags_panel_cancel, (XtPointer) NULL);
+
+    FirstArg(XtNlabel, "set");
+    NextArg(XtNfromVert, below);
+    NextArg(XtNfromHoriz, cancel);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    set = XtCreateManagedWidget("set", commandWidgetClass,
+				form, Args, ArgCount);
+    XtAddEventHandler(set, ButtonReleaseMask, (Boolean) 0,
+		      (XtEventHandler)flags_panel_set, (XtPointer) NULL);
+
+    XtPopup(nval_popup, XtGrabExclusive);
+    (void) XSetWMProtocols(XtDisplay(nval_popup), XtWindow(nval_popup),
+                           &wm_delete_window, 1);
+}
+
+/* handle integer and floating point settings */
 
 static void
 nval_panel_dismiss()
@@ -1374,6 +1588,7 @@ show_color(sw)
     } else
 	color = all_colors_available ? appres.color[cur_color] : x_fg_color.pixel;
 
+    show_fillstyle(fill_style_sw);
     put_msg("Color set to %s", colorNames[cur_color + 1]);
     XSetForeground(tool_d, color_gc, color);
     /* now fill the color rectangle with the new color */
@@ -1394,7 +1609,52 @@ show_color(sw)
     XtSetValues(sw->button, &button_args[6], 1);
     button_args[6].value = (XtArgVal) sw->normalPM;
     XtSetValues(sw->button, &button_args[6], 1);
-    show_fillstyle(fill_style_sw);
+}
+
+/* TEXT FLAGS */
+
+static
+inc_flags(sw)
+    ind_sw_info	   *sw;
+{
+    if (++cur_flagshown > MAX_FLAGS)
+	cur_flagshown = 0;
+    show_flags(sw);
+}
+
+static
+dec_flags(sw)
+    ind_sw_info	   *sw;
+{
+    if (--cur_flagshown < 0)
+	cur_flagshown = MAX_FLAGS;
+    show_flags(sw);
+}
+
+static
+show_flags(sw)
+    ind_sw_info	   *sw;
+{
+    put_msg("Text flags: Hidden=%s, Special=%s, Rigid=%s (Button 1 to change)",
+		(cur_textflags & HIDDEN_TEXT) ? "on" : "off",
+		(cur_textflags & SPECIAL_TEXT) ? "on" : "off",
+		(cur_textflags & RIGID_TEXT) ? "on" : "off");
+
+    /* write the text/ellipse angle in the background pixmap */
+    switch(cur_flagshown) {
+	case 0:
+	    sprintf(indbuf, "hidden=%s",
+			(cur_textflags & HIDDEN_TEXT) ? "on  " : "off ");
+	    break;
+	case 1:
+	    sprintf(indbuf, "special=%s",
+			(cur_textflags & SPECIAL_TEXT) ? "on " : "off");
+	    break;
+	default:
+	    sprintf(indbuf, "rigid=%s",
+			(cur_textflags & RIGID_TEXT) ? "on   " : "off  ");
+    }
+    update_string_pixmap(sw, indbuf, 6, 26);
 }
 
 /* FONT */
@@ -1489,7 +1749,7 @@ show_font_return(w)
     show_font(return_sw);
 }
 
-/* increase font size */
+/* FONT SIZE */
 
 static
 inc_fontsize(sw)
@@ -1508,9 +1768,6 @@ inc_fontsize(sw)
 	cur_fontsize++;
     show_fontsize(sw);
 }
-
-
-/* decrease font size */
 
 static
 dec_fontsize(sw)
@@ -1546,6 +1803,8 @@ show_fontsize(sw)
     update_string_pixmap(sw, indbuf, sw->sw_width - 28, 20);
 }
 
+/* ELLIPSE/TEXT ANGLE */
+
 static
 inc_elltextangle(sw)
     ind_sw_info	   *sw;
@@ -1579,7 +1838,7 @@ show_elltextangle(sw)
     if (cur_elltextangle <= -360.0 || cur_elltextangle >= 360)
 	cur_elltextangle = 0.0;
 
-    put_fmsg("Text/Ellipse angle %.1f", cur_elltextangle);
+    put_msg("Text/Ellipse angle %.1f", cur_elltextangle);
     if (cur_elltextangle == old_elltextangle)
 	return;
 
@@ -1589,6 +1848,8 @@ show_elltextangle(sw)
     update_string_pixmap(sw, indbuf, sw->sw_width - 40, 26);
     old_elltextangle = cur_elltextangle;
 }
+
+/* ROTATION ANGLE */
 
 static
 inc_rotnangle(sw)
@@ -1726,7 +1987,7 @@ show_zoom(sw)
     else if (zoomscale > 10.0)
 	zoomscale = 10.0;
 
-    put_fmsg("Zoom scale %.2lf", (double) zoomscale);
+    put_msg("Zoom scale %.2f", zoomscale);
     if (zoomscale == old_zoomscale)
 	return;
 
@@ -1741,6 +2002,9 @@ show_zoom(sw)
     /* fix up the rulers and grid */
     reset_rulers();
     redisplay_rulers();
+    /* reload text objects' font structures since we need 
+	to load larger/smaller fonts */
+    reload_text_fstructs();
     setup_grid(cur_gridmode);
     old_zoomscale = zoomscale;
 }
@@ -1827,7 +2091,7 @@ show_textstep(sw)
     else if (cur_textstep > 99.0)
 	cur_textstep = 99.0;
 
-    put_fmsg("Font step %.1lf", (double) cur_textstep);
+    put_msg("Text step %.1f", cur_textstep);
     /* write the font size in the background pixmap */
     indbuf[0] = indbuf[1] = indbuf[2] = indbuf[3] = indbuf[4] = '\0';
     sprintf(indbuf, "%4.1f", cur_textstep);

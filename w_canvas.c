@@ -4,14 +4,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 /*********************** IMPORTS ************************/
@@ -83,7 +79,7 @@ null_proc()
 static void
 canvas_exposed(tool, event, params, nparams)
     TOOL	    tool;
-    INPUTEVENT	   *event;
+    XButtonEvent   *event;
     String	   *params;
     Cardinal	   *nparams;
 {
@@ -194,24 +190,15 @@ setup_canvas()
     reset_clip_window();
 }
 
-/* macro which rounds coordinates depending on point positioning mode */
-#define		round_coords(x, y) \
-    if (cur_pointposn != P_ANY) \
-	if (!anypointposn) { \
-	    x = ((t = x%posn_rnd[cur_pointposn]) < posn_hlf[cur_pointposn]) \
-		? x - t - 1 : x + posn_rnd[cur_pointposn] - t - 1; \
-	    y = ((t = y%posn_rnd[cur_pointposn]) < posn_hlf[cur_pointposn]) \
-		? y - t - 1 : y + posn_rnd[cur_pointposn] - t - 1; \
-	}
-
 static
 canvas_selected(tool, event, params, nparams)
     TOOL	    tool;
-    INPUTEVENT	   *event;
+    XButtonEvent   *event;
     String	   *params;
     Cardinal	   *nparams;
 {
-    register int    x, y, t;
+    register int    x, y;
+    KeySym	    key;
     static int	    sx = -10000, sy = -10000;
     char	    buf[1];
     XButtonPressedEvent *be = (XButtonPressedEvent *) event;
@@ -290,15 +277,15 @@ canvas_selected(tool, event, params, nparams)
     case KeyPress:
 	/* we might want to check action_on */
 	/* if arrow keys are pressed, pan */
-	t = XLookupKeysym(ke, 0);
-	if (t == XK_Left ||
-	    t == XK_Right ||
-	    t == XK_Up ||
-	    t == XK_Down ||
-	    t == XK_Home ||
-	    t == XK_Multi_key ||
-	    t == XK_Alt_L ) {
-	    switch (t) {
+	key = XLookupKeysym(ke, 0);
+	if (key == XK_Left ||
+	    key == XK_Right ||
+	    key == XK_Up ||
+	    key == XK_Down ||
+	    key == XK_Home ||
+	    key == XK_Multi_key ||
+	    key == XK_Alt_L ) {
+	    switch (key) {
 	    case XK_Left:
 		pan_left();
 		break;

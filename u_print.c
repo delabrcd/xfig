@@ -4,14 +4,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
@@ -50,16 +46,18 @@ char *shell_protect_string(string)
     return(buf);
 }
 
-print_to_printer(printer, flushleft, mag)
+print_to_printer(printer, mag, flushleft, params)
     char	    printer[];
     Boolean	    flushleft;
     float	    mag;
+    char	    params[];
 {
     char	    prcmd[2*PATH_MAX+200], translator[60];
     char	    syspr[2*PATH_MAX+200];
     char	    tmpfile[32];
 
     sprintf(tmpfile, "%s/%s%06d", TMPDIR, "xfig-print", getpid());
+    warnexist = False;
     if (write_file(tmpfile))
 	return;
 
@@ -71,17 +69,17 @@ print_to_printer(printer, flushleft, mag)
 
     if (emptyname(printer)) {	/* send to default printer */
 #if defined(SYSV) || defined(SVR4)
-	sprintf(syspr, "lp -oPS");
+	sprintf(syspr, "lp %s -oPS", params);
 #else
-	sprintf(syspr, "lpr -J %s", shell_protect_string(cur_filename));
+	sprintf(syspr, "lpr %s -J %s", params, shell_protect_string(cur_filename));
 #endif
 	put_msg("Printing figure on default printer in %s mode ...     ",
 		print_landscape ? "LANDSCAPE" : "PORTRAIT");
     } else {
 #if defined(SYSV) || defined(SVR4)
-	sprintf(syspr, "lp -d%s -oPS", printer);
+	sprintf(syspr, "lp %s -d%s -oPS", params, printer);
 #else
-	sprintf(syspr, "lpr -J %s -P%s", shell_protect_string(cur_filename),
+	sprintf(syspr, "lpr %s -J %s -P%s", params, shell_protect_string(cur_filename),
 		printer);
 #endif
 	put_msg("Printing figure on printer %s in %s mode ...     ",
@@ -92,7 +90,7 @@ print_to_printer(printer, flushleft, mag)
     /* make up the whole translate/print command */
     sprintf(prcmd, "%s %s | %s", translator, tmpfile, syspr);
     if (system(prcmd) != 0)
-	file_msg("Error during PRINT (unable to find fig2dev?)");
+	file_msg("Error during PRINT (check standard error output)");
     else {
 	if (emptyname(printer))
 	    put_msg("Printing figure on printer %s in %s mode ... done",
@@ -121,6 +119,7 @@ print_to_file(file, lang, mag, flushleft)
 
     sprintf(tmp_fig_file, "%s/%s%06d", TMPDIR, "xfig-fig", getpid());
     /* write the fig objects to a temporary file */
+    warnexist = False;
     if (write_file(tmp_fig_file))
 	return (1);
     outfile = shell_protect_string(file);
@@ -158,7 +157,7 @@ print_to_file(file, lang, mag, flushleft)
 	sprintf(prcmd, "fig2dev -L%s -m %f %s %s", lang,
 		mag, tmp_fig_file, outfile);
     if (system(prcmd) != 0)
-	file_msg("Error during EXPORT (unable to find fig2dev?)");
+	file_msg("Error during EXPORT (check standard error output)");
     else
 	put_msg("Exporting figure to file \"%s\" in %s mode ... done",
 		file, print_landscape ? "LANDSCAPE" : "PORTRAIT");

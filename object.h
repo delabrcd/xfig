@@ -4,14 +4,10 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #define		DEFAULT		      (-1)
@@ -21,7 +17,7 @@
 #define		RUBBER_LINE		3
 #define		PANEL_LINE		4
 
-#define		Color			long
+#define		Color			int
 
 #define		BLACK			0
 #define		WHITE			7
@@ -152,6 +148,7 @@ typedef struct f_text {
 #define					T_CENTER_JUSTIFIED	1
 #define					T_RIGHT_JUSTIFIED	2
     int		    font;
+    PIX_ROT_FONT    fontstruct;
     int		    size;	/* point size */
     Color	    color;
     int		    depth;
@@ -269,7 +266,7 @@ typedef struct f_linkinfo {
 #define		EPS_SIZE		sizeof(struct f_eps)
 #define		LINKINFO_SIZE		sizeof(struct f_linkinfo)
 
-/**********************	 object codes  **********************/
+/**********************  object codes  **********************/
 
 #define		O_ELLIPSE		1
 #define		O_POLYLINE		2
@@ -280,7 +277,7 @@ typedef struct f_linkinfo {
 #define		O_END_COMPOUND		-O_COMPOUND
 #define		O_ALL_OBJECT		99
 
-/*********************	object masks  ************************/
+/********************* object masks for update  ************************/
 
 #define M_NONE			0x000
 #define M_POLYLINE_POLYGON	0x001

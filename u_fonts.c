@@ -1,56 +1,51 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1991 by Brian V. Smith
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include <X11/Xlib.h>
 #include "fig.h"
+#include "resources.h"
 #include "u_fonts.h"
 #include "object.h"
-
-#define NULL 0
 
 /* printer font names for indicator window */
 
 struct _xfstruct x_fontinfo[NUM_X_FONTS] = {
-    {"-adobe-times-medium-r-*--", NULL},
-    {"-adobe-times-medium-i-*--", NULL},
-    {"-adobe-times-bold-r-*--", NULL},
-    {"-adobe-times-bold-i-*--", NULL},
-    {"-schumacher-clean-medium-r-*--", NULL},
-    {"-schumacher-clean-medium-i-*--", NULL},
-    {"-schumacher-clean-bold-r-*--", NULL},
-    {"-schumacher-clean-bold-i-*--", NULL},
-    {"-adobe-courier-medium-r-*--", NULL},
-    {"-adobe-courier-medium-o-*--", NULL},
-    {"-adobe-courier-bold-r-*--", NULL},
-    {"-adobe-courier-bold-o-*--", NULL},
-    {"-adobe-helvetica-medium-r-*--", NULL},
-    {"-adobe-helvetica-medium-o-*--", NULL},
-    {"-adobe-helvetica-bold-r-*--", NULL},
-    {"-adobe-helvetica-bold-o-*--", NULL},
-    {"-adobe-new century schoolbook-medium-r-*--", NULL},
-    {"-adobe-new century schoolbook-medium-i-*--", NULL},
-    {"-adobe-new century schoolbook-bold-r-*--", NULL},
-    {"-adobe-new century schoolbook-bold-i-*--", NULL},
-    {"-*-lucidabright-medium-r-*--", NULL},
-    {"-*-lucidabright-medium-i-*--", NULL},
-    {"-*-lucidabright-demibold-r-*--", NULL},
-    {"-*-lucidabright-demibold-i-*--", NULL},
-    {"-*-symbol-medium-r-*--", NULL},
-    {"-*-zapfchancery-medium-i-*--", NULL},
-    {"-*-zapfdingbats-*-*-*--", NULL},
+    {"-adobe-times-medium-r-*--", (struct xfont*) NULL},
+    {"-adobe-times-medium-i-*--", (struct xfont*) NULL},
+    {"-adobe-times-bold-r-*--", (struct xfont*) NULL},
+    {"-adobe-times-bold-i-*--", (struct xfont*) NULL},
+    {"-schumacher-clean-medium-r-*--", (struct xfont*) NULL},
+    {"-schumacher-clean-medium-i-*--", (struct xfont*) NULL},
+    {"-schumacher-clean-bold-r-*--", (struct xfont*) NULL},
+    {"-schumacher-clean-bold-i-*--", (struct xfont*) NULL},
+    {"-adobe-courier-medium-r-*--", (struct xfont*) NULL},
+    {"-adobe-courier-medium-o-*--", (struct xfont*) NULL},
+    {"-adobe-courier-bold-r-*--", (struct xfont*) NULL},
+    {"-adobe-courier-bold-o-*--", (struct xfont*) NULL},
+    {"-adobe-helvetica-medium-r-*--", (struct xfont*) NULL},
+    {"-adobe-helvetica-medium-o-*--", (struct xfont*) NULL},
+    {"-adobe-helvetica-bold-r-*--", (struct xfont*) NULL},
+    {"-adobe-helvetica-bold-o-*--", (struct xfont*) NULL},
+    {"-adobe-new century schoolbook-medium-r-*--", (struct xfont*) NULL},
+    {"-adobe-new century schoolbook-medium-i-*--", (struct xfont*) NULL},
+    {"-adobe-new century schoolbook-bold-r-*--", (struct xfont*) NULL},
+    {"-adobe-new century schoolbook-bold-i-*--", (struct xfont*) NULL},
+    {"-*-lucidabright-medium-r-*--", (struct xfont*) NULL},
+    {"-*-lucidabright-medium-i-*--", (struct xfont*) NULL},
+    {"-*-lucidabright-demibold-r-*--", (struct xfont*) NULL},
+    {"-*-lucidabright-demibold-i-*--", (struct xfont*) NULL},
+    {"-*-symbol-medium-r-*--", (struct xfont*) NULL},
+    {"-*-zapfchancery-medium-i-*--", (struct xfont*) NULL},
+    {"-*-zapfdingbats-*-*-*--", (struct xfont*) NULL},
 };
 
 struct _fstruct ps_fontinfo[NUM_PS_FONTS + 1] = {

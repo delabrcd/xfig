@@ -1,17 +1,13 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1985 by Supoj Sutanthavibul
+ * Copyright (c) 1991 by Henning Spruth
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 extern float	zoomscale;
@@ -32,8 +28,8 @@ extern int	zoomyoff;
 	      a1,a2)
 #define zXDrawLine(d,w,gc,x1,y1,x2,y2)\
     XDrawLine(d,w,gc,ZOOMX(x1),ZOOMY(y1),ZOOMX(x2),ZOOMY(y2))
-#define zXDrawString(d,w,gc,x,y,s,l)\
-    XDrawString(d,w,gc,ZOOMX(x),ZOOMY(y),s,l)
+#define zXRotDrawString(d,w,font,gc,x,y,s,l)\
+    XRotDrawString(d,w,font,gc,ZOOMX(x),ZOOMY(y),s,l)
 #define zXFillRectangle(d,w,gc,x1,y1,x2,y2)\
     XFillRectangle(d,w,gc,ZOOMX(x1),ZOOMY(y1),\
 		round(zoomscale*(x2)),round(zoomscale*(y2)))

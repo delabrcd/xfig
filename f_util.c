@@ -4,22 +4,17 @@
  *
  * "Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of M.I.T. not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  M.I.T. makes no representations about the
- * suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty."
- *
+ * the above copyright notice appear in all copies and that both the copyright
+ * notice and this permission notice appear in supporting documentation. 
+ * No representations are made about the suitability of this software for 
+ * any purpose.  It is provided "as is" without express or implied warranty."
  */
 
 #include "fig.h"
+#include "resources.h"
 #include "object.h"
 #include "mode.h"
-#include "resources.h"
 #include "w_util.h"
-#include <unistd.h>
 
 int
 emptyname(name)
@@ -106,7 +101,7 @@ get_directory(direct)
 
 #if defined(SYSV) || defined(SVR4)
     if (getcwd(direct, 1024) == NULL) {	/* get current working dir */
-	put_msg("%s", "Can't get current directory");
+	put_msg("Can't get current directory");
 #else
     if (getwd(direct) == NULL) {/* get current working dir */
 	put_msg("%s", direct);	/* err msg is in directory */
@@ -145,18 +140,26 @@ ok_to_write(file_name, op_name)
 		put_msg("Write permission for \"%s\" is denied", file_name);
 		return (0);
 	    } else {
-		sprintf(string, "\"%s\" already exists.\nDo you want to overwrite it?", file_name);
-		if (!popup_query(QUERY_YES, string)) {
-		    put_msg("%s cancelled", op_name);
-		    return (0);
+		if (warnexist) {
+		    sprintf(string, "\"%s\" already exists.\nDo you want to overwrite it?", file_name);
+		    if (!popup_query(QUERY_YES, string)) {
+			put_msg("%s cancelled", op_name);
+			return (0);
+		    }
+		}
+		/* !warnexist */
+		else {
+			return(1);
 		}
 	    }
 	} else {
 	    put_msg("\"%s\" is read only", file_name);
 	    return (0);
 	}
-    } else if (errno != ENOENT)
-	return (0);		/* file does exist but stat fails */
+    } else {
+	if (errno != ENOENT)
+	    return (0);		/* file does exist but stat fails */
+    }
 
     return (1);
 }
