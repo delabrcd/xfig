@@ -67,8 +67,7 @@ struct Cmap {
 
 typedef struct {
 		char *name,
-		     *rgb,
-		     *aname;
+		     *rgb;
 		} fig_colors ;
 
 #ifdef USE_XPM

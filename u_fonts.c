@@ -15,7 +15,6 @@
  * the party supplying this software to the X Consortium.
  */
 
-#include <X11/Xlib.h>
 #include "fig.h"
 #include "resources.h"
 #include "u_fonts.h"

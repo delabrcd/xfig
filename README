@@ -13,14 +13,32 @@ This file contains some notes about installing xfig, the directory
 some further documentation including the manual in troff -man format
 and PostScript.
 
-Please report any bugs, fixes, contributions, etc. to:
+***************************************************************************
+Please refer any questions/bug fixes/contributions etc. about TransFig or 
+xfig to me.
 
-Brian V. Smith (bvsmith@lbl.gov)
+Brian Smith
+Lawrence Berkeley Laboratory
+bvsmith@lbl.gov
+***************************************************************************
+
+Note that although I work at Lawrence Berkeley Laboratory (LBL) I don't speak 
+for LBL nor do I represent LBL with respect to my work on TransFig and xfig,
+nor does LBL make any representations about the suitability of this software 
+for any purpose.
+Here is the legal part:
+
+THE LAWRENCE BERKELEY LABORATORY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS 
+SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
+EVENT SHALL THE AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL 
+DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, 
+WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING 
+OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ++++++++++++++++++++++
-NOTE FOR version 3.1.0
+NOTE about version 3.0
 
-  An error in version 3.0.0 incorrectly positioned objects on the canvas
+  An error in version 3.0 incorrectly positioned objects on the canvas
   when reading older fig files.  New objects entered with 3.0 are
   correctly positioned.  A warning will popup when you load a version 3.0
   file with version 3.1 that says you might need to offset your figure by
@@ -103,6 +121,11 @@ See the man pages for more information.
 If you have a SYSV system but use BSD-style printing (lpr instead of lp) you
 must define -DBSDLPR in the Imakefile/Makefile.
 
+You may also need to uncomment the following string in the Fig.ad
+app-defaults file:
+
+!Fig*job_params*string:		-oPS
+
 -----------------
 Solaris users
 -----------------
@@ -122,17 +145,6 @@ Some people have had trouble with the Sun cc 3.0.1 compiler and optimization.
 You may need to shut off optimization.
 A common symptom is that xfig just core dumps when starting.
 
------------------
-OpenWindows users
------------------
-
-Xfig now automatically looks for the OpenWindows style of font names
-(e.g. times-roman-13) and uses those when available so the -DOPENWIN flag
-is no longer necessary 
-
-There is no need to compile with the -DOPENWIN_BUG flag anymore for 
-OpenWindows 2.0 (or any version of OpenWindows for that matter).
-
 ----------------------------------------------
 Possible problems encountered installing xfig:
 ----------------------------------------------
@@ -146,18 +158,6 @@ POSSIBLE CAUSE AND SOLUTION:
 	tag the text object as "special" and then use the pstex output mode.
 	This mode forces special text objects to be passed through to LaTeX,
 	allowing the use of Math mode and CM fonts among other things.
-
-PROBLEM:
-	xfig hangs when pressing the Text or Update button.
-
-POSSIBLE CAUSE AND SOLUTION:
-	Increase the height of the indicator panel by changing init_ind_panel()
-	where it says:
-
-        i = DEF_IND_SW_HT+4*INTERNAL_BW+14;  /* allow for thickness of scrollbar */
-
-	Try increasing the 14 to 16 or 20 and see if that fixes it.  Please
-	send me email if you have to do this and tell me the value you used.
 ________________________________________________________________________________
 PROBLEM:
 	On a DEC Alpha the compiler may complain about something like: ".mask
@@ -178,6 +178,23 @@ PROBLEM:
 	This may be ignored as it is a problem with the Sun shared libraries
 	and the way X11 builds the shared Xmu library.  It doesn't affect the
 	operation of xfig.
+
+	Or you may compile with "-Bstatic -lXmu -Bdynamic".
+	To really solve the problem if you are using OpenWindows 3.0
+	(X11R4-based Xt), please contact your local Sun office and request the
+	following patches:
+
+        Patch i.d.      Description
+        100512-02       4.1.x OpenWindows 3.0 libXt Jumbo patch
+        100573-03       4.1.x OpenWindows 3.0 undefined symbols when using
+                                shared libXmu
+
+	A source patch for use with the MIT X11R4 libraries was developed by
+	Conrad Kimball (cek@sdc.boeing.com); it retrofits into R4 some fixes
+	made in R5 to get around this problem. The patch is on export in [1/93]
+	contrib/X11R4_sunos4.1.2_patch_version3.Z".
+
+	The other option is to use X11R5 or X11R6.
 ________________________________________________________________________________
 PROBLEM:
 	The window oscillates and fights with the window manager when
@@ -236,7 +253,8 @@ POSSIBLE CAUSE AND SOLUTION:
 ________________________________________________________________________________
 PROBLEMS:
 	On HP computers using cc compiler version A.09.61 there is a problem with
-	level 3 optimization. 
+	level 3 optimization.  Use +O2 instead of +O3.
 
 POSSIBLE CAUSE AND SOLUTION:
 	Use level 2 instead.
+

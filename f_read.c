@@ -1044,7 +1044,7 @@ read_textobject(fp)
     fix_angle(&t->angle);
 
     /* get the font struct */
-    t->fontstruct = lookfont(x_fontnum(t->flags, t->font),
+    t->fontstruct = lookfont(x_fontnum(psfont_text(t), t->font),
 			round(t->size*display_zoomscale));
     fix_depth(&t->depth);
     check_color(&t->color);

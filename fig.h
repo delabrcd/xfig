@@ -17,7 +17,34 @@
  * the party supplying this software to the X Consortium.
  */
 
-/* include only Xlib.h and Intrinsic.h here - use figx.h for widget stuff */
+/* For the X stuff, include only Xlib.h and Intrinsic.h here - 
+   use figx.h for widget stuff */
+
+#include <sys/stat.h>
+
+#if defined(__convex__) && defined(__STDC__)
+#define S_IFDIR _S_IFDIR
+#define S_IWRITE _S_IWRITE
+#endif
+
+#ifndef SYSV
+#ifndef SVR4
+#include <fcntl.h>
+#endif
+#endif
+
+#include <pwd.h>
+#include <signal.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <errno.h>
+
+extern int	errno;
+extern int	sys_nerr;
+extern char    *sys_errlist[];
+extern char    *mktemp();
+
+#include <math.h>	/* for sin(), cos() etc */
 
 #include <X11/Xlib.h>
 #include <X11/Intrinsic.h>
@@ -212,32 +239,6 @@ int bcmp();
 #endif  /* SYSV */
 #endif  /* X_NOT_STDC_ENV */
 
-#include <sys/stat.h>
-
-#if defined(__convex__) && defined(__STDC__)
-#define S_IFDIR _S_IFDIR
-#define S_IWRITE _S_IWRITE
-#endif
-
-#ifndef SYSV
-#ifndef SVR4
-#include <fcntl.h>
-#endif
-#endif
-
-#include <pwd.h>
-#include <signal.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <errno.h>
-
-extern int	errno;
-extern int	sys_nerr;
-extern char    *sys_errlist[];
-extern char    *mktemp();
-
-#include <math.h>	/* for sin(), cos() etc */
-
 #if defined(SYSV) && defined(SYSV386)
 #if defined(__STDC__)
 #ifdef ISC
@@ -332,9 +333,15 @@ extern	double		drand48();
 
 #else /* not SYSV */
 
+#ifndef random
 extern	long		random();
+#endif
+#ifndef srandom
 extern	void		srandom();
+#endif
 
+#ifndef frandom
 #define	frandom()	(random()*(1./2147483648.))
+#endif
 
 #endif	/* not SYSV */

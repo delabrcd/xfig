@@ -166,8 +166,8 @@ init_update_settings(p, type, x, y, px, py)
 	up_part(cur_styleval, cur_a->style_val, I_LINESTYLE);
 	up_part(cur_capstyle, cur_a->cap_style, I_CAPSTYLE);
 	up_part(cur_depth, cur_a->depth, I_DEPTH);
-	up_part(cur_arrowmode, get_arrow_mode(cur_a), I_ARROWMODE);
-	up_part(cur_arrowtype, get_arrow_type(cur_a), I_ARROWTYPE);
+	up_part(cur_arrowmode, get_arrow_mode((F_line *)cur_a), I_ARROWMODE);
+	up_part(cur_arrowtype, get_arrow_type((F_line *)cur_a), I_ARROWTYPE);
 	break;
     case O_SPLINE:
 	cur_s = (F_spline *) p;
@@ -180,8 +180,8 @@ init_update_settings(p, type, x, y, px, py)
 	if (cur_s->type == T_OPEN_NORMAL || cur_s->type == T_OPEN_INTERP)
 	    up_part(cur_capstyle, cur_s->cap_style, I_CAPSTYLE);
 	up_part(cur_depth, cur_s->depth, I_DEPTH);
-	up_part(cur_arrowmode, get_arrow_mode(cur_s), I_ARROWMODE);
-	up_part(cur_arrowtype, get_arrow_type(cur_s), I_ARROWTYPE);
+	up_part(cur_arrowmode, get_arrow_mode((F_line *)cur_s), I_ARROWMODE);
+	up_part(cur_arrowtype, get_arrow_type((F_line *)cur_s), I_ARROWTYPE);
 	break;
     default:
 	return;
@@ -272,7 +272,7 @@ update_ellipse(ellipse)
     up_part(ellipse->pen_color, cur_pencolor, I_PEN_COLOR);
     up_part(ellipse->fill_color, cur_fillcolor, I_FILL_COLOR);
     up_part(ellipse->depth, cur_depth, I_DEPTH);
-    fix_fillstyle(ellipse);	/* make sure it has legal fill style if color changed */
+    fix_fillstyle((F_line *)ellipse);	/* make sure it has legal fill style if color changed */
     draw_ellipse(ellipse, PAINT);
 }
 
@@ -290,8 +290,8 @@ update_arc(arc)
     up_part(arc->pen_color, cur_pencolor, I_PEN_COLOR);
     up_part(arc->fill_color, cur_fillcolor, I_FILL_COLOR);
     up_part(arc->depth, cur_depth, I_DEPTH);
-    up_arrow(arc);
-    fix_fillstyle(arc);	/* make sure it has legal fill style if color changed */
+    up_arrow((F_line *)arc);
+    fix_fillstyle((F_line *)arc);	/* make sure it has legal fill style if color changed */
     draw_arc(arc, PAINT);
 }
 
@@ -340,8 +340,8 @@ update_text(text)
     up_part(text->angle, cur_elltextangle*M_PI/180.0, I_ELLTEXTANGLE);
     up_part(text->color, cur_pencolor, I_PEN_COLOR);
     up_part(text->depth, cur_depth, I_DEPTH);
-    size = textsize(lookfont(x_fontnum(text->flags, text->font), text->size),
-			strlen(text->cstring), text->cstring);
+    size = textsize(lookfont(x_fontnum(psfont_text(text), text->font),
+			text->size), strlen(text->cstring), text->cstring);
     text->ascent = size.ascent;
     text->descent = size.descent;
     text->length = size.length;
@@ -364,8 +364,8 @@ update_spline(spline)
     up_part(spline->fill_color, cur_fillcolor, I_FILL_COLOR);
     up_part(spline->depth, cur_depth, I_DEPTH);
     if (open_spline(spline))
-	up_arrow(spline);
-    fix_fillstyle(spline);	/* make sure it has legal fill style if color changed */
+	up_arrow((F_line *)spline);
+    fix_fillstyle((F_line *)spline);	/* make sure it has legal fill style if color changed */
     draw_spline(spline, PAINT);
 }
 

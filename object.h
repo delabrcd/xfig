@@ -142,11 +142,14 @@ typedef struct f_pic {
     struct Cmap	    cmap[MAXCOLORMAPSIZE];  /* for GIF/XPM files */
     int		    numcols;		/* number of colors in cmap */
     float	    hw_ratio;
-    int		    size_x, size_y;	/* fig units */
-    struct f_pos    bit_size;		/* pixels */
+    int		    size_x, size_y;	/* picture size (fig units) */
+    struct f_pos    bit_size;		/* size of bitmap in pixels */
     Color	    color;		/* only used for XBM */
     Pixmap	    pixmap;		/* pixmap created for canvas */
-    int		    pix_rotation, pix_width, pix_height, pix_flipped;
+    int		    pix_rotation,
+		    pix_width,		/* current width of pixmap (pixels) */
+		    pix_height,		/* current height of pixmap (pixels) */
+		    pix_flipped;
 }
 		F_pic;
 

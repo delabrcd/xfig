@@ -96,7 +96,7 @@
 .PD
 ..
 .\"-------
-.TH XFIG 1 "Release 3.1(.2) (Protocol 3.1)"
+.TH XFIG 1 "Release 3.1(.3) (Protocol 3.1)"
 .SH NAME
 xfig - Facility for Interactive Generation of figures under X11
 .SH SYNOPSIS
@@ -124,11 +124,7 @@ the action of the middle button.
 is available via anonymous ftp from
 .I ftp.x.org
 in
-.BI /contrib/applications/drawing_tools/xfig\-fixes/xfig.2.1. X\c
-.BR .tar.Z ,
-where the
-.I X
-is the current patchlevel.
+.BI /contrib/applications/drawing_tools/xfig .
 .PP
 The
 .I TransFig
@@ -187,11 +183,7 @@ The
 package is available via anonymous ftp from
 .I ftp.x.org
 in
-.BI /contrib/applications/drawing_tools/transfig\-fixes/transfig.2.1. X\c
-.BR .tar.Z ,
-where the
-.I X
-is the current patchlevel.
+.BI /contrib/applications/drawing_tools/transfig .
 .SH OPTIONS
 .\"-------
 .At
@@ -1148,6 +1140,8 @@ is used.
 .I "Print Job Params"
 This is an AsciiTextWidget which into which you may put any extra
 command-line parameters that your lpr or lp program needs for printing.
+This may be set using the resource 
+.BR Fig*job_params*string .
 .TP
 .I "Figures in batch"
 This indicator shows how many figures have been put in the batch file

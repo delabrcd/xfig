@@ -420,9 +420,9 @@ rotate_ellipse(e, x, y)
 	e->end.x = x + rotn_dirn * (y - e->end.y);
 	e->end.y = y + rotn_dirn * dxe;
     } else {
-	rotate_point(&e->center, x, y);
-	rotate_point(&e->start, x, y);
-	rotate_point(&e->end, x, y);
+	rotate_point((F_point *)&e->center, x, y);
+	rotate_point((F_point *)&e->start, x, y);
+	rotate_point((F_point *)&e->end, x, y);
     }
     e->angle -= (float) (rotn_dirn * act_rotnangle * M_PI / 180);
     if (e->angle < 0.0)
@@ -457,9 +457,9 @@ rotate_arc(a, x, y)
 	p[0] = a->point[0];
 	p[1] = a->point[1];
 	p[2] = a->point[2];
-	rotate_point(&p[0], x, y);
-	rotate_point(&p[1], x, y);
-	rotate_point(&p[2], x, y);
+	rotate_point((F_point *)&p[0], x, y);
+	rotate_point((F_point *)&p[1], x, y);
+	rotate_point((F_point *)&p[2], x, y);
 	if (compute_arccenter(p[0], p[1], p[2], &xx, &yy)) {
 	    a->point[0].x = p[0].x;
 	    a->point[0].y = p[0].y;

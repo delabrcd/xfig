@@ -115,7 +115,7 @@ arc_bound(arc, xmin, ymin, xmax, ymax)
     *ymin = sy - half_wd;
 
     /* now add in the arrow (if any) boundaries */
-    arrow_bound(O_ARC, arc, xmin, ymin, xmax, ymax);
+    arrow_bound(O_ARC, (F_line *)arc, xmin, ymin, xmax, ymax);
 }
 
 compound_bound(compound, xmin, ymin, xmax, ymax)
@@ -366,7 +366,7 @@ spline_bound(s, xmin, ymin, xmax, ymax)
 	normal_spline_bound(s, xmin, ymin, xmax, ymax);
     }
     /* now add in the arrow (if any) boundaries */
-    arrow_bound(O_SPLINE, s, xmin, ymin, xmax, ymax);
+    arrow_bound(O_SPLINE, (F_line *)s, xmin, ymin, xmax, ymax);
 }
 
 static void

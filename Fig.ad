@@ -26,6 +26,11 @@ Fig*export_panel*mask*string:	*ps
 ! shell environment variable for the printer name
 !Fig*printer*string:		ps
 
+! printer job parameters
+! If you are running Solaris your print command may need -oPS.  If so,
+! uncomment the following.  You may want to add any print params here anyway.
+!Fig*job_params*string:		-oPS
+
 ! Set the maximum number of colors to use for color images (EPS,GIF,XPM)
 ! xfig will try to install a private colormap if needed to get this
 ! nubmer of colors UNLESS -dontswitchcmap (resource Fig.dont_switch_cmap)
@@ -47,6 +52,10 @@ Fig*Scrollbar.bottomShadow: white
 Fig*stdColor.shadowWidth: 0
 Fig*stdColor.topShadow: black
 Fig*stdColor.bottomShadow: white
+! this is for the user color buttons in the color panel
+Fig*colorMemory.shadowWidth: 0
+Fig*colorMemory.topShadow: black
+Fig*colorMemory.bottomShadow: white
 
 ! make the F20 key paste text in the canvas
 Fig*translations: #override \n\

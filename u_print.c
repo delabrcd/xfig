@@ -60,7 +60,7 @@ print_to_printer(printer, mag, flushleft, params)
     float	    mag;
     char	    params[];
 {
-    char	    prcmd[2*PATH_MAX+200], translator[60];
+    char	    prcmd[2*PATH_MAX+200], translator[255];
     char	    syspr[2*PATH_MAX+200];
     char	    tmpfile[PATH_MAX];
 
@@ -78,7 +78,7 @@ print_to_printer(printer, mag, flushleft, params)
 
     if (emptyname(printer)) {	/* send to default printer */
 #if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
-	sprintf(syspr, "lp %s -oPS", params);
+	sprintf(syspr, "lp %s", params);
 #else
 	sprintf(syspr, "lpr %s -J %s", params, shell_protect_string(cur_filename));
 #endif
@@ -86,7 +86,7 @@ print_to_printer(printer, mag, flushleft, params)
 		appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     } else {
 #if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
-	sprintf(syspr, "lp %s -d%s -oPS", params, printer);
+	sprintf(syspr, "lp %s -d%s", params, printer);
 #else
 	sprintf(syspr, "lpr %s -J %s -P%s", params, shell_protect_string(cur_filename),
 		printer);
@@ -152,7 +152,7 @@ print_to_file(file, lang, mag, flushleft, xoff, yoff)
 		cur_filename, tmp_fig_file, outfile);
     else if (!strcmp(lang, "ibmgl"))
 	sprintf(prcmd, "fig2dev -Libmgl -m %f %s %s %s",
-		mag, appres.landscape ? "-L" : "-P", tmp_fig_file,
+		mag, appres.landscape ? "" : "-P", tmp_fig_file,
 		outfile);
     else if (!strcmp(lang, "pstex_t")) {
 	/* make it automatically input the postscript part */

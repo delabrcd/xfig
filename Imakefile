@@ -37,8 +37,9 @@ XCOMM INCROOT=/usr/include/mit
 XCOMM Uncomment the XPMDEFINES variable if you have the XPM (color pixmap)
 XCOMM package and you would like to use the following:
 XCOMM USE_XPM will allow import/export of XPM files
-XCOMM USE_XPM_ICON uses a color xpm icon for xfig itself
-XCOMM   You need XPM version 3.4c or newer.  This is available from ftp.x.org
+XCOMM USE_XPM_ICON uses a color xpm icon for xfig itself (USE_XPM must be
+XCOMM	defined if you use USE_XPM_ICON)
+XCOMM You need XPM version 3.4c or newer.  This is available from ftp.x.org
 XCOMM   in /contrib/libraries.
 
 XCOMM XPMDEFINES = -DUSE_XPM -DUSE_XPM_ICON
@@ -161,7 +162,9 @@ XFIGOBJ =	d_arc.o d_arcbox.o d_box.o d_ellipse.o d_picobj.o \
 		w_icons.o w_indpanel.o w_modepanel.o w_mousefun.o w_msgpanel.o \
 		w_print.o w_rottext.o w_rulers.o w_setup.o w_util.o w_zoom.o
 
-ICONXFIGFILES =  fig.icon.X
+XCOMM Other dependencies should be handled by "make depend"
+
+MAINDEPFILES =  fig.icon.X patchlevel.h version.h
 
 SRCS = $(XFIGSRC)
 OBJS = $(XFIGOBJ)
@@ -171,6 +174,6 @@ MakeDirectories(install,$(XFIGLIBDIR))
 InstallNonExec(CompKeyDB,$(XFIGLIBDIR))
 InstallAppDefaults(Fig)
 InstallAppDefaults(Fig-color)
-SpecialObjectRule(main.o, $(ICONXFIGFILES), $(USETAB) )
+SpecialObjectRule(main.o, $(MAINDEPFILES), $(USETAB) )
 SpecialObjectRule(w_canvas.o, , $(DIR_DEFS))
 SpecialObjectRule(w_rottext.o, , $(CACHE))

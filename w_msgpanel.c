@@ -37,7 +37,7 @@
 /********************* IMPORTS *******************/
 
 extern char    *basname();
-extern Boolean	file_up;
+extern Boolean	file_up, export_up, edit_up;
 extern char    *read_file_name;
 
 /********************* EXPORTS *******************/
@@ -62,7 +62,7 @@ DeclareStaticArgs(12);
 /* for the popup message window */
 
 static int	file_msg_length=0;
-static char	tmpstr[100];
+static char	tmpstr[300];
 static Widget	file_msg_panel,
 		file_msg_win, file_msg_dismiss;
 
@@ -277,6 +277,7 @@ int x1,y1,x2,y2,x3,y3;
 int
 file_msg(va_alist) va_dcl
 {
+    va_list arglist;
     XawTextBlock block;
     va_list ap;
     char *format;
@@ -367,7 +368,7 @@ popup_file_msg()
 
 	if (file_msg_popup) {
 	    if (!file_msg_is_popped) {
-		if (file_up) {
+		if (edit_up || export_up || file_up) {
 		    XtPopup(file_msg_popup, XtGrabNonexclusive);
 		    XSetWMProtocols(XtDisplay(file_msg_popup),
 				    XtWindow(file_msg_popup),
@@ -430,7 +431,7 @@ popup_file_msg()
 	XtAddEventHandler(file_msg_dismiss, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler)clear_file_message, (XtPointer) NULL);
 
-	if (file_up)
+	if (edit_up || export_up || file_up)
 		{
 		XtPopup(file_msg_popup, XtGrabNonexclusive);
     		XSetWMProtocols(XtDisplay(file_msg_popup),

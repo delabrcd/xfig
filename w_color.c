@@ -1105,12 +1105,12 @@ XButtonEvent	*ev;
 
 	if (modified[0]) {
 	    cur_pencolor = mixed_color_indx[0];
+	    show_pen_color();
 	}
 	if (modified[1]) {
 	    cur_fillcolor = mixed_color_indx[1];
+	    show_fill_color();
 	}
-	show_pen_color();
-	show_fill_color();
 	modified[0] = modified[1] = False;
 	/* update the button in the indicator panel */
 	choice_panel_dismiss();
@@ -1144,9 +1144,9 @@ XButtonEvent	*ev;
 	} else {
 	    /* look up color rgb values from the name */
 	    if (color == DEFAULT) {
-		mixed_color[edit_fill].red = 
-		  mixed_color[edit_fill].green = 
-		  mixed_color[edit_fill].blue = 65536;
+		mixed_color[edit_fill].red = x_bg_color.red;
+		  mixed_color[edit_fill].green = x_bg_color.green;
+		  mixed_color[edit_fill].blue = x_bg_color.blue;
 	    } else {
 		XParseColor(tool_d, tool_cm, 
 			colorNames[color+1].rgb, &mixed_color[edit_fill]);

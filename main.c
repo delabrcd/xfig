@@ -905,12 +905,10 @@ check_colors()
     for (i=0; i<NUM_STD_COLS; i++) {
 	/* try to allocate another named color */
 	/* first try by #xxxxx form if exists, then by name from rgb.txt file */
-	if (!XAllocNamedColor(tool_d, tool_cm, colorNames[i+1].rgb,&color,&dum) &&
-	   (!XAllocNamedColor(tool_d, tool_cm, colorNames[i+1].aname,&color,&dum))) {
+	if (!xallncol(colorNames[i+1].rgb,&color,&dum)) {
 	     /* can't allocate it, switch colormaps try again */
 	     if (!switch_colormap() || 
-	        (!XAllocNamedColor(tool_d, tool_cm, colorNames[i+1].rgb,&color,&dum)) ||
-		(!XAllocNamedColor(tool_d, tool_cm, colorNames[i+1].aname,&color,&dum))) {
+	        (!xallncol(colorNames[i+1].rgb,&color,&dum))) {
 		    fprintf(stderr, "Not enough colormap entries available for basic colors\n");
 		    fprintf(stderr, "using monochrome mode.\n");
 		    all_colors_available = False;
@@ -950,3 +948,30 @@ char *strstr(s1, s2)
     return NULL;
 }
 #endif
+
+/* This will parse the hexadecimal form of the named colors in the standard color
+/* names.  Some servers can't parse the hex form for XAllocNamedColor() */
+
+int
+xallncol(name,color,exact)
+    char	*name;
+    XColor	*color,*exact;
+{
+    unsigned	short r,g,b;
+
+    if (*name != '#')
+	return XAllocNamedColor(tool_d,tool_cm,name,color,exact);
+
+    if (sscanf(name,"#%2hx%2hx%2hx",&r,&g,&b) != 3 || name[7] != '\0') {
+	fprintf(stderr,
+	  "Malformed color specification %s in resources.c must be 6 hex digits",name);
+	exit(1);
+    }
+
+    color->red   = r<<8;
+    color->green = g<<8;
+    color->blue  = b<<8;
+    color->flags = DoRed|DoGreen|DoBlue;
+    *exact = *color;
+    return XAllocColor(tool_d,tool_cm,color);
+}

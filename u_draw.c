@@ -168,7 +168,7 @@ draw_ellipse(e, op)
 		(int)(7*max2(a,b)*zoomscale), (b * b), (a * a),
 		e->center.x, e->center.y, op,
 		e->thickness, e->style, e->style_val, e->fill_style,
-		e->pen_color, e->fill_color, CAP_BUTT);
+		e->pen_color, e->fill_color, CAP_ROUND);
     /* however, for solid lines the server is muuuch faster even for thick lines */
     } else {
 	xmin = e->center.x - e->radiuses.x;
@@ -177,7 +177,7 @@ draw_ellipse(e, op)
 	ymax = e->center.y + e->radiuses.y;
 	pw_curve(canvas_win, xmin, ymin, xmax, ymax, op,
 		 e->thickness, e->style, e->style_val, e->fill_style,
-		 e->pen_color, e->fill_color, CAP_BUTT);
+		 e->pen_color, e->fill_color, CAP_ROUND);
     }
 }
 
@@ -392,7 +392,7 @@ angle_ellipse(center_x, center_y, radius_x, radius_y, angle,
 	if (!add_point(ipnts->x,ipnts->y))
 		too_many_points();
 	draw_point_array(canvas_win, op, thickness, style, style_val,
-		 JOIN_MITER, CAP_BUTT, fill_style, pen_color, fill_color);
+		 JOIN_MITER, CAP_ROUND, fill_style, pen_color, fill_color);
 
 	zoomscale = savezoom;
 	zoomxoff = savexoff;
@@ -811,8 +811,8 @@ draw_intspline(s, op)
 	too_many_points();
 
     draw_point_array(canvas_win, op, s->thickness, s->style, s->style_val,
-			JOIN_MITER, s->cap_style, s->fill_style,
-			s->pen_color, s->fill_color);
+			JOIN_MITER, s->type==T_CLOSED_INTERP? CAP_ROUND: s->cap_style,
+			s->fill_style, s->pen_color, s->fill_color);
 
 
     if (s->back_arrow)
@@ -934,7 +934,8 @@ draw_closed_spline(spline, op)
 	too_many_points();
 
     draw_point_array(canvas_win, op, spline->thickness, spline->style,
-		     spline->style_val, JOIN_MITER, spline->cap_style,
+		     spline->style_val, JOIN_MITER, 
+		     spline->style==DOTTED_LINE? CAP_ROUND: CAP_BUTT,
 		     spline->fill_style, spline->pen_color, spline->fill_color);
 }
 

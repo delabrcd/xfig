@@ -37,6 +37,13 @@
 #include "w_mousefun.h"
 #include "w_setup.h"
 
+/* for message panel server grab negotiation */
+
+extern Boolean	file_msg_is_popped;
+extern Widget	file_msg_popup;
+
+Boolean		edit_up=False;
+
 extern choice_info arrowtype_choices[];
 extern char    *panel_get_value();
 extern PIX_FONT lookfont();
@@ -371,7 +378,11 @@ edit_item(p, type, x, y)
 	break;
     }
 
-    XtPopup(popup, XtGrabExclusive);
+    XtPopup(popup, XtGrabNonexclusive);
+    edit_up = True;
+    if (file_msg_is_popped)
+	XtAddGrab(file_msg_popup, False, False);
+
     /* insure that the most recent colormap is installed */
     set_cmap(XtWindow(popup));
     (void) XSetWMProtocols(XtDisplay(popup), XtWindow(popup),
@@ -507,7 +518,7 @@ origsize_pic(w, ev)
 
 
 static char    *flip_pic_items[] = {"Normal            ",
-"Flipped about diag"};
+				"Flipped about diag"};
 
 make_window_compound(c)
     F_compound	   *c;
@@ -1102,7 +1113,7 @@ get_new_text_values()
     new_t->cstring = new_string(strlen(s) + 1);
     strcpy(new_t->cstring, s);
     /* get the fontstruct for zoom = 1 to get the size of the string */
-    canvas_font = lookfont(x_fontnum(new_t->flags, new_t->font),
+    canvas_font = lookfont(x_fontnum(psfont_text(new_t), new_t->font),
 			new_t->size);
     size = textsize(canvas_font, strlen(s), s);
     new_t->ascent = size.ascent;
@@ -1275,7 +1286,7 @@ make_window_arc(a)
     pen_color = new_a->pen_color;
     fill_color = new_a->fill_color;
     put_generic_vals(new_a);
-    put_generic_arrows(new_a);
+    put_generic_arrows((F_line *)new_a);
     put_arc_type(new_a);
     put_cap_style(new_a);
     generic_window("ARC", "Specified by 3 points", &arc_ic, done_arc, True, True);
@@ -1291,7 +1302,7 @@ get_new_arc_values()
     float	    cx, cy;
 
     get_generic_vals(new_a);
-    get_generic_arrows(new_a);
+    get_generic_arrows((F_line *)new_a);
     get_cap_style(new_a);
     get_arc_type(new_a);
     get_f_pos(&p0, x1_panel, y1_panel);
@@ -1352,7 +1363,7 @@ make_window_spline(s)
     pen_color = new_s->pen_color;
     fill_color = new_s->fill_color;
     put_generic_vals(new_s);
-    put_generic_arrows(new_s);
+    put_generic_arrows((F_line *)new_s);
     put_cap_style(new_s);
     switch (new_s->type) {
     case T_OPEN_NORMAL:
@@ -1387,7 +1398,7 @@ done_spline()
 	draw_spline(new_s, ERASE);
 	changed = 1;
 	get_generic_vals(new_s);
-	get_generic_arrows(new_s);
+	get_generic_arrows((F_line *) new_s);
 	get_cap_style(new_s);
 	get_points(new_s->points, closed_spline(new_s));
 	if (int_spline(new_s))
@@ -1397,7 +1408,7 @@ done_spline()
     case DONE:
 	draw_spline(new_s, ERASE);
 	get_generic_vals(new_s);
-	get_generic_arrows(new_s);
+	get_generic_arrows((F_line *) new_s);
 	get_cap_style(new_s);
 	get_points(new_s->points, closed_spline(new_s));
 	if (int_spline(new_s))
@@ -2577,6 +2588,7 @@ Quit(widget, client_data, call_data)
     Widget	    widget;
     XtPointer	    client_data, call_data;
 {
+    edit_up = False;
     XtDestroyWidget(popup);
 }
 

@@ -122,7 +122,7 @@ gen_print_cmd(cmd,file,printer,pr_params)
 {
     if (emptyname(printer)) {	/* send to default printer */
 #if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
-	sprintf(cmd, "lp %s -oPS %s", 
+	sprintf(cmd, "lp %s %s", 
 		pr_params,
 		shell_protect_string(file));
 #else
@@ -135,7 +135,7 @@ gen_print_cmd(cmd,file,printer,pr_params)
 		appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     } else {
 #if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
-	sprintf(cmd, "lp %s, -d%s -oPS %s",
+	sprintf(cmd, "lp %s, -d%s %s",
 		pr_params,
 		printer, 
 		shell_protect_string(file));

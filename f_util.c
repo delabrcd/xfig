@@ -332,8 +332,9 @@ count_colors(obj)
 	count_colors(c);
     }
     for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PIC_BOX && l->pic->numcols > 0) {
-	    ncolors += l->pic->numcols;
+	if (l->type == T_PIC_BOX && l->pic->bitmap != NULL &&
+	    l->pic->numcols > 0) {
+		ncolors += l->pic->numcols;
 	}
     }
 }
@@ -371,8 +372,9 @@ count_pixels(obj)
 	count_pixels(c);
     }
     for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PIC_BOX && l->pic->numcols > 0) {
-	    npixels += l->pic->bit_size.x * l->pic->bit_size.y;
+	if (l->type == T_PIC_BOX && l->pic->bitmap != NULL &&
+	    l->pic->numcols > 0) {
+		npixels += l->pic->bit_size.x * l->pic->bit_size.y;
 	}
     }
 }
@@ -388,17 +390,18 @@ straight_cmap(obj)
 	straight_cmap(c);
     }
     for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PIC_BOX && l->pic->numcols > 0) {
-	    for (i=0; i<l->pic->numcols; i++) {
-		image_cells[scol].red   = l->pic->cmap[i].red << 8;
-		image_cells[scol].green = l->pic->cmap[i].green << 8;
-		image_cells[scol].blue  = l->pic->cmap[i].blue << 8;
-		l->pic->cmap[i].pixel = image_cells[scol].pixel;
-		scol++;
-	    }
-	    if (l->pic->pixmap)
-		XFreePixmap(tool_d, l->pic->pixmap);
-	    l->pic->pixmap = 0;		/* this will force regeneration of the pixmap */
+	if (l->type == T_PIC_BOX && l->pic->bitmap != NULL &&
+	    l->pic->numcols > 0) {
+		for (i=0; i<l->pic->numcols; i++) {
+		    image_cells[scol].red   = l->pic->cmap[i].red << 8;
+		    image_cells[scol].green = l->pic->cmap[i].green << 8;
+		    image_cells[scol].blue  = l->pic->cmap[i].blue << 8;
+		    l->pic->cmap[i].pixel = image_cells[scol].pixel;
+		    scol++;
+		}
+		if (l->pic->pixmap)
+		    XFreePixmap(tool_d, l->pic->pixmap);
+		l->pic->pixmap = 0;		/* this will force regeneration of the pixmap */
 	}
     }
 }
@@ -416,15 +419,16 @@ add_pixels(obj)
 	add_pixels(c);
     }
     for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PIC_BOX && l->pic->numcols > 0) {
-	    /* now add each pixel to the sample list */
-	    for (i=0; i<l->pic->bit_size.x * l->pic->bit_size.y; i++) {
-		byte = l->pic->bitmap[i];
-		col[N_RED] = l->pic->cmap[byte].red;
-		col[N_GRN] = l->pic->cmap[byte].green;
-		col[N_BLU] = l->pic->cmap[byte].blue;
-		neu_pixel(col);
-	    }
+	if (l->type == T_PIC_BOX && l->pic->bitmap != NULL &&
+	    l->pic->numcols > 0) {
+		/* now add each pixel to the sample list */
+		for (i=0; i<l->pic->bit_size.x * l->pic->bit_size.y; i++) {
+		    byte = l->pic->bitmap[i];
+		    col[N_RED] = l->pic->cmap[byte].red;
+		    col[N_GRN] = l->pic->cmap[byte].green;
+		    col[N_BLU] = l->pic->cmap[byte].blue;
+		    neu_pixel(col);
+		}
 	}
     }
 }
@@ -442,19 +446,20 @@ remap_image_colormap(obj)
 	remap_image_colormap(c);
     }
     for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PIC_BOX && l->pic->numcols > 0) {
-	    for (i=0; i<l->pic->numcols; i++) {
-	        /* real color from the image */
-		col[N_RED] = l->pic->cmap[i].red;
-		col[N_GRN] = l->pic->cmap[i].green;
-		col[N_BLU] = l->pic->cmap[i].blue;
-		/* X color index from the mapping */
-		p = neu_map_pixel(col);
-		l->pic->cmap[i].pixel = image_cells[p].pixel;
-	    }
-	    if (l->pic->pixmap)
-		XFreePixmap(tool_d, l->pic->pixmap);
-	    l->pic->pixmap = 0;		/* this will force regeneration of the pixmap */
+	if (l->type == T_PIC_BOX && l->pic->bitmap != NULL &&
+	    l->pic->numcols > 0) {
+		for (i=0; i<l->pic->numcols; i++) {
+		    /* real color from the image */
+		    col[N_RED] = l->pic->cmap[i].red;
+		    col[N_GRN] = l->pic->cmap[i].green;
+		    col[N_BLU] = l->pic->cmap[i].blue;
+		    /* X color index from the mapping */
+		    p = neu_map_pixel(col);
+		    l->pic->cmap[i].pixel = image_cells[p].pixel;
+		}
+		if (l->pic->pixmap)
+		    XFreePixmap(tool_d, l->pic->pixmap);
+		l->pic->pixmap = 0;		/* this will force regeneration of the pixmap */
 	}
     }
 }
@@ -575,5 +580,5 @@ F_pic	*pic;
 	/* monochrome */
 	pic->numcols = 0;
 		
-	return True;
+	return;
 }

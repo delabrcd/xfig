@@ -2,18 +2,37 @@
 Version 3.1
 =============================================================================
 
+Patchlevel 3 (Jan, 24, 1995)
+
+BUG FIXES:
+
+o when using the 3D Athena widgets, user defined color buttons in popup color
+	panel were allocating three colors per user color - fix to app-default
+	file fixed that (3D widget set was trying to make shadows)
+o EPS objects were too small when "Use orig. size" used in edit panel
+o hexadecimal color names not parsed correctly for xpm images
+o moved include of <stdio.h> and some others above <X11/Xlib.h> for gcc
+	warnings about NULL being redefined
+o LaTeX text with special flag had wrong style (Roman became Italic etc.)
+o cap style implicitly set to ROUND for ellipses and closed splines with
+	dotted lines
+o some cleanup of pointer/data type casts
+o incorrect parameter for ibmgl export mode - incorrectly used -L for landscape
+o more #ifndef/#endif surrounding random, srandom and frandom in fig.h
+o removed the -oPS command-line option for SYSV systems because it is printer
+	dependent.  Use the "Fig*job_params*string: -oPS" resource.
+o can now dismiss message window while edit panel is up
+o command string for printing file too short for some cases - increased
+
+-----------------------------------------------------------------------------
 Patchlevel 2 (Jan, 13, 1995)
 
 BUG FIXES:
 
 o ISO8859 restriction on font searching was inadvertantly removed - added back
-o for those brain-dead OpenWindows servers that don't recognize the hexadecimal
-	color name form (e.g. #339922) the 32 "standared" xfig colors have
-	alternate names like "blue3" etc. to use if the numbered colors can't be
-	allocated.  This OW bug was causing xfig to switch to monochrome mode
-	after complaining that it couldn't allocate the standard colors.
-	Scott Allendorf from U of Iowa enlightened me that it is OpenWindows'
-	fault.
+o hexadecimal color names not parsed correctly xfig standard colors. This was
+	causing xfig to switch to monochrome mode after complaining that it
+	couldn't allocate the standard colors.
 o definition for XCOMM in Imakefile for those running R4
 o fixed problem with popup message panel having wrong colors when xfig switches
 	to a private colormap

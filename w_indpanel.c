@@ -1100,7 +1100,7 @@ popup_choice_panel(isw)
 	NextArg(XtNresize, False);
 	NextArg(XtNresizable, False);
 	NextArg(XtNborderWidth, INTERNAL_BW);
-	beside = XtCreateManagedWidget(" ", commandWidgetClass,
+	beside = XtCreateManagedWidget((String)" ", commandWidgetClass,
 				       form, Args, ArgCount);
 	XtAddEventHandler(beside, ButtonReleaseMask, (Boolean) 0,
 			  (XtEventHandler)choice_panel_set, (XtPointer) tmp_choice);

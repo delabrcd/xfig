@@ -211,8 +211,8 @@ parsesize(name)
  */
 
 PIX_FONT
-lookfont(f, s)
-    int		    f, s;
+lookfont(fnum, size)
+    int		    fnum, size;
 {
 	PIX_FONT        fontst;
 	char		fn[128];
@@ -221,29 +221,29 @@ lookfont(f, s)
 	struct xfont   *newfont, *nf, *oldnf;
 
 
-	if (f == DEFAULT)
-	    f = 0;		/* pass back the -normal font font */
-	if (s < 0)
-	    s = DEF_FONTSIZE;	/* default font size */
-	if (s < 2)
-	    s = 2;		/* minimum allowable */
+	if (fnum == DEFAULT)
+	    fnum = 0;			/* pass back the -normal font font */
+	if (size < 0)
+	    size = DEF_FONTSIZE;	/* default font size */
+	if (size < 2)
+	    size = 2;			/* minimum allowable */
 
-	/* see if we've already loaded that font size 's'
-	   from the font family 'f' */
+	/* see if we've already loaded that font size 'size'
+	   from the font family 'fnum' */
 
 	found = False;
 
 	/* start with the basic font name (e.g. adobe-times-medium-r-normal-...
 		OR times-roman for OpenWindows fonts) */
 
-	nf = x_fontinfo[f].xfontlist;
+	nf = x_fontinfo[fnum].xfontlist;
 	oldnf = nf;
 	if (nf != NULL) {
-	    if (nf->size > s && !appres.SCALABLEFONTS)
+	    if (nf->size > size && !appres.SCALABLEFONTS)
 		found = True;
 	    else while (nf != NULL){
-	    if (nf->size == s || (!appres.SCALABLEFONTS &&
-		     (nf->size >= s && oldnf->size <= s ))) {
+	    if (nf->size == size || (!appres.SCALABLEFONTS &&
+		     (nf->size >= size && oldnf->size <= size ))) {
 		found = True;
 		break;
 	    }
@@ -253,35 +253,35 @@ lookfont(f, s)
 	}
 	if (found) {		/* found exact size (or only larger available) */
 	    strcpy(fn,nf->fname);  /* put the name in fn */
-	    if (s < nf->size)
-		put_msg("Font size %d not found, using larger %d point",s,nf->size);
+	    if (size < nf->size)
+		put_msg("Font size %d not found, using larger %d point",size,nf->size);
 	    if (appres.DEBUG)
 		fprintf(stderr, "Located font %s\n", fn);
 	} else if (!appres.SCALABLEFONTS) {	/* not found, use largest available */
 	    nf = oldnf;
 	    strcpy(fn,nf->fname);  		/* put the name in fn */
-	    if (s > nf->size)
-		put_msg("Font size %d not found, using smaller %d point",s,nf->size);
+	    if (size > nf->size)
+		put_msg("Font size %d not found, using smaller %d point",size,nf->size);
 	    if (appres.DEBUG)
-		fprintf(stderr, "Using font %s for size %d\n", fn, s);
+		fprintf(stderr, "Using font %s for size %d\n", fn, size);
 	} else { /* SCALABLE; none yet of that size, alloc one and put it in the list */
 	    newfont = (struct xfont *) malloc(sizeof(struct xfont));
 	    /* add it on to the end of the list */
-	    if (x_fontinfo[f].xfontlist == NULL)
-	        x_fontinfo[f].xfontlist = newfont;
+	    if (x_fontinfo[fnum].xfontlist == NULL)
+	        x_fontinfo[fnum].xfontlist = newfont;
 	    else
 	        oldnf->next = newfont;
 	    nf = newfont;		/* keep current ptr */
-	    nf->size = s;		/* store the size here */
+	    nf->size = size;		/* store the size here */
 	    nf->fstruct = NULL;
 	    nf->next = NULL;
 
 	    if (openwinfonts) {
 		/* OpenWindows fonts, create font name like times-roman-13 */
-		sprintf(fn, "%s-%d", x_fontinfo[f].template, s);
+		sprintf(fn, "%s-%d", x_fontinfo[fnum].template, size);
 	    } else {
 		/* X11 fonts, create a full XLFD font name */
-		strcpy(template,x_fontinfo[f].template);
+		strcpy(template,x_fontinfo[fnum].template);
 		/* attach pointsize to font name */
 		strcat(template,"%d-*-*-*-*-*-");
 		/* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
@@ -292,7 +292,7 @@ lookfont(f, s)
 		    strcat(template,"*-*");
 		/* use the pixel field instead of points in the fontname so that the
 		font scales with screen size */
-		sprintf(fn, template, s);
+		sprintf(fn, template, size);
 	    }
 	    /* allocate space for the name and put it in the structure */
 	    nf->fname = (char *) malloc(strlen(fn)+1);

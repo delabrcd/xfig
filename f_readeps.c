@@ -130,12 +130,12 @@ read_epsf(pic)
 	    /* for monchrome, use pbm */
 	    if (tool_cells <= 2 || appres.monochrome) {
 		sprintf(gscom,
-		   "gs -dSAFER -sDEVICE=pbmraw -g%dx%d -sOutputFile=%s -q - >/dev/null 2>&1",
+		   "gs -r72x72 -dSAFER -sDEVICE=pbmraw -g%dx%d -sOutputFile=%s -q - >/dev/null 2>&1",
 		    wid, ht, pbmnam);
 	    /* for color, use gif */
 	    } else {
 		sprintf(gscom,
-		    "gs -dSAFER -sDEVICE=gif8 -g%dx%d -sOutputFile=%s -q - >/dev/null 2>&1",
+		    "gs -r72x72 -dSAFER -sDEVICE=gif8 -g%dx%d -sOutputFile=%s -q - >/dev/null 2>&1",
 		    wid, ht, pbmnam);
 	    }
 	    if ((gsfile = popen(gscom,"w" )) != 0) {
@@ -263,13 +263,21 @@ read_epsf(pic)
 		}
 		fclose(pbmfile);
 	} else {
+		int wid,ht;
+
 		/* now read the gif file */
 		strcpy(tmpfile,pic->file);
 		strcpy(pic->file, pbmnam);
 		/* don't need bitmap - read_gif() will allocate a new one */
 		free((unsigned char *) pic->bitmap);
 		pic->bitmap = NULL;
+		/* save picture width/height because read_gif will overwrite it */
+		wid = pic->size_x;
+		ht  = pic->size_y;
 		status = read_gif(pic);
+		/* restore width/height */
+		pic->size_x = wid;
+		pic->size_y = ht;
 		/* restore real filename */
 		strcpy(pic->file, tmpfile);
 		/* and type */

@@ -36,7 +36,7 @@ read_xpm(pic)
     FILE		*fd;
     int			i, type;
     char		*c;
-    XColor		exact_def, screen_def;
+    XColor		exact_def;
 
     if ((fd=open_picfile(pic->file,&type))==NULL) {
 	return FileInvalid;
@@ -54,7 +54,10 @@ read_xpm(pic)
 	/* now look up the colors in the image and put them in the pic colormap */
 	for (i=0; i<image.ncolors; i++) {
 	    c = (image.colorTable + i)->c_color;
-	    XLookupColor(tool_d, tool_cm, c, &exact_def, &screen_def);
+	    if (XParseColor(tool_d, tool_cm, c, &exact_def) == 0) {
+		file_msg("Error parsing color %s",c);
+		exact_def.red = exact_def.green = exact_def.blue = 255;
+	    }
 	    pic->cmap[i].red = exact_def.red >> 8;
 	    pic->cmap[i].green = exact_def.green >> 8;
 	    pic->cmap[i].blue = exact_def.blue >> 8;
@@ -67,7 +70,7 @@ read_xpm(pic)
 	pic->bitmap = (unsigned char *) malloc(image.width*image.height*sizeof(unsigned char));
 	if (pic->bitmap == NULL) {
 	    file_msg("cannot allocate space for GIF/XPM image");
-	    return;
+	    return 0;
 	}
 	for (i=0; i<image.width*image.height; i++)
 	    pic->bitmap[i] = (unsigned char) image.data[i]; /* int to unsigned char */
