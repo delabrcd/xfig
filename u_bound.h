@@ -14,4 +14,4 @@
  *
  */
 
-extern int      overlapping();
+extern int	overlapping();

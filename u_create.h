@@ -36,3 +36,4 @@ extern F_arrow *forward_arrow();
 extern F_arrow *backward_arrow();
 extern F_arrow *new_arrow();
 extern char    *new_string();
+extern F_linkinfo *new_link();

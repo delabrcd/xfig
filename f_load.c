@@ -21,14 +21,14 @@
 #include "u_undo.h"
 #include "w_setup.h"
 
-extern int      num_object;
+extern int	num_object;
 
 int
 load_file(file)
-    char           *file;
+    char	   *file;
 {
-    int             s;
-    F_compound      c;
+    int		    s;
+    F_compound	    c;
 
     c.arcs = NULL;
     c.compounds = NULL;
@@ -72,10 +72,10 @@ load_file(file)
 
 int
 merge_file(file)
-    char           *file;
+    char	   *file;
 {
-    F_compound      c;
-    int             s;
+    F_compound	    c;
+    int		    s;
 
     c.arcs = NULL;
     c.compounds = NULL;
@@ -88,7 +88,7 @@ merge_file(file)
 
     s = read_fig(file, &c);
     if (s == 0) {		/* Successful read */
-	int             xmin, ymin, xmax, ymax;
+	int		xmin, ymin, xmax, ymax;
 
 	compound_bound(&c, &xmin, &ymin, &xmax, &ymax);
 	clean_up();

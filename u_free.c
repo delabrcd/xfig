@@ -19,9 +19,9 @@
 #include "resources.h"
 
 free_arc(list)
-    F_arc         **list;
+    F_arc	  **list;
 {
-    F_arc          *a, *arc;
+    F_arc	   *a, *arc;
 
     for (a = *list; a != NULL;) {
 	arc = a;
@@ -36,9 +36,9 @@ free_arc(list)
 }
 
 free_compound(list)
-    F_compound    **list;
+    F_compound	  **list;
 {
-    F_compound     *c, *compound;
+    F_compound	   *c, *compound;
 
     for (c = *list; c != NULL;) {
 	compound = c;
@@ -55,9 +55,9 @@ free_compound(list)
 }
 
 free_ellipse(list)
-    F_ellipse     **list;
+    F_ellipse	  **list;
 {
-    F_ellipse      *e, *ellipse;
+    F_ellipse	   *e, *ellipse;
 
     for (e = *list; e != NULL;) {
 	ellipse = e;
@@ -68,9 +68,9 @@ free_ellipse(list)
 }
 
 free_line(list)
-    F_line        **list;
+    F_line	  **list;
 {
-    F_line         *l, *line;
+    F_line	   *l, *line;
 
     for (l = *list; l != NULL;) {
 	line = l;
@@ -81,9 +81,9 @@ free_line(list)
 }
 
 free_text(list)
-    F_text        **list;
+    F_text	  **list;
 {
-    F_text         *t, *text;
+    F_text	   *t, *text;
 
     for (t = *list; t != NULL;) {
 	text = t;
@@ -95,9 +95,9 @@ free_text(list)
 }
 
 free_spline(list)
-    F_spline      **list;
+    F_spline	  **list;
 {
-    F_spline       *s, *spline;
+    F_spline	   *s, *spline;
 
     for (s = *list; s != NULL;) {
 	spline = s;
@@ -108,9 +108,9 @@ free_spline(list)
 }
 
 free_splinestorage(s)
-    F_spline       *s;
+    F_spline	   *s;
 {
-    F_control      *a, *b;
+    F_control	   *a, *b;
 
     free_points(s->points);
     for (a = s->controls; a != NULL; a = b) {
@@ -125,7 +125,7 @@ free_splinestorage(s)
 }
 
 free_linestorage(l)
-    F_line         *l;
+    F_line	   *l;
 {
     free_points(l->points);
     if (l->for_arrow)
@@ -143,12 +143,25 @@ free_linestorage(l)
 }
 
 free_points(first_point)
-    F_point        *first_point;
+    F_point	   *first_point;
 {
-    F_point        *p, *q;
+    F_point	   *p, *q;
 
     for (p = first_point; p != NULL; p = q) {
 	q = p->next;
 	free((char *) p);
     }
+}
+
+free_linkinfo(list)
+    F_linkinfo	  **list;
+{
+    F_linkinfo	   *l, *link;
+
+    for (l = *list; l != NULL;) {
+	link = l;
+	l = l->next;
+	free((char *) link);
+    }
+    *list = NULL;
 }

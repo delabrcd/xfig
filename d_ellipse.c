@@ -27,18 +27,18 @@
 
 /*************************  local procedures  ********************/
 
-static int      init_ellipsebyradius_drawing();
-static int      init_ellipsebydiameter_drawing();
-static int      init_circlebyradius_drawing();
-static int      init_circlebydiameter_drawing();
-static int      create_ellipsebydia();
-static int      create_ellipsebyrad();
-static int      create_circlebyrad();
-static int      create_circlebydia();
-static int      cancel_ellipsebydia();
-static int      cancel_ellipsebyrad();
-static int      cancel_circlebyrad();
-static int      cancel_circlebydia();
+static int	init_ellipsebyradius_drawing();
+static int	init_ellipsebydiameter_drawing();
+static int	init_circlebyradius_drawing();
+static int	init_circlebydiameter_drawing();
+static int	create_ellipsebydia();
+static int	create_ellipsebyrad();
+static int	create_circlebyrad();
+static int	create_circlebydia();
+static int	cancel_ellipsebydia();
+static int	cancel_ellipsebyrad();
+static int	cancel_circlebyrad();
+static int	cancel_circlebydia();
 
 ellipsebyradius_drawing_selected()
 {
@@ -54,7 +54,7 @@ ellipsebyradius_drawing_selected()
 
 static
 init_ellipsebyradius_drawing(x, y)
-    int             x, y;
+    int		    x, y;
 {
     cur_x = fix_x = x;
     cur_y = fix_y = y;
@@ -80,9 +80,9 @@ cancel_ellipsebyrad()
 
 static
 create_ellipsebyrad(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    F_ellipse      *ellipse;
+    F_ellipse	   *ellipse;
 
     elastic_ebr();
     center_marker(fix_x, fix_y);
@@ -97,7 +97,7 @@ create_ellipsebyrad(x, y)
     ellipse->color = cur_color;
     ellipse->depth = 0;
     ellipse->pen = 0;
-    ellipse->area_fill = cur_areafill;
+    ellipse->fill_style = cur_fillstyle;
     ellipse->direction = 1;
     ellipse->center.x = fix_x;
     ellipse->center.y = fix_y;
@@ -128,7 +128,7 @@ ellipsebydiameter_drawing_selected()
 
 static
 init_ellipsebydiameter_drawing(x, y)
-    int             x, y;
+    int		    x, y;
 {
     cur_x = fix_x = x;
     cur_y = fix_y = y;
@@ -154,9 +154,9 @@ cancel_ellipsebydia()
 
 static
 create_ellipsebydia(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    F_ellipse      *ellipse;
+    F_ellipse	   *ellipse;
 
     elastic_ebd();
     center_marker(fix_x, fix_y);
@@ -171,7 +171,7 @@ create_ellipsebydia(x, y)
     ellipse->color = cur_color;
     ellipse->depth = 0;
     ellipse->pen = NULL;
-    ellipse->area_fill = cur_areafill;
+    ellipse->fill_style = cur_fillstyle;
     ellipse->direction = 1;
     ellipse->center.x = (fix_x + x) / 2;
     ellipse->center.y = (fix_y + y) / 2;
@@ -204,7 +204,7 @@ circlebyradius_drawing_selected()
 
 static
 init_circlebyradius_drawing(x, y)
-    int             x, y;
+    int		    x, y;
 {
     cur_x = fix_x = x;
     cur_y = fix_y = y;
@@ -230,10 +230,10 @@ cancel_circlebyrad()
 
 static
 create_circlebyrad(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    F_ellipse      *c;
-    int             rx, ry;
+    F_ellipse	   *c;
+    int		    rx, ry;
 
     elastic_cbr();
     center_marker(fix_x, fix_y);
@@ -248,7 +248,7 @@ create_circlebyrad(x, y)
     c->color = cur_color;
     c->depth = 0;
     c->pen = NULL;
-    c->area_fill = cur_areafill;
+    c->fill_style = cur_fillstyle;
     c->direction = 1;
     c->center.x = fix_x;
     c->center.y = fix_y;
@@ -280,7 +280,7 @@ circlebydiameter_drawing_selected()
 
 static
 init_circlebydiameter_drawing(x, y)
-    int             x, y;
+    int		    x, y;
 {
     cur_x = fix_x = x;
     cur_y = fix_y = y;
@@ -306,10 +306,10 @@ cancel_circlebydia()
 
 static
 create_circlebydia(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    F_ellipse      *c;
-    int             rx, ry;
+    F_ellipse	   *c;
+    int		    rx, ry;
 
     elastic_cbd();
     center_marker(fix_x, fix_y);
@@ -324,7 +324,7 @@ create_circlebydia(x, y)
     c->color = cur_color;
     c->depth = 0;
     c->pen = NULL;
-    c->area_fill = cur_areafill;
+    c->fill_style = cur_fillstyle;
     c->direction = 1;
     c->center.x = (fix_x + x) / 2 + .5;
     c->center.y = (fix_y + y) / 2 + .5;

@@ -1,6 +1,93 @@
 Version 2.1
 ===========
 
+Patchlevel 2
+Changes to Patchlevel 1:
+
+o the font flag (LaTeX, PostScript) wasn't being changed correctly in the
+	UPDATE text object operation when switching from LaTeX to PostScript 
+	or vice versa.
+
+o the textstep value may now be entered in floating point in the popup menu
+
+o the eps-bitmap icon was renamed to eps-object because it can be any
+	eps object that is imported.  If it has a preview bitmap
+	that will be displayed.  Several filenames/program variables
+	were also changed to reflect this.
+
+o there is now a more general glue mechanism for compounding objects
+
+o text pasting into canvas now possible with F18 function key or any translation
+	desired by user.  F18 is hardwired default in program; F20 also 
+	programmed in Fig.ad to paste text.
+	Brian Boyter (pyrdc!bimbo!boyter@uunet.UU.NET)
+
+o DEFAULT fill_style caused core dump 
+	from Jeffry R. Abramson (jra@violin.att.com)
+
+o made the mouse-tracking markers hollow so as not to be visually obtrusive
+	as suggested by Stephen Gildea (gildea@expo.lcs.mit.edu)
+
+o removed extraneous call to free() in add_point() (u_draw.c)
+	from Per Fogelstr|m (pf@diab.se)
+
+o cleaned up gcc compiler warnings about type mismatches etc.
+
+o compound objects may be rotated by arbitrary angles if there are no boxes, 
+	arc-boxes, ellipses or circles contained within.
+
+o text rotation support is improved - markers are now shown rotated and
+	the angle attribute is set by the relevant rotate operations.
+
+o both ps and eps modes now supported in export menu.
+
+o new directory browsing facilities integrated with File and Export popups.
+	Allows selection of file by clicking on the filename.  Has mask to list
+	only those files of interest.  See the man pages for further details.
+
+o Default font for Postscript fonts may now be selected and objects that
+	have default font may be edited
+
+o FASTSERVER flag removed; now always uses smart redrawing when available
+	Additionally, smart redrawing is available more often
+
+o fixed bug in regular polygon where some vertices were off by one pixel
+
+o added "Use orig. size" button for eps objects to set object to original 
+	size in popup edit
+	from Peter Scott (pjs@euclid.jpl.nasa.gov)
+
+o international characters supported (umlauts, accents, cedilla etc) using
+	compose (meta) key
+	from Herve Soulard (soulard@corto.inria.fr)
+
+o much improved color support
+	from Henning Spruth (hns@regent.e-technik.tu-muenchen.de)
+
+o additional pan and zoom mode with <Ctrl>Key and left/middle/right button
+	from Henning Spruth (hns@regent.e-technik.tu-muenchen.de)
+
+o removed reference to FONTLIBDIR in Imakefile (no longer required)
+
+o added a smart-links feature for the MOVE and COPY commands.
+	With smart links turned on, when a BOX-like object is moved
+	so are the lines which join up to it (its links).
+	Two modes are supported: one which moves just the endpoint,
+	the other slides the endlink so that it's angle doesn't change.
+	In the second mode horizontal/vertical lines remain that way.
+
+o added the ability to save figure during quit if it is modified
+
+o added support for scalable fonts under R5
+
+o additional command line flags supported
+	-latexfonts flag (resource .latexfonts) to start xfig with the LaTeX
+	fonts as the default instead of PostScript fonts
+	-specialtext flag (resource .specialtext) to start xfig with special
+	text as the default
+
+o bug fixed where number of objects count in file popup was sometimes clipped
+
 Patchlevel 1
 Changes to Patchlevel 0:
 
@@ -60,7 +147,7 @@ Changes to Version 2.0 Patchlevel 10:
 Implemented by Paul King (king@cs.uq.oz.au) and
 Brian Smith (envbvs@epb7.lbl.gov) with help from
 Micah Beck (beck@cs.cornell.edu) and
-Brian Boyter (boyter@fstc-chville.army.mil) (EPS code).
+Brian Boyter (pyrdc!bimbo!boyter@uunet.UU.NET) (EPS code).
 
 USER INTERFACE
 --------------

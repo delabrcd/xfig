@@ -17,14 +17,18 @@
 #include "fig.h"
 #include "mode.h"
 #include "object.h"
+#include "resources.h"
+#include "paintop.h"
 #include "u_create.h"
 #include "u_list.h"
+#include "u_elastic.h"
+#include "u_undo.h"
 
 void
 list_delete_arc(arc_list, arc)
-    F_arc         **arc_list, *arc;
+    F_arc	  **arc_list, *arc;
 {
-    F_arc          *a, *aa;
+    F_arc	   *a, *aa;
 
     if (*arc_list == NULL)
 	return;
@@ -45,9 +49,9 @@ list_delete_arc(arc_list, arc)
 
 void
 list_delete_ellipse(ellipse_list, ellipse)
-    F_ellipse     **ellipse_list, *ellipse;
+    F_ellipse	  **ellipse_list, *ellipse;
 {
-    F_ellipse      *q, *r;
+    F_ellipse	   *q, *r;
 
     if (*ellipse_list == NULL)
 	return;
@@ -68,9 +72,9 @@ list_delete_ellipse(ellipse_list, ellipse)
 
 void
 list_delete_line(line_list, line)
-    F_line         *line, **line_list;
+    F_line	   *line, **line_list;
 {
-    F_line         *q, *r;
+    F_line	   *q, *r;
 
     if (*line_list == NULL)
 	return;
@@ -91,9 +95,9 @@ list_delete_line(line_list, line)
 
 void
 list_delete_spline(spline_list, spline)
-    F_spline      **spline_list, *spline;
+    F_spline	  **spline_list, *spline;
 {
-    F_spline       *q, *r;
+    F_spline	   *q, *r;
 
     if (*spline_list == NULL)
 	return;
@@ -114,9 +118,9 @@ list_delete_spline(spline_list, spline)
 
 void
 list_delete_text(text_list, text)
-    F_text        **text_list, *text;
+    F_text	  **text_list, *text;
 {
-    F_text         *q, *r;
+    F_text	   *q, *r;
 
     if (*text_list == NULL)
 	return;
@@ -136,9 +140,9 @@ list_delete_text(text_list, text)
 
 void
 list_delete_compound(list, compound)
-    F_compound    **list, *compound;
+    F_compound	  **list, *compound;
 {
-    F_compound     *c, *cc;
+    F_compound	   *c, *cc;
 
     if (*list == NULL)
 	return;
@@ -159,9 +163,9 @@ list_delete_compound(list, compound)
 
 void
 list_add_arc(arc_list, a)
-    F_arc         **arc_list, *a;
+    F_arc	  **arc_list, *a;
 {
-    F_arc	*aa;
+    F_arc	   *aa;
 
     a->next = NULL;
     if ((aa = last_arc(*arc_list)) == NULL)
@@ -172,9 +176,9 @@ list_add_arc(arc_list, a)
 
 void
 list_add_ellipse(ellipse_list, e)
-    F_ellipse     **ellipse_list, *e;
+    F_ellipse	  **ellipse_list, *e;
 {
-    F_ellipse	*ee;
+    F_ellipse	   *ee;
 
     e->next = NULL;
     if ((ee = last_ellipse(*ellipse_list)) == NULL)
@@ -185,9 +189,9 @@ list_add_ellipse(ellipse_list, e)
 
 void
 list_add_line(line_list, l)
-    F_line        **line_list, *l;
+    F_line	  **line_list, *l;
 {
-    F_line	*ll;
+    F_line	   *ll;
 
     l->next = NULL;
     if ((ll = last_line(*line_list)) == NULL)
@@ -198,9 +202,9 @@ list_add_line(line_list, l)
 
 void
 list_add_spline(spline_list, s)
-    F_spline      **spline_list, *s;
+    F_spline	  **spline_list, *s;
 {
-    F_spline	*ss;
+    F_spline	   *ss;
 
     s->next = NULL;
     if ((ss = last_spline(*spline_list)) == NULL)
@@ -211,9 +215,9 @@ list_add_spline(spline_list, s)
 
 void
 list_add_text(text_list, t)
-    F_text        **text_list, *t;
+    F_text	  **text_list, *t;
 {
-    F_text	*tt;
+    F_text	   *tt;
 
     t->next = NULL;
     if ((tt = last_text(*text_list)) == NULL)
@@ -224,9 +228,9 @@ list_add_text(text_list, t)
 
 void
 list_add_compound(list, c)
-    F_compound    **list, *c;
+    F_compound	  **list, *c;
 {
-    F_compound	*cc;
+    F_compound	   *cc;
 
     c->next = NULL;
     if ((cc = last_compound(*list)) == NULL)
@@ -237,7 +241,7 @@ list_add_compound(list, c)
 
 void
 delete_line(old_l)
-    F_line         *old_l;
+    F_line	   *old_l;
 {
     list_delete_line(&objects.lines, old_l);
     clean_up();
@@ -248,7 +252,7 @@ delete_line(old_l)
 
 void
 delete_arc(old_a)
-    F_arc          *old_a;
+    F_arc	   *old_a;
 {
     list_delete_arc(&objects.arcs, old_a);
     clean_up();
@@ -259,7 +263,7 @@ delete_arc(old_a)
 
 void
 delete_ellipse(old_e)
-    F_ellipse      *old_e;
+    F_ellipse	   *old_e;
 {
     list_delete_ellipse(&objects.ellipses, old_e);
     clean_up();
@@ -270,7 +274,7 @@ delete_ellipse(old_e)
 
 void
 delete_text(old_t)
-    F_text         *old_t;
+    F_text	   *old_t;
 {
     list_delete_text(&objects.texts, old_t);
     clean_up();
@@ -281,7 +285,7 @@ delete_text(old_t)
 
 void
 delete_spline(old_s)
-    F_spline       *old_s;
+    F_spline	   *old_s;
 {
     list_delete_spline(&objects.splines, old_s);
     clean_up();
@@ -292,7 +296,7 @@ delete_spline(old_s)
 
 void
 delete_compound(old_c)
-    F_compound     *old_c;
+    F_compound	   *old_c;
 {
     list_delete_compound(&objects.compounds, old_c);
     clean_up();
@@ -303,7 +307,7 @@ delete_compound(old_c)
 
 void
 add_line(new_l)
-    F_line         *new_l;
+    F_line	   *new_l;
 {
     list_add_line(&objects.lines, new_l);
     clean_up();
@@ -314,7 +318,7 @@ add_line(new_l)
 
 void
 add_arc(new_a)
-    F_arc          *new_a;
+    F_arc	   *new_a;
 {
     list_add_arc(&objects.arcs, new_a);
     clean_up();
@@ -325,7 +329,7 @@ add_arc(new_a)
 
 void
 add_ellipse(new_e)
-    F_ellipse      *new_e;
+    F_ellipse	   *new_e;
 {
     list_add_ellipse(&objects.ellipses, new_e);
     clean_up();
@@ -336,7 +340,7 @@ add_ellipse(new_e)
 
 void
 add_text(new_t)
-    F_text         *new_t;
+    F_text	   *new_t;
 {
     list_add_text(&objects.texts, new_t);
     clean_up();
@@ -347,7 +351,7 @@ add_text(new_t)
 
 void
 add_spline(new_s)
-    F_spline       *new_s;
+    F_spline	   *new_s;
 {
     list_add_spline(&objects.splines, new_s);
     clean_up();
@@ -358,7 +362,7 @@ add_spline(new_s)
 
 void
 add_compound(new_c)
-    F_compound     *new_c;
+    F_compound	   *new_c;
 {
     list_add_compound(&objects.compounds, new_c);
     clean_up();
@@ -370,7 +374,7 @@ add_compound(new_c)
 
 void
 change_line(old_l, new_l)
-    F_line         *old_l, *new_l;
+    F_line	   *old_l, *new_l;
 {
     list_delete_line(&objects.lines, old_l);
     list_add_line(&objects.lines, new_l);
@@ -383,7 +387,7 @@ change_line(old_l, new_l)
 
 void
 change_arc(old_a, new_a)
-    F_arc          *old_a, *new_a;
+    F_arc	   *old_a, *new_a;
 {
     list_delete_arc(&objects.arcs, old_a);
     list_add_arc(&objects.arcs, new_a);
@@ -396,7 +400,7 @@ change_arc(old_a, new_a)
 
 void
 change_ellipse(old_e, new_e)
-    F_ellipse      *old_e, *new_e;
+    F_ellipse	   *old_e, *new_e;
 {
     list_delete_ellipse(&objects.ellipses, old_e);
     list_add_ellipse(&objects.ellipses, new_e);
@@ -409,7 +413,7 @@ change_ellipse(old_e, new_e)
 
 void
 change_text(old_t, new_t)
-    F_text         *old_t, *new_t;
+    F_text	   *old_t, *new_t;
 {
     list_delete_text(&objects.texts, old_t);
     list_add_text(&objects.texts, new_t);
@@ -422,7 +426,7 @@ change_text(old_t, new_t)
 
 void
 change_spline(old_s, new_s)
-    F_spline       *old_s, *new_s;
+    F_spline	   *old_s, *new_s;
 {
     list_delete_spline(&objects.splines, old_s);
     list_add_spline(&objects.splines, new_s);
@@ -435,7 +439,7 @@ change_spline(old_s, new_s)
 
 void
 change_compound(old_c, new_c)
-    F_compound     *old_c, *new_c;
+    F_compound	   *old_c, *new_c;
 {
     list_delete_compound(&objects.compounds, old_c);
     list_add_compound(&objects.compounds, new_c);
@@ -447,14 +451,14 @@ change_compound(old_c, new_c)
 }
 
 tail(ob, tails)
-    F_compound     *ob, *tails;
+    F_compound	   *ob, *tails;
 {
-    F_arc          *a;
-    F_compound     *c;
-    F_ellipse      *e;
-    F_line         *l;
-    F_spline       *s;
-    F_text         *t;
+    F_arc	   *a;
+    F_compound	   *c;
+    F_ellipse	   *e;
+    F_line	   *l;
+    F_spline	   *s;
+    F_text	   *t;
 
     if (NULL != (a = ob->arcs))
 	for (; a->next != NULL; a = a->next);
@@ -483,7 +487,7 @@ tail(ob, tails)
  * defined prior to calling append.
  */
 append_objects(l1, l2, tails)
-    F_compound     *l1, *l2, *tails;
+    F_compound	   *l1, *l2, *tails;
 {
     if (tails->arcs)
 	tails->arcs->next = l2->arcs;
@@ -514,7 +518,7 @@ append_objects(l1, l2, tails)
 /* Cut is the dual of append. */
 
 cut_objects(objects, tails)
-    F_compound     *objects, *tails;
+    F_compound	   *objects, *tails;
 {
     if (tails->arcs)
 	tails->arcs->next = NULL;
@@ -543,10 +547,10 @@ cut_objects(objects, tails)
 }
 
 append_point(x, y, point)
-    int             x, y;
-    F_point       **point;
+    int		    x, y;
+    F_point	  **point;
 {
-    F_point        *p;
+    F_point	   *p;
 
     if ((p = create_point()) == NULL)
 	return;
@@ -559,20 +563,20 @@ append_point(x, y, point)
 }
 
 num_points(points)
-    F_point        *points;
+    F_point	   *points;
 {
-    int             n;
-    F_point        *p;
+    int		    n;
+    F_point	   *p;
 
     for (p = points, n = 0; p != NULL; p = p->next, n++);
     return (n);
 }
 
-F_text *
+F_text	       *
 last_text(list)
-    F_text        *list;
+    F_text	   *list;
 {
-    F_text	*tt;
+    F_text	   *tt;
 
     if (list == NULL)
 	return NULL;
@@ -581,11 +585,11 @@ last_text(list)
     return tt;
 }
 
-F_line *
+F_line	       *
 last_line(list)
-    F_line        *list;
+    F_line	   *list;
 {
-    F_line	*ll;
+    F_line	   *ll;
 
     if (list == NULL)
 	return NULL;
@@ -594,11 +598,11 @@ last_line(list)
     return ll;
 }
 
-F_spline *
+F_spline       *
 last_spline(list)
-    F_spline        *list;
+    F_spline	   *list;
 {
-    F_spline	*ss;
+    F_spline	   *ss;
 
     if (list == NULL)
 	return NULL;
@@ -607,11 +611,11 @@ last_spline(list)
     return ss;
 }
 
-F_arc *
+F_arc	       *
 last_arc(list)
-    F_arc        *list;
+    F_arc	   *list;
 {
-    F_arc	*tt;
+    F_arc	   *tt;
 
     if (list == NULL)
 	return NULL;
@@ -620,11 +624,11 @@ last_arc(list)
     return tt;
 }
 
-F_ellipse *
+F_ellipse      *
 last_ellipse(list)
-    F_ellipse        *list;
+    F_ellipse	   *list;
 {
-    F_ellipse	*tt;
+    F_ellipse	   *tt;
 
     if (list == NULL)
 	return NULL;
@@ -633,11 +637,11 @@ last_ellipse(list)
     return tt;
 }
 
-F_compound *
+F_compound     *
 last_compound(list)
-    F_compound        *list;
+    F_compound	   *list;
 {
-    F_compound	*tt;
+    F_compound	   *tt;
 
     if (list == NULL)
 	return NULL;
@@ -646,11 +650,24 @@ last_compound(list)
     return tt;
 }
 
-F_arc *
-prev_arc(list, arc)
-    F_arc	    *list, *arc;
+F_point	       *
+last_point(list)
+    F_point	   *list;
 {
-    F_arc	    *csr;
+    F_point	   *tt;
+
+    if (list == NULL)
+	return NULL;
+
+    for (tt = list; tt->next != NULL; tt = tt->next);
+    return tt;
+}
+
+F_arc	       *
+prev_arc(list, arc)
+    F_arc	   *list, *arc;
+{
+    F_arc	   *csr;
 
     if (list == arc)
 	return NULL;
@@ -659,11 +676,11 @@ prev_arc(list, arc)
     return csr;
 }
 
-F_compound *
+F_compound     *
 prev_compound(list, compound)
-    F_compound	    *list, *compound;
+    F_compound	   *list, *compound;
 {
-    F_compound	    *csr;
+    F_compound	   *csr;
 
     if (list == compound)
 	return NULL;
@@ -672,11 +689,11 @@ prev_compound(list, compound)
     return csr;
 }
 
-F_ellipse *
+F_ellipse      *
 prev_ellipse(list, ellipse)
-    F_ellipse	    *list, *ellipse;
+    F_ellipse	   *list, *ellipse;
 {
-    F_ellipse	    *csr;
+    F_ellipse	   *csr;
 
     if (list == ellipse)
 	return NULL;
@@ -685,11 +702,11 @@ prev_ellipse(list, ellipse)
     return csr;
 }
 
-F_line *
+F_line	       *
 prev_line(list, line)
-    F_line	    *list, *line;
+    F_line	   *list, *line;
 {
-    F_line	    *csr;
+    F_line	   *csr;
 
     if (list == line)
 	return NULL;
@@ -698,11 +715,11 @@ prev_line(list, line)
     return csr;
 }
 
-F_spline *
+F_spline       *
 prev_spline(list, spline)
-    F_spline	    *list, *spline;
+    F_spline	   *list, *spline;
 {
-    F_spline	    *csr;
+    F_spline	   *csr;
 
     if (list == spline)
 	return NULL;
@@ -711,16 +728,29 @@ prev_spline(list, spline)
     return csr;
 }
 
-F_text *
+F_text	       *
 prev_text(list, text)
-    F_text	    *list, *text;
+    F_text	   *list, *text;
 {
-    F_text	    *csr;
+    F_text	   *csr;
 
     if (list == text)
 	return NULL;
 
     for (csr = list; csr->next != text; csr = csr->next);
+    return csr;
+}
+
+F_point	       *
+prev_point(list, point)
+    F_point	   *list, *point;
+{
+    F_point	   *csr;
+
+    if (list == point)
+	return NULL;
+
+    for (csr = list; csr->next != point; csr = csr->next);
     return csr;
 }
 
@@ -743,5 +773,144 @@ object_count(list)
     for (e = list->ellipses; e != NULL; e = e->next, cnt++);
     for (l = list->lines; l != NULL; l = l->next, cnt++);
     for (s = list->splines; s != NULL; s = s->next, cnt++);
-    return(cnt);
+    return (cnt);
+}
+
+int
+set_tags(list, tag)
+    F_compound	   *list;
+    int		    tag;
+{
+    F_arc	   *a;
+    F_text	   *t;
+    F_compound	   *c;
+    F_ellipse	   *e;
+    F_line	   *l;
+    F_spline	   *s;
+
+    for (a = list->arcs; a != NULL; a = a->next) {
+	mask_toggle_arcmarker(a);
+	a->tagged = tag;
+	mask_toggle_arcmarker(a);
+    }
+    for (t = list->texts; t != NULL; t = t->next) {
+	mask_toggle_textmarker(t);
+	t->tagged = tag;
+	mask_toggle_textmarker(t);
+    }
+    for (c = list->compounds; c != NULL; c = c->next) {
+	mask_toggle_compoundmarker(c);
+	c->tagged = tag;
+	mask_toggle_compoundmarker(c);
+    }
+    for (e = list->ellipses; e != NULL; e = e->next) {
+	mask_toggle_ellipsemarker(e);
+	e->tagged = tag;
+	mask_toggle_ellipsemarker(e);
+    }
+    for (l = list->lines; l != NULL; l = l->next) {
+	mask_toggle_linemarker(l);
+	l->tagged = tag;
+	mask_toggle_linemarker(l);
+    }
+    for (s = list->splines; s != NULL; s = s->next) {
+	mask_toggle_splinemarker(s);
+	s->tagged = tag;
+	mask_toggle_splinemarker(s);
+    }
+}
+
+void
+get_links(llx, lly, urx, ury)
+    int		    llx, lly, urx, ury;
+{
+    F_line	   *l;
+    F_point	   *a;
+    F_linkinfo	   *j, *k;
+
+    j = NULL;
+    for (l = objects.lines; l != NULL; l = l->next)
+	if (l->type == T_POLYLINE) {
+	    a = l->points;
+	    if (point_on_perim(a, llx, lly, urx, ury)) {
+		if ((k = new_link(l, a, a->next)) == NULL)
+		    return;
+		if (j == NULL)
+		    cur_links = k;
+		else
+		    j->next = k;
+		j = k;
+		if (k->prevpt != NULL)
+		    k->two_pts = (k->prevpt->next == NULL);
+		continue;
+	    }
+	    if (a->next == NULL)/* single point, no need to check further */
+		continue;
+	    a = last_point(l->points);
+	    if (point_on_perim(a, llx, lly, urx, ury)) {
+		if ((k = new_link(l, a, prev_point(l->points, a))) == NULL)
+		    return;
+		if (j == NULL)
+		    cur_links = k;
+		else
+		    j->next = k;
+		j = k;
+		if (k->prevpt != NULL)
+		    k->two_pts = (prev_point(l->points, k->prevpt) == NULL);
+		continue;
+	    }
+	}
+}
+
+#define LINK_TOL 3
+
+int
+point_on_perim(p, llx, lly, urx, ury)
+    F_point	   *p;
+    int		    llx, lly, urx, ury;
+{
+    return ((abs(p->x - llx) <= LINK_TOL && p->y >= lly - LINK_TOL
+	     && p->y <= ury + LINK_TOL) ||
+	    (abs(p->x - urx) <= LINK_TOL && p->y >= lly - LINK_TOL
+	     && p->y <= ury + LINK_TOL) ||
+	    (abs(p->y - lly) <= LINK_TOL && p->x >= llx - LINK_TOL
+	     && p->x <= urx + LINK_TOL) ||
+	    (abs(p->y - ury) <= LINK_TOL && p->x >= llx - LINK_TOL
+	     && p->x <= urx + LINK_TOL));
+}
+
+void
+adjust_links(mode, links, dx, dy, cx, cy, sx, sy, copying)
+    int		    mode;
+    F_linkinfo	   *links;
+    int		dx, dy;		/* delta */
+    int		cx, cy;		/* center of scale - NOT USED YET */
+    float	sx, sy;		/* scale factor - NOT USED YET */
+    int		    copying;
+{
+    F_linkinfo	   *k;
+    F_line	   *l;
+
+    if (mode != SMART_OFF)
+	for (k = links; k != NULL; k = k->next) {
+	    if (copying) {
+		l = copy_line(k->line);
+		list_delete_line(&objects.lines, k->line);
+		list_add_line(&saved_objects.lines, k->line);
+		list_add_line(&objects.lines, l);
+	    } else {
+		mask_toggle_linemarker(k->line);
+		draw_line(k->line, ERASE);
+	    }
+	    if (mode == SMART_SLIDE && k->prevpt != NULL) {
+		if (k->endpt->x == k->prevpt->x)
+		    k->prevpt->x += dx;
+		else
+		    k->prevpt->y += dy;
+	    }
+	    k->endpt->x += dx;
+	    k->endpt->y += dy;
+	    draw_line(k->line, PAINT);
+	    mask_toggle_linemarker(k->line);
+	}
 }

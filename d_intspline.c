@@ -25,8 +25,8 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-static int      create_intsplineobject();
-static int      init_intspline_drawing();
+static int	create_intsplineobject();
+static int	init_intspline_drawing();
 
 intspline_drawing_selected()
 {
@@ -42,7 +42,7 @@ intspline_drawing_selected()
 
 static
 init_intspline_drawing(x, y)
-    int             x, y;
+    int		    x, y;
 {
     min_num_points = 3;
     init_trace_drawing(x, y);
@@ -52,9 +52,9 @@ init_intspline_drawing(x, y)
 
 static
 create_intsplineobject(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    F_spline       *spline;
+    F_spline	   *spline;
 
     if (x != fix_x || y != fix_y || num_point < min_num_points) {
 	if (manhattan_mode || mountain_mode)
@@ -79,12 +79,10 @@ create_intsplineobject(x, y)
     spline->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     spline->color = cur_color;
     spline->depth = 0;
-    spline->area_fill = cur_areafill;
+    spline->fill_style = cur_fillstyle;
     /*
-     * The current area fill color is saved in all intspline objects (but
-     * support for filling may not be available in all fig2dev languages).
-     * Currently, splines are drawn in overlapping sections which make
-     * drawing the area fill difficult, so no filling is done on screen.
+     * The current fill style is saved in all intspline objects (but support
+     * for filling may not be available in all fig2dev languages).
      */
     spline->pen = 0;
     spline->points = first_point;
@@ -109,7 +107,7 @@ create_intsplineobject(x, y)
     make_control_points(spline);
     draw_intspline(spline, PAINT);
     if (appres.DEBUG) {
-	int             xmin, ymin, xmax, ymax;
+	int		xmin, ymin, xmax, ymax;
 
 	spline_bound(spline, &xmin, &ymin, &xmax, &ymax);
 	elastic_box(xmin, ymin, xmax, ymax);
@@ -122,10 +120,10 @@ create_intsplineobject(x, y)
 /* Tension : 0 (min) -> 1 (max)	 */
 
 create_control_list(s)
-    F_spline       *s;
+    F_spline	   *s;
 {
-    F_point        *p;
-    F_control      *cp;
+    F_point	   *p;
+    F_control	   *cp;
 
     if ((cp = create_cpoint()) == NULL)
 	return (-1);
@@ -141,7 +139,7 @@ create_control_list(s)
 }
 
 make_control_points(s)
-    F_spline       *s;
+    F_spline	   *s;
 {
     if (-1 == create_control_list(s))
 	return;
@@ -150,7 +148,7 @@ make_control_points(s)
 }
 
 remake_control_points(s)
-    F_spline       *s;
+    F_spline	   *s;
 {
     if (s->type == T_CLOSED_INTERP)
 	compute_cp(s->points, s->controls, CLOSED_PATH);
@@ -164,15 +162,15 @@ remake_control_points(s)
 #define		_SQR2		1.4142
 
 compute_cp(points, controls, path)
-    F_point        *points;
-    F_control      *controls;
-    int             path;
+    F_point	   *points;
+    F_control	   *controls;
+    int		    path;
 {
-    F_control      *cp, *cpn;
-    F_point        *p, *p2, *pk;/* Pk is the next-to-last point. */
-    float           dx, dy;
-    float           x1, y1, x2, y2, x3, y3;
-    float           l1, l2, theta1, theta2;
+    F_control	   *cp, *cpn;
+    F_point	   *p, *p2, *pk;/* Pk is the next-to-last point. */
+    float	    dx, dy;
+    float	    x1, y1, x2, y2, x3, y3;
+    float	    l1, l2, theta1, theta2;
 
     x1 = points->x;
     y1 = points->y;
@@ -271,10 +269,10 @@ compute_cp(points, controls, path)
  */
 
 control_points(x, y, l1, l2, theta1, theta2, t, cp)
-    float           x, y, l1, l2, theta1, theta2, t;
-    F_control      *cp;
+    float	    x, y, l1, l2, theta1, theta2, t;
+    F_control	   *cp;
 {
-    float           s, theta, r = 1 - t;
+    float	    s, theta, r = 1 - t;
 
     /* 0 <= theta1, theta2 < 2PI */
 

@@ -18,8 +18,8 @@
 #include "object.h"
 
 translate_ellipse(ellipse, dx, dy)
-    F_ellipse      *ellipse;
-    int             dx, dy;
+    F_ellipse	   *ellipse;
+    int		    dx, dy;
 {
     ellipse->center.x += dx;
     ellipse->center.y += dy;
@@ -30,8 +30,8 @@ translate_ellipse(ellipse, dx, dy)
 }
 
 translate_arc(arc, dx, dy)
-    F_arc          *arc;
-    int             dx, dy;
+    F_arc	   *arc;
+    int		    dx, dy;
 {
     arc->center.x += (float) dx;
     arc->center.y += (float) dy;
@@ -44,10 +44,10 @@ translate_arc(arc, dx, dy)
 }
 
 translate_line(line, dx, dy)
-    F_line         *line;
-    int             dx, dy;
+    F_line	   *line;
+    int		    dx, dy;
 {
-    F_point        *point;
+    F_point	   *point;
 
     for (point = line->points; point != NULL; point = point->next) {
 	point->x += dx;
@@ -56,19 +56,19 @@ translate_line(line, dx, dy)
 }
 
 translate_text(text, dx, dy)
-    F_text         *text;
-    int             dx, dy;
+    F_text	   *text;
+    int		    dx, dy;
 {
     text->base_x += dx;
     text->base_y += dy;
 }
 
 translate_spline(spline, dx, dy)
-    F_spline       *spline;
-    int             dx, dy;
+    F_spline	   *spline;
+    int		    dx, dy;
 {
-    F_point        *point;
-    F_control      *cp;
+    F_point	   *point;
+    F_control	   *cp;
 
     for (point = spline->points; point != NULL; point = point->next) {
 	point->x += dx;
@@ -83,8 +83,8 @@ translate_spline(spline, dx, dy)
 }
 
 translate_compound(compound, dx, dy)
-    F_compound     *compound;
-    int             dx, dy;
+    F_compound	   *compound;
+    int		    dx, dy;
 {
     compound->nwcorner.x += dx;
     compound->nwcorner.y += dy;
@@ -100,60 +100,60 @@ translate_compound(compound, dx, dy)
 }
 
 translate_arcs(arcs, dx, dy)
-    F_arc          *arcs;
-    int             dx, dy;
+    F_arc	   *arcs;
+    int		    dx, dy;
 {
-    F_arc          *a;
+    F_arc	   *a;
 
     for (a = arcs; a != NULL; a = a->next)
 	translate_arc(a, dx, dy);
 }
 
 translate_compounds(compounds, dx, dy)
-    F_compound     *compounds;
-    int             dx, dy;
+    F_compound	   *compounds;
+    int		    dx, dy;
 {
-    F_compound     *c;
+    F_compound	   *c;
 
     for (c = compounds; c != NULL; c = c->next)
 	translate_compound(c, dx, dy);
 }
 
 translate_ellipses(ellipses, dx, dy)
-    F_ellipse      *ellipses;
-    int             dx, dy;
+    F_ellipse	   *ellipses;
+    int		    dx, dy;
 {
-    F_ellipse      *e;
+    F_ellipse	   *e;
 
     for (e = ellipses; e != NULL; e = e->next)
 	translate_ellipse(e, dx, dy);
 }
 
 translate_lines(lines, dx, dy)
-    F_line         *lines;
-    int             dx, dy;
+    F_line	   *lines;
+    int		    dx, dy;
 {
-    F_line         *l;
+    F_line	   *l;
 
     for (l = lines; l != NULL; l = l->next)
 	translate_line(l, dx, dy);
 }
 
 translate_splines(splines, dx, dy)
-    F_spline       *splines;
-    int             dx, dy;
+    F_spline	   *splines;
+    int		    dx, dy;
 {
-    F_spline       *s;
+    F_spline	   *s;
 
     for (s = splines; s != NULL; s = s->next)
 	translate_spline(s, dx, dy);
 }
 
 translate_texts(texts, dx, dy)
-    F_text         *texts;
-    int             dx, dy;
+    F_text	   *texts;
+    int		    dx, dy;
 {
-    F_text         *t;
+    F_text	   *t;
 
     for (t = texts; t != NULL; t = t->next)
 	translate_text(t, dx, dy);

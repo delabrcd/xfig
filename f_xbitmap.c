@@ -21,11 +21,11 @@
 #include "paintop.h"
 #include "w_setup.h"
 
-static int create_n_write_bitmap();
+static int	create_n_write_bitmap();
 
 int
 write_bitmap(file_name)
-    char           *file_name;
+    char	   *file_name;
 {
     if (!ok_to_write(file_name, "EXPORT"))
 	return (1);
@@ -33,24 +33,24 @@ write_bitmap(file_name)
     return (create_n_write_bitmap(file_name));	/* write the bitmap file */
 }
 
-static Boolean  havegcs = False;
-static GC       sav_fill_gc[NUMFILLPATS];
-static GC       sav_un_fill_gc[NUMFILLPATS];
+static Boolean	havegcs = False;
+static GC	sav_fill_gc[NUMFILLPATS];
+static GC	sav_un_fill_gc[NUMFILLPATS];
 static unsigned long save_fg_color;
 static unsigned long save_bg_color;
 
 static int
 create_n_write_bitmap(filename)
-    char           *filename;
+    char	   *filename;
 {
-    int             xmin, ymin, xmax, ymax;
-    int             width, height;
-    Window          sav_canvas;
-    int             sav_objmask;
-    Pixmap          largepm, bitmap;
+    int		    xmin, ymin, xmax, ymax;
+    int		    width, height;
+    Window	    sav_canvas;
+    int		    sav_objmask;
+    Pixmap	    largepm, bitmap;
     extern F_compound objects;
-    int             i;
-    GC              xgc;
+    int		    i;
+    GC		    xgc;
 
     /* Assume that there is at least one object */
     compound_bound(&objects, &xmin, &ymin, &xmax, &ymax);
@@ -127,7 +127,7 @@ create_n_write_bitmap(filename)
     XSetPlaneMask(tool_d, gccache[ERASE], (unsigned long) AllPlanes);
     XSetForeground(tool_d, gccache[ERASE], x_bg_color.pixel);
     XSetBackground(tool_d, gccache[ERASE], x_bg_color.pixel);
-    for (i = 0; i < NUMFILLPATS; i++) {	/* swap back the fill gc's */
+    for (i = 0; i < NUMFILLPATS; i++) { /* swap back the fill gc's */
 	xgc = sav_fill_gc[i];
 	sav_fill_gc[i] = fill_gc[i];
 	fill_gc[i] = xgc;

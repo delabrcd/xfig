@@ -14,7 +14,7 @@
  *
  */
 
-extern pr_size  pf_textwidth();
+extern pr_size	pf_textwidth();
 extern PIX_FONT bold_font;
 extern PIX_FONT roman_font;
 extern PIX_FONT canvas_font;
@@ -28,7 +28,7 @@ extern PIX_FONT button_font;
 #define		char_height(font) \
 		((font)->max_bounds.ascent + (font)->max_bounds.descent)
 #define		char_width(font)	((font)->max_bounds.width)
-#define		char_advance(font,char)	\
+#define		char_advance(font,char) \
 		    (((font)->per_char)?\
 		    ((font)->per_char[(char)-(font)->min_char_or_byte2].width):\
 		    ((font)->max_bounds.width))

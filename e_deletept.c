@@ -23,7 +23,7 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-static int      init_delete_point();
+static int	init_delete_point();
 
 delete_point_selected()
 {
@@ -39,11 +39,11 @@ delete_point_selected()
 
 static
 init_delete_point(obj, type, x, y, p, q)
-    char           *obj;
-    int             type, x, y;
-    F_point        *p, *q;
+    char	   *obj;
+    int		    type, x, y;
+    F_point	   *p, *q;
 {
-    int             n;
+    int		    n;
 
     switch (type) {
     case O_POLYLINE:
@@ -89,10 +89,10 @@ init_delete_point(obj, type, x, y, p, q)
 /**************************  spline  *******************************/
 
 splinepoint_deleting(spline, prev_point, selected_point)
-    F_spline       *spline;
-    F_point        *prev_point, *selected_point;
+    F_spline	   *spline;
+    F_point	   *prev_point, *selected_point;
 {
-    F_point        *p, *next_point;
+    F_point	   *p, *next_point;
 
     next_point = selected_point->next;
     set_temp_cursor(&wait_cursor);
@@ -158,10 +158,10 @@ splinepoint_deleting(spline, prev_point, selected_point)
  * first point in the list, in which case prev_point will be NULL.
  */
 linepoint_deleting(line, prev_point, selected_point)
-    F_line         *line;
-    F_point        *prev_point, *selected_point;
+    F_line	   *line;
+    F_point	   *prev_point, *selected_point;
 {
-    F_point        *p, *next_point;
+    F_point	   *p, *next_point;
 
     next_point = selected_point->next;
     mask_toggle_linemarker(line);

@@ -16,7 +16,7 @@
 
 /*
  * This file contains routines for creating the objects and sub-object
- * parts used by xfig.  The file is divided into the following parts:
+ * parts used by xfig.	The file is divided into the following parts:
  *
  * DECLARATIONS, ARROWS, POINTS,
  * ARCS, ELLIPSES, LINES, SPLINES, TEXTS, COMPOUNDS
@@ -30,43 +30,41 @@
 #include "object.h"
 #include "u_create.h"
 
-extern char    *malloc();
-extern char    *calloc();
-extern int      cur_linewidth;
+extern int	cur_linewidth;
 
 /* LOCAL */
 
-static float    forward_arrow_wid = 4;
-static float    forward_arrow_ht = 8;
-static int      forward_arrow_type = 0;
-static int      forward_arrow_style = 0;
-static float    forward_arrow_thickness = 1;
+static float	forward_arrow_wid = 4;
+static float	forward_arrow_ht = 8;
+static int	forward_arrow_type = 0;
+static int	forward_arrow_style = 0;
+static float	forward_arrow_thickness = 1;
 
-static float    backward_arrow_wid = 4;
-static float    backward_arrow_ht = 8;
-static int      backward_arrow_type = 0;
-static int      backward_arrow_style = 0;
-static float    backward_arrow_thickness = 1;
+static float	backward_arrow_wid = 4;
+static float	backward_arrow_ht = 8;
+static int	backward_arrow_type = 0;
+static int	backward_arrow_style = 0;
+static float	backward_arrow_thickness = 1;
 
 static F_arrow *create_arrow();
-static char     Err_mem[] = "Running out of memory.";
+static char	Err_mem[] = "Running out of memory.";
 
 /****************** ARROWS ****************/
 
 static F_arrow *
 create_arrow()
 {
-    F_arrow        *a;
+    F_arrow	   *a;
 
     if ((a = (F_arrow *) malloc(ARROW_SIZE)) == NULL)
 	put_msg(Err_mem);
     return (a);
 }
 
-F_arrow        *
+F_arrow	       *
 forward_arrow()
 {
-    F_arrow        *a;
+    F_arrow	   *a;
 
     if ((a = create_arrow()) == NULL)
 	return (NULL);
@@ -79,10 +77,10 @@ forward_arrow()
     return (a);
 }
 
-F_arrow        *
+F_arrow	       *
 backward_arrow()
 {
-    F_arrow        *a;
+    F_arrow	   *a;
 
     if ((a = create_arrow()) == NULL)
 	return (NULL);
@@ -95,12 +93,12 @@ backward_arrow()
     return (a);
 }
 
-F_arrow        *
+F_arrow	       *
 new_arrow(type, style, thickness, wid, ht)
-    int             type, style;
-    float           thickness, wid, ht;
+    int		    type, style;
+    float	    thickness, wid, ht;
 {
-    F_arrow        *a;
+    F_arrow	   *a;
 
     if ((a = create_arrow()) == NULL)
 	return (NULL);
@@ -113,12 +111,32 @@ new_arrow(type, style, thickness, wid, ht)
     return (a);
 }
 
+/************************ SMART LINKS *************************/
+
+F_linkinfo     *
+new_link(l, ep, pp)
+    F_line	   *l;
+    F_point	   *ep, *pp;
+{
+    F_linkinfo	   *k;
+
+    if ((k = (F_linkinfo *) malloc(LINKINFO_SIZE)) == NULL) {
+	put_msg(Err_mem);
+	return (NULL);
+    }
+    k->line = l;
+    k->endpt = ep;
+    k->prevpt = pp;
+    k->next = NULL;
+    return (k);
+}
+
 /************************ POINTS *************************/
 
-F_point        *
+F_point	       *
 create_point()
 {
-    F_point        *p;
+    F_point	   *p;
 
     if ((p = (F_point *) malloc(POINT_SIZE)) == NULL)
 	put_msg(Err_mem);
@@ -128,18 +146,18 @@ create_point()
 F_control      *
 create_cpoint()
 {
-    F_control      *cp;
+    F_control	   *cp;
 
     if ((cp = (F_control *) malloc(CONTROL_SIZE)) == NULL)
 	put_msg(Err_mem);
     return (cp);
 }
 
-F_point        *
+F_point	       *
 copy_points(orig_pt)
-    F_point        *orig_pt;
+    F_point	   *orig_pt;
 {
-    F_point        *new_pt, *prev_pt, *first_pt;
+    F_point	   *new_pt, *prev_pt, *first_pt;
 
     if ((new_pt = create_point()) == NULL)
 	return (NULL);
@@ -163,22 +181,23 @@ copy_points(orig_pt)
 
 /************************ ARCS *************************/
 
-F_arc          *
+F_arc	       *
 create_arc()
 {
-    F_arc          *a;
+    F_arc	   *a;
 
     if ((a = (F_arc *) malloc(ARCOBJ_SIZE)) == NULL)
 	put_msg(Err_mem);
+    a->tagged = 0;
     return (a);
 }
 
-F_arc          *
+F_arc	       *
 copy_arc(a)
-    F_arc          *a;
+    F_arc	   *a;
 {
-    F_arc          *arc;
-    F_arrow        *arrow;
+    F_arc	   *arc;
+    F_arrow	   *arrow;
 
     if ((arc = create_arc()) == NULL)
 	return (NULL);
@@ -209,18 +228,19 @@ copy_arc(a)
 F_ellipse      *
 create_ellipse()
 {
-    F_ellipse      *e;
+    F_ellipse	   *e;
 
     if ((e = (F_ellipse *) malloc(ELLOBJ_SIZE)) == NULL)
 	put_msg(Err_mem);
+    e->tagged = 0;
     return (e);
 }
 
 F_ellipse      *
 copy_ellipse(e)
-    F_ellipse      *e;
+    F_ellipse	   *e;
 {
-    F_ellipse      *ellipse;
+    F_ellipse	   *ellipse;
 
     if ((ellipse = create_ellipse()) == NULL)
 	return (NULL);
@@ -232,13 +252,14 @@ copy_ellipse(e)
 
 /************************ LINES *************************/
 
-F_line         *
+F_line	       *
 create_line()
 {
-    F_line         *l;
+    F_line	   *l;
 
     if ((l = (F_line *) malloc(LINOBJ_SIZE)) == NULL)
 	put_msg(Err_mem);
+    l->tagged = 0;
     l->eps = NULL;
     l->next = NULL;
     l->for_arrow = NULL;
@@ -248,22 +269,22 @@ create_line()
     return (l);
 }
 
-F_eps          *
+F_eps	       *
 create_eps()
 {
-    F_eps          *e;
+    F_eps	   *e;
 
     if ((e = (F_eps *) malloc(EPS_SIZE)) == NULL)
 	put_msg(Err_mem);
     return (e);
 }
 
-F_line         *
+F_line	       *
 copy_line(l)
-    F_line         *l;
+    F_line	   *l;
 {
-    F_line         *line;
-    F_arrow        *arrow;
+    F_line	   *line;
+    F_arrow	   *arrow;
     int		    nbytes;
 
     if ((line = create_line()) == NULL)
@@ -302,8 +323,8 @@ copy_line(l)
 	if (l->eps->bitmap != NULL) {
 	    nbytes = (line->eps->bit_size.x + 7) / 8 * line->eps->bit_size.y;
 	    line->eps->bitmap = (unsigned char *) malloc(nbytes);
-            if (line->eps->bitmap == NULL)
-        	fprintf(stderr, "xfig: out of memory in function copy_line");
+	    if (line->eps->bitmap == NULL)
+		fprintf(stderr, "xfig: out of memory in function copy_line");
 	    bcopy(l->eps->bitmap, line->eps->bitmap, nbytes);
 	    line->eps->pix_width = 0;
 	    line->eps->pix_height = 0;
@@ -318,20 +339,21 @@ copy_line(l)
 F_spline       *
 create_spline()
 {
-    F_spline       *s;
+    F_spline	   *s;
 
     if ((s = (F_spline *) malloc(SPLOBJ_SIZE)) == NULL)
 	put_msg(Err_mem);
+    s->tagged = 0;
     return (s);
 }
 
 F_spline       *
 copy_spline(s)
-    F_spline       *s;
+    F_spline	   *s;
 {
-    F_spline       *spline;
-    F_control      *new_cp, *orig_cp, *last_cp;
-    F_arrow        *arrow;
+    F_spline	   *spline;
+    F_control	   *new_cp, *orig_cp, *last_cp;
+    F_arrow	   *arrow;
 
     if ((spline = create_spline()) == NULL)
 	return (NULL);
@@ -387,32 +409,33 @@ copy_spline(s)
 
 /************************ TEXTS *************************/
 
-F_text         *
+F_text	       *
 create_text()
 {
-    F_text         *t;
+    F_text	   *t;
 
     if ((t = (F_text *) malloc(TEXOBJ_SIZE)) == NULL)
 	put_msg(Err_mem);
+    t->tagged = 0;
     return (t);
 }
 
-char           *
+char	       *
 new_string(len)
-    int             len;
+    int		    len;
 {
-    char           *c;
+    char	   *c;
 
-    if ((c = calloc((unsigned) len, sizeof(char))) == NULL)
+    if ((c = (char *) calloc((unsigned) len, sizeof(char))) == NULL)
 	put_msg(Err_mem);
     return (c);
 }
 
-F_text         *
+F_text	       *
 copy_text(t)
-    F_text         *t;
+    F_text	   *t;
 {
-    F_text         *text;
+    F_text	   *text;
 
     if ((text = create_text()) == NULL)
 	return (NULL);
@@ -432,23 +455,24 @@ copy_text(t)
 F_compound     *
 create_compound()
 {
-    F_compound     *c;
+    F_compound	   *c;
 
     if ((c = (F_compound *) malloc(COMOBJ_SIZE)) == NULL)
 	put_msg(Err_mem);
+    c->tagged = 0;
     return (c);
 }
 
 F_compound     *
 copy_compound(c)
-    F_compound     *c;
+    F_compound	   *c;
 {
-    F_ellipse      *e, *ee;
-    F_arc          *a, *aa;
-    F_line         *l, *ll;
-    F_spline       *s, *ss;
-    F_text         *t, *tt;
-    F_compound     *cc, *ccc, *compound;
+    F_ellipse	   *e, *ee;
+    F_arc	   *a, *aa;
+    F_line	   *l, *ll;
+    F_spline	   *s, *ss;
+    F_text	   *t, *tt;
+    F_compound	   *cc, *ccc, *compound;
 
     if ((compound = create_compound()) == NULL)
 	return (NULL);

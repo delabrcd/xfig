@@ -16,12 +16,12 @@
 
 /******************  modes  ******************/
 
-#define		F_NULL		 	0
-#define	    FIRST_DRAW_MODE         F_CIRCLE_BY_RAD
-#define		F_CIRCLE_BY_RAD 	1
-#define		F_CIRCLE_BY_DIA 	2
-#define		F_ELLIPSE_BY_RAD 	3
-#define		F_ELLIPSE_BY_DIA 	4
+#define		F_NULL			0
+#define	    FIRST_DRAW_MODE	    F_CIRCLE_BY_RAD
+#define		F_CIRCLE_BY_RAD		1
+#define		F_CIRCLE_BY_DIA		2
+#define		F_ELLIPSE_BY_RAD	3
+#define		F_ELLIPSE_BY_DIA	4
 #define		F_CIRCULAR_ARC		5
 #define		F_POLYLINE		6
 #define		F_BOX			7
@@ -33,8 +33,8 @@
 #define		F_CLOSED_INTSPLINE	13
 #define		F_ARC_BOX		14
 #define		F_REGPOLY		15
-#define		F_EPSBITMAP		16
-#define	    FIRST_EDIT_MODE         F_GLUE
+#define		F_EPSOBJ		16
+#define	    FIRST_EDIT_MODE	    F_GLUE
 #define		F_GLUE			30
 #define		F_BREAK			31
 #define		F_SCALE			32
@@ -51,106 +51,124 @@
 #define		F_ROTATE		43
 #define		F_AUTOARROW		44
 #define		F_CONVERT		45
-#define         F_CHANGE		46
+#define		F_CHANGE		46
 #define		F_UPDATE		47
 #define		F_ALIGN			48
 #define		F_ZOOM			49
 #define		F_LOAD			50
 #define		F_EDIT			50
 
-extern int      cur_mode;
+extern int	cur_mode;
 
 /* alignment mode */
-#define         NONE                    0
-#define         LEFT                    1
-#define         TOP                     1
-#define         CENTER                  2
-#define         RIGHT                   3
-#define         BOTTOM                  3
+#define		NONE			0
+#define		LEFT			1
+#define		TOP			1
+#define		CENTER			2
+#define		RIGHT			3
+#define		BOTTOM			3
 
-extern int      cur_halign;
-extern int      cur_valign;
+extern int	cur_halign;
+extern int	cur_valign;
 
 /* angle geometry */
-#define         L_UNCONSTRAINED         0
-#define         L_LATEXLINE             1
-#define         L_LATEXARROW            2
-#define         L_MOUNTHATTAN           3
-#define         L_MANHATTAN             4
-#define         L_MOUNTAIN              5
+#define		L_UNCONSTRAINED		0
+#define		L_LATEXLINE		1
+#define		L_LATEXARROW		2
+#define		L_MOUNTHATTAN		3
+#define		L_MANHATTAN		4
+#define		L_MOUNTAIN		5
 
-extern int      manhattan_mode;
-extern int      mountain_mode;
-extern int      latexline_mode;
-extern int      latexarrow_mode;
+extern int	manhattan_mode;
+extern int	mountain_mode;
+extern int	latexline_mode;
+extern int	latexarrow_mode;
 
 /* arrow mode */
-#define         L_NOARROWS              0
-#define         L_FARROWS               1
-#define         L_FBARROWS              2
-#define         L_BARROWS               3
+#define		L_NOARROWS		0
+#define		L_FARROWS		1
+#define		L_FBARROWS		2
+#define		L_BARROWS		3
 
-extern int      autoforwardarrow_mode;
-extern int      autobackwardarrow_mode;
+extern int	autoforwardarrow_mode;
+extern int	autobackwardarrow_mode;
 
 /* grid mode */
-#define         GRID_0                  0
-#define         GRID_1                  1
-#define         GRID_2                  2
+#define		GRID_0			0
+#define		GRID_1			1
+#define		GRID_2			2
 
-extern int      cur_gridmode;
+extern int	cur_gridmode;
 
 /* point position */
-#define         P_ANY                   0
-#define         P_MAGNET                1
-#define         P_GRID1                 2
-#define         P_GRID2                 3
+#define		P_ANY			0
+#define		P_MAGNET		1
+#define		P_GRID1			2
+#define		P_GRID2			3
 
-extern int      cur_pointposn;
-extern int      posn_rnd[P_GRID2 + 1];
-extern int      posn_hlf[P_GRID2 + 1];
+extern int	cur_pointposn;
+extern int	posn_rnd[P_GRID2 + 1];
+extern int	posn_hlf[P_GRID2 + 1];
+extern int	grid_fine[P_GRID2 + 1];
+extern int	grid_coarse[P_GRID2 + 1];
+extern char    *grid_name[P_GRID2 + 1];
 
 /* rotn axis */
 #define		UD_FLIP			1
 #define		LR_FLIP			2
 
-extern int      cur_rotnangle;
+extern int	cur_rotnangle;
+
+/* smart link mode */
+#define		SMART_OFF		0
+#define		SMART_MOVE		1
+#define		SMART_SLIDE		2
+
+extern int	cur_linkmode;
 
 /* misc */
-extern int      action_on;
-extern int      highlighting;
-extern int      aborting;
-extern int      anypointposn;
-extern int      figure_modified;
-extern int      cur_numsides;
+extern int	action_on;
+extern int	highlighting;
+extern int	aborting;
+extern int	anypointposn;
+extern int	figure_modified;
+extern int	cur_numsides;
 
-extern void     reset_modifiedflag();
-extern void     set_modifiedflag();
-extern void     reset_action_on();
-extern void     set_action_on();
+extern void	reset_modifiedflag();
+extern void	set_modifiedflag();
+extern void	reset_action_on();
+extern void	set_action_on();
 
-/**********************  global mode variables  ************************/
+/**********************	 global mode variables	************************/
 
-extern int      num_point;
-extern int      min_num_points;
+extern int	num_point;
+extern int	min_num_points;
 
 /***************************  Print Settings  ****************************/
 
-extern int      print_landscape;/* def. orientation for printer */
+extern int	print_landscape;/* def. orientation for printer */
+
+#define NUM_EXP_LANG	15
+#define LANG_EPS	8	/* position of eps starting from 0 */
+#define LANG_PS		9	/* position of ps starting from 0 */
+#define LANG_XBITMAP	14	/* position of Xbitmap starting from 0 */
+
+extern int	cur_exp_lang;
+extern char    *lang_items[NUM_EXP_LANG];
 
 /***************************  Mode Settings  ****************************/
 
-extern int      cur_objmask;
+extern int	cur_objmask;
 
 /***************************  Text Settings  ****************************/
 
-extern int      cur_textstep;
-extern int      hidden_text_length;
+extern int	hidden_text_length;
+extern float	cur_textstep;
 
 /***************************  File Settings  ****************************/
 
-extern char     cur_dir[];
-extern char     cur_filename[];
-extern char     save_filename[];/* to undo load */
-extern char     file_header[];
-extern char     cut_buf_name[];
+extern char	cur_dir[];
+extern char	cur_filename[];
+extern char	save_filename[];/* to undo load */
+extern char	file_header[];
+extern char	cut_buf_name[];

@@ -19,23 +19,23 @@
 #include "w_setup.h"
 #include "w_util.h"
 
-int             TOOL_WD, TOOL_HT;
-int             CMDPANEL_WD, CMDPANEL_HT = 22;
-int             MODEPANEL_WD, MODEPANEL_HT;
-int             MODEPANEL_SPACE;
-int             MSGPANEL_WD, MSGPANEL_HT = 18;
-int             MOUSEFUN_WD, MOUSEFUN_HT;
-int             INDPANEL_WD;
-int             CANVAS_WD, CANVAS_HT;
-int             INTERNAL_BW;
-int             TOPRULER_WD, TOPRULER_HT;
-int             SIDERULER_WD, SIDERULER_HT;
-int             SW_PER_ROW, SW_PER_COL;
+int		TOOL_WD, TOOL_HT;
+int		CMDPANEL_WD, CMDPANEL_HT = 22;
+int		MODEPANEL_WD, MODEPANEL_HT;
+int		MODEPANEL_SPACE;
+int		MSGPANEL_WD, MSGPANEL_HT = 18;
+int		MOUSEFUN_WD, MOUSEFUN_HT;
+int		INDPANEL_WD;
+int		CANVAS_WD, CANVAS_HT;
+int		INTERNAL_BW;
+int		TOPRULER_WD, TOPRULER_HT;
+int		SIDERULER_WD, SIDERULER_HT;
+int		SW_PER_ROW, SW_PER_COL;
 
 setup_sizes(new_canv_wd, new_canv_ht)
-    int             new_canv_wd, new_canv_ht;
+    int		    new_canv_wd, new_canv_ht;
 {
-    int             NUM_CMD_SW;
+    int		    NUM_CMD_SW;
 
     /*
      * make the width of the mousefun panel about 1/3 of the size of the

@@ -1,9 +1,38 @@
+===============================================================
+XFIG - Facility for Interactive Generation of figures under X11
+===============================================================
+
+
+Xfig is a menu-driven tool that allows the user to draw and manipulate objects
+interactively in an X window.  The resulting pictures can be saved, printed
+on postscript printers or converted to a variety of other formats (e.g. to
+allow inclusion in LaTeX documents).
+
+This file contains some notes about installing xfig, the directory
+'Examples' contains some example figures and the 'Doc' directory contains
+some further documentation including the manual in troff -man format.
+
 Please report any bugs, fixes, contributions, etc. to:
 
 Brian V. Smith (bvsmith@lbl.gov)
-------------------------------------------------------
 
-NOTE:
+
+===================
+INSTALLATION NOTES:
+===================
+
+1. Edit the Imakefile if you need to customize it (see following notes)
+2. Type "make Makefile" or "xmkmf" if you have xmkmf
+>> Ignore the warning about redefining InstallManPage <<
+
+3. Type "make install"
+4. Type "make install.man"
+5. Add the resources from Fig.ad to /usr/lib/.../app-defaults/Fig that you
+	wish to use
+
+-----------------
+OpenWindows users
+-----------------
 
 Openwindows has scalable fonts so xfig must be compiled with the -DOPENWIN
 flag in order to handle this.
@@ -11,8 +40,20 @@ flag in order to handle this.
 There is also a bug in OpenWindows 2.0 which relates to pixmaps in widgets.
 You must compile xfig with the -DOPENWIN_BUG option for this problem.
 
+----------------------
+Printing your figures:
+----------------------
+
+The program to translate your figure into one of many printer languages
+(Postscript, LaTex, etc) is called fig2dev and is part of the TransFig
+package by Micah Beck.
+It is available from export.lcs.mit.edu in /contrib/transfig.tar.Z or
+ftp.cs.cornell.edu in the directory /pub/fig.
+See the man pages for more information.
+
+----------------------------------------------
 Possible problems encountered installing xfig:
-=============================================
+----------------------------------------------
 
 PROBLEM:
 	The window oscillates and fights with the window manager when
@@ -25,41 +66,21 @@ POSSIBLE CAUSE AND SOLUTION:
 	Change the resource to be specific to the programs which need it.
 
 PROBLEM:
-	I tried to compile xfig on an SGI SystemV and got a error message.
-	> cc -O -prototypes -cckr -float -I/usr/include -DSYSV
-		-DMALLOC_0_RETURNS_NULL -DFUNCPROTO -DNARROWPROTO
-		-DFASTSERVER  -c u_redraw.c
-	>(ccom): u_redraw.c, line 106: ccom: Internal: out of tree space;
-		increase default option: -Wf,-XNh1000
-	>                        spline_depths(objects->splines)))))))))));
+	Openwindows sometimes loses track of xfig's icon.
 
 POSSIBLE CAUSE AND SOLUTION:
-	The line in question involves quite a few levels of nesting and
-	could possibly be simplified.  Use the options -Wf,-XNh6000 as the
-	compiler message suggests and you shouldn't have any trouble.
-Possible problems encountered installing xfig:
-=============================================
+	Cause unknown, here is a temporary kludge. Place the line:
+		Fig*iconPixmap:               ..../your_lib_area/fig.icon.X
+	in your .Xdefaults file and copy fig.icon.X into your lib area.
 
 PROBLEM:
-	The window oscillates and fights with the window manager when
-	I click on a mode button or try to resize the xfig window.
+	I can't seem to get a single xfig binary to work under both
+	openwindows and standard X.
 
 POSSIBLE CAUSE AND SOLUTION:
- 	Perhaps the following resource has been set
- 		*allowShellResize: true
-	because another program requires it to be true.
-	Change the resource to be specific to the programs which need it.
+	You can compile xfig so that it knows about openwindows fonts
+	but then it won't work under standard X.  If you want a single
+	binary, compile with -DOPENWIN_BUG but not -DOPENWIN.  This
+	will work on both systems but you won't be able to access the
+	openwindows fonts.
 
-PROBLEM:
-	I tried to compile xfig on an SGI SystemV and got a error message.
-	> cc -O -prototypes -cckr -float -I/usr/include -DSYSV
-		-DMALLOC_0_RETURNS_NULL -DFUNCPROTO -DNARROWPROTO
-		-DFASTSERVER  -c u_redraw.c
-	>(ccom): u_redraw.c, line 106: ccom: Internal: out of tree space;
-		increase default option: -Wf,-XNh1000
-	>                        spline_depths(objects->splines)))))))))));
-
-POSSIBLE CAUSE AND SOLUTION:
-	The line in question involves quite a few levels of nesting and
-	could possibly be simplified.  Use the options -Wf,-XNh6000 as the
-	compiler message suggests and you shouldn't have any trouble.

@@ -24,12 +24,12 @@
 #include "w_zoom.h"
 
 /*
- * Support for rendering based on correct object depth.  A simple depth based
+ * Support for rendering based on correct object depth.	 A simple depth based
  * caching scheme; anything more will require major surgery on the object
  * data structures that will percolate throughout program.
  */
 
-#define	MAXDEPTH	(10)
+#define MAXDEPTH	(10)
 
 /*
  * One ``counts'' structure for each object type at each nesting depth from 0
@@ -39,25 +39,25 @@
  */
 
 struct counts {
-    unsigned        num_arcs;	/* # arcs at this depth */
-    unsigned        num_lines;	/* # lines at this depth */
-    unsigned        num_ellipses;	/* # ellipses at this depth */
-    unsigned        num_splines;/* # splines at this depth */
-    unsigned        num_texts;	/* # texts at this depth */
-    unsigned        cnt_arcs;	/* count of arcs drawn at this depth */
-    unsigned        cnt_lines;	/* count of lines drawn at this depth */
-    unsigned        cnt_ellipses;	/* count of ellipses drawn at this
+    unsigned	    num_arcs;	/* # arcs at this depth */
+    unsigned	    num_lines;	/* # lines at this depth */
+    unsigned	    num_ellipses;	/* # ellipses at this depth */
+    unsigned	    num_splines;/* # splines at this depth */
+    unsigned	    num_texts;	/* # texts at this depth */
+    unsigned	    cnt_arcs;	/* count of arcs drawn at this depth */
+    unsigned	    cnt_lines;	/* count of lines drawn at this depth */
+    unsigned	    cnt_ellipses;	/* count of ellipses drawn at this
 					 * depth */
-    unsigned        cnt_splines;/* count of splines drawn at this depth */
-    unsigned        cnt_texts;	/* count of texts drawn at this depth */
+    unsigned	    cnt_splines;/* count of splines drawn at this depth */
+    unsigned	    cnt_texts;	/* count of texts drawn at this depth */
 };
 
 /*
- * The array of ``counts'' structures.  All objects at depth >= MAXDEPTH are
+ * The array of ``counts'' structures.	All objects at depth >= MAXDEPTH are
  * accounted for in the counts[MAXDEPTH] entry.
  */
 
-struct counts   counts[MAXDEPTH + 1];
+struct counts	counts[MAXDEPTH + 1];
 
 /*
  * Function to clear the array of object counts prior to each redraw.
@@ -82,13 +82,14 @@ clearcounts()
     }
 }
 
-unsigned int    max_depth;
+unsigned int	max_depth;
 
 redisplay_objects(objects)
-    F_compound     *objects;
+    F_compound	   *objects;
 {
-    int             fill;
-    int             depth;
+    int		    fill;
+    int		    depth;
+    int		    tdepth;
 
     if (objects == NULL)
 	return;
@@ -99,12 +100,13 @@ redisplay_objects(objects)
      */
 
     clearcounts();
+    tdepth = max2(compound_depths(objects->compounds),
+		  max2(text_depths(objects->texts),
+		       spline_depths(objects->splines)));
     max_depth = max2(arc_depths(objects->arcs),
 		     max2(line_depths(objects->lines),
 			  max2(ellipse_depths(objects->ellipses),
-			       max2(compound_depths(objects->compounds),
-				    max2(text_depths(objects->texts),
-				       spline_depths(objects->splines))))));
+			       tdepth)));
 
     /*
      * A new outer loop, executing once per depth level from max_depth down
@@ -140,10 +142,10 @@ redisplay_objects(objects)
 
 int
 arc_depths(arcs)
-    F_arc          *arcs;
+    F_arc	   *arcs;
 {
-    int             maxdepth = 0;
-    F_arc          *fp;
+    int		    maxdepth = 0;
+    F_arc	   *fp;
 
     for (fp = arcs; fp != NULL; fp = fp->next) {
 	if (maxdepth < fp->depth)
@@ -161,10 +163,10 @@ arc_depths(arcs)
 
 int
 line_depths(lines)
-    F_line         *lines;
+    F_line	   *lines;
 {
-    int             maxdepth = 0;
-    F_line         *fp;
+    int		    maxdepth = 0;
+    F_line	   *fp;
 
     for (fp = lines; fp != NULL; fp = fp->next) {
 	if (maxdepth < fp->depth)
@@ -182,10 +184,10 @@ line_depths(lines)
 
 int
 ellipse_depths(ellipses)
-    F_ellipse      *ellipses;
+    F_ellipse	   *ellipses;
 {
-    int             maxdepth = 0;
-    F_ellipse      *fp;
+    int		    maxdepth = 0;
+    F_ellipse	   *fp;
 
     for (fp = ellipses; fp != NULL; fp = fp->next) {
 	if (maxdepth < fp->depth)
@@ -203,10 +205,10 @@ ellipse_depths(ellipses)
 
 int
 spline_depths(splines)
-    F_spline       *splines;
+    F_spline	   *splines;
 {
-    int             maxdepth = 0;
-    F_spline       *fp;
+    int		    maxdepth = 0;
+    F_spline	   *fp;
 
     for (fp = splines; fp != NULL; fp = fp->next) {
 	if (maxdepth < fp->depth)
@@ -224,10 +226,10 @@ spline_depths(splines)
 
 int
 text_depths(texts)
-    F_text         *texts;
+    F_text	   *texts;
 {
-    int             maxdepth = 0;
-    F_text         *fp;
+    int		    maxdepth = 0;
+    F_text	   *fp;
 
     for (fp = texts; fp != NULL; fp = fp->next) {
 	if (maxdepth < fp->depth)
@@ -244,18 +246,20 @@ text_depths(texts)
 
 int
 compound_depths(compounds)
-    F_compound     *compounds;
+    F_compound	   *compounds;
 {
-    int             maxdepth = 0;
-    F_compound     *fp;
+    int		    maxdepth = 0;
+    F_compound	   *fp;
+    int		    tdepth;
 
     for (fp = compounds; fp != NULL; fp = fp->next) {
+	tdepth = max2(compound_depths(fp->compounds),
+		      max2(text_depths(fp->texts),
+			   spline_depths(fp->splines)));
 	maxdepth = max2(arc_depths(fp->arcs),
 			max2(line_depths(fp->lines),
 			     max2(ellipse_depths(fp->ellipses),
-				  max2(compound_depths(fp->compounds),
-				       max2(text_depths(fp->texts),
-					    spline_depths(fp->splines))))));
+				  tdepth)));
     }
     return maxdepth;
 }
@@ -267,18 +271,18 @@ compound_depths(compounds)
  */
 
 redisplay_arcobject(arcs, depth, fill)
-    F_arc          *arcs;
-    int             depth;
-    int             fill;
+    F_arc	   *arcs;
+    int		    depth;
+    int		    fill;
 {
-    F_arc          *arc;
+    F_arc	   *arc;
     struct counts  *cp = &counts[min2(depth, MAXDEPTH)];
 
     arc = arcs;
     while (arc != NULL && cp->cnt_arcs < cp->num_arcs) {
 	if (depth == arc->depth)
-	    if ((fill && arc->area_fill) ||
-		(fill == 0 && arc->area_fill == 0)) {
+	    if ((fill && arc->fill_style) ||
+		(fill == 0 && arc->fill_style == 0)) {
 		draw_arc(arc, PAINT);
 		++cp->cnt_arcs;
 	    }
@@ -293,19 +297,19 @@ redisplay_arcobject(arcs, depth, fill)
  */
 
 redisplay_ellipseobject(ellipses, depth, fill)
-    F_ellipse      *ellipses;
-    int             depth;
-    int             fill;
+    F_ellipse	   *ellipses;
+    int		    depth;
+    int		    fill;
 {
-    F_ellipse      *ep;
+    F_ellipse	   *ep;
     struct counts  *cp = &counts[min2(depth, MAXDEPTH)];
 
 
     ep = ellipses;
     while (ep != NULL && cp->cnt_ellipses < cp->num_ellipses) {
 	if (depth == ep->depth)
-	    if ((fill && ep->area_fill) ||
-		(fill == 0 && ep->area_fill == 0)) {
+	    if ((fill && ep->fill_style) ||
+		(fill == 0 && ep->fill_style == 0)) {
 		draw_ellipse(ep, PAINT);
 		++cp->cnt_ellipses;
 	    }
@@ -320,19 +324,19 @@ redisplay_ellipseobject(ellipses, depth, fill)
  */
 
 redisplay_lineobject(lines, depth, fill)
-    F_line         *lines;
-    int             depth;
-    int             fill;
+    F_line	   *lines;
+    int		    depth;
+    int		    fill;
 {
-    F_line         *lp;
+    F_line	   *lp;
     struct counts  *cp = &counts[min2(depth, MAXDEPTH)];
 
 
     lp = lines;
     while (lp != NULL && cp->cnt_lines < cp->num_lines) {
 	if (depth == lp->depth)
-	    if ((fill && lp->area_fill) ||
-		(fill == 0 && lp->area_fill == 0)) {
+	    if ((fill && lp->fill_style) ||
+		(fill == 0 && lp->fill_style == 0)) {
 		draw_line(lp, PAINT);
 		++cp->cnt_lines;
 	    }
@@ -341,24 +345,24 @@ redisplay_lineobject(lines, depth, fill)
 }
 
 /*
- * Redisplay a list of splines.  Only display splines of the correct depth
+ * Redisplay a list of splines.	 Only display splines of the correct depth
  * and fill mode.  For each spline drawn, update the count for the
  * appropriate depth in the counts array.
  */
 
 redisplay_splineobject(splines, depth, fill)
-    F_spline       *splines;
-    int             depth;
-    int             fill;
+    F_spline	   *splines;
+    int		    depth;
+    int		    fill;
 {
-    F_spline       *spline;
+    F_spline	   *spline;
     struct counts  *cp = &counts[min2(depth, MAXDEPTH)];
 
     spline = splines;
     while (spline != NULL && cp->cnt_splines < cp->num_splines) {
 	if (depth == spline->depth)
-	    if ((fill && spline->area_fill) ||
-		(fill == 0 && spline->area_fill == 0)) {
+	    if ((fill && spline->fill_style) ||
+		(fill == 0 && spline->fill_style == 0)) {
 		draw_spline(spline, PAINT);
 		++cp->cnt_splines;
 	    }
@@ -367,16 +371,16 @@ redisplay_splineobject(splines, depth, fill)
 }
 
 /*
- * Redisplay a list of texts.  Only display texts of the correct depth.  For
+ * Redisplay a list of texts.  Only display texts of the correct depth.	 For
  * each text drawn, update the count for the appropriate depth in the counts
  * array.
  */
 
 redisplay_textobject(texts, depth)
-    F_text         *texts;
-    int             depth;
+    F_text	   *texts;
+    int		    depth;
 {
-    F_text         *text;
+    F_text	   *text;
     struct counts  *cp = &counts[min2(depth, MAXDEPTH)];
 
     text = texts;
@@ -395,11 +399,11 @@ redisplay_textobject(texts, depth)
  */
 
 redisplay_compoundobject(compounds, depth, fill)
-    F_compound     *compounds;
-    int             depth;
-    int             fill;
+    F_compound	   *compounds;
+    int		    depth;
+    int		    fill;
 {
-    F_compound     *c;
+    F_compound	   *c;
 
     for (c = compounds; c != NULL; c = c->next) {
 	redisplay_arcobject(c->arcs, depth, fill);
@@ -424,7 +428,7 @@ redisplay_canvas()
 }
 
 redisplay_region(xmin, ymin, xmax, ymax)
-    int             xmin, ymin, xmax, ymax;
+    int		    xmin, ymin, xmax, ymax;
 {
     set_temp_cursor(&wait_cursor);
     /* kludge so that markers are redrawn */
@@ -441,7 +445,140 @@ redisplay_region(xmin, ymin, xmax, ymax)
 }
 
 redisplay_zoomed_region(xmin, ymin, xmax, ymax)
-    int             xmin, ymin, xmax, ymax;
+    int		    xmin, ymin, xmax, ymax;
 {
     redisplay_region(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax));
+}
+
+redisplay_ellipse(e)
+    F_ellipse	   *e;
+{
+    int		    xmin, ymin, xmax, ymax;
+
+    ellipse_bound(e, &xmin, &ymin, &xmax, &ymax);
+    redisplay_zoomed_region(xmin, ymin, xmax, ymax);
+}
+
+redisplay_ellipses(e1, e2)
+    F_ellipse	   *e1, *e2;
+{
+    int		    xmin1, ymin1, xmax1, ymax1;
+    int		    xmin2, ymin2, xmax2, ymax2;
+
+    ellipse_bound(e1, &xmin1, &ymin1, &xmax1, &ymax1);
+    ellipse_bound(e2, &xmin2, &ymin2, &xmax2, &ymax2);
+    redisplay_regions(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2);
+}
+
+redisplay_arc(a)
+    F_arc	   *a;
+{
+    int		    xmin, ymin, xmax, ymax;
+
+    arc_bound(a, &xmin, &ymin, &xmax, &ymax);
+    redisplay_zoomed_region(xmin, ymin, xmax, ymax);
+}
+
+redisplay_arcs(a1, a2)
+    F_arc	   *a1, *a2;
+{
+    int		    xmin1, ymin1, xmax1, ymax1;
+    int		    xmin2, ymin2, xmax2, ymax2;
+
+    arc_bound(a1, &xmin1, &ymin1, &xmax1, &ymax1);
+    arc_bound(a2, &xmin2, &ymin2, &xmax2, &ymax2);
+    redisplay_regions(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2);
+}
+
+redisplay_spline(s)
+    F_spline	   *s;
+{
+    int		    xmin, ymin, xmax, ymax;
+
+    spline_bound(s, &xmin, &ymin, &xmax, &ymax);
+    redisplay_zoomed_region(xmin, ymin, xmax, ymax);
+}
+
+redisplay_splines(s1, s2)
+    F_spline	   *s1, *s2;
+{
+    int		    xmin1, ymin1, xmax1, ymax1;
+    int		    xmin2, ymin2, xmax2, ymax2;
+
+    spline_bound(s1, &xmin1, &ymin1, &xmax1, &ymax1);
+    spline_bound(s2, &xmin2, &ymin2, &xmax2, &ymax2);
+    redisplay_regions(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2);
+}
+
+redisplay_line(l)
+    F_line	   *l;
+{
+    int		    xmin, ymin, xmax, ymax;
+
+    line_bound(l, &xmin, &ymin, &xmax, &ymax);
+    redisplay_zoomed_region(xmin, ymin, xmax, ymax);
+}
+
+redisplay_lines(l1, l2)
+    F_line	   *l1, *l2;
+{
+    int		    xmin1, ymin1, xmax1, ymax1;
+    int		    xmin2, ymin2, xmax2, ymax2;
+
+    line_bound(l1, &xmin1, &ymin1, &xmax1, &ymax1);
+    line_bound(l2, &xmin2, &ymin2, &xmax2, &ymax2);
+    redisplay_regions(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2);
+}
+
+redisplay_compound(c)
+    F_compound	   *c;
+{
+    redisplay_zoomed_region(c->nwcorner.x, c->nwcorner.y,
+			    c->secorner.x, c->secorner.y);
+}
+
+redisplay_compounds(c1, c2)
+    F_compound	   *c1, *c2;
+{
+    redisplay_regions(c1->nwcorner.x, c1->nwcorner.y,
+		      c1->secorner.x, c1->secorner.y,
+		      c2->nwcorner.x, c2->nwcorner.y,
+		      c2->secorner.x, c2->secorner.y);
+}
+
+redisplay_text(t)
+    F_text	   *t;
+{
+    int		    xmin, ymin, xmax, ymax;
+
+    text_bound(t, &xmin, &ymin, &xmax, &ymax);
+    redisplay_zoomed_region(xmin, ymin, xmax, ymax);
+}
+
+redisplay_texts(t1, t2)
+    F_text	   *t1, *t2;
+{
+    int		    xmin1, ymin1, xmax1, ymax1;
+    int		    xmin2, ymin2, xmax2, ymax2;
+
+    text_bound(t1, &xmin1, &ymin1, &xmax1, &ymax1);
+    text_bound(t2, &xmin2, &ymin2, &xmax2, &ymax2);
+    redisplay_regions(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2);
+}
+
+redisplay_regions(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2)
+    int		    xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2;
+{
+    if (xmin1 == xmin2 && ymin1 == ymin2 && xmax1 == xmax2 && ymax1 == ymax2) {
+	redisplay_zoomed_region(xmin1, ymin1, xmax1, ymax1);
+	return;
+    }
+    /* below is easier than sending clip rectangle array to X */
+    if (overlapping(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2)) {
+	redisplay_zoomed_region(min2(xmin1, xmin2), min2(ymin1, ymin2),
+				max2(xmax1, xmax2), max2(ymax1, ymax2));
+    } else {
+	redisplay_zoomed_region(xmin1, ymin1, xmax1, ymax1);
+	redisplay_zoomed_region(xmin2, ymin2, xmax2, ymax2);
+    }
 }

@@ -18,52 +18,62 @@
 #include "mode.h"
 #include "object.h"
 
-int             cur_mode = F_NULL;
-int             cur_halign = NONE;
-int             cur_valign = NONE;
-int             manhattan_mode = 0;
-int             mountain_mode = 0;
-int             latexline_mode = 0;
-int             latexarrow_mode = 0;
-int             autoforwardarrow_mode = 0;
-int             autobackwardarrow_mode = 0;
-int             cur_gridmode = GRID_0;
-int             cur_pointposn = P_MAGNET;
-int             posn_rnd[P_GRID2 + 1];
-int             posn_hlf[P_GRID2 + 1];
-int             cur_rotnangle = 90;
-int             cur_numsides = 6;
-int             action_on = 0;
-int             highlighting = 0;
-int             aborting = 0;
-int             anypointposn = 0;
-int             figure_modified = 0;
+int		cur_mode = F_NULL;
+int		cur_halign = NONE;
+int		cur_valign = NONE;
+int		manhattan_mode = 0;
+int		mountain_mode = 0;
+int		latexline_mode = 0;
+int		latexarrow_mode = 0;
+int		autoforwardarrow_mode = 0;
+int		autobackwardarrow_mode = 0;
+int		cur_gridmode = GRID_0;
+int		cur_pointposn = P_MAGNET;
+int		posn_rnd[P_GRID2 + 1];
+int		posn_hlf[P_GRID2 + 1];
+int		grid_fine[P_GRID2 + 1];
+int		grid_coarse[P_GRID2 + 1];
+char	       *grid_name[P_GRID2 + 1];
+int		cur_rotnangle = 90;
+int		cur_linkmode = 0;
+int		cur_numsides = 6;
+int		action_on = 0;
+int		highlighting = 0;
+int		aborting = 0;
+int		anypointposn = 0;
+int		figure_modified = 0;
 
-/**********************  global mode variables  ************************/
+/**********************	 global mode variables	************************/
 
-int             num_point;
-int             min_num_points;
+int		num_point;
+int		min_num_points;
 
 /***************************  Print Settings  ****************************/
 
-int             print_landscape = 0;	/* def. orientation for printer */
+int		print_landscape = 0;	/* def. orientation for printer */
+int		cur_exp_lang = LANG_EPS;
+
+char	       *lang_items[] = {
+    "box     ", "epic    ", "eepic   ", "eepicemu", "latex   ",
+    "null    ", "pic     ", "pictex  ", "eps     ", "ps      ",
+    "pstex   ", "pstex_t ", "textyl  ", "tpic    ", "Xbitmap "};
 
 /***************************  Mode Settings  ****************************/
 
-int             cur_objmask = M_NONE;
+int		cur_objmask = M_NONE;
 
 /***************************  Text Settings  ****************************/
 
-int             cur_textstep = 12;
-int             hidden_text_length;
+int		hidden_text_length;
+float		cur_textstep = 1.2;
 
 /***************************  File Settings  ****************************/
 
-char            cur_dir[1024];
-char            cur_filename[200] = "";
-char            save_filename[200] = "";	/* to undo load */
-char            cut_buf_name[100];
-char            file_header[32] = "#FIG ";
+char		cur_dir[1024];
+char		cur_filename[200] = "";
+char		save_filename[200] = "";	/* to undo load */
+char		cut_buf_name[100];
+char		file_header[32] = "#FIG ";
 
 /*************************** routines ***********************/
 

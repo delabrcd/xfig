@@ -25,11 +25,11 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-extern float    compute_angle();
+extern float	compute_angle();
 
 /*************************** local declarations *********************/
 
-static          init_regpoly_drawing(), create_regpoly(), cancel_regpoly();
+static		init_regpoly_drawing(), create_regpoly(), cancel_regpoly();
 
 regpoly_drawing_selected()
 {
@@ -45,7 +45,7 @@ regpoly_drawing_selected()
 
 static
 init_regpoly_drawing(x, y)
-    int             x, y;
+    int		    x, y;
 {
     cur_x = fix_x = x;
     cur_y = fix_y = y;
@@ -71,13 +71,13 @@ cancel_regpoly()
 
 static
 create_regpoly(x, y)
-    int             x, y;
+    int		    x, y;
 {
     register float  angle;
     register int    nx, ny, dx, dy, i;
-    float           init_angle, mag;
-    F_line         *poly;
-    F_point        *point;
+    float	    init_angle, mag;
+    F_line	   *poly;
+    F_point	   *point;
 
     elastic_poly(fix_x, fix_y, cur_x, cur_y, work_numsides);
     if (fix_x == x && fix_y == y)
@@ -100,7 +100,7 @@ create_regpoly(x, y)
     poly->color = cur_color;
     poly->depth = 0;
     poly->pen = 0;
-    poly->area_fill = cur_areafill;
+    poly->fill_style = cur_fillstyle;
     /* scale dash length by line thickness */
     poly->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     poly->radius = 0;
@@ -116,8 +116,8 @@ create_regpoly(x, y)
 	angle = init_angle - 2.0 * M_PI * (float) i / (float) cur_numsides;
 	if (angle < 0)
 	    angle += 2.0 * M_PI;
-	nx = fix_x + (int) (mag * cos((double) angle));
-	ny = fix_y + (int) (mag * sin((double) angle));
+	nx = fix_x + round(mag * cos((double) angle));
+	ny = fix_y + round(mag * sin((double) angle));
 	append_point(nx, ny, &point);
     }
     append_point(x, y, &point);

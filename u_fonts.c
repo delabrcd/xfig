@@ -16,6 +16,7 @@
 
 #include <X11/Xlib.h>
 #include "u_fonts.h"
+#include "object.h"
 
 #define NULL 0
 
@@ -51,7 +52,8 @@ struct _xfstruct x_fontinfo[NUM_X_FONTS] = {
     {"-*-zapfdingbats-*-*-*--*", NULL},
 };
 
-struct _fstruct ps_fontinfo[NUM_PS_FONTS] = {
+struct _fstruct ps_fontinfo[NUM_PS_FONTS + 1] = {
+    {"Default", -1},
     {"Times-Roman", 0},
     {"Times-Italic", 1},
     {"Times-Bold", 2},
@@ -99,8 +101,8 @@ struct _fstruct latex_fontinfo[NUM_LATEX_FONTS] = {
 };
 
 x_fontnum(psflag, fnum)
-    int             psflag, fnum;
+    int		    psflag, fnum;
 {
-    return (psflag ? ps_fontinfo[fnum].xfontnum :
+    return (psflag ? ps_fontinfo[fnum + 1].xfontnum :
 	    latex_fontinfo[fnum].xfontnum);
 }

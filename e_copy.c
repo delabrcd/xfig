@@ -27,8 +27,8 @@
 #include "w_setup.h"
 
 /* local routine declarations */
-static          init_copy(), init_arb_copy(), init_constrained_copy();
-static          init_copy_to_scrap();
+static		init_copy(), init_arb_copy(), init_constrained_copy();
+static		init_copy_to_scrap();
 
 copy_selected()
 {
@@ -48,9 +48,9 @@ copy_selected()
 
 static
 init_arb_copy(p, type, x, y, px, py)
-    char           *p;
-    int             type;
-    int             x, y, px, py;
+    char	   *p;
+    int		    type;
+    int		    x, y, px, py;
 {
     constrained = MOVE_ARB;
     init_copy(p, type, x, y, px, py);
@@ -61,9 +61,9 @@ init_arb_copy(p, type, x, y, px, py)
 
 static
 init_constrained_copy(p, type, x, y, px, py)
-    char           *p;
-    int             type;
-    int             x, y, px, py;
+    char	   *p;
+    int		    type;
+    int		    x, y, px, py;
 {
     constrained = MOVE_HORIZ_VERT;
     init_copy(p, type, x, y, px, py);
@@ -75,9 +75,9 @@ init_constrained_copy(p, type, x, y, px, py)
 
 static
 init_copy(p, type, x, y, px, py)
-    char           *p;
-    int             type;
-    int             x, y, px, py;
+    char	   *p;
+    int		    type;
+    int		    x, y, px, py;
 {
     switch (type) {
     case O_COMPOUND:
@@ -123,13 +123,13 @@ init_copy(p, type, x, y, px, py)
 
 static
 init_copy_to_scrap(p, type, x, y, px, py)
-    char           *p;
-    int             type;
-    int             x, y;
-    int             px, py;
+    char	   *p;
+    int		    type;
+    int		    x, y;
+    int		    px, py;
 {
-    FILE           *fp;
-    struct stat     file_status;
+    FILE	   *fp;
+    struct stat	    file_status;
 
     if (stat(cut_buf_name, &file_status) == 0) {	/* file exists */
 	if (file_status.st_mode & S_IFDIR) {

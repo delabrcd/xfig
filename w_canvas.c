@@ -16,6 +16,7 @@
 
 /*********************** IMPORTS ************************/
 
+#include <string.h>
 #include "fig.h"
 #include "resources.h"
 #include "mode.h"
@@ -27,28 +28,49 @@
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
+#include "sys/time.h"
+#include <X11/Xatom.h>
 
-extern          erase_rulermark();
-extern          erase_objecthighlight();
+extern		erase_rulermark();
+extern		erase_objecthighlight();
+extern		char_handler();
+
+/************** LOCAL STRUCTURE ***************/
+
+typedef struct _CompKey CompKey;
+
+struct _CompKey {
+    unsigned char   key;
+    unsigned char   first;
+    unsigned char   second;
+    CompKey	   *next;
+};
 
 /*********************** EXPORTS ************************/
 
-int             (*canvas_kbd_proc) ();
-int             (*canvas_locmove_proc) ();
-int             (*canvas_leftbut_proc) ();
-int             (*canvas_middlebut_proc) ();
-int             (*canvas_middlebut_save) ();
-int             (*canvas_rightbut_proc) ();
-int             (*return_proc) ();
-int             null_proc();
-int             clip_xmin, clip_ymin, clip_xmax, clip_ymax;
-int             clip_width, clip_height;
-int             cur_x, cur_y;
+int		(*canvas_kbd_proc) ();
+int		(*canvas_locmove_proc) ();
+int		(*canvas_leftbut_proc) ();
+int		(*canvas_middlebut_proc) ();
+int		(*canvas_middlebut_save) ();
+int		(*canvas_rightbut_proc) ();
+int		(*return_proc) ();
+int		null_proc();
+int		clip_xmin, clip_ymin, clip_xmax, clip_ymax;
+int		clip_width, clip_height;
+int		cur_x, cur_y;
+
+String		local_translations = "";
 
 /*********************** LOCAL ************************/
 
-static          canvas_selected();
-int             ignore_exp_cnt = 2;	/* we get 2 expose events at startup */
+static CompKey *allCompKey = NULL;
+static		canvas_selected();
+static unsigned char getComposeKey();
+static		readComposeKey();
+static void	clear_char_string();
+
+int		ignore_exp_cnt = 2;	/* we get 2 expose events at startup */
 
 null_proc()
 {
@@ -59,12 +81,12 @@ null_proc()
 
 static void
 canvas_exposed(tool, event, params, nparams)
-    TOOL            tool;
-    INPUTEVENT     *event;
-    String         *params;
-    Cardinal       *nparams;
+    TOOL	    tool;
+    INPUTEVENT	   *event;
+    String	   *params;
+    Cardinal	   *nparams;
 {
-    static          xmin = 9999, xmax = -9999, ymin = 9999, ymax = -9999;
+    static	    xmin = 9999, xmax = -9999, ymin = 9999, ymax = -9999;
     XExposeEvent   *xe = (XExposeEvent *) event;
     register int    tmp;
 
@@ -87,27 +109,31 @@ canvas_exposed(tool, event, params, nparams)
     xmin = 9999, xmax = -9999, ymin = 9999, ymax = -9999;
 }
 
-XtActionsRec    canvas_actions[] =
+static void canvas_paste();
+
+XtActionsRec	canvas_actions[] =
 {
     {"EventCanv", (XtActionProc) canvas_selected},
     {"ExposeCanv", (XtActionProc) canvas_exposed},
     {"EnterCanv", (XtActionProc) draw_mousefun_canvas},
+    {"PasteCanv", (XtActionProc) canvas_paste},
     {"LeaveCanv", (XtActionProc) clear_mousefun},
     {"EraseRulerMark", (XtActionProc) erase_rulermark},
 };
 
-static String   canvas_translations =
+static String	canvas_translations =
 "<Motion>:EventCanv()\n\
     Any<BtnDown>:EventCanv()\n\
+    <Key>F18: PasteCanv()\n\
     <EnterWindow>:EnterCanv()\n\
     <LeaveWindow>:LeaveCanv()EraseRulerMark()\n\
     <Key>:EventCanv()\n\
     <Expose>:ExposeCanv()\n";
 
 init_canvas(tool)
-    TOOL            tool;
+    TOOL	   tool;
 {
-    XColor          fixcolors[2];
+    XColor	   fixcolors[2];
 
     DeclareArgs(10);
 
@@ -151,9 +177,18 @@ init_canvas(tool)
     canvas_rightbut_proc = null_proc;
     canvas_kbd_proc = canvas_locmove_proc = null_proc;
     XtAppAddActions(tool_app, canvas_actions, XtNumber(canvas_actions));
-    XtOverrideTranslations(canvas_sw,
+    XtAugmentTranslations(canvas_sw,
 			   XtParseTranslationTable(canvas_translations));
+
+    readComposeKey();
+
     return (1);
+}
+
+static void
+clear_char_string()
+{
+    char_handler('');
 }
 
 setup_canvas()
@@ -175,16 +210,20 @@ setup_canvas()
 
 static
 canvas_selected(tool, event, params, nparams)
-    TOOL            tool;
-    INPUTEVENT     *event;
-    String         *params;
-    Cardinal       *nparams;
+    TOOL	    tool;
+    INPUTEVENT	   *event;
+    String	   *params;
+    Cardinal	   *nparams;
 {
     register int    x, y, t;
-    static int      sx = -10000, sy = -10000;
-    char            buf[1];
+    static int	    sx = -10000, sy = -10000;
+    char	    buf[1];
     XButtonPressedEvent *be = (XButtonPressedEvent *) event;
     XKeyPressedEvent *ke = (XKeyPressedEvent *) event;
+
+    static char	    compose_buf[2];
+    static char	    compose_key = 0;
+    unsigned char   c;
 
     switch (event->type) {
     case MotionNotify:
@@ -202,8 +241,8 @@ canvas_selected(tool, event, params, nparams)
 	sy = y;
 #else
 	{
-	    Window          rw, cw;
-	    int             rx, ry, cx, cy;
+	    Window	    rw, cw;
+	    int		    rx, ry, cx, cy;
 	    unsigned int    mask;
 
 	    XQueryPointer(event->display, event->window,
@@ -220,7 +259,7 @@ canvas_selected(tool, event, params, nparams)
 	    if (cx == sx && cy == sy)
 		break;
 	    x = sx = cx;	/* these are zoomed */
-	    y = sy = cy;	/* coordinates!     */
+	    y = sy = cy;	/* coordinates!	    */
 	}
 #endif
 	set_rulermark(x, y);
@@ -231,6 +270,11 @@ canvas_selected(tool, event, params, nparams)
 	x = BACKX(event->x);
 	y = BACKY(event->y);
 
+	/* call interactive zoom function if control key is pressed */
+	if (be->state & ControlMask) {
+	    zoom_selected(x, y, be->button);
+	    break;
+	}
 	/* perform appropriate rounding if necessary */
 	round_coords(x, y);
 
@@ -249,7 +293,8 @@ canvas_selected(tool, event, params, nparams)
 	    t == XK_Right ||
 	    t == XK_Up ||
 	    t == XK_Down ||
-	    t == XK_Home) {
+	    t == XK_Home ||
+	    t == XK_Multi_key) {
 	    switch (t) {
 	    case XK_Left:
 		pan_left();
@@ -266,10 +311,34 @@ canvas_selected(tool, event, params, nparams)
 	    case XK_Home:
 		pan_origin();
 		break;
+	    case XK_Multi_key:
+		compose_key = 1;
+		break;
 	    }
 	} else {
-	    if (XLookupString(ke, buf, sizeof(buf), NULL, NULL) > 0)
-		(*canvas_kbd_proc) ((unsigned char) buf[0]);
+	    switch (compose_key) {
+	    case 0:
+		if (XLookupString(ke, buf, sizeof(buf), NULL, NULL) > 0)
+		    (*canvas_kbd_proc) ((unsigned char) buf[0]);
+		break;
+	    case 1:
+		if (XLookupString(ke, &compose_buf[0], 1, NULL, NULL)
+		    > 0)
+		    compose_key = 2;
+		break;
+	    case 2:
+		if (XLookupString(ke, &compose_buf[1], 1, NULL, NULL)
+		    > 0) {
+		    if ((c = getComposeKey(compose_buf)) != '\0')
+			(*canvas_kbd_proc) (c);
+		    else {
+			(*canvas_kbd_proc) ((unsigned char) compose_buf[0]);
+			(*canvas_kbd_proc) ((unsigned char) compose_buf[1]);
+		    }
+		    compose_key = 0;
+		}
+		break;
+	    }
 	}
 	break;
     }
@@ -282,8 +351,132 @@ clear_canvas()
 }
 
 clear_region(xmin, ymin, xmax, ymax)
-    int             xmin, ymin, xmax, ymax;
+    int		    xmin, ymin, xmax, ymax;
 {
     XClearArea(tool_d, canvas_win, xmin, ymin,
 	       xmax - xmin + 1, ymax - ymin + 1, False);
+}
+
+static void canvas_paste(w, paste_event)
+Widget w;
+XKeyEvent *paste_event;
+{
+	static void get_canvas_clipboard();
+	Time event_time;
+
+	if (canvas_kbd_proc != char_handler)
+		return;
+
+	if (paste_event != NULL)
+		event_time = paste_event->time;
+	   else
+		time(&event_time);
+	/***
+	This doesn't seem to work:
+	XtGetSelectionValue(w, XInternAtom(XtDisplay(w), "XA_PRIMARY", False),
+		XA_STRING, get_canvas_clipboard, NULL, event_time);
+	***/
+	XtGetSelectionValue(w, XA_PRIMARY,
+		XA_STRING, get_canvas_clipboard, NULL, event_time);
+}
+
+static void
+get_canvas_clipboard(w, client_data, selection, type, buf, length, format)
+Widget w;
+XtPointer client_data;
+Atom *selection;
+Atom *type;
+XtPointer buf;
+unsigned long *length;
+int *format;
+{
+	char *c;
+	int i;
+
+	c = buf;
+	for (i=0; i<*length; i++) {
+           canvas_kbd_proc(*c);
+           c++;
+	}
+	XtFree(buf);
+}
+
+static unsigned char
+getComposeKey(buf)
+    char	   *buf;
+{
+    CompKey	   *compKeyPtr = allCompKey;
+
+    while (compKeyPtr != NULL) {
+	if (compKeyPtr->first == (unsigned char) (buf[0]) &&
+	    compKeyPtr->second == (unsigned char) (buf[1]))
+	    return (compKeyPtr->key);
+	else
+	    compKeyPtr = compKeyPtr->next;
+    }
+    return ('\0');
+}
+
+static
+readComposeKey()
+{
+    FILE	   *st;
+    CompKey	   *compKeyPtr;
+    char	    line[255];
+    char	   *p;
+    char	   *p1;
+    char	   *p2;
+    char	   *p3;
+    long	    size;
+
+    /* put together the filename from the dir name and file name */
+    strcpy(line, XFIGLIBDIR);
+    strcat(line, "/");
+    strcat(line, KEY_NAME);
+    if ((st = fopen(line, "r")) == NULL) {
+	allCompKey = NULL;
+	return (0);
+    }
+    fseek(st, 0, 2);
+    size = ftell(st);
+    fseek(st, 0, 0);
+
+    local_translations = (String) malloc(size + 1);
+
+    strcpy(local_translations, "");
+    while (fgets(line, 250, st) != NULL) {
+	if (line[0] != '#') {
+	    strcat(local_translations, line);
+	    if ((p = strstr(line, "Multi_key")) != NULL) {
+		if (allCompKey == NULL) {
+		    allCompKey = (CompKey *) malloc(sizeof(CompKey));
+		    compKeyPtr = allCompKey;
+		} else {
+		    compKeyPtr->next = (CompKey *) malloc(sizeof(CompKey));
+		    compKeyPtr = compKeyPtr->next;
+		}
+
+		p1 = strstr(p, "<Key>") + strlen("<Key>");
+		p = strstr(p1, ",");
+		*p++ = '\0';
+		p2 = strstr(p, "<Key>") + strlen("<Key>");
+		p = strstr(p2, ":");
+		*p++ = '\0';
+		p3 = strstr(p, "insert-string(") + strlen("insert-string(");
+		p = strstr(p3, ")");
+		*p++ = '\0';
+
+		if (strlen(p3) == 1)
+		    compKeyPtr->key = *p3;
+		else
+		    compKeyPtr->key = strtol(p3, NULL, 16);
+		compKeyPtr->first = XStringToKeysym(p1);
+		compKeyPtr->second = XStringToKeysym(p2);
+		compKeyPtr->next = NULL;
+	    }
+	}
+    }
+
+    fclose(st);
+
 }

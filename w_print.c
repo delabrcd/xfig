@@ -16,6 +16,7 @@
 
 /* IMPORTS */
 
+#include <math.h>		/* for atof() */
 #include "fig.h"
 #include "mode.h"
 #include "resources.h"
@@ -23,8 +24,9 @@
 #include "w_setup.h"
 #include "w_util.h"
 
-extern String   text_translations;
-extern Widget   make_popup_menu();
+extern String	text_translations;
+extern Widget	make_popup_menu();
+extern char    *panel_get_value();
 
 /* LOCAL */
 
@@ -36,15 +38,15 @@ static char    *just_items[] = {
     "flush left",
 "centered  "};
 
-static void     orient_select();
-static Widget   orient_panel, orient_menu, orient_lab;
+static void	orient_select();
+static Widget	orient_panel, orient_menu, orient_lab;
 
-static void     just_select();
-static Widget   just_panel, just_menu, just_lab;
+static void	just_select();
+static Widget	just_panel, just_menu, just_lab;
 
-static Widget   print_panel, print_popup, cancel, print, printer_text,
-                printer_lab, mag_lab, print_w, mag_text;
-static int      print_centered = 0;
+static Widget	print_panel, print_popup, cancel, print, printer_text, printer_lab,
+		mag_lab, print_w, mag_text;
+static int	print_centered = 0;
 static Position xposn, yposn;
 
 static void
@@ -56,23 +58,24 @@ print_panel_dismiss()
 
 static void
 print_panel_cancel(w, ev)
-    Widget          w;
+    Widget	    w;
     XButtonEvent   *ev;
 {
     print_panel_dismiss();
 }
 
-static char     print_msg[] = "PRINT";
+static char	print_msg[] = "PRINT";
 
+void
 do_print(w)
-    Widget          w;
+    Widget	    w;
 {
     DeclareArgs(1);
-    float           mag;
-    char           *pval;
+    float	    mag;
+    char	   *pval;
 
     if (emptyfigure_msg(print_msg))
-        return;
+	return;
 
     if (print_popup) {
 	mag = (float) atof(panel_get_value(mag_text)) / 100.0;
@@ -90,8 +93,8 @@ do_print(w)
 
 static void
 orient_select(w, new_orient, garbage)
-    Widget          w;
-    XtPointer       new_orient, garbage;
+    Widget	    w;
+    XtPointer	    new_orient, garbage;
 {
     DeclareArgs(1);
 
@@ -102,8 +105,8 @@ orient_select(w, new_orient, garbage)
 
 static void
 just_select(w, new_just, garbage)
-    Widget          w;
-    XtPointer       new_just, garbage;
+    Widget	    w;
+    XtPointer	    new_just, garbage;
 {
     DeclareArgs(1);
 
@@ -113,11 +116,11 @@ just_select(w, new_just, garbage)
 }
 
 popup_print_panel(w)
-    Widget          w;
+    Widget	    w;
 {
-    Widget          image;
+    Widget	    image;
     XtTranslations  popdown_actions;
-    Pixmap          p;
+    Pixmap	    p;
 
     DeclareArgs(10);
 
@@ -127,7 +130,7 @@ popup_print_panel(w)
 
 	FirstArg(XtNx, xposn);
 	NextArg(XtNy, yposn + 50);
-	print_popup = XtCreatePopupShell("xfig: print menu",
+	print_popup = XtCreatePopupShell("xfig_print_menu",
 					 transientShellWidgetClass,
 					 tool, Args, ArgCount);
 
@@ -149,14 +152,14 @@ popup_print_panel(w)
 	NextArg(XtNinternalHeight, 0);
 	NextArg(XtNresize, False);
 	NextArg(XtNresizable, False);
-	image = XtCreateManagedWidget("printer image", labelWidgetClass,
+	image = XtCreateManagedWidget("printer_image", labelWidgetClass,
 				      print_panel, Args, ArgCount);
 
 	FirstArg(XtNlabel, "  Magnification%:");
 	NextArg(XtNfromVert, image);
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
-	mag_lab = XtCreateManagedWidget("mag label", labelWidgetClass,
+	mag_lab = XtCreateManagedWidget("mag_label", labelWidgetClass,
 					print_panel, Args, ArgCount);
 
 	FirstArg(XtNwidth, 40);
@@ -175,7 +178,7 @@ popup_print_panel(w)
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNfromVert, mag_text);
-	orient_lab = XtCreateManagedWidget("orient label", labelWidgetClass,
+	orient_lab = XtCreateManagedWidget("orient_label", labelWidgetClass,
 					   print_panel, Args, ArgCount);
 
 	FirstArg(XtNfromHoriz, orient_lab);
@@ -191,7 +194,7 @@ popup_print_panel(w)
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNfromVert, orient_panel);
-	just_lab = XtCreateManagedWidget("just label", labelWidgetClass,
+	just_lab = XtCreateManagedWidget("just_label", labelWidgetClass,
 					 print_panel, Args, ArgCount);
 
 	FirstArg(XtNfromHoriz, just_lab);
@@ -208,12 +211,12 @@ popup_print_panel(w)
 	NextArg(XtNfromVert, just_panel);
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
-	printer_lab = XtCreateManagedWidget("dir label", labelWidgetClass,
+	printer_lab = XtCreateManagedWidget("dir_label", labelWidgetClass,
 					    print_panel, Args, ArgCount);
 
 	/*
 	 * don't SetValue the XtNstring so the user may specify the default
-	 * printer in a resource, e.g.:  *printer*string: at6
+	 * printer in a resource, e.g.:	 *printer*string: at6
 	 */
 
 	FirstArg(XtNwidth, 225);

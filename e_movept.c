@@ -32,7 +32,7 @@
 
 static F_point *moved_point;
 
-static Boolean  init_ellipsepointmoving();
+static Boolean	init_ellipsepointmoving();
 static int	init_arcpointmoving();
 static int	init_linepointmoving();
 static int	init_splinepointmoving();
@@ -44,22 +44,22 @@ static int	relocate_linepoint();
 static int	relocate_splinepoint();
 static int	assign_newboxpoint();
 
-static int      init_move_point();
-static int      init_arb_move_point();
-static int      init_stretch_move_point();
+static int	init_move_point();
+static int	init_arb_move_point();
+static int	init_stretch_move_point();
 
-static int      fix_movedarcpoint();
-static int      fix_movedellipsepoint();
-static int      fix_movedsplinepoint();
-static int      fix_box();
-static int      fix_movedlinepoint();
-static int      fix_movedlatexlinepoint();
+static int	fix_movedarcpoint();
+static int	fix_movedellipsepoint();
+static int	fix_movedsplinepoint();
+static int	fix_box();
+static int	fix_movedlinepoint();
+static int	fix_movedlatexlinepoint();
 
-static int      cancel_movedarcpoint();
-static int      cancel_movedellipsepoint();
-static int      cancel_movedsplinepoint();
-static int      cancel_box();
-static int      cancel_movedlinepoint();
+static int	cancel_movedarcpoint();
+static int	cancel_movedellipsepoint();
+static int	cancel_movedsplinepoint();
+static int	cancel_box();
+static int	cancel_movedlinepoint();
 
 move_point_selected()
 {
@@ -76,9 +76,9 @@ move_point_selected()
 
 static
 init_arb_move_point(obj, type, x, y, p, q)
-    char           *obj;
-    int             type, x, y;
-    F_point        *p, *q;
+    char	   *obj;
+    int		    type, x, y;
+    F_point	   *p, *q;
 {
     constrained = MOVE_ARB;
     init_move_point(obj, type, x, y, p, q);
@@ -89,9 +89,9 @@ init_arb_move_point(obj, type, x, y, p, q)
 
 static
 init_stretch_move_point(obj, type, x, y, p, q)
-    char           *obj;
-    int             type, x, y;
-    F_point        *p, *q;
+    char	   *obj;
+    int		    type, x, y;
+    F_point	   *p, *q;
 {
     constrained = MOVE_HORIZ_VERT;
     init_move_point(obj, type, x, y, p, q);
@@ -103,9 +103,9 @@ init_stretch_move_point(obj, type, x, y, p, q)
 
 static
 init_move_point(obj, type, x, y, p, q)
-    char           *obj;
-    int             type, x, y;
-    F_point        *p, *q;
+    char	   *obj;
+    int		    type, x, y;
+    F_point	   *p, *q;
 {
     left_point = p;
     moved_point = q;
@@ -124,7 +124,7 @@ init_move_point(obj, type, x, y, p, q)
 	/* dirty trick - arcpoint_num is stored in p */
 	movedpoint_num = (int) p;
 	cur_e = (F_ellipse *) obj;
-	if (!init_ellipsepointmoving())	/* selected center, ignore */
+	if (!init_ellipsepointmoving()) /* selected center, ignore */
 	    return;
 	break;
     case O_ARC:
@@ -155,10 +155,10 @@ wrapup_movepoint()
 
 /*************************  ellipse  *******************************/
 
-static          Boolean
+static		Boolean
 init_ellipsepointmoving()
 {
-    double          dx, dy, l;
+    double	    dx, dy, l;
 
     if (constrained &&
 	(cur_e->type == T_CIRCLE_BY_DIA || cur_e->type == T_CIRCLE_BY_RAD)) {
@@ -240,7 +240,7 @@ cancel_movedellipsepoint()
 
 static
 fix_movedellipsepoint(x, y)
-    int             x, y;
+    int		    x, y;
 {
     switch (cur_e->type) {
     case T_ELLIPSE_BY_RAD:
@@ -266,10 +266,10 @@ fix_movedellipsepoint(x, y)
 
 static
 relocate_ellipsepoint(ellipse, x, y, point_num)
-    F_ellipse      *ellipse;
-    int             x, y, point_num;
+    F_ellipse	   *ellipse;
+    int		    x, y, point_num;
 {
-    int             dx, dy;
+    int		    dx, dy;
 
     set_temp_cursor(&wait_cursor);
     draw_ellipse(ellipse, ERASE);
@@ -341,7 +341,7 @@ cancel_movedarcpoint()
 
 static
 fix_movedarcpoint(x, y)
-    int             x, y;
+    int		    x, y;
 {
     elastic_arclink();
     adjust_pos(x, y, cur_a->point[movedpoint_num].x,
@@ -355,11 +355,11 @@ fix_movedarcpoint(x, y)
 
 static
 relocate_arcpoint(arc, x, y, movedpoint_num)
-    F_arc          *arc;
-    int             x, y, movedpoint_num;
+    F_arc	   *arc;
+    int		    x, y, movedpoint_num;
 {
-    float           xx, yy;
-    F_pos           p[3];
+    float	    xx, yy;
+    F_pos	    p[3];
 
     p[0] = arc->point[0];
     p[1] = arc->point[1];
@@ -384,7 +384,7 @@ relocate_arcpoint(arc, x, y, movedpoint_num)
 static
 init_splinepointmoving()
 {
-    F_point        *p;
+    F_point	   *p;
 
     set_action_on();
     toggle_splinemarker(cur_s);
@@ -412,7 +412,7 @@ cancel_movedsplinepoint()
 
 static
 fix_movedsplinepoint(x, y)
-    int             x, y;
+    int		    x, y;
 {
     elastic_linelink();
     adjust_pos(x, y, from_x, from_y, &x, &y);
@@ -428,9 +428,9 @@ fix_movedsplinepoint(x, y)
 
 static
 relocate_splinepoint(s, x, y, moved_point)
-    F_spline       *s;
-    int             x, y;
-    F_point        *moved_point;
+    F_spline	   *s;
+    int		    x, y;
+    F_point	   *moved_point;
 {
     set_temp_cursor(&wait_cursor);
     draw_spline(s, ERASE);	/* erase old spline */
@@ -447,14 +447,14 @@ relocate_splinepoint(s, x, y, moved_point)
     reset_cursor();
 }
 
-/***************************  compound  ********************************/
+/***************************  compound	********************************/
 
-static          prescale_compound(), cancel_compound();
+static		prescale_compound(), cancel_compound();
 
 static
 init_compoundpointmoving()
 {
-    double          dx, dy, l;
+    double	    dx, dy, l;
 
     set_action_on();
     if (cur_x == cur_c->nwcorner.x)
@@ -492,13 +492,13 @@ cancel_compound()
     wrapup_movepoint();
 }
 
-extern          scale_compound();
+extern		scale_compound();
 
 static
 prescale_compound(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    float           scalex, scaley;
+    float	    scalex, scaley;
 
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     adjust_box_pos(x, y, from_x, from_y, &cur_x, &cur_y);
@@ -524,9 +524,9 @@ prescale_compound(x, y)
 static
 init_linepointmoving()
 {
-    int             box_case;
-    int             latex_case;
-    F_point        *p;
+    int		    box_case;
+    int		    latex_case;
+    F_point	   *p;
 
     set_action_on();
     toggle_linemarker(cur_l);
@@ -561,18 +561,22 @@ init_linepointmoving()
 		if (cur_l->back_arrow)	/* backward arrow  */
 		    draw_arrow(cur_x, cur_y,
 			       left_point->x, left_point->y,
-			       cur_l->back_arrow, ERASE);
+			       cur_l->back_arrow, ERASE,
+			       cur_l->color);
 	    }
 	} else if (cur_l->back_arrow)	/* backward arrow  */
 	    draw_arrow(right_point->x, right_point->y,
-		       cur_x, cur_y, cur_l->back_arrow, ERASE);
+		       cur_x, cur_y, cur_l->back_arrow, ERASE,
+		       cur_l->color);
 	if (right_point != NULL) {
 	    if (cur_l->for_arrow && right_point->next == NULL)
 		draw_arrow(cur_x, cur_y, right_point->x, right_point->y,
-			   cur_l->for_arrow, ERASE);
+			   cur_l->for_arrow, ERASE,
+			   cur_l->color);
 	} else if (cur_l->for_arrow)	/* f arrow */
 	    draw_arrow(left_point->x, left_point->y,
-		       cur_x, cur_y, cur_l->for_arrow, ERASE);
+		       cur_x, cur_y, cur_l->for_arrow, ERASE,
+		       cur_l->color);
 	if (latexline_mode || latexarrow_mode) {
 	    if (left_point != NULL) {
 		latex_fix_x = left_point->x;
@@ -586,7 +590,7 @@ init_linepointmoving()
 	}
     }
     if (box_case) {
-	double          dx, dy, l;
+	double		dx, dy, l;
 
 	if (constrained) {
 	    dx = cur_x - fix_x;
@@ -624,9 +628,9 @@ cancel_box()
 
 static
 fix_box(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    int             delta;
+    int		    delta;
 
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     adjust_box_pos(x, y, from_x, from_y, &x, &y);
@@ -647,37 +651,37 @@ fix_box(x, y)
 
 static
 assign_newboxpoint(b, x1, y1, x2, y2)
-    F_line         *b;
-    int             x1, y1, x2, y2;
+    F_line	   *b;
+    int		    x1, y1, x2, y2;
 {
-    F_point        *p;
+    F_point	   *p;
     register int    tmp;
 
     p = b->points;
     if (p->x != x1)
-        p->x = x2;
+	p->x = x2;
     if (p->y != y1)
-        p->y = y2;
+	p->y = y2;
     p = p->next;
     if (p->x != x1)
-        p->x = x2;
+	p->x = x2;
     if (p->y != y1)
-        p->y = y2;
+	p->y = y2;
     p = p->next;
     if (p->x != x1)
-        p->x = x2;
+	p->x = x2;
     if (p->y != y1)
-        p->y = y2;
+	p->y = y2;
     p = p->next;
     if (p->x != x1)
-        p->x = x2;
+	p->x = x2;
     if (p->y != y1)
-        p->y = y2;
+	p->y = y2;
     p = p->next;
     if (p->x != x1)
-        p->x = x2;
+	p->x = x2;
     if (p->y != y1)
-        p->y = y2;
+	p->y = y2;
 }
 
 static
@@ -690,7 +694,7 @@ cancel_movedlinepoint()
 
 static
 fix_movedlinepoint(x, y)
-    int             x, y;
+    int		    x, y;
 {
     elastic_linelink();
     adjust_pos(x, y, from_x, from_y, &x, &y);
@@ -708,7 +712,7 @@ fix_movedlinepoint(x, y)
 
 static
 fix_movedlatexlinepoint(x, y)
-    int             x, y;
+    int		    x, y;
 {
     elastic_linelink();
     adjust_pos(x, y, from_x, from_y, &x, &y);
@@ -728,9 +732,9 @@ fix_movedlatexlinepoint(x, y)
 
 static
 relocate_linepoint(line, x, y, moved_point, left_point)
-    F_line         *line;
-    int             x, y;
-    F_point        *moved_point, *left_point;
+    F_line	   *line;
+    int		    x, y;
+    F_point	   *moved_point, *left_point;
 {
     draw_line(line, ERASE);
     if (line->type == T_POLYGON)

@@ -14,14 +14,14 @@
  *
  */
 
-void            init_mousefun();
-void            setup_mousefun();
-void            set_mousefun();
-void            draw_mousefun_mode();
-void            draw_mousefun_ind();
-void            draw_mousefun_unitbox();
-void            draw_mousefun_topruler();
-void            draw_mousefun_sideruler();
-void            draw_mousefun_canvas();
-void            draw_mousefun();
-void            clear_mousefun();
+void		init_mousefun();
+void		setup_mousefun();
+void		set_mousefun();
+void		draw_mousefun_mode();
+void		draw_mousefun_ind();
+void		draw_mousefun_unitbox();
+void		draw_mousefun_topruler();
+void		draw_mousefun_sideruler();
+void		draw_mousefun_canvas();
+void		draw_mousefun();
+void		clear_mousefun();

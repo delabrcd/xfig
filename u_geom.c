@@ -29,17 +29,17 @@
 /*************************** COMPUTE NORMAL **********************
 
 Input arguments :
-        (x1,y1)(x2,y2) : the vector
-        direction : direction of the normal vector to (x1,y1)(x2,y2)
+	(x1,y1)(x2,y2) : the vector
+	direction : direction of the normal vector to (x1,y1)(x2,y2)
 Output arguments :
-        (*x,*y)(x2,y2) : a normal vector.
+	(*x,*y)(x2,y2) : a normal vector.
 Return value : none
 
 ******************************************************************/
 
 compute_normal(x1, y1, x2, y2, direction, x, y)
-    float           x1, y1;
-    int             x2, y2, direction, *x, *y;
+    float	    x1, y1;
+    int		    x2, y2, direction, *x, *y;
 {
     if (direction) {		/* counter clockwise  */
 	*x = round(x2 - (y2 - y1));
@@ -53,29 +53,29 @@ compute_normal(x1, y1, x2, y2, direction, x, y)
 /******************** CLOSE TO VECTOR **************************
 
 Input arguments:
-        (x1,y1)(x2,y2) : the vector
-        (xp,yp) : the point
-        d : tolerance (max. allowable distance from the point to the vector)
-        dd : d * d
+	(x1,y1)(x2,y2) : the vector
+	(xp,yp) : the point
+	d : tolerance (max. allowable distance from the point to the vector)
+	dd : d * d
 Output arguments:
-        (*px,*py) : a point on the vector which is not far from (xp,yp)
-                by more than d. Normally the vector (*px,*py)(xp,yp)
-                is normal to vector (x1,y1)(x2,y2) except when (xp,yp)
-                is within d from (x1,y1) or (x2,y2), in which cases,
-                (*px,*py) = (x1,y1) or (x2,y2) respectively.
+	(*px,*py) : a point on the vector which is not far from (xp,yp)
+		by more than d. Normally the vector (*px,*py)(xp,yp)
+		is normal to vector (x1,y1)(x2,y2) except when (xp,yp)
+		is within d from (x1,y1) or (x2,y2), in which cases,
+		(*px,*py) = (x1,y1) or (x2,y2) respectively.
 Return value :
-        0 : No point on the vector is within d from (xp, yp)
-        1 : (*px, *py) is such a point.
+	0 : No point on the vector is within d from (xp, yp)
+	1 : (*px, *py) is such a point.
 
 ******************************************************************/
 
 close_to_vector(x1, y1, x2, y2, xp, yp, d, dd, px, py)
-    int             x1, y1, x2, y2, xp, yp, d;
-    float           dd;
-    int            *px, *py;
+    int		    x1, y1, x2, y2, xp, yp, d;
+    float	    dd;
+    int		   *px, *py;
 {
-    int             xmin, ymin, xmax, ymax;
-    float           x, y, slope, D2, dx, dy;
+    int		    xmin, ymin, xmax, ymax;
+    float	    x, y, slope, D2, dx, dy;
 
     if (abs(xp - x1) <= d && abs(yp - y1) <= d) {
 	*px = x1;
@@ -132,21 +132,21 @@ close_to_vector(x1, y1, x2, y2, xp, yp, d, dd, px, py)
 /********************* COMPUTE ARC CENTER ******************
 
 Input arguments :
-        p1, p2, p3 : 3 points on the arc
+	p1, p2, p3 : 3 points on the arc
 Output arguments :
-        (*x,*y) : Center of the arc
+	(*x,*y) : Center of the arc
 Return value :
-        0 : if p1, p2, p3 are co-linear.
-        1 : if they are not.
+	0 : if p1, p2, p3 are co-linear.
+	1 : if they are not.
 
 *************************************************************/
 
 int
 compute_arccenter(p1, p2, p3, x, y)
-    F_pos           p1, p2, p3;
-    float          *x, *y;
+    F_pos	    p1, p2, p3;
+    float	   *x, *y;
 {
-    float           s12, s13, len1, len2, len3, dx12, dy12, dx13, dy13;
+    float	    s12, s13, len1, len2, len3, dx12, dy12, dx13, dy13;
 
     if (p1.x == p3.x && p1.y == p3.y)
 	return 0;
@@ -176,7 +176,7 @@ compute_arccenter(p1, p2, p3, x, y)
 /********************* COMPUTE ANGLE ************************
 
 Input arguments :
-        (dx,dy) : the vector (0,0)(dx,dy)
+	(dx,dy) : the vector (0,0)(dx,dy)
 Output arguments : none
 Return value : the angle of the vector in the range [0, 2PI)
 
@@ -184,9 +184,9 @@ Return value : the angle of the vector in the range [0, 2PI)
 
 float
 compute_angle(dx, dy)		/* compute the angle between 0 to 2PI  */
-    float           dx, dy;
+    float	    dx, dy;
 {
-    float           alpha;
+    float	    alpha;
 
     if (dx == 0) {
 	if (dy > 0)
@@ -212,20 +212,20 @@ compute_angle(dx, dy)		/* compute the angle between 0 to 2PI  */
 /********************* COMPUTE DIRECTION ********************
 
 Input arguments :
-        p1, p2, p3 : 3 points of an arc with p1 the first and p3 the last.
+	p1, p2, p3 : 3 points of an arc with p1 the first and p3 the last.
 Output arguments : none
 Return value :
-        0 : if the arc passes p1, p2 and p3 (in that order) in
-                clockwise direction
-        1 : if direction is counterclockwise
+	0 : if the arc passes p1, p2 and p3 (in that order) in
+		clockwise direction
+	1 : if direction is counterclockwise
 
 *************************************************************/
 
 int
 compute_direction(p1, p2, p3)
-    F_pos           p1, p2, p3;
+    F_pos	    p1, p2, p3;
 {
-    float           diff, dx, dy, alpha, theta;
+    float	    diff, dx, dy, alpha, theta;
 
     dx = p2.x - p1.x;
     dy = p1.y - p2.y;		/* because origin of the screen is on the
@@ -248,7 +248,7 @@ compute_direction(p1, p2, p3)
 
 int
 pgcd(a, b)
-    int             a, b;
+    int		    a, b;
 
 /*
  * compute greatest common divisor, assuming 0 < a <= b
@@ -260,7 +260,7 @@ pgcd(a, b)
 
 int
 gcd(a, b)
-    int             a, b;
+    int		    a, b;
 
 /*
  * compute greatest common divisor
@@ -276,7 +276,7 @@ gcd(a, b)
 
 int
 lcm(a, b)
-    int             a, b;
+    int		    a, b;
 
 /*
  * compute least common multiple
@@ -286,11 +286,11 @@ lcm(a, b)
 }
 
 
-double          rad2deg = 57.295779513082320877;
+double		rad2deg = 57.295779513082320877;
 
 struct angle_table {
-    int             x, y;
-    double          angle;
+    int		    x, y;
+    double	    angle;
 };
 
 struct angle_table line_angles[25] =
@@ -338,11 +338,11 @@ struct angle_table arrow_angles[13] =
 };
 
 get_slope(dx, dy, sxp, syp, arrow)
-    int             dx, dy, *sxp, *syp, arrow;
+    int		    dx, dy, *sxp, *syp, arrow;
 {
-    double          angle;
-    int             i, s, max;
-    double          d, d1;
+    double	    angle;
+    int		    i, s, max;
+    double	    d, d1;
     struct angle_table *st;
 
     if (dx == 0) {
@@ -376,11 +376,11 @@ get_slope(dx, dy, sxp, syp, arrow)
 }
 
 latex_endpoint(x1, y1, x2, y2, xout, yout, arrow, magnet)
-    int             x1, y1, x2, y2;
-    int            *xout, *yout;
-    int             arrow, magnet;
+    int		    x1, y1, x2, y2;
+    int		   *xout, *yout;
+    int		    arrow, magnet;
 {
-    int             dx, dy, sx, sy, ds, dsx, dsy;
+    int		    dx, dy, sx, sy, ds, dsx, dsy;
 
     dx = x2 - x1;
     dy = y2 - y1;

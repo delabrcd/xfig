@@ -29,9 +29,9 @@
 #include "w_mousefun.h"
 #include "w_setup.h"
 
-static int      init_delete();
-static int      init_delete_region(), delete_region(), cancel_delete_region();
-static int      init_delete_to_scrap();
+static int	init_delete();
+static int	init_delete_region(), delete_region(), cancel_delete_region();
+static int	init_delete_to_scrap();
 
 delete_selected()
 {
@@ -49,82 +49,41 @@ delete_selected()
 
 static
 init_delete(p, type, x, y, px, py)
-    char           *p;
-    int             type;
-    int             x, y;
-    int             px, py;
+    char	   *p;
+    int		    type;
+    int		    x, y;
+    int		    px, py;
 {
-#ifdef FASTSERVER
-    int             xmin, ymin, xmax, ymax;
-
-#endif
-
     switch (type) {
     case O_COMPOUND:
 	cur_c = (F_compound *) p;
 	delete_compound(cur_c);
-	toggle_compoundmarker(cur_c);
-#ifdef FASTSERVER
-	redisplay_zoomed_region(cur_c->nwcorner.x, cur_c->nwcorner.y,
-				cur_c->secorner.x, cur_c->secorner.y);
-#else
-	draw_compoundelements(cur_c, ERASE);
-#endif
+	redisplay_compound(cur_c);
 	break;
     case O_POLYLINE:
 	cur_l = (F_line *) p;
 	delete_line(cur_l);
-	toggle_linemarker(cur_l);
-#ifdef FASTSERVER
-	line_bound(cur_l, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-#else
-	draw_line(cur_l, ERASE);
-#endif
+	redisplay_line(cur_l);
 	break;
     case O_TEXT:
 	cur_t = (F_text *) p;
 	delete_text(cur_t);
-	toggle_textmarker(cur_t);
-#ifdef FASTSERVER
-	text_bound(cur_t, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-#else
-	draw_text(cur_t, ERASE);
-#endif
+	redisplay_text(cur_t);
 	break;
     case O_ELLIPSE:
 	cur_e = (F_ellipse *) p;
 	delete_ellipse(cur_e);
-	toggle_ellipsemarker(cur_e);
-#ifdef FASTSERVER
-	ellipse_bound(cur_e, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-#else
-	draw_ellipse(cur_e, ERASE);
-#endif
+	redisplay_ellipse(cur_e);
 	break;
     case O_ARC:
 	cur_a = (F_arc *) p;
 	delete_arc(cur_a);
-	toggle_arcmarker(cur_a);
-#ifdef FASTSERVER
-	arc_bound(cur_a, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-#else
-	draw_arc(cur_a, ERASE);
-#endif
+	redisplay_arc(cur_a);
 	break;
     case O_SPLINE:
 	cur_s = (F_spline *) p;
 	delete_spline(cur_s);
-	toggle_splinemarker(cur_s);
-#ifdef FASTSERVER
-	spline_bound(cur_s, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-#else
-	draw_spline(cur_s, ERASE);
-#endif
+	redisplay_spline(cur_s);
 	break;
     default:
 	return;
@@ -133,7 +92,7 @@ init_delete(p, type, x, y, px, py)
 
 static
 init_delete_region(x, y)
-    int             x, y;
+    int		    x, y;
 {
     init_box_drawing(x, y);
     set_mousefun("", "final corner", "cancel");
@@ -153,9 +112,9 @@ cancel_delete_region()
 
 static
 delete_region(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    F_compound     *c;
+    F_compound	   *c;
 
     if ((c = create_compound()) == NULL)
 	return;
@@ -173,35 +132,29 @@ delete_region(x, y)
 	return;
     }
     clean_up();
-    set_latestobjects(*c);
+    set_latestobjects(c);
     tail(&objects, &object_tails);
     append_objects(&objects, &saved_objects, &object_tails);
     cut_objects(&objects, &object_tails);
     set_action_object(F_DELETE, O_ALL_OBJECT);
     set_modifiedflag();
-    toggle_markers_in_compound(c);
-#ifdef FASTSERVER
-    redisplay_zoomed_region(c->nwcorner.x, c->nwcorner.y,
-			    c->secorner.x, c->secorner.y);
-#else
-    draw_compoundelements(c, ERASE);
-#endif
+    redisplay_compound(c);
     delete_selected();
     draw_mousefun_canvas();
 }
 
 static
 init_delete_to_scrap(p, type, x, y, px, py)
-    char           *p;
-    int             type;
-    int             x, y;
-    int             px, py;
+    char	   *p;
+    int		    type;
+    int		    x, y;
+    int		    px, py;
 {
-    extern char     cut_buf_name[];
-    extern char     file_header[];
+    extern char	    cut_buf_name[];
+    extern char	    file_header[];
 
-    FILE           *fp;
-    struct stat     file_status;
+    FILE	   *fp;
+    struct stat	    file_status;
 
     if (stat(cut_buf_name, &file_status) == 0) {	/* file exists */
 	if (file_status.st_mode & S_IFDIR) {
@@ -234,43 +187,37 @@ init_delete_to_scrap(p, type, x, y, px, py)
 	cur_c = (F_compound *) p;
 	write_compound(fp, cur_c);
 	delete_compound(cur_c);
-	toggle_compoundmarker(cur_c);
-	draw_compoundelements(cur_c, ERASE);
+	redisplay_compound(cur_c);
 	break;
     case O_POLYLINE:
 	cur_l = (F_line *) p;
 	write_line(fp, cur_l);
 	delete_line(cur_l);
-	toggle_linemarker(cur_l);
-	draw_line(cur_l, ERASE);
+	redisplay_line(cur_l);
 	break;
     case O_TEXT:
 	cur_t = (F_text *) p;
 	write_text(fp, cur_t);
 	delete_text(cur_t);
-	toggle_textmarker(cur_t);
-	draw_text(cur_t, ERASE);
+	redisplay_text(cur_t);
 	break;
     case O_ELLIPSE:
 	cur_e = (F_ellipse *) p;
 	write_ellipse(fp, cur_e);
 	delete_ellipse(cur_e);
-	toggle_ellipsemarker(cur_e);
-	draw_ellipse(cur_e, ERASE);
+	redisplay_ellipse(cur_e);
 	break;
     case O_ARC:
 	cur_a = (F_arc *) p;
 	write_arc(fp, cur_a);
 	delete_arc(cur_a);
-	toggle_arcmarker(cur_a);
-	draw_arc(cur_a, ERASE);
+	redisplay_arc(cur_a);
 	break;
     case O_SPLINE:
 	cur_s = (F_spline *) p;
 	write_spline(fp, cur_s);
 	delete_spline(cur_s);
-	toggle_splinemarker(cur_s);
-	draw_spline(cur_s, ERASE);
+	redisplay_spline(cur_s);
 	break;
     default:
 	fclose(fp);

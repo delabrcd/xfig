@@ -30,41 +30,41 @@
 
 extern PIX_FONT lookfont();
 
-#define	CTRL_H	8
-#define	NL	10
-#define	CR	13
-#define	CTRL_U	21
-#define	CTRL_X	24
-#define	SP	32
-#define	DEL	127
+#define CTRL_H	8
+#define NL	10
+#define CR	13
+#define CTRL_U	21
+#define CTRL_X	24
+#define SP	32
+#define DEL	127
 
 #define			BUF_SIZE	400
 
-char            prefix[BUF_SIZE],	/* part of string left of mouse click */
-                suffix[BUF_SIZE];	/* part to right of click */
-int             leng_prefix, leng_suffix;
-static int      char_ht, char_wid;
-static int      base_x, base_y;
+char		prefix[BUF_SIZE],	/* part of string left of mouse click */
+		suffix[BUF_SIZE];	/* part to right of click */
+int		leng_prefix, leng_suffix;
+static int	char_ht, char_wid;
+static int	base_x, base_y;
 
-static PR_SIZE  tsize;
-static PR_SIZE  ssize;
+static PR_SIZE	tsize;
+static PR_SIZE	ssize;
 
-static int      work_psflag, work_font, work_fontsize, work_textjust;
-static          finish_n_start();
-static          init_text_input(), cancel_text_input();
-static          wrap_up();
-static          char_handler();
+static int	work_psflag, work_font, work_fontsize, work_textjust;
+static		finish_n_start();
+static		init_text_input(), cancel_text_input();
+static		wrap_up();
+int		char_handler();
 static F_text  *new_text();
 
-static int cpy_n_char();
-static int prefix_length();
-static int initialize_char_handler();
-static int terminate_char_handler();
-static int erase_char_string();
-static int draw_char_string();
-static int turn_on_blinking_cursor();
-static int turn_off_blinking_cursor();
-static int move_blinking_cursor();
+static int	cpy_n_char();
+static int	prefix_length();
+static int	initialize_char_handler();
+static int	terminate_char_handler();
+static int	erase_char_string();
+static int	draw_char_string();
+static int	turn_on_blinking_cursor();
+static int	turn_off_blinking_cursor();
+static int	move_blinking_cursor();
 
 text_drawing_selected()
 {
@@ -109,7 +109,7 @@ static
 new_text_line()
 {
     wrap_up();
-    cur_y += (int) ((float) char_ht * cur_textstep / 10.0);
+    cur_y += (int) ((float) char_ht * cur_textstep);
     cur_x = base_x;
     init_text_input(cur_x, cur_y);
 }
@@ -117,7 +117,7 @@ new_text_line()
 static
 wrap_up()
 {
-    PR_SIZE         size;
+    PR_SIZE	    size;
 
     reset_action_on();
     erase_char_string();
@@ -153,7 +153,7 @@ wrap_up()
 	size = pf_textwidth(new_t->font, psfont_text(new_t), new_t->size,
 			    leng_prefix, prefix);
 	new_t->height = size.y;
-	new_t->length = size.x;	/* in pixels */
+	new_t->length = size.x; /* in pixels */
 	cur_t = new_t;
     }
     draw_text(cur_t, PAINT);
@@ -162,9 +162,9 @@ wrap_up()
 
 static
 init_text_input(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    int             basx;
+    int		    basx;
 
     cur_x = x;
     cur_y = y;
@@ -243,11 +243,11 @@ init_text_input(x, y)
 }
 
 static
-F_text         *
+F_text	       *
 new_text()
 {
-    F_text         *text;
-    PR_SIZE         size;
+    F_text	   *text;
+    PR_SIZE	    size;
 
     if ((text = create_text()) == NULL)
 	return (NULL);
@@ -258,7 +258,7 @@ new_text()
     }
     text->type = work_textjust;
     text->font = work_font;	/* put in current font number */
-    text->size = work_fontsize;	/* added 9/25/89 B.V.Smith */
+    text->size = work_fontsize; /* added 9/25/89 B.V.Smith */
     text->angle = cur_angle;
     text->flags = cur_textflags;
     text->color = cur_color;
@@ -277,8 +277,8 @@ new_text()
 
 static int
 cpy_n_char(dst, src, n)
-    char           *dst, *src;
-    int             n;
+    char	   *dst, *src;
+    int		    n;
 {
     /* src must be longer than n chars */
 
@@ -289,13 +289,13 @@ cpy_n_char(dst, src, n)
 
 static int
 prefix_length(string, where_p)
-    char           *string;
-    int             where_p;
+    char	   *string;
+    int		    where_p;
 {
     /* c stands for character unit and p for pixel unit */
-    int             l, len_c, len_p;
-    int             char_wid, where_c;
-    PR_SIZE         size;
+    int		    l, len_c, len_p;
+    int		    char_wid, where_c;
+    PR_SIZE	    size;
 
     if (canvas_font == NULL)
 	fprintf(stderr, "xfig: Error, in prefix_length, canvas_font = NULL\n");
@@ -314,16 +314,20 @@ prefix_length(string, where_p)
 				 * where_c chars */
     if (l < where_p) {
 	do {			/* add the width of next char to l */
-	    l += (char_wid = char_advance(canvas_font, string[where_c++]));
+	    l += (char_wid = char_advance(canvas_font, (unsigned char) string[where_c++]));
 	} while (l < where_p);
 	if (l - (char_wid >> 1) >= where_p)
 	    where_c--;
     } else if (l > where_p) {
 	do {			/* subtract the width of last char from l */
-	    l -= (char_wid = char_advance(canvas_font, string[--where_c]));
+	    l -= (char_wid = char_advance(canvas_font, (unsigned char) string[--where_c]));
 	} while (l > where_p);
 	if (l + (char_wid >> 1) >= where_p)
 	    where_c++;
+    }
+    if (where_c < 0) {
+	fprintf(stderr, "xfig file %s line %d: Error in prefix_length - adjusted\n", __FILE__, __LINE__);
+	where_c = 0;
     }
     return (where_c);
 }
@@ -336,26 +340,27 @@ prefix_length(string, where_p)
 
 #define			BLINK_INTERVAL	700	/* milliseconds blink rate */
 
-static PIXWIN   pw;
-static int      ch_height;
-static int      cbase_x, cbase_y;
-static float    rbase_x, rcur_x;
-static int      obase_x;
+static PIXWIN	pw;
+static int	ch_height;
+static int	cbase_x, cbase_y;
+static float	rbase_x, rcur_x;
+static int	obase_x;
 
-static          (*cr_proc) ();
+static		(*cr_proc) ();
 
 static
 draw_cursor(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    pw_vector(pw, x, y, x, y - ch_height, INV_PAINT, 1, RUBBER_LINE, 0.0);
+    pw_vector(pw, x, y, x, y - ch_height, INV_PAINT, 1, RUBBER_LINE, 0.0,
+	      DEFAULT_COLOR);
 }
 
 static int
 initialize_char_handler(p, cr, bx, by)
-    PIXWIN          p;
-    int             (*cr) ();
-    int             bx, by;
+    PIXWIN	    p;
+    int		    (*cr) ();
+    int		    bx, by;
 {
     pw = p;
     cr_proc = cr;
@@ -385,34 +390,33 @@ terminate_char_handler()
 static int
 erase_char_string()
 {
-    pw_text(pw, cbase_x, cbase_y, INV_PAINT,
-	    work_font, work_psflag, work_fontsize, prefix);
+    pw_text(pw, cbase_x, cbase_y, INV_PAINT, work_font, work_psflag,
+	    work_fontsize, prefix, DEFAULT_COLOR);
     if (leng_suffix)
-	pw_text(pw, cur_x, cbase_y, INV_PAINT,
-		work_font, work_psflag, work_fontsize, suffix);
+	pw_text(pw, cur_x, cbase_y, INV_PAINT, work_font, work_psflag,
+		work_fontsize, suffix, DEFAULT_COLOR);
 }
 
 static int
 draw_char_string()
 {
     pw_text(pw, cbase_x, cbase_y, INV_PAINT,
-	    work_font, work_psflag, work_fontsize, prefix);
+	    work_font, work_psflag, work_fontsize, prefix, DEFAULT_COLOR);
     if (leng_suffix)
 	pw_text(pw, cur_x, cbase_y, INV_PAINT,
-		work_font, work_psflag, work_fontsize, suffix);
+	      work_font, work_psflag, work_fontsize, suffix, DEFAULT_COLOR);
     move_blinking_cursor(cur_x, cur_y);
 }
 
-static
 char_handler(c)
     unsigned char   c;
 {
-    int             cwidth;
+    int		    cwidth;
 
     if (cr_proc == NULL)
 	return;
 
-    if (c == CR) {
+    if (c == CR || c == NL) {
 	erase_char_string();
 	/*
 	 * comment out the cr_proc() and un-comment the new_text-line() to
@@ -425,13 +429,13 @@ char_handler(c)
 	    /*
 	     * To increase efficiency you could remove the erase_char_string
 	     * from the next line and add the following in the switch below:
-	     * LEFT: 			erase_suffix CENTER:	erase_prefix
+	     * LEFT:			erase_suffix CENTER:	erase_prefix
 	     * erase_suffix RIGHT:	erase_prefix A similar thing would
 	     * need to be done for draw_char_string and for the other text
 	     * functions below.
 	     */
 	    erase_char_string();
-	    cwidth = char_advance(canvas_font, prefix[leng_prefix - 1]);
+	    cwidth = char_advance(canvas_font, (unsigned char) prefix[leng_prefix - 1]);
 	    /* correct text/cursor posn for justification and zoom factor */
 	    switch (work_textjust) {
 	    case T_LEFT_JUSTIFIED:
@@ -460,7 +464,7 @@ char_handler(c)
 	    switch (work_textjust) {
 	    case T_CENTER_JUSTIFIED:
 		while (leng_prefix--)	/* subtract char width/2 per char */
-		    rcur_x -= char_advance(canvas_font, prefix[leng_prefix]) /
+		    rcur_x -= char_advance(canvas_font, (unsigned char) prefix[leng_prefix]) /
 			2.0;
 		cur_x = cbase_x = rbase_x = rcur_x;
 		break;
@@ -481,7 +485,7 @@ char_handler(c)
 	put_msg("Text buffer is full, character is ignored");
     } else {			/* normal text character */
 	erase_char_string();
-	cwidth = char_advance(canvas_font, c);
+	cwidth = char_advance(canvas_font, (unsigned char) c);
 	/* correct text/cursor posn for justification and zoom factor */
 	switch (work_textjust) {
 	case T_LEFT_JUSTIFIED:
@@ -513,22 +517,21 @@ char_handler(c)
 
 *******************************************************************/
 
-static int      cursor_on, cursor_is_moving;
-static int      cursor_x, cursor_y;
+static int	cursor_on, cursor_is_moving;
+static int	cursor_x, cursor_y;
+static int	(*erase) ();
+static int	(*draw) ();
 static XtTimerCallbackProc blink();
-static int      (*erase) ();
-static int      (*draw) ();
 static unsigned long blink_timer;
-
 static XtIntervalId blinkid;
-static int      stop_blinking = False;
-static int      cur_is_blinking = False;
+static int	stop_blinking = False;
+static int	cur_is_blinking = False;
 
 static int
 turn_on_blinking_cursor(draw_cursor, erase_cursor, x, y, msec)
-    int             (*draw_cursor) ();
-    int             (*erase_cursor) ();
-    int             x, y;
+    int		    (*draw_cursor) ();
+    int		    (*erase_cursor) ();
+    int		    x, y;
     unsigned long   msec;
 {
     draw = draw_cursor;
@@ -541,7 +544,8 @@ turn_on_blinking_cursor(draw_cursor, erase_cursor, x, y, msec)
     cursor_on = 1;
     if (!cur_is_blinking) {	/* if we are already blinking, don't request
 				 * another */
-	blinkid = XtAppAddTimeOut(tool_app, blink_timer, blink, 0);
+	blinkid = XtAppAddTimeOut(tool_app, blink_timer, (XtTimerCallbackProc) blink,
+				  (XtPointer) NULL);
 	cur_is_blinking = True;
     }
     stop_blinking = False;
@@ -555,13 +559,13 @@ turn_off_blinking_cursor()
     stop_blinking = True;
 }
 
-static XtTimerCallbackProc
+static		XtTimerCallbackProc
 blink(client_data, id)
 #if XtSpecificationRelease >= 4
-    XtPointer       client_data;
+    XtPointer	    client_data;
 
 #else
-    caddr_t         client_data;
+    caddr_t	    client_data;
 
 #endif
     XtIntervalId   *id;
@@ -576,7 +580,8 @@ blink(client_data, id)
 	    draw(cursor_x, cursor_y);
 	    cursor_on = 1;
 	}
-	blinkid = XtAppAddTimeOut(tool_app, blink_timer, blink, 0);
+	blinkid = XtAppAddTimeOut(tool_app, blink_timer, (XtTimerCallbackProc) blink,
+				  (XtPointer) NULL);
     } else {
 	stop_blinking = False;	/* signal that we've stopped */
 	cur_is_blinking = False;
@@ -586,7 +591,7 @@ blink(client_data, id)
 
 static int
 move_blinking_cursor(x, y)
-    int             x, y;
+    int		    x, y;
 {
     cursor_is_moving = 1;
     if (cursor_on)

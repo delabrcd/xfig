@@ -4,3 +4,11 @@ Fig.internalborderwidth: 3
 Fig.geometry:		+0+0
 Fig.iconX:		+0
 Fig.iconY:		-0
+Fig*Text =*font: -*-times-medium-r-normal--14-*
+Fig*file_panel*mask*string:	*.fig
+Fig*export_panel*mask*string:	*.ps
+
+! make the F20 key paste text in the canvas
+
+Fig.form.canvas.translations: #override \n\
+			<Key>F20: PasteCanv()\n

@@ -26,9 +26,9 @@
 #include "w_drawprim.h"
 #include "w_mousefun.h"
 
-extern          update_current_settings();
-static int      init_update_object();
-static int      init_update_settings();
+extern		update_current_settings();
+static int	init_update_object();
+static int	init_update_settings();
 
 update_selected()
 {
@@ -44,11 +44,25 @@ update_selected()
 }
 
 static
+get_arrow_mode(object)
+    F_line	   *object;
+{
+    if (!object->for_arrow && !object->back_arrow)
+	return L_NOARROWS;
+    else if (object->for_arrow && !object->back_arrow)
+	return L_FARROWS;
+    else if (!object->for_arrow && object->back_arrow)
+	return L_BARROWS;
+    else
+	return L_FBARROWS;
+}
+    
+static
 init_update_settings(p, type, x, y, px, py)
-    char           *p;
-    int             type;
-    int             x, y;
-    int             px, py;
+    char	   *p;
+    int		    type;
+    int		    x, y;
+    int		    px, py;
 {
     switch (type) {
     case O_COMPOUND:
@@ -57,10 +71,11 @@ init_update_settings(p, type, x, y, px, py)
     case O_POLYLINE:
 	cur_l = (F_line *) p;
 	cur_linewidth = cur_l->thickness;
-	cur_areafill = cur_l->area_fill;
+	cur_fillstyle = cur_l->fill_style;
 	cur_color = cur_l->color;
 	cur_linestyle = cur_l->style;
 	cur_styleval = cur_l->style_val;
+	cur_arrowmode = get_arrow_mode(cur_l);
 	if (cur_l->type == T_ARC_BOX)
 	    cur_boxradius = cur_l->radius;
 	break;
@@ -79,7 +94,7 @@ init_update_settings(p, type, x, y, px, py)
     case O_ELLIPSE:
 	cur_e = (F_ellipse *) p;
 	cur_linewidth = cur_e->thickness;
-	cur_areafill = cur_e->area_fill;
+	cur_fillstyle = cur_e->fill_style;
 	cur_color = cur_e->color;
 	cur_linestyle = cur_e->style;
 	cur_styleval = cur_e->style_val;
@@ -87,18 +102,20 @@ init_update_settings(p, type, x, y, px, py)
     case O_ARC:
 	cur_a = (F_arc *) p;
 	cur_linewidth = cur_a->thickness;
-	cur_areafill = cur_a->area_fill;
+	cur_fillstyle = cur_a->fill_style;
 	cur_color = cur_a->color;
 	cur_linestyle = cur_a->style;
 	cur_styleval = cur_a->style_val;
+	cur_arrowmode = get_arrow_mode(cur_a);
 	break;
     case O_SPLINE:
 	cur_s = (F_spline *) p;
 	cur_linewidth = cur_s->thickness;
-	cur_areafill = cur_s->area_fill;
+	cur_fillstyle = cur_s->fill_style;
 	cur_color = cur_s->color;
 	cur_linestyle = cur_s->style;
 	cur_styleval = cur_s->style_val;
+	cur_arrowmode = get_arrow_mode(cur_s);
 	break;
     default:
 	return;
@@ -109,10 +126,10 @@ init_update_settings(p, type, x, y, px, py)
 
 static
 init_update_object(p, type, x, y, px, py)
-    char           *p;
-    int             type;
-    int             x, y;
-    int             px, py;
+    char	   *p;
+    int		    type;
+    int		    x, y;
+    int		    px, py;
 {
     switch (type) {
     case O_COMPOUND:
@@ -177,24 +194,24 @@ init_update_object(p, type, x, y, px, py)
 }
 
 update_ellipse(ellipse)
-    F_ellipse      *ellipse;
+    F_ellipse	   *ellipse;
 {
     draw_ellipse(ellipse, ERASE);
     ellipse->thickness = cur_linewidth;
     ellipse->style = cur_linestyle;
-    ellipse->area_fill = cur_areafill;
+    ellipse->fill_style = cur_fillstyle;
     ellipse->color = cur_color;
     ellipse->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     draw_ellipse(ellipse, PAINT);
 }
 
 update_arc(arc)
-    F_arc          *arc;
+    F_arc	   *arc;
 {
     draw_arc(arc, ERASE);
     arc->thickness = cur_linewidth;
     arc->style = cur_linestyle;
-    arc->area_fill = cur_areafill;
+    arc->fill_style = cur_fillstyle;
     arc->color = cur_color;
     arc->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     if (autoforwardarrow_mode)
@@ -209,7 +226,7 @@ update_arc(arc)
 }
 
 update_line(line)
-    F_line         *line;
+    F_line	   *line;
 {
     draw_line(line, ERASE);
     line->thickness = cur_linewidth;
@@ -217,7 +234,7 @@ update_line(line)
     line->color = cur_color;
     line->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     line->radius = cur_boxradius;
-    line->area_fill = cur_areafill;
+    line->fill_style = cur_fillstyle;
     if (line->type != T_POLYGON && line->type != T_BOX &&
 	line->type != T_ARC_BOX && line->points->next != NULL) {
 	if (autoforwardarrow_mode)
@@ -233,13 +250,14 @@ update_line(line)
 }
 
 update_text(text)
-    F_text         *text;
+    F_text	   *text;
 {
-    PR_SIZE         size;
+    PR_SIZE	    size;
 
     draw_text(text, ERASE);
     text->type = cur_textjust;
     text->font = using_ps ? cur_ps_font : cur_latex_font;
+    text->flags = cur_textflags;  
     text->size = cur_fontsize;
     text->angle = cur_angle;
     text->color = cur_color;
@@ -251,14 +269,14 @@ update_text(text)
 }
 
 update_spline(spline)
-    F_spline       *spline;
+    F_spline	   *spline;
 {
     draw_spline(spline, ERASE);
     spline->thickness = cur_linewidth;
     spline->style = cur_linestyle;
     spline->color = cur_color;
     spline->style_val = cur_styleval * (cur_linewidth + 1) / 2;
-    spline->area_fill = cur_areafill;
+    spline->fill_style = cur_fillstyle;
     if (open_spline(spline)) {
 	if (autoforwardarrow_mode)
 	    spline->for_arrow = forward_arrow();
@@ -273,7 +291,7 @@ update_spline(spline)
 }
 
 update_compound(compound)
-    F_compound     *compound;
+    F_compound	   *compound;
 {
     update_lines(compound->lines);
     update_splines(compound->splines);
@@ -286,54 +304,54 @@ update_compound(compound)
 }
 
 update_arcs(arcs)
-    F_arc          *arcs;
+    F_arc	   *arcs;
 {
-    F_arc          *a;
+    F_arc	   *a;
 
     for (a = arcs; a != NULL; a = a->next)
 	update_arc(a);
 }
 
 update_compounds(compounds)
-    F_compound     *compounds;
+    F_compound	   *compounds;
 {
-    F_compound     *c;
+    F_compound	   *c;
 
     for (c = compounds; c != NULL; c = c->next)
 	update_compound(c);
 }
 
 update_ellipses(ellipses)
-    F_ellipse      *ellipses;
+    F_ellipse	   *ellipses;
 {
-    F_ellipse      *e;
+    F_ellipse	   *e;
 
     for (e = ellipses; e != NULL; e = e->next)
 	update_ellipse(e);
 }
 
 update_lines(lines)
-    F_line         *lines;
+    F_line	   *lines;
 {
-    F_line         *l;
+    F_line	   *l;
 
     for (l = lines; l != NULL; l = l->next)
 	update_line(l);
 }
 
 update_splines(splines)
-    F_spline       *splines;
+    F_spline	   *splines;
 {
-    F_spline       *s;
+    F_spline	   *s;
 
     for (s = splines; s != NULL; s = s->next)
 	update_spline(s);
 }
 
 update_texts(texts)
-    F_text         *texts;
+    F_text	   *texts;
 {
-    F_text         *t;
+    F_text	   *t;
 
     for (t = texts; t != NULL; t = t->next)
 	update_text(t);

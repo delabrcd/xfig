@@ -23,44 +23,90 @@
 #include "u_draw.h"
 #include "u_elastic.h"
 #include "u_list.h"
+#include "u_search.h"
 #include "u_undo.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-static          create_compoundobject(), cancel_compound(), init_create_compoundobject();
-static		get_arc();
-static		get_compound();
-static		get_ellipse();
-static		get_line();
-static		get_spline();
-static		get_text();
+static		create_compoundobject(), cancel_tag_region(),
+		init_tag_region(), tag_region(), tag_object();
+static		get_arc(), sel_arc();
+static		get_compound(), sel_compound();
+static		get_ellipse(), sel_ellipse();
+static		get_line(), sel_line();
+static		get_spline(), sel_spline();
+static		get_text(), sel_text();
 
 compound_selected()
 {
-    set_mousefun("first corner", "", "");
+    set_mousefun("tag object", "tag region", "compound tagged");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
-    canvas_leftbut_proc = init_create_compoundobject;
-    canvas_middlebut_proc = null_proc;
-    canvas_rightbut_proc = null_proc;
-    set_cursor(&arrow_cursor);
+    init_searchproc_left(tag_object);
+    canvas_leftbut_proc = object_search_left;
+    canvas_middlebut_proc = init_tag_region;
+    canvas_rightbut_proc = create_compoundobject;
+    set_cursor(&pick9_cursor);
     reset_action_on();
 }
 
 static
-init_create_compoundobject(x, y)
+tag_object(p, type, x, y, px, py)
+    char           *p;
+    int             type;
     int             x, y;
+    int             px, py;
 {
-    init_box_drawing(x, y);
-    set_mousefun("final corner", "", "cancel");
-    draw_mousefun_canvas();
-    canvas_leftbut_proc = create_compoundobject;
-    canvas_middlebut_proc = null_proc;
-    canvas_rightbut_proc = cancel_compound;
+    switch (type) {
+    case O_COMPOUND:
+        cur_c = (F_compound *) p;
+        toggle_compoundhighlight(cur_c);
+	cur_c->tagged = 1 - cur_c->tagged;
+        break;
+    case O_POLYLINE:
+        cur_l = (F_line *) p;
+        toggle_linehighlight(cur_l);
+	cur_l->tagged = 1 - cur_l->tagged;
+        break;
+    case O_TEXT:
+        cur_t = (F_text *) p;
+        toggle_texthighlight(cur_t);
+	cur_t->tagged = 1 - cur_t->tagged;
+        break;
+    case O_ELLIPSE:
+        cur_e = (F_ellipse *) p;
+        toggle_ellipsehighlight(cur_e);
+	cur_e->tagged = 1 - cur_e->tagged;
+        break;
+    case O_ARC:
+        cur_a = (F_arc *) p;
+        toggle_archighlight(cur_a);
+	cur_a->tagged = 1 - cur_a->tagged;
+        break;
+    case O_SPLINE:
+        cur_s = (F_spline *) p;
+        toggle_splinehighlight(cur_s);
+	cur_s->tagged = 1 - cur_s->tagged;
+        break;
+    default:
+        return;
+    }
 }
 
 static
-cancel_compound()
+init_tag_region(x, y)
+    int		    x, y;
+{
+    init_box_drawing(x, y);
+    set_mousefun("", "final corner", "cancel");
+    draw_mousefun_canvas();
+    canvas_leftbut_proc = null_proc;
+    canvas_middlebut_proc = tag_region;
+    canvas_rightbut_proc = cancel_tag_region;
+}
+
+static
+cancel_tag_region()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     compound_selected();
@@ -68,19 +114,30 @@ cancel_compound()
 }
 
 static
-create_compoundobject(x, y)
-    int             x, y;
+tag_region(x, y)
+    int		    x, y;
 {
-    F_compound     *c;
+    int		    xmin, ymin, xmax, ymax;
+
+    elastic_box(fix_x, fix_y, cur_x, cur_y);
+    xmin = min2(fix_x, x);
+    ymin = min2(fix_y, y);
+    xmax = max2(fix_x, x);
+    ymax = max2(fix_y, y);
+    tag_obj_in_region(xmin, ymin, xmax, ymax);
+    compound_selected();
+    draw_mousefun_canvas();
+}
+
+static
+create_compoundobject(x, y)
+    int		    x, y;
+{
+    F_compound	   *c;
 
     if ((c = create_compound()) == NULL)
 	return;
 
-    elastic_box(fix_x, fix_y, cur_x, cur_y);
-    c->nwcorner.x = min2(fix_x, x);
-    c->nwcorner.y = min2(fix_y, y);
-    c->secorner.x = max2(fix_x, x);
-    c->secorner.y = max2(fix_y, y);
     if (compose_compound(c) == 0) {
 	free((char *) c);
 	compound_selected();
@@ -106,8 +163,20 @@ create_compoundobject(x, y)
     draw_mousefun_canvas();
 }
 
+tag_obj_in_region(xmin, ymin, xmax, ymax)
+    int		    xmin, ymin, xmax, ymax;
+{
+    sel_ellipse(xmin, ymin, xmax, ymax);
+    sel_line(xmin, ymin, xmax, ymax);
+    sel_spline(xmin, ymin, xmax, ymax);
+    sel_text(xmin, ymin, xmax, ymax);
+    sel_arc(xmin, ymin, xmax, ymax);
+    sel_compound(xmin, ymin, xmax, ymax);
+}
+
+
 compose_compound(c)
-    F_compound     *c;
+    F_compound	   *c;
 {
     c->ellipses = NULL;
     c->lines = NULL;
@@ -115,18 +184,12 @@ compose_compound(c)
     c->splines = NULL;
     c->arcs = NULL;
     c->compounds = NULL;
-    get_ellipse(&c->ellipses, c->nwcorner.x, c->nwcorner.y,
-		c->secorner.x, c->secorner.y);
-    get_line(&c->lines, c->nwcorner.x, c->nwcorner.y,
-	     c->secorner.x, c->secorner.y);
-    get_spline(&c->splines, c->nwcorner.x, c->nwcorner.y,
-	       c->secorner.x, c->secorner.y);
-    get_text(&c->texts, c->nwcorner.x, c->nwcorner.y,
-	     c->secorner.x, c->secorner.y);
-    get_arc(&c->arcs, c->nwcorner.x, c->nwcorner.y,
-	    c->secorner.x, c->secorner.y);
-    get_compound(&c->compounds, c->nwcorner.x, c->nwcorner.y,
-		 c->secorner.x, c->secorner.y);
+    get_ellipse(&c->ellipses);
+    get_line(&c->lines);
+    get_spline(&c->splines);
+    get_text(&c->texts);
+    get_arc(&c->arcs);
+    get_compound(&c->compounds);
     if (c->ellipses != NULL)
 	return (1);
     if (c->splines != NULL)
@@ -143,29 +206,33 @@ compose_compound(c)
 }
 
 static
-get_ellipse(list, xmin, ymin, xmax, ymax)
-    F_ellipse     **list;
-    int             xmin, ymin, xmax, ymax;
+sel_ellipse(xmin, ymin, xmax, ymax)
+    int		    xmin, ymin, xmax, ymax;
 {
-    F_ellipse      *e, *ee, *ellipse;
+    F_ellipse	   *e;
+
+    for (e = objects.ellipses; e != NULL; e = e->next) {
+	if (xmin > e->center.x - e->radiuses.x)
+	    continue;
+	if (xmax < e->center.x + e->radiuses.x)
+	    continue;
+	if (ymin > e->center.y - e->radiuses.y)
+	    continue;
+	if (ymax < e->center.y + e->radiuses.y)
+	    continue;
+	e->tagged = 1 - e->tagged;
+	toggle_ellipsehighlight(e);
+    }
+}
+
+static
+get_ellipse(list)
+    F_ellipse	  **list;
+{
+    F_ellipse	   *e, *ee, *ellipse;
 
     for (e = objects.ellipses; e != NULL;) {
-	if (xmin > e->center.x - e->radiuses.x) {
-	    ee = e;
-	    e = e->next;
-	    continue;
-	}
-	if (xmax < e->center.x + e->radiuses.x) {
-	    ee = e;
-	    e = e->next;
-	    continue;
-	}
-	if (ymin > e->center.y - e->radiuses.y) {
-	    ee = e;
-	    e = e->next;
-	    continue;
-	}
-	if (ymax < e->center.y + e->radiuses.y) {
+	if (!e->tagged) {
 	    ee = e;
 	    e = e->next;
 	    continue;
@@ -185,23 +252,39 @@ get_ellipse(list, xmin, ymin, xmax, ymax)
 }
 
 static
-get_arc(list, xmin, ymin, xmax, ymax)
-    F_arc         **list;
-    int             xmin, ymin, xmax, ymax;
+sel_arc(xmin, ymin, xmax, ymax)
+    int		    xmin, ymin, xmax, ymax;
 {
-    F_arc          *a, *arc, *aa;
-    int             urx, ury, llx, lly;
+    F_arc	   *a;
+    int		    urx, ury, llx, lly;
 
-    for (a = objects.arcs; a != NULL;) {
+    for (a = objects.arcs; a != NULL; a = a->next) {
 	arc_bound(a, &llx, &lly, &urx, &ury);
 	if (xmin > llx)
-	    goto out;
+	    continue;
 	if (xmax < urx)
-	    goto out;
+	    continue;
 	if (ymin > lly)
-	    goto out;
+	    continue;
 	if (ymax < ury)
-	    goto out;
+	    continue;
+	a->tagged = 1 - a->tagged;
+	toggle_archighlight(a);
+    }
+}
+
+static
+get_arc(list)
+    F_arc	  **list;
+{
+    F_arc	   *a, *arc, *aa;
+
+    for (a = objects.arcs; a != NULL;) {
+	if (!a->tagged) {
+	    aa = a;
+	    a = a->next;
+	    continue;
+	}
 	if (*list == NULL)
 	    *list = a;
 	else
@@ -212,23 +295,18 @@ get_arc(list, xmin, ymin, xmax, ymax)
 	else
 	    a = aa->next = a->next;
 	arc->next = NULL;
-	continue;
-out:
-	aa = a;
-	a = a->next;
     }
 }
 
 static
-get_line(list, xmin, ymin, xmax, ymax)
-    F_line        **list;
-    int             xmin, ymin, xmax, ymax;
+sel_line(xmin, ymin, xmax, ymax)
+    int		    xmin, ymin, xmax, ymax;
 {
-    F_line         *line, *l, *ll;
-    F_point        *p;
-    int             inbound;
+    F_line	   *l;
+    F_point	   *p;
+    int		    inbound;
 
-    for (l = objects.lines; l != NULL;) {
+    for (l = objects.lines; l != NULL; l = l->next) {
 	for (inbound = 1, p = l->points; p != NULL && inbound;
 	     p = p->next) {
 	    inbound = 0;
@@ -242,7 +320,21 @@ get_line(list, xmin, ymin, xmax, ymax)
 		continue;
 	    inbound = 1;
 	}
-	if (!inbound) {
+	if (!inbound)
+	    continue;
+	l->tagged = 1 - l->tagged;
+	toggle_linehighlight(l);
+    }
+}
+
+static
+get_line(list)
+    F_line	  **list;
+{
+    F_line	   *line, *l, *ll;
+
+    for (l = objects.lines; l != NULL;) {
+	if (!l->tagged) {
 	    ll = l;
 	    l = l->next;
 	    continue;
@@ -261,23 +353,39 @@ get_line(list, xmin, ymin, xmax, ymax)
 }
 
 static
-get_spline(list, xmin, ymin, xmax, ymax)
-    F_spline      **list;
-    int             xmin, ymin, xmax, ymax;
+sel_spline(xmin, ymin, xmax, ymax)
+    int		    xmin, ymin, xmax, ymax;
 {
-    F_spline       *spline, *s, *ss;
-    int             urx, ury, llx, lly;
+    F_spline	   *s;
+    int		    urx, ury, llx, lly;
 
-    for (s = objects.splines; s != NULL;) {
+    for (s = objects.splines; s != NULL; s = s->next) {
 	spline_bound(s, &llx, &lly, &urx, &ury);
 	if (xmin > llx)
-	    goto out;
+	    continue;
 	if (xmax < urx)
-	    goto out;
+	    continue;
 	if (ymin > lly)
-	    goto out;
+	    continue;
 	if (ymax < ury)
-	    goto out;
+	    continue;
+	s->tagged = 1 - s->tagged;
+	toggle_splinehighlight(s);
+    }
+}
+
+static
+get_spline(list)
+    F_spline	  **list;
+{
+    F_spline	   *spline, *s, *ss;
+
+    for (s = objects.splines; s != NULL;) {
+	if (!s->tagged) {
+	    ss = s;
+	    s = s->next;
+	    continue;
+	}
 	if (*list == NULL)
 	    *list = s;
 	else
@@ -288,43 +396,43 @@ get_spline(list, xmin, ymin, xmax, ymax)
 	else
 	    s = ss->next = s->next;
 	spline->next = NULL;
-	continue;
-out:
-	ss = s;
-	s = s->next;
     }
 }
 
 static
-get_text(list, xmin, ymin, xmax, ymax)
-    F_text        **list;
-    int             xmin, ymin, xmax, ymax;
+sel_text(xmin, ymin, xmax, ymax)
+    int		    xmin, ymin, xmax, ymax;
 {
-    int             halflen;
-    F_text         *text, *t, *tt;
+    int		    halflen;
+    F_text	   *t;
 
-    for (t = objects.texts; t != NULL;) {
+    for (t = objects.texts; t != NULL; t = t->next) {
 	halflen = t->length / 2;
 	if (((t->type == T_LEFT_JUSTIFIED) && xmin > t->base_x) ||
 	  ((t->type == T_CENTER_JUSTIFIED) && xmin > t->base_x - halflen) ||
-	 ((t->type == T_RIGHT_JUSTIFIED) && xmin > t->base_x - t->length)) {
-	    tt = t;
-	    t = t->next;
+	 ((t->type == T_RIGHT_JUSTIFIED) && xmin > t->base_x - t->length))
 	    continue;
-	}
 	if (((t->type == T_LEFT_JUSTIFIED) && xmax < t->base_x + t->length) ||
 	  ((t->type == T_CENTER_JUSTIFIED) && xmax < t->base_x + halflen) ||
-	    ((t->type == T_RIGHT_JUSTIFIED) && xmax < t->base_x)) {
-	    tt = t;
-	    t = t->next;
+	    ((t->type == T_RIGHT_JUSTIFIED) && xmax < t->base_x))
 	    continue;
-	}
-	if (ymin > t->base_y - t->height) {
-	    tt = t;
-	    t = t->next;
+	if (ymin > t->base_y - t->height)
 	    continue;
-	}
-	if (ymax < t->base_y) {
+	if (ymax < t->base_y)
+	    continue;
+	t->tagged = 1 - t->tagged;
+	toggle_texthighlight(t);
+    }
+}
+
+static
+get_text(list)
+    F_text	  **list;
+{
+    F_text	   *text, *t, *tt;
+
+    for (t = objects.texts; t != NULL;) {
+	if (!t->tagged) {
 	    tt = t;
 	    t = t->next;
 	    continue;
@@ -343,29 +451,33 @@ get_text(list, xmin, ymin, xmax, ymax)
 }
 
 static
-get_compound(list, xmin, ymin, xmax, ymax)
-    F_compound    **list;
-    int             xmin, ymin, xmax, ymax;
+sel_compound(xmin, ymin, xmax, ymax)
+    int		    xmin, ymin, xmax, ymax;
 {
-    F_compound     *compd, *c, *cc;
+    F_compound	   *c;
+
+    for (c = objects.compounds; c != NULL; c = c->next) {
+	if (xmin > c->nwcorner.x)
+	    continue;
+	if (xmax < c->secorner.x)
+	    continue;
+	if (ymin > c->nwcorner.y)
+	    continue;
+	if (ymax < c->secorner.y)
+	    continue;
+	c->tagged = 1 - c->tagged;
+	toggle_compoundhighlight(c);
+    }
+}
+
+static
+get_compound(list)
+    F_compound	  **list;
+{
+    F_compound	   *compd, *c, *cc;
 
     for (c = objects.compounds; c != NULL;) {
-	if (xmin > c->nwcorner.x) {
-	    cc = c;
-	    c = c->next;
-	    continue;
-	}
-	if (xmax < c->secorner.x) {
-	    cc = c;
-	    c = c->next;
-	    continue;
-	}
-	if (ymin > c->nwcorner.y) {
-	    cc = c;
-	    c = c->next;
-	    continue;
-	}
-	if (ymax < c->secorner.y) {
+	if (!c->tagged) {
 	    cc = c;
 	    c = c->next;
 	    continue;

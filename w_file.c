@@ -18,40 +18,56 @@
 #include "resources.h"
 #include "object.h"
 #include "mode.h"
-#include "w_drawprim.h"         /* for char_height */
+#include "w_drawprim.h"		/* for char_height */
+#include "w_dir.h"
 #include "w_util.h"
 #include "w_setup.h"
 
-extern String   text_translations;
+/* these next translations are also used by the export filename widget */
+String		file_text_translations =
+"<Key>Return: no-op(RingBell)\n\
+			Ctrl<Key>J: no-op(RingBell)\n\
+			Ctrl<Key>M: no-op(RingBell)\n";
 
-static char     load_msg[] = "The current figure is modified.\nDo you want to discard it and load the new file?";
+static char	load_msg[] = "The current figure is modified.\nDo you want to discard it and load the new file?";
 static char	buf[40];
 
 DeclareStaticArgs(12);
-static Widget   file_panel, file_popup, file_status, num_objects;
-static Widget	cancel, save, merge, load, newfile, newdir;
-static Widget   file_w;
+static Widget	file_panel, file_popup, file_status, num_objects;
+static Widget	cancel, save, merge, load;
+static Widget	file_w;
 static Position xposn, yposn;
+
+/* Global so w_dir.c can access us */
+
+Widget		file_selfile,	/* selected file widget */
+		file_mask,	/* mask widget */
+		file_dir,	/* current directory widget */
+		file_flist,	/* file list wiget */
+		file_dlist;	/* dir list wiget */
+
+Boolean		file_up = False;
 
 static void
 file_panel_dismiss()
 {
     XtPopdown(file_popup);
     XtSetSensitive(file_w, True);
+    file_up = False;
 }
 
 static void
 do_merge(w, ev)
-    Widget          w;
+    Widget	    w;
     XButtonEvent   *ev;
 {
-    char            filename[100];
-    char           *fval, *dval;
+    char	    filename[100];
+    char	   *fval, *dval;
 
-    FirstArg(XtNstring, &dval);
-    GetValues(newdir);
     FirstArg(XtNstring, &fval);
-    GetValues(newfile);
+    GetValues(file_selfile);
+    FirstArg(XtNstring, &dval);
+    GetValues(file_dir);
 
     if (emptyname_msg(fval, "MERGE"))
 	return;
@@ -65,22 +81,22 @@ do_merge(w, ev)
 
 static void
 do_load(w, ev)
-    Widget          w;
+    Widget	    w;
     XButtonEvent   *ev;
 {
-    char           *fval, *dval;
+    char	   *fval, *dval;
 
     FirstArg(XtNstring, &dval);
-    GetValues(newdir);
+    GetValues(file_dir);
     FirstArg(XtNstring, &fval);
-    GetValues(newfile);
+    GetValues(file_selfile);
 
     if (emptyname_msg(fval, "LOAD"))
 	return;
 
     if (!emptyfigure() && figure_modified) {
 	XtSetSensitive(load, False);
-	if (!win_confirm(canvas_win, load_msg)) {
+	if (!popup_query(QUERY_YES, load_msg)) {
 	    XtSetSensitive(load, True);
 	    return;
 	}
@@ -92,16 +108,17 @@ do_load(w, ev)
     }
 }
 
+void
 do_save(w)
-    Widget          w;
+    Widget	    w;
 {
-    char           *fval, *dval;
+    char	   *fval, *dval;
 
     if (file_popup) {
-	FirstArg(XtNstring, &dval);
-	GetValues(newdir);
 	FirstArg(XtNstring, &fval);
-	GetValues(newfile);
+	GetValues(file_selfile);
+	FirstArg(XtNstring, &dval);
+	GetValues(file_dir);
 
 	if (emptyname_msg(fval, "SAVE"))
 	    return;
@@ -123,19 +140,23 @@ do_save(w)
 
 static void
 file_panel_cancel(w, ev)
-    Widget          w;
+    Widget	    w;
     XButtonEvent   *ev;
 {
     file_panel_dismiss();
 }
 
 popup_file_panel(w)
-    Widget          w;
+    Widget	    w;
 {
-    Widget          file, dir;
+    Widget	    file, dir, beside, below;
     XtTranslations  popdown_actions;
-    PIX_FONT        temp_font;
+    PIX_FONT	    temp_font;
 
+
+    set_temp_cursor(&wait_cursor);
+    XtSetSensitive(w, False);
+    file_up = True;
 
     if (!file_popup) {
 	file_w = w;
@@ -143,7 +164,7 @@ popup_file_panel(w)
 
 	FirstArg(XtNx, xposn);
 	NextArg(XtNy, yposn + 50);
-	file_popup = XtCreatePopupShell("xfig: file menu",
+	file_popup = XtCreatePopupShell("xfig_file_menu",
 					transientShellWidgetClass,
 					tool, Args, ArgCount);
 
@@ -152,70 +173,56 @@ popup_file_panel(w)
 	popdown_actions = XtParseTranslationTable("<Btn1Up>:\n");
 	XtOverrideTranslations(file_panel, popdown_actions);
 
-	FirstArg(XtNlabel, "Directory:");
-	NextArg(XtNwidth, 380);
-	NextArg(XtNjustify, XtJustifyLeft);
-	NextArg(XtNborderWidth, 0);
-	dir = XtCreateManagedWidget("dir label", labelWidgetClass,
-				    file_panel, Args, ArgCount);
-	FirstArg(XtNfont, &temp_font);
-        GetValues(dir);
-
-	FirstArg(XtNwidth, 380);
-        NextArg(XtNheight, char_height(temp_font) * 2 + 4);
-	NextArg(XtNeditType, "edit");
-	NextArg(XtNfromVert, dir);
-	NextArg(XtNstring, cur_dir);
-	NextArg(XtNinsertPosition, strlen(cur_dir));
-	NextArg(XtNborderWidth, INTERNAL_BW);
-        NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
-	newdir = XtCreateManagedWidget("directory", asciiTextWidgetClass,
-				       file_panel, Args, ArgCount);
-	XtOverrideTranslations(newdir,
-			       XtParseTranslationTable(text_translations));
-
-	FirstArg(XtNlabel, "File:");
-	NextArg(XtNwidth, 380);
-	NextArg(XtNfromVert, newdir);
-	NextArg(XtNjustify, XtJustifyLeft);
-	NextArg(XtNborderWidth, 0);
-	file = XtCreateManagedWidget("file label", labelWidgetClass,
-				     file_panel, Args, ArgCount);
-
-	FirstArg(XtNwidth, 380);
-        NextArg(XtNheight, char_height(temp_font) * 2 + 4);
-	NextArg(XtNeditType, "edit");
-	NextArg(XtNstring, cur_filename);
-	NextArg(XtNinsertPosition, strlen(cur_filename));
-	NextArg(XtNfromVert, file);
-	NextArg(XtNborderWidth, INTERNAL_BW);
-        NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
-	newfile = XtCreateManagedWidget("file", asciiTextWidgetClass,
-					file_panel, Args, ArgCount);
-	XtOverrideTranslations(newfile,
-			       XtParseTranslationTable(text_translations));
-
 	FirstArg(XtNlabel, "");
-	NextArg(XtNwidth, 380);
-	NextArg(XtNfromVert, newfile);
+	NextArg(XtNwidth, 400);
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
-	file_status = XtCreateManagedWidget("file status", labelWidgetClass,
+	NextArg(XtNresize, False);
+	file_status = XtCreateManagedWidget("file_status", labelWidgetClass,
 					    file_panel, Args, ArgCount);
 
 	FirstArg(XtNlabel, "");
-	NextArg(XtNwidth, 380);
+	NextArg(XtNwidth, 400);
 	NextArg(XtNfromVert, file_status);
 	NextArg(XtNjustify, XtJustifyLeft);
 	NextArg(XtNborderWidth, 0);
-	num_objects = XtCreateManagedWidget("num objects", labelWidgetClass,
+	NextArg(XtNresize, False);
+	num_objects = XtCreateManagedWidget("num_objects", labelWidgetClass,
 					    file_panel, Args, ArgCount);
+
+	FirstArg(XtNlabel, "         Filename:");
+	NextArg(XtNvertDistance, 15);
+	NextArg(XtNfromVert, num_objects);
+	NextArg(XtNborderWidth, 0);
+	file = XtCreateManagedWidget("file_label", labelWidgetClass,
+				     file_panel, Args, ArgCount);
+	FirstArg(XtNfont, &temp_font);
+	GetValues(file);
+
+	FirstArg(XtNwidth, 350);
+	NextArg(XtNheight, char_height(temp_font) * 2 + 4);
+	NextArg(XtNeditType, "edit");
+	NextArg(XtNstring, cur_filename);
+	NextArg(XtNinsertPosition, strlen(cur_filename));
+	NextArg(XtNfromHoriz, file);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNvertDistance, 15);
+	NextArg(XtNfromVert, num_objects);
+	NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
+	file_selfile = XtCreateManagedWidget("file_name", asciiTextWidgetClass,
+					     file_panel, Args, ArgCount);
+	XtOverrideTranslations(file_selfile,
+			   XtParseTranslationTable(file_text_translations));
+
+	create_dirinfo(file_panel, file_selfile, &beside, &below,
+		       &file_mask, &file_dir, &file_flist, &file_dlist);
 
 	FirstArg(XtNlabel, "Cancel");
 	NextArg(XtNvertDistance, 15);
-	NextArg(XtNhorizDistance, 45);
+	NextArg(XtNhorizDistance, 25);
 	NextArg(XtNheight, 25);
-	NextArg(XtNfromVert, num_objects);
+	NextArg(XtNfromHoriz, beside);
+	NextArg(XtNfromVert, below);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
 				       file_panel, Args, ArgCount);
@@ -223,8 +230,8 @@ popup_file_panel(w)
 			  file_panel_cancel, (XtPointer) NULL);
 
 	FirstArg(XtNlabel, "Save");
-	NextArg(XtNfromVert, num_objects);
 	NextArg(XtNfromHoriz, cancel);
+	NextArg(XtNfromVert, below);
 	NextArg(XtNvertDistance, 15);
 	NextArg(XtNhorizDistance, 25);
 	NextArg(XtNheight, 25);
@@ -235,9 +242,9 @@ popup_file_panel(w)
 			  do_save, (XtPointer) NULL);
 
 	FirstArg(XtNlabel, "Load");
-	NextArg(XtNfromVert, num_objects);
-	NextArg(XtNfromHoriz, save);
 	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNfromHoriz, save);
+	NextArg(XtNfromVert, below);
 	NextArg(XtNvertDistance, 15);
 	NextArg(XtNhorizDistance, 25);
 	NextArg(XtNheight, 25);
@@ -247,25 +254,25 @@ popup_file_panel(w)
 			  do_load, (XtPointer) NULL);
 
 	FirstArg(XtNlabel, "Merge Read");
-	NextArg(XtNfromVert, num_objects);
 	NextArg(XtNfromHoriz, load);
+	NextArg(XtNfromVert, below);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNvertDistance, 15);
 	NextArg(XtNhorizDistance, 25);
 	NextArg(XtNheight, 25);
 	merge = XtCreateManagedWidget("merge", commandWidgetClass,
-				     file_panel, Args, ArgCount);
+				      file_panel, Args, ArgCount);
 	XtAddEventHandler(merge, ButtonReleaseMask, (Boolean) 0,
 			  do_merge, (XtPointer) NULL);
-
+    } else {
+	Rescan();
     }
-    XtSetSensitive(file_w, False);
-    FirstArg(XtNlabel, (figure_modified ? "File Status: Modified" :
-			"File Status: Not modified"));
+    FirstArg(XtNlabel, (figure_modified ? "      File Status: Modified	  " :
+			"      File Status: Not modified"));
     SetValues(file_status);
-    sprintf(buf, "Num Objects: %d", object_count(&objects));
+    sprintf(buf, "Number of Objects: %d", object_count(&objects));
     FirstArg(XtNlabel, buf);
     SetValues(num_objects);
     XtPopup(file_popup, XtGrabNonexclusive);
+    reset_cursor();
 }
-

@@ -26,26 +26,26 @@
 #include "w_setup.h"
 #include "w_util.h"
 
-extern void     setup_cmd_panel();
-extern          X_error_handler();
-extern          error_handler();
-extern int      ignore_exp_cnt;
+extern void	setup_cmd_panel();
+extern		X_error_handler();
+extern void	error_handler();
+extern int	ignore_exp_cnt;
 extern char    *getenv();
 
 #include "fig.icon.X"
-Pixmap          fig_icon;
+Pixmap		fig_icon;
 
-static char     tool_name[100];
-static          sigwinched();
+static char	tool_name[100];
+static		sigwinched();
 
 /************** FIG options ******************/
 
-TOOL            tool;
+TOOL		tool;
 static char    *filename = NULL;
 
-static Boolean  true = True;
-static Boolean  false = False;
-static int      zero = 0;
+static Boolean	true = True;
+static Boolean	false = False;
+static int	zero = 0;
 
 static XtResource application_resources[] = {
     {"showallbuttons", "ShowAllButtons", XtRBoolean, sizeof(Boolean),
@@ -76,6 +76,32 @@ static XtResource application_resources[] = {
     XtOffset(appresPtr, startfontsize), XtRInt, (caddr_t) & zero},
     {"internalborderwidth", "InternalBorderWidth", XtRFloat, sizeof(float),
     XtOffset(appresPtr, internalborderwidth), XtRInt, (caddr_t) & zero},
+    {"latexfonts", "Latexfonts", XtRBoolean, sizeof(Boolean),
+    XtOffset(appresPtr, latexfonts), XtRBoolean, (caddr_t) & false},
+    {"specialtext", "SpecialText", XtRBoolean, sizeof(Boolean),
+    XtOffset(appresPtr, specialtext), XtRBoolean, (caddr_t) & false},
+    {"scalablefonts", "ScalableFonts", XtRBoolean, sizeof(Boolean),
+    XtOffset(appresPtr, SCALABLEFONTS), XtRBoolean, (caddr_t) & false},
+    {"color0", "Color0", XtRPixel, sizeof(Pixel),
+    XtOffset(appresPtr, color[0]), XtRString, (caddr_t) "black"},
+    {"color1", "Color1", XtRPixel, sizeof(Pixel),
+    XtOffset(appresPtr, color[1]), XtRString, (caddr_t) "blue"},
+    {"color2", "Color2", XtRPixel, sizeof(Pixel),
+    XtOffset(appresPtr, color[2]), XtRString, (caddr_t) "green"},
+    {"color3", "Color3", XtRPixel, sizeof(Pixel),
+    XtOffset(appresPtr, color[3]), XtRString, (caddr_t) "cyan"},
+    {"color4", "Color4", XtRPixel, sizeof(Pixel),
+    XtOffset(appresPtr, color[4]), XtRString, (caddr_t) "red"},
+    {"color5", "Color5", XtRPixel, sizeof(Pixel),
+    XtOffset(appresPtr, color[5]), XtRString, (caddr_t) "magenta"},
+    {"color6", "Color6", XtRPixel, sizeof(Pixel),
+    XtOffset(appresPtr, color[6]), XtRString, (caddr_t) "yellow"},
+    {"color7", "Color7", XtRPixel, sizeof(Pixel),
+    XtOffset(appresPtr, color[7]), XtRString, (caddr_t) "white"},
+    {"monochrome", "Monochrome", XtRBoolean, sizeof(Boolean),
+    XtOffset(appresPtr, monochrome), XtRBoolean, (caddr_t) & false},
+    {"latexfonts", "Latexfonts", XtRBoolean, sizeof(Boolean),
+    XtOffset(appresPtr, latexfonts), XtRBoolean, (caddr_t) & false},
 };
 
 static XrmOptionDescRec options[] =
@@ -102,6 +128,10 @@ static XrmOptionDescRec options[] =
     {"-buttonFont", ".buttonFont", XrmoptionSepArg, 0},
     {"-startFontSize", ".startfontsize", XrmoptionSepArg, 0},
     {"-startfontsize", ".startfontsize", XrmoptionSepArg, 0},
+    {"-latexfonts", ".latexfonts", XrmoptionNoArg, "True"},
+    {"-specialtext", ".specialtext", XrmoptionNoArg, "True"},
+    {"-scalablefonts", ".scalablefonts", XrmoptionNoArg, "True"},
+    {"-monochrome", ".monochrome", XrmoptionNoArg, "True"},
     {"-internalBW", ".internalborderwidth", XrmoptionSepArg, 0},
     {"-internalBorderWidth", ".internalborderwidth", XrmoptionSepArg, 0},
 };
@@ -111,7 +141,7 @@ static XtCallbackRec callbacks[] =
     {NULL, NULL},
 };
 
-static Arg      form_args[] =
+static Arg	form_args[] =
 {
     {XtNcallback, (XtArgVal) callbacks},
     {XtNinput, (XtArgVal) True},
@@ -119,37 +149,40 @@ static Arg      form_args[] =
     {XtNresizable, (XtArgVal) False},
 };
 
-static void     check_for_resize();
-XtActionsRec    form_actions[] =
+static void	check_for_resize();
+static void	check_colors();
+XtActionsRec	form_actions[] =
 {
     {"ResizeForm", (XtActionProc) check_for_resize},
 };
 
-static String   form_translations =
+static String	form_translations =
 "<ConfigureNotify>:ResizeForm()\n";
 
-#define	NCHILDREN	9
-static TOOL     form;
+#define NCHILDREN	9
+static TOOL	form;
 
 main(argc, argv)
-    int             argc;
-    char           *argv[];
+    int		    argc;
+    char	   *argv[];
 
 {
-    TOOL            children[NCHILDREN];
-    int             ichild;
-    int             init_canv_wd, init_canv_ht;
-    XWMHints       *wmhints;
-    char            i;
-    Dimension       w, h;
+    TOOL	    children[NCHILDREN];
+    int		    ichild;
+    int		    init_canv_wd, init_canv_ht;
+    XWMHints	   *wmhints;
+    char	    i;
+    Dimension	    w, h;
 
     DeclareArgs(5);
 
     (void) sprintf(tool_name, " XFIG %s.%s  (protocol: %s)",
 		   FIG_VERSION, PATCHLEVEL, PROTOCOL_VERSION);
     (void) strcat(file_header, PROTOCOL_VERSION);
-    tool = XtAppInitialize(&tool_app, "Fig", options, XtNumber(options),
-			(Cardinal *) & argc, argv, NULL, NULL, 0);
+    tool = XtAppInitialize(&tool_app, (String) "Fig", (XrmOptionDescList) options,
+			   (Cardinal) XtNumber(options),
+			   (Cardinal *) & argc, (String *) argv,
+			   (String *) NULL, (String *) NULL, (Cardinal) 0);
 
     fix_converters();
     XtGetApplicationResources(tool, &appres, application_resources,
@@ -164,12 +197,22 @@ main(argc, argv)
 	i++;
     }
 
-    print_landscape = appres.landscape;	/* match print and screen format to
+    print_landscape = appres.landscape; /* match print and screen format to
 					 * start */
 
     tool_d = XtDisplay(tool);
     tool_s = XtScreen(tool);
     tool_sn = DefaultScreen(tool_d);
+
+    /* turn off PSFONT_TEXT flag if user specified -latexfonts */
+    if (appres.latexfonts)
+	cur_textflags = cur_textflags & (~PSFONT_TEXT);
+    if (appres.specialtext)
+	cur_textflags = cur_textflags | SPECIAL_TEXT;
+
+    /* turn off PSFONT_TEXT flag if user specified -latexfonts */
+    if (appres.latexfonts)
+	cur_textflags = cur_textflags & (~PSFONT_TEXT);
 
     /* run synchronously for debugging */
 
@@ -178,8 +221,8 @@ main(argc, argv)
 	fprintf(stderr, "Debug mode, running synchronously\n");
     }
     if (CellsOfScreen(tool_s) == 2 && appres.INVERSE) {
-	XrmValue        value;
-	XrmDatabase     newdb = (XrmDatabase) 0, old;
+	XrmValue	value;
+	XrmDatabase	newdb = (XrmDatabase) 0, old;
 
 	value.size = sizeof("White");
 	value.addr = "White";
@@ -212,6 +255,12 @@ main(argc, argv)
     XSetFont(tool_d, gc, roman_font->fid);
     XSetFont(tool_d, bold_gc, bold_font->fid);
     XSetFont(tool_d, button_gc, button_font->fid);
+
+    /*
+     * check if the NUMCOLORS drawing colors could be allocated and have
+     * different palette entries
+     */
+    check_colors();
 
     init_cursor();
     form = XtCreateManagedWidget("form", formWidgetClass, tool,
@@ -254,7 +303,7 @@ main(argc, argv)
     (void) init_mode_panel(form);
     (void) init_topruler(form);
     (void) init_canvas(form);
-    (void) init_fontmenu(form);	/* printer font menu */
+    (void) init_fontmenu(form); /* printer font menu */
     (void) init_unitbox(form);
     (void) init_sideruler(form);
     (void) init_ind_panel(form);
@@ -278,6 +327,12 @@ main(argc, argv)
     XtManageChildren(children, NCHILDREN);
     XtRealizeWidget(tool);
 
+    fig_icon = XCreateBitmapFromData(tool_d, XtWindow(tool),
+				     fig_bits, fig_width, fig_height);
+
+    FirstArg(XtNtitle, tool_name);
+    NextArg(XtNiconPixmap, fig_icon);
+    SetValues(tool);
     /* Set the input field to true to allow keyboard input */
     wmhints = XGetWMHints(tool_d, XtWindow(tool));
     wmhints->flags |= InputHint;/* add in input hint */
@@ -318,12 +373,6 @@ main(argc, argv)
 	XtManageChild(canvas_sw);
 	XtManageChild(mode_panel);
     }
-    fig_icon = XCreateBitmapFromData(tool_d, XtWindow(tool),
-				     fig_bits, fig_width, fig_height);
-
-    FirstArg(XtNtitle, tool_name);
-    NextArg(XtNiconPixmap, fig_icon);
-    SetValues(tool);
 
     init_gc();
     setup_cmd_panel();
@@ -350,7 +399,8 @@ main(argc, argv)
     (void) signal(SIGFPE, error_handler);
     (void) signal(SIGBUS, error_handler);
     (void) signal(SIGSEGV, error_handler);
-    (void) signal(SIGINT, SIG_IGN); /* in case user accidentally types ctrl-c */
+    (void) signal(SIGINT, SIG_IGN);	/* in case user accidentally types
+					 * ctrl-c */
 
     put_msg("READY, please select a mode or load a file");
 
@@ -366,13 +416,7 @@ main(argc, argv)
 	sprintf(cut_buf_name, "%s%06d", "/tmp/xfig", getpid());
     }
 
-    while (XtAppPending(tool_app)) {
-	XEvent          event;
-
-	/* pass events to ensure we are completely initialised */
-	XtAppNextEvent(tool_app, &event);
-	XtDispatchEvent(&event);
-    }
+    app_flush();
 
     if (filename == NULL)
 	strcpy(cur_filename, DEF_NAME);
@@ -384,14 +428,14 @@ main(argc, argv)
 
 static void
 check_for_resize(tool, event, params, nparams)
-    TOOL            tool;
-    INPUTEVENT     *event;
-    String         *params;
-    Cardinal       *nparams;
+    TOOL	    tool;
+    INPUTEVENT	   *event;
+    String	   *params;
+    Cardinal	   *nparams;
 {
     XConfigureEvent *xc = (XConfigureEvent *) event;
-    Dimension       b;
-    int             dx, dy;
+    Dimension	    b;
+    int		    dx, dy;
 
     DeclareArgs(3);
 
@@ -441,4 +485,30 @@ check_for_resize(tool, event, params, nparams)
     XtManageChild(unitbox_sw);	/* so that it shifts with canvas */
 
     XawFormDoLayout(form, True);
+}
+
+
+static void
+check_colors()
+{
+    int		    i, j;
+
+    /* if monochrome resource is set, do not even check for colors */
+    if (appres.monochrome) {
+	all_colors_available = false;
+	return;
+    }
+    all_colors_available = true;
+
+    /* check if the drawing colors have different palette entries */
+    for (i = 0; i < NUMCOLORS - 1; i++) {
+	for (j = i + 1; j < NUMCOLORS; j++) {
+	    if (appres.color[i] == appres.color[j]) {
+		all_colors_available = false;
+		break;
+	    }
+	}
+	if (!all_colors_available)
+	    break;
+    }
 }

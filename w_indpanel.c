@@ -28,49 +28,47 @@
 #include "w_util.h"
 #include "w_zoom.h"
 
-extern int     *font_ps_sel, *font_latex_sel;	/* ptrs to return font nos */
-extern int      (*font_setimage) ();	/* call this function */
-extern Widget   font_widget;	/* on this widget */
-extern char    *psfont_menu_bits[], *latexfont_menu_bits[];
-extern Pixmap   psfont_menu_bitmaps[], latexfont_menu_bitmaps[];
+extern Pixmap	psfont_menu_bitmaps[], latexfont_menu_bitmaps[];
 extern struct _fstruct ps_fontinfo[], latex_fontinfo[];
 extern char    *panel_get_value();
+extern int	show_zoom();
 
-/**************     local variables and routines   **************/
+/**************	    local variables and routines   **************/
 
-static int      cur_anglegeom = L_UNCONSTRAINED;
-static int      cur_arrowmode = L_NOARROWS;
-static int      cur_indmask = I_MIN1;
+static int	cur_anglegeom = L_UNCONSTRAINED;
+static int	cur_indmask = I_MIN1;
 
 DeclareStaticArgs(15);
 
 /* declarations for choice buttons */
-static int      inc_choice(), dec_choice();
-static int      show_valign(), show_halign(), show_textjust();
-static int      show_arrowmode(), show_linestyle(), show_anglegeom();
-static int      show_pointposn(), show_gridmode();
+static int	inc_choice(), dec_choice();
+static int	show_valign(), show_halign(), show_textjust();
+static int	show_arrowmode(), show_linestyle(), show_anglegeom();
+static int	show_pointposn(), show_gridmode(), show_linkmode();
 
 /* declarations for value buttons */
-static int      show_linewidth(), inc_linewidth(), dec_linewidth();
-static int      show_boxradius(), inc_boxradius(), dec_boxradius();
-static int      show_areafill(), darken_fill(), lighten_fill();
-static int      show_font(), inc_font(), dec_font();
-static int      show_fontsize(), inc_fontsize(), dec_fontsize();
-static int      show_textstep(), inc_textstep(), dec_textstep();
-static int      show_zoom(), inc_zoom(), dec_zoom();
-static int      show_rotnangle(), inc_rotnangle(), dec_rotnangle();
-static int      show_numsides(), inc_numsides(), dec_numsides();
+static int	show_linewidth(), inc_linewidth(), dec_linewidth();
+static int	show_boxradius(), inc_boxradius(), dec_boxradius();
+static int	show_fillstyle(), darken_fill(), lighten_fill();
+static int	show_color(), next_color(), prev_color();
+static int	show_font(), inc_font(), dec_font();
+static int	show_fontsize(), inc_fontsize(), dec_fontsize();
+static int	show_textstep(), inc_textstep(), dec_textstep();
+static int	inc_zoom(), dec_zoom();
+static int	show_rotnangle(), inc_rotnangle(), dec_rotnangle();
+static int	show_numsides(), inc_numsides(), dec_numsides();
 
-static int      popup_fonts();
+static int	popup_fonts();
 
-static char     indbuf[5];
-static int      old_zoomscale = -1;
-static int      old_rotnangle = -1;
+static char	indbuf[5];
+static int	old_zoomscale = -1;
+static int	old_rotnangle = -1;
 
 #define		DEF_IND_SW_HT		32
 #define		DEF_IND_SW_WD		64
 #define		FONT_IND_SW_WD		(40+PS_FONTPANE_WD)
 #define		NARROW_IND_SW_WD	56
+#define		WIDE_IND_SW_WD		76
 
 /* indicator switch definitions */
 
@@ -83,7 +81,7 @@ static choice_info anglegeom_choices[] = {
     {L_MOUNTAIN, &mountain_ic,},
 };
 
-#define	NUM_ANGLEGEOM_CHOICES (sizeof(anglegeom_choices)/sizeof(choice_info))
+#define NUM_ANGLEGEOM_CHOICES (sizeof(anglegeom_choices)/sizeof(choice_info))
 
 static choice_info valign_choices[] = {
     {NONE, &none_ic,},
@@ -92,7 +90,7 @@ static choice_info valign_choices[] = {
     {BOTTOM, &valignb_ic,},
 };
 
-#define	NUM_VALIGN_CHOICES (sizeof(valign_choices)/sizeof(choice_info))
+#define NUM_VALIGN_CHOICES (sizeof(valign_choices)/sizeof(choice_info))
 
 static choice_info halign_choices[] = {
     {NONE, &none_ic,},
@@ -101,7 +99,7 @@ static choice_info halign_choices[] = {
     {RIGHT, &halignr_ic,},
 };
 
-#define	NUM_HALIGN_CHOICES (sizeof(halign_choices)/sizeof(choice_info))
+#define NUM_HALIGN_CHOICES (sizeof(halign_choices)/sizeof(choice_info))
 
 static choice_info gridmode_choices[] = {
     {GRID_0, &none_ic,},
@@ -109,16 +107,16 @@ static choice_info gridmode_choices[] = {
     {GRID_2, &grid2_ic,},
 };
 
-#define	NUM_GRIDMODE_CHOICES (sizeof(gridmode_choices)/sizeof(choice_info))
+#define NUM_GRIDMODE_CHOICES (sizeof(gridmode_choices)/sizeof(choice_info))
 
 static choice_info pointposn_choices[] = {
     {P_ANY, &any_ic,},
-    {P_MAGNET, &magnet_ic,},
+    {P_MAGNET, &fine_grid_ic,},
     {P_GRID1, &grid1_ic,},
     {P_GRID2, &grid2_ic,},
 };
 
-#define	NUM_POINTPOSN_CHOICES (sizeof(pointposn_choices)/sizeof(choice_info))
+#define NUM_POINTPOSN_CHOICES (sizeof(pointposn_choices)/sizeof(choice_info))
 
 static choice_info arrowmode_choices[] = {
     {L_NOARROWS, &noarrows_ic,},
@@ -127,7 +125,7 @@ static choice_info arrowmode_choices[] = {
     {L_BARROWS, &barrows_ic,},
 };
 
-#define	NUM_ARROWMODE_CHOICES (sizeof(arrowmode_choices)/sizeof(choice_info))
+#define NUM_ARROWMODE_CHOICES (sizeof(arrowmode_choices)/sizeof(choice_info))
 
 static choice_info textjust_choices[] = {
     {T_LEFT_JUSTIFIED, &textL_ic,},
@@ -135,7 +133,7 @@ static choice_info textjust_choices[] = {
     {T_RIGHT_JUSTIFIED, &textR_ic,},
 };
 
-#define	NUM_TEXTJUST_CHOICES (sizeof(textjust_choices)/sizeof(choice_info))
+#define NUM_TEXTJUST_CHOICES (sizeof(textjust_choices)/sizeof(choice_info))
 
 static choice_info linestyle_choices[] = {
     {SOLID_LINE, &solidline_ic,},
@@ -143,83 +141,84 @@ static choice_info linestyle_choices[] = {
     {DOTTED_LINE, &dottedline_ic,},
 };
 
-#define	NUM_LINESTYLE_CHOICES (sizeof(linestyle_choices)/sizeof(choice_info))
+#define NUM_LINESTYLE_CHOICES (sizeof(linestyle_choices)/sizeof(choice_info))
 
-choice_info     areafill_choices[NUMFILLPATS + 1];
+static choice_info linkmode_choices[] = {
+    {SMART_OFF, &smartoff_ic,},
+    {SMART_MOVE, &smartmove_ic,},
+    {SMART_SLIDE, &smartslide_ic,},
+};
 
-#define	I_CHOICE	0
-#define	I_IVAL		1
-#define	I_FVAL		2	/* textstep is an integer - kludge */
+#define NUM_LINKMODE_CHOICES (sizeof(linkmode_choices)/sizeof(choice_info))
 
-typedef struct ind_sw_struct {
-    int             type;	/* one of I_CHOICE .. I_FVAL */
-    int             func;
-    char            line1[6], line2[6];
-    int             sw_width;
-    int            *varadr;
-    int             (*inc_func) ();
-    int             (*dec_func) ();
-    int             (*show_func) ();
-    choice_info    *choices;	/* specific to I_CHOICE */
-    int             numchoices;	/* specific to I_CHOICE */
-    int             sw_per_row;	/* specific to I_CHOICE */
-    TOOL            widget;
-    Pixmap          normalPM;
-}               ind_sw_info;
+choice_info	fillstyle_choices[NUMFILLPATS + 1];
 
-#define         inc_action(z)   (z->inc_func)(z)
-#define         dec_action(z)   (z->dec_func)(z)
-#define         show_action(z)  (z->show_func)(z)
+choice_info	color_choices[NUMCOLORS + 1];
+static ind_sw_info *fill_style_sw;
 
-static ind_sw_info ind_switches[] = {
+#define I_CHOICE	0
+#define I_IVAL		1
+#define I_FVAL		2
+
+#define		inc_action(z)	(z->inc_func)(z)
+#define		dec_action(z)	(z->dec_func)(z)
+#define		show_action(z)	(z->show_func)(z)
+
+ind_sw_info	ind_switches[] = {
     {I_IVAL, I_ZOOM, "Zoom", "Scale", NARROW_IND_SW_WD,
-    &zoomscale, inc_zoom, dec_zoom, show_zoom,},
+	&zoomscale, NULL, inc_zoom, dec_zoom, show_zoom,},
     {I_CHOICE, I_GRIDMODE, "Grid", "Mode", DEF_IND_SW_WD,
-	&cur_gridmode, inc_choice, dec_choice, show_gridmode,
-    gridmode_choices, NUM_GRIDMODE_CHOICES, NUM_GRIDMODE_CHOICES,},
+	&cur_gridmode, NULL, inc_choice, dec_choice, show_gridmode,
+	gridmode_choices, NUM_GRIDMODE_CHOICES, NUM_GRIDMODE_CHOICES,},
     {I_CHOICE, I_POINTPOSN, "Point", "Posn", DEF_IND_SW_WD,
-	&cur_pointposn, inc_choice, dec_choice, show_pointposn,
-    pointposn_choices, NUM_POINTPOSN_CHOICES, NUM_POINTPOSN_CHOICES,},
+	&cur_pointposn, NULL, inc_choice, dec_choice, show_pointposn,
+	pointposn_choices, NUM_POINTPOSN_CHOICES, NUM_POINTPOSN_CHOICES,},
     {I_IVAL, I_ROTNANGLE, "Rotn", "Angle", NARROW_IND_SW_WD,
-    &cur_rotnangle, inc_rotnangle, dec_rotnangle, show_rotnangle,},
+	&cur_rotnangle, NULL, inc_rotnangle, dec_rotnangle, show_rotnangle,},
     {I_IVAL, I_NUMSIDES, "Num", "Sides", NARROW_IND_SW_WD,
-    &cur_numsides, inc_numsides, dec_numsides, show_numsides,},
+	&cur_numsides, NULL, inc_numsides, dec_numsides, show_numsides,},
     {I_CHOICE, I_VALIGN, "Vert", "Align", DEF_IND_SW_WD,
-	&cur_valign, inc_choice, dec_choice, show_valign,
-    valign_choices, NUM_VALIGN_CHOICES, NUM_VALIGN_CHOICES,},
+	&cur_valign, NULL, inc_choice, dec_choice, show_valign,
+	valign_choices, NUM_VALIGN_CHOICES, NUM_VALIGN_CHOICES,},
     {I_CHOICE, I_HALIGN, "Horiz", "Align", DEF_IND_SW_WD,
-	&cur_halign, inc_choice, dec_choice, show_halign,
-    halign_choices, NUM_HALIGN_CHOICES, NUM_HALIGN_CHOICES,},
+	&cur_halign, NULL, inc_choice, dec_choice, show_halign,
+	halign_choices, NUM_HALIGN_CHOICES, NUM_HALIGN_CHOICES,},
     {I_CHOICE, I_ANGLEGEOM, "Angle", "Geom", DEF_IND_SW_WD,
-	&cur_anglegeom, inc_choice, dec_choice, show_anglegeom,
-    anglegeom_choices, NUM_ANGLEGEOM_CHOICES, NUM_ANGLEGEOM_CHOICES / 2,},
-    {I_CHOICE, I_FILLAREA, "Area", "Fill", DEF_IND_SW_WD,
-	&cur_areafill, darken_fill, lighten_fill, show_areafill,
-    areafill_choices, NUMFILLPATS + 1, (NUMFILLPATS + 1) / 2},
-    {I_IVAL, I_LINEWIDTH, "Line", "Width", DEF_IND_SW_WD,
-    &cur_linewidth, inc_linewidth, dec_linewidth, show_linewidth,},
+	&cur_anglegeom, NULL, inc_choice, dec_choice, show_anglegeom,
+	anglegeom_choices, NUM_ANGLEGEOM_CHOICES, NUM_ANGLEGEOM_CHOICES / 2,},
+    {I_CHOICE, I_FILLSTYLE, "Fill", "Style", DEF_IND_SW_WD,
+	&cur_fillstyle, NULL, darken_fill, lighten_fill, show_fillstyle,
+	fillstyle_choices, NUMFILLPATS + 1, (NUMFILLPATS + 1) / 2},
+    {I_CHOICE, I_COLOR, "Color", "", WIDE_IND_SW_WD,
+	&cur_color, NULL, next_color, prev_color, show_color,
+	color_choices, NUMCOLORS + 1, (NUMCOLORS + 1) / 2},
+    {I_CHOICE, I_LINKMODE, "Smart", "Links", DEF_IND_SW_WD,
+	&cur_linkmode, NULL, inc_choice, dec_choice, show_linkmode,
+	linkmode_choices, NUM_LINKMODE_CHOICES, NUM_LINKMODE_CHOICES},
+    {I_IVAL, I_LINEWIDTH, "Line", "Width", NARROW_IND_SW_WD,
+	&cur_linewidth, NULL, inc_linewidth, dec_linewidth, show_linewidth,},
     {I_CHOICE, I_LINESTYLE, "Line", "Style", DEF_IND_SW_WD,
-	&cur_linestyle, inc_choice, dec_choice, show_linestyle,
-    linestyle_choices, NUM_LINESTYLE_CHOICES, NUM_LINESTYLE_CHOICES,},
+	&cur_linestyle, NULL, inc_choice, dec_choice, show_linestyle,
+	linestyle_choices, NUM_LINESTYLE_CHOICES, NUM_LINESTYLE_CHOICES,},
     {I_IVAL, I_BOXRADIUS, "Box", "Curve", DEF_IND_SW_WD,
-    &cur_boxradius, inc_boxradius, dec_boxradius, show_boxradius,},
+	&cur_boxradius, NULL, inc_boxradius, dec_boxradius, show_boxradius,},
     {I_CHOICE, I_ARROWMODE, "Arrow", "Mode", DEF_IND_SW_WD,
-	&cur_arrowmode, inc_choice, dec_choice, show_arrowmode,
-    arrowmode_choices, NUM_ARROWMODE_CHOICES, NUM_ARROWMODE_CHOICES,},
+	&cur_arrowmode, NULL, inc_choice, dec_choice, show_arrowmode,
+	arrowmode_choices, NUM_ARROWMODE_CHOICES, NUM_ARROWMODE_CHOICES,},
     {I_CHOICE, I_TEXTJUST, "Text", "Just", DEF_IND_SW_WD,
-	&cur_textjust, inc_choice, dec_choice, show_textjust,
-    textjust_choices, NUM_TEXTJUST_CHOICES, NUM_TEXTJUST_CHOICES,},
+	&cur_textjust, NULL, inc_choice, dec_choice, show_textjust,
+	textjust_choices, NUM_TEXTJUST_CHOICES, NUM_TEXTJUST_CHOICES,},
     {I_IVAL, I_FONTSIZE, "Text", "Size", NARROW_IND_SW_WD,
-    &cur_fontsize, inc_fontsize, dec_fontsize, show_fontsize,},
-    {I_IVAL, I_TEXTSTEP, "Text", "Step", NARROW_IND_SW_WD,
-    &cur_textstep, inc_textstep, dec_textstep, show_textstep,},
+	&cur_fontsize, NULL, inc_fontsize, dec_fontsize, show_fontsize,},
+    {I_FVAL, I_TEXTSTEP, "Text", "Step", NARROW_IND_SW_WD,
+	NULL, &cur_textstep, inc_textstep, dec_textstep, show_textstep,},
     {I_IVAL, I_FONT, "Text", "Font", FONT_IND_SW_WD,
-    &cur_ps_font, inc_font, dec_font, show_font,},
+	&cur_ps_font, NULL, inc_font, dec_font, show_font,},
 };
 
 #define		NUM_IND_SW	(sizeof(ind_switches) / sizeof(ind_sw_info))
 
-static Arg      button_args[] =
+static Arg	button_args[] =
 {
      /* 0 */ {XtNlabel, (XtArgVal) "        "},
      /* 1 */ {XtNwidth, (XtArgVal) 0},
@@ -234,7 +233,7 @@ static Arg      button_args[] =
 };
 
 /* button selection event handler */
-static void     sel_ind_but();
+static void	sel_ind_but();
 
 static XtActionsRec ind_actions[] =
 {
@@ -242,12 +241,12 @@ static XtActionsRec ind_actions[] =
     {"LeaveIndSw", (XtActionProc) clear_mousefun},
 };
 
-static String   ind_translations =
+static String	ind_translations =
 "<EnterWindow>:EnterIndSw()highlight()\n\
     <LeaveWindow>:LeaveIndSw()unhighlight()\n";
 
 init_ind_panel(tool)
-    TOOL            tool;
+    TOOL	    tool;
 {
     register int    i;
     register ind_sw_info *sw;
@@ -325,15 +324,20 @@ setup_ind_panel()
     XSetBackground(tool_d, ind_blank_gc, ind_but_bg);
     XSetForeground(tool_d, ind_blank_gc, ind_but_bg);
 
-    /* initialize the area-fill gc and pixmaps */
+    /* create a gc for the color 'palette' */
+    color_gc = XCreateGC(tool_d, XtWindow(ind_panel), (unsigned long) 0, NULL);
+
+    /* initialize the fill style gc and pixmaps */
     init_fill_pm();
     init_fill_gc();
 
-    FirstArg(XtNbackgroundPixmap, areafill_choices[NUMFILLPATS].normalPM);
+    FirstArg(XtNbackgroundPixmap, fillstyle_choices[NUMFILLPATS].blackPM);
     SetValues(ind_panel);
 
     for (i = 0; i < NUM_IND_SW; ++i) {
 	isw = &ind_switches[i];
+	if (ind_switches[i].func == I_FILLSTYLE)
+		fill_style_sw = isw;
 
 	p = XCreatePixmap(d, XtWindow(isw->widget), isw->sw_width,
 			  DEF_IND_SW_HT, DefaultDepthOfScreen(s));
@@ -354,7 +358,7 @@ setup_ind_panel()
 }
 
 update_indpanel(mask)
-    int             mask;
+    int		    mask;
 {
     register int    i;
     register ind_sw_info *isw;
@@ -379,8 +383,8 @@ update_indpanel(mask)
 
 static void
 sel_ind_but(widget, isw, event)
-    Widget          widget;
-    ind_sw_info    *isw;
+    Widget	    widget;
+    ind_sw_info	   *isw;
     XButtonEvent   *event;
 {
     if (event->button == Button3) {	/* right button */
@@ -390,8 +394,8 @@ sel_ind_but(widget, isw, event)
     } else {			/* left button */
 	if (isw->func == I_FONT)
 	    popup_fonts(isw);
-	else if (isw->type == I_IVAL)
-	    popup_ival_panel(isw);
+	else if (isw->type == I_IVAL || isw->type == I_FVAL)
+	    popup_nval_panel(isw);
 	else if (isw->type == I_CHOICE)
 	    popup_choice_panel(isw);
     }
@@ -399,15 +403,15 @@ sel_ind_but(widget, isw, event)
 
 static
 update_string_pixmap(isw, buf, xpos)
-    ind_sw_info    *isw;
-    char           *buf;
-    int             xpos;
+    ind_sw_info	   *isw;
+    char	   *buf;
+    int		    xpos;
 {
     XDrawImageString(tool_d, isw->normalPM, ind_button_gc,
 		     xpos, 18, buf, strlen(buf));
     /*
      * Fool the toolkit by changing the background pixmap to 0 then giving it
-     * the modified one again.  Otherwise, it sees that the pixmap ID is not
+     * the modified one again.	Otherwise, it sees that the pixmap ID is not
      * changed and doesn't actually draw it into the widget window
      */
     button_args[6].value = 0;
@@ -420,11 +424,11 @@ update_string_pixmap(isw, buf, xpos)
 
 static
 update_choice_pixmap(isw, mode)
-    ind_sw_info    *isw;
-    int             mode;
+    ind_sw_info	   *isw;
+    int		    mode;
 {
-    choice_info    *tmp_choice;
-    int             i;
+    choice_info	   *tmp_choice;
+    int		    i;
     register Pixmap p;
 
     /* put the pixmap in the widget background */
@@ -434,7 +438,7 @@ update_choice_pixmap(isw, mode)
     XPutImage(tool_d, p, ind_button_gc, tmp_choice->icon, 0, 0, 32, 0, 32, 32);
     /*
      * Fool the toolkit by changing the background pixmap to 0 then giving it
-     * the modified one again.  Otherwise, it sees that the pixmap ID is not
+     * the modified one again.	Otherwise, it sees that the pixmap ID is not
      * changed and doesn't actually draw it into the widget window
      */
     button_args[6].value = 0;
@@ -449,11 +453,12 @@ update_choice_pixmap(isw, mode)
 
 ********************************************************/
 
-static Widget   choice_popup;
+static Widget	choice_popup;
 static ind_sw_info *choice_i;
-static Widget   ival_popup, form, cancel, set, beside, below, newvalue, label;
-static Widget   dash_length, dot_gap;
-static ind_sw_info *ival_i;
+static Widget	nval_popup, form, cancel, set, beside, below, newvalue,
+		label;
+static Widget	dash_length, dot_gap;
+static ind_sw_info *nval_i;
 
 
 static void
@@ -465,7 +470,7 @@ choice_panel_dismiss()
 
 static void
 choice_panel_cancel(w, ev)
-    Widget          w;
+    Widget	    w;
     XButtonEvent   *ev;
 {
     choice_panel_dismiss();
@@ -473,11 +478,11 @@ choice_panel_cancel(w, ev)
 
 static void
 choice_panel_set(w, sel_choice, ev)
-    Widget          w;
-    choice_info    *sel_choice;
+    Widget	    w;
+    choice_info	   *sel_choice;
     XButtonEvent   *ev;
 {
-    (*choice_i->varadr) = sel_choice->value;
+    (*choice_i->i_varadr) = sel_choice->value;
     show_action(choice_i);
 
     /* auxiliary info */
@@ -498,13 +503,14 @@ choice_panel_set(w, sel_choice, ev)
 }
 
 popup_choice_panel(isw)
-    ind_sw_info    *isw;
+    ind_sw_info	   *isw;
 {
-    Position        x_val, y_val;
-    Dimension       width, height;
-    char            buf[32];
-    choice_info    *tmp_choice;
-    Pixmap          p;
+    Position	    x_val, y_val;
+    Dimension	    width, height;
+    char	    buf[32];
+    choice_info	   *tmp_choice;
+    Pixmap	    p;
+    Pixel	    form_fg;
     register int    i;
 
     choice_i = isw;
@@ -522,7 +528,7 @@ popup_choice_panel(isw)
     NextArg(XtNresize, False);
     NextArg(XtNresizable, False);
 
-    choice_popup = XtCreatePopupShell("xfig: set indicator panel",
+    choice_popup = XtCreatePopupShell("xfig_set_indicator_panel",
 				      transientShellWidgetClass, tool,
 				      Args, ArgCount);
 
@@ -544,10 +550,15 @@ popup_choice_panel(isw)
 		      choice_panel_cancel, (XtPointer) NULL);
 
     tmp_choice = isw->choices;
+
     for (i = 0; i < isw->numchoices; tmp_choice++, i++) {
-	if (isw->func == I_FILLAREA)
-	    p = areafill_choices[i].normalPM;
-	else
+	if (isw->func == I_FILLSTYLE)
+	    p = (cur_color==BLACK? 
+		fillstyle_choices[i].blackPM :fillstyle_choices[i].normalPM);
+	else if (isw->func == I_COLOR) {
+	    p = NULL;
+	    tmp_choice->value = (i >= NUMCOLORS ? DEFAULT_COLOR : i);
+	} else
 	    p = XCreatePixmapFromBitmapData(tool_d, XtWindow(ind_panel),
 			    tmp_choice->icon->data, tmp_choice->icon->width,
 			   tmp_choice->icon->height, ind_but_fg, ind_but_bg,
@@ -561,11 +572,34 @@ popup_choice_panel(isw)
 	}
 	FirstArg(XtNfromVert, below);
 	NextArg(XtNfromHoriz, beside);
-	NextArg(XtNbackgroundPixmap, p);
-	NextArg(XtNwidth, tmp_choice->icon->width);
+	if (isw->func != I_COLOR) {
+	    NextArg(XtNbackgroundPixmap, p);
+	    NextArg(XtNwidth, tmp_choice->icon->width);
+	    NextArg(XtNheight, tmp_choice->icon->height);
+	} else {		/* Color popup menu */
+	    NextArg(XtNheight, 32);
+	    NextArg(XtNwidth, 64);
+	    if (i < NUMCOLORS && i >= 0) {	/* it's a proper color */
+		if (all_colors_available) {
+		    XColor	    col;
+
+		    col.pixel = appres.color[i];
+		    XQueryColor(tool_d, DefaultColormapOfScreen(tool_s), &col);
+		    if ((0.3 * col.red + 0.59 * col.green + 0.11 * col.blue) < 0.5 * (255 << 8))
+			form_fg = appres.color[WHITE];
+		    else
+			form_fg = appres.color[BLACK];
+		    NextArg(XtNforeground, form_fg);
+		    NextArg(XtNbackground, appres.color[i]);
+		}
+		NextArg(XtNlabel, colorNames[i + 1]);
+	    } else {		/* it's the default color */
+		NextArg(XtNforeground, x_fg_color.pixel);
+		NextArg(XtNlabel, colorNames[0]);
+	    }
+	}
 	NextArg(XtNresize, False);
 	NextArg(XtNresizable, False);
-	NextArg(XtNheight, tmp_choice->icon->height);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	beside = XtCreateManagedWidget(" ", commandWidgetClass,
 				       form, Args, ArgCount);
@@ -579,7 +613,8 @@ popup_choice_panel(isw)
 	/* dash length */
 	FirstArg(XtNfromVert, beside);
 	NextArg(XtNborderWidth, 0);
-	label = XtCreateManagedWidget("Default dash length =",
+	NextArg(XtNlabel, "Default dash length =");
+	label = XtCreateManagedWidget("default_dash_length",
 				    labelWidgetClass, form, Args, ArgCount);
 	sprintf(buf, "%1.1f", cur_dashlength);
 	FirstArg(XtNfromVert, beside);
@@ -594,7 +629,8 @@ popup_choice_panel(isw)
 	/* dot gap */
 	FirstArg(XtNfromVert, dash_length);
 	NextArg(XtNborderWidth, 0);
-	label = XtCreateManagedWidget("    Default dot gap =",
+	NextArg(XtNlabel, "    Default dot gap =");
+	label = XtCreateManagedWidget("default_dot_gap",
 				    labelWidgetClass, form, Args, ArgCount);
 	sprintf(buf, "%1.1f", cur_dotgap);
 	FirstArg(XtNfromVert, dash_length);
@@ -613,43 +649,52 @@ popup_choice_panel(isw)
 }
 
 static void
-ival_panel_dismiss()
+nval_panel_dismiss()
 {
-    XtDestroyWidget(ival_popup);
-    XtSetSensitive(ival_i->widget, True);
+    XtDestroyWidget(nval_popup);
+    XtSetSensitive(nval_i->widget, True);
 }
 
 static void
-ival_panel_cancel(w, ev)
-    Widget          w;
+nval_panel_cancel(w, ev)
+    Widget	    w;
     XButtonEvent   *ev;
 {
-    ival_panel_dismiss();
+    nval_panel_dismiss();
 }
 
 static void
-ival_panel_set(w, ev)
-    Widget          w;
+nval_panel_set(w, ev)
+    Widget	    w;
     XButtonEvent   *ev;
 {
-    int             new_value;
+    int		    new_i_value;
+    float	    new_f_value;
 
-    new_value = atoi(panel_get_value(newvalue));
-    ival_panel_dismiss();
 
-    (*ival_i->varadr) = new_value;
-    show_action(ival_i);
+    if (nval_i->type == I_IVAL)
+	    {
+	    new_i_value = atoi(panel_get_value(newvalue));
+	    (*nval_i->i_varadr) = new_i_value;
+	    }
+    else
+	    {
+	    new_f_value = atof(panel_get_value(newvalue));
+	    (*nval_i->f_varadr) = new_f_value;
+	    }
+    nval_panel_dismiss();
+    show_action(nval_i);
 }
 
-popup_ival_panel(isw)
-    ind_sw_info    *isw;
+popup_nval_panel(isw)
+    ind_sw_info	   *isw;
 {
-    Position        x_val, y_val;
-    Dimension       width, height;
-    char            buf[32];
+    Position	    x_val, y_val;
+    Dimension	    width, height;
+    char	    buf[32];
 
-    ival_i = isw;
-    XtSetSensitive(ival_i->widget, False);
+    nval_i = isw;
+    XtSetSensitive(nval_i->widget, False);
 
     FirstArg(XtNwidth, &width);
     NextArg(XtNheight, &height);
@@ -662,11 +707,11 @@ popup_ival_panel(isw)
     NextArg(XtNy, y_val);
     NextArg(XtNwidth, 240);
 
-    ival_popup = XtCreatePopupShell("xfig: set indicator panel",
+    nval_popup = XtCreatePopupShell("xfig_set_indicator_panel",
 				    transientShellWidgetClass, tool,
 				    Args, ArgCount);
 
-    form = XtCreateManagedWidget("form", formWidgetClass, ival_popup, NULL, 0);
+    form = XtCreateManagedWidget("form", formWidgetClass, nval_popup, NULL, 0);
 
     FirstArg(XtNborderWidth, 0);
     sprintf(buf, "%s %s", isw->line1, isw->line2);
@@ -674,9 +719,14 @@ popup_ival_panel(isw)
 
     FirstArg(XtNfromVert, label);
     NextArg(XtNborderWidth, 0);
-    newvalue = XtCreateManagedWidget("Value =", labelWidgetClass,
+    NextArg(XtNlabel, "Value =");
+    newvalue = XtCreateManagedWidget("value", labelWidgetClass,
 				     form, Args, ArgCount);
-    sprintf(buf, "%d", (*isw->varadr));
+    /* int or float? */
+    if (isw->type == I_IVAL)
+	    sprintf(buf, "%d", (*isw->i_varadr));
+    else
+	    sprintf(buf, "%4.1f", (*isw->f_varadr));
     FirstArg(XtNfromVert, label);
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNfromHoriz, newvalue);
@@ -693,7 +743,7 @@ popup_ival_panel(isw)
     cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
 				   form, Args, ArgCount);
     XtAddEventHandler(cancel, ButtonReleaseMask, (Boolean) 0,
-		      ival_panel_cancel, (XtPointer) NULL);
+		      nval_panel_cancel, (XtPointer) NULL);
 
     FirstArg(XtNlabel, "set");
     NextArg(XtNfromVert, newvalue);
@@ -702,9 +752,9 @@ popup_ival_panel(isw)
     set = XtCreateManagedWidget("set", commandWidgetClass,
 				form, Args, ArgCount);
     XtAddEventHandler(set, ButtonReleaseMask, (Boolean) 0,
-		      ival_panel_set, (XtPointer) NULL);
+		      nval_panel_set, (XtPointer) NULL);
 
-    XtPopup(ival_popup, XtGrabExclusive);
+    XtPopup(nval_popup, XtGrabExclusive);
 }
 
 /********************************************************
@@ -715,8 +765,8 @@ popup_ival_panel(isw)
 
 update_current_settings()
 {
-    int             i;
-    ind_sw_info    *isw;
+    int		    i;
+    ind_sw_info	   *isw;
 
     for (i = 0; i < NUM_IND_SW; ++i) {
 	isw = &ind_switches[i];
@@ -726,19 +776,19 @@ update_current_settings()
 
 static
 dec_choice(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
-    if (--(*sw->varadr) < 0)
-	(*sw->varadr) = sw->numchoices - 1;
+    if (--(*sw->i_varadr) < 0)
+	(*sw->i_varadr) = sw->numchoices - 1;
     show_action(sw);
 }
 
 static
 inc_choice(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
-    if (++(*sw->varadr) > sw->numchoices - 1)
-	(*sw->varadr) = 0;
+    if (++(*sw->i_varadr) > sw->numchoices - 1)
+	(*sw->i_varadr) = 0;
     show_action(sw);
 }
 
@@ -746,7 +796,7 @@ inc_choice(sw)
 
 static
 show_arrowmode(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     update_choice_pixmap(sw, cur_arrowmode);
     switch (cur_arrowmode) {
@@ -779,7 +829,7 @@ show_arrowmode(sw)
 
 static
 dec_linewidth(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     --cur_linewidth;
     show_linewidth(sw);
@@ -787,7 +837,7 @@ dec_linewidth(sw)
 
 static
 inc_linewidth(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     ++cur_linewidth;
     show_linewidth(sw);
@@ -795,7 +845,7 @@ inc_linewidth(sw)
 
 static
 show_linewidth(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     if (cur_linewidth > MAXLINEWIDTH)
 	cur_linewidth = MAXLINEWIDTH;
@@ -803,18 +853,18 @@ show_linewidth(sw)
 	cur_linewidth = 0;
 
     /* erase by drawing wide, inverted (white) line */
-    pw_vector(sw->normalPM, DEF_IND_SW_WD / 2, DEF_IND_SW_HT / 2,
-	      DEF_IND_SW_WD, DEF_IND_SW_HT / 2, ERASE,
-	      DEF_IND_SW_HT, PANEL_LINE, 0.0);
+    pw_vector(sw->normalPM, DEF_IND_SW_WD / 2 + 2, DEF_IND_SW_HT / 2,
+	      sw->sw_width - 2, DEF_IND_SW_HT / 2, ERASE,
+	      DEF_IND_SW_HT, PANEL_LINE, 0.0, DEFAULT_COLOR);
     /* draw current line thickness into pixmap */
     if (cur_linewidth > 0)	/* don't draw line for zero-thickness */
-	pw_vector(sw->normalPM, DEF_IND_SW_WD / 2, DEF_IND_SW_HT / 2,
-		  DEF_IND_SW_WD, DEF_IND_SW_HT / 2, PAINT,
-		  cur_linewidth, PANEL_LINE, 0.0);
+	pw_vector(sw->normalPM, DEF_IND_SW_WD / 2 + 2, DEF_IND_SW_HT / 2,
+		  sw->sw_width - 2, DEF_IND_SW_HT / 2, PAINT,
+		  cur_linewidth, PANEL_LINE, 0.0, DEFAULT_COLOR);
 
     /*
      * Fool the toolkit by changing the background pixmap to 0 then giving it
-     * the modified one again.  Otherwise, it sees that the pixmap ID is not
+     * the modified one again.	Otherwise, it sees that the pixmap ID is not
      * changed and doesn't actually draw it into the widget window
      */
     button_args[6].value = 0;
@@ -829,7 +879,7 @@ show_linewidth(sw)
 
 static
 show_anglegeom(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     update_choice_pixmap(sw, cur_anglegeom);
     switch (cur_anglegeom) {
@@ -882,7 +932,7 @@ show_anglegeom(sw)
 
 static
 show_linestyle(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     update_choice_pixmap(sw, cur_linestyle);
     switch (cur_linestyle) {
@@ -905,7 +955,7 @@ show_linestyle(sw)
 
 static
 show_valign(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     update_choice_pixmap(sw, cur_valign);
     switch (cur_valign) {
@@ -928,7 +978,7 @@ show_valign(sw)
 
 static
 show_halign(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     update_choice_pixmap(sw, cur_halign);
     switch (cur_halign) {
@@ -951,9 +1001,9 @@ show_halign(sw)
 
 static
 show_gridmode(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
-    static int      prev_gridmode = -1;
+    static int	    prev_gridmode = -1;
 
     update_choice_pixmap(sw, cur_gridmode);
     switch (cur_gridmode) {
@@ -976,22 +1026,42 @@ show_gridmode(sw)
 
 static
 show_pointposn(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
+    char	    buf[80];
+
     update_choice_pixmap(sw, cur_pointposn);
     switch (cur_pointposn) {
     case P_ANY:
 	put_msg("Arbitrary Positioning of Points");
 	break;
     case P_MAGNET:
-	put_msg("MAGNET MODE: entered points rounded to the nearest %s increment",
-		(appres.INCHES ? "1/16\"" : "2 mm"));
-	break;
     case P_GRID1:
-	put_msg("Points rounded to small grid positions");
-	break;
     case P_GRID2:
-	put_msg("Points rounded to large grid positions");
+	sprintf(buf,
+	  "MAGNET MODE: entered points rounded to the nearest %s increment",
+		grid_name[cur_pointposn]);
+	put_msg(buf);
+	break;
+    }
+}
+
+/* SMART LINK MODE */
+
+static
+show_linkmode(sw)
+    ind_sw_info	   *sw;
+{
+    update_choice_pixmap(sw, cur_linkmode);
+    switch (cur_linkmode) {
+    case SMART_OFF:
+	put_msg("Do not adjust links automatically");
+	break;
+    case SMART_MOVE:
+	put_msg("Adjust links automatically by moving endpoint");
+	break;
+    case SMART_SLIDE:
+	put_msg("Adjust links automatically by sliding endlink");
 	break;
     }
 }
@@ -1000,7 +1070,7 @@ show_pointposn(sw)
 
 static
 show_textjust(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     update_choice_pixmap(sw, cur_textjust);
     switch (cur_textjust) {
@@ -1020,7 +1090,7 @@ show_textjust(sw)
 
 static
 dec_boxradius(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     --cur_boxradius;
     show_boxradius(sw);
@@ -1028,7 +1098,7 @@ dec_boxradius(sw)
 
 static
 inc_boxradius(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     ++cur_boxradius;
     show_boxradius(sw);
@@ -1037,7 +1107,7 @@ inc_boxradius(sw)
 #define MAXRADIUS 30
 static
 show_boxradius(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     if (cur_boxradius > MAXRADIUS)
 	cur_boxradius = MAXRADIUS;
@@ -1046,15 +1116,15 @@ show_boxradius(sw)
     /* erase by drawing wide, inverted (white) line */
     pw_vector(sw->normalPM, DEF_IND_SW_WD / 2, DEF_IND_SW_HT / 2,
 	      DEF_IND_SW_WD, DEF_IND_SW_HT / 2, ERASE,
-	      DEF_IND_SW_HT, PANEL_LINE, 0.0);
+	      DEF_IND_SW_HT, PANEL_LINE, 0.0, DEFAULT_COLOR);
     /* draw current radius into pixmap */
     curve(sw->normalPM, 0, cur_boxradius, -cur_boxradius, 0, 1,
-	  cur_boxradius, cur_boxradius,
-	  DEF_IND_SW_WD - 2, DEF_IND_SW_HT - 2, PAINT, 1, PANEL_LINE, 0.0, 0);
+	  cur_boxradius, cur_boxradius, DEF_IND_SW_WD - 2, DEF_IND_SW_HT - 2,
+	  PAINT, 1, PANEL_LINE, 0.0, 0, DEFAULT_COLOR);
 
     /*
      * Fool the toolkit by changing the background pixmap to 0 then giving it
-     * the modified one again.  Otherwise, it sees that the pixmap ID is not
+     * the modified one again.	Otherwise, it sees that the pixmap ID is not
      * changed and doesn't actually draw it into the widget window
      */
     button_args[6].value = 0;
@@ -1065,40 +1135,48 @@ show_boxradius(sw)
     put_msg("ROUNDED-CORNER BOX Radius = %d", cur_boxradius);
 }
 
-/* AREA FILL */
+/* FILL STYLE */
 
 static
 darken_fill(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
-    if (++cur_areafill > NUMFILLPATS)
-	cur_areafill = 0;
-    show_areafill(sw);
+    if (++cur_fillstyle > NUMFILLPATS)
+	cur_fillstyle = 0;
+    show_fillstyle(sw);
 }
 
 static
 lighten_fill(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
-    if (--cur_areafill < 0)
-	cur_areafill = NUMFILLPATS;
-    show_areafill(sw);
+    if (--cur_fillstyle < 0)
+	cur_fillstyle = NUMFILLPATS;
+    show_fillstyle(sw);
 }
 
 static
-show_areafill(sw)
-    ind_sw_info    *sw;
+show_fillstyle(sw)
+    ind_sw_info	   *sw;
 {
-    if (cur_areafill == 0) {
-	XCopyArea(tool_d, areafill_choices[0].normalPM, sw->normalPM,
-		  ind_button_gc, 0, 0, 32, 32, 32, 0);
+    if (cur_fillstyle == 0) {
+	XCopyArea(tool_d, ((cur_color==BLACK || 
+			    (!all_colors_available && cur_color!=WHITE))? 
+			fillstyle_choices[0].blackPM: fillstyle_choices[0].normalPM),
+			sw->normalPM,
+			ind_button_gc, 0, 0, 32, 32, 32, 0);
 	put_msg("NO-FILL MODE");
     } else {
 	/* put the pixmap in the widget background */
-	XCopyArea(tool_d, areafill_choices[cur_areafill].normalPM, sw->normalPM,
-		  ind_button_gc, 0, 0, 26, 24, 35, 4);
-	put_msg("FILL MODE (density = %d%%)",
-		((cur_areafill - 1) * 100) / (NUMFILLPATS - 1));
+	XCopyArea(tool_d, ((cur_color==BLACK || 
+			    (!all_colors_available && cur_color!=WHITE))? 
+				fillstyle_choices[cur_fillstyle].blackPM:
+				fillstyle_choices[cur_fillstyle].normalPM),
+			sw->normalPM,
+			ind_button_gc, 0, 0, 26, 24, 35, 4);
+	put_msg("FILL MODE (%s = %d%%)",
+		cur_color==BLACK? "black density": "color intensity",
+		((cur_fillstyle - 1) * 100) / (NUMFILLPATS - 1));
     }
     button_args[6].value = 0;
     XtSetValues(sw->widget, &button_args[6], 1);
@@ -1106,11 +1184,66 @@ show_areafill(sw)
     XtSetValues(sw->widget, &button_args[6], 1);
 }
 
+/* COLOR */
+
+static
+next_color(sw)
+    ind_sw_info	   *sw;
+{
+    if (++cur_color >= NUMCOLORS)
+	cur_color = DEFAULT_COLOR;
+    show_color(sw);
+}
+
+static
+prev_color(sw)
+    ind_sw_info	   *sw;
+{
+    if (--cur_color < DEFAULT_COLOR)
+	cur_color = NUMCOLORS - 1;
+    show_color(sw);
+}
+
+static
+show_color(sw)
+    ind_sw_info	   *sw;
+{
+    int		    color;
+
+    if (cur_color < 0 || cur_color >= NUMCOLORS) {
+	cur_color == DEFAULT_COLOR;
+	color = x_fg_color.pixel;
+    } else
+	color = all_colors_available ? appres.color[cur_color] : x_fg_color.pixel;
+
+    put_msg("Color set to %s", colorNames[cur_color + 1]);
+    XSetForeground(tool_d, color_gc, color);
+    /* now fill the color rectangle with the new color */
+    XFillRectangle(tool_d, sw->normalPM, color_gc, sw->sw_width - 29, 4, 26, 24);
+    /*
+     * write the widget background over old color name before writing new
+     * name
+     */
+    /* first set the foreground color to the background for the fill */
+    XSetForeground(tool_d, ind_button_gc, ind_but_bg);
+    XFillRectangle(tool_d, sw->normalPM, ind_button_gc, 0, DEF_IND_SW_HT / 2,
+		   sw->sw_width - 29, DEF_IND_SW_HT / 2);
+    /* now restore the foreground in the gc */
+    XSetForeground(tool_d, ind_button_gc, ind_but_fg);
+    XDrawImageString(tool_d, sw->normalPM, ind_button_gc, 3, 25,
+	      colorNames[cur_color + 1], strlen(colorNames[cur_color + 1]));
+    button_args[6].value = 0;
+    XtSetValues(sw->widget, &button_args[6], 1);
+    button_args[6].value = (XtArgVal) sw->normalPM;
+    XtSetValues(sw->widget, &button_args[6], 1);
+    show_fillstyle(fill_style_sw);
+}
+
 /* FONT */
 
 static
 inc_font(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     if (using_ps)
 	cur_ps_font++;
@@ -1121,7 +1254,7 @@ inc_font(sw)
 
 static
 dec_font(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     if (using_ps)
 	cur_ps_font--;
@@ -1132,12 +1265,12 @@ dec_font(sw)
 
 static
 show_font(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     if (using_ps) {
 	if (cur_ps_font >= NUM_PS_FONTS)
-	    cur_ps_font = 0;
-	else if (cur_ps_font < 0)
+	    cur_ps_font = DEFAULT;
+	else if (cur_ps_font < DEFAULT)
 	    cur_ps_font = NUM_PS_FONTS - 1;
     } else {
 	if (cur_latex_font >= NUM_LATEX_FONTS)
@@ -1148,14 +1281,14 @@ show_font(sw)
 
     /* erase larger fontpane bits if we switched to smaller (Latex) */
     XFillRectangle(tool_d, sw->normalPM, ind_blank_gc, 0, 0,
-		   32 + max2(PS_FONTPANE_WD, LATEX_FONTPANE_WD), DEF_IND_SW_HT);
+	       32 + max2(PS_FONTPANE_WD, LATEX_FONTPANE_WD), DEF_IND_SW_HT);
     /* and redraw info */
     XDrawImageString(tool_d, sw->normalPM, ind_button_gc, 3, 12, sw->line1,
 		     strlen(sw->line1));
     XDrawImageString(tool_d, sw->normalPM, ind_button_gc, 3, 25, sw->line2,
 		     strlen(sw->line2));
 
-    XCopyArea(tool_d, using_ps ? psfont_menu_bitmaps[cur_ps_font] :
+    XCopyArea(tool_d, using_ps ? psfont_menu_bitmaps[cur_ps_font + 1] :
 	      latexfont_menu_bitmaps[cur_latex_font],
 	      sw->normalPM, ind_button_gc, 0, 0,
 	      using_ps ? PS_FONTPANE_WD : LATEX_FONTPANE_WD,
@@ -1167,20 +1300,20 @@ show_font(sw)
     /* put the pixmap in the widget background */
     button_args[6].value = (XtArgVal) sw->normalPM;
     XtSetValues(sw->widget, &button_args[6], 1);
-    put_msg("Font: %s", using_ps ? ps_fontinfo[cur_ps_font].name :
+    put_msg("Font: %s", using_ps ? ps_fontinfo[cur_ps_font + 1].name :
 	    latex_fontinfo[cur_latex_font].name);
 }
 
 /* popup menu of printer fonts */
 
-static int      psflag;
+static int	psflag;
 static ind_sw_info *return_sw;
 
-int    show_font_return();
+int		show_font_return();
 
 static
 popup_fonts(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     return_sw = sw;
     psflag = using_ps ? 1 : 0;
@@ -1189,7 +1322,7 @@ popup_fonts(sw)
 }
 
 show_font_return(w)
-    Widget          w;
+    Widget	    w;
 {
     if (psflag)
 	cur_textflags = cur_textflags | PSFONT_TEXT;
@@ -1202,7 +1335,7 @@ show_font_return(w)
 
 static
 inc_fontsize(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     if (cur_fontsize >= 100) {
 	cur_fontsize = (cur_fontsize / 10) * 10;	/* round first */
@@ -1223,7 +1356,7 @@ inc_fontsize(sw)
 
 static
 dec_fontsize(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     if (cur_fontsize > 100) {
 	cur_fontsize = (cur_fontsize / 10) * 10;	/* round first */
@@ -1241,7 +1374,7 @@ dec_fontsize(sw)
 
 static
 show_fontsize(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     if (cur_fontsize < 0)
 	cur_fontsize = 0;
@@ -1252,12 +1385,12 @@ show_fontsize(sw)
     /* write the font size in the background pixmap */
     indbuf[0] = indbuf[1] = indbuf[2] = indbuf[3] = indbuf[4] = '\0';
     sprintf(indbuf, "%4d", cur_fontsize);
-    update_string_pixmap(sw, indbuf, 28);
+    update_string_pixmap(sw, indbuf, sw->sw_width - 28);
 }
 
 static
 inc_rotnangle(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     if (cur_rotnangle < 30 || cur_rotnangle >= 120)
 	cur_rotnangle = 30;
@@ -1274,7 +1407,7 @@ inc_rotnangle(sw)
 
 static
 dec_rotnangle(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     if (cur_rotnangle > 120 || cur_rotnangle <= 30)
 	cur_rotnangle = 120;
@@ -1291,7 +1424,7 @@ dec_rotnangle(sw)
 
 static
 show_rotnangle(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     if (cur_rotnangle < 1)
 	cur_rotnangle = 1;
@@ -1305,12 +1438,12 @@ show_rotnangle(sw)
     /* write the font size in the background pixmap */
     indbuf[0] = indbuf[1] = indbuf[2] = indbuf[3] = indbuf[4] = '\0';
     sprintf(indbuf, "%3d", cur_rotnangle);
-    update_string_pixmap(sw, indbuf, 34);
+    update_string_pixmap(sw, indbuf, sw->sw_width - 22);
 
     /* change markers if we changed to or from 90 degrees (except at start) */
     if (old_rotnangle != -1) {
 	if (cur_rotnangle == 90)
-	    update_markers(M_NO_TEXT);
+	    update_markers(M_ALL);
 	else if (old_rotnangle == 90)
 	    update_markers(M_ROTATE_ANGLE);
     }
@@ -1321,7 +1454,7 @@ show_rotnangle(sw)
 
 static
 inc_numsides(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     cur_numsides++;
     show_numsides(sw);
@@ -1329,7 +1462,7 @@ inc_numsides(sw)
 
 static
 dec_numsides(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     cur_numsides--;
     show_numsides(sw);
@@ -1337,7 +1470,7 @@ dec_numsides(sw)
 
 static
 show_numsides(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     if (cur_numsides < 3)
 	cur_numsides = 3;
@@ -1348,14 +1481,14 @@ show_numsides(sw)
     /* write the font size in the background pixmap */
     indbuf[0] = indbuf[1] = indbuf[2] = indbuf[3] = indbuf[4] = '\0';
     sprintf(indbuf, "%2d", cur_numsides);
-    update_string_pixmap(sw, indbuf, 38);
+    update_string_pixmap(sw, indbuf, sw->sw_width - 18);
 }
 
 /* ZOOM */
 
 static
 inc_zoom(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     zoomscale++;
     show_zoom(sw);
@@ -1363,15 +1496,14 @@ inc_zoom(sw)
 
 static
 dec_zoom(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     zoomscale--;
     show_zoom(sw);
 }
 
-static
 show_zoom(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     if (zoomscale < 1)
 	zoomscale = 1;
@@ -1385,7 +1517,7 @@ show_zoom(sw)
     /* write the font size in the background pixmap */
     indbuf[0] = indbuf[1] = indbuf[2] = indbuf[3] = indbuf[4] = '\0';
     sprintf(indbuf, "%2d", zoomscale);
-    update_string_pixmap(sw, indbuf, 38);
+    update_string_pixmap(sw, indbuf, sw->sw_width - 18);
 
     /* fix up the rulers and grid */
     reset_rulers();
@@ -1398,53 +1530,53 @@ show_zoom(sw)
 
 static
 inc_textstep(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
-    if (cur_textstep >= 100) {
-	cur_textstep = (cur_textstep / 10) * 10;	/* round first */
-	cur_textstep += 10;
-    } else if (cur_textstep >= 50) {
-	cur_textstep = (cur_textstep / 5) * 5;
-	cur_textstep += 5;
-    } else if (cur_textstep >= 20) {
-	cur_textstep = (cur_textstep / 2) * 2;
-	cur_textstep += 2;
+    if (cur_textstep >= 10.0) {
+	cur_textstep = (int) cur_textstep;	/* round first */
+	cur_textstep += 1.0;
+    } else if (cur_textstep >= 5.0) {
+	cur_textstep = ((int)(cur_textstep*2.0+0.01))/2.0;
+	cur_textstep += 0.5;
+    } else if (cur_textstep >= 2.0) {
+	cur_textstep = ((int)(cur_textstep*5.0+0.01))/5.0;
+	cur_textstep += 0.2;
     } else
-	cur_textstep++;
+	cur_textstep += 0.1;
     show_textstep(sw);
 }
 
 static
 dec_textstep(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
-    if (cur_textstep > 100) {
-	cur_textstep = (cur_textstep / 10) * 10;	/* round first */
-	cur_textstep -= 10;
-    } else if (cur_textstep > 50) {
-	cur_textstep = (cur_textstep / 5) * 5;
-	cur_textstep -= 5;
-    } else if (cur_textstep > 20) {
-	cur_textstep = (cur_textstep / 2) * 2;
-	cur_textstep -= 2;
-    } else if (cur_textstep > 4)
-	cur_textstep--;
+    if (cur_textstep > 10.0) {
+	cur_textstep = (int)cur_textstep;	/* round first */
+	cur_textstep -= 1.0;
+    } else if (cur_textstep > 5.0) {
+	cur_textstep = ((int)(cur_textstep*2.0+0.01))/2.0;
+	cur_textstep -= 0.5;
+    } else if (cur_textstep > 2.0) {
+	cur_textstep = ((int)(cur_textstep*5.0+0.01))/5.0;
+	cur_textstep -= 0.2;
+    } else if (cur_textstep > 0.4)
+	cur_textstep -= 0.1;
     show_textstep(sw);
 }
 
 /* could make this more generic - but a copy will do for font set JNT */
 static
 show_textstep(sw)
-    ind_sw_info    *sw;
+    ind_sw_info	   *sw;
 {
     if (cur_textstep < 0)
 	cur_textstep = 0;
-    else if (cur_textstep > 990)
-	cur_textstep = 990;
+    else if (cur_textstep > 99.0)
+	cur_textstep = 99.0;
 
-    put_fmsg("Font step %.1f", (double) cur_textstep / 10.0);
+    put_fmsg("Font step %.1f", cur_textstep);
     /* write the font size in the background pixmap */
     indbuf[0] = indbuf[1] = indbuf[2] = indbuf[3] = indbuf[4] = '\0';
-    sprintf(indbuf, "%4.1f", cur_textstep / 10.0);
-    update_string_pixmap(sw, indbuf, 28);
+    sprintf(indbuf, "%4.1f", cur_textstep);
+    update_string_pixmap(sw, indbuf, sw->sw_width - 28);
 }

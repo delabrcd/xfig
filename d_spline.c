@@ -25,8 +25,8 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-static int      create_splineobject();
-static int      init_spline_drawing();
+static int	create_splineobject();
+static int	init_spline_drawing();
 
 spline_drawing_selected()
 {
@@ -42,7 +42,7 @@ spline_drawing_selected()
 
 static
 init_spline_drawing(x, y)
-    int             x, y;
+    int		    x, y;
 {
     if (cur_mode == F_CLOSED_SPLINE) {
 	min_num_points = 3;
@@ -58,17 +58,17 @@ init_spline_drawing(x, y)
 
 static
 create_splineobject(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    F_spline       *spline;
+    F_spline	   *spline;
 
     if (x != fix_x || y != fix_y || num_point < min_num_points) {
-        if (manhattan_mode || mountain_mode)
-            get_direction(x, y);
-        else if (latexline_mode || latexarrow_mode)
-            get_latexpoint(x, y);
-        else
-            get_intermediatepoint(x, y);
+	if (manhattan_mode || mountain_mode)
+	    get_direction(x, y);
+	else if (latexline_mode || latexarrow_mode)
+	    get_latexpoint(x, y);
+	else
+	    get_intermediatepoint(x, y);
     }
     elastic_line();
     if ((spline = create_spline()) == NULL)
@@ -80,12 +80,10 @@ create_splineobject(x, y)
     spline->color = cur_color;
     spline->depth = 0;
     spline->pen = 0;
-    spline->area_fill = cur_areafill;
+    spline->fill_style = cur_fillstyle;
     /*
-     * The current area fill color is saved in all spline objects (but
-     * support for filling may not be available in all fig2dev languages).
-     * Currently, splines are drawn in overlapping sections which make
-     * drawing the area fill difficult, so no filling is done on screen.
+     * The current fill style is saved in all spline objects (but support for
+     * filling may not be available in all fig2dev languages).
      */
     spline->points = first_point;
     spline->controls = NULL;
@@ -109,7 +107,7 @@ create_splineobject(x, y)
 	draw_open_spline(spline, PAINT);
     }
     if (appres.DEBUG) {
-	int             xmin, ymin, xmax, ymax;
+	int		xmin, ymin, xmax, ymax;
 
 	spline_bound(spline, &xmin, &ymin, &xmax, &ymax);
 	elastic_box(xmin, ymin, xmax, ymax);

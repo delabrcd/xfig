@@ -27,10 +27,10 @@
 extern void	force_positioning();
 extern void	force_nopositioning();
 
-static int      init_point_adding();
-static int      fix_linepoint_adding();
-static int      mm_fix_linepoint_adding();
-static int      fix_splinepoint_adding();
+static int	init_point_adding();
+static int	fix_linepoint_adding();
+static int	mm_fix_linepoint_adding();
+static int	fix_splinepoint_adding();
 static int	init_splinepointadding();
 static int	init_linepointadding();
 static int	find_endpoints();
@@ -51,10 +51,10 @@ point_adding_selected()
 
 static int
 init_point_adding(p, type, x, y, px, py)
-    char           *p;
-    int             type;
-    int             x, y;
-    int             px, py;
+    char	   *p;
+    int		    type;
+    int		    x, y;
+    int		    px, py;
 {
     switch (type) {
     case O_POLYLINE:
@@ -93,7 +93,8 @@ cancel_line_pointadding()
     if (left_point != NULL && right_point != NULL)
 	pw_vector(canvas_win, left_point->x, left_point->y,
 		  right_point->x, right_point->y, INV_PAINT,
-		  cur_l->thickness, cur_l->style, cur_l->style_val);
+		  cur_l->thickness, cur_l->style, cur_l->style_val,
+		  cur_l->color);
     cancel_pointadding();
 }
 
@@ -101,7 +102,7 @@ cancel_line_pointadding()
 
 static int
 init_splinepointadding(px, py)
-    int             px, py;
+    int		    px, py;
 {
     set_action_on();
     set_mousefun("place new point", "", "cancel");
@@ -123,9 +124,9 @@ init_splinepointadding(px, py)
 
 static
 fix_splinepoint_adding(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    F_point        *p;
+    F_point	   *p;
 
     if ((p = create_point()) == NULL) {
 	wrapup_pointadding();
@@ -147,10 +148,10 @@ fix_splinepoint_adding(x, y)
  */
 
 splinepoint_adding(spline, left_point, added_point, right_point)
-    F_spline       *spline;
-    F_point        *left_point, *added_point, *right_point;
+    F_spline	   *spline;
+    F_point	   *left_point, *added_point, *right_point;
 {
-    F_control      *c;
+    F_control	   *c;
 
     if (int_spline(spline)) {	/* Interpolated spline */
 	if ((c = create_cpoint()) == NULL)
@@ -158,7 +159,7 @@ splinepoint_adding(spline, left_point, added_point, right_point)
     }
     set_temp_cursor(&wait_cursor);
     mask_toggle_splinemarker(spline);
-    draw_spline(spline, ERASE);	/* erase old spline */
+    draw_spline(spline, ERASE); /* erase old spline */
     if (left_point == NULL) {
 	added_point->next = spline->points;
 	spline->points = added_point;
@@ -172,7 +173,7 @@ splinepoint_adding(spline, left_point, added_point, right_point)
 	spline->controls = c;
 	remake_control_points(spline);
     }
-    draw_spline(spline, PAINT);	/* draw the modified spline */
+    draw_spline(spline, PAINT); /* draw the modified spline */
     mask_toggle_splinemarker(spline);
     clean_up();
     set_modifiedflag();
@@ -187,7 +188,7 @@ splinepoint_adding(spline, left_point, added_point, right_point)
 
 static int
 init_linepointadding(px, py)
-    int             px, py;
+    int		    px, py;
 {
     set_action_on();
     set_mousefun("place new point", "", "cancel");
@@ -207,7 +208,8 @@ init_linepointadding(px, py)
     if (left_point != NULL && right_point != NULL)
 	pw_vector(canvas_win, left_point->x, left_point->y,
 		  right_point->x, right_point->y, ERASE,
-		  cur_l->thickness, cur_l->style, cur_l->style_val);
+		  cur_l->thickness, cur_l->style, cur_l->style_val,
+		  cur_l->color);
 
     /* draw in rubber-band line */
     elastic_linelink();
@@ -228,9 +230,9 @@ init_linepointadding(px, py)
 
 static
 fix_linepoint_adding(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    F_point        *p;
+    F_point	   *p;
 
     if ((p = create_point()) == NULL) {
 	wrapup_pointadding();
@@ -246,7 +248,7 @@ fix_linepoint_adding(x, y)
 static
 mm_fix_linepoint_adding()
 {
-    F_point        *p;
+    F_point	   *p;
 
     if ((p = create_point()) == NULL) {
 	wrapup_pointadding();
@@ -260,8 +262,8 @@ mm_fix_linepoint_adding()
 }
 
 linepoint_adding(line, left_point, added_point, right_point)
-    F_line         *line;
-    F_point        *left_point, *added_point, *right_point;
+    F_line	   *line;
+    F_point	   *left_point, *added_point, *right_point;
 {
     mask_toggle_linemarker(line);
     draw_line(line, ERASE);
@@ -292,11 +294,11 @@ linepoint_adding(line, left_point, added_point, right_point)
 
 static int
 find_endpoints(p, x, y, fp, sp)
-    F_point        *p, **fp, **sp;
-    int             x, y;
+    F_point	   *p, **fp, **sp;
+    int		    x, y;
 {
-    int             d;
-    F_point        *a = NULL, *b = p;
+    int		    d;
+    F_point	   *a = NULL, *b = p;
 
     if (x == b->x && y == b->y) {
 	*fp = a;

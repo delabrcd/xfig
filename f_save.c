@@ -20,15 +20,15 @@
 #include "object.h"
 #include "w_setup.h"
 
-extern int      num_object;
+extern int	num_object;
 
 write_file(file_name)
-    char           *file_name;
+    char	   *file_name;
 {
-    FILE           *fp;
+    FILE	   *fp;
 
     if (!ok_to_write(file_name, "SAVE"))
-	    return (-1);
+	return (-1);
 
     if ((fp = fopen(file_name, "w")) == NULL) {
 	put_msg("Couldn't open file %s, %s", file_name, sys_errlist[errno]);
@@ -45,15 +45,15 @@ write_file(file_name)
 
 int
 write_objects(fp)
-    FILE           *fp;
+    FILE	   *fp;
 {
-    extern char     file_header[];
-    F_arc          *a;
-    F_compound     *c;
-    F_ellipse      *e;
-    F_line         *l;
-    F_spline       *s;
-    F_text         *t;
+    extern char	    file_header[];
+    F_arc	   *a;
+    F_compound	   *c;
+    F_ellipse	   *e;
+    F_line	   *l;
+    F_spline	   *s;
+    F_text	   *t;
 
     /*
      * Number 2 means that the origin (0,0) is at the upper left corner of
@@ -97,14 +97,14 @@ write_objects(fp)
 }
 
 write_arc(fp, a)
-    FILE           *fp;
-    F_arc          *a;
+    FILE	   *fp;
+    F_arc	   *a;
 {
-    F_arrow        *f, *b;
+    F_arrow	   *f, *b;
 
     fprintf(fp, "%d %d %d %d %d %d %d %d %.3f %d %d %d %.3f %.3f %d %d %d %d %d %d\n",
 	    O_ARC, a->type, a->style, a->thickness,
-	    a->color, a->depth, a->pen, a->area_fill,
+	    a->color, a->depth, a->pen, a->fill_style,
 	    a->style_val, a->direction,
 	    ((f = a->for_arrow) ? 1 : 0), ((b = a->back_arrow) ? 1 : 0),
 	    a->center.x, a->center.y,
@@ -120,15 +120,15 @@ write_arc(fp, a)
 }
 
 write_compound(fp, com)
-    FILE           *fp;
-    F_compound     *com;
+    FILE	   *fp;
+    F_compound	   *com;
 {
-    F_arc          *a;
-    F_compound     *c;
-    F_ellipse      *e;
-    F_line         *l;
-    F_spline       *s;
-    F_text         *t;
+    F_arc	   *a;
+    F_compound	   *c;
+    F_ellipse	   *e;
+    F_line	   *l;
+    F_spline	   *s;
+    F_text	   *t;
 
     fprintf(fp, "%d %d %d %d %d\n", O_COMPOUND, com->nwcorner.x,
 	    com->nwcorner.y, com->secorner.x, com->secorner.y);
@@ -148,15 +148,15 @@ write_compound(fp, com)
 }
 
 write_ellipse(fp, e)
-    FILE           *fp;
-    F_ellipse      *e;
+    FILE	   *fp;
+    F_ellipse	   *e;
 {
     if (e->radiuses.x == 0 || e->radiuses.y == 0)
 	return;
 
     fprintf(fp, "%d %d %d %d %d %d %d %d %.3f %d %.3f %d %d %d %d %d %d %d %d\n",
 	    O_ELLIPSE, e->type, e->style, e->thickness,
-	    e->color, e->depth, e->pen, e->area_fill,
+	    e->color, e->depth, e->pen, e->fill_style,
 	    e->style_val, e->direction, e->angle,
 	    e->center.x, e->center.y,
 	    e->radiuses.x, e->radiuses.y,
@@ -165,17 +165,17 @@ write_ellipse(fp, e)
 }
 
 write_line(fp, l)
-    FILE           *fp;
-    F_line         *l;
+    FILE	   *fp;
+    F_line	   *l;
 {
-    F_point        *p;
-    F_arrow        *f, *b;
+    F_point	   *p;
+    F_arrow	   *f, *b;
 
     if (l->points == NULL)
 	return;
     fprintf(fp, "%d %d %d %d %d %d %d %d %.3f %d %d %d\n",
 	    O_POLYLINE, l->type, l->style, l->thickness,
-	  l->color, l->depth, l->pen, l->area_fill, l->style_val, l->radius,
+	 l->color, l->depth, l->pen, l->fill_style, l->style_val, l->radius,
 	    ((f = l->for_arrow) ? 1 : 0), ((b = l->back_arrow) ? 1 : 0));
     if (f)
 	fprintf(fp, "\t%d %d %.3f %.3f %.3f\n", f->type, f->style,
@@ -194,18 +194,18 @@ write_line(fp, l)
 }
 
 write_spline(fp, s)
-    FILE           *fp;
-    F_spline       *s;
+    FILE	   *fp;
+    F_spline	   *s;
 {
-    F_control      *cp;
-    F_point        *p;
-    F_arrow        *f, *b;
+    F_control	   *cp;
+    F_point	   *p;
+    F_arrow	   *f, *b;
 
     if (s->points == NULL)
 	return;
     fprintf(fp, "%d %d %d %d %d %d %d %d %.3f %d %d\n",
 	    O_SPLINE, s->type, s->style, s->thickness,
-	    s->color, s->depth, s->pen, s->area_fill, s->style_val,
+	    s->color, s->depth, s->pen, s->fill_style, s->style_val,
 	    ((f = s->for_arrow) ? 1 : 0), ((b = s->back_arrow) ? 1 : 0));
     if (f)
 	fprintf(fp, "\t%d %d %.3f %.3f %.3f\n", f->type, f->style,
@@ -230,8 +230,8 @@ write_spline(fp, s)
 }
 
 write_text(fp, t)
-    FILE           *fp;
-    F_text         *t;
+    FILE	   *fp;
+    F_text	   *t;
 {
     if (t->length == 0)
 	return;
@@ -243,9 +243,9 @@ write_text(fp, t)
 }
 
 emergency_save(file_name)
-    char           *file_name;
+    char	   *file_name;
 {
-    FILE           *fp;
+    FILE	   *fp;
 
     if ((fp = fopen(file_name, "w")) == NULL)
 	return (-1);

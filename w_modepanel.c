@@ -37,7 +37,7 @@ extern          box_drawing_selected();
 extern          arcbox_drawing_selected();
 extern          line_drawing_selected();
 extern          regpoly_drawing_selected();
-extern          epsbitmap_drawing_selected();
+extern          epsobj_drawing_selected();
 extern          text_drawing_selected();
 extern          arc_drawing_selected();
 extern          spline_drawing_selected();
@@ -61,9 +61,9 @@ extern          arrow_head_selected();
 extern          edit_item_selected();
 extern          update_selected();
 
-/**************     local variables and routines   **************/
+/**************	    local variables and routines   **************/
 
-#define MAX_MODEMSG_LEN	80
+#define MAX_MODEMSG_LEN 80
 typedef struct mode_switch_struct {
     PIXRECT         icon;
     int             mode;
@@ -75,7 +75,7 @@ typedef struct mode_switch_struct {
     Pixmap          normalPM, reversePM;
 }               mode_sw_info;
 
-#define         setmode_action(z)    (z->setmode_func)(z)
+#define		setmode_action(z)    (z->setmode_func)(z)
 
 DeclareStaticArgs(13);
 /* pointer to current mode switch */
@@ -114,11 +114,11 @@ static mode_sw_info mode_switches[] = {
     I_REGPOLY, "Regular Polygon",},
     {&arc_ic, F_CIRCULAR_ARC, arc_drawing_selected, M_NONE,
     I_ARC, "ARC drawing: specify three points on the arc",},
-    {&epsbitmap_ic, F_EPSBITMAP, epsbitmap_drawing_selected, M_NONE,
-    I_MIN2, "Encapsulated Postscript Bitmap",},
+    {&epsobj_ic, F_EPSOBJ, epsobj_drawing_selected, M_NONE,
+    I_MIN2, "Encapsulated Postscript Object",},
     {&text_ic, F_TEXT, text_drawing_selected, M_TEXT_NORMAL,
     I_TEXT, "TEXT input (from keyboard)",},
-    {&glue_ic, F_GLUE, compound_selected, M_COMPOUND,
+    {&glue_ic, F_GLUE, compound_selected, M_ALL,
     I_MIN2, "GLUE objects into COMPOUND object",},
     {&break_ic, F_BREAK, break_selected, M_COMPOUND,
     I_MIN1, "BREAK COMPOUND object",},
@@ -129,11 +129,11 @@ static mode_sw_info mode_switches[] = {
     {&movept_ic, F_MOVE_POINT, move_point_selected, M_NO_TEXT,
     I_MIN2, "MOVE POINTs",},
     {&move_ic, F_MOVE, move_selected, M_ALL,
-    I_MIN2, "MOVE objects",},
+    I_MIN3, "MOVE objects",},
     {&addpt_ic, F_ADD_POINT, point_adding_selected, M_VARPTS_OBJECT,
     I_MIN1, "ADD POINTs (to lines, polygons and splines)",},
     {&copy_ic, F_COPY, copy_selected, M_ALL,
-    I_MIN2, "COPY objects",},
+    I_MIN3, "COPY objects",},
     {&deletept_ic, F_DELETE_POINT, delete_point_selected, M_VARPTS_OBJECT,
     I_MIN1, "DELETE POINTs (from lines, polygons and splines)",},
     {&delete_ic, F_DELETE, delete_selected, M_ALL,
@@ -146,9 +146,9 @@ static mode_sw_info mode_switches[] = {
     I_MIN1, "FLIP objects up or down",},
     {&flip_y_ic, F_FLIP, flip_lr_selected, M_NO_TEXT,
     I_MIN1, "FLIP objects left or right",},
-    {&rotCW_ic, F_ROTATE, rotate_cw_selected, M_NO_TEXT,
+    {&rotCW_ic, F_ROTATE, rotate_cw_selected, M_ALL,
     I_ROTATE, "ROTATE objects clockwise",},
-    {&rotCCW_ic, F_ROTATE, rotate_ccw_selected, M_NO_TEXT,
+    {&rotCCW_ic, F_ROTATE, rotate_ccw_selected, M_ALL,
     I_ROTATE, "ROTATE objects counter-clockwise",},
     {&convert_ic, F_CONVERT, convert_selected,
 	(M_POLYLINE_LINE | M_POLYLINE_POLYGON | M_SPLINE_INTERP), I_MIN1,
@@ -268,7 +268,7 @@ setup_mode_panel()
     if (appres.INVERSE) {
 	FirstArg(XtNbackground, WhitePixelOfScreen(tool_s));
     } else {
-    	FirstArg(XtNbackground, BlackPixelOfScreen(tool_s));
+	FirstArg(XtNbackground, BlackPixelOfScreen(tool_s));
     }
     SetValues(mode_panel);
 
@@ -284,7 +284,7 @@ setup_mode_panel()
 
 	/* create reverse bitmaps */
 	msw->reversePM = XCreatePixmapFromBitmapData(d, XtWindow(msw->widget),
-		      msw->icon->data, msw->icon->width, msw->icon->height,
+		       msw->icon->data, msw->icon->width, msw->icon->height,
 				   but_bg, but_fg, DefaultDepthOfScreen(s));
     }
 
@@ -307,7 +307,7 @@ sel_mode_but(widget, msw, event)
 	if (cur_mode == F_TEXT)
 	    finish_text_input();/* finish up any text input */
 	else {
-	    put_msg("FINISH drawing current object first");
+	    put_msg("Please finish (or cancel) the current operation before changing modes");
 	    return;
 	}
     } else if (highlighting)
@@ -317,6 +317,14 @@ sel_mode_but(widget, msw, event)
 	turn_on(msw);
 	update_indpanel(msw->indmask);
 	put_msg(msw->modemsg);
+	if ((cur_mode == F_GLUE || cur_mode == F_BREAK) &&
+	    msw->mode != F_GLUE &&
+	    msw->mode != F_BREAK)
+	    /*
+	     * reset tagged items when changing modes, perhaps this is not
+	     * really necessary
+	     */
+	    set_tags(objects, 0);
 	cur_mode = msw->mode;
 	anypointposn = !(msw->indmask & I_POINTPOSN);
 	new_objmask = msw->objmask;

@@ -16,11 +16,12 @@
 
 /*
  * Routines for drawing and filling objects under the following headings:
- * 	ARC, ELLIPSE, LINE, SPLINE, TEXT, COMPOUND,
+ *	ARC, ELLIPSE, LINE, SPLINE, TEXT, COMPOUND,
  *	ARROWS, CURVES FOR ARCS AND ELLIPSES, CURVES FOR SPLINES.
  *
  */
 
+#include <strings.h>
 #include "fig.h"
 #include "resources.h"
 #include "object.h"
@@ -32,29 +33,32 @@
 #include "w_drawprim.h"
 #include "w_zoom.h"
 
-extern char    *malloc();
-
 typedef unsigned char byte;
 
 #define			PI		3.14159
 
 /************** POLYGON/CURVE DRAWING FACILITIES ****************/
 
-#define   MaxNumPts	  4000
-static int      npoints;
-static int      max_points;
+#define	  MaxNumPts	  10000
+static int	npoints;
+static int	max_points;
 static XPoint  *points;
-static int      allocstep;
+static int	allocstep;
 
-static          Boolean
+static		Boolean
 init_point_array(init_size, step_size)
-    int             init_size, step_size;
+    int		    init_size, step_size;
 {
     npoints = 0;
     max_points = init_size;
     allocstep = step_size;
-    if (max_points > MaxNumPts)
+    if (max_points > MaxNumPts) {
+	fprintf(stderr, "xfig: warning: too many points in polyline\n");
+	fprintf(stderr, "  Only first %d points are displayed\n", MaxNumPts);
+	fprintf(stderr, "  Recompile with MaxNumPts > %d in %s\n",
+		init_size, __FILE__);
 	max_points = MaxNumPts;
+    }
     if ((points = (XPoint *) malloc(max_points * sizeof(XPoint))) == 0) {
 	fprintf(stderr, "xfig: insufficient memory to allocate point array\n");
 	return False;
@@ -62,15 +66,15 @@ init_point_array(init_size, step_size)
     return True;
 }
 
-static          Boolean
+static		Boolean
 add_point(x, y)
-    int             x, y;
+    int		    x, y;
 {
     if (npoints >= (max_points - 1)) {
-	XPoint         *tmp_p;
+	XPoint	       *tmp_p;
 
 	max_points += allocstep;
-	if (max_points > MaxNumPts)
+	if (max_points >= MaxNumPts)
 	    return False;	/* stop; it is not closing */
 
 	if ((tmp_p = (XPoint *) realloc(points,
@@ -79,7 +83,6 @@ add_point(x, y)
 		    "xfig: insufficient memory to reallocate point array\n");
 	    return False;
 	}
-	free(points);
 	points = tmp_p;
     }
     points[npoints].x = (short) x;
@@ -89,26 +92,27 @@ add_point(x, y)
 }
 
 static void
-draw_point_array(w, op, line_width, line_style, style_val, area_fill)
-    Window          w;
-    int             op;
-    int             line_width, line_style;
-    float           style_val;
-    int             area_fill;
+draw_point_array(w, op, line_width, line_style, style_val, fill_style, color)
+    Window	    w;
+    int		    op;
+    int		    line_width, line_style;
+    float	    style_val;
+    int		    fill_style;
+    Color	    color;
 {
     pw_lines(w, points, npoints, op,
-	     line_width, line_style, style_val, area_fill);
+	     line_width, line_style, style_val, fill_style, color);
     free(points);
 }
 
 /*********************** ARC ***************************/
 
 draw_arc(a, op)
-    F_arc          *a;
-    int             op;
+    F_arc	   *a;
+    int		    op;
 {
-    int             radius, rx, ry;
-    int             xmin, ymin, xmax, ymax;
+    int		    radius, rx, ry;
+    int		    xmin, ymin, xmax, ymax;
 
     arc_bound(a, &xmin, &ymin, &xmax, &ymax);
     if (!overlapping(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax),
@@ -125,7 +129,7 @@ draw_arc(a, op)
 	  round(a->center.y - a->point[2].y),
 	  a->direction, radius, radius,
 	  round(a->center.x), round(a->center.y), op,
-	  a->thickness, a->style, a->style_val, a->area_fill);
+	  a->thickness, a->style, a->style_val, a->fill_style, a->color);
 
     draw_arcarrows(a, op);
 }
@@ -133,10 +137,10 @@ draw_arc(a, op)
 /*********************** ELLIPSE ***************************/
 
 draw_ellipse(e, op)
-    F_ellipse      *e;
-    int             op;
+    F_ellipse	   *e;
+    int		    op;
 {
-    int             a, b, xmin, ymin, xmax, ymax;
+    int		    a, b, xmin, ymin, xmax, ymax;
 
     ellipse_bound(e, &xmin, &ymin, &xmax, &ymax);
     if (!overlapping(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax),
@@ -148,26 +152,27 @@ draw_ellipse(e, op)
 	b = e->radiuses.y;
 	curve(canvas_win, a, 0, a, 0, e->direction, (b * b), (a * a),
 	      e->center.x, e->center.y, op,
-	      e->thickness, e->style, e->style_val, e->area_fill);
+	      e->thickness, e->style, e->style_val, e->fill_style, e->color);
     } else {
 	pw_curve(canvas_win, xmin, ymin, xmax, ymax, op,
-		 e->thickness, e->style, e->style_val, e->area_fill);
+		 e->thickness, e->style, e->style_val, e->fill_style,
+		 e->color);
     }
 }
 
 /*********************** LINE ***************************/
 
 draw_line(line, op)
-    F_line         *line;
-    int             op;
+    F_line	   *line;
+    int		    op;
 {
-    F_point        *point;
-    int             num_pts;
-    int             xx, yy, x, y;
-    int             xmin, ymin, xmax, ymax;
-    char           *string;
-    F_point        *p0, *p1, *p2;
-    pr_size         txt;
+    F_point	   *point;
+    int		    num_pts;
+    int		    xx, yy, x, y;
+    int		    xmin, ymin, xmax, ymax;
+    char	   *string;
+    F_point	   *p0, *p1, *p2;
+    pr_size	    txt;
 
     line_bound(line, &xmin, &ymin, &xmax, &ymax);
     if (!overlapping(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax),
@@ -204,7 +209,8 @@ draw_line(line, op)
 	    txt = pf_textwidth(0, 0, 12, strlen(string), string);
 	    x = (xmin + xmax) / 2 - txt.x / 2;
 	    y = (ymin + ymax) / 2;
-	    pw_text(canvas_win, x, y, op, 0, 0, 12, string);
+	    pw_text(canvas_win, x, y, op, 0, 0, 12, string,
+		    DEFAULT_COLOR);
 	    /* return; */
 	}
     }
@@ -216,12 +222,12 @@ draw_line(line, op)
     /* is it a single point? */
     if (line->points->next == NULL) {
 	/* draw but don't fill */
-	pw_point(canvas_win, x, y, line->thickness, op);
+	pw_point(canvas_win, x, y, line->thickness, op, line->color);
 	return;
     }
     if (line->back_arrow)	/* backward arrow  */
 	draw_arrow(point->next->x, point->next->y, x, y,
-		   line->back_arrow, op);
+		   line->back_arrow, op, line->color);
 
     num_pts = 0;
     /* count number of points in this object */
@@ -241,18 +247,18 @@ draw_line(line, op)
     }
 
     draw_point_array(canvas_win, op, line->thickness, line->style,
-		     line->style_val, line->area_fill);
+		     line->style_val, line->fill_style, line->color);
 
     if (line->for_arrow)
-	draw_arrow(xx, yy, x, y, line->for_arrow, op);
+	draw_arrow(xx, yy, x, y, line->for_arrow, op, line->color);
 }
 
 draw_arcbox(line, op)
-    F_line         *line;
-    int             op;
+    F_line	   *line;
+    int		    op;
 {
-    F_point        *point;
-    int             xmin, xmax, ymin, ymax;
+    F_point	   *point;
+    int		    xmin, xmax, ymin, ymax;
 
     point = line->points;
     xmin = xmax = point->x;
@@ -270,18 +276,19 @@ draw_arcbox(line, op)
 	    ymax = point->y;
     }
     pw_arcbox(canvas_win, xmin, ymin, xmax, ymax, line->radius, op,
-	    line->thickness, line->style, line->style_val, line->area_fill);
+	    line->thickness, line->style, line->style_val, line->fill_style,
+	      line->color);
 }
 
 draw_eps_pixmap(box, op)
-    F_line         *box;
-    int             op;
+    F_line	   *box;
+    int		    op;
 {
-    int             xmin, ymin;
-    int             xmax, ymax;
+    int		    xmin, ymin;
+    int		    xmax, ymax;
     int		    width, height, rotation;
-    F_pos           origin;
-    F_pos           opposite;
+    F_pos	    origin;
+    F_pos	    opposite;
 
     origin.x = ZOOMX(box->points->x);
     origin.y = ZOOMY(box->points->y);
@@ -296,7 +303,6 @@ draw_eps_pixmap(box, op)
 	clear_region(xmin, ymin, xmax, ymax);
 	return;
     }
-
     width = abs(origin.x - opposite.x);
     height = abs(origin.y - opposite.y);
     rotation = 0;
@@ -308,13 +314,13 @@ draw_eps_pixmap(box, op)
 	rotation = 90;
 
     if (box->eps->pix_rotation != rotation ||
-        box->eps->pix_width != width ||
+	box->eps->pix_width != width ||
 	box->eps->pix_height != height ||
 	box->eps->pix_flipped != box->eps->flipped)
 	create_eps_pixmap(box, rotation, width, height, box->eps->flipped);
 
     XCopyArea(tool_d, box->eps->pixmap, canvas_win, gccache[op],
-	      0, 0, xmax-xmin, ymax-ymin, xmin, ymin);
+	      0, 0, xmax - xmin, ymax - ymin, xmin, ymin);
     XFlush(tool_d);
 }
 
@@ -327,18 +333,18 @@ draw_eps_pixmap(box, op)
  * for display purposes.
  */
 create_eps_pixmap(box, rotation, width, height, flipped)
-    F_line         *box;
-    int             rotation, width, height, flipped;
+    F_line	   *box;
+    int		    rotation, width, height, flipped;
 {
-    int             i;
-    int             j;
-    byte           *data;
-    byte           *tdata;
-    int             nbytes;
-    int             bbytes;
-    int             ibit;
-    int             jbit;
-    int             wbit;
+    int		    i;
+    int		    j;
+    byte	   *data;
+    byte	   *tdata;
+    int		    nbytes;
+    int		    bbytes;
+    int		    ibit;
+    int		    jbit;
+    int		    wbit;
 
     if (box->eps->pixmap != 0)
 	XFreePixmap(tool_d, box->eps->pixmap);
@@ -351,7 +357,7 @@ create_eps_pixmap(box, rotation, width, height, flipped)
 
     /* create a new bitmap at the specified size (requires interpolation) */
     if ((!flipped && (rotation == 0 || rotation == 180)) ||
-        (flipped && !(rotation == 0 || rotation == 180))) {
+	(flipped && !(rotation == 0 || rotation == 180))) {
 	for (j = 0; j < height; j++)
 	    for (i = 0; i < width; i++) {
 		ibit = box->eps->bit_size.x * i / width;
@@ -391,9 +397,11 @@ create_eps_pixmap(box, rotation, width, height, flipped)
 	}
 
     box->eps->pixmap = XCreatePixmapFromBitmapData(tool_d, canvas_win,
-                                (char *) data, width, height,
-                                x_fg_color.pixel, x_bg_color.pixel,
-				DefaultDepthOfScreen(tool_s));
+					       (char *) data, width, height,
+			       (box->color >= 0 && box->color < NUMCOLORS) ?
+				appres.color[box->color] : x_fg_color.pixel,
+						   x_bg_color.pixel,
+					      DefaultDepthOfScreen(tool_s));
     free(data);
     free(tdata);
 
@@ -406,10 +414,10 @@ create_eps_pixmap(box, rotation, width, height, flipped)
 /*********************** SPLINE ***************************/
 
 draw_spline(spline, op)
-    F_spline       *spline;
-    int             op;
+    F_spline	   *spline;
+    int		    op;
 {
-    int             xmin, ymin, xmax, ymax;
+    int		    xmin, ymin, xmax, ymax;
 
     spline_bound(spline, &xmin, &ymin, &xmax, &ymax);
     if (!overlapping(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax),
@@ -425,18 +433,18 @@ draw_spline(spline, op)
 }
 
 draw_intspline(s, op)
-    F_spline       *s;
-    int             op;
+    F_spline	   *s;
+    int		    op;
 {
-    F_point        *p1, *p2;
-    F_control      *cp1, *cp2;
+    F_point	   *p1, *p2;
+    F_control	   *cp1, *cp2;
 
     p1 = s->points;
     cp1 = s->controls;
     cp2 = cp1->next;
     if (s->back_arrow)
 	draw_arrow(round(cp2->lx), round(cp2->ly), p1->x, p1->y,
-		   s->back_arrow, op);
+		   s->back_arrow, op, s->color);
 
     if (!init_point_array(300, 200))
 	return;
@@ -451,20 +459,20 @@ draw_intspline(s, op)
     add_point(p1->x, p1->y);
 
     draw_point_array(canvas_win, op, s->thickness, s->style,
-		     s->style_val, s->area_fill);
+		     s->style_val, s->fill_style, s->color);
 
     if (s->for_arrow)
 	draw_arrow(round(cp1->lx), round(cp1->ly), p1->x,
-		   p1->y, s->for_arrow, op);
+		   p1->y, s->for_arrow, op, s->color);
 }
 
 draw_open_spline(spline, op)
-    F_spline       *spline;
-    int             op;
+    F_spline	   *spline;
+    int		    op;
 {
-    F_point        *p;
-    float           cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
-    float           x1, y1, x2, y2;
+    F_point	   *p;
+    float	    cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
+    float	    x1, y1, x2, y2;
 
     if (!init_point_array(300, 200))
 	return;
@@ -481,7 +489,7 @@ draw_open_spline(spline, op)
     cy2 = (cy1 + y2) / 2;
     if (spline->back_arrow)	/* backward arrow  */
 	draw_arrow((int) x2, (int) y2, (int) x1, (int) y1,
-		   spline->back_arrow, op);
+		   spline->back_arrow, op, spline->color);
     add_point((int) x1, (int) y1);
 
     for (p = p->next; p != NULL; p = p->next) {
@@ -494,7 +502,8 @@ draw_open_spline(spline, op)
 	cx3 = (x1 + cx4) / 2;
 	cy3 = (y1 + cy4) / 2;
 	quadratic_spline(cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4, op,
-		       spline->thickness, spline->style, spline->style_val);
+			 spline->thickness, spline->style, spline->style_val,
+			 spline->color);
 	cx1 = cx4;
 	cy1 = cy4;
 	cx2 = (cx1 + x2) / 2;
@@ -505,20 +514,20 @@ draw_open_spline(spline, op)
     add_point((int) x2, (int) y2);
 
     draw_point_array(canvas_win, op, spline->thickness, spline->style,
-		     spline->style_val, spline->area_fill);
+		     spline->style_val, spline->fill_style, spline->color);
 
     if (spline->for_arrow)	/* forward arrow  */
 	draw_arrow((int) x1, (int) y1, (int) x2, (int) y2,
-		   spline->for_arrow, op);
+		   spline->for_arrow, op, spline->color);
 }
 
 draw_closed_spline(spline, op)
-    F_spline       *spline;
-    int             op;
+    F_spline	   *spline;
+    int		    op;
 {
-    F_point        *p;
-    float           cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
-    float           x1, y1, x2, y2;
+    F_point	   *p;
+    float	    cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
+    float	    x1, y1, x2, y2;
 
     if (!init_point_array(300, 200))
 	return;
@@ -544,7 +553,8 @@ draw_closed_spline(spline, op)
 	cx3 = (x1 + cx4) / 2;
 	cy3 = (y1 + cy4) / 2;
 	quadratic_spline(cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4, op,
-		       spline->thickness, spline->style, spline->style_val);
+			 spline->thickness, spline->style, spline->style_val,
+			 spline->color);
 	cx1 = cx4;
 	cy1 = cy4;
 	cx2 = (cx1 + x2) / 2;
@@ -560,12 +570,13 @@ draw_closed_spline(spline, op)
     cx3 = (x1 + cx4) / 2;
     cy3 = (y1 + cy4) / 2;
     quadratic_spline(cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4, op,
-		     spline->thickness, spline->style, spline->style_val);
+		     spline->thickness, spline->style, spline->style_val,
+		     spline->color);
 
     add_point((int) cx4, (int) cy4);
 
     draw_point_array(canvas_win, op, spline->thickness, spline->style,
-		     spline->style_val, spline->area_fill);
+		     spline->style_val, spline->fill_style, spline->color);
 }
 
 
@@ -574,12 +585,12 @@ draw_closed_spline(spline, op)
 static char    *hidden_text_string = "<<>>";
 
 draw_text(text, op)
-    F_text         *text;
-    int             op;
+    F_text	   *text;
+    int		    op;
 {
-    PR_SIZE         size;
-    int             x;
-    int             xmin, ymin, xmax, ymax;
+    PR_SIZE	    size;
+    int		    x;
+    int		    xmin, ymin, xmax, ymax;
 
     text_bound(text, &xmin, &ymin, &xmax, &ymax);
     if (!overlapping(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax),
@@ -597,25 +608,26 @@ draw_text(text, op)
 	    x -= size.x;
     }
     if (hidden_text(text))
-	pw_text(canvas_win, x, text->base_y, op, 0, 0, 12, hidden_text_string);
+	pw_text(canvas_win, x, text->base_y, op, 0, 0, 12,
+		hidden_text_string, DEFAULT_COLOR);
     else
 	pw_text(canvas_win, x, text->base_y,
-	      op, text->font, psfont_text(text), text->size, text->cstring);
+		op, text->font, psfont_text(text), text->size, text->cstring, text->color);
 }
 
 /*********************** COMPOUND ***************************/
 
 void
 draw_compoundelements(c, op)
-    F_compound     *c;
-    int             op;
+    F_compound	   *c;
+    int		    op;
 {
-    F_line         *l;
-    F_spline       *s;
-    F_ellipse      *e;
-    F_text         *t;
-    F_arc          *a;
-    F_compound     *c1;
+    F_line	   *l;
+    F_spline	   *s;
+    F_ellipse	   *e;
+    F_text	   *t;
+    F_arc	   *a;
+    F_compound	   *c1;
 
     if (!overlapping(c->nwcorner.x, c->nwcorner.y, c->secorner.x, c->secorner.y,
 		     clip_xmin, clip_ymin, clip_xmax, clip_ymax))
@@ -647,13 +659,14 @@ draw_compoundelements(c, op)
 
 ****************************************************************/
 
-draw_arrow(x1, y1, x2, y2, arrow, op)
-    int             x1, y1, x2, y2, op;
-    F_arrow        *arrow;
+draw_arrow(x1, y1, x2, y2, arrow, op, color)
+    int		    x1, y1, x2, y2, op;
+    F_arrow	   *arrow;
+    Color	    color;
 {
-    float           x, y, xb, yb, dx, dy, l, sina, cosa;
-    int             xc, yc, xd, yd;
-    float           wid = arrow->wid, ht = arrow->ht;
+    float	    x, y, xb, yb, dx, dy, l, sina, cosa;
+    int		    xc, yc, xd, yd;
+    float	    wid = arrow->wid, ht = arrow->ht;
 
     dx = x2 - x1;
     dy = y1 - y2;
@@ -672,27 +685,28 @@ draw_arrow(x1, y1, x2, y2, arrow, op)
     xd = x * cosa + y * sina + .5;
     yd = -x * sina + y * cosa + .5;
     pw_vector(canvas_win, xc, yc, x2, y2, op,
-	      (int) arrow->thickness, arrow->style, 0.0);
+	      (int) arrow->thickness, arrow->style, 0.0, color);
     pw_vector(canvas_win, xd, yd, x2, y2, op,
-	      (int) arrow->thickness, arrow->style, 0.0);
+	      (int) arrow->thickness, arrow->style, 0.0, color);
 }
 
 draw_arcarrows(a, op)
-    F_arc          *a;
-    int             op;
+    F_arc	   *a;
+    int		    op;
 {
-    int             x, y;
+    int		    x, y;
 
     if (a->for_arrow) {
 	compute_normal(a->center.x, a->center.y, a->point[2].x,
 		       a->point[2].y, a->direction, &x, &y);
-	draw_arrow(x, y, a->point[2].x, a->point[2].y, a->for_arrow, op);
+	draw_arrow(x, y, a->point[2].x, a->point[2].y, a->for_arrow, op,
+		   a->color);
     }
     if (a->back_arrow) {
 	compute_normal(a->center.x, a->center.y, a->point[0].x,
 		       a->point[0].y, a->direction ^ 1, &x, &y);
 	draw_arrow(x, y, a->point[0].x, a->point[0].y,
-		   a->back_arrow, op);
+		   a->back_arrow, op, a->color);
     }
 }
 
@@ -709,21 +723,22 @@ draw_arcarrows(a, op)
  Jordan, William J. Lennon and Barry D. Holm, IEEE Transaction on Computers
  Vol C-22, No. 12 December 1973.
 
- Will fill the curve if area_fill is != 0
+ Will fill the curve if fill_style is != 0
 
 ****************************************************************/
 
 curve(window, xstart, ystart, xend, yend, direction,
-      a, b, xoff, yoff, op, thick, style, style_val, area_fill)
-    Window          window;
-    int             xstart, ystart, xend, yend, a, b, xoff, yoff;
-    int             direction, op, thick, style, area_fill;
-    float           style_val;
+      a, b, xoff, yoff, op, thick, style, style_val, fill_style, color)
+    Window	    window;
+    int		    xstart, ystart, xend, yend, a, b, xoff, yoff;
+    int		    direction, op, thick, style, fill_style;
+    float	    style_val;
+    int		    color;
 {
     register int    deltax, deltay, dfx, dfy, x, y;
-    int             dfxx, dfyy;
-    int             falpha, fx, fy, fxy, absfx, absfy, absfxy;
-    int             margin, test_succeed, inc, dec;
+    int		    dfxx, dfyy;
+    int		    falpha, fx, fy, fxy, absfx, absfy, absfxy;
+    int		    margin, test_succeed, inc, dec;
 
     if (a == 0 || b == 0)
 	return;
@@ -786,7 +801,7 @@ curve(window, xstart, ystart, xend, yend, direction,
     if (margin == 1)		/* end points should touch */
 	add_point(xoff + xstart, yoff - ystart);
 
-    draw_point_array(window, op, thick, style, style_val, area_fill);
+    draw_point_array(window, op, thick, style, style_val, fill_style, color);
 }
 
 /********************* CURVES FOR SPLINES *****************************
@@ -815,13 +830,15 @@ curve(window, xstart, ystart, xend, yend, direction,
  * doesn't work
  */
 
-quadratic_spline(a1, b1, a2, b2, a3, b3, a4, b4, op, thick, style, style_val)
-    float           a1, b1, a2, b2, a3, b3, a4, b4;
-    int             op, thick, style;
-    float           style_val;
+quadratic_spline(a1, b1, a2, b2, a3, b3, a4, b4, op, thick, style,
+		 style_val, color)
+    float	    a1, b1, a2, b2, a3, b3, a4, b4;
+    int		    op, thick, style;
+    float	    style_val;
+    int		    color;
 {
     register float  xmid, ymid;
-    float           x1, y1, x2, y2, x3, y3, x4, y4;
+    float	    x1, y1, x2, y2, x3, y3, x4, y4;
 
     clear_stack();
     push(a1, b1, a2, b2, a3, b3, a4, b4);
@@ -848,13 +865,13 @@ quadratic_spline(a1, b1, a2, b2, a3, b3, a4, b4, op, thick, style, style_val)
  */
 
 bezier_spline(a0, b0, a1, b1, a2, b2, a3, b3, op, thick, style, style_val)
-    float           a0, b0, a1, b1, a2, b2, a3, b3;
-    int             op, thick, style;
-    float           style_val;
+    float	    a0, b0, a1, b1, a2, b2, a3, b3;
+    int		    op, thick, style;
+    float	    style_val;
 {
     register float  tx, ty;
-    float           x0, y0, x1, y1, x2, y2, x3, y3;
-    float           sx1, sy1, sx2, sy2, tx1, ty1, tx2, ty2, xmid, ymid;
+    float	    x0, y0, x1, y1, x2, y2, x3, y3;
+    float	    sx1, sy1, sx2, sy2, tx1, ty1, tx2, ty2, xmid, ymid;
 
     clear_stack();
     push(a0, b0, a1, b1, a2, b2, a3, b3);
@@ -887,13 +904,13 @@ bezier_spline(a0, b0, a1, b1, a2, b2, a3, b3, op, thick, style, style_val)
 #define		STACK_DEPTH		20
 
 typedef struct stack {
-    float           x1, y1, x2, y2, x3, y3, x4, y4;
+    float	    x1, y1, x2, y2, x3, y3, x4, y4;
 }
-                Stack;
+		Stack;
 
-static Stack    stack[STACK_DEPTH];
+static Stack	stack[STACK_DEPTH];
 static Stack   *stack_top;
-static int      stack_count;
+static int	stack_count;
 
 clear_stack()
 {
@@ -902,7 +919,7 @@ clear_stack()
 }
 
 push(x1, y1, x2, y2, x3, y3, x4, y4)
-    float           x1, y1, x2, y2, x3, y3, x4, y4;
+    float	    x1, y1, x2, y2, x3, y3, x4, y4;
 {
     stack_top->x1 = x1;
     stack_top->y1 = y1;
@@ -918,7 +935,7 @@ push(x1, y1, x2, y2, x3, y3, x4, y4)
 
 int
 pop(x1, y1, x2, y2, x3, y3, x4, y4)
-    float          *x1, *y1, *x2, *y2, *x3, *y3, *x4, *y4;
+    float	   *x1, *y1, *x2, *y2, *x3, *y3, *x4, *y4;
 {
     if (stack_count == 0)
 	return (0);

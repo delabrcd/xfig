@@ -25,26 +25,50 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-static int      init_break();
+static int	init_break(), init_break_only(), init_break_tag();
 
 break_selected()
 {
-    set_mousefun("break compound", "", "");
+    set_mousefun("break compound", "break and tag", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
-    init_searchproc_left(init_break);
+    init_searchproc_left(init_break_only);
+    init_searchproc_middle(init_break_tag);
     canvas_leftbut_proc = object_search_left;
-    canvas_middlebut_proc = null_proc;
+    canvas_middlebut_proc = object_search_middle;
     canvas_rightbut_proc = null_proc;
     set_cursor(&pick15_cursor);
 }
 
 static
-init_break(p, type, x, y, px, py)
-    char           *p;
-    int             type;
-    int             x, y;
-    int             px, py;
+init_break_only(p, type, x, y, px, py, loc_tag)
+    char	   *p;
+    int		    type;
+    int		    x, y;
+    int		    px, py;
+    int 	    loc_tag;
+{
+    init_break(p, type, x, y, px, py, 0);
+}
+
+static
+init_break_tag(p, type, x, y, px, py, loc_tag)
+    char	   *p;
+    int		    type;
+    int		    x, y;
+    int		    px, py;
+    int 	    loc_tag;
+{
+    init_break(p, type, x, y, px, py, 1);
+}
+
+static
+init_break(p, type, x, y, px, py, loc_tag)
+    char	   *p;
+    int		    type;
+    int		    x, y;
+    int		    px, py;
+    int 	    loc_tag;
 {
     if (type != O_COMPOUND)
 	return;
@@ -56,6 +80,7 @@ init_break(p, type, x, y, px, py)
     tail(&objects, &object_tails);
     append_objects(&objects, cur_c, &object_tails);
     toggle_markers_in_compound(cur_c);
+    set_tags(cur_c, loc_tag);
     set_action(F_BREAK);
     set_latestcompound(cur_c);
     set_modifiedflag();

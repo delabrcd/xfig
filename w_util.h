@@ -14,11 +14,19 @@
  *
  */
 
+/* constant values used for popup_query */
+
+#define QUERY_YES	0
+#define QUERY_YESNO	1
+#define RESULT_NO	-1
+#define RESULT_YES	1
+#define RESULT_CANCEL	0
+
 /*
  * Author:	Doyle C. Davidson
  *		Intergraph Corporation
  *		One Madison Industrial Park
- *		Huntsville, Al.  35894-0001
+ *		Huntsville, Al.	 35894-0001
  *
  * Modification history:
  *		11 May 91 - added SetValues and GetValues - Paul King
@@ -40,9 +48,9 @@
 
 #define ArgCount	_fooArgCount
 #define Args		_fooArgList
-#define ArgCountMax     _fooArgCountMax
+#define ArgCountMax	_fooArgCountMax
 
-#define DeclareArgs(n)  Arg Args[n]; int ArgCountMax = n; int ArgCount
+#define DeclareArgs(n)	Arg Args[n]; int ArgCountMax = n; int ArgCount
 
 #define DeclareStaticArgs(n)  static Arg Args[n]; static int ArgCountMax = n; static int ArgCount
 

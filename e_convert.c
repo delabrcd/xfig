@@ -25,7 +25,7 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-static int      init_convert();
+static int	init_convert();
 
 convert_selected()
 {
@@ -41,10 +41,10 @@ convert_selected()
 
 static
 init_convert(p, type, x, y, px, py)
-    char           *p;
-    int             type;
-    int             x, y;
-    int             px, py;
+    char	   *p;
+    int		    type;
+    int		    x, y;
+    int		    px, py;
 {
     switch (type) {
     case O_POLYLINE:
@@ -63,9 +63,9 @@ init_convert(p, type, x, y, px, py)
 }
 
 line_2_spline(l)
-    F_line         *l;
+    F_line	   *l;
 {
-    F_spline       *s;
+    F_spline	   *s;
 
     if (num_points(l->points) < 3) {
 	put_msg("Can't CONVERT this line into a spline: insufficient points");
@@ -84,7 +84,7 @@ line_2_spline(l)
     s->depth = l->depth;
     s->style_val = l->style_val;
     s->pen = l->pen;
-    s->area_fill = l->area_fill;
+    s->fill_style = l->fill_style;
     s->for_arrow = l->for_arrow;
     s->back_arrow = l->back_arrow;
     s->points = l->points;
@@ -119,9 +119,9 @@ line_2_spline(l)
 }
 
 spline_2_line(s)
-    F_spline       *s;
+    F_spline	   *s;
 {
-    F_line         *l;
+    F_line	   *l;
 
     /* Now we turn s into a line */
     if ((l = create_line()) == NULL)
@@ -138,7 +138,7 @@ spline_2_line(s)
     l->style_val = s->style_val;
     l->pen = s->pen;
     l->radius = DEF_BOXRADIUS;
-    l->area_fill = s->area_fill;
+    l->fill_style = s->fill_style;
     l->for_arrow = s->for_arrow;
     l->back_arrow = s->back_arrow;
     l->points = s->points;

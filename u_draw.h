@@ -21,4 +21,4 @@
  * declarations of routines for drawing objects
  */
 /* compounds */
-void            draw_compoundelements();
+void		draw_compoundelements();

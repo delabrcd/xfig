@@ -18,19 +18,20 @@
 #include "object.h"
 #include "mode.h"
 #include "u_list.h"
+#include "w_zoom.h"
 
 #define TOLERANCE 3
 
-static          (*manipulate) ();
-static          (*handlerproc_left) ();
-static          (*handlerproc_middle) ();
-static          (*handlerproc_right) ();
-static int      type;
-static long     objectcount;
-static long     n;
+static		(*manipulate) ();
+static		(*handlerproc_left) ();
+static		(*handlerproc_middle) ();
+static		(*handlerproc_right) ();
+static int	type;
+static long	objectcount;
+static long	n;
 static int	csr_x, csr_y;
 
-static F_point  point1, point2;
+static F_point	point1, point2;
 
 static F_arc   *a;
 static F_ellipse *e;
@@ -41,13 +42,13 @@ static F_compound *c;
 
 char
 next_arc_found(x, y, tolerance, px, py, shift)
-    int             x, y, tolerance, *px, *py;
-    int             shift;
+    int		    x, y, tolerance, *px, *py;
+    int		    shift;
 {				/* (px, py) is the control point on the
 				 * circumference of an arc which is the
 				 * closest to (x, y)				 */
 
-    int             i;
+    int		    i;
 
     if (!arc_in_mask())
 	return (0);
@@ -71,14 +72,14 @@ next_arc_found(x, y, tolerance, px, py, shift)
 
 char
 next_ellipse_found(x, y, tolerance, px, py, shift)
-    int             x, y, tolerance, *px, *py;
-    int             shift;
+    int		    x, y, tolerance, *px, *py;
+    int		    shift;
 {				/* (px, py) is the point on the circumference
 				 * of an ellipse which is the closest to (x,
 				 * y)				 */
 
-    int             a, b, dx, dy;
-    float           dis, r, tol;
+    int		    a, b, dx, dy;
+    float	    dis, r, tol;
 
     if (!ellipse_in_mask())
 	return (0);
@@ -128,16 +129,16 @@ next_ellipse_found(x, y, tolerance, px, py, shift)
 
 char
 next_line_found(x, y, tolerance, px, py, shift)
-    int             x, y, tolerance, *px, *py, shift;
+    int		    x, y, tolerance, *px, *py, shift;
 {				/* return the pointer to lines object if the
 				 * search is successful otherwise return
 				 * NULL.  The value returned via (px, py) is
 				 * the closest point on the vector to point
-				 * (x, y) 					 */
+				 * (x, y)					 */
 
-    F_point        *point;
-    int             x1, y1, x2, y2;
-    float           tol2;
+    F_point	   *point;
+    int		    x1, y1, x2, y2;
+    float	    tol2;
 
     tol2 = (float) tolerance *tolerance;
 
@@ -174,15 +175,15 @@ next_line_found(x, y, tolerance, px, py, shift)
 
 char
 next_spline_found(x, y, tolerance, px, py, shift)
-    int             x, y, tolerance, *px, *py;
-    int             shift;
+    int		    x, y, tolerance, *px, *py;
+    int		    shift;
 {				/* return the pointer to lines object if the
 				 * search is successful otherwise return
 				 * NULL.  */
 
-    F_point        *point;
-    int             x1, y1, x2, y2;
-    float           tol2;
+    F_point	   *point;
+    int		    x1, y1, x2, y2;
+    float	    tol2;
 
     if (!anyspline_in_mask())
 	return (0);
@@ -214,10 +215,10 @@ next_spline_found(x, y, tolerance, px, py, shift)
 
 char
 next_text_found(x, y, tolerance, dummy1, dummy2, shift)
-    int             x, y;
-    int             tolerance, dummy1, dummy2, shift;
+    int		    x, y;
+    int		    tolerance, dummy1, dummy2, shift;
 {
-    int             halflen;
+    int		    halflen, dx, dy;
 
     if (!anytext_in_mask())
 	return (0);
@@ -228,12 +229,15 @@ next_text_found(x, y, tolerance, dummy1, dummy2, shift)
 
     for (; t != NULL; t = prev_text(objects.texts, t))
 	if (validtext_in_mask(t)) {
+	    /* adjust for text angle */
+	    dy = (int) ((double) t->height * cos(t->angle));
+	    dx = (int) ((double) t->height * sin(t->angle));
 	    n++;
 	    if (abs(x - t->base_x) <= tolerance &&
 		abs(y - t->base_y) <= tolerance)
 		return (1);
-	    if (abs(x - t->base_x) <= tolerance &&
-		abs(y - t->base_y + t->height) <= tolerance)
+	    if (abs(x - (t->base_x - dx)) <= tolerance &&
+		abs(y - (t->base_y - dy)) <= tolerance)
 		return (1);
 	    halflen = t->length / 2;
 	    if (t->base_y - t->height > y)
@@ -255,10 +259,10 @@ next_text_found(x, y, tolerance, dummy1, dummy2, shift)
 
 int
 next_compound_found(x, y, tolerance, px, py, shift)
-    int             x, y, tolerance, *px, *py;
-    int             shift;
+    int		    x, y, tolerance, *px, *py;
+    int		    shift;
 {
-    float           tol2;
+    float	    tol2;
 
     if (!compound_in_mask())
 	return (0);
@@ -367,11 +371,11 @@ init_search()
 
 void
 do_object_search(x, y, shift)
-    int             x, y;
+    int		    x, y;
     unsigned int    shift;	/* Shift Key Status from XEvent */
 {
-    int             px, py;
-    char            found = 0;
+    int		    px, py;
+    char	    found = 0;
 
     init_search();
     for (n = 0; n < objectcount;) {
@@ -395,13 +399,10 @@ do_object_search(x, y, shift)
 	    found = next_compound_found(x, y, TOLERANCE, &px, &py, shift);
 	    break;
 	}
-	if (found) {
-	    if (!shift)
-		break;
-	    show_objecthighlight();
-	    found = 0;
+
+	if (found)
 	    break;
-	}
+
 	switch (type) {
 	case O_ELLIPSE:
 	    type = O_POLYLINE;
@@ -429,7 +430,14 @@ do_object_search(x, y, shift)
 	    break;
 	}
     }
-    if (found) {
+    if (!found) {		/* nothing found */
+	csr_x = x;
+	csr_y = y;
+	type = -1;
+	show_objecthighlight();
+    } else if (shift) {		/* show selected object */
+	show_objecthighlight();
+    } else {			/* user selected an object */
 	erase_objecthighlight();
 	switch (type) {
 	case O_ELLIPSE:
@@ -451,16 +459,11 @@ do_object_search(x, y, shift)
 	    manipulate(c, type, x, y, px, py);
 	    break;
 	}
-    } else {
-	csr_x = x;
-	csr_y = y;
-	type = -1;
-	show_objecthighlight();
     }
 }
 
 object_search_left(x, y, shift)
-    int             x, y;
+    int		    x, y;
     unsigned int    shift;	/* Shift Key Status from XEvent */
 {
     manipulate = handlerproc_left;
@@ -468,7 +471,7 @@ object_search_left(x, y, shift)
 }
 
 object_search_middle(x, y, shift)
-    int             x, y;
+    int		    x, y;
     unsigned int    shift;	/* Shift Key Status from XEvent */
 {
     manipulate = handlerproc_middle;
@@ -476,7 +479,7 @@ object_search_middle(x, y, shift)
 }
 
 object_search_right(x, y, shift)
-    int             x, y;
+    int		    x, y;
     unsigned int    shift;	/* Shift Key Status from XEvent */
 {
     manipulate = handlerproc_right;
@@ -485,7 +488,7 @@ object_search_right(x, y, shift)
 
 char
 next_ellipse_point_found(x, y, tol, point_num, shift)
-    int             x, y, tol, shift, *point_num;
+    int		    x, y, tol, shift, *point_num;
 
 /* dirty trick - point_num is called as a `F_point *point_num' */
 {
@@ -493,9 +496,9 @@ next_ellipse_point_found(x, y, tol, point_num, shift)
     if (!ellipse_in_mask())
 	return (0);
     if (e == NULL)
-        e = last_ellipse(objects.ellipses);
+	e = last_ellipse(objects.ellipses);
     else if (shift)
-        e = prev_ellipse(objects.ellipses, e);
+	e = prev_ellipse(objects.ellipses, e);
 
     for (; e != NULL; e = prev_ellipse(objects.ellipses, e), n++) {
 	if (abs(e->start.x - x) <= tol && abs(e->start.y - y) <= tol) {
@@ -512,18 +515,18 @@ next_ellipse_point_found(x, y, tol, point_num, shift)
 
 char
 next_arc_point_found(x, y, tol, point_num, shift)
-    int             x, y, tol, shift, *point_num;
+    int		    x, y, tol, shift, *point_num;
 
 /* dirty trick - point_num is called as a `F_point *point_num' */
 {
-    int             i;
+    int		    i;
 
     if (!arc_in_mask())
 	return (0);
     if (a == NULL)
-        a = last_arc(objects.arcs);
+	a = last_arc(objects.arcs);
     else if (shift)
-        a = prev_arc(objects.arcs, a);
+	a = prev_arc(objects.arcs, a);
 
     for (; a != NULL; a = prev_arc(objects.arcs, a), n++) {
 	for (i = 0; i < 3; i++) {
@@ -539,15 +542,15 @@ next_arc_point_found(x, y, tol, point_num, shift)
 
 char
 next_spline_point_found(x, y, tol, p, q, shift)
-    int             x, y, tol, shift;
-    F_point       **p, **q;
+    int		    x, y, tol, shift;
+    F_point	  **p, **q;
 {
     if (!anyspline_in_mask())
 	return (0);
     if (s == NULL)
-        s = last_spline(objects.splines);
+	s = last_spline(objects.splines);
     else if (shift)
-        s = prev_spline(objects.splines, s);
+	s = prev_spline(objects.splines, s);
 
     for (; s != NULL; s = prev_spline(objects.splines, s))
 	if (validspline_in_mask(s)) {
@@ -563,17 +566,17 @@ next_spline_point_found(x, y, tol, p, q, shift)
 
 char
 next_line_point_found(x, y, tol, p, q, shift)
-    int             x, y, tol, shift;
-    F_point       **p, **q;
+    int		    x, y, tol, shift;
+    F_point	  **p, **q;
 {
-    F_point        *a, *b;
+    F_point	   *a, *b;
 
     if (!anyline_in_mask())
 	return (0);
     if (l == NULL)
-        l = last_line(objects.lines);
+	l = last_line(objects.lines);
     else if (shift)
-        l = prev_line(objects.lines, l);
+	l = prev_line(objects.lines, l);
 
     for (; l != NULL; l = prev_line(objects.lines, l))
 	if (validline_in_mask(l)) {
@@ -591,16 +594,16 @@ next_line_point_found(x, y, tol, p, q, shift)
 
 char
 next_compound_point_found(x, y, tol, p, q, shift)
-    int             x, y, tol, shift, *p, *q;
+    int		    x, y, tol, shift, *p, *q;
 
 /* dirty trick - p and q are called with type `F_point' */
 {
     if (!compound_in_mask())
 	return (0);
     if (c == NULL)
-        c = last_compound(objects.compounds);
+	c = last_compound(objects.compounds);
     else if (shift)
-        c = prev_compound(objects.compounds, c);
+	c = prev_compound(objects.compounds, c);
 
     for (; c != NULL; c = prev_compound(objects.compounds, c), n++) {
 	if (abs(c->nwcorner.x - x) <= tol &&
@@ -633,7 +636,7 @@ next_compound_point_found(x, y, tol, p, q, shift)
 
 void
 init_searchproc_left(handlerproc)
-    int             (*handlerproc) ();
+    int		    (*handlerproc) ();
 
 {
     handlerproc_left = handlerproc;
@@ -641,7 +644,7 @@ init_searchproc_left(handlerproc)
 
 void
 init_searchproc_middle(handlerproc)
-    int             (*handlerproc) ();
+    int		    (*handlerproc) ();
 
 {
     handlerproc_middle = handlerproc;
@@ -649,7 +652,7 @@ init_searchproc_middle(handlerproc)
 
 void
 init_searchproc_right(handlerproc)
-    int             (*handlerproc) ();
+    int		    (*handlerproc) ();
 
 {
     handlerproc_right = handlerproc;
@@ -657,11 +660,11 @@ init_searchproc_right(handlerproc)
 
 void
 do_point_search(x, y, shift)
-    int             x, y;
+    int		    x, y;
     unsigned int    shift;	/* Shift Key Status from XEvent */
 {
-    F_point        *px, *py;
-    char            found = 0;
+    F_point	   *px, *py;
+    char	    found = 0;
 
     px = &point1;
     py = &point2;
@@ -687,10 +690,8 @@ do_point_search(x, y, shift)
 	    break;
 	}
 	if (found) {
-	    if (!shift)
-		break;
-	    show_objecthighlight();
-	    found = 0;
+	    if (shift)
+		show_objecthighlight();
 	    break;
 	}
 	switch (type) {
@@ -716,7 +717,14 @@ do_point_search(x, y, shift)
 	    break;
 	}
     }
-    if (found) {
+    if (!found) {
+	csr_x = x;
+	csr_y = y;
+	type = -1;
+	show_objecthighlight();
+    } else if (shift) {
+	show_objecthighlight();
+    } else {
 	erase_objecthighlight();
 	switch (type) {
 	case O_ELLIPSE:
@@ -735,16 +743,11 @@ do_point_search(x, y, shift)
 	    manipulate(c, type, x, y, px, py);
 	    break;
 	}
-    } else {
-	csr_x = x;
-	csr_y = y;
-	type = -1;
-	show_objecthighlight();
     }
 }
 
 point_search_left(x, y, shift)
-    int             x, y;
+    int		    x, y;
     unsigned int    shift;	/* Shift Key Status from XEvent */
 {
     manipulate = handlerproc_left;
@@ -752,7 +755,7 @@ point_search_left(x, y, shift)
 }
 
 point_search_middle(x, y, shift)
-    int             x, y;
+    int		    x, y;
     unsigned int    shift;	/* Shift Key Status from XEvent */
 {
     manipulate = handlerproc_middle;
@@ -760,7 +763,7 @@ point_search_middle(x, y, shift)
 }
 
 point_search_right(x, y, shift)
-    int             x, y;
+    int		    x, y;
     unsigned int    shift;	/* Shift Key Status from XEvent */
 {
     manipulate = handlerproc_right;
@@ -771,12 +774,12 @@ point_search_right(x, y, shift)
 
 /* These are some of the original search subroutines which are still in use */
 
-F_text         *
+F_text	       *
 text_search(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    F_text         *t;
-    int             length;
+    F_text	   *t;
+    int		    length;
 
     for (t = objects.texts; t != NULL; t = t->next) {
 	if (t->base_y - t->height > y)
@@ -799,10 +802,10 @@ text_search(x, y)
 
 F_compound     *
 compound_search(x, y, tolerance, px, py)
-    int             x, y, tolerance, *px, *py;
+    int		    x, y, tolerance, *px, *py;
 {
-    F_compound     *c;
-    float           tol2;
+    F_compound	   *c;
+    float	    tol2;
 
     tol2 = tolerance * tolerance;
 
@@ -825,9 +828,9 @@ compound_search(x, y, tolerance, px, py)
 
 F_compound     *
 compound_point_search(x, y, tol, cx, cy, fx, fy)
-    int             x, y, tol, *cx, *cy, *fx, *fy;
+    int		    x, y, tol, *cx, *cy, *fx, *fy;
 {
-    F_compound     *c;
+    F_compound	   *c;
 
     for (c = objects.compounds; c != NULL; c = c->next) {
 	if (abs(c->nwcorner.x - x) <= tol &&

@@ -21,31 +21,31 @@
 #include "w_setup.h"
 #include "w_util.h"
 
-/********************  global variables  ***************************/
+/********************  global variables	 ***************************/
 
 extern char    *psfont_menu_bits[];
 extern char    *latexfont_menu_bits[];
-extern Pixmap   psfont_menu_bitmaps[];
-extern Pixmap   latexfont_menu_bitmaps[];
+extern Pixmap	psfont_menu_bitmaps[];
+extern Pixmap	latexfont_menu_bitmaps[];
 extern struct _fstruct ps_fontinfo[];	/* font names */
 extern struct _fstruct latex_fontinfo[];	/* font names */
 
 /* LOCAL VARIABLES */
 
 static int     *font_ps_sel;	/* ptr to store selected ps font in */
-static int     *font_latex_sel;	/* ptr to store selected latex font */
+static int     *font_latex_sel; /* ptr to store selected latex font */
 static int     *flag_sel;	/* pointer to store ps/latex flag */
-static TOOL     font_widget;	/* widget adr to store font image in */
-static int      (*font_setimage) ();
+static TOOL	font_widget;	/* widget adr to store font image in */
+static int	(*font_setimage) ();
 
-/********************  local variables  ***************************/
+/********************  local variables	***************************/
 
-static MENUITEM ps_fontmenu_items[NUM_PS_FONTS];
+static MENUITEM ps_fontmenu_items[NUM_PS_FONTS + 1];
 static MENUITEM latex_fontmenu_items[NUM_LATEX_FONTS];
 
-static void     fontpane_select();
-static void     fontpane_cancel();
-static void     fontpane_swap();
+static void	fontpane_select();
+static void	fontpane_cancel();
+static void	fontpane_swap();
 
 static XtCallbackRec pane_callbacks[] =
 {
@@ -53,15 +53,15 @@ static XtCallbackRec pane_callbacks[] =
     {NULL, NULL},
 };
 
-static TOOL     ps_fontpanes, ps_buttons;
-static TOOL     latex_fontpanes, latex_buttons;
-static TOOL     ps_fontpane[NUM_PS_FONTS];
-static TOOL     latex_fontpane[NUM_LATEX_FONTS];
+static TOOL	ps_fontpanes, ps_buttons;
+static TOOL	latex_fontpanes, latex_buttons;
+static TOOL	ps_fontpane[NUM_PS_FONTS + 1];
+static TOOL	latex_fontpane[NUM_LATEX_FONTS];
 
 init_fontmenu(tool)
-    TOOL            tool;
+    TOOL	    tool;
 {
-    TOOL            tmp_but;
+    TOOL	    tmp_but;
     register int    i;
     register MENUITEM *mi;
     XtTranslations  pane_actions;
@@ -71,10 +71,10 @@ init_fontmenu(tool)
     FirstArg(XtNborderWidth, POPUP_BW);
     NextArg(XtNmappedWhenManaged, False);
 
-    ps_fontmenu = XtCreatePopupShell("xfig: ps font menu",
+    ps_fontmenu = XtCreatePopupShell("xfig_ps_font_menu",
 				     transientShellWidgetClass, tool,
 				     Args, ArgCount);
-    latex_fontmenu = XtCreatePopupShell("xfig: latex font menu",
+    latex_fontmenu = XtCreatePopupShell("xfig_latex_font_menu",
 					transientShellWidgetClass, tool,
 					Args, ArgCount);
 
@@ -86,11 +86,11 @@ init_fontmenu(tool)
     latex_fontpanes = XtCreateManagedWidget("menu", boxWidgetClass,
 					    latex_fontmenu, Args, ArgCount);
 
-    for (i = 0; i < NUM_PS_FONTS; i++) {
+    for (i = 0; i < NUM_PS_FONTS + 1; i++) {
 	ps_fontmenu_items[i].type = MENU_IMAGESTRING;	/* put the fontnames in
 							 * menu */
 	ps_fontmenu_items[i].label = ps_fontinfo[i].name;
-	ps_fontmenu_items[i].info = (caddr_t) i;	/* index for font # */
+	ps_fontmenu_items[i].info = (caddr_t) i - 1;	/* index for font # */
     }
 
     for (i = 0; i < NUM_LATEX_FONTS; i++) {
@@ -119,7 +119,7 @@ init_fontmenu(tool)
     FirstArg(XtNfromHoriz, tmp_but);
     NextArg(XtNwidth, PS_FONTPANE_WD - INTERNAL_BW - i);
     NextArg(XtNborderWidth, 0);
-    tmp_but = XtCreateManagedWidget("use latex fonts", commandWidgetClass,
+    tmp_but = XtCreateManagedWidget("use_latex_fonts", commandWidgetClass,
 				    ps_buttons, Args, ArgCount);
     XtAddEventHandler(tmp_but, ButtonReleaseMask, (Boolean) 0,
 		      fontpane_swap, (XtPointer) NULL);
@@ -134,7 +134,7 @@ init_fontmenu(tool)
     FirstArg(XtNfromHoriz, tmp_but);
     NextArg(XtNwidth, PS_FONTPANE_WD - INTERNAL_BW - i);
     NextArg(XtNborderWidth, 0);
-    tmp_but = XtCreateManagedWidget("use postscript fonts", commandWidgetClass,
+    tmp_but = XtCreateManagedWidget("use_postscript_fonts", commandWidgetClass,
 				    latex_buttons, Args, ArgCount);
     XtAddEventHandler(tmp_but, ButtonReleaseMask, (Boolean) 0,
 		      fontpane_swap, (XtPointer) NULL);
@@ -151,7 +151,7 @@ init_fontmenu(tool)
     NextArg(XtNborderWidth, INTERNAL_BW);
     NextArg(XtNresize, False);	/* don't allow resize */
 
-    for (i = 0; i < NUM_PS_FONTS; ++i) {
+    for (i = 0; i < NUM_PS_FONTS + 1; ++i) {
 	mi = &ps_fontmenu_items[i];
 	pane_callbacks[0].closure = (caddr_t) mi;
 	ps_fontpane[i] = XtCreateManagedWidget("pane", commandWidgetClass,
@@ -178,7 +178,7 @@ setup_fontmenu()
 
     DeclareArgs(2);
 
-    Pixel           bg, fg;
+    Pixel	    bg, fg;
 
     /* get the foreground/background of the widget */
     FirstArg(XtNforeground, &fg);
@@ -187,7 +187,7 @@ setup_fontmenu()
 
     /* Create the bitmaps */
 
-    for (i = 0; i < NUM_PS_FONTS; i++)
+    for (i = 0; i < NUM_PS_FONTS + 1; i++)
 	psfont_menu_bitmaps[i] = XCreatePixmapFromBitmapData(tool_d,
 				   XtWindow(ind_panel), psfont_menu_bits[i],
 				     PS_FONTPANE_WD, PS_FONTPANE_HT, fg, bg,
@@ -200,7 +200,7 @@ setup_fontmenu()
 					     XDefaultDepthOfScreen(tool_s));
 
     /* Store the bitmaps in the menu panes */
-    for (i = 0; i < NUM_PS_FONTS; i++) {
+    for (i = 0; i < NUM_PS_FONTS + 1; i++) {
 	FirstArg(XtNbitmap, psfont_menu_bitmaps[i]);
 	SetValues(ps_fontpane[i]);
     }
@@ -224,13 +224,13 @@ setup_fontmenu()
 
 void
 fontpane_popup(psfont_adr, latexfont_adr, psflag_adr, showfont_fn, show_widget)
-    int            *psfont_adr, *latexfont_adr, *psflag_adr;
-    int             (*showfont_fn) ();
-Widget          show_widget;
+    int		   *psfont_adr, *latexfont_adr, *psflag_adr;
+    int		    (*showfont_fn) ();
+    Widget	    show_widget;
 
 {
     DeclareArgs(2);
-    Position        xposn, yposn, dummy;
+    Position	    xposn, yposn, dummy;
 
     font_ps_sel = psfont_adr;
     font_latex_sel = latexfont_adr;
@@ -243,15 +243,15 @@ Widget          show_widget;
     NextArg(XtNy, yposn - 20);	/* up a little bit from top of tool */
     SetValues(ps_fontmenu);
     SetValues(latex_fontmenu);
-    XtPopup(*flag_sel ? ps_fontmenu : latex_fontmenu, XtGrabNonexclusive);
+    XtPopup(*flag_sel ? ps_fontmenu : latex_fontmenu, XtGrabExclusive);
 }
 
 static void
 fontpane_select(widget, mi)
-    TOOL            widget;
-    MENUITEM       *mi;
+    TOOL	    widget;
+    MENUITEM	   *mi;
 {
-    char           *font_name = mi->label;
+    char	   *font_name = mi->label;
 
     if (*flag_sel)
 	*font_ps_sel = (int) mi->info;	/* set ps font to one selected */
@@ -277,5 +277,5 @@ fontpane_swap()
     *flag_sel = 1 - *flag_sel;
     /* put image of font in indicator window */
     (*font_setimage) (font_widget);
-    XtPopup(*flag_sel ? ps_fontmenu : latex_fontmenu, XtGrabNonexclusive);
+    XtPopup(*flag_sel ? ps_fontmenu : latex_fontmenu, XtGrabExclusive);
 }

@@ -26,53 +26,69 @@
  */
 
 win_setmouseposition(w, x, y)
-    Window          w;
-    int             x, y;
+    Window	    w;
+    int		    x, y;
 {
+}
+
+/* manually flush out X events */
+
+app_flush()
+{
+    while (XtAppPending(tool_app)) {
+	XEvent		event;
+
+	/* pass events to ensure we are completely initialised */
+	XtAppNextEvent(tool_app, &event);
+	XtDispatchEvent(&event);
+    }
 }
 
 /* popup a confirmation window */
 
-static          query_result, query_done;
+static		query_result, query_done;
 
 static void
-query_confirmed(w, ev)
-    Widget          w;
-    XButtonEvent   *ev;
+accept_yes()
 {
     query_done = 1;
-    query_result = 1;
+    query_result = RESULT_YES;
 }
 
 static void
-query_cancelled(w, ev)
-    Widget          w;
-    XButtonEvent   *ev;
+accept_no()
 {
     query_done = 1;
-    query_result = 0;
+    query_result = RESULT_NO;
+}
+
+static void
+accept_cancel()
+{
+    query_done = 1;
+    query_result = RESULT_CANCEL;
 }
 
 int
-win_confirm(w, message)
-    Window          w;
-    char           *message;
+popup_query(query_type, message)
+    int		    query_type;
+    char	   *message;
 {
-    TOOL            query_popup, query_form, query_message;
-    TOOL            query_confirm, query_cancel;
-    int             xposn, yposn;
-    Window          win;
-    XEvent          event;
+    TOOL	    query_popup, query_form, query_message;
+    TOOL	    query_yes, query_no, query_cancel;
+    int		    xposn, yposn;
+    Window	    win;
+    XEvent	    event;
 
     DeclareArgs(7);
 
-    XTranslateCoordinates(tool_d, w, XDefaultRootWindow(tool_d),
+    XTranslateCoordinates(tool_d, canvas_win, XDefaultRootWindow(tool_d),
 			  150, 200, &xposn, &yposn, &win);
     FirstArg(XtNallowShellResize, True);
     NextArg(XtNx, xposn);
     NextArg(XtNy, yposn);
     NextArg(XtNborderWidth, POPUP_BW);
-    query_popup = XtCreatePopupShell("confirm", transientShellWidgetClass,
+    query_popup = XtCreatePopupShell("query_popup", transientShellWidgetClass,
 				     tool, Args, ArgCount);
 
     FirstArg(XtNdefaultDistance, 10);
@@ -84,28 +100,40 @@ win_confirm(w, message)
     query_message = XtCreateManagedWidget(message, labelWidgetClass,
 					  query_form, Args, ArgCount);
 
-    FirstArg(XtNlabel, "Confirm");
-    NextArg(XtNheight, 25);
+    FirstArg(XtNheight, 25);
     NextArg(XtNvertDistance, 15);
+    NextArg(XtNfromVert, query_message);
+    NextArg(XtNborderWidth, INTERNAL_BW);
+    NextArg(XtNlabel, "Yes");
     NextArg(XtNhorizDistance, 55);
-    NextArg(XtNfromVert, query_message);
-    NextArg(XtNborderWidth, INTERNAL_BW);
-    query_confirm = XtCreateManagedWidget("confirm", commandWidgetClass,
-					  query_form, Args, ArgCount);
-    XtAddEventHandler(query_confirm, ButtonReleaseMask, (Boolean) 0,
-		      query_confirmed, (XtPointer) NULL);
+    query_yes = XtCreateManagedWidget("yes", commandWidgetClass,
+				      query_form, Args, ArgCount);
+    XtAddEventHandler(query_yes, ButtonReleaseMask, (Boolean) 0,
+		      accept_yes, (XtPointer) NULL);
 
-    FirstArg(XtNlabel, "Cancel");
-    NextArg(XtNheight, 25);
-    NextArg(XtNvertDistance, 15);
-    NextArg(XtNfromVert, query_message);
-    NextArg(XtNfromHoriz, query_confirm);
-    NextArg(XtNhorizDistance, 25);
-    NextArg(XtNborderWidth, INTERNAL_BW);
+    if (query_type == QUERY_YESNO) {
+	ArgCount = 4;
+	NextArg(XtNhorizDistance, 25);
+	NextArg(XtNlabel, "No");
+	NextArg(XtNfromHoriz, query_yes);
+	query_no = XtCreateManagedWidget("no", commandWidgetClass,
+					 query_form, Args, ArgCount);
+	XtAddEventHandler(query_no, ButtonReleaseMask, (Boolean) 0,
+			  accept_no, (XtPointer) NULL);
+
+	ArgCount = 5;
+	NextArg(XtNfromHoriz, query_no);
+    } else {
+	ArgCount = 4;
+	NextArg(XtNhorizDistance, 25);
+	NextArg(XtNfromHoriz, query_yes);
+    }
+
+    NextArg(XtNlabel, "Cancel");
     query_cancel = XtCreateManagedWidget("cancel", commandWidgetClass,
 					 query_form, Args, ArgCount);
     XtAddEventHandler(query_cancel, ButtonReleaseMask, (Boolean) 0,
-		      query_cancelled, (XtPointer) NULL);
+		      accept_cancel, (XtPointer) NULL);
 
     XtPopup(query_popup, XtGrabExclusive);
     XDefineCursor(tool_d, XtWindow(query_popup), (Cursor) arrow_cursor.bitmap);
@@ -125,10 +153,10 @@ win_confirm(w, message)
 
 static void
 CvtStringToFloat(args, num_args, fromVal, toVal)
-    XrmValuePtr     args;
-    Cardinal       *num_args;
-    XrmValuePtr     fromVal;
-    XrmValuePtr     toVal;
+    XrmValuePtr	    args;
+    Cardinal	   *num_args;
+    XrmValuePtr	    fromVal;
+    XrmValuePtr	    toVal;
 {
     static float    f;
 
@@ -143,10 +171,10 @@ CvtStringToFloat(args, num_args, fromVal, toVal)
 
 static void
 CvtIntToFloat(args, num_args, fromVal, toVal)
-    XrmValuePtr     args;
-    Cardinal       *num_args;
-    XrmValuePtr     fromVal;
-    XrmValuePtr     toVal;
+    XrmValuePtr	    args;
+    Cardinal	   *num_args;
+    XrmValuePtr	    fromVal;
+    XrmValuePtr	    toVal;
 {
     static float    f;
 

@@ -31,12 +31,12 @@
 
 /* LOCAL */
 
-F_pos           point[3];
+F_pos		point[3];
 
-static int      create_arcobject();
-static int      get_arcpoint();
-static int      init_arc_drawing();
-static int      cancel_arc();
+static int	create_arcobject();
+static int	get_arcpoint();
+static int	init_arc_drawing();
+static int	cancel_arc();
 
 arc_drawing_selected()
 {
@@ -52,7 +52,7 @@ arc_drawing_selected()
 
 static
 init_arc_drawing(x, y)
-    int             x, y;
+    int		    x, y;
 {
     set_mousefun("mid point", "", "cancel");
     draw_mousefun_canvas();
@@ -84,7 +84,7 @@ cancel_arc()
 
 static
 get_arcpoint(x, y)
-    int             x, y;
+    int		    x, y;
 {
     if (x == fix_x && y == fix_y)
 	return;
@@ -108,11 +108,11 @@ get_arcpoint(x, y)
 
 static
 create_arcobject(lx, ly)
-    int             lx, ly;
+    int		    lx, ly;
 {
-    F_arc          *arc;
-    int             x, y, i;
-    float           xx, yy;
+    F_arc	   *arc;
+    int		    x, y, i;
+    float	    xx, yy;
 
     elastic_line();
     cur_x = lx;
@@ -125,7 +125,7 @@ create_arcobject(lx, ly)
     /* erase previous line segment(s) if necessary */
     for (i = 1; i < num_point; i++) {
 	pw_vector(canvas_win, x, y, point[i].x, point[i].y, INV_PAINT,
-		  1, RUBBER_LINE, 0.0);
+		  1, RUBBER_LINE, 0.0, DEFAULT_COLOR);
 	x = point[i].x;
 	y = point[i].y;
     }
@@ -146,7 +146,7 @@ create_arcobject(lx, ly)
     /* scale dash length according to linethickness */
     arc->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     arc->pen = 0;
-    arc->area_fill = cur_areafill;
+    arc->fill_style = cur_fillstyle;
     arc->color = cur_color;
     arc->depth = 0;
     arc->direction = compute_direction(point[0], point[1], point[2]);
@@ -169,7 +169,7 @@ create_arcobject(lx, ly)
     arc->next = NULL;
     draw_arc(arc, PAINT);
     if (appres.DEBUG) {
-	int             xmin, ymin, xmax, ymax;
+	int		xmin, ymin, xmax, ymax;
 
 	arc_bound(arc, &xmin, &ymin, &xmax, &ymax);
 	elastic_box(xmin, ymin, xmax, ymax);

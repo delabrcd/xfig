@@ -28,8 +28,8 @@
 
 /*************************** local procedures *********************/
 
-static int      create_arc_boxobject(), cancel_arc_boxobject();
-static int      init_arc_box_drawing();
+static int	create_arc_boxobject(), cancel_arc_boxobject();
+static int	init_arc_box_drawing();
 
 arcbox_drawing_selected()
 {
@@ -45,7 +45,7 @@ arcbox_drawing_selected()
 
 static
 init_arc_box_drawing(x, y)
-    int             x, y;
+    int		    x, y;
 {
     cur_x = fix_x = x;
     cur_y = fix_y = y;
@@ -70,10 +70,10 @@ cancel_arc_boxobject()
 
 static
 create_arc_boxobject(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    F_line         *box;
-    F_point        *point;
+    F_line	   *box;
+    F_point	   *point;
 
     elastic_box(fix_x, fix_y, cur_x, cur_y);
 
@@ -94,8 +94,8 @@ create_arc_boxobject(x, y)
     box->color = cur_color;
     box->depth = 0;
     box->pen = 0;
-    box->area_fill = cur_areafill;
-    /* multiply  dash length by line thickness */
+    box->fill_style = cur_fillstyle;
+    /* multiply	 dash length by line thickness */
     box->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     box->radius = cur_boxradius;/* corner radius */
     box->points = point;

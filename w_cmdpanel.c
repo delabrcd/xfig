@@ -19,43 +19,43 @@
 #include "fig.h"
 #include "resources.h"
 #include "mode.h"
-#include "w_canvas.h"	/* for null_proc() */
+#include "w_canvas.h"		/* for null_proc() */
 #include "w_drawprim.h"
 #include "w_mousefun.h"
 #include "w_util.h"
 #include "w_setup.h"
 
-extern          erase_objecthighlight();
-extern          emptyfigure();
+extern		erase_objecthighlight();
+extern		emptyfigure();
 extern		do_print(), do_export(), do_save();
-extern void     undo(), redisplay_canvas();
-extern void     popup_print_panel(), popup_file_panel(), popup_export_panel();
+extern void	undo(), redisplay_canvas();
+extern void	popup_print_panel(), popup_file_panel(), popup_export_panel();
 
-void            init_cmd_panel();
-void            setup_cmd_panel();
+void		init_cmd_panel();
+void		setup_cmd_panel();
 
 /* internal features and definitions */
 
 /* cmd panel definitions */
 #define CMD_LABEL_LEN	16
 typedef struct cmd_switch_struct {
-    char            label[CMD_LABEL_LEN];
-    void            (*cmd_func) ();
-    int             (*quick_func) ();
-    char            mousefun_l[CMD_LABEL_LEN];
-    char            mousefun_r[CMD_LABEL_LEN];
-    TOOL            widget;
-}               cmd_sw_info;
+    char	    label[CMD_LABEL_LEN];
+    void	    (*cmd_func) ();
+    int		    (*quick_func) ();
+    char	    mousefun_l[CMD_LABEL_LEN];
+    char	    mousefun_r[CMD_LABEL_LEN];
+    TOOL	    widget;
+}		cmd_sw_info;
 
-#define	cmd_action(z)	(z->cmd_func)(z->widget)
-#define	quick_action(z)	(z->quick_func)(z->widget)
+#define cmd_action(z)	(z->cmd_func)(z->widget)
+#define quick_action(z) (z->quick_func)(z->widget)
 
 /* prototypes */
-static void     sel_cmd_but();
-static void     enter_cmd_but();
-void            quit();
-static void     delete_all_cmd();
-static void     paste();
+static void	sel_cmd_but();
+static void	enter_cmd_but();
+void		quit();
+static void	delete_all_cmd();
+static void	paste();
 
 /* command panel of switches below the lower ruler */
 static cmd_sw_info cmd_switches[] = {
@@ -69,14 +69,14 @@ static cmd_sw_info cmd_switches[] = {
     {"Print...", popup_print_panel, do_print, "popup", "print shortcut"},
 };
 
-#define         NUM_CMD_SW  (sizeof(cmd_switches) / sizeof(cmd_sw_info))
+#define		NUM_CMD_SW  (sizeof(cmd_switches) / sizeof(cmd_sw_info))
 
 static XtActionsRec cmd_actions[] =
 {
     {"LeaveCmdSw", (XtActionProc) clear_mousefun},
 };
 
-static String   cmd_translations =
+static String	cmd_translations =
 "<Btn1Down>:set()\n\
     <Btn1Up>:unset()\n\
     <LeaveWindow>:LeaveCmdSw()reset()\n";
@@ -90,14 +90,13 @@ num_cmd_sw()
 }
 
 /* command panel */
-
 void
 init_cmd_panel(tool)
-    TOOL            tool;
+    TOOL	    tool;
 {
     register int    i;
     register cmd_sw_info *sw;
-    Widget          beside = NULL;
+    Widget	    beside = NULL;
 
     FirstArg(XtNborderWidth, 0);
     NextArg(XtNdefaultDistance, 0);
@@ -147,15 +146,15 @@ setup_cmd_panel()
 
     for (i = 0; i < NUM_CMD_SW; ++i) {
 	sw = &cmd_switches[i];
-	FirstArg(XtNfont, button_font);	/* label font */
+	FirstArg(XtNfont, button_font); /* label font */
 	SetValues(sw->widget);
     }
 }
 
 static void
 enter_cmd_but(widget, sw, event)
-    Widget          widget;
-    cmd_sw_info    *sw;
+    Widget	    widget;
+    cmd_sw_info	   *sw;
     XButtonEvent   *event;
 {
     clear_mousefun();
@@ -164,8 +163,8 @@ enter_cmd_but(widget, sw, event)
 
 static void
 sel_cmd_but(widget, sw, event)
-    Widget          widget;
-    cmd_sw_info    *sw;
+    Widget	    widget;
+    cmd_sw_info	   *sw;
     XButtonEvent   *event;
 {
     if (event->button == Button2)
@@ -187,17 +186,29 @@ sel_cmd_but(widget, sw, event)
 	quick_action(sw);
 }
 
-static char     quit_msg[] = "The current figure is modified.\nDo you want to quit anyway?";
+static char	quit_msg[] = "The current figure is modified.\nDo you want to save it before quitting?";
 
 void
 quit(w)
-    Widget          w;
+    Widget	    w;
 {
+    int		    qresult;
+
     if (!emptyfigure() && figure_modified && !aborting) {
 	XtSetSensitive(w, False);
-	if (!win_confirm(canvas_win, quit_msg)) {
+	if ((qresult = popup_query(QUERY_YESNO, quit_msg)) == RESULT_CANCEL) {
 	    XtSetSensitive(w, True);
 	    return;
+	} else if (qresult == RESULT_YES) {
+	    do_save(w);
+	    /*
+	     * if saving was not successful, figure_modified is still true:
+	     * do not quit!
+	     */
+	    if (figure_modified) {
+		XtSetSensitive(w, True);
+		return;
+	    }
 	}
     }
     /* delete the cut buffer only if it is a temporary file */

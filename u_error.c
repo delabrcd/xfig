@@ -21,11 +21,12 @@
 #define MAXERRORS 6
 #define MAXERRMSGLEN 512
 
-static int      error_cnt = 0;
+static int	error_cnt = 0;
 
 /* VARARGS1 */
 put_err(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
-    char           *format, *arg1, *arg2, *arg3, *arg4, *arg5, *arg6, *arg7, *arg8;
+    char	   *format, *arg1, *arg2, *arg3, *arg4, *arg5, *arg6, *arg7,
+		   *arg8;
 {
     fprintf(stderr, format, arg1, arg2, arg3, arg4, arg5,
 	    arg6, arg7, arg8);
@@ -33,7 +34,7 @@ put_err(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
 }
 
 error_handler(err_sig)
-    int             err_sig;
+    int		    err_sig;
 {
     switch (err_sig) {
     case SIGHUP:
@@ -53,10 +54,10 @@ error_handler(err_sig)
 }
 
 X_error_handler(d, err_ev)
-    Display        *d;
-    XErrorEvent    *err_ev;
+    Display	   *d;
+    XErrorEvent	   *err_ev;
 {
-    char            err_msg[MAXERRMSGLEN];
+    char	    err_msg[MAXERRMSGLEN];
 
     XGetErrorText(tool_d, (int) (err_ev->error_code), err_msg, MAXERRMSGLEN - 1);
     (void) fprintf(stderr,

@@ -25,19 +25,19 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-extern int      latex_endpoint();
+extern int	latex_endpoint();
 
 /*************************** locally global variables *********************/
 
-static int      init_line_drawing();
+static int	init_line_drawing();
 
-int             create_lineobject();
-int             create_latexobject();
-int             get_direction();
-int             get_intermediatepoint();
-int             get_latexpoint();
+int		create_lineobject();
+int		create_latexobject();
+int		get_direction();
+int		get_intermediatepoint();
+int		get_latexpoint();
 
-/**********************  polyline and polygon section  **********************/
+/**********************	 polyline and polygon section  **********************/
 
 line_drawing_selected()
 {
@@ -62,7 +62,7 @@ line_drawing_selected()
 
 static
 init_line_drawing(x, y)
-    int             x, y;
+    int		    x, y;
 {
     init_trace_drawing(x, y);
 }
@@ -73,14 +73,14 @@ cancel_line_drawing()
     cur_x = fix_x;
     cur_y = fix_y;
     if (cur_point != first_point)
-      elastic_moveline(first_point);  /* erase control vector */
+	elastic_moveline(first_point);	/* erase control vector */
     free_points(first_point);
     return_proc();
     draw_mousefun_canvas();
 }
 
 init_trace_drawing(x, y)
-    int             x, y;
+    int		    x, y;
 {
     if ((first_point = create_point()) == NULL)
 	return;
@@ -118,7 +118,7 @@ init_trace_drawing(x, y)
 }
 
 get_direction(x, y)
-    int             x, y;
+    int		    x, y;
 {
     (*canvas_locmove_proc) (x, y);
     canvas_locmove_proc = constrainedangle_line;
@@ -126,7 +126,7 @@ get_direction(x, y)
 }
 
 get_latexpoint(x, y)
-    int             x, y;
+    int		    x, y;
 {
     elastic_latexline();
     latex_endpoint(fix_x, fix_y, x, y, &cur_x, &cur_y, latexarrow_mode,
@@ -140,7 +140,7 @@ get_latexpoint(x, y)
 }
 
 get_intermediatepoint(x, y)
-    int             x, y;
+    int		    x, y;
 {
     elastic_line();		/* erase elastic line */
     cur_x = x;
@@ -159,7 +159,7 @@ get_intermediatepoint(x, y)
 }
 
 create_latexobject(x, y)
-    int             x, y;
+    int		    x, y;
 {
     if (x != fix_x || y != fix_y) {
 	elastic_latexline();
@@ -176,10 +176,10 @@ create_latexobject(x, y)
 /* come here upon pressing middle button (last point of lineobject) */
 
 create_lineobject(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    F_line         *line;
-    int             dot;
+    F_line	   *line;
+    int		    dot;
 
     if (num_point == 0) {
 	if ((first_point = create_point()) == NULL) {
@@ -209,7 +209,7 @@ create_lineobject(x, y)
     }
     line->type = T_POLYLINE;
     line->thickness = cur_linewidth;
-    line->area_fill = cur_areafill;
+    line->fill_style = cur_fillstyle;
     line->style = cur_linestyle;
     line->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     line->color = cur_color;
@@ -228,10 +228,10 @@ create_lineobject(x, y)
 	} else {		/* polyline; draw any arrows */
 	    if (autoforwardarrow_mode)
 		line->for_arrow = forward_arrow();
-		/* arrow will be drawn in draw_line below */
-	    if (autobackwardarrow_mode) 
+	    /* arrow will be drawn in draw_line below */
+	    if (autobackwardarrow_mode)
 		line->back_arrow = backward_arrow();
-		/* arrow will be drawn in draw_line below */
+	    /* arrow will be drawn in draw_line below */
 	}
 	cur_x = fix_x;
 	cur_y = fix_y;

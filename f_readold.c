@@ -15,17 +15,17 @@
  */
 
 /*******************************************************************/
-/***************       Read version 1.3 format       ***************/
+/***************       Read version 1.3 format	     ***************/
 /*******************************************************************/
 #include "fig.h"
 #include "object.h"
 #include "u_create.h"
 
-/*******    Fig 1.3 subtype of objects    *******/
-#define			DRAW_ELLIPSE_BY_RAD 	1
-#define			DRAW_ELLIPSE_BY_DIA 	2
-#define			DRAW_CIRCLE_BY_RAD 	3
-#define			DRAW_CIRCLE_BY_DIA 	4
+/*******    Fig 1.3 subtype of objects	  *******/
+#define			DRAW_ELLIPSE_BY_RAD	1
+#define			DRAW_ELLIPSE_BY_DIA	2
+#define			DRAW_CIRCLE_BY_RAD	3
+#define			DRAW_CIRCLE_BY_DIA	4
 #define			DRAW_CIRCULAR_ARC	5
 #define			DRAW_POLYLINE		6
 #define			DRAW_BOX		7
@@ -42,22 +42,22 @@ static F_spline *read_1_3_splineobject();
 static F_arc   *read_1_3_arcobject();
 static F_compound *read_1_3_compoundobject();
 
-extern int      line_no;
-extern int      num_object;
+extern int	line_no;
+extern int	num_object;
 
 int
 read_1_3_objects(fp, obj)
-    FILE           *fp;
-    F_compound     *obj;
+    FILE	   *fp;
+    F_compound	   *obj;
 {
-    F_ellipse      *e, *le = NULL;
-    F_line         *l, *ll = NULL;
-    F_text         *t, *lt = NULL;
-    F_spline       *s, *ls = NULL;
-    F_arc          *a, *la = NULL;
-    F_compound     *c, *lc = NULL;
-    int             n;
-    int             object, pixperinch, canvaswid, canvasht, coord_sys;
+    F_ellipse	   *e, *le = NULL;
+    F_line	   *l, *ll = NULL;
+    F_text	   *t, *lt = NULL;
+    F_spline	   *s, *ls = NULL;
+    F_arc	   *a, *la = NULL;
+    F_compound	   *c, *lc = NULL;
+    int		    n;
+    int		    object, pixperinch, canvaswid, canvasht, coord_sys;
 
     n = fscanf(fp, "%d%d%d%d\n", &pixperinch, &coord_sys, &canvaswid, &canvasht);
     if (n != 4) {
@@ -135,10 +135,10 @@ read_1_3_objects(fp, obj)
 
 static F_arc   *
 read_1_3_arcobject(fp)
-    FILE           *fp;
+    FILE	   *fp;
 {
-    F_arc          *a;
-    int             f, b, h, w, n;
+    F_arc	   *a;
+    int		    f, b, h, w, n;
 
     if ((a = create_arc()) == NULL)
 	return (NULL);
@@ -177,15 +177,15 @@ read_1_3_arcobject(fp)
 
 static F_compound *
 read_1_3_compoundobject(fp)
-    FILE           *fp;
+    FILE	   *fp;
 {
-    F_arc          *a, *la = NULL;
-    F_ellipse      *e, *le = NULL;
-    F_line         *l, *ll = NULL;
-    F_spline       *s, *ls = NULL;
-    F_text         *t, *lt = NULL;
-    F_compound     *com, *c, *lc = NULL;
-    int             n, object;
+    F_arc	   *a, *la = NULL;
+    F_ellipse	   *e, *le = NULL;
+    F_line	   *l, *ll = NULL;
+    F_spline	   *s, *ls = NULL;
+    F_text	   *t, *lt = NULL;
+    F_compound	   *com, *c, *lc = NULL;
+    int		    n, object;
 
     if ((com = create_compound()) == NULL)
 	return (NULL);
@@ -279,10 +279,10 @@ read_1_3_compoundobject(fp)
 
 static F_ellipse *
 read_1_3_ellipseobject(fp)
-    FILE           *fp;
+    FILE	   *fp;
 {
-    F_ellipse      *e;
-    int             n, t;
+    F_ellipse	   *e;
+    int		    n, t;
 
     if ((e = create_ellipse()) == NULL)
 	return (NULL);
@@ -291,7 +291,7 @@ read_1_3_ellipseobject(fp)
     e->angle = 0.0;
     e->depth = 0;
     e->pen = 0;
-    e->area_fill = NULL;
+    e->fill_style = NULL;
     e->next = NULL;
     n = fscanf(fp, " %d %d %d %f %d %d %d %d %d %d %d %d %d\n",
 	       &t, &e->style,
@@ -318,11 +318,11 @@ read_1_3_ellipseobject(fp)
 
 static F_line  *
 read_1_3_lineobject(fp)
-    FILE           *fp;
+    FILE	   *fp;
 {
-    F_line         *l;
-    F_point        *p, *q;
-    int             f, b, h, w, n, t, x, y;
+    F_line	   *l;
+    F_point	   *p, *q;
+    int		    f, b, h, w, n, t, x, y;
 
     if ((l = create_line()) == NULL)
 	return (NULL);
@@ -330,7 +330,7 @@ read_1_3_lineobject(fp)
     l->color = BLACK;
     l->depth = 0;
     l->pen = 0;
-    l->area_fill = NULL;
+    l->fill_style = NULL;
     l->for_arrow = NULL;
     l->back_arrow = NULL;
     l->next = NULL;
@@ -384,11 +384,11 @@ read_1_3_lineobject(fp)
 
 static F_spline *
 read_1_3_splineobject(fp)
-    FILE           *fp;
+    FILE	   *fp;
 {
-    F_spline       *s;
-    F_point        *p, *q;
-    int             f, b, h, w, n, t, x, y;
+    F_spline	   *s;
+    F_point	   *p, *q;
+    int		    f, b, h, w, n, t, x, y;
 
     if ((s = create_spline()) == NULL)
 	return (NULL);
@@ -396,7 +396,7 @@ read_1_3_splineobject(fp)
     s->color = BLACK;
     s->depth = 0;
     s->pen = 0;
-    s->area_fill = NULL;
+    s->fill_style = NULL;
     s->for_arrow = NULL;
     s->back_arrow = NULL;
     s->controls = NULL;
@@ -452,11 +452,11 @@ read_1_3_splineobject(fp)
 
 static F_text  *
 read_1_3_textobject(fp)
-    FILE           *fp;
+    FILE	   *fp;
 {
-    F_text         *t;
-    int             n;
-    char            buf[128];
+    F_text	   *t;
+    int		    n;
+    char	    buf[128];
 
     if ((t = create_text()) == NULL)
 	return (NULL);

@@ -38,16 +38,18 @@
  * all the "next" fields of objects pointed to by object_tails to NULL.
  */
 
-F_compound      saved_objects = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-F_compound      object_tails = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+F_compound	saved_objects = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+F_compound	object_tails = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
 /*************** LOCAL *****************/
 
-static int      last_object;
-static int      last_action = F_NULL;
-static F_pos    last_position, new_position;
-static int      last_arcpointnum;
+static int	last_object;
+static int	last_action = F_NULL;
+static F_pos	last_position, new_position;
+static int	last_arcpointnum;
 static F_point *last_prev_point, *last_selected_point, *last_next_point;
+static F_linkinfo *last_links;
+static int	last_linkmode;
 
 void
 undo()
@@ -139,6 +141,8 @@ undo_glue()
     last_action = F_BREAK;
     mask_toggle_compoundmarker(saved_objects.compounds);
     toggle_markers_in_compound(saved_objects.compounds);
+    if (cur_mode != F_GLUE && cur_mode != F_BREAK)
+	set_tags(saved_objects.compounds, 0);
 }
 
 undo_convert()
@@ -205,63 +209,45 @@ undo_change()
     case O_POLYLINE:
 	new_l = saved_objects.lines;	/* the original */
 	old_l = saved_objects.lines->next;	/* the changed object */
-	mask_toggle_linemarker(old_l);
-	draw_line(old_l, ERASE);
 	change_line(old_l, new_l);
-	draw_line(new_l, PAINT);
-	mask_toggle_linemarker(new_l);
+	redisplay_lines(new_l, old_l);
 	break;
     case O_ELLIPSE:
 	new_e = saved_objects.ellipses;
 	old_e = saved_objects.ellipses->next;
-	mask_toggle_ellipsemarker(old_e);
-	draw_ellipse(old_e, ERASE);
 	change_ellipse(old_e, new_e);
-	draw_ellipse(new_e, PAINT);
-	mask_toggle_ellipsemarker(new_e);
+	redisplay_ellipses(new_e, old_e);
 	break;
     case O_TEXT:
 	new_t = saved_objects.texts;
 	old_t = saved_objects.texts->next;
-	mask_toggle_textmarker(old_t);
-	draw_text(old_t, ERASE);
 	change_text(old_t, new_t);
-	draw_text(new_t, PAINT);
-	mask_toggle_textmarker(new_t);
+	redisplay_texts(new_t, old_t);
 	break;
     case O_SPLINE:
 	new_s = saved_objects.splines;
 	old_s = saved_objects.splines->next;
-	mask_toggle_splinemarker(old_s);
-	draw_spline(old_s, ERASE);
 	change_spline(old_s, new_s);
-	draw_spline(new_s, PAINT);
-	mask_toggle_splinemarker(new_s);
+	redisplay_splines(new_s, old_s);
 	break;
     case O_ARC:
 	new_a = saved_objects.arcs;
 	old_a = saved_objects.arcs->next;
-	mask_toggle_arcmarker(old_a);
-	draw_arc(old_a, ERASE);
 	change_arc(old_a, new_a);
-	draw_arc(new_a, PAINT);
-	mask_toggle_arcmarker(new_a);
+	redisplay_arcs(new_a, old_a);
 	break;
     case O_COMPOUND:
 	new_c = saved_objects.compounds;
 	old_c = saved_objects.compounds->next;
-	mask_toggle_compoundmarker(old_c);
-	draw_compoundelements(old_c, ERASE);
 	change_compound(old_c, new_c);
-	draw_compoundelements(new_c, PAINT);
-	mask_toggle_compoundmarker(new_c);
+	redisplay_compounds(new_c, old_c);
 	break;
     }
 }
 
 /*
  * When a single object is created, it is appended to the appropriate list
- * in objects.  It is also placed in the appropriate list in saved_objects.
+ * in objects.	It is also placed in the appropriate list in saved_objects.
  *
  * When a number of objects are created (usually by reading them in from
  * a file or undoing a remove-all action), they are appended to the lists in
@@ -275,68 +261,32 @@ undo_change()
 
 undo_add()
 {
-    int             xmin, ymin, xmax, ymax;
+    int		    xmin, ymin, xmax, ymax;
 
     switch (last_object) {
     case O_POLYLINE:
 	list_delete_line(&objects.lines, saved_objects.lines);
-	mask_toggle_linemarker(saved_objects.lines);
-#ifdef FASTSERVER
-	line_bound(saved_objects.lines, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-#else
-	draw_line(saved_objects.lines, ERASE);
-#endif
+	redisplay_line(saved_objects.lines);
 	break;
     case O_ELLIPSE:
 	list_delete_ellipse(&objects.ellipses, saved_objects.ellipses);
-	mask_toggle_ellipsemarker(saved_objects.ellipses);
-#ifdef FASTSERVER
-	ellipse_bound(saved_objects.ellipses, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-#else
-	draw_ellipse(saved_objects.ellipses, ERASE);
-#endif
+	redisplay_ellipse(saved_objects.ellipses);
 	break;
     case O_TEXT:
 	list_delete_text(&objects.texts, saved_objects.texts);
-	mask_toggle_textmarker(saved_objects.texts);
-#ifdef FASTSERVER
-	text_bound(saved_objects.texts, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-#else
-	draw_text(saved_objects.texts, ERASE);
-#endif
+	redisplay_text(saved_objects.texts);
 	break;
     case O_SPLINE:
 	list_delete_spline(&objects.splines, saved_objects.splines);
-	mask_toggle_splinemarker(saved_objects.splines);
-#ifdef FASTSERVER
-	spline_bound(saved_objects.splines, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-#else
-	draw_spline(saved_objects.splines, ERASE);
-#endif
+	redisplay_spline(saved_objects.splines);
 	break;
     case O_ARC:
 	list_delete_arc(&objects.arcs, saved_objects.arcs);
-	mask_toggle_arcmarker(saved_objects.arcs);
-#ifdef FASTSERVER
-	arc_bound(saved_objects.arcs, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-#else
-	draw_arc(saved_objects.arcs, ERASE);
-#endif
+	redisplay_arc(saved_objects.arcs);
 	break;
     case O_COMPOUND:
 	list_delete_compound(&objects.compounds, saved_objects.compounds);
-	mask_toggle_compoundmarker(saved_objects.compounds);
-#ifdef FASTSERVER
-	compound_bound(saved_objects.compounds, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-#else
-	draw_compoundelements(saved_objects.compounds, ERASE);
-#endif
+	redisplay_compound(saved_objects.compounds);
 	break;
     case O_ALL_OBJECT:
 	cut_objects(&objects, &object_tails);
@@ -349,38 +299,32 @@ undo_add()
 
 undo_delete()
 {
-    int             xmin, ymin, xmax, ymax;
+    int		    xmin, ymin, xmax, ymax;
 
     switch (last_object) {
     case O_POLYLINE:
-	draw_line(saved_objects.lines, PAINT);
-	mask_toggle_linemarker(saved_objects.lines);
 	list_add_line(&objects.lines, saved_objects.lines);
+	redisplay_line(saved_objects.lines);
 	break;
     case O_ELLIPSE:
-	draw_ellipse(saved_objects.ellipses, PAINT);
-	mask_toggle_ellipsemarker(saved_objects.ellipses);
 	list_add_ellipse(&objects.ellipses, saved_objects.ellipses);
+	redisplay_ellipse(saved_objects.ellipses);
 	break;
     case O_TEXT:
-	draw_text(saved_objects.texts, PAINT);
-	mask_toggle_textmarker(saved_objects.texts);
 	list_add_text(&objects.texts, saved_objects.texts);
+	redisplay_text(saved_objects.texts);
 	break;
     case O_SPLINE:
-	draw_spline(saved_objects.splines, PAINT);
-	mask_toggle_splinemarker(saved_objects.splines);
 	list_add_spline(&objects.splines, saved_objects.splines);
+	redisplay_spline(saved_objects.splines);
 	break;
     case O_ARC:
-	draw_arc(saved_objects.arcs, PAINT);
-	mask_toggle_arcmarker(saved_objects.arcs);
 	list_add_arc(&objects.arcs, saved_objects.arcs);
+	redisplay_arc(saved_objects.arcs);
 	break;
     case O_COMPOUND:
-	draw_compoundelements(saved_objects.compounds, PAINT);
-	mask_toggle_compoundmarker(saved_objects.compounds);
 	list_add_compound(&objects.compounds, saved_objects.compounds);
+	redisplay_compound(saved_objects.compounds);
 	break;
     case O_ALL_OBJECT:
 	compound_bound(&saved_objects, &xmin, &ymin, &xmax, &ymax);
@@ -392,99 +336,56 @@ undo_delete()
 
 undo_move()
 {
-    int             dx, dy;
-
-#ifdef FASTSERVER
-    int             xmin, ymin, xmax, ymax;
-
-#endif
+    int		    dx, dy;
+    int		    xmin1, ymin1, xmax1, ymax1;
+    int		    xmin2, ymin2, xmax2, ymax2;
 
     dx = last_position.x - new_position.x;
     dy = last_position.y - new_position.y;
     switch (last_object) {
     case O_POLYLINE:
-	mask_toggle_linemarker(saved_objects.lines);
-#ifdef FASTSERVER
-	list_delete_line(&objects.lines, saved_objects.lines);
-	line_bound(saved_objects.lines, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-	list_add_line(&objects.lines, saved_objects.lines);
-#else
-	draw_line(saved_objects.lines, ERASE);
-#endif
+	line_bound(saved_objects.lines, &xmin1, &ymin1, &xmax1, &ymax1);
 	translate_line(saved_objects.lines, dx, dy);
-	draw_line(saved_objects.lines, PAINT);
-	mask_toggle_linemarker(saved_objects.lines);
+	line_bound(saved_objects.lines, &xmin2, &ymin2, &xmax2, &ymax2);
+	adjust_links(last_linkmode, last_links, dx, dy, 0, 0, 1.0, 1.0, 0);
+	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
+			  xmin2, ymin2, xmax2, ymax2);
 	break;
     case O_ELLIPSE:
-	mask_toggle_ellipsemarker(saved_objects.ellipses);
-#ifdef FASTSERVER
-	list_delete_ellipse(&objects.ellipses, saved_objects.ellipses);
-	ellipse_bound(saved_objects.ellipses, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-	list_add_ellipse(&objects.ellipses, saved_objects.ellipses);
-#else
-	draw_ellipse(saved_objects.ellipses, ERASE);
-#endif
+	ellipse_bound(saved_objects.ellipses, &xmin1, &ymin1, &xmax1, &ymax1);
 	translate_ellipse(saved_objects.ellipses, dx, dy);
-	draw_ellipse(saved_objects.ellipses, PAINT);
-	mask_toggle_ellipsemarker(saved_objects.ellipses);
+	ellipse_bound(saved_objects.ellipses, &xmin2, &ymin2, &xmax2, &ymax2);
+	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
+			  xmin2, ymin2, xmax2, ymax2);
 	break;
     case O_TEXT:
-	mask_toggle_textmarker(saved_objects.texts);
-#ifdef FASTSERVER
-	list_delete_text(&objects.texts, saved_objects.texts);
-	text_bound(saved_objects.texts, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-	list_add_text(&objects.texts, saved_objects.texts);
-#else
-	draw_text(saved_objects.texts, ERASE);
-#endif
+	text_bound(saved_objects.texts, &xmin1, &ymin1, &xmax1, &ymax1);
 	translate_text(saved_objects.texts, dx, dy);
-	draw_text(saved_objects.texts, PAINT);
-	mask_toggle_textmarker(saved_objects.texts);
+	text_bound(saved_objects.texts, &xmin2, &ymin2, &xmax2, &ymax2);
+	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
+			  xmin2, ymin2, xmax2, ymax2);
 	break;
     case O_SPLINE:
-	mask_toggle_splinemarker(saved_objects.splines);
-#ifdef FASTSERVER
-	list_delete_spline(&objects.splines, saved_objects.splines);
-	spline_bound(saved_objects.splines, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-	list_add_spline(&objects.splines, saved_objects.splines);
-#else
-	draw_spline(saved_objects.splines, ERASE);
-#endif
+	spline_bound(saved_objects.splines, &xmin1, &ymin1, &xmax1, &ymax1);
 	translate_spline(saved_objects.splines, dx, dy);
-	draw_spline(saved_objects.splines, PAINT);
-	mask_toggle_splinemarker(saved_objects.splines);
+	spline_bound(saved_objects.splines, &xmin2, &ymin2, &xmax2, &ymax2);
+	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
+			  xmin2, ymin2, xmax2, ymax2);
 	break;
     case O_ARC:
-	mask_toggle_arcmarker(saved_objects.arcs);
-#ifdef FASTSERVER
-	list_delete_arc(&objects.arcs, saved_objects.arcs);
-	arc_bound(saved_objects.arcs, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-	list_add_arc(&objects.arcs, saved_objects.arcs);
-#else
-	draw_arc(saved_objects.arcs, ERASE);
-#endif
+	arc_bound(saved_objects.arcs, &xmin1, &ymin1, &xmax1, &ymax1);
 	translate_arc(saved_objects.arcs, dx, dy);
-	draw_arc(saved_objects.arcs, PAINT);
-	mask_toggle_arcmarker(saved_objects.arcs);
+	arc_bound(saved_objects.arcs, &xmin2, &ymin2, &xmax2, &ymax2);
+	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
+			  xmin2, ymin2, xmax2, ymax2);
 	break;
     case O_COMPOUND:
-	mask_toggle_compoundmarker(saved_objects.compounds);
-#ifdef FASTSERVER
-	list_delete_compound(&objects.compounds, saved_objects.compounds);
-	compound_bound(saved_objects.compounds, &xmin, &ymin, &xmax, &ymax);
-	redisplay_zoomed_region(xmin, ymin, xmax, ymax);
-	list_add_compound(&objects.compounds, saved_objects.compounds);
-#else
-	draw_compoundelements(saved_objects.compounds, ERASE);
-#endif
+	compound_bound(saved_objects.compounds, &xmin1, &ymin1, &xmax1, &ymax1);
 	translate_compound(saved_objects.compounds, dx, dy);
-	draw_compoundelements(saved_objects.compounds, PAINT);
-	mask_toggle_compoundmarker(saved_objects.compounds);
+	compound_bound(saved_objects.compounds, &xmin2, &ymin2, &xmax2, &ymax2);
+	adjust_links(last_linkmode, last_links, dx, dy, 0, 0, 1.0, 1.0, 0);
+	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
+			  xmin2, ymin2, xmax2, ymax2);
 	break;
     }
     swap_newp_lastp();
@@ -492,8 +393,8 @@ undo_move()
 
 undo_load()
 {
-    F_compound      temp;
-    char            ctemp[128];
+    F_compound	    temp;
+    char	    ctemp[128];
 
     temp = objects;
     objects = saved_objects;
@@ -508,7 +409,7 @@ undo_load()
 
 undo_scale()
 {
-    float           scalex, scaley;
+    float	    scalex, scaley;
 
     mask_toggle_compoundmarker(saved_objects.compounds);
     draw_compoundelements(saved_objects.compounds, ERASE);
@@ -522,7 +423,7 @@ undo_scale()
 
 swap_newp_lastp()
 {
-    int             t;		/* swap new_position and last_position  */
+    int		    t;		/* swap new_position and last_position	*/
 
     t = new_position.x;
     new_position.x = last_position.x;
@@ -617,13 +518,14 @@ clean_up()
     } else if (last_action == F_BREAK) {
 	free((char *) saved_objects.compounds);
 	saved_objects.compounds = NULL;
-    } else if (last_action == F_ADD) {
+    } else if (last_action == F_ADD || last_action == F_MOVE) {
 	saved_objects.arcs = NULL;
 	saved_objects.compounds = NULL;
 	saved_objects.ellipses = NULL;
 	saved_objects.lines = NULL;
 	saved_objects.splines = NULL;
 	saved_objects.texts = NULL;
+	free_linkinfo(&last_links);
     } else if (last_action == F_CONVERT) {
 	saved_objects.splines = NULL;
 	saved_objects.lines = NULL;
@@ -639,94 +541,102 @@ clean_up()
 }
 
 set_latestarc(arc)
-    F_arc          *arc;
+    F_arc	   *arc;
 {
     saved_objects.arcs = arc;
 }
 
 set_latestobjects(objects)
-    F_compound     *objects;
+    F_compound	   *objects;
 {
     saved_objects = *objects;
 }
 
 set_latestcompound(compound)
-    F_compound     *compound;
+    F_compound	   *compound;
 {
     saved_objects.compounds = compound;
 }
 
 set_latestellipse(ellipse)
-    F_ellipse      *ellipse;
+    F_ellipse	   *ellipse;
 {
     saved_objects.ellipses = ellipse;
 }
 
 set_latestline(line)
-    F_line         *line;
+    F_line	   *line;
 {
     saved_objects.lines = line;
 }
 
 set_latestspline(spline)
-    F_spline       *spline;
+    F_spline	   *spline;
 {
     saved_objects.splines = spline;
 }
 
 set_latesttext(text)
-    F_text         *text;
+    F_text	   *text;
 {
     saved_objects.texts = text;
 }
 
 set_last_prevpoint(prev_point)
-    F_point        *prev_point;
+    F_point	   *prev_point;
 {
     last_prev_point = prev_point;
 }
 
 set_last_selectedpoint(selected_point)
-    F_point        *selected_point;
+    F_point	   *selected_point;
 {
     last_selected_point = selected_point;
 }
 
 set_last_nextpoint(next_point)
-    F_point        *next_point;
+    F_point	   *next_point;
 {
     last_next_point = next_point;
 }
 
 set_last_arcpointnum(num)
-    int             num;
+    int		    num;
 {
     last_arcpointnum = num;
 }
 
 set_lastposition(x, y)
-    int             x, y;
+    int		    x, y;
 {
     last_position.x = x;
     last_position.y = y;
 }
 
 set_newposition(x, y)
-    int             x, y;
+    int		    x, y;
 {
     new_position.x = x;
     new_position.y = y;
 }
 
 set_action(action)
-    int             action;
+    int		    action;
 {
     last_action = action;
 }
 
 set_action_object(action, object)
-    int             action, object;
+    int		    action, object;
 {
     last_action = action;
     last_object = object;
+}
+
+set_lastlinkinfo(mode, links)
+    int		    mode;
+    F_linkinfo	   *links;
+{
+    last_linkmode = mode;
+    last_links = links;
 }

@@ -29,8 +29,8 @@
 #include <ctype.h>
 #include <errno.h>
 
-extern int      errno;
-extern int      sys_nerr;
+extern int	errno;
+extern int	sys_nerr;
 extern char    *sys_errlist[];
 
 #include <math.h>
@@ -40,24 +40,26 @@ extern char    *sys_errlist[];
 #endif
 
 #ifndef M_PI
-#define M_PI    3.14159265358979323846
-#define M_PI_2  1.57079632679489661923
+#define M_PI	3.14159265358979323846
+#define M_PI_2	1.57079632679489661923
 #endif
 
 #define		min2(a, b)	(((a) < (b)) ? (a) : (b))
 #define		max2(a, b)	(((a) > (b)) ? (a) : (b))
 #define		min3(a,b,c)	((((a<b)?a:b)<c)?((a<b)?a:b):c)
 #define		max3(a,b,c)	((((a>b)?a:b)>c)?((a>b)?a:b):c)
-#define		round(a)	(int)((a)+.5)
+#define		round(a)	(int)(((a)<0)?(a)-.5:(a)+.5)
 #define		signof(a)	(((a) < 0) ? -1 : 1)
 
 #define		DEF_NAME	"unnamed.fig"
+#define		KEY_NAME	"CompKeyDB"
 
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>
 #include <X11/Intrinsic.h>
 #include <X11/StringDefs.h>
 #include <X11/Shell.h>
+#include <X11/Xatom.h>
 
 #include <X11/Xaw/Command.h>
 #include <X11/Xaw/Label.h>
@@ -72,3 +74,6 @@ extern char    *sys_errlist[];
 #include <X11/Xaw/Sme.h>
 #include <X11/Xaw/SmeBSB.h>
 #include <X11/Xaw/Toggle.h>
+#include <X11/Xaw/Paned.h>
+#include <X11/Xaw/Viewport.h>
+#include <X11/Xaw/List.h>

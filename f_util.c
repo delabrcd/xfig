@@ -18,10 +18,11 @@
 #include "object.h"
 #include "mode.h"
 #include "resources.h"
+#include "w_util.h"
 
 int
 emptyname(name)
-    char            name[];
+    char	    name[];
 
 {
     if (*name == '\0') {
@@ -33,10 +34,10 @@ emptyname(name)
 
 int
 emptyname_msg(name, msg)
-    char            name[], msg[];
+    char	    name[], msg[];
 
 {
-    int             returnval;
+    int		    returnval;
 
     if (returnval = emptyname(name))
 	put_msg("No file name specified, %s command ignored", msg);
@@ -63,10 +64,10 @@ emptyfigure()
 
 int
 emptyfigure_msg(msg)
-    char            msg[];
+    char	    msg[];
 
 {
-    int             returnval;
+    int		    returnval;
 
     if (returnval = emptyfigure())
 	put_msg("Empty figure, %s command ignored", msg);
@@ -75,7 +76,7 @@ emptyfigure_msg(msg)
 
 int
 change_directory(path)
-    char           *path;
+    char	   *path;
 {
     if (path == NULL) {
 	*cur_dir == '\0';
@@ -85,28 +86,28 @@ change_directory(path)
 	put_msg("Can't go to directory %s, : %s", path, sys_errlist[errno]);
 	return (1);
     }
-    if (get_directory(cur_dir) != NULL)	/* get cwd */
+    if (get_directory(cur_dir) != NULL) /* get cwd */
 	return (0);
     else
 	return (1);
 }
 
 get_directory(direct)
-    char           *direct;
+    char	   *direct;
 {
 #if defined(SYSV) || defined(SVR4)
-    extern char    *getcwd();
+    extern char	   *getcwd();
 
 #else
-    extern char    *getwd();
+    extern char	   *getwd();
 
 #endif
 
 #if defined(SYSV) || defined(SVR4)
-    if (getcwd(direct, 1024) == NULL) {	/* get curent working dir */
+    if (getcwd(direct, 1024) == NULL) {	/* get current working dir */
 	put_msg("%s", "Can't get current directory");
 #else
-    if (getwd(direct) == NULL) {/* get curent working dir */
+    if (getwd(direct) == NULL) {/* get current working dir */
 	put_msg("%s", direct);	/* err msg is in directory */
 #endif
 	*direct = '\0';
@@ -116,52 +117,51 @@ get_directory(direct)
 }
 
 #ifndef S_IWUSR
-#define	S_IWUSR	0000200
+#define S_IWUSR 0000200
 #endif
 #ifndef S_IWGRP
-#define	S_IWGRP	0000020
+#define S_IWGRP 0000020
 #endif
 #ifndef S_IWOTH
-#define	S_IWOTH	0000002
+#define S_IWOTH 0000002
 #endif
 
 int
 ok_to_write(file_name, op_name)
     char	   *file_name, *op_name;
 {
-    struct stat     file_status;
-    char            string[180];
+    struct stat	    file_status;
+    char	    string[180];
 
-    if (stat(file_name, &file_status) == 0) {   /* file exists */
-        if (file_status.st_mode & S_IFDIR) {
-            put_msg("\"%s\" is a directory", file_name);
-            return (0);
-        }
-        if (file_status.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) {
-            /* writing is permitted by SOMEONE */
-            if (!((file_status.st_mode & S_IWUSR) &&    /* user writable */
-                  (file_status.st_uid == geteuid()))
-                &&
-                !((file_status.st_mode & S_IWGRP) &&    /* group writable */
-                  (file_status.st_gid == getegid()))
-                &&
-                !(file_status.st_mode & S_IWOTH)) {     /* world writable */
-                put_msg("Write permission for \"%s\" is denied", file_name);
-                return (0);
-            } else {
-                sprintf(string, "\"%s\" already exists.\nDo you want to overwrite it?", file_name);
-                if (!win_confirm(canvas_win, string)) {
-                    put_msg("%s cancelled", op_name);
-                    return (0);
-                }
-            }
-        } else {
-            put_msg("\"%s\" is read only", file_name);
-            return (0);
-        }
+    if (stat(file_name, &file_status) == 0) {	/* file exists */
+	if (file_status.st_mode & S_IFDIR) {
+	    put_msg("\"%s\" is a directory", file_name);
+	    return (0);
+	}
+	if (file_status.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) {
+	    /* writing is permitted by SOMEONE */
+	    if (!((file_status.st_mode & S_IWUSR) &&	/* user writable */
+		  (file_status.st_uid == geteuid()))
+		&&
+		!((file_status.st_mode & S_IWGRP) &&	/* group writable */
+		  (file_status.st_gid == getegid()))
+		&&
+		!(file_status.st_mode & S_IWOTH)) {	/* world writable */
+		put_msg("Write permission for \"%s\" is denied", file_name);
+		return (0);
+	    } else {
+		sprintf(string, "\"%s\" already exists.\nDo you want to overwrite it?", file_name);
+		if (!popup_query(QUERY_YES, string)) {
+		    put_msg("%s cancelled", op_name);
+		    return (0);
+		}
+	    }
+	} else {
+	    put_msg("\"%s\" is read only", file_name);
+	    return (0);
+	}
     } else if (errno != ENOENT)
-        return (0);            /* file does exist but stat fails */
+	return (0);		/* file does exist but stat fails */
 
     return (1);
 }
-

@@ -46,76 +46,76 @@
 #define			SRM_WID			8
 #define			SRM_HT			16
 
-extern          pan_origin();
+extern		pan_origin();
 
-static GC       tr_gc, tr_xor_gc, tr_erase_gc;
-static GC       sr_gc, sr_xor_gc, sr_erase_gc;
-static int      lasty = -100, lastx = -100;
-static int      troffx = -8, troffy = -10;
-static int      orig_zoomoff;
-static int      last_drag_x, last_drag_y;
-static char     tr_marker_image[16] = {
-    0xFE, 0xFF,			/* *************** */
-    0xFC, 0x7F,			/* *************  */
-    0xF8, 0x3F,			/* ***********   */
-    0xF0, 0x1F,			/* *********    */
-    0xE0, 0x0F,			/* *******     */
-    0xC0, 0x07,			/* *****      */
-    0x80, 0x03,			/* ***       */
-    0x00, 0x01,			/* *        */
+static GC	tr_gc, tr_xor_gc, tr_erase_gc;
+static GC	sr_gc, sr_xor_gc, sr_erase_gc;
+static int	lasty = -100, lastx = -100;
+static int	troffx = -8, troffy = -10;
+static int	orig_zoomoff;
+static int	last_drag_x, last_drag_y;
+static char	tr_marker_image[16] = {
+    0xFE, 0xFF,		/* ***************  */
+    0x04, 0x40,		/*  *           *  */
+    0x08, 0x20,		/*   *         *  */
+    0x10, 0x10,		/*    *       *  */
+    0x20, 0x08,		/*     *     *  */
+    0x40, 0x04,		/*      *   *  */
+    0x80, 0x02,		/*       * *  */
+    0x00, 0x01,		/*        *  */
 };
-static          mpr_static(trm_pr, TRM_WID, TRM_HT, 1, tr_marker_image);
-static int      srroffx = 2, srroffy = -7;
-static char     srr_marker_image[16] = {
-    0x80,			/* *  */
-    0xC0,			/* **  */
-    0xE0,			/* ***  */
-    0xF0,			/* ****  */
-    0xF8,			/* *****  */
-    0xFC,			/* ******  */
-    0xFE,			/* *******  */
-    0xFF,			/* ********  */
-    0xFE,			/* *******  */
-    0xFC,			/* ******  */
-    0xF8,			/* *****  */
-    0xF0,			/* ****  */
-    0xE0,			/* ***  */
-    0xC0,			/* **  */
-    0x80,			/* *  */
+static		mpr_static(trm_pr, TRM_WID, TRM_HT, 1, tr_marker_image);
+static int	srroffx = 2, srroffy = -7;
+static char	srr_marker_image[16] = {
+    0x80,		/*        *  */
+    0xC0,		/*       **  */
+    0xA0,		/*      * *  */
+    0x90,		/*     *  *  */
+    0x88,		/*    *   *  */
+    0x84,		/*   *    *  */
+    0x82,		/*  *     *  */
+    0x81,		/* *      *  */
+    0x82,		/*  *     *  */
+    0x84,		/*   *    *  */
+    0x88,		/*    *   *  */
+    0x90,		/*     *  *  */
+    0xA0,		/*      * *  */
+    0xC0,		/*       **  */
+    0x80,		/*        *  */
     0x00
 };
-static          mpr_static(srrm_pr, SRM_WID, SRM_HT, 1, srr_marker_image);
+static		mpr_static(srrm_pr, SRM_WID, SRM_HT, 1, srr_marker_image);
 
-static int      srloffx = -10, srloffy = -7;
-static char     srl_marker_image[16] = {
-    0x01,			/* *          */
-    0x03,			/* **         */
-    0x07,			/* ***        */
-    0x0F,			/* ****       */
-    0x1F,			/* *****      */
-    0x3F,			/* ******     */
-    0x7F,			/* *******    */
-    0xFF,			/* ********   */
-    0x7F,			/* *******    */
-    0x3F,			/* ******     */
-    0x1F,			/* *****      */
-    0x0F,			/* ****       */
-    0x07,			/* ***        */
-    0x03,			/* **         */
-    0x01,			/* *          */
+static int	srloffx = -10, srloffy = -7;
+static char	srl_marker_image[16] = {
+    0x01,		/* *	      */
+    0x03,		/* **	      */
+    0x05,		/* * *	      */
+    0x09,		/* *  *	      */
+    0x11,		/* *   *      */
+    0x21,		/* *    *     */
+    0x41,		/* *     *    */
+    0x81,		/* *      *   */
+    0x41,		/* *     *    */
+    0x21,		/* *    *     */
+    0x11,		/* *   *      */
+    0x09,		/* *  *	      */
+    0x05,		/* * *	      */
+    0x03,		/* **	      */
+    0x01,		/* *	      */
     0x00
 };
-static          mpr_static(srlm_pr, SRM_WID, SRM_HT, 1, srl_marker_image);
+static		mpr_static(srlm_pr, SRM_WID, SRM_HT, 1, srl_marker_image);
 
-static Pixmap   toparrow_pm = 0, sidearrow_pm = 0;
-static Pixmap   topruler_pm = 0, sideruler_pm = 0;
+static Pixmap	toparrow_pm = 0, sidearrow_pm = 0;
+static Pixmap	topruler_pm = 0, sideruler_pm = 0;
 
 DeclareStaticArgs(14);
 
-static          topruler_selected();
-static          topruler_exposed();
-static          sideruler_selected();
-static          sideruler_exposed();
+static		topruler_selected();
+static		topruler_exposed();
+static		sideruler_selected();
+static		sideruler_exposed();
 
 redisplay_rulers()
 {
@@ -136,7 +136,7 @@ reset_rulers()
 }
 
 set_rulermark(x, y)
-    int             x, y;
+    int		    x, y;
 {
     if (appres.TRACKING) {
 	set_siderulermark(y);
@@ -152,28 +152,28 @@ erase_rulermark()
     }
 }
 
-#define	HINCH	(PIX_PER_INCH / 2)
-#define	QINCH	(PIX_PER_INCH / 4)
-#define	SINCH	(PIX_PER_INCH / 16)
+#define HINCH	(PIX_PER_INCH / 2)
+#define QINCH	(PIX_PER_INCH / 4)
+#define SINCH	(PIX_PER_INCH / 16)
 #define TWOMM	(PIX_PER_CM / 5)
 
 /************************* UNITBOX ************************/
 
-XtActionsRec    unitbox_actions[] =
+XtActionsRec	unitbox_actions[] =
 {
     {"EnterUnitBox", (XtActionProc) draw_mousefun_unitbox},
     {"LeaveUnitBox", (XtActionProc) clear_mousefun},
     {"HomeRulers", (XtActionProc) pan_origin},
 };
 
-static String   unitbox_translations =
+static String	unitbox_translations =
 "<EnterWindow>:EnterUnitBox()\n\
     <LeaveWindow>:LeaveUnitBox()\n\
     <Btn1Down>:HomeRulers()\n";
 
 int
 init_unitbox(tool)
-    TOOL            tool;
+    TOOL	    tool;
 {
     FirstArg(XtNwidth, RULER_WD);
     NextArg(XtNheight, RULER_WD);
@@ -200,7 +200,7 @@ init_unitbox(tool)
 
 /************************* TOPRULER ************************/
 
-XtActionsRec    topruler_actions[] =
+XtActionsRec	topruler_actions[] =
 {
     {"EventTopRuler", (XtActionProc) topruler_selected},
     {"ExposeTopRuler", (XtActionProc) topruler_exposed},
@@ -208,7 +208,7 @@ XtActionsRec    topruler_actions[] =
     {"LeaveTopRuler", (XtActionProc) clear_mousefun},
 };
 
-static String   topruler_translations =
+static String	topruler_translations =
 "Any<BtnDown>:EventTopRuler()\n\
     Any<BtnUp>:EventTopRuler()\n\
     <Btn2Motion>:EventTopRuler()\n\
@@ -218,10 +218,10 @@ static String   topruler_translations =
 
 static
 topruler_selected(tool, event, params, nparams)
-    TOOL tool;
-    INPUTEVENT     *event;
-    String         *params;
-    Cardinal       *nparams;
+    TOOL	    tool;
+    INPUTEVENT	   *event;
+    String	   *params;
+    Cardinal	   *nparams;
 {
     XButtonEvent   *be = (XButtonEvent *) event;
 
@@ -278,7 +278,7 @@ erase_toprulermark()
 }
 
 set_toprulermark(x)
-    int             x;
+    int		    x;
 {
     XClearArea(tool_d, topruler_win, ZOOMX(lastx) + troffx,
 	       TOPRULER_HT + troffy, trm_pr.width,
@@ -291,10 +291,10 @@ set_toprulermark(x)
 
 static
 topruler_exposed(tool, event, params, nparams)
-    TOOL            tool;
-    INPUTEVENT     *event;
-    String         *params;
-    Cardinal       *nparams;
+    TOOL	    tool;
+    INPUTEVENT	   *event;
+    String	   *params;
+    Cardinal	   *nparams;
 {
     if (((XExposeEvent *) event)->count > 0)
 	return;
@@ -308,7 +308,7 @@ redisplay_topruler()
 
 int
 init_topruler(tool)
-    TOOL            tool;
+    TOOL	    tool;
 {
     TOPRULER_HT = RULER_WD;
     FirstArg(XtNwidth, TOPRULER_WD);
@@ -337,7 +337,7 @@ init_topruler(tool)
 setup_topruler()
 {
     unsigned long   bg, fg;
-    XGCValues       gcv;
+    XGCValues	    gcv;
     unsigned long   gcmask;
 
     topruler_win = XtWindow(topruler_sw);
@@ -403,8 +403,8 @@ reset_topruler()
 {
     register int    i, j;
     register Pixmap p = topruler_pm;
-    char            number[3];
-    int             X0;
+    char	    number[3];
+    int		    X0;
 
     /* top ruler, adjustments for digits are kludges based on 6x13 char */
     XFillRectangle(tool_d, p, tr_erase_gc, 0, 0, TOPRULER_WD, TOPRULER_HT);
@@ -453,7 +453,7 @@ reset_topruler()
 
 /************************* SIDERULER ************************/
 
-XtActionsRec    sideruler_actions[] =
+XtActionsRec	sideruler_actions[] =
 {
     {"EventSideRuler", (XtActionProc) sideruler_selected},
     {"ExposeSideRuler", (XtActionProc) sideruler_exposed},
@@ -461,7 +461,7 @@ XtActionsRec    sideruler_actions[] =
     {"LeaveSideRuler", (XtActionProc) clear_mousefun},
 };
 
-static String   sideruler_translations =
+static String	sideruler_translations =
 "Any<BtnDown>:EventSideRuler()\n\
     Any<BtnUp>:EventSideRuler()\n\
     <Btn2Motion>:EventSideRuler()\n\
@@ -469,12 +469,12 @@ static String   sideruler_translations =
     <LeaveWindow>:LeaveSideRuler()\n\
     <Expose>:ExposeSideRuler()\n";
 
-    static
-    sideruler_selected(tool, event, params, nparams)
-    TOOL tool;
-    INPUTEVENT     *event;
-    String         *params;
-    Cardinal       *nparams;
+static
+sideruler_selected(tool, event, params, nparams)
+    TOOL	    tool;
+    INPUTEVENT	   *event;
+    String	   *params;
+    Cardinal	   *nparams;
 {
     XButtonEvent   *be = (XButtonEvent *) event;
 
@@ -525,10 +525,10 @@ static String   sideruler_translations =
 
 static
 sideruler_exposed(tool, event, params, nparams)
-    TOOL            tool;
-    INPUTEVENT     *event;
-    String         *params;
-    Cardinal       *nparams;
+    TOOL	    tool;
+    INPUTEVENT	   *event;
+    String	   *params;
+    Cardinal	   *nparams;
 {
     if (((XExposeEvent *) event)->count > 0)
 	return;
@@ -537,7 +537,7 @@ sideruler_exposed(tool, event, params, nparams)
 
 int
 init_sideruler(tool)
-    TOOL            tool;
+    TOOL	    tool;
 {
     SIDERULER_WD = RULER_WD;
     FirstArg(XtNwidth, SIDERULER_WD);
@@ -571,7 +571,7 @@ redisplay_sideruler()
 setup_sideruler()
 {
     unsigned long   bg, fg;
-    XGCValues       gcv;
+    XGCValues	    gcv;
     unsigned long   gcmask;
 
     sideruler_win = XtWindow(sideruler_sw);
@@ -645,8 +645,8 @@ reset_sideruler()
 {
     register int    i, j;
     register Pixmap p = sideruler_pm;
-    char            number[3];
-    int             Y0;
+    char	    number[3];
+    int		    Y0;
 
     /* side ruler, adjustments for digits are kludges based on 6x13 char */
     XFillRectangle(tool_d, p, sr_erase_gc, 0, 0, SIDERULER_WD,
@@ -747,7 +747,7 @@ erase_siderulermark()
 }
 
 set_siderulermark(y)
-    int             y;
+    int		    y;
 {
     if (appres.RHS_PANEL) {
 	/*

@@ -14,12 +14,14 @@
  *
  */
 
-#define	INV_PAINT	0
-#define	MERGE		1
-#define	PAINT		2
-#define	ERASE		3
+#define INV_PAINT	0
+#define MERGE		1
+#define PAINT		2
+#define ERASE		3
 
-#define	NUMOPS		4
+#define NUMOPS		4
 
-#define	DRAW		1
-#define	UNDRAW		0
+#define DRAW		1
+#define UNDRAW		0
+
+#define DEFAULT_COLOR	-1

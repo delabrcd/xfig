@@ -21,29 +21,29 @@
 #include "w_mousefun.h"
 #include "w_setup.h"
 
-#define	MOUSE_BUT_WID		(int) (MOUSEFUN_WD * 0.045)
-#define	MOUSE_BUT_HGT		(int) (MOUSEFUN_HT * 0.5)
-#define MOUSE_LEFT_SPACE 	(int) ((MOUSEFUN_WD - 5 * MOUSE_BUT_WID) / 2)
-#define MOUSE_LEFT_CTR	 	(int) (MOUSE_LEFT_SPACE/2)
-#define MOUSE_MID_CTR	 	(int) (MOUSEFUN_WD / 2)
-#define MOUSE_RIGHT_CTR	 	(int) (MOUSEFUN_WD - MOUSE_LEFT_CTR)
+#define MOUSE_BUT_WID		(int) (MOUSEFUN_WD * 0.045)
+#define MOUSE_BUT_HGT		(int) (MOUSEFUN_HT * 0.5)
+#define MOUSE_LEFT_SPACE	(int) ((MOUSEFUN_WD - 5 * MOUSE_BUT_WID) / 2)
+#define MOUSE_LEFT_CTR		(int) (MOUSE_LEFT_SPACE/2)
+#define MOUSE_MID_CTR		(int) (MOUSEFUN_WD / 2)
+#define MOUSE_RIGHT_CTR		(int) (MOUSEFUN_WD - MOUSE_LEFT_CTR)
 #define MOUSEFUN_MAX	20
 
 DeclareStaticArgs(14);
-static char     mousefun_l[MOUSEFUN_MAX];
-static char     mousefun_m[MOUSEFUN_MAX];
-static char     mousefun_r[MOUSEFUN_MAX];
+static char	mousefun_l[MOUSEFUN_MAX];
+static char	mousefun_m[MOUSEFUN_MAX];
+static char	mousefun_r[MOUSEFUN_MAX];
 
 /* labels for the left and right buttons have 15 chars max */
-static char     lr_blank[] = "               ";
+static char	lr_blank[] = "               ";
 
 /* give the middle button label a bit more space - 19 chars max */
-static char     mid_blank[] = "                   ";
-static Pixmap   mousefun_pm;
+static char	mid_blank[] = "                   ";
+static Pixmap	mousefun_pm;
 
 void
 init_mousefun(tool)
-    TOOL            tool;
+    TOOL	    tool;
 {
     FirstArg(XtNwidth, MOUSEFUN_WD);
     NextArg(XtNheight, MOUSEFUN_HT);
@@ -119,7 +119,7 @@ resize_mousefun()
 
 void
 set_mousefun(left, middle, right)
-    char           *left, *middle, *right;
+    char	   *left, *middle, *right;
 {
     strcpy(mousefun_l, left);
     strcpy(mousefun_m, middle);
@@ -170,10 +170,10 @@ draw_mousefun_canvas()
 
 static void
 draw_mousefun_msg(s, xctr, ypos)
-    char           *s;
-    int             xctr, ypos;
+    char	   *s;
+    int		    xctr, ypos;
 {
-    int             width;
+    int		    width;
 
     width = XTextWidth(button_font, s, strlen(s));
     XDrawImageString(tool_d, mousefun_pm, mouse_button_gc,
@@ -182,7 +182,7 @@ draw_mousefun_msg(s, xctr, ypos)
 
 void
 draw_mousefun(left, middle, right)
-    char           *left, *middle, *right;
+    char	   *left, *middle, *right;
 {
     draw_mousefun_msg(left, MOUSE_LEFT_CTR, 30);
     draw_mousefun_msg(middle, MOUSE_MID_CTR, 11);

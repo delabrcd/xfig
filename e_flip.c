@@ -26,17 +26,17 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-static int      flip_axis;
-static int      copy;
-static int      init_flip();
-static int      init_copynflip();
-static int      init_fliparc();
-static int      init_flipcompound();
-static int      init_flipellipse();
-static int      init_flipline();
-static int      init_flipspline();
-static int      flip_selected();
-static int      flip_search();
+static int	flip_axis;
+static int	copy;
+static int	init_flip();
+static int	init_copynflip();
+static int	init_fliparc();
+static int	init_flipcompound();
+static int	init_flipellipse();
+static int	init_flipline();
+static int	init_flipspline();
+static int	flip_selected();
+static int	flip_search();
 
 flip_ud_selected()
 {
@@ -66,10 +66,10 @@ flip_selected()
 
 static
 init_flip(p, type, x, y, px, py)
-    char           *p;
-    int             type;
-    int             x, y;
-    int             px, py;
+    char	   *p;
+    int		    type;
+    int		    x, y;
+    int		    px, py;
 {
     copy = 0;
     flip_search(p, type, x, y, px, py);
@@ -77,10 +77,10 @@ init_flip(p, type, x, y, px, py)
 
 static
 init_copynflip(p, type, x, y, px, py)
-    char           *p;
-    int             type;
-    int             x, y;
-    int             px, py;
+    char	   *p;
+    int		    type;
+    int		    x, y;
+    int		    px, py;
 {
     copy = 1;
     flip_search(p, type, x, y, px, py);
@@ -88,10 +88,10 @@ init_copynflip(p, type, x, y, px, py)
 
 static
 flip_search(p, type, x, y, px, py)
-    char           *p;
-    int             type;
-    int             x, y;
-    int             px, py;
+    char	   *p;
+    int		    type;
+    int		    x, y;
+    int		    px, py;
 {
     switch (type) {
     case O_POLYLINE:
@@ -121,10 +121,10 @@ flip_search(p, type, x, y, px, py)
 
 static
 init_fliparc(a, px, py)
-    F_arc          *a;
-    int             px, py;
+    F_arc	   *a;
+    int		    px, py;
 {
-    F_arc          *arc;
+    F_arc	   *arc;
 
     set_temp_cursor(&wait_cursor);
     arc = copy_arc(a);
@@ -143,10 +143,10 @@ init_fliparc(a, px, py)
 
 static
 init_flipcompound(c, px, py)
-    F_compound     *c;
-    int             px, py;
+    F_compound	   *c;
+    int		    px, py;
 {
-    F_compound     *compound;
+    F_compound	   *compound;
 
     set_temp_cursor(&wait_cursor);
     compound = copy_compound(c);
@@ -165,9 +165,9 @@ init_flipcompound(c, px, py)
 
 static
 init_flipellipse(old_e, px, py)
-    F_ellipse      *old_e;
+    F_ellipse	   *old_e;
 {
-    F_ellipse      *new_e;
+    F_ellipse	   *new_e;
 
     new_e = copy_ellipse(old_e);
     flip_ellipse(new_e, px, py, flip_axis);
@@ -184,10 +184,10 @@ init_flipellipse(old_e, px, py)
 
 static
 init_flipline(old_l, px, py)
-    F_line         *old_l;
-    int             px, py;
+    F_line	   *old_l;
+    int		    px, py;
 {
-    F_line         *new_l;
+    F_line	   *new_l;
 
     new_l = copy_line(old_l);
     flip_line(new_l, px, py, flip_axis);
@@ -204,10 +204,10 @@ init_flipline(old_l, px, py)
 
 static
 init_flipspline(old_s, px, py)
-    F_spline       *old_s;
-    int             px, py;
+    F_spline	   *old_s;
+    int		    px, py;
 {
-    F_spline       *new_s;
+    F_spline	   *new_s;
 
     new_s = copy_spline(old_s);
     flip_spline(new_s, px, py, flip_axis);
@@ -223,10 +223,10 @@ init_flipspline(old_s, px, py)
 }
 
 flip_line(l, x, y, flip_axis)
-    F_line         *l;
-    int             x, y, flip_axis;
+    F_line	   *l;
+    int		    x, y, flip_axis;
 {
-    F_point        *p;
+    F_point	   *p;
 
     switch (flip_axis) {
     case UD_FLIP:		/* x axis  */
@@ -243,11 +243,11 @@ flip_line(l, x, y, flip_axis)
 }
 
 flip_spline(s, x, y, flip_axis)
-    F_spline       *s;
-    int             x, y, flip_axis;
+    F_spline	   *s;
+    int		    x, y, flip_axis;
 {
-    F_point        *p;
-    F_control      *cp;
+    F_point	   *p;
+    F_control	   *cp;
 
     switch (flip_axis) {
     case UD_FLIP:		/* x axis  */
@@ -270,8 +270,8 @@ flip_spline(s, x, y, flip_axis)
 }
 
 flip_text(t, x, y, flip_axis)
-    F_text         *t;
-    int             x, y, flip_axis;
+    F_text	   *t;
+    int		    x, y, flip_axis;
 {
     switch (flip_axis) {
     case UD_FLIP:		/* x axis  */
@@ -284,8 +284,8 @@ flip_text(t, x, y, flip_axis)
 }
 
 flip_ellipse(e, x, y, flip_axis)
-    F_ellipse      *e;
-    int             x, y, flip_axis;
+    F_ellipse	   *e;
+    int		    x, y, flip_axis;
 {
     switch (flip_axis) {
     case UD_FLIP:		/* x axis  */
@@ -304,8 +304,8 @@ flip_ellipse(e, x, y, flip_axis)
 }
 
 flip_arc(a, x, y, flip_axis)
-    F_arc          *a;
-    int             x, y, flip_axis;
+    F_arc	   *a;
+    int		    x, y, flip_axis;
 {
     switch (flip_axis) {
     case UD_FLIP:		/* x axis  */
@@ -326,16 +326,16 @@ flip_arc(a, x, y, flip_axis)
 }
 
 flip_compound(c, x, y, flip_axis)
-    F_compound     *c;
-    int             x, y, flip_axis;
+    F_compound	   *c;
+    int		    x, y, flip_axis;
 {
-    F_line         *l;
-    F_arc          *a;
-    F_ellipse      *e;
-    F_spline       *s;
-    F_text         *t;
-    F_compound     *c1;
-    int             p, q;
+    F_line	   *l;
+    F_arc	   *a;
+    F_ellipse	   *e;
+    F_spline	   *s;
+    F_text	   *t;
+    F_compound	   *c1;
+    int		    p, q;
 
     switch (flip_axis) {
     case UD_FLIP:		/* x axis  */

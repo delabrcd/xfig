@@ -32,9 +32,37 @@ The following is the format of fig output (fig 2.1).
 
     Some fields are described as "enumeration type" or "bit vector"; the 
     values which these fields can take are defined in the header file object.h.
-    The pen, color, arrow_type, and arrow_style fields are described as unused.
+    The pen, arrow_type, and arrow_style fields are described as unused.
     These values may be defined in some future version of Fig.
 
+    The color field is defined as follows:
+
+	-1 = Default
+	 0 = Black
+	 1 = Blue
+	 2 = Green
+	 3 = Cyan
+	 4 = Red
+	 5 = Magenta
+	 6 = Yellow
+	 7 = White
+	 values from 8 to 2^30-1 = reserved for future use
+
+    The depth field is defined as follows:
+
+	 0 ... 2^30-1 where larger value means object is deeper than (under)
+		      objects with smaller depth
+
+    The area fill field is defined as follows:
+	
+	 0 = not filled
+	 1 = white
+	...  values from 2 to 20 are shades of grey, from lighter to darker
+	21 = black
+
+    The style_val field is defined as the length, in pixels, of the on/off dashes
+    for dashed lines, and the distance between the dots, in pixels, for dotted lines
+ 
     (3.1) ARC
 
     First line :
@@ -44,7 +72,7 @@ The following is the format of fig output (fig 2.1).
 	int	sub_type		(always	1)
 	int	line_style		(enumeration type)
 	int	line_thickness		(pixels)
-	int	color			(not used)
+	int	color			(enumeration type)
 	int	depth			(no units)
 	int	pen			(not used)
 	int	area_fill		(enumeration type)
@@ -112,11 +140,11 @@ The following is the format of fig output (fig 2.1).
 					 4 : circle defined by diameter)
 	int	line_style		(enumeration type)
 	int	thickness		(pixels)
-	int	color			(not used)
+	int	color			(enumeration type)
 	int	depth			(no units)
 	int	pen			(not used)
 	int	area_fill		(enumeration type)
-	float	style_val		(pixels, not used)
+	float	style_val		(pixels)
 	int	direction		(always 1)
 	float	angle			(radians, the angle of the x-axis)
 	int	center_x, center_y	(pixels)
@@ -136,8 +164,8 @@ The following is the format of fig output (fig 2.1).
 					 4 : arc-box)
 					 5 : imported-eps bounding-box)
 	int	line_style		(enumeration type)
-	int	thickness		(pixels, not used)
-	int	color			(not used)
+	int	thickness		(pixels)
+	int	color			(enumeration type)
 	int	depth			(no units)
 	int	pen			(not used)
 	int	area_fill		(enumeration type)
@@ -179,12 +207,12 @@ The following is the format of fig output (fig 2.1).
 					 3 : open interpolated spline
 					 4 : closed interpolated spline)
 	int	line_style		(See the end of this section)
-	int	thickness		(pixels, not used)
-	int	color			(not used)
+	int	thickness		(pixels)
+	int	color			(enumeration type)
 	int	depth			(no units)
 	int	pen			(not used)
 	int	area_fill		(enumeration type)
-	float	style_val		(pixels, not used)
+	float	style_val		(pixels)
 	int	forward_arrow		(0: off, 1: on)
 	int	backward_arrow		(0: off, 1: on)
 
@@ -225,9 +253,9 @@ The following is the format of fig output (fig 2.1).
 	int	font 			(enumeration type)
 	int	font_size 		(points)
 	int	pen			(not used)
-	int	color			(not used)
+	int	color			(enumeration type)
 	int	depth			(no units)
-	float	angle			(radians)
+	float	angle			(radians, the angle of the text)
 	int	font_flags		(bit vector)
 	int	height			(pixels)
 	int	length			(pixels)

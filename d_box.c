@@ -27,8 +27,8 @@
 
 /*************************** local declarations *********************/
 
-int             init_box_drawing();
-static          create_boxobject(), cancel_box();
+int		init_box_drawing();
+static		create_boxobject(), cancel_box();
 
 box_drawing_selected()
 {
@@ -43,7 +43,7 @@ box_drawing_selected()
 }
 
 init_box_drawing(x, y)
-    int             x, y;
+    int		    x, y;
 {
     cur_x = fix_x = x;
     cur_y = fix_y = y;
@@ -68,10 +68,10 @@ cancel_box()
 
 static
 create_boxobject(x, y)
-    int             x, y;
+    int		    x, y;
 {
-    F_line         *box;
-    F_point        *point;
+    F_line	   *box;
+    F_point	   *point;
 
     elastic_box(fix_x, fix_y, cur_x, cur_y);
 
@@ -92,7 +92,7 @@ create_boxobject(x, y)
     box->color = cur_color;
     box->depth = 0;
     box->pen = 0;
-    box->area_fill = cur_areafill;
+    box->fill_style = cur_fillstyle;
     /* scale dash length by line thickness */
     box->style_val = cur_styleval * (cur_linewidth + 1) / 2;
     box->radius = 0;

@@ -1,9 +1,37 @@
 This file contains some possible things to do in future versions of xfig.
 
+allow fractional text sizes (float)
+save modified_flag before file operations and restore if undo used
+Should arrow mode be changed in update mode
+Should arrow size change in update mode when linewidth changes?
+investigate whether eps objects that don't have a preview bitmap
+	are scaled correctly
+add ability to add/delete arrows and change arrow size from edit panel
+change eps_bitmaps so that background is transparent (needs to work
+	in normal and reverse-video modes).
+Make popup windows come up so that they don't overlap the figure (if possible).
+	An edit popup window should at least not overlap the
+	object being edited (again only if possible).
+Possibly make extension to Fig protocol to handle several line 
+	cap/join styles (e.g. round, butt, miter)
+Use fill pattern (grey-shading) to mimic color objects on monochrome systems.
+Extend smart links to work for SCALE, MOVEPT and perhaps EDIT, UPDATE.
+	Could also extend them to work for arc-type links and for
+	ellipse/circle objects.  Also, at the moment smart-links
+	only work for one end of a link if both ends of the link
+	happen to touch the object being operated on.  To fix this would
+	require changing the F_linkinfo structure to have left_endpt,
+	left_prevpt, right_endpt, right_prevpt fields instead of the current
+	endpt, prevpt and two_pts fields.
+The corners of rectangles aren't sorted.  In the edit popup sometimes
+	the corner labelled top left is actually the bottom right.
+	Should either sort them before displaying or use names like
+	"First Corner" and "Opposite Corner".
 Make xfig resources more consistent with normal use of resources in X clients.
 	e.g. provide support to allow each command button (say) to be
 	a different color.  Ditto for mode buttons, etc.
-Reorganise the print and file menus?
+investigate if we should be setting initialResourcesPersistent to false for
+	widgets that are created and destroyed as required.
 Still need to think about how point positioning should be utilized with
 	many of the editing commands, e.g. if point positioning is set to
 	large grid and you atr trying to move an object, should:
@@ -19,37 +47,16 @@ Still need to think about how point positioning should be utilized with
 	may not be able to pick up an object which isn't on the grid points.
 	I think e) is the next best but it won't let you mimick b).
 Use clipping rectangles in more places:
-	after a move/erase of a filled object redraw with clipped region(s) use
-	two regions if orig and final don't overlap or one big one otherwise.
-Should arrow size change in update mode when linewidth changes?
+	use the redisplay_* routines as necessary.
 when started up in reverse video, the popups have a black border which
 	fades into the canvas.
 	Is this an xfig problem or just the way I've set up my window manager?
-Make a raise/lower depth feature:
-	the raise_ic icon is already in w_icons.c
-Make xfig understand depth better:
-	If you set the depth using the object edit panels, xfig will redraw
-	them correctly, however it would be nice if as you entered new filled
-	objects that they were automatically given an appropriate depth.
-	This would involve finding the depth of all overlapping (filled?)
-	objects and setting the depth to be one less.  As it happens now,
-	if you draw two overlapping filled objects, the second appears
-	on top of the first until after the first redraw when this reverses.
-Get rid of -DFASTSERVER, have a runtime option instead -fast vs -quality ?
-Additional options to align mode:
-	abutT, abutB, abutL, abutR
-make glue+align have select mode
 allow popup menus to be pinned?
 have a resource which can be set to keep backups during a save, instead of
 	prompting the user about overwrite etc.
-save modified_flag before file operations and restore if undo used
 make a keypad label:
 	This should popup in the mousefun window whenever a panel for
 	entering text is entered.  The kbd_ic icon is already there.
-Test print popup under OpenWindows
-	if necessary put in patch for OPENWIN bug in w_print.c
-make the file popup have a file list
-Have a mode for positioning points near other points - using shift key?.
 zooming of text is still a kludge. (It doesn't work properly yet)
 make arcs use pw_curve to speed them up.
 add bounding box to every F_object definition, useful for:
@@ -72,4 +79,59 @@ things like pan/zoom/resize/iconify will still leave junk on the screen
 	A third solution is to use a canvas_elasticdraw_save parameter
 	instead of using a case statement - it would need to be set
 	prior to every elastic draw operation.
-search-and-replace for text primitives
+Generalize align mode (like glue mode) to allow arbitrary tagged objects to be
+	aligned rather than just compounds.
+Additional align mode options for distributing objects evenly within a compound
+	or abutting them together: abutT, abutB, abutL, abutR, distH, distV
+Some facility to provide better support for small screens.
+	e.g. scrollable indicator button list or automatic resizing
+	to have several rows as needed.  Similarly for mode panel.
+	A good test is to limit the total space to 640x480 so that
+	it is still useable on an IBM-PC VGA screen.
+Make a raise/lower depth feature:
+	the raise_ic icon is already in w_icons.c
+Make xfig understand depth better:
+	If you set the depth using the object edit panels, xfig will redraw
+	them correctly, however it would be nice if as you entered new filled
+	objects that they were automatically given an appropriate depth.
+	This would involve finding the depth of all overlapping (filled?)
+	objects and setting the depth to be one less.
+	What about support for negative depth values?
+What really needs to be done is a major rework of the list structures used
+	to store xfig objects.  Here are some comments involving the change.
+-------- note about restructuring xfig data structures -------------
+Rather than having a depth attribute for objects, you can use the order
+in which objects are entered to determine their depth:  later objects
+appear on the top.  A raise/lower depth operation would allow you to
+change the ordering.
+
+The consequences to the current implementation of converting totally to this
+scheme are non-trivial.  Instead of having separate lists for each object
+type, you need to have a single list which has a union of all the different
+objects as its type.  This will require changes in many places in the code.
+At the moment there are many places where each of the lists are traversed
+separately.  In many cases the code can be simplified dramatically if there
+was only a single list.  For example, to perform a move on an object there
+are separate routines (one for each object type) to start/cancel/place the
+object.  You could replace this by a single routine for start/cancel and
+place which worked no matter what type you had.  (Who says you can't use
+object-orientation in C :-)).  Another advantage is that the current caching
+scheme for redrawing would no longer be needed (i.e. redrawing would be
+greatly simplified).  Also undo would become simpler (I think).
+
+If we want to make a smooth transition from the current scheme to the
+one described above (and I do), here is how I propose we do it:
+
+We need to change every direct access to the current lists to use functions.
+i.e. something like
+        for (a=objects.arc; a!=NULL; a=a->next) ...
+to be something like
+        for (a=first_arc(); a!=NULL; a=next_arc(a)) ...
+
+At the moment these routines would be simple to implement.
+Once all occurrences had been changed, it would simply be a matter
+of changing the underlying list structure and changing the first_arc,
+next_arc routines.  Then as we had time we could replace whichever
+sets of six loops by a single loop which did
+        for (o=first_obj(); o!=NULL; o=next_obj(o)) ...
+-------- end of note about restructuring xfig data structures -------------

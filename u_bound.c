@@ -40,19 +40,19 @@
 	    (x) = (x) - tmp_t - 1; \
 	}
 
-static void     points_bound();
-static void     int_spline_bound();
-static void     normal_spline_bound();
-static int      tmp_t;
+static void	points_bound();
+static void	int_spline_bound();
+static void	normal_spline_bound();
+static int	tmp_t;
 
 arc_bound(arc, xmin, ymin, xmax, ymax)
-    F_arc          *arc;
-    int            *xmin, *ymin, *xmax, *ymax;
+    F_arc	   *arc;
+    int		   *xmin, *ymin, *xmax, *ymax;
 {
-    float           alpha, beta;
-    double          dx, dy, radius;
-    int             bx, by, sx, sy;
-    int             half_wd;
+    float	    alpha, beta;
+    double	    dx, dy, radius;
+    int		    bx, by, sx, sy;
+    int		    half_wd;
 
     dx = arc->point[0].x - arc->center.x;
     dy = arc->center.y - arc->point[0].y;
@@ -127,17 +127,17 @@ arc_bound(arc, xmin, ymin, xmax, ymax)
 }
 
 compound_bound(compound, xmin, ymin, xmax, ymax)
-    F_compound     *compound;
-    int            *xmin, *ymin, *xmax, *ymax;
+    F_compound	   *compound;
+    int		   *xmin, *ymin, *xmax, *ymax;
 {
-    F_arc          *a;
-    F_ellipse      *e;
-    F_compound     *c;
-    F_spline       *s;
-    F_line         *l;
-    F_text         *t;
-    int             bx, by, sx, sy, first = 1;
-    int             llx, lly, urx, ury;
+    F_arc	   *a;
+    F_ellipse	   *e;
+    F_compound	   *c;
+    F_spline	   *s;
+    F_line	   *l;
+    F_text	   *t;
+    int		    bx, by, sx, sy, first = 1;
+    int		    llx, lly, urx, ury;
 
     for (a = compound->arcs; a != NULL; a = a->next) {
 	arc_bound(a, &sx, &sy, &bx, &by);
@@ -250,10 +250,10 @@ compound_bound(compound, xmin, ymin, xmax, ymax)
 }
 
 ellipse_bound(e, xmin, ymin, xmax, ymax)
-    F_ellipse      *e;
-    int            *xmin, *ymin, *xmax, *ymax;
+    F_ellipse	   *e;
+    int		   *xmin, *ymin, *xmax, *ymax;
 {
-    int             half_wd;
+    int		    half_wd;
 
     half_wd = e->thickness / 2;
     *xmin = e->center.x - e->radiuses.x - half_wd;
@@ -263,15 +263,15 @@ ellipse_bound(e, xmin, ymin, xmax, ymax)
 }
 
 line_bound(l, xmin, ymin, xmax, ymax)
-    F_line         *l;
-    int            *xmin, *ymin, *xmax, *ymax;
+    F_line	   *l;
+    int		   *xmin, *ymin, *xmax, *ymax;
 {
     points_bound(l->points, (l->thickness / 2), xmin, ymin, xmax, ymax);
 }
 
 spline_bound(s, xmin, ymin, xmax, ymax)
-    F_spline       *s;
-    int            *xmin, *ymin, *xmax, *ymax;
+    F_spline	   *s;
+    int		   *xmin, *ymin, *xmax, *ymax;
 {
     if (int_spline(s)) {
 	int_spline_bound(s, xmin, ymin, xmax, ymax);
@@ -282,15 +282,15 @@ spline_bound(s, xmin, ymin, xmax, ymax)
 
 static void
 int_spline_bound(s, xmin, ymin, xmax, ymax)
-    F_spline       *s;
-    int            *xmin, *ymin, *xmax, *ymax;
+    F_spline	   *s;
+    int		   *xmin, *ymin, *xmax, *ymax;
 {
-    F_point        *p1, *p2;
-    F_control      *cp1, *cp2;
-    float           x0, y0, x1, y1, x2, y2, x3, y3, sx1, sy1, sx2, sy2;
-    float           tx, ty, tx1, ty1, tx2, ty2;
-    float           sx, sy, bx, by;
-    int             half_wd;
+    F_point	   *p1, *p2;
+    F_control	   *cp1, *cp2;
+    float	    x0, y0, x1, y1, x2, y2, x3, y3, sx1, sy1, sx2, sy2;
+    float	    tx, ty, tx1, ty1, tx2, ty2;
+    float	    sx, sy, bx, by;
+    int		    half_wd;
 
     half_wd = s->thickness / 2;
     p1 = s->points;
@@ -352,14 +352,14 @@ int_spline_bound(s, xmin, ymin, xmax, ymax)
 
 static void
 normal_spline_bound(s, xmin, ymin, xmax, ymax)
-    F_spline       *s;
-    int            *xmin, *ymin, *xmax, *ymax;
+    F_spline	   *s;
+    int		   *xmin, *ymin, *xmax, *ymax;
 {
-    F_point        *p;
-    float           cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
-    float           x1, y1, x2, y2, sx, sy, bx, by;
-    float           px, py, qx, qy;
-    int             half_wd;
+    F_point	   *p;
+    float	    cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
+    float	    x1, y1, x2, y2, sx, sy, bx, by;
+    float	    px, py, qx, qy;
+    int		    half_wd;
 
     half_wd = s->thickness / 2;
     p = s->points;
@@ -417,11 +417,14 @@ normal_spline_bound(s, xmin, ymin, xmax, ymax)
 }
 
 text_bound(t, xmin, ymin, xmax, ymax)
-    F_text         *t;
-    int            *xmin, *ymin, *xmax, *ymax;
+    F_text	   *t;
+    int		   *xmin, *ymin, *xmax, *ymax;
 {
-    int             length;
+    int		    length, dx, dy, mx, my;
 
+    /* adjust for text angle */
+    dy = (int) ((double) t->height * cos(t->angle));
+    dx = (int) ((double) t->height * sin(t->angle));
     length = text_length(t);
     *xmin = t->base_x;
     *ymin = t->base_y - t->height;
@@ -435,16 +438,21 @@ text_bound(t, xmin, ymin, xmax, ymax)
 	*xmin -= length / 2;
 	*xmax -= length / 2;
     }
+    mx = t->base_x - dx;
+    my = t->base_y - dy;
+    *xmin = min2(*xmin, mx);
+    *xmax = max2(*xmax, mx);
+    *ymax = max2(*ymax, my);
 }
 
 static void
 points_bound(points, half_wd, xmin, ymin, xmax, ymax)
-    F_point        *points;
-    int             half_wd;
-    int            *xmin, *ymin, *xmax, *ymax;
+    F_point	   *points;
+    int		    half_wd;
+    int		   *xmin, *ymin, *xmax, *ymax;
 {
-    int             bx, by, sx, sy;
-    F_point        *p;
+    int		    bx, by, sx, sy;
+    F_point	   *p;
 
     bx = sx = points->x;
     by = sy = points->y;
@@ -462,7 +470,7 @@ points_bound(points, half_wd, xmin, ymin, xmax, ymax)
 
 int
 overlapping(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2)
-    int             xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2;
+    int		    xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2;
 {
     if (xmin1 < xmin2)
 	if (ymin1 < ymin2)

@@ -14,86 +14,92 @@
  *
  */
 
-#define         DEFAULT               (-1)
+#define		DEFAULT		      (-1)
 #define		SOLID_LINE		0
 #define		DASH_LINE		1
 #define		DOTTED_LINE		2
 #define		RUBBER_LINE		3
 #define		PANEL_LINE		4
 
+#define		Color			long
+
+#define		BLACK			0
+#define		WHITE			7
+
 typedef struct f_pattern {
-    int             w, h;
-    int            *p;
+    int		    w, h;
+    int		   *p;
 }
-                F_pattern;
+		F_pattern;
 
 typedef struct f_point {
-    int             x, y;
+    int		    x, y;
     struct f_point *next;
 }
-                F_point;
+		F_point;
 
 typedef struct f_pos {
-    int             x, y;
+    int		    x, y;
 }
-                F_pos;
+		F_pos;
 
 typedef struct f_arrow {
-    int             type;
-    int             style;
-    float           thickness;
-    float           wid;
-    float           ht;
+    int		    type;
+    int		    style;
+    float	    thickness;
+    float	    wid;
+    float	    ht;
 }
-                F_arrow;
+		F_arrow;
 
 typedef struct f_ellipse {
-    int             type;
+    int		    tagged;
+    int		    type;
 #define					T_ELLIPSE_BY_RAD	1
 #define					T_ELLIPSE_BY_DIA	2
 #define					T_CIRCLE_BY_RAD		3
 #define					T_CIRCLE_BY_DIA		4
-    int             style;
-    int             thickness;
-    int             color;
-#define					BLACK			0
-    int             depth;
-    int             direction;
-    float           style_val;
-    float           angle;
-    int             pen;
-    int             area_fill;
-#define                                 UNFILLED        0
-#define                                 WHITE_FILL      1
-#define                                 BLACK_FILL      21
+    int		    style;
+    int		    thickness;
+    Color	    color;
+    int		    depth;
+    int		    direction;
+    float	    style_val;
+    float	    angle;
+    int		    pen;
+    int		    fill_style;
+#define					UNFILLED	0
+#define					WHITE_FILL	1
+#define					BLACK_FILL	21
     struct f_pos    center;
     struct f_pos    radiuses;
     struct f_pos    start;
     struct f_pos    end;
     struct f_ellipse *next;
 }
-                F_ellipse;
+		F_ellipse;
 
 typedef struct f_arc {
-    int             type;
+    int		    tagged;
+    int		    type;
 #define					T_3_POINTS_ARC		1
-    int             style;
-    int             thickness;
-    int             color;
-    int             depth;
-    int             pen;
-    int             area_fill;
-    float           style_val;
-    int             direction;
+    int		    style;
+    int		    thickness;
+    Color	    color;
+    int		    depth;
+    int		    pen;
+    int		    fill_style;
+    float	    style_val;
+    int		    direction;
     struct f_arrow *for_arrow;
     struct f_arrow *back_arrow;
     struct {
-	float           x, y;
-    }               center;
+	float		x, y;
+    }		    center;
     struct f_pos    point[3];
     struct f_arc   *next;
 }
-                F_arc;
+		F_arc;
 
 #define		CLOSED_PATH		0
 #define		OPEN_PATH		1
@@ -102,96 +108,99 @@ typedef struct f_arc {
 #define		DEF_DOTGAP		3
 
 typedef struct f_eps {
-    char            file[256];
-    int             flipped;
+    char	    file[256];
+    int		    flipped;
     unsigned char  *bitmap;
     float	    hw_ratio;
+    int		    size_x, size_y;
     struct f_pos    bit_size;
-    Pixmap          pixmap;
-    int             pix_rotation, pix_width, pix_height, pix_flipped;
+    Pixmap	    pixmap;
+    int		    pix_rotation, pix_width, pix_height, pix_flipped;
 }
 		F_eps;
 
-extern char EMPTY_EPS[];
+extern char	EMPTY_EPS[];
 
 typedef struct f_line {
-    int             type;
+    int		    tagged;
+    int		    type;
 #define					T_POLYLINE	1
 #define					T_BOX		2
 #define					T_POLYGON	3
 #define					T_ARC_BOX	4
 #define					T_EPS_BOX	5
-    int             style;
-    int             thickness;
-    int             color;
-    int             depth;
-    float           style_val;
-    int             pen;
-    int             area_fill;
-    int             radius;	/* corner radius for T_ARC_BOX */
+    int		    style;
+    int		    thickness;
+    Color	    color;
+    int		    depth;
+    float	    style_val;
+    int		    pen;
+    int		    fill_style;
+    int		    radius;	/* corner radius for T_ARC_BOX */
     struct f_arrow *for_arrow;
     struct f_arrow *back_arrow;
     struct f_point *points;
     struct f_eps   *eps;
     struct f_line  *next;
 }
-                F_line;
+		F_line;
 
 typedef struct f_text {
-    int             type;
+    int		    tagged;
+    int		    type;
 #define					T_LEFT_JUSTIFIED	0
 #define					T_CENTER_JUSTIFIED	1
 #define					T_RIGHT_JUSTIFIED	2
-    int             font;
-    int             size;	/* point size */
-    int             color;
-    int             depth;
-    float           angle;	/* in radian */
+    int		    font;
+    int		    size;	/* point size */
+    Color	    color;
+    int		    depth;
+    float	    angle;	/* in radian */
 
-    int             flags;
+    int		    flags;
 #define					RIGID_TEXT		1
 #define					SPECIAL_TEXT		2
 #define					PSFONT_TEXT		4
 #define					HIDDEN_TEXT		8
 
-    int             height;	/* pixels */
-    int             length;	/* pixels */
-    int             base_x;
-    int             base_y;
-    int             pen;
-    char           *cstring;
+    int		    height;	/* pixels */
+    int		    length;	/* pixels */
+    int		    base_x;
+    int		    base_y;
+    int		    pen;
+    char	   *cstring;
     struct f_text  *next;
 }
-                F_text;
+		F_text;
 
 #define MAXFONT(T) (psfont_text(T) ? NUM_PS_FONTS : NUM_LATEX_FONTS)
 
-#define         rigid_text(t) \
-                        (t->flags == DEFAULT \
-                                || (t->flags & RIGID_TEXT))
+#define		rigid_text(t) \
+			(t->flags == DEFAULT \
+				|| (t->flags & RIGID_TEXT))
 
-#define         special_text(t) \
-                        ((t->flags != DEFAULT \
-                                && (t->flags & SPECIAL_TEXT)))
+#define		special_text(t) \
+			((t->flags != DEFAULT \
+				&& (t->flags & SPECIAL_TEXT)))
 
-#define         psfont_text(t) \
-                        (t->flags != DEFAULT \
-                                && (t->flags & PSFONT_TEXT))
+#define		psfont_text(t) \
+			(t->flags != DEFAULT \
+				&& (t->flags & PSFONT_TEXT))
 
-#define         hidden_text(t) \
-                        (t->flags != DEFAULT \
-                                && (t->flags & HIDDEN_TEXT))
+#define		hidden_text(t) \
+			(t->flags != DEFAULT \
+				&& (t->flags & HIDDEN_TEXT))
 
-#define         text_length(t) \
-                        (hidden_text(t) ? hidden_text_length : t->length)
+#define		text_length(t) \
+			(hidden_text(t) ? hidden_text_length : t->length)
 
-#define         using_ps        (cur_textflags & PSFONT_TEXT)
+#define		using_ps	(cur_textflags & PSFONT_TEXT)
 
 typedef struct f_control {
-    float           lx, ly, rx, ry;
+    float	    lx, ly, rx, ry;
     struct f_control *next;
 }
-                F_control;
+		F_control;
 
 #define		int_spline(s)		(s->type & 0x2)
 #define		normal_spline(s)	(!(s->type & 0x2))
@@ -199,18 +208,19 @@ typedef struct f_control {
 #define		open_spline(s)		(!(s->type & 0x1))
 
 typedef struct f_spline {
-    int             type;
+    int		    tagged;
+    int		    type;
 #define					T_OPEN_NORMAL	0
-#define					T_CLOSED_NORMAL	1
+#define					T_CLOSED_NORMAL 1
 #define					T_OPEN_INTERP	2
-#define					T_CLOSED_INTERP	3
-    int             style;
-    int             thickness;
-    int             color;
-    int             depth;
-    float           style_val;
-    int             pen;
-    int             area_fill;
+#define					T_CLOSED_INTERP 3
+    int		    style;
+    int		    thickness;
+    Color	    color;
+    int		    depth;
+    float	    style_val;
+    int		    pen;
+    int		    fill_style;
     struct f_arrow *for_arrow;
     struct f_arrow *back_arrow;
     /*
@@ -222,9 +232,10 @@ typedef struct f_spline {
     struct f_control *controls;
     struct f_spline *next;
 }
-                F_spline;
+		F_spline;
 
 typedef struct f_compound {
+    int		    tagged;
     struct f_pos    nwcorner;
     struct f_pos    secorner;
     struct f_line  *lines;
@@ -235,7 +246,16 @@ typedef struct f_compound {
     struct f_compound *compounds;
     struct f_compound *next;
 }
-                F_compound;
+		F_compound;
+
+typedef struct f_linkinfo {
+    struct f_line  *line;
+    struct f_point *endpt;
+    struct f_point *prevpt;
+    int		    two_pts;
+    struct f_linkinfo *next;
+}
+		F_linkinfo;
 
 #define		ARROW_SIZE		sizeof(struct f_arrow)
 #define		POINT_SIZE		sizeof(struct f_point)
@@ -247,8 +267,9 @@ typedef struct f_compound {
 #define		SPLOBJ_SIZE		sizeof(struct f_spline)
 #define		COMOBJ_SIZE		sizeof(struct f_compound)
 #define		EPS_SIZE		sizeof(struct f_eps)
+#define		LINKINFO_SIZE		sizeof(struct f_linkinfo)
 
-/**********************  object codes  **********************/
+/**********************	 object codes  **********************/
 
 #define		O_NONE			0
 #define		O_ELLIPSE		1
@@ -260,41 +281,39 @@ typedef struct f_compound {
 #define		O_END_COMPOUND		-O_COMPOUND
 #define		O_ALL_OBJECT		99
 
-/*********************  object masks  ************************/
+/*********************	object masks  ************************/
 
 #define M_NONE			0x000
-#define	M_POLYLINE_POLYGON	0x001
-#define	M_POLYLINE_LINE		0x002
-#define	M_POLYLINE_BOX		0x004	/* includes ARCBOX */
-#define	M_SPLINE_O_NORMAL	0x008
-#define	M_SPLINE_C_NORMAL	0x010
-#define	M_SPLINE_O_INTERP	0x020
-#define	M_SPLINE_C_INTERP	0x040
-#define	M_TEXT_NORMAL		0x080
-#define	M_TEXT_HIDDEN		0x100
-#define	M_ARC			0x200
-#define	M_ELLIPSE		0x400
-#define	M_COMPOUND		0x800
+#define M_POLYLINE_POLYGON	0x001
+#define M_POLYLINE_LINE		0x002
+#define M_POLYLINE_BOX		0x004	/* includes ARCBOX */
+#define M_SPLINE_O_NORMAL	0x008
+#define M_SPLINE_C_NORMAL	0x010
+#define M_SPLINE_O_INTERP	0x020
+#define M_SPLINE_C_INTERP	0x040
+#define M_TEXT_NORMAL		0x080
+#define M_TEXT_HIDDEN		0x100
+#define M_ARC			0x200
+#define M_ELLIPSE		0x400
+#define M_COMPOUND		0x800
 
-#define	M_TEXT		(M_TEXT_HIDDEN | M_TEXT_NORMAL)
-#define	M_SPLINE_O	(M_SPLINE_O_NORMAL | M_SPLINE_O_INTERP)
-#define	M_SPLINE_C	(M_SPLINE_C_NORMAL | M_SPLINE_C_INTERP)
-#define	M_SPLINE_NORMAL	(M_SPLINE_O_NORMAL | M_SPLINE_C_NORMAL)
-#define	M_SPLINE_INTERP	(M_SPLINE_O_INTERP | M_SPLINE_C_INTERP)
-#define	M_SPLINE	(M_SPLINE_NORMAL | M_SPLINE_INTERP)
-#define	M_POLYLINE	(M_POLYLINE_LINE | M_POLYLINE_POLYGON | M_POLYLINE_BOX)
-#define M_VARPTS_OBJECT	(M_POLYLINE_LINE | M_POLYLINE_POLYGON | M_SPLINE)
+#define M_TEXT		(M_TEXT_HIDDEN | M_TEXT_NORMAL)
+#define M_SPLINE_O	(M_SPLINE_O_NORMAL | M_SPLINE_O_INTERP)
+#define M_SPLINE_C	(M_SPLINE_C_NORMAL | M_SPLINE_C_INTERP)
+#define M_SPLINE_NORMAL (M_SPLINE_O_NORMAL | M_SPLINE_C_NORMAL)
+#define M_SPLINE_INTERP (M_SPLINE_O_INTERP | M_SPLINE_C_INTERP)
+#define M_SPLINE	(M_SPLINE_NORMAL | M_SPLINE_INTERP)
+#define M_POLYLINE	(M_POLYLINE_LINE | M_POLYLINE_POLYGON | M_POLYLINE_BOX)
+#define M_VARPTS_OBJECT (M_POLYLINE_LINE | M_POLYLINE_POLYGON | M_SPLINE)
 #define M_OPEN_OBJECT	(M_POLYLINE_LINE | M_SPLINE_O | M_ARC)
-#define M_ROTATE_ANGLE	(M_VARPTS_OBJECT | M_ARC)
-#define	M_OBJECT	(M_ELLIPSE | M_POLYLINE | M_SPLINE | M_TEXT | M_ARC)
-#define	M_NO_TEXT	(M_ELLIPSE | M_POLYLINE | M_SPLINE | M_COMPOUND | M_ARC)
-#define	M_ALL		(M_OBJECT | M_COMPOUND)
+#define M_ROTATE_ANGLE	(M_VARPTS_OBJECT | M_ARC | M_TEXT | M_COMPOUND)
+#define M_OBJECT	(M_ELLIPSE | M_POLYLINE | M_SPLINE | M_TEXT | M_ARC)
+#define M_NO_TEXT	(M_ELLIPSE | M_POLYLINE | M_SPLINE | M_COMPOUND | M_ARC)
+#define M_ALL		(M_OBJECT | M_COMPOUND)
 
 /************************  Objects  **********************/
 
 extern F_compound objects;
-
- /*extern F_compound      select_objects;*//* for select mode */
 
 /************  global working pointers ************/
 
@@ -305,27 +324,29 @@ extern F_text  *cur_t, *new_t, *old_t;
 extern F_spline *cur_s, *new_s, *old_s;
 extern F_compound *cur_c, *new_c, *old_c;
 extern F_point *first_point, *cur_point;
+extern F_linkinfo *cur_links;
 
 /*************** object attribute settings ***********/
 
 /*  Lines  */
-extern int      cur_linewidth;
-extern int      cur_linestyle;
-extern float    cur_dashlength;
-extern float    cur_dotgap;
-extern float    cur_styleval;
-extern int      pen_size;
-extern int      pen_type;
-extern int      cur_color;
-extern int      cur_boxradius;
-extern int      cur_areafill;
+extern int	cur_linewidth;
+extern int	cur_linestyle;
+extern float	cur_dashlength;
+extern float	cur_dotgap;
+extern float	cur_styleval;
+extern int	pen_size;
+extern int	pen_type;
+extern Color	cur_color;
+extern int	cur_boxradius;
+extern int	cur_fillstyle;
+extern int	cur_arrowmode;
 
 /* Text */
-extern int      cur_fontsize;	/* font size */
-extern int      cur_latex_font;
-extern int      cur_ps_font;
-extern int      cur_textjust;
-extern int      cur_textflags;
+extern int	cur_fontsize;	/* font size */
+extern int	cur_latex_font;
+extern int	cur_ps_font;
+extern int	cur_textjust;
+extern int	cur_textflags;
 
 /* Misc */
-extern float    cur_angle;
+extern float	cur_angle;

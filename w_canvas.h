@@ -16,14 +16,16 @@
 
 /************** DECLARE EXPORTS ***************/
 
-extern int      (*canvas_kbd_proc) ();
-extern int      (*canvas_locmove_proc) ();
-extern int      (*canvas_leftbut_proc) ();
-extern int      (*canvas_middlebut_proc) ();
-extern int      (*canvas_middlebut_save) ();
-extern int      (*canvas_rightbut_proc) ();
-extern int      (*return_proc) ();
-extern int      null_proc();
-extern int      clip_xmin, clip_ymin, clip_xmax, clip_ymax;
-extern int      clip_width, clip_height;
-extern int      cur_x, cur_y;
+extern int	(*canvas_kbd_proc) ();
+extern int	(*canvas_locmove_proc) ();
+extern int	(*canvas_leftbut_proc) ();
+extern int	(*canvas_middlebut_proc) ();
+extern int	(*canvas_middlebut_save) ();
+extern int	(*canvas_rightbut_proc) ();
+extern int	(*return_proc) ();
+extern int	null_proc();
+extern int	clip_xmin, clip_ymin, clip_xmax, clip_ymax;
+extern int	clip_width, clip_height;
+extern int	cur_x, cur_y;
+
+extern String	local_translations;

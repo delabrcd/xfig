@@ -24,20 +24,18 @@
 #include "mode.h"
 #include <stdio.h>
 
-extern char    *malloc();
-
 read_epsf(eps)
-    F_eps          *eps;
+    F_eps	   *eps;
 {
-    int             nbitmap;
-    int             bitmapz;
-    char           *cp;
+    int		    nbitmap;
+    int		    bitmapz;
+    char	   *cp;
     unsigned char  *mp;
-    int             n;
-    int             flag;
-    char            buf[300];
-    int             llx, lly, urx, ury;
-    FILE           *epsf;
+    int		    n;
+    int		    flag;
+    char	    buf[300];
+    int		    llx, lly, urx, ury;
+    FILE	   *epsf;
     register unsigned char *last;
 
     epsf = fopen(eps->file, "r");
@@ -50,7 +48,7 @@ read_epsf(eps)
 	if (!strncmp(buf, "%%boundingbox", 13)) {
 	    if (sscanf(buf, "%%%%boundingbox: %d %d %d %d",
 		       &llx, &lly, &urx, &ury) < 4) {
-		put_msg("Bad EPS bitmap file: %s", eps->file);
+		put_msg("Bad EPS file: %s", eps->file);
 		fclose(epsf);
 		return 0;
 	    }
@@ -59,6 +57,8 @@ read_epsf(eps)
     }
 
     eps->hw_ratio = (float) (ury - lly) / (float) (urx - llx);
+    eps->size_x = urx - llx;
+    eps->size_y = ury - lly;
 
     eps->bitmap = NULL;
     eps->bit_size.x = 0;
@@ -71,18 +71,25 @@ read_epsf(eps)
     eps->pix_height = 0;
 
     if (ury - lly <= 0 || urx - llx <= 0) {
-	put_msg("Bad values in EPS bitmap bounding box");
+	put_msg("Bad values in EPS bounding box");
     }
     bitmapz = 0;
 
     /* look for a preview bitmap */
+    n = 1;
     while (fgets(buf, 300, epsf) != NULL) {
 	lower(buf);
 	if (!strncmp(buf, "%%beginpreview", 14)) {
 	    sscanf(buf, "%%%%beginpreview: %d %d %d",
 		   &eps->bit_size.x, &eps->bit_size.y, &bitmapz);
+	    n = 0;
 	    break;
 	}
+    }
+
+    if (n) {
+	put_msg("EPS object read OK, but no preview bitmap found");
+	return;
     }
 
     if (eps->bit_size.x > 0 && eps->bit_size.y > 0 && bitmapz == 1) {
@@ -124,14 +131,14 @@ read_epsf(eps)
 	    }
 	}
     }
-    put_msg("EPS bitmap file read OK");
+    put_msg("EPS object read OK");
     fclose(epsf);
     return 1;
 }
 
 int
 hex(c)
-    char            c;
+    char	    c;
 {
     if (isdigit(c))
 	return (c - 48);
@@ -140,7 +147,7 @@ hex(c)
 }
 
 lower(buf)
-    char           *buf;
+    char	   *buf;
 {
     while (*buf) {
 	if (isupper(*buf))

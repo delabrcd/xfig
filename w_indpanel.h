@@ -14,31 +14,34 @@
  *
  */
 
-#define	I_ANGLEGEOM	0x00001
-#define I_VALIGN	0x00002
-#define I_HALIGN	0x00004
-#define I_GRIDMODE	0x00008
-#define I_POINTPOSN	0x00010
-#define I_FILLAREA	0x00020
-#define I_BOXRADIUS	0x00040
-#define I_LINEWIDTH	0x00080
-#define I_LINESTYLE	0x00100
-#define I_ARROWMODE	0x00200
-#define I_TEXTJUST	0x00400
-#define I_FONTSIZE	0x00800
-#define I_FONT		0x01000
-#define I_TEXTSTEP	0x02000
-#define I_ZOOM		0x04000
-#define I_ROTNANGLE	0x08000
-#define I_NUMSIDES	0x10000
+#define I_ANGLEGEOM	0x000001
+#define I_VALIGN	0x000002
+#define I_HALIGN	0x000004
+#define I_GRIDMODE	0x000008
+#define I_POINTPOSN	0x000010
+#define I_FILLSTYLE	0x000020
+#define I_BOXRADIUS	0x000040
+#define I_LINEWIDTH	0x000080
+#define I_LINESTYLE	0x000100
+#define I_ARROWMODE	0x000200
+#define I_TEXTJUST	0x000400
+#define I_FONTSIZE	0x000800
+#define I_FONT		0x001000
+#define I_TEXTSTEP	0x002000
+#define I_ZOOM		0x004000
+#define I_ROTNANGLE	0x008000
+#define I_NUMSIDES	0x010000
+#define I_COLOR		0x020000
+#define I_LINKMODE	0x040000
 
-#define I_NONE		0x00000
-#define I_ALL		0x1ffff
+#define I_NONE		0x000000
+#define I_ALL		0x07ffff
 #define I_MIN1		(I_GRIDMODE | I_ZOOM)
 #define I_MIN2		(I_MIN1 | I_POINTPOSN)
-#define I_TEXT0		(I_TEXTJUST | I_FONT | I_FONTSIZE | I_TEXTJUST)
+#define I_MIN3		(I_MIN2 | I_LINKMODE)
+#define I_TEXT0		(I_TEXTJUST | I_FONT | I_FONTSIZE | I_COLOR)
 #define I_TEXT		(I_MIN2 | I_TEXTSTEP | I_TEXT0)
-#define I_LINE0		(I_FILLAREA | I_LINESTYLE | I_LINEWIDTH)
+#define I_LINE0		(I_FILLSTYLE | I_LINESTYLE | I_LINEWIDTH | I_COLOR)
 #define I_BOX		(I_MIN2 | I_LINE0)
 #define I_ARC		(I_BOX | I_ARROWMODE)
 #define I_REGPOLY	(I_BOX | I_NUMSIDES)
@@ -50,7 +53,27 @@
 #define I_ROTATE	(I_MIN1 | I_ROTNANGLE)
 
 typedef struct choice_struct {
-    int             value;
-    PIXRECT         icon;
-    Pixmap          normalPM;
-}               choice_info;
+    int		    value;
+    PIXRECT	    icon;
+    Pixmap	    normalPM,blackPM;
+}		choice_info;
+
+typedef struct ind_sw_struct {
+    int		    type;	/* one of I_CHOICE .. I_FVAL */
+    int		    func;
+    char	    line1[6], line2[6];
+    int		    sw_width;
+    int		   *i_varadr;
+    float	   *f_varadr;
+    int		    (*inc_func) ();
+    int		    (*dec_func) ();
+    int		    (*show_func) ();
+    choice_info	   *choices;	/* specific to I_CHOICE */
+    int		    numchoices; /* specific to I_CHOICE */
+    int		    sw_per_row; /* specific to I_CHOICE */
+    TOOL	    widget;
+    Pixmap	    normalPM;
+}		ind_sw_info;
+
+#define ZOOM_SWITCH_INDEX	0	/* used by w_zoom.c */
+extern ind_sw_info ind_switches[];

@@ -26,20 +26,20 @@
 
 /********************* EXPORTS *******************/
 
-int             put_msg();
-int             put_fmsg();
-int             init_msgreceiving();
+int		put_msg();
+int		put_fmsg();
+int		init_msgreceiving();
 
 /************************  LOCAL ******************/
 
 #define			BUF_SIZE		128
-static char     prompt[BUF_SIZE];
+static char	prompt[BUF_SIZE];
 
 DeclareStaticArgs(8);
 
 int
 init_msg(tool)
-    TOOL            tool;
+    TOOL	    tool;
 {
     /* width */
     FirstArg(XtNwidth, MSGPANEL_WD);
@@ -69,8 +69,8 @@ setup_msg()
 
 /* VARARGS1 */
 put_msg(format, arg1, arg2, arg3, arg4, arg5)
-    char           *format;
-    int             arg1, arg2, arg3, arg4, arg5;
+    char	   *format;
+    int		    arg1, arg2, arg3, arg4, arg5;
 {
     sprintf(prompt, format, arg1, arg2, arg3, arg4, arg5);
     FirstArg(XtNlabel, prompt);
@@ -84,8 +84,8 @@ put_msg(format, arg1, arg2, arg3, arg4, arg5)
 
 /* VARARGS1 */
 put_fmsg(format, arg1, arg2, arg3, arg4, arg5)
-    char           *format;
-    double          arg1, arg2, arg3, arg4, arg5;
+    char	   *format;
+    double	    arg1, arg2, arg3, arg4, arg5;
 {
     sprintf(prompt, format, arg1, arg2, arg3, arg4, arg5);
     FirstArg(XtNlabel, prompt);

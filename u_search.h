@@ -14,18 +14,18 @@
  *
  */
 
-void            init_searchproc_left();
-void            init_searchproc_middle();
-void            init_searchproc_right();
+void		init_searchproc_left();
+void		init_searchproc_middle();
+void		init_searchproc_right();
 
-int             point_search_left();
-int             point_search_middle();
-int             point_search_right();
+int		point_search_left();
+int		point_search_middle();
+int		point_search_right();
 
-int             object_search_left();
-int             object_search_middle();
-int             object_search_right();
+int		object_search_left();
+int		object_search_middle();
+int		object_search_right();
 
-F_text         *text_search();
+F_text	       *text_search();
 F_compound     *compound_search();
 F_compound     *compound_point_search();

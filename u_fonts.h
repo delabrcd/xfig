@@ -14,16 +14,16 @@
  *
  */
 
-#define	MIN_P_SIZE 6
-#define	MAX_P_SIZE 30
+#define MIN_P_SIZE 6
+#define MAX_P_SIZE 30
 
 #define DEF_FONTSIZE 12		/* default font size in pts */
-#define	PS_FONTPANE_WD 290
-#define	LATEX_FONTPANE_WD 112
-#define	PS_FONTPANE_HT 20
-#define	LATEX_FONTPANE_HT 20
-#define	NUM_X_FONTS 27
-#define	NUM_PS_FONTS 35
+#define PS_FONTPANE_WD 290
+#define LATEX_FONTPANE_WD 112
+#define PS_FONTPANE_HT 20
+#define LATEX_FONTPANE_HT 20
+#define NUM_X_FONTS 27
+#define NUM_PS_FONTS 35
 #define NUM_LATEX_FONTS 6
 
 /* element of linked list for each font
@@ -32,22 +32,22 @@
    point size of that font */
 
 struct xfont {
-    int             size;	/* size in points */
-    Font            fid;	/* X font id */
-    XFontStruct    *fstruct;	/* X font structure */
-    char           *fname;	/* actual name of X font found */
+    int		    size;	/* size in points */
+    Font	    fid;	/* X font id */
+    XFontStruct	   *fstruct;	/* X font structure */
+    char	   *fname;	/* actual name of X font found */
     struct xfont   *next;	/* next in the list */
 };
 
 struct _fstruct {
-    char           *name;	/* Postscript font name */
-    int             xfontnum;	/* template for locating X fonts */
+    char	   *name;	/* Postscript font name */
+    int		    xfontnum;	/* template for locating X fonts */
 };
 
 struct _xfstruct {
-    char           *template;	/* template for locating X fonts */
+    char	   *template;	/* template for locating X fonts */
     struct xfont   *xfontlist;	/* linked list of X fonts for different point
 				 * sizes */
 };
 
-int             x_fontnum();
+int		x_fontnum();

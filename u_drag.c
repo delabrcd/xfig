@@ -27,20 +27,20 @@
 #include "w_drawprim.h"
 #include "w_zoom.h"
 
-static int      place_line(), cancel_line();
-static int      place_arc(), cancel_arc();
-static int      place_spline(), cancel_spline();
-static int      place_ellipse(), cancel_ellipse();
-static int      place_text(), cancel_text();
-static int      place_compound(), cancel_compound();
+static int	place_line(), cancel_line();
+static int	place_arc(), cancel_arc();
+static int	place_spline(), cancel_spline();
+static int	place_ellipse(), cancel_ellipse();
+static int	place_text(), cancel_text();
+static int	place_compound(), cancel_compound();
 
-extern int      copy_selected();
+extern int	copy_selected();
 
 /***************************** ellipse section ************************/
 
 init_ellipsedragging(e, x, y)
-    F_ellipse      *e;
-    int             x, y;
+    F_ellipse	   *e;
+    int		    x, y;
 {
     new_e = e;
     fix_x = cur_x = x;
@@ -64,8 +64,7 @@ cancel_ellipse()
 	free_ellipse(&new_e);
     } else {
 	list_add_ellipse(&objects.ellipses, new_e);
-	draw_ellipse(new_e, PAINT);
-	toggle_ellipsemarker(new_e);
+	redisplay_ellipse(new_e);
     }
     (*return_proc) ();
     draw_mousefun_canvas();
@@ -73,13 +72,11 @@ cancel_ellipse()
 
 static
 place_ellipse(x, y)
-    int             x, y;
+    int		    x, y;
 {
     elastic_moveellipse();
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
     translate_ellipse(new_e, x - fix_x, y - fix_y);
-    draw_ellipse(new_e, PAINT);
-    toggle_ellipsemarker(new_e);
     if (return_proc == copy_selected) {
 	add_ellipse(new_e);
     } else {
@@ -91,15 +88,16 @@ place_ellipse(x, y)
 	set_latestellipse(new_e);
 	set_modifiedflag();
     }
+    redisplay_ellipse(new_e);
     (*return_proc) ();
     draw_mousefun_canvas();
 }
 
-/*****************************  arc  section  *******************/
+/*****************************	arc  section  *******************/
 
 init_arcdragging(a, x, y)
-    F_arc          *a;
-    int             x, y;
+    F_arc	   *a;
+    int		    x, y;
 {
     new_a = a;
     fix_x = cur_x = x;
@@ -119,8 +117,7 @@ cancel_arc()
 	free_arc(&new_a);
     } else {
 	list_add_arc(&objects.arcs, new_a);
-	draw_arc(new_a, PAINT);
-	toggle_arcmarker(new_a);
+	redisplay_arc(new_a);
     }
     (*return_proc) ();
     draw_mousefun_canvas();
@@ -128,13 +125,11 @@ cancel_arc()
 
 static
 place_arc(x, y)
-    int             x, y;
+    int		    x, y;
 {
     elastic_movearc(new_a);
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
     translate_arc(new_a, x - fix_x, y - fix_y);
-    draw_arc(new_a, PAINT);
-    toggle_arcmarker(new_a);
     if (return_proc == copy_selected) {
 	add_arc(new_a);
     } else {
@@ -146,6 +141,7 @@ place_arc(x, y)
 	set_latestarc(new_a);
 	set_modifiedflag();
     }
+    redisplay_arc(new_a);
     (*return_proc) ();
     draw_mousefun_canvas();
 }
@@ -153,9 +149,11 @@ place_arc(x, y)
 /*************************  line  section  **********************/
 
 init_linedragging(l, x, y)
-    F_line         *l;
-    int             x, y;
+    F_line	   *l;
+    int		    x, y;
 {
+    int		    xmin, ymin, xmax, ymax;
+
     new_l = l;
     cur_x = fix_x = x;
     cur_y = fix_y = y;
@@ -163,6 +161,10 @@ init_linedragging(l, x, y)
     canvas_leftbut_proc = place_line;
     canvas_rightbut_proc = cancel_line;
     set_action_on();
+    if (l->type == T_BOX || l->type == T_ARC_BOX || l->type == T_EPS_BOX) {
+	line_bound(l, &xmin, &ymin, &xmax, &ymax);
+	get_links(xmin, ymin, xmax, ymax);
+    }
     elastic_moveline(new_l->points);
 }
 
@@ -170,12 +172,12 @@ static
 cancel_line()
 {
     elastic_moveline(new_l->points);
+    free_linkinfo(&cur_links);
     if (return_proc == copy_selected) {
 	free_line(&new_l);
     } else {
 	list_add_line(&objects.lines, new_l);
-	draw_line(new_l, PAINT);
-	toggle_linemarker(new_l);
+	redisplay_line(new_l);
     }
     (*return_proc) ();
     draw_mousefun_canvas();
@@ -183,35 +185,45 @@ cancel_line()
 
 static
 place_line(x, y)
-    int             x, y;
+    int		    x, y;
 {
+    int		    dx, dy;
+
     elastic_moveline(new_l->points);
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
-    translate_line(new_l, x - fix_x, y - fix_y);
+    dx = x - fix_x;
+    dy = y - fix_y;
+    translate_line(new_l, dx, dy);
+    clean_up();
+    set_latestline(new_l);
     if (return_proc == copy_selected) {
-	add_line(new_l);
+	adjust_links(cur_linkmode, cur_links, dx, dy, 0, 0, 1.0, 1.0, 1);
+	tail(&objects, &object_tails);
+	append_objects(&objects, &saved_objects, &object_tails);
+	set_action_object(F_ADD, O_ALL_OBJECT);
+	free_linkinfo(&cur_links);
     } else {
 	list_add_line(&objects.lines, new_l);
-	clean_up();
+	adjust_links(cur_linkmode, cur_links, dx, dy, 0, 0, 1.0, 1.0, 0);
 	set_lastposition(fix_x, fix_y);
 	set_newposition(x, y);
+	set_lastlinkinfo(cur_linkmode, cur_links);
+	cur_links = NULL;
 	set_action_object(F_MOVE, O_POLYLINE);
-	set_latestline(new_l);
-	set_modifiedflag();
     }
-    draw_line(new_l, PAINT);
-    toggle_linemarker(new_l);
+    set_modifiedflag();
+    redisplay_line(new_l);
     (*return_proc) ();
     draw_mousefun_canvas();
 }
 
-/************************  text section  **************************/
+/************************  text section	 **************************/
 
-static PR_SIZE  txsize;
+static PR_SIZE	txsize;
 
 init_textdragging(t, x, y)
-    F_text         *t;
-    int             x, y;
+    F_text	   *t;
+    int		    x, y;
 {
 
     new_t = t;
@@ -242,8 +254,7 @@ cancel_text()
 	free_text(&new_t);
     } else {
 	list_add_text(&objects.texts, new_t);
-	draw_text(new_t, PAINT);
-	toggle_textmarker(new_t);
+	redisplay_text(new_t);
     }
     (*return_proc) ();
     draw_mousefun_canvas();
@@ -251,13 +262,11 @@ cancel_text()
 
 static
 place_text(x, y)
-    int             x, y;
+    int		    x, y;
 {
     elastic_movetext();
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
     translate_text(new_t, x - fix_x, y - fix_y);
-    draw_text(new_t, PAINT);
-    toggle_textmarker(new_t);
     if (return_proc == copy_selected) {
 	add_text(new_t);
     } else {
@@ -269,6 +278,7 @@ place_text(x, y)
 	set_latesttext(new_t);
 	set_modifiedflag();
     }
+    redisplay_text(new_t);
     (*return_proc) ();
     draw_mousefun_canvas();
 }
@@ -276,8 +286,8 @@ place_text(x, y)
 /*************************  spline  section  **********************/
 
 init_splinedragging(s, x, y)
-    F_spline       *s;
-    int             x, y;
+    F_spline	   *s;
+    int		    x, y;
 {
     new_s = s;
     cur_x = fix_x = x;
@@ -297,8 +307,7 @@ cancel_spline()
 	free_spline(&new_s);
     } else {
 	list_add_spline(&objects.splines, new_s);
-	draw_spline(new_s, PAINT);
-	toggle_splinemarker(new_s);
+	redisplay_spline(new_s);
     }
     (*return_proc) ();
     draw_mousefun_canvas();
@@ -306,13 +315,11 @@ cancel_spline()
 
 static
 place_spline(x, y)
-    int             x, y;
+    int		    x, y;
 {
     elastic_moveline(new_s->points);
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
     translate_spline(new_s, x - fix_x, y - fix_y);
-    draw_spline(new_s, PAINT);
-    toggle_splinemarker(new_s);
     if (return_proc == copy_selected) {
 	add_spline(new_s);
     } else {
@@ -324,15 +331,16 @@ place_spline(x, y)
 	set_latestspline(new_s);
 	set_modifiedflag();
     }
+    redisplay_spline(new_s);
     (*return_proc) ();
     draw_mousefun_canvas();
 }
 
-/*****************************  Compound section  *******************/
+/*****************************	Compound section  *******************/
 
 init_compounddragging(c, x, y)
-    F_compound     *c;
-    int             x, y;
+    F_compound	   *c;
+    int		    x, y;
 {
     new_c = c;
     fix_x = cur_x = x;
@@ -345,6 +353,7 @@ init_compounddragging(c, x, y)
     canvas_leftbut_proc = place_compound;
     canvas_rightbut_proc = cancel_compound;
     set_action_on();
+    get_links(c->nwcorner.x, c->nwcorner.y, c->secorner.x, c->secorner.y);
     elastic_movebox();
 }
 
@@ -352,12 +361,12 @@ static
 cancel_compound()
 {
     elastic_movebox();
+    free_linkinfo(&cur_links);
     if (return_proc == copy_selected) {
 	free_compound(&new_c);
     } else {
 	list_add_compound(&objects.compounds, new_c);
-	draw_compoundelements(new_c, PAINT);
-	toggle_compoundmarker(new_c);
+	redisplay_compound(new_c);
     }
     (*return_proc) ();
     draw_mousefun_canvas();
@@ -365,24 +374,34 @@ cancel_compound()
 
 static
 place_compound(x, y)
-    int             x, y;
+    int		    x, y;
 {
+    int		    dx, dy;
+
     elastic_movebox();
     adjust_pos(x, y, fix_x, fix_y, &x, &y);
-    translate_compound(new_c, x - fix_x, y - fix_y);
-    draw_compoundelements(new_c, PAINT);
-    toggle_compoundmarker(new_c);
+    dx = x - fix_x;
+    dy = y - fix_y;
+    translate_compound(new_c, dx, dy);
+    clean_up();
+    set_latestcompound(new_c);
     if (return_proc == copy_selected) {
-	add_compound(new_c);
+	adjust_links(cur_linkmode, cur_links, dx, dy, 0, 0, 1.0, 1.0, 1);
+	tail(&objects, &object_tails);
+	append_objects(&objects, &saved_objects, &object_tails);
+	set_action_object(F_ADD, O_ALL_OBJECT);
+	free_linkinfo(&cur_links);
     } else {
 	list_add_compound(&objects.compounds, new_c);
-	clean_up();
+	adjust_links(cur_linkmode, cur_links, dx, dy, 0, 0, 1.0, 1.0, 0);
 	set_lastposition(fix_x, fix_y);
 	set_newposition(x, y);
+	set_lastlinkinfo(cur_linkmode, cur_links);
+	cur_links = NULL;
 	set_action_object(F_MOVE, O_COMPOUND);
-	set_latestcompound(new_c);
-	set_modifiedflag();
     }
+    set_modifiedflag();
+    redisplay_compound(new_c);
     (*return_proc) ();
     draw_mousefun_canvas();
 }

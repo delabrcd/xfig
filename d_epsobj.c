@@ -27,16 +27,16 @@
 
 /*************************** local declarations *********************/
 
-static 
-init_epsbitmap_drawing(), create_epsbitmap(),
-cancel_epsbitmap();
+static
+		init_epsobj_drawing(), create_epsobj(),
+		cancel_epsobj();
 
-epsbitmap_drawing_selected()
+epsobj_drawing_selected()
 {
     set_mousefun("corner point", "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
-    canvas_leftbut_proc = init_epsbitmap_drawing;
+    canvas_leftbut_proc = init_epsobj_drawing;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
     set_cursor(&arrow_cursor);
@@ -44,28 +44,28 @@ epsbitmap_drawing_selected()
 }
 
 static
-init_epsbitmap_drawing(x, y)
-    int             x, y;
+init_epsobj_drawing(x, y)
+    int		    x, y;
 {
     init_box_drawing(x, y);
-    canvas_leftbut_proc = create_epsbitmap;
-    canvas_rightbut_proc = cancel_epsbitmap;
+    canvas_leftbut_proc = create_epsobj;
+    canvas_rightbut_proc = cancel_epsobj;
 }
 
 static
-cancel_epsbitmap()
+cancel_epsobj()
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
-    epsbitmap_drawing_selected();
+    epsobj_drawing_selected();
     draw_mousefun_canvas();
 }
 
 static
-create_epsbitmap(x, y)
-    int             x, y;
+create_epsobj(x, y)
+    int		    x, y;
 {
-    F_line         *box;
-    F_point        *point;
+    F_line	   *box;
+    F_point	   *point;
 
     elastic_box(fix_x, fix_y, cur_x, cur_y);
 
@@ -83,10 +83,10 @@ create_epsbitmap(x, y)
     box->type = T_EPS_BOX;
     box->style = SOLID_LINE;
     box->thickness = 1;
-    box->color = 0;
+    box->color = cur_color;
     box->depth = 0;
     box->pen = 0;
-    box->area_fill = 0;
+    box->fill_style = 0;
     box->style_val = 0;
     box->radius = 0;
 
@@ -114,8 +114,8 @@ create_epsbitmap(x, y)
     append_point(fix_x, fix_y, &point);
     draw_line(box, PAINT);
     add_line(box);
-    put_msg("Please enter name of EPS bitmap file in EDIT window");
+    put_msg("Please enter name of EPS file in EDIT window");
     edit_item((char *) box, O_POLYLINE);
-    epsbitmap_drawing_selected();
+    epsobj_drawing_selected();
     draw_mousefun_canvas();
 }

@@ -16,8 +16,8 @@
 
 typedef struct {
     unsigned int    x, y, z;
-    caddr_t        *m;
-}               MprData;
+    caddr_t	   *m;
+}		MprData;
 
 #define mpr_static(name,x,y,z,pix)	\
 XImage name	= \
@@ -37,72 +37,81 @@ LSBFirst,	/* bitmap bit order LSB or MSBFirst */ \
 0,		/* red_mask */ \
 0,		/* z arrangement green_mask */ \
 0,		/* z arrangement blue_mask */ \
-NULL 		/* object data pointer for extension */ \
+NULL		/* object data pointer for extension */ \
 }
+
+#define NUMCOLORS 8
+extern char    *colorNames[NUMCOLORS + 1];
+extern Boolean	all_colors_available;
 
 /* resources structure */
 
 typedef struct _appres {
-    Boolean         INCHES;
-    Boolean         DEBUG;
-    Boolean         RHS_PANEL;
-    Boolean         INVERSE;
-    Boolean         TRACKING;
-    Boolean         landscape;
-    Boolean         ShowAllButtons;
-    char           *normalFont;
-    char           *boldFont;
-    char           *buttonFont;
-    float           tmp_width;
-    float           tmp_height;
-    float           startfontsize;	/* ges 6.2.91 */
-    float           internalborderwidth;
-}               appresStruct, *appresPtr;
+    Boolean	    INCHES;
+    Boolean	    DEBUG;
+    Boolean	    RHS_PANEL;
+    Boolean	    INVERSE;
+    Boolean	    TRACKING;
+    Boolean	    landscape;
+    Boolean	    ShowAllButtons;
+    Boolean	    latexfonts;
+    Boolean	    specialtext;
+    Boolean	    SCALABLEFONTS;	/* hns 5 Nov 91 */
+    char	   *normalFont;
+    char	   *boldFont;
+    char	   *buttonFont;
+    float	    tmp_width;
+    float	    tmp_height;
+    float	    startfontsize;	/* ges 6 Feb 91 */
+    float	    internalborderwidth;
+    Pixel	    color[NUMCOLORS];
+    Boolean	    monochrome;
+}		appresStruct, *appresPtr;
 extern appresStruct appres;
 
 typedef struct {
-    int             x, y;
-}               pr_size;
+    int		    x, y;
+}		pr_size;
 
 typedef struct {
     unsigned int    hotx, hoty;
     unsigned int    graphop;
-    XImage         *bitmap;
-}               CursorRec;
+    XImage	   *bitmap;
+}		CursorRec;
 
 typedef struct {
     unsigned int    r_width, r_height, r_left, r_top;
-}               RectRec;
+}		RectRec;
 
 typedef struct {
-    int             type;
-    char           *label;
-    caddr_t         info;
-}               MenuItemRec;
+    int		    type;
+    char	   *label;
+    caddr_t	    info;
+}		MenuItemRec;
 
 struct Menu {
-    int             m_imagetype;
-#define	MENU_IMAGESTRING	0x00	/* imagedata is char * */
-#define MENU_GRAPHIC            0x01	/* imagedata is pixrect * */
-    caddr_t         m_imagedata;
-    int             m_itemcount;
-    MenuItemRec    *m_items;
-    struct Menu    *m_next;
-    caddr_t         m_data;
+    int		    m_imagetype;
+#define MENU_IMAGESTRING	0x00	/* imagedata is char * */
+#define MENU_GRAPHIC		0x01	/* imagedata is pixrect * */
+    caddr_t	    m_imagedata;
+    int		    m_itemcount;
+    MenuItemRec	   *m_items;
+    struct Menu	   *m_next;
+    caddr_t	    m_data;
 };
 
 typedef struct Menu MenuRec;
 
-typedef Window  PIXWIN;
-typedef XImage  PIXRECTREC;
+typedef Window	PIXWIN;
+typedef XImage	PIXRECTREC;
 typedef XImage *PIXRECT;
 typedef XFontStruct *PIX_FONT;
 typedef MprData MPR_DATA;
 typedef CursorRec CURSORREC;
 typedef CursorRec *CURSOR;
-typedef Widget  TOOL;
-typedef Widget  TOOLSW;
-typedef Window  FDTYPE;
+typedef Widget	TOOL;
+typedef Widget	TOOLSW;
+typedef Window	FDTYPE;
 typedef XButtonEvent INPUTEVENT;
 typedef unsigned long INPUTMASK;
 typedef pr_size PR_SIZE;
@@ -110,49 +119,56 @@ typedef RectRec RECT;
 typedef MenuItemRec MENUITEM;
 typedef MenuRec MENU;
 
-extern PIXWIN   canvas_win, msg_win, sideruler_win, topruler_win;
+extern PIXWIN	canvas_win, msg_win, sideruler_win, topruler_win;
 
-extern CURSOR   cur_cursor;
-extern CURSORREC arrow_cursor, bull_cursor, buster_cursor, crosshair_cursor, null_cursor, pencil_cursor, pick15_cursor, pick9_cursor, panel_cursor, l_arrow_cursor, lr_arrow_cursor, r_arrow_cursor, u_arrow_cursor, ud_arrow_cursor, d_arrow_cursor, wait_cursor;
+extern CURSOR	cur_cursor;
+extern CURSORREC arrow_cursor, bull_cursor, buster_cursor, crosshair_cursor,
+		null_cursor, pencil_cursor, pick15_cursor, pick9_cursor,
+		panel_cursor, l_arrow_cursor, lr_arrow_cursor, r_arrow_cursor,
+		u_arrow_cursor, ud_arrow_cursor, d_arrow_cursor, wait_cursor;
 
-extern TOOL     tool;
-extern XtAppContext	tool_app;
+extern TOOL	tool;
+extern XtAppContext tool_app;
 
-extern TOOLSW   canvas_sw, ps_fontmenu,	/* printer font menu tool */
-                latex_fontmenu,	/* printer font menu tool */
-                msg_panel, cmd_panel, mode_panel, d_label, e_label, mousefun, ind_panel,	/* indicator panel */
-                unitbox_sw, sideruler_sw, topruler_sw;
+extern TOOLSW	canvas_sw, ps_fontmenu, /* printer font menu tool */
+		latex_fontmenu, /* printer font menu tool */
+		msg_panel, cmd_panel, mode_panel, d_label, e_label, mousefun,
+		ind_panel,	/* indicator panel */
+		unitbox_sw, sideruler_sw, topruler_sw;
 
 extern Display *tool_d;
 extern Screen  *tool_s;
-extern int      tool_sn;
+extern int	tool_sn;
 
 #define NUMFILLPATS 21
 
-extern GC       gc, bold_gc, button_gc, ind_button_gc, mouse_button_gc, blank_gc,
-                ind_blank_gc, mouse_blank_gc, gccache[0x10], fillgc, fill_gc[NUMFILLPATS],	/* area fill gc's */
-                un_fill_gc[NUMFILLPATS];	/* area unfill gc's */
-extern Pixmap   fill_pm[NUMFILLPATS];
-extern XColor   x_fg_color, x_bg_color;
+extern GC	gc, bold_gc, button_gc, ind_button_gc, mouse_button_gc,
+		color_gc, blank_gc, ind_blank_gc, mouse_blank_gc, gccache[0x10],
+		fillgc, fill_gc[NUMFILLPATS],	/* fill style gc's */
+		black_fill_gc[NUMFILLPATS],
+		un_fill_gc[NUMFILLPATS],	/* unfill gc's */
+		black_un_fill_gc[NUMFILLPATS];
+extern Pixmap	fill_pm[NUMFILLPATS];
+extern XColor	x_fg_color, x_bg_color;
 extern unsigned long but_fg, but_bg;
 extern unsigned long ind_but_fg, ind_but_bg;
 extern unsigned long mouse_but_fg, mouse_but_bg;
 
 struct icon {
-    short           ic_width, ic_height;	/* overall icon dimensions */
-    PIXRECT         ic_background;	/* background pattern (mem pixrect) */
-    RECT            ic_gfxrect;	/* where the graphic goes */
-    PIXRECT         ic_mpr;	/* the graphic (a memory pixrect) */
-    RECT            ic_textrect;/* where text goes */
-    char           *ic_text;	/* the text */
-    PIX_FONT        ic_font;	/* Font with which to display text */
-    int             ic_flags;
+    short	    ic_width, ic_height;	/* overall icon dimensions */
+    PIXRECT	    ic_background;	/* background pattern (mem pixrect) */
+    RECT	    ic_gfxrect; /* where the graphic goes */
+    PIXRECT	    ic_mpr;	/* the graphic (a memory pixrect) */
+    RECT	    ic_textrect;/* where text goes */
+    char	   *ic_text;	/* the text */
+    PIX_FONT	    ic_font;	/* Font with which to display text */
+    int		    ic_flags;
 };
 
 /* flag values */
-#define	ICON_BKGRDPAT	0x02	/* use ic_background to prepare image */
-#define	ICON_BKGRDGRY	0x04	/* use std gray to prepare image */
-#define	ICON_BKGRDCLR	0x08	/* clear to prepare image */
-#define	ICON_BKGRDSET	0x10	/* set to prepare image */
-#define	ICON_FIRSTPRIV	0x0100	/* start of private flags range */
-#define	ICON_LASTPRIV	0x8000	/* end of private flags range */
+#define ICON_BKGRDPAT	0x02	/* use ic_background to prepare image */
+#define ICON_BKGRDGRY	0x04	/* use std gray to prepare image */
+#define ICON_BKGRDCLR	0x08	/* clear to prepare image */
+#define ICON_BKGRDSET	0x10	/* set to prepare image */
+#define ICON_FIRSTPRIV	0x0100	/* start of private flags range */
+#define ICON_LASTPRIV	0x8000	/* end of private flags range */

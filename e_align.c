@@ -26,10 +26,10 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-static int      init_align();
-static int      llx, lly, urx, ury;
-static int      xcmin, ycmin, xcmax, ycmax;
-static int      dx, dy;
+static int	init_align();
+static int	llx, lly, urx, ury;
+static int	xcmin, ycmin, xcmax, ycmax;
+static int	dx, dy;
 static int	align_arc();
 static int	align_ellipse();
 static int	align_line();
@@ -52,10 +52,10 @@ align_selected()
 
 static
 init_align(p, type, x, y, px, py)
-    char           *p;
-    int             type;
-    int             x, y;
-    int             px, py;
+    char	   *p;
+    int		    type;
+    int		    x, y;
+    int		    px, py;
 {
     if (type != O_COMPOUND)
 	return;
@@ -87,7 +87,7 @@ init_align(p, type, x, y, px, py)
 static int
 align_ellipse()
 {
-    F_ellipse      *e;
+    F_ellipse	   *e;
 
     for (e = cur_c->ellipses; e != NULL; e = e->next) {
 	ellipse_bound(e, &llx, &lly, &urx, &ury);
@@ -99,7 +99,7 @@ align_ellipse()
 static int
 align_arc()
 {
-    F_arc          *a;
+    F_arc	   *a;
 
     for (a = cur_c->arcs; a != NULL; a = a->next) {
 	arc_bound(a, &llx, &lly, &urx, &ury);
@@ -111,7 +111,7 @@ align_arc()
 static int
 align_line()
 {
-    F_line         *l;
+    F_line	   *l;
 
     for (l = cur_c->lines; l != NULL; l = l->next) {
 	line_bound(l, &llx, &lly, &urx, &ury);
@@ -123,7 +123,7 @@ align_line()
 static int
 align_spline()
 {
-    F_spline       *s;
+    F_spline	   *s;
 
     for (s = cur_c->splines; s != NULL; s = s->next) {
 	spline_bound(s, &llx, &lly, &urx, &ury);
@@ -135,7 +135,7 @@ align_spline()
 static int
 align_compound()
 {
-    F_compound     *c;
+    F_compound	   *c;
 
     for (c = cur_c->compounds; c != NULL; c = c->next) {
 	compound_bound(c, &llx, &lly, &urx, &ury);
@@ -147,7 +147,7 @@ align_compound()
 static int
 align_text()
 {
-    F_text         *t;
+    F_text	   *t;
 
     for (t = cur_c->texts; t != NULL; t = t->next) {
 	text_bound(t, &llx, &lly, &urx, &ury);

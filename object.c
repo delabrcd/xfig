@@ -15,45 +15,47 @@
  */
 
 #include "fig.h"
+#include "mode.h"
 #include "object.h"
+#include "paintop.h"
 
 /************************  Objects  **********************/
 
-F_compound      objects = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-
-/*F_compound      select_objects = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};*/
+F_compound	objects = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
 /************  global object pointers ************/
 
-F_line         *cur_l, *new_l, *old_l;
-F_arc          *cur_a, *new_a, *old_a;
+F_line	       *cur_l, *new_l, *old_l;
+F_arc	       *cur_a, *new_a, *old_a;
 F_ellipse      *cur_e, *new_e, *old_e;
-F_text         *cur_t, *new_t, *old_t;
+F_text	       *cur_t, *new_t, *old_t;
 F_spline       *cur_s, *new_s, *old_s;
 F_compound     *cur_c, *new_c, *old_c;
-F_point        *first_point, *cur_point;
+F_point	       *first_point, *cur_point;
+F_linkinfo     *cur_links;
 
 /*************** object attribute settings ***********/
 
 /*  Lines  */
-int             cur_linewidth = 1;
-int             cur_linestyle = SOLID_LINE;
-float           cur_dashlength = DEF_DASHLENGTH;
-float           cur_dotgap = DEF_DOTGAP;
-float           cur_styleval = 0.0;
-int             pen_size = 0;
-int             pen_type = 0;
-int             cur_color = -1;
-int             cur_boxradius = DEF_BOXRADIUS;
-int             cur_areafill = 0;
-char            EMPTY_EPS[8] = "<empty>";
+int		cur_linewidth = 1;
+int		cur_linestyle = SOLID_LINE;
+float		cur_dashlength = DEF_DASHLENGTH;
+float		cur_dotgap = DEF_DOTGAP;
+float		cur_styleval = 0.0;
+int		pen_size = 0;
+int		pen_type = 0;
+Color		cur_color = DEFAULT_COLOR;
+int		cur_boxradius = DEF_BOXRADIUS;
+int		cur_fillstyle = 0;
+int		cur_arrowmode = L_NOARROWS;
+char		EMPTY_EPS[8] = "<empty>";
 
 /* Text */
-int             cur_fontsize;	/* font size */
-int             cur_latex_font = 0;
-int             cur_ps_font = 0;
-int             cur_textjust = T_LEFT_JUSTIFIED;
-int             cur_textflags = PSFONT_TEXT;
+int		cur_fontsize;	/* font size */
+int		cur_latex_font = 0;
+int		cur_ps_font = 0;
+int		cur_textjust = T_LEFT_JUSTIFIED;
+int		cur_textflags = PSFONT_TEXT;
 
 /* Misc */
-float           cur_angle = 0.0;
+float		cur_angle = 0.0;

@@ -14,9 +14,9 @@
  *
  */
 
-extern int     zoomscale;
-extern int     zoomxoff;
-extern int     zoomyoff;
+extern int	zoomscale;
+extern int	zoomxoff;
+extern int	zoomyoff;
 
 #define ZOOMX(x) (zoomscale*(x-zoomxoff))
 #define ZOOMY(y) (zoomscale*(y-zoomyoff))

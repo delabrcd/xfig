@@ -19,7 +19,7 @@
 #include "u_fonts.h"
 #include "u_create.h"
 
-static char     Err_incomp[] = "Incomplete %s object at line %d.";
+static char	Err_incomp[] = "Incomplete %s object at line %d.";
 
 static F_ellipse *read_ellipseobject();
 static F_line  *read_lineobject();
@@ -28,20 +28,21 @@ static F_spline *read_splineobject();
 static F_arc   *read_arcobject();
 static F_compound *read_compoundobject();
 
-#define                 FILL_CONVERT(f) \
-                                (((proto>=20) || (f) == UNFILLED) \
-                                        ? (f) : 21 - ((f)-1)*5)
+#define			FILL_CONVERT(f) \
+				(((proto>=20) || (f) == UNFILLED || !TFX) \
+					? (f) : 21 - ((f)-1)*5)
 
 #define			BUF_SIZE		1024
 
-char            buf[BUF_SIZE];
-int             line_no;
-int             num_object;
-int             proto;		/* file protocol*10 */
+char		buf[BUF_SIZE];
+int		line_no;
+int		num_object;
+int		proto;		/* file protocol*10 */
+int		TFX;		/* true for 1.4TFX protocol */
 
 read_fail_message(file, err)
-    char           *file;
-    int             err;
+    char	   *file;
+    int		    err;
 {
     if (err == 0)		/* Successful read */
 	return;
@@ -81,10 +82,10 @@ The coordinate system is 1 for lower left at 0,0 and
 **********************************************************/
 
 read_fig(file_name, obj)
-    char           *file_name;
-    F_compound     *obj;
+    char	   *file_name;
+    F_compound	   *obj;
 {
-    FILE           *fp;
+    FILE	   *fp;
 
     line_no = 0;
     if ((fp = fopen(file_name, "r")) == NULL)
@@ -96,11 +97,11 @@ read_fig(file_name, obj)
 }
 
 readfp_fig(fp, obj)
-    FILE           *fp;
-    F_compound     *obj;
+    FILE	   *fp;
+    F_compound	   *obj;
 {
-    int             status;
-    float           fproto;
+    int		    status;
+    float	    fproto;
 
     num_object = 0;
 #if defined(SYSV) || defined(SVR4)
@@ -110,12 +111,15 @@ readfp_fig(fp, obj)
 #endif
     if (fgets(buf, BUF_SIZE, fp) == 0)	/* version */
 	return -2;
-    if (strncmp(buf, "#FIG", 4) == 0) {	/* versions 1.4/later have #FIG in
+    if (strncmp(buf, "#FIG", 4) == 0) { /* versions 1.4/later have #FIG in
 					 * first line */
 	if ((sscanf(index(buf, ' ') + 1, "%f", &fproto)) == 0)	/* assume 1.4 */
 	    proto = 14;
 	else
 	    proto = (fproto + .01) * 10;	/* protocol version*10 */
+	TFX = False;
+	if (strstr(buf, "TFX") != NULL)
+	    TFX = True;
 	status = read_objects(fp, obj);
     } else {
 	proto = 13;
@@ -128,16 +132,16 @@ readfp_fig(fp, obj)
 
 int
 read_objects(fp, obj)
-    FILE           *fp;
-    F_compound     *obj;
+    FILE	   *fp;
+    F_compound	   *obj;
 {
-    F_ellipse      *e, *le = NULL;
-    F_line         *l, *ll = NULL;
-    F_text         *t, *lt = NULL;
-    F_spline       *s, *ls = NULL;
-    F_arc          *a, *la = NULL;
-    F_compound     *c, *lc = NULL;
-    int             object, ppi, coord_sys;
+    F_ellipse	   *e, *le = NULL;
+    F_line	   *l, *ll = NULL;
+    F_text	   *t, *lt = NULL;
+    F_spline	   *s, *ls = NULL;
+    F_arc	   *a, *la = NULL;
+    F_compound	   *c, *lc = NULL;
+    int		    object, ppi, coord_sys;
 
     line_no++;
     if (get_line(fp) < 0) {
@@ -223,12 +227,12 @@ read_objects(fp, obj)
 
 static F_arc   *
 read_arcobject(fp)
-    FILE           *fp;
+    FILE	   *fp;
 {
-    F_arc          *a;
-    int             n, fa, ba;
-    int             type, style;
-    float           thickness, wid, ht;
+    F_arc	   *a;
+    int		    n, fa, ba;
+    int		    type, style;
+    float	    thickness, wid, ht;
 
     if ((a = create_arc()) == NULL)
 	return (NULL);
@@ -238,7 +242,7 @@ read_arcobject(fp)
     n = sscanf(buf, "%*d%d%d%d%d%d%d%d%f%d%d%d%f%f%d%d%d%d%d%d\n",
 	       &a->type, &a->style, &a->thickness,
 	       &a->color, &a->depth,
-	       &a->pen, &a->area_fill,
+	       &a->pen, &a->fill_style,
 	       &a->style_val, &a->direction, &fa, &ba,
 	       &a->center.x, &a->center.y,
 	       &a->point[0].x, &a->point[0].y,
@@ -249,7 +253,7 @@ read_arcobject(fp)
 	free((char *) a);
 	return (NULL);
     }
-    a->area_fill = FILL_CONVERT(a->area_fill);
+    a->fill_style = FILL_CONVERT(a->fill_style);
     /* change depths < 0 to 0 */
     if (a->depth < 0)
 	a->depth = 0;
@@ -279,15 +283,15 @@ read_arcobject(fp)
 
 static F_compound *
 read_compoundobject(fp)
-    FILE           *fp;
+    FILE	   *fp;
 {
-    F_arc          *a, *la = NULL;
-    F_ellipse      *e, *le = NULL;
-    F_line         *l, *ll = NULL;
-    F_spline       *s, *ls = NULL;
-    F_text         *t, *lt = NULL;
-    F_compound     *com, *c, *lc = NULL;
-    int             n, object;
+    F_arc	   *a, *la = NULL;
+    F_ellipse	   *e, *le = NULL;
+    F_line	   *l, *ll = NULL;
+    F_spline	   *s, *ls = NULL;
+    F_text	   *t, *lt = NULL;
+    F_compound	   *com, *c, *lc = NULL;
+    int		    n, object;
 
     if ((com = create_compound()) == NULL)
 	return (NULL);
@@ -389,8 +393,8 @@ read_compoundobject(fp)
 static F_ellipse *
 read_ellipseobject()
 {
-    F_ellipse      *e;
-    int             n;
+    F_ellipse	   *e;
+    int		    n;
 
     if ((e = create_ellipse()) == NULL)
 	return (NULL);
@@ -398,7 +402,7 @@ read_ellipseobject()
     e->next = NULL;
     n = sscanf(buf, "%*d%d%d%d%d%d%d%d%f%d%f%d%d%d%d%d%d%d%d\n",
 	       &e->type, &e->style, &e->thickness,
-	       &e->color, &e->depth, &e->pen, &e->area_fill,
+	       &e->color, &e->depth, &e->pen, &e->fill_style,
 	       &e->style_val, &e->direction, &e->angle,
 	       &e->center.x, &e->center.y,
 	       &e->radiuses.x, &e->radiuses.y,
@@ -409,7 +413,7 @@ read_ellipseobject()
 	free((char *) e);
 	return (NULL);
     }
-    e->area_fill = FILL_CONVERT(e->area_fill);
+    e->fill_style = FILL_CONVERT(e->fill_style);
     /* change depths < 0 to 0 */
     if (e->depth < 0)
 	e->depth = 0;
@@ -418,13 +422,13 @@ read_ellipseobject()
 
 static F_line  *
 read_lineobject(fp)
-    FILE           *fp;
+    FILE	   *fp;
 {
-    F_line         *l;
-    F_point        *p, *q;
-    int             n, x, y, fa, ba;
-    int             type, style, radius_flag;
-    float           thickness, wid, ht;
+    F_line	   *l;
+    F_point	   *p, *q;
+    int		    n, x, y, fa, ba;
+    int		    type, style, radius_flag;
+    float	    thickness, wid, ht;
 
     if ((l = create_line()) == NULL)
 	return (NULL);
@@ -441,12 +445,12 @@ read_lineobject(fp)
     if (radius_flag) {
 	n = sscanf(buf, "%*d%d%d%d%d%d%d%d%f%d%d%d",
 		   &l->type, &l->style, &l->thickness, &l->color, &l->depth,
-	       &l->pen, &l->area_fill, &l->style_val, &l->radius, &fa, &ba);
+	      &l->pen, &l->fill_style, &l->style_val, &l->radius, &fa, &ba);
     } else {			/* old format uses pen for radius of arc-box
 				 * corners */
 	n = sscanf(buf, "%*d%d%d%d%d%d%d%d%f%d%d",
 		   &l->type, &l->style, &l->thickness, &l->color,
-		&l->depth, &l->pen, &l->area_fill, &l->style_val, &fa, &ba);
+	       &l->depth, &l->pen, &l->fill_style, &l->style_val, &fa, &ba);
 	if (l->type == T_ARC_BOX) {
 	    l->radius = l->pen;
 	    l->pen = 0;
@@ -458,7 +462,7 @@ read_lineobject(fp)
 	free((char *) l);
 	return (NULL);
     }
-    l->area_fill = FILL_CONVERT(l->area_fill);
+    l->fill_style = FILL_CONVERT(l->fill_style);
     /* change depths < 0 to 0 */
     if (l->depth < 0)
 	l->depth = 0;
@@ -537,15 +541,15 @@ read_lineobject(fp)
 
 static F_spline *
 read_splineobject(fp)
-    FILE           *fp;
+    FILE	   *fp;
 {
-    F_spline       *s;
-    F_point        *p, *q;
-    F_control      *cp, *cq;
-    int             c, n, x, y, fa, ba;
-    int             type, style;
-    float           thickness, wid, ht;
-    float           lx, ly, rx, ry;
+    F_spline	   *s;
+    F_point	   *p, *q;
+    F_control	   *cp, *cq;
+    int		    c, n, x, y, fa, ba;
+    int		    type, style;
+    float	    thickness, wid, ht;
+    float	    lx, ly, rx, ry;
 
     if ((s = create_spline()) == NULL)
 	return (NULL);
@@ -557,13 +561,13 @@ read_splineobject(fp)
 
     n = sscanf(buf, "%*d%d%d%d%d%d%d%d%f%d%d%d%d%d%d",
 	       &s->type, &s->style, &s->thickness, &s->color,
-	       &s->depth, &s->pen, &s->area_fill, &s->style_val, &fa, &ba);
+	       &s->depth, &s->pen, &s->fill_style, &s->style_val, &fa, &ba);
     if (n != 10) {
 	put_msg(Err_incomp, "spline", line_no);
 	free((char *) s);
 	return (NULL);
     }
-    s->area_fill = FILL_CONVERT(s->area_fill);
+    s->fill_style = FILL_CONVERT(s->fill_style);
     /* change depths < 0 to 0 */
     if (s->depth < 0)
 	s->depth = 0;
@@ -672,12 +676,12 @@ read_splineobject(fp)
 
 static F_text  *
 read_textobject(fp)
-    FILE           *fp;
+    FILE	   *fp;
 {
-    F_text         *t;
-    int             n;
-    int             ignore = 0;
-    char            s[BUF_SIZE], s_temp[BUF_SIZE], junk[2];
+    F_text	   *t;
+    int		    n;
+    int		    ignore = 0;
+    char	    s[BUF_SIZE], s_temp[BUF_SIZE], junk[2];
     float	    tx_size, tx_height, tx_length;
 
     if ((t = create_text()) == NULL)
@@ -726,7 +730,7 @@ read_textobject(fp)
 	    n = sscanf(buf, "%[^\1]%[\1]", s_temp, junk);
 	    /* Safety check */
 	    if (strlen(s) + 1 + strlen(s_temp) + 1 > BUF_SIZE) {
-		/* Too many characters.  Ignore the rest. */
+		/* Too many characters.	 Ignore the rest. */
 		ignore = 1;
 	    }
 	    if (!ignore)
@@ -761,7 +765,7 @@ read_textobject(fp)
 }
 
 get_line(fp)
-    FILE           *fp;
+    FILE	   *fp;
 {
     while (1) {
 	if (NULL == fgets(buf, BUF_SIZE, fp)) {
@@ -775,9 +779,9 @@ get_line(fp)
 }
 
 skip_comment(fp)
-    FILE           *fp;
+    FILE	   *fp;
 {
-    char            c;
+    char	    c;
 
     while ((c = fgetc(fp)) == '#')
 	skip_line(fp);
@@ -786,7 +790,7 @@ skip_comment(fp)
 }
 
 skip_line(fp)
-    FILE           *fp;
+    FILE	   *fp;
 {
     while (fgetc(fp) != '\n') {
 	if (feof(fp))
