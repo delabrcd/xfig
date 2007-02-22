@@ -43,8 +43,7 @@
 
 <!-- *********************************************** -->
 
-<h2><a name="faq-running">Problems when running <b>xfig</b> or
-<b>TransFig (fig2dev)</b></a></h2>
+<h2><a name="faq-running">Problems when running <b>xfig</b> or <b>TransFig (fig2dev)</b></a></h2>
 
 <ol>
 <li><a href="#nocolor">I don't get any color in <b>xfig</b>'s buttons</a>
@@ -54,7 +53,7 @@
 
 <p>
 <li><a href="#action">A warning about some action not found occurs,
-like ``Warning: Actions not found: ModeOpenCompound''</a>
+like &quot;Warning: Actions not found: ModeOpenCompound&quot;</a>
 
 <p>
 <li><a href="#xclip">An X error occurs with <tt>X_SetClipRectangles</tt> as the Request code,
@@ -84,7 +83,7 @@ the exported PostScript file with ghostscript 5.50</a>
 
 <p>
 <li><a href="#grafbase">I am exporting to the MetaFont format and the generated
-file refers to the ``grafbase.mf'' file which I don't have</a>
+file refers to the &quot;grafbase.mf&quot; file which I don't have</a>
 
 <p>
 <li><a href="#pulldown">My pulldown menus don't work under CDE</a>
@@ -98,18 +97,35 @@ export to EPS, GIF, etc., although they look fine on the screen</a>
 
 <p>
 <li><a href="#superclass">xfig says:
-	"Warning: Representation size 4 must match superclass's to override underline"</a>
+	&quot;Warning: Representation size 4 must match superclass's to override underline&quot;</a>
 
 <p>
 <li><a href="#en_US">fig2dev says:
-	"can't open file: /usr/X11R6/lib/X11/fig2dev/en_US.ps" 
+	&quot;can't open file: /usr/X11R6/lib/X11/fig2dev/en_US.ps&quot; 
 	(or some other xx_xx.ps file)</a>
 <p>
 <li><a href="#XUSERFILESEARCHPATH">xfig won't find the app-defaults file in my personal directory
 even though I have set the <b>XAPPLRESDIR</b> environment variable</a>
+
 <p>
 <li><a href="#multi-key">I can't enter special characters such as a-umlaute in the popup
-		editor for text objects.
+		editor for text objects.</a>
+<p>
+<li><a href="#validator">When I enter values in the &quot;spinner&quot; widgets,
+the digits are entered in reverse order.</a>
+
+<p>
+<li><a href="#ogonek">LaTeX asks for missing macro \k <i><b>or</b></i> the ogonek diacritic mark
+isn't visible.</a>
+
+<p>
+<li><a href="#fonts">Text is positioned differently when exported than it is on the screen</a>
+
+<p>
+<li><a href="#fvwm">I cannot type anything into the popup dialogs in xfig when I use the fvwm window manager</a>
+
+<p>
+<li><a href="#arrow_scroll">When I start xfig I get the message: &quot;Warning: Actions not found: StartScroll&quot;</a>
 
 </ol>
 
@@ -120,7 +136,7 @@ even though I have set the <b>XAPPLRESDIR</b> environment variable</a>
 
 <ol>
 <li><a href="#alpha">On a DEC Alpha the compiler may complain about something 
-like ``.mask must have pcreg from .frame set if any bits are set in .mask or .fmask''
+like &quot;.mask must have pcreg from .frame set if any bits are set in .mask or .fmask&quot;
 in the file <tt>u_bound.c</tt></a>
 
 <p>
@@ -199,7 +215,7 @@ that version.
 <li>
 <h3><a name="edit_eps">Can I edit PostScript files with <b>xfig</b>?</a></h3>
 
-No, but you can ``paint'' over them with <b>Fig</b> objects to add annotation or other objects.
+No, but you can &quot;paint&quot; over them with <b>Fig</b> objects to add annotation or other objects.
 Or you can convert the PostScript file into the <b>Fig</b> format using
 <a href="installation.html#pstoedit"><b>pstoedit</b></a>
 and then edit the <b>Fig</b> file using <b>xfig</b> in the usual way.
@@ -224,7 +240,7 @@ X-splines allow the user to mix interpolation and approximation
 points in the same curve. More precisely, it means that an X-spline curve
 is neither an interpolated spline nor an approximated one, it is BOTH
 (the behaviour of each point is controlled by one single parameter
-called "shape factor").
+called &quot;shape factor&quot;).
 <p>
 <b>Caveat:</b> Because spline models of previous versions (quadratic B-splines
 and Bezier with hidden points) are no longer supported, curves that are
@@ -249,7 +265,7 @@ There are several files that you need:
 <dt><tt>CompKeyDB</tt>
 <dd>Set the <tt>XFIGLIBDIR</tt> variable in the <tt>Imakefile</tt>
 to the directory you want this file to go into, or specify the file
-with resource ``<tt>Fig*keyFile: <i>your_lib_area</i>/CompKeyDB</tt>''.
+with resource &quot;<tt>Fig*keyFile: <i>your_lib_area</i>/CompKeyDB</tt>&quot;.
 
 <dt><tt>Fig</tt> and <tt>Fig-color</tt> (from the <tt>Fig.ad</tt> 
 and <tt>Fig-color.ad</tt> files)
@@ -272,7 +288,7 @@ where <tt>XFIGLIBDIR</tt> in the Imakefile points.
 <h3><a name="mailing_list">Is there a mailing list or newsgroup specifically for <b>xfig</b>?</a></h3>
 
 There are no mailing lists for <b>xfig</b>, but you may send email 
-to <a href="mailto:xfig-bugs@epb.lbl.gov">xfig-bugs@epb.lbl.gov</a>
+to <a href="mailto:bvsmith@lbl.gov">bvsmith@lbl.gov</a>
 or post questions about it to 
 <a href="news:comp.windows.x">comp.windows.x</a>,
 <a href="news:comp.windows.x.apps">comp.windows.x.apps</a>,
@@ -308,7 +324,7 @@ and/or you don't have the customization resource set.
 <dd>You should install the app-defaults files <tt>Fig</tt> and <tt>Fig-color</tt>
 (<tt>Fig.ad</tt> and <tt>Fig-color.ad</tt> in <b>xfig</b> source distribution)
 into the appropriate directory.
-You should also put the string ``<tt>*customization: -color</tt>''
+You should also put the string &quot;<tt>*customization: -color</tt>&quot;
 in a global resource file that gets loaded into the X server resources
 (<tt>.Xdefaults</tt>), and then restart the X server.
 <p>
@@ -341,7 +357,7 @@ set (libXaw) seem to cause this problem.
 
 <li>
 <h3><a name="action">A warning about some action not found occurs,
-like ``Warning: Actions not found: ModeOpenCompound''</a></h3>
+like &quot;Warning: Actions not found: ModeOpenCompound&quot;</a></h3>
 
 <dl>
 <dt>POSSIBLE CAUSE:
@@ -352,7 +368,7 @@ like ``Warning: Actions not found: ModeOpenCompound''</a></h3>
 <dd>Install the app-default files (<tt>Fig.ad</tt> and <tt>Fig-color.ad</tt>)
 which comes with the <b>xfig</b>.  
 <br>
-This is most easily done with ``<tt>make install</tt>''.
+This is most easily done with &quot;<tt>make install</tt>&quot;.
 </dl>
 
 <hr>
@@ -404,7 +420,7 @@ I always end up with PostScript fonts</a></h3>
 <dt>POSSIBLE CAUSE AND SOLUTION:
 <dd>To put fonts under the control of LaTeX when generating PostScript output,
 you must tag the text object as 
-``<a href="attributes.html#text-flags">special</a>'' and then use
+&quot;<a href="attributes.html#text-flags">special</a>&quot; and then use
 <a href="printing.html#export">Combined PostScript/LaTeX</a> (pstex) 
 output mode.
 This mode forces special text objects to be passed through to LaTeX,
@@ -487,7 +503,7 @@ Get a newer version of Ghostscript.
 
 <li>
 <h3><a name="grafbase">I am exporting to the MetaFont format and the generated
-file refers to the ``grafbase.mf'' file which I don't have</a></h3>
+file refers to the &quot;grafbase.mf&quot; file which I don't have</a></h3>
 <dl>
 <dt>POSSIBLE CAUSE AND SOLUTION:
 <dd>The grafbase.mf file should be on your system if you have MetaFont, but if
@@ -534,7 +550,7 @@ Get a newer version of Ghostscript.
 
 <li>
 <h3><a name="superclass">xfig says:
-	"Warning: Representation size 4 must match superclass's to override underline"</a>
+	&quot;Warning: Representation size 4 must match superclass's to override underline&quot;</a>
 </h3>
 <dl>
 <dt>POSSIBLE CAUSE AND SOLUTION:
@@ -544,9 +560,10 @@ Get a newer version of Ghostscript.
 Don't mix the 2D and 3D widget libraries (Xaw and Xaw3d) and header files.
 </dl>
 
+<!-- ********************** -->
 <li>
 <h3><a name="en_US">fig2dev says:
-	"can't open file: /usr/X11R6/lib/X11/fig2dev/en_US.ps" 
+	&quot;can't open file: /usr/X11R6/lib/X11/fig2dev/en_US.ps&quot; 
 	(or some other xx_xx.ps file)</a>
 </h3>
 <dl>
@@ -558,6 +575,7 @@ for a non-existent font encoding file.
 Download newer versions of xfig and transfig RPMs from RedHat.
 </dl>
 
+<!-- ********************** -->
 <li>
 <h3><a name="XUSERFILESEARCHPATH">
 	xfig won't find the app-defaults file in my personal directory
@@ -567,12 +585,13 @@ Download newer versions of xfig and transfig RPMs from RedHat.
 <dt>POSSIBLE CAUSE AND SOLUTION:
 <dd>If you are using Sun's Openwindows X server you need to set a different 
 environment variable, <b>XUSERFILESEARCHPATH</b> to point to your personal
-app-defaults directory, and append a "%N" to the path, e.g. 
+app-defaults directory, and append a &quot;%N&quot; to the path, e.g. 
 <blockquote>
 <tt>setenv XUSERFILESEARCHPATH $HOME/app-defaults/<b>%N</b></tt>
 </blockquote>
 </dl>
 
+<!-- ********************** -->
 <li>
 <h3><a name="multi-key">I can't enter special characters such as a-umlaute in the popup
 		editor for text objects.</h3>
@@ -585,22 +604,84 @@ The <b>CompKeyDB</b> file may not be installed.  This is the file that tells
 xfig how to handle the multi-key sequences to produce the Latin-1 characters
 such as 
 <IMG SRC="images/a-umlaut.png" ALT="a umlaut" >
-(a-umlaute), <IMG SRC="images/c-cedilla.png" ALT="c cedilla" > 
+(a-umlaute), <IMG SRC="images/c-cedilla.png" ALT="c cedilla" align=top> 
 (c-cedilla), etc. You should do a <tt>make install</tt> to fully
 install xfig and its support files.
 <li>
-Your keyboard doesn't have a <b>"Multi_key"</b> key.  On some systems
-(e.g. Sun Sparcstations), there is a compose key or "Multi_key" which handles these sequences.
-If your keyboard doesn't have such a key you can remap another key (e.g. the "Windows"
+Your keyboard doesn't have a <b>&quot;Multi_key&quot;</b> key.  On some systems
+(e.g. Sun Sparcstations), there is a compose key or &quot;Multi_key&quot; which handles these sequences.
+If your keyboard doesn't have such a key you can remap another key (e.g. the &quot;Windows&quot;
 keys, known to the X server as <b>Super_L</b> and <b>Super_R</b> to the Multi_key using 
 the <b>xmodmap</b> program:
 <p>
 <tt>
-xmodmap -e "keysym Super_L = Multi_key"
+xmodmap -e &quot;keysym Super_L = Multi_key&quot;
 <br>
-xmodmap -e "keysym Super_R = Multi_key"
+xmodmap -e &quot;keysym Super_R = Multi_key&quot;
 </tt>
 </ol>
+</dl>
+
+<!-- ********************** -->
+<li>
+<h3><a name="validator">When I enter values in the &quot;spinner&quot; widgets,
+the digits are entered in reverse order.</h3>
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd>
+There is a bug in the RedHat Xaw Athena widget set.  Any of the Xaw3d (3-D) Athena
+widget sets will work properly.
+Uncomment the  &quot;#define XAW3D&quot; line in the Imakefile and recompile xfig 
+according to the instructions in the <tt>README</tt> file.
+</dl>
+
+<!-- ********************** -->
+<li>
+<h3><a name="ogonek">LaTeX asks for missing macro \k <i><b>or</b></i> the ogonek diacritic mark
+isn't visible.</h3>
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd>
+Define the macro <tt>\def\k#1{\c{#1}}</tt> before the <tt>\begin{document}</tt> directive
+in your LaTeX document.
+</dl>
+
+<!-- ********************** -->
+<li>
+<h3><a name="fonts">Text is positioned differently when exported than it is on the screen</h3>
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd>
+Your X server (screen) fonts may not be the same as the PostScript fonts that fig2dev
+uses when exporting.  If you use the ghostscript fonts in your X server things will
+improve.  To do this, see 
+<a href="installation.html#install-ghostfonts">Installing Ghostscript's Type1 fonts under X.</a>
+</dl>
+
+<!-- ********************** -->
+<li>
+<h3><a name="fvwm">I cannot type anything into the popup dialogs in xfig when I use the fvwm window manager</h3>
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd>
+There have been reports of this problem when using the fvwm window manager, possibly under Cygwin.
+Try mwm or twm or KDE.
+</dl>
+
+<!-- ********************** -->
+<li>
+<h3><a name="arrow_scroll">When I start xfig I get the message: &quot;Warning: Actions not found: StartScroll&quot;</h3>
+<dl>
+<dt>POSSIBLE CAUSE AND SOLUTION:
+<dd>
+When the Xaw or Xaw3d Athena widget sets are compiled with the <b><t>ARROW_SCROLLBAR</t></b> style of
+scrollbars there is no <t>StartScroll</t> action and you won't be able to scroll using the 
+wheel on the mouse.  
+If you want to be able to scroll using the wheel, you must recompile the Xaw library from 
+sources, disabling the <b><t>ARROW_SCROLLBAR</t></b> option.
+<br>
+From xfig version 3.2.5 on, it checks if this action exists and doesn't give the warning.
+</dl>
 
 </ol>
 
@@ -615,8 +696,8 @@ xmodmap -e "keysym Super_R = Multi_key"
 
 <li>
 <h3><a name="alpha">On a DEC Alpha the compiler may complain about something 
-about something like ``.mask must have pcreg from .frame set if any 
-bits are set in .mask or .fmask''
+about something like &quot;.mask must have pcreg from .frame set if any 
+bits are set in .mask or .fmask&quot;
 in the file <tt>u_bound.c</tt></a></h3>
 
 <dl>
@@ -658,7 +739,7 @@ and the way X11 builds the shared Xmu library.
 <dt>SOLUTION:
 <dd>It doesn't affect the operation of <b>xfig</b> and you can ignore it.
 <p>
-Or you may compile with ``<tt>-Bstatic -lXmu -Bdynamic</tt>''.
+Or you may compile with &quot;<tt>-Bstatic -lXmu -Bdynamic</tt>&quot;.
 <p>
 To really solve the problem if you are using OpenWindows 3.0
 (X11R4-based Xt), please contact your local Sun office and request the
@@ -791,13 +872,13 @@ but your Intrinsics library <b>does</b> have those components.
 or use your system's 2D Athena widgets (Xaw).
 The latter is acheived by:
 <br>
-1. commenting out the "XAWLIB = -lXaw3d" line in the Imakefile,
+1. commenting out the &quot;XAWLIB = -lXaw3d&quot; line in the Imakefile,
 <br>
-2. doing a "rm w_menuentry.o",
+2. doing a &quot;rm w_menuentry.o&quot;,
 <br>
-3. "make Makefile" 
+3. &quot;make Makefile&quot; 
 <br>
-4. "make"
+4. &quot;make&quot;
 <hr>
 
 [ <a href="contents.html">Contents</a> |

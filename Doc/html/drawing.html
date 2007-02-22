@@ -36,7 +36,6 @@ after selecting a drawing mode.
 <dt><a href="#polyline"><img src="images/polyline-button.png"
     align="middle" alt="[Polyline]">
   Polylines and Dimension lines</a>
-<img src="images/pict-new.png" alt="New">
 
 <dt><a href="#polygon"><img src="images/polygon-button.png"
     align="middle" alt="[Polygon]">
@@ -77,7 +76,12 @@ The image on the button will turn negative, indicating that it is selected.
 Settings in the <a href="attributes.html">Attribute Panel</a> will
 be applied to newly created objects,
 so users should set those attributes before creating new objects.
-<p><img src="images/pict-new.png" alt="New">
+<p>
+<img src="images/pict-info.png" alt="">
+For overlapping objects, the depth attribute is important for <b>xfig</b> to 
+know the drawing order.  Please see <a href="layers.html">Layers (Depths)</a>
+for details.
+<p>
 Predefined styles may be created by the user by using the 
 <a href="main_menus.html#manage-styles">style manager</a>.
 <p>
@@ -296,9 +300,7 @@ See also <a href="#spline">About Spline Curves</a>.
 
 <hr>
 <dt><img src="images/polyline-button.png" alt="">
-  <a name="polyline">(POLYLINES and Dimension Lines
-<img src="images/pict-new.png" alt="New">
-  )</a>
+  <a name="polyline">(POLYLINES and Dimension Lines)</a>
 <dd><h3>Polylines</h3>
 Create polylines (line segments connecting a sequence of points).
 A simple line segment or point may also be created with this function.
@@ -374,11 +376,11 @@ for most <b>Fig</b> objects being drawn.
 <a href="attributes.html#arrow-type">arrow type</a>
 </dl>
 
-<dd><h3>Dimension Lines <img src="images/pict-new.png" alt="New"> </h3>
+<dd><h3>Dimension Lines</h3>
 Dimension lines are lines that show length and have one or more of the following:
 <ul>
 <li>Text surrounded by a box showing the length of the line
-<li>End "ticks" perpendicular to the line
+<li>End &quot;ticks&quot; perpendicular to the line
 <li>Arrowheads at either or both ends of the line
 </ul>
 To create a dimension line, hold down the <b>Shift</b> key and press
@@ -386,7 +388,7 @@ mouse button 1 on the first endpoint of the line and again at the
 other endpoint.  <b>xfig</b> will automatically calculate the length
 of the line and label it <i>in the units currently selected for the rulers</i>.
 <p>
-By default, end "ticks", arrowheads and a box around the text are 
+By default, end &quot;ticks&quot;, arrowheads and a box around the text are 
 automatically included in the dimension line, but these are controlled
 in the attributes listed below.
 Here are several examples of dimension lines:
@@ -673,7 +675,7 @@ Click mouse button 1 (`posn cursor') at the desired position on the canvas
 to specify the position where the text should be placed,
 then enter text from the keyboard, or to paste text already selected from
 another application (the <i>PRIMARY cut buffer</i>),
-press the shift key and mouse button 2 <img src="images/pict-new.png" Alt="New">, 
+press the shift key and mouse button 2, 
 or F18 (the `Paste' key on Sun Workstations), or F20.
 Selecting <i>Paste Text</i> from the 
 <a href="main_menus.html#edit-menu"><i>Edit</i> menu</a> 
@@ -690,7 +692,7 @@ counter-clockwise.
 <p>
 It is possible to enter Latin-1 glyphs 
 such as `<img src="images/a-umlaut.png" alt="a umlaut">' or
-`<img src="images/c-cedilla.png" alt="c cedilla">' 
+`<img src="images/c-cedilla.png" alt="c cedilla" align=top>' 
 (Compose characters) using the COMPOSE (META) key.
 See <a href="#compose-char">Latin-1 Characters</a> about this.  These tables
 also show the keyboard mapping for glyphs from the Symbol font.
@@ -735,36 +737,46 @@ This doesn't work for right justified or centered text.
 The following editing facilities are available:
 <br>
 <table >
-<tr><th><tt>Control-H</tt><td>[Backspace]<td>Delete a character to the
+<tr><th><tt>&lt;Backspace&gt;</tt> or <tt>Control-H</tt><td>Delete a character to the
 left of the cursor.</tr>
-<tr><th><tt>Control-D</tt><td>[Delete]<td>Delete a character to the
+
+<tr><th><tt>&lt;DEL&gt;</tt> or <tt>Control-D</tt><td>Delete a character to the
 right of the cursor.</tr>
-<tr><th><tt>Control-X</tt><td><td>Delete all the characters to the left
+
+<tr><th><tt>Control-X</tt><td>Delete all the characters to the left
 of the cursor.</tr>
-<tr><th><tt>Control-K</tt><td><td>Delete all the characters to the right
+
+<tr><th><tt>Control-K</tt><td>Delete all the characters to the right
 of the cursor.</tr>
-<tr><th><tt>Control-A</tt><td>[Home]<td>Move cursor of the start of the
+
+<tr><th><tt>&lt;Home&gt;</tt> or <tt>Control-A</tt><td>Move cursor of the start of the
 text.</tr>
-<tr><th><tt>Control-E</tt><td>[End]<td>Move cursor of the end of the
+
+<tr><th><tt>&lt;End&gt;</tt> or <tt>Control-E</tt><td>Move cursor of the end of the
 text.</tr>
-<tr><th><tt>Control-B</tt><td>[&lt;-]<td>Move cursor left one
+
+<tr><th><tt>&lt;Left&gt;</tt> or <tt>Control-B</tt><td>Move cursor left one
 character.</tr>
-<tr><th><tt>Control-F</tt><td>[-&gt;]<td>Move cursor right one
+
+<tr><th><tt>&lt;Right&gt;</tt> or <tt>Control-F</tt><td>Move cursor right one
 character.</tr>
-<tr><th><tt>Control-M</tt><td>[Return]<td>Finish entering the text and
+
+<tr><th><tt>&lt;Return&gt;</tt> or <tt>Control-M</tt><td>Finish entering the text and
 start entering text on the next line.<br>
 See also <a href="attributes.html#text-step">TEXT STEP</a>.</tr>
-<tr><th valign=top><tt>F18</tt><br>
- or <tt>F20</tt><td>[Paste]<td>Paste text from the <i>PRIMARY cut
+
+<tr><th valign=top><tt>&lt;Paste&gt;</tt> or <tt>&lt;F18&gt;</tt><br>
+ or <tt>&lt;F20&gt;</tt><td>Paste text from the <i>PRIMARY cut
  buffer</i> (cut/paste buffer of <b>xterm</b>).<br>
  Selecting <i>Paste Text</i> from the 
  <a href="main_menus.html#edit-menu"><i>Edit</i> menu</a> 
  will also perform this function, as will <b>Shift+Mouse Button 2</b>.</tr>
- <tr><th><tt>Alt</tt><br> or <tt>Meta</tt>)<td>[Compose]<td>This key is
- used to enter Latin-1 character
- such as `<img src="images/a-umlaut.png" alt="a umlaut">' or
- `<img src="images/c-cedilla.png" alt="c cedilla">'.<br>
- See also <a href="#compose-char">Latin-1 Characters</a>.</tr>
+
+ <tr><th><tt>&lt;Compose&gt;</tt> or <tt>&lt;Alt&gt;</tt> or <tt>&lt;Meta&gt;</tt>
+ 		<td>This key is used to enter Latin-1 character
+	 such as `<img src="images/a-umlaut.png" alt="a umlaut">' or
+	 `<img src="images/c-cedilla.png" alt="c cedilla" align=top>'.<br>
+	 See also <a href="#compose-char">Latin-1 Characters</a>.</tr>
  </table>
 
 <p>
@@ -802,13 +814,17 @@ on the canvas where you want it placed.
 </blockquote>
 <p>
 In the panel there is a pull-down menu of the
-<a href="#availablelibraries">available libraries</a>.  Select
-one and the library will automatically be loaded.  The status window will show
+<a href="#availablelibraries">available libraries</a>.  
+Select one and the library will automatically be loaded.  The status window will show
 how many objects it contains after it loads the library,
 and the icons of the library objects will appear in a view box.
 Double clicking on an icon or single clicking and pressing the <b>Select Object</b>
 button will select that object and pop down the panel.
 <p>
+A diamond on the left side of the menu entry indicates that objects are at
+that level in addition to subdirectories:
+<img src="images/libpulldown.png" align=top>
+<br>
 The size of the icons may be chosen from a pulldown menu.
 The options are 40, 60, 80, 100 and 120 pixels.
 <p>
@@ -817,7 +833,6 @@ chose from the library appear under the curser.  Simply click mouse
 button 1 (`place object') to place it anywhere on the canvas.
 This may be repeated for the same object.
 <p>
-<img src="images/pict-new.png" alt="New">
 If you wish to place the object at the position it was originally created, e.g. for 
 laser printer labels, hold down the <b>Shift</b> key and press mouse 
 button 3 (`place at orign posn') to place it.
@@ -956,7 +971,7 @@ Welding - common welding patterns and errors
 It is hoped that users will contribute Fig objects to the libraries to
 expand and enhance them for all <b>xfig</b> users.
 If you wish to contribute any Fig objects to existing or new libraries, please send
-them to me at <a href="mailto:xfigmail@epb.lbl.gov">xfigmail@epb.lbl.gov</a>.
+them to me at <a href="mailto:bvsmith@lbl.gov">bvsmith@lbl.gov</a>.
 You may restrict their usage by users if you
 wish, but all will benefit if you allow free usage, i.e. copying, using them
 in published reports, etc.
@@ -984,7 +999,7 @@ or <tt>Fig.library_dir</tt> resource.
 and all libraries in the directory and any subdirectories will become available.
 <p>
 The default value of <tt>library_dir</tt> is
-``<tt>$XFIGLIBDIR/Libraries</tt>'', where libraries comes
+&quot;<tt>$XFIGLIBDIR/Libraries</tt>&quot;, where libraries comes
 with <b>xfig</b> will be installed automatically
 when <a href="installation.html">installing <b>xfig</b></a>.
 So, you don't have to specify <tt>library_dir</tt> 
@@ -997,11 +1012,11 @@ which contains list of libraries.
 <p>
 Using this method, the names of the libraries are
 simply the names of the directories;
-e.g.  if the resource ``<tt>Fig.library_dir: /xfig/Libraries</tt>''
+e.g.  if the resource &quot;<tt>Fig.library_dir: /xfig/Libraries</tt>&quot;
 is defined, the <tt>/xfig/Libraries/Flowchart</tt> directory
-will result in the library name ``Flowchart'',
+will result in the library name &quot;Flowchart&quot;,
 and the <tt>/xfig/Libraries/Electrical/Physical</tt> directory
-will result in the library name ``Electrical - Physical''.
+will result in the library name &quot;Electrical - Physical&quot;.
 
 <h3>Method 2</h3>
 
@@ -1070,7 +1085,7 @@ Users may select from four types of spline curves on the
 It is also possible to change the type of spline curves using
 <a href="editing.html#spline-line">SPLINE &lt;-&gt; LINE</a>, 
 or adjust the shape of the curve by adjusting
-``<a href="#xspline">shape factor</a>'' after curve has been created.
+&quot;<a href="#xspline">shape factor</a>&quot; after curve has been created.
 <p>
 <dl>
 <dd><img src="images/blueballdot.png" align=bottom alt="-">
@@ -1139,8 +1154,8 @@ the following Latin-1 glyphs may be entered using the COMPOSE (META) key.
 For example to enter `<img src="images/a-umlaut.png" alt="a umlaut">',
 press and release the COMPOSE key (or META or ALT key),
 enter the character `<tt>a</tt>',
-and then the character `<tt>"</tt>' (double quote).
-To enter `<img src="images/c-cedilla.png" alt="c cedilla">',
+and then the character `<tt>&quot;</tt>' (double quote).
+To enter `<img src="images/c-cedilla.png" alt="c cedilla" align=top>',
 enter COMPOSE, `<tt>c</tt>' and `<tt>,</tt>'.
 <p>
 <blockquote>

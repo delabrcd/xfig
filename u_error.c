@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -22,12 +22,19 @@
 #include "patchlevel.h"
 #include "version.h"
 
+#include "object.h"
+#include "f_save.h"
+#include "f_util.h"
+#include "w_cmdpanel.h"
+
 #define MAXERRORS 6
 #define MAXERRMSGLEN 512
 
 static int	error_cnt = 0;
-error_handler(err_sig)
-    int		    err_sig;
+
+void emergency_quit (Boolean abortflag);
+
+void error_handler(int err_sig)
 {
     fprintf(stderr,"\nxfig%s.%s: ",FIG_VERSION,PATCHLEVEL);
     switch (err_sig) {
@@ -52,9 +59,7 @@ error_handler(err_sig)
     emergency_quit(True);
 }
 
-X_error_handler(d, err_ev)
-    Display	   *d;
-    XErrorEvent	   *err_ev;
+void X_error_handler(Display *d, XErrorEvent *err_ev)
 {
     char	    err_msg[MAXERRMSGLEN];
     char	    ernum[10];
@@ -72,8 +77,7 @@ X_error_handler(d, err_ev)
     emergency_quit(True);
 }
 
-emergency_quit(abortflag)
-    Boolean    abortflag;
+void emergency_quit(Boolean abortflag)
 {
     if (++error_cnt > MAXERRORS) {
 	fprintf(stderr, "xfig: too many errors - giving up.\n");
@@ -100,11 +104,7 @@ emergency_quit(abortflag)
 
 /* ARGSUSED */
 void
-my_quit(w, event, params, num_params)
-    Widget     w;
-    XEvent    *event;
-    String    *params;
-    Cardinal  *num_params;
+my_quit(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
     if (event && event->type == ClientMessage &&
 #ifdef WHEN_SAVE_YOURSELF_IS_FIXED

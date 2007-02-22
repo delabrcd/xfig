@@ -8,12 +8,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -24,17 +24,19 @@ extern Boolean	save_layers[MAX_DEPTH+1];
 extern Widget	layer_form;
 extern Boolean	gray_layers;
 
-extern void	init_depth_panel();
-extern void	setup_depth_panel();
-extern void	update_layers();
-extern void	toggle_show_depths();
-extern	void	save_active_layers(), restore_active_layers();
-extern	void	save_counts(), save_counts_and_clear(), restore_counts();
-extern	void	save_depths(), restore_depths();
+#define active_layer(layer) active_layers[layer]
 
-extern Boolean	active_layer();
-extern Boolean	any_active_in_compound();
-extern void	reset_layers();
-extern void	reset_depths();
+extern void	init_depth_panel(Widget parent);
+extern void	setup_depth_panel(void);
+extern void	update_layers(void);
+extern void	toggle_show_depths(void);
+extern	void	save_active_layers(void), restore_active_layers(void);
+extern	void	save_counts(void), save_counts_and_clear(void), restore_counts(void);
+extern	void	save_depths(void), restore_depths(void);
+
+extern Boolean	any_active_in_compound(F_compound *cmpnd);
+extern void	reset_layers(void);
+extern void	reset_depths(void);
 
 extern int	LAYER_WD, LAYER_HT;
+extern void update_layerpanel ();

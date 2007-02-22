@@ -24,7 +24,10 @@ and export them to various languages and formats such as PostScript, GIF, JPEG, 
 <ul>
 <li><a href="#install-xfig">Getting and Installing Xfig</a>
 <li><a href="#install-transfig">Installing TransFig/fig2dev</a>
+<li><a href="#install-xfigwin">Xfig On Microsoft Windows</a>
+<li><a href="#install-xfigmac">Xfig On the MacIntosh</a>
 <li><a href="#install-misc">Installing Other Software</a>
+<li><a href="#install-ghostfonts">Installing Ghostscript's Type 1 fonts under X</a>
 </ul>
 <img src="images/blueballdot.png" align=bottom alt="-">
 <a href="#related-software">Related Software</a>
@@ -45,25 +48,24 @@ see also <a href="i18n.html">Internationalization</a>.
 
 <p>
 <ol>
-<li>Get the source of <b>xfig</b> (<tt>xfig.3.2.4.full.tar.gz</tt>)
+<li>Get the source of <b>xfig</b> (<tt>xfig.3.2.5-alpha3.full.tar.gz</tt>)
 and <i>gunzip</i> and <i>untar</i> the file:
 <br>
 Either do:
 <ol>
-<li><tt>gunzip -c xfig.3.2.4.full.tar.gz | tar xvf -</tt>
+<li><tt>gunzip -c xfig.3.2.5-alpha3.full.tar.gz | tar xvf -</tt>
 <br><b>or</b>
-<li><tt>gunzip xfig.3.2.4.full.tar.gz</tt>
+<li><tt>gunzip xfig.3.2.5-alpha3.full.tar.gz</tt>
 <br>
-<tt>tar xvf xfig.3.2.4.full.tar</tt>
+<tt>tar xvf xfig.3.2.5-alpha3.full.tar</tt>
 </ol>
 <p>
 <a name="getting_xfig">You can get the source from</a>
-<a href="ftp://epb.lbl.gov/xfig">ftp://epb.lbl.gov/xfig</a>,
 <a href="http://www.xfig.org/xfigdist">http://www.xfig.org/xfigdist</a>,
 <a href="ftp://ftp.x.org/contrib/applications/drawing_tools/xfig/">
 ftp://ftp.x.org/contrib/applications/drawing_tools/xfig</a>
 and its
-<a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">mirror sites</a>
+<a href="http://www.x.org/Downloads.html">mirror sites</a>
 or from any CTAN machine
 (<a href="ftp://ftp.tex.ac.uk/pub/archive/graphics/">
 ftp://ftp.tex.ac.uk/pub/archive/graphics</a>,
@@ -77,14 +79,14 @@ If you want to install <b>xfig</b> in a directory other than
 the default X11 binary directory:
 <dl>
 <dd><img src="images/blueballdot.png" align=bottom alt="-">
-add <b>"BINDIR=&lt;directory&gt;"</b> at the
+add <b>&quot;BINDIR=&lt;directory&gt;&quot;</b> at the
 top of the Imakefile, where <b>&lt;directory&gt;</b> is the full path of the
 directory in which you want <b>xfig</b> to be installed.
 <dd><img src="images/blueballdot.png" align=bottom alt="-">
 Also, you may have to redefine <b>MKDIRHIER</b> because make looks for it relative to
 the <b>BINDIR</b> variable.
 <br>
-Set it to: <b>"MKDIRHIER = /bin/sh &lt;path&gt;/mkdirhier"</b>
+Set it to: <b>&quot;MKDIRHIER = /bin/sh &lt;path&gt;/mkdirhier&quot;</b>
 where &lt;path&gt; is the path to the <b>mkdirhier</b> script or program.
 <dd><img src="images/blueballdot.png" align=bottom alt="-">
 Finally, uncomment and change <b>XAPPLOADDIR</b> to the directory where you want
@@ -93,7 +95,7 @@ environment variable <b>XAPPLRESDIR</b> in your shell to point to this directory
 <br>
 On Sun systems running Openwindows you probably need to set the environment
 variable <b>XUSERFILESEARCHPATH</b> to point to your app-defaults directory, and 
-append a "%N" to the path, e.g. /users/me/xfig/app-defaults/%N
+append a &quot;%N&quot; to the path, e.g. /users/me/xfig/app-defaults/%N
 </dl>
 
 <dd><img src="images/redball.png" align=bottom alt="-">
@@ -169,15 +171,13 @@ uncomment `<tt>NEED_STRERROR = -DNEED_STRERROR</tt>'.
 <p>
 <a name="wheelmouse"></a>
 <dd><img src="images/redball.png" align=bottom alt="-">
-<img src="images/pict-new.png" alt="New">
-If you have a wheel mouse, uncomment the `<tt>#define WHEELMOUSE</tt>' line.
-See <a href="miscellaneous.html#wheelmouse">wheel mouse</a>
-for a description of the wheel function in xfig.
+If you have a wheel mouse, see <a href="miscellaneous.html#wheelmouse">wheel mouse</a>
+for a description of the wheel functions in xfig.
 
 <p>
 <dd><img src="images/redball.png" align=bottom alt="-">
 If you want to enable internationalization facility of <b>xfig</b>,
-uncomment ``<tt>#define I18N</tt>'' (remove (<tt>XCOMM</tt>).
+uncomment &quot;<tt>#define I18N</tt>&quot; (remove (<tt>XCOMM</tt>).
 See <a href="i18n.html">Internationalization</a> for more information.
 <p>
 <b>Suggestion to Package Maintainers:</b>
@@ -234,7 +234,7 @@ of <b>fig2dev</b>,
 see also <a href="i18n.html">Internationalization</a>.
 <p>
 <ol>
-<li>Get the source of <b>TransFig</b> (<tt>transfig.3.2.4.tar.gz</tt>),
+<li>Get the source of <b>TransFig</b> (<tt>transfig.3.2.5-alpha3.tar.gz</tt>),
 and <i>untar</i> the file.
 It should be available at the same site as <a href="#install-xfig"><b>xfig</b></a>.
 
@@ -313,7 +313,7 @@ On HP-UX, you may need to reduce optimization level to <tt>+O2</tt>.
 <p>
 <dd><img src="images/redball.png" align=bottom alt="-">
 If you want to enable internationalization facility of <b>fig2dev</b>,
-uncomment ``<tt>#define I18N</tt>'' (remove (<tt>XCOMM</tt>).
+uncomment &quot;<tt>#define I18N</tt>&quot; (remove (<tt>XCOMM</tt>).
 See <a href="i18n.html">Internationalization</a> for more information.
 </dl>
 <p>
@@ -324,7 +324,7 @@ See <tt>README</tt> and <tt>Imakefile</tt> for more details.
 
 <p>
 <li>Type <font color="aa00aa"><kbd>make Makefiles</kbd></font> to generate the
-<tt>Makefile</tt>s.  Note the ``s'' in ``Makefiles''.
+<tt>Makefile</tt>s.  Note the &quot;s&quot; in &quot;Makefiles&quot;.
 
 <p>
 <li>Type <font color="aa00aa"><kbd>make</kbd></font> to compile
@@ -340,7 +340,32 @@ to copy the manual pages to the appropriate directory.
 </ol>
 
 
-<h2><a name="install-misc">Installing Other Software</a></h2>
+<a name="install-xfigwin"></a>
+<hr>
+<h2>
+Xfig On Microsoft Windows</h2>
+There is a version of <b>xfig</b> ported to run under Microsoft Windows using the Cygnus X server.
+See:
+<a href="http://aquarius.franken.de/software/develop/gnuwin32/cygwin/porters/Hirmke_Michael/GNUWin32-links.html">
+Xfig for Windows</a>.
+
+Another version that was ported by Wayne (Wenguang) Wang is:
+<a href="http://www.cs.usask.ca/grads/wew036/latex/xfig.html" target=_top>Wayne Wang's xfig for Windows</a>.
+
+<p>
+<b>Both need an X server</b> (e.g. Hummingbird Exceed, or Cygwin to run.  See:
+<a href="http://www.cygwin.com/xfree/">http://www.cygwin.com/xfree/)</a>
+
+<a name="install-xfigmac"></a>
+<hr>
+<h2>Xfig On the MacIntosh</h2>
+There is a version of <b>xfig</b> ported to run on the MacIntosh under the Darwin port of XFree86.
+See:
+<a href="http://fink.sourceforge.net/pdb/package.php/xfig">http://fink.sourceforge.net/pdb/package.php/xfig</a>
+
+<a name="install-misc"></a>
+<hr>
+<h2>Installing Other Software</h2>
 
 In addition to <b>xfig</b> and <b>transfig</b> (<b>fig2dev</b>).
 you will also need to install
@@ -383,11 +408,53 @@ Be sure that it includes <b>ppmtojpeg</b>.  This may be found only in the newer
 releases, such as 9.0 and 9.1
 </ul>
 
-
+<a name="install-ghostfonts"></a>
 <img src="images/blueramp.png" alt="-">
-<h2><a name="related-software">Related Software</a></h2>
+<h2>Installing Ghostscript's Type 1 fonts under X</h2>
 
-<h2><a name="related-library">Libraries</a></h2>
+You can use Ghostscript's high quality Type 1 fonts on your X server (and therefore in xfig).
+
+Copy the necessary files from Ghostscript's fonts directory to /usr/X11R6/lib/X11/fonts/Type1/ (or wherever your X server Type 1 fonts are).
+
+<pre>
+$ cp /usr/share/ghostscript/fonts/*l.pfb /usr/X11R6/lib/X11/fonts/Type1
+</pre>
+
+Append the file
+<tt>/usr/share/ghostscript/fonts/fonts.scale</tt> to <tt>Type1/fonts.scale</tt>. 
+The first line in the latter file contains is the number of fonts listed in that file.
+Change that number to include the additional fonts.
+
+<p>
+Now run <tt>mkfontdir(1)</tt> to update the font database:
+
+<pre>
+$ mkfontdir
+</pre>
+
+<p>
+If your operating system has the <tt>chkfontpath</tt> command, alternative is to add
+the Ghostscript font directory to the X server font path:
+
+<pre>
+chkfontpath -a /usr/share/ghostscript/fonts/fonts/
+</pre>
+
+In either case, if your X-server is running already you have to tell it to reread the font databases with
+ <tt>xset(1)</tt>:
+
+<pre>
+$ xset fp rehash
+</pre>
+
+
+
+<a name="related-software"></a>
+<img src="images/blueramp.png" alt="-">
+<h2>Related Software</h2>
+
+<a name="related-library"></a>
+<h3>Libraries</h3>
 
 <dl>
 <dt>
@@ -399,7 +466,7 @@ It is available from
 <a href="ftp://ftp.x.org/contrib/widgets/">
 ftp://ftp.x.org/contrib/widgets</a>
 and its
-<a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">mirror sites</a>
+<a href="http://www.x.org/Downloads.html">mirror sites</a>
 in <tt>/contrib/widgets</tt>.
 
 <dt>
@@ -410,7 +477,7 @@ This package provides facilities to handle images in XPM format.
 It is available from
 <a href="ftp://ftp.x.org/contrib/libraries/">ftp://ftp.x.org/contrib/libraries</a>
 and its
-<a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">mirror sites</a>
+<a href="http://www.x.org/Downloads.html">mirror sites</a>
 in <tt>/contrib/libraries</tt>.
 
 <dt>
@@ -422,11 +489,12 @@ The official distribution site is
 <a href="ftp://ftp.uu.net/graphics/jpeg/">ftp://ftp.uu.net/graphics/jpeg</a>.
 It is also available from
 <a href="ftp://ftp.x.org/contrib/libraries/">ftp://ftp.x.org/contrib/libraries</a>
-and its <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">mirror sites</a>
+and its <a href="http://www.x.org/Downloads.html">mirror sites</a>
 in <tt>/contrib/libraries</tt>.
 </dl>
 
-<h2><a name="related-apps">Related Applications</a></h2>
+<a name="related-apps"></a>
+<h3>Related Applications</h3>
 
 Here is a list of related applications.
 See also <a href="http://SAL.KachinaTech.COM">
@@ -462,6 +530,13 @@ and its <a href="http://www.fsf.org/order/ftp.html">mirror sites</a>,
 or <a href="ftp://ftp.cs.wisc.edu/ghost/aladdin">ftp.cs.wisc.edu/ghost/aladdin</a>.
 
 <dt><img src="images/redball.png" align=bottom alt="-">
+<b>AutoTrace</b><br>
+<dd>
+Converts bitmap to vector graphics - has a Fig file output driver.
+Available from <a href="http://autotrace.sourceforge.net">http://autotrace.sourceforge.net</a>.
+Written by Martin Weber.
+
+<dt><img src="images/redball.png" align=bottom alt="-">
 <b>cdraw2fig</b><br>
 <dd>
 Converts `Cheap Draw' format to <b>Fig</b> format.
@@ -471,7 +546,7 @@ archives at osu-cis.
 <dt><img src="images/redball.png" align=bottom alt="-">
 <b>chemtool</b><br>
 <dd>A chemical structure editor for X11 available from
-<a href="http://www.uni-ulm.de/~s_tvolk/chemtool">http://www.uni-ulm.de/~s_tvolk/chemtool</a>
+<a href="http://ruby.chemie.uni-freiburg.de/~martin/chemtool/chemtool.html">http://ruby.chemie.uni-freiburg.de/~martin/chemtool/chemtool.html</a>
 that writes Fig output (and relies on transfig for anything more fancy than xbm)
 
 <dt><img src="images/redball.png" align=bottom alt="-">
@@ -495,8 +570,7 @@ is freely available from <a href="http://www.gimp.org/">http://www.gimp.org/</a>
 <dd>
 <b>gnuplot</b> is a plotting package which can output in <b>Fig</b> and other formats.
 The official distribution site is
-<a href="ftp://ftp.dartmouth.edu/pub/gnuplot/">ftp://ftp.dartmouth.edu/pub/gnuplot</a>,
-but you can also get it from the <tt>comp.sources.misc</tt> archive newsgroup.
+<a href="http://www.gnuplot.info/">http://www.gnuplot.info/</a>.
 
 <dt><img src="images/redball.png" align=bottom alt="-">
 <a name="grass2fig"><b>grass2fig</b></a><br>
@@ -531,7 +605,7 @@ It is available from
 <dt><img src="images/redball.png" align=bottom alt="-">
 <b>jfig</b><br>
 <dd>
-<b>jfig</b> is a Java-based program that is based on <b>xfig</b>.
+<b>jfig</b> is a Java-based drawing program that is based on <b>xfig</b>.
 See <a href="http://tech-www.informatik.uni-hamburg.de/applets/javafig/applet.html" target=_new>
 http://tech-www.informatik.uni-hamburg.de/applets/javafig/applet.html</a>
 
@@ -583,7 +657,7 @@ to bitmap formats.
 <a href="ftp://ftp.x.org/contrib/applications/drawing_tools/xfig/">
 ftp://ftp.x.org/contrib/applications/drawing_tools/xfig</a>
 and its
-<a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">mirror sites</a>
+<a href="http://www.x.org/Downloads.html">mirror sites</a>
 or from
 <a href="ftp://ftp.cdrom.com/pub/X11/contrib/utilities/">
 ftp://ftp.cdrom.com/pub/X11/contrib/utilities</a>.
@@ -597,7 +671,7 @@ It is available from
 ftp://ftp.cs.orst.edu/localsrc/graphics</a>
 or <a href="ftp://ftp.x.org/contrib/utilities/">ftp://ftp.x.org/contrib/utilities</a>
 and its
-<a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">mirror sites</a>
+<a href="http://www.x.org/Downloads.html">mirror sites</a>
 in <tt>/contrib/utilities</tt>.
 
 <dt><img src="images/redball.png" align=bottom alt="-">

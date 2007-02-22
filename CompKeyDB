@@ -98,6 +98,7 @@
 :<Key>Multi_key,:<Key>slash,:<Key>u: insert-string(0xB5)
 :<Key>Multi_key,:<Key>P,:<Key>exclam: insert-string(0xB6)
 :<Key>Multi_key,:<Key>asciicircum,:<Key>period: insert-string(0xB7)
+:<Key>Multi_key,:<Key>comma,:<Key>comma: insert-string(0xB8)
 :<Key>Multi_key,:<Key>asciicircum,:<Key>1: insert-string(0xB9)
 :<Key>Multi_key,:<Key>underscore,:<Key>o: insert-string(0xBA)
 :<Key>Multi_key,:<Key>greater,:<Key>greater: insert-string(0xBB)

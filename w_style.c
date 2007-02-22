@@ -4,12 +4,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -24,11 +24,11 @@
 #include "e_update.h"
 #include "u_draw.h"
 #include "u_fonts.h"
-#include "w_color.h"
 #include "w_drawprim.h"
 #include "w_file.h"
 #include "w_fontbits.h"
 #include "w_indpanel.h"
+#include "w_color.h"
 #include "w_listwidget.h"
 #include "w_mousefun.h"
 #include "w_msgpanel.h"
@@ -37,12 +37,12 @@
 #include "w_util.h"
 #include "w_zoom.h"
 
+#include "w_modepanel.h"
+
 /* EXPORTS */
 
-void	init_manage_style_panel(void);
-void	setup_manage_style_panel(void);
 void	popup_manage_style_panel(void);
-void	close_style();
+void	close_style(Widget w, XButtonEvent *ev);
 Boolean	style_dirty_flag = False;
 
 /* LOCALS */
@@ -94,6 +94,8 @@ Element style_reference[] = {
     "ellipse_text_angle", Tfloat, NULL, &cur_elltextangle, I_ELLTEXTANGLE,
     NULL, 0, NULL, NULL, 0
 };
+
+
 
 void
 construct_style (Style * style, unsigned long flag)
@@ -158,7 +160,7 @@ set_style (Style * style)
 
 static int indent;
 
-print_indent (FILE * file)
+void print_indent (FILE * file)
 {
     int     i;
 
@@ -268,8 +270,8 @@ trim (char *string)
 int
 parse_style (Style * style, FILE * file)
 {
-    int     end = 0, i = 0, j = 0;
-    char    name[256], value[256], string[256], *s;
+    int     i = 0, j = 0;
+    char    name[256], value[256], string[256];
     long    pos;
 
     pos = ftell (file);
@@ -322,7 +324,7 @@ int
 parse_family_style (Style_family * family, FILE * file)
 {
     int     i = 0, r;
-    char    name[256], string[256], *p, *q, *s;
+    char    name[256], string[256];
 
     if (get_nstyle_line (string, 256, file) == NULL)
 	return EOF;
@@ -362,8 +364,7 @@ void
 load_family_set (Style_family * family)
 {
     FILE   *file;
-    char    name[PATH_MAX], buffer[2048];
-    int     n;
+    char    name[PATH_MAX];
 
     strcpy (name, xfigrc_name);
     strcat (name, "style");
@@ -397,7 +398,7 @@ save_family_set (Style_family * family)
 int
 add_family_to_family_set (Style_family * family, char *name)
 {
-    int     i, j, ok;
+    int     i, ok;
 
     /* search if the family already exists */
     i = 0;
@@ -416,12 +417,13 @@ add_family_to_family_set (Style_family * family, char *name)
     return i;
 }
 
-int
+Boolean
 add_style_to_family (Style_family * family,
 		     int *iii, int *jjj,
 		     char *family_name, char *style_name, unsigned long flag)
 {
-    int     i, j, ok;
+    int		i, j, ok;
+    Boolean	status;
 
     i = add_family_to_family_set (family, family_name);
     j = 0;
@@ -430,24 +432,30 @@ add_style_to_family (Style_family * family,
 	   (ok = (strcmp (family[i].style[j].name, style_name) != 0)))
 	j++;
 
-    if (j < MAX_STYLE_FAMILY && family[i].style[j].name == NULL) {
-	family[i].style[j].name = my_strdup (style_name);
-	family[i].style[j].element[0].name = NULL;
-	if (j + 1 < MAX_STYLE_FAMILY)
-	    family[i].style[j + 1].name = NULL;
-	/* set dirty flag */
-	style_dirty_flag = True;
+    if (j < MAX_STYLE_FAMILY) {
+	if (family[i].style[j].name == NULL) {
+	    family[i].style[j].name = my_strdup (style_name);
+	    family[i].style[j].element[0].name = NULL;
+	    if (j + 1 < MAX_STYLE_FAMILY)
+		family[i].style[j + 1].name = NULL;
+	    /* set dirty flag */
+	    style_dirty_flag = True;
+	}
+	construct_style (&family[i].style[j], flag);
+	*iii = i;
+	*jjj = j;
+	status = True;
+    } else {
+	*iii = -1;
+	*jjj = -1;
+	status = False;
     }
-    construct_style (&family[i].style[j], flag);
-    *iii = i;
-    *jjj = j;
-    return 0;
+    return status;
 }
 
-int
-delete_family_from_family_set (Style_family * family, char *name)
+void delete_family_from_family_set (Style_family * family, char *name)
 {
-    int     i, ii, j, k, ok;
+    int		i, ii, j, k, ok;
 
     /* search if the family  exists */
     i = 0;
@@ -488,8 +496,7 @@ delete_family_from_family_set (Style_family * family, char *name)
     }
 }
 
-int
-delete_style_from_family (Style_family * family, char *family_name, char *style_name)
+void delete_style_from_family (Style_family * family, char *family_name, char *style_name)
 {
     int     i, j, jj, k, ok;
 
@@ -559,7 +566,7 @@ build_style_text (Style_family * family, int f)
 }
 
 static void
-style_update ()
+style_update (void)
 {
     build_family_text (current_family_set);
     build_style_text (current_family_set, current_family);
@@ -577,10 +584,7 @@ style_update ()
 }
 
 static void
-family_select (w, closure, call_data)
-     Widget  w;
-     XtPointer closure;
-     XtPointer call_data;
+family_select (Widget w, XtPointer closure, XtPointer call_data)
 {
 
     XawListReturnStruct *ret_struct = (XawListReturnStruct *) call_data;
@@ -591,10 +595,7 @@ family_select (w, closure, call_data)
 }
 
 static void
-style_select (w, closure, call_data)
-     Widget  w;
-     XtPointer closure;
-     XtPointer call_data;
+style_select (Widget w, XtPointer closure, XtPointer call_data)
 {
     XawListReturnStruct *ret_struct = (XawListReturnStruct *) call_data;
 
@@ -607,9 +608,7 @@ style_select (w, closure, call_data)
 }
 
 void
-add_family (w, ev)
-     Widget  w;
-     XButtonEvent *ev;
+add_family (Widget w, XButtonEvent *ev)
 {
     char   *fval;
 
@@ -623,9 +622,7 @@ add_family (w, ev)
 }
 
 void
-delete_family (w, ev)
-     Widget  w;
-     XButtonEvent *ev;
+delete_family (Widget w, XButtonEvent *ev)
 {
     char   *fval;
 
@@ -640,9 +637,7 @@ delete_family (w, ev)
 }
 
 void
-add_style (w, ev)
-     Widget  w;
-     XButtonEvent *ev;
+add_style (Widget w, XButtonEvent *ev)
 {
     char   *fval, *sval, ftemp[256], stemp[256];
 
@@ -653,9 +648,10 @@ add_style (w, ev)
     GetValues (style_style_name);
     strcpy (stemp, sval);
     if (strlen (ftemp) && strlen (stemp)) {
-	add_style_to_family (current_family_set,
+	if (!add_style_to_family (current_family_set,
 			     &current_family, &current_style,
-			     ftemp, stemp, cur_updatemask);
+			     ftemp, stemp, cur_updatemask))
+	    file_msg("Sorry, no more room available in this family : use a new one");
 	style_update ();
     }
 }
@@ -663,9 +659,7 @@ add_style (w, ev)
 
 
 void
-delete_style (w, ev)
-     Widget  w;
-     XButtonEvent *ev;
+delete_style (Widget w, XButtonEvent *ev)
 {
     char   *fval, *sval;
 
@@ -681,17 +675,13 @@ delete_style (w, ev)
 }
 
 void
-save_style (w, ev)
-     Widget  w;
-     XButtonEvent *ev;
+save_style (Widget w, XButtonEvent *ev)
 {
     save_family_set (current_family_set);
 }
 
 void
-load_style (w, ev)
-     Widget  w;
-     XButtonEvent *ev;
+load_style (Widget w, XButtonEvent *ev)
 {
     load_family_set (current_family_set);
     current_family = current_style = -1;
@@ -699,7 +689,7 @@ load_style (w, ev)
 }
 
 int
-confirm_close_style ()
+confirm_close_style (void)
 {
     int      status;
 
@@ -713,9 +703,7 @@ confirm_close_style ()
 }
 
 void
-close_style (w, ev)
-     Widget  w;
-     XButtonEvent *ev;
+close_style (Widget w, XButtonEvent *ev)
 {
     if (confirm_close_style() == RESULT_CANCEL)
 	return;
@@ -759,9 +747,6 @@ static XtActionsRec style_actions[] = {
 void
 init_manage_style_panel (void)
 {
-    char    buf[50];
-    static Boolean actions_added = False;
-
     load_family_set (current_family_set);
     FirstArg (XtNtitle, "Xfig: Manage Styles");
     NextArg (XtNcolormap, tool_cm);
@@ -964,15 +949,20 @@ init_manage_style_panel (void)
     XtAddCallback (style_close_style, XtNcallback,
 		   (XtCallbackProc) close_style, (XtPointer) NULL);
 
-    XtAppAddActions (tool_app, style_actions, XtNumber (style_actions));
     style_update ();
+}
+
+void
+add_style_actions(void)
+{
+    XtAppAddActions (tool_app, style_actions, XtNumber (style_actions));
 }
 
 /* now that the main tool has been created we can position (although it
    is not popped up yet) the style panel */
 
 void
-setup_manage_style_panel ()
+setup_manage_style_panel (void)
 {
     Position x_val, y_val;
     Dimension width, height;

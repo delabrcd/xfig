@@ -7,12 +7,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -32,10 +32,18 @@
 #include "w_msgpanel.h"
 #include "d_spline.h"
 
-static void	init_convert_line_spline();
-static void	init_convert_open_closed();
+#include "f_util.h"
+#include "u_free.h"
+#include "u_markers.h"
+#include "u_redraw.h"
+#include "w_cursor.h"
 
-convert_selected()
+static void	init_convert_line_spline(F_line *p, int type, int x, int y, int px, int py);
+static void	init_convert_open_closed(F_line *obj, int type, int x, int y, F_point *p, F_point *q);
+
+
+
+void convert_selected(void)
 {
     set_mousefun("spline<->line", "", "open<->closed", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
@@ -47,13 +55,11 @@ convert_selected()
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = point_search_right;
     set_cursor(pick15_cursor);
+    reset_action_on();
 }
 
 static void
-init_convert_open_closed(obj, type, x, y, p, q)
-     F_line	   *obj;
-     int	    type, x, y;
-     F_point       *p, *q;
+init_convert_open_closed(F_line *obj, int type, int x, int y, F_point *p, F_point *q)
 {
     switch (type) {
     case O_POLYLINE:
@@ -70,11 +76,7 @@ init_convert_open_closed(obj, type, x, y, p, q)
 }
 
 static void
-init_convert_line_spline(p, type, x, y, px, py)
-    F_line	   *p;
-    int		    type;
-    int		    x, y;
-    int		    px, py;
+init_convert_line_spline(F_line *p, int type, int x, int y, int px, int py)
 {
     static int flag = 0;
 
@@ -103,8 +105,7 @@ init_convert_line_spline(p, type, x, y, px, py)
 /* handle conversion of box to arc_box and arc_box to box */
 
 void
-box_2_box(old_l)
-    F_line	   *old_l;
+box_2_box(F_line *old_l)
 {
     F_line	   *new_l;
 
@@ -133,9 +134,7 @@ box_2_box(old_l)
 }
 
 void
-line_spline(l, type_value)
-    F_line	   *l;
-    int          type_value;
+line_spline(F_line *l, int type_value)
 {
     F_spline	   *s;
 
@@ -204,8 +203,7 @@ line_spline(l, type_value)
 }
 
 void
-spline_line(s)
-    F_spline	   *s;
+spline_line(F_spline *s)
 {
     F_line	   *l;
     F_point        *tmppoint;
@@ -245,7 +243,7 @@ spline_line(s)
 	l->for_arrow->wd = s->for_arrow->wd;
 	l->for_arrow->ht = s->for_arrow->ht;
     } else {
-	l->back_arrow = NULL;
+	l->for_arrow = NULL;
     }
     if (s->back_arrow) {
 	l->back_arrow = create_arrow();
@@ -272,9 +270,7 @@ spline_line(s)
 }
 
 void
-toggle_polyline_polygon(line, previous_point, selected_point)
-     F_line  *line;
-     F_point *previous_point, *selected_point;
+toggle_polyline_polygon(F_line *line, F_point *previous_point, F_point *selected_point)
 {
   F_point *point, *last_pt;
   
@@ -326,9 +322,7 @@ toggle_polyline_polygon(line, previous_point, selected_point)
 
 
 void
-toggle_open_closed_spline(spline, previous_point, selected_point)
-     F_spline *spline;
-     F_point  *previous_point, *selected_point;
+toggle_open_closed_spline(F_spline *spline, F_point *previous_point, F_point *selected_point)
 {
   F_point *last_pt;
   F_sfactor *last_sfactor, *previous_sfactor, *selected_sfactor;

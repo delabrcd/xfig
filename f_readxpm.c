@@ -4,21 +4,23 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
 #include "fig.h"
 #include "resources.h"
 #include "object.h"
+#include "w_indpanel.h"
 #include "w_color.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
+#include "f_util.h"
 
 /* attempt to read a XPM (color pixmap) file */
 /* the filename is passed since XpmReadFileToXpmImage needs a name 
@@ -29,10 +31,7 @@
 */
 
 int
-read_xpm(file, filetype, pic)
-    char	   *file;
-    int		    filetype;
-    F_pic	   *pic;
+read_xpm(char *file, int filetype, F_pic *pic)
 {
     int		    status;
     XpmImage	    image;

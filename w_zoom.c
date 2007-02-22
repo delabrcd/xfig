@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -32,12 +32,14 @@
 #include "w_util.h"
 #include "w_zoom.h"
 
+#include "w_cursor.h"
+
 /* global for w_canvas.c */
 
 Boolean	zoom_in_progress = False;
 
-static void	do_zoom(), cancel_zoom();
-static void	init_zoombox_drawing();
+static void	do_zoom(int x, int y), cancel_zoom(void);
+static void	init_zoombox_drawing(int x, int y);
 
 static void	(*save_kbd_proc) ();
 static void	(*save_locmove_proc) ();
@@ -57,126 +59,9 @@ static int	my_fix_x, my_fix_y;
 static int	my_cur_x, my_cur_y;
 
 
-/* storage for conversion of data points to screen coords (zXDrawLines and zXFillPolygon) */
-
-static XPoint	*_pp_ = (XPoint *) NULL;	/* data pointer itself */
-static int	 _npp_ = 0;			/* number of points currently allocated */
-static Boolean	 _noalloc_ = False;		/* signals previous failed alloc */
-static Boolean	 chkalloc();
-static void	 convert_sh();
-
-zXDrawLines(d,w,gc,p,n,m)
-    Display	*d;
-    Window	 w;
-    GC		 gc;
-    zXPoint	*p;
-    int		 n;
-{
-    /* make sure we have allocated data */
-    if (!chkalloc(n)) {
-	return;
-    }
-    /* now convert each point to short */
-    convert_sh(p,n);
-    XDrawLines(d,w,gc,_pp_,n,m);
-}
-
-zXFillPolygon(d,w,gc,p,n,m,o)
-    Display	*d;
-    Window	 w;
-    GC		 gc;
-    zXPoint	*p;
-    int		 n;
-    int		 m,o;
-{
-    /* make sure we have allocated data */
-    if (!chkalloc(n)) {
-	return;
-    }
-    /* now convert each point to short */
-    convert_sh(p,n);
-    XFillPolygon(d,w,gc,_pp_,n,m,o);
-}
-
-/* convert each point to short */
-
-static void
-convert_sh(p,n)
-    zXPoint	*p;
-    int		 n;
-{
-    int 	 i;
-
-    for (i=0;i<n;i++) {
-	_pp_[i].x = SHZOOMX(p[i].x);
-	_pp_[i].y = SHZOOMY(p[i].y);
-    }
-}
-
-/* convert Fig units to pixels at current zoom AND convert to short, being
-   careful to convert large numbers (> 12000) to numbers the X library likes */
-
-/* One for X coordinates */
-
-short
-SHZOOMX(x)
-    int		 x;
-{
-    x = ZOOMX(x);
-    /* the X server or X11 Library doesn't like coords larger than about 12000 */
-    x = (x < -12000? -12000: (x > 12000? 12000: x));
-    return (short) x;
-}
-
-/* do the same using the ZOOMY transformation for a Y coordinate */
-
-short
-SHZOOMY(y)
-    int		 y;
-{
-    y = ZOOMY(y);
-    /* the X server or X11 Library doesn't like coords larger than about 12000 */
-    y = (y < -12000? -12000: (y > 12000? 12000: y));
-    return (short) y;
-}
-
-static Boolean
-chkalloc(n)
-    int		 n;
-{
-    int		 i;
-    XPoint	*tpp;
-
-    /* see if we need to allocate some (more) memory */
-    if (n > _npp_) {
-	/* if previous allocation failed, return now */
-	if (_noalloc_)
-	    return False;
-	/* get either what we need +50 points or 500, whichever is larger */
-	i = max2(n+50, 500);	
-	if (_npp_ == 0) {
-	    if ((tpp = (XPoint *) malloc(i * sizeof(XPoint))) == 0) {
-		fprintf(stderr,"\007Can't alloc memory for %d point array, exiting\n",i);
-		exit(1);
-	    }
-	} else {
-	    if ((tpp = (XPoint *) realloc(_pp_, i * sizeof(XPoint))) == 0) {
-		file_msg("Can't alloc memory for %d point array",i);
-		_noalloc_ = True;
-		return False;
-	    }
-	}
-	/* everything ok, set global pointer and count */
-	_pp_ = tpp;
-	_npp_ = i;
-    }
-    return True;
-}
 
 void
-zoom_selected(x, y, button)
-    int		    x, y;
-    unsigned int    button;
+zoom_selected(int x, int y, unsigned int button)
 {
     /* if trying to zoom while drawing an object, don't allow it */
     if ((button != Button2) && check_action_on()) /* panning is ok */
@@ -197,14 +82,12 @@ zoom_selected(x, y, button)
 	case Button3:
 	    unzoom();
 	    break;
-#ifdef WHEELMOUSE
 	case Button4:
 	    wheel_dec_zoom();
 	    break;
 	case Button5:
 	    wheel_inc_zoom();
 	    break;
-#endif /* WHEELMOUSE */
 	}
     } else if (button == Button1) {
 	reset_cursor();
@@ -213,15 +96,14 @@ zoom_selected(x, y, button)
 }
 
 void
-unzoom()
+unzoom(void)
 {
     display_zoomscale = 1.0;
     show_zoom(&ind_switches[ZOOM_SWITCH_INDEX]);
 }
 
 static void
-my_box(x, y)
-    int		    x, y;
+my_box(int x, int y)
 {
     elastic_box(my_fix_x, my_fix_y, my_cur_x, my_cur_y);
     my_cur_x = x;
@@ -230,14 +112,13 @@ my_box(x, y)
 }
 
 static void
-elastic_mybox()
+elastic_mybox(void)
 {
     elastic_box(my_fix_x, my_fix_y, my_cur_x, my_cur_y);
 }
 
 static void
-init_zoombox_drawing(x, y)
-    int		    x, y;
+init_zoombox_drawing(int x, int y)
 {
     if (check_action_on())
 	return;
@@ -264,8 +145,7 @@ init_zoombox_drawing(x, y)
 }
 
 static void
-do_zoom(x, y)
-    int		    x, y;
+do_zoom(int x, int y)
 {
     int		    dimx, dimy;
     float	    scalex, scaley;
@@ -310,7 +190,7 @@ do_zoom(x, y)
 }
 
 static void
-cancel_zoom()
+cancel_zoom(void)
 {
     elastic_box(my_fix_x, my_fix_y, my_cur_x, my_cur_y);
     /* restore state */

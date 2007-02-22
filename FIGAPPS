@@ -1,6 +1,9 @@
 The following are applications which can produce Fig files as their output:
 
 ************************************************************************
+There is a port of xfig for the MacIntosh running Darwin (the MacIntosh
+port of XFree86). See http://fink.sourceforge.net/pdb/package.php/xfig
+************************************************************************
 There is a version of xfig which will run under Windows, but still needs
 an X server (e.g. Hummingbird Exceed, or Cygwin http://www.cygwin.com/xfree/)
 to run.  The URL is:

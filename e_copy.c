@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -28,13 +28,18 @@
 #include "w_mousefun.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
+#include "f_save.h"
+#include "u_markers.h"
+#include "w_cursor.h"
 
 /* local routine declarations */
-static void	init_copy(), init_arb_copy(), init_constrained_copy();
-static void	init_copy_to_scrap();
+static void	init_copy(F_line *p, int type, int x, int y, int px, int py), init_arb_copy(F_line *p, int type, int x, int y, int px, int py), init_constrained_copy(F_line *p, int type, int x, int y, int px, int py);
+static void	init_copy_to_scrap(F_line *p, int type, int x, int y, int px, int py);
+
+
 
 void
-copy_selected()
+copy_selected(void)
 {
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
@@ -53,10 +58,7 @@ copy_selected()
 }
 
 static void
-init_arb_copy(p, type, x, y, px, py)
-    F_line	   *p;
-    int		    type;
-    int		    x, y, px, py;
+init_arb_copy(F_line *p, int type, int x, int y, int px, int py)
 {
     constrained = MOVE_ARB;
     init_copy(p, type, x, y, px, py);
@@ -66,10 +68,7 @@ init_arb_copy(p, type, x, y, px, py)
 }
 
 static void
-init_constrained_copy(p, type, x, y, px, py)
-    F_line	   *p;
-    int		    type;
-    int		    x, y, px, py;
+init_constrained_copy(F_line *p, int type, int x, int y, int px, int py)
 {
     constrained = MOVE_HORIZ_VERT;
     init_copy(p, type, x, y, px, py);
@@ -79,10 +78,7 @@ init_constrained_copy(p, type, x, y, px, py)
 }
 
 static void
-init_copy(p, type, x, y, px, py)
-    F_line	   *p;
-    int		    type;
-    int		    x, y, px, py;
+init_copy(F_line *p, int type, int x, int y, int px, int py)
 {
     /* turn off all markers */
     update_markers(0);
@@ -129,18 +125,18 @@ init_copy(p, type, x, y, px, py)
 }
 
 static void
-init_copy_to_scrap(p, type, x, y, px, py)
-    F_line	   *p;
-    int		    type;
-    int		    x, y;
-    int		    px, py;
+init_copy_to_scrap(F_line *p, int type, int x, int y, int px, int py)
 {
     FILE	   *fp;
-    FILE	   *open_cut_file();
+    FILE	   *open_cut_file(void);
 
     if ((fp=open_cut_file())==NULL)
 	return;
-    write_file_header(fp);
+#ifdef I18N
+    /* set the numeric locale to C so we get decimal points for numbers */
+    setlocale(LC_NUMERIC, "C");
+#endif  /* I18N */
+    write_fig_header(fp);
 
     switch (type) {
     case O_COMPOUND:
@@ -169,8 +165,16 @@ init_copy_to_scrap(p, type, x, y, px, py)
 	break;
     default:
 	fclose(fp);
+#ifdef I18N
+	/* reset to original locale */
+	setlocale(LC_NUMERIC, "");
+#endif  /* I18N */
 	return;
     }
+#ifdef I18N
+    /* reset to original locale */
+    setlocale(LC_NUMERIC, "");
+#endif  /* I18N */
     put_msg("Object copied to scrapfile %s",cut_buf_name);
     fclose(fp);
 }

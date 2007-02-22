@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -24,28 +24,31 @@
 #include "object.h"
 #include "paintop.h"
 #include "f_picobj.h"
+#include "f_util.h"
 #include "u_create.h"
 #include "u_elastic.h"
 #include "w_canvas.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
 #include "mode.h"
-#ifdef USE_XPM
-#include <xpm.h>
-#endif /* USE_XPM */
 
-extern	int	read_gif();
-extern	int	read_pcx();
-extern	int	read_epsf();
-extern	int	read_png();
-extern	int	read_ppm();
-extern	int	read_tif();
-extern	int	read_xbm();
+#include "w_file.h"
+#include "w_util.h"
+
+extern	int	read_gif(FILE *file, int filetype, F_pic *pic);
+extern	int	read_pcx(FILE *file, int filetype, F_pic *pic);
+extern	int	read_epsf(FILE *file, int filetype, F_pic *pic);
+extern	int	read_pdf(FILE *file, int filetype, F_pic *pic);
+extern	int	read_png(FILE *file, int filetype, F_pic *pic);
+extern	int	read_ppm(FILE *file, int filetype, F_pic *pic);
+extern	int	read_tif(char *filename, int filetype, F_pic *pic);
+extern	int	read_xbm(FILE *file, int filetype, F_pic *pic);
+
 #ifdef USE_JPEG
-extern	int	read_jpg();
+extern	int	read_jpg(FILE *file, int filetype, F_pic *pic);
 #endif /* USE_JPEG */
 #ifdef USE_XPM
-extern	int	read_xpm();
+extern	int	read_xpm(FILE *file, int filetype, F_pic *pic);
 #endif /* USE_XPM */
 
 #define MAX_SIZE 255
@@ -60,6 +63,7 @@ static	 struct hdr {
 	headers[]= {    {"GIF", "GIF",		    3, read_gif,	True},
 			{"PCX", "\012\005\001",	    3, read_pcx,	True},
 			{"EPS", "%!",		    2, read_epsf,	True},
+			{"PDF", "%PDF",		    2, read_pdf,	True},
 			{"PPM", "P3",		    2, read_ppm,	True},
 			{"PPM", "P6",		    2, read_ppm,	True},
 			{"TIFF", "II*\000",	    4, read_tif,	False},
@@ -86,12 +90,9 @@ static	 struct hdr {
  * If "force" is true, read the file unconditionally.
  */
 
-read_picobj(pic, file, color, force, existing)
-    F_pic	   *pic;
-    char	   *file;
-    Color	    color;
-    Boolean	    force;
-    Boolean	   *existing;
+
+
+void read_picobj(F_pic *pic, char *file, int color, Boolean force, Boolean *existing)
 {
     FILE	   *fd;
     int		    type;
@@ -99,7 +100,7 @@ read_picobj(pic, file, color, force, existing)
     char	    buf[20],realname[PATH_MAX];
     Boolean	    found, reread;
     struct _pics   *pics, *lastpic;
-    struct stat	    file_status;
+    time_t	    mtime;
 
     pic->color = color;
     /* don't touch the flipped flag - caller has already set it */
@@ -122,15 +123,17 @@ read_picobj(pic, file, color, force, existing)
     reread = False;
     for (pics = pictures; pics; pics = pics->next) {
 	if (strcmp(pics->file, file)==0) {
-	    /* found it - make sure the timestamp is newer than the timestamp of the file  */
+	    /* found it - make sure the timestamp is >= the timestamp of the file  */
 	    /* check both the "realname" and the original name */
-	    if ((stat(pics->realname, &file_status) != 0) && (stat(pics->file, &file_status) != 0)) {
+	    if ((mtime = file_timestamp(pics->realname) < 0))
+		mtime = file_timestamp(pics->file);
+	    if (mtime < 0) {
 		/* oops, doesn't exist? */
 		file_msg("Error %s on %s",strerror(errno),file);
 		return;
 	    }
 	    /* or if force is true then reread it */
-	    if (force || (file_status.st_mtime > pics->time_stamp)) {
+	    if (force || (mtime > pics->time_stamp)) {
 		reread = True;
 		break;			/* no, re-read the file */
 	    }
@@ -142,6 +145,8 @@ read_picobj(pic, file, color, force, existing)
 	    if (pics->bitmap != NULL) {
 		*existing = True;
 		put_msg("Reading Picture object file...found cached picture");
+		/* must set the h/w ratio here */
+		pic->hw_ratio = (float) pic->pic_cache->bit_size.y/pic->pic_cache->bit_size.x;
 		return;
 	    }
 	    if (appres.DEBUG)
@@ -186,9 +191,8 @@ read_picobj(pic, file, color, force, existing)
 	file_msg("No such picture file: %s",file);
 	return;
     }
-    /* get the modified time and save */
-    (void) stat(file, &file_status);
-    pics->time_stamp = file_status.st_mtime;
+    /* get the modified time and save it */
+    pics->time_stamp = file_timestamp(file);
     /* and save the realname (it may be compressed) */
     pics->realname = strdup(realname);
 
@@ -242,11 +246,7 @@ read_picobj(pic, file, color, force, existing)
 */
 
 FILE *
-open_picfile(name, type, pipeok, retname)
-    char	*name;
-    int		*type;
-    Boolean	 pipeok;
-    char	*retname;
+open_picfile(char *name, int *type, Boolean pipeok, char *retname)
 {
     char	 unc[PATH_MAX+20];	/* temp buffer for gunzip command */
     FILE	*fstream;		/* handle on file  */
@@ -324,9 +324,7 @@ open_picfile(name, type, pipeok, retname)
 }
 
 void
-close_picfile(file,type)
-    FILE	*file;
-    int		 type;
+close_picfile(FILE *file, int type)
 {
     char	 line[MAX_SIZE];
     int		 stat;

@@ -5,12 +5,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -32,8 +32,17 @@
 #include "w_setup.h"
 #include "w_util.h"
 
-static void	init_update_object();
-static void	init_update_settings();
+#include "e_scale.h"
+#include "f_util.h"
+#include "u_bound.h"
+#include "u_fonts.h"
+#include "u_free.h"
+#include "u_redraw.h"
+#include "w_cursor.h"
+#include "w_util.h"
+
+static void	init_update_object(F_line *p, int type, int x, int y, int px, int py);
+static void	init_update_settings(F_line *p, int type, int x, int y, int px, int py);
 
 static Boolean	keep_depth = False;
 static int	delta_depth;
@@ -48,8 +57,26 @@ static int	delta_depth;
 		    (lv) = keep_depth ? \
 			(min((lv)+delta_depth,MAX_DEPTH)) : (rv)
 
+
+void up_dashdot (float styleval, int style, unsigned int mask);
+void up_from_arrow (F_arrow *arrow, int thick);
+void update_compound (F_compound *compound);
+void update_line (F_line *line);
+void update_text (F_text *text);
+void update_ellipse (F_ellipse *ellipse);
+void update_arc (F_arc *arc);
+void update_spline (F_spline *spline);
+void fix_fillstyle (void *object);
+void up_arrow (F_line *object);
+void update_lines (F_line *lines);
+void update_splines (F_spline *splines);
+void update_ellipses (F_ellipse *ellipses);
+void update_arcs (F_arc *arcs);
+void update_texts (F_text *texts);
+void update_compounds (F_compound *compounds);
+
 void
-update_selected()
+update_selected(void)
 {
     set_mousefun("update object", "update settings", "",
 			LOC_OBJ, LOC_OBJ, LOC_OBJ);
@@ -64,11 +91,11 @@ update_selected()
     set_cursor(pick9_cursor);
     /* manage on the update buttons */
     manage_update_buts();
+    reset_action_on();
 }
 
 static int
-get_arrow_mode(object)
-    F_line	   *object;
+get_arrow_mode(F_line *object)
 {
     if (!object->for_arrow && !object->back_arrow)
 	return L_NOARROWS;
@@ -81,8 +108,7 @@ get_arrow_mode(object)
 }
     
 static int
-get_arrow_type(object)
-    F_line	   *object;
+get_arrow_type(F_line *object)
 {
     int		    type;
 
@@ -101,11 +127,7 @@ get_arrow_type(object)
 /* update the indicator buttons FROM the selected object */
 
 static void
-init_update_settings(p, type, x, y, px, py)
-    F_line	   *p;
-    int		    type;
-    int		    x, y;
-    int		    px, py;
+init_update_settings(F_line *p, int type, int x, int y, int px, int py)
 {
     int		    old_psfont_flag, new_psfont_flag;
     F_line	   *dline, *dtick1, *dtick2, *dbox;
@@ -138,6 +160,10 @@ init_update_settings(p, type, x, y, px, py)
 		    cur_dimline_rightarrow = 0;
 		}
 	        cur_dimline_ticks = (dtick1 || dtick2);
+		if (dtick1)
+		    cur_dimline_tickthick = dtick1->thickness;
+		else
+		    cur_dimline_tickthick = dtick2->thickness;
 	    }
 	    if (dbox) {
 		cur_dimline_boxthick = dbox->thickness;
@@ -265,16 +291,14 @@ init_update_settings(p, type, x, y, px, py)
     }
     update_current_settings();
     if (type == O_COMPOUND) {
-	put_msg("Only the (smallest) depth is retrieved from a compound object");
+	put_msg("Note: Only the (smallest) depth is retrieved from a compound object");
 	beep();
     } else {
 	put_msg("Settings UPDATED");
     }
 }
 
-up_from_arrow(arrow, thick)
-    F_arrow  *arrow;
-    int	      thick;
+void up_from_arrow(F_arrow *arrow, int thick)
 {
 	up_part(cur_arrowthick, arrow->thickness,I_ARROWSIZE);
 	up_part(cur_arrowwidth, arrow->wd,I_ARROWSIZE);
@@ -293,11 +317,7 @@ up_from_arrow(arrow, thick)
 /* update the selected object FROM the indicator buttons */
 
 static void
-init_update_object(p, type, x, y, px, py)
-    F_line	   *p;
-    int		    type;
-    int		    x, y;
-    int		    px, py;
+init_update_object(F_line *p, int type, int x, int y, int px, int py)
 {
     int		    largest;
     Boolean	    dontupdate;
@@ -397,8 +417,7 @@ init_update_object(p, type, x, y, px, py)
 	put_msg("Object(s) UPDATED");
 }
 
-update_ellipse(ellipse)
-    F_ellipse	   *ellipse;
+void update_ellipse(F_ellipse *ellipse)
 {
     draw_ellipse(ellipse, ERASE);
     up_part(ellipse->thickness, cur_linewidth, I_LINEWIDTH);
@@ -410,12 +429,11 @@ update_ellipse(ellipse)
     up_part(ellipse->pen_color, cur_pencolor, I_PEN_COLOR);
     up_part(ellipse->fill_color, cur_fillcolor, I_FILL_COLOR);
     up_depth_part(ellipse->depth, cur_depth);
-    fix_fillstyle((F_line *)ellipse);	/* make sure it has legal fill style if color changed */
+    fix_fillstyle(ellipse);	/* make sure it has legal fill style if color changed */
     /* updated object will be redisplayed by init_update_xxx() */
 }
 
-update_arc(arc)
-    F_arc	   *arc;
+void update_arc(F_arc *arc)
 {
     draw_arc(arc, ERASE);
     up_part(arc->thickness, cur_linewidth, I_LINEWIDTH);
@@ -442,12 +460,11 @@ update_arc(arc)
 	/* if not wedge type, update any arrow settings */
 	up_arrow((F_line *)arc);
     }
-    fix_fillstyle((F_line *)arc);	/* make sure it has legal fill style if color changed */
+    fix_fillstyle(arc);	/* make sure it has legal fill style if color changed */
     /* updated object will be redisplayed by init_update_xxx() */
 }
 
-update_line(line)
-    F_line	   *line;
+void update_line(F_line *line)
 {
     draw_line(line, ERASE);
 	up_part(line->thickness, cur_linewidth, I_LINEWIDTH);
@@ -473,8 +490,7 @@ update_line(line)
     /* updated object will be redisplayed by init_update_xxx() */
 }
 
-update_text(text)
-    F_text	   *text;
+void update_text(F_text *text)
 {
     PR_SIZE	    size;
     int		old_psfont_flag, new_psfont_flag;
@@ -508,8 +524,7 @@ update_text(text)
     /* updated object will be redisplayed by init_update_xxx() */
 }
 
-update_spline(spline)
-    F_spline	   *spline;
+void update_spline(F_spline *spline)
 {
     draw_spline(spline, ERASE);
     up_part(spline->thickness, cur_linewidth, I_LINEWIDTH);
@@ -524,7 +539,7 @@ update_spline(spline)
     up_depth_part(spline->depth, cur_depth);
     if (open_spline(spline))
 	up_arrow((F_line *)spline);
-    fix_fillstyle((F_line *)spline);	/* make sure it has legal fill style if color changed */
+    fix_fillstyle(spline);	/* make sure it has legal fill style if color changed */
     /* updated object will be redisplayed by init_update_xxx() */
 }
 
@@ -532,9 +547,9 @@ update_spline(spline)
 /* WARNING: this procedure assumes that splines, lines, arcs and ellipses
 	    all have the same structure up to the fill_style and color */
 
-fix_fillstyle(object)
-    F_line	   *object;
+void fix_fillstyle(void *obj)
 {
+    F_line *object = obj;
     if (object->fill_color == BLACK || object->fill_color == DEFAULT ||
 	object->fill_color == DEFAULT) {
 	    if (object->fill_style >= NUMSHADEPATS && 
@@ -548,8 +563,7 @@ fix_fillstyle(object)
 	object->fill_style = NUMFILLPATS;
 }
 
-up_arrow(object)
-    F_line	   *object;
+void up_arrow(F_line *object)
 {
     if (object->for_arrow) {
 	up_part(object->for_arrow->type, ARROW_TYPE(cur_arrowtype), I_ARROWTYPE);
@@ -628,8 +642,7 @@ up_arrow(object)
     }
 }
 
-update_compound(compound)
-    F_compound	   *compound;
+void update_compound(F_compound *compound)
 {
     F_line	   *dline, *dtick1, *dtick2, *dbox;
     F_text	   *dtext;
@@ -658,21 +671,21 @@ update_compound(compound)
 	    /* create new one if setting says so */
 	    if (cur_dimline_rightarrow != -1)
 		dline->for_arrow = forward_dim_arrow();
-	} /* if (dline) */
 
-	/* update text box */
-	if (dbox) {
-	    /* attach the polygon after the main line */
-	    dline->next = dbox;
-	    dbox->thickness = cur_dimline_boxthick;
-	    dbox->fill_color = cur_dimline_boxcolor;
-	}
+	    /* update text box */
+	    if (dbox) {
+		/* attach the polygon after the main line */
+		dline->next = dbox;
+		dbox->thickness = cur_dimline_boxthick;
+		dbox->fill_color = cur_dimline_boxcolor;
+	    }
+	} /* if (dline) */
 
 	/* free any old ticks */
 	if (dtick1)
-	    free_line(dtick1);
+	    free_linestorage(dtick1);
 	if (dtick2)
-	    free_line(dtick2);
+	    free_linestorage(dtick2);
 
 	/* create new ones if user wants */
 	if (cur_dimline_ticks) {
@@ -685,8 +698,14 @@ update_compound(compound)
 	    dtick1->next = dtick2;
 	} else {
 	    /* no ticks, terminate list of lines after box */
-	    dbox->next = (F_line *) NULL;
+	    if (dbox)
+		dbox->next = (F_line *) NULL;
 	}
+       /* now put the new line list into the compound */
+       if (dline) 
+	   compound->lines = dline;
+       else
+	   compound->lines = dbox;
 
 	/* finally, the text */
 	if (dtext = compound->texts) {
@@ -695,7 +714,8 @@ update_compound(compound)
 	    dtext->size = cur_dimline_fontsize;
 	    dtext->flags = cur_dimline_psflag? PSFONT_TEXT: 0;
 	    /* free any comments in the text */
-	    free((char *) dtext->comments);
+	    if (dtext->comments)
+		free((char *) dtext->comments);
 	    if (cur_dimline_fixed)
 		dtext->comments = my_strdup("fixed text");
 	}
@@ -728,8 +748,7 @@ update_compound(compound)
 		   &compound->secorner.x, &compound->secorner.y);
 }
 
-update_arcs(arcs)
-    F_arc	   *arcs;
+void update_arcs(F_arc *arcs)
 {
     F_arc	   *a;
 
@@ -737,8 +756,7 @@ update_arcs(arcs)
 	update_arc(a);
 }
 
-update_compounds(compounds)
-    F_compound	   *compounds;
+void update_compounds(F_compound *compounds)
 {
     F_compound	   *c;
 
@@ -746,8 +764,7 @@ update_compounds(compounds)
 	update_compound(c);
 }
 
-update_ellipses(ellipses)
-    F_ellipse	   *ellipses;
+void update_ellipses(F_ellipse *ellipses)
 {
     F_ellipse	   *e;
 
@@ -755,8 +772,7 @@ update_ellipses(ellipses)
 	update_ellipse(e);
 }
 
-update_lines(lines)
-    F_line	   *lines;
+void update_lines(F_line *lines)
 {
     F_line	   *l;
 
@@ -764,8 +780,7 @@ update_lines(lines)
 	update_line(l);
 }
 
-update_splines(splines)
-    F_spline	   *splines;
+void update_splines(F_spline *splines)
 {
     F_spline	   *s;
 
@@ -773,8 +788,7 @@ update_splines(splines)
 	update_spline(s);
 }
 
-update_texts(texts)
-    F_text	   *texts;
+void update_texts(F_text *texts)
 {
     F_text	   *t;
 
@@ -782,10 +796,7 @@ update_texts(texts)
 	update_text(t);
 }
 
-up_dashdot(styleval, style, mask)
-    float	    styleval;
-    int		    style;
-    unsigned int    mask;
+void up_dashdot(float styleval, int style, unsigned int mask)
 {
 	if ((style == DASH_LINE) ||
 	    (style == DASH_DOT_LINE) || 

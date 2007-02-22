@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -52,17 +52,23 @@
 #define		WHITE			7
 #define		GREEN4			12
 
+/* defaults for line attributes */
+
+#define		DEF_BOXRADIUS		7
+#define		DEF_DASHLENGTH		4
+#define		DEF_DOTGAP		3
+
+/* arrowhead defaults */
+
+#define		DEF_ARROW_WID 4.0
+#define		DEF_ARROW_HT  8.0
+
 /** VERY IMPORTANT:  The f_line, f_spline and f_arc objects all must have the
 		components up to and including the arrows in the same order.
 		This is for the get/put_generic_arrows() in e_edit.c.
 		In addition, the f_line and f_spline objects must have the
 		components up to and including the f_points in the same order.
 **/
-
-typedef struct f_pos {
-    int		    x, y;
-}
-		F_pos;
 
 /***********************************************************************/
 /* NOTE: If you change this you must change _pic_names in e_edit.c too */
@@ -91,6 +97,12 @@ enum pictypes {
 
 #define NUM_PIC_TYPES LAST_PIC-1
 
+/* structure to contain a point */
+typedef struct f_pos {
+    int		    x, y;
+}
+	F_pos;
+
 struct _pics {
 		char	     *file;
 		char	     *realname;		/* in case the actual file is compressed (.gz, etc) */
@@ -98,7 +110,7 @@ struct _pics {
 		char	     *bitmap;
 	        enum pictypes subtype;
 	        int	      size_x, size_y;	/* picture size (fig units) */
-	        struct f_pos  bit_size;		/* size of bitmap in pixels */
+	        F_pos	      bit_size;		/* size of bitmap in pixels */
 	        struct Cmap   cmap[MAX_COLORMAP_SIZE];  /* for GIF/XPM/JPEG files */
 	        int	      numcols;		/* number of colors in cmap */
 	        int	      transp;		/* transparent color (TRANSP_NONE if none) for GIFs */
@@ -107,14 +119,20 @@ struct _pics {
 		struct _pics *next;
 	     };
 
+/*******************/
+/* point structure */
+/*******************/
+
 typedef struct f_point {
     int		    x, y;
     struct f_point *next;
 }
-		F_point;
+	F_point;
 
-#define DEF_ARROW_WID 4.0
-#define DEF_ARROW_HT  8.0
+
+/***********************/
+/* Arrowhead structure */
+/***********************/
 
 typedef struct f_arrow {
     int		    type;
@@ -123,9 +141,11 @@ typedef struct f_arrow {
     float	    wd;
     float	    ht;
 }
-		F_arrow;
-
+	F_arrow;
+
+/******************/
 /* Ellipse object */
+/******************/
 
 typedef struct f_ellipse {
     int		    tagged;
@@ -153,20 +173,23 @@ typedef struct f_ellipse {
     char	   *comments;
     struct f_ellipse *next;
 }
-		F_ellipse;
-
+	F_ellipse;
+
 /* SEE NOTE AT TOP BEFORE CHANGING ANYTHING IN THE f_arc STRUCTURE */
 
+/**************/
 /* Arc object */
+/**************/
 
 typedef struct f_arc {
     int		    tagged;
     int		    distrib;
     int		    type;
 				/* note: these arc types are the internal values */
-				/* in the file, they are open=1, wedge=2 */
+				/* in the file, they are open=1, wedge=2, elliptical=3 */
 #define					T_OPEN_ARC		0
 #define					T_PIE_WEDGE_ARC		1
+#define					T_ELLIPTICAL		2
     int		    style;
     int		    thickness;
     Color	    pen_color;
@@ -184,6 +207,7 @@ typedef struct f_arc {
 
 /* THE PRECEDING VARS MUST BE IN THE SAME ORDER IN f_arc, f_line and f_spline */
 
+    float           angle;		/* for elliptical arcs, new for V4.0 */
     int		    direction;
     struct {
 	float		x, y;
@@ -192,18 +216,14 @@ typedef struct f_arc {
     char	   *comments;
     struct f_arc   *next;
 }
-		F_arc;
+	F_arc;
 
-#define		CLOSED_PATH		0
-#define		OPEN_PATH		1
-#define		DEF_BOXRADIUS		7
-#define		DEF_DASHLENGTH		4
-#define		DEF_DOTGAP		3
-
+
 #define PicSuccess	1
 #define FileInvalid    -2
-
-/* Picture sub-type */
+/************************************/
+/* Picture sub-type for Line object */
+/************************************/
 
 typedef struct f_pic {
     struct _pics   *pic_cache;		/* picture repository (bitmap, refcount etc) */
@@ -219,13 +239,15 @@ typedef struct f_pic {
 		    pix_height,		/* current height of pixmap (pixels) */
 		    pix_flipped;
 }
-		F_pic;
+	F_pic;
 
 extern char	EMPTY_PIC[];
 
 /* SEE NOTE AT TOP BEFORE CHANGING ANYTHING IN THE f_line STRUCTURE */
 
+/***************/
 /* Line object */
+/***************/
 
 typedef struct f_line {
     int		    tagged;
@@ -259,13 +281,15 @@ typedef struct f_line {
 #define					JOIN_ROUND	1
 #define					JOIN_BEVEL	2
     int		    radius;	/* corner radius for T_ARCBOX */
-    struct f_pic   *pic;
+    F_pic   	   *pic;	/* picture object, if type = T_PICTURE */
     char	   *comments;
     struct f_line  *next;
 }
-		F_line;
-
+	F_line;
+
+/***************/
 /* Text object */
+/***************/
 
 typedef struct f_text {
     int		    tagged;
@@ -298,7 +322,9 @@ typedef struct f_text {
     char	   *comments;
     struct f_text  *next;
 }
-		F_text;
+	F_text;
+
+/* text macros */
 
 #define MAXFONT(T) (psfont_text(T) ? NUM_FONTS : NUM_LATEX_FONTS)
 
@@ -322,14 +348,12 @@ typedef struct f_text {
 			(hidden_text(t) ? hidden_text_length : t->length)
 
 #define		using_ps	(cur_textflags & PSFONT_TEXT)
-
-typedef struct f_shape {
-    double s;
-    struct f_shape *next;
-}
-		F_sfactor;
-
+
 /* SEE NOTE AT TOP BEFORE CHANGING ANYTHING IN THE f_spline STRUCTURE */
+
+/*****************/
+/* Spline object */
+/*****************/
 
 #define		int_spline(s)		(s->type & 0x2)
 #define         x_spline(s)	        (s->type & 0x4)
@@ -376,36 +400,50 @@ typedef struct f_spline {
     char	   *comments;
     struct f_spline *next;
 }
-		F_spline;
+	F_spline;
+
+/**************************************/
+/* Shape factor structure for splines */
+/**************************************/
+
+typedef struct f_shape {
+    double s;
+    struct f_shape *next;
+}
+	F_sfactor;
+
+/*******************/
+/* Compound object */
+/*******************/
 
 typedef struct f_compound {
-    int		    tagged;
-    int		    distrib;
-    struct f_pos    nwcorner;
-    struct f_pos    secorner;
-    struct f_line  *lines;
-    struct f_ellipse *ellipses;
-    struct f_spline *splines;
-    struct f_text  *texts;
-    struct f_arc   *arcs;
-    char	   *comments;
+    int		       tagged;
+    int		       distrib;
+    struct f_pos       nwcorner;
+    struct f_pos       secorner;
+    struct f_line     *lines;
+    struct f_ellipse  *ellipses;
+    struct f_spline   *splines;
+    struct f_text     *texts;
+    struct f_arc      *arcs;
+    char	      *comments;
     struct f_compound *parent;	/* for "open/close compound" */
     struct f_compound *GABPtr;	/* Where original compound came from */
-    Boolean	    draw_parent;
+    Boolean	       draw_parent;
     struct f_compound *compounds;
     struct f_compound *next;
 }
-		F_compound;
+	F_compound;
 
 typedef struct f_linkinfo {
-    struct f_line  *line;
-    struct f_point *endpt;
-    struct f_point *prevpt;
-    int		    two_pts;
+    struct f_line     *line;
+    struct f_point    *endpt;
+    struct f_point    *prevpt;
+    int		       two_pts;
     struct f_linkinfo *next;
 }
-		F_linkinfo;
-
+	F_linkinfo;
+
 /* separate the "type" and the "style" from the cur_arrowtype */
 #define		ARROW_TYPE(x)	((x)==0? 0 : ((x)+1)/2)
 #define		ARROW_STYLE(x)	((x)==0? 0 : ((x)+1)%2)
@@ -472,7 +510,7 @@ typedef struct f_linkinfo {
 #define M_ANGLEMEAS_OBJECT  (M_POLYLINE_LINE | M_POLYLINE_POLYGON | M_ARC)
 #define M_LENMEAS_OBJECT    (M_POLYLINE_LINE | M_POLYLINE_POLYGON | M_POLYLINE_BOX | M_ARC | M_ELLIPSE)
 #define M_AREAMEAS_OBJECT   (M_POLYLINE_POLYGON | M_POLYLINE_BOX | M_ARC | M_ELLIPSE)
-#define M_TANGENT_OBJECT (M_VARPTS_OBJECT | M_POLYLINE_BOX | M_ARC | M_ELLIPSE)
+#define M_TANGENT_OBJECT    (M_VARPTS_OBJECT | M_POLYLINE_BOX | M_ARC | M_ELLIPSE)
 
 /************************  Objects  **********************/
 

@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -20,6 +20,8 @@
 
 /************** DECLARE EXPORTS ***************/
 
+extern void	init_canvas(Widget tool);
+extern void	add_canvas_actions(void);
 extern void	(*canvas_kbd_proc) ();
 extern void	(*canvas_locmove_proc) ();
 extern void	(*canvas_ref_proc) ();
@@ -28,14 +30,17 @@ extern void	(*canvas_middlebut_proc) ();
 extern void	(*canvas_middlebut_save) ();
 extern void	(*canvas_rightbut_proc) ();
 extern void	(*return_proc) ();
-extern void	null_proc();
-extern void	toggle_show_balloons();
-extern void	toggle_show_lengths();
-extern void	toggle_show_vertexnums();
-extern void	toggle_show_borders();
+extern void	null_proc(void);
+extern void	toggle_show_balloons(void);
+extern void	toggle_show_lengths(void);
+extern void	toggle_show_vertexnums(void);
+extern void	toggle_show_borders(void);
 
-extern		canvas_selected();
-extern void	paste_primary_selection();
+extern void		canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal *nparams);
+extern void	paste_primary_selection(void);
+extern void setup_canvas(void);
+extern void clear_region(int xmin, int ymin, int xmax, int ymax);
+extern void clear_canvas(void);
 
 extern int	clip_xmin, clip_ymin, clip_xmax, clip_ymax;
 extern int	clip_width, clip_height;
@@ -47,7 +52,7 @@ extern int	shift;		/* global state of shift key */
 extern int	pointer_click;	/* for counting multiple clicks */
 
 /* for Sun keyboard, define COMP_LED 2 */
-extern void	setCompLED();
+extern void	setCompLED(int on);
 
 extern String	local_translations;
 

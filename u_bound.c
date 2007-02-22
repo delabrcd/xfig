@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -26,6 +26,8 @@
 #include "w_setup.h"
 #include "w_zoom.h"
 
+#include "u_draw.h"
+
 #define		Ninety_deg		M_PI_2
 #define		One_eighty_deg		M_PI
 #define		Two_seventy_deg		(M_PI + M_PI_2)
@@ -37,13 +39,12 @@
 	        *ymax = max2(*ymax, Y1); \
 	        *ymin = min2(*ymin, Y2)
 
-static void	points_bound();
-static void	general_spline_bound();
-static void	approx_spline_bound();
+static void	points_bound(F_point *points, int half_wd, int *xmin, int *ymin, int *xmax, int *ymax);
+static void	general_spline_bound(F_spline *s, int *xmin, int *ymin, int *xmax, int *ymax);
+static void	approx_spline_bound(F_spline *s, int *xmin, int *ymin, int *xmax, int *ymax);
+static void arrow_bound(int objtype, F_line *obj, int *xmin, int *ymin, int *xmax, int *ymax);
 
-arc_bound(arc, xmin, ymin, xmax, ymax)
-    F_arc	   *arc;
-    int		   *xmin, *ymin, *xmax, *ymax;
+void arc_bound(F_arc *arc, int *xmin, int *ymin, int *xmax, int *ymax)
 {
     float	    alpha, beta;
     double	    dx, dy, radius;
@@ -134,7 +135,11 @@ arc_bound(arc, xmin, ymin, xmax, ymax)
     	sy = min2(sy,arc->center.y);
     }
 
-    half_wd = arc->thickness / 2.0 * ZOOM_FACTOR;
+    /* don't adjust by line thickness if = 1 */
+    if (arc->thickness == 1)
+	half_wd = 0;
+    else
+	half_wd = arc->thickness / 2.0 * ZOOM_FACTOR;
     *xmax = bx + half_wd;
     *ymax = by + half_wd;
     *xmin = sx - half_wd;
@@ -152,9 +157,7 @@ arc_bound(arc, xmin, ymin, xmax, ymax)
     arrow_bound(O_ARC, (F_line *)arc, xmin, ymin, xmax, ymax);
 }
 
-compound_bound(compound, xmin, ymin, xmax, ymax)
-    F_compound	   *compound;
-    int		   *xmin, *ymin, *xmax, *ymax;
+void compound_bound(F_compound *compound, int *xmin, int *ymin, int *xmax, int *ymax)
 {
     F_arc	   *a;
     F_ellipse	   *e;
@@ -293,12 +296,8 @@ compound_bound(compound, xmin, ymin, xmax, ymax)
 
 /* basically, use the code for drawing the ellipse to find its bounds */
 /* From James Tough (see u_draw.c: angle_ellipse() */
-/* include the bounds for the markers (even though we don't know if they
-   are on or off now */
 
-ellipse_bound(e, xmin, ymin, xmax, ymax)
-    F_ellipse	   *e;
-    int		   *xmin, *ymin, *xmax, *ymax;
+void ellipse_bound(F_ellipse *e, int *xmin, int *ymin, int *xmax, int *ymax)
 {
 	int	    half_wd;
 	double	    c1, c2, c3, c4, c5, c6, v1, cphi, sphi, cphisqr, sphisqr;
@@ -315,9 +314,15 @@ ellipse_bound(e, xmin, ymin, xmax, ymax)
 	    *ymin = *ymax = ycen;
 	    return;
 	}
+
+	/* don't adjust by line thickness if = 1 */
+	if (e->thickness == 1)
+	    half_wd = 0;
+	else
+	    half_wd = e->thickness / 2.0 * ZOOM_FACTOR;
+
 	/* angle of 0 is easy */
 	if (e->angle == 0) {
-	    half_wd = e->thickness / 2.0 * ZOOM_FACTOR;
 	    *xmin = xcen - a - half_wd;
 	    *xmax = xcen + a + half_wd;
 	    *ymin = ycen - b - half_wd;
@@ -389,18 +394,10 @@ ellipse_bound(e, xmin, ymin, xmax, ymax)
 	}
 	/* for simplicity, just add half the line thickness to xmax and ymax
 	   and subtract half from xmin and ymin */
-	half_wd = e->thickness / 2.0;	/* want Fig units, so don't multiply by ZOOM_FACTOR */
-	*xmax += half_wd;
-	*ymax += half_wd;
-	*xmin -= half_wd;
-	*ymin -= half_wd;
-	/* now include the markers because they could be outside the bounds of
-	   the ellipse (+/-3 is (roughly) half the size of the markers (5)) */
-	/* and multiply back to real coordinates */
-	*xmax = max2(*xmax*ZOOM_FACTOR, max2(e->start.x, e->end.x)+3);
-	*ymax = max2(*ymax*ZOOM_FACTOR, max2(e->start.y, e->end.y)+3);
-	*xmin = min2(*xmin*ZOOM_FACTOR, min2(e->start.x, e->end.x)-3);
-	*ymin = min2(*ymin*ZOOM_FACTOR, min2(e->start.y, e->end.y)-3);
+	*xmin = *xmin * ZOOM_FACTOR + half_wd;
+	*ymin = *ymin * ZOOM_FACTOR + half_wd;
+	*xmax = *xmax * ZOOM_FACTOR + half_wd;
+	*ymax = *ymax * ZOOM_FACTOR + half_wd;
 	/* show the boundaries */
 	if (appres.DEBUG && !preview_in_progress) {
 	    pw_vector(canvas_win, *xmin, *ymin, *xmax, *ymin, PAINT, 1, RUBBER_LINE, 0.0, RED);
@@ -410,9 +407,7 @@ ellipse_bound(e, xmin, ymin, xmax, ymax)
 	}
 }
 
-line_bound(l, xmin, ymin, xmax, ymax)
-    F_line	   *l;
-    int		   *xmin, *ymin, *xmax, *ymax;
+void line_bound(F_line *l, int *xmin, int *ymin, int *xmax, int *ymax)
 {
     points_bound(l->points, (l->thickness / 2), xmin, ymin, xmax, ymax);
     /* now add in the arrow (if any) boundaries */
@@ -422,9 +417,7 @@ line_bound(l, xmin, ymin, xmax, ymax)
     }
 }
 
-spline_bound(s, xmin, ymin, xmax, ymax)
-    F_spline	   *s;
-    int		   *xmin, *ymin, *xmax, *ymax;
+void spline_bound(F_spline *s, int *xmin, int *ymin, int *xmax, int *ymax)
 {
     if (approx_spline(s))
 	approx_spline_bound(s, xmin, ymin, xmax, ymax);
@@ -441,9 +434,7 @@ spline_bound(s, xmin, ymin, xmax, ymax)
 }
 
 static void
-general_spline_bound(s, xmin, ymin, xmax, ymax)
-    F_spline      *s;
-    int	          *xmin, *ymin, *xmax, *ymax;
+general_spline_bound(F_spline *s, int *xmin, int *ymin, int *xmax, int *ymax)
 {
   F_point   *cur_point, *next_point;
   F_sfactor *cur_sfactor;     
@@ -491,9 +482,7 @@ general_spline_bound(s, xmin, ymin, xmax, ymax)
 }
 
 static void
-approx_spline_bound(s, xmin, ymin, xmax, ymax)
-    F_spline	   *s;
-    int		   *xmin, *ymin, *xmax, *ymax;
+approx_spline_bound(F_spline *s, int *xmin, int *ymin, int *xmax, int *ymax)
 {
     F_point	   *p;
     int		    px, py;
@@ -515,11 +504,7 @@ approx_spline_bound(s, xmin, ymin, xmax, ymax)
    The actual corners of the rectangle are returned in (rx1,ry1)...(rx4,ry4)
  */
 
-text_bound(t, xmin, ymin, xmax, ymax,
-		  rx1, ry1, rx2, ry2, rx3, ry3, rx4, ry4)
-    F_text	   *t;
-    int		   *xmin, *ymin, *xmax, *ymax;
-    int		   *rx1,*ry1, *rx2,*ry2, *rx3,*ry3, *rx4,*ry4;
+void text_bound(F_text *t, int *xmin, int *ymin, int *xmax, int *ymax, int *rx1, int *ry1, int *rx2, int *ry2, int *rx3, int *ry3, int *rx4, int *ry4)
 {
     int		    h, l;
     int		    x1,y1, x2,y2, x3,y3, x4,y4;
@@ -570,10 +555,7 @@ text_bound(t, xmin, ymin, xmax, ymax,
 }
 
 static void
-points_bound(points, half_wd, xmin, ymin, xmax, ymax)
-    F_point	   *points;
-    int		    half_wd;
-    int		   *xmin, *ymin, *xmax, *ymax;
+points_bound(F_point *points, int half_wd, int *xmin, int *ymin, int *xmax, int *ymax)
 {
     int		    bx, by, sx, sy;
     F_point	   *p;
@@ -594,8 +576,7 @@ points_bound(points, half_wd, xmin, ymin, xmax, ymax)
 }
 
 int
-overlapping(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2)
-    int		    xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2;
+overlapping(int xmin1, int ymin1, int xmax1, int ymax1, int xmin2, int ymin2, int xmax2, int ymax2)
 {
     if (xmin1 < xmin2)
 	if (ymin1 < ymin2)
@@ -610,10 +591,7 @@ overlapping(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2)
 
 /* extend xmin, ymin xmax, ymax by the arrow boundaries of obj (if any) */
 
-arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
-    int		    objtype;
-    F_line	   *obj;
-    int		   *xmin, *ymin, *xmax, *ymax;
+void arrow_bound(int objtype, F_line *obj, int *xmin, int *ymin, int *xmax, int *ymax)
 {
     int		    fxmin, fymin, fxmax, fymax;
     int		    bxmin, bymin, bxmax, bymax;
@@ -621,8 +599,8 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
     F_arc	   *a;
     int		    p1x, p1y, p2x, p2y;
     int		    dum;
-    zXPoint	    arrowpts[50];
-    int		    npts, i;
+    zXPoint	    arrowpts[50], arrowfillpts[50], arrowclippts[50];
+    int		    npts, nfillpts, i;
 
     if (obj->for_arrow) {
 	if (objtype == O_ARC) {
@@ -642,8 +620,8 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 	    p2x = p->x;
 	    p2y = p->y;
 	}
-	calc_arrow(p1x, p1y, p2x, p2y, &dum, &dum, &dum, &dum,
-			obj->for_arrow, arrowpts, &npts, &dum);
+	calc_arrow(p1x, p1y, p2x, p2y, obj->thickness,
+			obj->for_arrow, arrowpts, &npts, arrowfillpts, &nfillpts, arrowclippts, &dum);
 	fxmin=fymin=10000000;
 	fxmax=fymax=-10000000;
 	for (i=0; i<npts; i++) {
@@ -676,8 +654,8 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 	    p2x = obj->points->x;	/* first point (forward tip) */
 	    p2y = obj->points->y;
 	}
-	calc_arrow(p1x, p1y, p2x, p2y, &dum, &dum, &dum, &dum,
-			obj->back_arrow, arrowpts, &npts, &dum);
+	calc_arrow(p1x, p1y, p2x, p2y, obj->thickness,
+			obj->back_arrow, arrowpts, &npts, arrowfillpts, &nfillpts, arrowclippts, &dum);
 	bxmin=bymin=10000000;
 	bxmax=bymax=-10000000;
 	for (i=0; i<npts; i++) {
@@ -702,8 +680,7 @@ arrow_bound(objtype, obj, xmin, ymin, xmax, ymax)
 /* rounds DOWN the coordinates depending on point positioning mode */
 
 int
-floor_coords(x)
-int x;
+floor_coords(int x)
 {
     register int tmp_t;
 
@@ -721,8 +698,7 @@ int x;
 /* rounds UP the coordinates depending on point positioning mode */
 
 int
-ceil_coords(x)
-int x;
+ceil_coords(int x)
 {
     register int tmp_t;
 

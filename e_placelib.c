@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -39,6 +39,15 @@
 #include "w_setup.h"
 #include "w_zoom.h"
 
+#include "e_flip.h"
+#include "e_scale.h"
+#include "u_redraw.h"
+#include "u_translate.h"
+#include "u_undo.h"
+#include "w_cursor.h"
+#include "w_modepanel.h"
+#include "w_msgpanel.h"
+
 /* EXPORTS */
 
 int	cur_library_object = -1;
@@ -48,18 +57,22 @@ int	old_library_object = -1;
 
 static int	off_library_x,off_library_y;
 
-static void	init_move_object(),move_object(),change_draw_mode();
-static void	transform_lib_obj(),place_lib_object();
-static void	put_draw();
-static void	sel_place_lib_obj_proc();
+static void	init_move_object(int x, int y),move_object(int x, int y),change_draw_mode(int x, int y);
+static void	transform_lib_obj(XKeyEvent *kpe, unsigned char c, KeySym keysym),place_lib_object(int x, int y, unsigned int shift);
+static void	put_draw(int paint_mode);
+static void	sel_place_lib_obj_proc(int x, int y, int shift);
 static int	orig_put_x, orig_put_y;
 
 static Boolean	draw_box = False;
 
+
+
 void
-put_selected()
+put_selected(void)
 {
-	int x,y;
+	int	 i, x,y;
+	char	*com;
+
 	set_mousefun("place object","new object","cancel library",
 			"place and edit","change draw mode", "place at orig posn");
 	set_action_on();
@@ -86,15 +99,25 @@ put_selected()
 	get_pointer_win_xy(&x, &y);
 	/* draw the first image */
 	init_move_object(BACKX(x), BACKY(y));
+
+	/* message that we're placing object so and so */
+	com = strdup(lib_compounds[cur_library_object]->compound->comments);
+	if (strlen(com)) {
+	    /* change newlines to blanks */
+	    for (i=strlen(com); i>=0; i--)
+		if (com[i] == '\n')
+		    com[i] = ' ';
+	    put_msg("Placing library object \"%s\" (%s.fig)",
+		com, library_objects_texts[cur_library_object]);
+	} else {
+	    put_msg("Placing library object %s.fig", library_objects_texts[cur_library_object]);
+	}
 }
 
 /* allow rotation or flipping of library object before placing on canvas */
 
 static void
-transform_lib_obj(kpe, c, keysym)
-    XKeyEvent	   *kpe;
-    unsigned char   c;
-    KeySym	    keysym;
+transform_lib_obj(XKeyEvent *kpe, unsigned char c, KeySym keysym)
 {
     int x,y;
 
@@ -125,9 +148,7 @@ transform_lib_obj(kpe, c, keysym)
 }
 
 static void
-sel_place_lib_obj_proc(x, y, shift)
-    int		    x, y;
-    int		    shift;
+sel_place_lib_obj_proc(int x, int y, int shift)
 {
     /* if shift-left button, change drawing mode */
     if (shift) {
@@ -139,7 +160,7 @@ sel_place_lib_obj_proc(x, y, shift)
 }
 
 void
-sel_place_lib_obj()
+sel_place_lib_obj(void)
 {
     canvas_kbd_proc = transform_lib_obj;
     canvas_locmove_proc = null_proc;
@@ -155,8 +176,7 @@ sel_place_lib_obj()
 }
 
 static void
-put_draw(paint_mode)
-int paint_mode;
+put_draw(int paint_mode)
 {
   register int    x1, y1, x2, y2;
   
@@ -175,8 +195,7 @@ int paint_mode;
 }
 
 static void
-change_draw_mode(x, y)
-    int		    x, y;
+change_draw_mode(int x, int y)
 {
     put_draw(ERASE);
     draw_box = !draw_box;
@@ -190,9 +209,7 @@ change_draw_mode(x, y)
 /* place library object at original position in its file */
 
 static void
-place_lib_object_orig(x, y, shift)
-    int		    x, y;
-    unsigned int    shift;
+place_lib_object_orig(int x, int y, unsigned int shift)
 {
     int dx,dy;
 
@@ -212,9 +229,7 @@ place_lib_object_orig(x, y, shift)
 }
 
 static void
-place_lib_object(x, y, shift)
-    int		    x, y;
-    unsigned int    shift;
+place_lib_object(int x, int y, unsigned int shift)
 {
     F_compound *this_c;
 
@@ -249,8 +264,7 @@ place_lib_object(x, y, shift)
 
 
 static void
-move_object(x, y)
-    int		    x, y;
+move_object(int x, int y)
 {
     int dx,dy;
     void  (*save_canvas_locmove_proc) ();
@@ -274,8 +288,7 @@ move_object(x, y)
 }
 
 static void
-init_move_object(x, y)
-    int		    x, y;
+init_move_object(int x, int y)
 {	
     cur_x=x;
     cur_y=y;
@@ -290,9 +303,7 @@ init_move_object(x, y)
 /* cancel placing a library object */
 
 void
-cancel_place_lib_obj(x, y, shift)
-    int		    x, y;
-    int		    shift;
+cancel_place_lib_obj(int x, int y, int shift)
 {
     /* if shift right-button, actually do a place in original position */
     if (shift) {

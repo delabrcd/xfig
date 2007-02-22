@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -42,8 +42,7 @@ int		TOPRULER_WD, TOPRULER_HT;
 int		SIDERULER_WD, SIDERULER_HT;
 int		SW_PER_ROW, SW_PER_COL;
 
-setup_sizes(new_canv_wd, new_canv_ht)
-    int		    new_canv_wd, new_canv_ht;
+void setup_sizes(int new_canv_wd, int new_canv_ht)
 {
     int		    NUM_CMD_MENUS;
 

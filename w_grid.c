@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -26,6 +26,8 @@
 #include "w_util.h"
 #include "w_zoom.h"
 
+#include "u_redraw.h"
+
 #define null_width 32
 #define null_height 32
 
@@ -34,7 +36,9 @@ static char	null_bits[null_width * null_height / 8] = {0};
 static Pixmap	null_pm, grid_pm = 0;
 static unsigned long bg, fg;
 
-init_grid()
+
+
+void init_grid(void)
 {
     DeclareArgs(2);
 
@@ -51,13 +55,13 @@ init_grid()
 
 /* grid in X11 is simply the background of the canvas */
 
-setup_grid()
+void setup_grid(void)
 {
-    float	    coarse, fine;
-    float	    x, x0c, x0f, y, y0c, y0f;
-    int		    grid;
+    double	    spacing;
+    double	    x, x0c, y, y0c;
+    int		    grid, grid_unit;
     int		    dim;
-    static	    prev_grid = -1;
+    static int	    prev_grid = -1;
 
     DeclareArgs(2);
 
@@ -66,63 +70,59 @@ setup_grid()
     if (grid == GRID_0) {
 	FirstArg(XtNbackgroundPixmap, null_pm);
     } else {
-	coarse = grid_coarse[cur_gridunit][grid-1] * zoomscale;
-	if (display_zoomscale < 1.0)
-	    fine = grid_fine[cur_gridunit][grid-1] * zoomscale;
-	else
-	    fine = grid_fine[cur_gridunit][grid-1] / ZOOM_FACTOR;
+	grid_unit = cur_gridunit;
+	/* user scale not = 1.0, use tenths of inch if inch scale */
+	if (appres.userscale != 1.0 && appres.INCHES)
+	    grid_unit = TENTH_UNIT;
+	spacing = grid_spacing[grid_unit][grid-1] * zoomscale/appres.userscale;
 	/* if zoom is small, use larger grid */
-	while (coarse < 6 && ++grid <= GRID_4) {
-	    coarse = grid_coarse[cur_gridunit][grid-1] * zoomscale;
-	    fine = grid_fine[cur_gridunit][grid-1] * zoomscale;
+	while (spacing < 5.0 && ++grid <= GRID_4) {
+	    spacing = grid_spacing[grid_unit][grid-1] * zoomscale/appres.userscale;
 	}
+	/* round to three decimal places */
+	spacing = (int) (spacing*1000.0) / 1000.0;
 
-	if (coarse == 0.0) {	/* coarse must be <> 0 */
-	    coarse = fine;
-	    fine = 0.0;
-	}
-	/* size of the pixmap equal to 1 inch or 2 cm to reset any 
-	   error at those boundaries */
-	dim = round(appres.INCHES? 
-			PIX_PER_INCH*zoomscale:
-			2*PIX_PER_CM*zoomscale);
-	/* HOWEVER, if that is a ridiculous size, limit it to approx screen size */
-	if (dim > screen_wd)
-		dim = screen_wd;
-
-	if (grid_pm)
-	    XFreePixmap(tool_d, grid_pm);
-	grid_pm = XCreatePixmap(tool_d, canvas_win, dim, dim, tool_dpth);
-	/* first fill the pixmap with the background color */
-	XSetForeground(tool_d, grid_gc, bg);
-	XFillRectangle(tool_d, grid_pm, grid_gc, 0, 0, dim, dim);
-	/* now write the grid in the grid color */
-	XSetForeground(tool_d, grid_gc, grid_color);
-	x0c = -fmod((double) zoomscale * zoomxoff, (double) coarse);
-	y0c = -fmod((double) zoomscale * zoomyoff, (double) coarse);
-	if (coarse - x0c < 0.5)
-		x0c = 0.0;
-	if (coarse - y0c < 0.5)
-		y0c = 0.0;
-	if (fine != 0.0) {
-	    x0f = -fmod((double) zoomxoff, (double) fine / ZOOM_FACTOR);
-	    y0f = -fmod((double) zoomyoff, (double) fine / ZOOM_FACTOR);
-	    for (x = x0c; x < dim; x += coarse)
-		for (y = y0f; y < dim; y += fine) {
-		    XDrawPoint(tool_d, grid_pm, grid_gc, round(x), round(y));
-		}
-	    for (y = y0c; y < dim; y += coarse)
-		for (x = x0f; x < dim; x += fine) {
-		    XDrawPoint(tool_d, grid_pm, grid_gc, round(x), round(y));
-		}
+	if (spacing <= 4.0) {
+	    /* too small at this zoom, no grid */
+	    FirstArg(XtNbackgroundPixmap, null_pm);
+	    redisplay_canvas();
 	} else {
-	    for (x = x0c; x < dim; x += coarse)
-		for (y = y0c; y < dim; y += coarse) {
-		    XDrawPoint(tool_d, grid_pm, grid_gc, round(x), round(y));
-		}
-	}
+		/* size of the pixmap equal to 1 inch or 2 cm to reset any 
+		   error at those boundaries */
+		dim = (int) round(appres.INCHES? 
+				PIX_PER_INCH*zoomscale/appres.userscale:
+				2*PIX_PER_CM*zoomscale/appres.userscale);
+		/* HOWEVER, if that is a ridiculous size, limit it to approx screen size */
+		if (dim > CANVAS_WD)
+		    dim = CANVAS_WD;
 
-	FirstArg(XtNbackgroundPixmap, grid_pm);
+		while (fabs((float) dim / spacing - (int) ((float) dim / spacing)) > 0.01) {
+		    dim++;
+		    if (dim > CANVAS_WD)
+			break;
+		}
+
+		if (grid_pm)
+		    XFreePixmap(tool_d, grid_pm);
+		grid_pm = XCreatePixmap(tool_d, canvas_win, dim, dim, tool_dpth);
+		/* first fill the pixmap with the background color */
+		XSetForeground(tool_d, grid_gc, bg);
+		XFillRectangle(tool_d, grid_pm, grid_gc, 0, 0, dim, dim);
+		/* now write the grid in the grid color */
+		XSetForeground(tool_d, grid_gc, grid_color);
+		x0c = -fmod((double) zoomscale * zoomxoff, spacing);
+		y0c = -fmod((double) zoomscale * zoomyoff, spacing);
+		if (spacing - x0c < 0.5)
+			x0c = 0.0;
+		if (spacing - y0c < 0.5)
+			y0c = 0.0;
+		for (x = x0c; x < dim; x += spacing)
+		    XDrawLine(tool_d, grid_pm, grid_gc, (int) round(x), 0, (int) round(x), dim);
+		for (y = y0c; y < dim; y += spacing)
+		    XDrawLine(tool_d, grid_pm, grid_gc, 0, (int) round(y), dim, (int) round(y));
+
+		FirstArg(XtNbackgroundPixmap, grid_pm);
+	}
     }
     SetValues(canvas_sw);
     if (prev_grid == GRID_0 && grid == GRID_0)

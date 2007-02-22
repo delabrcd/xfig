@@ -5,12 +5,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -30,6 +30,14 @@
 #include "w_setup.h"
 #include "w_util.h"
 
+#include "f_util.h"
+#include "u_bound.h"
+#include "u_redraw.h"
+#include "w_canvas.h"
+#include "w_cmdpanel.h"
+#include "w_color.h"
+#include "w_cursor.h"
+
 /* EXPORTS */
 
 Widget	print_popup;	/* the main print popup */
@@ -42,7 +50,7 @@ Widget	print_overlap_panel;
 Widget	printer_menu_button;
 Widget	print_mag_text;
 Widget	print_background_panel;
-void	print_update_figure_size();
+void	print_update_figure_size(void);
 Boolean	print_all_layers=True;
 Widget	print_grid_minor_text, print_grid_major_text;
 Widget	print_grid_minor_menu_button, print_grid_minor_menu;
@@ -57,24 +65,24 @@ static Widget	beside, below;
 
 #define MAX_PRINTERS 1000		/* for those systems using lprng :-) */
 static char    *printer_names[MAX_PRINTERS];
-static int	parse_printcap();
+static int	parse_printcap(char **names);
 static int	numprinters;
 
-static void	orient_select();
+static void	orient_select(Widget w, XtPointer new_orient, XtPointer garbage);
 
-static void	just_select();
+static void	just_select(Widget w, XtPointer new_just, XtPointer garbage);
 static Widget	just_lab;
 
-static void	papersize_select();
+static void	papersize_select(Widget w, XtPointer new_papersize, XtPointer garbage);
 static Widget	papersize_menu;
 
-static void	background_select();
+static void	background_select(Widget w, XtPointer closure, XtPointer call_data);
 static Widget	background_menu;
 
-static void	multiple_select();
-static void	overlap_select();
+static void	multiple_select(Widget w, XtPointer new_multiple, XtPointer garbage);
+static void	overlap_select(Widget w, XtPointer new_overlap, XtPointer garbage);
 
-static void	printer_select();
+static void	printer_select(Widget w, XtPointer new_printer, XtPointer garbage);
 
 static Widget	dismiss, print, 
 		printer_text, param_text,
@@ -84,17 +92,17 @@ static Widget	dismiss, print,
 
 static Widget	size_lab;
 
-static void	update_figure_size();
-static void	fit_page();
+static void	update_figure_size(void);
+static void	fit_page(void);
 
 static Position xposn, yposn;
 static String   prn_translations =
         "<Message>WM_PROTOCOLS: DismissPrint()\n";
-static void     print_panel_dismiss(), do_clear_batch();
-static void	get_magnif();
-static void update_mag();
-void		do_print(), do_print_batch();
-static XtCallbackProc switch_print_layers();
+static void     print_panel_dismiss(Widget w, XButtonEvent *ev), do_clear_batch(Widget w);
+static void	get_magnif(void);
+static void update_mag(Widget widget, XtPointer *item, XtPointer *event);
+void		do_print(Widget w), do_print_batch(Widget w);
+static XtCallbackProc switch_print_layers(Widget w, XtPointer closure, XtPointer call_data);
 
 /* callback list to keep track of magnification window */
 
@@ -116,10 +124,12 @@ static XtActionsRec     prn_actions[] =
     {"UpdateMag", (XtActionProc) update_mag},
 };
 
+
+void create_print_panel (Widget w);
+void update_batch_count (void);
+
 static void
-print_panel_dismiss(w, ev)
-    Widget	    w;
-    XButtonEvent   *ev;
+print_panel_dismiss(Widget w, XButtonEvent *ev)
 {
     /* first get magnification in case it changed */
     /* the other things like paper size, justification, etc. are already
@@ -131,8 +141,7 @@ print_panel_dismiss(w, ev)
 static char	print_msg[] = "PRINT";
 
 void
-do_print(w)
-    Widget	    w;
+do_print(Widget w)
 {
 	char	   *printer_val;
 	char	   *param_val;
@@ -162,7 +171,7 @@ do_print(w)
 	param_val = panel_get_value(param_text);
 
 	/* get grid params and assemble into fig2dev parm */
-	get_grid_spec(grid, print_grid_minor_text);
+	get_grid_spec(grid, print_grid_minor_text, print_grid_major_text);
 
 	if (batch_exists) {
 	    gen_print_cmd(cmd,batch_file,printer_val,param_val);
@@ -190,7 +199,7 @@ do_print(w)
 /* calculate the magnification needed to fit the figure to the page size */
 
 static void
-fit_page()
+fit_page(void)
 {
 	int	lx,ly,ux,uy;
 	float	wd,ht,pwd,pht;
@@ -238,7 +247,7 @@ fit_page()
 /* get the magnification from the widget and make it reasonable if not */
 
 static void
-get_magnif()
+get_magnif(void)
 {
 	char buf[60];
 
@@ -254,10 +263,7 @@ get_magnif()
 /* as the user types in a magnification, update the figure size */
 
 static void
-update_mag(widget, item, event)
-    Widget	    widget;
-    XtPointer	   *item;
-    XtPointer	   *event;
+update_mag(Widget widget, XtPointer *item, XtPointer *event)
 {
     char	   *buf;
 
@@ -267,7 +273,7 @@ update_mag(widget, item, event)
 }
 
 static void
-update_figure_size()
+update_figure_size(void)
 {
     char buf[60];
 
@@ -285,8 +291,7 @@ static int num_batch_figures=0;
 static Boolean writing_batch=False;
 
 void
-do_print_batch(w)
-    Widget	    w;
+do_print_batch(Widget w)
 {
 	FILE	   *infp,*outfp;
 	char	    tmp_exp_file[32];
@@ -318,10 +323,10 @@ do_print_batch(w)
 	make_rgb_string(export_background_color, backgrnd);
 
 	/* get grid params and assemble into fig2dev parm */
-	get_grid_spec(grid, print_grid_minor_text);
+	get_grid_spec(grid, print_grid_minor_text, print_grid_major_text);
 
 	print_to_file(tmp_exp_file, "ps", appres.magnification, 0, 0, backgrnd,
-				NULL, False, print_all_layers, 0, False, grid);
+				NULL, False, print_all_layers, 0, False, grid, appres.overlap);
 	put_msg("Appending to batch file \"%s\" (%s mode) ... done",
 		    batch_file, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
 	app_flush();		/* make sure message gets displayed */
@@ -349,8 +354,7 @@ do_print_batch(w)
 }
 
 static void
-do_clear_batch(w)
-    Widget	    w;
+do_clear_batch(Widget w)
 {
 	unlink(batch_file);
 	batch_exists = False;
@@ -361,7 +365,7 @@ do_clear_batch(w)
 
 /* update the label widget with the current number of figures in the batch file */
 
-update_batch_count()
+void update_batch_count(void)
 {
 	char	    num[10];
 
@@ -380,9 +384,7 @@ update_batch_count()
 }
 
 static void
-orient_select(w, new_orient, garbage)
-    Widget	    w;
-    XtPointer	    new_orient, garbage;
+orient_select(Widget w, XtPointer new_orient, XtPointer garbage)
 {
     if (appres.landscape != (int) new_orient) {
 	change_orient();
@@ -393,9 +395,7 @@ orient_select(w, new_orient, garbage)
 }
 
 static void
-just_select(w, new_just, garbage)
-    Widget	    w;
-    XtPointer	    new_just, garbage;
+just_select(Widget w, XtPointer new_just, XtPointer garbage)
 {
 
     FirstArg(XtNlabel, XtName(w));
@@ -407,9 +407,7 @@ just_select(w, new_just, garbage)
 }
 
 static void
-papersize_select(w, new_papersize, garbage)
-    Widget	    w;
-    XtPointer	    new_papersize, garbage;
+papersize_select(Widget w, XtPointer new_papersize, XtPointer garbage)
 {
     int papersize = (int) new_papersize;
 
@@ -424,9 +422,7 @@ papersize_select(w, new_papersize, garbage)
 }
 
 static void
-multiple_select(w, new_multiple, garbage)
-    Widget	    w;
-    XtPointer	    new_multiple, garbage;
+multiple_select(Widget w, XtPointer new_multiple, XtPointer garbage)
 {
     int multiple = (int) new_multiple;
 
@@ -460,9 +456,7 @@ multiple_select(w, new_multiple, garbage)
 }
 
 static void
-overlap_select(w, new_overlap, garbage)
-    Widget	    w;
-    XtPointer	    new_overlap, garbage;
+overlap_select(Widget w, XtPointer new_overlap, XtPointer garbage)
 {
     int overlap = (int) new_overlap;
 
@@ -477,9 +471,7 @@ overlap_select(w, new_overlap, garbage)
 /* user selected a background color from the menu */
 
 static void
-background_select(w, closure, call_data)
-    Widget	    w;
-    XtPointer	    closure, call_data;
+background_select(Widget w, XtPointer closure, XtPointer call_data)
 {
     Pixel	    bgcolor, fgcolor;
 
@@ -505,9 +497,7 @@ background_select(w, closure, call_data)
 /* come here when user chooses minor grid interval from menu */
 
 void
-print_grid_minor_select(w, new_grid_choice, garbage)
-    Widget	    w;
-    XtPointer	    new_grid_choice, garbage;
+print_grid_minor_select(Widget w, XtPointer new_grid_choice, XtPointer garbage)
 {
     char *val;
     grid_minor = (int) new_grid_choice;
@@ -523,9 +513,7 @@ print_grid_minor_select(w, new_grid_choice, garbage)
 /* come here when user chooses major grid interval from menu */
 
 void
-print_grid_major_select(w, new_grid_choice, garbage)
-    Widget	    w;
-    XtPointer	    new_grid_choice, garbage;
+print_grid_major_select(Widget w, XtPointer new_grid_choice, XtPointer garbage)
 {
     char *val;
     grid_major = (int) new_grid_choice;
@@ -539,9 +527,7 @@ print_grid_major_select(w, new_grid_choice, garbage)
 }
 
 static void
-printer_select(w, new_printer, garbage)
-    Widget	    w;
-    XtPointer	    new_printer, garbage;
+printer_select(Widget w, XtPointer new_printer, XtPointer garbage)
 {
     int printer = (int) new_printer;
 
@@ -556,7 +542,7 @@ printer_select(w, new_printer, garbage)
 /* update the figure size window */
 
 void
-print_update_figure_size()
+print_update_figure_size(void)
 {
 	float	mult;
 	char	*unit;
@@ -576,8 +562,7 @@ print_update_figure_size()
 }
 
 void
-popup_print_panel(w)
-    Widget	    w;
+popup_print_panel(Widget w)
 {
     char	    buf[30];
 
@@ -600,8 +585,6 @@ popup_print_panel(w)
 	background_menu = make_color_popup_menu(print_background_panel,
 	    				"Background Color", background_select, 
 					NO_TRANSP, INCL_BACKG);
-	/* reset grid menus to be consistent with units */
-	reset_grid_menus();
     } else {
 	create_print_panel(w);
     }
@@ -620,8 +603,7 @@ popup_print_panel(w)
 
 /* make the popup print panel */
 
-create_print_panel(w)
-    Widget	    w;
+void create_print_panel(Widget w)
 {
 	Widget	    image;
 	Widget	    entry,mag_spinner, below, fitpage;
@@ -912,7 +894,7 @@ create_print_panel(w)
 	NextArg(XtNright, XtChainLeft);
 	beside = XtCreateManagedWidget("grid_label", labelWidgetClass,
 					    print_panel, Args, ArgCount);
-	below = make_grid_options(print_panel, print_background_panel, beside,
+	below = make_grid_options(print_panel, print_background_panel, beside, minor_grid, major_grid,
 				&print_grid_minor_menu_button, &print_grid_major_menu_button,
 				&print_grid_minor_menu, &print_grid_major_menu,
 				&print_grid_minor_text, &print_grid_major_text,
@@ -1147,9 +1129,7 @@ create_print_panel(w)
 /* when user toggles between printing all or only active layers */
 
 static XtCallbackProc
-switch_print_layers(w, closure, call_data)
-    Widget	    w;
-    XtPointer       closure, call_data;
+switch_print_layers(Widget w, XtPointer closure, XtPointer call_data)
 {
     Boolean	    state;
     int		    which;
@@ -1183,13 +1163,14 @@ switch_print_layers(w, closure, call_data)
 
     /* set global state */
     print_all_layers = state;
+
+    return;
 }
 
 /* if the users's sytem doesn't have an /etc/printcap file, this will return 0 */
 
 static int
-parse_printcap(names)
-char *names[];
+parse_printcap(char **names)
 {
     FILE   *printcap;
     char    str[300];
@@ -1274,10 +1255,7 @@ char *names[];
 }
 
 Widget
-make_layer_choice(label_all, label_active, parent, below, beside, hdist, vdist)
-    char	*label_all, *label_active;
-    Widget	 parent, below, beside;
-    int		 hdist, vdist;
+make_layer_choice(char *label_all, char *label_active, Widget parent, Widget below, Widget beside, int hdist, int vdist)
 {
 	Widget	 form;
 

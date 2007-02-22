@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -35,14 +35,20 @@
 #include "paintop.h"
 #include "mode.h"
 #include "object.h"
+#include "u_create.h"
 #include "u_fonts.h"
 #include "w_canvas.h"
 #include "w_drawprim.h"
 #include "w_indpanel.h"
+#include "w_layers.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
-#include "w_zoom.h"
+
+#include "u_create.h"
+#include "w_cursor.h"
+#include "w_file.h"
+#include "w_rottext.h"
 
 /* EXPORTS */
 
@@ -53,9 +59,14 @@ XFontStruct	*canvas_font;
 
 /* LOCAL */
 
+static void	clip_line(int x1, int y1, int x2, int y2,  short *x3, short *y3, short *x4, short *y4);
+static int	clip_poly(XPoint *inVertices, int npoints, XPoint *outVertices);
+static void	intersect(XPoint first, XPoint second, int x1, int y1, int x2, int y2, XPoint *intersectPt);
+static Boolean	inside (XPoint testVertex, int x1, int y1, int x2, int y2);
+static void	setup_next(int npoints, XPoint *in, XPoint *out);
 static Pixel	gc_color[NUMOPS], gc_background[NUMOPS];
 static XRectangle clip[1];
-static int	parsesize();
+static int	parsesize(char *name);
 static Boolean	openwinfonts;
 
 #define MAXNAMES 35
@@ -65,11 +76,18 @@ static struct {
     int		    s;
 }		flist[MAXNAMES];
 
-init_font()
+
+void rescale_pattern (int patnum);
+void zXFillPolygon (Display *d, Window w, GC gc, zXPoint *points, int n, int complex, int coordmode);
+void zXDrawLines (Display *d, Window w, GC gc, zXPoint *points, int n, int coordmode);
+void scale_pattern (int indx);
+int SutherlandHodgmanPolygoClip (XPoint *inVertices, XPoint *outVertices, int inLength, int x1, int y1, int x2, int y2);
+
+void init_font(void)
 {
     struct xfont   *newfont, *nf;
     int		    f, count, i, p, ss;
-    char	    template[200];
+    char	    template[300];
     char	  **fontlist, **fname;
 
     if (appres.boldFont == NULL || *appres.boldFont == '\0')
@@ -119,13 +137,12 @@ init_font()
 	    strcpy(template,x_fontinfo[0].template);  /* nope, check for font size 0 */
 	    strcat(template,"0-0-*-*-*-*-");
 	    /* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
-	    if (strstr(template,"symbol") == NULL &&
-		strstr(template,"zapf dingbats") == NULL)
+	    if (strstr(template,"ymbol") == NULL &&
+		strstr(template,"ingbats") == NULL)
 		    strcat(template,"ISO8859-*");
 	    else
 		strcat(template,"*-*");
-	    if ((fontlist = XListFonts(tool_d, template, 1, &count))==0)
-		appres.scalablefonts = False;	/* none, turn off request for them */
+	    fontlist = XListFonts(tool_d, template, 1, &count);
 	}
 	XFreeFontNames(fontlist); 
     }
@@ -139,8 +156,8 @@ init_font()
 	    strcpy(template,x_fontinfo[f].template);
 	    strcat(template,"*-*-*-*-*-*-");
 	    /* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
-	    if (strstr(template,"symbol") == NULL &&
-		strstr(template,"zapf dingbats") == NULL)
+	    if (strstr(template,"ymbol") == NULL &&
+		strstr(template,"ingbats") == NULL)
 		    strcat(template,"ISO8859-*");
 	    else
 		strcat(template,"*-*");
@@ -186,8 +203,7 @@ init_font()
 /* e.g. -adobe-courier-bold-o-normal--10-100-75-75-m-60-ISO8859-1 */
 
 static int
-parsesize(name)
-    char	   *name;
+parsesize(char *name)
 {
     int		    s;
     char	   *np;
@@ -210,8 +226,7 @@ parsesize(name)
  */
 
 XFontStruct *
-lookfont(fnum, size)
-    int		    fnum, size;
+lookfont(int fnum, int size)
 {
 	XFontStruct    *fontst;
 	char		fn[300],back_fn[300];
@@ -287,8 +302,8 @@ lookfont(fnum, size)
 		/* attach pointsize to font name */
 		strcat(template,"%d-*-*-*-*-*-");
 		/* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
-		if (strstr(template,"symbol") == NULL &&
-		    strstr(template,"zapf dingbats") == NULL)
+		if (strstr(template,"ymbol") == NULL &&
+		    strstr(template,"ingbats") == NULL)
 			strcat(template,"ISO8859-*");
 	        else
 			strcat(template,"*-*");
@@ -299,8 +314,8 @@ lookfont(fnum, size)
 		strcpy(template,x_backup_fontinfo[fnum].template);
 		strcat(template,"%d-*-*-*-*-*-");
 		/* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
-		if (strstr(template,"symbol") == NULL &&
-		    strstr(template,"zapf dingbats") == NULL)
+		if (strstr(template,"ymbol") == NULL &&
+		    strstr(template,"ingbats") == NULL)
 			strcat(template,"ISO8859-*");
 	        else
 			strcat(template,"*-*");
@@ -388,7 +403,7 @@ pw_text(Window w, int x, int y, int op, int depth, XFontStruct *fstruct,
 
     /* if this depth is inactive, draw the text in gray */
     /* if depth == MAX_DEPTH+1 then the caller wants the original color no matter what */
-    if (depth < MAX_DEPTH+1 && !active_layer(depth))
+    if (draw_parent_gray || (depth < MAX_DEPTH+1 && !active_layer(depth)))
 	color = MED_GRAY;
 
     /* get the X colors */
@@ -423,10 +438,7 @@ pw_text(Window w, int x, int y, int op, int depth, XFontStruct *fstruct,
 }
 
 PR_SIZE
-textsize(fstruct, n, s)
-    XFontStruct	   *fstruct;
-    int		    n;
-    char	   *s;
+textsize(XFontStruct *fstruct, int n, char *s)
 {
     PR_SIZE	    ret;
     int		    dir, asc, desc;
@@ -457,10 +469,7 @@ static int	gc_thickness[NUMOPS],
 		gc_cap_style[NUMOPS];
 
 GC
-makegc(op, fg, bg)
-    int		    op;
-    Pixel	    fg;
-    Pixel	    bg;
+makegc(int op, Pixel fg, Pixel bg)
 {
     register GC	    ngc;
     XGCValues	    gcv;
@@ -472,17 +481,17 @@ makegc(op, fg, bg)
     gcmask = GCJoinStyle | GCCapStyle | GCFunction | GCForeground |
 		GCBackground | GCFont;
     switch (op) {
-    case PAINT:
+      case PAINT:
 	gcv.foreground = fg;
 	gcv.background = bg;
 	gcv.function = GXcopy;
 	break;
-    case ERASE:
+      case ERASE:
 	gcv.foreground = bg;
 	gcv.background = bg;
 	gcv.function = GXcopy;
 	break;
-    case INV_PAINT:
+      case INV_PAINT:
 	gcv.foreground = fg ^ bg;
 	gcv.background = bg;
 	gcv.function = GXxor;
@@ -490,20 +499,20 @@ makegc(op, fg, bg)
     }
 
     ngc = XCreateGC(tool_d, tool_w, gcmask, &gcv);
-    XCopyGC(tool_d, gc, ~(gcmask), ngc);	/* add main gc's values to
-						 * the new one */
     return (ngc);
 }
 
-init_gc()
+void init_gc(void)
 {
     int		    i;
     XColor	    tmp_color;
+    XGCValues	    gcv;
 
     gccache[PAINT] = makegc(PAINT, x_fg_color.pixel, x_bg_color.pixel);
     gccache[ERASE] = makegc(ERASE, x_fg_color.pixel, x_bg_color.pixel);
     gccache[INV_PAINT] = makegc(INV_PAINT, x_fg_color.pixel, x_bg_color.pixel);
     /* parse any grid color spec */
+fprintf(stderr,"color = '%s'\n",appres.grid_color);
     XParseColor(tool_d, tool_cm, appres.grid_color, &tmp_color);
     if (XAllocColor(tool_d, tool_cm, &tmp_color)==0) {
 	fprintf(stderr,"Can't allocate color for grid \n");
@@ -521,12 +530,26 @@ init_gc()
 	gc_line_style[i] = -1;
 	gc_join_style[i] = -1;
     }
+    /* gc for page border and axis lines */
+    border_gc = DefaultGC(tool_d, tool_sn);
+    /* set the roman font for the message window */
+    XSetFont(tool_d, border_gc, roman_font->fid);
+
+    /* gc for picture pixmap rendering */
+    pic_gc = XCreateGC(tool_d, DefaultRootWindow(tool_d), 0, NULL);
+
+    /* make a gc for the command buttons */
+    gcv.font = button_font->fid;
+    button_gc = XCreateGC(tool_d, DefaultRootWindow(tool_d), GCFont, &gcv);
+    /* copy the other components from the page border gc to the button_gc */
+    XCopyGC(tool_d, border_gc, ~GCFont, button_gc);
+
 }
 
 /* create the gc's for fill style (PAINT and ERASE) */
 /* the fill_pm[] must already be created */
 
-init_fill_gc()
+void init_fill_gc(void)
 {
     XGCValues	    gcv;
     int		    i;
@@ -919,7 +942,7 @@ patrn_strct pattern_images[NUMPATTERNS] = {
 
 /* generate the fill pixmaps */
 
-init_fill_pm()
+void init_fill_pm(void)
 {
     int		    i,j;
 
@@ -1004,7 +1027,7 @@ pw_curve(Window w, int xstart, int ystart, int xend, int yend,
 
     /* if this depth is inactive, draw the curve and any fill in gray */
     /* if depth == MAX_DEPTH+1 then the caller wants the original color no matter what */
-    if (depth < MAX_DEPTH+1 && !active_layer(depth)) {
+    if (draw_parent_gray || (depth < MAX_DEPTH+1 && !active_layer(depth))) {
 	pen_color = MED_GRAY;
 	fill_color = LT_GRAY;
     }
@@ -1043,7 +1066,7 @@ pw_point(Window w, int x, int y, int op, int depth, int line_width,
     int		    hf_wid;
 
     /* if this depth is inactive, draw the point in gray */
-    if (!active_layer(depth))
+    if (draw_parent_gray || !active_layer(depth))
 	color = MED_GRAY;
 
     /* pw_point doesn't use line_style or fill_style but needs color */
@@ -1066,7 +1089,7 @@ pw_arcbox(Window w, int xmin, int ymin, int xmax, int ymax, int radius,
     int		    diam = 2 * radius;
 
     /* if this depth is inactive, draw the arcbox in gray */
-    if (depth < MAX_DEPTH+1 && !active_layer(depth)) {
+    if (draw_parent_gray || (depth < MAX_DEPTH+1 && !active_layer(depth))) {
 	pen_color = MED_GRAY;
 	fill_color = LT_GRAY;
     }
@@ -1122,7 +1145,7 @@ pw_lines(Window w, zXPoint *points, int npoints, int op, int depth,
     register XPoint *p;
 
     /* if this depth is inactive, draw the line in gray */
-    if (depth < MAX_DEPTH+1 && !active_layer(depth)) {
+    if (draw_parent_gray || (depth < MAX_DEPTH+1 && !active_layer(depth))) {
 	pen_color = MED_GRAY;
 	fill_color = LT_GRAY;
     }
@@ -1177,8 +1200,7 @@ pw_lines(Window w, zXPoint *points, int npoints, int op, int depth,
     }
 }
 
-set_clip_window(xmin, ymin, xmax, ymax)
-    int		    xmin, ymin, xmax, ymax;
+void set_clip_window(int xmin, int ymin, int xmax, int ymax)
 {
     clip_xmin = clip[0].x = xmin;
     clip_ymin = clip[0].y = ymin;
@@ -1186,27 +1208,23 @@ set_clip_window(xmin, ymin, xmax, ymax)
     clip_ymax = ymax;
     clip_width = clip[0].width = xmax - xmin + 1;
     clip_height = clip[0].height = ymax - ymin + 1;
+    XSetClipRectangles(tool_d, border_gc, 0, 0, clip, 1, YXBanded);
     XSetClipRectangles(tool_d, gccache[PAINT], 0, 0, clip, 1, YXBanded);
     XSetClipRectangles(tool_d, gccache[INV_PAINT], 0, 0, clip, 1, YXBanded);
     XSetClipRectangles(tool_d, gccache[ERASE], 0, 0, clip, 1, YXBanded);
 }
 
-set_zoomed_clip_window(xmin, ymin, xmax, ymax)
-    int		    xmin, ymin, xmax, ymax;
+void set_zoomed_clip_window(int xmin, int ymin, int xmax, int ymax)
 {
     set_clip_window(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax));
 }
 
-reset_clip_window()
+void reset_clip_window(void)
 {
     set_clip_window(0, 0, CANVAS_WD, CANVAS_HT);
 }
 
-set_fill_gc(fill_style, op, pencolor, fillcolor, xorg, yorg)
-    int		    fill_style;
-    int		    op;
-    Color	    pencolor, fillcolor;
-    int		    xorg, yorg;
+void set_fill_gc(int fill_style, int op, int pencolor, int fillcolor, int xorg, int yorg)
 {
     Color	    fg, bg;
 
@@ -1268,10 +1286,7 @@ static int ndash_3dots = 8;
 static float dash_3dots[8] = { 1., 0.4, 0., 0.3, 0., 0.3, 0., 0.4 };
 
 
-set_line_stuff(width, style, style_val, join_style, cap_style, op, color)
-    int		    width, style, join_style, cap_style, op;
-    float	    style_val;
-    Color	    color;
+void set_line_stuff(int width, int style, float style_val, int join_style, int cap_style, int op, int color)
 {
     XGCValues	    gcv;
     unsigned long   mask;
@@ -1380,8 +1395,7 @@ set_line_stuff(width, style, style_val, join_style, cap_style, op, color)
 }
 
 int
-x_color(col)
-int	col;
+x_color(int col)
 {
 	int	pix;
 	if (!all_colors_available) {
@@ -1418,8 +1432,7 @@ int	col;
 /* resize the fill patterns for the current display_zoomscale */
 /* also generate new Pixmaps in fill_pm[] */
 
-rescale_pattern(patnum)
-int	patnum;
+void rescale_pattern(int patnum)
 {
 	int		j;
 	XGCValues	gcv;
@@ -1447,8 +1460,7 @@ int	patnum;
 	reset_cursor();
 }
 
-scale_pattern(indx)
-int	indx;
+void scale_pattern(int indx)
 {
     int	    i;
     int	    j;
@@ -1516,3 +1528,337 @@ int	indx;
     pattern_images[indx].cwidth = nwidth;
     pattern_images[indx].cheight = nheight;
 }
+
+/* storage for conversion of data points to screen coords (zXDrawLines and zXFillPolygon) */
+
+static XPoint	*_pp_ = (XPoint *) NULL;	/* data pointer itself */
+static int	 _npp_ = 0;			/* number of points currently allocated */
+static Boolean	 _noalloc_ = False;		/* signals previous failed alloc */
+static Boolean	 chkalloc(int n);
+static void	 convert_sh(zXPoint *p, int n);
+
+void zXDrawLines(Display *d, Window w, GC gc, zXPoint *points, int n, int coordmode)
+{
+#ifdef CLIP_LINE
+    XPoint	*outp;
+#endif /* CLIP_LINE */
+
+    /* make sure we have allocated data */
+    if (!chkalloc(n)) {
+	return;
+    }
+    /* now convert each point to short into _pp_ */
+    convert_sh(points, n);
+#ifdef CLIP_LINE
+    outp = (XPoint *) malloc(2*n*sizeof(XPoint));
+    n = clip_poly(_pp_, n, outp);
+    XDrawLines(d, w, gc, outp, n, coordmode);
+#else
+    XDrawLines(d, w, gc, _pp_, n, coordmode);
+#endif /* CLIP_LINE */
+}
+
+void zXFillPolygon(Display *d, Window w, GC gc, zXPoint *points, int n, int complex, int coordmode)
+{
+    XPoint	*outp;
+
+    /* make sure we have allocated data for _pp_ */
+    if (!chkalloc(n)) {
+	return;
+    }
+    /* now convert each point to short into _pp_ */
+    convert_sh(points, n);
+    outp = (XPoint *) malloc(2*n*sizeof(XPoint));
+    n = clip_poly(_pp_, n, outp);
+    XFillPolygon(d, w, gc, outp, n, complex, coordmode);
+    free(outp);
+}
+
+/* convert each point to short */
+
+static void
+convert_sh(zXPoint *p, int n)
+{
+    int 	 i;
+
+    for (i=0; i<n; i++) {
+	_pp_[i].x = ZOOMX(p[i].x);
+	_pp_[i].y = ZOOMY(p[i].y);
+    }
+}
+
+static Boolean
+chkalloc(int n)
+{
+    int		 i;
+    XPoint	*tpp;
+
+    /* see if we need to allocate some (more) memory */
+    if (n > _npp_) {
+	/* if previous allocation failed, return now */
+	if (_noalloc_)
+	    return False;
+	/* get either what we need +50 points or 500, whichever is larger */
+	i = max2(n+50, 500);	
+	if (_npp_ == 0) {
+	    if ((tpp = (XPoint *) malloc(i * sizeof(XPoint))) == 0) {
+		fprintf(stderr,"\007Can't alloc memory for %d point array, exiting\n",i);
+		exit(1);
+	    }
+	} else {
+	    if ((tpp = (XPoint *) realloc(_pp_, i * sizeof(XPoint))) == 0) {
+		file_msg("Can't alloc memory for %d point array",i);
+		_noalloc_ = True;
+		return False;
+	    }
+	}
+	/* everything ok, set global pointer and count */
+	_pp_ = tpp;
+	_npp_ = i;
+    }
+    return True;
+}
+
+/*
+ * clip_poly - This procedure performs the Sutherland-Hodgman polygon clipping
+ * on the inVertices array, putting the resultant points into the outVertices array,
+ * and returning the number of points as the return value.
+ * We are clipping to the canvas area.
+ */
+
+static int
+clip_poly(XPoint *inVertices, int npoints, XPoint *outVertices)
+{
+	/* clip to left edge */
+        npoints = SutherlandHodgmanPolygoClip (inVertices, outVertices, npoints, 
+					-100, CANVAS_HT*2, -100, -100);
+        setup_next(npoints, inVertices, outVertices);
+	/* now to bottom edge */
+        npoints = SutherlandHodgmanPolygoClip (inVertices,outVertices, npoints, 
+					-100, CANVAS_HT*2, CANVAS_WD*2, CANVAS_HT*2);
+        setup_next(npoints, inVertices, outVertices);
+	/* right edge */
+        npoints = SutherlandHodgmanPolygoClip (inVertices,outVertices, npoints, 
+					CANVAS_WD*2, -100, CANVAS_WD*2, CANVAS_HT*2);
+        setup_next(npoints, inVertices, outVertices);
+	/* top edge */
+        npoints = SutherlandHodgmanPolygoClip (inVertices,outVertices, npoints, 
+					CANVAS_WD*2, -100, -100, -100);
+        setup_next(npoints, inVertices, outVertices);
+        return npoints;
+}
+
+/*
+ * The "SutherlandHodgmanPolygoClip" function is a critical function of the
+ * polygon clipping. It uses the Sutherland_Hodgman algorithm to implement
+ * a step in clipping a polygon to a clipping window. 
+ */
+
+int
+SutherlandHodgmanPolygoClip (
+    XPoint	*inVertices,		/* Input vertex array */
+    XPoint	*outVertices,		/* Output vertex array */
+    int		 inLength,		/* Number of entries in inVertices */
+    int		 x1, int y1, int x2, int y2)	/* Edge of clip polygon */
+{
+	XPoint s,p;	/*Start, end point of current polygon edge*/ 
+	XPoint i;	/*Intersection point with a clip boundary*/
+	int j;		/*Vertex loop counter*/
+	int outpts;	/* number of points in output array */
+
+        outpts = 0;
+        s.x = inVertices[inLength-1].x; /*Start with the last vertex in inVertices*/
+        s.y = inVertices[inLength-1].y;
+        for (j=0; j < inLength; j++) {
+            p.x = inVertices[j].x; /*Now s and p correspond to the vertices*/
+            p.y = inVertices[j].y;
+            if (inside(p,x1, y1, x2, y2)) {      /*Cases 1 and 4*/
+                 if (inside(s, x1, y1, x2, y2)) {
+			outVertices[outpts].x = p.x;
+			outVertices[outpts].y = p.y;
+			outpts++;
+                } else {                            /*Case 4*/
+                        intersect(s, p, x1, y1, x2, y2, &i);
+			outVertices[outpts].x = i.x;
+			outVertices[outpts].y = i.y;
+			outpts++;
+			outVertices[outpts].x = p.x;
+			outVertices[outpts].y = p.y;
+			outpts++;
+                }
+            } else {                  /*Cases 2 and 3*/
+                if (inside(s, x1, y1, x2, y2))  /*Cases 2*/ {
+                        intersect(s, p, x1, y1, x2, y2, &i);
+			outVertices[outpts].x = i.x;
+			outVertices[outpts].y = i.y;
+			outpts++;
+                }
+           }                          /*No action for case 3*/
+           s.x = p.x;	/*Advance to next pair of vertices*/
+           s.y = p.y;
+	}
+	return outpts;
+}      /*SutherlandHodgmanPolygonClip*/
+
+/* 
+ * The "Inside" function returns TRUE if the vertex tested is on the inside
+ * of the clipping boundary. "Inside" is defined as "to the left of
+ * clipping boundary when one looks from the first vertex to the second
+ * vertex of the clipping boundary". The code for this function is:
+ */
+
+static Boolean
+inside (XPoint testVertex, int x1, int y1, int x2, int y2)
+{
+    if (x2 > x1)              /*bottom edge*/
+	if (testVertex.y <= y1) 
+	    return True;
+    if (x2 < x1)              /*top edge*/
+	if (testVertex.y >= y1) 
+	    return True;
+    if (y2 > y1)              /*right edge*/
+	if (testVertex.x <= x2) 
+	    return True;
+    if (y2 < y1)              /*left edge*/
+	if (testVertex.x >= x2) 
+	    return True;
+    /* outside */
+    return False;
+}
+
+/*
+ * The "intersect" function calculates the intersection of the polygon edge
+ * (vertex s to p) with the clipping boundary. 
+ */
+
+static void
+intersect(XPoint first, XPoint second, int x1, int y1, int x2, int y2,
+                XPoint *intersectPt)
+{
+  if (y1 == y2) {    /*horizontal*/
+     intersectPt->y=y1;
+     intersectPt->x=first.x +(y1-first.y)*
+                    (second.x-first.x)/(second.y-first.y);   /*Vertical*/
+   } else {
+           intersectPt->x=x1;
+           intersectPt->y=first.y +(x1-first.x)*
+                    (second.y-first.y)/(second.x-first.x);
+   }
+}
+
+/*
+ * setup_next copies the input to the output
+ */
+
+static void
+setup_next(int npoints, XPoint *in, XPoint *out)
+{
+	int i;
+	for (i=0; i<npoints; i++) {
+		in[i].x = out[i].x;
+		in[i].y = out[i].y;
+	}
+}
+
+
+/*
+ * clip_line - This procedure clips a line to the current clip boundaries and
+ * returns the new coordinates in x3, y3 and x4, y4.
+ * If the line lies completely outside of the clip boundary, the result is False,
+ * otherwise True.
+ * This procedure uses the well known Cohen-Sutherland line clipping
+ * algorithm to clip each coordinate.
+ */
+
+int compoutcode(int x, int y);
+
+/* bitfields for output codes */
+#define codetop    1
+#define codebottom 2
+#define coderight  4
+#define codeleft   8
+
+void
+clip_line(int x1, int y1, int x2, int y2,  short *x3, short *y3, short *x4, short *y4)
+{
+  int outcode0;         /* the code of the first endpoint  */
+  int outcode1;         /* the code of the second endpoint */
+  int outcodeout;
+  int x, y;
+
+  outcode0 = compoutcode(x1, y1);		/* compute the original codes   */
+  outcode1 = compoutcode(x2, y2);
+
+  /* while not trivially accepted */
+  while (outcode0 != 0 || outcode1 != 0)  {
+    if ((outcode0 & outcode1) != 0) { 		/* trivial reject */
+	/* set line to a single point at the limits of the screen */
+	if ((outcode0|outcode1) & codebottom) *y3 = *y4 = CANVAS_HT;
+    	if ((outcode0|outcode1) & codetop)    *y3 = *y4 = 0;
+    	if ((outcode0|outcode1) & codeleft)   *x3 = *x4 = 0;
+    	if ((outcode0|outcode1) & coderight)  *x3 = *x4 = CANVAS_WD;
+	return;
+    } else {
+	/* failed both tests, so calculate the line segment to clip */
+	if (outcode0 > 0 )
+	    outcodeout = outcode0;	/* clip the first point */
+	else
+	    outcodeout = outcode1;	/* clip the last point  */
+
+	if ((outcodeout & codebottom) == codebottom) {
+	    /* clip the line to the bottom of the viewport     */
+	    y = CANVAS_HT;
+	    x = x1+(double)(x2-x1)*(double)(y-y1) / (y2 - y1);
+	}
+	else if ((outcodeout & codetop) == codetop ) {
+	    /* clip the line to the top of the viewport        */
+	    y = 0;
+	    x = x1+(double)(x2-x1)*(double)(y-y1) / (y2 - y1);
+	}
+	else if ((outcodeout & coderight) == coderight ) {
+	    /* clip the line to the right edge of the viewport */
+	    x = CANVAS_WD;
+	    y = y1+(double)(y2-y1)*(double)(x-x1) / (x2-x1);
+	}
+	else if ((outcodeout & codeleft) == codeleft ) {
+	    /* clip the line to the left edge of the viewport  */
+	    x = 0;
+	    y = y1+(double)(y2-y1)*(double)(x-x1) / (x2-x1);
+	};
+
+	if (outcodeout == outcode0) {		/* modify the first coordinate   */
+	    x1 = x; y1 = y;			/* update temporary variables    */  
+	    outcode0 = compoutcode(x1, y1);	/* recalculate the outcode       */
+	}
+	else {
+	/* modify the second coordinate  */
+	    x2 = x; y2 = y;			/* update temporary variables    */  
+	    outcode1 = compoutcode(x2, y2);	/* recalculate the outcode       */
+	}
+    }
+  }
+
+  /* coordinates for the new line! */
+  *x3 = (short) x1;
+  *y3 = (short) y1;
+  *x4 = (short) x2;
+  *y4 = (short) y2;
+
+  return;
+}
+
+/* return codes for different cases */
+
+int
+compoutcode(int x, int y)
+{
+  int code = 0;
+
+  if      (y > CANVAS_HT) code = codebottom;
+  else if (y < 0) code = codetop;
+
+  if      (x > CANVAS_WD) code = code+coderight;
+  else if (x < 0) code = code+codeleft;
+  return code;
+}
+

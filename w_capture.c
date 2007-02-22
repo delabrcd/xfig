@@ -5,12 +5,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -25,10 +25,15 @@
 #include "w_capture.h"
 #include "w_msgpanel.h"
 
-static Boolean	getImageData();	  	/* returns zero on failure */
-static Boolean	selectedRootArea();	/* returns zero on failure */
-static void	drawRect();
-static int	getCurrentColors();	/* returns number of colors in map */
+#include "f_util.h"
+#include "f_wrpng.h"
+#include "w_drawprim.h"
+#include "w_util.h"
+
+static Boolean	getImageData(int *w, int *h, int *type, int *nc, unsigned char *Red, unsigned char *Green, unsigned char *Blue);	  	/* returns zero on failure */
+static Boolean	selectedRootArea(int *x_r, int *y_r, unsigned int *w_r, unsigned int *h_r, Window *cw);	/* returns zero on failure */
+static void	drawRect(int x, int y, int w, int h, int draw);
+static int	getCurrentColors(Window w, XColor *colors);	/* returns number of colors in map */
 
 static unsigned char *data;		/* pointer to captured & converted data */
 
@@ -40,10 +45,12 @@ static unsigned char *data;		/* pointer to captured & converted data */
 static Window   rectWindow;
 static GC       rectGC;
 
+
+
 Boolean
-captureImage(window, filename)  	/* returns True on success */
-Widget window;
-char *filename;
+captureImage(Widget window, char *filename)  	/* returns True on success */
+              
+               
 {
     unsigned char	Red[MAX_COLORMAP_SIZE],
 			Green[MAX_COLORMAP_SIZE],
@@ -115,8 +122,7 @@ char *filename;
 /* count how many bits to shift mask to the right to end up with a "1" in the lsb */
 
 int
-rshift(mask)
-    int		mask;
+rshift(int mask)
 {
     register int i;
 
@@ -129,9 +135,7 @@ rshift(mask)
 }
 
 static Boolean
-getImageData(w, h, type, nc, Red, Green, Blue) 
-  int *w, *h, *type, *nc;
-  unsigned char Red[], Green[], Blue[];
+getImageData(int *w, int *h, int *type, int *nc, unsigned char *Red, unsigned char *Green, unsigned char *Blue)
 {
     XColor	colors[MAX_COLORMAP_SIZE];
     int		colused[MAX_COLORMAP_SIZE];
@@ -152,6 +156,7 @@ getImageData(w, h, type, nc, Red, Green, Blue)
     unsigned char *iptr, *rowptr, *dptr;
 
     sleep(1);   /* in case he'd like to click on something */
+    beep();	/* signal user */
     if ( selectedRootArea( &x, &y, &width, &height, &cw ) == False )
 	return False;
 
@@ -218,36 +223,46 @@ getImageData(w, h, type, nc, Red, Green, Blue)
 	for (i=0; i<image->height; i++) {
 	    for (j=0; j<image->width; j++) {
 		if (byte_order == MSBFirst) {
-		    switch (image->depth) {
-			case 8:
+		    switch (byte_inc) {
+			case 1:
 				pix =  (unsigned char) *iptr;
 				break;
-			case 16: 
-				pix =  (short) (*iptr << 8);
+			case 2: 
+				pix =  (unsigned short) (*iptr << 8);
 				pix += (unsigned char) *(iptr+1);
 				break;
-			case 24:
-			case 32:
-				pix =  (int) (*iptr << 16);
-				pix += (short) (*(iptr+1) << 8);
+			case 3:
+				pix =  (unsigned int) (*(iptr) << 16);
+				pix += (unsigned short) (*(iptr+1) << 8);
 				pix += (unsigned char) (*(iptr+2));
+				break;
+			case 4:
+				pix =  (unsigned int) (*(iptr) << 24);
+				pix += (unsigned int) (*(iptr+1) << 16);
+				pix += (unsigned short) (*(iptr+2) << 8);
+				pix += (unsigned char) (*(iptr+3));
 				break;
 		    }
 		} else {
 		    /* LSBFirst */
-		    switch (image->depth) {
-			case 8:
+		    switch (byte_inc) {
+			case 1:
 				pix =  (unsigned char) *iptr;
 				break;
-			case 16: 
+			case 2: 
 				pix =  (unsigned char) *iptr;
-				pix += (short) (*(iptr+1) << 8);
+				pix += (unsigned short) (*(iptr+1) << 8);
 				break;
-			case 24:
-			case 32:
+			case 3:
 				pix =  (unsigned char) *iptr;
-				pix += (short) (*(iptr+1) << 8);
-				pix += (int) (*(iptr+2) << 16);
+				pix += (unsigned short) (*(iptr+1) << 8);
+				pix += (unsigned int) (*(iptr+2) << 16);
+				break;
+			case 4:
+				pix =  (unsigned char) *iptr;
+				pix += (unsigned short) (*(iptr+1) << 8);
+				pix += (unsigned int) (*(iptr+2) << 16);
+				pix += (unsigned int) (*(iptr+3) << 24);
 				break;
 		    }
 		} /* if (byte_order ...) */
@@ -366,10 +381,7 @@ getImageData(w, h, type, nc, Red, Green, Blue)
 */
 
 static Boolean 
-selectedRootArea( x_r, y_r, w_r, h_r, cw )
-    int *x_r, *y_r;
-    unsigned int *w_r, *h_r;
-    Window *cw;
+selectedRootArea(int *x_r, int *y_r, unsigned int *w_r, unsigned int *h_r, Window *cw)
 {
     int		x1, y1;			/* start point of user rect */
     int		x, y, width, height;	/* current values for rect */
@@ -389,8 +401,6 @@ selectedRootArea( x_r, y_r, w_r, h_r, cw )
     XGrabPointer(tool_d, rectWindow, False, 0L,
 	 	GrabModeAsync, GrabModeSync, None,
  			crosshair_cursor, CurrentTime);
-
-
     while (PTR_BUTTON_STATE( win_x, win_y, mask ) == 0) 
 	;
 
@@ -488,8 +498,7 @@ selectedRootArea( x_r, y_r, w_r, h_r, cw )
 */
 
 static void
-drawRect( x, y, w, h, draw )
-  int x, y, w, h, draw;
+drawRect(int x, int y, int w, int h, int draw)
 {
 static int onscreen = False;
 
@@ -546,9 +555,7 @@ if ( onscreen != draw )
 #define lowbit(x) ((x) & (~(x) + 1))
 
 static int
-getCurrentColors(w, colors)
-     Window w;
-     XColor colors[];
+getCurrentColors(Window w, XColor *colors)
 {
   XWindowAttributes xwa;
   int i, ncolors;
@@ -624,8 +631,7 @@ getCurrentColors(w, colors)
 */
 
 Boolean
-canHandleCapture( d )
-  Display *d;
+canHandleCapture(Display *d)
 {
     XWindowAttributes xwa;
  

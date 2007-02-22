@@ -5,12 +5,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -19,6 +19,8 @@
 #include "object.h"
 #include "f_picobj.h"
 #include "w_msgpanel.h"
+
+#include "f_readpcx.h"
 
 #define BUFLEN 1024
 
@@ -35,9 +37,9 @@
 /* +-------------------------------------------------------------------+ */
 
 
-static Boolean	ReadColorMap();
-static Boolean	DoGIFextension();
-static int	GetDataBlock();
+static Boolean	ReadColorMap(FILE *fd, unsigned int number, struct Cmap *cmap);
+static Boolean	DoGIFextension(FILE *fd, int label);
+static int	GetDataBlock(FILE *fd, unsigned char *buf);
 
 #define LOCALCOLORMAP		0x80
 #define	ReadOK(file,buffer,len)	(fread((void *) buffer, (size_t) len, (size_t) 1, (FILE *) file) != 0)
@@ -66,11 +68,10 @@ struct {
 		  FileInvalid (-2) : invalid file
 */
 
+
+
 int
-read_gif(file,filetype,pic)
-    FILE	   *file;
-    int		    filetype;
-    F_pic	   *pic;
+read_gif(FILE *file, int filetype, F_pic *pic)
 {
 	char		buf[BUFLEN],pcxname[PATH_MAX];
 	FILE		*giftopcx;
@@ -223,10 +224,7 @@ read_gif(file,filetype,pic)
 }
 
 static Boolean
-ReadColorMap(fd,number,cmap)
-FILE	*fd;
-unsigned int	number;
-struct Cmap cmap[MAX_COLORMAP_SIZE];
+ReadColorMap(FILE *fd, unsigned int number, struct Cmap *cmap)
 {
 	int		i;
 	unsigned char	rgb[3];
@@ -244,9 +242,7 @@ struct Cmap cmap[MAX_COLORMAP_SIZE];
 }
 
 static Boolean
-DoGIFextension(fd, label)
-FILE	*fd;
-int	label;
+DoGIFextension(FILE *fd, int label)
 {
 	static unsigned char buf[256];
 	char	    *str;
@@ -294,9 +290,7 @@ int	label;
 int	ZeroDataBlock = False;
 
 static int
-GetDataBlock(fd, buf)
-FILE		*fd;
-unsigned char 	*buf;
+GetDataBlock(FILE *fd, unsigned char *buf)
 {
 	unsigned char	count;
 

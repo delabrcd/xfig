@@ -4,6 +4,9 @@ Fig*beNiceToColormap: 			False
 
 Fig*highlightThickness: 		2
 
+! grid color (light red default)
+Fig.grid_color:				#ffcccc
+
 !##### Background, Foreground
 
 Fig*canvas.background: 			gray97

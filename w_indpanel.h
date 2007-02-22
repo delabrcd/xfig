@@ -5,12 +5,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -19,28 +19,13 @@
 
 #include "w_icons.h"
 
-/* EXPORTS */
-
-extern Boolean	update_buts_managed;
-extern Widget	choice_popup;
-extern void	show_zoom();
-extern void	show_fillstyle();
-extern void	inc_zoom(), dec_zoom(), fit_zoom();
-extern void	fontpane_popup();
-extern void	make_pulldown_menu_images();
-extern void	tog_selective_update();
-extern unsigned long cur_indmask;	/* mask showing which indicator buttons are mapped */
-#ifdef WHEELMOUSE
-extern void	wheel_inc_zoom(), wheel_dec_zoom();
-#endif /* WHEELMOUSE */
-
 /* size of buttons in indicator panel */
 #define		DEF_IND_SW_HT		34
 #define		DEF_IND_SW_WD		64
 #define		FONT_IND_SW_WD		(40+PS_FONTPANE_WD)
 #define		NARROW_IND_SW_WD	56
 #define		WIDE_IND_SW_WD		76
-#define		XWIDE_IND_SW_WD		86
+#define		XWIDE_IND_SW_WD		90
 
 /* size of update control panel */
 #define		UPD_BITS	10	/* bits wide and high */
@@ -86,13 +71,13 @@ extern Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 #define I_NUMCOPIES	0x08000000
 #define I_NUMXCOPIES	0x10000000
 #define I_NUMYCOPIES	0x20000000
-#define I_free2_____	0x40000000	/* this one is free for another ind */
-#define I_free3_____	0x80000000	/* same */
+#define I_TANGNORMLEN	0x40000000
+#define I_free1_____	0x80000000	/* this one is free for another ind */
 
 #define I_NONE		0x00000000
 
 /* be sure to update I_ALL if more buttons are added */
-#define I_ALL		0xffffffff & ~I_free2_____ & ~I_free3_____
+#define I_ALL		0xffffffff & ~I_free1_____
 
 #define I_MIN2		(I_POINTPOSN)
 #define I_MIN3		(I_MIN2 | I_LINKMODE)
@@ -111,6 +96,7 @@ extern Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 #define I_ELLIPSE	(I_MIN2 | I_LINE0 | I_DEPTH | I_ELLTEXTANGLE)
 #define I_ARC		(I_BOX | I_ARROWMODE | I_ARROWTYPE | I_ARROWSIZE | \
 				I_CAPSTYLE | I_ARCTYPE)
+#define I_CHOP		(I_ARCTYPE)
 #define I_REGPOLY	(I_BOX | I_NUMSIDES)
 #define I_CLOSED	(I_BOX | I_ANGLEGEOM)
 #define I_OPEN		(I_CLOSED | I_ARROWMODE | I_ARROWTYPE | I_ARROWSIZE | I_CAPSTYLE)
@@ -122,7 +108,7 @@ extern Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 #define I_ROTATE	(I_MIN2 | I_ROTNANGLE | I_NUMCOPIES)
 #define I_COPY   	(I_MIN3 | I_NUMXCOPIES | I_NUMYCOPIES)
 #define I_ADD_DEL_ARROW (I_LINEWIDTH | I_ARROWTYPE | I_ARROWSIZE)
-#define I_TANGENT     (I_MIN2 | I_LINE1 | I_DEPTH | I_ARROWTYPE | I_ARROWMODE)
+#define I_TANGENT       (I_MIN2 | I_LINE1 | I_DEPTH | I_ARROWTYPE | I_ARROWMODE | I_TANGNORMLEN)
 
 /* for checking which parts to update */
 #define I_UPDATEMASK	(I_OBJECT)
@@ -133,6 +119,7 @@ typedef struct choice_struct {
     Pixmap	    pixmap;
 }		choice_info;
 
+extern choice_info arrowtype_choices[];
 extern choice_info dim_arrowtype_choices[];
 extern choice_info fillstyle_choices[];
 extern choice_info capstyle_choices[];
@@ -164,8 +151,39 @@ typedef struct ind_sw_struct {
 
 extern ind_sw_info ind_switches[];
 extern ind_sw_info *fill_style_sw;
-extern ind_sw_info *pen_color_button, *fill_color_button;
+extern ind_sw_info *pen_color_button, *fill_color_button, *depth_button;
 
 #define ZOOM_SWITCH_INDEX	0	/* used by w_zoom.c */
+
+/* EXPORTS */
+
+extern void	init_ind_panel(Widget tool);
+extern void	add_ind_actions(void);
+extern Boolean	update_buts_managed;
+extern Widget	choice_popup;
+extern void	show_depth(ind_sw_info *sw), show_zoom(ind_sw_info *sw);
+extern void	show_fillstyle(ind_sw_info *sw);
+extern void	fontpane_popup(int *psfont_adr, int *latexfont_adr, int *psflag_adr, void (*showfont_fn) (/* ??? */), Widget show_widget);
+extern void	make_pulldown_menu_images(choice_info *entries, Cardinal nent, Pixmap **images, char **texts, Widget parent, XtCallbackProc callback);
+extern void	tog_selective_update(long unsigned int mask);
+extern unsigned long cur_indmask;	/* mask showing which indicator buttons are mapped */
+extern void	inc_zoom(ind_sw_info *sw), dec_zoom(ind_sw_info *sw), fit_zoom(ind_sw_info *sw);
+extern void	wheel_inc_zoom(), wheel_dec_zoom();
+extern void update_current_settings(void);
+extern void setup_ind_panel(void);
+extern void manage_update_buts (void);
+extern void recolor_fillstyles (void);
+extern void unmanage_update_buts (void);
+extern void update_indpanel (long unsigned int mask);
+extern void choice_panel_dismiss (void);
+extern void set_and_show_rotnangle (float value);
+extern void generate_choice_pixmaps(ind_sw_info *isw);
+extern void draw_cur_dimline(void);
+extern void get_dimline_values(void);
+extern void popup_arrowsize_panel(ind_sw_info *isw);
+extern void popup_flags_panel(ind_sw_info *isw);
+extern void popup_nval_panel(ind_sw_info *isw);
+extern void popup_dimline_panel(ind_sw_info *isw);
+extern void popup_choice_panel(ind_sw_info *isw);
 
 #endif /* W_INDPANEL_H */

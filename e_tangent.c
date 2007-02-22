@@ -4,12 +4,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -24,18 +24,26 @@
 #include "u_smartsearch.h"
 #include "w_canvas.h"
 #include "w_mousefun.h"
+#include "w_setup.h"
+
+#include "f_util.h"
+#include "u_draw.h"
+#include "u_list.h"
+#include "u_markers.h"
+#include "w_cursor.h"
+#include "w_msgpanel.h"
 
 #define ZERO_TOLERANCE 2.0
-#define TANGENT_HL 450
 
-extern void	force_positioning(), force_nopositioning();
 
-static void	init_tangent_adding();
-static void	init_normal_adding();
-static void	tangent_or_normal();
-static void	tangent_normal_line();
+static void	init_tangent_adding(char *p, int type, int x, int y, int px, int py);
+static void	init_normal_adding(char *p, int type, int x, int y, int px, int py);
+static void	tangent_or_normal(int x, int y, int flag);
+static void	tangent_normal_line(int x, int y, float vx, float vy);
 
-tangent_selected()
+
+
+void tangent_selected(void)
 {
     set_mousefun("add tangent", "add normal", "", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
@@ -54,32 +62,22 @@ tangent_selected()
 /*  smart_point1, smart_point2 are two points of the tangent */
 
 static void
-init_tangent_adding(p, type, x, y, px, py)
-    char	   *p;
-    int		    type;
-    int		    x, y;
-    int		    px, py;
+init_tangent_adding(char *p, int type, int x, int y, int px, int py)
 {
     tangent_or_normal(px, py, 0);
 }
 
 static void
-init_normal_adding(p, type, x, y, px, py)
-    char	   *p;
-    int		    type;
-    int		    x, y;
-    int		    px, py;
+init_normal_adding(char *p, int type, int x, int y, int px, int py)
 {
     tangent_or_normal(px, py, 1);
 }
 
 static void
-tangent_or_normal(x, y, flag)
-    int             x, y, flag;
+tangent_or_normal(int x, int y, int flag)
 {
-    float dx, dy, length, sx, sy, tgt;
+    float dx, dy, length, sx, sy, tanlen;
 
-    tgt = (float)TANGENT_HL;
     dx = (float)(smart_point2.x - smart_point1.x);
     dy = (float)(smart_point2.y - smart_point1.y);
     if (dx == 0.0 && dy == 0.0)
@@ -88,10 +86,12 @@ tangent_or_normal(x, y, flag)
         length = sqrt(dx * dx + dy * dy);
     if (length < ZERO_TOLERANCE) {
         put_msg("%s", "singularity, can't draw tangent/normal");
+	beep();
         return;
     }
-    sx = dx * tgt /length;
-    sy = dy * tgt /length;
+    tanlen = cur_tangnormlen * (appres.INCHES? PIX_PER_INCH: PIX_PER_CM) / 2.0;
+    sx = dx * tanlen / length;
+    sy = dy * tanlen / length;
     if (flag) {
        tangent_normal_line(x, y, -sy, sx);
        put_msg("%s", "added normal");
@@ -103,9 +103,7 @@ tangent_or_normal(x, y, flag)
 }
 
 static void
-tangent_normal_line(x, y, vx, vy)
-    int x, y;
-    float vx, vy;
+tangent_normal_line(int x, int y, float vx, float vy)
 {
     int dx, dy, xl, yl, xr, yr;
     F_line	   *line;

@@ -17,11 +17,8 @@ postprocessor that converts Fig files to various output formats such as
 PostScript (and EPS), PNG, GIF, LaTeX, etc.
 
 Xfig and the TransFig package are available from:
-	ftp://epb.lbl.gov/xfig
 	http://www.xfig.org/xfigdist
-	ftp://ftp.x.org/contrib/applications/drawing_tools
-	ftp://ftp.cdrom.com/pub/X11/contrib/applications/drawing_tools
-	from any CTAN machine, e.g. ftp://ftp.tex.ac.uk/pub/archive/graphics.
+	from any CTAN machine, e.g. ftp://ftp.tex.ac.uk/pub/archive/graphics
 
 The xfig distribution includes some library of Fig objects, which are available
 via the library object drawing mode.
@@ -34,11 +31,11 @@ Oh, and the $64,000 question: Yes, xfig is Year 2000 compliant.
 
 ***************************************************************************
 Please send email about any questions/bug fixes/contributions etc. about
-TransFig or xfig to xfig-bugs@epb1.lbl.gov.
+TransFig or xfig to bvsmith@lbl.gov.
 
 Brian V. Smith
 Lawrence Berkeley National Laboratory
-xfig-bugs@epb1.lbl.gov
+bvsmith@lbl.gov
 ***************************************************************************
 
 Note that although I work at Lawrence Berkeley National Laboratory (LBNL)
@@ -57,10 +54,10 @@ OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 
 ***************************************************************************
-SPECIAL COPYRIGHT NOTICE:
+NEW COPYRIGHT/PERMISSION NOTICE:
 
-The xfig copyright has changed slightly in version 3.2.4.
-It now states that:
+The xfig copyright and permission notice has changed (again) slightly in
+version 3.2.5.  It now states that:
 
 	FIG : Facility for Interactive Generation of figures
 	Copyright (c) 1985-1988 by Supoj Sutanthavibul
@@ -69,16 +66,15 @@ It now states that:
 
 	Any party obtaining a copy of these files is granted, free of charge, a
 	full and unrestricted irrevocable, world-wide, paid up, royalty-free,
-	nonexclusive right and license to deal in this software and
-	documentation files (the "Software"), including without limitation the
-	rights to use, copy, modify, merge, publish and/or distribute copies of
+	nonexclusive right and license to deal in this software and documentation 
+	files (the "Software"), including without limitation the rights to use, 
+	copy, modify, merge, publish distribute, sublicense and/or sell copies of
 	the Software, and to permit persons who receive copies from any such 
-	party to do so, with the only requirement being that this copyright 
-	notice remain intact.
+	party to do so, with the only requirement being that the above copyright 
+	and this permission notice remain intact.
 
-The previous notice allowed the *selling* of xfig. This is not allowed now,
-unless xfig is simply included in a collection of programs (e.g. a CD) that
-you are selling.
+The license for 3.2.4 didn't allow selling xfig unless it was simply included in a
+collection of programs (e.g. a CD) that one was selling.
 ______________________________________________________________________________
 
 NOTE 1: Because Unisys has stated that they WILL charge royalties for the
@@ -263,6 +259,12 @@ o For a 3D look, I recommend using Kaleb Keithley's 3D Athena Widget set, a
   3D Athena widget headers are located.
   This set is available from ftp.x.org in /contrib/widgets.
 
+o If the Xaw or Xaw3d Athena widget sets are compiled with the ARROW_SCROLLBAR
+  style of scrollbars, there is no StartScroll action and you won't be able to
+  scroll using the wheel on the mouse.  
+  If you want to be able to scroll using the wheel, you must recompile the Xaw
+  library from sources, disabling the ARROW_SCROLLBAR option.
+
 o If you *don't* want JPEG support, comment out the #define USEJPEG line in
   the Imakefile.
 
@@ -331,9 +333,6 @@ o If your system doesn't have strcasecmp() and/or strncasecmp(), uncomment the
 
 o If your system doesn't have the strerror() function then uncomment the
   "#define NEED_STRERROR" in the Imakefile.
-
-o If you have a wheel mouse, uncomment the "XCOMM #define WHEELMOUSE" line.
-  See the documentation for a description of the wheel function in xfig.
 
 o If you have an input tablet and your X server supports the XInputExtension
   uncomment the lines that define TABLIB and USETAB in the Imakefile.

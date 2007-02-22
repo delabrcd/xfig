@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -60,12 +60,13 @@
 #include "resources.h"
 #include "object.h"
 #include "f_picobj.h"
+#include "f_util.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
 #include <setjmp.h>
 #include <jpeglib.h>
 
-static	Boolean	read_JPEG_file();
+static	Boolean	read_JPEG_file(FILE *file);
 
 static	F_pic	   *pict;
 static	unsigned char *bitmapptr;
@@ -75,10 +76,7 @@ static	unsigned char *bitmapptr;
 */
 
 int
-read_jpg(file,filetype,pic)
-    FILE	   *file;
-    int		    filetype;
-    F_pic	   *pic;
+read_jpg(FILE *file, int filetype, F_pic *pic)
 {
 	/* make scale factor smaller for metric */
 	float scale = (appres.INCHES ?
@@ -108,8 +106,8 @@ read_jpg(file,filetype,pic)
 /* These static variables are needed by the error routines. */
 
 static	jmp_buf setjmp_buffer;		/* for return to caller */
-static	void	error_exit();
-static	void	error_output();
+static	void	error_exit(j_common_ptr cinfo);
+static	void	error_output(j_common_ptr cinfo);
 
 struct error_mgr {
   struct jpeg_error_mgr pub;	/* "public" fields */
@@ -127,8 +125,7 @@ typedef struct error_mgr * error_ptr;
  */
 
 static Boolean
-read_JPEG_file (file)
-   FILE  *file;
+read_JPEG_file (FILE *file)
 {
 	int i;
 
@@ -259,8 +256,7 @@ read_JPEG_file (file)
  */
 
 static void
-error_exit (cinfo)
-     j_common_ptr cinfo;
+error_exit (j_common_ptr cinfo)
 {
     char buffer[JMSG_LENGTH_MAX];
     /* cinfo->err really points to a error_mgr struct, so coerce pointer */
@@ -280,8 +276,7 @@ error_exit (cinfo)
 }
 
 static void
-error_output(cinfo)
-     j_common_ptr cinfo;
+error_output(j_common_ptr cinfo)
 {
   char	buffer[JMSG_LENGTH_MAX];
 

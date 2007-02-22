@@ -5,12 +5,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -54,6 +54,7 @@ extern icon_struct	break_ic;
 extern icon_struct	library_ic;
 extern icon_struct	open_comp_ic;
 extern icon_struct	join_split_ic;
+extern icon_struct	chop_ic;
 extern icon_struct	joinmiter_ic;
 extern icon_struct	joinround_ic;
 extern icon_struct	joinbevel_ic;
@@ -143,7 +144,11 @@ extern icon_struct	arrow6o_ic, arrow6f_ic;
 extern icon_struct	arrow7o_ic, arrow7f_ic;
 extern icon_struct	arrow8o_ic, arrow8f_ic;
 extern icon_struct	arrow9a_ic, arrow9b_ic;
-extern icon_struct	arrow10a_ic, arrow10b_ic;
+extern icon_struct	arrow10o_ic, arrow10f_ic;
+extern icon_struct	arrow11o_ic, arrow11f_ic;
+extern icon_struct	arrow12o_ic, arrow12f_ic;
+extern icon_struct	arrow13a_ic, arrow13b_ic;
+extern icon_struct	arrow14a_ic, arrow14b_ic;
 extern unsigned char	no_arrow_bits[];
 extern unsigned char	arrow0_bits[];
 extern unsigned char	arrow1o_bits[], arrow1f_bits[];
@@ -155,7 +160,11 @@ extern unsigned char	arrow6o_bits[], arrow6f_bits[];
 extern unsigned char	arrow7o_bits[], arrow7f_bits[];
 extern unsigned char	arrow8o_bits[], arrow8f_bits[];
 extern unsigned char	arrow9a_bits[], arrow9b_bits[];
-extern unsigned char	arrow10a_bits[], arrow10b_bits[];
+extern unsigned char	arrow10o_bits[], arrow10f_bits[];
+extern unsigned char	arrow11o_bits[], arrow11f_bits[];
+extern unsigned char	arrow12o_bits[], arrow12f_bits[];
+extern unsigned char	arrow13a_bits[], arrow13b_bits[];
+extern unsigned char	arrow14a_bits[], arrow14b_bits[];
 
 /* for splash screen */
 

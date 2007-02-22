@@ -34,6 +34,10 @@ See also <a href="#select-object">Selecting Objects</a>.
     align="middle" alt="">
   Join/Split Lines/Splines/etc</a>
 
+<dt><a href="#chop"><img src="images/chop-button.png"
+    align="middle" alt="">
+  Chop Object</a>
+
 <dt><a href="#scale"><img src="images/scale-button.png"
     align="middle" alt="">
   Scale Object</a>
@@ -95,22 +99,18 @@ See also <a href="#select-object">Selecting Objects</a>.
 <dt><a href="#add-tangent"><img src="images/add-tangent-button.png"
     align="middle" alt="">
   Add Tangent or Normal to Curve</a>
-<img src="images/pict-new.png" alt="New">
 
 <dt><a href="#measure-angle"><img src="images/measure-angle-button.png"
     align="middle" alt="">
   Measure Angle</a>
-<img src="images/pict-new.png" alt="New">
 
 <dt><a href="#measure-length"><img src="images/measure-length-button.png"
     align="middle" alt="">
   Measure Length of Lines and Arcs, and Perimeters of Circles and Ellipses</a>
-<img src="images/pict-new.png" alt="New">
 
 <dt><a href="#measure-area"><img src="images/measure-area-button.png"
     align="middle" alt="">
   Measure Area of Polygons and Ellipses</a>
-<img src="images/pict-new.png" alt="New">
 
 </dl>
 <p>
@@ -144,7 +144,7 @@ glue those objects and make them a COMPOUND object.
 If an already tagged object is selected by mouse button 1
 or mouse button 2, that object will be untagged.
 If you want to remove all tags,
-change the mode temporarily to any other mode (e.g. "move object") except BREAK COMPOUND.
+change the mode temporarily to any other mode (e.g. &quot;move object&quot;) except BREAK COMPOUND.
 <p>
 The COMPOUND object may be separated into component objects by
 <a href="#break-compound">BREAK COMPOUND</a>.
@@ -181,6 +181,10 @@ and then the component objects may be edited.
 All other objects which were not in the COMPOUND object
 will become invisible temporarily,
 but they will reappear after all COMPOUND objects are closed.
+<p>
+If mouse button 2 (`open, keep visible') is clicked on the COMPOUND, 
+the other objects not in the COMPOUND object will become shades of gray,
+making it easy to align objects inside the compound with those outside.
 <p>
 A popup panel with two buttons to close the COMPOUND objects
 (<i>Close This Compound</i> and <i>Close All Compounds</i>)
@@ -229,6 +233,44 @@ To split a line or spline into two separate objects or to convert a box
 or polygon to a line, or to open a closed spline,
 click mouse button 2 (`Spline line/spline') 
 between two the points on the line/spline etc.
+
+
+
+<hr>
+
+<dt><img src="images/chop-button.png" alt="">
+  <a name="chop"></a>
+Chopping objects.
+<dd>
+<p>
+The Chop operation allows you to chop polylines, arcs, and circles into
+individual opjects that, together, approximate the original object.
+(Ellipses will be supported in a future release.)
+<p>
+Left-clicking on one or more objects selects them as "axes".  When another
+object is subsequently selected with a middle click, all possible intersections
+between that object and all "axe" objects are computed.  These intersections
+are then used to create a collection of new objects that approximate the
+original.  Additional "axe" objects can be added at anytime, and any number of
+objects may be chopped.  Right-clicking clears the axe list.
+<p>
+Circles will be partitioned into pie-wedge arcs and arcs will be partitioned
+into either open or pie-wedge arcs, depending on the type of the original arc.
+(In both cases, the type can be changed by editing the newly created objects.)
+Open polylines and unconstrained polygons (i.e., closed polylines other than
+boxes, arcboxes, and picture boxes) will be chopped into one or more objects of
+the same type.  Constrained polygons cannot be chopped.
+<p>
+How polygons are chopped is controlled by the "Arc Type" mode in the indicator
+panel.  If "Open" mode is selected, the polygons that result from the cut
+operation will defined only by the vertices of the original polygon and the
+intersection points; "Closed" mode will result in polygons that include, in
+addition to the original vertices and intersects, the geometric centerpoint of
+the  original polygon.
+<p>
+Chop operations cannot (yet) be undone.
+
+
 
 <hr>
 
@@ -693,7 +735,6 @@ by setting <a href="attributes.html#arrow-mode">ARROW MODE</a>.
 <dt><a name="add-tangent"></a>
 <img src="images/add-tangent-button.png" align="middle" alt="">
 Add Tangent or Normal to Curve
-<img src="images/pict-new.png" alt="New">
 <dd>
 <p>
 Clicking mouse button 1 near a curve of an arc or spline will create a
@@ -709,7 +750,6 @@ the curve.
 <dt><a name="measure-angle"></a>
 <img src="images/measure-angle-button.png" align="middle" alt="">
 Measure Angle
-<img src="images/pict-new.png" alt="New">
 <dd>
 <p>
 Clicking mouse button 1 on a vertex of a polyline or polygon will report
@@ -729,7 +769,6 @@ setting in the attributes panel.
 <dt><a name="measure-length"></a>
 <img src="images/measure-length-button.png" align="middle" alt="">
 Measure Length of Lines and Arcs, and Perimeters of Circles and Ellipses
-<img src="images/pict-new.png" alt="New">
 <dd>
 <p>
 Clicking mouse button 1 on any polyline, polygon, box, arc or circle/ellipse will report
@@ -746,7 +785,6 @@ Clicking mouse button 3 will reset the accumulated length to 0.
 <dt><a name="measure-area"></a>
 <img src="images/measure-area-button.png" align="middle" alt="">
 Measure Area of Polygons and Ellipses
-<img src="images/pict-new.png" alt="New">
 <dd>
 <p>
 Clicking mouse button 1 on any polyline, polygon, box or circle/ellipse will report
@@ -910,7 +948,7 @@ and <a href="attributes.html#arrow-size">ARROW SIZE</a>)
 the coordinates of any points, in <b>Fig</b> units (1/1200 inch).
 <br>
 <img src="images/pict-info.png" alt="">
-Note: For these entries, you may enter values followed by either ``c'' or ``i'' 
+Note: For these entries, you may enter values followed by either &quot;c&quot; or &quot;i&quot; 
 for centimeters or inches respectively.
 </dl>
 

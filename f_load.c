@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -35,9 +35,17 @@
 #include "w_util.h"
 #include "w_setup.h"
 
+#include "e_compound.h"
+#include "u_bound.h"
+#include "u_draw.h"
+#include "u_list.h"
+#include "u_redraw.h"
+#include "w_cursor.h"
+#include "w_grid.h"
+
 /* LOCAL declarations */
 
-void	read_fail_message();
+void	read_fail_message(char *file, int err);
 
 /* load Fig file.
 
@@ -46,10 +54,12 @@ void	read_fail_message();
 	xoff, yoff	= offset from 0 (Fig units)
 */
 
+
+void update_settings (fig_settings *settings);
+void update_recent_list (char *file);
+
 int
-load_file(file, xoff, yoff)
-    char	   *file;
-    int		    xoff, yoff;
+load_file(char *file, int xoff, int yoff)
 {
     int		    s;
     F_compound	    c;
@@ -130,8 +140,7 @@ load_file(file, xoff, yoff)
     return 1;
 }
 
-update_settings(settings)
-    fig_settings  *settings;
+void update_settings(fig_settings *settings)
 {
 	DeclareArgs(4);
 	char    buf[30];
@@ -218,9 +227,7 @@ update_settings(settings)
 	    SetValues(export_transp_panel);
 }
 
-merge_file(file, xoff, yoff)
-    char	   *file;
-    int		    xoff, yoff;
+void merge_file(char *file, int xoff, int yoff)
 {
     F_compound	   *c, *c2;
     int		    s;
@@ -284,8 +291,7 @@ merge_file(file, xoff, yoff)
 
 /* update the recent list */
 
-update_recent_list(file)
-    char  *file;
+void update_recent_list(char *file)
 {
     int    i;
     char   *name, path[PATH_MAX], num[3];
@@ -340,9 +346,7 @@ update_recent_list(file)
 }
 
 void
-read_fail_message(file, err)
-    char	   *file;
-    int		    err;
+read_fail_message(char *file, int err)
 {
     if (err == 0)		/* Successful read */
 	return;

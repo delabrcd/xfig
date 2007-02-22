@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -25,6 +25,9 @@
 #include "w_drawprim.h"
 #include "w_msgpanel.h"
 #include "w_zoom.h"
+
+#include "d_spline.h"
+#include "u_free.h"
 
 /*******    Fig 1.3 subtype of objects	  *******/
 #define			DRAW_ELLIPSE_BY_RAD	1
@@ -40,18 +43,17 @@
 #define			DRAW_CLOSEDSPLINE	11
 #define			DRAW_COMPOUND		13
 
-static F_ellipse *read_1_3_ellipseobject();
-static F_line  *read_1_3_lineobject();
-static F_text  *read_1_3_textobject();
-static F_spline *read_1_3_splineobject();
-static F_arc   *read_1_3_arcobject();
-static F_compound *read_1_3_compoundobject();
+static F_ellipse *read_1_3_ellipseobject(FILE *fp);
+static F_line  *read_1_3_lineobject(FILE *fp);
+static F_text  *read_1_3_textobject(FILE *fp);
+static F_spline *read_1_3_splineobject(FILE *fp);
+static F_arc   *read_1_3_arcobject(FILE *fp);
+static F_compound *read_1_3_compoundobject(FILE *fp);
+
+
 
 int
-read_1_3_objects(fp, buf, obj)
-    FILE	   *fp;
-    char	   *buf;
-    F_compound	   *obj;
+read_1_3_objects(FILE *fp, char *buf, F_compound *obj)
 {
     F_ellipse	   *e, *le = NULL;
     F_line	   *l, *ll = NULL;
@@ -137,8 +139,7 @@ read_1_3_objects(fp, buf, obj)
 }
 
 static F_arc   *
-read_1_3_arcobject(fp)
-    FILE	   *fp;
+read_1_3_arcobject(FILE *fp)
 {
     F_arc	   *a;
     int		    f, b, h, w, n;
@@ -180,8 +181,7 @@ read_1_3_arcobject(fp)
 }
 
 static F_compound *
-read_1_3_compoundobject(fp)
-    FILE	   *fp;
+read_1_3_compoundobject(FILE *fp)
 {
     F_arc	   *a, *la = NULL;
     F_ellipse	   *e, *le = NULL;
@@ -283,8 +283,7 @@ read_1_3_compoundobject(fp)
 }
 
 static F_ellipse *
-read_1_3_ellipseobject(fp)
-    FILE	   *fp;
+read_1_3_ellipseobject(FILE *fp)
 {
     F_ellipse	   *e;
     int		    n, t;
@@ -322,8 +321,7 @@ read_1_3_ellipseobject(fp)
 }
 
 static F_line  *
-read_1_3_lineobject(fp)
-    FILE	   *fp;
+read_1_3_lineobject(FILE *fp)
 {
     F_line	   *l;
     F_point	   *p, *q;
@@ -390,8 +388,7 @@ read_1_3_lineobject(fp)
 }
 
 static F_spline *
-read_1_3_splineobject(fp)
-    FILE	   *fp;
+read_1_3_splineobject(FILE *fp)
 {
     F_spline	   *s;
     F_point	   *p, *q;
@@ -469,8 +466,7 @@ read_1_3_splineobject(fp)
 }
 
 static F_text  *
-read_1_3_textobject(fp)
-    FILE	   *fp;
+read_1_3_textobject(FILE *fp)
 {
     F_text	   *t;
     int		    n;

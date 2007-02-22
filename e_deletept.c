@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -29,10 +29,17 @@
 #include "w_msgpanel.h"
 #include "d_spline.h"
 
-static void	init_delete_point();
+#include "f_util.h"
+#include "u_redraw.h"
+#include "u_undo.h"
+#include "w_cursor.h"
+
+static void	init_delete_point(F_line *obj, int type, int x, int y, F_point *p, F_point *q);
+
+
 
 void
-delete_point_selected()
+delete_point_selected(void)
 {
     set_mousefun("delete point", "", "", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
@@ -43,13 +50,11 @@ delete_point_selected()
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
     set_cursor(pick9_cursor);
+    reset_action_on();
 }
 
 static void
-init_delete_point(obj, type, x, y, p, q)
-    F_line	   *obj;
-    int		    type, x, y;
-    F_point	   *p, *q;
+init_delete_point(F_line *obj, int type, int x, int y, F_point *p, F_point *q)
 {
     int		    n;
 
@@ -98,9 +103,7 @@ init_delete_point(obj, type, x, y, p, q)
 /**************************  spline  *******************************/
 
 void
-splinepoint_deleting(spline, previous_point, selected_point)
-    F_spline	   *spline;
-    F_point	   *previous_point, *selected_point;
+splinepoint_deleting(F_spline *spline, F_point *previous_point, F_point *selected_point)
 {
     F_point	   *next_point;
     F_sfactor      *s_prev_point, *selected_sfactor;
@@ -156,9 +159,7 @@ splinepoint_deleting(spline, previous_point, selected_point)
  */
 
 void
-linepoint_deleting(line, prev_point, selected_point)
-    F_line	   *line;
-    F_point	   *prev_point, *selected_point;
+linepoint_deleting(F_line *line, F_point *prev_point, F_point *selected_point)
 {
     F_point	   *p, *next_point;
 

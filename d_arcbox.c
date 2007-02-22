@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -28,14 +28,19 @@
 #include "w_msgpanel.h"
 #include "w_mousefun.h"
 
+#include "f_util.h"
+#include "u_redraw.h"
+
 /*************************** local procedures *********************/
 
-static void	create_arc_boxobject();
-static void	cancel_arc_boxobject();
-static void	init_arc_box_drawing();
+static void	create_arc_boxobject(int x, int y);
+static void	cancel_arc_boxobject(void);
+static void	init_arc_box_drawing(int x, int y);
+
+
 
 void
-arcbox_drawing_selected()
+arcbox_drawing_selected(void)
 {
     set_mousefun("corner point", "", "", "", "", "");
     canvas_kbd_proc = null_proc;
@@ -43,13 +48,12 @@ arcbox_drawing_selected()
     canvas_leftbut_proc = init_arc_box_drawing;
     canvas_middlebut_proc = null_proc;
     canvas_rightbut_proc = null_proc;
-    set_cursor(arrow_cursor);
+    set_cursor(crosshair_cursor);
     reset_action_on();
 }
 
 static void
-init_arc_box_drawing(x, y)
-    int		    x, y;
+init_arc_box_drawing(int x, int y)
 {
     cur_x = fix_x = x;
     cur_y = fix_y = y;
@@ -65,7 +69,7 @@ init_arc_box_drawing(x, y)
 }
 
 static void
-cancel_arc_boxobject()
+cancel_arc_boxobject(void)
 {
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     arcbox_drawing_selected();
@@ -73,8 +77,7 @@ cancel_arc_boxobject()
 }
 
 static void
-create_arc_boxobject(x, y)
-    int		    x, y;
+create_arc_boxobject(int x, int y)
 {
     F_line	   *box;
     F_point	   *point;

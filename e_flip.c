@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -28,6 +28,10 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
+#include "u_markers.h"
+#include "u_redraw.h"
+#include "w_cursor.h"
+
 /* EXPORTS */
 
 int		setanchor;
@@ -37,19 +41,26 @@ int		setanchor_y;
 static int	flip_axis;
 static int	copy;
 
-static void	init_flip();
-static void	init_copynflip();
-static void	set_unset_anchor();
-static void	init_fliparc();
-static void	init_flipcompound();
-static void	init_flipellipse();
-static void	init_flipline();
-static void	init_flipspline();
-static void	flip_selected();
-static void	flip_search();
+static void	init_flip(F_line *p, int type, int x, int y, int px, int py);
+static void	init_copynflip(F_line *p, int type, int x, int y, int px, int py);
+static void	set_unset_anchor(int x, int y);
+static void	init_fliparc(F_arc *old_a, int px, int py);
+static void	init_flipcompound(F_compound *old_c, int px, int py);
+static void	init_flipellipse(F_ellipse *old_e, int px, int py);
+static void	init_flipline(F_line *old_l, int px, int py);
+static void	init_flipspline(F_spline *old_s, int px, int py);
+static void	flip_selected(void);
+static void	flip_search(F_line *p, int type, int x, int y, int px, int py);
+
+
+void flip_arc (F_arc *a, int x, int y, int flip_axis);
+void flip_compound (F_compound *c, int x, int y, int flip_axis);
+void flip_ellipse (F_ellipse *e, int x, int y, int flip_axis);
+void flip_line (F_line *l, int x, int y, int flip_axis);
+void flip_spline (F_spline *s, int x, int y, int flip_axis);
 
 void
-flip_ud_selected()
+flip_ud_selected(void)
 {
     flip_axis = UD_FLIP;
     /* erase any existing anchor */
@@ -61,10 +72,11 @@ flip_ud_selected()
     setcenter = 0;
     setanchor = 0;
     flip_selected();
+    reset_action_on();
 }
 
 void
-flip_lr_selected()
+flip_lr_selected(void)
 {
     flip_axis = LR_FLIP;
     /* erase any existing anchor */
@@ -76,10 +88,11 @@ flip_lr_selected()
     setcenter = 0;
     setanchor = 0;
     flip_selected();
+    reset_action_on();
 }
 
 static void
-flip_selected()
+flip_selected(void)
 {
     set_mousefun("flip", "copy & flip", "set anchor", 
 			LOC_OBJ, LOC_OBJ, "set anchor");
@@ -95,8 +108,7 @@ flip_selected()
 }
 
 static void
-set_unset_anchor(x, y)
-    int		    x, y;
+set_unset_anchor(int x, int y)
 {
     if (setanchor) {
       set_mousefun("flip", "copy & flip", "set anchor", 
@@ -119,11 +131,7 @@ set_unset_anchor(x, y)
 }
 
 static void
-init_flip(p, type, x, y, px, py)
-    F_line	   *p;
-    int		    type;
-    int		    x, y;
-    int		    px, py;
+init_flip(F_line *p, int type, int x, int y, int px, int py)
 {
     copy = 0;
     if (setanchor) 
@@ -134,11 +142,7 @@ init_flip(p, type, x, y, px, py)
 }
 
 static void
-init_copynflip(p, type, x, y, px, py)
-    F_line	   *p;
-    int		    type;
-    int		    x, y;
-    int		    px, py;
+init_copynflip(F_line *p, int type, int x, int y, int px, int py)
 {
     copy = 1;
     if (setanchor) 
@@ -149,11 +153,7 @@ init_copynflip(p, type, x, y, px, py)
 }
 
 static void
-flip_search(p, type, x, y, px, py)
-    F_line	   *p;
-    int		    type;
-    int		    x, y;
-    int		    px, py;
+flip_search(F_line *p, int type, int x, int y, int px, int py)
 {
     switch (type) {
     case O_POLYLINE:
@@ -182,9 +182,7 @@ flip_search(p, type, x, y, px, py)
 }
 
 static void
-init_fliparc(old_a, px, py)
-    F_arc	   *old_a;
-    int		    px, py;
+init_fliparc(F_arc *old_a, int px, int py)
 {
     F_arc	   *new_a;
 
@@ -206,9 +204,7 @@ init_fliparc(old_a, px, py)
 }
 
 static void
-init_flipcompound(old_c, px, py)
-    F_compound	   *old_c;
-    int		    px, py;
+init_flipcompound(F_compound *old_c, int px, int py)
 {
     F_compound	   *new_c;
 
@@ -230,8 +226,7 @@ init_flipcompound(old_c, px, py)
 }
 
 static void
-init_flipellipse(old_e, px, py)
-    F_ellipse	   *old_e;
+init_flipellipse(F_ellipse *old_e, int px, int py)
 {
     F_ellipse	   *new_e;
 
@@ -251,9 +246,7 @@ init_flipellipse(old_e, px, py)
 }
 
 static void
-init_flipline(old_l, px, py)
-    F_line	   *old_l;
-    int		    px, py;
+init_flipline(F_line *old_l, int px, int py)
 {
     F_line	   *new_l;
 
@@ -273,9 +266,7 @@ init_flipline(old_l, px, py)
 }
 
 static void
-init_flipspline(old_s, px, py)
-    F_spline	   *old_s;
-    int		    px, py;
+init_flipspline(F_spline *old_s, int px, int py)
 {
     F_spline	   *new_s;
 
@@ -294,9 +285,7 @@ init_flipspline(old_s, px, py)
     redisplay_spline(new_s);
 }
 
-flip_line(l, x, y, flip_axis)
-    F_line	   *l;
-    int		    x, y, flip_axis;
+void flip_line(F_line *l, int x, int y, int flip_axis)
 {
     F_point	   *p;
 
@@ -314,9 +303,7 @@ flip_line(l, x, y, flip_axis)
 	l->pic->flipped = 1 - l->pic->flipped;
 }
 
-flip_spline(s, x, y, flip_axis)
-    F_spline	   *s;
-    int		    x, y, flip_axis;
+void flip_spline(F_spline *s, int x, int y, int flip_axis)
 {
     F_point	   *p;
 
@@ -332,9 +319,7 @@ flip_spline(s, x, y, flip_axis)
     }
 }
 
-flip_text(t, x, y, flip_axis)
-    F_text	   *t;
-    int		    x, y, flip_axis;
+void flip_text(F_text *t, int x, int y, int flip_axis)
 {
     double	    sina, cosa;
 
@@ -348,7 +333,7 @@ flip_text(t, x, y, flip_axis)
 	/* switch justification */
 	if (t->type == T_LEFT_JUSTIFIED)
 	    t->type = T_RIGHT_JUSTIFIED;
-	else
+	else if (t->type == T_RIGHT_JUSTIFIED)
 	    t->type = T_LEFT_JUSTIFIED;
 	break;
       case UD_FLIP:		/* up/down around the x axis  */
@@ -360,9 +345,7 @@ flip_text(t, x, y, flip_axis)
     }
 }
 
-flip_ellipse(e, x, y, flip_axis)
-    F_ellipse	   *e;
-    int		    x, y, flip_axis;
+void flip_ellipse(F_ellipse *e, int x, int y, int flip_axis)
 {
     switch (flip_axis) {
     case UD_FLIP:		/* x axis  */
@@ -381,9 +364,7 @@ flip_ellipse(e, x, y, flip_axis)
     e->angle = - e->angle;
 }
 
-flip_arc(a, x, y, flip_axis)
-    F_arc	   *a;
-    int		    x, y, flip_axis;
+void flip_arc(F_arc *a, int x, int y, int flip_axis)
 {
     switch (flip_axis) {
     case UD_FLIP:		/* x axis  */
@@ -403,9 +384,7 @@ flip_arc(a, x, y, flip_axis)
     }
 }
 
-flip_compound(c, x, y, flip_axis)
-    F_compound	   *c;
-    int		    x, y, flip_axis;
+void flip_compound(F_compound *c, int x, int y, int flip_axis)
 {
     F_line	   *l;
     F_arc	   *a;

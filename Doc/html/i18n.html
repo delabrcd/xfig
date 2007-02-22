@@ -75,12 +75,12 @@ These facilities may be implemented as a single program.
 <h3><a name="install-xfig">Install <b>xfig</b></a></h3>
 
 <ol>
-<li>Get <a href="installation.html"><b>xfig.3.2.4.tar.gz</b></a> 
+<li>Get <a href="installation.html"><b>xfig.3.2.5-alpha3.tar.gz</b></a> 
 and <i>gunzip</i> and <i>untar</i> it.
 
 <p>
-<li>Uncomment ``<tt>#define I18N</tt>''
-in <tt>xfig.3.2.4/Imakefile</tt> (remove the <tt>XCOMM</tt> comment).
+<li>Uncomment &quot;<tt>#define I18N</tt>&quot;
+in <tt>xfig.3.2.5-alpha3/Imakefile</tt> (remove the <tt>XCOMM</tt> comment).
 
 <p>
 <li>If your C library supports the required locale,
@@ -97,12 +97,12 @@ make sure that <tt>-DSETLOCALE</tt> is specified.
 <h3><a name="install-fig2dev">Install <b>fig2dev</b></a></h3>
 
 <ol>
-<li>Get <a href="installation.html"><b>transfig.3.2.4.tar.gz</b></a> 
+<li>Get <a href="installation.html"><b>transfig.3.2.5-alpha4.tar.gz</b></a> 
 and <i>gunzip</i> and <i>untar</i> it.
 
 <p>
-<li>Uncomment ``<tt>#define I18N</tt>''
-in <tt>transfig.3.2.4/fig2dev/Imakefile</tt> (remove the <tt>XCOMM</tt> comment).
+<li>Uncomment &quot;<tt>#define I18N</tt>&quot;
+in <tt>transfig.3.2.5-alpha3/fig2dev/Imakefile</tt> (remove the <tt>XCOMM</tt> comment).
 
 <p>
 <li>If you want to install files like <tt>japanese.ps</tt> 
@@ -134,11 +134,11 @@ and an <i>input method</i> (<b>kinput2</b> or <b>htt</b>, for example)
 is available.
 
 <p>
-<li>Type ``<kbd>xfig -international</kbd>''.
+<li>Type &quot;<kbd>xfig -international</kbd>&quot;.
 <p>
 Without the <tt>-international</tt> option,
 <b>xfig</b> will work as normal (no internationalization).
-If you put ``<tt>Fig.international: true</tt>'' 
+If you put &quot;<tt>Fig.international: true</tt>&quot; 
 into your <a href="#resource">resource file</a>,
 <tt>-international</tt> option may omitted.
 </ol>
@@ -148,12 +148,12 @@ into your <a href="#resource">resource file</a>,
 
 Using this internationalization facility,
 you may enter text in Japanese or some another languages 
-(henceforce, call ``international text'') 
+(henceforce, call &quot;international text&quot;) 
 with the <a href="drawing.html#text">TEXT</a> facility.
 When entering international text,
-``<i>Times-Roman</i>'' or ``<i>Times-Bold</i>'' 
-(may be displayed as ``<i>Times-Roman + Mincho</i>'' 
-and ``<i>Times-Bold + Gothic</i>'' in Japanese environment) 
+&quot;<i>Times-Roman</i>&quot; or &quot;<i>Times-Bold</i>&quot; 
+(may be displayed as &quot;<i>Times-Roman + Mincho</i>&quot; 
+and &quot;<i>Times-Bold + Gothic</i>&quot; in Japanese environment) 
 must be selected as <a href="attributes.html#text-font">TEXT FONT</a>.
 <p>
 Input of international text will be started
@@ -283,7 +283,7 @@ you must make the file for the language and available fonts.
 <p>
 The file must installed into the directory 
 specified when <b>fig2dev</b> is installed.
-The filename must locale name followed by ``<tt>.ps</tt>''.
+The filename must locale name followed by &quot;<tt>.ps</tt>&quot;.
 For example, if locale name is <tt>zh_CN.eucCN</tt>, 
 the filename must <tt>zh_CN.eucCN.ps</tt>.
 
@@ -299,7 +299,7 @@ it may be necessary to make suitable settings using this mechanism.
 In the default configuration of X11R6, 
 if there is a resource file like 
 <tt>/usr/X11R6/lib/X11/<i>locale</i>/app-defaults/Fig</tt> 
-(here, <tt><i>locale</i></tt> is locale name or its ``language part''), 
+(here, <tt><i>locale</i></tt> is locale name or its &quot;language part&quot;), 
 it will be loaded instead of
 <tt>/usr/X11R6/lib/X11/app-defaults/Fig</tt>.
 Therefore, if you wrote setting for Japanese environment in 
@@ -313,9 +313,9 @@ will be used otherwise.
 
 <ul>
 <li>When entering international text, you must select
-``<i>Times-Roman</i>'' or ``<i>Times-Bold</i>'' 
-(may be displayed as ``<i>Times-Roman + Mincho</i>'' 
-and ``<i>Times-Bold + Gothic</i>'' in Japanese environment)
+&quot;<i>Times-Roman</i>&quot; or &quot;<i>Times-Bold</i>&quot; 
+(may be displayed as &quot;<i>Times-Roman + Mincho</i>&quot; 
+and &quot;<i>Times-Bold + Gothic</i>&quot; in Japanese environment)
 as the <a href="attributes.html#text-font">TEXT FONT</a>.
 If any other font is selected,
 <a href="drawing.html#compose-char">Latin-1 characters</a> 
@@ -329,8 +329,8 @@ in <a href="drawing.html#text">TEXT</a> mode.
 
 <p>
 <li>When specifying <tt>international</tt> resource,
-you should specify as ``<tt>Fig.international: true</tt>'' 
-but not ``<tt>Fig*international: true</tt>''.
+you should specify as &quot;<tt>Fig.international: true</tt>&quot; 
+but not &quot;<tt>Fig*international: true</tt>&quot;.
 
 <p>
 <li>Use EUC for encoding of multi-byte text.

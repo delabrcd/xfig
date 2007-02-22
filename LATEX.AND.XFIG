@@ -158,15 +158,12 @@ you can type in strings such as
 
                 $\int_0^9 f(x) dx$
 
-and they will be processed by latex. You will need to export
-your file twice when using this format: once to the 
-combined ps/latex (ps part) language and once to the combined
-ps/latex (latex part) language. The first will create a .pstex
-file and the second will create a .pstex_t file. The .pstex_t
-file automatically calls the .pstex file and you do not need
-to include it explicitely in your tex file (users of the previous
-version please take note of this.) To include your figure
-just use something similar to this:
+and they will be processed by latex. You will need to export your file to
+the "combined ps/latex (both parts)" language.  This will create both a
+.pstex file and a .pstex_t file. The .pstex_t file automatically calls
+the .pstex file and you do not need to include it explicitely in your
+tex file (users of the previous version please take note of this.)
+To include your figure just use something similar to this:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 3 of Lecture %%%%%%%%%%%%%%%%%%%%%
@@ -267,6 +264,7 @@ xfig and PDFLaTeX
    In xfig, select the "PDF" export filter, which will generate a
    foo.pdf file.  In your document, put in the preamble :
     \usepackage[pdftex]{graphicx}
+    \DeclareGraphicsRule{.pdftex}{pdf}{.pdftex}{}
    and insert your picture with \includegraphics{foo.pdf}
    You may use all the includegraphics options as well.
    Pros: Very easy to use.
@@ -307,9 +305,9 @@ done
     \usepackage[pdftex]{graphicx,color}
    The color package is required whenever you put some text in colors.
    Then include the picture with_
-    \input foo.pdftex
+    \input foo.pdftex_t
    You can also resize it:
-    \resizebox{3cm}{!}{\input foo.pdftex}  % sets the width to 3cm
+    \resizebox{3cm}{!}{\input foo.pdftex_t}  % sets the width to 3cm
    Pros: Whatever is put in your text boxes is treated just as your
 	 document's code; that means you can use your own macros,
 	 which is really cool.
@@ -327,7 +325,7 @@ done
     \input supp-pdf.tex
     \usepackage[pdftex]{graphicx}
    And to include your figure :
-    \convertMPtoPDF{foo.0}
+    \convertMPtoPDF{foo.0}{1}{1}
    That's it. Quite simple, and you can put a bit TeX inside.
    Pros: Can be easily included in a dual-output (pdf/dvi) file: for
 	 including it as PS, just put a \includegraphics{foo.0} in the

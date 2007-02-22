@@ -58,7 +58,7 @@ or <a href="options.html#res-other">showpageborder</a> resource.
 Show info balloons. delay(ms)
 <dd>
 If this option is checked, <b>xfig</b> pops up a 
-<a href="miscellaneous.html#balloons">``balloon''</a> with information
+<a href="miscellaneous.html#balloons">&quot;balloon&quot;</a> with information
 as the mouse passes over buttons or other areas of <b>xfig</b>. E.g.:
 <br>
 <img src="images/balloons-example.png" alt="[ Balloon message ]">
@@ -114,14 +114,14 @@ option or <a href="options.html#res-modes">allownegcoords</a> resouce.
 
 <dt>
 <img src="images/blueballdot.png" align=bottom alt="-">
-Draw lines through 0,0
+Draw axis lines
 <dd>
 If checked (the default), <b>xfig</b> will draw X and Y axis lines through
 0,0 on the canvas
 <br>
 The initial setting can be set by
-<a href="options.html#com-modes">-drawzerolines / -dontdrawzerolines</a> 
-option or <a href="options.html#res-modes">drawzerolines</a> resource.
+<a href="options.html#com-modes">-showaxislines / -dontshowaxislines</a> 
+option or <a href="options.html#res-modes">showaxislines</a> resource.
 
 <dt>
 <img src="images/blueballdot.png" align=bottom alt="-">
@@ -177,7 +177,7 @@ be called when you use the spell check feature in <b>xfig</b>
 (<i>Spell Check...</i> in the <a href="main_menus.html#edit-menu">Edit menu</a>,
 or <tt>Meta-K</tt> accelerator).
 <br>
-The default is ``<tt>spell %f</tt>'', 
+The default is &quot;<tt>spell %f</tt>&quot;, 
 but it can be changed with 
 <a href="options.html#com-other">-spellcheckcommand</a> option
 or <a href="options.html#res-other">spellcheckcommand</a> resource.
@@ -190,7 +190,7 @@ HTML Browser
 <dd>
 This is the external web (HTML) browser that <b>xfig</b> will call to view help files.
 <br>
-The default is ``<tt>netscape -remote 'openFile(%f)' || netscape %f</tt>'',
+The default is &quot;<tt>netscape -remote 'openFile(%f)' || netscape %f</tt>&quot;,
 it says to look for a running <b>Netscape</b> and open the pages in that.
 If none is running, a new one will start.
 The <b>%f</b> is necessary to tell <b>xfig</b> to insert the filename into the 
@@ -204,7 +204,7 @@ PDF Viewer
 This is the external PDF (Portable Document Format) viewer that <b>xfig</b> will 
 call to view the <b>xfig</b> tutorial.
 <br>
-The default is ``<tt>acroread %f</tt>'',
+The default is &quot;<tt>acroread %f</tt>&quot;,
 which will invoke <A HREF="http://www.adobe.com/"><b>Acrobat Reader</b></a>.
 The <b>%f</b> is necessary to tell <b>xfig</b> to insert the filename into the viewer command.
 This can be set by <a href="options.html#res-other">pdfviewer</a> resource.

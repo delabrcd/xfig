@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -22,16 +22,20 @@
 #include "w_msgpanel.h"
 #include "w_setup.h"
 
-int         _read_pcx();
+#include "w_util.h"
+
+int         _read_pcx(FILE *pcxfile, F_pic *pic);
 Boolean	    bitmap_from_gs();
 
 /* read a PDF file */
 
+
+int read_epsf_pdf (FILE *file, int filetype, F_pic *pic, Boolean pdf_flag);
+void lower (char *buf);
+int hex (char c);
+
 int
-read_pdf(file, filetype, pic)
-    FILE       *file;
-    int         filetype;
-    F_pic      *pic;
+read_pdf(FILE *file, int filetype, F_pic *pic)
 {
     return read_epsf_pdf(file, filetype, pic, True);
 }
@@ -43,20 +47,13 @@ read_pdf(file, filetype, pic)
 */
 
 int
-read_epsf(file, filetype, pic)
-    FILE       *file;
-    int         filetype;
-    F_pic      *pic;
+read_epsf(FILE *file, int filetype, F_pic *pic)
 {
     return read_epsf_pdf(file, filetype, pic, False);
 }
 
 int
-read_epsf_pdf(file, filetype, pic, pdf_flag)
-    FILE       *file;
-    int         filetype;
-    F_pic      *pic;
-    Boolean     pdf_flag;
+read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
 {
     int         nbitmap;
     Boolean     bitmapz;
@@ -224,8 +221,7 @@ read_epsf_pdf(file, filetype, pic, pdf_flag)
 }
 
 int
-hex(c)
-    char        c;
+hex(char c)
 {
     if (isdigit(c))
 	return (c - 48);
@@ -233,8 +229,7 @@ hex(c)
 	return (c - 87);
 }
 
-lower(buf)
-    char       *buf;
+void lower(char *buf)
 {
     while (*buf) {
 	if (isupper(*buf))
@@ -255,6 +250,7 @@ bitmap_from_gs(file, filetype, pic, urx, llx, ury, lly, pdf_flag)
     int         urx, llx, ury, lly;
     int         pdf_flag;
 {
+    static	tempseq = 0;
     char        buf[300];
     FILE       *tmpfp, *pixfile, *gsfile;
     char       *psnam, *driver;
@@ -273,7 +269,7 @@ bitmap_from_gs(file, filetype, pic, urx, llx, ury, lly, pdf_flag)
 				 * file */
 	/* re-open the pipe */
 	close_picfile(file, filetype);
-	file = open_picfile(file, &filetype, PIPEOK, pixnam);
+	file = open_picfile(tmpfile, &filetype, PIPEOK, pixnam);
 	sprintf(tmpfile, "%s/%s%06d", TMPDIR, "xfig-eps", getpid());
 	if ((tmpfp = fopen(tmpfile, "wb")) == NULL) {
 	    file_msg("Couldn't open tmp file %s, %s", tmpfile, strerror(errno));
@@ -283,10 +279,12 @@ bitmap_from_gs(file, filetype, pic, urx, llx, ury, lly, pdf_flag)
 	    fputs(buf, tmpfp);
 	fclose(tmpfp);
     }
-    /* make name /TMPDIR/xfig-pic.pix */
-    sprintf(pixnam, "%s/%s%06d.pix", TMPDIR, "xfig-pic", getpid());
+    /* make name /TMPDIR/xfig-pic######.pix */
+    sprintf(pixnam, "%s/%s%06d.pix", TMPDIR, "xfig-pic", tempseq);
     /* and file name for any error messages from gs */
-    sprintf(errnam, "%s/%s%06d.err", TMPDIR, "xfig-pic", getpid());
+    sprintf(errnam, "%s/%s%06d.err", TMPDIR, "xfig-pic", tempseq);
+    tempseq++;
+
     /* generate gs command line */
     /* for monochrome, use pbm */
     if (tool_cells <= 2 || appres.monochrome) {
@@ -309,6 +307,8 @@ bitmap_from_gs(file, filetype, pic, urx, llx, ury, lly, pdf_flag)
     sprintf(&gscom[strlen(gscom)],
 	    "%s -r72x72 -dSAFER -sDEVICE=%s -g%dx%d -sOutputFile=%s -q - > %s 2>&1",
 	    appres.ghostscript, driver, wid, ht, pixnam, errnam);
+    if (appres.DEBUG)
+	fprintf(stderr,"calling: %s\n",gscom);
     if ((gsfile = popen(gscom, "w")) == 0) {
 	file_msg("Cannot open pipe with command: %s\n", gscom);
 	return False;
@@ -350,6 +350,7 @@ bitmap_from_gs(file, filetype, pic, urx, llx, ury, lly, pdf_flag)
     fprintf(gsfile, "quit\n");
 
     status = pclose(gsfile);
+
     if (filetype == 1)
 	unlink(tmpfile);
     /* error return from ghostscript, look in error file */

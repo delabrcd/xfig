@@ -8,12 +8,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -33,23 +33,32 @@
 #include "object.h"
 #include "u_search.h"
 #include "w_canvas.h"
+#include "w_drawprim.h"
 #include "w_icons.h"
 #include "w_indpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
-#include "w_zoom.h"
+
+#include "e_scale.h"
+#include "u_bound.h"
+#include "u_list.h"
+#include "u_markers.h"
+#include "u_redraw.h"
+#include "w_color.h"
+#include "w_cursor.h"
+#include "w_modepanel.h"
+#include "w_mousefun.h"
 
 Widget	close_compound_popup;
 Boolean	close_popup_isup = False;
-void	open_this_compound();
+void	open_this_compound(F_compound *c, Boolean vis);
 int	save_mask;
 
+
+void popup_close_compound (void);
+
 static void
-init_open_compound(c, type, x, y, px, py)
-    F_compound	   *c;
-    int		    type;
-    int		    x, y;
-    int		    px, py;
+init_open_compound(F_compound *c, int type, int x, int y, int px, int py)
 {
     if (type != O_COMPOUND)
 	return;
@@ -57,12 +66,7 @@ init_open_compound(c, type, x, y, px, py)
 }
 
 static void
-init_open_compound_vis(c, type, x, y, px, py, loc_tag)
-    F_compound	   *c;
-    int		    type;
-    int		    x, y;
-    int		    px, py;
-    int 	    loc_tag;
+init_open_compound_vis(F_compound *c, int type, int x, int y, int px, int py, int loc_tag)
 {
     if (type != O_COMPOUND)
 	return;
@@ -70,9 +74,7 @@ init_open_compound_vis(c, type, x, y, px, py, loc_tag)
 }
 
 void
-open_this_compound(c, vis)
-    F_compound	   *c;
-    Boolean	    vis;
+open_this_compound(F_compound *c, Boolean vis)
 {
   F_compound *d;
 
@@ -95,7 +97,7 @@ open_this_compound(c, vis)
 }
 
 void
-open_compound_selected()
+open_compound_selected(void)
 {
   /* prepatory functions done for mode operations by sel_mode_but */
   update_markers((int)M_COMPOUND);
@@ -111,10 +113,11 @@ open_compound_selected()
   canvas_middlebut_proc = object_search_middle;
   canvas_rightbut_proc = null_proc;
   set_cursor(pick15_cursor);
+  reset_action_on();
 }
 
 void
-close_compound()
+close_compound(void)
 {
   F_compound *c;
   F_compound *d;		/* Destination */
@@ -156,7 +159,7 @@ close_compound()
 }
 
 void
-close_all_compounds()
+close_all_compounds(void)
 {
   F_compound *c;
   F_compound *d;		/* Destination */
@@ -190,7 +193,7 @@ close_all_compounds()
   }
 }
 
-popup_close_compound()
+void popup_close_compound(void)
 {
     Widget	    close_compound_form;
     Widget	    close_compoundw, close_compound_allw;

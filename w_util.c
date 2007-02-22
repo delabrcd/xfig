@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -24,16 +24,18 @@
 #include "f_util.h"
 #include "u_redraw.h"
 #include "w_canvas.h"
-#include "w_color.h"
 #include "w_cmdpanel.h"
 #include "w_drawprim.h"
 #include "w_export.h"
 #include "w_indpanel.h"
+#include "w_color.h"
 #include "w_layers.h"
 #include "w_msgpanel.h"
 #include "w_print.h"
 #include "w_util.h"
 #include "w_setup.h"
+
+#include <X11/IntrinsicP.h> /* XtResizeWidget() */
 
 #ifdef I18N
 #include "d_text.h"
@@ -67,13 +69,15 @@ Pixmap	  mouse_l=(Pixmap) 0,		/* mouse indicator bitmaps for the balloons */
 /* LOCALS */
 
 DeclareStaticArgs(14);
+static void _installscroll(Widget parent, Widget widget);
 
 static Pixmap	spinup_bm=0;	/* pixmaps for spinners */
 static Pixmap	spindown_bm=0;
-static void	validate_int();	/* validation for spinners */
+static void	validate_int(Widget w, XtPointer info, XtPointer dum);	/* validation for spinners */
+static void	convert_gridstr(Widget widget, float mult);
 
 /* for internal consumption only (use MakeIntSpinnerEntry or MakeFloatSpinnerEntry) */
-static Widget	MakeSpinnerEntry();
+static Widget	MakeSpinnerEntry(Widget parent, Widget *text, char *name, Widget below, Widget beside, XtCallbackProc callback, char *string, int type, float min, float max, float inc, int width);
 
 /* bitmap for checkmark */
 static unsigned char check_bits[] = {
@@ -143,19 +147,29 @@ static unsigned char menu_cascade_arrow_bits[] = {
    0x00, 0x00, 0x02, 0x00, 0x0e, 0x00, 0x3e, 0x00, 0xfe, 0x00, 0xfe, 0x01,
    0xfe, 0x01, 0xfe, 0x00, 0x3e, 0x00, 0x0e, 0x00, 0x02, 0x00, 0x00, 0x00};
 
-/* diamond for library menu to indicate toplevel files */
+/* diamond for library menu to indicate toplevel files.
+ * For the XAW3D1_5E version, there is a single point on the left edge and the 
+ * diamond is moved to the right because the menu's 3D edge obscures it otherwise */
 
-#define diamond_width 8
+#ifdef XAW3D1_5E
+#define diamond_width 12
 #define diamond_height 7
-static char diamond_bits[] = {
-   0x10, 0x38, 0x7c, 0xfe, 0x7c, 0x38, 0x10};
+static unsigned char diamond_bits[] = {
+   0x00, 0x01, 0x80, 0x03, 0xc0, 0x07, 0xe1,
+   0x0f, 0xc0, 0x07, 0x80, 0x03, 0x00, 0x01};
+#else
+#define diamond_width 7
+#define diamond_height 7
+static unsigned char diamond_bits[] = {
+   0x08, 0x1c, 0x3e, 0x7f, 0x3e, 0x1c, 0x08};
+#endif /* XAW3D1_5E */
 
 /* popup a confirmation window */
 
-static		query_result, query_done;
+static int	query_result, query_done;
 static String   query_translations =
         "<Message>WM_PROTOCOLS: DismissQuery()\n";
-static void     accept_cancel();
+static void     accept_cancel(Widget widget, XtPointer closure, XtPointer call_data);
 static XtActionsRec     query_actions[] =
 {
     {"DismissQuery", (XtActionProc) accept_cancel},
@@ -163,7 +177,9 @@ static XtActionsRec     query_actions[] =
 
 /* synchronize so that (e.g.) new cursor appears etc. */
 
-app_flush()
+
+
+void app_flush(void)
 {
 	/* this method prevents "ghost" rubberbanding when the user
 	   moves the mouse after creating/resizing object */
@@ -171,59 +187,42 @@ app_flush()
 }
 
 static void
-accept_yes(widget, closure, call_data)
-    Widget	    widget;
-    XtPointer	    closure;
-    XtPointer	    call_data;
+accept_yes(Widget widget, XtPointer closure, XtPointer call_data)
 {
     query_done = 1;
     query_result = RESULT_YES;
 }
 
 static void
-accept_no(widget, closure, call_data)
-    Widget	    widget;
-    XtPointer	    closure;
-    XtPointer	    call_data;
+accept_no(Widget widget, XtPointer closure, XtPointer call_data)
 {
     query_done = 1;
     query_result = RESULT_NO;
 }
 
 static void
-accept_cancel(widget, closure, call_data)
-    Widget	    widget;
-    XtPointer	    closure;
-    XtPointer	    call_data;
+accept_cancel(Widget widget, XtPointer closure, XtPointer call_data)
 {
     query_done = 1;
     query_result = RESULT_CANCEL;
 }
 
 static void
-accept_part(widget, closure, call_data)
-    Widget	    widget;
-    XtPointer	    closure;
-    XtPointer	    call_data;
+accept_part(Widget widget, XtPointer closure, XtPointer call_data)
 {
     query_done = 1;
     query_result = RESULT_PART;
 }
 
 static void
-accept_all(widget, closure, call_data)
-    Widget	    widget;
-    XtPointer	    closure;
-    XtPointer	    call_data;
+accept_all(Widget widget, XtPointer closure, XtPointer call_data)
 {
     query_done = 1;
     query_result = RESULT_ALL;
 }
 
 int
-popup_query(query_type, message)
-    int		    query_type;
-    char	   *message;
+popup_query(int query_type, char *message)
 {
     Widget	    query_popup, query_form, query_message;
     Widget	    query_yes, query_no, query_cancel;
@@ -354,23 +353,12 @@ popup_query(query_type, message)
 
 #include "SmeCascade.h"
 
-void
-test_callback(w, value, garbage)
-     Widget	    w;
-     XtPointer	    value, garbage;
-{
-  fprintf(stderr,"%d chosen\n",(int) value);
-}
+#include "d_text.h"
+#include "e_placelib.h"
+#include "w_rulers.h"
 
 Widget
-make_pulldown_menu(entries, nent, divide_line, divide_message, parent, callback)
-    char	   *entries[];
-    Cardinal	    nent;
-    int		    divide_line;
-    char	   *divide_message;
-    Widget	    parent;
-    XtCallbackProc  callback;
-
+make_pulldown_menu(char **entries, Cardinal nent, int divide_line, char *divide_message, Widget parent, XtCallbackProc callback)
 {
     Widget	    pulldown_menu, entry;
     int		    i;
@@ -396,11 +384,7 @@ make_pulldown_menu(entries, nent, divide_line, divide_message, parent, callback)
 }
 
 static void
-CvtStringToFloat(args, num_args, fromVal, toVal)
-    XrmValuePtr	    args;
-    Cardinal	   *num_args;
-    XrmValuePtr	    fromVal;
-    XrmValuePtr	    toVal;
+CvtStringToFloat(XrmValuePtr args, Cardinal *num_args, XrmValuePtr fromVal, XrmValuePtr toVal)
 {
     static float    f;
 
@@ -414,11 +398,7 @@ CvtStringToFloat(args, num_args, fromVal, toVal)
 }
 
 static void
-CvtIntToFloat(args, num_args, fromVal, toVal)
-    XrmValuePtr	    args;
-    Cardinal	   *num_args;
-    XrmValuePtr	    fromVal;
-    XrmValuePtr	    toVal;
+CvtIntToFloat(XrmValuePtr args, Cardinal *num_args, XrmValuePtr fromVal, XrmValuePtr toVal)
 {
     static float    f;
 
@@ -429,7 +409,7 @@ CvtIntToFloat(args, num_args, fromVal, toVal)
     (*toVal).addr = (caddr_t) & f;
 }
 
-fix_converters()
+void fix_converters(void)
 {
     XtAppAddConverter(tool_app, "String", "Float", CvtStringToFloat, NULL, 0);
     XtAppAddConverter(tool_app, "Int", "Float", CvtIntToFloat, NULL, 0);
@@ -437,20 +417,13 @@ fix_converters()
 
 
 static void
-cancel_color(w, widget, dum1)
-    Widget   w;
-    XtPointer widget, dum1;
+cancel_color(Widget w, XtPointer widget, XtPointer dum1)
 {
     XtPopdown((Widget)widget);
 }
 
 Widget
-make_color_popup_menu(parent, name, callback, include_transp, include_backg)
-    Widget	    parent;
-    char	   *name;
-    XtCallbackProc  callback;
-    Boolean	    include_transp, include_backg;
-
+make_color_popup_menu(Widget parent, char *name, XtCallbackProc callback, Boolean include_transp, Boolean include_backg)
 {
     Widget	    pop_menu, pop_form, color_box;
     Widget	    viewp, entry, label;
@@ -587,9 +560,7 @@ make_color_popup_menu(parent, name, callback, include_transp, include_backg)
 }
 
 void
-set_color_name(color, buf)
-    Color	    color;
-    char	   *buf;
+set_color_name(int color, char *buf)
 {
     if (color == TRANSP_NONE)
 	sprintf(buf,"None");
@@ -607,9 +578,7 @@ set_color_name(color, buf)
  */
 
 void
-set_but_col(widget, color)
-    Widget	    widget;
-    Pixel	    color;
+set_but_col(Widget widget, Pixel color)
 {
 	XColor		 xcolor;
 	Pixel		 but_col;
@@ -629,9 +598,7 @@ set_but_col(widget, color)
 }
 
 static void
-inc_flt_spinner(widget, info, dum)
-    Widget  widget;
-    XtPointer info, dum;
+inc_flt_spinner(Widget widget, XtPointer info, XtPointer dum)
 {
     float val;
     char *sval,str[40];
@@ -654,9 +621,7 @@ inc_flt_spinner(widget, info, dum)
 }
 
 static void
-dec_flt_spinner(widget, info, dum)
-    Widget  widget;
-    XtPointer info, dum;
+dec_flt_spinner(Widget widget, XtPointer info, XtPointer dum)
 {
     float val;
     char *sval,str[40];
@@ -680,9 +645,7 @@ dec_flt_spinner(widget, info, dum)
 }
 
 static void
-inc_int_spinner(widget, info, dum)
-    Widget  widget;
-    XtPointer info, dum;
+inc_int_spinner(Widget widget, XtPointer info, XtPointer dum)
 {
     int     val;
     char   *sval,str[40];
@@ -705,9 +668,7 @@ inc_int_spinner(widget, info, dum)
 }
 
 static void
-dec_int_spinner(widget, info, dum)
-    Widget  widget;
-    XtPointer info, dum;
+dec_int_spinner(Widget widget, XtPointer info, XtPointer dum)
 {
     int     val;
     char   *sval,str[40];
@@ -733,16 +694,13 @@ dec_int_spinner(widget, info, dum)
 /* Code to handle automatic spinning when user holds down mouse button */
 /***********************************************************************/
 
-static XtTimerCallbackProc auto_spin();
+static XtTimerCallbackProc auto_spin(XtPointer client_data, XtIntervalId *id);
 static XtIntervalId	   auto_spinid;
-static XtEventHandler	   stop_spin_timer();
+static XtEventHandler	   stop_spin_timer(int widget, int data, int event);
 static Widget		   cur_spin = (Widget) 0;
 
 XtEventHandler
-start_spin_timer(widget, data, event)
-    Widget	widget;
-    XtPointer	data;
-    XEvent	event;
+start_spin_timer(Widget widget, XtPointer data, XEvent event)
 {
     auto_spinid = XtAppAddTimeOut(tool_app, appres.spinner_delay,
 				(XtTimerCallbackProc) auto_spin, (XtPointer) NULL);
@@ -751,23 +709,27 @@ start_spin_timer(widget, data, event)
 			  (XtEventHandler) stop_spin_timer, (XtPointer) NULL);
     /* keep track of which one the user is pressing */
     cur_spin = widget;
+
+    return;
 }
 
 static XtEventHandler
-stop_spin_timer(widget, data, event)
+stop_spin_timer(int widget, int data, int event)
 {
     XtRemoveTimeOut(auto_spinid);
+
+    return;
 }
 
 static	XtTimerCallbackProc
-auto_spin(client_data, id)
-    XtPointer	    client_data;
-    XtIntervalId   *id;
+auto_spin(XtPointer client_data, XtIntervalId *id)
 {
     auto_spinid = XtAppAddTimeOut(tool_app, appres.spinner_rate,
 				(XtTimerCallbackProc) auto_spin, (XtPointer) NULL);
     /* call the proper spinup/down routine */
     XtCallCallbacks(cur_spin, XtNcallback, 0);
+
+    return;
 }
 
 /***************************/
@@ -775,15 +737,7 @@ auto_spin(client_data, id)
 /***************************/
 
 Widget
-MakeIntSpinnerEntry(parent, text, name, below, beside, callback,
-			string, min, max, inc, width)
-    Widget  parent, *text;
-    char   *name;
-    Widget  below, beside;
-    XtCallbackProc callback;
-    char   *string;
-    int	    min, max, inc;
-    int	    width;
+MakeIntSpinnerEntry(Widget parent, Widget *text, char *name, Widget below, Widget beside, XtCallbackProc callback, char *string, int min, int max, int inc, int width)
 {
     return MakeSpinnerEntry(parent, text, name, below, beside, callback,
 			string, I_IVAL, (float) min, (float) max, (float) inc, width);
@@ -794,15 +748,7 @@ MakeIntSpinnerEntry(parent, text, name, below, beside, callback,
 /*********************************/
 
 Widget
-MakeFloatSpinnerEntry(parent, text, name, below, beside, callback,
-			string, min, max, inc, width)
-    Widget  parent, *text;
-    char   *name;
-    Widget  below, beside;
-    XtCallbackProc callback;
-    char   *string;
-    float   min, max, inc;
-    int	    width;
+MakeFloatSpinnerEntry(Widget parent, Widget *text, char *name, Widget below, Widget beside, XtCallbackProc callback, char *string, float min, float max, float inc, int width)
 {
     return MakeSpinnerEntry(parent, text, name, below, beside, callback,
 			string, I_FVAL, min, max, inc, width);
@@ -831,16 +777,7 @@ MakeFloatSpinnerEntry(parent, text, name, below, beside, callback,
 *****************************************************************************************/
 
 static Widget
-MakeSpinnerEntry(parent, text, name, below, beside, callback,
-			string, type, min, max, inc, width)
-    Widget	 parent, *text;
-    char	*name;
-    Widget	 below, beside;
-    XtCallbackProc callback;
-    char	*string;
-    int		 type;
-    float	 min, max, inc;
-    int		 width;
+MakeSpinnerEntry(Widget parent, Widget *text, char *name, Widget below, Widget beside, XtCallbackProc callback, char *string, int type, float min, float max, float inc, int width)
 {
     Widget	 inform, outform, spinup, spindown, source;
     spin_struct *spinstruct;
@@ -990,14 +927,12 @@ MakeSpinnerEntry(parent, text, name, below, beside, callback,
 /* validate the integer spinner as user types */
 
 void
-validate_int(w, info, dum)
-    Widget	w;
-    XtPointer	info, dum;
+validate_int(Widget w, XtPointer info, XtPointer dum)
 {
     DeclareArgs(4);
     spin_struct *spins = (spin_struct*) info;
     char	buf[200];
-    int		val, i, s, pos;
+    int		val, i, pos;
 
     /* save cursor position */
     FirstArg(XtNinsertPosition, &pos);
@@ -1007,8 +942,8 @@ validate_int(w, info, dum)
     strncpy(buf,panel_get_value(spins->widget),sizeof(buf));
     for (i=0; i<strlen(buf); )
 	/* delete any non-digits (including leading "-" when min >= 0 */
-	if ((buf[i] < '0' || buf[i] > '9') || (spins->min >= 0.0 && buf[i] == '-')
-			&& !(i == 0 && buf[i] == '-')) {
+	if ((spins->min >= 0.0 && buf[i] == '-') || ((buf[i] < '0' || buf[i] > '9') && buf[i] != '-') || 
+			(i != 0 && buf[i] == '-')) {
 	    strcpy(&buf[i],&buf[i+1]);
 	    /* adjust cursor for char we just removed */
 	    pos--;
@@ -1025,9 +960,8 @@ validate_int(w, info, dum)
     }
     panel_set_value(spins->widget, buf);
     /* put cursor back */
-    i = strlen(buf);
-    if (pos < i) {
-	FirstArg(XtNinsertPosition, pos);
+    if (pos < strlen(buf)) {
+	FirstArg(XtNinsertPosition, pos+1);
 	SetValues(spins->widget);
     }
 }
@@ -1035,11 +969,7 @@ validate_int(w, info, dum)
 /* handle the wheelmouse wheel */
 
 void
-spinner_up_down(w, ev, params, num_params)
-    Widget          w;
-    XButtonEvent   *ev;
-    String	   *params;
-    Cardinal	   *num_params;
+spinner_up_down(Widget w, XButtonEvent *ev, String *params, Cardinal *num_params)
 {
   w = XtParent(w);
   if (params[0][0] == '+') w = XtNameToWidget(w, "*spinup");
@@ -1056,7 +986,7 @@ spinner_up_down(w, ev, params, num_params)
 /* if the file message window is up add it to the grab */
 /* in this way a user may dismiss the file_msg panel if another panel is up */
 
-file_msg_add_grab()
+void file_msg_add_grab(void)
 {
     if (file_msg_popup)
 	XtAddGrab(file_msg_popup, False, False);
@@ -1065,8 +995,7 @@ file_msg_add_grab()
 /* get the pointer relative to the window it is in */
 
 void
-get_pointer_win_xy(xposn, yposn)
-    int		  *xposn, *yposn;
+get_pointer_win_xy(int *xposn, int *yposn)
 { 
     Window	   win;
     int		   cx, cy;
@@ -1079,8 +1008,7 @@ get_pointer_win_xy(xposn, yposn)
 /* get the pointer relative to the root */
 
 void
-get_pointer_root_xy(xposn, yposn)
-    int		  *xposn, *yposn;
+get_pointer_root_xy(int *xposn, int *yposn)
 { 
     Window	   rw, cw;
     int		   cx, cy;
@@ -1094,7 +1022,7 @@ get_pointer_root_xy(xposn, yposn)
    to switch modes in the middle of some drawing/editing operation */
 
 Boolean
-check_action_on()
+check_action_on(void)
 {
     /* zooming is ok */
     if (action_on && cur_mode != F_ZOOM) {
@@ -1102,7 +1030,7 @@ check_action_on()
 	    finish_text_input(0,0,0);/* finish up any text input */
 	else {
 	    if (cur_mode == F_PLACE_LIB_OBJ)
-		cancel_place_lib_obj();	      
+		cancel_place_lib_obj(0, 0, 0);	      
 	    else {
 		put_msg("Finish (or cancel) the current operation before changing modes");
 		beep();
@@ -1115,21 +1043,11 @@ check_action_on()
 
 /* process any (single) outstanding Xt event to allow things like button pushes */
 
-process_pending()
+void process_pending(void)
 {
     while (XtAppPending(tool_app))
 	XtAppProcessEvent(tool_app, XtIMAll);
     app_flush();
-}
-
-/* create the bitmaps that look like mouse buttons pressed */
-
-create_mouse()
-{
-    mouse_l = XCreateBitmapFromData(tool_d, tool_w, 
-		(char *) mouse_l_bits, mouse_l_width, mouse_l_height);
-    mouse_r = XCreateBitmapFromData(tool_d, tool_w, 
-		(char *) mouse_r_bits, mouse_r_width, mouse_r_height);
 }
 
 Boolean	user_colors_saved = False;
@@ -1144,7 +1062,7 @@ int	saved_nuser_num;
 
 /* save user colors into temp vars */
 
-save_user_colors()
+void save_user_colors(void)
 {
     int		i;
 
@@ -1169,7 +1087,7 @@ save_user_colors()
 
 /* save n_user colors into temp vars */
 
-save_nuser_colors()
+void save_nuser_colors(void)
 {
     int		i;
 
@@ -1190,7 +1108,7 @@ save_nuser_colors()
 
 /* restore user colors from temp vars */
 
-restore_user_colors()
+void restore_user_colors(void)
 {
     int		i,num;
 
@@ -1242,7 +1160,7 @@ restore_user_colors()
 
 /* Restore user colors from temp vars into n_user_...  */
 
-restore_nuser_colors()
+void restore_nuser_colors(void)
 {
     int		i;
 
@@ -1266,9 +1184,8 @@ restore_nuser_colors()
 
 /* create some global bitmaps like menu arrows, checkmarks, etc. */
 
-create_bitmaps()
+void create_bitmaps(void)
 {
-	unsigned char *bits;
 	int	       i;
 
 	/* make a down-arrow for any pull-down menu buttons */
@@ -1304,33 +1221,10 @@ create_bitmaps()
 	/* create the 1-plane bitmaps of the arrow images */
 	/* these will go in the "left bitmap" part of the menu */
 	/* they are used in e_edit.c and w_indpanel.c */
-	for (i =- 1; i < NUM_ARROW_TYPES; i++) {
-	    if (i==-1) bits = no_arrow_bits;
-	    else if (i==0) bits = arrow0_bits;
-	    else if (i==1) bits = arrow1o_bits;
-	    else if (i==2) bits = arrow1f_bits;
-	    else if (i==3) bits = arrow2o_bits;
-	    else if (i==4) bits = arrow2f_bits;
-	    else if (i==5) bits = arrow3o_bits;
-	    else if (i==6) bits = arrow3f_bits;
-#ifdef NEWARROWTYPES
-	    else if (i==7) bits = arrow4o_bits;
-	    else if (i==8) bits = arrow4f_bits;
-	    else if (i==9) bits = arrow5o_bits;
-	    else if (i==10) bits = arrow5f_bits;
-	    else if (i==11) bits = arrow6o_bits;
-	    else if (i==12) bits = arrow6f_bits;
-	    else if (i==13) bits = arrow7o_bits;
-	    else if (i==14) bits = arrow7f_bits;
-	    else if (i==15) bits = arrow8o_bits;
-	    else if (i==16) bits = arrow8f_bits;
-	    else if (i==17) bits = arrow9a_bits;
-	    else if (i==18) bits = arrow9b_bits;
-	    else if (i==19) bits = arrow10a_bits;
-	    else if (i==20) bits = arrow10b_bits;
-#endif /* NEWARROWTYPES */
+	for (i =- 1; i < NUM_ARROW_TYPES-1; i++) {
 	    arrow_pixmaps[i+1] = XCreateBitmapFromData(tool_d,canvas_win,
-				(char*) bits, 32, 32); 
+				(i==-1? (char*) no_arrow_bits: (char*) arrowtype_choices[i].icon->bits),
+				32, 32); 
 	}
 	diamond_pixmap = XCreateBitmapFromData(tool_d, canvas_win, 
 			(char*) diamond_bits, diamond_width, diamond_height); 
@@ -1340,14 +1234,18 @@ create_bitmaps()
 			(char*) linestyle_choices[i].icon->bits, 
 			linestyle_choices[i].icon->width, linestyle_choices[i].icon->height); 
 	}
+
+	/* create the bitmaps that look like mouse buttons pressed */
+	mouse_l = XCreateBitmapFromData(tool_d, tool_w, 
+		(char *) mouse_l_bits, mouse_l_width, mouse_l_height);
+	mouse_r = XCreateBitmapFromData(tool_d, tool_w, 
+		(char *) mouse_r_bits, mouse_r_width, mouse_r_height);
 }
 
 /* put a string into an ASCII text widget */
 
 void
-panel_set_value(widg, val)
-    Widget	    widg;
-    char	   *val;
+panel_set_value(Widget widg, char *val)
 {
     FirstArg(XtNstring, val);
     SetValues(widg);
@@ -1359,8 +1257,7 @@ panel_set_value(widg, val)
 /* get a string from an ASCII text widget */
 
 char *
-panel_get_value(widg)
-    Widget	    widg;
+panel_get_value(Widget widg)
 {
     char	   *val;
 
@@ -1372,9 +1269,7 @@ panel_get_value(widg)
 /* put an int into an ASCII text widget */
 
 void
-panel_set_int(widg, intval)
-    Widget	    widg;
-    int		    intval;
+panel_set_int(Widget widg, int intval)
 {
     char	    buf[80];
     sprintf(buf, "%d", intval);
@@ -1384,27 +1279,17 @@ panel_set_int(widg, intval)
 /* put a float into an ASCII text widget */
 
 void
-panel_set_float(widg, floatval, format)
-    Widget	    widg;
-    float	    floatval;
-    char	   *format;
+panel_set_float(Widget widg, float floatval, char *format)
 {
     char	    buf[80];
     sprintf(buf, format, floatval);
     panel_set_value(widg, buf);
 }
 
+/* create a checkbutton with a labelled area to the right */
+
 Widget
-CreateCheckbutton(label, widget_name, parent, below, beside, manage, large, 
-			value, user_callback, togwidg)
-    char	*label;
-    char	*widget_name;
-    Widget	 parent, below, beside;
-    Boolean	 manage;
-    Boolean	 large;
-    Boolean	*value;
-    XtCallbackProc user_callback;
-    Widget	*togwidg;
+CreateCheckbutton(char *label, char *widget_name, Widget parent, Widget below, Widget beside, Boolean manage, Boolean large, Boolean *value, XtCallbackProc user_callback, Widget *togwidg)
 {
 	DeclareArgs(20);
 	Widget   form, toggle, labelw;
@@ -1484,10 +1369,7 @@ CreateCheckbutton(label, widget_name, parent, below, beside, manage, large,
 }
 
 XtCallbackProc
-toggle_checkbutton(w, data, garbage)
-    Widget	   w;
-    XtPointer 	   data;
-    XtPointer      garbage;
+toggle_checkbutton(Widget w, XtPointer data, XtPointer garbage)
 {
     DeclareArgs(5);
     Pixmap	   pm;
@@ -1521,13 +1403,14 @@ toggle_checkbutton(w, data, garbage)
 	NextArg(XtNstate, True);
     }
     SetValues(w);
+
+    return;
 }
 
 /* assemble main window title bar with xfig title and (base) file name */
 
 void
-update_wm_title(name)
-char    *name;
+update_wm_title(char *name)
 {
     char  wm_title[200];
     DeclareArgs(2);
@@ -1539,11 +1422,7 @@ char    *name;
 }
 
 void
-check_for_resize(tool, event, params, nparams)
-    Widget	    tool;
-    XButtonEvent   *event;
-    String	   *params;
-    Cardinal	   *nparams;
+check_for_resize(Widget tool, XButtonEvent *event, String *params, Cardinal *nparams)
 {
     int		    dx, dy;
     XConfigureEvent *xc = (XConfigureEvent *) event;
@@ -1563,8 +1442,7 @@ check_for_resize(tool, event, params, nparams)
 
 /* resize whole shebang given new canvas size (width,height) */
 
-resize_all(width, height)
-    int		width, height;
+void resize_all(int width, int height)
 {
     Dimension	b, b2, b3, w, h, h2;
     int		min_sw_per_row;
@@ -1684,7 +1562,7 @@ resize_all(width, height)
 }
 
 void
-check_colors()
+check_colors(void)
 {
     int		    i;
     XColor	    dum,color;
@@ -1765,25 +1643,25 @@ check_colors()
 	} else {
 	    pageborder_color = colors[BLACK];
 	}
-	/* get zero-crossing lines color */
-	XParseColor(tool_d, tool_cm, appres.zerolines, &x_color);
+	/* get axis lines color */
+	XParseColor(tool_d, tool_cm, appres.axislines, &x_color);
 	if (XAllocColor(tool_d, tool_cm, &x_color)) {
-	    zero_lines_color = x_color.pixel;
+	    axis_lines_color = x_color.pixel;
 	} else {
-	    zero_lines_color = colors[BLACK];
+	    axis_lines_color = colors[BLACK];
 	}
     }
 
 }
 
 /* useful when using ups */
-XSyncOn()
+void XSyncOn(void)
 {
 	XSynchronize(tool_d, True);
 	XFlush(tool_d);
 }
 
-XSyncOff()
+void XSyncOff(void)
 {
 	XSynchronize(tool_d, False);
 	XFlush(tool_d);
@@ -1795,9 +1673,7 @@ XSyncOff()
  */
 
 int
-xallncol(name,color,exact)
-    char	*name;
-    XColor	*color,*exact;
+xallncol(char *name, XColor *color, XColor *exact)
 {
     unsigned	short r,g,b;
     char	nam[30];
@@ -1823,17 +1699,7 @@ xallncol(name,color,exact)
 }
 
 Widget
-make_grid_options(parent, put_below, put_beside,
-			grid_minor_menu_button, grid_major_menu_button,
-			grid_minor_menu, grid_major_menu,
-			print_grid_minor_text, print_grid_major_text,
-			grid_unit_label, grid_major_select, grid_minor_select)
-    Widget	  parent, put_below, put_beside;
-    Widget	 *grid_minor_menu_button, *grid_major_menu_button;
-    Widget	 *grid_minor_menu, *grid_major_menu;
-    Widget	 *print_grid_minor_text, *print_grid_major_text;
-    Widget	 *grid_unit_label;
-    void	(*grid_major_select)(), (*grid_minor_select)();
+make_grid_options(Widget parent, Widget put_below, Widget put_beside, char *minor_grid_value, char *major_grid_value, Widget *grid_minor_menu_button, Widget *grid_major_menu_button, Widget *grid_minor_menu, Widget *grid_major_menu, Widget *print_grid_minor_text, Widget *print_grid_major_text, Widget *grid_unit_label, void (*grid_major_select) (/* ??? */), void (*grid_minor_select) (/* ??? */))
 {
 	Widget	below, beside;
 
@@ -1867,7 +1733,7 @@ make_grid_options(parent, put_below, put_beside,
 				*grid_minor_menu_button, grid_minor_select);
 
 	/* text widget for user to type in minor grid spacing */
-	FirstArg(XtNstring, "None");
+	FirstArg(XtNstring, minor_grid_value);
 	NextArg(XtNwidth, 50);
 	NextArg(XtNleftMargin, 4);
 	NextArg(XtNfromVert, put_below);
@@ -1904,7 +1770,7 @@ make_grid_options(parent, put_below, put_beside,
 
 	/* text widget for user to type in major grid spacing */
 
-	FirstArg(XtNstring, "None");
+	FirstArg(XtNstring, major_grid_value);
 	NextArg(XtNwidth, 50);
 	NextArg(XtNleftMargin, 4);
 	NextArg(XtNfromVert, put_below);
@@ -1942,38 +1808,35 @@ make_grid_options(parent, put_below, put_beside,
 /* do this in both the print and export panels */
 
 void
-reset_grid_menus()
+reset_grid_menus(void)
 {
-	float	 value;
-	char	*sval;
-	char	**old_grid_choices = grid_choices;
+	float	convert;
 
 	if (appres.INCHES) {
+	    convert = 1.0;
 	    /* if was metric and is now inches, convert grid values */
-	    if (grid_choices != grid_inch_choices) {
-		if (print_panel) {
-		    if (sscanf(panel_get_value(print_grid_major_text),"%f",&value) != 0) {
-			value = value / 25.4;
-			panel_set_float(print_grid_major_text, value, "%.2f");
-		    }
-		    if (sscanf(panel_get_value(print_grid_minor_text),"%f",&value) != 0) {
-			value = value / 25.4;
-			panel_set_float(print_grid_minor_text, value, "%.2f");
-		    }
-		}
-		if (export_panel) {
-		    if (sscanf(panel_get_value(export_grid_major_text),"%f",&value) != 0) {
-			value = value / 25.4;
-			panel_set_float(export_grid_major_text, value, "%.2f");
-		    }
-		    if (sscanf(panel_get_value(export_grid_minor_text),"%f",&value) != 0) {
-			value = value / 25.4;
-			panel_set_float(export_grid_minor_text, value, "%.2f");
-		    }
-		}
+	    if (old_gridunit == MM_UNIT)
+		convert = 0.03937;
+	    /* if fraction<->decimal find nearest equiv */
+	    if (print_panel) {
+		/* convert major to metric */
+		convert_gridstr(print_grid_major_text, convert);
+		/* convert minor to metric */
+		convert_gridstr(print_grid_minor_text, convert);
 	    }
-	    grid_choices = grid_inch_choices;
-	    n_grid_choices = num_grid_inch_choices;
+	    if (export_panel) {
+		/* convert major to metric */
+		convert_gridstr(export_grid_major_text, convert);
+		/* convert minor to metric */
+		convert_gridstr(export_grid_minor_text, convert);
+	    }
+	    if (cur_gridunit == FRACT_UNIT) {
+		grid_choices = grid_inch_choices;
+		n_grid_choices = num_grid_inch_choices;
+	    } else {
+		grid_choices = grid_tenth_inch_choices;
+		n_grid_choices = num_grid_tenth_inch_choices;
+	    }
 	    FirstArg(XtNlabel, "inches");
 	    if (print_panel)
 		SetValues(print_grid_unit_label);
@@ -1989,35 +1852,19 @@ reset_grid_menus()
 		SetValues(export_grid_unit_label);
 	    /* if there are any fractions in the values, change them to 10mm */
 	    if (print_panel) {
-		FirstArg(XtNstring, &sval);
-		GetValues(print_grid_major_text);
-		if (strchr(sval,'/')) {
-		    FirstArg(XtNstring, "10");
-		    SetValues(print_grid_major_text);
-		}
-		FirstArg(XtNstring, &sval);
-		GetValues(print_grid_minor_text);
-		if (strchr(sval,'/')) {
-		    FirstArg(XtNstring, "10");
-		    SetValues(print_grid_minor_text);
-		}
+		/* convert major to metric */
+		convert_gridstr(print_grid_major_text, 25.4);
+		/* convert minor to metric */
+		convert_gridstr(print_grid_minor_text, 25.4);
 	    }
 	    if (export_panel) {
-		FirstArg(XtNstring, &sval);
-		GetValues(export_grid_major_text);
-		if (strchr(sval,'/')) {
-		    FirstArg(XtNstring, "10");
-		    SetValues(export_grid_major_text);
-		}
-		FirstArg(XtNstring, &sval);
-		GetValues(export_grid_minor_text);
-		if (strchr(sval,'/')) {
-		    FirstArg(XtNstring, "10");
-		    SetValues(export_grid_minor_text);
-		}
+		/* convert major to metric */
+		convert_gridstr(export_grid_major_text, 25.4);
+		/* convert minor to metric */
+		convert_gridstr(export_grid_minor_text, 25.4);
 	    }
 	}
-	if (old_grid_choices != grid_choices) {
+	if (old_gridunit != cur_gridunit) {
 	    if (print_panel) {
 		XtDestroyWidget(print_grid_minor_menu);
 		XtDestroyWidget(print_grid_major_menu);
@@ -2035,6 +1882,48 @@ reset_grid_menus()
 					export_grid_major_menu_button, export_grid_major_select);
 	    }
 	}
+	old_gridunit = cur_gridunit;
+}
+
+static void
+convert_gridstr(Widget widget, float mult)
+{
+	double	 value, numer, denom, diff;
+	char	*sval, fraction[20];
+	double	 fracts[] = { 2, 4, 8, 16, 32 };
+	double	 tol[]    = { 0.05, 0.1, 0.2, 0.3, 0.6};
+#define NUM_FRACTS sizeof(fracts)/sizeof(double)
+	int	 i;
+
+	FirstArg(XtNstring, &sval);
+	GetValues(widget);
+	/* don't convert anything if "none" */
+	if (strcasecmp(sval, "none") == 0)
+	    return;
+	if (sscanf(sval,"%lf/%lf", &numer, &denom) == 2) {
+	    value = numer/denom*mult;
+	} else {
+	    /* not fraction, just convert to metric */
+	    value = numer * mult;
+	}
+	/* if user wants fractions, give him fractions */
+	if (cur_gridunit == FRACT_UNIT) {
+	    for (i=0; i<NUM_FRACTS; i++) {
+		numer = round(value*fracts[i]);
+		diff = fabs(value*fracts[i] - numer);
+		if (diff < tol[i])
+		    break;
+	    }
+	    if (i < NUM_FRACTS) {
+		sprintf(fraction, "%d/%d", (int) numer, (int) fracts[i]);
+		panel_set_value(widget, fraction);
+		return;
+	    }
+	} else if (cur_gridunit == MM_UNIT) {
+	    /* for metric, round to nearest integer mm */
+	    value = round(value);
+	}
+	panel_set_float(widget, value, "%.3lf");
 }
 
 /************************/
@@ -2057,7 +1946,7 @@ reset_grid_menus()
  * Then we fade the letters to the background color and remove the icon.
  ****************************************************************************/
 
-splash_screen()
+void splash_screen(void)
 {
 	GC		splash_gc;
 	XColor  	col, colbg;
@@ -2067,7 +1956,7 @@ splash_screen()
 	int		splash_x, splash_y;
 	int		i, x, y, width;
 	unsigned long	plane_mask;
-	Boolean		use_bitmap;
+	Boolean		use_bitmap = False;
 	XGCValues	gcv;
 
 #ifdef USE_XPM
@@ -2106,8 +1995,7 @@ splash_screen()
 	    use_bitmap = True;
 	}
 
-	/* if we have a PseudoColor or GrayScale visual, fade
-	   the letters from black up to the background */
+	/* if we have a color visual, fade the letters from dark color up to the background */
 
 	/* we'll start the text at sort of a bluish-purple */
 	col.flags = DoRed|DoGreen|DoBlue;
@@ -2257,8 +2145,79 @@ splash_screen()
 /* clear_canvas() zeroes splash_onscreen */
 
 void
-clear_splash()
+clear_splash(void)
 {
     if (splash_onscreen)
 	clear_canvas();
+}
+
+/*
+ * Install wheel mouse scrolling for the scrollbar of the parent of the passed widget
+ *
+ *      viewport
+ *        / \
+ *   widget  scrollbar
+ */
+
+static char scroll_accel[] =
+	"<Btn4Down>:	StartScroll(Backward)\n\
+	<Btn5Down>:	StartScroll(Forward)\n\
+	<BtnUp>:	NotifyScroll(FullLength) EndScroll()\n";
+
+static XtAccelerators scroll_acceltable = 0;
+
+void
+InstallScroll(Widget widget)
+{
+	_installscroll(XtParent(widget), widget);
+}
+
+/* 
+ * Install wheel mouse scrolling for the scrollbar of the parent of the parent of the passed widget
+ *
+ * We look to the parent of the parent for the scrollbar because we have: 
+ *      viewport
+ *        / \
+ *     box   scrollbar
+ *      |
+ *    widget
+ */
+
+void
+InstallScrollParent(Widget widget)
+{
+	_installscroll(XtParent(XtParent(widget)), widget);
+}
+
+static void
+_installscroll(Widget parent, Widget widget)
+{
+	Widget		scroll;
+	XtActionList	action_list;
+	int		num_actions, i;
+	Boolean		found_scroll_action;
+
+	/* only parse the acceleration table once */
+	if (scroll_acceltable == 0)
+	    scroll_acceltable = XtParseAcceleratorTable(scroll_accel);
+
+	/* install the wheel scrolling for the scrollbar of the parent onto the widget */
+	scroll = XtNameToWidget(parent, "vertical");
+	if (scroll) {
+	    /* first see if the scrollbar supports the StartScroll action (when Xaw
+	     * is compiled with ARROW_SCROLLBAR, it does not have this action */
+	    found_scroll_action = False;
+	    XtGetActionList(scrollbarWidgetClass, &action_list, &num_actions);
+	    for (i=0; i<num_actions; i++)
+		if (strcasecmp(action_list[i].string, "startscroll") == 0) {
+		    found_scroll_action = True;
+		    break;
+		}
+	    if (found_scroll_action) {
+		XtOverrideTranslations(scroll, scroll_acceltable);
+		FirstArg(XtNaccelerators, scroll_acceltable);
+		SetValues(scroll);
+		XtInstallAccelerators(widget, scroll);
+	    }
+	}
 }

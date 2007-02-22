@@ -6,29 +6,38 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
 #include "fig.h"
 #include "resources.h"
+#include "object.h"
 #include "mode.h"
 #include "w_layers.h"
 #include "w_msgpanel.h"
 #include "w_print.h"
 #include "w_setup.h"
 
-extern void	init_write_tmpfile();
-extern void	end_write_tmpfile();
+#include "f_save.h"
+#include "f_util.h"
+#include "w_cursor.h"
+#include "w_drawprim.h"
+#include "w_util.h"
+#include "u_print.h"
 
-static int	exec_prcmd();
+
+static int	exec_prcmd(char *command, char *msg);
 static char	layers[PATH_MAX];
 static char	prcmd[2*PATH_MAX+200], tmpcmd[255];
+
+Boolean	print_hpgl_pcl_switch;
+Boolean	hpgl_specified_font;
 
 /*
  * Protect a string by enclosing it in apostrophes. Escape any apostrophes
@@ -37,8 +46,11 @@ static char	prcmd[2*PATH_MAX+200], tmpcmd[255];
  * reused the next time the function is called!
  */
 
-char *shell_protect_string(string)
-    char	   *string;
+
+void build_layer_list (char *layers);
+void append_group (char *list, char *num, int first, int last);
+
+char *shell_protect_string(char *string)
 {
     static char *buf = 0;
     static int buflen = 0;
@@ -75,12 +87,7 @@ char *shell_protect_string(string)
     return(buf);
 }
 
-print_to_printer(printer, backgrnd, mag, print_all_layers, grid, params)
-    char	    printer[];
-    char	   *backgrnd;
-    float	    mag;
-    Boolean	    print_all_layers;
-    char	   *grid, params[];
+void print_to_printer(char *printer, char *backgrnd, float mag, Boolean print_all_layers, char *grid, char *params)
 {
     char	    syspr[2*PATH_MAX+200];
     char	    tmpfile[PATH_MAX];
@@ -104,14 +111,20 @@ print_to_printer(printer, backgrnd, mag, print_all_layers, grid, params)
 	name = shell_protect_string(cur_filename);
 
 #ifdef I18N
+    /* set the numeric locale to C so we get decimal points for numbers */
+    setlocale(LC_NUMERIC, "C");
     sprintf(tmpcmd, "%s %s -L ps -z %s -m %f %s -n %s",
 	    fig2dev_cmd, appres.international ? appres.fig2dev_localize_option : "",
+    /* reset to original locale */
 #else
     sprintf(tmpcmd, "%s -L ps -z %s -m %f %s -n %s",
 	    fig2dev_cmd,
 #endif /* I18N */
 	    paper_sizes[appres.papersize].sname, mag/100.0,
 	    appres.landscape ? "-l xxx" : "-p xxx", name);
+#ifdef I18N
+    setlocale(LC_NUMERIC, "");
+#endif /* I18N */
 
     if (appres.correct_font_size)
 	strcat(tmpcmd," -F ");
@@ -149,23 +162,34 @@ print_to_printer(printer, backgrnd, mag, print_all_layers, grid, params)
     unlink(tmpfile);
 }
 
-/* xoff and yoff are in fig2dev print units (1/72 inch) */
+void strsub(prcmd,find,repl,result, global)
+	char *prcmd,*find, *repl,*result;
+    int global;
+{
+	char *loc;
 
-print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent, 
-		use_transp_backg, print_all_layers, border, smooth, grid)
-    char	   *file, *lang;
-    float	    mag;
-    int		    xoff, yoff;
-    char	   *backgrnd, *transparent;
-    Boolean	    use_transp_backg;
-    Boolean	    print_all_layers;
-    int		    border;
-    Boolean	    smooth;
-    char	   *grid;
+	do {
+		loc = strstr(prcmd,find);
+		if(loc == NULL)
+			break;
+
+		while((prcmd != loc) && *prcmd) /* copy prcmd into result up to loc */
+			*result++ = *prcmd++;
+		strcpy(result,repl);
+		result += strlen(repl);
+		prcmd += strlen(find);
+	} while(global);
+
+	strcpy(result,prcmd);
+}
+/* xoff, yoff, and border are in fig2dev print units (1/72 inch) */
+
+int print_to_file(char *file, char *lang, float mag, int xoff, int yoff, char *backgrnd, char *transparent, Boolean use_transp_backg, Boolean print_all_layers, int border, Boolean smooth, char *grid, Boolean overlap)
 {
     char	    tmp_name[PATH_MAX];
     char	    tmp_fig_file[PATH_MAX];
     char	   *outfile, *name, *real_lang;
+    char	   *suf;
 
     /* if file exists, ask if ok */
     if (!ok_to_write(file, "EXPORT"))
@@ -203,18 +227,37 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
     if (!strncmp(lang, "eps", 3))
 	real_lang = "eps";
 
+    /* if lang is pspdf, call first with just "eps" */
+    if (!strncmp(lang, "pspdf", 5))
+	real_lang = "eps";
+
     /* if binary CGM, real language is cgm */
     if (!strcmp(lang, "bcgm"))
 	real_lang = "cgm";
 
     /* start with the command, language and internationalization, if applicable */
 #ifdef I18N
-    sprintf(prcmd, "%s %s -L %s -m %f ", 
+    /* set the numeric locale to C so we get decimal points for numbers */
+    setlocale(LC_NUMERIC, "C");
+    sprintf(prcmd, "%s %s -L %s ", 
 		fig2dev_cmd, appres.international ? appres.fig2dev_localize_option : "",
 		real_lang, mag/100.0);
+    /* reset to original locale */
+    setlocale(LC_NUMERIC, "");
 #else
-    sprintf(prcmd, "%s -L %s -m %f ", fig2dev_cmd, real_lang, mag/100.0);
+    sprintf(prcmd, "%s -L %s ", fig2dev_cmd, real_lang);
 #endif  /* I18N */
+
+    /* Add in magnification */
+    sprintf(&prcmd[strlen(prcmd)], "-m %f", mag/100.);
+
+    /* fig2dev for -L ibmgl also take option -m "mag,x0,y0", where the
+       offset is in inches.
+    */
+    if (!strcmp(lang, "ibmgl") && (xoff || yoff)) {
+	sprintf(&prcmd[strlen(prcmd)], ",%.4f,%.4f ", xoff/72., yoff/72.);
+    } else
+	strcat(prcmd, " ");
 
     /* add the -D +list if user doesn't want all layers printed */
     if (!print_all_layers)
@@ -229,6 +272,10 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
 
     /* PostScript or PDF output */
     if (!strcmp(lang, "ps") || !strcmp(lang, "pdf")) {
+	/* add -O if user wants pages overlapped (multiple page mode) */
+	if (overlap)
+	    strcat(prcmd, " -O ");
+
 	sprintf(tmpcmd, "-z %s %s -n %s -x %d -y %d -b %d", 
 		paper_sizes[appres.papersize].sname,
 		appres.landscape ? "-l xxx" : "-p xxx", 
@@ -276,15 +323,61 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
 
     /* IBMGL (we know it as "hpl" but it was changed above) */
     } else if (!strcmp(lang, "ibmgl")) {
-	sprintf(tmpcmd, "%s %s %s",
+	if (hpgl_specified_font)
+	    strcat(prcmd," -F");
+	if (print_hpgl_pcl_switch)
+	    strcat(prcmd, " -k");
+	sprintf(tmpcmd, " -z %s %s %s %s",
+		paper_sizes[appres.papersize].sname,
 		appres.landscape ? "" : "-P",
 		tmp_fig_file, outfile);
 	strcat(prcmd, tmpcmd);
+    } else if (!strcmp(lang,"pspdftex")) {
+	/* first generate postscript then PDF.  */
+	sprintf(tmpcmd, "-n %s", outfile);
+	strcat(prcmd, tmpcmd);
+
+	if (backgrnd[0]) {
+		strcat(prcmd," -g \\");	/* must escape the #rrggbb color spec */
+		strcat(prcmd,backgrnd);
+	}
+	strcat(prcmd," ");
+	strcat(prcmd,tmp_fig_file);
+	strcat(prcmd," ");
+
+	strsub(outfile,".","_",tmp_name,1);
+	strcat(prcmd,tmp_name);
+
+	/* make it suitable for pstex. */
+	strsub(prcmd,"pspdftex","pstex",tmpcmd,0);
+	strcat(tmpcmd,".eps");
+	(void) exec_prcmd(tmpcmd, "EXPORT of PostScript part");
+
+	/* make it suitable for pdftex. */
+	strsub(prcmd,"eps","pdf",tmpcmd,0);
+	strsub(tmpcmd,"pspdftex","pdftex",prcmd,0);
+	strcat(prcmd,".pdf");
+	(void) exec_prcmd(prcmd, "EXPORT of PDF part");
+
+	/* and then the tex code. */
+#ifdef I18N
+	/* set the numeric locale to C so we get decimal points for numbers */
+	setlocale(LC_NUMERIC, "C");
+	sprintf(prcmd, "fig2dev %s -L %s -p %s -m %f %s %s",
+		appres.international ?  appres.fig2dev_localize_option : "",
+#else
+		sprintf(prcmd, "fig2dev -L %s -p %s -m %f %s %s",
+#endif  /* I18N */
+				"pstex_t", tmp_name, mag/100.0, tmp_fig_file, outfile);
+#ifdef I18N
+	/* reset to original locale */
+	setlocale(LC_NUMERIC, "");
+#endif  /* I18N */
 
     /* PSTEX and PDFTEX */
     } else if (!strcmp(lang, "pstex") || !strcmp(lang, "pdftex")) {
-	/* do both PostScript (or PDF) part and text part */
-	/* first the postscript/PDF part */
+	/* do both EPS (or PDF) part and text part */
+	/* first the EPS/PDF part */
 	sprintf(tmpcmd, "-b %d -n %s", border, name);
 	strcat(prcmd, tmpcmd);
 	if (appres.correct_font_size)
@@ -300,7 +393,7 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
 	strcat(prcmd,outfile);
 
 	if (!strcmp(lang, "pstex"))
-	    (void) exec_prcmd(prcmd, "EXPORT of PostScript part");
+	    (void) exec_prcmd(prcmd, "EXPORT of EPS part");
 	else
 	    (void) exec_prcmd(prcmd, "EXPORT of PDF part");
 
@@ -310,14 +403,20 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
 	strcat(tmp_name,"_t");
 	/* make it automatically input the postscript/pdf part (-p option) */
 #ifdef I18N
-	sprintf(prcmd, "%s %s -L %s -E %d -p %s -m %f ",
+	/* set the numeric locale to C so we get decimal points for numbers */
+	setlocale(LC_NUMERIC, "C");
+	sprintf(prcmd, "%s %s -L %s -E %d -p %s -m %f -b %d ",
 		fig2dev_cmd, appres.international ? appres.fig2dev_localize_option : "",
 #else
-	sprintf(prcmd, "%s -L %s -E %d -p %s -m %f ",
+	sprintf(prcmd, "%s -L %s -E %d -p %s -m %f -b %d ",
 		fig2dev_cmd,
 #endif  /* I18N */
 		!strcmp(lang,"pstex")? "pstex_t": "pdftex_t",
-		appres.encoding, outfile, mag/100.0);
+		appres.encoding, outfile, mag/100.0, border);
+#ifdef I18N
+	/* reset to original locale */
+	setlocale(LC_NUMERIC, "");
+#endif  /* I18N */
 	/* add the -D +list if user doesn't want all layers printed */
 	if (!print_all_layers)
 	    strcat(prcmd, layers);
@@ -326,6 +425,69 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
 	strcat(prcmd, " ");
 	strcat(prcmd, tmp_name);
 
+    /* PSPDF */
+    } else if (!strcmp(lang, "pspdf")) {
+	sprintf(tmpcmd, "-b %d -n %s", border, name);
+	strcat(prcmd, tmpcmd);
+	if (appres.correct_font_size)
+	    strcat(prcmd," -F ");
+
+	if (backgrnd[0]) {
+	    strcat(prcmd," -g \\");	/* must escape the #rrggbb color spec */
+	    strcat(prcmd,backgrnd);
+	}
+	strcat(prcmd," ");
+	strcat(prcmd,tmp_fig_file);
+	strcat(prcmd," ");
+	/* add output file name */
+	strcat(prcmd,outfile);
+
+	(void) exec_prcmd(prcmd, "EXPORT of EPS part");
+	/* start over with the command, language and internationalization, if applicable */
+#ifdef I18N
+	/* set the numeric locale to C so we get decimal points for numbers */
+	setlocale(LC_NUMERIC, "C");
+	sprintf(prcmd, "%s %s -L pdf -m %f ", 
+		fig2dev_cmd, appres.international ? appres.fig2dev_localize_option : "",
+		mag/100.0);
+	/* reset to original locale */
+	setlocale(LC_NUMERIC, "");
+#else
+	sprintf(prcmd, "%s -L pdf -m %f ", fig2dev_cmd, mag/100.0);
+#endif  /* I18N */
+
+	/* add the -D +list if user doesn't want all layers printed */
+	if (!print_all_layers)
+	    strcat(prcmd, layers);
+
+	/* any grid spec */
+	if (strlen(grid) && strcasecmp(grid,"none") !=0 ) {
+	    strcat(prcmd," -G ");
+	    strcat(prcmd,grid);
+	    strcat(prcmd," ");
+	}
+	sprintf(tmpcmd, "-b %d -n %s", border, name);
+	strcat(prcmd, tmpcmd);
+	if (appres.correct_font_size)
+	    strcat(prcmd," -F ");
+
+	if (backgrnd[0]) {
+	    strcat(prcmd," -g \\");	/* must escape the #rrggbb color spec */
+	    strcat(prcmd,backgrnd);
+	}
+	strcat(prcmd," ");
+	strcat(prcmd,tmp_fig_file);
+	strcat(prcmd," ");
+
+	/* now change the output file name to xxx.pdf */
+	/* strip off current suffix, if any */
+	if ((suf=strrchr(outfile, '.')))
+	    *suf = '\0';
+	/* and make .pdf */
+	strcat(outfile,".pdf'");
+	strcat(prcmd, outfile);
+	/* and fall through to export */
+    	
     /* JPEG */
     } else if (!strcmp(lang, "jpeg")) {
 	/* set the image quality for JPEG export */
@@ -446,11 +608,7 @@ print_to_file(file, lang, mag, xoff, yoff, backgrnd, transparent,
     return (0);
 }
 
-gen_print_cmd(cmd,file,printer,pr_params)
-    char	   *cmd;
-    char	   *file;
-    char	   *printer;
-    char	   *pr_params;
+void gen_print_cmd(char *cmd, char *file, char *printer, char *pr_params)
 {
     if (emptyname(printer)) {	/* send to default printer */
 #if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
@@ -485,8 +643,7 @@ gen_print_cmd(cmd,file,printer,pr_params)
 }
 
 int
-exec_prcmd(command, msg)
-    char  *command, *msg;
+exec_prcmd(char *command, char *msg)
 {
     char   errfname[PATH_MAX];
     FILE  *errfile;
@@ -526,9 +683,7 @@ exec_prcmd(command, msg)
    if the color is < 0, make empty string
 */
 
-make_rgb_string(color, rgb_string)
-    int	   color;
-    char  *rgb_string;
+void make_rgb_string(int color, char *rgb_string)
 {
 	XColor xcolor;
 	if (color >= 0) {
@@ -545,8 +700,7 @@ make_rgb_string(color, rgb_string)
 
 /* make up the -D option to fig2dev if user wants to print only active layers */
 
-build_layer_list(layers)
-    char	*layers;
+void build_layer_list(char *layers)
 {
     char	 list[PATH_MAX], notlist[PATH_MAX], num[10];
     int		 layer, len, notlen;
@@ -620,9 +774,7 @@ build_layer_list(layers)
     }
 }
 
-append_group(list, num, first, last)
-    char    *list, *num;
-    int	     first, last;
+void append_group(char *list, char *num, int first, int last)
 {
     if (list[0])
 	strcat(list,",");
@@ -631,3 +783,4 @@ append_group(list, num, first, last)
     else
 	sprintf(num,"%0d:%d",first,last);
 }
+

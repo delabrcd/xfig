@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -28,14 +28,19 @@
 #include "w_canvas.h"
 #include "w_mousefun.h"
 
-static void	add_arrow_head();
-static void	delete_arrow_head();
-static void	add_linearrow();
-static void	add_arcarrow();
-static void	add_splinearrow();
+#include "u_redraw.h"
+#include "w_cursor.h"
+
+static void	add_arrow_head(F_line *obj, int type, int x, int y, F_point *p, F_point *q);
+static void	delete_arrow_head(F_line *obj, int type, int x, int y, F_point *p, F_point *q);
+static void	add_linearrow(F_line *line, F_point *prev_point, F_point *selected_point);
+static void	add_arcarrow(F_arc *arc, int point_num);
+static void	add_splinearrow(F_spline *spline, F_point *prev_point, F_point *selected_point);
+
+
 
 void
-arrow_head_selected()
+arrow_head_selected(void)
 {
     set_mousefun("add arrow", "delete arrow", "", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
@@ -47,13 +52,11 @@ arrow_head_selected()
     canvas_middlebut_proc = point_search_middle;
     canvas_rightbut_proc = null_proc;
     set_cursor(pick9_cursor);
+    reset_action_on();
 }
 
 static void
-add_arrow_head(obj, type, x, y, p, q)
-    F_line	   *obj;
-    int		    type, x, y;
-    F_point	   *p, *q;
+add_arrow_head(F_line *obj, int type, int x, int y, F_point *p, F_point *q)
 {
     switch (type) {
     case O_POLYLINE:
@@ -73,10 +76,7 @@ add_arrow_head(obj, type, x, y, p, q)
 }
 
 static void
-delete_arrow_head(obj, type, x, y, p, q)
-    F_line	   *obj;
-    int		    type, x, y;
-    F_point	   *p, *q;
+delete_arrow_head(F_line *obj, int type, int x, int y, F_point *p, F_point *q)
 {
     switch (type) {
     case O_POLYLINE:
@@ -96,9 +96,7 @@ delete_arrow_head(obj, type, x, y, p, q)
 }
 
 static void
-add_linearrow(line, prev_point, selected_point)
-    F_line	   *line;
-    F_point	   *prev_point, *selected_point;
+add_linearrow(F_line *line, F_point *prev_point, F_point *selected_point)
 {
     if (line->points->next == NULL)
 	return;			/* A single point line */
@@ -124,9 +122,7 @@ add_linearrow(line, prev_point, selected_point)
 }
 
 static void
-add_arcarrow(arc, point_num)
-    F_arc	   *arc;
-    int		    point_num;
+add_arcarrow(F_arc *arc, int point_num)
 {
 
     /* only allow arrowheads on open arc */
@@ -152,9 +148,7 @@ add_arcarrow(arc, point_num)
 }
 
 static void
-add_splinearrow(spline, prev_point, selected_point)
-    F_spline	   *spline;
-    F_point	   *prev_point, *selected_point;
+add_splinearrow(F_spline *spline, F_point *prev_point, F_point *selected_point)
 {
     if (prev_point == NULL) {	/* add backward arrow */
 	if (spline->back_arrow)
@@ -176,9 +170,7 @@ add_splinearrow(spline, prev_point, selected_point)
 }
 
 void
-delete_linearrow(line, prev_point, selected_point)
-    F_line	   *line;
-    F_point	   *prev_point, *selected_point;
+delete_linearrow(F_line *line, F_point *prev_point, F_point *selected_point)
 {
     if (line->points->next == NULL)
 	return;			/* A single point line */
@@ -214,9 +206,7 @@ delete_linearrow(line, prev_point, selected_point)
 }
 
 void
-delete_arcarrow(arc, point_num)
-    F_arc	   *arc;
-    int		    point_num;
+delete_arcarrow(F_arc *arc, int point_num)
 {
     if (arc->type == T_PIE_WEDGE_ARC)
 	return;;
@@ -250,9 +240,7 @@ delete_arcarrow(arc, point_num)
 }
 
 void
-delete_splinearrow(spline, prev_point, selected_point)
-    F_spline	   *spline;
-    F_point	   *prev_point, *selected_point;
+delete_splinearrow(F_spline *spline, F_point *prev_point, F_point *selected_point)
 {
     if (closed_spline(spline))
 	return;

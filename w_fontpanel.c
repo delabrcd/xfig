@@ -4,12 +4,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -20,12 +20,10 @@
 #include "w_fontbits.h"
 #include "w_indpanel.h"
 #include "w_msgpanel.h"
+#include "w_fontpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
-
-#ifdef I18N
-#include <locale.h>
-#endif  /* I18N */
+#include "w_color.h"
 
 /********************  local variables	***************************/
 
@@ -38,9 +36,9 @@ static void	(*font_setimage) ();
 static MenuItemRec ps_fontmenu_items[NUM_FONTS + 1];
 static MenuItemRec latex_fontmenu_items[NUM_LATEX_FONTS];
 
-static void	fontpane_select();
-static void	fontpane_cancel();
-static void	fontpane_swap();
+static void	fontpane_select(Widget w, XtPointer closure, XtPointer call_data);
+static void	fontpane_cancel(void);
+static void	fontpane_swap(void);
 
 static XtCallbackRec pane_callbacks[] =
 {
@@ -62,9 +60,10 @@ static Widget	ps_fontpane[NUM_FONTS+1];
 static Widget	latex_fontpane[NUM_LATEX_FONTS];
 static Boolean	first_fontmenu;
 
+
+
 void
-init_fontmenu(tool)
-    Widget	    tool;
+init_fontmenu(Widget tool)
 {
     Widget	    tmp_but, ps_cancel, latex_cancel;
     register int    i;
@@ -251,7 +250,7 @@ init_fontmenu(tool)
 /* create the bitmaps for the font menu */
 
 void
-setup_fontmenu()
+setup_fontmenu(void)
 {
     register int    i;
 
@@ -318,10 +317,7 @@ setup_fontmenu()
 }
 
 void
-fontpane_popup(psfont_adr, latexfont_adr, psflag_adr, showfont_fn, show_widget)
-    int		   *psfont_adr, *latexfont_adr, *psflag_adr;
-    void	    (*showfont_fn) ();
-    Widget	    show_widget;
+fontpane_popup(int *psfont_adr, int *latexfont_adr, int *psflag_adr, void (*showfont_fn) (/* ??? */), Widget show_widget)
 {
     DeclareArgs(2);
     Position	    xposn, yposn;
@@ -350,10 +346,7 @@ fontpane_popup(psfont_adr, latexfont_adr, psflag_adr, showfont_fn, show_widget)
 }
 
 static void
-fontpane_select(w, closure, call_data)
-    Widget    w;
-    XtPointer closure;
-    XtPointer call_data;
+fontpane_select(Widget w, XtPointer closure, XtPointer call_data)
 {
     MenuItemRec	   *mi = (MenuItemRec *) closure;
     char	   *font_name = mi->label;
@@ -370,13 +363,13 @@ fontpane_select(w, closure, call_data)
 }
 
 static void
-fontpane_cancel()
+fontpane_cancel(void)
 {
     XtPopdown(*flag_sel ? ps_fontmenu : latex_fontmenu);
 }
 
 static void
-fontpane_swap()
+fontpane_swap(void)
 {
     Widget widg;
 

@@ -1,7 +1,7 @@
 !Don't change the following string - xfig uses it to determine
 ! if you have the newest app-defaults files installed
 
-Fig.version:			3.2.4
+Fig.version:			3.2.5-alpha6
 
 ! some sample settings you may want to change
 
@@ -62,7 +62,7 @@ Fig*file_panel*mask*string:	*.fig *.fig.gz *.fig.[Zz]
 Fig.exportLanguage:		eps
 
 ! filename mask for the image popup browser
-Fig*browse_panel*mask*string:	*.gif* *.jpg* *.pcx* *.png* *.ppm* *.tif* *.xpm* *.xbm* *.ps* *.eps*
+Fig*browse_panel*mask*string:	*.gif* *.jpg* *.jpeg* *.pcx* *.png* *.ppm* *.tif* *.xpm* *.xbm* *.ps* *.eps* *.pdf*
 
 ! printer name
 ! If the following resource is NOT set, xfig will use the PRINTER 
@@ -83,11 +83,22 @@ Fig*browse_panel*mask*string:	*.gif* *.jpg* *.pcx* *.png* *.ppm* *.tif* *.xpm* *
 ! is set.
 Fig.max_image_colors:		80
 
+! information balloon settings
+! show help balloons
+Fig.showballoons:		true
 ! delay (milliseconds) before popping up info balloon 
 Fig*balloon_delay:		500
 
 ! Spacing between buttons
 Fig.internalborderwidth:	1
+
+! These bindings make text entry editing more like modern systems
+! instead of the outdated Athena widget bindings
+
+*Text*translations: #override \
+		<Key>Delete:	delete-next-character() \n\
+		<Key>End:	end-of-line() \n\
+		<Key>Home:	beginning-of-line() 
 
 ! If you are using the 3d Athena widget set (which looks very nice)
 ! and you want the scrollbars to be 3d (even though they look funny)
@@ -204,6 +215,7 @@ Fig*accelerators: \
 	Alt<Key>p:  PopupPrint() \n\
 	Meta<Key>q: Quit() \n\
 	Alt<Key>q:  Quit() \n\
+	Shift <Key>u: PopupUnits() \n\
 	Meta<Key>u: Undo() \n\
 	Alt<Key>u:  Undo() \n\
 	Meta<Key>t: Paste() \n\
@@ -299,10 +311,12 @@ Fig*commands*View*translations: #augment \n\
 	<Key>f: XtMenuPopdown(viewmenu) ZoomFit() \n\
 	<Key>u: XtMenuPopdown(viewmenu) Unzoom() \n\
 	<Key>p: XtMenuPopdown(viewmenu) PanOrigin() \n\
+	<Key>c: XtMenuPopdown(viewmenu) PopupCharmap() \n\
 	<Key>d: XtMenuPopdown(viewmenu) ToggleShowDepths() \n\
 	<Key>n: XtMenuPopdown(viewmenu) ToggleShowBalloons() \n\
 	<Key>b: XtMenuPopdown(viewmenu) ToggleShowBorders() \n\
 	<Key>l: XtMenuPopdown(viewmenu) ToggleShowLengths() \n\
+	<Key>a: XtMenuPopdown(viewmenu) ToggleAutoRefresh() \n\
 	<Key>v,<Key>v: XtMenuPopdown(viewmenu) ToggleShowVertexnums() \n\
 	<Key>: XtMenuPopdown(viewmenu)
 
@@ -471,7 +485,8 @@ Fig*mode_panel*accelerators: \
 	<Key>s: ModeSpline() \n\
 	<Key>t: ModeText() \n\
 	<Key>u: ModeUpdateObject() \n\
-	<Key>v: ModeConvertObject()
+	<Key>v: ModeConvertObject() \n\
+	<Key>x: ModeChopObject()
 
 ! to make the color selection menu in the popup editor work
 Fig*color_menu_form*Command.translations: \
@@ -489,9 +504,8 @@ Fig*menu_divider.bottomShadowContrast:	0
 
 
 ! ----------------------------------------------------------------
-! WHEEL-MOUSE SUPPORT:
+! Wheel-mouse SUPPORT:
 ! written by T.Sato <VEF00200@nifty.ne.jp>
-! xfig must be compiled with -DWHEELMOUSE
 
 ! switch setting via wheel rotation
 !
@@ -513,20 +527,13 @@ Fig*spinner_form*Command.translations: #override \
     <BtnDown>:	set() \n\
     <BtnUp>:	notify() unset()
 
-! move scrollbar via wheel rotation
-!
-Fig*Scrollbar.translations: #override \
-    <Btn4Down>: StartScroll(Backward) StartScroll(Backward) \
-        StartScroll(Backward) StartScroll(Backward) StartScroll(Backward) \n\
-    <Btn5Down>: StartScroll(Forward) StartScroll(Forward) \
-        StartScroll(Forward) StartScroll(Forward) StartScroll(Forward)
-
 ! popup drawing/editing menu via wheel rotation.
 ! if Control is pressed, zoom in/zoom out via wheel rotation.
 !
 Fig*canvas.translations: #override \
     Shift<Btn4Down>: PopupModePanel(draw) \n\
-    Shift<Btn5Down>: PopupModePanel(edit)
+    Shift<Btn5Down>: PopupModePanel(edit) \n\
+    Ctrl<Key>k:  PopupKeyboardPanel(edit)
 
 Fig*draw_menu*translations: #override \
     <Message>WM_PROTOCOLS: PopdownModePanel() \n\
@@ -545,6 +552,6 @@ Fig*MenuButton.translations: #override \
     <Btn4Down>: \n\
     <Btn5Down>:
 
-! END OF WHEEL-MOUSE resources
+! END OF Wheel-mouse resources
 ! ----------------------------------------------------------------
 

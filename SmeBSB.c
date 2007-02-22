@@ -1,5 +1,9 @@
 /* $XConsortium: SmeBSB.c,v 1.19 94/04/17 20:12:49 kaleb Exp $ */
 
+/* This is being included with the xfig distribution to ensure proper
+ * includes for Xaw3d, if used.  It is unchanged from the X Consortium.
+ */
+
 /*
 Copyright (c) 1989, 1994  X Consortium
 
@@ -45,7 +49,6 @@ in this Software without prior written authorization from the X Consortium.
 
 /* needed for abs() */
 #ifdef X_NOT_STDC_ENV
-extern int abs();
 #else
 #include <stdlib.h>
 #endif /* X_NOT_STDC_ENV */
@@ -94,17 +97,17 @@ static XtResource resources[] = {
  * Semi Public function definitions. 
  */
 
-static void Redisplay(), Destroy(), Initialize(), FlipColors();
-static void ClassInitialize();
-static Boolean SetValues();
-static XtGeometryResult QueryGeometry();
+static void Redisplay(Widget w, XEvent *event, Region region), Destroy(Widget w), Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args), FlipColors(Widget w);
+static void ClassInitialize(void);
+static Boolean SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args);
+static XtGeometryResult QueryGeometry(Widget w, XtWidgetGeometry *intended, XtWidgetGeometry *return_val);
 
 /* 
  * Private Function Definitions.
  */
 
-static void GetDefaultSize(), DrawBitmaps(), GetBitmapInfo();
-static void CreateGCs(), DestroyGCs();
+static void GetDefaultSize(Widget w, Dimension *width, Dimension *height), DrawBitmaps(Widget w, GC gc), GetBitmapInfo(Widget w, Boolean is_left);
+static void CreateGCs(Widget w), DestroyGCs(Widget w);
     
 #ifdef XAW3D
 #define superclass (&smeThreeDClassRec)
@@ -180,7 +183,7 @@ WidgetClass smeBSBObjectClass = (WidgetClass) &smeBSBClassRec;
  */
 
 static void 
-ClassInitialize()
+ClassInitialize(void)
 {
     XawInitializeWidgetSet();
     XtAddConverter( XtRString, XtRJustify, XmuCvtStringToJustify, 
@@ -197,10 +200,7 @@ ClassInitialize()
 
 /* ARGSUSED */
 static void
-Initialize(request, new, args, num_args)
-Widget request, new;
-ArgList args;
-Cardinal *num_args;
+Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
     SmeBSBObject entry = (SmeBSBObject) new;
 
@@ -226,8 +226,7 @@ Cardinal *num_args;
  */
 
 static void
-Destroy(w)
-Widget w;
+Destroy(Widget w)
 {
     SmeBSBObject entry = (SmeBSBObject) w;
 
@@ -246,10 +245,7 @@ Widget w;
 
 /* ARGSUSED */
 static void
-Redisplay(w, event, region)
-Widget w;
-XEvent * event;
-Region region;
+Redisplay(Widget w, XEvent *event, Region region)
 {
     GC gc;
     SmeBSBObject entry = (SmeBSBObject) w;
@@ -265,14 +261,18 @@ Region region;
 #endif /* XAW3D */
 
     entry->sme_bsb.set_values_area_cleared = FALSE;    
+#if (XtVersion >= 11006)
     if ( entry->sme.international == True ) {
         fontset_ascent = abs(ext->max_ink_extent.y);
         fontset_descent = ext->max_ink_extent.height - fontset_ascent;
-    }
-    else { /*else, compute size from font like R5*/
+    } else { /*else, compute size from font like R5*/
         font_ascent = entry->sme_bsb.font->max_bounds.ascent;
         font_descent = entry->sme_bsb.font->max_bounds.descent;
     }
+#else
+    font_ascent = entry->sme_bsb.font->max_bounds.ascent;
+    font_descent = entry->sme_bsb.font->max_bounds.descent;
+#endif /* XtVersion R6 */
     y_loc = entry->rectangle.y;
 
 
@@ -301,12 +301,14 @@ Region region;
 	    int width, t_width;
 
 	case XtJustifyCenter:
+#if (XtVersion >= 11006)
             if ( entry->sme.international == True ) {
 	        t_width = XmbTextEscapement(entry->sme_bsb.fontset,label,len);
                 width = entry->rectangle.width - (entry->sme_bsb.left_margin +
 					      entry->sme_bsb.right_margin);
-            }
-            else {
+            } else 
+#endif /* XtVersion >= 11006 */
+	    {
 	        t_width = XTextWidth(entry->sme_bsb.font, label, len);
 	        width = entry->rectangle.width - (entry->sme_bsb.left_margin +
 					      entry->sme_bsb.right_margin);
@@ -314,12 +316,14 @@ Region region;
 	    x_loc += (width - t_width)/2;
 	    break;
 	case XtJustifyRight:
+#if (XtVersion >= 11006)
             if ( entry->sme.international == True ) {
                 t_width = XmbTextEscapement(entry->sme_bsb.fontset,label,len);
                 x_loc = entry->rectangle.width - ( entry->sme_bsb.right_margin
 						 + t_width );
-            }
-            else {
+            } else 
+#endif /* XtVersion >= 11006 */
+	    {
 	        t_width = XTextWidth(entry->sme_bsb.font, label, len);
 	        x_loc = entry->rectangle.width - ( entry->sme_bsb.right_margin
 						 + t_width );
@@ -333,14 +337,16 @@ Region region;
 
 	/* this will center the text in the gadget top-to-bottom */
 
+#if (XtVersion >= 11006)
         if ( entry->sme.international==True ) {
             y_loc += ((int)entry->rectangle.height - 
 		  (fontset_ascent + fontset_descent)) / 2 + fontset_ascent;
 
             XmbDrawString(XtDisplayOfObject(w), XtWindowOfObject(w),
                 entry->sme_bsb.fontset, gc, x_loc + s, y_loc, label, len);
-        }
-        else {
+        } else 
+#endif /* XtVersion >= 11006 */
+	{
             y_loc += ((int)entry->rectangle.height - 
 		  (font_ascent + font_descent)) / 2 + font_ascent;
 	
@@ -363,10 +369,7 @@ Region region;
 
 /* ARGSUSED */
 static Boolean
-SetValues(current, request, new, args, num_args)
-Widget current, request, new;
-ArgList args;
-Cardinal *num_args;
+SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
     SmeBSBObject entry = (SmeBSBObject) new;
     SmeBSBObject old_entry = (SmeBSBObject) current;
@@ -395,18 +398,26 @@ Cardinal *num_args;
 	ret_val = TRUE;
     }
 
+#if (XtVersion >= 11006)
     if (  (	(old_entry->sme_bsb.font != entry->sme_bsb.font) &&
 	(old_entry->sme.international == False )	          ) ||
-	(old_entry->sme_bsb.foreground != entry->sme_bsb.foreground) ) {
-	DestroyGCs(current);
-	CreateGCs(new);
-	ret_val = TRUE;
-    }
+	(old_entry->sme_bsb.foreground != entry->sme_bsb.foreground) )
+#else
+    if (  (old_entry->sme_bsb.font != entry->sme_bsb.font) ||
+	(old_entry->sme_bsb.foreground != entry->sme_bsb.foreground) )
+#endif /* XtVersion >= 11006 */
+	{
+	    DestroyGCs(current);
+	    CreateGCs(new);
+	    ret_val = TRUE;
+	}
 
+#if (XtVersion >= 11006)
     if ( ( old_entry->sme_bsb.fontset != entry->sme_bsb.fontset) &&
 				(old_entry->sme.international == True ) )
         /* DONT changes the GCs, because the fontset is not in them. */
         ret_val = TRUE;
+#endif /* XtVersion >= 11006 */
 
     if (ret_val) {
 	GetDefaultSize(new, 
@@ -428,9 +439,7 @@ Cardinal *num_args;
  */
 
 static XtGeometryResult
-QueryGeometry(w, intended, return_val) 
-Widget w;
-XtWidgetGeometry *intended, *return_val;
+QueryGeometry(Widget w, XtWidgetGeometry *intended, XtWidgetGeometry *return_val)
 {
     SmeBSBObject entry = (SmeBSBObject) w;
     Dimension width, height;
@@ -471,8 +480,7 @@ XtWidgetGeometry *intended, *return_val;
  */
 
 static void 
-FlipColors(w)
-Widget w;
+FlipColors(Widget w)
 {
     SmeBSBObject entry = (SmeBSBObject) w;
     SmeBSBObjectClass oclass = (SmeBSBObjectClass) XtClass (w);
@@ -510,12 +518,11 @@ Widget w;
  */
 
 static void
-GetDefaultSize(w, width, height) 
-Widget w;
-Dimension * width, * height;
+GetDefaultSize(Widget w, Dimension *width, Dimension *height)
 {
     SmeBSBObject entry = (SmeBSBObject) w;
 
+#if (XtVersion >= 11006)
     if ( entry->sme.international == True ) {
         XFontSetExtents *ext = XExtentsOfFontSet(entry->sme_bsb.fontset);
         if (entry->sme_bsb.label == NULL) 
@@ -534,7 +541,9 @@ Dimension * width, * height;
         *height += (2 * entry->sme_threeD.shadow_width);
 #endif /* XAW3D */
     }
-    else {
+    else 
+#endif /* XtVersion >= 11006 */
+    {
         if (entry->sme_bsb.label == NULL) 
 	    *width = 0;
         else
@@ -565,9 +574,7 @@ Dimension * width, * height;
  */
 
 static void
-DrawBitmaps(w, gc)
-Widget w;
-GC gc;
+DrawBitmaps(Widget w, GC gc)
 {
     int x_loc, y_loc;
     SmeBSBObject entry = (SmeBSBObject) w;
@@ -629,9 +636,7 @@ GC gc;
  */
 
 static void
-GetBitmapInfo(w, is_left)
-Widget w;
-Boolean is_left;
+GetBitmapInfo(Widget w, Boolean is_left)
 {
     SmeBSBObject entry = (SmeBSBObject) w;    
     unsigned int depth, bw;
@@ -687,8 +692,7 @@ Boolean is_left;
  */
 
 static void
-CreateGCs(w)
-Widget w;
+CreateGCs(Widget w)
 {
     SmeBSBObject entry = (SmeBSBObject) w;    
     XGCValues values;
@@ -700,16 +704,20 @@ Widget w;
     values.graphics_exposures = FALSE;
     mask      = GCForeground | GCBackground | GCGraphicsExposures | GCFont;
     mask_i18n = GCForeground | GCBackground | GCGraphicsExposures;
+#if (XtVersion >= 11006)
     if ( entry->sme.international == True )
         entry->sme_bsb.rev_gc = XtAllocateGC(w, 0, mask_i18n, &values, GCFont, 0 );
     else
+#endif /* XtVersion >= 11006 */
         entry->sme_bsb.rev_gc = XtGetGC(w, mask, &values);
     
     values.foreground = entry->sme_bsb.foreground;
     values.background = XtParent(w)->core.background_pixel;
+#if (XtVersion >= 11006)
     if ( entry->sme.international == True )
         entry->sme_bsb.norm_gc = XtAllocateGC(w, 0, mask_i18n, &values, GCFont, 0 );
     else
+#endif /* XtVersion >= 11006 */
         entry->sme_bsb.norm_gc = XtGetGC(w, mask, &values);
 
     values.fill_style = FillTiled;
@@ -719,9 +727,11 @@ Widget w;
 					    XtParent(w)->core.depth);
     values.graphics_exposures = FALSE;
     mask |= GCTile | GCFillStyle;
+#if (XtVersion >= 11006)
     if ( entry->sme.international == True )
         entry->sme_bsb.norm_gray_gc = XtAllocateGC(w, 0, mask_i18n, &values, GCFont, 0 );
     else
+#endif /* XtVersion >= 11006 */
         entry->sme_bsb.norm_gray_gc = XtGetGC(w, mask, &values);
 
     values.foreground ^= values.background;
@@ -738,8 +748,7 @@ Widget w;
  */
 
 static void
-DestroyGCs(w)
-Widget w;
+DestroyGCs(Widget w)
 {
     SmeBSBObject entry = (SmeBSBObject) w;    
 

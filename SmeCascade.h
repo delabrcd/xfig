@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2002 by Brian V. Smith
+ * Copyright (c) 1989-2003 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -24,11 +24,10 @@
 
 #ifdef XAW3D
 #include <X11/Xaw3d/Sme.h>
-#include <X11/Xaw3d/SmeBSB.h>
 #else
 #include <X11/Xaw/Sme.h>
-#include <X11/Xaw/SmeBSB.h>
 #endif
+#include "SmeBSB.h"
 
 /****************************************************************
  *
@@ -62,7 +61,7 @@ typedef struct _SmeCascadeRec         *SmeCascadeObject;
 
 extern WidgetClass smeCascadeObjectClass;
 
-void popdown_subs();
+void popdown_subs(void);
 
 #define	XtNsubMenu	 "subMenu"
 #define	XtCSubMenu	 "SubMenu"

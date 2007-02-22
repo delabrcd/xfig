@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -21,6 +21,7 @@
 #include "patchlevel.h"
 #include "resources.h"
 #include "object.h"
+#include "main.h"
 #include "mode.h"
 #include "d_text.h"
 #include "e_edit.h"
@@ -30,11 +31,15 @@
 #include "u_fonts.h"
 #include "u_redraw.h"
 #include "u_undo.h"
+#include "w_canvas.h"
+#include "w_indpanel.h"
 #include "w_color.h"
+#include "w_cursor.h"
 #include "w_cmdpanel.h"
 #include "w_digitize.h"
 #include "w_drawprim.h"
 #include "w_file.h"
+#include "w_fontpanel.h"
 #include "w_export.h"
 #include "w_help.h"
 #include "w_icons.h"
@@ -42,17 +47,17 @@
 #include "w_layers.h"
 #include "w_library.h"
 #include "w_msgpanel.h"
+#include "w_modepanel.h"
 #include "w_mousefun.h"
 #include "w_print.h"
 #include "w_rulers.h"
 #include "w_srchrepl.h"
 #include "w_setup.h"
+#include "w_style.h"
 #include "w_util.h"
 #include "w_zoom.h"
-
-#ifdef USE_XPM_ICON
-#include <xpm.h>
-#endif /* USE_XPM_ICON */
+#include "w_snap.h"
+#include "f_load.h"
 
 /* input extensions for an input tablet */
 #ifdef USE_TAB
@@ -61,7 +66,6 @@
 
 #ifdef I18N
 #include <X11/keysym.h>
-#include <locale.h>
 #endif  /* I18N */
 
 /* EXPORTS */
@@ -72,13 +76,14 @@ Boolean	    geomspec;
 
 int		update_fig_files();
 static int	screen_res;
-static void	make_cut_buf_name();
-static void	check_resource_ranges();
-static void	set_icon_geom();
-static void	set_max_image_colors();
-static void	parse_canvas_colors();
-static void	set_xpm_icon();
-static void	resize_canvas();
+static void	make_cut_buf_name(void);
+static void	check_resource_ranges(void);
+static void	set_icon_geom(void);
+static void	set_max_image_colors(void);
+static void	parse_canvas_colors(void);
+static void	set_xpm_icon(void);
+static void	resize_canvas(void);
+static void check_refresh(XtPointer client_data, XtIntervalId *id);
 
 /************** FIG options ******************/
 
@@ -90,6 +95,8 @@ static Boolean	false = False;
 static float	Fzero = 0.0;
 static float	Fone = 1.0;
 static float	F100 = 100.0;
+static float	FDef_arrow_wd = DEF_ARROW_WID;
+static float	FDef_arrow_ht = DEF_ARROW_HT;
 
 /* actions so that we may install accelerators at the top level */
 static XtActionsRec	main_actions[] =
@@ -107,6 +114,7 @@ static XtActionsRec	main_actions[] =
     {"ExportFile",	(XtActionProc) do_export},
     {"PopupPrint",	(XtActionProc) popup_print_panel},
     {"PrintFile",	(XtActionProc) do_print},
+    {"PopupCharmap",	(XtActionProc) popup_character_map},
     {"PopupGlobals",	(XtActionProc) show_global_settings},
     {"Undo",		(XtActionProc) undo},
     {"Paste",		(XtActionProc) paste},
@@ -124,7 +132,7 @@ static XtActionsRec	main_actions[] =
 
 static XtResource application_resources[] = {
     {"geometry",  "XtCGeometry",    XtRString,  sizeof(char *),
-      XtOffset(appresPtr,geometry), XtRString, (caddr_t) NULL},
+      XtOffset(appresPtr, geometry), XtRString, (caddr_t) NULL},
 
     {"version",  "version",    XtRString,  sizeof(char *),
       XtOffset(appresPtr,version), XtRString, (caddr_t) NULL},
@@ -132,8 +140,8 @@ static XtResource application_resources[] = {
       XtOffset(appresPtr, zoom), XtRFloat, (caddr_t) & Fone},
     {"allownegcoords", "NegativeCoordinates",   XtRBoolean, sizeof(Boolean),
       XtOffset(appresPtr, allownegcoords), XtRBoolean, (caddr_t) & true},
-    {"showzerolines", "Axis",   XtRBoolean, sizeof(Boolean),
-      XtOffset(appresPtr, drawzerolines), XtRBoolean, (caddr_t) & true},
+    {"showaxislines", "Axis",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, showaxislines), XtRBoolean, (caddr_t) & true},
     {"canvasbackground",  "Background",    XtRString,  sizeof(char *),
       XtOffset(appresPtr,canvasbackground), XtRString, (caddr_t) NULL},
     {"canvasforeground",  "Foreground",    XtRString,  sizeof(char *),
@@ -141,7 +149,7 @@ static XtResource application_resources[] = {
     {"iconGeometry",  "IconGeometry",    XtRString,  sizeof(char *),
       XtOffset(appresPtr,iconGeometry), XtRString, (caddr_t) NULL},
     {"showallbuttons", "ShowAllButtons",   XtRBoolean, sizeof(Boolean),
-      XtOffset(appresPtr, ShowAllButtons), XtRBoolean, (caddr_t) & false},
+      XtOffset(appresPtr, showallbuttons), XtRBoolean, (caddr_t) & false},
     {XtNjustify,   XtCJustify, XtRBoolean, sizeof(Boolean),
       XtOffset(appresPtr, RHS_PANEL), XtRBoolean, (caddr_t) & false},
     {"landscape",   XtCOrientation, XtRBoolean, sizeof(Boolean),
@@ -160,6 +168,14 @@ static XtResource application_resources[] = {
       XtOffset(appresPtr, normalFont), XtRString, (caddr_t) NULL},
     {"buttonFont", "Font",   XtRString, sizeof(char *),
       XtOffset(appresPtr, buttonFont), XtRString, (caddr_t) NULL},
+    {"startarrowtype", "StartArrowType",   XtRInt, sizeof(int),
+      XtOffset(appresPtr, startarrowtype), XtRImmediate, (caddr_t) 0},
+    {"startarrowthick", "StartArrowThick",   XtRFloat, sizeof(float),
+      XtOffset(appresPtr, startarrowthick), XtRFloat, (caddr_t) & Fone},
+    {"startarrowwidth", "StartArrowWidth",   XtRFloat, sizeof(float),
+      XtOffset(appresPtr, startarrowwidth), XtRFloat, (caddr_t) & FDef_arrow_wd},
+    {"startarrowlength", "StartArrowLength",   XtRFloat, sizeof(float),
+      XtOffset(appresPtr, startarrowlength), XtRFloat, (caddr_t) & FDef_arrow_ht},
     {"startlatexFont", "StartlatexFont",   XtRString, sizeof(char *),
       XtOffset(appresPtr, startlatexFont), XtRString, (caddr_t) NULL},
     {"startpsFont", "StartpsFont",   XtRString, sizeof(char *),
@@ -175,7 +191,7 @@ static XtResource application_resources[] = {
     {"startlinewidth", "StartLineWidth",   XtRInt, sizeof(int),
       XtOffset(appresPtr, startlinewidth), XtRImmediate, (caddr_t) 1},
     {"grid_color", "Color",   XtRString, sizeof(char *),
-      XtOffset(appresPtr, grid_color), XtRImmediate, (caddr_t) "red"},
+      XtOffset(appresPtr, grid_color), XtRImmediate, (caddr_t) "#ffcccc"},
     {"grid_unit", "UnitType",   XtRString, sizeof(char *),
       XtOffset(appresPtr, tgrid_unit), XtRImmediate, (caddr_t) "default"},
     {"startgridmode", "StartGridMode",   XtRInt, sizeof(int),
@@ -272,16 +288,22 @@ static XtResource application_resources[] = {
       XtOffset(appresPtr, library_icon_size), XtRImmediate, (caddr_t) DEF_ICON_SIZE},
     {"splash", "View",   XtRBoolean, sizeof(Boolean),
       XtOffset(appresPtr, splash), XtRBoolean, (caddr_t) & true},
-    {"zerolines", "Color",   XtRString, sizeof(char *),
-      XtOffset(appresPtr, zerolines), XtRString, (caddr_t) "pink"},
+    {"axislines", "Color",   XtRString, sizeof(char *),
+      XtOffset(appresPtr, axislines), XtRString, (caddr_t) "pink"},
     {"freehand_resolution", "Hints",   XtRInt, sizeof(int),
       XtOffset(appresPtr, freehand_resolution), XtRImmediate, (caddr_t) 25},
     {"ghostscript", "Ghostscript",   XtRString, sizeof(char *),
       XtOffset(appresPtr, ghostscript), XtRString, (caddr_t) "gs"},
     {"correct_font_size", "Size",   XtRBoolean, sizeof(Boolean),
-      XtOffset(appresPtr, correct_font_size), XtRBoolean, (caddr_t) & false},
+      XtOffset(appresPtr, correct_font_size), XtRBoolean, (caddr_t) & true},
     {"encoding", "Encoding", XtRInt, sizeof(int),
       XtOffset(appresPtr, encoding), XtRImmediate, (caddr_t) 1},
+    {"write_v40", "Format",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, write_v40), XtRBoolean, (caddr_t) & false},
+    {"crosshair", "Crosshair",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, crosshair), XtRBoolean, (caddr_t) & false},
+    {"autorefresh", "Refresh",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, autorefresh), XtRBoolean, (caddr_t) & false},
 
 #ifdef I18N
     {"international", "International", XtRBoolean, sizeof(Boolean),
@@ -329,6 +351,7 @@ XrmOptionDescRec options[] =
     {"-depth", "*depth", XrmoptionSepArg, NULL},
 
     {"-allownegcoords", ".allownegcoords", XrmoptionNoArg, "True"},
+    {"-autorefresh", ".autorefresh", XrmoptionNoArg, "True"},
     {"-balloon_delay", ".balloon_delay", XrmoptionSepArg, 0},
     {"-boldFont", ".boldFont", XrmoptionSepArg, 0},
     {"-buttonFont", ".buttonFont", XrmoptionSepArg, 0},
@@ -338,17 +361,20 @@ XrmOptionDescRec options[] =
     {"-centimeters", ".inches", XrmoptionNoArg, "False"},
     {"-cfg", ".canvasforeground", XrmoptionSepArg, (caddr_t) NULL},
     {"-correct_font_size", ".correct_font_size", XrmoptionNoArg, "True"},
+    {"-crosshair", ".crosshair", XrmoptionNoArg, "True"},
     {"-debug", ".debug", XrmoptionNoArg, "True"},
     {"-dontallownegcoords", ".allownegcoords", XrmoptionNoArg, "False"},
-    {"-dontshowzerolines", ".drawzerolines", XrmoptionNoArg, "False"},
+    {"-dontshowaxislines", ".showaxislines", XrmoptionNoArg, "False"},
     {"-dontshowballoons", ".showballoons", XrmoptionNoArg, "False"},
     {"-dontshowlengths", ".showlengths", XrmoptionNoArg, "False"},
     {"-dontshownums", ".shownums", XrmoptionNoArg, "False"},
     {"-dontshowpageborder", ".showpageborder", XrmoptionNoArg, "False"},
     {"-dontswitchcmap", ".dontswitchcmap", XrmoptionNoArg, "True"},
+    {"-encoding", ".encoding", XrmoptionSepArg, 0},
     {"-exportLanguage", ".exportLanguage", XrmoptionSepArg, 0},
     {"-export_margin", ".export_margin", XrmoptionSepArg, 0},
     {"-flipvisualhints", ".flipvisualhints", XrmoptionNoArg, "True"},
+    {"-noflipvisualhints", ".flipvisualhints", XrmoptionNoArg, "False"},
     {"-flushleft", ".flushleft", XrmoptionNoArg, "True"},
     {"-freehand_resolution", ".freehand_resolution", XrmoptionSepArg, 0},
     {"-ghostscript", ".ghostscript", XrmoptionSepArg, "gs"},
@@ -400,7 +426,7 @@ XrmOptionDescRec options[] =
     {"-showlengths", ".showlengths", XrmoptionNoArg, "True"},
     {"-shownums", ".shownums", XrmoptionNoArg, "True"},
     {"-showpageborder", ".showpageborder", XrmoptionNoArg, "True"},
-    {"-showzerolines", ".drawzerolines", XrmoptionNoArg, "True"},
+    {"-showaxislines", ".showaxislines", XrmoptionNoArg, "True"},
     {"-single", ".multiple", XrmoptionNoArg, "False"},
     {"-smooth_factor", ".smooth_factor", XrmoptionSepArg, 0},
     {"-specialtext", ".specialtext", XrmoptionNoArg, "True"},
@@ -409,6 +435,10 @@ XrmOptionDescRec options[] =
     {"-spinner_rate", ".spinner_rate", XrmoptionSepArg, 0},
     {"-splash", ".splash", XrmoptionNoArg, "True"},
     {"-startfillstyle", ".startfillstyle", XrmoptionSepArg, 0},
+    {"-startarrowtype", ".startarrowtype",  XrmoptionSepArg, 0},
+    {"-startarrowthick", ".startarrowthick", XrmoptionSepArg, 0},
+    {"-startarrowwidth", ".startarrowwidth", XrmoptionSepArg, 0},
+    {"-startarrowlength", ".startarrowlength", XrmoptionSepArg, 0},
     {"-startFontSize", ".startfontsize", XrmoptionSepArg, 0},
     {"-startfontsize", ".startfontsize", XrmoptionSepArg, 0},
     {"-startgridmode", ".startgridmode",  XrmoptionSepArg, 0},
@@ -421,10 +451,10 @@ XrmOptionDescRec options[] =
     {"-track", ".trackCursor", XrmoptionNoArg, "True"},
     {"-transparent_color", ".transparent", XrmoptionSepArg, 0},
     {"-userscale", ".userscale", XrmoptionSepArg, 0},
+    {"-write_v40", ".write_v40", XrmoptionNoArg, "True"},
     {"-userunit", ".userunit", XrmoptionSepArg, 0},
-    {"-zerolines", ".zerolines", XrmoptionSepArg, "pink"},
+    {"-axislines", ".axislines", XrmoptionSepArg, "pink"},
     {"-zoom", ".zoom", XrmoptionSepArg, 0},
-    {"-encoding", ".encoding", XrmoptionSepArg, 0},
 #ifdef I18N
     {"-international", ".international", XrmoptionNoArg, "True"},
     {"-inputStyle", ".inputStyle", XrmoptionSepArg, 0},
@@ -433,6 +463,7 @@ XrmOptionDescRec options[] =
 
 char *help_list[] = {
 	"[-allownegcoords] ",
+	"[-autorefresh] ",
 	"[-balloon_delay <delay>] ",
 	"[-boldFont <font>] ",
 	"[-but_per_row <number>] ",
@@ -441,10 +472,11 @@ char *help_list[] = {
 	"[-center] ",
 	"[-cfg <color>] ",
 	"[-centimeters] ",
+	"[-correct_font_size] ",
 	"[-debug] ",
 	"[-depth <visual_depth>] ",
 	"[-dontallownegcoords] ",
-	"[-dontshowzerolines] ",
+	"[-dontshowaxislines] ",
 	"[-dontshowballoons] ",
 	"[-dontshowlengths] ",
 	"[-dontshowpageborder] ",
@@ -503,7 +535,7 @@ char *help_list[] = {
 	"[-showlengths] ",
 	"[-shownums] ",
 	"[-showpageborder] ",
-	"[-showzerolines] ",
+	"[-showaxislines] ",
 	"[-single] ",
 	"[-smooth_factor <factor>] ",
 	"[-specialtext] ",
@@ -526,7 +558,7 @@ char *help_list[] = {
 	"[-userscale <scale>] ",
 	"[-userunit <units>] ",
 	"[-visual <visual>] ",
-	"[-zerolines <color>] ",
+	"[-axislines <color>] ",
 	"[-zoom <zoom scale>] ",
 #ifdef I18N
 	"[-international] ",
@@ -580,7 +612,6 @@ XtResource resources[] =
 	XtOffsetOf (OptionsRec, depth), XtRImmediate, NULL},
 };
 
-
 XtTimerCallbackProc manage_layer_buttons();
 
 int	xargc;		/* keeps copies of the command-line arguments */
@@ -588,9 +619,11 @@ char  **xargv;
 int	xpm_icon_status; /* status from reading the xpm icon */
 struct  geom   geom;
 
-main(argc, argv)
-    int		    argc;
-    char	   *argv[];
+
+int setup_visual (int *argc_p, char **argv, Arg *args);
+void get_pointer_mapping (void);
+
+void main(int argc, char **argv)
 {
     Widget	    children[NCHILDREN];
     XEvent	    event;
@@ -598,7 +631,6 @@ main(argc, argv)
     int		    init_canv_wd, init_canv_ht;
     XWMHints	   *wmhints;
     int		    i,j;
-    XGCValues	    gcv;
     XColor	    dumcolor;
     char	    version[30];
     char	   *dval;
@@ -615,7 +647,7 @@ main(argc, argv)
 
     /* make a copy of the version */
     (void) strcpy(tool_name, xfig_version);
-    (void) strcat(file_header, PROTOCOL_VERSION);
+    (void) sprintf(file_header, "#FIG %s", PROTOCOL_VERSION);
 
     /* clear update Fig flag */
     update_figs = False;
@@ -642,41 +674,45 @@ main(argc, argv)
 	/* yes, go do it and exit */
 	exit(update_fig_files(argc,argv));
 
-    } else if (argc > 1 && (strcasecmp(argv[1],"-v")==0 ||
-		    ((strcmp(argv[1],"-help")==0) || (strcmp(argv[1],"-h")==0)))) {
-
-	    /*******************************/
-	    /* help or version number only */
-	    /*******************************/
-	    /* print the version info in both cases */
-	    fprintf(stderr,"%s\n",xfig_version);
-	    if ((strcmp(argv[1],"-help")==0) || (strcmp(argv[1],"-h")==0)) {
-		int len, col;
-
-		fprintf(stderr,"Usage:\n");
-		fprintf(stderr,"xfig [-h[elp]] [-v[ersion]]\n");
-		fprintf(stderr,"     ");
-		col=5;
-		for (i = 0; help_list[i] != NULL; i++) {
-		    len = strlen(help_list[i]);
-		    if (col+len > 85) {
-			col = 5;
-			fprintf(stderr,"\n     ");
-		    }
-		    fprintf(stderr, "%s", help_list[i]);
-		    col += len;
-		}
-	 	fprintf(stderr,"\n  Note: all options may be abbreviated to minimum unique string.\n");
-	    }
-	exit(0);
-
     } else if (argc > 1) {
+	char *p1,*p2,*p;
+	/* first check for either -help or -version */
+	for (i=1; i<argc; i++)
+	    if (strcasecmp(argv[i],"-v")==0 ||
+		    ((strcmp(argv[i],"-help")==0) || (strcmp(argv[i],"-h")==0))) {
+
+		/*******************************/
+		/* help or version number only */
+		/*******************************/
+		/* print the version info in both cases */
+		fprintf(stderr,"%s\n",xfig_version);
+		if ((strcmp(argv[i],"-help")==0) || (strcmp(argv[i],"-h")==0)) {
+		    int len, col;
+
+		    fprintf(stderr,"Usage:\n");
+		    fprintf(stderr,"xfig [-h[elp]] [-v[ersion]]\n");
+		    fprintf(stderr,"     ");
+		    col=5;
+		    for (i = 0; help_list[i] != NULL; i++) {
+			len = strlen(help_list[i]);
+			if (col+len > 85) {
+			    col = 5;
+			    fprintf(stderr,"\n     ");
+			}
+			fprintf(stderr, "%s", help_list[i]);
+			col += len;
+		    }
+	 	    fprintf(stderr,"\n  Note: all options may be abbreviated to minimum unique string.\n");
+		}
+		/* exit after -h or -v */
+		exit(0);
+	    }
+
 	/*********************************************************************************/
 	/* If the user uses the -geom argument parse out the position from the size.     */
 	/* We'll allow the system to use the position part, but we'll set the size later */
 	/* when the window sizes have been computed correctly.                           */
 	/*********************************************************************************/
-	char *p1,*p2,*p;
 
 	for (i=1; i<argc; i++) {
 	    if (strncmp(argv[i],"-ge",3)==0) {
@@ -737,9 +773,6 @@ main(argc, argv)
 				applicationShellWidgetClass,
 				tool_d, args, cnt);
 
-    /* get the current directory so we can go back here on abort */
-    get_directory(orig_dir);
-
     /* get width, height of screen */
     screen_wd = WidthOfScreen(XtScreen(tool));
     screen_ht = HeightOfScreen(XtScreen(tool));
@@ -757,14 +790,14 @@ main(argc, argv)
     /* add "string to float" and "integer to float" converters */
     fix_converters();
 
+    /* flip the mouse hints if the pointer mapping is reversed */
+    get_pointer_mapping();
+
     /***********************************************************************/
     /* get the application resources again now that we have the new visual */
     /***********************************************************************/
     XtGetApplicationResources(tool, &appres, application_resources,
 			      XtNumber(application_resources), NULL, 0);
-
-    /* flip the mouse hints if the pointer mapping is reversed */
-    get_pointer_mapping();
 
     /* start dimension line fonts same as user's request */
     cur_dimline_psflag = appres.latexfonts? 0:1;
@@ -873,16 +906,6 @@ main(argc, argv)
     /* initialize font information */
     init_font();
 
-    gc = DefaultGC(tool_d, tool_sn);
-    /* set the roman font for the message window */
-    XSetFont(tool_d, gc, roman_font->fid);
-
-    /* make a gc for the command buttons */
-    gcv.font = button_font->fid;
-    button_gc = XCreateGC(tool_d, DefaultRootWindow(tool_d), GCFont, &gcv);
-    /* copy the other components from the default gc to the button_gc */
-    XCopyGC(tool_d, gc, ~GCFont, button_gc);
-
     /* initialize the active_layers array */
     reset_layers();
     /* and the depth counters */
@@ -916,23 +939,23 @@ main(argc, argv)
     /*********************/
 
     init_canv_wd = appres.tmp_width *
-	(appres.INCHES ? PIX_PER_INCH : PIX_PER_CM)/ZOOM_FACTOR;
+	(appres.INCHES ? PIX_PER_INCH : PIX_PER_CM)/ZOOM_FACTOR + 1;
     init_canv_ht = appres.tmp_height *
-	(appres.INCHES ? PIX_PER_INCH : PIX_PER_CM)/ZOOM_FACTOR;
+	(appres.INCHES ? PIX_PER_INCH : PIX_PER_CM)/ZOOM_FACTOR + 1;
 
     RULER_WD = appres.rulerthick;
     if (RULER_WD < DEF_RULER_WD)
 	RULER_WD = DEF_RULER_WD;
 
     /* if the user didn't specify anything in the resources for width/height */
-    if (init_canv_wd == 0) {
+    if (init_canv_wd < 10) {
 	if (appres.landscape) {
 	    init_canv_wd = DEF_CANVAS_WD_LAND;
 	} else {
 	    init_canv_wd = DEF_CANVAS_WD_PORT;
 	}
     }
-    if (init_canv_ht == 0) {
+    if (init_canv_ht < 10) {
 	if (appres.landscape) {
 	    init_canv_ht = DEF_CANVAS_HT_LAND;
 	} else {
@@ -999,12 +1022,19 @@ main(argc, argv)
 	setup_sizes(init_canv_wd, init_canv_ht);
     }
 
-    (void) init_main_menus(tool_form, arg_filename);
-    (void) init_msg(tool_form);
-    (void) init_mousefun(tool_form);
-    (void) init_mode_panel(tool_form);
-    (void) init_topruler(tool_form);
-    (void) init_canvas(tool_form);
+    /* add actions now or some of the other init_ procs complain about not finding actions */
+    add_canvas_actions();
+    add_cmd_actions();
+    add_style_actions();
+    add_ind_actions();
+
+    /* now initialize the panels */
+    init_main_menus(tool_form, arg_filename);
+    init_msg(tool_form);
+    init_mousefun(tool_form);
+    init_mode_panel(tool_form);
+    init_topruler(tool_form);
+    init_canvas(tool_form);
 
     /*
      * check if the NUM_STD_COLS drawing colors could be allocated and have
@@ -1012,9 +1042,9 @@ main(argc, argv)
      */
     check_colors();
 
-    /******************************************************************/
-    /* parse any canvas background or foreground color the user wants */
-    /******************************************************************/
+    /*
+     * parse any canvas background or foreground color the user wants
+     */
 
     parse_canvas_colors();
 
@@ -1028,6 +1058,7 @@ main(argc, argv)
     init_unitbox(tool_form);	/* units box where rulers meet */
     init_sideruler(tool_form);	/* side ruler */
     init_ind_panel(tool_form);	/* bottom indicator panel */
+    init_snap_panel(tool_form);	/* snap mode -- must precede the depth panel */
     init_depth_panel(tool_form);/* active layer panel to the right of the side ruler */
     init_manage_style_panel();	/* the named style panel */
 
@@ -1050,6 +1081,9 @@ main(argc, argv)
     XtManageChildren(children, NCHILDREN);
     XtRealizeWidget(tool);
     tool_w = XtWindow(tool);
+
+    /* get the current directory so we can go back here on abort */
+    get_directory(orig_dir);
 
     /* keep main_canvas for the case when we set a temporary cursor and
        the canvas_win is set the figure preview (when loading figures) */
@@ -1169,7 +1203,7 @@ main(argc, argv)
     resize_canvas();
 
     /*********************************************************************/
-    /* get the current directory for both file and export operations     *
+    /* get the current directory for both file and export operations     */
     /* and library_dir if the user has specified that as a relative path */
     /*********************************************************************/
     get_directory(cur_file_dir);
@@ -1245,6 +1279,7 @@ main(argc, argv)
 #endif /* SIGBUS */
     (void) signal(SIGSEGV, error_handler);
     (void) signal(SIGINT, SIG_IGN);	/* in case user accidentally types ctrl-c */
+    (void) signal(SIGPIPE, SIG_IGN);	/* because we use popen()  */
 
     /* now add actions */
     XtAppAddActions(tool_app, form_actions, XtNumber(form_actions));
@@ -1287,6 +1322,12 @@ main(argc, argv)
 
     /* reset the cursor */
     reset_cursor();
+
+    /* add a timeout proc to check if the fig file has changed to redisplay it */
+    /* this is only done if the user has requested -autorefresh */
+    if (appres.autorefresh) {
+	set_autorefresh();
+    }
 
     /* If the user requests a tablet then do the set up for it */
     /*   and handle the tablet XInput extension events */
@@ -1346,7 +1387,7 @@ main(argc, argv)
 
 	/* Open the tablet device and select the event types */
 	for (i = 0, devPtr = devInfo; i < numDevs; i++, devPtr++)
-	  if (! strcmp(devPtr->name, XI_TABLET))
+	  if (! strcmp(devPtr->name, XI_TABLET)) {
 	    if ((tablet = XOpenDevice(tool_d, devPtr->id)) == NULL)
 	      printf("Unable to open tablet\n");
 
@@ -1359,6 +1400,7 @@ main(argc, argv)
 	             XtWindow(canvas_sw), eventList, 3))
 	        printf("Bad status on XSelectExtensionEvent\n");
 	    }
+	  }
 
 	XFreeDeviceList(devInfo);
 
@@ -1384,7 +1426,7 @@ main(argc, argv)
 	        tablet_res = 12.0;
 
               if (appres.DEBUG)
-	        printf("TABLET: Res: %f %d %d %d %d\n", tablet_res,
+	        printf("TABLET: Res: %f %d %d %ld %ld\n", tablet_res,
 	          valState->valuators[8], valState->valuators[10],
 	          minval, maxval);
 	    }
@@ -1439,7 +1481,7 @@ main(argc, argv)
 		/* if user presses key or mouse button, clear splash */
 		if (event.type == KeyPress || event.type == ButtonPress)
 		    clear_splash();
-		}
+	    }
 	    XtDispatchEvent(&event);
 	  }
 	}
@@ -1453,8 +1495,8 @@ notablet:
 #ifdef I18N
     /* I use this code instead of XtAppMainLoop(), bacause there was
          a problem when used with kinput2.
-	 Probably, it is not good idea to mix call of XtDispatchEvent()
-	 and canvas_selected(), but I couldn't find better solution. -T.S.
+	 It is probably not good idea to mix calls of XtDispatchEvent()
+	 and canvas_selected(), but I couldn't find a better solution. -T.S.
     */
     if (xim_ic != NULL) {
       while (1) {
@@ -1486,9 +1528,10 @@ notablet:
     /* all finished with setup */
     put_msg("READY. Select a mode or load a file");
 
-    /********************************/
-    /* receive and process X events */
-    /********************************/
+    /*******************************************************/
+    /* Main loop when there is no input tablet and no I18N */
+    /* receive and process X events                        */
+    /*******************************************************/
 
     while (1) {
 	XtAppNextEvent(tool_app, &event);
@@ -1496,23 +1539,18 @@ notablet:
 	    /* if user presses key or mouse button, clear splash */
 	    if (event.type == KeyPress || event.type == ButtonPress)
 		clear_splash();
-	    XtDispatchEvent(&event);
-	} else {
-	    XtDispatchEvent(&event);
 	}
+	XtDispatchEvent(&event);
     }
 }
 
 /* setup all the visual and depth stuff */
 
 int
-setup_visual(argc_p, argv, args)
-	int	      *argc_p;
-	char	      *argv[];
-	Arg	       args[];
+setup_visual(int *argc_p, char **argv, Arg *args)
 {
 	int	       i, n, cnt;
-	int	       count;		/* number of matchs (only 1?) */
+	int	       count;		/* number of matches (only 1?) */
 	XPixmapFormatValues *pmf;
 	XVisualInfo    vinfo;		/* template for find visual */
 	XVisualInfo   *vinfo_list;	/* returned list of visuals */
@@ -1622,7 +1660,7 @@ setup_visual(argc_p, argv, args)
 /************************************************************************/
 
 static void
-make_cut_buf_name()
+make_cut_buf_name(void)
 {
     userhome = getenv("HOME");
     if ((userhome == NULL) || (*userhome == '\0')) {
@@ -1640,7 +1678,7 @@ make_cut_buf_name()
 /*****************************************/
 
 static void
-check_resource_ranges()
+check_resource_ranges(void)
 {
     /* make sure smooth_factor is 0, 2 or 4 */
     switch (appres.smooth_factor) {
@@ -1668,7 +1706,7 @@ check_resource_ranges()
 /* set the icon geometry */
 
 static void
-set_icon_geom()
+set_icon_geom(void)
 {
     int scr, x, y, junk;
 
@@ -1688,7 +1726,7 @@ set_icon_geom()
 /* set maximum number of colors for imported images */
 
 static void
-set_max_image_colors()
+set_max_image_colors(void)
 {
     /* for any of these visual classes, allow total number of cmap entries for image colors */
     switch (tool_vclass) {
@@ -1711,13 +1749,15 @@ set_max_image_colors()
     }
 }
 
-/******************************************************************/
-/* parse any canvas background or foreground color the user wants */
-/******************************************************************/
+/*
+ * parse any canvas background or foreground color the user wants
+ */
 
 static void
-parse_canvas_colors()
+parse_canvas_colors(void)
 {
+    Pixel	pix;
+
     /* we had to wait until the canvas was created to get any color the
        user set through resources */
     if (appres.canvasbackground) {
@@ -1727,10 +1767,9 @@ parse_canvas_colors()
 	    appres.canvasbackground = (char*) NULL;
 	}
     } else {
-	Pixel bg;
-	FirstArg(XtNbackground, &bg);
+	FirstArg(XtNbackground, &pix);
 	GetValues(canvas_sw);
-	x_bg_color.pixel = bg;
+	x_bg_color.pixel = pix;
 	/* get the rgb values for it */
 	XQueryColor(tool_d, tool_cm, &x_bg_color);
     }
@@ -1742,10 +1781,9 @@ parse_canvas_colors()
 	    appres.canvasforeground = (char*) NULL;
 	}
     } else {
-	Pixel fg;
-	FirstArg(XtNforeground, &fg);
+	FirstArg(XtNforeground, &pix);
 	GetValues(canvas_sw);
-	x_fg_color.pixel = fg;
+	x_fg_color.pixel = pix;
 	/* get the rgb values for it */
 	XQueryColor(tool_d, tool_cm, &x_fg_color);
     }
@@ -1753,10 +1791,6 @@ parse_canvas_colors()
     FirstArg(XtNbackground, x_bg_color.pixel);
     NextArg(XtNforeground, x_fg_color.pixel);
     SetValues(canvas_sw);
-
-    /* now fix the global GC */
-    XSetState(tool_d, gc, x_fg_color.pixel, x_bg_color.pixel, GXcopy,
-	      AllPlanes);
 }
 
 /*************************************************/
@@ -1764,7 +1798,7 @@ parse_canvas_colors()
 /*************************************************/
 
 static void
-set_xpm_icon()
+set_xpm_icon(void)
 {
     xpm_icon_status = -1;
 
@@ -1818,7 +1852,7 @@ set_xpm_icon()
 /* if the user specified a geometry, change canvas size to fit */
 
 static void
-resize_canvas()
+resize_canvas(void)
 {
     Dimension	    w, h, w1, h1;
 
@@ -1868,7 +1902,7 @@ resize_canvas()
 
 /* flip the mouse hints if the pointer mapping is reversed */
 
-get_pointer_mapping()
+void get_pointer_mapping(void)
 {
 	unsigned char mapping[3];
 	int	      nmap;
@@ -1879,4 +1913,102 @@ get_pointer_mapping()
 	    return;
 	if (mapping[0] != 1)
 	    appres.flipvisualhints = True;
+}
+
+XtIntervalId refresh_timeout_id = 0;
+static	Widget	refresh_indicator = (Widget) NULL;
+static	Dimension	refresh_w = 0;
+static	Dimension	msg_w = 0;
+static	Dimension	new_msg_width;
+
+/* Turn on autorefresh mode 
+ * Add a AppTimeOut and insert a label widget to the left of the
+ * message window with a red background saying "Autorefresh Mode"
+ */
+
+void
+set_autorefresh(void)
+{
+	DeclareArgs(10);
+
+	/* get the initial timestamp */
+	figure_timestamp = file_timestamp(cur_filename);
+	refresh_timeout_id = XtAppAddTimeOut(tool_app, CHECK_REFRESH_TIME, 
+			(XtTimerCallbackProc) check_refresh, (XtPointer) NULL);
+	XtUnmanageChild(msg_panel);
+	if (!refresh_indicator) {
+	    FirstArg(XtNlabel, "Autorefresh Mode");
+	    NextArg(XtNfromVert, cmd_form);
+	    NextArg(XtNborderWidth, 0);
+	    NextArg(XtNbackground, x_color(RED));
+	    refresh_indicator = XtCreateWidget("autorefresh", labelWidgetClass,
+				    tool_form, Args, ArgCount);
+	}
+	XtManageChild(refresh_indicator);
+	if (msg_w == 0) {
+	    FirstArg(XtNwidth, &refresh_w);
+	    GetValues(refresh_indicator);	/* get width of refresh indicator */
+	    FirstArg(XtNwidth, &msg_w);
+	    GetValues(msg_panel);		/* and message panel */
+	    new_msg_width = msg_w - refresh_w;	/* calculate new width of message panel */
+	}
+	FirstArg(XtNfromHoriz, refresh_indicator);
+	NextArg(XtNwidth, new_msg_width);	/* set width of message panel */
+	SetValues(msg_panel);
+	XtManageChild(msg_panel);
+	put_msg("Autorefresh mode ON");
+}
+
+/* Cancel the autorefresh mode
+ * remove the timer and the indicator to the left of the message window
+ */
+
+void
+cancel_autorefresh(void)
+{
+	DeclareArgs(4);
+
+	XtRemoveTimeOut(refresh_timeout_id);
+	refresh_timeout_id = 0;
+	put_msg("Autorefresh mode OFF");
+	XtUnmanageChild(msg_panel);
+	XtUnmanageChild(refresh_indicator);
+	/* reposition message panel to the hard left in the main window */
+	FirstArg(XtNfromHoriz, (Widget) NULL);
+	NextArg(XtNwidth, msg_w);		/* restore original width if message panel */
+	SetValues(msg_panel);
+	XtManageChild(msg_panel);
+}
+
+void
+toggle_refresh_mode(void)
+{
+	appres.autorefresh = !appres.autorefresh;
+	if (appres.autorefresh) {
+	    set_autorefresh();
+	} else if (refresh_timeout_id) {
+	    cancel_autorefresh();
+	}
+	/* update the View menu */
+	refresh_view_menu();
+}
+
+/* check if the file timestamp has changed since last displayed and redisplay it */
+/* This is called by XtAppAddTimeOut */
+
+static void
+check_refresh(XtPointer client_data, XtIntervalId *id)
+{
+	time_t	    cur_timestamp;
+
+	/* get current timestamp and reload if newer */
+	cur_timestamp = file_timestamp(cur_filename);
+	if (cur_timestamp > figure_timestamp)
+	    load_file(cur_filename, 0, 0);
+	figure_timestamp = cur_timestamp;
+
+	/* keep being called */
+	(void) XtAppAddTimeOut(tool_app, CHECK_REFRESH_TIME, 
+			(XtTimerCallbackProc) check_refresh, (XtPointer) NULL);
+	return;
 }

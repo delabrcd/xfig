@@ -48,11 +48,6 @@ ENDCompound
 
 Change line thickness to float for finer precision
 Separate dash/dot length from the gap
-New arrowhead type  ----<>  diamond point for UML diagrams
-Allow different arrow head tips (miter, round, bevel)
-	*** Be sure to save arrowhead width and height "as is" instead 
-	    of multiplying them by 15.0 in f_save.c ***
-
 Enhance pattern fill allow "transparent" fill so that only the pattern lines
 	fill the shape, not the background color.
 Enhance all objects to have cap_style type for dotted lines
@@ -76,36 +71,15 @@ Some kind of color pallette which is global (remains around between drawings)
 
 *** END OF V4.0 IDEAS ***
 
---------------------------------------------------------------------
-The following items would require a change to the Fig file protocol:
---------------------------------------------------------------------
-
-Allow multiple pages of figures
-Store page size with file
-Super/subscripts for text objects
-Text blocks in text frame
-Composite objects (ala PostScript) that can be filled if wanted
-	e.g. polyline joined with arc and filled:
-	 _______
-	(_______)
-Text that is connected to objects which appears in popup near object
-	e.g. to have extra information about an object, like "this is
-	my mother at age 5" in a family tree figure
-
 ----------------------------------------------------------
 The following DON'T require a change to the file protocol:
 ----------------------------------------------------------
 
-"File watch" feature so that xfig will re-read figure file when time-stamp
-	changes (file has been updated by external program).  Probably should
-	add "end of file"  marker so we know when it is complete.
 Have "static objects" which aren't erased when new figure is loaded.  This way
 	you can have a template into which figures may be merged.
 Option for grid to be constant screen-size (independent of zooming)
 Allow picking of points that aren't on the positioning grid
 Recursively uncompound objects with one click
-Possibly use already allocated colors when importing GIF/XPM figures
-	(e.g. black, red, etc)
 Re-render imported EPS files (using gs) at new resolution when zooming LARGER
 Moving object when point_posn mode is on should first move object to closest
 	positioning grid position then allow movement from there.
@@ -127,7 +101,6 @@ Allow vertically-aligned text
         For example, g and j extend below the baseline.
   "bottom" would mean the time under the bottom of the text including
         descenders.
-Have common edit popup for all four splines to allow conversion between all
 Change eps_bitmaps so that background is transparent; i.e. stipple
 Extend smart links to work for SCALE, MOVEPT and perhaps EDIT, UPDATE.
 	Could also extend them to work for arc-type links and for

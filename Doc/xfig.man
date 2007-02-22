@@ -1,4 +1,4 @@
-.\" FIG : Facility for Interactive Generation of figures
+\" FIG : Facility for Interactive Generation of figures
 .\" Copyright (c) 1985 by Supoj Sutanthavibul
 .\" Parts Copyright (c) 1994 by Brian V. Smith
 .\" Parts Copyright (c) 1991 by Paul King
@@ -111,6 +111,8 @@
 .TH XFIG 1 "Xfig 3.2.4 (Dec 2002)"
 .SH NAME
 xfig - Facility for Interactive Generation of figures under X11
+.br
+Version 3.2.4
 .SH SYNOPSIS
 .B xfig
 .RI [ options ]
@@ -148,8 +150,7 @@ the action of the middle button.
 .PP
 .I Xfig
 is available from
-ftp://www-epb.lbl.gov/xfig
-and usually from ftp://ftp.x.org/contrib/applications/drawing_tools/xfig .
+http://www.xfig.org .
 .PP
 The
 .I TransFig
@@ -174,8 +175,7 @@ See man fig2dev for all options.
 The
 .I TransFig
 package is available from
-ftp://www-epb.lbl.gov/xfig and
-ftp://ftp.x.org/contrib/applications/drawing_tools/transfig .
+http://www.xfig.org .
 .SH OPTIONS
 .\"-------
 .At
@@ -256,6 +256,18 @@ If you want to set the foreground of everything in xfig
 (e.g. menus, etc.) use the general 
 .B -fg
 option.
+.\"-------
+.At
+.BR \-correct_font_size
+.Ap
+Normally, 
+.I fig2dev
+uses 1/80 inch for font size increments (for historical reasons),
+instead of the more proper ``points'' (1/72 inch) that
+.I xfig
+uses.  This option makes xfig call fig2dev with the 
+.BR -F
+option to make it use points (1/72 inch).
 .\"-------
 .At
 .BR \-deb [ ug ]
@@ -529,6 +541,15 @@ Install own colormap. Normally, xfig uses the current colormap.
 Use lines of width
 .I width
 between all buttons and panels (default = 1).
+.\"-------
+.At
+.BR \-international
+.Ap
+Switch on international support (mainly Japanese and Korean),
+users of ISO Latin 1 (ISO-8859-1) probably should not use this,
+therefore the international support is switched off by default
+for locales using ISO-8859-1* codesets. For all other locales this
+option is already used by default.
 .\"-------
 .At
 .BR \-jpeg [ _quality ]
@@ -1189,6 +1210,7 @@ Name	Type	Default	Command-line equivalent
 .if t \l'\nnu'
 allownegcoords	boolean	true	\-allownegcoords (true),
 			\-dontallownegcoords (false)
+axislines	string	pink	\-axislines
 balloon_delay	integer	500 (ms)	\-balloon_delay
 boldFont	string	8x13bold	\-bold
 but_per_row	integer	2	\-but_per_row
@@ -1220,6 +1242,7 @@ inches	boolean	true	\-inches (true),
 			\-metric (false)
 installowncmap	boolean	false	\-installowncmap
 internalborderwidth	integer	1	\-internalBW
+international	International	boolean	false	-international
 jpeg_quality	integer	75	\-jpeg_quality
 justify	boolean	false	\-left (false),
 			\-right (true)
@@ -1249,6 +1272,8 @@ scalablefonts	boolean	true	\-scalablefonts (true),
 			\-noscalablefonts (false)
 scale_factor	float	1.0	\-scale_factor
 showallbuttons	boolean	false	\-showallbuttons
+showaxislines	boolean	true	\-showaxislines (true),
+			\-dontshowaxislines (false)
 showballoons	boolean	true	\-showballoons (true),
 			\-dontshowballoons (false)
 showdepthmanager	boolean	true	\-showdepthmanager (true),
@@ -1259,8 +1284,6 @@ shownums	boolean	false	\-shownums (true),
 			\-dontshownums (false)
 showpageborder	boolean	true	\-showpageborder (true),
 			\-dontshowpageborder (false)
-showzerolines	boolean	true	\-showzerolines (true),
-			\-dontshowzerolines (false)
 single	boolean	true	\-single
 smooth_factor	integer	0	\-smooth_factor
 specialtext	boolean	false	\-specialtext
@@ -1303,7 +1326,7 @@ and depths are supported.
 .SH BUGS and RESTRICTIONS
 Please send bug reports, fixes, new features etc. to:
 .br
-xfig-bugs@epb1.lbl.gov
+bvsmith@lbl.gov
 (Brian V. Smith)
 .PP
 When reporting a bug, please first check if the problem is mentioned in

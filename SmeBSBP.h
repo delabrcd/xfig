@@ -45,11 +45,11 @@ in this Software without prior written authorization from the X Consortium.
 
 #ifdef XAW3D
 #include <X11/Xaw3d/SmeThreeDP.h>
-#include <X11/Xaw3d/SmeBSB.h>
 #else
 #include <X11/Xaw/SmeP.h>
-#include <X11/Xaw/SmeBSB.h>
 #endif /* XAW3D */
+
+#include "SmeBSB.h"
 
 /************************************************************
  *

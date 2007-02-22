@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -33,18 +33,25 @@
 #include "w_msgpanel.h"
 #include "w_setup.h"
 #include "w_zoom.h"
+
+#include "u_draw.h"
+#include "u_markers.h"
+#include "u_redraw.h"
+#include "w_cmdpanel.h"
+#include "w_cursor.h"
+
+#include <sys/wait.h>  /* waitpid() */
+
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
 #include <X11/Xmu/Atoms.h>
 
-/* EXPORTS */
-
-void	char_handler();
-void	draw_char_string();
-void	erase_char_string();
 #ifdef SEL_TEXT
 Boolean	text_selection_active;
 #endif /* SEL_TEXT */
+
+/* EXPORTS */
+int	work_font;
 
 /* LOCALS */
 
@@ -66,6 +73,7 @@ Boolean	text_selection_active;
 #define PSUB_FRAC (1.0-CSUB_FRAC)	/* amount of up/down shift */
 
 #define NL	'\n'
+#define ESC	'\033'
 #define CR	'\r'
 #define CTRL_X	24
 #define SP	' '
@@ -86,29 +94,29 @@ static float	work_float_fontsize;	/* keep current font size in floating for roun
 static XFontStruct *canvas_zoomed_font;
 
 static Boolean	is_newline;
-static int	work_font, work_fontsize, work_flags,
+static int	work_fontsize, work_flags,
 		work_psflag, work_textjust, work_depth;
 static Color	work_textcolor;
 static XFontStruct *work_fontstruct;
 static float	work_angle;		/* in RADIANS */
 static double	sin_t, cos_t;		/* sin(work_angle) and cos(work_angle) */
-static void	finish_n_start();
-static void	init_text_input(), cancel_text_input();
-static F_text  *new_text();
+static void	finish_n_start(int x, int y);
+static void	init_text_input(int x, int y), cancel_text_input(void);
+static F_text  *new_text(void);
 
-static void	new_text_line();
-static void     overlay_text_input();
-static void	create_textobject();
-static void	draw_cursor();
-static void	move_cur();
-static void	move_text();
-static void	reload_compoundfont();
-static int	prefix_length();
-static void	initialize_char_handler();
-static void	terminate_char_handler();
-static void	turn_on_blinking_cursor();
-static void	turn_off_blinking_cursor();
-static void	move_blinking_cursor();
+static void	new_text_line(void);
+static void     overlay_text_input(int x, int y);
+static void	create_textobject(void);
+static void	draw_cursor(int x, int y);
+static void	move_cur(int dir, unsigned char c, float div);
+static void	move_text(int dir, unsigned char c, float div);
+static void	reload_compoundfont(F_compound *compounds);
+static int	prefix_length(char *string, int where_p);
+static void	initialize_char_handler(Window w, int (*cr) (/* ??? */), int bx, int by);
+static void	terminate_char_handler(void);
+static void	turn_on_blinking_cursor(void (*draw_cursor) (/* ??? */), void (*erase_cursor) (/* ??? */), int x, int y, long unsigned int msec);
+static void	turn_off_blinking_cursor(void);
+static void	move_blinking_cursor(int x, int y);
 
 #ifdef SEL_TEXT
 /* for text selection */
@@ -146,7 +154,6 @@ xfig-i18n will prepare for G2 and G3 here, too.
 #define EUC_SS3 '\217'  /* single shift 3 */
 
 static int	i18n_prefix_tail(), i18n_suffix_head();
-extern Boolean	is_i18n_font();
 
 #ifdef I18N_USE_PREEDIT
 static pid_t	preedit_pid = -1;
@@ -162,8 +169,12 @@ static Boolean	is_preedit_running();
 /*							*/
 /********************************************************/
 
+
+void move_pref_to_suf (void);
+void move_suf_to_pref (void);
+
 void
-text_drawing_selected()
+text_drawing_selected(void)
 {
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
@@ -192,7 +203,7 @@ text_drawing_selected()
 }
 
 static void
-finish_n_start(x, y)
+finish_n_start(int x, int y)
 {
     create_textobject();
     /* reset text size after any super/subscripting */
@@ -204,9 +215,7 @@ finish_n_start(x, y)
 }
 
 void
-finish_text_input(x, y, shift)
-    int		    x, y;
-    int		    shift;
+finish_text_input(int x, int y, int shift)
 {
     if (shift) {
 	paste_primary_selection();
@@ -223,7 +232,7 @@ finish_text_input(x, y, shift)
 }
 
 static void
-cancel_text_input()
+cancel_text_input(void)
 {
     /* reset text size after any super/subscripting */
     work_fontsize = cur_fontsize;
@@ -242,7 +251,7 @@ cancel_text_input()
 }
 
 static void
-new_text_line()
+new_text_line(void)
 {
     /* finish current text */
     create_textobject();
@@ -262,7 +271,7 @@ new_text_line()
 }
 
 static void
-new_text_down()
+new_text_down(void)
 {
     /* only so deep */
     if (supersub <= -MAX_SUPSUB)
@@ -288,7 +297,7 @@ new_text_down()
 }
 
 static void
-new_text_up()
+new_text_up(void)
 {
     /* only so deep */
     if (supersub >= MAX_SUPSUB)
@@ -318,8 +327,7 @@ new_text_up()
  */
 
 static void
-overlay_text_input(x, y)
-     int		    x, y;
+overlay_text_input(int x, int y)
 {
     cur_x = x;
     cur_y = y;
@@ -385,7 +393,7 @@ overlay_text_input(x, y)
 }
 
 static void
-create_textobject()
+create_textobject(void)
 {
     PR_SIZE	    size;
 
@@ -438,12 +446,12 @@ create_textobject()
 }
 
 static void
-init_text_input(x, y)
-    int		    x, y;
+init_text_input(int x, int y)
 {
     int		    length, posn;
     PR_SIZE	    tsize;
     float	    lensin, lencos;
+    int		    prev_work_font;
 
     cur_x = x;
     cur_y = y;
@@ -491,7 +499,11 @@ init_text_input(x, y)
 	} else {		/* set working settings from ind panel */
 	    work_textcolor = cur_pencolor;
 	    work_fontsize = cur_fontsize;
+	    prev_work_font = work_font;
 	    work_font     = using_ps ? cur_ps_font : cur_latex_font;
+	    /* font changed, refresh character map panel if it is up */
+	    if (prev_work_font != work_font)
+		refresh_character_panel();
 	    work_psflag   = using_ps;
 	    work_flags    = cur_textflags;
 	    work_textjust = cur_textjust;
@@ -527,7 +539,11 @@ init_text_input(x, y)
 	}
 	/* update the working text parameters */
 	work_textcolor = cur_t->color;
+	prev_work_font = work_font;
 	work_font = cur_t->font;
+	/* font changed, refresh character map panel if it is up */
+	if (prev_work_font != work_font)
+	    refresh_character_panel();
 	work_fontstruct = canvas_zoomed_font = cur_t->fontstruct;
 	work_fontsize = cur_t->size;
 	work_psflag   = cur_t->flags & PSFONT_TEXT;
@@ -660,7 +676,7 @@ init_text_input(x, y)
 }
 
 static F_text *
-new_text()
+new_text(void)
 {
     F_text	   *text;
     PR_SIZE	    size;
@@ -696,9 +712,7 @@ new_text()
 /* return the index of the character in the string before the cursor (where_p) */
 
 static int
-prefix_length(string, where_p)
-    char	   *string;
-    int		    where_p;
+prefix_length(char *string, int where_p)
 {
     /* c stands for character unit and p for pixel unit */
     int		    l, len_c, len_p;
@@ -771,8 +785,7 @@ static float	rbase_x, rbase_y, rcur_x, rcur_y;
 static int	(*cr_proc) ();
 
 static void
-draw_cursor(x, y)
-    int		    x, y;
+draw_cursor(int x, int y)
 {
     pw_vector(pw, x, y, 
 		round(x-ch_height*sin_t),
@@ -781,10 +794,7 @@ draw_cursor(x, y)
 }
 
 static void
-initialize_char_handler(w, cr, bx, by)
-    Window	    w;
-    int		    (*cr) ();
-    int		    bx, by;
+initialize_char_handler(Window w, int (*cr) (/* ??? */), int bx, int by)
 {
     pw = w;
     cr_proc = cr;
@@ -807,7 +817,7 @@ initialize_char_handler(w, cr, bx, by)
 }
 
 static void
-terminate_char_handler()
+terminate_char_handler(void)
 {
     turn_off_blinking_cursor();
     cr_proc = NULL;
@@ -817,8 +827,7 @@ terminate_char_handler()
 #endif /* I18N */
 }
 
-do_char(ch, op)
-    unsigned char    ch;
+void do_char(unsigned char ch, int op)
 {
     char	     c[2];
 
@@ -827,56 +836,52 @@ do_char(ch, op)
 	    work_angle, c, work_textcolor, COLOR_NONE);
 }
 
-draw_char(ch)
-    unsigned char    ch;
+void draw_char(unsigned char ch)
 {
     do_char(ch, PAINT);
 }
 
-erase_char(ch)
-    unsigned char    ch;
+void erase_char(unsigned char ch)
 {
     do_char(ch, ERASE);
 }
 
-do_prefix(op)
-    int		     op;
+void do_prefix(int op)
 {
     if (leng_prefix)
 	pw_text(pw, cbase_x, cbase_y, op, MAX_DEPTH+1, canvas_zoomed_font, 
 		work_angle, prefix, work_textcolor, COLOR_NONE);
 }
 
-draw_prefix()
+void draw_prefix(void)
 {
     do_prefix(PAINT);
 }
 
-erase_prefix()
+void erase_prefix(void)
 {
     do_prefix(ERASE);
 }
 
-do_suffix(op)
-    int		     op;
+void do_suffix(int op)
 {
     if (leng_suffix)
 	pw_text(pw, cur_x, cur_y, op, MAX_DEPTH+1, canvas_zoomed_font, 
 		work_angle, suffix, work_textcolor, COLOR_NONE);
 }
 
-draw_suffix()
+void draw_suffix(void)
 {
     do_suffix(PAINT);
 }
 
-erase_suffix()
+void erase_suffix(void)
 {
     do_suffix(ERASE);
 }
 
 void
-erase_char_string()
+erase_char_string(void)
 {
     pw_text(pw, cbase_x, cbase_y, ERASE, MAX_DEPTH+1, canvas_zoomed_font, 
 	    work_angle, prefix, work_textcolor, COLOR_NONE);
@@ -886,7 +891,7 @@ erase_char_string()
 }
 
 void
-draw_char_string()
+draw_char_string(void)
 {
 #ifdef I18N
     if (appres.international && is_i18n_font(canvas_font)) {
@@ -942,10 +947,7 @@ draw_char_string()
 }
 
 void
-char_handler(kpe, c, keysym)
-    XKeyEvent	   *kpe;
-    unsigned char   c;
-    KeySym	    keysym;
+char_handler(XKeyEvent *kpe, unsigned char c, KeySym keysym)
 {
     register int    i;
     unsigned char   ch;
@@ -965,7 +967,13 @@ char_handler(kpe, c, keysym)
     }
 #endif /* SEL_TEXT */
 
-    if (c == CR || c == NL) {
+    if (c == ESC) {
+	create_textobject();
+	canvas_kbd_proc = null_proc;
+	canvas_middlebut_proc = null_proc;
+	canvas_leftbut_proc = null_proc;
+	canvas_rightbut_proc = null_proc;
+    } else if (c == CR || c == NL) {
 	new_text_line();
     } else if (c == CTRL_UNDERSCORE) {
 	/* subscript */
@@ -1340,7 +1348,7 @@ char_handler(kpe, c, keysym)
     /*************************/
     /* normal text character */
     /*************************/
-    } else {	
+    } else {
 	/* move pointer */
 #ifdef I18N
 	if (appres.international && is_i18n_font(canvas_font))
@@ -1389,10 +1397,7 @@ char_handler(kpe, c, keysym)
 /* move the cursor left (-1) or right (1) by the width of char c divided by div */
 
 static void
-move_cur(dir, c, div)
-    int		    dir;
-    unsigned char   c;
-    float	    div;
+move_cur(int dir, unsigned char c, float div)
 {
     double	    cwidth;
     double	    cwsin, cwcos;
@@ -1412,10 +1417,7 @@ move_cur(dir, c, div)
    char c divided by div */
 
 static void
-move_text(dir, c, div)
-    int		    dir;
-    unsigned char   c;
-    float	    div;
+move_text(int dir, unsigned char c, float div)
 {
     double	    cwidth;
     double	    cwsin, cwcos;
@@ -1584,11 +1586,12 @@ track_text_select(x, y)
 
 /* move last char of prefix to first of suffix */
 
-move_pref_to_suf()
+void move_pref_to_suf(void)
 {
-    int		    i, len;
+    int		    i;
 
 #ifdef I18N
+    int		    len;
     if (leng_prefix > 0 && appres.international && is_i18n_font(canvas_font)) {
 	len = i18n_prefix_tail(NULL);
 	for (i=leng_suffix+len; i>0; i--)	/* copies null too */
@@ -1612,11 +1615,12 @@ move_pref_to_suf()
 
 /* move first char of suffix to last of prefix */
 
-move_suf_to_pref()
+void move_suf_to_pref(void)
 {
-    int		    i, len;
+    int		    i;
 
 #ifdef I18N
+    int		    len;
     if (leng_suffix > 0 && appres.international && is_i18n_font(canvas_font)) {
 	len = i18n_suffix_head(NULL);
 	for (i=0; i<len; i++)
@@ -1730,17 +1734,13 @@ static int	cursor_on, cursor_is_moving;
 static int	cursor_x, cursor_y;
 static void	(*erase) ();
 static void	(*draw) ();
-static XtTimerCallbackProc blink();
+static XtTimerCallbackProc blink(XtPointer client_data, XtIntervalId *id);
 static unsigned long blink_timer;
 static int	stop_blinking = False;
 static int	cur_is_blinking = False;
 
 static void
-turn_on_blinking_cursor(draw_cursor, erase_cursor, x, y, msec)
-    void	    (*draw_cursor) ();
-    void	    (*erase_cursor) ();
-    int		    x, y;
-    unsigned long   msec;
+turn_on_blinking_cursor(void (*draw_cursor) (/* ??? */), void (*erase_cursor) (/* ??? */), int x, int y, long unsigned int msec)
 {
     draw = draw_cursor;
     erase = erase_cursor;
@@ -1760,7 +1760,7 @@ turn_on_blinking_cursor(draw_cursor, erase_cursor, x, y, msec)
 }
 
 static void
-turn_off_blinking_cursor()
+turn_off_blinking_cursor(void)
 {
     if (cursor_on)
 	erase(cursor_x, cursor_y);
@@ -1768,9 +1768,7 @@ turn_off_blinking_cursor()
 }
 
 static		XtTimerCallbackProc
-blink(client_data, id)
-    XtPointer	    client_data;
-    XtIntervalId   *id;
+blink(XtPointer client_data, XtIntervalId *id)
 {
     if (!stop_blinking) {
 	if (cursor_is_moving)
@@ -1792,8 +1790,7 @@ blink(client_data, id)
 }
 
 static void
-move_blinking_cursor(x, y)
-    int		    x, y;
+move_blinking_cursor(int x, int y)
 {
     cursor_is_moving = 1;
     if (cursor_on)
@@ -1814,7 +1811,7 @@ move_blinking_cursor(x, y)
  */
 
 void
-reload_text_fstructs()
+reload_text_fstructs(void)
 {
     F_text	   *t;
 
@@ -1830,8 +1827,7 @@ reload_text_fstructs()
  */
 
 static void
-reload_compoundfont(compounds)
-    F_compound	   *compounds;
+reload_compoundfont(F_compound *compounds)
 {
     F_compound	   *c;
     F_text	   *t;
@@ -1844,8 +1840,7 @@ reload_compoundfont(compounds)
 }
 
 void
-reload_text_fstruct(t)
-    F_text	   *t;
+reload_text_fstruct(F_text *t)
 {
     t->fontstruct = lookfont(x_fontnum(psfont_text(t), t->font), 
 			round(t->size*display_zoomscale));
@@ -1937,11 +1932,12 @@ xim_initialize(w)
   const XIMStyle style_off_the_spot = XIMPreeditArea | XIMStatusArea;
   const XIMStyle style_root = XIMPreeditNothing | XIMStatusNothing;
   static long int im_event_mask = 0;
-  XIMStyles *styles;
-  XIMStyle preferred_style;
-  int i;
-  XVaNestedList preedit_att, status_att;
-  XPoint spot;
+  XIMStyles	*styles;
+  XIMStyle	 preferred_style;
+  int		 i;
+  XVaNestedList  preedit_att, status_att;
+  XPoint	 spot;
+  char		*modifier_list;
 
   preferred_style = style_notuseful;
   if (strncasecmp(appres.xim_input_style, "OverTheSpot", 3) == 0)
@@ -1958,6 +1954,9 @@ xim_initialize(w)
   if (preferred_style == style_notuseful) return;
 
   if (appres.DEBUG) fprintf(stderr, "initialize_input_method()...\n");
+  if ((modifier_list = XSetLocaleModifiers("")) == NULL || *modifier_list == '\0') {
+	/* printf("Warning: XSetLocaleModifiers() failed.\n"); */
+  }
 
   xim_im = XOpenIM(XtDisplay(w), NULL, NULL, NULL);
   if (xim_im == NULL) {

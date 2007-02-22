@@ -5,12 +5,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -39,6 +39,13 @@
 typedef unsigned char  BYTE;	/* 8-bit unsigned integer */
 typedef BYTE	 COLR[4];	/* red, green, blue, exponent */
 extern	BYTE	 clrtab[][3];
+
+extern int neu_init(long int npixels);
+extern int neu_init2 (long int npixels);
+extern int neu_clrtab(int ncolors);
+extern void neu_pixel(register BYTE *col);
+extern int neu_map_pixel(register BYTE *col);
+
 
 #define MIN_NEU_SAMPLES	600	/* min number of samples (npixels/samplefac) needed for network */
 #endif /* F_NEUCLRTAB_H */

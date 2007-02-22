@@ -5,12 +5,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -20,6 +20,7 @@
 #include "f_neuclrtab.h"
 #include "f_picobj.h"
 #include "f_util.h"
+#include "w_indpanel.h"
 #include "w_color.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
@@ -55,13 +56,11 @@ struct pcxhed
 void dispbyte(unsigned char *ptr,int *xp,int *yp,int c,int w,int h,
               int real_bpp,int byteline,int *planep,int *pmaskp);
 
-int	_read_pcx();
+int	_read_pcx(FILE *pcxfile, F_pic *pic);
+
 
 int
-read_pcx(file,filetype,pic)
-    FILE	   *file;
-    int		    filetype;
-    F_pic	   *pic;
+read_pcx(FILE *file, int filetype, F_pic *pic)
 {
     int		    status;
 
@@ -96,16 +95,14 @@ read_pcx(file,filetype,pic)
 
 void pcx_decode();
 
-_read_pcx(pcxfile,pic)
-    FILE	*pcxfile;
-    F_pic	*pic;
+int _read_pcx(FILE *pcxfile, F_pic *pic)
 {
 	int		 i,w,h,bytepp,x,y,yy,byteline,plane,pmask;
 	unsigned char	*pal;
 	struct pcxhed	 header;
-	int		 count;
+	int		 count, cnt;
 	long		 bytemax,bytesdone;
-	byte		 inbyte,inbyte2;
+	byte		 inbyte;
 	int		 real_bpp;		/* how many bpp file really is */
 
 	pic->pic_cache->bitmap=NULL;
@@ -177,17 +174,17 @@ _read_pcx(pcxfile,pic)
 	  x = 0;
 	  while (y == yy) {
 	    inbyte=fgetc(pcxfile);
-	    if (inbyte<192) {
+	    if ((inbyte & 0xC0) != 0xC0) {
 	      dispbyte(pic->pic_cache->bitmap,&x,&y,inbyte,w,h,real_bpp,
 		byteline,&plane,&pmask);
 	      bytesdone++;
 	    } else {
-	      inbyte2 = fgetc(pcxfile);
-	      inbyte &= 63;
-	      for (count=0; count<inbyte; count++)
-		dispbyte(pic->pic_cache->bitmap,&x,&y,inbyte2,w,h,real_bpp,
+	      cnt = inbyte & 0x3F;
+	      inbyte = fgetc(pcxfile);
+	      for (count=0; count<cnt; count++)
+		dispbyte(pic->pic_cache->bitmap,&x,&y,inbyte,w,h,real_bpp,
 			byteline,&plane,&pmask);
-	      bytesdone += inbyte;
+	      bytesdone += cnt;
 	    }
 	  }
 	}
@@ -303,7 +300,7 @@ dispbyte(unsigned char *ptr,int *xp,int *yp,int c,int w,int h,
 	  case 8:
 		*(ptr+(*yp)*w+*xp)=c;
 		(*xp)++;
-		if (*xp>=w) {
+		if (*xp>=byteline) {
 		    (*xp)=0;
 		    (*yp)++;
 		}
@@ -312,7 +309,7 @@ dispbyte(unsigned char *ptr,int *xp,int *yp,int c,int w,int h,
 	  case 24:
 		*(ptr+((*yp)*w+*xp)*3+(2-(*planep)))=c;
 		(*xp)++;
-		if (*xp>=w) {
+		if (*xp>=byteline) {
 		    (*xp)=0;
 		    (*planep)++; /* no need to change pmask */
 		    if (*planep==3) {

@@ -4,12 +4,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -21,26 +21,40 @@
 #include "f_read.h"
 #include "f_util.h"
 #include "u_create.h"
-#include "w_color.h"
 #include "w_file.h"
 #include "w_indpanel.h"
+#include "w_color.h"
 #include "w_util.h"
 #include "w_icons.h"
 #include "w_msgpanel.h"
 #include "version.h"
 
+#include "f_save.h"
+#include "u_fonts.h"
+#include "w_cursor.h"
+
 /* LOCALS */
 
-int	count_colors();
-int	count_pixels();
+int	count_colors(void);
+int	count_pixels(void);
 
 
 /* PROCEDURES */
 
-int
-emptyname(name)
-    char	    name[];
 
+void beep (void);
+void alloc_imagecolors (int num);
+void add_all_pixels (void);
+void remap_image_colormap (void);
+void extract_cmap (void);
+void readjust_cmap (void);
+void free_pixmaps (F_compound *obj);
+void add_recent_file (char *file);
+int strain_out (char *name);
+void finish_update_xfigrc (void);
+
+int
+emptyname(char *name)
 {
     if  (name == NULL || *name == '\0') {
 	return (1);
@@ -50,9 +64,7 @@ emptyname(name)
 }
 
 int
-emptyname_msg(name, msg)
-    char	    name[], msg[];
-
+emptyname_msg(char *name, char *msg)
 {
     int		    returnval;
 
@@ -64,7 +76,7 @@ emptyname_msg(name, msg)
 }
 
 int
-emptyfigure()
+emptyfigure(void)
 {
     if (objects.texts != NULL)
 	return (0);
@@ -82,9 +94,7 @@ emptyfigure()
 }
 
 int
-emptyfigure_msg(msg)
-    char	    msg[];
-
+emptyfigure_msg(char *msg)
 {
     int		    returnval;
 
@@ -96,8 +106,7 @@ emptyfigure_msg(msg)
 }
 
 int
-change_directory(path)
-    char	   *path;
+change_directory(char *path)
 {
     if (path == NULL || *path == '\0')
 	return 0;
@@ -108,11 +117,10 @@ change_directory(path)
     return 0;
 }
 
-get_directory(direct)
-    char	   *direct;
+int get_directory(char *direct)
 {
 #if defined(SYSV) || defined(SVR4) || defined(_POSIX_SOURCE)
-    extern char	   *getcwd();
+    extern char	   *getcwd(char *, size_t);
 
 #else
     extern char	   *getwd();
@@ -121,11 +129,11 @@ get_directory(direct)
 
 #if defined(SYSV) || defined(SVR4) || defined(_POSIX_SOURCE)
     if (getcwd(direct, PATH_MAX) == NULL) {	/* get current working dir */
-	put_msg("Can't get current directory");
+	file_msg("Can't get current directory");
 	beep();
 #else
     if (getwd(direct) == NULL) {		/* get current working dir */
-	put_msg("%s", direct);			/* err msg is in directory */
+	file_msg("%s", direct);			/* err msg is in direct var */
 	beep();
 #endif /* defined(SYSV) || defined(SVR4) || defined(_POSIX_SOURCE) */
 	*direct = '\0';
@@ -147,8 +155,7 @@ get_directory(direct)
 #endif /* S_IWOTH */
 
 int
-ok_to_write(file_name, op_name)
-    char	   *file_name, *op_name;
+ok_to_write(char *file_name, char *op_name)
 {
     struct stat	    file_status;
     char	    string[180];
@@ -193,8 +200,7 @@ ok_to_write(file_name, op_name)
 /* strip any path from filename */
 
 char *
-xf_basename(filename)
-    char	   *filename;
+xf_basename(char *filename)
 {
     char	   *p;
     if (filename == NULL || *filename == '\0')
@@ -216,7 +222,7 @@ static int	  npixels;
 
 /* remap the colors for all the pictures in the picture repository */
 
-remap_imagecolors()
+void remap_imagecolors(void)
 {
     int		    i;
 
@@ -252,7 +258,8 @@ remap_imagecolors()
 	    unsigned long   pixels[MAX_USR_COLS];
 	    for (i=0; i<num_oldcolors; i++)
 		pixels[i] = image_cells[i].pixel;
-	    XFreeColors(tool_d, tool_cm, pixels, num_oldcolors, 0);
+	    if (tool_vclass == PseudoColor)
+		XFreeColors(tool_d, tool_cm, pixels, num_oldcolors, 0);
 	}
 	alloc_imagecolors(ncolors);
 	/* hmm, we couldn't get that number of colors anyway; use the net, Luke */
@@ -355,8 +362,7 @@ remap_imagecolors()
 
 /* allocate the color cells for the pictures */
 
-alloc_imagecolors(num)
-    int		    num;
+void alloc_imagecolors(int num)
 {
     int		    i;
 
@@ -374,7 +380,7 @@ alloc_imagecolors(num)
 /* count the number of colors in all the pictures in the picture repository */
 
 int
-count_colors()
+count_colors(void)
 {
     int		    ncolors;
     struct _pics   *pics;
@@ -387,7 +393,7 @@ count_colors()
 }
 
 int
-count_pixels()
+count_pixels(void)
 {
     int		    npixels;
     struct _pics   *pics;
@@ -399,9 +405,8 @@ count_pixels()
     return npixels;
 }
 
-readjust_cmap()
+void readjust_cmap(void)
 {
-    F_compound	   *c;
     struct _pics   *pics;
     int		   i, j;
 
@@ -420,12 +425,10 @@ readjust_cmap()
     free_pixmaps(&objects);
 }
 
-free_pixmaps(obj)
-    F_compound	   *obj;
+void free_pixmaps(F_compound *obj)
 {
     F_line	   *l;
     F_compound	   *c;
-    int		   i,j;
 
     /* traverse the compounds in this compound */
     for (c = obj->compounds; c != NULL; c = c->next) {
@@ -445,7 +448,7 @@ free_pixmaps(obj)
     }
 }
 
-extract_cmap()
+void extract_cmap(void)
 {
     struct _pics   *pics;
     int		    i;
@@ -465,7 +468,7 @@ extract_cmap()
     free_pixmaps(&objects);
 }
 
-add_all_pixels()
+void add_all_pixels(void)
 {
     struct _pics   *pics;
     BYTE	   col[3];
@@ -489,7 +492,7 @@ add_all_pixels()
 	}
 }
 
-remap_image_colormap()
+void remap_image_colormap(void)
 {
     struct _pics   *pics;
     BYTE	   col[3];
@@ -532,8 +535,7 @@ remap_image_colormap()
 #define HALF_FS_SCALE 512
 #define MAXVAL (256*256)
 
-map_to_mono(pic)
-F_pic	*pic;
+void map_to_mono(F_pic *pic)
 {
 	unsigned char *dptr = pic->pic_cache->bitmap;	/* 8-bit wide data pointer */
 	unsigned char *bptr;			/* 1-bit wide bitmap pointer */
@@ -644,7 +646,7 @@ F_pic	*pic;
 	return;
 }
 
-beep()
+void beep(void)
 {
 	XBell(tool_d,0);
 }
@@ -719,8 +721,7 @@ strcasecmp(const char* s1, const char* s2)
 /* p1 must be < p2 */
 
 char *
-safe_strcpy(p1,p2)
-    char *p1, *p2;
+safe_strcpy(char *p1, char *p2)
 {
     char *c1;
     c1 = p1;
@@ -733,8 +734,7 @@ safe_strcpy(p1,p2)
 /* gunzip file if necessary */
 
 Boolean
-uncompress_file(name)
-    char	   *name; 
+uncompress_file(char *name)
 {
     char	    plainname[PATH_MAX];
     char	    dirname[PATH_MAX];
@@ -809,9 +809,10 @@ uncompress_file(name)
 
 #define RC_BUFSIZ 1000
 
-read_xfigrc()
+void read_xfigrc(void)
 {
     char  line[RC_BUFSIZ+1], *word, *opnd;
+    int	  i, len;
     FILE *xfigrc;
 
     num_recent_files = 0;
@@ -824,13 +825,19 @@ read_xfigrc()
     if (xfigrc == 0)
 	return;		/* no .xfigrc file */
     
+    /* there must not be any whitespace between word and ":" */
     while (fgets(line, RC_BUFSIZ, xfigrc) != NULL) {
 	word = strtok(line, ": \t");
-	opnd = strtok(NULL, " \t\n");		/* parse operand and remove newline */
+	opnd = strtok(NULL, "\n");		/* parse operand and remove newline */
 	if (!word || !opnd)
 	    continue;
-	if (strcmp(opnd,":")==0)
-	    opnd = strtok(NULL, " \t\n");	/* one or more white spaces before : */
+	/* find first non-blank */
+	for (i=0, len=strlen(opnd); i<len; i++, opnd++)
+	    if (*opnd != ' ' && *opnd != '\t')
+		break;
+	/* nothing, do next */
+	if (i==len)
+	    continue;
 	if (strcasecmp(word, "max_recent_files") == 0)
 	    max_recent_files = min2(MAX_RECENT_FILES, atoi(opnd));
 	else if (strcasecmp(word, "file") == 0)
@@ -841,8 +848,7 @@ read_xfigrc()
 
 /* add next token from 'line' to recent file list */
 
-add_recent_file(file)
-    char  *file;
+void add_recent_file(char *file)
 {
     char  *name;
 
@@ -862,7 +868,7 @@ static char	tmpname[PATH_MAX];
 
 /* rewrite .xfigrc file with current list of recent files */
 
-update_recent_files()
+void update_recent_files(void)
 {
     int	    i;
 
@@ -884,8 +890,7 @@ update_recent_files()
 
 /* update a named entry in the user's .xfigrc file */
 
-update_xfigrc(name, string)
-    char	*name, *string;
+void update_xfigrc(char *name, char *string)
 {
     /* first copy all lines except the one we want to the temp file */
     strain_out(name);
@@ -898,8 +903,7 @@ update_xfigrc(name, string)
 /* copy all lines from .xfigrc without the "name" spec into a temp file (global tmpf) */
 /* temp file is left open after copy */
 
-strain_out(name)
-    char	*name;
+int strain_out(char *name)
 {
     char    line[RC_BUFSIZ+1], *tok;
 
@@ -940,7 +944,7 @@ strain_out(name)
     return 0;
 }
 
-finish_update_xfigrc()
+void finish_update_xfigrc(void)
 {
     fclose(tmpf);
     if (xfigrc != 0)
@@ -958,8 +962,11 @@ finish_update_xfigrc()
 /* Copy initial appres settings to current vars */
 /************************************************/
 
-init_settings()
+void init_settings(void)
 {
+    /* also initialize print/export grid strings */
+    minor_grid[0] = major_grid[0] = '\0';
+
     if (appres.startfontsize >= 1.0)
 	cur_fontsize = round(appres.startfontsize);
 
@@ -973,6 +980,24 @@ init_settings()
     }
 
     cur_ps_font = psfontnum (appres.startpsFont);
+
+    if (appres.startarrowtype >= 0)
+	cur_arrowtype = appres.startarrowtype;
+
+    if (appres.startarrowthick > 0.0) {
+	use_abs_arrowvals = True;
+	cur_arrowthick = appres.startarrowthick;
+    }
+
+    if (appres.startarrowwidth > 0.0) {
+	use_abs_arrowvals = True;
+	cur_arrowwidth = appres.startarrowwidth;
+    }
+
+    if (appres.startarrowlength > 0.0) {
+	use_abs_arrowvals = True;
+	cur_arrowheight = appres.startarrowlength;
+    }
 
     if (appres.starttextstep > 0.0)
 	cur_textstep = appres.starttextstep;
@@ -1009,7 +1034,9 @@ init_settings()
 	grid_unit = MM_UNIT;
     }
 
-    cur_gridunit = grid_unit;
+    /* set current and "old" grid unit */
+    old_gridunit = cur_gridunit = grid_unit;
+
     /* turn off PSFONT_TEXT flag if user specified -latexfonts */
     if (appres.latexfonts)
 	cur_textflags = cur_textflags & (~PSFONT_TEXT);
@@ -1051,9 +1078,7 @@ init_settings()
 */
 
 int
-update_fig_files(argc, argv)
-    int		    argc;
-    char	   *argv[];
+update_fig_files(int argc, char **argv)
 {
     fig_settings    settings;
     char	    file[PATH_MAX];
@@ -1066,11 +1091,9 @@ update_fig_files(argc, argv)
 
     update_figs = True;
 
-    for (i=2; i<argc; i++) {
-	/* skip any scaling the user may have given */
-	if (strcasecmp(argv[i],"-scale_factor")==0) {
-	    /* and skip the scale factor */
-	    i++;
+    for (i=1; i<argc; i++) {
+	/* skip any other options the user may have given */
+	if (argv[i][0] == '-') {
 	    continue;
 	}
 	strcpy(file,argv[i]);
@@ -1115,8 +1138,7 @@ update_fig_files(argc, argv)
 /* replace all "%f" in "program" with value in filename */
 
 char *
-build_command(program, filename)
-    char	*program, *filename;
+build_command(char *program, char *filename)
 {
     char *cmd = new_string(PATH_MAX*2);
     char  cmd2[PATH_MAX*2];
@@ -1159,8 +1181,7 @@ strerror(e)
 /**************************************************************************/
 
 char
-*my_strdup(str)
-    char *str;
+*my_strdup(char *str)
 {
     char *s;
     
@@ -1177,11 +1198,10 @@ char
 /* for images with no palette, we'll use neural net to reduce to 256 colors with palette */
 
 Boolean
-map_to_palette(pic)
-    F_pic	*pic;
+map_to_palette(F_pic *pic)
 {
 	int	 w,h,x,y;
-	int	 mult, neu_stat, numcols, size;
+	int	 mult, neu_stat, size;
 	unsigned char *old;
 	BYTE	 col[3];
 
@@ -1244,9 +1264,7 @@ map_to_palette(pic)
    If passed dimline is not a dimension line, the result is False */
 
 Boolean
-dimline_components(dimline, line, tick1, tick2, poly)
-    F_compound	  *dimline;
-    F_line	 **line, **tick1, **tick2, **poly;
+dimline_components(F_compound *dimline, F_line **line, F_line **tick1, F_line **tick2, F_line **poly)
 {
     F_line *l;
 
@@ -1272,8 +1290,7 @@ dimline_components(dimline, line, tick1, tick2, poly)
 }
 
 int
-find_smallest_depth(compound)
-    F_compound	   *compound;
+find_smallest_depth(F_compound *compound)
 {
 	F_line	 *l;
 	F_spline	 *s;
@@ -1308,8 +1325,7 @@ find_smallest_depth(compound)
 }
 
 int
-find_largest_depth(compound)
-    F_compound	   *compound;
+find_largest_depth(F_compound *compound)
 {
 	F_line	 *l;
 	F_spline	 *s;
@@ -1345,20 +1361,42 @@ find_largest_depth(compound)
 
 /* get grid params and assemble into fig2dev parm */
 void
-get_grid_spec(char *grid, Widget grid_panel)
+get_grid_spec(char *grid, Widget minor_grid_panel, Widget major_grid_panel)
 {
 	char	   *c1;
 
-	/* get grid spec from panel */
-	strcpy(grid, panel_get_value(grid_panel));
+	/* if panel hasn't been up yet */
+	if (minor_grid_panel == (Widget) 0 || major_grid_panel == (Widget) 0) {
+	    sprintf(grid,"%s:%s%s", 
+			    	strlen(minor_grid)==0? "0": minor_grid, 
+				strlen(major_grid)==0? "0": major_grid,
+				appres.INCHES? "in":"mm");
+	    return;
+	}
+
+	/* get minor grid spec from panel */
+	strcpy(grid, panel_get_value(minor_grid_panel));
 	if (strcasecmp(grid,"none") == 0) {
 	    grid[0]='\0';
 	}
-	c1 = panel_get_value(grid_panel);
+	/* now major */
+	c1 = panel_get_value(major_grid_panel);
 	if (strcasecmp(c1,"none") != 0 && strlen(c1)) {
 	    strcat(grid,":");
 	    strcat(grid,c1);
 	}
 	if (strlen(grid))
 	    strcat(grid,appres.INCHES? "in":"mm");
+}
+
+/* get the timestamp (mtime) of the filename passed */
+
+time_t
+file_timestamp(char *file)
+{
+    struct stat	    file_status;
+
+    if (stat(file, &file_status) != 0)
+	return -1;
+    return file_status.st_mtime;
 }

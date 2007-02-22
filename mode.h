@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -71,6 +71,7 @@
 #define		F_LENMEAS		59
 #define		F_AREAMEAS		60
 #define		F_PASTE			61
+#define		F_CHOP			62
 
 extern int	cur_mode;
 
@@ -121,9 +122,8 @@ enum 		{ MM_UNIT, FRACT_UNIT, TENTH_UNIT };
 #define		GRID_3			3
 #define		GRID_4			4
 
-extern int	cur_gridmode, cur_gridunit, grid_unit;
-extern int	grid_fine[NUM_GRID_UNITS][GRID_4];
-extern int	grid_coarse[NUM_GRID_UNITS][GRID_4];
+extern int	cur_gridmode, cur_gridunit, old_gridunit, grid_unit;
+extern int	grid_spacing[NUM_GRID_UNITS][GRID_4];
 extern char    *grid_name[NUM_GRID_UNITS][GRID_4+1];
 
 /* point position */
@@ -169,10 +169,10 @@ extern char	cur_browser[PATH_MAX];
 extern char	cur_pdfviewer[PATH_MAX];
 extern Boolean	warnexist;
 
-extern void	reset_modifiedflag();
-extern void	set_modifiedflag();
-extern void	reset_action_on();
-extern void	set_action_on();
+extern void	reset_modifiedflag(void);
+extern void	set_modifiedflag(void);
+extern void	reset_action_on(void);
+extern void	set_action_on(void);
 
 /**********************	 global mode variables	************************/
 
@@ -180,8 +180,6 @@ extern int	num_point;
 extern int	min_num_points;
 
 /***************************  Export Settings  ****************************/
-
-extern Boolean	export_flushleft;	/* flush left (true) or center (false) */
 
 /*********************************************************************/
 /* If you change the order of the LANG_xxx you must change the order */
@@ -196,6 +194,7 @@ enum {
 	LANG_EPS_MONO_TIFF,
 	LANG_EPS_COLOR_TIFF,
 	LANG_PDF,
+	LANG_PSPDF,
 	LANG_BOX,
 	LANG_LATEX,
 	LANG_EPIC,
@@ -203,6 +202,7 @@ enum {
 	LANG_EEPICEMU,
 	LANG_PSTEX,
 	LANG_PDFTEX,
+	LANG_PSPDFTEX,
 	LANG_PICTEX,
 	LANG_IBMGL,
 	LANG_TEXTYL,
@@ -213,9 +213,10 @@ enum {
 	LANG_MP,
 	LANG_MMP,
 	LANG_CGM,
-	LANG_BCGM,	 /* binary cgm */
+	LANG_BCGM,	/* binary cgm */
 	LANG_EMF,
 	LANG_TK,
+	LANG_SHAPE,	/* ShapePar definition */
 	LANG_SVG,
 /* bitmap formats should follow here, starting with GIF */
 	LANG_GIF,
@@ -285,6 +286,7 @@ extern float	cur_arrow_multheight;
 extern float	cur_arrow_multthick;
 extern Boolean	use_abs_arrowvals;
 extern int	cur_arctype;
+extern float	cur_tangnormlen;
 
 /*************************** Dimension lines ****************************/
 
@@ -296,6 +298,7 @@ extern int	cur_dimline_rightarrow;
 extern float	cur_dimline_arrowlength;
 extern float	cur_dimline_arrowwidth;
 extern Boolean	cur_dimline_ticks;
+extern int	cur_dimline_tickthick;
 extern int	cur_dimline_boxthick;
 extern int	cur_dimline_boxcolor;
 extern int	cur_dimline_textcolor;
@@ -303,6 +306,7 @@ extern int	cur_dimline_font;
 extern int	cur_dimline_fontsize;
 extern int	cur_dimline_psflag;
 extern Boolean	cur_dimline_fixed;
+extern int	cur_dimline_prec;
 
 /**************************** Miscellaneous *****************************/
 

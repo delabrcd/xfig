@@ -92,8 +92,8 @@ shift the figure when reading
 in a file with objects that have negative coordinates.
 
 <p>
-<dt><kbd>-dontshowzerolines </kbd> (<kbd>-dontshowz</kbd>)
-<dd>Don't draw the lines crossing through 0,0 on the canvas. The
+<dt><kbd>-dontshowaxislines </kbd> (<kbd>-dontshowa</kbd>)
+<dd>Don't draw the axis lines crossing through 0,0 on the canvas. The
 page border may still be drawn unless 
 <a href="#showpageborder">-dontshowpageborder</a> is selected.
 
@@ -105,7 +105,8 @@ adds another point to the object being drawn.
 <p>
 <dt><kbd>-grid_unit </kbd> <i>unit</i> (<kbd>-grid_u</kbd>)
 <dd>Set the <i>unit</i> of the grid and rulers when in inches mode.
-If <i>unit</i> is "1/10", "ten", "tenth", "1/10" or "10", (e.g. -grid_unit ten)
+If <i>unit</i> is &quot;1/10&quot;, &quot;ten&quot;, &quot;tenth&quot;,
+&quot;1/10&quot; or &quot;10&quot;, (e.g. -grid_unit ten)
 then the grid and point positioning is in decimal inches.  Otherwise
 they are in 1/16 inch units (as before).  When in this mode, the grid
 step sizes are 0.1, 0.2, 0.5 and 1 inch and the positioning steps are
@@ -173,9 +174,9 @@ conjunction with the update <a href="#update">-update</a> option to do a batch s
 figures.
 
 <p>
-<dt><kbd>-showzerolines </kbd> (<kbd>-showz</kbd>)
-<dd>Draw the lines crossing through 0,0 on the canvas.
-See also <a href="#zerolines">zerolines</a> option for the color of the zero lines.
+<dt><kbd>-showaxislines </kbd> (<kbd>-showa</kbd>)
+<dd>Draw the axis lines crossing through 0,0 on the canvas.
+See also <a href="#axislines">axislines</a> option for the color of the zero lines.
 
 <p>
 <dt><kbd>-specialtext </kbd> (<kbd>-spec</kbd>)
@@ -267,9 +268,10 @@ See also <a href="panning.html#set-unit">Set Units</a>.
 See also <a href="panning.html#set-unit">Set Units</a>.
 
 <p>
-<a name="zerolines"></a>
-<dt><kbd>-zerolines </kbd> <i>color</i> (<kbd>-zerol</kbd>)
-<dd>Draw the lines crossing through 0,0 on the canvas in this color.
+<a name="axislines"></a>
+<dt><kbd>-axislines </kbd> <i>color</i> (<kbd>-axisl</kbd>)
+<dd>Draw the axis lines crossing through 0,0 on the canvas in this color.
+The <kbd>-showaxislines</kbd> option must be on.
 The page border lines will overwrite the zero lines in the positive 
 quadrant unless it is turned off.
 
@@ -459,6 +461,14 @@ If you want to set the foreground color of everything in <b>xfig</b>
 (menus, etc), use the general <tt>-fg</tt> option.
 
 <p>
+<dt><kbd>-correct_font_size
+<dd>Normally, <i>fig2dev</i>
+uses 1/80 inch for font size increments (for historical reasons),
+instead of the more proper ``points'' (1/72 inch) that <i>xfig</i>
+uses.  This option makes xfig call fig2dev with the 
+<tt>-F</tt> option to make it use points (1/72 inch).
+
+<p>
 <dt><kbd>-depth </kbd> (<kbd>-dep</kbd>)
 <dd>Choose depth of visual desired.
 <br>
@@ -614,7 +624,7 @@ The default is to <i>not</i> flip the messages.
 
 <p>
 <dt><kbd>-grid_color </kbd> <i>color</i> (<kbd>-grid</kbd>)
-<dd>Draw the grid on the canvas in this color (default black).
+<dd>Draw the grid on the canvas in this color (default light red).
 
 <p>
 <a name="icon_view"></a>
@@ -681,7 +691,6 @@ The default is to show the icon view.  See also <a href="#icon_view">-icon_view<
 <p>
 <a name="nosplash"></a>
 <dt><kbd>-nosplash</kbd>
-<img src="images/pict-new.png">
 <dd>Don't show the startup screen on startup. 
 The default is to show the splash screen
 
@@ -1260,11 +1269,11 @@ messages for mice whose buttons have been switched.
 
 <p>
 <dt><kbd>grid_color </kbd> <i>color</i> (<kbd>Color</kbd>)
-<dd>Draw the grid on the canvas in this color (default black).
+<dd>Draw the grid on the canvas in this color (default light red).
 <br>
 <b>Option:</b> <tt>-grid_color</tt>
 <br>
-<b>Default:</b> <FONT color="#AA00AA">black</font>
+<b>Default:</b> <FONT color="#AA00AA">#FFCCCC</font>
 
 <p>
 <a name="res-icon_view"></a>
@@ -1407,7 +1416,6 @@ of text objects.
 <p>
 <a name="splash_resource"></a>
 <dt><kbd>splash </kbd> (<kbd>View</kbd>)
-<img src="images/pict-new.png" alt="New">
 <dd>Show or don't show the startup screen on startup. 
 <br>
 <b>Option:</b> <tt>-nosplash</tt>
@@ -1467,7 +1475,7 @@ This resource may be used to set any options
 which should given to <tt>lpr</tt> (<tt>lp</tt> on System V system)
 when printing.
 <br>
-<b>Default:</b> <FONT color="#AA00AA">""</font>
+<b>Default:</b> <FONT color="#AA00AA">&quot;&quot;</font>
 
 <p>
 <dt><kbd>Fig*printer*string</kbd>
@@ -1477,7 +1485,7 @@ If this resource is not set
 and the environment variable <tt>$PRINTER</tt> is set,
 it is used as the initial value.
 <br>
-<b>Default:</b> <FONT color="#AA00AA">""</font>
+<b>Default:</b> <FONT color="#AA00AA">&quot;&quot;</font>
 </dl>
 
 <img src="images/blueramp.png" alt="==============================">
@@ -1552,7 +1560,7 @@ Normally, you don't have to set this because <b>xfig</b> will choose it
 from the locale if this is not explicitly specified.
 This is effective only if internationalization facility is enabled.
 <br>
-<b>Default:</b> ""
+<b>Default:</b> &quot;&quot;
 
 <p>
 <dt><kbd>inputStyle</kbd>

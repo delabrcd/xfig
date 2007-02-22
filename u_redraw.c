@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -33,6 +33,13 @@
 #include "w_setup.h"
 #include "w_util.h"
 #include "w_zoom.h"
+
+#include "d_text.h"
+#include "u_bound.h"
+#include "u_elastic.h"
+#include "u_markers.h"
+#include "w_cursor.h"
+#include "w_rulers.h"
 
 /* EXPORTS */
 
@@ -61,8 +68,18 @@ struct counts	counts[MAX_DEPTH + 1], saved_counts[MAX_DEPTH + 1];
  * Function to clear the array of object counts with file load or new command.
  */
 
+
+void redisplay_arcobject (F_arc *arcs, int depth);
+void redisplay_compoundobject (F_compound *compounds, int depth);
+void redisplay_ellipseobject (F_ellipse *ellipses, int depth);
+void redisplay_lineobject (F_line *lines, int depth);
+void redisplay_splineobject (F_spline *splines, int depth);
+void redisplay_textobject (F_text *texts, int depth);
+void redraw_pageborder (void);
+void draw_pb (int x, int y, int w, int h);
+
 void
-clearallcounts()
+clearallcounts(void)
 {
     register struct counts *cp;
 
@@ -81,7 +98,7 @@ clearallcounts()
  */
 
 void
-clearcounts()
+clearcounts(void)
 {
     register struct counts *cp;
 
@@ -94,13 +111,15 @@ clearcounts()
     }
 }
 
-redisplay_objects(active_objects)
-    F_compound	   *active_objects;
+void redisplay_objects(F_compound *active_objects)
 {
     int		    depth;
-    F_compound	   *objects; /* for drawing */
+    F_compound	   *objects, *save_objects;
   
     objects = active_objects;
+    save_objects = (F_compound *) NULL;
+
+    draw_parent_gray = False;
 
     if (objects == NULL)
 	return;
@@ -109,22 +128,22 @@ redisplay_objects(active_objects)
      * Opened compound with `keep parent visible'?
      */
     for (; (objects->parent != NULL) && (objects->draw_parent); ) {
-      /* put in any changes */
-      *((F_compound*)objects->GABPtr) = *objects;            
-      objects = objects->parent;
+	if (!save_objects)
+	    save_objects = objects;
+	/* put in any changes */
+	*((F_compound*)objects->GABPtr) = *objects;            
+	/* follow parent to the top */
+	objects = objects->parent;
+	/* instruct lower level procs to draw gray */
+	draw_parent_gray = True;
     }
 
     clearcounts();
-    /*
-     * A new outer loop, executing once per depth level from max_depth down
-     * to min_depth (negative depths are not supported).  The code inside the
-     * loop is the original code for redisplay_objects.
-     */
 
-    if (gray_layers) {
+    /* if user wants gray inactive layers, draw them first */
+    if (gray_layers || draw_parent_gray) {
 	for (depth = max_depth; depth >= min_depth; --depth) {
-	    /* if user wants gray inactive layer, draw it */
-	    if (!active_layer(depth)) {
+	    if (!active_layer(depth) || draw_parent_gray) {
 		redisplay_arcobject(objects->arcs, depth);
 		redisplay_compoundobject(objects->compounds, depth);
 		redisplay_ellipseobject(objects->ellipses, depth);
@@ -135,8 +154,15 @@ redisplay_objects(active_objects)
 	}
     }
 
+    if (draw_parent_gray) {
+	/* now point to just the open compound and (re)draw it */
+	clearcounts();
+	objects = save_objects;
+	draw_parent_gray = False;
+    }
+
+    /* now draw the active layers in their normal colors */
     for (depth = max_depth; depth >= min_depth; --depth) {
-	/* if active layer, or user wants gray inactive layer, draw it */
 	if (active_layer(depth)) {
 	    redisplay_arcobject(objects->arcs, depth);
 	    redisplay_compoundobject(objects->compounds, depth);
@@ -168,9 +194,7 @@ redisplay_objects(active_objects)
  * the counts array.
  */
 
-redisplay_arcobject(arcs, depth)
-    F_arc	   *arcs;
-    int		    depth;
+void redisplay_arcobject(F_arc *arcs, int depth)
 {
     F_arc	   *arc;
     struct counts  *cp;
@@ -195,9 +219,7 @@ redisplay_arcobject(arcs, depth)
  * appropriate depth in the counts array.
  */
 
-redisplay_ellipseobject(ellipses, depth)
-    F_ellipse	   *ellipses;
-    int		    depth;
+void redisplay_ellipseobject(F_ellipse *ellipses, int depth)
 {
     F_ellipse	   *ep;
     struct counts  *cp;
@@ -223,9 +245,7 @@ redisplay_ellipseobject(ellipses, depth)
  * depth in the counts array.
  */
 
-redisplay_lineobject(lines, depth)
-    F_line	   *lines;
-    int		    depth;
+void redisplay_lineobject(F_line *lines, int depth)
 {
     F_line	   *lp;
     struct counts  *cp;
@@ -251,9 +271,7 @@ redisplay_lineobject(lines, depth)
  * appropriate depth in the counts array.
  */
 
-redisplay_splineobject(splines, depth)
-    F_spline	   *splines;
-    int		    depth;
+void redisplay_splineobject(F_spline *splines, int depth)
 {
     F_spline	   *spline;
     struct counts  *cp;
@@ -278,9 +296,7 @@ redisplay_splineobject(splines, depth)
  * array.
  */
 
-redisplay_textobject(texts, depth)
-    F_text	   *texts;
-    int		    depth;
+void redisplay_textobject(F_text *texts, int depth)
 {
     F_text	   *text;
     struct counts  *cp;
@@ -304,9 +320,7 @@ redisplay_textobject(texts, depth)
  * work out to the objects contained in the compound.
  */
 
-redisplay_compoundobject(compounds, depth)
-    F_compound	   *compounds;
-    int		    depth;
+void redisplay_compoundobject(F_compound *compounds, int depth)
 {
     F_compound	   *c;
 
@@ -324,7 +338,7 @@ redisplay_compoundobject(compounds, depth)
  * Redisplay the entire drawing.
  */
 void
-redisplay_canvas()
+redisplay_canvas(void)
 {
     /* turn off Compose key LED */
     setCompLED(0);
@@ -335,7 +349,7 @@ redisplay_canvas()
 
 /* redisplay the object currently being created by the user (if any) */
 
-redisplay_curobj()
+void redisplay_curobj(void)
 {
     F_point	*p;
     int		 rx,ry,i;
@@ -428,8 +442,7 @@ redisplay_curobj()
     }
 }
 
-redisplay_region(xmin, ymin, xmax, ymax)
-    int		    xmin, ymin, xmax, ymax;
+void redisplay_region(int xmin, int ymin, int xmax, int ymax)
 {
     /* if we're generating a preview, don't redisplay the canvas 
        but set request flag so preview will call us with full canvas 
@@ -456,7 +469,7 @@ redisplay_region(xmin, ymin, xmax, ymax)
 
 /* update page border with new page size */
 
-update_pageborder()
+void update_pageborder(void)
 {
     if (appres.show_pageborder) {
 	clear_canvas();
@@ -466,33 +479,34 @@ update_pageborder()
 
 /* make a light blue line showing the right and bottom edge of the current page size */
 /* also make light blue lines vertically and horizontally through 0,0 if
-   drawzerolines is true */
+   showaxislines is true */
 
-redisplay_pageborder()
+void redisplay_pageborder(void)
 {
-    /* first the page border if user wants it */
-    if (appres.show_pageborder) 
-	redraw_pageborder();
 
-    /* now the lines through 0,0 */
-    if (appres.drawzerolines) {
+    set_clip_window(clip_xmin, clip_ymin, clip_xmax, clip_ymax);
+    /* first the axis lines */
+    if (appres.showaxislines) {
 	/* set the color */
-	XSetForeground(tool_d, gc, zero_lines_color);
-	XDrawLine(tool_d, canvas_win, gc, round(-zoomxoff*zoomscale), 0, 
+	XSetForeground(tool_d, border_gc, axis_lines_color);
+	XDrawLine(tool_d, canvas_win, border_gc, round(-zoomxoff*zoomscale), 0, 
 					  round(-zoomxoff*zoomscale), CANVAS_HT);
-	XDrawLine(tool_d, canvas_win, gc, 0, round(-zoomyoff*zoomscale), CANVAS_WD, 
+	XDrawLine(tool_d, canvas_win, border_gc, 0, round(-zoomyoff*zoomscale), CANVAS_WD, 
 					  round(-zoomyoff*zoomscale));
     }
+    /* now the page border if user wants it */
+    if (appres.show_pageborder) 
+	redraw_pageborder();
 }
 
-redraw_pageborder()
+void redraw_pageborder(void)
 {
     int		   pwd, pht, ux;
     int		   x, y;
     char	   pname[80];
 
     /* set the color */
-    XSetForeground(tool_d, gc, pageborder_color);
+    XSetForeground(tool_d, border_gc, pageborder_color);
 
     pwd = paper_sizes[appres.papersize].width;
     pht = paper_sizes[appres.papersize].height;
@@ -508,7 +522,7 @@ redraw_pageborder()
     }
     /* if multiple page mode, draw all page borders that are visible */
     if (appres.multiple) {
-	int	wd, ht, xoff, yoff;
+	int	wd, ht;
 
 	wd = CANVAS_WD/zoomscale;
 	ht = CANVAS_HT/zoomscale;
@@ -538,36 +552,33 @@ redraw_pageborder()
 	    }
 	}
     } else {
-	zXDrawLine(tool_d, canvas_win, gc, 0,   0,   pwd, 0);
-	zXDrawLine(tool_d, canvas_win, gc, pwd, 0,   pwd, pht);
-	zXDrawLine(tool_d, canvas_win, gc, pwd, pht, 0,   pht);
-	zXDrawLine(tool_d, canvas_win, gc, 0,   pht, 0,   0);
+	zXDrawLine(tool_d, canvas_win, border_gc, 0,   0,   pwd, 0);
+	zXDrawLine(tool_d, canvas_win, border_gc, pwd, 0,   pwd, pht);
+	zXDrawLine(tool_d, canvas_win, border_gc, pwd, pht, 0,   pht);
+	zXDrawLine(tool_d, canvas_win, border_gc, 0,   pht, 0,   0);
     }
     /* Now put the paper size in the lower-right corner just outside the page border.
        We want the full name except for the size in parenthesis */
     strcpy(pname,paper_sizes[appres.papersize].fname);
     /* truncate after first part of name */
     *(strchr(pname, '('))= '\0';
-    XDrawString(tool_d,canvas_win,gc,ZOOMX(pwd)+3,ZOOMY(pht),pname,strlen(pname));
+    XDrawString(tool_d,canvas_win,border_gc,ZOOMX(pwd)+3,ZOOMY(pht),pname,strlen(pname));
 }
 
-draw_pb(x, y, w, h)
-    int		   x, y, w, h;
+void draw_pb(int x, int y, int w, int h)
 {
-	zXDrawLine(tool_d, canvas_win, gc, x,   y,   x+w, y);
-	zXDrawLine(tool_d, canvas_win, gc, x+w, y,   x+w, y+h);
-	zXDrawLine(tool_d, canvas_win, gc, x+w, y+h, x,   y+h);
-	zXDrawLine(tool_d, canvas_win, gc, x,   y+h, x,   y);
+	zXDrawLine(tool_d, canvas_win, border_gc, x,   y,   x+w, y);
+	zXDrawLine(tool_d, canvas_win, border_gc, x+w, y,   x+w, y+h);
+	zXDrawLine(tool_d, canvas_win, border_gc, x+w, y+h, x,   y+h);
+	zXDrawLine(tool_d, canvas_win, border_gc, x,   y+h, x,   y);
 }
 
-redisplay_zoomed_region(xmin, ymin, xmax, ymax)
-    int		    xmin, ymin, xmax, ymax;
+void redisplay_zoomed_region(int xmin, int ymin, int xmax, int ymax)
 {
     redisplay_region(ZOOMX(xmin), ZOOMY(ymin), ZOOMX(xmax), ZOOMY(ymax));
 }
 
-redisplay_ellipse(e)
-    F_ellipse	   *e;
+void redisplay_ellipse(F_ellipse *e)
 {
     int		    xmin, ymin, xmax, ymax;
 
@@ -575,8 +586,7 @@ redisplay_ellipse(e)
     redisplay_zoomed_region(xmin, ymin, xmax, ymax);
 }
 
-redisplay_ellipses(e1, e2)
-    F_ellipse	   *e1, *e2;
+void redisplay_ellipses(F_ellipse *e1, F_ellipse *e2)
 {
     int		    xmin1, ymin1, xmax1, ymax1;
     int		    xmin2, ymin2, xmax2, ymax2;
@@ -586,8 +596,7 @@ redisplay_ellipses(e1, e2)
     redisplay_regions(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2);
 }
 
-redisplay_arc(a)
-    F_arc	   *a;
+void redisplay_arc(F_arc *a)
 {
     int		    xmin, ymin, xmax, ymax;
     int		    cx, cy;
@@ -616,8 +625,7 @@ redisplay_arc(a)
     redisplay_zoomed_region(xmin, ymin, xmax, ymax);
 }
 
-redisplay_arcs(a1, a2)
-    F_arc	   *a1, *a2;
+void redisplay_arcs(F_arc *a1, F_arc *a2)
 {
     int		    xmin1, ymin1, xmax1, ymax1;
     int		    xmin2, ymin2, xmax2, ymax2;
@@ -627,8 +635,7 @@ redisplay_arcs(a1, a2)
     redisplay_regions(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2);
 }
 
-redisplay_spline(s)
-    F_spline	   *s;
+void redisplay_spline(F_spline *s)
 {
     int		    xmin, ymin, xmax, ymax;
 
@@ -636,8 +643,7 @@ redisplay_spline(s)
     redisplay_zoomed_region(xmin, ymin, xmax, ymax);
 }
 
-redisplay_splines(s1, s2)
-    F_spline	   *s1, *s2;
+void redisplay_splines(F_spline *s1, F_spline *s2)
 {
     int		    xmin1, ymin1, xmax1, ymax1;
     int		    xmin2, ymin2, xmax2, ymax2;
@@ -647,8 +653,7 @@ redisplay_splines(s1, s2)
     redisplay_regions(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2);
 }
 
-redisplay_line(l)
-    F_line	   *l;
+void redisplay_line(F_line *l)
 {
     int		    xmin, ymin, xmax, ymax;
 
@@ -656,8 +661,7 @@ redisplay_line(l)
     redisplay_zoomed_region(xmin, ymin, xmax, ymax);
 }
 
-redisplay_lines(l1, l2)
-    F_line	   *l1, *l2;
+void redisplay_lines(F_line *l1, F_line *l2)
 {
     int		    xmin1, ymin1, xmax1, ymax1;
     int		    xmin2, ymin2, xmax2, ymax2;
@@ -667,15 +671,13 @@ redisplay_lines(l1, l2)
     redisplay_regions(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2);
 }
 
-redisplay_compound(c)
-    F_compound	   *c;
+void redisplay_compound(F_compound *c)
 {
     redisplay_zoomed_region(c->nwcorner.x, c->nwcorner.y,
 			    c->secorner.x, c->secorner.y);
 }
 
-redisplay_compounds(c1, c2)
-    F_compound	   *c1, *c2;
+void redisplay_compounds(F_compound *c1, F_compound *c2)
 {
     redisplay_regions(c1->nwcorner.x, c1->nwcorner.y,
 		      c1->secorner.x, c1->secorner.y,
@@ -683,8 +685,7 @@ redisplay_compounds(c1, c2)
 		      c2->secorner.x, c2->secorner.y);
 }
 
-redisplay_text(t)
-    F_text	   *t;
+void redisplay_text(F_text *t)
 {
     int		    xmin, ymin, xmax, ymax;
     int		    dum;
@@ -694,8 +695,7 @@ redisplay_text(t)
     redisplay_zoomed_region(xmin, ymin, xmax, ymax);
 }
 
-redisplay_texts(t1, t2)
-    F_text	   *t1, *t2;
+void redisplay_texts(F_text *t1, F_text *t2)
 {
     int		    xmin1, ymin1, xmax1, ymax1;
     int		    xmin2, ymin2, xmax2, ymax2;
@@ -709,8 +709,7 @@ redisplay_texts(t1, t2)
 		      xmin2, ymin2, xmax2, ymax2);
 }
 
-redisplay_regions(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2)
-    int		    xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2;
+void redisplay_regions(int xmin1, int ymin1, int xmax1, int ymax1, int xmin2, int ymin2, int xmax2, int ymax2)
 {
     if (xmin1 == xmin2 && ymin1 == ymin2 && xmax1 == xmax2 && ymax1 == ymax2) {
 	redisplay_zoomed_region(xmin1, ymin1, xmax1, ymax1);

@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -33,7 +33,7 @@ int		latexline_mode = 0;
 int		latexarrow_mode = 0;
 int		autoforwardarrow_mode = 0;
 int		autobackwardarrow_mode = 0;
-int		cur_gridmode, cur_gridunit, grid_unit;
+int		cur_gridmode, cur_gridunit, old_gridunit, grid_unit;
 int		cur_pointposn;
 int		posn_rnd[NUM_GRID_UNITS][P_GRID4 + 1] = {
 		   { 0, PPCM/10, PPCM/5, PPCM/2, PPCM, PPCM*2},	/*   mm  mode */
@@ -45,15 +45,10 @@ int		posn_hlf[NUM_GRID_UNITS][P_GRID4 + 1] = {
 		   { 0, PPI/32, PPI/16, PPI/8, PPI/4, PPI/2},
 		   { 0, PPI/40, PPI/20, PPI/10, PPI/5, PPI/2},
 		   };
-int		grid_coarse[NUM_GRID_UNITS][GRID_4] = {
+int		grid_spacing[NUM_GRID_UNITS][GRID_4] = {
 		   { PPCM/5, PPCM/2, PPCM, PPCM*2},		/* 2mm, 5mm, 10mm, 20mm */
 		   { PPI/8, PPI/4, PPI/2, PPI},			/* 1/8", 1/4", 1/2", 1" */
 		   { PPI/10, PPI/5, PPI/2, PPI},		/* 1/10", 1/5", 1/2", 1" */
-		   };
-int		grid_fine[NUM_GRID_UNITS][GRID_4] = {
-		   { PPCM/10, PPCM/5, PPCM/2, PPCM},
-		   { PPI/16, PPI/16, PPI/8, PPI/8},
-		   { PPI/20, PPI/10, PPI/5, PPI/2},
 		   };
 
 		/* the first entry in each unit category is only used for point positioning */
@@ -89,8 +84,6 @@ int		min_num_points;
 
 /***************************  Export Settings  ****************************/
 
-Boolean		export_flushleft;	/* flush left (true) or center (false) */
-
 int		cur_exp_lang;		/* gets initialized in main.c */
 Boolean		batch_exists = False;
 char		batch_file[32];
@@ -102,10 +95,10 @@ char		batch_file[32];
 
 char	       *lang_items[] = {
 	"ps",    "eps",   "eps_ascii", "eps_mono_tiff", "eps_color_tiff",
-	"pdf",   "box",   "latex",  "epic", "eepic", "eepicemu",
-	"pstex", "pdftex","pictex", "hpl",  "textyl",
+	"pdf",   "pspdf", "box", "latex", "epic", "eepic", "eepicemu",
+	"pstex", "pdftex","pspdftex", "pictex", "hpl", "textyl",
 	"tpic",  "pic",   "map",    "mf",
-	"mp",    "mmp",   "cgm",    "bcgm", "emf",   "tk",  "svg",
+	"mp",    "mmp",   "cgm",    "bcgm", "emf",   "tk", "shape", "svg",
 /* bitmap formats start here */
 	"gif",  
 	"jpeg",
@@ -122,6 +115,7 @@ char	       *lang_texts[] = {
 	"EPS with Monochrome TIFF preview    ",
 	"EPS with Color TIFF preview         ",
 	"PDF (Portable Document Format)      ",
+	"EPS and PDF (two files)             ",
 	"LaTeX box (figure boundary)         ",
 	"LaTeX picture                       ",
 	"LaTeX picture + epic macros         ",
@@ -129,8 +123,9 @@ char	       *lang_texts[] = {
 	"LaTeX picture + eepicemu macros     ",
 	"Combined PS/LaTeX (both parts)      ",
 	"Combined PDF/LaTeX (both parts)     ",
+	"Combined PS/PDF/LaTeX (3 parts)     ",
 	"PiCTeX macros                       ",
-	"IBMGL (or HPGL)                     ",
+	"HPGL/2 (or IBMGL)                   ",
 	"Textyl \\special commands            ",
 	"TPIC                                ",
 	"PIC                                 ",
@@ -142,6 +137,7 @@ char	       *lang_texts[] = {
 	"Binary CGM                          ",
 	"EMF (Enhanced Metafile)             ",
 	"Tk  (Tcl/Tk toolkit)                ",
+	"SHAPE (ShapePar definition )        ", 
 	"SVG (Scalable Vector Graphics; beta)",
 
 	/*** bitmap formats follow ***/
@@ -202,6 +198,7 @@ float		cur_arrow_multwidth = DEF_ARROW_WID;
 float		cur_arrow_multheight = DEF_ARROW_HT;
 Boolean		use_abs_arrowvals = False;		/* start with values prop. to width */
 int		cur_arctype	= T_OPEN_ARC;
+float		cur_tangnormlen = 1.0;			/* current tangent/normal line length */
 
 /*************************** Dimension lines ****************************/
 
@@ -213,6 +210,7 @@ int		cur_dimline_rightarrow = 2;	/* other end */
 float		cur_dimline_arrowlength = DEF_ARROW_HT;	/* as a multiple of line thickness */
 float		cur_dimline_arrowwidth = DEF_ARROW_WID;	/* as a multiple of line thickness */
 Boolean		cur_dimline_ticks = True;	/* Include ticks */
+int		cur_dimline_tickthick = 1;	/* thickness of ticks */
 int		cur_dimline_boxthick = 1;	/* thickness of text box line */
 int		cur_dimline_boxcolor = WHITE;	/* start with white-filled text box */
 int		cur_dimline_textcolor = BLACK;	/* text color */
@@ -220,6 +218,7 @@ int		cur_dimline_font = 0;		/* Times Roman */
 int		cur_dimline_fontsize = DEF_FONTSIZE; /* size of text */
 int		cur_dimline_psflag = 1;
 Boolean		cur_dimline_fixed = False;	/* text is adjusted to report line length */
+int		cur_dimline_prec = 1;		/* number of dec points in dimension line text */
 
 /**************************** Miscellaneous *****************************/
 
@@ -232,32 +231,32 @@ char		cur_file_dir[PATH_MAX];
 char		cur_export_dir[PATH_MAX];
 char		cur_filename[PATH_MAX] = "";
 char		save_filename[PATH_MAX] = "";	/* to undo load */
-char		file_header[32] = "#FIG ";
+char		file_header[32];
 char		cut_buf_name[PATH_MAX];		/* path of .xfig cut buffer file */
 char		xfigrc_name[PATH_MAX];		/* path of .xfigrc file */
 
 /*************************** routines ***********************/
 
 void
-reset_modifiedflag()
+reset_modifiedflag(void)
 {
     figure_modified = 0;
 }
 
 void
-set_modifiedflag()
+set_modifiedflag(void)
 {
     figure_modified = 1;
 }
 
 void
-set_action_on()
+set_action_on(void)
 {
     action_on = 1;
 }
 
 void
-reset_action_on()
+reset_action_on(void)
 {
     action_on = 0;
     /* reset this so next show_linelengths will work properly */

@@ -6,24 +6,27 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
 #ifndef FIG_H
 #define FIG_H
 
-extern	char	*my_strdup();
+extern	char	*my_strdup(char *str);
 
 /* For the X stuff, include only Xlib.h and Intrinsic.h here - 
    use figx.h for widget stuff */
 
-#if defined(ultrix) || defined(__bsdi__) || defined(Mips) || defined(apollo)
+#if defined(ultrix) || defined(__bsdi__) || defined(Mips) || defined(apollo) || defined(__hpux)
+#if defined(__hpux)
+#define _HPUX_SOURCE /* for typedef caddr_t :-(( */
+#endif 
 #include <sys/types.h>	/* for stat structure */
 #endif
 #include <sys/stat.h>
@@ -57,7 +60,7 @@ extern char	*strerror();
 #  endif
 #endif /* NEED_STRERROR */
 
-extern char    *mktemp();
+extern char    *mktemp(char *);
 
 #include <math.h>	/* for sin(), cos() etc */
 
@@ -358,7 +361,6 @@ extern char *getenv();
 #define INLINE
 #endif /* USE_INLINE */
 
-#endif /* FIG_H */
 
 #ifdef NOSTRSTR
 extern char *strstr();
@@ -381,11 +383,17 @@ extern	double		drand48();
 extern	long		random();
 extern	void		srandom(unsigned int);
 
-#elif !defined(__osf__) && !defined(__CYGWIN__)
-extern	void		srandom();
+#elif !defined(__osf__) && !defined(__CYGWIN__) && !defined(linux)
+extern	void		srandom(int);
 
 #endif
 
 #ifndef frandom
 #define	frandom()	(random()*(1./2147483648.))
 #endif
+
+#ifdef I18N
+#include <locale.h>
+#endif  /* I18N */
+
+#endif /* FIG_H */

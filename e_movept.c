@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -33,41 +33,49 @@
 #include "w_mousefun.h"
 #include "w_msgpanel.h"
 
+#include "f_util.h"
+#include "u_geom.h"
+#include "u_redraw.h"
+#include "w_cursor.h"
+
 /* local routine declarations */
 
 static F_point *moved_point;
 
-static void	fix_movedcompoundpoint();
-static void	cancel_compound();
+static void	fix_movedcompoundpoint(int x, int y);
+static void	cancel_compound(void);
 
-static Boolean	init_ellipsepointmoving();
-static void	init_arcpointmoving();
-static void	init_linepointmoving();
-static void	init_splinepointmoving();
-static void	init_compoundpointmoving();
+static Boolean	init_ellipsepointmoving(void);
+static void	init_arcpointmoving(void);
+static void	init_linepointmoving(void);
+static void	init_splinepointmoving(void);
+static void	init_compoundpointmoving(void);
 
-static void	relocate_arcpoint();
-static void	relocate_ellipsepoint();
-static void	relocate_linepoint();
-static void	relocate_splinepoint();
+static void	relocate_arcpoint(F_arc *arc, int x, int y, int movedpoint_num);
+static void	relocate_ellipsepoint(F_ellipse *ellipse, int x, int y, int point_num);
+static void	relocate_linepoint(F_line *line, int x, int y, F_point *moved_point, F_point *left_point);
+static void	relocate_splinepoint(F_spline *s, int x, int y, F_point *moved_point);
 
-static Boolean	init_move_point();
-static void	init_arb_move_point();
-static void	init_stretch_move_point();
+static Boolean	init_move_point(F_line *obj, int type, int x, int y, F_point *p, F_point *q);
+static void	init_arb_move_point(F_line *obj, int type, int x, int y, F_point *p, F_point *q);
+static void	init_stretch_move_point(F_line *obj, int type, int x, int y, F_point *p, F_point *q);
 
-static void	fix_movedarcpoint();
-static void	fix_movedellipsepoint();
-static void	fix_movedsplinepoint();
-static void	fix_box();
-static void	fix_movedlinepoint();
+static void	fix_movedarcpoint(int x, int y);
+static void	fix_movedellipsepoint(int x, int y);
+static void	fix_movedsplinepoint(int x, int y);
+static void	fix_box(int x, int y);
+static void	fix_movedlinepoint(int x, int y);
 
-static void	cancel_movedarcpoint();
-static void	cancel_movedellipsepoint();
-static void	cancel_movedsplinepoint();
-static void	cancel_movept_box();
-static void	cancel_movedlinepoint();
+static void	cancel_movedarcpoint(void);
+static void	cancel_movedellipsepoint(void);
+static void	cancel_movedsplinepoint(void);
+static void	cancel_movept_box(void);
+static void	cancel_movedlinepoint(void);
 
-move_point_selected()
+
+void assign_newboxpoint (F_line *b, int x1, int y1, int x2, int y2);
+
+void move_point_selected(void)
 {
     set_mousefun("move point", "horiz/vert move", "", LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
@@ -80,13 +88,11 @@ move_point_selected()
     canvas_rightbut_proc = null_proc;
     set_cursor(pick9_cursor);
     force_anglegeom();
+    reset_action_on();
 }
 
 static void
-init_arb_move_point(obj, type, x, y, p, q)
-    F_line	   *obj;
-    int		    type, x, y;
-    F_point	   *p, *q;
+init_arb_move_point(F_line *obj, int type, int x, int y, F_point *p, F_point *q)
 {
     constrained = MOVE_ARB;
     if (!init_move_point(obj, type, x, y, p, q))
@@ -97,10 +103,7 @@ init_arb_move_point(obj, type, x, y, p, q)
 }
 
 static void
-init_stretch_move_point(obj, type, x, y, p, q)
-    F_line	   *obj;
-    int		    type, x, y;
-    F_point	   *p, *q;
+init_stretch_move_point(F_line *obj, int type, int x, int y, F_point *p, F_point *q)
 {
     constrained = MOVE_HORIZ_VERT;
     if (!init_move_point(obj, type, x, y, p, q))
@@ -112,10 +115,7 @@ init_stretch_move_point(obj, type, x, y, p, q)
 }
 
 static Boolean
-init_move_point(obj, type, x, y, p, q)
-    F_line	   *obj;
-    int		    type, x, y;
-    F_point	   *p, *q;
+init_move_point(F_line *obj, int type, int x, int y, F_point *p, F_point *q)
 {
     left_point = p;
     moved_point = q;
@@ -160,7 +160,7 @@ init_move_point(obj, type, x, y, p, q)
 }
 
 static void
-wrapup_movepoint()
+wrapup_movepoint(void)
 {
     reset_action_on();
     move_point_selected();
@@ -170,7 +170,7 @@ wrapup_movepoint()
 /*************************  ellipse  *******************************/
 
 static		Boolean
-init_ellipsepointmoving()
+init_ellipsepointmoving(void)
 {
     double	    dx, dy, l;
 
@@ -235,7 +235,7 @@ init_ellipsepointmoving()
 }
 
 static void
-cancel_movedellipsepoint()
+cancel_movedellipsepoint(void)
 {
     canvas_ref_proc = canvas_locmove_proc = null_proc;
     /* erase elastic version */
@@ -261,8 +261,7 @@ cancel_movedellipsepoint()
 }
 
 static void
-fix_movedellipsepoint(x, y)
-    int		    x, y;
+fix_movedellipsepoint(int x, int y)
 {
     switch (cur_e->type) {
       case T_ELLIPSE_BY_RAD:
@@ -293,9 +292,7 @@ fix_movedellipsepoint(x, y)
 }
 
 static void
-relocate_ellipsepoint(ellipse, x, y, point_num)
-    F_ellipse	   *ellipse;
-    int		    x, y, point_num;
+relocate_ellipsepoint(F_ellipse *ellipse, int x, int y, int point_num)
 {
     double	    dx, dy;
 
@@ -350,7 +347,7 @@ relocate_ellipsepoint(ellipse, x, y, point_num)
 /***************************  arc  *********************************/
 
 static void
-init_arcpointmoving()
+init_arcpointmoving(void)
 {
     set_action_on();
     /* turn off all markers */
@@ -368,7 +365,7 @@ init_arcpointmoving()
 }
 
 static void
-cancel_movedarcpoint()
+cancel_movedarcpoint(void)
 {
     canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_arclink();
@@ -380,8 +377,7 @@ cancel_movedarcpoint()
 }
 
 static void
-fix_movedarcpoint(x, y)
-    int		    x, y;
+fix_movedarcpoint(int x, int y)
 {
     canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_arclink();
@@ -402,9 +398,7 @@ fix_movedarcpoint(x, y)
 }
 
 static void
-relocate_arcpoint(arc, x, y, movedpoint_num)
-    F_arc	   *arc;
-    int		    x, y, movedpoint_num;
+relocate_arcpoint(F_arc *arc, int x, int y, int movedpoint_num)
 {
     float	    xx, yy;
     F_pos	    p[3];
@@ -415,6 +409,7 @@ relocate_arcpoint(arc, x, y, movedpoint_num)
     p[movedpoint_num].x = x;
     p[movedpoint_num].y = y;
     if (compute_arccenter(p[0], p[1], p[2], &xx, &yy)) {
+
 	arc->point[movedpoint_num].x = x;
 	arc->point[movedpoint_num].y = y;
 	arc->center.x = xx;
@@ -426,7 +421,7 @@ relocate_arcpoint(arc, x, y, movedpoint_num)
 /**************************  spline  *******************************/
 
 static void
-init_splinepointmoving()
+init_splinepointmoving(void)
 {
     set_action_on();
     /* turn off all markers */
@@ -483,7 +478,7 @@ init_splinepointmoving()
 }
 
 static void
-cancel_movedsplinepoint()
+cancel_movedsplinepoint(void)
 {
     canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_linelink();
@@ -495,8 +490,7 @@ cancel_movedsplinepoint()
 }
 
 static void
-fix_movedsplinepoint(x, y)
-    int		    x, y;
+fix_movedsplinepoint(int x, int y)
 {
     (*canvas_locmove_proc) (x, y);
     canvas_ref_proc = canvas_locmove_proc = null_proc;
@@ -519,10 +513,7 @@ fix_movedsplinepoint(x, y)
 }
 
 static void
-relocate_splinepoint(s, x, y, moved_point)
-    F_spline	   *s;
-    int		    x, y;
-    F_point	   *moved_point;
+relocate_splinepoint(F_spline *s, int x, int y, F_point *moved_point)
 {
     moved_point->x = x;
     moved_point->y = y;
@@ -532,7 +523,7 @@ relocate_splinepoint(s, x, y, moved_point)
 /***************************  compound	********************************/
 
 static void
-init_compoundpointmoving()
+init_compoundpointmoving(void)
 {
     double	    dx, dy, l;
     F_line	   *line, *dum;
@@ -553,7 +544,7 @@ init_compoundpointmoving()
     set_cursor(crosshair_cursor);
     elastic_box(fix_x, fix_y, cur_x, cur_y);
     /* is this a dimension line? */
-    if (dimline_components(cur_c, &line, &dum, &dum, &dum)) {
+    if (dimline_components(cur_c, &line, &dum, &dum, &dum) && line) {
 	/* yes, constrain the resizing in the direction of the line */
 	if (line->points->x == line->points->next->x)
 	    /* vertical line */
@@ -578,7 +569,7 @@ init_compoundpointmoving()
 }
 
 static void
-cancel_compound()
+cancel_compound(void)
 {
     canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_box(fix_x, fix_y, cur_x, cur_y);
@@ -590,8 +581,7 @@ cancel_compound()
 }
 
 static void
-fix_movedcompoundpoint(x, y)
-    int		    x, y;
+fix_movedcompoundpoint(int x, int y)
 {
     float	    scalex, scaley;
 
@@ -629,7 +619,7 @@ fix_movedcompoundpoint(x, y)
 /***************************  line  ********************************/
 
 static void
-init_linepointmoving()
+init_linepointmoving(void)
 {
     F_point	   *p;
 
@@ -717,7 +707,7 @@ init_linepointmoving()
 }
 
 static void
-cancel_movept_box()
+cancel_movept_box(void)
 {
     canvas_ref_proc = canvas_locmove_proc = null_proc;
     /* erase the elastic box */
@@ -732,8 +722,7 @@ cancel_movept_box()
 }
 
 static void
-fix_box(x, y)
-    int		    x, y;
+fix_box(int x, int y)
 {
     canvas_ref_proc = canvas_locmove_proc = null_proc;
     elastic_box(fix_x, fix_y, cur_x, cur_y);
@@ -758,9 +747,7 @@ fix_box(x, y)
     wrapup_movepoint();
 }
 
-assign_newboxpoint(b, x1, y1, x2, y2)
-    F_line	   *b;
-    int		    x1, y1, x2, y2;
+void assign_newboxpoint(F_line *b, int x1, int y1, int x2, int y2)
 {
     F_point	   *p;
 
@@ -792,7 +779,7 @@ assign_newboxpoint(b, x1, y1, x2, y2)
 }
 
 static void
-cancel_movedlinepoint()
+cancel_movedlinepoint(void)
 {
     canvas_ref_proc = canvas_locmove_proc = null_proc;
     /* erase the elastic line */
@@ -807,8 +794,7 @@ cancel_movedlinepoint()
 }
 
 static void
-fix_movedlinepoint(x, y)
-    int		    x, y;
+fix_movedlinepoint(int x, int y)
 {
     (*canvas_locmove_proc) (x, y);
     canvas_ref_proc = canvas_locmove_proc = null_proc;
@@ -835,10 +821,7 @@ fix_movedlinepoint(x, y)
 }
 
 static void
-relocate_linepoint(line, x, y, moved_point, left_point)
-    F_line	   *line;
-    int		    x, y;
-    F_point	   *moved_point, *left_point;
+relocate_linepoint(F_line *line, int x, int y, F_point *moved_point, F_point *left_point)
 {
     if (line->type == T_POLYGON)
 	if (line->points == moved_point) {

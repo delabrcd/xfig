@@ -4,12 +4,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -32,8 +32,10 @@
 
 #include "figx.h"
 #include "w_menuentryP.h"
+#include "w_canvas.h"
 
 #include <stdio.h>
+#include <stdlib.h>  /* abs() */
 
 #define offset(field) XtOffsetOf(FigSmeBSBRec, figSme_bsb.field)
 
@@ -47,8 +49,8 @@ static XtResource resources[] = {
  * Semi Public function definitions. 
  */
 
-static void Redisplay();
-static Boolean SetValues();
+static void Redisplay(Widget w, XEvent *event, Region region);
+static Boolean SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args);
 
 #define superclass (&smeBSBClassRec)
 
@@ -121,10 +123,7 @@ WidgetClass figSmeBSBObjectClass = (WidgetClass) &figSmeBSBClassRec;
 
 /* ARGSUSED */
 static void
-Redisplay(w, event, region)
-Widget w;
-XEvent * event;
-Region region;
+Redisplay(Widget w, XEvent *event, Region region)
 {
     GC gc;
     FigSmeBSBObject entry = (FigSmeBSBObject) w;
@@ -261,10 +260,7 @@ Region region;
 
 /* ARGSUSED */
 static Boolean
-SetValues(current, request, new, args, num_args)
-Widget current, request, new;
-ArgList args;
-Cardinal *num_args;
+SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
     FigSmeBSBObject entry = (FigSmeBSBObject) new;
     FigSmeBSBObject old_entry = (FigSmeBSBObject) current;

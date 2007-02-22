@@ -7,12 +7,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  *
  *	Created: 13 Aug 88
@@ -67,12 +67,15 @@ char	       *re_comp();
 #define streq(a, b)	(! strcmp((a), (b)))
 
 extern Widget	popup_dir_text;
-extern void	create_dirinfo();
+extern void	create_dirinfo(Boolean file_exp, Widget parent, Widget below, Widget *ret_beside, Widget *ret_below, Widget *mask_w, Widget *dir_w, Widget *flist_w, Widget *dlist_w, int file_width, Boolean file_panel);
 
 /* Xdir function declarations. */
 
-Boolean		MakeFileList();
-char	       *SaveString();
-void		MakeFullPath();
-Boolean		IsDirectory();
+extern Boolean		MakeFileList(char *dir_name, char *mask, char ***dir_list, char ***file_list);
+extern char	       *SaveString();
+extern void		MakeFullPath(char *root, char *filename, char *pathname);
+extern Boolean		IsDirectory(char *path, char *file);
+extern void parseuserpath (char *path, char *longpath);
+extern void Rescan (Widget widget, XEvent *event, String *params, Cardinal *num_params);
+
 #endif /* W_DIR_H */

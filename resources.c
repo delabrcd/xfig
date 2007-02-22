@@ -6,12 +6,12 @@
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
- * nonexclusive right and license to deal in this software and
- * documentation files (the "Software"), including without limitation the
- * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
- * notice remain intact.
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
  *
  */
 
@@ -19,48 +19,49 @@
 #include "resources.h"
 #include "object.h"
 
-fig_colors       colorNames[] = {
-			"Default",	"NULL",
-			"Black",	"black",
-			"Blue",		"blue",
-			"Green",	"green",
-			"Cyan",		"cyan",
-			"Red",		"red",
-			"Magenta",	"magenta",
-			"Yellow",	"yellow",
-			"White",	"white",
-			"Blue4",	"#000090",	/* NOTE: hex colors must be 6 digits */
-			"Blue3",	"#0000b0",
-			"Blue2",	"#0000d0",
-			"LtBlue",	"#87ceff",
-			"Green4",	"#009000",
-			"Green3",	"#00b000",
-			"Green2",	"#00d000",
-			"Cyan4",	"#009090",
-			"Cyan3",	"#00b0b0",
-			"Cyan2",	"#00d0d0",
-			"Red4",		"#900000",
-			"Red3",		"#b00000",
-			"Red2",		"#d00000",
-			"Magenta4",	"#900090",
-			"Magenta3",	"#b000b0",
-			"Magenta2",	"#d000d0",
-			"Brown4",	"#803000",
-			"Brown3",	"#a04000",
-			"Brown2",	"#c06000",
-			"Pink4",	"#ff8080",
-			"Pink3",	"#ffa0a0",
-			"Pink2",	"#ffc0c0",
-			"Pink",		"#ffe0e0",
-			"Gold",		"gold" };
+fig_colors colorNames[] = {
+		{"Default",	"NULL"},
+		{"Black",	"black"},
+		{"Blue",	"blue"},
+		{"Green",	"green"},
+		{"Cyan",	"cyan"},
+		{"Red",		"red"},
+		{"Magenta",	"magenta"},
+		{"Yellow",	"yellow"},
+		{"White",	"white"},
+		{"Blue4",	"#000090"},	/* NOTE: hex colors must be 6 digits */
+		{"Blue3",	"#0000b0"},
+		{"Blue2",	"#0000d0"},
+		{"LtBlue",	"#87ceff"},
+		{"Green4",	"#009000"},
+		{"Green3",	"#00b000"},
+		{"Green2",	"#00d000"},
+		{"Cyan4",	"#009090"},
+		{"Cyan3",	"#00b0b0"},
+		{"Cyan2",	"#00d0d0"},
+		{"Red4",	"#900000"},
+		{"Red3",	"#b00000"},
+		{"Red2",	"#d00000"},
+		{"Magenta4",	"#900090"},
+		{"Magenta3",	"#b000b0"},
+		{"Magenta2",	"#d000d0"},
+		{"Brown4",	"#803000"},
+		{"Brown3",	"#a04000"},
+		{"Brown2",	"#c06000"},
+		{"Pink4",	"#ff8080"},
+		{"Pink3",	"#ffa0a0"},
+		{"Pink2",	"#ffc0c0"},
+		{"Pink",	"#ffe0e0"},
+		{"Gold",	"gold" }
+		};
 
-char		*short_clrNames[] = {
-			"Default", 
-			"Blk", "Blu", "Grn", "Cyn", "Red", "Mag", "Yel", "Wht",
-			"Bl4", "Bl3", "Bl2", "LBl", "Gr4", "Gr3", "Gr2",
-			"Cn4", "Cn3", "Cn2", "Rd4", "Rd3", "Rd2",
-			"Mg4", "Mg3", "Mg2", "Br4", "Br3", "Br2",
-			"Pk4", "Pk3", "Pk2", "Pnk", "Gld" };
+char	*short_clrNames[] = {
+		"Default", 
+		"Blk", "Blu", "Grn", "Cyn", "Red", "Mag", "Yel", "Wht",
+		"Bl4", "Bl3", "Bl2", "LBl", "Gr4", "Gr3", "Gr2",
+		"Cn4", "Cn3", "Cn2", "Rd4", "Rd3", "Rd2",
+		"Mg4", "Mg3", "Mg2", "Br4", "Br3", "Br2",
+		"Pk4", "Pk3", "Pk2", "Pnk", "Gld" };
 
 /* current export/print background color */
 int		export_background_color = COLOR_NONE;
@@ -99,13 +100,15 @@ Boolean		n_colorFree[MAX_USR_COLS];
 Boolean		all_colors_available;
 Pixel		dark_gray_color, med_gray_color, lt_gray_color;
 Pixel		pageborder_color;
-Pixel		zero_lines_color;
+Pixel		axis_lines_color;
 int		max_depth=-1;
 int		min_depth=-1;
 char		tool_name[200];
 Boolean		display_fractions=True;	/* whether to display fractions in lengths */
 char		*userhome=NULL;		/* user's home directory */
 float		 scale_factor=1.0;	/* scale drawing as it is read in */
+char		 minor_grid[40], major_grid[40]; /* export/print grid values */
+Boolean		 draw_parent_gray;	/* in open compound, draw rest in gray */
 
 /* number of colors we want to use for pictures */
 /* this will be determined when the first picture is used.  We will take
@@ -155,8 +158,9 @@ Atom		wm_delete_window;
 int		num_recent_files;	/* number of recent files in list */
 int		max_recent_files;	/* user max number of recent files */
 int		splash_onscreen = False; /* flag used to clear off splash graphic */
+time_t		figure_timestamp;	/* last time file was written externally (for -autorefresh) */
 
-GC		gc, button_gc, ind_button_gc, mouse_button_gc,
+GC		border_gc, button_gc, ind_button_gc, mouse_button_gc, pic_gc,
 		fill_color_gc, pen_color_gc, blank_gc, ind_blank_gc, 
 		mouse_blank_gc, gccache[NUMOPS], grid_gc,
 		fillgc, fill_gc[NUMFILLPATS],	/* fill style gc's */
