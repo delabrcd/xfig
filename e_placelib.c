@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -162,7 +162,7 @@ sel_place_lib_obj_proc(int x, int y, int shift)
 void
 sel_place_lib_obj(void)
 {
-    canvas_kbd_proc = transform_lib_obj;
+    canvas_kbd_proc = (void (*)())transform_lib_obj;
     canvas_locmove_proc = null_proc;
     canvas_ref_proc = null_proc;
     canvas_leftbut_proc = null_proc;

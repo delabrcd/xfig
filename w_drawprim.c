@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -512,7 +512,6 @@ void init_gc(void)
     gccache[ERASE] = makegc(ERASE, x_fg_color.pixel, x_bg_color.pixel);
     gccache[INV_PAINT] = makegc(INV_PAINT, x_fg_color.pixel, x_bg_color.pixel);
     /* parse any grid color spec */
-fprintf(stderr,"color = '%s'\n",appres.grid_color);
     XParseColor(tool_d, tool_cm, appres.grid_color, &tmp_color);
     if (XAllocColor(tool_d, tool_cm, &tmp_color)==0) {
 	fprintf(stderr,"Can't allocate color for grid \n");

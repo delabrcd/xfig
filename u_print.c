@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -87,7 +87,7 @@ char *shell_protect_string(char *string)
     return(buf);
 }
 
-void print_to_printer(char *printer, char *backgrnd, float mag, Boolean print_all_layers, char *grid, char *params)
+void print_to_printer(char *printer, char *backgrnd, float mag, Boolean print_all_layers, Boolean bound_active_layers, char *grid, char *params)
 {
     char	    syspr[2*PATH_MAX+200];
     char	    tmpfile[PATH_MAX];
@@ -141,8 +141,12 @@ void print_to_printer(char *printer, char *backgrnd, float mag, Boolean print_al
 	strcat(tmpcmd,backgrnd);
     }
     /* add the -D +list if user doesn't want all layers printed */
-    if (!print_all_layers)
+    if (!print_all_layers) {
 	strcat(tmpcmd, layers);
+	/* if doesn't want bounding box of whole figure */
+	if (bound_active_layers)
+	    strcat(tmpcmd, " -K ");
+    }
 
     /* make the print command with no filename (it will be in stdin) */
     gen_print_cmd(syspr, "", printer, params);
@@ -184,7 +188,8 @@ void strsub(prcmd,find,repl,result, global)
 }
 /* xoff, yoff, and border are in fig2dev print units (1/72 inch) */
 
-int print_to_file(char *file, char *lang, float mag, int xoff, int yoff, char *backgrnd, char *transparent, Boolean use_transp_backg, Boolean print_all_layers, int border, Boolean smooth, char *grid, Boolean overlap)
+int print_to_file(char *file, char *lang, float mag, int xoff, int yoff, char *backgrnd, char *transparent, Boolean use_transp_backg, 
+				Boolean print_all_layers, Boolean bound_active_layers, int border, Boolean smooth, char *grid, Boolean overlap)
 {
     char	    tmp_name[PATH_MAX];
     char	    tmp_fig_file[PATH_MAX];
@@ -228,8 +233,11 @@ int print_to_file(char *file, char *lang, float mag, int xoff, int yoff, char *b
 	real_lang = "eps";
 
     /* if lang is pspdf, call first with just "eps" */
-    if (!strncmp(lang, "pspdf", 5))
+    if (!strcmp(lang, "pspdf"))
 	real_lang = "eps";
+    /* for pspdftex start with "pstex" */
+    if (!strcmp(lang, "pspdftex"))
+	real_lang = "pstex";
 
     /* if binary CGM, real language is cgm */
     if (!strcmp(lang, "bcgm"))
@@ -260,8 +268,12 @@ int print_to_file(char *file, char *lang, float mag, int xoff, int yoff, char *b
 	strcat(prcmd, " ");
 
     /* add the -D +list if user doesn't want all layers printed */
-    if (!print_all_layers)
+    if (!print_all_layers) {
 	strcat(prcmd, layers);
+	/* if doesn't want bounding box of whole figure */
+	if (bound_active_layers)
+	    strcat(prcmd, " -K ");
+    }
 
     /* any grid spec */
     if (strlen(grid) && strcasecmp(grid,"none") !=0 ) {
@@ -333,7 +345,7 @@ int print_to_file(char *file, char *lang, float mag, int xoff, int yoff, char *b
 		tmp_fig_file, outfile);
 	strcat(prcmd, tmpcmd);
     } else if (!strcmp(lang,"pspdftex")) {
-	/* first generate postscript then PDF.  */
+	/* first generate pstex postscript then pdftex PDF.  */
 	sprintf(tmpcmd, "-n %s", outfile);
 	strcat(prcmd, tmpcmd);
 
@@ -354,7 +366,7 @@ int print_to_file(char *file, char *lang, float mag, int xoff, int yoff, char *b
 	(void) exec_prcmd(tmpcmd, "EXPORT of PostScript part");
 
 	/* make it suitable for pdftex. */
-	strsub(prcmd,"eps","pdf",tmpcmd,0);
+	strsub(prcmd,"ps","pdf",tmpcmd,0);
 	strsub(tmpcmd,"pspdftex","pdftex",prcmd,0);
 	strcat(prcmd,".pdf");
 	(void) exec_prcmd(prcmd, "EXPORT of PDF part");
@@ -418,8 +430,12 @@ int print_to_file(char *file, char *lang, float mag, int xoff, int yoff, char *b
 	setlocale(LC_NUMERIC, "");
 #endif  /* I18N */
 	/* add the -D +list if user doesn't want all layers printed */
-	if (!print_all_layers)
+	if (!print_all_layers) {
 	    strcat(prcmd, layers);
+	    /* if doesn't want bounding box of whole figure */
+	    if (bound_active_layers)
+		strcat(prcmd, " -K ");
+	}
 	/* finally, append the filenames */
 	strcat(prcmd, tmp_fig_file);
 	strcat(prcmd, " ");
@@ -457,8 +473,12 @@ int print_to_file(char *file, char *lang, float mag, int xoff, int yoff, char *b
 #endif  /* I18N */
 
 	/* add the -D +list if user doesn't want all layers printed */
-	if (!print_all_layers)
+	if (!print_all_layers) {
 	    strcat(prcmd, layers);
+	    /* if doesn't want bounding box of whole figure */
+	    if (bound_active_layers)
+		strcat(prcmd, " -K ");
+	}
 
 	/* any grid spec */
 	if (strlen(grid) && strcasecmp(grid,"none") !=0 ) {
@@ -616,7 +636,8 @@ void gen_print_cmd(char *cmd, char *file, char *printer, char *pr_params)
 		pr_params,
 		shell_protect_string(file));
 #else
-	sprintf(cmd, "lpr %s %s",
+	sprintf(cmd, "%s %s %s",
+		access("/usr/bin/lp", X_OK)?"lpr":"lp",
 		pr_params,
 		shell_protect_string(file));
 #endif /* (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR) */
@@ -630,8 +651,10 @@ void gen_print_cmd(char *cmd, char *file, char *printer, char *pr_params)
 		printer, 
 		shell_protect_string(file));
 #else
-	sprintf(cmd, "lpr %s -P%s %s", 
+	sprintf(cmd, "%s %s %s%s %s", 
+		access("/usr/bin/lp", X_OK)?"lpr":"lp",
 		pr_params,
+		access("/usr/bin/lp", X_OK)?"-P":"-d",
 		printer,
 		shell_protect_string(file));
 #endif /* (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR) */
@@ -658,18 +681,19 @@ exec_prcmd(char *command, char *msg)
     if (appres.DEBUG)
 	fprintf(stderr,"Execing: %s\n",command);
     status=system(command);
-    /* check if error file has anything in it */
-    if ((errfile = fopen(errfname, "r")) == NULL) {
-	if (status != 0)
+    if (status != 0) {
+	/* check if error file has anything in it */
+	if ((errfile = fopen(errfname, "r")) == NULL) {
 	    file_msg("Error during %s. No messages available.",msg);
-    } else {
-	if (fgets(str,sizeof(str)-1,errfile) != NULL) {
-	    rewind(errfile);
-	    file_msg("Error during %s.  Messages:",msg);
-	    while (fgets(str,sizeof(str)-1,errfile) != NULL) {
-		/* remove trailing newlines */
-		str[strlen(str)-1] = '\0';
-		file_msg(" %s",str);
+	} else {
+  	    if (fgets(str,sizeof(str)-1,errfile) != NULL) {
+		rewind(errfile);
+		file_msg("Error during %s.  Messages:",msg);
+		while (fgets(str,sizeof(str)-1,errfile) != NULL) {
+		    /* remove trailing newlines */
+		    str[strlen(str)-1] = '\0';
+		    file_msg(" %s",str);
+		}
 	    }
 	}
 	fclose(errfile);

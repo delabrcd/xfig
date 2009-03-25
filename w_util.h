@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -62,11 +62,7 @@
 
 /* number of arrow types */
 
-#ifdef NEWARROWTYPES
 #define NUM_ARROW_TYPES		30
-#else
-#define NUM_ARROW_TYPES		8
-#endif /* NEWARROWTYPES */
 
 /* EXPORTS */
 
@@ -76,7 +72,7 @@ extern	int	num_grid_inch_choices, num_grid_tenth_inch_choices, num_grid_cm_choic
 extern	char	**grid_choices;
 extern	int	n_grid_choices, grid_minor, grid_major;
 extern	Widget	make_grid_options(Widget parent, Widget put_below, Widget put_beside, char *minor_grid_value, char *major_grid_value, Widget *grid_minor_menu_button, Widget *grid_major_menu_button, Widget *grid_minor_menu, Widget *grid_major_menu, Widget *print_grid_minor_text, Widget *print_grid_major_text, Widget *grid_unit_label, void (*grid_major_select) (/* ??? */), void (*grid_minor_select) (/* ??? */));
-extern	void	reset_grid_menus(void);
+extern	void	reset_grid_menus(Boolean inches);
 
 extern	Boolean	check_action_on(void);
 extern	void	check_for_resize(Widget tool, XButtonEvent *event, String *params, Cardinal *nparams);

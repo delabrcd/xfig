@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -79,14 +79,12 @@ static XtActionsRec	file_msg_actions[] =
 
 /* message window code begins */
 
-
-
 void
 init_msg(Widget tool)
 {
     /* now the message panel */
     FirstArg(XtNfont, roman_font);
-    FirstArg(XtNwidth, MSGPANEL_WD);
+    NextArg(XtNwidth, MSGPANEL_WD);
     NextArg(XtNheight, MSGPANEL_HT);
     NextArg(XtNstring, "\0");
     NextArg(XtNfromVert, cmd_form);
@@ -687,6 +685,8 @@ popup_file_msg(void)
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNscrollHorizontal, XawtextScrollWhenNeeded);
 	NextArg(XtNscrollVertical, XawtextScrollAlways);
+	NextArg(XtNright, XtChainRight);
+	NextArg(XtNbottom, XtChainBottom);
 	file_msg_win = XtCreateManagedWidget("file_msg_win", asciiTextWidgetClass,
 					     file_msg_panel, Args, ArgCount);
 	XtOverrideTranslations(file_msg_win,
@@ -696,6 +696,10 @@ popup_file_msg(void)
 	NextArg(XtNheight, 25);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNfromVert, file_msg_win);
+	NextArg(XtNtop, XtChainBottom);
+	NextArg(XtNbottom, XtChainBottom);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	file_msg_dismiss = XtCreateManagedWidget("dismiss", commandWidgetClass,
 				       file_msg_panel, Args, ArgCount);
 	XtAddEventHandler(file_msg_dismiss, ButtonReleaseMask, False,
@@ -706,6 +710,10 @@ popup_file_msg(void)
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNfromVert, file_msg_win);
 	NextArg(XtNfromHoriz, file_msg_dismiss);
+	NextArg(XtNtop, XtChainBottom);
+	NextArg(XtNbottom, XtChainBottom);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
 	file_msg_dismiss = XtCreateManagedWidget("clear", commandWidgetClass,
 				       file_msg_panel, Args, ArgCount);
 	XtAddEventHandler(file_msg_dismiss, ButtonReleaseMask, False,

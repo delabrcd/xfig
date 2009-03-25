@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -35,6 +35,7 @@ extern void	toggle_show_balloons(void);
 extern void	toggle_show_lengths(void);
 extern void	toggle_show_vertexnums(void);
 extern void	toggle_show_borders(void);
+extern void 	round_coords();				// isometric grid
 
 extern void		canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal *nparams);
 extern void	paste_primary_selection(void);
@@ -57,24 +58,5 @@ extern void	setCompLED(int on);
 extern String	local_translations;
 
 #define LOC_OBJ	"Locate Object"
-
-/* macro which rounds coordinates depending on point positioning mode */
-#define		round_coords(x, y) \
-  if (cur_pointposn != P_ANY) \
-    if (!anypointposn) { \
-	int _txx; \
-	if (x<0) \
-	    x = ((_txx = abs(x)%posn_rnd[cur_gridunit][cur_pointposn]) < posn_hlf[cur_gridunit][cur_pointposn]) \
-		? x + _txx : x - posn_rnd[cur_gridunit][cur_pointposn] + _txx; \
-	else \
-	    x = ((_txx = x%posn_rnd[cur_gridunit][cur_pointposn]) < posn_hlf[cur_gridunit][cur_pointposn]) \
-		? x - _txx : x + posn_rnd[cur_gridunit][cur_pointposn] - _txx; \
-	if (y<0) \
-	    y = ((_txx = abs(y)%posn_rnd[cur_gridunit][cur_pointposn]) < posn_hlf[cur_gridunit][cur_pointposn]) \
-		? y + _txx : y - posn_rnd[cur_gridunit][cur_pointposn] + _txx; \
-	else \
-	    y = ((_txx = y%posn_rnd[cur_gridunit][cur_pointposn]) < posn_hlf[cur_gridunit][cur_pointposn]) \
-		? y - _txx : y + posn_rnd[cur_gridunit][cur_pointposn] - _txx; \
-    }
 
 #endif /* W_CANVAS_H */

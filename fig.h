@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -302,15 +302,6 @@ extern char *getenv();
 #endif /* X_NOT_STDC_ENV */
 #endif /* defined(SYSV) && defined(SYSV386) */
 
-/* 
-#if defined(SYSV) || defined(SVR4) || defined(__osf__) || defined(USE_DIRENT)
-#define u_int uint
-#define USE_DIRENT
-#define DIRSTRUCT	struct dirent
-#else
-#define DIRSTRUCT	struct direct
-#endif
-*/
 #ifdef HAVE_NO_DIRENT
 #define DIRSTRUCT struct direct
 #else
@@ -383,7 +374,7 @@ extern	double		drand48();
 extern	long		random();
 extern	void		srandom(unsigned int);
 
-#elif !defined(__osf__) && !defined(__CYGWIN__) && !defined(linux)
+#elif !defined(__osf__) && !defined(__CYGWIN__) && !defined(linux) && !defined(__FreeBSD__) && !defined(__GLIBC__)
 extern	void		srandom(int);
 
 #endif

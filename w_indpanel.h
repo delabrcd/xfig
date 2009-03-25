@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -164,7 +164,7 @@ extern Widget	choice_popup;
 extern void	show_depth(ind_sw_info *sw), show_zoom(ind_sw_info *sw);
 extern void	show_fillstyle(ind_sw_info *sw);
 extern void	fontpane_popup(int *psfont_adr, int *latexfont_adr, int *psflag_adr, void (*showfont_fn) (/* ??? */), Widget show_widget);
-extern void	make_pulldown_menu_images(choice_info *entries, Cardinal nent, Pixmap **images, char **texts, Widget parent, XtCallbackProc callback);
+extern void	make_pulldown_menu_images(choice_info *entries, Cardinal nent, Pixmap *images, char **texts, Widget parent, XtCallbackProc callback);
 extern void	tog_selective_update(long unsigned int mask);
 extern unsigned long cur_indmask;	/* mask showing which indicator buttons are mapped */
 extern void	inc_zoom(ind_sw_info *sw), dec_zoom(ind_sw_info *sw), fit_zoom(ind_sw_info *sw);

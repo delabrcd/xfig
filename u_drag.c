@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -463,8 +463,8 @@ init_textdragging(F_text *t, int x, int y)
     fix_y = cur_y = y;
     x1 = new_t->base_x;
     y1 = new_t->base_y;
-    /* adjust fix_x/y so that text will fall on grid if grid is on */
-    round_coords(x1,y1);
+    /* adjust fix_x/y so that text will fall on grid if grid is on */		// isometric grid
+    round_coords( &x1, &y1 );
     fix_x += new_t->base_x - x1;
     fix_y += new_t->base_y - y1;
     x1off = x1-x; /*new_t->base_x - x;*/

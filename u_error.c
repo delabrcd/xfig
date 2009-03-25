@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -59,7 +59,7 @@ void error_handler(int err_sig)
     emergency_quit(True);
 }
 
-void X_error_handler(Display *d, XErrorEvent *err_ev)
+int X_error_handler(Display *d, XErrorEvent *err_ev)
 {
     char	    err_msg[MAXERRMSGLEN];
     char	    ernum[10];
@@ -75,6 +75,7 @@ void X_error_handler(Display *d, XErrorEvent *err_ev)
     XGetErrorDatabaseText(tool_d, "XRequest", ernum, "<Unknown>", err_msg, MAXERRMSGLEN);
     (void) fprintf(stderr, "Request code: %s\n",err_msg);
     emergency_quit(True);
+    return 0;
 }
 
 void emergency_quit(Boolean abortflag)

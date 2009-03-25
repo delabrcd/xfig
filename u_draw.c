@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1992 by James Tough
  * Parts Copyright (c) 1998 by Georg Stemmer
@@ -92,7 +92,6 @@ static struct _arrow_shape arrow_shapes[NUM_ARROW_TYPES] = {
 		   { 5, 1, 0, True, True, False, 1.5, {{-0.75,0.5},{0,0},{-0.75,-0.5},{-1.0,0},{-0.75,0.5}}},
 		   /* type 3b filled convex spearhead */
 		   { 5, 1, 0, True, True, False, 1.5, {{-0.75,0.5},{0,0},{-0.75,-0.5},{-1.0,0},{-0.75,0.5}}},
-#ifdef NEWARROWTYPES
 		   /* type 4a diamond */
 		   { 5, 1, 0, True, True, False, 1.15, {{-0.5,0.5},{0,0},{-0.5,-0.5},{-1.0,0},{-0.5,0.5}}},
 		   /* type 4b filled diamond */
@@ -140,7 +139,6 @@ static struct _arrow_shape arrow_shapes[NUM_ARROW_TYPES] = {
 		   { 4, 0, 0, True, True, False, -1.0, {{0,0.5},{-1.0,0.5},{-1.0,-0.5},{0,-0.5}}},
 		   /* type 14b backward two-prong fork */
 		   { 4, 1, 0, True, True, False, 0.0, {{-1.0,0.5,},{0,0.5},{0,-0.5},{-1.0,-0.5}}},
-#endif /* NEWARROWTYPES */
 		};
 
 /************** POLYGON/CURVE DRAWING FACILITIES ****************/
@@ -282,7 +280,7 @@ void draw_arc(F_arc *a, int op)
 
     /* setup clipping so that spline doesn't protrude beyond arrowhead */
     /* also create the arrowheads */
-    clip_arrows(a,O_ARC,op,0);
+    clip_arrows((F_line *)a,O_ARC,op,0);
 
     /* draw the arc itself */
     draw_point_array(canvas_win, op, a->depth, a->thickness,
@@ -296,10 +294,10 @@ void draw_arc(F_arc *a, int op)
     /* draw the arrowheads, if any */
     if (a->type != T_PIE_WEDGE_ARC) {
       if (a->for_arrow) {
-	    draw_arrow(a, a->for_arrow, farpts, nfpts, farfillpts, nffillpts, op);
+	    draw_arrow((F_line *)a, a->for_arrow, farpts, nfpts, farfillpts, nffillpts, op);
       }
       if (a->back_arrow) {
-	    draw_arrow(a, a->back_arrow, barpts, nbpts, barfillpts, nbfillpts, op);
+	    draw_arrow((F_line *)a, a->back_arrow, barpts, nbpts, barfillpts, nbfillpts, op);
       }
     }
     /* write the depth on the object */
@@ -2067,7 +2065,7 @@ draw_spline(F_spline *spline, int op)
     if (success) {
 	/* setup clipping so that spline doesn't protrude beyond arrowhead */
 	/* also create the arrowheads */
-	clip_arrows(spline,O_SPLINE,op,4);
+	clip_arrows((F_line *)spline,O_SPLINE,op,4);
 
 	draw_point_array(canvas_win, op, spline->depth, spline->thickness,
 		       spline->style, spline->style_val,
@@ -2078,9 +2076,9 @@ draw_spline(F_spline *spline, int op)
 	set_clip_window(clip_xmin, clip_ymin, clip_xmax, clip_ymax);
 
 	if (spline->for_arrow)	/* forward arrow  */
-	    draw_arrow(spline, spline->for_arrow, farpts, nfpts, farfillpts, nffillpts, op);
+	    draw_arrow((F_line *)spline, spline->for_arrow, farpts, nfpts, farfillpts, nffillpts, op);
 	if (spline->back_arrow)	/* backward arrow  */
-	    draw_arrow(spline, spline->back_arrow, barpts, nbpts, barfillpts, nbfillpts, op);
+	    draw_arrow((F_line *)spline, spline->back_arrow, barpts, nbpts, barfillpts, nbfillpts, op);
 	/* write the depth on the object */
 	debug_depth(spline->depth,spline->points->x,spline->points->y);
     }

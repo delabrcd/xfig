@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -170,13 +170,13 @@ create_compoundobject(int x, int y)
     if (c->nwcorner.x == c->secorner.x) {
 	if (cur_pointposn != P_ANY) {
 	    c->secorner.x += posn_rnd[cur_gridunit][cur_pointposn];
-	    c->secorner.x = ceil_coords(c->secorner.x);
+	    c->secorner.x = ceil_coords_x(c->secorner.x,c->secorner.y);
 	}
     }
     if (c->nwcorner.y == c->secorner.y) {
 	if (cur_pointposn != P_ANY) {
 	    c->secorner.y += posn_rnd[cur_gridunit][cur_pointposn];
-	    c->secorner.y = ceil_coords(c->secorner.y);
+	    c->secorner.y = ceil_coords_y(c->secorner.x,c->secorner.y);
 	}
     }
     c->next = NULL;

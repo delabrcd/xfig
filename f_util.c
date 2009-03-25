@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2002 by Brian V. Smith
+ * Copyright (c) 1989-2007 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -1009,7 +1009,10 @@ void init_settings(void)
 	cur_linewidth = min2(appres.startlinewidth,MAX_LINE_WIDTH);
 
     if (appres.startgridmode >= 0)
-	cur_gridmode = min2(appres.startgridmode,GRID_4);
+	cur_gridmode = min2(appres.startgridmode,GRID_ISO_4);
+
+    if (appres.startgridtype >= 0)					// isometric grid
+	cur_gridtype = min2(appres.startgridtype,GRID_ISO);	
 
     if (appres.startposnmode >= 0)
 	cur_pointposn = min2(appres.startposnmode,P_GRID4);

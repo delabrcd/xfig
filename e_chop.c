@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -19,7 +19,9 @@
 /* >>>>>>>>>>>>>>>>>>> fixme -- don't forget undo ! <<<<<<<<<<<<<<<< */
 
 #include <stdlib.h>
+#ifndef __FreeBSD__
 #include <alloca.h>
+#endif
 #include "fig.h"
 #include "resources.h"
 #include "mode.h"
@@ -651,8 +653,8 @@ chop_arc(F_arc * a, int x, int y)
 	this_arc->point[0].x = s_points[i - 1].x;
 	this_arc->point[0].y = s_points[i - 1].y;
       
-	this_arc->point[1].x = (int)lrint((double)(a->center.x) + vsumx);
-	this_arc->point[1].y = (int)lrint((double)(a->center.y) + vsumy);
+	this_arc->point[1].x = (int)rint((double)(a->center.x) + vsumx);
+	this_arc->point[1].y = (int)rint((double)(a->center.y) + vsumy);
 
 	this_arc->point[2].x = s_points[i].x;
 	this_arc->point[2].y = s_points[i].y;
@@ -778,8 +780,8 @@ chop_ellipse(F_ellipse * e, int x, int y)
 	arc->point[0].x = s_points[sp].x;
 	arc->point[0].y = s_points[sp].y;
       
-	arc->point[1].x = (int)lrint((double)(arc->center.x) + vsumx);
-	arc->point[1].y = (int)lrint((double)(arc->center.y) + vsumy);
+	arc->point[1].x = (int)rint((double)(arc->center.x) + vsumx);
+	arc->point[1].y = (int)rint((double)(arc->center.y) + vsumy);
 
 	arc->point[2].x = s_points[ep].x;
 	arc->point[2].y = s_points[ep].y;

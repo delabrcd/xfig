@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -460,7 +460,7 @@ fix_scale_arc(int x, int y)
     oldd = sqrt(oldx * oldx + oldy * oldy);
     scalefact = newd / oldd;
     /* scale any arrowheads */
-    scale_arrows(new_a,scalefact,scalefact);
+    scale_arrows((F_line *)new_a,scalefact,scalefact);
 
     relocate_arcpoint(new_a, x, y);
     change_arc(cur_a, new_a);
@@ -567,7 +567,7 @@ fix_scale_spline(int x, int y)
     set_action_object(F_EDIT, O_SPLINE);
     old_s->next = cur_s;
     /* now change the original to become the new object */
-    rescale_points(cur_s, x, y);
+    rescale_points((F_line *)cur_s, x, y);
     wrapup_scale();
     /* redraw anything under the old spline */
     redisplay_spline(old_s);
@@ -1048,7 +1048,7 @@ scale_spline(F_spline *s, float sx, float sy, int refx, int refy)
 	p->y = round(refy + (p->y - refy) * sy);
     }
     /* scale any arrowheads */
-    scale_arrows(s,sx,sy);
+    scale_arrows((F_line *)s,sx,sy);
 }
 
 static void
@@ -1090,7 +1090,7 @@ scale_arc(F_arc *a, float sx, float sy, int refx, int refy)
     }
     a->direction = compute_direction(a->point[0], a->point[1], a->point[2]);
     /* scale any arrowheads */
-    scale_arrows(a,sx,sy);
+    scale_arrows((F_line *)a,sx,sy);
 }
 
 static void

@@ -1,2 +1,2 @@
-extern int init_grid (void);
-extern int setup_grid (void);
+extern void init_grid (void);
+extern void setup_grid (void);

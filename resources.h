@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -224,6 +224,7 @@ typedef struct _appres {
     int		 startfillstyle;	/* starting fill style */
     float	 startfontsize;		/* ges 6 Feb 91 */
     int		 startgridmode;		/* starting grid mode */
+    int		 startgridtype;		/* starting grid type */		// isometric grid
     int		 startarrowtype;	/* starting arrow type */
     float	 startarrowthick;	/* starting arrow thick */
     float	 startarrowwidth;	/* starting arrow width */

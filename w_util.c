@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -1699,7 +1699,10 @@ xallncol(char *name, XColor *color, XColor *exact)
 }
 
 Widget
-make_grid_options(Widget parent, Widget put_below, Widget put_beside, char *minor_grid_value, char *major_grid_value, Widget *grid_minor_menu_button, Widget *grid_major_menu_button, Widget *grid_minor_menu, Widget *grid_major_menu, Widget *print_grid_minor_text, Widget *print_grid_major_text, Widget *grid_unit_label, void (*grid_major_select) (/* ??? */), void (*grid_minor_select) (/* ??? */))
+make_grid_options(Widget parent, Widget put_below, Widget put_beside, char *minor_grid_value, char *major_grid_value,
+		Widget *grid_minor_menu_button, Widget *grid_major_menu_button, Widget *grid_minor_menu, 
+		Widget *grid_major_menu, Widget *print_grid_minor_text, Widget *print_grid_major_text, 
+		Widget *grid_unit_label, void (*grid_major_select) (/* ??? */), void (*grid_minor_select) (/* ??? */))
 {
 	Widget	below, beside;
 
@@ -1808,11 +1811,11 @@ make_grid_options(Widget parent, Widget put_below, Widget put_beside, char *mino
 /* do this in both the print and export panels */
 
 void
-reset_grid_menus(void)
+reset_grid_menus(Boolean inches)
 {
 	float	convert;
 
-	if (appres.INCHES) {
+	if (inches) {
 	    convert = 1.0;
 	    /* if was metric and is now inches, convert grid values */
 	    if (old_gridunit == MM_UNIT)
@@ -1911,7 +1914,7 @@ convert_gridstr(Widget widget, float mult)
 	    for (i=0; i<NUM_FRACTS; i++) {
 		numer = round(value*fracts[i]);
 		diff = fabs(value*fracts[i] - numer);
-		if (diff < tol[i])
+		if (diff < tol[i] && numer > 0.0)
 		    break;
 	    }
 	    if (i < NUM_FRACTS) {

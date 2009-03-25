@@ -7,6 +7,77 @@ IMPORTANT NOTE:
 	As of April 2004, the email address xfig-bugs@epb1.lbl.gov no longer exists.
 	Please use bvsmith@lbl.gov to report xfig problems or questions.
 
+	Also please note that I don't have much time anymore to work on xfig/transfig,
+	  so while you may have a great contribution to make, unfortunately I
+	  won't have time to work it into a release.  However, I will still try
+	  to fix bugs.
+
+-----------------------------------
+Patchlevel 5a (Mar 16, 2009):
+
+NEW FEATURES:
+	o Fig-color merged into Fig app-defaults file because almost no one knows about
+	  the "*customization: -color" option to make X programs read the color def file.
+	o 22 new arrowhead types
+	o changed default browser to firefox and default pdf viewer to xpdf
+	o HTML MAP export (fig2dev) produces reference to .png file instead of .gif now
+	o A note added to i18n.html that says if you run fig2dev standalone, you must
+	  pass the -j option to it
+	o No need to have the C99 complex functions in the math library.
+	o New computers from Andre Esser (Libraries/Computers)
+	o Some network icons colored and/or combined by Roland Rosenfeld.
+	o When exporting only active layers have choice of bounding area of whole
+	  figure or only the active layers
+	o Two new library figures - piano_keyboard.fig, top view of a piano keyboard
+	  by Reinaert Albrecht, and piano_keyboard_perspect.fig, a perspective
+	  view of a piano keyboard by Brian Smith, both in the Libraries/Music
+	  directory.
+	o New library figure - scissors.fig in Libraries/OfficeEquip from Kasie
+	  Breezer Talbot
+	o Search tolerance increased from 4 pixels to 10 for zoom < 20
+	o Isometric grid to ease making isometric drawings
+	  From Jasper Wesselingh
+	o New 37-pin D connector and 50-pin ribbon connector in Libraries/Electronic/Physical
+
+BUGS FIXED:
+	o dimension line arrowhead width and length used %d instead of %f in
+	  dialog, always displaying 0
+	o leftover debugging printf(...color = ) in startup
+	o finally fixed size of mode panel so it doesn't cover indicator panel
+	  under certain circumstances
+	o removed "Alpha" from splash
+	o updated copyright date in Help/About
+	o problem with depth panel height due to snap mode indicator
+	o snap indicator indicated "Focus" when "Diameter" was selected
+	o w_keyboard.c had pointer assignment reversed
+	o extraneous "done" in Imakefile in "install.jhtml" section
+	  From Eric Scott
+	o many protoytpe cleanups from Eric Scott
+	o #ifndef __FreeBSD__ added around #include <alloca.h> from Eric Scott
+	o uses rint() instead of lrint() for those with non-C99 compilers
+	o Solaris doesn't have REG_NOERROR for regex, so have new #define for that
+	o added dependency on version.h and patchlevel.h for f_util.c and f_save.c to
+	  Imakefile
+	o In imperial fractional scale mode, if the user scale factor wasn't 1.0, xfig
+	  would switch to decimal mode.  This has been fixed to remain in fractional mode.
+	o Added condition for GLIBC to not declare srandom(int)
+	o Better resizing of message popup panel
+	o Map of Spain included Portugal. From Eugen Dedu.
+	o Double-clicking on either style or family would crash xfig
+	o Export/Print grid units were not reset when loading Fig file of different units
+	o When converting empty export/print grid units to fractional inches would make 0/2
+	o Escaped hyphens in man page
+	  From Roland Rosendfeld
+	o When exporting to all three: PostScript, PDF and TeX, incorrectly generated
+	  PostScript and PDF that included LaTeX-only (special) text
+	o Bug when doing Save As to a shorter filename - would corrupt name sometimes
+	o Note about 450 pixels/cm didn't make it from the FORMAT3.1 file to FORMAT3.2
+	o Print command was using -P instead of -d for lp
+	o On Cygwin, needed to double-escape PRINTER environment when backslashes in name
+	o w_library.c had incompatible poiner type in call to ScanLibraryDirectory
+	o Not enough characters allocated for ruler inch/cm indicators.  Would cause segfault
+	  on zooming out because of longer ruler text, e.g. -10210cm
+
 -----------------------------------
 Patchlevel 5 (Feb 22, 2007):
 

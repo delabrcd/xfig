@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * This software is copyright (C) 1991-1996, Thomas G. Lane.
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * All Rights Reserved except as specified below.
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -178,8 +178,10 @@ read_JPEG_file (FILE *file)
 	pict->pic_cache->bit_size.x = cinfo.image_width;
 	pict->pic_cache->bit_size.y = cinfo.image_height;
 	if ((pict->pic_cache->bitmap = (unsigned char *) 
-	     malloc(cinfo.image_width * cinfo.image_height)) == NULL)
-		error_exit("Can't alloc memory for JPEG image");
+	  malloc(cinfo.image_width * cinfo.image_height)) == NULL) {
+	    file_msg("Can't alloc memory for JPEG image");
+	    longjmp(jerr.setjmp_buffer, 1);
+	}
 	bitmapptr = pict->pic_cache->bitmap;
 
 	/* Step 4: set parameters for decompression */

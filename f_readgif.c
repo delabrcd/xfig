@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Parts Copyright (c) 1990 David Koblas
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -175,7 +175,7 @@ read_gif(FILE *file, int filetype, F_pic *pic)
 	/* make name for temp output file */
 	sprintf(pcxname, "%s/%s%06d.pix", TMPDIR, "xfig-pcx", getpid());
 	/* make command to convert gif to pcx into temp file */
-	sprintf(buf, "giftopnm | ppmtopcx > %s 2> /dev/null", pcxname);
+	sprintf(buf, "giftopnm -quiet | ppmtopcx -quiet > %s", pcxname);
 	if ((giftopcx = popen(buf,"w" )) == 0) {
 	    file_msg("Cannot open pipe to giftopnm or ppmtopcx\n");
 	    close_picfile(file,filetype);

@@ -405,6 +405,12 @@ Arcs
 </dl>
 
 <DT><img src="images/blueballdot.png" alt="-">
+<b>Nearest</b>
+<dd>While a polyline is being drawn, this operation simply snaps to the nearest
+point on the nearest object.  This works for target polyline, circle/ellipse,
+text (the bounding box), and arc objects.
+
+<DT><img src="images/blueballdot.png" alt="-">
 <b>Focus</b>
 <dd>Focus snap mode snaps the input point to some feature
 of the selected object that may be interpreted as a focus.  The feature
@@ -429,6 +435,12 @@ Arcs
 <dd>Snaps to the arc centerpoint.
 
 </dl>
+
+<DT><img src="images/blueballdot.png" alt="-">
+<b>Diameter</b> <dd>While a polyline is being drawn, this operation snaps to a
+point such that the midpoint of the segment specified by that point and the
+"current" point is at the centerpoint of the selected object.  This works for
+all objects except splines.
 
 <DT><img src="images/blueballdot.png" alt="-">
 <b>Normal</b>

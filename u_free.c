@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -168,14 +168,14 @@ void free_picture_entry(struct _pics *picture)
 	return;
 
     if (picture->refcount == 0) {
-	fprintf(stderr, "Error freeing picture %x %s with refcount = 0\n",
+	fprintf(stderr, "Error freeing picture %p %s with refcount = 0\n",
 		picture, picture->file);
 	return;
     }
     picture->refcount--;
     if (picture->refcount == 0) {
 	if (appres.DEBUG)
-	    fprintf(stderr,"Delete picture %x %s, refcount = %d\n",
+	    fprintf(stderr,"Delete picture %p %s, refcount = %d\n",
 				picture, picture->file, picture->refcount);
 	if (picture->bitmap)
 	    free((char *) picture->bitmap);
@@ -193,7 +193,7 @@ void free_picture_entry(struct _pics *picture)
 	free(picture);
     } else {
 	if (appres.DEBUG)
-	    fprintf(stderr,"Decrease refcount for picture %x %s, refcount = %d\n",
+	    fprintf(stderr,"Decrease refcount for picture %p %s, refcount = %d\n",
 				picture, picture->file, picture->refcount);
     }
 }

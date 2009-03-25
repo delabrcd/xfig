@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1994 Anthony Dekker
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  *
  * [NEUQUANT Neural-Net quantization algorithm by Anthony Dekker, 1994.
  * See "Kohonen neural networks for optimal colour quantization"

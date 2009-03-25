@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 2004 by Chris Moller
  *
@@ -29,7 +29,9 @@
 #include "w_util.h"
 #include "u_quartic.h"
 #include <math.h>
+#ifndef __FreeBSD__
 #include <alloca.h>
+#endif
 
 int snap_gx;
 int snap_gy;
@@ -149,8 +151,8 @@ snap_polyline_focus_handler(F_line * l, int x, int y)
     sy += (double)(point->y);
   }
   if (n > 0) {
-    snap_gx = (int)lrint(sx/(double)n);
-    snap_gy = (int)lrint(sy/(double)n);
+    snap_gx = (int)rint(sx/(double)n);
+    snap_gy = (int)rint(sy/(double)n);
     snap_found = True;
   }
 }
@@ -175,8 +177,8 @@ snap_polyline_midpoint_handler(l, x, y)
       double dist = hypot(mpx - (double)x, mpy - (double)y);
       if (dist < mind) {
             mind = dist;
-            snap_gx = (int)lrint(mpx);
-            snap_gy = (int)lrint(mpy);
+            snap_gx = (int)rint(mpx);
+            snap_gy = (int)rint(mpy);
             snap_found = True;
       }
     }
@@ -236,8 +238,8 @@ do_snap_polyline_normal(l, x, y, cur_point_x, cur_point_y)
       double rx = (c - b)/(m - n);
       double ry1 = (m * rx) + b;
       double ry2 = (n * rx) + c;
-      snap_gx = (int)lrint(rx);
-      snap_gy = (int)lrint(ry1);
+      snap_gx = (int)rint(rx);
+      snap_gy = (int)rint(ry1);
     }
   }
 }
@@ -265,14 +267,13 @@ snap_ellipse_focus_ellipse_handler(e, x, y)
   int idy;
   double dx, dy;
   double dist_1, dist_2;
-
   double a = pow((double)(e->radiuses.x), 2.0);
   double b = pow((double)(e->radiuses.y), 2.0);
   double c = sqrt(fabs(b - a));
 
   snap_rotate_vector(&dx, &dy, c, 0.0, -((double)(e->angle)));
-  idx = (int)lrint(dx);
-  idy = (int)lrint(dy);
+  idx = (int)rint(dx);
+  idy = (int)rint(dy);
 
   dist_1 = hypot((double)((e->center.x + idx) - x),
                         (double)((e->center.y + idy) - y));
@@ -363,7 +364,6 @@ snap_ellipse_normal_ellipse_handler(e, x, y, cur_point_x, cur_point_y)
   int sel_idx;
   
   /* translate to ellipse origin */
-  
   double PX = cur_point_x - (double)(e->center.x);
   double PY = cur_point_y - (double)(e->center.y);
   double X  = (double)(x - e->center.x);
@@ -417,8 +417,8 @@ snap_ellipse_normal_ellipse_handler(e, x, y, cur_point_x, cur_point_y)
       ix[sel_idx] += (double)(e->center.x);
       iy[sel_idx] += (double)(e->center.y);
     
-      snap_gx = (int)lrint(ix[sel_idx]);
-      snap_gy = (int)lrint(iy[sel_idx]);
+      snap_gx = (int)rint(ix[sel_idx]);
+      snap_gy = (int)rint(iy[sel_idx]);
       snap_found = True;
 
       mind = dist;
@@ -464,12 +464,12 @@ circle_normal_handler(center_x, center_y, radius, x, y, cur_point_x, cur_point_y
   da = hypot(tya - (double)y, txa - (double)x);
   db = hypot(tyb - (double)y, txb - (double)x);
   if (da < db) {
-    snap_gx = (int)lrint(txa);
-    snap_gy = (int)lrint(tya);
+    snap_gx = (int)rint(txa);
+    snap_gy = (int)rint(tya);
   }
   else {
-    snap_gx = (int)lrint(txb);
-    snap_gy = (int)lrint(tyb);
+    snap_gx = (int)rint(txb);
+    snap_gy = (int)rint(tyb);
   }
   snap_found = True;
 }
@@ -523,12 +523,12 @@ circle_tangent_handler(center_x, center_y, r, x, y)
     da = hypot(tya - (double)y, txa - (double)x);
     db = hypot(tyb - (double)y, txb - (double)x);
     if (da < db) {
-      snap_gx = (int)lrint(txa);
-      snap_gy = (int)lrint(tya);
+      snap_gx = (int)rint(txa);
+      snap_gy = (int)rint(tya);
     }
     else {
-      snap_gx = (int)lrint(txb);
-      snap_gy = (int)lrint(tyb);
+      snap_gx = (int)rint(txb);
+      snap_gy = (int)rint(tyb);
     }
     snap_found = True;
   }
@@ -679,8 +679,8 @@ snap_ellipse_tangent_ellipse_handler(e, x, y)
       snap_rotate_vector (&xx,  &yy,  tx[px],  ty[py],  -(double)(e->angle));
       xx += (double)(e->center.x);
       yy += (double)(e->center.y);
-      snap_gx = (int)lrint(xx);
-      snap_gy = (int)lrint(yy);
+      snap_gx = (int)rint(xx);
+      snap_gy = (int)rint(yy);
       snap_found = True;
     }
     else {
@@ -702,7 +702,6 @@ snap_ellipse_endpoint_handler(e, x, y)
      int x;
      int y;
 {
-    double dist;
   int i;
   double tx,ty;
   double mind = HUGE_VAL;
@@ -725,8 +724,8 @@ snap_ellipse_endpoint_handler(e, x, y)
       ty = ry;
     }
   }
-  snap_gx = (int)lrint(tx);
-  snap_gy = (int)lrint(ty);
+  snap_gx = (int)rint(tx);
+  snap_gy = (int)rint(ty);
   snap_found = True;
 }
 
@@ -759,9 +758,9 @@ snap_polyline_handler(l, x, y)
     snap_polyline_focus_handler(l, x, y);
     break;
   case SNAP_MODE_DIAMETER:
-    put_msg("Polylines do not have diameters.");
-    beep();
-    snap_msg_set = True;
+    snap_polyline_focus_handler(l, x, y);
+    snap_gx += snap_gx - cur_point->x;
+    snap_gy += snap_gy - cur_point->y;
     break;
   case SNAP_MODE_NEAREST:
     do_snap_polyline_normal(l, x, y, (double)x, (double)y);
@@ -806,14 +805,25 @@ snap_spline_handler(s, x, y)
       f_line_p->type = T_POLYLINE;
       f_line_p->points = s->points;
       snap_polyline_handler(f_line_p, x, y);
-      break;
     }
+    break;
   case SNAP_MODE_DIAMETER:
+#if 0
+    {
+      F_line * f_line_p = alloca(sizeof(F_line));
+      f_line_p->type = T_POLYLINE;
+      f_line_p->points = s->points;
+      snap_polyline_handler(f_line_p, x, y);
+      snap_gx += snap_gx - cur_point->x;
+      snap_gy += snap_gy - cur_point->y;
+    }
+    break;
+#endif
     switch(s->type) {
     case T_OPEN_APPROX:
     case T_OPEN_INTERP:
     case T_OPEN_XSPLINE:
-      put_msg("Polylines do not have diameters.");
+      put_msg("Spline diameters not yet implemented.");
       beep();
       snap_msg_set = True;
       break;
@@ -878,7 +888,7 @@ is_point_on_arc(a, x, y)
   dt = (dx * (double)(a->point[0].y - y))
     -  (dy * (double)(a->point[0].x - x));
   
-  return (signbit(d1) == signbit(dt)) ? True : False;
+  return (signbit_(d1) == signbit_(dt)) ? True : False;
 }
 
 /*                                      */
@@ -919,8 +929,8 @@ snap_arc_handler(a, x, y)
 	sx += a->point[i].x;
 	sy += a->point[i].y;
       }
-      snap_gx = (int)lrint(((double)sx)/3.0);
-      snap_gy = (int)lrint(((double)sy)/3.0);
+      snap_gx = (int)rint(((double)sx)/3.0);
+      snap_gy = (int)rint(((double)sy)/3.0);
       snap_found = True;
     }
     break;
@@ -959,14 +969,16 @@ snap_arc_handler(a, x, y)
     }
     break;
   case SNAP_MODE_FOCUS:
-    snap_gx = (int)lrint((double)(a->center.x));
-    snap_gy = (int)lrint((double)(a->center.y));
+    snap_gx = (int)rint((double)(a->center.x));
+    snap_gy = (int)rint((double)(a->center.y));
     snap_found = True;
     break;
   case SNAP_MODE_DIAMETER:
-    put_msg("Arcs do not have diameters.");
-    beep();
-    snap_msg_set = True;
+    snap_gx = (int)rint((double)(a->center.x));
+    snap_gy = (int)rint((double)(a->center.y));
+    snap_gx += snap_gx - cur_point->x;
+    snap_gy += snap_gy - cur_point->y;
+    snap_found = True;
     break;
   case SNAP_MODE_NEAREST:
     {
@@ -1268,16 +1280,23 @@ snap_diameter(w, closure, call_data)
 {
   
   /* snap to:									*/
-  /*		closed polyline (box and polygon) point opp centroids	-- todo	*/
-  /*		open polyline  (?)					-- null	*/
-  /*		ellipse foci and circle diameters			-- todo	*/
+  /*		closed polyline (box and polygon) point opp centroids	-- done	*/
+  /*		open polyline  (?)					-- done	*/
+  /*		ellipse foci and circle diameters			-- done	*/
   /*		closed spline opp centroids				-- todo	*/
-  /*		open spline centroids (?)				-- null	*/
+  /*		open spline centroids (?)				-- todo	*/
   /*		text bounding box opp centroids (?)			-- todo	*/
-  /*		arc centroids (or origin ?)				-- null	*/
-  
-  XtVaSetValues(snap_indicator_label, XtNlabel, "Focus" , NULL);
-  snap_mode = SNAP_MODE_DIAMETER;
+  /*		arc centroids (or origin ?)				-- done	*/
+
+   if (!cur_point) {
+    put_msg("No prior point from which to create a diameter.");
+    beep();
+    snap_msg_set = True;
+  }
+  else {
+    XtVaSetValues(snap_indicator_label, XtNlabel, "Diameter" , NULL);
+    snap_mode = SNAP_MODE_DIAMETER;
+  }
 }
 
 void
@@ -1362,7 +1381,6 @@ snap_tangent(w, closure, call_data)
   }
 }
 
-Widget snap_indicator_panel;
 Widget snap_indicator_label;
 
 

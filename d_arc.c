@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -308,7 +308,7 @@ resizing_arc(int x, int y)
     if (num_point == 0)
 	length_msg(MSG_RADIUS);
     else {
-	compute_3p_angle(&tpoint[0], &center_point, &p3, &alpha);
+	compute_3p_angle((F_point *)&tpoint[0], (F_point *)&center_point, &p3, &alpha);
 	put_msg("1st angle = %.2f degrees", (float) alpha*180.0/M_PI);
     }
     elastic_arc();

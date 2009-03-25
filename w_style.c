@@ -589,6 +589,8 @@ family_select (Widget w, XtPointer closure, XtPointer call_data)
 
     XawListReturnStruct *ret_struct = (XawListReturnStruct *) call_data;
 
+    if (ret_struct == 0)
+	return;
     current_family = ret_struct->list_index;
     current_style = -1;
     style_update ();
@@ -599,6 +601,8 @@ style_select (Widget w, XtPointer closure, XtPointer call_data)
 {
     XawListReturnStruct *ret_struct = (XawListReturnStruct *) call_data;
 
+    if (ret_struct == 0)
+	return;
     current_style = ret_struct->list_index;
     style_update ();
     cur_updatemask = set_style (&current_family_set[current_family].style[current_style]);
@@ -696,7 +700,7 @@ confirm_close_style (void)
     if (style_dirty_flag) {
 	status = popup_query(QUERY_YESNOCAN, "Do you wish to save the changes you made to the styles?");
 	if (status == RESULT_YES)
-	    save_style((Widget) 0, (XEvent *) 0);
+	    save_style((Widget) 0, (XButtonEvent *) 0);
 	return status;
     }
     return RESULT_YES;

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 2004 by Chris Moller
  *
@@ -24,8 +24,8 @@
 #include "w_snap.h"
 #include "w_intersect.h"
 #include "u_quartic.h"
+#include <alloca.h>
 #include <math.h>
-#include <complex.h>
 #undef I
   
 #define ISET_P1 (1 << 0)
@@ -48,8 +48,8 @@ insert_isect(isect_cb_s * isect_cb, double ix, double iy, int seg_idx)
     isect_cb->isects = realloc(isect_cb->isects,
 			       isect_cb->max_isects * sizeof(isects_s));
   }
-  isect_cb->isects[isect_cb->nr_isects].x = (int)lrint(ix);
-  isect_cb->isects[isect_cb->nr_isects].y = (int)lrint(iy);
+  isect_cb->isects[isect_cb->nr_isects].x = (int)rint(ix);
+  isect_cb->isects[isect_cb->nr_isects].y = (int)rint(iy);
   isect_cb->isects[isect_cb->nr_isects++].seg_idx = seg_idx;
 }
 
@@ -139,7 +139,7 @@ do_circle_ellipse_intersect(r, X, Y, e, x, y, arc, isect_cb)
       int ix_idx, cy_idx, ey_idx;
       
       for (ix_idx = 0; ix_idx < 2; ix_idx++) {			/* for +/- ix vals... */
-	double rxc, rxe, dt, de;
+	double rxc, rxe, dt;
 	
 	ix = (ix_idx & 1) ? -solr[i] : solr[i];
 	rxc = pow(r, 2.0) - pow(ix - X, 2.0);
@@ -156,8 +156,8 @@ do_circle_ellipse_intersect(r, X, Y, e, x, y, arc, isect_cb)
 		double ttx, tty;
 		int ittx, itty;
 		snap_rotate_vector (&ttx,  &tty,  ix,  cy,  -(double)(e->angle));
-		ittx = ((int)lrint(ttx)) + e->center.x;
-		itty = ((int)lrint(tty)) + e->center.y;
+		ittx = ((int)rint(ttx)) + e->center.x;
+		itty = ((int)rint(tty)) + e->center.y;
 		point_ok = is_point_on_arc(arc, ittx, itty);
 	      }
 	      else point_ok = True;
@@ -190,8 +190,8 @@ do_circle_ellipse_intersect(r, X, Y, e, x, y, arc, isect_cb)
 
   if (True == snap_found) {
     snap_rotate_vector (&hix,  &hiy,  hix,  hiy,  -(double)(e->angle));
-    snap_gx = ((int)lrint(hix)) + e->center.x;
-    snap_gy = ((int)lrint(hiy)) + e->center.y;
+    snap_gx = ((int)rint(hix)) + e->center.x;
+    snap_gy = ((int)rint(hiy)) + e->center.y;
   }
 }
      
@@ -264,8 +264,8 @@ do_circle_circle(PX, PY, X2, Y2, R1, R2, OX, OY, arc, arc2, isect_cb)
 	      if (arc) {
 		int ittx, itty;
 	  
-		ittx = (int)lrint(ix + OX);
-		itty = (int)lrint(iy + OY);
+		ittx = (int)rint(ix + OX);
+		itty = (int)rint(iy + OY);
 		point_ok = is_point_on_arc(arc, ittx, itty);
 
 		if (arc2 && (True == point_ok))
@@ -288,8 +288,8 @@ do_circle_circle(PX, PY, X2, Y2, R1, R2, OX, OY, arc, arc2, isect_cb)
 	}
       }
       
-      snap_gx = (int)lrint(hix + OX);
-      snap_gy = (int)lrint(hiy + OY);
+      snap_gx = (int)rint(hix + OX);
+      snap_gy = (int)rint(hiy + OY);
       snap_found = True;
     }
   }
@@ -299,8 +299,8 @@ do_circle_circle(PX, PY, X2, Y2, R1, R2, OX, OY, arc, arc2, isect_cb)
     double iy = R1 * sin(theta);
     
     if (isect_cb) insert_isect(isect_cb, ix, iy, -1);
-    snap_gx = (int)lrint(ix);
-    snap_gy = (int)lrint(iy);
+    snap_gx = (int)rint(ix);
+    snap_gy = (int)rint(iy);
     snap_found = True;
   }
   else {
@@ -340,13 +340,11 @@ non_ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
   double A, B, C, D;
   double SIN, COS;
   double KV, KW;
-  double E, F, G, H, J, K, L, M, N, P, Q, R, S, T, U, V, W;
-  double  Z0,  Z1,  Z2,  Z3,  Z4, Z5, Z6, Z7, Z8, Z9;
-  double Z10, Z11, Z12, Z13, Z14;
+  double E, F, G, H, K, L, M, N;
   double * poly;
   double * solr;
   double * soli;
-  double ix, iye1, iye2;
+  double ix, iye1;
   double PX = (double)(x - e1->center.x);
   double PY = (double)(y - e1->center.y);
   double a  = (double)(e1->radiuses.x);
@@ -358,7 +356,7 @@ non_ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
   double mind = HUGE_VAL;
   double dist;
   double hix, hiy;
-  int nsol, i, ix_idx, iye1_idx, iye2_idx;
+  int nsol, i, ix_idx, iye1_idx;
   
   snap_rotate_vector (&PX, &PY, PX, PY, (double)(e1->angle));
   snap_rotate_vector (&X,  &Y,  X,  Y,  (double)(e1->angle));
@@ -566,8 +564,8 @@ non_ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
   }
   if (True == snap_found) {
     snap_rotate_vector (&hix, &hiy, hix, hiy, -(double)(e1->angle));
-    snap_gx = (int)lrint(hix) + e1->center.x;
-    snap_gy = (int)lrint(hiy) + e1->center.y;
+    snap_gx = (int)rint(hix) + e1->center.x;
+    snap_gy = (int)rint(hiy) + e1->center.y;
   }
 }
 
@@ -745,8 +743,8 @@ ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
   }
   if (True == snap_found) {
     snap_rotate_vector (&hix, &hiy, hix, hiy, -(double)(e1->angle));
-    snap_gx = (int)lrint(hix) + e1->center.x;
-    snap_gy = (int)lrint(hiy) + e1->center.y;
+    snap_gx = (int)rint(hix) + e1->center.x;
+    snap_gy = (int)rint(hiy) + e1->center.y;
   }
 }
 
@@ -881,29 +879,25 @@ do_intersect_ellipse_polyline(ecx, ecy, ea, eb, theta, l, x, y, arc, isect_cb)
 	      /* due to roundoff errors, the intersection of tangents to ellipses and
 	       * circles may be slightly complex.  this code catches such near misses.
 	       */
-	      double complex ix1c;
-	      double complex iy1c;
-	      double complex ix2c;
-	      double complex iy2c;
+	      double ix1i, iy1i, ix2i, iy2i;
 	      double x1mag, y1mag;
 	      double x2mag, y2mag;
 
-	      iy1c = ((-X) + (sqrt(-rx) *  _Complex_I))/(2.0 * W);
-	      ix1c = (K * iy1c) + L;
+	      iy1 = -X/(2.0 * W);
+	      iy1i = sqrt(-rx)/(2.0 * W);
+	      ix1 = K * iy1 + L;
+	      ix1i = K * iy1i;
 	      
-	      iy2c = ((-X) - (sqrt(-rx) *  _Complex_I))/(2.0 * W);
-	      ix2c = (K * iy2c) + L;
+	      iy2 = -X/(2.0 * W);
+	      iy2i = -sqrt(-rx)/(2.0 * W);
+	      ix2 = K * iy2 + L;
+	      ix2i = K * iy2i;
 
-	      ix1 = creal(ix1c);
-	      iy1 = creal(iy1c);
-	      ix2 = creal(ix2c);
-	      iy2 = creal(iy2c);
+	      x1mag = hypot(ix1, ix1i);
+	      y1mag = hypot(iy1, iy1i);
 
-	      x1mag = hypot(ix1, cimag(ix1c));
-	      y1mag = hypot(iy1, cimag(iy1c));
-
-	      x2mag = hypot(ix2, cimag(ix2c));
-	      y2mag = hypot(iy2, cimag(iy2c));
+	      x2mag = hypot(ix2, ix2i);
+	      y2mag = hypot(iy2, iy2i);
 	      
 	      if ((1.0 > fabs(ix1) - x1mag) &&
 		  (1.0 > fabs(iy1) - y1mag) &&
@@ -934,14 +928,14 @@ do_intersect_ellipse_polyline(ecx, ecy, ea, eb, theta, l, x, y, arc, isect_cb)
 	  if (iset & ISET_P1) {
 	    point_ok = (NULL == arc)
 	      ? True
-	      : is_point_on_arc(arc, (int)lrint(ix1), (int)lrint(iy1));
+	      : is_point_on_arc(arc, (int)rint(ix1), (int)rint(iy1));
 	    if (True == point_ok) {
 	      if (isect_cb) insert_isect(isect_cb, ix1, iy1, seg_idx);
 	      dist = hypot(iy1 - (double)y, ix1 - (double)x);
 	      if (dist < mind) {
 		mind = dist;
-		snap_gx = (int)lrint(ix1);
-		snap_gy = (int)lrint(iy1);
+		snap_gx = (int)rint(ix1);
+		snap_gy = (int)rint(iy1);
 		snap_found = True;
 	      }
 	    }
@@ -950,14 +944,14 @@ do_intersect_ellipse_polyline(ecx, ecy, ea, eb, theta, l, x, y, arc, isect_cb)
 	  if (iset & ISET_P2) {
 	    point_ok = (NULL == arc)
 	      ? True
-	      :	 is_point_on_arc(arc, (int)lrint(ix2), (int)lrint(iy2));
+	      :	 is_point_on_arc(arc, (int)rint(ix2), (int)rint(iy2));
 	    if (True == point_ok) {
 	      if (isect_cb) insert_isect(isect_cb, ix2, iy2, seg_idx);
 	      dist = hypot(iy2 - (double)y, ix2 - (double)x);
 	      if (dist < mind) {
 		mind = dist;
-		snap_gx = (int)lrint(ix2);
-		snap_gy = (int)lrint(iy2);
+		snap_gx = (int)rint(ix2);
+		snap_gy = (int)rint(iy2);
 		snap_found = True;
 	      }
 	    }
@@ -1061,8 +1055,8 @@ build_text_bounding_box(F_text * t)
     tx = (double)points[i].x;
     ty = (double)points[i].y;
     snap_rotate_vector(&tx, &ty, tx, ty, -(double)(t->angle));
-    points[i].x = t->base_x + (int)lrint(tx);
-    points[i].y = t->base_y + (int)lrint(ty);
+    points[i].x = t->base_x + (int)rint(tx);
+    points[i].y = t->base_y + (int)rint(ty);
     points[i].next = (i < 4) ? &points[i+1] : NULL;
   }
   return f_line_p;
@@ -1169,8 +1163,8 @@ intersect_polyline_polyline_handler(F_line * l1, F_line * l2, int x, int y, isec
 	      dist = hypot(iy - (double)y, ix - (double)x);
 	      if (dist < mind) {
 		mind = dist;
-		snap_gx = (int)lrint(ix);
-		snap_gy = (int)lrint(iy);
+		snap_gx = (int)rint(ix);
+		snap_gy = (int)rint(iy);
 	      }
 	    }
 	  }

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -232,7 +232,7 @@ void canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal 
     Window	    rw, cw;
     int		    rx, ry, cx, cy;
     unsigned int    mask;
-    register int    x, y;
+    int    x, y;
 
 
     static char	    compose_buf[2];
@@ -255,8 +255,8 @@ void canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal 
 	x = BACKX(event->x);
 	y = BACKY(event->y);
 
-	/* perform appropriate rounding if necessary */
-	round_coords(x, y);
+	/* perform appropriate rounding if necessary */			// isometric grid
+	round_coords(&x, &y);
 
 	if (x == sx && y == sy)
 	    return;
@@ -272,7 +272,7 @@ void canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal 
 	cy = BACKY(cy);
 
 	/* perform appropriate rounding if necessary */
-	round_coords(cx, cy);
+	round_coords(&cx, &cy);						// isometric grid
 
 #ifdef REPORT_XY_ALWAYS
 	put_msg("x = %.3f, y = %.3f %s",
@@ -358,7 +358,7 @@ void canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal 
 	else {
 	  /* if the point hasn't been snapped... */
 	  /* perform appropriate rounding if necessary */
-	  round_coords(x, y);
+	  round_coords(&x, &y);				// isometric grid
 	}
 
 	/* Convert Alt-Button3 to Button2 */
@@ -558,7 +558,7 @@ void canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal 
 			       }
 			       lbuf[len] = '\0';
 			       if (0 < len) {
-				 if (2 <= len && canvas_kbd_proc == char_handler) {
+				 if (2 <= len && canvas_kbd_proc == (void (*)())char_handler) {
 				   i18n_char_handler(lbuf);
 				 } else {
 				   for (i = 0; i < len; i++) {
@@ -663,7 +663,7 @@ canvas_paste(Widget w, XKeyEvent *paste_event)
 {
 	Time event_time;
 
-	if (canvas_kbd_proc != char_handler)
+	if (canvas_kbd_proc != (void (*)())char_handler)
 		return;
 
 	if (paste_event != NULL)
@@ -710,7 +710,7 @@ get_canvas_clipboard(Widget w, XtPointer client_data, Atom *selection, Atom *typ
 	    if (ret_status == Success || 0 < num_values) {
 	      for (i = 0; i < num_values; i++) {
 		for (c = tmp[i]; *c; c++) {
-		  if (canvas_kbd_proc == char_handler && ' ' <= *c && *(c + 1)) {
+		  if (canvas_kbd_proc == (void (*)())char_handler && ' ' <= *c && *(c + 1)) {
 		    prefix_append_char(*c);
 		  } else {
 		    canvas_kbd_proc((XKeyEvent *) 0, *c, (KeySym) 0);
@@ -937,7 +937,7 @@ void static popdown_mode_panel(void)
   active_mode_panel = None;
 }
 
-void static mode_panel_button_selected(Widget w, char *icon, char *call_data)
+void static mode_panel_button_selected(Widget w, icon_struct *icon, char *call_data)
 {
   change_mode(icon);
   popdown_mode_panel();
@@ -1012,3 +1012,51 @@ static void popup_mode_panel(Widget widget, XButtonEvent *event, String *params,
   XtPopup(panel, XtGrabNone);
   active_mode_panel = panel;
 }
+
+
+/* macro which rounds coordinates depending on point positioning mode */		// isometric grid
+void round_coords( int* x, int* y )
+{
+	double txx;						/* position from nearest whole grid */
+	double xd, yd;						/* new coordinates */
+	double c30 = cos( 30.0 / 180.0 * M_PI );		/* cos( 30 ) */
+	double s = posn_rnd[cur_gridunit][cur_pointposn];	/* whole grid interval */
+	double h = posn_hlf[cur_gridunit][cur_pointposn];	/* half grid interval */
+	
+	/* do all calculations in double */
+	xd = *x;
+	yd = *y;
+	
+	/* make sure the cursor is on grid */
+	if( ( cur_pointposn != P_ANY ) && ( !anypointposn ) ) {
+		if( cur_gridtype == GRID_ISO ) { 
+			/* determine x */
+			xd = ( fabs( txx = fmod( xd, s * c30 ) ) < ( h * c30 ) ) ? 
+				 xd - txx : xd + ( xd >= 0 ? s * c30 : -s * c30 ) - txx; 
+
+			/* determine y depending on x */
+			if( fabs( fmod( xd / ( s * c30 ), 2.0 ) ) > 0.5 ) {
+				yd = ( fabs( txx = fmod( yd + h, s ) ) < h ) ? 
+			 	 	 yd - txx : yd + ( yd >= 0 ? s : -s ) - txx; 
+			} else {
+				yd = ( fabs( txx = fmod( yd, s ) ) < h ) ? 
+			 	 	 yd - txx : yd + ( yd >= 0 ? s : -s ) - txx; 
+		 	}
+		}
+		
+		if( cur_gridtype == GRID_SQUARE ) {
+			/* determine x */
+			xd = ( fabs( txx = fmod( xd, s ) ) < h ) ? 
+				 xd - txx : xd + ( xd >= 0 ? s : -s ) - txx; 
+				 
+			/* determine y */
+			yd = ( fabs( txx = fmod( yd, s ) ) < h ) ? 
+				 yd - txx : yd + ( yd >= 0 ? s : -s ) - txx; 						
+		}
+	}
+	
+	/* store (return) result as integer */
+	*x = xd;
+	*y = yd;
+}
+

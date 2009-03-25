@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 2004 by Chris Moller
  *
@@ -18,7 +18,9 @@
 
 #include <sys/types.h>
 #include <regex.h>
+#ifndef __FreeBSD__
 #include <alloca.h>
+#endif
 #include <string.h>
 #include <math.h>
 
@@ -27,14 +29,20 @@
 #include "resources.h"
 #include "object.h"
 #include "mode.h"
+#include "f_util.h"
 #include "w_canvas.h"
 #include "w_setup.h"
 #include "w_indpanel.h"
 #include "w_util.h"
 #include "w_keyboard.h"
+#include "w_msgpanel.h"
 
 #if defined(__CYGWIN__)
 #define REG_NOERROR REG_OKAY
+#endif
+
+#if defined(__FreeBSD__) && !defined(REG_NOERROR)
+#define REG_NOERROR 0
 #endif
 
 Boolean keyboard_input_available = False;
@@ -282,8 +290,8 @@ handle_keyboard_input(w, event)
 	}
 	pha *= pha_conversion;
 
-	keyboard_x =  origin_x + (int)lrint(pix_per_unit * mag * cos(pha));
-	keyboard_y =  origin_y + (int)lrint(pix_per_unit * mag * sin(pha));
+	keyboard_x =  origin_x + (int)rint(pix_per_unit * mag * cos(pha));
+	keyboard_y =  origin_y + (int)rint(pix_per_unit * mag * sin(pha));
 	keyboard_state = event->state;
 	keyboard_input_available = True;
       }
@@ -350,8 +358,8 @@ handle_keyboard_input(w, event)
 	}
 	else yv = strtod(RECT_Y_F, NULL);
 
-	keyboard_x = (int)lrint(pix_per_unit * xv);
-	keyboard_y = (int)lrint(pix_per_unit * yv);
+	keyboard_x = (int)rint(pix_per_unit * xv);
+	keyboard_y = (int)rint(pix_per_unit * yv);
 	if (False == x_absolute) keyboard_x += origin_x;
 	if (False == y_absolute) keyboard_y += origin_y;
 	keyboard_state = event->state;
@@ -382,9 +390,9 @@ handle_keyboard_input(w, event)
 	  }
 	  else {	/* new entry */
 	    keyboard_history[0].prior = 
+	      keyboard_history_write_pointer =
 	      keyboard_history_write_pointer->next =
 	      keyboard_history_read_pointer =
-	      keyboard_history_write_pointer =
 	      &keyboard_history[keyboard_history_nr_etys];
 	    keyboard_history_write_pointer->next  = &keyboard_history[0];
 	    keyboard_history_write_pointer->prior = &keyboard_history[keyboard_history_nr_etys - 1];
@@ -426,12 +434,8 @@ String  keyboard_translations =
 static void
 create_keyboard_panel()
 {
-  Widget keyboard_form, entry;
+  Widget keyboard_form;
   Widget label, usage_hint;
-  icon_struct *icon;
-  Widget up = None, left = None;
-  int max_wd = 150, wd = 0;
-  int i;
   DeclareArgs(10);
   char * str;
 

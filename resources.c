@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -139,6 +139,7 @@ Widget		canvas_sw, ps_fontmenu,		/* printer font menu tool */
 		msg_panel, name_panel, cmd_form, mode_panel, 
 		d_label, e_label, mousefun,
 		ind_panel, ind_box, upd_ctrl,	/* indicator panel */
+		snap_indicator_panel,		/* snap indicator */
 		unitbox_sw, sideruler_sw, topruler_sw;
 
 Display	       *tool_d;

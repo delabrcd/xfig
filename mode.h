@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -121,8 +121,14 @@ enum 		{ MM_UNIT, FRACT_UNIT, TENTH_UNIT };
 #define		GRID_2			2
 #define		GRID_3			3
 #define		GRID_4			4
+#define		GRID_ISO_1		5			// isometric grid
+#define		GRID_ISO_2		6
+#define		GRID_ISO_3		7
+#define		GRID_ISO_4		8
+#define		GRID_SQUARE		0
+#define		GRID_ISO		1
 
-extern int	cur_gridmode, cur_gridunit, old_gridunit, grid_unit;
+extern int	cur_gridtype, cur_gridmode, cur_gridunit, old_gridunit, grid_unit;		// isometric grid
 extern int	grid_spacing[NUM_GRID_UNITS][GRID_4];
 extern char    *grid_name[NUM_GRID_UNITS][GRID_4+1];
 

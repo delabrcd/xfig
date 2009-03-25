@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -127,7 +127,7 @@ create_picobj(int x, int y)
     /* draw it and anything on top of it */
     redisplay_line(box);
     put_msg("Please enter name of Picture Object file in EDIT window");
-    edit_item((char *) box, O_POLYLINE, 0, 0);
+    edit_item(box, O_POLYLINE, 0, 0);
     picobj_drawing_selected();
     draw_mousefun_canvas();
 }

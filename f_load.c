@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -102,6 +102,8 @@ load_file(char *file, int xoff, int yoff)
 
 	/* update the settings in appres.xxx from the settings struct returned from read_fig */
 	update_settings(&settings);
+	/* reset the grid menus in print/export panels */
+	reset_grid_menus(appres.INCHES);
 
 	/* and draw the figure on the canvas*/
 	redisplay_canvas();
@@ -134,6 +136,7 @@ load_file(char *file, int xoff, int yoff)
 	reset_modifiedflag();
 	return 0;
     }
+
     read_fail_message(file, s);
     reset_modifiedflag();
     reset_cursor();
@@ -142,7 +145,7 @@ load_file(char *file, int xoff, int yoff)
 
 void update_settings(fig_settings *settings)
 {
-	DeclareArgs(4);
+	DeclareArgs(2);
 	char    buf[30];
 
 	/* set landscape flag oppositely and change_orient() will toggle it */
@@ -156,7 +159,7 @@ void update_settings(fig_settings *settings)
 	}
 	/* set the printer and export justification labels */
 	appres.flushleft = settings->flushleft;
-	FirstArg(XtNlabel, just_items[settings->flushleft]);
+	FirstArg(XtNlabel, just_items[(int)settings->flushleft]);
 	if (export_popup)
 	    SetValues(export_just_panel);
 	if (print_popup)
@@ -212,7 +215,7 @@ void update_settings(fig_settings *settings)
 
 	/* multi-page setting */
 	appres.multiple = settings->multiple;
-	FirstArg(XtNlabel, multiple_pages[appres.multiple]);
+	FirstArg(XtNlabel, multiple_pages[(int)appres.multiple]);
 	if (export_popup)
 	    SetValues(export_multiple_panel);
 	if (print_popup)

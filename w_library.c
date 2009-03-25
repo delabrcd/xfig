@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1998 by Stephane Mancini
- * Parts Copyright (c) 1999-2002 by Brian V. Smith
+ * Parts Copyright (c) 1999-2007 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -1020,15 +1020,13 @@ create_library_panel(void)
     XtInstallAccelerators(library_form, cancel);
 }
 
-#ifndef XAW3D1_5E
-#endif /* XAW3D1_5E */
-
 static Widget
 make_library_menu(Widget parent, char *name, struct lib_rec **librec, int num)
 {
     Widget	     menu, entry;
 #ifndef XAW3D1_5E
     Widget	     submenu;
+#else
     char	     submenu_name[200];
 #endif /* XAW3D1_5E */
     char	     menu_name[200];
@@ -1371,7 +1369,7 @@ MakeLibrary(void)
 	return 0;
     } else if (S_ISDIR(st.st_mode)) {
 	/* if it is directory, scan the sub-directories and search libraries */
-	(void) ScanLibraryDirectory(True, &library_rec, path, "", "", &dum, &numlibs);
+	(void) ScanLibraryDirectory(True, library_rec, path, "", "", &dum, &numlibs);
 	return numlibs;
     } else {
 	/* if it is a file, it must contain list of libraries */

@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -52,6 +52,7 @@ Widget	print_mag_text;
 Widget	print_background_panel;
 void	print_update_figure_size(void);
 Boolean	print_all_layers=True;
+Boolean	bound_active_layers=False;
 Widget	print_grid_minor_text, print_grid_major_text;
 Widget	print_grid_minor_menu_button, print_grid_minor_menu;
 Widget	print_grid_major_menu_button, print_grid_major_menu;
@@ -61,7 +62,7 @@ Widget	print_grid_unit_label;
 
 DeclareStaticArgs(15);
 
-static Widget	beside, below;
+static Widget	beside;
 
 #define MAX_PRINTERS 1000		/* for those systems using lprng :-) */
 static char    *printer_names[MAX_PRINTERS];
@@ -88,7 +89,7 @@ static Widget	dismiss, print,
 		printer_text, param_text,
 		clear_batch, print_batch, 
 		num_batch,
-		printalltoggle, printactivetoggle;
+		printalltoggle, printactivetoggle, boundactivetoggle;
 
 static Widget	size_lab;
 
@@ -100,7 +101,7 @@ static String   prn_translations =
         "<Message>WM_PROTOCOLS: DismissPrint()\n";
 static void     print_panel_dismiss(Widget w, XButtonEvent *ev), do_clear_batch(Widget w);
 static void	get_magnif(void);
-static void update_mag(Widget widget, XtPointer *item, XtPointer *event);
+static void update_mag(Widget widget, XtPointer item, XtPointer event);
 void		do_print(Widget w), do_print_batch(Widget w);
 static XtCallbackProc switch_print_layers(Widget w, XtPointer closure, XtPointer call_data);
 
@@ -192,7 +193,7 @@ do_print(Widget w)
 	    /* make a #rrggbb string from the background color */
 	    make_rgb_string(export_background_color, backgrnd);
 	    print_to_printer(printer_val, backgrnd, appres.magnification,
-				print_all_layers, grid, cmd);
+				print_all_layers, bound_active_layers, grid, cmd);
 	}
 }
 
@@ -263,7 +264,7 @@ get_magnif(void)
 /* as the user types in a magnification, update the figure size */
 
 static void
-update_mag(Widget widget, XtPointer *item, XtPointer *event)
+update_mag(Widget widget, XtPointer item, XtPointer event)
 {
     char	   *buf;
 
@@ -326,7 +327,7 @@ do_print_batch(Widget w)
 	get_grid_spec(grid, print_grid_minor_text, print_grid_major_text);
 
 	print_to_file(tmp_exp_file, "ps", appres.magnification, 0, 0, backgrnd,
-				NULL, False, print_all_layers, 0, False, grid, appres.overlap);
+				NULL, False, print_all_layers, bound_active_layers, 0, False, grid, appres.overlap);
 	put_msg("Appending to batch file \"%s\" (%s mode) ... done",
 		    batch_file, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
 	app_flush();		/* make sure message gets displayed */
@@ -553,7 +554,7 @@ print_update_figure_size(void)
 	    return;
 	mult = appres.INCHES? PIX_PER_INCH : PIX_PER_CM;
 	unit = appres.INCHES? "in": "cm";
-	compound_bound(&objects, &lx, &ly, &ux, &uy);
+	active_compound_bound(&objects, &lx, &ly, &ux, &uy, bound_active_layers && !print_all_layers);
 	sprintf(buf, "Fig Size: %.1f%s x %.1f%s",
 		(float)(ux-lx)/mult*appres.magnification/100.0,unit,
 		(float)(uy-ly)/mult*appres.magnification/100.0,unit);
@@ -610,7 +611,7 @@ void create_print_panel(Widget w)
 	Pixmap	    p;
 	unsigned    long fg, bg;
 	char	   *printer_val;
-	char	    buf[50];
+	char	    buf[100];
 	char	   *unit;
 	int	    ux,uy,lx,ly;
 	int	    i,len,maxl;
@@ -917,7 +918,7 @@ void create_print_panel(Widget w)
 	 * printer in a resource, e.g.:	 *printer*string: at6
 	 */
 
-	FirstArg(XtNwidth, 100);
+	FirstArg(XtNwidth, 200);
 	NextArg(XtNleftMargin, 4);
 	NextArg(XtNfromVert, below);
 	NextArg(XtNfromHoriz, beside);
@@ -941,6 +942,17 @@ void create_print_panel(Widget w)
 	   var and put it into the widget */
 	if (emptyname(printer_val)) {
 		printer_val=getenv("PRINTER");
+		if (strchr(printer_val,'\\')) {
+		    buf[0]='\0';
+		    len=0;
+		    for (i=0; i<strlen(printer_val); i++) {
+		    	buf[len++] = printer_val[i];
+		    	if (printer_val[i]=='\\')
+			    buf[len++]='\\';
+		    }
+		    buf[len++]='\0';
+		    printer_val = buf;
+		}
 		if (printer_val == NULL) {
 			printer_val = "";
 		} else {
@@ -993,7 +1005,7 @@ void create_print_panel(Widget w)
 	 * job parameters in a resource, e.g.:	 *param*string: -K2
 	 */
 
-	FirstArg(XtNwidth, 100);
+	FirstArg(XtNwidth, 200);
 	NextArg(XtNfromVert, printer_text);
 	NextArg(XtNfromHoriz, beside);
 	NextArg(XtNeditType, XawtextEdit);
@@ -1163,9 +1175,33 @@ switch_print_layers(Widget w, XtPointer closure, XtPointer call_data)
 
     /* set global state */
     print_all_layers = state;
+    update_figure_size();
 
     return;
 }
+
+/* when user toggles between printing all or only active layers */
+
+static XtCallbackProc
+switch_bound(Widget w, XtPointer closure, XtPointer call_data)
+{
+    Boolean	    state;
+
+    /* check state of the toggle and set/remove checkmark */
+    FirstArg(XtNstate, &state);
+    GetValues(w);
+    
+    if (state ) {
+	FirstArg(XtNbitmap, sm_check_pm);
+    } else {
+	FirstArg(XtNbitmap, sm_null_check_pm);
+    }
+    SetValues(w);
+    /* set global */
+    bound_active_layers = state;
+    update_figure_size();
+}
+
 
 /* if the users's sytem doesn't have an /etc/printcap file, this will return 0 */
 
@@ -1332,5 +1368,33 @@ make_layer_choice(char *label_all, char *label_active, Widget parent, Widget bel
 	below = XtCreateManagedWidget("print_active_layers", labelWidgetClass,
 				form, Args, ArgCount);
 
+	/* now make checkbox to compute bounding box for whole figure or only exported part */
+
+	FirstArg(XtNbitmap, (bound_active_layers? sm_check_pm : sm_null_check_pm));
+	NextArg(XtNfromVert, printalltoggle);
+	NextArg(XtNfromHoriz, below);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	NextArg(XtNinternalWidth, 1);
+	NextArg(XtNinternalHeight, 1);
+	NextArg(XtNlabel, "  ");
+	NextArg(XtNstate, bound_active_layers);	/* initial state */
+	boundactivetoggle = XtCreateManagedWidget("boundactivetoggle", toggleWidgetClass,
+				form, Args, ArgCount);
+	XtAddCallback(boundactivetoggle, XtNcallback, (XtCallbackProc) switch_bound,
+					(XtPointer) NULL);
+
+	FirstArg(XtNlabel, "Boundary only active layers");
+	NextArg(XtNborderWidth, 0);
+	NextArg(XtNfromVert, printalltoggle);
+	NextArg(XtNfromHoriz, boundactivetoggle);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);	/* make it stay on left side */
+	NextArg(XtNright, XtChainLeft);
+	below = XtCreateManagedWidget("bound_active_layers", labelWidgetClass,
+				form, Args, ArgCount);
 	return form;
 }

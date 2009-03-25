@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -573,7 +573,7 @@ unit_panel_set(Widget w, XButtonEvent *ev)
     export_update_figure_size();
     print_update_figure_size();
     /* finally, reset any grid specs in export or print panels to make consistent */
-    reset_grid_menus();
+    reset_grid_menus(appres.INCHES);
 
     unit_panel_dismiss();
 }
@@ -1166,7 +1166,7 @@ void reset_topruler(void)
     register int    i,k;
     register tick_info* tk;
     register Pixmap p = topruler_pm;
-    char	    number[6];
+    char	    number[20];
     int		    X0,len;
     int		    tickmod, tickskip;
 
@@ -1425,7 +1425,7 @@ void reset_sideruler(void)
     register int    i,k;
     register tick_info* tk;
     register Pixmap p = sideruler_pm;
-    char	    number[6],len;
+    char	    number[20],len;
     int		    Y0;
     int		    tickmod, tickskip;
 

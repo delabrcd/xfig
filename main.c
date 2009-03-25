@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -196,6 +196,8 @@ static XtResource application_resources[] = {
       XtOffset(appresPtr, tgrid_unit), XtRImmediate, (caddr_t) "default"},
     {"startgridmode", "StartGridMode",   XtRInt, sizeof(int),
       XtOffset(appresPtr, startgridmode), XtRImmediate, (caddr_t) 0},
+    {"startgridtype", "StartGridType",   XtRInt, sizeof(int),			// isometric grid
+      XtOffset(appresPtr, startgridtype), XtRImmediate, (caddr_t) 0},
     {"startposnmode", "StartPosnMode",   XtRInt, sizeof(int),
       XtOffset(appresPtr, startposnmode), XtRImmediate, (caddr_t) 1 },
     {"latexfonts", "Latexfonts",   XtRBoolean, sizeof(Boolean),
@@ -267,7 +269,7 @@ static XtResource application_resources[] = {
     {"pageborder", "Color",   XtRString, sizeof(char *),
       XtOffset(appresPtr, pageborder), XtRString, (caddr_t) "lightblue"},
     {"browser", "Browser", XtRString, sizeof(char *),
-      XtOffset(appresPtr, browser), XtRString, (caddr_t) "netscape"},
+      XtOffset(appresPtr, browser), XtRString, (caddr_t) "firefox"},
     {"pdfviewer", "Viewer", XtRString, sizeof(char *),
       XtOffset(appresPtr, pdf_viewer), XtRString, (caddr_t) "acroread"},
     {"spinner_delay", "spinnerDelay",   XtRInt, sizeof(int),
@@ -442,6 +444,7 @@ XrmOptionDescRec options[] =
     {"-startFontSize", ".startfontsize", XrmoptionSepArg, 0},
     {"-startfontsize", ".startfontsize", XrmoptionSepArg, 0},
     {"-startgridmode", ".startgridmode",  XrmoptionSepArg, 0},
+    {"-startgridtype", ".startgridtype",  XrmoptionSepArg, 0},			// isometric grid
     {"-startlatexFont", ".startlatexFont", XrmoptionSepArg, 0},
     {"-startlinewidth", ".startlinewidth", XrmoptionSepArg, 0},
     {"-startposnmode", ".startposnmode",  XrmoptionSepArg, 0},
@@ -546,6 +549,7 @@ char *help_list[] = {
 	"[-startfillstyle <style>] ",
 	"[-startfontsize <size>] ",
 	"[-startgridmode <number>] ",
+	"[-startgridtype <number>] ",			// isometric grid
 	"[-startlatexFont <font>] ",
 	"[-startlinewidth <width>] ",
 	"[-startposnmode <number>] ",
@@ -1515,7 +1519,7 @@ notablet:
 	    if (XK_F1 <= key && key <= XK_F35) {
 	      XtDispatchEvent(&event);
 	    } else {
-	      canvas_selected(canvas_sw, &event, NULL, NULL);
+	      canvas_selected(canvas_sw, (XButtonEvent *)&event, NULL, NULL);
 	    }
 	  } else {
 	    XtDispatchEvent(&event);

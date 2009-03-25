@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -22,8 +22,6 @@
 #include "w_indpanel.h"
 #include "w_setup.h"
 #include "w_util.h"
-
-#define	NUM_DRAW_SW 17 /* kludge - shouldn't have to edit this by hand */
 
 int		TOOL_WD, TOOL_HT;
 int		CMDFORM_WD, CMDFORM_HT = CMD_BUT_HT;
@@ -94,8 +92,7 @@ void setup_sizes(int new_canv_wd, int new_canv_ht)
 
     /* space for both modepanel titles (Drawing modes and Editing modes) */
     MODEPANEL_SPACE = 1 + CANVAS_HT + RULER_WD - 
-	(MODE_SW_HT + INTERNAL_BW) * (ceil((double)NUM_DRAW_SW/SW_PER_ROW) +
-			ceil((double)(NUM_MODE_SW-NUM_DRAW_SW)/SW_PER_ROW));
+	(MODE_SW_HT + INTERNAL_BW) * (ceil((double)NUM_MODE_SW/SW_PER_ROW) + 1);
     if (MODEPANEL_SPACE < 2)
 	MODEPANEL_SPACE = 2;
 }

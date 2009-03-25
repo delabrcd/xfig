@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2002 by Brian V. Smith
+ * Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -208,7 +208,7 @@ void file_getxyoff(int *ixoff, int *iyoff)
     *iyoff = round(yoff*offset_unit_conv[yoff_unit_setting]);
 }
 
-void
+static void
 merge_request(Widget w, XButtonEvent *ev)
 {
     if (preview_in_progress) {
@@ -291,7 +291,7 @@ load_request(Widget w, XButtonEvent *ev)
     }
 }
 
-void
+static void
 do_load(Widget w, XButtonEvent *ev)
 {
     char	    fname[PATH_MAX];

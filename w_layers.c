@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -366,11 +366,13 @@ init_depth_panel(Widget parent)
 void
 setup_depth_panel(void)
 {
-    Dimension	 ind_ht;
-    /* get height of indicator panel */
+    Dimension	 ind_ht, snap_ht=0;
+    /* get height of indicator and snap panels */
     FirstArg(XtNheight, &ind_ht);
     GetValues(ind_panel);
-    LAYER_HT = MOUSEFUN_HT + TOPRULER_HT + CANVAS_HT + ind_ht + INTERNAL_BW*4;
+    FirstArg(XtNheight, &snap_ht);
+    GetValues(snap_indicator_panel);
+    LAYER_HT = MOUSEFUN_HT + TOPRULER_HT + CANVAS_HT + ind_ht - snap_ht + INTERNAL_BW*4;
 
     /* now that the bitmaps have been created, put the checkmark in the proper toggle */
     FirstArg(XtNbitmap, (gray_layers? sm_check_pm : sm_null_check_pm));

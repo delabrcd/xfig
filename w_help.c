@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2002 by Brian V. Smith
+ * Copyright (c) 1989-2007 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -164,7 +164,7 @@ launch_about(Widget w, XtPointer closure, XtPointer call_data)
 	/* make up some information */
 	strcpy(info,xfig_version);
 	strcat(info,"\n  Copyright \251 1985-1988 by Supoj Sutanthavibul");
-	strcat(info,"\n  Parts Copyright \251 1989-2002 by Brian V. Smith (BVSmith@lbl.gov)");
+	strcat(info,"\n  Parts Copyright \251 1989-2007 by Brian V. Smith (BVSmith@lbl.gov)");
 	strcat(info,"\n  Parts Copyright \251 1991 by Paul King");
 	strcat(info,"\n  See source files and man pages for other copyrights");
 

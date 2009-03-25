@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2002 by Brian V. Smith
+ * Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -236,16 +236,15 @@ menu_def snap_menu_items[] = {
   {"Midpoint",	0, snap_midpoint},	/* snap to segment or other midpoints				*/
   {"Nearest",	0, snap_nearest},	/* snap to nearest object					*/
   {"Focus",	0, snap_focus},		/* snap to ellipse focus or circle centerpoint			*/
-  {"Diameter",	0, snap_diameter},	/* snap to ellipse or circle opposite diameter			*/
   {"-",		0, NULL},		/* make a dividing line						*/
                                 /* selections that only work as a polyline vertex (other stuff?)	*/
   {"Normal",	0, snap_normal},	/* snap to point that results in a seg normal to snapped-to obj	*/
   {"Tangent",	0, snap_tangent},	/* snap to point that results in a seg tangent to obj		*/
   {"Intersection", 0, snap_intersect},	/* snap to intersection of picked objs				*/
+  {"Diameter",	0, snap_diameter},	/* snap to ellipse or circle opposite diameter			*/
   {"-",		0, NULL},		/* make a dividing line						*/
   {NULL, 0, NULL},
 };
-
 
 /* command panel of menus */
 
@@ -376,8 +375,8 @@ rebuild_file_menu(Widget menu)
 	for (j = 0; j < MAX_RECENT_FILES; j++) {
 	    sprintf(id, "%1d", j + 1);
 	    FirstArg(XtNvertSpace, 10);
-	    NextArg(XtNunderline, 0); /* underline # digit */
 #ifndef XAW3D1_5E
+	    NextArg(XtNunderline, 0); /* underline # digit */
 	    entry = XtCreateWidget(id, figSmeBSBObjectClass, menu, Args, ArgCount);
 #else
 	    entry = XtCreateWidget(id, smeBSBObjectClass, menu, Args, ArgCount);
@@ -433,8 +432,8 @@ create_menu_item(main_menu_info *menup)
 		if (menup->menu[i].checkmark) {
 		    NextArg(XtNleftMargin, 12);
 		}
-		NextArg(XtNunderline, menup->menu[i].u_line); /* any underline */
 #ifndef XAW3D1_5E
+		NextArg(XtNunderline, menup->menu[i].u_line); /* any underline */
 		entry = XtCreateManagedWidget(menup->menu[i].name, figSmeBSBObjectClass, 
 					menu, Args, ArgCount);
 #else
@@ -1371,8 +1370,7 @@ filename_unballoon(Widget widget, XtPointer closure, XEvent *event, Boolean *con
 
 void update_cur_filename(char *newname)
 {
-	strcpy(cur_filename,newname);
-
+        strcpy(cur_filename,newname);
 	/* store the new filename in the name_panel widget */
 	FirstArg(XtNlabel, newname);
 	SetValues(name_panel);
@@ -1614,12 +1612,12 @@ popup_character_map(void)
 static void
 paste_char(Widget w, XtPointer client_data, XtPointer call_data)
 {
-    unsigned char *chr = (unsigned char *) client_data;
+    unsigned char chr = (unsigned char) client_data;
 
     /* only allow during text input */
-    if (canvas_kbd_proc != char_handler)
+    if (canvas_kbd_proc != (void (*)())char_handler)
 	return;
-    char_handler((XKeyEvent *) 0, *chr, (KeySym) 0);
+    char_handler((XKeyEvent *) 0, chr, (KeySym) 0);
 }
 
 /* add or remove a checkmark to a menu entry to show that it

@@ -1,6 +1,6 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2002 by Brian V. Smith
+ * Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -365,7 +365,7 @@ do_export(Widget w)
 	if (print_to_file(fval, lang_items[cur_exp_lang],
 			      appres.magnification, xoff, yoff, backgrnd,
 			      (transp == TRANSP_NONE? NULL: transparent),
-			      use_transp_backg, print_all_layers,
+			      use_transp_backg, print_all_layers, bound_active_layers,
 			      border, appres.smooth_factor, grid, appres.overlap) == 0) {
 		FirstArg(XtNlabel, fval);
 		SetValues(dfile_text);		/* set the default filename */
@@ -782,7 +782,7 @@ export_update_figure_size(void)
 
 	if (!export_popup)
 	    return;
-	compound_bound(&objects, &lx, &ly, &ux, &uy);
+	active_compound_bound(&objects, &lx, &ly, &ux, &uy, bound_active_layers && !print_all_layers);
 	mult = appres.INCHES? PIX_PER_INCH : PIX_PER_CM;
 	unit = appres.INCHES? "in": "cm";
 	sprintf(buf, "Figure size: %.1f%s x %.1f%s",
@@ -1115,7 +1115,7 @@ void create_export_panel(Widget w)
 	sprintf(buf, "%.1f", appres.magnification);
 	/* we want to track typing here to update figure size label */
 	mag_spinner = MakeFloatSpinnerEntry(export_panel, &export_mag_text, "magnification",
-			(Widget) NULL, mag_lab, update_mag, buf, 0.0, 10000.0, 1.0, 45);
+			(Widget) NULL, mag_lab, (XtCallbackProc)update_mag, buf, 0.0, 10000.0, 1.0, 45);
 	FirstArg(XtNfromVert, lang_panel);
 	NextArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainTop);

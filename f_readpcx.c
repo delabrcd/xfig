@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Based on (public domain) code from Russell Marks
- * Parts Copyright (c) 2000-2002 by Brian V. Smith
+ * Parts Copyright (c) 2000-2007 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,

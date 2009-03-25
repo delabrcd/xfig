@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -20,9 +20,9 @@
 
 Boolean		in_text_bound(F_text *t, int x, int y, int *posn, Boolean extra);
 
-void		init_searchproc_left(int (*handlerproc) (/* ??? */));
-void		init_searchproc_middle(int (*handlerproc) (/* ??? */));
-void		init_searchproc_right(int (*handlerproc) (/* ??? */));
+void		init_searchproc_left(void (*handlerproc) (/* ??? */));
+void		init_searchproc_middle(void (*handlerproc) (/* ??? */));
+void		init_searchproc_right(void (*handlerproc) (/* ??? */));
 
 void		point_search_left(int x, int y, unsigned int shift);
 void		point_search_middle(int x, int y, unsigned int shift);

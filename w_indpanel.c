@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -56,7 +56,7 @@ Widget	choice_popup;
 void	show_depth(ind_sw_info *sw), show_zoom(ind_sw_info *sw);
 void	show_fillstyle(ind_sw_info *sw);
 void	fontpane_popup(int *psfont_adr, int *latexfont_adr, int *psflag_adr, void (*showfont_fn) (/* ??? */), Widget show_widget);
-void	make_pulldown_menu_images(choice_info *entries, Cardinal nent, Pixmap **images, char **texts, Widget parent, XtCallbackProc callback);
+void	make_pulldown_menu_images(choice_info *entries, Cardinal nent, Pixmap *images, char **texts, Widget parent, XtCallbackProc callback);
 void	tog_selective_update(long unsigned int mask);
 unsigned long cur_indmask;	/* mask showing which indicator buttons are mapped */
 void	inc_zoom(ind_sw_info *sw), dec_zoom(ind_sw_info *sw), fit_zoom(ind_sw_info *sw);
@@ -224,6 +224,10 @@ static choice_info gridmode_choices[] = {
     {GRID_2, &grid2_ic,},
     {GRID_3, &grid3_ic,},
     {GRID_4, &grid4_ic,},
+    {GRID_ISO_1, &grid_iso1_ic,},			// isometric grid
+    {GRID_ISO_2, &grid_iso2_ic,},
+    {GRID_ISO_3, &grid_iso3_ic,},
+    {GRID_ISO_4, &grid_iso4_ic,},
 };
 #define NUM_GRIDMODE_CHOICES (sizeof(gridmode_choices)/sizeof(choice_info))
 
@@ -375,9 +379,9 @@ ind_sw_info	*fill_style_sw;
 ind_sw_info	ind_switches[] = {
     {I_FVAL, 0, "Zoom", "", NARROW_IND_SW_WD,		/* always show zoom button */
 	NULL, &display_zoomscale, inc_zoom, dec_zoom, show_zoom, MIN_ZOOM, MAX_ZOOM, 1.0},
-    {I_CHOICE, 0, "Grid", "Mode", DEF_IND_SW_WD,	/* and grid button */
+    {I_CHOICE, 0, "Grid", "Mode", DEF_IND_SW_WD,	/* and grid button */			// isometric grid
 	&cur_gridmode, NULL, inc_choice, dec_choice, show_gridmode, 0, 0, 0.0,
-	gridmode_choices, NUM_GRIDMODE_CHOICES, NUM_GRIDMODE_CHOICES},
+	gridmode_choices, NUM_GRIDMODE_CHOICES, (NUM_GRIDMODE_CHOICES+1)/2},
     {I_CHOICE, I_POINTPOSN, "Point", "Posn", DEF_IND_SW_WD,
 	&cur_pointposn, NULL, inc_choice, dec_choice, show_pointposn, 0, 0, 0.0,
 	pointposn_choices, NUM_POINTPOSN_CHOICES, NUM_POINTPOSN_CHOICES},
@@ -3686,22 +3690,28 @@ show_halign(ind_sw_info *sw)
     }
 }
 
-/* GRID MODE	 */
+/* GRID MODE	 */		// isometric grid
 
 static void
-show_gridmode(ind_sw_info *sw)
+show_gridmode(sw)
+    ind_sw_info	   *sw;
 {
-    static int	    prev_gridmode = -1;
-
     update_choice_pixmap(sw, cur_gridmode);
+    
+    /* check the new mode */
     if (cur_gridmode == GRID_0) {
-	put_msg("No grid");
+		put_msg("No grid");
+    } else if( cur_gridmode <= GRID_4 ) {
+	    cur_gridtype = GRID_SQUARE;
+		put_msg( "%s grid", grid_name[cur_gridunit][cur_gridmode] );
     } else {
-	put_msg("%s %s", grid_name[cur_gridunit][cur_gridmode]," grid");
+	 	/*cur_gridmode = cur_gridmode - GRID_4;*/
+	 	cur_gridtype = GRID_ISO;
+	 	put_msg( "%s isometric grid", grid_name[cur_gridunit][cur_gridmode - GRID_4] );
     }
-    if (cur_gridmode != prev_gridmode)
-	setup_grid();
-    prev_gridmode = cur_gridmode;
+    
+    /* display new grid */
+    setup_grid();
 }
 
 /* POINT POSITION	 */
@@ -4776,7 +4786,7 @@ zoom_to_fit(Widget w, XtPointer closure, XtPointer call_data)
  */
 
 void
-make_pulldown_menu_images(choice_info *entries, Cardinal nent, Pixmap **images, char **texts, Widget parent, XtCallbackProc callback)
+make_pulldown_menu_images(choice_info *entries, Cardinal nent, Pixmap *images, char **texts, Widget parent, XtCallbackProc callback)
 {
     Widget	    pulldown_menu, entry;
     char	    buf[64];

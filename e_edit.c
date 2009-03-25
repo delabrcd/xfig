@@ -3,7 +3,7 @@
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
  * Change function implemented by Frank Schmuck (schmuck@svax.cs.cornell.edu)
  * X version by Jon Tombs <jon@uk.ac.oxford.robots>
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
@@ -603,7 +603,7 @@ void get_generic_arrows(F_line *x)
 	}
 }
 
-void	edit_item(F_line *p, int type, int x, int y);
+void	edit_item(void *p, int type, int x, int y);
 void	edit_spline_point(F_spline *spline, int type, int x, int y, F_point *previous_point, F_point *the_point);
 void	edit_figure_comments(int x, int y, unsigned int shift);
 
@@ -738,7 +738,7 @@ popdown_comments(void)
 	XtDestroyWidget(comment_popup);
 }
 
-void edit_item(F_line *p, int type, int x, int y)
+void edit_item(void *p, int type, int x, int y)
 {
     XtWidgetGeometry xtgeom,comp;
     int		    llx, lly, urx, ury, dum;
@@ -3963,7 +3963,7 @@ void		f_menu_popup(void);
 
 static XtCallbackRec f_sel_callback[] =
 {
-    {f_menu_popup, NULL},
+    {(XtCallbackProc)f_menu_popup, NULL},
     {NULL, NULL},
 };
 

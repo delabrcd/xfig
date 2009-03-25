@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -31,6 +31,7 @@ extern void	popup_print_panel(Widget w);
 extern void	do_print(Widget w);
 extern void	do_print_batch(Widget w);
 extern Boolean	print_all_layers;
+extern Boolean	bound_active_layers;
 
 extern Widget	print_grid_minor_text, print_grid_major_text;
 extern Widget	print_grid_minor_menu_button, print_grid_minor_menu;

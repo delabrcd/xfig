@@ -1,7 +1,7 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2002 by Brian V. Smith
+ * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -33,7 +33,7 @@ int		latexline_mode = 0;
 int		latexarrow_mode = 0;
 int		autoforwardarrow_mode = 0;
 int		autobackwardarrow_mode = 0;
-int		cur_gridmode, cur_gridunit, old_gridunit, grid_unit;
+int		cur_gridtype, cur_gridmode, cur_gridunit, old_gridunit, grid_unit;		// isometric grid
 int		cur_pointposn;
 int		posn_rnd[NUM_GRID_UNITS][P_GRID4 + 1] = {
 		   { 0, PPCM/10, PPCM/5, PPCM/2, PPCM, PPCM*2},	/*   mm  mode */
