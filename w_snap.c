@@ -27,7 +27,10 @@
 #include "w_setup.h"
 #include "w_indpanel.h"
 #include "w_util.h"
+#include "w_msgpanel.h"
 #include "u_quartic.h"
+#include "u_search.h"
+#include "f_util.h"
 #include <math.h>
 #ifndef __FreeBSD__
 #include <alloca.h>

@@ -92,9 +92,16 @@ void print_to_printer(char *printer, char *backgrnd, float mag, Boolean print_al
     char	    syspr[2*PATH_MAX+200];
     char	    tmpfile[PATH_MAX];
     char	   *name;
+    int     fd;
 
-    sprintf(tmpfile, "%s/%s%06d", TMPDIR, "xfig-print", getpid());
+    snprintf(tmpfile, sizeof(tmpfile), "%s/xfig-print.XXXXXX", TMPDIR);
     warnexist = False;
+    if ((fd = mkstemp(tmpfile)) == -1) {
+       file_msg("Can't open temp file %s: %s\n", tmpfile, strerror(errno));
+       return;
+    }
+    close(fd);
+
     init_write_tmpfile();
     if (write_file(tmpfile, False)) {
       end_write_tmpfile();
@@ -671,10 +678,16 @@ exec_prcmd(char *command, char *msg)
     char   errfname[PATH_MAX];
     FILE  *errfile;
     char   str[400];
-    int	   status;
+    int	   status, fd;
 
     /* make temp filename for any errors */
-    sprintf(errfname, "%s/xfig-export%06d.err", TMPDIR, getpid());
+    snprintf(errfname, sizeof(errfname), "%s/xfig-export.XXXXXX", TMPDIR);
+    if ((fd = mkstemp(errfname)) == -1) {
+	file_msg("Can't open temp file %s: %s\n", errfname, strerror(errno));
+	return 1;
+    }
+    close(fd);
+    
     /* direct any output from fig2dev to this file */
     strcat(command, " 2> "); 
     strcat(command, errfname); 

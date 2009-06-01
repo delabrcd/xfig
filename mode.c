@@ -86,7 +86,7 @@ int		min_num_points;
 
 int		cur_exp_lang;		/* gets initialized in main.c */
 Boolean		batch_exists = False;
-char		batch_file[32];
+char		batch_file[PATH_MAX];
 
 /*******************************************************************/
 /* If you change the order of the lang_items[] you must change the */

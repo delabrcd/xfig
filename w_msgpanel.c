@@ -90,6 +90,8 @@ init_msg(Widget tool)
     NextArg(XtNfromVert, cmd_form);
     NextArg(XtNvertDistance, -INTERNAL_BW);
     NextArg(XtNborderWidth, INTERNAL_BW);
+    NextArg(XtNtopMargin, 1);
+    NextArg(XtNbottomMargin, 1);
     NextArg(XtNdisplayCaret, False);
     NextArg(XtNtop, XtChainTop);
     NextArg(XtNbottom, XtChainTop);

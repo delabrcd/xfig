@@ -76,7 +76,7 @@ read_gif(FILE *file, int filetype, F_pic *pic)
 	char		buf[BUFLEN],pcxname[PATH_MAX];
 	FILE		*giftopcx;
 	struct Cmap 	localColorMap[MAX_COLORMAP_SIZE];
-	int		i, stat, size;
+	int		i, stat, size, fd;
 	int		useGlobalColormap;
 	unsigned int	bitPixel, red, green, blue;
 	unsigned char	c;
@@ -173,7 +173,13 @@ read_gif(FILE *file, int filetype, F_pic *pic)
 	/* now call giftopnm and ppmtopcx */
 
 	/* make name for temp output file */
-	sprintf(pcxname, "%s/%s%06d.pix", TMPDIR, "xfig-pcx", getpid());
+	snprintf(pcxname, sizeof(pcxname), "%s/xfig-pcx.XXXXXX", TMPDIR);
+	if ((fd = mkstemp(pcxname)) == -1) {
+		file_msg("Cannot create temporary file\n");
+		return FileInvalid;
+	}
+	close(fd);
+
 	/* make command to convert gif to pcx into temp file */
 	sprintf(buf, "giftopnm -quiet | ppmtopcx -quiet > %s", pcxname);
 	if ((giftopcx = popen(buf,"w" )) == 0) {

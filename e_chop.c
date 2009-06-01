@@ -22,6 +22,7 @@
 #ifndef __FreeBSD__
 #include <alloca.h>
 #endif
+#include <math.h>
 #include "fig.h"
 #include "resources.h"
 #include "mode.h"
@@ -31,6 +32,9 @@
 #include "u_list.h"
 #include "u_search.h"
 #include "u_undo.h"
+#include "u_markers.h"
+#include "u_geom.h"
+#include "u_redraw.h"
 #include "w_canvas.h"
 #include "w_drawprim.h"
 #include "w_mousefun.h"
@@ -39,6 +43,8 @@
 #include "w_zoom.h"
 #include "w_snap.h"
 #include "w_intersect.h"
+#include "w_cursor.h"
+#include "f_util.h"
 
 static void select_axe_object();
 static void select_log_object();

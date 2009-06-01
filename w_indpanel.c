@@ -3319,10 +3319,10 @@ show_dimline(ind_sw_info *sw)
 	    sprintf(indbuf, "R arrow typ=%d", cur_dimline_rightarrow);
 	    break;
 	case 4:
-	    sprintf(indbuf, "Arrow len=%d", cur_dimline_arrowlength);
+	    sprintf(indbuf, "Arrow len=%.2f", cur_dimline_arrowlength);
 	    break;
 	case 5:
-	    sprintf(indbuf, "Arrow wid=%d", cur_dimline_arrowwidth);
+	    sprintf(indbuf, "Arrow wid=%.2f", cur_dimline_arrowwidth);
 	    break;
 	case 6:
 	    sprintf(indbuf, "Ticks: %s", cur_dimline_ticks? "yes": "no");

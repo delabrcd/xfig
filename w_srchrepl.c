@@ -788,7 +788,7 @@ spell_check(void)
   char	 *cmd;
   char	  str[300];
   FILE	 *fp;
-  int	  len, i;
+  int	  len, i, fd;
   Boolean done = FALSE;
   static int lines = 0;
 
@@ -804,9 +804,12 @@ spell_check(void)
   }
   lines = 0;
 
-  sprintf(filename, "%s/xfig-spell.%d", TMPDIR, (int)getpid());
-  fp = fopen(filename, "w");
-  if (fp == NULL) {
+  snprintf(filename, sizeof(filename), "%s/xfig-spell.XXXXXX", TMPDIR);
+  if ((fd = mkstemp(filename)) == -1 || (fp = fdopen(fd, "w")) == NULL) {
+    if (fd != -1) {
+	unlink(filename);
+	close(fd);
+    }
     file_msg("Can't open temporary file: %s: %s\n", filename, strerror(errno));
   } else {
     /* locate all text objects and write them to file fp */

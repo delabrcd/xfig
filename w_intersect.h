@@ -59,4 +59,6 @@ extern void snap_intersect_handler(void * obj1, int type1, void * obj2, int type
 
 extern F_line * build_text_bounding_box(F_text * t);
 
+extern void delete_text_bounding_box(F_line * l);
+
 #endif

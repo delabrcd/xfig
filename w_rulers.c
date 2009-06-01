@@ -1149,7 +1149,7 @@ get_skip_prec(void)
 		/* look for values for current zoom */
 		if ((display_zoomscale/appres.userscale <= rs->max_zoom) ||
 			(rs->max_zoom == 0.0)) {
-		    skip = rs->skipt/appres.userscale;
+		    skip = rs->skipt > appres.userscale ? rs->skipt/appres.userscale : 1;
 		    skipx = skip * rs->skipx;
 		    sprintf(precstr, "%%.%df", rs->prec);
 		    break;
@@ -1183,7 +1183,7 @@ void reset_topruler(void)
 	tickmod = 1;
 
     /* see how big a label is to adjust spacing, if necessary */
-    sprintf(number, "%d%s", (X0+(int)((TOPRULER_WD/zoomscale)))/tickmod, cur_fig_units);
+    snprintf(number, sizeof(number), "%d%s", (X0+(int)((TOPRULER_WD/zoomscale)))/tickmod, cur_fig_units);
     len = XTextWidth(roman_font, number, strlen(number));
     while (skipx < (len + 5)/zoomscale) {
 	skip *= 2;
@@ -1197,11 +1197,11 @@ void reset_topruler(void)
       /* string */
       if (i % skipx == 0) {
         if ((i/10) % tickmod == 0)
-          sprintf(number, "%d%s", i/tickmod, cur_fig_units);
+          snprintf(number, sizeof(number), "%d%s", i/tickmod, cur_fig_units);
 	else if (i % tickmod == 0)
-          sprintf(number, "%d", i/tickmod);
+          snprintf(number, sizeof(number), "%d", i/tickmod);
         else
-          sprintf(number, precstr, (float)(1.0 * i / tickmod));
+          snprintf(number, sizeof(number), precstr, (float)(1.0 * i / tickmod));
 	/* get length of string to position it */
 	len = XTextWidth(roman_font, number, strlen(number));
         /* we center on the number only, letting the minus sign hang out */
@@ -1456,11 +1456,11 @@ void reset_sideruler(void)
       /* string */
       if (i % skipx == 0) {
         if ((i/10) % tickmod == 0)
-          sprintf(number, "%d%s", i/tickmod, cur_fig_units);
+          snprintf(number, sizeof(number), "%d%s", i/tickmod, cur_fig_units);
 	else if (i % tickmod == 0)
-          sprintf(number, "%d", i/tickmod);
+          snprintf(number, sizeof(number), "%d", i/tickmod);
         else
-          sprintf(number, precstr, (float)(1.0 * i / tickmod));
+          snprintf(number, sizeof(number), precstr, (float)(1.0 * i / tickmod));
 	/* get length of string to position it */
 	len = XTextWidth(roman_font, number, strlen(number));
 	/* vertically centered on inch/cm mark */

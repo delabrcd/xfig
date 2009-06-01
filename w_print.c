@@ -295,9 +295,10 @@ void
 do_print_batch(Widget w)
 {
 	FILE	   *infp,*outfp;
-	char	    tmp_exp_file[32];
+	char	    tmp_exp_file[PATH_MAX];
 	char	    str[255];
 	char	    backgrnd[10], grid[80];
+   int       fd;
 
 	if (writing_batch || emptyfigure_msg(print_msg))
 		return;
@@ -306,11 +307,20 @@ do_print_batch(Widget w)
 	/* this could happen if the user presses the button too fast */
 	writing_batch = True;
 
-	/* make a temporary name to write the batch stuff to */
-	sprintf(batch_file, "%s/%s%06d", TMPDIR, "xfig-batch", getpid());
 	/* make a temporary name to write this figure to */
-	sprintf(tmp_exp_file, "%s/%s%06d", TMPDIR, "xfig-exp", getpid());
-	batch_exists = True;
+	snprintf(tmp_exp_file, sizeof(tmp_exp_file), "%s/xfig-exp.XXXXXX",
+		TMPDIR);
+
+	if (batch_exists != True) {
+		/* make a temporary name to write the batch stuff to */
+		sprintf(batch_file, "%s/xfig-batch.XXXXXX", TMPDIR);
+		if ((fd = mkstemp(batch_file)) == -1) {
+			file_msg("Error creating temporary file");
+			return;
+		}
+		close(fd);
+		batch_exists = True;
+	}
 	if (!print_popup) 
 		create_print_panel(w);
 
@@ -322,6 +332,12 @@ do_print_batch(Widget w)
 
 	/* make a #rrggbb string from the background color */
 	make_rgb_string(export_background_color, backgrnd);
+
+	if ((fd = mkstemp(tmp_exp_file)) == -1) {
+		file_msg("Error creating temporary file");
+		return;
+	}
+	close(fd);
 
 	/* get grid params and assemble into fig2dev parm */
 	get_grid_spec(grid, print_grid_minor_text, print_grid_major_text);
@@ -942,7 +958,7 @@ void create_print_panel(Widget w)
 	   var and put it into the widget */
 	if (emptyname(printer_val)) {
 		printer_val=getenv("PRINTER");
-		if (strchr(printer_val,'\\')) {
+		if ((printer_val!=NULL) && strchr(printer_val,'\\')) {
 		    buf[0]='\0';
 		    len=0;
 		    for (i=0; i<strlen(printer_val); i++) {

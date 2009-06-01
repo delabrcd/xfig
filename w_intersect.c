@@ -23,6 +23,8 @@
 #include "mode.h"
 #include "w_snap.h"
 #include "w_intersect.h"
+#include "w_msgpanel.h"
+#include "f_util.h"
 #include "u_quartic.h"
 #include <alloca.h>
 #include <math.h>

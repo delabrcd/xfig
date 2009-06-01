@@ -4,7 +4,6 @@ Version 3.2
 =============================================================================
 
 IMPORTANT NOTE:
-	As of April 2004, the email address xfig-bugs@epb1.lbl.gov no longer exists.
 	Please use bvsmith@lbl.gov to report xfig problems or questions.
 
 	Also please note that I don't have much time anymore to work on xfig/transfig,
@@ -12,6 +11,15 @@ IMPORTANT NOTE:
 	  won't have time to work it into a release.  However, I will still try
 	  to fix bugs.
 
+-----------------------------------
+Patchlevel 5b (Jun 1, 2009)
+
+BUGS FIXED:
+	o Dimension line indicator incorrectly showed arrow length/width
+	o Several patches from Fedora xfig maintainer
+	o divide by 0 under certain circumstances in ruler code
+	  From Libor Pechacek
+	o Segfault if PRINTER env variable was not defined
 -----------------------------------
 Patchlevel 5a (Mar 16, 2009):
 

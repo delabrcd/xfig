@@ -250,11 +250,10 @@ bitmap_from_gs(file, filetype, pic, urx, llx, ury, lly, pdf_flag)
     int         urx, llx, ury, lly;
     int         pdf_flag;
 {
-    static	tempseq = 0;
     char        buf[300];
     FILE       *tmpfp, *pixfile, *gsfile;
     char       *psnam, *driver;
-    int         status, wid, ht, nbitmap;
+    int         status, wid, ht, nbitmap, fd;
     char        tmpfile[PATH_MAX],
 		pixnam[PATH_MAX],
 		errnam[PATH_MAX],
@@ -270,8 +269,12 @@ bitmap_from_gs(file, filetype, pic, urx, llx, ury, lly, pdf_flag)
 	/* re-open the pipe */
 	close_picfile(file, filetype);
 	file = open_picfile(tmpfile, &filetype, PIPEOK, pixnam);
-	sprintf(tmpfile, "%s/%s%06d", TMPDIR, "xfig-eps", getpid());
-	if ((tmpfp = fopen(tmpfile, "wb")) == NULL) {
+   snprintf(tmpfile, sizeof(tmpfile), "%s/xfig-eps.XXXXXX", TMPDIR);
+   if ((fd = mkstemp(tmpfile)) == -1 || (tmpfp = fdopen(fd, "wb")) == NULL) {
+       if (fd != -1) {
+         unlink(tmpfile);
+         close(fd);
+       }
 	    file_msg("Couldn't open tmp file %s, %s", tmpfile, strerror(errno));
 	    return False;
 	}
@@ -280,10 +283,20 @@ bitmap_from_gs(file, filetype, pic, urx, llx, ury, lly, pdf_flag)
 	fclose(tmpfp);
     }
     /* make name /TMPDIR/xfig-pic######.pix */
-    sprintf(pixnam, "%s/%s%06d.pix", TMPDIR, "xfig-pic", tempseq);
+    snprintf(pixnam, sizeof(pixnam), "%s/xfig-pic.XXXXXX", TMPDIR);
+    if ((fd = mkstemp(pixnam)) == -1) {
+        file_msg("Couldn't open tmp file %s, %s", pixnam, strerror(errno));
+        return False;
+    }
+    close(fd);
+
     /* and file name for any error messages from gs */
-    sprintf(errnam, "%s/%s%06d.err", TMPDIR, "xfig-pic", tempseq);
-    tempseq++;
+    snprintf(errnam, sizeof(errnam), "%s/xfig-picerr.XXXXXX", TMPDIR);
+    if ((fd = mkstemp(errnam)) == -1) {
+       file_msg("Couldn't open tmp file %s, %s", errnam, strerror(errno));
+       return False;
+    }
+    close(fd);
 
     /* generate gs command line */
     /* for monochrome, use pbm */

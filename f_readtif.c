@@ -33,11 +33,16 @@ read_tif(char *filename, int filetype, F_pic *pic)
 {
 	char	 buf[2*PATH_MAX+40],pcxname[PATH_MAX];
 	FILE	*tiftopcx;
-	int	 stat;
+	int	 stat, fd;
 
 	/* make name for temp output file */
-	sprintf(pcxname, "%s/%s%06d.pix", TMPDIR, "xfig-pcx", getpid());
-
+	snprintf(pcxname, sizeof(pcxname), "%s/xfig-pcx.XXXXXX", TMPDIR);
+	if ((fd = mkstemp(pcxname)) == -1) {
+	    file_msg("Cannot open temp file %s: %s\n", pcxname, strerror(errno));
+		return FileInvalid;
+	}
+	close(fd);
+	
 	/* make command to convert tif to pnm then to pcx into temp file */
 	/* for some reason, tifftopnm requires a file and can't work in a pipe */
 	sprintf(buf, "tifftopnm %s 2> /dev/null | ppmtopcx > %s 2> /dev/null",

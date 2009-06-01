@@ -35,7 +35,7 @@ extern void	toggle_show_balloons(void);
 extern void	toggle_show_lengths(void);
 extern void	toggle_show_vertexnums(void);
 extern void	toggle_show_borders(void);
-extern void 	round_coords();				// isometric grid
+extern void 	round_coords(int *x, int *y);		// isometric grid
 
 extern void		canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal *nparams);
 extern void	paste_primary_selection(void);

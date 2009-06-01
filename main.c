@@ -68,6 +68,8 @@
 #include <X11/keysym.h>
 #endif  /* I18N */
 
+#include <X11/IntrinsicP.h>
+
 /* EXPORTS */
 
 Boolean	    geomspec;
@@ -657,8 +659,10 @@ void main(int argc, char **argv)
     update_figs = False;
 
     /* get the TMPDIR environment variable for temporary files */
-    if ((TMPDIR = getenv("XFIGTMPDIR"))==NULL)
-	TMPDIR = "/tmp";
+    if ((TMPDIR = getenv("XFIGTMPDIR"))==NULL) {
+		if ((TMPDIR = getenv("TMPDIR")) == NULL)
+			TMPDIR = "/tmp";
+	}
 
     /* first check args to see if user wants to scale the figure as it is
 	read in and make sure it is a resonable (positive) number */
@@ -1673,7 +1677,14 @@ make_cut_buf_name(void)
     if (userhome != NULL && *strcpy(cut_buf_name, userhome) != '\0') {
 	strcat(cut_buf_name, "/.xfig");
     } else {
-	sprintf(cut_buf_name, "%s/xfig%06d", TMPDIR, getpid());
+		int fd;
+		sprintf(cut_buf_name, "%s/xfig.XXXXXX", TMPDIR);
+		if ((fd = mkstemp(cut_buf_name)) == -1) {
+			fprintf(stderr, "Can't create temporary file for cut_buff: %s\n",
+					strerror(errno));
+			exit(0);
+		}
+		close(fd);
     }
 }
 
