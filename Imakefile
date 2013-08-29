@@ -60,7 +60,7 @@ XCOMM Uncomment the following if you have David Hawkey's Xaw3D version 1.5E whic
 XCOMM some new features, including "Tips", which replace xfig's "help balloons"
 XCOMM NOTE: This is the default for many X systems now.
 
-XCOMM #define XAW3D1_5E
+#define XAW3D1_5E
 
 #ifdef XAW3D1_5E
     DUSEXAW3D = -DXAW3D -DXAW3D1_5E
@@ -76,7 +76,7 @@ XCOMM Redefine the following if your PNG library, zlib library and/or include fi
 XCOMM are in different places
 
 PNGLIBDIR = $(USRLIBDIR)
-PNGINC = -I/usr/local/include
+PNGINC = -I/usr/include
 ZLIBDIR = $(USRLIBDIR)
 
 XCOMM If don't want JPEG support, comment out the #define USEJPEG line
@@ -95,13 +95,13 @@ XCOMM You must have version 5b or newer of the jpeg library.
 #define USEINSTALLEDJPEG
 
 #ifdef USEJPEG
-    #ifdef USEINSTALLEDJPEG
+#    ifdef USEINSTALLEDJPEG
 	JPEGLIBDIR = /usr/local/lib
 	JPEGINC = -I/usr/include/X11
-    #else
+#    else
 	JPEGLIBDIR = ../jpeg
 	JPEGINC = -I$(JPEGLIBDIR)
-    #endif /* USEINSTALLEDJPEG */
+#    endif /* USEINSTALLEDJPEG */
 #endif /* USEJPEG */
 
 XCOMM Uncomment the #define for USEXPM if you want to use the XPM
@@ -120,7 +120,7 @@ XCOMM Change XPMINC if necessary to point to the include file for xpm (xpm.h)
 
 #ifdef USEXPM
 XPMLIBDIR = /usr/local/lib
-XPMINC = -I/usr/local/include/X11
+XPMINC = -I/usr/include/X11
 #endif
 
 XCOMM Uncomment the following definiton if you want to use the small icons
@@ -146,16 +146,17 @@ XCOMM to 1, 3, or 4 depending on your workstation model and X libraries.
 
 COMP_LED = -DCOMP_LED=3
 
-XCOMM Comment out the next line if you have any problems with the locale.
+XCOMM Comment out the next two lines if you have any problems with the locale.
 XCOMM If your setlocale() doesn't support the locale, you should
 XCOMM add -DSETLOCALE to I18N_DEFS.
 
 XCOMM #define I18N
+XCOMM XAW_INTERN = -DXAW_INTERNATIONALIZATION
 
 XCOMM If using an input tablet uncomment the following
 
-TABLIB = $(XILIB)
-USETAB = -DUSE_TAB
+XCOMM TABLIB = $(XILIB)
+XCOMM USETAB = -DUSE_TAB
 
 XCOMM uncomment the following line if your compiler supports
 XCOMM inline functions. With the "INLINE" keyword, you should notice that
@@ -251,7 +252,7 @@ DEPLIBJPEG = $(JPEGLIBDIR)/libjpeg.a
 #endif /* USEJPEG */
 
 #ifdef I18N
-I18N_DEFS = -DI18N -DSETLOCALE
+I18N_DEFS = -DI18N
 I18N_SRC = w_i18n.c
 I18N_OBJ = w_i18n.o
 #endif
@@ -296,7 +297,7 @@ DUSEXPMICON = -DUSE_XPM_ICON
 #endif /* USEXPM_ICON */
 #endif /* USEXPM */
 
-DEFINES =             $(STRDEFINES) $(USEINLINE) $(DUSEXPM) $(DUSEXAW3D) \
+DEFINES =             $(STRDEFINES) $(DDUSEINLINE) $(DUSEXPM) $(DUSEXAW3D) $(XAW_INTERN)\
 			$(DUSEJPEG) $(I18N_DEFS) $(HAVE_NO_DIRENT) -DNEWARROWTYPES
 
 

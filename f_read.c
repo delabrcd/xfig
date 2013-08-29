@@ -510,7 +510,7 @@ int read_objects(FILE *fp, F_compound *obj, int *res)
 		la = obj->arcs = a;
 	    num_object++;
 	    break;
-	case O_TEXT:
+	case O_TXT:
 	    if ((t = read_textobject(fp)) == NULL)
 		continue;
 	    if (lt)
@@ -750,7 +750,7 @@ read_compoundobject(FILE *fp)
 	    else
 		la = com->arcs = a;
 	    break;
-	case O_TEXT:
+	case O_TXT:
 	    if ((t = read_textobject(fp)) == NULL)
 		continue;
 	    if (lt)

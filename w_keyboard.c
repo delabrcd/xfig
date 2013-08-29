@@ -38,7 +38,7 @@
 #include "w_msgpanel.h"
 
 #if defined(__CYGWIN__)
-#define REG_NOERROR REG_OKAY
+#define REG_NOERROR 0
 #endif
 
 #if defined(__FreeBSD__) && !defined(REG_NOERROR)

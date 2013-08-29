@@ -32,6 +32,7 @@
 #include <X11/Xaw3d/AsciiText.h>
 #include <X11/Xaw3d/MenuButton.h>
 #include <X11/Xaw3d/Scrollbar.h>
+#include <X11/Xaw3d/Simple.h>
 #include <X11/Xaw3d/SimpleMenu.h>
 #include <X11/Xaw3d/Sme.h>
 #include <X11/Xaw3d/SmeLine.h>
@@ -54,6 +55,7 @@
 #include <X11/Xaw/AsciiText.h>
 #include <X11/Xaw/MenuButton.h>
 #include <X11/Xaw/Scrollbar.h>
+#include <X11/Xaw/Simple.h>
 #include <X11/Xaw/SimpleMenu.h>
 #include <X11/Xaw/Sme.h>
 #include <X11/Xaw/SmeLine.h>

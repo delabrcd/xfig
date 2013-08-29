@@ -77,7 +77,7 @@ init_delete(F_line *p, int type, int x, int y, int px, int py)
 	delete_line(cur_l);
 	redisplay_line(cur_l);
 	break;
-    case O_TEXT:
+    case O_TXT:
 	cur_t = (F_text *) p;
 	delete_text(cur_t);
 	redisplay_text(cur_t);
@@ -188,7 +188,7 @@ init_delete_to_scrap(F_line *p, int type, int x, int y, int px, int py)
 	delete_line(cur_l);
 	redisplay_line(cur_l);
 	break;
-    case O_TEXT:
+    case O_TXT:
 	cur_t = (F_text *) p;
 	write_text(fp, cur_t);
 	delete_text(cur_t);

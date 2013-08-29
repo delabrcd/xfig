@@ -367,12 +367,12 @@ void undo_change(void)
 	set_action_object(F_EDIT, O_ELLIPSE);
 	redisplay_ellipses(new_e, old_e);
 	break;
-      case O_TEXT:
+      case O_TXT:
 	new_t = saved_objects.texts;
 	old_t = saved_objects.texts->next;
 	/* account for depths */
-	remove_depth(O_TEXT, old_t->depth);
-	add_depth(O_TEXT, new_t->depth);
+	remove_depth(O_TXT, old_t->depth);
+	add_depth(O_TXT, new_t->depth);
 	/* swap old with new */
 	bcopy((char*)old_t, (char*)&swp_t, sizeof(F_text));
 	bcopy((char*)new_t, (char*)old_t, sizeof(F_text));
@@ -381,7 +381,7 @@ void undo_change(void)
 	swp_t.next = old_t->next;
 	old_t->next = new_t->next;
 	new_t->next = swp_t.next;
-	set_action_object(F_EDIT, O_TEXT);
+	set_action_object(F_EDIT, O_TXT);
 	redisplay_texts(new_t, old_t);
 	break;
       case O_SPLINE:
@@ -486,7 +486,7 @@ void undo_add(void)
 	list_delete_ellipse(&objects.ellipses, saved_objects.ellipses);
 	redisplay_ellipse(saved_objects.ellipses);
 	break;
-      case O_TEXT:
+      case O_TXT:
 	list_delete_text(&objects.texts, saved_objects.texts);
 	redisplay_text(saved_objects.texts);
 	break;
@@ -531,7 +531,7 @@ void undo_delete(void)
 	list_add_ellipse(&objects.ellipses, saved_objects.ellipses);
 	redisplay_ellipse(saved_objects.ellipses);
 	break;
-      case O_TEXT:
+      case O_TXT:
 	list_add_text(&objects.texts, saved_objects.texts);
 	redisplay_text(saved_objects.texts);
 	break;
@@ -588,7 +588,7 @@ void undo_move(void)
 	redisplay_regions(xmin1, ymin1, xmax1, ymax1,
 			  xmin2, ymin2, xmax2, ymax2);
 	break;
-      case O_TEXT:
+      case O_TXT:
 	text_bound(saved_objects.texts, &xmin1, &ymin1, &xmax1, &ymax1,
 		&dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
 	translate_text(saved_objects.texts, dx, dy);
@@ -745,7 +745,7 @@ void clean_up(void)
 	    saved_objects.splines->next = NULL;
 	    free_spline(&saved_objects.splines);
 	    break;
-	  case O_TEXT:
+	  case O_TXT:
 	    saved_objects.texts->next = NULL;
 	    free_text(&saved_objects.texts);
 	    break;
@@ -770,7 +770,7 @@ void clean_up(void)
 	  case O_SPLINE:
 	    free_spline(&saved_objects.splines);
 	    break;
-	  case O_TEXT:
+	  case O_TXT:
 	    free_text(&saved_objects.texts);
 	    break;
 	  case O_ALL_OBJECT:

@@ -1,7 +1,7 @@
 \" FIG : Facility for Interactive Generation of figures
-.\" Copyright (c) 1985 by Supoj Sutanthavibul
-.\" Parts Copyright (c) 1994-2007 by Brian V. Smith
+.\" Parts Copyright (c) 1994-2013 by Brian V. Smith
 .\" Parts Copyright (c) 1991 by Paul King
+.\" Copyright (c) 1985 by Supoj Sutanthavibul
 .\" The X Consortium, and any party obtaining a copy of these files from
 .\" the X Consortium, directly or indirectly, is granted, free of charge, a
 .\" full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -108,11 +108,11 @@
 .PD
 ..
 .\"-------
-.TH XFIG 1 "Xfig 3.2.4 (Dec 2002)"
+.TH XFIG 1 "Xfig 3.2.5c (August 2013)"
 .SH NAME
 xfig - Facility for Interactive Generation of figures under X11
 .br
-Version 3.2.4
+Version 3.2.5c
 .SH SYNOPSIS
 .B xfig
 .RI [ options ]
@@ -713,6 +713,12 @@ Don't show the startup splash screen.  The default is to show it (
 Turn off cursor (mouse) tracking arrows.
 .\"-------
 .At
+.BR \-nowrite_bak
+.Ap
+When saving a drawing into an existing .fig file xfig will first rename that file by
+appending ".bak" to the name.  This option disables this feature.
+.\"-------
+.At
 .BR \-ov [ erlap ]
 .Ap
 When exporting in multiple page mode, causes overlap from page to page of
@@ -1171,6 +1177,12 @@ See also the
 option.
 .\"-------
 .At
+.BR \-write_bak
+.Ap
+When saving a drawing into an existing .fig file xfig will first rename that file by
+appending \".bak\" to the name.  This is the default.  Use -nowrite_bak to disable this feature.
+.\"-------
+.At
 .BR \-zoom
 .I zoomscale
 .Ap
@@ -1222,6 +1234,7 @@ debug	boolean	false	\-debug
 depth	integer	*	\-depth
 dontswitchcmap	boolean	false	\-dontswitchcmap
 euc_encoding	boolean	false	(n/a)
+locale_encoding	boolean	false	(n/a)
 encoding	integer	1	\-encoding
 exportLanguage	string	eps	\-exportLanguage
 export_margin	integer	0	\-export_margin
@@ -1309,6 +1322,7 @@ userscale	float	1.0	\-userscale
 userunit	string	in (inches)	\-userunit
 		cm (metric)
 visual	string	*	\-visual
+write_bak	boolean	true	\-write_bak
 zoom	float	1.0	\-zoom
 
 * Default visual and depth depend on the X server. Use \fIxdpyinfo\fR to see what visuals

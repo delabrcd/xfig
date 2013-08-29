@@ -98,7 +98,7 @@ void emergency_quit(Boolean abortflag)
 	    if (emergency_save(strcat(TMPDIR,"/SAVE.fig")) == -1)
 		fprintf(stderr, "xfig: unable to save figure\n");
     } else
-	fprintf(stderr, "xfig: figure empty or not modified - exiting\n");
+	fprintf(stderr, "xfig: Figure is empty or not modified - exiting without saving.\n");
 
     goodbye(abortflag);	/* finish up and exit */
 }

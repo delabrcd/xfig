@@ -361,7 +361,7 @@ Widget
 make_pulldown_menu(char **entries, Cardinal nent, int divide_line, char *divide_message, Widget parent, XtCallbackProc callback)
 {
     Widget	    pulldown_menu, entry;
-    int		    i;
+    intptr_t	    i;
 
     pulldown_menu = XtCreatePopupShell("menu", simpleMenuWidgetClass, parent,
 				  NULL, ZERO);
@@ -427,7 +427,7 @@ make_color_popup_menu(Widget parent, char *name, XtCallbackProc callback, Boolea
 {
     Widget	    pop_menu, pop_form, color_box;
     Widget	    viewp, entry, label;
-    int		    i;
+    intptr_t	    i;
     char	    buf[30];
     Position	    x_val, y_val;
     Dimension	    height;
@@ -1473,9 +1473,9 @@ void resize_all(int width, int height)
     /* but don't change it if user explicitely used -but_per_row */
     if (appres.but_per_row == 0) {
 	if (h > h2) {
-	    min_sw_per_row = (MODE_SW_HT + INTERNAL_BW*2) * (NUM_MODE_SW+2) / h2 + 1;
+	    min_sw_per_row = (mode_sw_ht + INTERNAL_BW*2) * (NUM_MODE_SW+2) / h2 + 1;
 	    if (min_sw_per_row != SW_PER_ROW) 
-		width -= (min_sw_per_row - SW_PER_ROW)*(MODE_SW_WD+2*INTERNAL_BW);
+		width -= (min_sw_per_row - SW_PER_ROW)*(mode_sw_wd+2*INTERNAL_BW);
 	    SW_PER_ROW = max2(min_sw_per_row, SW_PER_ROW);
 	    setup_sizes(width, height);
 	    XtUnmanageChild(mode_panel);
@@ -1483,7 +1483,7 @@ void resize_all(int width, int height)
 	    NextArg(XtNresizable, True);
 	    SetValues(mode_panel);
 	    /* now resize width of labels "Drawing" and "Editing" */
-	    FirstArg(XtNwidth, MODE_SW_WD * SW_PER_ROW + INTERNAL_BW * (SW_PER_ROW - 1));
+	    FirstArg(XtNwidth, mode_sw_wd * SW_PER_ROW + INTERNAL_BW * (SW_PER_ROW - 1));
 	    SetValues(d_label);
 	    SetValues(e_label);
 	    FirstArg(XtNwidth, MODEPANEL_WD);
@@ -1495,9 +1495,9 @@ void resize_all(int width, int height)
 	    /* do this by checking the height of the "Drawing" label */
 	    FirstArg(XtNheight, &h);
 	    GetValues(d_label);
-	    min_sw_per_row = (MODE_SW_HT + INTERNAL_BW*2) * (NUM_MODE_SW+2) / h2 + 1;
+	    min_sw_per_row = (mode_sw_ht + INTERNAL_BW*2) * (NUM_MODE_SW+2) / h2 + 1;
 	    if (min_sw_per_row < SW_PER_ROW) {
-		width -= (min_sw_per_row - SW_PER_ROW)*(MODE_SW_WD+2*INTERNAL_BW);
+		width -= (min_sw_per_row - SW_PER_ROW)*(mode_sw_wd+2*INTERNAL_BW);
 		SW_PER_ROW = min_sw_per_row;
 		setup_sizes(width, height);
 		XtUnmanageChild(mode_panel);
@@ -1505,7 +1505,7 @@ void resize_all(int width, int height)
 		NextArg(XtNresizable, True);
 		SetValues(mode_panel);
 		/* now resize width of labels "Drawing" and "Editing" */
-		FirstArg(XtNwidth, MODE_SW_WD * SW_PER_ROW + INTERNAL_BW * (SW_PER_ROW - 1));
+		FirstArg(XtNwidth, mode_sw_wd * SW_PER_ROW + INTERNAL_BW * (SW_PER_ROW - 1));
 		SetValues(d_label);
 		SetValues(e_label);
 		FirstArg(XtNwidth, MODEPANEL_WD);

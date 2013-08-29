@@ -589,7 +589,7 @@ place_text_x(int x, int y)
 	clean_up();
 	set_lastposition(fix_x, fix_y);
 	set_newposition(x, y);
-	set_action_object(F_MOVE, O_TEXT);
+	set_action_object(F_MOVE, O_TXT);
 	set_latesttext(new_t);
 	set_modifiedflag();
     }

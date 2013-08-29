@@ -403,16 +403,15 @@ static Boolean seek_fontset(fid, fontset, size_ret)
      int *size_ret;
 {
   extern struct _xfstruct x_fontinfo[]; /* X11 fontnames */
-  static int font_types[] = { 0, 2 };  /* 0 = Times-Roman, 2 = Times-Bold */
   struct xfont *nf;
   int i;
   if (!appres.international) return FALSE;
-  for (i = 0; i < XtNumber(font_types); i++) {
-    nf = x_fontinfo[font_types[i]].xfontlist;
-    while (nf != NULL && (nf->fstruct == NULL || nf->fstruct->fid != fid))
+  for (i = 0; i < NUM_FONTS; i++) {
+    nf = x_fontinfo[i].xfontlist;
+    while (nf != NULL && (nf->fset == NULL || nf->fstruct->fid != fid))
       nf = nf->next;
-    if (nf != NULL) {
-      *fontset = (font_types[i]==0) ? appres.normal_fontset : appres.bold_fontset;
+    if (nf != NULL && nf->fset != NULL) {
+      *fontset=nf->fset;
       *size_ret = nf->size;
       return TRUE;
     }

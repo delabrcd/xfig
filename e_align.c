@@ -776,7 +776,7 @@ adjust_object_pos (F_line *obj_ptr, int obj_type, int delta_x, int delta_y)
     translate_spline(s, delta_x, delta_y);
     s->distrib = 1;
     break;
-  case O_TEXT:
+  case O_TXT:
     t = (F_text *) obj_ptr;
     translate_text(t, delta_x, delta_y);
     t->distrib = 1;
@@ -858,7 +858,7 @@ distribute_horizontally(void)
 	  { obj_ptr = (F_line *) c; obj_type = O_COMPOUND; }
       for (t = cur_c->texts; t != NULL; t = t->next)
 	if (pos_text(t, &min_left, &min_width, 0))
-	  { obj_ptr = (F_line *) t; obj_type = O_TEXT; }
+	  { obj_ptr = (F_line *) t; obj_type = O_TXT; }
     }
 
     /* Determine the new horizontal position of the object */
@@ -935,7 +935,7 @@ distribute_vertically(void)
 	  { obj_ptr = (F_line *) c; obj_type = O_COMPOUND; }
       for (t = cur_c->texts; t != NULL; t = t->next)
 	if (pos_text(t, &min_top, &min_height, 1))
-	  { obj_ptr = (F_line *) t; obj_type = O_TEXT; }
+	  { obj_ptr = (F_line *) t; obj_type = O_TXT; }
     }
 
     /* Determine the new vertical position of the object */

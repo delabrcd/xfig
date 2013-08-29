@@ -51,7 +51,7 @@
 
 #define		DEF_INTERNAL_BW		1
 #define		POPUP_BW		2
-#define		DEF_LAYER_WD		58	/* default width of the depth panel */
+#define		DEF_LAYER_WD		64	/* default width of the depth panel */
 
 extern int	TOOL_WD, TOOL_HT;
 extern int	CMDFORM_WD, CMDFORM_HT;

@@ -428,6 +428,14 @@ available from the Help/Xfig Reference menu entry while running xfig,
 or by viewing Doc/html/faq with your favorite web browser.
 ________________________________________________________________________________
 PROBLEM:
+	xfig crashes when pulling up a menu item
+
+POSSIBLE CAUSE AND SOLUTION:
+	You probably have version 1.5 of the 3D Xaw Athena widget set so you need
+	to remove the "XCOMM" from this line in the Imakefile: #define XAW3D1_5E 
+	then do "xmkmf" and "make install.all"
+________________________________________________________________________________
+PROBLEM:
 	icons in side and bottom panels appear then disappear
 
 POSSIBLE CAUSE AND SOLUTION:

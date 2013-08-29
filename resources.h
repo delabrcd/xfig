@@ -187,6 +187,7 @@ typedef struct _appres {
     Boolean	 dontswitchcmap;	/* don't allow switching of colormap */
     Boolean	 installowncmap;	/* install our own private colormap */
     Boolean	 showaxislines;		/* draw axis lines through 0,0 (useful w/allow_neg_coords) */
+    Boolean	 smallicons;		/* draw axis lines through 0,0 (useful w/allow_neg_coords) */
     char	*exportLanguage;
     Boolean	 flushleft;		/* center/flush-left printing */
     char	*geometry;
@@ -264,16 +265,16 @@ typedef struct _appres {
     int		 encoding;		/* encoding for latex escape translation */
     Boolean	 crosshair;		/* draw crosshair cursor wherever the pointer is */
     Boolean	 autorefresh;		/* automatically redraw figure when file has changed */
+    Boolean	 write_bak;		/* automatically rename current to .bak when saving */
 
 #ifdef I18N
     Boolean	 international;
     String	 font_menu_language;
     Boolean	 euc_encoding;
+    Boolean	 locale_encoding;
     Boolean	 latin_keyboard;
     Boolean	 always_use_fontset;
     XFontSet	 fixed_fontset;
-    XFontSet	 normal_fontset;
-    XFontSet	 bold_fontset;
     int		 fontset_size;
     String	 xim_input_style;
     String	 fig2dev_localize_option;

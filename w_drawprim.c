@@ -136,13 +136,18 @@ void init_font(void)
 	} else {
 	    strcpy(template,x_fontinfo[0].template);  /* nope, check for font size 0 */
 	    strcat(template,"0-0-*-*-*-*-");
-	    /* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
-	    if (strstr(template,"ymbol") == NULL &&
+	    /* add ISO8859 (if not Symbol font or ZapfDingbats) to font name in non-international mode*/
+	    if (
+#ifdef I18N
+		!appres.international &&
+#endif
+		strstr(template,"ymbol") == NULL &&
 		strstr(template,"ingbats") == NULL)
 		    strcat(template,"ISO8859-*");
 	    else
 		strcat(template,"*-*");
-	    fontlist = XListFonts(tool_d, template, 1, &count);
+	    if ((fontlist = XListFonts(tool_d, template, 1, &count))==0)
+		appres.scalablefonts = False;   /* none, turn off request for them */
 	}
 	XFreeFontNames(fontlist); 
     }
@@ -155,8 +160,12 @@ void init_font(void)
 	    nf = NULL;
 	    strcpy(template,x_fontinfo[f].template);
 	    strcat(template,"*-*-*-*-*-*-");
-	    /* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
-	    if (strstr(template,"ymbol") == NULL &&
+	    /* add ISO8859 (if not Symbol font or ZapfDingbats) to font name in non-international mode*/
+	    if (
+#ifdef I18N
+		!appres.international &&
+#endif
+		strstr(template,"ymbol") == NULL &&
 		strstr(template,"ingbats") == NULL)
 		    strcat(template,"ISO8859-*");
 	    else
@@ -221,18 +230,25 @@ parsesize(char *name)
 }
 
 /*
- * Lookup an X font, "f" corresponding to a Postscript font style that is
- * close in size to "s"
+ * Lookup an X font, "fnum" corresponding to a Postscript font style that is
+ * close in size to "size"
  */
 
 XFontStruct *
 lookfont(int fnum, int size)
 {
 	XFontStruct    *fontst;
+	XFontSet        fontset = NULL;
 	char		fn[300],back_fn[300];
 	char		template[300], *sub;
 	Boolean		found;
 	struct xfont   *newfont, *nf, *oldnf;
+
+#ifdef I18N
+	char **mcharset;
+	int ncharset;
+	char *defstr;
+#endif
 
 	if (fnum == DEFAULT)
 	    fnum = 0;			/* pass back the -normal font font */
@@ -252,8 +268,7 @@ lookfont(int fnum, int size)
 
 	found = False;
 
-	/* start with the basic font name (e.g. adobe-times-medium-r-normal-...
-		OR times-roman for OpenWindows fonts) */
+	/* start with the basic font name (e.g. -*-times-medium-r-normal-... */
 
 	nf = x_fontinfo[fnum].xfontlist;
 	oldnf = nf;
@@ -301,8 +316,12 @@ lookfont(int fnum, int size)
 		strcpy(template,x_fontinfo[fnum].template);
 		/* attach pointsize to font name */
 		strcat(template,"%d-*-*-*-*-*-");
-		/* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
-		if (strstr(template,"ymbol") == NULL &&
+		/* add ISO8859 (if not Symbol font or ZapfDingbats) to font name in non-international mode */
+		if (
+#ifdef I18N
+		    !appres.international &&
+#endif
+		    strstr(template,"ymbol") == NULL &&
 		    strstr(template,"ingbats") == NULL)
 			strcat(template,"ISO8859-*");
 	        else
@@ -313,8 +332,12 @@ lookfont(int fnum, int size)
 		/* do same process with backup font name in case first doesn't exist */
 		strcpy(template,x_backup_fontinfo[fnum].template);
 		strcat(template,"%d-*-*-*-*-*-");
-		/* add ISO8859 (if not Symbol font or ZapfDingbats) to font name */
-		if (strstr(template,"ymbol") == NULL &&
+		/* add ISO8859 (if not Symbol font or ZapfDingbats) to font name in non-international mode */
+		if (
+#ifdef I18N
+		    !appres.international &&
+#endif
+		    strstr(template,"ymbol") == NULL &&
 		    strstr(template,"ingbats") == NULL)
 			strcat(template,"ISO8859-*");
 	        else
@@ -338,6 +361,10 @@ lookfont(int fnum, int size)
 		return roman_font;
 	    set_temp_cursor(wait_cursor);
 	    fontst = XLoadQueryFont(tool_d, fn);
+#ifdef I18N
+	    if (appres.international)
+		fontset = XCreateFontSet(tool_d, fn, &mcharset, &ncharset, &defstr);
+#endif
 	    reset_cursor();
 	    if (fontst == NULL) {
 		/* doesn't exist, see if substituting "condensed" for "narrow" will match */
@@ -367,19 +394,19 @@ lookfont(int fnum, int size)
 		}
 	    }
 	    if (fontst == NULL) {
-		if (fontst == NULL) {
-		    /* even that font doesn't exist, use a plain one */
-		    file_msg("Can't find %s, using %s", fn, appres.normalFont);
-		    fontst = XLoadQueryFont(tool_d, appres.normalFont);
-		    if (nf->fname)
-			free(nf->fname);
-		    /* allocate space for the name and put it in the structure */
-		    nf->fname = (char *) new_string(strlen(appres.normalFont));
-		    strcpy(nf->fname, appres.normalFont);  /* keep actual name */
-		}
+		/* even that font doesn't exist, use a plain one */
+		file_msg("Can't find %s, using %s", fn, appres.normalFont);
+		fontst = XLoadQueryFont(tool_d, appres.normalFont);
+		if (nf->fname)
+		    free(nf->fname);
+		/* allocate space for the name and put it in the structure */
+		nf->fname = (char *) new_string(strlen(appres.normalFont));
+		strcpy(nf->fname, appres.normalFont);  /* keep actual name */
 	    }
+
 	    /* put the structure in the list */
 	    nf->fstruct = fontst;
+	    nf->fset = fontset;
 	} /* if (nf->fstruct == NULL) */
 
 	return (nf->fstruct);

@@ -11,6 +11,64 @@ IMPORTANT NOTE:
 	  won't have time to work it into a release.  However, I will still try
 	  to fix bugs.
 
+Patchlevel 5c (August, 2013)
+
+BUGS FIXED:
+	o Increased default width of layer panel from 58 to 64 to accomodate scrollbar width
+	o missing comma in FIXED_JAPANESE_PDF #ifdef case in w_cmdpanel.c
+	o printer name enclosed in apostrophes when printing in case has spaces in name
+	o new link from Elizabeth Bailey for Fig applications referenced in installation.html
+	o old link to duke.uask.ca for Fig applications has new link in installation.html
+	o Typo in message "GIF read error on extention ..." should be "extension"
+	o Possibility of stack overflow with malformed Fig files.
+	o In version 1.4 of the PNG library dither was removed so xfig now uses quantize when
+	  importing PNG images with palettes
+	o Other updates for PNG library version 1.5 from Peter Volkov
+	o Some versions of Cygwin don't have either REG_NOERROR or REG_OKAY defined so 
+	  REG_NOERROR defined to be 0
+	o Changed X-Spline parameter to match original intent of X-Spline authors:
+	  changed definition of Q(s) from -s to -0.5 * s in u_draw_spline.c
+	o Allowance for stricter ghostscript in -dSAFER mode.  Was causing error on reading EPS images.
+	  From Hans de Goede
+	o Security vulnerability with importing images fixed 
+	  (RedHat bug # 657981 - xfig buffer overflow when opening .fig file with malicius color definition)
+	o When exporting to combined PS/PDF/LATEX the -D option to exclude all but active layers
+	  was not passed to fig2dev
+	o Uses 24-bit color instead of 8-bit when importing eps files (pcx24b driver for ghostscript)
+	o Bug in freeing null fontset
+	o Semicolon (;) added at end of MimeType line in xfig.desktop as per
+	  http://standards.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html
+	o Reference to "Darwin Ports" changed to "MacPorts"
+	o Renamed O_TEXT to O_TXT to avoid conflicts with system define
+	o On lines with Round or Projecting cap style and arrowheads, the line endpoint stuck out
+	  beyond the arrowhead
+	  
+	From Vladsilav Zavjalov:
+	o Uses fontsets for all fonts in international mode
+	o SEGV when zooming while creating object (e.g. text)
+	o Add locale_encoding appres which acts similar to euc_encoding, but uses system locale and
+	  mbrlen function for multibyte character length calculation.
+	o Move "file not found" error message from check_docfile() to launch_viewer(), 
+	  remove excess check_docfile() call.
+	  Error message is not shown when looking for a locale-dependent docs. It is shown only
+	  if no docs found at all.
+	o Do not do strcpy with equal arguments in w_cmdpanel.c/update_cur_filename()
+	o Print to file had extra argument in sprintf in international mode
+	o Message panel not tall enough with 3D Athena widgets
+	o Warnings about different size of int and void * on 64-bit system.
+	  To fix this problem I changed int to intptr_t in some places.
+
+
+NEW FEATURES:
+	o New library objects from Markus Laner:
+	  Networks: NodeB.fig, cloud.fig, router.fig, wlan.fig
+	  Computers: datacard.fig, screen.fig, usbpen.fig, xbox.fig
+	o New command-line option -nowrite_bak to turn off automatic renaming of .fig to .fig.bak
+	  when saving .fig file.  X resource is "write_bak".  Also command-line option -write_bak
+	  to force renaming to true.
+	o Can now specify small buttons with command-line argument -smallicons
+	  From Ed Rosten
+
 -----------------------------------
 Patchlevel 5b (Jun 1, 2009)
 
@@ -24,6 +82,9 @@ BUGS FIXED:
 Patchlevel 5a (Mar 16, 2009):
 
 NEW FEATURES:
+	o "Chop" tool which allows you to chop polylines, arcs and circles into individual objects that together,
+	  approximate the original object.
+	  From Chris Moller
 	o Fig-color merged into Fig app-defaults file because almost no one knows about
 	  the "*customization: -color" option to make X programs read the color def file.
 	o 22 new arrowhead types

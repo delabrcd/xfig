@@ -47,6 +47,7 @@ static void	(*save_ref_proc) ();
 static void	(*save_leftbut_proc) ();
 static void	(*save_middlebut_proc) ();
 static void	(*save_rightbut_proc) ();
+static int	save_cur_mode;
 
 float		display_zoomscale;	/* both zoomscales initialized in main() */
 float		zoomscale;
@@ -128,7 +129,6 @@ init_zoombox_drawing(int x, int y)
     save_leftbut_proc = canvas_leftbut_proc;
     save_middlebut_proc = canvas_middlebut_proc;
     save_rightbut_proc = canvas_rightbut_proc;
-    save_kbd_proc = canvas_kbd_proc;
 
     my_cur_x = my_fix_x = x;
     my_cur_y = my_fix_y = y;
@@ -140,6 +140,7 @@ init_zoombox_drawing(int x, int y)
     canvas_rightbut_proc = cancel_zoom;
     elastic_box(my_fix_x, my_fix_y, my_cur_x, my_cur_y);
     set_action_on();
+    save_cur_mode=cur_mode;
     cur_mode = F_ZOOM;
     zoom_in_progress = True;
 }
@@ -184,7 +185,7 @@ do_zoom(int x, int y)
     canvas_leftbut_proc = save_leftbut_proc;
     canvas_middlebut_proc = save_middlebut_proc;
     canvas_rightbut_proc = save_rightbut_proc;
-    canvas_kbd_proc = save_kbd_proc;
+    cur_mode=save_cur_mode;
     reset_action_on();
     zoom_in_progress = False;
 }
@@ -200,7 +201,7 @@ cancel_zoom(void)
     canvas_leftbut_proc = save_leftbut_proc;
     canvas_middlebut_proc = save_middlebut_proc;
     canvas_rightbut_proc = save_rightbut_proc;
-    canvas_kbd_proc = save_kbd_proc;
+    cur_mode=save_cur_mode;
     reset_cursor();
     reset_action_on();
     zoom_in_progress = False;

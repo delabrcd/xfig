@@ -148,7 +148,7 @@ list_delete_text(F_text **text_list, F_text *text)
 	return;
 
     if (text_list == &objects.texts)
-	remove_depth(O_TEXT, text->depth);
+	remove_depth(O_TXT, text->depth);
     for (q = r = *text_list; r != NULL; q = r, r = r->next)
 	if (r == text) {
 	    if (r == *text_list)
@@ -215,7 +215,7 @@ remove_depth(int type, int depth)
 	    if (appres.DEBUG)
 		fprintf(stderr,"Spline[%d] count=%d\n",depth,counts[depth].num_splines);
 	    break;
-	case O_TEXT:
+	case O_TXT:
 	    --counts[depth].num_texts;
 	    if (appres.DEBUG)
 		fprintf(stderr,"Text[%d] count=%d\n",depth,counts[depth].num_texts);
@@ -273,7 +273,7 @@ remove_compound_depth(F_compound *comp)
     for (ss=comp->splines; ss; ss=ss->next)
 	remove_depth(O_SPLINE, ss->depth);
     for (tt=comp->texts; tt; tt=tt->next)
-	remove_depth(O_TEXT, tt->depth);
+	remove_depth(O_TXT, tt->depth);
     for (cc=comp->compounds; cc; cc=cc->next)
 	remove_compound_depth(cc);
     /* decrement the defer flag and update layer buttons if it hits 0 */
@@ -366,7 +366,7 @@ list_add_text(F_text **list, F_text *t)
 	tt->next = t;
     if (list == &objects.texts)
 	while (t) {
-	    add_depth(O_TEXT, t->depth);
+	    add_depth(O_TXT, t->depth);
 	    t = t->next;
 	}
 }
@@ -424,7 +424,7 @@ add_depth(int type, int depth)
 	    if (appres.DEBUG)
 		fprintf(stderr,"Spline[%d] count=%d\n",depth,counts[depth].num_splines);
 	    break;
-	case O_TEXT:
+	case O_TXT:
 	    ++counts[depth].num_texts;
 	    if (appres.DEBUG)
 		fprintf(stderr,"Text[%d] count=%d\n",depth,counts[depth].num_texts);
@@ -472,7 +472,7 @@ add_compound_depth(F_compound *comp)
     for (ss=comp->splines; ss; ss=ss->next)
 	add_depth(O_SPLINE, ss->depth);
     for (tt=comp->texts; tt; tt=tt->next)
-	add_depth(O_TEXT, tt->depth);
+	add_depth(O_TXT, tt->depth);
     for (cc=comp->compounds; cc; cc=cc->next)
 	add_compound_depth(cc);
     /* decrement the defer flag and update layer buttons if it hits 0 */
@@ -520,7 +520,7 @@ delete_text(F_text *old_t)
     list_delete_text(&objects.texts, old_t);
     clean_up();
     set_latesttext(old_t);
-    set_action_object(F_DELETE, O_TEXT);
+    set_action_object(F_DELETE, O_TXT);
     set_modifiedflag();
 }
 
@@ -584,7 +584,7 @@ add_text(F_text *new_t)
     list_add_text(&objects.texts, new_t);
     clean_up();
     set_latesttext(new_t);
-    set_action_object(F_ADD, O_TEXT);
+    set_action_object(F_ADD, O_TXT);
     set_modifiedflag();
 }
 
@@ -653,7 +653,7 @@ change_text(F_text *old_t, F_text *new_t)
     clean_up();
     old_t->next = new_t;
     set_latesttext(old_t);
-    set_action_object(F_EDIT, O_TEXT);
+    set_action_object(F_EDIT, O_TXT);
     set_modifiedflag();
 }
 
@@ -831,7 +831,7 @@ void remove_spline_depths(F_spline *s)
 void remove_text_depths(F_text *t)
 {
     for ( ; t; t = t->next)
-	remove_depth(O_TEXT, t->depth);
+	remove_depth(O_TXT, t->depth);
 }
 
 void append_point(int x, int y, F_point **point)    /** used in d_arcbox **/

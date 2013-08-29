@@ -144,6 +144,8 @@ static XtResource application_resources[] = {
       XtOffset(appresPtr, allownegcoords), XtRBoolean, (caddr_t) & true},
     {"showaxislines", "Axis",   XtRBoolean, sizeof(Boolean),
       XtOffset(appresPtr, showaxislines), XtRBoolean, (caddr_t) & true},
+    {"smallicons", "Icons",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, smallicons), XtRBoolean, (caddr_t) & false},
     {"canvasbackground",  "Background",    XtRString,  sizeof(char *),
       XtOffset(appresPtr,canvasbackground), XtRString, (caddr_t) NULL},
     {"canvasforeground",  "Foreground",    XtRString,  sizeof(char *),
@@ -308,6 +310,8 @@ static XtResource application_resources[] = {
       XtOffset(appresPtr, crosshair), XtRBoolean, (caddr_t) & false},
     {"autorefresh", "Refresh",   XtRBoolean, sizeof(Boolean),
       XtOffset(appresPtr, autorefresh), XtRBoolean, (caddr_t) & false},
+    {"write_bak", "Refresh",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, write_bak), XtRBoolean, (caddr_t) & true},
 
 #ifdef I18N
     {"international", "International", XtRBoolean, sizeof(Boolean),
@@ -316,6 +320,8 @@ static XtResource application_resources[] = {
        XtOffset(appresPtr, font_menu_language), XtRString, (caddr_t) ""},
     {"eucEncoding", "EucEncoding", XtRBoolean, sizeof(Boolean),
        XtOffset(appresPtr, euc_encoding), XtRBoolean, (caddr_t) & true},
+    {"localeEncoding", "LocaleEncoding", XtRBoolean, sizeof(Boolean),
+       XtOffset(appresPtr, locale_encoding), XtRBoolean, (caddr_t) & true},
     {"latinKeyboard", "Latinkeyboard", XtRBoolean, sizeof(Boolean),
        XtOffset(appresPtr, latin_keyboard), XtRBoolean, (caddr_t) & false},
     {"alwaysUseFontSet", "AlwaysUseFontSet", XtRBoolean, sizeof(Boolean),
@@ -324,16 +330,6 @@ static XtResource application_resources[] = {
        XtOffset(appresPtr, fixed_fontset), XtRString,
        (caddr_t) "-*-times-medium-r-normal--16-*-*-*-*-*-*-*,"
 	 "-*-*-medium-r-normal--16-*-*-*-*-*-*-*,*--16-*" },
-    {"normalFontSet", "NormalFontSet", XtRFontSet, sizeof(XFontSet),
-       XtOffset(appresPtr, normal_fontset), XtRString,
-       (caddr_t) "-*-times-medium-r-normal--16-*-*-*-*-*-*-*,"
-	 "-*-*-medium-r-normal--16-*-*-*-*-*-*-*,"
-	 "-*-*-*-r-*--16-*-*-*-*-*-*-*" },
-    {"boldFontSet", "BoldFontSet", XtRFontSet, sizeof(XFontSet),
-       XtOffset(appresPtr, bold_fontset), XtRString,
-       (caddr_t) "-*-times-bold-r-normal--16-*-*-*-*-*-*-*,"
-	 "-*-*-bold-r-normal--16-*-*-*-*-*-*-*,"
-	 "-*-*-*-r-*--16-*-*-*-*-*-*-*" },
     {"fontSetSize", "FontSetSize", XtRInt, sizeof(int),
        XtOffset(appresPtr, fontset_size), XtRImmediate, (caddr_t)0 },
     {"inputStyle", "InputStyle", XtRString, sizeof(char *),
@@ -412,6 +408,7 @@ XrmOptionDescRec options[] =
     {"-noscalablefonts", ".scalablefonts", XrmoptionNoArg, "False"},
     {"-nosplash", ".splash", XrmoptionNoArg, "False"},
     {"-notrack", ".trackCursor", XrmoptionNoArg, "False"},
+    {"-nowrite_bak", ".write_bak", XrmoptionNoArg, "False"},
     {"-overlap", ".overlap", XrmoptionNoArg, "True"},
     {"-pageborder", ".pageborder", XrmoptionSepArg, (caddr_t) NULL},
     {"-paper_size", ".paper_size", XrmoptionSepArg, (caddr_t) NULL},
@@ -433,6 +430,7 @@ XrmOptionDescRec options[] =
     {"-showaxislines", ".showaxislines", XrmoptionNoArg, "True"},
     {"-single", ".multiple", XrmoptionNoArg, "False"},
     {"-smooth_factor", ".smooth_factor", XrmoptionSepArg, 0},
+    {"-smallicons", ".smallicons", XrmoptionNoArg, "True"},
     {"-specialtext", ".specialtext", XrmoptionNoArg, "True"},
     {"-spellcheckcommand", ".spellcheckcommand", XrmoptionSepArg, 0},
     {"-spinner_delay", ".spinner_delay", XrmoptionSepArg, 0},
@@ -457,6 +455,7 @@ XrmOptionDescRec options[] =
     {"-transparent_color", ".transparent", XrmoptionSepArg, 0},
     {"-userscale", ".userscale", XrmoptionSepArg, 0},
     {"-write_v40", ".write_v40", XrmoptionNoArg, "True"},
+    {"-write_bak", ".write_bak", XrmoptionNoArg, "True"},
     {"-userunit", ".userunit", XrmoptionSepArg, 0},
     {"-axislines", ".axislines", XrmoptionSepArg, "pink"},
     {"-zoom", ".zoom", XrmoptionSepArg, 0},
@@ -469,6 +468,7 @@ XrmOptionDescRec options[] =
 char *help_list[] = {
 	"[-allownegcoords] ",
 	"[-autorefresh] ",
+	"[-axislines <color>] ",
 	"[-balloon_delay <delay>] ",
 	"[-boldFont <font>] ",
 	"[-but_per_row <number>] ",
@@ -523,6 +523,7 @@ char *help_list[] = {
 	"[-noscalablefonts] ",
 	"[-nosplash] ",
 	"[-notrack] ",
+	"[-nowrite_bak] ",
 	"[-overlap] ",
 	"[-pageborder <color>] ",
 	"[-paper_size <size>] ",
@@ -542,6 +543,7 @@ char *help_list[] = {
 	"[-showpageborder] ",
 	"[-showaxislines] ",
 	"[-single] ",
+	"[-smallicons] ",
 	"[-smooth_factor <factor>] ",
 	"[-specialtext] ",
 	"[-spellcheckcommand <command>] ",
@@ -564,7 +566,7 @@ char *help_list[] = {
 	"[-userscale <scale>] ",
 	"[-userunit <units>] ",
 	"[-visual <visual>] ",
-	"[-axislines <color>] ",
+	"[-write_bak] ",
 	"[-zoom <zoom scale>] ",
 #ifdef I18N
 	"[-international] ",
@@ -641,6 +643,7 @@ void main(int argc, char **argv)
     char	    version[30];
     char	   *dval;
     char	    tmpstr[PATH_MAX];
+
 
     geomspec = False;
 
@@ -772,6 +775,7 @@ void main(int argc, char **argv)
     /* get all the visual stuff and depth */
     cnt = setup_visual(&argc, argv, args);
 
+
     /*
      * Now create the real toplevel widget.
      */
@@ -846,6 +850,16 @@ void main(int argc, char **argv)
 	}
 	arg_filename = argv[1];
     }
+
+
+	/*
+	 * Initialise the icons
+	 * I don't know how late they can be done, so do them as early as possible
+	 */
+	if(appres.smallicons)
+		setup_icons_small();
+	else
+		setup_icons_big();
 
 #ifdef I18N
     /************************************************************/
@@ -1009,13 +1023,13 @@ void main(int argc, char **argv)
       }
 
       /* decide SW_PER_ROW so that they can fit into the window */
-      min_sw_per_row = (MODE_SW_HT + INTERNAL_BW) * NUM_MODE_SW / init_canv_ht + 1;
+      min_sw_per_row = (mode_sw_ht + INTERNAL_BW) * NUM_MODE_SW / init_canv_ht + 1;
       SW_PER_ROW = max2(min_sw_per_row, SW_PER_ROW);
 
       if (appres.tmp_width <= 0) {
 	max_wd = screen_wd
 	   - INTERNAL_BW * 2
-	   - (MODE_SW_WD + INTERNAL_BW) * SW_PER_ROW
+	   - (mode_sw_wd + INTERNAL_BW) * SW_PER_ROW
 	   - SIDERULER_WD - margin_wd
 	   - (appres.showdepthmanager? LAYER_WD:0);
 	CANVAS_WD_LAND = min2(max_wd, CANVAS_WD_LAND);
@@ -1129,6 +1143,7 @@ void main(int argc, char **argv)
     /*************************************************/
 
     set_xpm_icon();
+
 
     /* Set the input field to true to allow keyboard input */
     wmhints = XGetWMHints(tool_d, tool_w);

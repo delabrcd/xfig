@@ -1311,7 +1311,7 @@ intersect_ellipse_handler(obj1, obj2, type2, x, y)
   case O_SPLINE:
     intersect_ellipse_spline_handler(obj1, obj2, x, y);
     break;
-  case O_TEXT:
+  case O_TXT:
     intersect_ellipse_text_handler(obj1, obj2, x, y);
     break;
   case O_ARC:
@@ -1337,7 +1337,7 @@ intersect_polyline_handler(obj1, obj2, type2, x, y)
   case O_SPLINE:
     intersect_polyline_spline_handler(obj1, obj2, x, y);
     break;
-  case O_TEXT:
+  case O_TXT:
     intersect_polyline_text_handler(obj1, obj2, x, y);
     break;
   case O_ARC:
@@ -1363,7 +1363,7 @@ intersect_spline_handler(obj1, obj2, type2, x, y)
   case O_SPLINE:
     intersect_spline_spline_handler(obj1, obj2, x, y);
     break;
-  case O_TEXT:
+  case O_TXT:
     intersect_spline_text_handler(obj1, obj2, x, y);
     break;
   case O_ARC:
@@ -1389,7 +1389,7 @@ intersect_text_handler(obj1, obj2, type2, x, y)
   case O_SPLINE:
     intersect_spline_text_handler(obj2, obj1, x, y);
     break;
-  case O_TEXT:
+  case O_TXT:
     intersect_text_text_handler(obj1, obj2, x, y);
     break;
   case O_ARC:
@@ -1415,7 +1415,7 @@ intersect_arc_handler(obj1, obj2, type2, x, y)
   case O_SPLINE:
     intersect_spline_arc_handler(obj2, obj1, x, y);
     break;
-  case O_TEXT:
+  case O_TXT:
     intersect_text_arc_handler(obj2, obj1, x, y);
     break;
   case O_ARC:
@@ -1442,7 +1442,7 @@ snap_intersect_handler(obj1, type1, obj2, type2, x, y)
   case O_SPLINE:
     intersect_spline_handler(obj1, obj2, type2, x, y);
     break;
-  case O_TEXT:
+  case O_TXT:
     intersect_text_handler(obj1, obj2, type2, x, y);
     break;
   case O_ARC:

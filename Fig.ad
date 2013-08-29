@@ -6,7 +6,7 @@
 !Don't change the following string - xfig uses it to determine
 ! if you have the newest app-defaults files installed
 
-Fig.version:			3.2.5b
+Fig.version:			3.2.5c
 
 ! some sample settings you may want to change
 
@@ -176,9 +176,11 @@ Fig.internalborderwidth:	1
 !
 !Fig*keyFile:	~/.xfig.Compose-key
 
-! If xfig is compiled with I18N option, you may want to uncomment following line.
+! If xfig is compiled with I18N option, you may want to uncomment following lines.
 !
 !Fig.international: true
+!Fig.localeEncoding: true
+!Fig.alwaysUseFontSet: true
 
 ! Note that you shouldn't remove the following "Fig*international: false".  
 ! It must be there to cancel any *international: true that may defined via xrdb.

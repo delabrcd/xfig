@@ -54,8 +54,6 @@ launch_refman(Widget w, XtPointer closure, XtPointer call_data)
 	    sprintf(filename, "%s/html/index.html", XFIGDOCDIR);
 	}
 #endif /* I18N */
-	if (!check_docfile(filename))
-		return;
 	launch_viewer(filename, "Launching Web browser for html pages", cur_browser);
 }
 
@@ -94,8 +92,15 @@ void launch_viewer(char *filename, char *message, char *viewer)
 	setCompLED(0);
 
 	/* first check if the file is installed */
-	if (!check_docfile(filename))
-	    return;
+	if (!check_docfile(filename)){
+	    if (errno == ENOENT) {
+                file_msg("%s is not installed, please install package xfig-doc.",filename);
+            } else {
+                file_msg("System error: %s on file %s",strerror(errno),filename);
+            }
+            beep();
+            return;
+	}
 	/* now replace the %f in the browser command with the filename and add the "&" */
 	browsecommand = build_command(viewer, filename);
 	put_msg(message);
@@ -107,16 +112,7 @@ Boolean
 check_docfile(char *name)
 {
 	struct	stat file_status;
-	if (stat(name, &file_status) != 0) {	/* something wrong */
-	    if (errno == ENOENT) {
-		file_msg("%s is not installed, please install package xfig-doc.",name);
-	    } else {
-		file_msg("System error: %s on file %s",strerror(errno),name);
-	    }
-	    beep();
-	    return False;
-	}
-	return True;
+	return (stat(name, &file_status)==0);
 }
 
 static Widget    help_popup = (Widget) 0;
@@ -163,9 +159,9 @@ launch_about(Widget w, XtPointer closure, XtPointer call_data)
 
 	/* make up some information */
 	strcpy(info,xfig_version);
-	strcat(info,"\n  Copyright \251 1985-1988 by Supoj Sutanthavibul");
-	strcat(info,"\n  Parts Copyright \251 1989-2007 by Brian V. Smith (BVSmith@lbl.gov)");
+	strcat(info,"\n  Parts Copyright \251 1989-2013 by Brian V. Smith (BVSmith@lbl.gov)");
 	strcat(info,"\n  Parts Copyright \251 1991 by Paul King");
+	strcat(info,"\n  Copyright \251 1985-1988 by Supoj Sutanthavibul");
 	strcat(info,"\n  See source files and man pages for other copyrights");
 
 	FirstArg(XtNlabel, info);

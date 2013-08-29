@@ -1726,11 +1726,13 @@ void calc_arrow(int x1, int y1, int x2, int y2, int linethick, F_arrow *arrow, z
 	clippts[i].x = ROTXC(0,             miny);
 	clippts[i].y = ROTYC(0,             miny);
 	i++;
-	clippts[i].x = ROTXC(radius+th/2.0, miny);
-	clippts[i].y = ROTYC(radius+th/2.0, miny);
+	/* add halfthick in case the line cap style is Round or Projecting */
+	clippts[i].x = ROTXC(radius+th/2.0+halfthick, miny);
+	clippts[i].y = ROTYC(radius+th/2.0+halfthick, miny);
 	i++;
-	clippts[i].x = ROTXC(radius+th/2.0, maxy);
-	clippts[i].y = ROTYC(radius+th/2.0, maxy);
+	/* add halfthick in case the line cap style is Round or Projecting */
+	clippts[i].x = ROTXC(radius+th/2.0+halfthick, maxy);
+	clippts[i].y = ROTYC(radius+th/2.0+halfthick, maxy);
 	i++;
 	clippts[i].x = ROTXC(0,             maxy);
 	clippts[i].y = ROTYC(0,             maxy);
@@ -1796,12 +1798,14 @@ void calc_arrow(int x1, int y1, int x2, int y2, int linethick, F_arrow *arrow, z
 		clippts[i].y = ROTY(x,miny);
 		i++;
 		/* x tip, same y (note different offset in ROTX/Y2 rotation) */
-		clippts[i].x = ROTX2(arrow_shapes[indx].points[tip].x*len + ZOOM_FACTOR, miny);
-		clippts[i].y = ROTY2(arrow_shapes[indx].points[tip].x*len + ZOOM_FACTOR, miny);
+		/* add halfthick in case the line cap style is Round or Projecting */
+		clippts[i].x = ROTX2(arrow_shapes[indx].points[tip].x*len+halfthick + ZOOM_FACTOR, miny);
+		clippts[i].y = ROTY2(arrow_shapes[indx].points[tip].x*len+halfthick + ZOOM_FACTOR, miny);
 		i++;
 		/* x tip, upper y (note different offset in ROTX/Y2 rotation) */
-		clippts[i].x = ROTX2(arrow_shapes[indx].points[tip].x*len + ZOOM_FACTOR, maxy);
-		clippts[i].y = ROTY2(arrow_shapes[indx].points[tip].x*len + ZOOM_FACTOR, maxy);
+		/* add halfthick in case the line cap style is Round or Projecting */
+		clippts[i].x = ROTX2(arrow_shapes[indx].points[tip].x*len+halfthick + ZOOM_FACTOR, maxy);
+		clippts[i].y = ROTY2(arrow_shapes[indx].points[tip].x*len+halfthick + ZOOM_FACTOR, maxy);
 		i++;
 		/* first x of arrowhead, upper y */
 		clippts[i].x = ROTX(arrow_shapes[indx].points[0].x*len, maxy);

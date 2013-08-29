@@ -242,10 +242,7 @@ dice_polygons(int nr_segs, l_point_s * top_l_points, F_line * l)
   int last_x = -1;
   int last_y = -1;
   ptype_e last_ptype = PTYPE_NONE;
-  int end_seg;
-  int end_point;
   int start_point = -1;
-  Boolean completed = False;
   int this_x;
   int this_y;
   int this_ptype;
@@ -412,7 +409,7 @@ chop_polyline(F_line * l, int x, int y)
   } state_pline_e;
 
   if ((T_POLYLINE != l->type) && (T_POLYGON != l->type)) {
-    put_msg("Only unconstrained polylines anf polygons may be chopped.");
+    put_msg("Only unconstrained polylines and polygons may be chopped.");
     beep();
     return -1;
   }
@@ -532,7 +529,7 @@ chop_polyline(F_line * l, int x, int y)
 static int
 chop_arc(F_arc * a, int x, int y)
 {
-  int i, j;
+  int i;
   isect_cb_s isect_cb;
   Boolean runnable;
   int rc;
@@ -682,7 +679,7 @@ chop_arc(F_arc * a, int x, int y)
 static int
 chop_ellipse(F_ellipse * e, int x, int y)
 {
-  int i, j;
+  int i;
   isect_cb_s isect_cb;
   Boolean runnable;
   int rc;
@@ -817,7 +814,6 @@ select_log_object(obj, type, x, y, p, q)		/* select log objects */
      F_point * p;
      F_point * q;
 {
-  int i;
   Boolean rc;
 
   switch(type) {

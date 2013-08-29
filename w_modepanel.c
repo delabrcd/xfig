@@ -387,7 +387,7 @@ init_mode_panel(Widget tool)
     for (i = 0; i < NUM_MODE_SW; ++i) {
 	sw = &mode_switches[i];
 	if (sw->mode == FIRST_DRAW_MODE) {
-	    FirstArg(XtNwidth, MODE_SW_WD * SW_PER_ROW +
+	    FirstArg(XtNwidth, mode_sw_wd * SW_PER_ROW +
 		     INTERNAL_BW * (SW_PER_ROW - 1));
 	    NextArg(XtNborderWidth, 0);
 	    NextArg(XtNresize, False);

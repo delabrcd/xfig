@@ -136,7 +136,7 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
     pic->pic_cache->cmap[1].red = pic->pic_cache->cmap[1].green = pic->pic_cache->cmap[1].blue = 255;
     pic->pic_cache->numcols = 0;
 
-    if (bad_bbox = (urx <= llx || ury <= lly)) {
+    if ((bad_bbox = (urx <= llx || ury <= lly))) {
 	file_msg("Bad values in %s",
 		 pdf_flag ? "/MediaBox" : "EPS bounding box");
 	close_picfile(file,filetype);
@@ -252,12 +252,13 @@ bitmap_from_gs(file, filetype, pic, urx, llx, ury, lly, pdf_flag)
 {
     char        buf[300];
     FILE       *tmpfp, *pixfile, *gsfile;
-    char       *psnam, *driver;
+    char       *driver;
     int         status, wid, ht, nbitmap, fd;
     char        tmpfile[PATH_MAX],
 		pixnam[PATH_MAX],
 		errnam[PATH_MAX],
-		gscom[2 * PATH_MAX];
+		gscom[2 * PATH_MAX],
+		psnam[PATH_MAX];
 
     wid = urx - llx;
     ht = ury - lly;
@@ -305,21 +306,16 @@ bitmap_from_gs(file, filetype, pic, urx, llx, ury, lly, pdf_flag)
 	driver = "pbmraw";
     } else {
 	/* for color, use pcx */
-	driver = "pcx256";
+	driver = "pcx24b";
     }
-    /* avoid absolute paths (for Cygwin with gswin32) by changing directory */
-    if (tmpfile[0] == '/') {
-	psnam = strrchr(tmpfile, '/');
-	*psnam = 0;
-	sprintf(gscom, "cd \"%s/\";", tmpfile);
-	*psnam++ = '/';		/* Restore name for unlink() below */
-    } else {
-	psnam = tmpfile;
-	gscom[0] = '\0';
+    /* Canonicalize the eps file filename, needed to "defeat" -dSAFER */
+    if (!realpath(tmpfile, psnam)) {
+	file_msg("Cannot canonicalize %s: %s\n", tmpfile, strerror(errno));
+	return False;
     }
-    sprintf(&gscom[strlen(gscom)],
-	    "%s -r72x72 -dSAFER -sDEVICE=%s -g%dx%d -sOutputFile=%s -q - > %s 2>&1",
-	    appres.ghostscript, driver, wid, ht, pixnam, errnam);
+    sprintf(gscom,
+	    "%s -r72x72 -sDEVICE=%s -g%dx%d -sOutputFile=%s -dDELAYSAFER -c '<< /PermitFileReading [ (%s)] >> setuserparams .locksafe' -dSAFER -q - > %s 2>&1",
+	    appres.ghostscript, driver, wid, ht, pixnam, psnam, errnam);
     if (appres.DEBUG)
 	fprintf(stderr,"calling: %s\n",gscom);
     if ((gsfile = popen(gscom, "w")) == 0) {
@@ -330,7 +326,7 @@ bitmap_from_gs(file, filetype, pic, urx, llx, ury, lly, pdf_flag)
     gs commands (New method)
 
     W is the width in pixels and H is the height
-    gs -dSAFER -sDEVICE=pbmraw(or pcx256) -gWxH -sOutputFile=/tmp/xfig-pic%%%.pix -q -
+    gs -dSAFER -sDEVICE=pbmraw(or pcx24b) -gWxH -sOutputFile=/tmp/xfig-pic%%%.pix -q -
 
     -llx -lly translate
     % mark dictionary (otherwise fails for tiger.ps (e.g.):

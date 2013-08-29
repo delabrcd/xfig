@@ -16,14 +16,12 @@
 
 #ifndef W_ICONS_H
 #define W_ICONS_H
+extern int mode_sw_ht;
+extern int mode_sw_wd;
 
-#ifdef USE_SMALL_ICONS
-#define		MODE_SW_HT	22	/* height of a small mode switch icon */
-#define		MODE_SW_WD	22	/* width of a small mode switch icon */
-#else
-#define		MODE_SW_HT	32	/* height of a mode switch icon */
-#define		MODE_SW_WD	36	/* width of a mode switch icon */
-#endif
+void setup_icons_small();
+void setup_icons_big();
+
 
 typedef struct _icon_struct {
     int	    width, height;

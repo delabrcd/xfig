@@ -189,7 +189,7 @@ rotate_search(F_line *p, int type, int x, int y, int px, int py)
 	cur_s = (F_spline *) p;
 	init_rotatespline(cur_s, px, py);
 	break;
-    case O_TEXT:
+    case O_TXT:
 	cur_t = (F_text *) p;
 	init_rotatetext(cur_t, px, py);
 	break;

@@ -527,7 +527,7 @@ void write_text(FILE *fp, F_text *t)
     write_comments(fp, t->comments);
 
     fprintf(fp, "%d %d %d %d %d %d %d %.4f %d %d %d %d %d ",
-			O_TEXT, t->type, t->color, t->depth, t->pen_style,
+			O_TXT, t->type, t->color, t->depth, t->pen_style,
 			t->font, t->size, t->angle,
 			t->flags, t->ascent+t->descent, t->length,
 			t->base_x, t->base_y);

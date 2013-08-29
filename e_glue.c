@@ -81,7 +81,7 @@ tag_object(F_line *p, int type, int x, int y, int px, int py)
         toggle_linehighlight(cur_l);
 	cur_l->tagged = 1 - cur_l->tagged;
         break;
-    case O_TEXT:
+    case O_TXT:
         cur_t = (F_text *) p;
         toggle_texthighlight(cur_t);
 	cur_t->tagged = 1 - cur_t->tagged;
@@ -466,7 +466,7 @@ get_text(F_text **list)
 	    t = t->next;
 	    continue;
 	}
-	remove_depth(O_TEXT, t->depth);
+	remove_depth(O_TXT, t->depth);
 	if (*list == NULL)
 	    *list = t;
 	else

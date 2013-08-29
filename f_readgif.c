@@ -137,7 +137,7 @@ read_gif(FILE *file, int filetype, F_pic *pic)
 
 		if (c == '!') { 		/* Extension */
 			if (! ReadOK(file,&c,1))
-				file_msg("GIF read error on extention function code");
+				file_msg("GIF read error on extension function code");
 			(void) DoGIFextension(file, c);
 			continue;
 		}

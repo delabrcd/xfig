@@ -12,22 +12,70 @@
 
 <hr>
 <h2>Current release:</h2>
-<img src="images/blueballdot.png"><a href="#bugsfixedb">Bugs Fixed in <i>xfig 3.2.5b</i></a> 
+<img src="images/blueballdot.png"><a href="#bugsfixedc">Bugs Fixed in <i>xfig 3.2.5c</i></a> 
 <br>
-<img src="images/blueballdot.png"><a href="#bugsfixeda">Bugs Fixed in <i>xfig 3.2.5a</i></a> 
 <h2>Older releases of xfig:</h2>
-<img src="images/blueballdot.png"><a href="#bugsfixed"><i>xfig 3.2.5</i></a> 
+<img src="images/blueballdot.png"><a href="#bugsfixedb"><i>xfig 3.2.5</i></a> 
 <br>
 
 <br> <img src="images/blueramp.png" alt="-">
 
+<h2><a name="bugsfixedc">Bugs Fixed in <i>xfig 3.2.5c</i></a></h2>
+	<img src="images/blueballdot.png"> Increased default width of layer panel from 58 to 64 to accomodate scrollbar width
+	<br><img src="images/blueballdot.png"> missing comma in FIXED_JAPANESE_PDF #ifdef case in w_cmdpanel.c
+	<br><img src="images/blueballdot.png"> printer name enclosed in apostrophes when printing in case has spaces in name
+	<br><img src="images/blueballdot.png"> new link from Elizabeth Bailey for Fig applications referenced in installation.html
+	<br><img src="images/blueballdot.png"> old link to duke.uask.ca for Fig applications has new link in installation.html
+	<br><img src="images/blueballdot.png"> Typo in message "GIF read error on extention ..." should be "extension"
+	<br><img src="images/blueballdot.png"> Possibility of stack overflow with malformed Fig files.
+	<br><img src="images/blueballdot.png"> In version 1.4 of the PNG library dither was removed so xfig now uses quantize when
+	  importing PNG images with palettes
+	<br><img src="images/blueballdot.png"> Other updates for PNG library version 1.5 from Peter Volkov
+	<br><img src="images/blueballdot.png"> Some versions of Cygwin don't have either REG_NOERROR or REG_OKAY defined so REG_NOERROR defined to be 0
+	<br><img src="images/blueballdot.png"> Changed X-Spline parameter to match original intent of X-Spline authors:
+	  changed definition of Q(s) from -s to -0.5 * s in u_draw_spline.c
+	<br><img src="images/blueballdot.png"> Allowance for stricter ghostscript in -dSAFER mode.  Was causing error on reading EPS images.
+	  From Hans de Goede
+	<br><img src="images/blueballdot.png"> Security vulnerability with importing images fixed 
+	  (RedHat bug # 657981 - xfig buffer overflow when opening .fig file with malicius color definition)
+	<br><img src="images/blueballdot.png"> When exporting to combined PS/PDF/LATEX the -D option to exclude all but active layers
+	  was not passed to fig2dev
+	<br><img src="images/blueballdot.png"> Uses 24-bit color instead of 8-bit when importing eps files (pcx24b driver for ghostscript)
+	<br><img src="images/blueballdot.png"> Bug in freeing null fontset
+	<br><img src="images/blueballdot.png"> Semicolon (;) added at end of MimeType line in xfig.desktop as per
+	  http://standards.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html
+	<br><img src="images/blueballdot.png"> Reference to "Darwin Ports" changed to "MacPorts"
+	<br><img src="images/blueballdot.png"> Renamed O_TEXT to O_TXT to avoid conflicts with system define
+	<br><img src="images/blueballdot.png"> On lines with Round or Projecting cap style and arrowheads, the line endpoint stuck out
+	  beyond the arrowhead
+	  
+<br>
+<br>
+	From Vladsilav Zavjalov:
+<br>
+	<br><img src="images/blueballdot.png"> Uses fontsets for all fonts in international mode
+	<br><img src="images/blueballdot.png"> SEGV when zooming while creating object (e.g. text)
+	<br><img src="images/blueballdot.png"> Add locale_encoding appres which acts similar to euc_encoding, but uses system locale and
+	  mbrlen function for multibyte character length calculation.
+	<br><img src="images/blueballdot.png"> Move "file not found" error message from check_docfile() to launch_viewer(), 
+	  remove excess check_docfile() call.
+	  Error message is not shown when looking for a locale-dependent docs. It is shown only
+	  if no docs found at all.
+	<br><img src="images/blueballdot.png"> Do not do strcpy with equal arguments in w_cmdpanel.c/update_cur_filename()
+	<br><img src="images/blueballdot.png"> Print to file had extra argument in sprintf in international mode
+	<br><img src="images/blueballdot.png"> Message panel not tall enough with 3D Athena widgets
+	<br><img src="images/blueballdot.png"> Warnings about different size of int and void * on 64-bit system.
+	  To fix this problem I changed int to intptr_t in some places.
+<hr>
+
 <h2><a name="bugsfixedb">Bugs Fixed in <i>xfig 3.2.5b</i></a></h2>
-	<br><img src="images/blueballdot.png"> Dimension line indicator incorrectly showed arrow length/width
+	<img src="images/blueballdot.png"> Dimension line indicator incorrectly showed arrow length/width
 	<br><img src="images/blueballdot.png"> Several patches from Fedora xfig maintainer
 	<br><img src="images/blueballdot.png"> divide by 0 under certain circumstances in ruler code - From Libor Pechacek
 	<br><img src="images/blueballdot.png"> Segfault if PRINTER env variable was not defined
 
-<h2><a name="bugsfixedb">Bugs Fixed in <i>xfig 3.2.5a</i></a></h2>
+<hr>
+<h2><a name="bugsfixeda">Bugs Fixed in <i>xfig 3.2.5a</i></a></h2>
 	<img src="images/blueballdot.png"> dimension line arrowhead width and length used %d instead of %f in
 	  dialog, always displaying 0
 	<br><img src="images/blueballdot.png"> leftover debugging printf(...color = ) in startup

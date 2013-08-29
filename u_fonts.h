@@ -41,6 +41,7 @@ struct xfont {
     char	   *fname;	/* actual name of X font found */
     char	   *bname;	/* name of backup X font to try if first doesn't exist */
     XFontStruct	   *fstruct;	/* X font structure */
+    XFontSet       fset;	/* X font set - used in international mode*/
     struct xfont   *next;	/* next in the list */
 };
 

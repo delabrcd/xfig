@@ -393,7 +393,7 @@ void toggle_objecthighlight(void)
     case O_SPLINE:
 	toggle_splinehighlight(s);
 	break;
-    case O_TEXT:
+    case O_TXT:
 	toggle_texthighlight(t);
 	break;
     case O_ARC:
@@ -460,7 +460,7 @@ do_object_search(int x, int y, unsigned int shift)
 	  case O_SPLINE:
 	    found = next_spline_found(x, y, TOLERANCE, &px, &py, shift);
 	    break;
-	  case O_TEXT:
+	  case O_TXT:
 	    found = next_text_found(x, y, TOLERANCE, &px, &py, shift);
 	    break;
 	  case O_ARC:
@@ -484,10 +484,10 @@ do_object_search(int x, int y, unsigned int shift)
 	    s = NULL;
 	    break;
 	  case O_SPLINE:
-	    type = O_TEXT;
+	    type = O_TXT;
 	    t = NULL;
 	    break;
-	  case O_TEXT:
+	  case O_TXT:
 	    type = O_ARC;
 	    a = NULL;
 	    break;
@@ -520,7 +520,7 @@ do_object_search(int x, int y, unsigned int shift)
 	  case O_SPLINE:
 	    manipulate(s, type, x, y, px, py);
 	    break;
-	  case O_TEXT:
+	  case O_TXT:
 	    manipulate(t, type, x, y, px, py);
 	    break;
 	  case O_ARC:

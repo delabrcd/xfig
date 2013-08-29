@@ -45,6 +45,7 @@
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
 #include <X11/Xmu/Atoms.h>
+#include <wchar.h>
 
 #ifdef SEL_TEXT
 Boolean	text_selection_active;
@@ -732,10 +733,15 @@ prefix_length(char *string, int where_p)
 	size = textsize(canvas_font, where_c, string);
 	if (where_p <= size.length) return where_c;
 	if (appres.euc_encoding) {
-	  if (string[where_c] == EUC_SS3) where_c = where_c + 2;
-	  else if (is_euc_multibyte(string[where_c])) where_c = where_c + 1;
+	  if (string[where_c] == EUC_SS3) where_c = where_c + 3;
+	  else if (is_euc_multibyte(string[where_c])) where_c = where_c + 2;
 	}
-	where_c = where_c + 1;
+	else if (appres.locale_encoding) {
+	  l=mbrlen(string+where_c, MB_LEN_MAX, NULL);
+	  if (l>0) where_c+=l;
+	  else where_c++;
+	}
+	else where_c++;
       }
       return len_c;
     }
@@ -2042,7 +2048,7 @@ xim_set_spot(x, y)
 static int
 i18n_prefix_tail(char *s1)
 {
-  int len, i;
+  int len=1, i;
   if (appres.euc_encoding && is_euc_multibyte(prefix[leng_prefix-1])) {
     if (leng_prefix > 2 && prefix[leng_prefix-3] == EUC_SS3)
       len = 3;
@@ -2051,10 +2057,12 @@ i18n_prefix_tail(char *s1)
       len = 2;
       /* G2: 10001110 1xxxxxxx (JIS X 0201, for example) */
       /* G1: 1xxxxxxx 1xxxxxxx (JIS X 0208, for example) */
-    else
-      len = 1;  /* this can't happen */
-  } else {
-    len = 1;  /* G0: 0xxxxxxx (ASCII, for example) */
+  } else if (appres.locale_encoding){
+    for (i=0; (i<leng_prefix)&&(i<MB_LEN_MAX) ; i++){
+      len=mbrlen(prefix+leng_prefix-i, MB_LEN_MAX, NULL);
+      if (len>0) break;
+    }
+    if (len<=0) len=1;
   }
   if (s1 != NULL) {
     for (i = 0; i < len; i++) s1[i] = prefix[leng_prefix - len + i];
@@ -2066,13 +2074,14 @@ i18n_prefix_tail(char *s1)
 static int
 i18n_suffix_head(char *s1)
 {
-  int len, i;
+  int len=1, i;
   if (appres.euc_encoding && is_euc_multibyte(suffix[0])) {
     if (leng_suffix > 2 && suffix[0] == EUC_SS3) len = 3;  /* G3 */
     else if (leng_suffix > 1) len = 2;  /* G1 or G2 */
-    else len = 1;  /* this can't happen */
-  } else {
-    len = 1;  /* G0 */
+  }
+  else if (appres.locale_encoding){
+    len=mbrlen(suffix, MB_LEN_MAX, NULL);
+    if (len<=0) len=1;
   }
   if (s1 != NULL) {
     for (i = 0; i < len; i++) s1[i] = suffix[i];

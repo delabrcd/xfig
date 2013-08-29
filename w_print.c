@@ -426,7 +426,7 @@ just_select(Widget w, XtPointer new_just, XtPointer garbage)
 static void
 papersize_select(Widget w, XtPointer new_papersize, XtPointer garbage)
 {
-    int papersize = (int) new_papersize;
+    intptr_t papersize = (intptr_t) new_papersize;
 
     FirstArg(XtNlabel, paper_sizes[papersize].fname);
     SetValues(print_papersize_panel);
@@ -441,7 +441,7 @@ papersize_select(Widget w, XtPointer new_papersize, XtPointer garbage)
 static void
 multiple_select(Widget w, XtPointer new_multiple, XtPointer garbage)
 {
-    int multiple = (int) new_multiple;
+    intptr_t multiple = (intptr_t) new_multiple;
 
     FirstArg(XtNlabel, multiple_pages[multiple]);
     SetValues(print_multiple_panel);
@@ -475,7 +475,7 @@ multiple_select(Widget w, XtPointer new_multiple, XtPointer garbage)
 static void
 overlap_select(Widget w, XtPointer new_overlap, XtPointer garbage)
 {
-    int overlap = (int) new_overlap;
+    intptr_t overlap = (intptr_t) new_overlap;
 
     FirstArg(XtNlabel, overlap_pages[overlap]);
     SetValues(print_overlap_panel);
@@ -546,7 +546,7 @@ print_grid_major_select(Widget w, XtPointer new_grid_choice, XtPointer garbage)
 static void
 printer_select(Widget w, XtPointer new_printer, XtPointer garbage)
 {
-    int printer = (int) new_printer;
+    intptr_t printer = (intptr_t) new_printer;
 
     /* put selected printer in the menu button */
     FirstArg(XtNlabel, printer_names[printer]);
@@ -630,7 +630,8 @@ void create_print_panel(Widget w)
 	char	    buf[100];
 	char	   *unit;
 	int	    ux,uy,lx,ly;
-	int	    i,len,maxl;
+	int	    len,maxl;
+	intptr_t    i;
 	float	    mult;
 
 	XtTranslateCoords(tool, (Position) 0, (Position) 0, &xposn, &yposn);
@@ -958,6 +959,7 @@ void create_print_panel(Widget w)
 	   var and put it into the widget */
 	if (emptyname(printer_val)) {
 		printer_val=getenv("PRINTER");
+		/**********
 		if ((printer_val!=NULL) && strchr(printer_val,'\\')) {
 		    buf[0]='\0';
 		    len=0;
@@ -969,6 +971,7 @@ void create_print_panel(Widget w)
 		    buf[len++]='\0';
 		    printer_val = buf;
 		}
+		**********/
 		if (printer_val == NULL) {
 			printer_val = "";
 		} else {
@@ -1160,7 +1163,7 @@ static XtCallbackProc
 switch_print_layers(Widget w, XtPointer closure, XtPointer call_data)
 {
     Boolean	    state;
-    int		    which;
+    intptr_t	    which;
 
     /* check state of the toggle and set/remove checkmark */
     FirstArg(XtNstate, &state);
@@ -1183,7 +1186,7 @@ switch_print_layers(Widget w, XtPointer closure, XtPointer call_data)
 	XtSetSensitive(printalltoggle, state);
     }
     /* which button */
-    which = (int) XawToggleGetCurrent(w);
+    which = (intptr_t) XawToggleGetCurrent(w);
     if (which == 0)		/* no buttons on, in transition so return now */
 	return;
     if (which == 2)		/* "blank" button, invert state */

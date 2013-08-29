@@ -95,7 +95,7 @@ init_move(F_line *p, int type, int x, int y, int px, int py)
 	set_cursor(null_cursor);
 	init_linedragging(cur_l, px, py);
 	break;
-    case O_TEXT:
+    case O_TXT:
 	set_cursor(wait_cursor);
 	cur_t = (F_text *) p;
 	list_delete_text(&objects.texts, cur_t);

@@ -211,7 +211,7 @@ init_update_settings(F_line *p, int type, int x, int y, int px, int py)
 	if (cur_l->type == T_ARCBOX)
 	    up_part(cur_boxradius, cur_l->radius, I_BOXRADIUS);
 	break;
-      case O_TEXT:
+      case O_TXT:
 	cur_t = (F_text *) p;
 	up_part(cur_textjust, cur_t->type, I_TEXTJUST);
 	up_part(cur_pencolor, cur_t->color, I_PEN_COLOR);
@@ -365,7 +365,7 @@ init_update_object(F_line *p, int type, int x, int y, int px, int py)
 	/* draw the new line */
 	redisplay_line(new_l);
 	break;
-      case O_TEXT:
+      case O_TXT:
 	set_temp_cursor(wait_cursor);
 	cur_t = (F_text *) p;
 	new_t = copy_text(cur_t);

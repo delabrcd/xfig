@@ -217,7 +217,7 @@ menu_def help_menu_items[] = {
 #ifdef FIXED_JAPANESE_PDF
 	{"Xfig Reference (PDF, English)...",	0, launch_refpdf_en, False},
 	/* Tom Sato said that the Japanese version of the pdf looked ugly so we'll not distribute it now */
-	{"Xfig Reference (PDF, Japanese)...",	0, launch_refpdf_jp, False}
+	{"Xfig Reference (PDF, Japanese)...",	0, launch_refpdf_jp, False},
 #else
 	{"Xfig Reference (PDF)...",	0, launch_refpdf_en, False},
 #endif /* FIXED_JAPANESE_PDF */
@@ -415,7 +415,7 @@ create_menu_item(main_menu_info *menup)
 				menup->widget, Args, ArgCount);
 	/* make the menu items */
 	for (i = 0; menup->menu[i].name != NULL; i++) {
-	    if ((int) menup->menu[i].name == -1) {
+	    if ((intptr_t) menup->menu[i].name == -1) {
 		/* put in a separator line */
 		FirstArg(XtNlineWidth, 2);
 		(void) XtCreateManagedWidget("line", smeLineObjectClass, 
@@ -1370,7 +1370,7 @@ filename_unballoon(Widget widget, XtPointer closure, XEvent *event, Boolean *con
 
 void update_cur_filename(char *newname)
 {
-        strcpy(cur_filename,newname);
+        if (cur_filename!=newname) strcpy(cur_filename,newname);
 	/* store the new filename in the name_panel widget */
 	FirstArg(XtNlabel, newname);
 	SetValues(name_panel);
@@ -1535,7 +1535,8 @@ popup_character_map(void)
 {
 	Widget	    	 beside, below;
 	XFontStruct	*font;
-	int		 i, vertDist;
+	intptr_t	 i;
+	int		 vertDist;
 	char		 fname[80], chr[2];
 	static Boolean	 actions_added=False;
 

@@ -29,7 +29,7 @@ int		NAMEPANEL_WD;
 int		MODEPANEL_WD;
 int		MODEPANEL_SPACE;
 int		MSGPANEL_WD;
-int		MSGPANEL_HT = 18;
+int		MSGPANEL_HT = 24;
 int		MOUSEFUN_HT;
 int		INDPANEL_WD;
 int		CANVAS_WD, CANVAS_HT;
@@ -72,7 +72,7 @@ void setup_sizes(int new_canv_wd, int new_canv_ht)
 	SIDERULER_HT = MAX_SIDERULER_HT;
 
     /* side mode panel */
-    MODEPANEL_WD = (MODE_SW_WD + INTERNAL_BW) * SW_PER_ROW + INTERNAL_BW;
+    MODEPANEL_WD = (mode_sw_wd + INTERNAL_BW) * SW_PER_ROW + INTERNAL_BW;
 
     NUM_CMD_MENUS = num_main_menus();	/* kludge - NUM_CMD_MENUS local to w_cmdpanel.c */
     /* width of the command menu button form */
@@ -92,7 +92,7 @@ void setup_sizes(int new_canv_wd, int new_canv_ht)
 
     /* space for both modepanel titles (Drawing modes and Editing modes) */
     MODEPANEL_SPACE = 1 + CANVAS_HT + RULER_WD - 
-	(MODE_SW_HT + INTERNAL_BW) * (ceil((double)NUM_MODE_SW/SW_PER_ROW) + 1);
+	(mode_sw_ht + INTERNAL_BW) * (ceil((double)NUM_MODE_SW/SW_PER_ROW) + 1);
     if (MODEPANEL_SPACE < 2)
 	MODEPANEL_SPACE = 2;
 }

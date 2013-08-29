@@ -867,7 +867,7 @@ rescale_dimension_line(F_compound *dimline, float scalex, float scaley, int refx
 	    text->depth  = box->depth-1;
 	else
 	    text->depth  = line->depth-2;
-	add_depth(O_TEXT, text->depth);
+	add_depth(O_TXT, text->depth);
 	text->cstring = (char *) NULL;	/* the string will be put in later */
 	text->color = cur_dimline_textcolor;
 	text->font = cur_dimline_font;

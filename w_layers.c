@@ -136,7 +136,7 @@ init_depth_panel(Widget parent)
 	XtManageChild(layer_form);
 
     /* a label */
-    FirstArg(XtNlabel, "Depths ");
+    FirstArg(XtNlabel, "Depths   ");
     NextArg(XtNtop, XtChainTop);
     NextArg(XtNbottom, XtChainTop);
     NextArg(XtNleft, XtChainLeft);
@@ -146,7 +146,7 @@ init_depth_panel(Widget parent)
 
     /* buttons to make all active, all inactive or toggle all */
 
-    FirstArg(XtNlabel, "All On ");
+    FirstArg(XtNlabel, "All On  ");
     NextArg(XtNfromVert, label);
     NextArg(XtNtop, XtChainTop);
     NextArg(XtNbottom, XtChainTop);
@@ -163,7 +163,7 @@ init_depth_panel(Widget parent)
 			   (XtEventHandler)layer_unballoon, (XtPointer) NULL);
 #endif /* XAW3D1_5E */
 
-    FirstArg(XtNlabel, "All Off");
+    FirstArg(XtNlabel, "All Off ");
     NextArg(XtNfromVert, below);
     NextArg(XtNtop, XtChainTop);
     NextArg(XtNbottom, XtChainTop);
@@ -180,7 +180,7 @@ init_depth_panel(Widget parent)
 			   (XtEventHandler)layer_unballoon, (XtPointer) NULL);
 #endif /* XAW3D1_5E */
 
-    FirstArg(XtNlabel, "Toggle ");
+    FirstArg(XtNlabel, "Toggle  ");
     NextArg(XtNfromVert, below);
     NextArg(XtNtop, XtChainTop);
     NextArg(XtNbottom, XtChainTop);
@@ -229,7 +229,7 @@ init_depth_panel(Widget parent)
     NextArg(XtNbottom, XtChainTop);
     NextArg(XtNleft, XtChainRight);
     NextArg(XtNright, XtChainRight);
-    NextArg(XtNlabel, "Gray ");
+    NextArg(XtNlabel, "Gray  ");
     graylabel = below = XtCreateManagedWidget("graylabel", labelWidgetClass,
 				layer_form, Args, ArgCount);
 #ifndef XAW3D1_5E
@@ -266,7 +266,7 @@ init_depth_panel(Widget parent)
     FirstArg(XtNborderWidth, 0);
     NextArg(XtNfromVert, graytoggle);
     NextArg(XtNfromHoriz, blanktoggle);
-    NextArg(XtNlabel, "Blank");
+    NextArg(XtNlabel, "Blank ");
     NextArg(XtNtop, XtChainTop);
     NextArg(XtNbottom, XtChainTop);
     NextArg(XtNleft, XtChainRight);
@@ -309,7 +309,6 @@ init_depth_panel(Widget parent)
     FirstArg(XtNborderWidth, 1);
     NextArg(XtNwidth, LAYER_WD);
     NextArg(XtNallowVert, True);
-    NextArg(XtNforceBars, True);	/* force the vertical scrollbar */
     NextArg(XtNfromVert, below);
     NextArg(XtNtop, XtChainTop);
     NextArg(XtNbottom, XtChainBottom);
@@ -386,7 +385,7 @@ setup_depth_panel(void)
     XtManageChild(layer_form);
 }
 
-#define B_WIDTH		38
+#define B_WIDTH		48
 #define B_BORDER	2
 #define C_SIZE		10
 #define TOT_B_HEIGHT	(C_SIZE+2*B_BORDER)
@@ -677,7 +676,7 @@ static void
 switch_layer_mode(Widget w, XtPointer closure, XtPointer call_data)
 {
     Boolean	    state;
-    int		    which;
+    intptr_t	    which;
 
     /* check state of the toggle and set/remove checkmark */
     FirstArg(XtNstate, &state);
@@ -700,7 +699,7 @@ switch_layer_mode(Widget w, XtPointer closure, XtPointer call_data)
 	XtSetSensitive(graytoggle, state);
     }
     /* which button */
-    which = (int) XawToggleGetCurrent(w);
+    which = (intptr_t) XawToggleGetCurrent(w);
     if (which == 0)		/* no buttons on, in transition so return now */
 	return;
     if (which == 2)		/* "blank" button, invert state */

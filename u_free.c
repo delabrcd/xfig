@@ -270,6 +270,8 @@ void free_Fonts(void)
       XUnloadFont(tool_d, nf->fid);
       if (nf->fstruct != NULL)
 	  XFreeFont(tool_d, nf->fstruct); 
+      if (nf->fset != NULL)
+	  XFreeFontSet(tool_d, nf->fset); 
       nf = nf->next;
     } 
   }

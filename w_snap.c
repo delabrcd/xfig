@@ -240,7 +240,6 @@ do_snap_polyline_normal(l, x, y, cur_point_x, cur_point_y)
       double c  = cur_point_y - n * cur_point_x;
       double rx = (c - b)/(m - n);
       double ry1 = (m * rx) + b;
-      double ry2 = (n * rx) + c;
       snap_gx = (int)rint(rx);
       snap_gy = (int)rint(ry1);
     }
@@ -363,7 +362,6 @@ snap_ellipse_normal_ellipse_handler(e, x, y, cur_point_x, cur_point_y)
   double ix[2];
   double iy[2];
   double dtheta[2];
-  double theta, phi;
   int sel_idx;
   
   /* translate to ellipse origin */
@@ -1103,10 +1101,6 @@ snap_handler(p, type, x, y, px, py)
     int x, y;
     int px, py;
 {
-  F_arc      *a;
-  F_line     *l;
-  F_spline   *s;
-  F_text     *t;
   static void * intersect_object_1;
   static int intersect_type_1;
 
@@ -1138,7 +1132,7 @@ snap_handler(p, type, x, y, px, py)
     case O_SPLINE:
       snap_spline_handler(p, x, y);
       break;
-    case O_TEXT:
+    case O_TXT:
       snap_text_handler(p, x, y);
       break;
     case O_ARC:
