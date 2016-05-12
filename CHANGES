@@ -3,14 +3,60 @@ Changes to Xfig
 Version 3.2
 =============================================================================
 
-IMPORTANT NOTE:
-	Please use bvsmith@lbl.gov to report xfig problems or questions.
+Patchlevel 6-beta (May 2016)
 
-	Also please note that I don't have much time anymore to work on xfig/transfig,
-	  so while you may have a great contribution to make, unfortunately I
-	  won't have time to work it into a release.  However, I will still try
-	  to fix bugs.
+NEW FEATURES:
+	o New tikz and pict2e export drivers.
+	o Build using autoconf (./configure; make; make install).
 
+BUGS FIXED:
+	o Change \r\n to \n in all files.
+
+	From Roland Rosenfeld. Bug numbers refer to https://bugs.debian.org/#.
+	In fact, most of the bugs below, also those from other sources, were
+	fixed by applying the debian-patches.
+	o Position independent executables work, fixes bug # 756791.
+	o Revert previous change of X-spline parameter.
+	o Use C locale for fig2dev, to correctly interpret decimal point.
+	  Fixes bug # 782737.
+	o Correct grid mode distances in man page. Bug # 314820.
+	o Extend xfig.desktop.
+	o Fix unsecure use of temporary file. From Thomas Hoger, gentoo.
+	  Debian Bug # 565341.
+	o Escape - in man-page.
+	o Securely print string.
+	o Restore old shadow behaviour.
+	o Fix reading "/MediaBox" when importing pdf. Closes Bug # 530898.
+	o With -papersize b1, use B1, not B10. Bug 535181.
+
+	From Vladislav Zavjalov. Information on bugs is found
+	at https://bugzilla.altlinux.org/show_bug.cgi?id=#
+	o Do not use fontsets for symbol and dingbat fonts, bug # 26579.
+	o Fix compiler warnigs in w_indpanel.c. Commit feabe27.
+	o Restore correct depths when loading a figure, then undo.
+	  Commit b5c79b3.
+	o Restore filename after delete region, undo. Commit 219d690.
+	o Restore user color when opening new fig-file. Commit fccd915.
+	o Restore correct depths when joining lines with different depths.
+	  Commit a77bcaf.
+	o Fix xfontlist->fset initialization. Commit a592399.
+	o Fix default origin (100000,100000) -> (0,0) for filled objects.
+	  Commit 4d87e60.
+	o Fix 100% cpu-load by save panel. Commit 81a4596.
+	o Do not use local SimpleMenu.c with XAW3D1_5E.
+	
+	
+	o Missing argument may cause crash or undefined behaviour.
+	  Debian bug # 795642. From Michale Tautschnig.
+	From Hans de Goede. Bug information
+	at https://bugzilla.redhat.com/show_bug.cgi?id=#.
+	o Patch for importing png-files, Red Hat bug # 1150330. From David Kaufmann.
+	o Fix crash when changing arrow size. Bug # 1046102.
+	o Fix crash when creating dash-dotted lines. Bug # 1023744. From Michael Srb, thanks to
+	  Maurizio Pollini and David Kaufmann.
+	o Fix crash on exit. From Peter Volkov at gentoo
+
+-----------------------------------
 Patchlevel 5c (August, 2013)
 
 BUGS FIXED:
@@ -248,7 +294,7 @@ NEW FEATURES:
 	    End:   end-of-line
 	    Del:   delete-character-right
 	o Added *.jpeg* to picture browse options
-	o New libraries for electronics from Fabio Gonz·lez in
+	o New libraries for electronics from Fabio Gonz√°lez in
 	  Libraries/Electronics/Schematic/More 
 
 BUGS FIXED:
@@ -606,7 +652,7 @@ NEW FEATURES:
 	o New feature to add tangents and normal lines to curves.  See Editing
 	  section in html docs.  From Alex Durner.
 	o Splash screen on startup. Disable with -nosplash (resource Fig.splash).
-	  Interior logo by  Marc-AurËle Darche.
+	  Interior logo by  Marc-Aur√®le Darche.
 	o New command-line option -grid_color (resource grid_color) to set the
 	  color of the canvas grid (default: red).
 	o New option to print grid when exporting or printing (see printing/
@@ -853,7 +899,7 @@ BUGS FIXED:
 	  lines and 6 x,y pairs before scrolling.
 	o Special texts weren't filtered by the depth filter when exporting to
 	  combined ps/latex or pdf/latex
-	o Various typographical errors found by Daniel FrËrejacque
+	o Various typographical errors found by Daniel Fr√®rejacque
 	o Segfault if fast export (Alt-Shift-X) is done before either the file,
 	  export or browse panel was created
 	o When xfig was compiled with WHEELMOUSE support, zooming was always

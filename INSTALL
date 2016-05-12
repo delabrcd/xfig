@@ -1,0 +1,26 @@
+Type
+
+	./configure; make -j; make install-strip
+
+to build xfig and install it below /usr/local. The option -j causes a parallel
+build, install-strip strips debugging symbols from executables.
+Important options to configure are
+	--prefix=<path>		root of installation tree, default /usr/local
+	--without-xpm-icon	disable the xpm splash icon
+	--with-appdefaultdir=<path>	directory to install the X resources
+				file to, default /usr/share/X11/app-defaults/
+	--with-icondir=<path>	directory to install the xfig icon to,
+				default $prefix/share/pixmaps/
+	--with-applicationsdir=<path>	directory for the xfig.desktop file,
+				default $prefix/share/applications/
+	--without-xfig-libraries	do not install xfig libraries files,
+				currently 2531 fig files, 16 MB.
+Type ./configure --help for all options.
+
+*** Important note ***
+This is the first release using the autoconf system. Several options, which were
+previously available in the xmkmf / Imakefile build system, are not yet
+implemented. I am sorry for the inconvenience. This release is really a bit
+roughly packaged. The next version should be more polished. Please send patches
+or suggestions for improvement to thomas.loimer@tuwien.ac.at.
+**********************
