@@ -4,6 +4,7 @@ Type
 
 to build xfig and install it below /usr/local. The option -j causes a parallel
 build, install-strip strips debugging symbols from executables.
+
 Important options to configure are
 	--prefix=<path>		root of installation tree, default /usr/local
 	--without-xpm-icon	disable the xpm splash icon
@@ -17,10 +18,16 @@ Important options to configure are
 				currently 2531 fig files, 16 MB.
 Type ./configure --help for all options.
 
-*** Important note ***
-This is the first release using the autoconf system. Several options, which were
-previously available in the xmkmf / Imakefile build system, are not yet
-implemented. I am sorry for the inconvenience. This release is really a bit
-roughly packaged. The next version should be more polished. Please send patches
-or suggestions for improvement to thomas.loimer@tuwien.ac.at.
-**********************
+On Mac Darwin, OS X 10.11.1 (El Capitan), using XQuartz and having installed
+jpeg, libpng and zlib via Macports, the following command worked:
+	./configure --with-appdefaultdir=/opt/X11/share/X11/app-default
+	make -j; make install-strip
+
+On old systems, it may be necessary to define ANCIENT from the make command,
+	./configure; make -DANCIENT; make install
+The preprocessor macro ANCIENT can not be defined by ./configure,
+but must be set when invoking make.
+
+Please report bug fixes or suggestions for improvement
+to thomas.loimer@tuwien.ac.at. I am also very interested to learn about
+conditions where it is necessary to compile with make -DANCIENT.

@@ -159,7 +159,8 @@ launch_about(Widget w, XtPointer closure, XtPointer call_data)
 
 	/* make up some information */
 	strcpy(info,xfig_version);
-	strcat(info,"\n  Parts Copyright \251 1989-2013 by Brian V. Smith (BVSmith@lbl.gov)");
+	strcat(info,"\n  Parts Copyright \251 2016 by Thomas Loimer");
+	strcat(info,"\n  Parts Copyright \251 1989-2016 by Brian V. Smith");
 	strcat(info,"\n  Parts Copyright \251 1991 by Paul King");
 	strcat(info,"\n  Copyright \251 1985-1988 by Supoj Sutanthavibul");
 	strcat(info,"\n  See source files and man pages for other copyrights");

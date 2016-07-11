@@ -14,6 +14,15 @@
 
 @SET_MAKE@
 
+# This file is part of FIG - Facility for Interactive Generation of figures
+#
+# Copyright (c) 2016 Thomas Loimer <thomas.loimer@tuwien.ac.at>
+#
+# Copying and distribution of this file, with or without modification,
+# are permitted in any medium without royalty provided the copyright
+# notice and this notice are preserved. This file is offered as-is,
+# without any warranty.
+
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -87,16 +96,18 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = xfig$(EXEEXT)
-
-# only include, if not XAW3D1_5E
-@XAW3D1_5E_FALSE@am__append_1 = w_menuentry.c w_menuentry.h w_menuentryP.h \
+@USE_XPM_TRUE@am__append_1 = f_readxpm.c f_readxpm.h
+@USE_JPEG_TRUE@am__append_2 = f_readjpg.c f_readjpg.h
+@I18N_TRUE@am__append_3 = w_i18n.c w_i18n.h
+@XAW3D1_5E_FALSE@am__append_4 = w_menuentry.c w_menuentry.h w_menuentryP.h \
 @XAW3D1_5E_FALSE@	SmeBSB.h SmeCascade.c SmeCascade.h SmeCascadeP.h \
 @XAW3D1_5E_FALSE@	SimpleMenu.c SmeBSB.c SmeBSBP.h
 
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/version.m4 \
-	$(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/tl_check_header_path.m4 \
+	$(top_srcdir)/m4/tl_search_libs_path.m4 \
+	$(top_srcdir)/version.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
@@ -106,42 +117,40 @@ CONFIG_CLEAN_FILES = version.fig
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-LIBOBJDIR = ../lib/
 am__xfig_SOURCES_DIST = d_arcbox.c d_arcbox.h d_arc.c d_arc.h d_box.c \
 	d_box.h d_ellipse.c d_ellipse.h d_line.c d_line.h d_picobj.c \
 	d_picobj.h d_regpoly.c d_regpoly.h d_spline.c d_spline.h \
-	d_subspline.c d_subspline.h d_text.c d_text.h e_addpt.c \
-	e_addpt.h e_align.c e_align.h e_arrow.c e_arrow.h e_break.c \
-	e_break.h e_chop.c e_chop.h e_compound.c e_compound.h \
-	e_convert.c e_convert.h e_copy.c e_copy.h e_delete.c \
-	e_delete.h e_deletept.c e_deletept.h e_edit.c e_edit.h \
-	e_flip.c e_flip.h e_glue.c e_glue.h e_joinsplit.c \
+	d_subspline.c d_subspline.h d_text.c d_text.h dirstruct.h \
+	e_addpt.c e_addpt.h e_align.c e_align.h e_arrow.c e_arrow.h \
+	e_break.c e_break.h e_chop.c e_chop.h e_compound.c \
+	e_compound.h e_convert.c e_convert.h e_copy.c e_copy.h \
+	e_delete.c e_delete.h e_deletept.c e_deletept.h e_edit.c \
+	e_edit.h e_flip.c e_flip.h e_glue.c e_glue.h e_joinsplit.c \
 	e_joinsplit.h e_measure.c e_measure.h e_move.c e_move.h \
 	e_movept.c e_movept.h e_placelib.c e_placelib.h e_rotate.c \
 	e_rotate.h e_scale.c e_scale.h e_tangent.c e_tangent.h \
 	e_update.c e_update.h fig.h figx.h f_load.c f_load.h \
 	f_neuclrtab.c f_neuclrtab.h f_picobj.c f_picobj.h f_read.c \
 	f_readeps.c f_readeps.h f_readgif.c f_readgif.h f_read.h \
-	f_readjpg.c f_readjpg.h f_readold.c f_readold.h f_readpcx.c \
-	f_readpcx.h f_readpng.c f_readpng.h f_readppm.c f_readppm.h \
-	f_readtif.c f_readtif.h f_readxbm.c f_readxbm.h f_readxpm.c \
-	f_readxpm.h f_save.c f_save.h f_util.c f_util.h f_wrpcx.c \
-	f_wrpng.c f_wrpng.h main.c main.h mode.c mode.h object.c \
-	object.h paintop.h pcx.h resources.c resources.h u_bound.c \
-	u_bound.h u_create.c u_create.h u_drag.c u_drag.h u_draw.c \
-	u_draw.h u_elastic.c u_elastic.h u_error.c u_error.h u_fonts.c \
-	u_fonts.h u_free.c u_free.h u_geom.c u_geom.h u_list.c \
-	u_list.h u_markers.c u_markers.h u_pan.c u_pan.h u_print.c \
-	u_print.h u_quartic.c u_quartic.h u_redraw.c u_redraw.h \
-	u_scale.c u_scale.h u_search.c u_search.h u_smartsearch.c \
-	u_smartsearch.h u_translate.c u_translate.h u_undo.c u_undo.h \
-	w_browse.c w_browse.h w_canvas.c w_canvas.h w_capture.c \
-	w_capture.h w_cmdpanel.c w_cmdpanel.h w_color.c w_color.h \
-	w_cursor.c w_cursor.h w_digitize.c w_digitize.h w_dir.c \
-	w_dir.h w_drawprim.c w_drawprim.h w_export.c w_export.h \
-	w_file.c w_file.h w_fontbits.c w_fontbits.h w_fontpanel.c \
-	w_fontpanel.h w_grid.c w_grid.h w_help.c w_help.h w_i18n.c \
-	w_i18n.h w_icons.c w_icons.h w_indpanel.c w_indpanel.h \
+	f_readold.c f_readold.h f_readpcx.c f_readpcx.h f_readpng.c \
+	f_readpng.h f_readppm.c f_readppm.h f_readtif.c f_readtif.h \
+	f_readxbm.c f_readxbm.h f_readxpm.h f_save.c f_save.h f_util.c \
+	f_util.h f_wrpcx.c f_wrpng.c f_wrpng.h main.c main.h mode.c \
+	mode.h object.c object.h paintop.h pathmax.h pcx.h resources.c \
+	resources.h u_bound.c u_bound.h u_create.c u_create.h u_drag.c \
+	u_drag.h u_draw.c u_draw.h u_elastic.c u_elastic.h u_error.c \
+	u_error.h u_fonts.c u_fonts.h u_free.c u_free.h u_geom.c \
+	u_geom.h u_list.c u_list.h u_markers.c u_markers.h u_pan.c \
+	u_pan.h u_print.c u_print.h u_quartic.c u_quartic.h u_redraw.c \
+	u_redraw.h u_scale.c u_scale.h u_search.c u_search.h \
+	u_smartsearch.c u_smartsearch.h u_translate.c u_translate.h \
+	u_undo.c u_undo.h w_browse.c w_browse.h w_canvas.c w_canvas.h \
+	w_capture.c w_capture.h w_cmdpanel.c w_cmdpanel.h w_color.c \
+	w_color.h w_cursor.c w_cursor.h w_digitize.c w_digitize.h \
+	w_dir.c w_dir.h w_drawprim.c w_drawprim.h w_export.c \
+	w_export.h w_file.c w_file.h w_fontbits.c w_fontbits.h \
+	w_fontpanel.c w_fontpanel.h w_grid.c w_grid.h w_help.c \
+	w_help.h w_icons.c w_icons.h w_indpanel.c w_indpanel.h \
 	w_intersect.c w_intersect.h w_keyboard.c w_keyboard.h \
 	w_layers.c w_layers.h w_library.c w_library.h w_listwidget.c \
 	w_listwidget.h w_listwidgetP.h w_modepanel.c w_modepanel.h \
@@ -149,10 +158,14 @@ am__xfig_SOURCES_DIST = d_arcbox.c d_arcbox.h d_arc.c d_arc.h d_box.c \
 	w_print.h w_rottext.c w_rottext.h w_rulers.c w_rulers.h \
 	w_setup.c w_setup.h w_snap.c w_snap.h w_srchrepl.c \
 	w_srchrepl.h w_style.c w_style.h w_util.c w_util.h w_zoom.c \
-	w_zoom.h version.xbm w_menuentry.c w_menuentry.h \
-	w_menuentryP.h SmeBSB.h SmeCascade.c SmeCascade.h \
-	SmeCascadeP.h SimpleMenu.c SmeBSB.c SmeBSBP.h
-@XAW3D1_5E_FALSE@am__objects_1 = w_menuentry.$(OBJEXT) \
+	w_zoom.h version.xbm Xfuncs.h Xosdefs.h f_readxpm.c \
+	f_readjpg.c f_readjpg.h w_i18n.c w_i18n.h w_menuentry.c \
+	w_menuentry.h w_menuentryP.h SmeBSB.h SmeCascade.c \
+	SmeCascade.h SmeCascadeP.h SimpleMenu.c SmeBSB.c SmeBSBP.h
+@USE_XPM_TRUE@am__objects_1 = f_readxpm.$(OBJEXT)
+@USE_JPEG_TRUE@am__objects_2 = f_readjpg.$(OBJEXT)
+@I18N_TRUE@am__objects_3 = w_i18n.$(OBJEXT)
+@XAW3D1_5E_FALSE@am__objects_4 = w_menuentry.$(OBJEXT) \
 @XAW3D1_5E_FALSE@	SmeCascade.$(OBJEXT) SimpleMenu.$(OBJEXT) \
 @XAW3D1_5E_FALSE@	SmeBSB.$(OBJEXT)
 am_xfig_OBJECTS = d_arcbox.$(OBJEXT) d_arc.$(OBJEXT) d_box.$(OBJEXT) \
@@ -167,34 +180,35 @@ am_xfig_OBJECTS = d_arcbox.$(OBJEXT) d_arc.$(OBJEXT) d_box.$(OBJEXT) \
 	e_placelib.$(OBJEXT) e_rotate.$(OBJEXT) e_scale.$(OBJEXT) \
 	e_tangent.$(OBJEXT) e_update.$(OBJEXT) f_load.$(OBJEXT) \
 	f_neuclrtab.$(OBJEXT) f_picobj.$(OBJEXT) f_read.$(OBJEXT) \
-	f_readeps.$(OBJEXT) f_readgif.$(OBJEXT) f_readjpg.$(OBJEXT) \
-	f_readold.$(OBJEXT) f_readpcx.$(OBJEXT) f_readpng.$(OBJEXT) \
-	f_readppm.$(OBJEXT) f_readtif.$(OBJEXT) f_readxbm.$(OBJEXT) \
-	f_readxpm.$(OBJEXT) f_save.$(OBJEXT) f_util.$(OBJEXT) \
-	f_wrpcx.$(OBJEXT) f_wrpng.$(OBJEXT) main.$(OBJEXT) \
-	mode.$(OBJEXT) object.$(OBJEXT) resources.$(OBJEXT) \
-	u_bound.$(OBJEXT) u_create.$(OBJEXT) u_drag.$(OBJEXT) \
-	u_draw.$(OBJEXT) u_elastic.$(OBJEXT) u_error.$(OBJEXT) \
-	u_fonts.$(OBJEXT) u_free.$(OBJEXT) u_geom.$(OBJEXT) \
-	u_list.$(OBJEXT) u_markers.$(OBJEXT) u_pan.$(OBJEXT) \
-	u_print.$(OBJEXT) u_quartic.$(OBJEXT) u_redraw.$(OBJEXT) \
-	u_scale.$(OBJEXT) u_search.$(OBJEXT) u_smartsearch.$(OBJEXT) \
-	u_translate.$(OBJEXT) u_undo.$(OBJEXT) w_browse.$(OBJEXT) \
-	w_canvas.$(OBJEXT) w_capture.$(OBJEXT) w_cmdpanel.$(OBJEXT) \
-	w_color.$(OBJEXT) w_cursor.$(OBJEXT) w_digitize.$(OBJEXT) \
-	w_dir.$(OBJEXT) w_drawprim.$(OBJEXT) w_export.$(OBJEXT) \
-	w_file.$(OBJEXT) w_fontbits.$(OBJEXT) w_fontpanel.$(OBJEXT) \
-	w_grid.$(OBJEXT) w_help.$(OBJEXT) w_i18n.$(OBJEXT) \
+	f_readeps.$(OBJEXT) f_readgif.$(OBJEXT) f_readold.$(OBJEXT) \
+	f_readpcx.$(OBJEXT) f_readpng.$(OBJEXT) f_readppm.$(OBJEXT) \
+	f_readtif.$(OBJEXT) f_readxbm.$(OBJEXT) f_save.$(OBJEXT) \
+	f_util.$(OBJEXT) f_wrpcx.$(OBJEXT) f_wrpng.$(OBJEXT) \
+	main.$(OBJEXT) mode.$(OBJEXT) object.$(OBJEXT) \
+	resources.$(OBJEXT) u_bound.$(OBJEXT) u_create.$(OBJEXT) \
+	u_drag.$(OBJEXT) u_draw.$(OBJEXT) u_elastic.$(OBJEXT) \
+	u_error.$(OBJEXT) u_fonts.$(OBJEXT) u_free.$(OBJEXT) \
+	u_geom.$(OBJEXT) u_list.$(OBJEXT) u_markers.$(OBJEXT) \
+	u_pan.$(OBJEXT) u_print.$(OBJEXT) u_quartic.$(OBJEXT) \
+	u_redraw.$(OBJEXT) u_scale.$(OBJEXT) u_search.$(OBJEXT) \
+	u_smartsearch.$(OBJEXT) u_translate.$(OBJEXT) u_undo.$(OBJEXT) \
+	w_browse.$(OBJEXT) w_canvas.$(OBJEXT) w_capture.$(OBJEXT) \
+	w_cmdpanel.$(OBJEXT) w_color.$(OBJEXT) w_cursor.$(OBJEXT) \
+	w_digitize.$(OBJEXT) w_dir.$(OBJEXT) w_drawprim.$(OBJEXT) \
+	w_export.$(OBJEXT) w_file.$(OBJEXT) w_fontbits.$(OBJEXT) \
+	w_fontpanel.$(OBJEXT) w_grid.$(OBJEXT) w_help.$(OBJEXT) \
 	w_icons.$(OBJEXT) w_indpanel.$(OBJEXT) w_intersect.$(OBJEXT) \
 	w_keyboard.$(OBJEXT) w_layers.$(OBJEXT) w_library.$(OBJEXT) \
 	w_listwidget.$(OBJEXT) w_modepanel.$(OBJEXT) \
 	w_mousefun.$(OBJEXT) w_msgpanel.$(OBJEXT) w_print.$(OBJEXT) \
 	w_rottext.$(OBJEXT) w_rulers.$(OBJEXT) w_setup.$(OBJEXT) \
 	w_snap.$(OBJEXT) w_srchrepl.$(OBJEXT) w_style.$(OBJEXT) \
-	w_util.$(OBJEXT) w_zoom.$(OBJEXT) $(am__objects_1)
+	w_util.$(OBJEXT) w_zoom.$(OBJEXT) $(am__objects_1) \
+	$(am__objects_2) $(am__objects_3) $(am__objects_4)
 xfig_OBJECTS = $(am_xfig_OBJECTS)
-xfig_LDADD = $(LDADD)
-xfig_DEPENDENCIES = $(LIBOBJS)
+LIBOBJDIR = ../lib/
+am__DEPENDENCIES_1 =
+xfig_DEPENDENCIES = $(LIBOBJS) $(am__DEPENDENCIES_1)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -261,24 +275,31 @@ ACLOCAL = @ACLOCAL@
 ALLOCA = @ALLOCA@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
+APPDEFAULTDIR = @APPDEFAULTDIR@
+APPLICATIONSDIR = @APPLICATIONSDIR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
+AUTOM4TE = @AUTOM4TE@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+COMPKEYDBDIR = @COMPKEYDBDIR@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DOCDIR = @DOCDIR@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 GREP = @GREP@
+HTMLDIR = @HTMLDIR@
+ICONDIR = @ICONDIR@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -287,6 +308,7 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
@@ -298,15 +320,17 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PATH_CPPFLAGS = @PATH_CPPFLAGS@
+PATH_LDFLAGS = @PATH_LDFLAGS@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKGDATADIR = @PKGDATADIR@
 RELEASE_DATE = @RELEASE_DATE@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
-XAW_CFLAGS = @XAW_CFLAGS@
-XAW_LIBS = @XAW_LIBS@
 XMKMF = @XMKMF@
+X_LIBS = @X_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -353,50 +377,49 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = $(XAW_CFLAGS) -DXFIGLIBDIR=\"$(compkeydbdir)\" \
- -DOBJLIBDIR=\"$(pkgdatadir)/Libraries\" -DXFIGDOCDIR=\"$(docdir)\"\
- $(X_CPPFLAGS)
+AM_CPPFLAGS = $(PATH_CPPFLAGS) -DXFIGLIBDIR=\"$(compkeydbdir)\" \
+ -DOBJLIBDIR=\"$(pkgdatadir)/Libraries\" -DXFIGDOCDIR=\"$(docdir)\"
 
+AM_LDFLAGS = $(PATH_LDFLAGS)
 #AM_CFLAGS = -Wno-parentheses
 # LIBOBJS must be placed in LDADD or xfig_LDADD - otherwise, the
 # lib-dir is not distributed
-LDADD = $(LIBOBJS)
-AM_LDFLAGS = $(XAW_LIBS)
+# LIBOBJS may contain the replacement functions from AC_REPLACE_FUNCS.
+xfig_LDADD = $(LIBOBJS) $(X_LIBS)
 xfig_SOURCES = d_arcbox.c d_arcbox.h d_arc.c d_arc.h d_box.c d_box.h \
 	d_ellipse.c d_ellipse.h d_line.c d_line.h d_picobj.c \
 	d_picobj.h d_regpoly.c d_regpoly.h d_spline.c d_spline.h \
-	d_subspline.c d_subspline.h d_text.c d_text.h e_addpt.c \
-	e_addpt.h e_align.c e_align.h e_arrow.c e_arrow.h e_break.c \
-	e_break.h e_chop.c e_chop.h e_compound.c e_compound.h \
-	e_convert.c e_convert.h e_copy.c e_copy.h e_delete.c \
-	e_delete.h e_deletept.c e_deletept.h e_edit.c e_edit.h \
-	e_flip.c e_flip.h e_glue.c e_glue.h e_joinsplit.c \
+	d_subspline.c d_subspline.h d_text.c d_text.h dirstruct.h \
+	e_addpt.c e_addpt.h e_align.c e_align.h e_arrow.c e_arrow.h \
+	e_break.c e_break.h e_chop.c e_chop.h e_compound.c \
+	e_compound.h e_convert.c e_convert.h e_copy.c e_copy.h \
+	e_delete.c e_delete.h e_deletept.c e_deletept.h e_edit.c \
+	e_edit.h e_flip.c e_flip.h e_glue.c e_glue.h e_joinsplit.c \
 	e_joinsplit.h e_measure.c e_measure.h e_move.c e_move.h \
 	e_movept.c e_movept.h e_placelib.c e_placelib.h e_rotate.c \
 	e_rotate.h e_scale.c e_scale.h e_tangent.c e_tangent.h \
 	e_update.c e_update.h fig.h figx.h f_load.c f_load.h \
 	f_neuclrtab.c f_neuclrtab.h f_picobj.c f_picobj.h f_read.c \
 	f_readeps.c f_readeps.h f_readgif.c f_readgif.h f_read.h \
-	f_readjpg.c f_readjpg.h f_readold.c f_readold.h f_readpcx.c \
-	f_readpcx.h f_readpng.c f_readpng.h f_readppm.c f_readppm.h \
-	f_readtif.c f_readtif.h f_readxbm.c f_readxbm.h f_readxpm.c \
-	f_readxpm.h f_save.c f_save.h f_util.c f_util.h f_wrpcx.c \
-	f_wrpng.c f_wrpng.h main.c main.h mode.c mode.h object.c \
-	object.h paintop.h pcx.h resources.c resources.h u_bound.c \
-	u_bound.h u_create.c u_create.h u_drag.c u_drag.h u_draw.c \
-	u_draw.h u_elastic.c u_elastic.h u_error.c u_error.h u_fonts.c \
-	u_fonts.h u_free.c u_free.h u_geom.c u_geom.h u_list.c \
-	u_list.h u_markers.c u_markers.h u_pan.c u_pan.h u_print.c \
-	u_print.h u_quartic.c u_quartic.h u_redraw.c u_redraw.h \
-	u_scale.c u_scale.h u_search.c u_search.h u_smartsearch.c \
-	u_smartsearch.h u_translate.c u_translate.h u_undo.c u_undo.h \
-	w_browse.c w_browse.h w_canvas.c w_canvas.h w_capture.c \
-	w_capture.h w_cmdpanel.c w_cmdpanel.h w_color.c w_color.h \
-	w_cursor.c w_cursor.h w_digitize.c w_digitize.h w_dir.c \
-	w_dir.h w_drawprim.c w_drawprim.h w_export.c w_export.h \
-	w_file.c w_file.h w_fontbits.c w_fontbits.h w_fontpanel.c \
-	w_fontpanel.h w_grid.c w_grid.h w_help.c w_help.h w_i18n.c \
-	w_i18n.h w_icons.c w_icons.h w_indpanel.c w_indpanel.h \
+	f_readold.c f_readold.h f_readpcx.c f_readpcx.h f_readpng.c \
+	f_readpng.h f_readppm.c f_readppm.h f_readtif.c f_readtif.h \
+	f_readxbm.c f_readxbm.h f_readxpm.h f_save.c f_save.h f_util.c \
+	f_util.h f_wrpcx.c f_wrpng.c f_wrpng.h main.c main.h mode.c \
+	mode.h object.c object.h paintop.h pathmax.h pcx.h resources.c \
+	resources.h u_bound.c u_bound.h u_create.c u_create.h u_drag.c \
+	u_drag.h u_draw.c u_draw.h u_elastic.c u_elastic.h u_error.c \
+	u_error.h u_fonts.c u_fonts.h u_free.c u_free.h u_geom.c \
+	u_geom.h u_list.c u_list.h u_markers.c u_markers.h u_pan.c \
+	u_pan.h u_print.c u_print.h u_quartic.c u_quartic.h u_redraw.c \
+	u_redraw.h u_scale.c u_scale.h u_search.c u_search.h \
+	u_smartsearch.c u_smartsearch.h u_translate.c u_translate.h \
+	u_undo.c u_undo.h w_browse.c w_browse.h w_canvas.c w_canvas.h \
+	w_capture.c w_capture.h w_cmdpanel.c w_cmdpanel.h w_color.c \
+	w_color.h w_cursor.c w_cursor.h w_digitize.c w_digitize.h \
+	w_dir.c w_dir.h w_drawprim.c w_drawprim.h w_export.c \
+	w_export.h w_file.c w_file.h w_fontbits.c w_fontbits.h \
+	w_fontpanel.c w_fontpanel.h w_grid.c w_grid.h w_help.c \
+	w_help.h w_icons.c w_icons.h w_indpanel.c w_indpanel.h \
 	w_intersect.c w_intersect.h w_keyboard.c w_keyboard.h \
 	w_layers.c w_layers.h w_library.c w_library.h w_listwidget.c \
 	w_listwidget.h w_listwidgetP.h w_modepanel.c w_modepanel.h \
@@ -404,7 +427,8 @@ xfig_SOURCES = d_arcbox.c d_arcbox.h d_arc.c d_arc.h d_box.c d_box.h \
 	w_print.h w_rottext.c w_rottext.h w_rulers.c w_rulers.h \
 	w_setup.c w_setup.h w_snap.c w_snap.h w_srchrepl.c \
 	w_srchrepl.h w_style.c w_style.h w_util.c w_util.h w_zoom.c \
-	w_zoom.h version.xbm $(am__append_1)
+	w_zoom.h version.xbm Xfuncs.h Xosdefs.h $(am__append_1) \
+	$(am__append_2) $(am__append_3) $(am__append_4)
 EXTRA_DIST = u_draw_spline.c
 MAINTAINERCLEANFILES = Makefile.in
 all: all-am

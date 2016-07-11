@@ -109,7 +109,7 @@
 .PD
 ..
 .\"-------
-.TH xfig 1 "@RELEASE_DATE@" "Xfig @PACKAGE_VERSION@"
+.TH xfig 1 "@RELEASEDATE@" "Xfig @PACKAGE_VERSION@"
 .SH NAME
 xfig - Facility for Interactive Generation of figures under X11
 .br
@@ -130,18 +130,13 @@ specifies the name of a file to be edited.
 The objects in the file will be read at the start of
 .IR xfig .
 .PP
-The bulk of the documentation fori
+The bulk of the documentation for
 .IR xfig
 is in an HTML-based reference guide.
 See the Help menu in
 .IR xfig
 or point your browser at 
-.IR Doc/html/index.html
-(provided with the
-.IR xfig
-distribution, usually in the 
-.IR Doc/www
-directory).
+.IR @HTMLDIR@/html/index.html .
 There are both English and Japanese versions.
 .PP
 When using a two-button mouse use the
@@ -168,8 +163,10 @@ as a back-end processor to produce various types of output:
 LaTeX, Metafont, PostScript or Encapsulated PostScript,
 tk (tcl/tk tool command language/tool kit package),
 GIF, JPEG, PCX, PNG, PPM, TIFF,
-XBM, XPM, AutoCAD Slide, IBM-GL (HP/GL), Pic
-PiCTeX, box, epic, eepic and eepicemu.
+XBM, XPM, AutoCAD Slide, IBM-GL (HP/GL), Pic and
+PiCTeX.
+ For use with TeX/LaTeX: box, epic, eepic, eepicemu,
+pict2e, pstricks, tikz.
 .PP
 See man fig2dev for all options.
 .PP
@@ -189,6 +186,11 @@ Print all command-line options for xfig and quit.
 .Ap
 Allow panning into the negative region of the canvas.
 This is the default
+.\"-------
+.At
+.BR \-au [ torefresh ]
+Make xfig look at the timestamp on the .fig file and
+automatically load it and display it everytime it changes.
 .\"-------
 .At
 .BR \-bal [ loon_delay ]
@@ -1223,6 +1225,7 @@ Name	Type	Default	Command-line equivalent
 .if t \l'\nnu'
 allownegcoords	boolean	true	\-allownegcoords (true),
 			\-dontallownegcoords (false)
+autorefresh	boolean false	\-autorefresh
 axislines	string	pink	\-axislines
 balloon_delay	integer	500 (ms)	\-balloon_delay
 boldFont	string	8x13bold	\-bold
@@ -1237,6 +1240,7 @@ dontswitchcmap	boolean	false	\-dontswitchcmap
 euc_encoding	boolean	false	(n/a)
 locale_encoding	boolean	false	(n/a)
 encoding	integer	1	\-encoding
+save8bit	boolean	false	(n/a)
 exportLanguage	string	eps	\-exportLanguage
 export_margin	integer	0	\-export_margin
 flipvisualhints	boolean	false	\-flipvisualhints
@@ -1471,36 +1475,30 @@ express or implied warranty.
 .ft B
 .ft P
 .TP 8
-.B CompKeyDB
+.I @COMPKEYDBDIR@/CompKeyDB
 Data base of compose (meta) key sequences for 8-bit characters.
-Must be installed in
-.B $(XFIGLIBDIR)
-with ``make install'',
-or may be specified with command line option
+A different file may be specified with the command line option
 .B \-keyFile
 or X toolkit resource keyFile.
-See the
-.IR Imakefile .
 .TP
-/usr/lib/X11/xfig
-This directory contains the html documentation, the above mentioned
-CompKeyDB file, and a directory of libraries containing Fig objects
-such as electrical symbols, logic symbols, etc.
+.I @HTMLDIR@/html
+This directory contains the html documentation.
 .TP
-.B Fig.ad and Fig-color.ad
-Application defaults files which are automatically installed
-in the system app-defaults directory with the
-.I make install
-command.
-.TP
-.B Doc/FORMAT3.2
+.I @DOCDIR@/FORMAT3.2
 Description of Fig file format.
 .TP
-.B README
-Installation instructions and troubleshooting.
+.I @PKGDATADIR@/Libraries
+This directory contains libraries of Fig objects such as electrical symbols,
+logic symbols, etc.
 .TP
-.B CHANGES
-Description of bug fixes/new features.
+.I @APPDEFAULTDIR@/Fig
+Application defaults file.
+.TP
+.I @APPLICATIONSDIR@/xfig.desktop
+Desktop entry file.
+.TP
+.I @ICONDIR@/xfig.png
+Desktop icon.
 
 .SH AUTHORS
 Many people have contributed to
@@ -1769,12 +1767,12 @@ Bill Chimiak (chim@bgsm.edu)
 Please see the CHANGES file for credits for newer releases.
 .in -4
 .SH NOTES
-Many bug fixes/cleanups etc. by a host of faithful users
+Many bug fixes/cleanups etc. by a host of faithful users.
 .sp
 See the
 .B CHANGES
-file for all the credits
+file for all the credits.
 .sp
 The
 .I TransFig
-package was written by Micah Beck and is maintained by Brian Smith
+package was written by Micah Beck and is maintained by Thomas Loimer.

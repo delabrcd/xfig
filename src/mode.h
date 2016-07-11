@@ -20,6 +20,8 @@
 #ifndef MODE_H
 #define MODE_H
 
+#include "pathmax.h"
+
 #define		F_NULL			0
 #define	    FIRST_DRAW_MODE	    F_CIRCLE_BY_RAD
 #define		F_CIRCLE_BY_RAD		1

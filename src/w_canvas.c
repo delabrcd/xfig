@@ -53,9 +53,9 @@
 static void popup_mode_panel(Widget widget, XButtonEvent *event, String *params, Cardinal *num_params);
 static void popdown_mode_panel(void);
 
-#ifndef SYSV
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
-#endif /* SYSV */
+#endif
 #include <X11/Xatom.h>
 
 /*********************** EXPORTS ************************/
@@ -484,16 +484,16 @@ void canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal 
 	      key == XK_Home) && (!action_on || cur_mode != F_TEXT))) {
 	        switch (key) {
 		    case XK_Left:
-			pan_left(event->state&ShiftMask);
-			break;
-		    case XK_Right:
 			pan_right(event->state&ShiftMask);
 			break;
+		    case XK_Right:
+			pan_left(event->state&ShiftMask);
+			break;
 		    case XK_Up:
-			pan_up(event->state&ShiftMask);
+			pan_down(event->state&ShiftMask);
 			break;
 		    case XK_Down:
-			pan_down(event->state&ShiftMask);
+			pan_up(event->state&ShiftMask);
 			break;
 		    case XK_Home:
 			pan_origin();
@@ -559,7 +559,7 @@ void canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal 
 			       lbuf[len] = '\0';
 			       if (0 < len) {
 				 if (2 <= len && canvas_kbd_proc == (void (*)())char_handler) {
-				   i18n_char_handler(lbuf);
+				   i18n_char_handler((unsigned char *)lbuf);
 				 } else {
 				   for (i = 0; i < len; i++) {
 				     (*canvas_kbd_proc) (kpe, lbuf[i], (KeySym) 0);

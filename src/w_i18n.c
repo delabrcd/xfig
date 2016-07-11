@@ -12,8 +12,6 @@
  * and this permission notice remain intact.
  */
 
-#ifdef I18N
-
 #include "fig.h"
 #include "figx.h"
 #include "resources.h"
@@ -428,8 +426,19 @@ Boolean is_i18n_font(font)
   return seek_fontset(font->fid, &fontset, &font_size);
 }
 
+int
+i18n_fontset_height(fontset)
+     XFontSet fontset;
+{
+  XFontSetExtents *extents;
+  extents = XExtentsOfFontSet(fontset);
+  return extents->max_logical_extent.height;
+}
+
+
 /* get extents of the text */
-void i18n_text_extents(font, str, len, dir, asc, des, overall)
+void
+i18n_text_extents(font, str, len, dir, asc, des, overall)
      XFontStruct *font;
      char *str;
      int len;
@@ -455,14 +464,6 @@ void i18n_text_extents(font, str, len, dir, asc, des, overall)
     overall->ascent = -logical.y * scale;
     overall->descent = logical.height * scale - overall->ascent;
   }
-}
-
-int i18n_fontset_height(fontset)
-     XFontSet fontset;
-{
-  XFontSetExtents *extents;
-  extents = XExtentsOfFontSet(fontset);
-  return extents->max_logical_extent.height;
 }
 
 /* functions for bitmap scaling (AllocTextBitmapAndScaleBuf, ScaleUp, */
@@ -701,7 +702,7 @@ void i18n_draw_text(dpy, drawable, gc, x, y, str, len, drawbg)
   }
 }
 
-#ifdef SETLOCALE
+#ifndef HAVE_SETLOCALE
 
 char *setlocale(category, locale)
      int category;
@@ -726,6 +727,4 @@ char *setlocale(category, locale)
     return cur_locale;
   }
 }
-#endif  /* SETLOCALE */
-
-#endif  /* I18N */
+#endif  /* HAVE_SETLOCALE */

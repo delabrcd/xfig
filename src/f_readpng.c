@@ -90,8 +90,8 @@ read_png(FILE *file, int filetype, F_pic *pic)
     png_get_IHDR(png_ptr, info_ptr, &w, &h, &bit_depth, &color_type,
 	&interlace_type, &compression_type, &filter_type);
 
-    png_fixed_point gamma = 0.45;
-    png_get_gAMA_fixed(png_ptr,info_ptr,&gamma);
+    double gamma = 0.45455;
+    png_get_gAMA(png_ptr,info_ptr,&gamma);
     png_set_gamma(png_ptr, 2.2, gamma);
 
     if (png_get_valid(png_ptr,info_ptr,PNG_INFO_bKGD)) {

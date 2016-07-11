@@ -31,10 +31,10 @@
 #include "w_rottext.h"
 
 #ifdef I18N
-
-#define XDrawString i18n_draw_string
-#define XDrawImageString i18n_draw_image_string
-#define XTextExtents i18n_text_extents
+#include "w_i18n.h"
+#define XDrawString		i18n_draw_string
+#define XDrawImageString	i18n_draw_image_string
+#define XTextExtents		i18n_text_extents
 #endif  /* I18N */
 
 /* ---------------------------------------------------------------------- */

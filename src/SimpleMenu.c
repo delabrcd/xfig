@@ -39,6 +39,11 @@ in this Software without prior written authorization from the X Consortium.
  *          kit@expo.lcs.mit.edu
  */
 
+/* Thomas Loimer, 2016: Make ./configure work */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
@@ -56,7 +61,7 @@ in this Software without prior written authorization from the X Consortium.
 #include "SmeBSB.h"
 
 #include <X11/Xmu/Initer.h>
-#include <X11/Xmu/CharSet.h>
+//#include <X11/Xmu/CharSet.h>
 
 #define streq(a, b)        ( strcmp((a), (b)) == 0 )
 

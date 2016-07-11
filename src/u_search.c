@@ -512,7 +512,7 @@ do_object_search(int x, int y, unsigned int shift)
 	erase_objecthighlight();
 	switch (type) {
 	  case O_ELLIPSE:
-	    manipulate(e, type, x, y, px, py);
+	    manipulate(e, type, x, y, (int) px, py);
 	    break;
 	  case O_POLYLINE:
 	    manipulate(l, type, x, y, px, py);
@@ -524,7 +524,7 @@ do_object_search(int x, int y, unsigned int shift)
 	    manipulate(t, type, x, y, px, py);
 	    break;
 	  case O_ARC:
-	    manipulate(a, type, x, y, px, py);
+	    manipulate(a, type, x, y, (int) px, py);
 	    break;
 	  case O_COMPOUND:
 	    manipulate(c, type, x, y, px, py);

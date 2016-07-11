@@ -302,6 +302,8 @@ static XtResource application_resources[] = {
       XtOffset(appresPtr, correct_font_size), XtRBoolean, (caddr_t) & true},
     {"encoding", "Encoding", XtRInt, sizeof(int),
       XtOffset(appresPtr, encoding), XtRImmediate, (caddr_t) 1},
+    {"save8bit", "Save8bit",   XtRBoolean, sizeof(Boolean),
+      XtOffset(appresPtr, save8bit), XtRBoolean, (caddr_t) & false},
     {"write_v40", "Format",   XtRBoolean, sizeof(Boolean),
       XtOffset(appresPtr, write_v40), XtRBoolean, (caddr_t) & false},
     {"crosshair", "Crosshair",   XtRBoolean, sizeof(Boolean),
@@ -643,11 +645,11 @@ void main(int argc, char **argv)
     char	    tmpstr[PATH_MAX];
 
 
+    export_up = False;
     geomspec = False;
 
     /* generate version string for various uses */
-    sprintf(xfig_version, "Xfig %s patchlevel %s (Protocol %s)",
-	   FIG_VERSION, PATCHLEVEL, PROTOCOL_VERSION);
+    sprintf(xfig_version, "Xfig %s", PACKAGE_VERSION);
 
     /* ratio of Fig units to display resolution (80ppi) */
     ZOOM_FACTOR = PIX_PER_INCH/DISPLAY_PIX_PER_INCH;

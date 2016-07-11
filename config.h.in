@@ -21,9 +21,6 @@
 /* Define to 1 if using `alloca.c'. */
 #undef C_ALLOCA
 
-/* Define major.minor xfig version. */
-#undef FIG_VERSION
-
 /* Define to 1 if you have `alloca', as a function or macro. */
 #undef HAVE_ALLOCA
 
@@ -31,17 +28,26 @@
    */
 #undef HAVE_ALLOCA_H
 
-/* Define to 1 if you have the <fcntl.h> header file. */
-#undef HAVE_FCNTL_H
+/* Define to 1 if you have the declaration of `S_IFDIR', and to 0 if you
+   don't. */
+#undef HAVE_DECL_S_IFDIR
+
+/* Define to 1 if you have the declaration of `S_IWRITE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_S_IWRITE
+
+/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_DIRENT_H
+
+/* Define to 1 if you have the <features.h> header file. */
+#undef HAVE_FEATURES_H
 
 /* Define to 1 if you have the `fork' function. */
 #undef HAVE_FORK
 
 /* Define to 1 if you have the `getcwd' function. */
 #undef HAVE_GETCWD
-
-/* Define to 1 if you have the `index' function. */
-#undef HAVE_INDEX
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -52,34 +58,19 @@
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
-/* Define to 1 if you have the <locale.h> header file. */
-#undef HAVE_LOCALE_H
-
 /* Define to 1 if your system has a GNU libc compatible `malloc' function, and
    to 0 otherwise. */
 #undef HAVE_MALLOC
 
-/* Define to 1 if you have the `mbrlen' function. */
-#undef HAVE_MBRLEN
-
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
+#undef HAVE_NDIR_H
 
 /* Define to 1 if your system has a GNU libc compatible `realloc' function,
    and to 0 otherwise. */
 #undef HAVE_REALLOC
-
-/* Define to 1 if you have the `realpath' function. */
-#undef HAVE_REALPATH
-
-/* Define to 1 if you have the `regcomp' function. */
-#undef HAVE_REGCOMP
-
-/* Define to 1 if you have the `re_comp' function. */
-#undef HAVE_RE_COMP
-
-/* Define to 1 if you have the `rindex' function. */
-#undef HAVE_RINDEX
 
 /* Define to 1 if you have the `setlocale' function. */
 #undef HAVE_SETLOCALE
@@ -99,6 +90,9 @@
 /* Define to 1 if you have the `strdup' function. */
 #undef HAVE_STRDUP
 
+/* Define to 1 if you have the `strerror' function. */
+#undef HAVE_STRERROR
+
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
@@ -117,11 +111,13 @@
 /* Define to 1 if you have the `strstr' function. */
 #undef HAVE_STRSTR
 
-/* Define to 1 if you have the <sys/file.h> header file. */
-#undef HAVE_SYS_FILE_H
+/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_DIR_H
 
-/* Define to 1 if you have the <sys/param.h> header file. */
-#undef HAVE_SYS_PARAM_H
+/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_NDIR_H
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
@@ -141,9 +137,6 @@
 /* Define to 1 if you have the <vfork.h> header file. */
 #undef HAVE_VFORK_H
 
-/* Define to 1 if you have the <wchar.h> header file. */
-#undef HAVE_WCHAR_H
-
 /* Define to 1 if `fork' works. */
 #undef HAVE_WORKING_FORK
 
@@ -152,6 +145,12 @@
 
 /* Define to 1 if the system has the type `_Bool'. */
 #undef HAVE__BOOL
+
+/* Define to enable internationalization features. */
+#undef I18N
+
+/* Define to use preediting with i18n. */
+#undef I18N_USE_PREEDIT
 
 /* Define to not use the Compose Key Database file shipped with xfig. */
 #undef NO_COMPKEYDB
@@ -177,14 +176,15 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Define the patchlevel. */
-#undef PATCHLEVEL
-
 /* Define to the path of the printcap-file. */
 #undef PRINTCAP
 
-/* Define the fig file format. Identical to xfig version. */
+/* Define the fig file format. Identical to major.minor substring of xfig
+   version. */
 #undef PROTOCOL_VERSION
+
+/* Define to 0 if not provided by regex.h. */
+#undef REG_NOERROR
 
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
@@ -197,10 +197,10 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* Define to enable support to import jpeg files. */
+/* Define to enable support for importing jpeg files. */
 #undef USE_JPEG
 
-/* Define to use xpm color-bitmaps and import/export to xpm files. */
+/* Define to use xpm color-bitmaps and enable import/export to xpm files. */
 #undef USE_XPM
 
 /* Define to use xpm splash screen / color icon for xfig itself. */
@@ -238,10 +238,3 @@
 
 /* Define as `fork' if `vfork' does not work. */
 #undef vfork
-
-#ifdef USE_XPM_ICON
-#ifndef USE_XPM
-#define USE_XPM
-#endif
-#endif
-

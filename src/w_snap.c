@@ -765,6 +765,7 @@ snap_polyline_handler(l, x, y)
     break;
   case SNAP_MODE_NEAREST:
     do_snap_polyline_normal(l, x, y, (double)x, (double)y);
+  default:
     break;
   }
 }
@@ -841,6 +842,7 @@ snap_spline_handler(s, x, y)
     put_msg("Spline snap nearest not yet implemented.\n");
     beep();
     snap_msg_set = True;
+  default:
     break;
   }
 }
@@ -998,6 +1000,7 @@ snap_arc_handler(a, x, y)
 	}
       }
     }
+  default:
     break;
   }
 }
@@ -1090,6 +1093,7 @@ snap_ellipse_handler(e, x, y)
       snap_ellipse_normal_circle_handler(e, x, y, (double)x, (double)y);
       break;
     }
+  default:
     break;
   }
 }

@@ -67,9 +67,7 @@
 #include "object.h"
 #include "f_util.h"
 #include "w_cursor.h"
-
-/* See info autoconf, AC_HEADER_DIRENT: All current systems have dirent.h */
-#include <dirent.h>
+#include "dirstruct.h"
 
 static char	CurrentSelectionName[PATH_MAX];
 static int	file_entry_cnt, dir_entry_cnt;

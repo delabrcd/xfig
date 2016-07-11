@@ -32,6 +32,8 @@
 #include "u_fonts.h"
 #include "w_cursor.h"
 
+#include <time.h>
+
 /* LOCALS */
 
 int	count_colors(void);
@@ -554,7 +556,7 @@ void map_to_mono(F_pic *pic)
 	thiserr = (long *) malloc(sizeof(long) * (width+2));
 	nexterr = (long *) malloc(sizeof(long) * (width+2));
 	/* initialize random seed */
-	srandom( (int) (time(0)^getpid()) );
+	srandom( (int) (time((time_t *)NULL)^getpid()) );
 	for (col=0; col<width+2; col++) {
 	    /* (random errors in [-FS_SCALE/8 .. FS_SCALE/8]) */
 	    thiserr[col] = ( random() % FS_SCALE - HALF_FS_SCALE) / 4;
@@ -1107,14 +1109,14 @@ build_command(char *program, char *filename)
 /* define the strerror() function to return str_errlist[] if 
    the system doesn't have the strerror() function already */
 
-#ifdef NEED_STRERROR
+#ifndef HAVE_STRERROR
 char *
 strerror(e)
 	int e;
 {
 	return sys_errlist[e];
 }
-#endif /* NEED_STRERROR */
+#endif /* HAVE_STRERROR */
 
 
 /* for images with no palette, we'll use neural net to reduce to 256 colors with palette */

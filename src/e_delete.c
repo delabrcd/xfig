@@ -262,7 +262,7 @@ open_cut_file(void)
 void delete_all(void)
 {
     clean_up();
-    set_action_object(F_DELETE, O_ALL_OBJECT);
+    set_action_object(F_DELETE, O_FIGURE);
 
     /* initialize layer/depth info */
     reset_layers();

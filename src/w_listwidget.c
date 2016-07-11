@@ -20,12 +20,16 @@
    the functionality of up/down arrows to scroll up/down in the list
 */
 
+/* Thomas Loimer, 2016: Make ./configure work */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <ctype.h>
 
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#include <X11/Xmu/Drawing.h>
 #ifdef XAW3D
 #include <X11/Xaw3d/XawInit.h>
 #else /* XAW3D */

@@ -210,7 +210,8 @@ void write_fig_header(FILE *fp)
 	fprintf(fp, "}\n");
     } else {
 	/* V3.2 */
-	fprintf(fp, "%s  Produced by xfig version %s.%s\n",file_header, FIG_VERSION, PATCHLEVEL);
+	fprintf(fp, "%s  Produced by xfig version %s\n",
+		file_header, PACKAGE_VERSION);
 	fprintf(fp, appres.landscape? "Landscape\n": "Portrait\n");
 	fprintf(fp, appres.flushleft? "Flush left\n": "Center\n");
 	fprintf(fp, appres.INCHES? "Inches\n": "Metric\n");
@@ -534,7 +535,7 @@ void write_text(FILE *fp, F_text *t)
 	c = t->cstring[l];
 	if (c == '\\')
 	    fprintf(fp,"\\\\");	 /* escape a '\' with another one */
-	else if (c < 0x80)
+	else if (c < 0x80 || appres.save8bit)
 	    putc(c,fp);  /* normal 7-bit ASCII */
 	else
 	    fprintf(fp, "\\%o", c);  /* 8-bit, make \xxx (octal) */

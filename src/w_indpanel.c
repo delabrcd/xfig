@@ -1119,6 +1119,14 @@ void update_indpanel(long unsigned int mask)
 	    XtUnmanageChild(isw->formw);
 	}
     }
+    { /* fix scrollbar */
+       Dimension w,h;
+       FirstArg(XtNwidth, &w);
+       NextArg(XtNheight, &h);
+       GetValues(ind_box);
+       XtMakeResizeRequest(ind_box, w, h+1, NULL,NULL);
+    }
+
     XtManageChild(ind_box);
 }
 
@@ -4412,8 +4420,8 @@ wheel_inc_zoom()
     if (preview_in_progress || check_action_on())
 	return;
 
-    XQueryPointer(tool_d, canvas_win,
-		  &root, &child, &junk, &junk, &x1, &y1, &junk);
+    XQueryPointer(tool_d, canvas_win, &root, &child,
+		  &junk, &junk, &x1, &y1, (unsigned int*) &junk);
     centering = False;
     if (0 <= x1 && x1 <= CANVAS_WD && 0 <= y1 && y1 <= CANVAS_HT) {
 	centering = True;
@@ -4495,8 +4503,8 @@ wheel_dec_zoom()
     if (preview_in_progress || check_action_on())
 	return;
 
-    XQueryPointer(tool_d, canvas_win,
-		  &root, &child, &junk, &junk, &x1, &y1, &junk);
+    XQueryPointer(tool_d, canvas_win, &root, &child,
+		  &junk, &junk, &x1, &y1, (unsigned int *) &junk);
     centering = False;
     if (0 <= x1 && x1 <= CANVAS_WD && 0 <= y1 && y1 <= CANVAS_HT) {
 	centering = True;

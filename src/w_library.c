@@ -49,13 +49,11 @@
 #include "w_color.h"
 #include "w_cursor.h"
 #include "w_mousefun.h"
+#include "dirstruct.h"
 
 #ifndef XAW3D1_5E
 #include "SmeCascade.h"
 #endif /* XAW3D1_5E */
-
-/* See info autoconf, AC_HEADER_DIRENT: All current systems have dirent.h */
-#include <dirent.h>
 
 #define N_LIB_MAX	  100		/* max number of libraries */
 #define N_LIB_OBJECT_MAX  400		/* max number of objects in a library */

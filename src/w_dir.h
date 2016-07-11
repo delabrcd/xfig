@@ -50,10 +50,6 @@
 #ifndef W_DIR_H
 #define W_DIR_H
 
-/* From the C library. */
-
-char	       *re_comp();
-
 /* Useful constants. */
 
 #define EOS	'\0'		/* End-of-string. */

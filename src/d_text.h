@@ -29,10 +29,12 @@ extern int	work_font;
 #ifdef I18N
 extern XIC	xim_ic;
 extern Boolean	xim_active;
-extern		i18n_char_handler();
-extern		prefix_append_char();
+extern Boolean	xim_initialize(Widget w);
+extern void	i18n_char_handler(unsigned char *str);
+extern void	prefix_append_char(unsigned char ch);
+extern void	xim_set_ic_geometry(XIC ic, int width, int height);
 #ifdef I18N_USE_PREEDIT
-extern		kill_preedit();
+extern void	kill_preedit();
 #endif  /* I18N_USE_PREEDIT */
 #endif  /* I18N */
 extern void text_drawing_selected (void);

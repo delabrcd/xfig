@@ -43,6 +43,7 @@
 #include "w_zoom.h"
 #include "u_redraw.h"
 #include "w_cursor.h"
+#include <X11/ImUtil.h>	/* _XInitImageFuncPtrs() */
 
 static Boolean add_point(int x, int y);
 static void init_point_array(void);
@@ -603,7 +604,7 @@ void draw_line(F_line *line, int op)
     /* is it a picture object or a Fig figure? */
     if (line->type == T_PICTURE) {
 	if (line->pic->pic_cache) {
-	    if ((line->pic->pic_cache->bitmap != (Pixmap) NULL) && active_layer(line->depth)) {
+	    if ((line->pic->pic_cache->bitmap != NULL) && active_layer(line->depth)) {
 		/* only draw the picture if there is a pixmap AND this layer is active */
 		draw_pic_pixmap(line, op);
 		return;

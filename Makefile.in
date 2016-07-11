@@ -14,6 +14,15 @@
 
 @SET_MAKE@
 
+# This file is part of FIG - Facility for Interactive Generation of figures
+#
+# Copyright (c) 2016 Thomas Loimer <thomas.loimer@tuwien.ac.at>
+#
+# Copying and distribution of this file, with or without modification,
+# are permitted in any medium without royalty provided the copyright
+# notice and this notice are preserved. This file is offered as-is,
+# without any warranty.
+
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -89,8 +98,9 @@ POST_UNINSTALL = :
 @XFIG_LIBRARIES_TRUE@am__append_1 = $(xfig_librariesdir)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/version.m4 \
-	$(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/tl_check_header_path.m4 \
+	$(top_srcdir)/m4/tl_search_libs_path.m4 \
+	$(top_srcdir)/version.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
@@ -100,7 +110,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = app-defaults/Fig
 CONFIG_CLEAN_VPATH_FILES =
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -191,8 +201,9 @@ ETAGS = etags
 CTAGS = ctags
 CSCOPE = cscope
 DIST_SUBDIRS = $(SUBDIRS)
-am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in INSTALL \
-	README compile depcomp install-sh missing
+am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in \
+	$(top_srcdir)/app-defaults/Fig.in INSTALL README compile \
+	depcomp install-sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -228,9 +239,9 @@ am__relativize = \
     dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
   done; \
   reldir="$$dir2"
+DIST_ARCHIVES = $(distdir).tar.gz $(distdir).tar.xz
 GZIP_ENV = --best
-DIST_ARCHIVES = $(distdir).tar.xz
-DIST_TARGETS = dist-xz
+DIST_TARGETS = dist-xz dist-gzip
 distuninstallcheck_listfiles = find . -type f -print
 am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
   | sed 's|^\./|$(prefix)/|' | grep -v '$(infodir)/dir$$'
@@ -239,24 +250,31 @@ ACLOCAL = @ACLOCAL@
 ALLOCA = @ALLOCA@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
+APPDEFAULTDIR = @APPDEFAULTDIR@
+APPLICATIONSDIR = @APPLICATIONSDIR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
+AUTOM4TE = @AUTOM4TE@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+COMPKEYDBDIR = @COMPKEYDBDIR@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DOCDIR = @DOCDIR@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 GREP = @GREP@
+HTMLDIR = @HTMLDIR@
+ICONDIR = @ICONDIR@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -265,6 +283,7 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
@@ -276,15 +295,17 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PATH_CPPFLAGS = @PATH_CPPFLAGS@
+PATH_LDFLAGS = @PATH_LDFLAGS@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKGDATADIR = @PKGDATADIR@
 RELEASE_DATE = @RELEASE_DATE@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
-XAW_CFLAGS = @XAW_CFLAGS@
-XAW_LIBS = @XAW_LIBS@
 XMKMF = @XMKMF@
+X_LIBS = @X_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -331,15 +352,17 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = src doc
+ACLOCAL_AMFLAGS = -I m4
+SUBDIRS = src doc tests
 dist_icon_DATA = xfig.png
 appdefault_DATA = app-defaults/Fig
 dist_applications_DATA = xfig.desktop
 dist_compkeydb_DATA = CompKeyDB
-EXTRA_DIST = version.m4 CHANGES FIGAPPS app-defaults LATEX.AND.XFIG \
-	LATEX.AND.XFIG.zh_CN LATEX.AND.XFIG.zh_TW $(am__append_1)
-xfig_librariesdir = Libraries
+EXTRA_DIST = CHANGES FIGAPPS app-defaults xpm_splash_logo \
+	LATEX.AND.XFIG LATEX.AND.XFIG.zh_CN LATEX.AND.XFIG.zh_TW \
+	$(am__append_1)
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 config.h.in config.h.in~ configure
+xfig_librariesdir = Libraries
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -392,6 +415,8 @@ $(srcdir)/config.h.in:  $(am__configure_deps)
 
 distclean-hdr:
 	-rm -f config.h stamp-h1
+app-defaults/Fig: $(top_builddir)/config.status $(top_srcdir)/app-defaults/Fig.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 install-appdefaultDATA: $(appdefault_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(appdefault_DATA)'; test -n "$(appdefaultdir)" || list=; \
@@ -582,6 +607,7 @@ cscopelist-am: $(am__tagged_files)
 distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 	-rm -f cscope.out cscope.in.out cscope.po.out cscope.files
+@XFIG_LIBRARIES_FALSE@dist-hook:
 
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
@@ -640,6 +666,9 @@ distdir: $(DISTFILES)
 	      || exit 1; \
 	  fi; \
 	done
+	$(MAKE) $(AM_MAKEFLAGS) \
+	  top_distdir="$(top_distdir)" distdir="$(distdir)" \
+	  dist-hook
 	-test -n "$(am__skip_mode_fix)" \
 	|| find "$(distdir)" -type d ! -perm -755 \
 		-exec chmod u+rwx,go+rx {} \; -o \
@@ -890,8 +919,8 @@ uninstall-am: uninstall-appdefaultDATA uninstall-dist_applicationsDATA \
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am \
 	am--refresh check check-am clean clean-cscope clean-generic \
 	cscope cscopelist-am ctags ctags-am dist dist-all dist-bzip2 \
-	dist-gzip dist-lzip dist-shar dist-tarZ dist-xz dist-zip \
-	distcheck distclean distclean-generic distclean-hdr \
+	dist-gzip dist-hook dist-lzip dist-shar dist-tarZ dist-xz \
+	dist-zip distcheck distclean distclean-generic distclean-hdr \
 	distclean-tags distcleancheck distdir distuninstallcheck dvi \
 	dvi-am html html-am info info-am install install-am \
 	install-appdefaultDATA install-data install-data-am \
@@ -910,17 +939,53 @@ uninstall-am: uninstall-appdefaultDATA uninstall-dist_applicationsDATA \
 .PRECIOUS: Makefile
 
 
+version.m4: configure.ac Makefile.am src/*.c src/*.h
+	if test `git describe` && test "`git describe --abbrev=1`" \
+		!= "`sed -n '/XFIG_V/ {s/.*\[\(.*\)\])/\1/;p}' $@`"; then \
+	sed -i "s/VERSION\], \[.*\]/VERSION], [`git describe --abbrev=1`]/" $@ \
+	&& sed -i "s/DATE\], \[.*\]/DATE], [`LC_TIME=C date +'%b %Y' -r $@`]/" $@; \
+	fi
+# To compare git date with version.m4 date; Easier with wildcards, like above.
+# && test `git show -s --pretty=%ct` gt `date +%s -r $@`
+
+# a fragment, to test compilation with different configure-flags
+compile-check: distdir
+	chmod u+w $(distdir)
+	mkdir $(distdir)/_build $(distdir)/_build/sub
+	cd $(distdir)/_build/sub \
+	&& ../../configure --srcdir=../.. --without-xfig-libraries --disable-jpeg \
+	&& $(MAKE) -j $(AM_MAKEFLAGS) \
+	&& $(MAKE) $(AM_MAKEFLAGS) check \
+	&& $(MAKE) $(AM_MAKEFLAGS) clean
+	cd $(distdir)/_build/sub \
+	../../configure --srcdir=../.. --without-xfig-libraries --disable-xpm --enable-xpm-icon \
+	&& $(MAKE) -j $(AM_MAKEFLAGS) \
+	&& $(MAKE) $(AM_MAKEFLAGS) check \
+	&& $(MAKE) $(AM_MAKEFLAGS) clean
+
+# do not distribute Maps/USA/assemble and Maps/Canada/assemble
+# See info automake, 14.3 The dist Hook, for an example with chmod u+w.
+@XFIG_LIBRARIES_TRUE@dist-hook:
+@XFIG_LIBRARIES_TRUE@	test -d "$(distdir)/$(xfig_librariesdir)/Maps" \
+@XFIG_LIBRARIES_TRUE@	&& cd "$(distdir)/$(xfig_librariesdir)/Maps" && \
+@XFIG_LIBRARIES_TRUE@		for p in USA Canada; do \
+@XFIG_LIBRARIES_TRUE@			test -f "$$p/assemble" \
+@XFIG_LIBRARIES_TRUE@			&& { test -w "$$p" || chmod u+w "$$p"; } \
+@XFIG_LIBRARIES_TRUE@			&& rm -f "$$p/assemble" || :; \
+@XFIG_LIBRARIES_TRUE@		done || :
+
 # Libraries might not be distributed - so test, whether the
 # source is there, before trying to copy it to the destination.
 @XFIG_LIBRARIES_TRUE@install-data-hook:
-@XFIG_LIBRARIES_TRUE@	test -d "$(srcdir)/$(xfig_librariesdir)" \
-@XFIG_LIBRARIES_TRUE@	&& $(MKDIR_P) "$(DESTDIR)$(pkgdatadir)" \
-@XFIG_LIBRARIES_TRUE@	&& cp -Rp "$(srcdir)/$(xfig_librariesdir)" "$(DESTDIR)$(pkgdatadir)" \
-@XFIG_LIBRARIES_TRUE@	&& chmod -R u+rwX "$(DESTDIR)$(pkgdatadir)"
+@XFIG_LIBRARIES_TRUE@	test -d "$(srcdir)/$(xfig_librariesdir)" && { \
+@XFIG_LIBRARIES_TRUE@		$(MKDIR_P) "$(DESTDIR)$(pkgdatadir)" \
+@XFIG_LIBRARIES_TRUE@		&& cp -Rp "$(srcdir)/$(xfig_librariesdir)" "$(DESTDIR)$(pkgdatadir)" \
+@XFIG_LIBRARIES_TRUE@		&& chmod -R u+rwX "$(DESTDIR)$(pkgdatadir)" || exit 1; } \
+@XFIG_LIBRARIES_TRUE@		|| :
 
 @XFIG_LIBRARIES_TRUE@uninstall-local:
 @XFIG_LIBRARIES_TRUE@	test -d "$(DESTDIR)$(pkgdatadir)/$(xfig_librariesdir)" \
-@XFIG_LIBRARIES_TRUE@	&& rm -rf "$(DESTDIR)$(pkgdatadir)/$(xfig_librariesdir)"
+@XFIG_LIBRARIES_TRUE@	&& rm -rf "$(DESTDIR)$(pkgdatadir)/$(xfig_librariesdir)" || :
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

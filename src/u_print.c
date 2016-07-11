@@ -122,16 +122,12 @@ void print_to_printer(char *printer, char *backgrnd, float mag, Boolean print_al
     setlocale(LC_NUMERIC, "C");
     sprintf(tmpcmd, "%s %s -L ps -z %s -m %f %s -n %s",
 	    fig2dev_cmd, appres.international ? appres.fig2dev_localize_option : "",
-    /* reset to original locale */
 #else
     sprintf(tmpcmd, "%s -L ps -z %s -m %f %s -n %s",
 	    fig2dev_cmd,
 #endif /* I18N */
 	    paper_sizes[appres.papersize].sname, mag/100.0,
 	    appres.landscape ? "-l xxx" : "-p xxx", name);
-#ifdef I18N
-    setlocale(LC_NUMERIC, "");
-#endif /* I18N */
 
     if (appres.correct_font_size)
 	strcat(tmpcmd," -F ");
@@ -170,6 +166,11 @@ void print_to_printer(char *printer, char *backgrnd, float mag, Boolean print_al
 		printer, paper_sizes[appres.papersize].sname,
 		appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     }
+#ifdef I18N
+    /* reset to original locale */
+    setlocale(LC_NUMERIC, "");
+#endif /* I18N */
+
     unlink(tmpfile);
 }
 
@@ -240,7 +241,7 @@ print_to_file(char *file, char *lang, float mag, int xoff, int yoff,
     put_msg("Exporting to file \"%s\" in %s mode ...     ",
 	    file, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     app_flush();		/* make sure message gets displayed */
-   
+
     /* change "hpl" to "ibmgl" */
     if (!strcmp(lang, "hpl"))
 	lang = "ibmgl";
@@ -269,7 +270,7 @@ print_to_file(char *file, char *lang, float mag, int xoff, int yoff,
 		fig2dev_cmd, appres.international ? appres.fig2dev_localize_option : "",
 		real_lang, mag/100.);
     /* reset to original locale */
-    setlocale(LC_NUMERIC, "");
+    /* setlocale(LC_NUMERIC, "");  removed from Brian; I am not sure, yet */
 #else
     sprintf(prcmd, "%s -L %s -m %.4g", fig2dev_cmd, real_lang, mag/100.);
 #endif  /* I18N */
@@ -303,9 +304,9 @@ print_to_file(char *file, char *lang, float mag, int xoff, int yoff,
 	if (overlap)
 	    strcat(prcmd, " -O ");
 
-	sprintf(tmpcmd, "-z %s %s -n %s -x %d -y %d -b %d", 
+	sprintf(tmpcmd, "-z %s %s -n %s -x %d -y %d -b %d",
 		paper_sizes[appres.papersize].sname,
-		appres.landscape ? "-l xxx" : "-p xxx", 
+		appres.landscape ? "-l xxx" : "-p xxx",
 		name, xoff, yoff, border);
 	strcat(prcmd, tmpcmd);
 
@@ -375,6 +376,11 @@ print_to_file(char *file, char *lang, float mag, int xoff, int yoff,
 	strsub(outfile,".","_",tmp_name,1);
 	strcat(prcmd,tmp_name);
 
+#ifdef I18N
+	/* reset to original locale */
+	setlocale(LC_NUMERIC, "");
+#endif /* I18N */
+
 	/* make it suitable for pstex. */
 	strsub(prcmd,"pspdftex","pstex",tmpcmd,0);
 	strcat(tmpcmd,".eps");
@@ -396,11 +402,6 @@ print_to_file(char *file, char *lang, float mag, int xoff, int yoff,
 		sprintf(prcmd, "fig2dev -L %s -p %s -m %.4g %s %s %s",
 #endif  /* I18N */
 				"pstex_t", tmp_name, mag/100.0, layers, tmp_fig_file, outfile);
-#ifdef I18N
-	/* reset to original locale */
-	setlocale(LC_NUMERIC, "");
-#endif  /* I18N */
-
     /* PSTEX and PDFTEX */
     } else if (!strcmp(lang, "pstex") || !strcmp(lang, "pdftex")) {
 	/* do both EPS (or PDF) part and text part */
@@ -440,10 +441,6 @@ print_to_file(char *file, char *lang, float mag, int xoff, int yoff,
 #endif  /* I18N */
 		!strcmp(lang,"pstex")? "pstex_t": "pdftex_t",
 		appres.encoding, outfile, mag/100.0, border);
-#ifdef I18N
-	/* reset to original locale */
-	setlocale(LC_NUMERIC, "");
-#endif  /* I18N */
 	/* add the -D +list if user doesn't want all layers printed */
 	if (!print_all_layers) {
 	    strcat(prcmd, layers);
@@ -478,11 +475,9 @@ print_to_file(char *file, char *lang, float mag, int xoff, int yoff,
 #ifdef I18N
 	/* set the numeric locale to C so we get decimal points for numbers */
 	setlocale(LC_NUMERIC, "C");
-	sprintf(prcmd, "%s %s -L pdf -m %.4g ", 
+	sprintf(prcmd, "%s %s -L pdf -m %.4g ",
 		fig2dev_cmd, appres.international ? appres.fig2dev_localize_option : "",
 		mag/100.0);
-	/* reset to original locale */
-	setlocale(LC_NUMERIC, "");
 #else
 	sprintf(prcmd, "%s -L pdf -m %.4g ", fig2dev_cmd, mag/100.0);
 #endif  /* I18N */
@@ -526,7 +521,7 @@ print_to_file(char *file, char *lang, float mag, int xoff, int yoff,
     /* JPEG */
     } else if (!strcmp(lang, "jpeg")) {
 	/* set the image quality for JPEG export */
-	sprintf(tmpcmd, "-b %d -q %d -S %d", 
+	sprintf(tmpcmd, "-b %d -q %d -S %d",
 		border, appres.jpeg_quality, smooth);
 	strcat(prcmd, tmpcmd);
 
@@ -628,6 +623,11 @@ print_to_file(char *file, char *lang, float mag, int xoff, int yoff,
     /* make a busy cursor */
     set_temp_cursor(wait_cursor);
 
+#ifdef I18N
+    /* reset to original locale */
+    setlocale(LC_NUMERIC, "");
+#endif /* I18N */
+
     /* now execute fig2dev */
     if (exec_prcmd(prcmd, "EXPORT") == 0)
 	put_msg("Export to \"%s\" done", file);
@@ -647,7 +647,7 @@ void gen_print_cmd(char *cmd, char *file, char *printer, char *pr_params)
 {
     if (emptyname(printer)) {	/* send to default printer */
 #if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
-	sprintf(cmd, "lp %s %s", 
+	sprintf(cmd, "lp %s %s",
 		pr_params,
 		shell_protect_string(file));
 #else
@@ -663,14 +663,14 @@ void gen_print_cmd(char *cmd, char *file, char *printer, char *pr_params)
 #if (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR)
 	sprintf(cmd, "lp %s -d%s %s",
 		pr_params,
-		shell_protect_string(printer), 
+		shell_protect_string(printer),
 		shell_protect_string(file));
 #else
-	sprintf(cmd, "%s %s %s%s %s", 
+	sprintf(cmd, "%s %s %s%s %s",
 		access("/usr/bin/lp", X_OK)?"lpr":"lp",
 		pr_params,
 		access("/usr/bin/lp", X_OK)?"-P":"-d",
-		shell_protect_string(printer), 
+		shell_protect_string(printer),
 		shell_protect_string(file));
 #endif /* (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR) */
 	put_msg("Printing on \"%s\" with %s paper size in %s mode ...     ",

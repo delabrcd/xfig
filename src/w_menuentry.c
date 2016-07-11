@@ -19,10 +19,13 @@
     This adds the underline resource to underline one character of the label
 */
 
+/* Thomas Loimer, 2016: Make ./configure work */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-
-#include <X11/Xmu/Drawing.h>
 
 #ifdef XAW3D
 #include <X11/Xaw3d/XawInit.h>

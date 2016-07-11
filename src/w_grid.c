@@ -63,7 +63,7 @@ void setup_grid(void)
     int		    dim;			/* size of grid pixmap in pixels */
     int 		xdim, ydim;
     double		xs, ys, yd;
-    static	    prev_grid = -1;
+    static int	    prev_grid = -1;
 
     DeclareArgs(2);
 

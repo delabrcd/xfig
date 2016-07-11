@@ -6,7 +6,7 @@
 !Don't change the following string - xfig uses it to determine
 ! if you have the newest app-defaults files installed
 
-Fig.version:			3.2.6-beta
+Fig.version:			3.2.6-rc
 
 ! some sample settings you may want to change
 
@@ -175,6 +175,8 @@ Fig.internalborderwidth:	1
 ! An initial "~/" is replaced by the value of "$HOME/".
 !
 !Fig*keyFile:	~/.xfig.Compose-key
+
+Fig.save8bit:	true
 
 ! If xfig is compiled with I18N option, you may want to uncomment following lines.
 !

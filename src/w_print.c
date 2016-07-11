@@ -1203,7 +1203,7 @@ switch_print_layers(Widget w, XtPointer closure, XtPointer call_data)
 
 /* when user toggles between printing all or only active layers */
 
-static XtCallbackProc
+static void /* XtCallbackProc */
 switch_bound(Widget w, XtPointer closure, XtPointer call_data)
 {
     Boolean	    state;

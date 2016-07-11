@@ -19,6 +19,7 @@
 #define RESOURCES_H
 
 #include "paintop.h"
+#include "pathmax.h"
 
 #define NUMSHADEPATS	21
 #define NUMTINTPATS	20
@@ -263,6 +264,7 @@ typedef struct _appres {
     char	*ghostscript;		/* name of ghostscript (e.g. gs or gswin32) */
     Boolean	 correct_font_size;	/* adjust for difference in Fig screen res vs points (80/72) */
     int		 encoding;		/* encoding for latex escape translation */
+    Boolean	save8bit;		/* save 8bit files */
     Boolean	 crosshair;		/* draw crosshair cursor wherever the pointer is */
     Boolean	 autorefresh;		/* automatically redraw figure when file has changed */
     Boolean	 write_bak;		/* automatically rename current to .bak when saving */

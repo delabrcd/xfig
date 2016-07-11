@@ -3,6 +3,63 @@ Changes to Xfig
 Version 3.2
 =============================================================================
 
+Patchlevel 6-rc (July 2016)
+
+NEW FEATURES:
+	o Should compile on Mac (Darwin) after installing dependencies using
+	  Macports, Fink or Homebrew.
+	o Add two rudimentary tests. Run with make check.
+
+UI CHANGES:
+	From Brian V. Smith. These changes were made because the original
+	view was of the drawing on the page instead of the modern view
+	of the observer moving left/right/up/down:
+
+	o Left arrow moves observer left (used to scroll canvas left)
+	o Right arrow moves observer right
+	o Up arrow moves observer up
+	o Down arrow moves observer down
+	o Ctrl+Wheel up zooms in, Ctrl+Wheel down zooms out (was the other
+	  way around)
+
+BUGS FIXED:
+	o To compile on ancient systems, try make -DANCIENT.
+	o Report correct paths to installed files in the man page.
+	o Add pathmax.h and dirstruct.h, to define DIRSTRUCT and PATH_MAX.
+
+	From Vladislav Zavjalov; Commit numbers refer to
+	http://git.altlinux.org/people/slazav/packages/?p=xfig.git;a=commit;h=#
+	o Preserve comments when deleting objects; Commit #6c42e5c
+	o Restore colors and main comment after Delete All + Undo; #34f6105
+	o Draw horizontal scrollbar if property buttons are too wide to fit
+	  on the screen. Commit #e9c1394
+	o Add save8bit app-resource to allow saving 8-bit files. #5bd9fbb
+	o Move Xfuncs.h and Xosdefs.h out from fig.h. Commit #b433478
+	o Move -l flags from LDFLAGS to LDADD. Commit #2d57c85
+
+	From Roland Rosenfeld. Bug numers refer to https://bugs.debian.org/#.
+	o Do not link with -lXmu, if linking with Xaw3d > 1.5e.
+	o Make japanese documentation available for LANG=ja_JP.ujis.
+	o Set the Creation date in xfig_man.html to the date when
+	  creating the source tarball.
+	o Really fix reading png files,
+	  https://bugzilla.redhat.com/show_bug.cgi?id=1150330
+	o Delete some superfluos files, fix typos (Caribbean),
+	  add semicolon in xfig.desktop (bug # 812477).
+
+	From Brian V. Smith:
+	o old link for "Xfig On Microsoft Windows"
+	  (Getting and Installing Xfig html page)
+	o dash_list wrong dimension causes segfault on some line styles
+	o Should handle systems where REG_NOERROR (regular expression)
+	  is undefined now
+	o Missing xfig_man.html
+	o Modify a few places where to set locale to "C".
+	o Didn't allocate enough space for fonts (would segfault
+	  when popping up File panels)
+	o Moving arc point would segfault
+
+-----------------------------------
 Patchlevel 6-beta (May 2016)
 
 NEW FEATURES:
@@ -43,17 +100,18 @@ BUGS FIXED:
 	o Fix default origin (100000,100000) -> (0,0) for filled objects.
 	  Commit 4d87e60.
 	o Fix 100% cpu-load by save panel. Commit 81a4596.
-	o Do not use local SimpleMenu.c with XAW3D1_5E.
-	
-	
+	o Do not use local SimpleMenu.c with XAW3D1_5E. Would segfault on
+	  some 64-bit systems when opening main menu.
+
 	o Missing argument may cause crash or undefined behaviour.
-	  Debian bug # 795642. From Michale Tautschnig.
+	  Debian bug # 795642. From Michael Tautschnig.
+
 	From Hans de Goede. Bug information
 	at https://bugzilla.redhat.com/show_bug.cgi?id=#.
 	o Patch for importing png-files, Red Hat bug # 1150330. From David Kaufmann.
 	o Fix crash when changing arrow size. Bug # 1046102.
-	o Fix crash when creating dash-dotted lines. Bug # 1023744. From Michael Srb, thanks to
-	  Maurizio Pollini and David Kaufmann.
+	o Fix crash when creating dash-dotted lines. Bug # 1023744.
+	  From Michael Srb, thanks to Maurizio Pollini and David Kaufmann.
 	o Fix crash on exit. From Peter Volkov at gentoo
 
 -----------------------------------
@@ -70,13 +128,13 @@ BUGS FIXED:
 	o In version 1.4 of the PNG library dither was removed so xfig now uses quantize when
 	  importing PNG images with palettes
 	o Other updates for PNG library version 1.5 from Peter Volkov
-	o Some versions of Cygwin don't have either REG_NOERROR or REG_OKAY defined so 
+	o Some versions of Cygwin don't have either REG_NOERROR or REG_OKAY defined so
 	  REG_NOERROR defined to be 0
 	o Changed X-Spline parameter to match original intent of X-Spline authors:
 	  changed definition of Q(s) from -s to -0.5 * s in u_draw_spline.c
 	o Allowance for stricter ghostscript in -dSAFER mode.  Was causing error on reading EPS images.
 	  From Hans de Goede
-	o Security vulnerability with importing images fixed 
+	o Security vulnerability with importing images fixed
 	  (RedHat bug # 657981 - xfig buffer overflow when opening .fig file with malicius color definition)
 	o When exporting to combined PS/PDF/LATEX the -D option to exclude all but active layers
 	  was not passed to fig2dev
@@ -88,13 +146,13 @@ BUGS FIXED:
 	o Renamed O_TEXT to O_TXT to avoid conflicts with system define
 	o On lines with Round or Projecting cap style and arrowheads, the line endpoint stuck out
 	  beyond the arrowhead
-	  
+
 	From Vladsilav Zavjalov:
 	o Uses fontsets for all fonts in international mode
 	o SEGV when zooming while creating object (e.g. text)
 	o Add locale_encoding appres which acts similar to euc_encoding, but uses system locale and
 	  mbrlen function for multibyte character length calculation.
-	o Move "file not found" error message from check_docfile() to launch_viewer(), 
+	o Move "file not found" error message from check_docfile() to launch_viewer(),
 	  remove excess check_docfile() call.
 	  Error message is not shown when looking for a locale-dependent docs. It is shown only
 	  if no docs found at all.
@@ -235,7 +293,7 @@ NEW FEATURES:
 	  -startarrowtype, -startarrowwidth, -startarrowlength, -startarrowthick
 
 BUGS FIXED:
-	o xfig would crash on 64-bit processors because of a missing include, which 
+	o xfig would crash on 64-bit processors because of a missing include, which
 	  causes new_string() to be declared implicitly as returning an integer.
 	  This may cause the top 32 bits to get lost and hence the crash.
 	o Blanks not preserved in imported picture filename when reading Fig file
@@ -245,7 +303,7 @@ BUGS FIXED:
 	o Also, vertex numbers are not shown on inactive (grayed) layers
 	o Widget shadow resources moved from Fig-color to Fig because they don't
 	  really have anything to do with color. There was a problem when running
-	  KDE because it set a global resource *Scrollbar*height: which made xfig 
+	  KDE because it set a global resource *Scrollbar*height: which made xfig
 	  freeze when *customization: -color was NOT used.
 	o The point positioning indicator is turned on when editing a compound
 	  object to show the user that it is used
@@ -255,11 +313,11 @@ BUGS FIXED:
 	o Centered text was changed to left-justified when flipped horizontally
 	  inside a compound object.
 	o With -v option, after reporting the version, xfig would say that -v
-	  was an unknown option 
+	  was an unknown option
 	o Local locale was being used when writing the xfig cut buffer file
 	  instead of switching to "C" locale.  This created commas instead of
 	  decimal (.) for numbers in those particular locales.
-	  From Dirk Osswald 
+	  From Dirk Osswald
 	o Local locale was used when forming command for calling fig2dev,
 	  resulting in commas instead of decimals for floating point numbers.
 	o count_user_colors buffer overflow fixed
@@ -284,7 +342,7 @@ NEW FEATURES:
 	o Added note to README and FAQ html file:
 	  If the Xaw or Xaw3d Athena widget sets are compiled with the
 	  ARROW_SCROLLBAR style of scrollbars, there is no StartScroll action
-	  and you won't be able to scroll using the wheel on the mouse.  
+	  and you won't be able to scroll using the wheel on the mouse.
 	  If you want to be able to scroll using the wheel, you must recompile
 	  the Xaw library from sources, disabling the ARROW_SCROLLBAR option.
 	o Astrological symbols for planets in Miscellaneous/Astrology by Andrew Collier
@@ -295,7 +353,7 @@ NEW FEATURES:
 	    Del:   delete-character-right
 	o Added *.jpeg* to picture browse options
 	o New libraries for electronics from Fabio González in
-	  Libraries/Electronics/Schematic/More 
+	  Libraries/Electronics/Schematic/More
 
 BUGS FIXED:
 	o typo in latex_and_xfig.html and LATEX_AND_XFIG files. Text should be:
@@ -312,9 +370,9 @@ Note:	There is a minor change to the copyright/permission notice for xfig.
 	Basically, I have restored the part that allows one to sell xfig
 	regardless of whether it is bundled as part of a package or not.
 	This is identical to the original copyright/permission notice for
-	xfig, which was based on the MIT (then later, the X Consortium) 
+	xfig, which was based on the MIT (then later, the X Consortium)
 	copyright notice.
-	Here is the new notice (different files have different author 
+	Here is the new notice (different files have different author
 	copyrights at the top):
 
 	> FIG : Facility for Interactive Generation of figures
@@ -324,11 +382,11 @@ Note:	There is a minor change to the copyright/permission notice for xfig.
 
 	> Any party obtaining a copy of these files is granted, free of charge, a
 	> full and unrestricted irrevocable, world-wide, paid up, royalty-free,
-	> nonexclusive right and license to deal in this software and documentation 
-	> files (the "Software"), including without limitation the rights to use, 
+	> nonexclusive right and license to deal in this software and documentation
+	> files (the "Software"), including without limitation the rights to use,
 	> copy, modify, merge, publish distribute, sublicense and/or sell copies of
-	> the Software, and to permit persons who receive copies from any such 
-	> party to do so, with the only requirement being that the above copyright 
+	> the Software, and to permit persons who receive copies from any such
+	> party to do so, with the only requirement being that the above copyright
 	> and this permission notice remain intact.
 
 NEW FEATURES:
@@ -1786,9 +1844,9 @@ NEW FEATURES:
 	  entries (e.g. line thickness indicator popup)
 	o Option of using either absolute values for arrowhead sizes or multiple
 	  of current line length (see arrow size popup)
-  	o Arrowhead thickness, width and height can be set explicitely in
-  	  bottom panel for creating arrowheads.  Update button also copies
-  	  arrowhead size info to/from objects and indicator panel.
+	o Arrowhead thickness, width and height can be set explicitely in
+	  bottom panel for creating arrowheads.  Update button also copies
+	  arrowhead size info to/from objects and indicator panel.
 	  The arrowhead width and height parameters are now the same units as
 	  the arrowhead thickness, which is units of line thickness, not 1/1200
 	  inch as they were in previous versions of xfig.
@@ -1958,17 +2016,17 @@ Version 3.2 (first release Aug 22, 1997)
 =============================================================================
 
 GENERAL NOTE:
- 	Because Unisys Corp. has stated that they will not charge royalties for
- 	the use of the LZW compression algorithm in *FREE* programs, xfig will
- 	continue to support importing and exporting of GIF images.
- 	However, be aware that if you sell xfig, for example as part of a CD-ROM
- 	package with freeware, you may be liable for paying royalties to Unisys.
- 	You may comment out the USEGIF variable in the Imakefile to avoid this.
- 	With USEGIF commented out, xfig will still import GIF files, but not
- 	export in that format.  Also, for screen capture, xfig will create a PCX
+	Because Unisys Corp. has stated that they will not charge royalties for
+	the use of the LZW compression algorithm in *FREE* programs, xfig will
+	continue to support importing and exporting of GIF images.
+	However, be aware that if you sell xfig, for example as part of a CD-ROM
+	package with freeware, you may be liable for paying royalties to Unisys.
+	You may comment out the USEGIF variable in the Imakefile to avoid this.
+	With USEGIF commented out, xfig will still import GIF files, but not
+	export in that format.  Also, for screen capture, xfig will create a PCX
 	file instead of a GIF file.
- 	*** The authors of xfig and the Lawrence Berkeley National Laboratory
- 	cannot be held responsible in any case. ***
+	*** The authors of xfig and the Lawrence Berkeley National Laboratory
+	cannot be held responsible in any case. ***
 
 NOTE:	fig2dev now handles the exporting to bitmap formats (GIF, JPEG etc)
 	  instead of xfig, so there is more consistent output. Requires the

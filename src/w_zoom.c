@@ -84,10 +84,10 @@ zoom_selected(int x, int y, unsigned int button)
 	    unzoom();
 	    break;
 	case Button4:
-	    wheel_dec_zoom();
+	    wheel_inc_zoom();
 	    break;
 	case Button5:
-	    wheel_inc_zoom();
+	    wheel_dec_zoom();
 	    break;
 	}
     } else if (button == Button1) {

@@ -63,7 +63,11 @@
 #include "w_cursor.h"
 #include "w_dir.h"
 
+#ifdef I18N
+#include "w_i18n.h"
+#endif
 #include <sys/wait.h>  /* waitpid() */
+#include <time.h>
 
 /* EXPORTS */
 
@@ -3211,7 +3215,7 @@ generic_window(char *object_type, char *sub_type, icon_struct *icon, void (*d_pr
 	XtAddCallback(but1, XtNcallback,
 	    (XtCallbackProc) grab_button, (XtPointer) NULL);
 
-	if ( cur_image_editor != NULL && *cur_image_editor != (char) NULL) {
+	if ( cur_image_editor != NULL && *cur_image_editor != (char) 0) {
 	    FirstArg(XtNlabel,"Edit Image");
 	    NextArg(XtNfromHoriz, but1);
 	    NextArg(XtNfromVert, label);

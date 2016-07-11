@@ -596,8 +596,10 @@ read_arcobject(FILE *fp)
     int		    type, style;
     float	    thickness, wd, ht;
 
-    if ((a = create_arc()) == NULL)
+    if ((a = create_arc()) == NULL){
+	numcom=0;
 	return NULL;
+    }
 
     save_line = line_no;
     a->next = NULL;
@@ -630,6 +632,7 @@ read_arcobject(FILE *fp)
     if (((proto < 22) && (n != 19)) || ((proto >= 30) && (n != 21))) {
 	file_msg(Err_incomp, "arc", save_line);
 	free((char *) a);
+	numcom=0;
 	return NULL;
     }
     a->fill_style = FILL_CONVERT(a->fill_style);
@@ -685,8 +688,10 @@ read_compoundobject(FILE *fp)
     F_compound	   *com, *c, *lc = NULL;
     int		    n, object;
 
-    if ((com = create_compound()) == NULL)
+    if ((com = create_compound()) == NULL){
+        numcom=0;
 	return NULL;
+    }
 
     com->arcs = NULL;
     com->ellipses = NULL;
@@ -708,12 +713,14 @@ read_compoundobject(FILE *fp)
 	/* otherwise, if there aren't 4 numbers, complain */
 	file_msg(Err_incomp, "compound", save_line);
 	free((char *) com);
+	numcom=0;
 	return NULL;
     }
     while (read_line(fp) > 0) {
 	if (sscanf(buf, "%d", &object) != 1) {
 	    file_msg(Err_incomp, "compound", save_line);
 	    free((char *) com);
+	    numcom=0;
 	    return NULL;
 	}
 	switch (object) {
@@ -783,6 +790,7 @@ read_compoundobject(FILE *fp)
  	           &com->secorner.x, &com->secorner.y);
 	return com;
     } else {
+	numcom=0;
 	return NULL;
     }
 }
@@ -793,8 +801,10 @@ read_ellipseobject(void)
     F_ellipse	   *e;
     int		    n;
 
-    if ((e = create_ellipse()) == NULL)
+    if ((e = create_ellipse()) == NULL){
+	numcom=0;
 	return NULL;
+    }
 
     save_line = line_no;
     e->next = NULL;
@@ -822,6 +832,7 @@ read_ellipseobject(void)
     if (((proto < 22) && (n != 18)) || ((proto >= 30) && (n != 19))) {
 	file_msg(Err_incomp, "ellipse", save_line);
 	free((char *) e);
+	numcom=0;
 	return NULL;
     }
     e->fill_style = FILL_CONVERT(e->fill_style);
@@ -846,8 +857,10 @@ read_lineobject(FILE *fp)
     char	    picfile[PATH_MAX];
     Boolean	    dum;
 
-    if ((l = create_line()) == NULL)
+    if ((l = create_line()) == NULL){
+	numcom=0;
 	return NULL;
+    }
 
     save_line = line_no;
     l->points = NULL;
@@ -890,6 +903,7 @@ read_lineobject(FILE *fp)
 			((proto >= 30) && n != 15)))) {
 	    file_msg(Err_incomp, "line", save_line);
 	    free((char *) l);
+	    numcom=0;
 	    return NULL;
     }
     l->fill_style = FILL_CONVERT(l->fill_style);
@@ -899,10 +913,13 @@ read_lineobject(FILE *fp)
     fix_fillstyle(l);	/* make sure that black/white have legal fill styles */
     /* forward arrow */
     if (fa) {
-	if (read_line(fp) == -1)
+	if (read_line(fp) == -1){
+	    numcom=0;
 	    return NULL;
+	}
 	if (sscanf(buf, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    file_msg(Err_incomp, "line", save_line);
+	    numcom=0;
 	    return NULL;
 	}
 	/* make sure arrowhead is legal and convert units */
@@ -911,10 +928,13 @@ read_lineobject(FILE *fp)
     }
     /* backward arrow */
     if (ba) {
-	if (read_line(fp) == -1)
+	if (read_line(fp) == -1){
+	    numcom=0;
 	    return NULL;
+	}
 	if (sscanf(buf, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    file_msg(Err_incomp, "line", save_line);
+	    numcom=0;
 	    return NULL;
 	}
 	/* make sure arrowhead is legal and convert units */
@@ -926,15 +946,18 @@ read_lineobject(FILE *fp)
 
 	if (read_line(fp) == -1) {
 	    free((char *) l);
+	    numcom=0;
 	    return NULL;
 	}
 	if ((l->pic = create_pic()) == NULL) {
 	    free((char *) l);
+	    numcom=0;
 	    return NULL;
 	}
 	if (sscanf(buf, "%d %[^\n]", &l->pic->flipped, s1) != 2) {
 	    file_msg(Err_incomp, "Picture Object", save_line);
 	    free((char *) l);
+	    numcom=0;
 	    return NULL;
 	}
 
@@ -960,6 +983,7 @@ read_lineobject(FILE *fp)
 
     if ((p = create_point()) == NULL) {
 	free((char *) l);
+	numcom=0;
 	return NULL;
     }
 
@@ -971,6 +995,7 @@ read_lineobject(FILE *fp)
     if (fscanf(fp, "%d%d", &p->x, &p->y) != 2) {
 	file_msg(Err_incomp, "line", save_line);
 	free_linestorage(l);
+	numcom=0;
 	return NULL;
     }
     ox = p->x;
@@ -984,6 +1009,7 @@ read_lineobject(FILE *fp)
 	if (fscanf(fp, "%d%d", &x, &y) != 2) {
 	    file_msg(Err_incomp, "line", save_line);
 	    free_linestorage(l);
+	    numcom=0;
 	    return NULL;
 	}
 	if (proto < 22 && x == 9999)
@@ -995,6 +1021,7 @@ read_lineobject(FILE *fp)
 	oy = y;
 	if ((q = create_point()) == NULL) {
 	    free_linestorage(l);
+	    numcom=0;
 	    return NULL;
 	}
 	q->x = x;
@@ -1017,6 +1044,7 @@ read_lineobject(FILE *fp)
 			save_line);
 	    }
 	    free_linestorage(l);
+	    numcom=0;
 	    return NULL;
     }
     /* if the line has only one point, delete any arrowheads it might have now */
@@ -1048,8 +1076,10 @@ read_splineobject(FILE *fp)
     double	    s_param;
     float	    lx, ly, rx, ry;
 
-    if ((s = create_spline()) == NULL)
+    if ((s = create_spline()) == NULL){
+	numcom=0;
 	return NULL;
+    }
 
     save_line = line_no;
     s->points = NULL;
@@ -1074,6 +1104,7 @@ read_splineobject(FILE *fp)
     if (((proto < 22) && (n != 10)) || ((proto >= 30) && n != 13)) {
 	file_msg(Err_incomp, "spline", save_line);
 	free((char *) s);
+	numcom=0;
 	return NULL;
     }
     s->fill_style = FILL_CONVERT(s->fill_style);
@@ -1083,10 +1114,13 @@ read_splineobject(FILE *fp)
     fix_fillstyle(s);	/* make sure that black/white have legal fill styles */
     /* forward arrow */
     if (fa) {
-	if (read_line(fp) == -1)
+	if (read_line(fp) == -1){
+	    numcom=0;
 	    return NULL;
+	}
 	if (sscanf(buf, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    file_msg(Err_incomp, "spline", save_line);
+	    numcom=0;
 	    return NULL;
 	}
 	/* make sure arrowhead is legal and convert units */
@@ -1095,10 +1129,13 @@ read_splineobject(FILE *fp)
     }
     /* backward arrow */
     if (ba) {
-	if (read_line(fp) == -1)
+	if (read_line(fp) == -1){
+	    numcom=0;
 	    return NULL;
+	}
 	if (sscanf(buf, "%d%d%f%f%f", &type, &style, &thickness, &wd, &ht) != 5) {
 	    file_msg(Err_incomp, "spline", save_line);
+	    numcom=0;
 	    return NULL;
 	}
 	/* make sure arrowhead is legal and convert units */
@@ -1111,10 +1148,12 @@ read_splineobject(FILE *fp)
     if ((n = fscanf(fp, "%d%d", &x, &y)) != 2) {
 	file_msg(Err_incomp, "spline", save_line);
 	free_splinestorage(s);
+	numcom=0;
 	return NULL;
     };
     if ((p = create_point()) == NULL) {
 	free_splinestorage(s);
+	numcom=0;
 	return NULL;
     }
     s->points = p;
@@ -1131,12 +1170,14 @@ read_splineobject(FILE *fp)
 	    file_msg(Err_incomp, "spline", save_line);
 	    p->next = NULL;
 	    free_splinestorage(s);
+	    numcom=0;
 	    return NULL;
 	};
 	if (proto < 22 && x == 9999)
 	    break;
 	if ((q = create_point()) == NULL) {
 	    free_splinestorage(s);
+	    numcom=0;
 	    return NULL;
 	}
 	q->x = x;
@@ -1157,6 +1198,7 @@ read_splineobject(FILE *fp)
             if (fscanf(fp, "%f%f%f%f", &lx, &ly, &rx, &ry) != 4) {
               file_msg(Err_incomp, "spline", save_line);
 	      free_splinestorage(s);
+	      numcom=0;
               return NULL;
             }
           }
@@ -1168,6 +1210,7 @@ read_splineobject(FILE *fp)
 	}
 	if (! make_sfactors(s)) {
 	    free_splinestorage(s);
+	    numcom=0;
 	    return NULL;
 	}
 	return s;
@@ -1179,10 +1222,12 @@ read_splineobject(FILE *fp)
     if ((n = fscanf(fp, "%lf", &s_param)) != 1) {
 	file_msg(Err_incomp, "spline", save_line);
 	free_splinestorage(s);
+	numcom=0;
 	return NULL;
     };
     if ((cp = create_sfactor()) == NULL) {
 	free_splinestorage(s);
+	numcom=0;
 	return NULL;
     }
     s->sfactors = cp;
@@ -1193,11 +1238,13 @@ read_splineobject(FILE *fp)
 	    file_msg(Err_incomp, "spline", save_line);
 	    cp->next = NULL;
 	    free_splinestorage(s);
+	    numcom=0;
 	    return NULL;
 	};
 	if ((cq = create_sfactor()) == NULL) {
 	    cp->next = NULL;
 	    free_splinestorage(s);
+	    numcom=0;
 	    return NULL;
 	}
 	cq->s=s_param;
@@ -1207,10 +1254,12 @@ read_splineobject(FILE *fp)
     if (closed_spline(s) && numpts < 3) {
 	file_msg("Closed splines must have 3 or more points, removing spline at line %d", save_line);
 	free_splinestorage(s);
+	numcom=0;
 	return NULL;
     } else if (numpts < 2) {
 	file_msg("Open splines must have 2 or more points, removing spline at line %d", save_line);
 	free_splinestorage(s);
+	numcom=0;
 	return NULL;
     }
     cp->next = NULL;
@@ -1233,8 +1282,10 @@ read_textobject(FILE *fp)
     Boolean	    more;
     PR_SIZE	    tx_dim;
 
-    if ((t = create_text()) == NULL)
+    if ((t = create_text()) == NULL){
+	numcom=0;
 	return NULL;
+    }
 
     save_line = line_no;
     t->next = NULL;
@@ -1282,6 +1333,7 @@ read_textobject(FILE *fp)
     if (n < 11) {
 	file_msg(Err_incomp, "text", save_line);
 	free((char *) t);
+	numcom=0;
 	return NULL;
     }
 
@@ -1386,6 +1438,7 @@ read_textobject(FILE *fp)
 			    if (sscanf(&s[l+1],"%3o",&num)!=1) {
 				file_msg("Error in parsing text string on line.", save_line);
 				free((char *) t);
+				numcom=0;
 				return NULL;
 			    }
 			    buf[n++]= (unsigned char) num;	/* put char in */
@@ -1413,6 +1466,7 @@ read_textobject(FILE *fp)
     /* skip first blank from input file by starting at s[1] */
     if ((t->cstring = new_string(strlen(&s[1]))) == NULL) {
 	free((char *) t);
+	numcom=0;
 	return NULL;
     }
     /* copy string to text object */

@@ -49,6 +49,9 @@
 #include "w_indpanel.h"
 #include "w_color.h"
 
+extern void	swap_depths(void);	/* w_layers.c */
+extern void	swap_counts(void);	/* w_layers.c */
+
 /*************** EXPORTS *****************/
 
 /*
@@ -521,6 +524,7 @@ void undo_add(void)
 
 void undo_delete(void)
 {
+    char	   *swp_comm;
     int		    xmin, ymin, xmax, ymax;
     char	    ctemp[PATH_MAX];
 
@@ -549,6 +553,20 @@ void undo_delete(void)
 	list_add_compound(&objects.compounds, saved_objects.compounds);
 	redisplay_compound(saved_objects.compounds);
 	break;
+      case O_FIGURE:
+        /* swap saved figure comments with current */
+        swp_comm = objects.comments;
+        objects.comments = saved_objects.comments;
+        saved_objects.comments = swp_comm;
+        /* swap colors*/
+        swap_colors();
+        /* restore objects*/
+        saved_objects.next = NULL;
+        compound_bound(&saved_objects, &xmin, &ymin, &xmax, &ymax);
+        tail(&objects, &object_tails);
+        append_objects(&objects, &saved_objects, &object_tails);
+        redisplay_zoomed_region(xmin, ymin, xmax, ymax);
+        break;
       case O_ALL_OBJECT:
 	saved_objects.next = NULL;
 	compound_bound(&saved_objects, &xmin, &ymin, &xmax, &ymax);

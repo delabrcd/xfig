@@ -69,7 +69,7 @@ static XRectangle clip[1];
 static int	parsesize(char *name);
 static Boolean	openwinfonts;
 
-#define MAXNAMES 35
+#define MAXNAMES 300
 
 static struct {
     char	   *fn;
@@ -187,10 +187,12 @@ void init_font(void)
 		flist[p++].s = ss;	/* and save size */
 		}
 	    }
+	    /* start at size 4 and go to 50 */
 	    for (ss = 4; ss <= 50; ss++) {
 		for (i = 0; i < p; i++)
-			if (flist[i].s == ss)
+			if (flist[i].s == ss)	/* found size */
 			    break;
+		/* if found size, allocate the font */
 		if (i < p && flist[i].s == ss) {
 			newfont = (struct xfont *) malloc(sizeof(struct xfont));
 			if (nf == NULL)
@@ -199,6 +201,8 @@ void init_font(void)
 			    nf->next = newfont;
 			nf = newfont;	/* keep current ptr */
 			nf->size = ss;	/* store the size here */
+			if (appres.DEBUG)
+			    fprintf(stderr,"Font: %s\n",flist[i].fn);
 			nf->fname = flist[i].fn;	/* keep actual name */
 			nf->fstruct = NULL;
 		        nf->fset = NULL;
@@ -478,7 +482,7 @@ textsize(XFontStruct *fstruct, int n, char *s)
 
 #ifdef I18N
     if (appres.international) {
-      extern i18n_text_extents();
+      extern void i18n_text_extents(); /* w_i18n.h */
       i18n_text_extents(fstruct, s, n, &dir, &asc, &desc, &overall);
       ret.length = ZOOM_FACTOR * overall.width;
       ret.ascent = ZOOM_FACTOR * overall.ascent;

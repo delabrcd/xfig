@@ -30,7 +30,8 @@
 #include "w_drawprim.h"
 #include "w_util.h"
 
-static Boolean	getImageData(int *w, int *h, int *type, int *nc, unsigned char *Red, unsigned char *Green, unsigned char *Blue);	  	/* returns zero on failure */
+static Boolean	getImageData(unsigned int *w, unsigned int *h, int *type,
+	int *nc, unsigned char *Red, unsigned char *Green, unsigned char *Blue);	  	/* returns zero on failure */
 static Boolean	selectedRootArea(int *x_r, int *y_r, unsigned int *w_r, unsigned int *h_r, Window *cw);	/* returns zero on failure */
 static void	drawRect(int x, int y, int w, int h, int draw);
 static int	getCurrentColors(Window w, XColor *colors);	/* returns number of colors in map */
@@ -49,15 +50,13 @@ static GC       rectGC;
 
 Boolean
 captureImage(Widget window, char *filename)  	/* returns True on success */
-              
-               
 {
     unsigned char	Red[MAX_COLORMAP_SIZE],
 			Green[MAX_COLORMAP_SIZE],
 			Blue[MAX_COLORMAP_SIZE];
     int      		numcols;
     int      		captured;
-    int      		width, height;
+    unsigned int	width, height;
     Boolean		status;
 
     FILE		*pngfile;
@@ -135,7 +134,8 @@ rshift(int mask)
 }
 
 static Boolean
-getImageData(int *w, int *h, int *type, int *nc, unsigned char *Red, unsigned char *Green, unsigned char *Blue)
+getImageData(unsigned int *w, unsigned int *h, int *type, int *nc,
+		unsigned char *Red, unsigned char *Green, unsigned char *Blue)
 {
     XColor	colors[MAX_COLORMAP_SIZE];
     int		colused[MAX_COLORMAP_SIZE];
@@ -144,7 +144,8 @@ getImageData(int *w, int *h, int *type, int *nc, unsigned char *Red, unsigned ch
     int		red_mask, green_mask, blue_mask;
     int		red_shift, green_shift, blue_shift;
 
-    int		x, y, width, height;
+    int		x, y;
+    unsigned int width, height;
     Window	cw;
     static	XImage *image;
 
@@ -157,7 +158,7 @@ getImageData(int *w, int *h, int *type, int *nc, unsigned char *Red, unsigned ch
 
     sleep(1);   /* in case he'd like to click on something */
     beep();	/* signal user */
-    if ( selectedRootArea( &x, &y, &width, &height, &cw ) == False )
+    if ( selectedRootArea(&x, &y, &width, &height, &cw ) == False )
 	return False;
 
     image = XGetImage(tool_d, XDefaultRootWindow(tool_d),

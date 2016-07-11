@@ -16,6 +16,14 @@
  */
 
 #include "fig.h"
+/*
+ * really, only needs
+ *
+ * #include <stdio.h>
+ * #include <limits.h>
+ * #include <X11/Xlib.h>
+ * #include <X11/Intrinsic.h>
+ */
 #include "resources.h"
 #include "mode.h"
 #include "w_zoom.h"

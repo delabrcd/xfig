@@ -40,11 +40,14 @@
 #include "w_cmdpanel.h"
 #include "w_cursor.h"
 
+#ifdef I18N
+#include "w_i18n.h"
+#endif
+
 #include <sys/wait.h>  /* waitpid() */
 
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
-#include <X11/Xmu/Atoms.h>
 #include <wchar.h>
 
 #ifdef SEL_TEXT
@@ -101,7 +104,7 @@ static Color	work_textcolor;
 static XFontStruct *work_fontstruct;
 static float	work_angle;		/* in RADIANS */
 static double	sin_t, cos_t;		/* sin(work_angle) and cos(work_angle) */
-static void	finish_n_start(int x, int y);
+//static void	finish_n_start(int x, int y);
 static void	init_text_input(int x, int y), cancel_text_input(void);
 static F_text  *new_text(void);
 
@@ -155,11 +158,12 @@ xfig-i18n will prepare for G2 and G3 here, too.
 #define EUC_SS3 '\217'  /* single shift 3 */
 
 static int	i18n_prefix_tail(), i18n_suffix_head();
+static void	xim_set_spot();
 
 #ifdef I18N_USE_PREEDIT
 static pid_t	preedit_pid = -1;
 static char	preedit_filename[PATH_MAX] = "";
-static 		open_preedit_proc(), close_preedit_proc(), paste_preedit_proc();
+static void	open_preedit_proc(), close_preedit_proc(), paste_preedit_proc();
 static Boolean	is_preedit_running();
 #endif  /* I18N_USE_PREEDIT */
 #endif  /* I18N */
@@ -171,8 +175,8 @@ static Boolean	is_preedit_running();
 /********************************************************/
 
 
-void move_pref_to_suf (void);
-void move_suf_to_pref (void);
+static void move_pref_to_suf(void);
+static void move_suf_to_pref(void);
 
 void
 text_drawing_selected(void)
@@ -377,7 +381,7 @@ overlay_text_input(int x, int y)
 
 	/* load the X font and get its id for this font and size UNZOOMED */
 	/* this is to get widths etc for the unzoomed chars */
-	canvas_font = lookfont(x_fontnum(work_psflag, work_font), 
+	canvas_font = lookfont(x_fontnum(work_psflag, work_font),
 			   work_fontsize);
 	/* get the ZOOMED font for actually drawing on the canvas */
 	canvas_zoomed_font = lookfont(x_fontnum(work_psflag, work_font), 
@@ -1449,8 +1453,7 @@ move_text(int dir, unsigned char c, float div)
 /* keep track of text being selected by button down pointer movement */
 
 static void
-track_text_select(x, y)
-    int		    x, y;
+track_text_select (int x, int y)
 {
     int		    indx, posn;
     int		    i, dir;
@@ -1592,7 +1595,8 @@ track_text_select(x, y)
 
 /* move last char of prefix to first of suffix */
 
-void move_pref_to_suf(void)
+static void
+move_pref_to_suf(void)
 {
     int		    i;
 
@@ -1621,7 +1625,8 @@ void move_pref_to_suf(void)
 
 /* move first char of suffix to last of prefix */
 
-void move_suf_to_pref(void)
+static void
+move_suf_to_pref(void)
 {
     int		    i;
 
@@ -1652,9 +1657,8 @@ void move_suf_to_pref(void)
 
 /* draw string from x, y in inverse (selected) color */
 
-draw_selection(x, y, string)
-    int		    x, y;
-    char	   *string;
+static void
+draw_selection (int x, int y, char *string)
 {
     /* turn off blinking cursor temporarily */
     turn_off_blinking_cursor();
@@ -1667,9 +1671,8 @@ draw_selection(x, y, string)
 
 /* draw string from x, y in normal (unselected) color */
 
-undraw_selection(x, y, string)
-    int		    x, y;
-    char	   *string;
+static void
+undraw_selection (int x, int y, char *string)
 {
     /* turn off blinking cursor temporarily */
     turn_off_blinking_cursor();
@@ -1684,12 +1687,8 @@ undraw_selection(x, y, string)
 /* this the callback w_canvas.c: canvas_selected() when user pastes the selection */
 
 Boolean
-ConvertSelection(w, selection, target, type, value, length, format)
-    Widget	    w;
-    Atom	   *selection, *target, *type;
-    XtPointer	   *value;
-    unsigned long  *length;
-    int		   *format;
+ConvertSelection (Widget w, Atom *selection, Atom *target, Atom *type,
+		  XtPointer *value, unsigned long *length, int *format)
 {
     /* if nothing, return */
     if (lensel == 0)
@@ -1710,9 +1709,7 @@ ConvertSelection(w, selection, target, type, value, length, format)
 }
 
 void
-LoseSelection(w, selection)
-    Widget	    w;
-    Atom	   *selection;
+LoseSelection (Widget w, Atom *selection)
 {
     lensel = 0;
     text_selection[0] = '\0';
@@ -1722,9 +1719,7 @@ LoseSelection(w, selection)
 }
 
 void
-TransferSelectionDone(w, selection, target)
-    Widget	    w;
-    Atom	   *selection, *target;
+TransferSelectionDone (Widget w, Atom *selection, Atom *target)
 {
     /* nothing to do */
 }
@@ -1746,7 +1741,9 @@ static int	stop_blinking = False;
 static int	cur_is_blinking = False;
 
 static void
-turn_on_blinking_cursor(void (*draw_cursor) (/* ??? */), void (*erase_cursor) (/* ??? */), int x, int y, long unsigned int msec)
+turn_on_blinking_cursor(void (*draw_cursor) (/* ??? */),
+			void (*erase_cursor) (/* ??? */),
+			int x, int y, long unsigned int msec)
 {
     draw = draw_cursor;
     erase = erase_cursor;
@@ -1773,7 +1770,7 @@ turn_off_blinking_cursor(void)
     stop_blinking = True;
 }
 
-static		XtTimerCallbackProc
+static	XtTimerCallbackProc
 blink(XtPointer client_data, XtIntervalId *id)
 {
     if (!stop_blinking) {
@@ -1863,10 +1860,7 @@ reload_text_fstruct(F_text *t)
 #ifdef I18N
 
 static void
-GetPreferredGeomerty(ic, name, area)
-     XIC ic;
-     char *name;
-     XRectangle **area;
+GetPreferredGeomerty(XIC ic, char *name, XRectangle **area)
 {
   XVaNestedList list;
   list = XVaCreateNestedList(0, XNAreaNeeded, area, NULL);
@@ -1875,10 +1869,7 @@ GetPreferredGeomerty(ic, name, area)
 }
 
 static void
-SetGeometry(ic, name, area)
-     XIC ic;
-     char *name;
-     XRectangle *area;
+SetGeometry(XIC ic, char *name, XRectangle *area)
 {
   XVaNestedList list;
   list = XVaCreateNestedList(0, XNArea, area, NULL);
@@ -1886,10 +1877,8 @@ SetGeometry(ic, name, area)
   XFree(list);
 }
 
-xim_set_ic_geometry(ic, width, height)
-     XIC ic;
-     int width;
-     int height;
+void
+xim_set_ic_geometry(XIC ic, int width, int height)
 {
   XRectangle preedit_area, *preedit_area_ptr;
   XRectangle status_area, *status_area_ptr;
@@ -1929,8 +1918,7 @@ xim_set_ic_geometry(ic, width, height)
 }
 
 Boolean
-xim_initialize(w)
-     Widget w;
+xim_initialize(Widget w)
 {
   const XIMStyle style_notuseful = 0;
   const XIMStyle style_over_the_spot = XIMPreeditPosition | XIMStatusArea;
@@ -1957,7 +1945,7 @@ xim_initialize(w)
   else if (strncasecmp(appres.xim_input_style, "None", 3) != 0)
     fprintf(stderr, "xfig: inputStyle should OverTheSpot, OffTheSpot, or Root\n");
 
-  if (preferred_style == style_notuseful) return;
+  if (preferred_style == style_notuseful) return False;
 
   if (appres.DEBUG) fprintf(stderr, "initialize_input_method()...\n");
   if ((modifier_list = XSetLocaleModifiers("")) == NULL || *modifier_list == '\0') {
@@ -2023,8 +2011,8 @@ xim_initialize(w)
   return True;
 }
 
-xim_set_spot(x, y)
-     int x, y;
+static void
+xim_set_spot(int x, int y)
 {
   static XPoint spot;
   XVaNestedList preedit_att;
@@ -2090,8 +2078,8 @@ i18n_suffix_head(char *s1)
   return len;
 }
 
-i18n_char_handler(str)
-     unsigned char *str;
+void
+i18n_char_handler(unsigned char *str)
 {
   int i;
   erase_char_string();	/* erase chars after the cursor */
@@ -2100,8 +2088,8 @@ i18n_char_handler(str)
   draw_char_string();	/* draw new suffix */
 }
 
-prefix_append_char(ch)
-     unsigned char ch;
+void
+prefix_append_char(unsigned char ch)
 {
   if (leng_prefix + leng_suffix < BUF_SIZE) {
     prefix[leng_prefix++] = ch;
@@ -2113,7 +2101,7 @@ prefix_append_char(ch)
 
 #ifdef I18N_USE_PREEDIT
 static Boolean
-is_preedit_running()
+is_preedit_running(void)
 {
   pid_t pid;
   sprintf(preedit_filename, "%s/%s%06d", TMPDIR, "xfig-preedit", getpid());
@@ -2122,7 +2110,8 @@ is_preedit_running()
   return (0 < preedit_pid && access(preedit_filename, R_OK) == 0);
 }
 
-kill_preedit()
+void
+kill_preedit(void)
 {
   if (0 < preedit_pid) {
     kill(preedit_pid, SIGTERM);
@@ -2130,9 +2119,8 @@ kill_preedit()
   }
 }
 
-static
-close_preedit_proc(x, y)
-     int x, y;
+static void
+close_preedit_proc(int x, int y)
 {
   if (is_preedit_running()) {
     kill_preedit();
@@ -2142,9 +2130,8 @@ close_preedit_proc(x, y)
   draw_mousefun_canvas();
 }
 
-static
-open_preedit_proc(x, y)
-     int x, y;
+static void
+open_preedit_proc(int x, int y)
 {
   int i;
   if (!is_preedit_running()) {
@@ -2171,9 +2158,8 @@ open_preedit_proc(x, y)
   draw_mousefun_canvas();
 }
 
-static
-paste_preedit_proc(x, y)
-     int x, y;
+static void
+paste_preedit_proc(int x, int y)
 {
   FILE *fp;
   char ch;

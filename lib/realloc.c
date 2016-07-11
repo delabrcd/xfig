@@ -31,6 +31,8 @@
 #undef realloc
 
 #include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h> /* info autoconf: On Darwin, stdio.h is a prerequisite. */
 
 void *realloc();
 

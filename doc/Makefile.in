@@ -88,15 +88,16 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 subdir = doc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/version.m4 \
-	$(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/tl_check_header_path.m4 \
+	$(top_srcdir)/m4/tl_search_libs_path.m4 \
+	$(top_srcdir)/version.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(dist_doc_DATA) \
 	$(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
-CONFIG_CLEAN_FILES = xfig.man
+CONFIG_CLEAN_FILES = xfig.man xfig_man.html
 CONFIG_CLEAN_VPATH_FILES =
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -145,35 +146,44 @@ am__uninstall_files_from_dir = { \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
 man1dir = $(mandir)/man1
-am__installdirs = "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(docdir)"
+am__installdirs = "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(docdir)" \
+	"$(DESTDIR)$(docdir)"
 NROFF = nroff
 MANS = $(man1_MANS)
-DATA = $(dist_doc_DATA)
+DATA = $(dist_doc_DATA) $(doc_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
-am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/xfig.man.in TODO
+am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/xfig.man.in \
+	$(srcdir)/xfig_man.html.in TODO
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALLOCA = @ALLOCA@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
+APPDEFAULTDIR = @APPDEFAULTDIR@
+APPLICATIONSDIR = @APPLICATIONSDIR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
+AUTOM4TE = @AUTOM4TE@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+COMPKEYDBDIR = @COMPKEYDBDIR@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DOCDIR = @DOCDIR@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 GREP = @GREP@
+HTMLDIR = @HTMLDIR@
+ICONDIR = @ICONDIR@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -182,6 +192,7 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
@@ -193,15 +204,17 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PATH_CPPFLAGS = @PATH_CPPFLAGS@
+PATH_LDFLAGS = @PATH_LDFLAGS@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKGDATADIR = @PKGDATADIR@
 RELEASE_DATE = @RELEASE_DATE@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
-XAW_CFLAGS = @XAW_CFLAGS@
-XAW_LIBS = @XAW_LIBS@
 XMKMF = @XMKMF@
+X_LIBS = @X_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -251,8 +264,9 @@ top_srcdir = @top_srcdir@
 dist_doc_DATA = FORMAT1.3 FORMAT1.4 FORMAT2.0 FORMAT2.1 FORMAT3.0 \
 	FORMAT3.1 FORMAT3.2 xfig-howto.pdf xfig_ref_en.pdf
 
+doc_DATA = xfig_man.html
 man1_MANS = xfig.man
-EXTRA_DIST = xfig.man.orig html MAKEPS
+EXTRA_DIST = html MAKEPS
 MAINTAINERCLEANFILES = Makefile.in
 all: all-am
 
@@ -287,6 +301,8 @@ $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 xfig.man: $(top_builddir)/config.status $(srcdir)/xfig.man.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+xfig_man.html: $(top_builddir)/config.status $(srcdir)/xfig_man.html.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 install-man1: $(man1_MANS)
 	@$(NORMAL_INSTALL)
@@ -350,6 +366,27 @@ uninstall-dist_docDATA:
 	@list='$(dist_doc_DATA)'; test -n "$(docdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(docdir)'; $(am__uninstall_files_from_dir)
+install-docDATA: $(doc_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(doc_DATA)'; test -n "$(docdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(docdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(docdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(docdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(docdir)" || exit $$?; \
+	done
+
+uninstall-docDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(doc_DATA)'; test -n "$(docdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(docdir)'; $(am__uninstall_files_from_dir)
 tags TAGS:
 
 ctags CTAGS:
@@ -387,11 +424,14 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
+	$(MAKE) $(AM_MAKEFLAGS) \
+	  top_distdir="$(top_distdir)" distdir="$(distdir)" \
+	  dist-hook
 check-am: all-am
 check: check-am
 all-am: Makefile $(MANS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(docdir)"; do \
+	for dir in "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(docdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -445,7 +485,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-dist_docDATA install-man
+install-data-am: install-dist_docDATA install-docDATA install-man
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 install-dvi: install-dvi-am
@@ -490,31 +530,64 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-dist_docDATA uninstall-local uninstall-man
+uninstall-am: uninstall-dist_docDATA uninstall-docDATA uninstall-local \
+	uninstall-man
 
 uninstall-man: uninstall-man1
 
 .MAKE: install-am install-data-am install-strip
 
 .PHONY: all all-am check check-am clean clean-generic cscopelist-am \
-	ctags-am distclean distclean-generic distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-data-hook install-dist_docDATA \
-	install-dvi install-dvi-am install-exec install-exec-am \
-	install-html install-html-am install-info install-info-am \
-	install-man install-man1 install-pdf install-pdf-am install-ps \
+	ctags-am dist-hook distclean distclean-generic distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-data-hook \
+	install-dist_docDATA install-docDATA install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
+	install-man1 install-pdf install-pdf-am install-ps \
 	install-ps-am install-strip installcheck installcheck-am \
 	installdirs maintainer-clean maintainer-clean-generic \
 	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags-am \
-	uninstall uninstall-am uninstall-dist_docDATA uninstall-local \
-	uninstall-man uninstall-man1
+	uninstall uninstall-am uninstall-dist_docDATA \
+	uninstall-docDATA uninstall-local uninstall-man uninstall-man1
 
 .PRECIOUS: Makefile
 
 
+# Below, $< is not fully portable, see info autoconf "Portable Make",
+# use $? instead. man is sensitive to spaces after the options.
+# Probably, groff -Thtml -mman xfig.man > $@ is more portable?
+
+# Do not make xfig_man.html at build time, like so:
+#xfig_man.html: xfig.man
+#	man -Thtml -l $? >$@
+# but make xfig_man.html.in at distribution time.
+# Chicken and egg problem: To configure and make dist, the maintainer
+# must provide a xfig_man.html.in, which is then re-created at
+# make dist time. An empty file is sufficient, e.g.,
+# touch xfig_man.html.in. But see below, for the maintainer.
+dist-hook:
+	chmod u+w "$(distdir)" \
+	&& { test -f "$(distdir)/xfig_man.html.in" \
+		&& { test -w "$(distdir)/xfig_man.html.in" \
+			|| chmod u+w "$(distdir)/xfig_man.html.in"; } \
+		|| :; }
+	man -Thtml -l "$(srcdir)/xfig.man.in" > "$(distdir)/xfig_man.html.in"
+
+# If the maintainer wants to compile, xfig.man.in needs to be present here
+# in the source tree. Create it manually and keep it. If xfig_man.html.in is
+# modified, xfig.man is instantiated automatically.
+$(srcdir)/xfig_man.html.in: $(srcdir)/xfig.man.in
+	man -Thtml -l xfig.man.in > xfig_man.html.in
+#	$(SHELL) $(top_builddir)/config.status --file=xfig_man.html
+
+$(srcdir)/xfig.man.in:
+	touch $@
+
 install-data-hook:
 	cp -Rp "$(srcdir)/html" "$(DESTDIR)$(htmldir)" \
 	&& chmod -R u+rwX "$(DESTDIR)$(htmldir)"
+	cd "$(DESTDIR)$(htmldir)/html" && $(LN_S) japanese ja_JP.ujis
 
 uninstall-local:
 	rm -rf "$(DESTDIR)$(htmldir)/html"

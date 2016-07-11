@@ -1231,7 +1231,7 @@ void create_bitmaps(void)
 	/* create the 1-plane bitmaps of the arrow images */
 	/* these will go in the "left bitmap" part of the menu */
 	/* they are used in e_edit.c and w_indpanel.c */
-	for (i =- 1; i < NUM_ARROW_TYPES-1; i++) {
+	for (i = -1; i < NUM_ARROW_TYPES-1; i++) {
 	    arrow_pixmaps[i+1] = XCreateBitmapFromData(tool_d,canvas_win,
 				(i==-1? (char*) no_arrow_bits: (char*) arrowtype_choices[i].icon->bits),
 				32, 32); 
@@ -2220,7 +2220,8 @@ _installscroll(Widget parent, Widget widget)
 	    /* first see if the scrollbar supports the StartScroll action (when Xaw
 	     * is compiled with ARROW_SCROLLBAR, it does not have this action */
 	    found_scroll_action = False;
-	    XtGetActionList(scrollbarWidgetClass, &action_list, &num_actions);
+	    XtGetActionList(scrollbarWidgetClass, &action_list,
+				(unsigned int *)&num_actions);
 	    for (i=0; i<num_actions; i++)
 		if (strcasecmp(action_list[i].string, "startscroll") == 0) {
 		    found_scroll_action = True;

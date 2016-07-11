@@ -22,8 +22,6 @@
 #ifndef _FigSmeBSB_h
 #define _FigSmeBSB_h
 
-#include <X11/Xmu/Converters.h>
-
 #ifdef XAW3D
 #include <X11/Xaw3d/Sme.h>
 #else

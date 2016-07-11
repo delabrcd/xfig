@@ -44,6 +44,8 @@
 
 /* EXPORTS */
 
+Boolean	export_up = False;
+
 char	default_export_file[PATH_MAX];
 
 Widget	export_popup;	/* the main export popup */
@@ -53,8 +55,6 @@ Widget	exp_selfile,	/* output (selected) file widget */
 	exp_dir,	/* current directory widget */
 	exp_flist,	/* file list widget */
 	exp_dlist;	/* dir list widget */
-
-Boolean	export_up = False;
 
 Widget	top_section, bottom_section, postscript_form, bitmap_form;
 Widget  ps_form_label;

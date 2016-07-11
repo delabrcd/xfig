@@ -22,7 +22,6 @@
 #include <alloca.h>
 #endif
 #include <string.h>
-#include <math.h>
 
 #include "fig.h"
 #include "figx.h"
@@ -36,14 +35,6 @@
 #include "w_util.h"
 #include "w_keyboard.h"
 #include "w_msgpanel.h"
-
-#if defined(__CYGWIN__)
-#define REG_NOERROR 0
-#endif
-
-#if defined(__FreeBSD__) && !defined(REG_NOERROR)
-#define REG_NOERROR 0
-#endif
 
 Boolean keyboard_input_available = False;
 int keyboard_x;
