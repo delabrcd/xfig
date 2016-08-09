@@ -37,7 +37,7 @@
 
 static void	init_picobj_drawing(int x, int y);
 static void	create_picobj(int x, int y);
-static void 	cancel_picobj(void);
+static void	cancel_picobj(void);
 
 
 

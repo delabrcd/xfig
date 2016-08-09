@@ -20,7 +20,7 @@
 #ifndef MODE_H
 #define MODE_H
 
-#include "pathmax.h"
+#include <limits.h>	/* PATH_MAX, below */
 
 #define		F_NULL			0
 #define	    FIRST_DRAW_MODE	    F_CIRCLE_BY_RAD
@@ -117,7 +117,7 @@ extern int	autobackwardarrow_mode;
 
 /* grid subunit modes (mm, 1/16", 1/10") */
 #define		NUM_GRID_UNITS		3
-enum 		{ MM_UNIT, FRACT_UNIT, TENTH_UNIT };
+enum		{ MM_UNIT, FRACT_UNIT, TENTH_UNIT };
 
 /* grid mode */
 #define		GRID_0			0
@@ -209,6 +209,7 @@ enum {
 	LANG_LATEX,
 	LANG_PICT2E,
 	LANG_TIKZ,
+	LANG_PSTRICKS,
 	LANG_EPIC,
 	LANG_EEPIC,
 	LANG_EEPICEMU,

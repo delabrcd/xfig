@@ -1,7 +1,7 @@
 [Desktop Entry]
 Exec=/usr/bin/xfig %f
 InitialPreference=2
-MimeType=image/x-xfig;
+MimeType=application/x-xfig;
 Name=xfig
 Comment=Facility for Interactive Generation of figures under X11
 Icon=xfig

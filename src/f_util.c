@@ -243,7 +243,7 @@ void remap_imagecolors(void)
     app_flush();
 
     if (ncolors > appres.max_image_colors) {
-	if (appres.DEBUG) 
+	if (appres.DEBUG)
 		fprintf(stderr,"More colors (%d) than allowed (%d), using neural net\n",
 				ncolors,appres.max_image_colors);
 	ncolors = appres.max_image_colors;
@@ -263,7 +263,7 @@ void remap_imagecolors(void)
 	/* hmm, we couldn't get that number of colors anyway; use the net, Luke */
 	if (ncolors > avail_image_cols) {
 	    usenet = True;
-	    if (appres.DEBUG) 
+	    if (appres.DEBUG)
 		fprintf(stderr,"More colors (%d) than available (%d), using neural net\n",
 				ncolors,avail_image_cols);
 	}
@@ -350,7 +350,7 @@ void remap_imagecolors(void)
 	YStoreColors(tool_cm, image_cells, scol);
 	scol = 0;	/* global color counter */
 	readjust_cmap();
-	if (appres.DEBUG) 
+	if (appres.DEBUG)
 	    fprintf(stderr,"Able to use %d colors without neural net\n",scol);
 	reset_cursor();
     }
@@ -550,7 +550,7 @@ void map_to_mono(F_pic *pic)
 	height = pic->pic_cache->bit_size.y;
 
 	/* allocate space for 1-bit bitmap */
-	if ((bptr = (unsigned char*) 
+	if ((bptr = (unsigned char*)
 	     malloc(sizeof(unsigned char) * (width+7)/8*height)) == NULL)
 		return;
 	thiserr = (long *) malloc(sizeof(long) * (width+2));
@@ -600,7 +600,7 @@ void map_to_mono(F_pic *pic)
 			bP++;
 			bitp = 0x80;
 		    }
-		} else { 
+		} else {
 		    bitp <<= 1;
 		    if (bitp > 0x80) {
 			bP--;
@@ -640,7 +640,7 @@ void map_to_mono(F_pic *pic)
 	pic->pic_cache->bitmap = bptr;
 	/* monochrome */
 	pic->pic_cache->numcols = 0;
-		
+
 	return;
 }
 
@@ -757,7 +757,7 @@ void read_xfigrc(void)
     xfigrc = fopen(xfigrc_name,"r");
     if (xfigrc == 0)
 	return;		/* no .xfigrc file */
-    
+
     /* there must not be any whitespace between word and ":" */
     while (fgets(line, RC_BUFSIZ, xfigrc) != NULL) {
 	word = strtok(line, ": \t");
@@ -816,7 +816,7 @@ void update_recent_files(void)
 
     /* now append file list */
     for (i=0; i<num_recent_files; i++)
-    	fprintf(tmpf, "file: %s\n",&recent_files[i].name[2]);  /* point past the number */
+	fprintf(tmpf, "file: %s\n",&recent_files[i].name[2]);  /* point past the number */
     /* close and rename the files */
     finish_update_xfigrc();
 }
@@ -951,7 +951,7 @@ void init_settings(void)
 	cur_gridmode = min2(appres.startgridmode,GRID_ISO_4);
 
     if (appres.startgridtype >= 0)					// isometric grid
-	cur_gridtype = min2(appres.startgridtype,GRID_ISO);	
+	cur_gridtype = min2(appres.startgridtype,GRID_ISO);
 
     if (appres.startposnmode >= 0)
 	cur_pointposn = min2(appres.startposnmode,P_GRID4);
@@ -964,7 +964,7 @@ void init_settings(void)
     if (appres.INCHES) {
 	/* make sure user specified one */
 	if (strcasecmp(appres.tgrid_unit, "default") != 0) {
-	    if (strcasecmp(appres.tgrid_unit, "tenth") == 0 || 
+	    if (strcasecmp(appres.tgrid_unit, "tenth") == 0 ||
 		strcasecmp(appres.tgrid_unit, "ten") == 0 ||
 		strcasecmp(appres.tgrid_unit, "1/10") == 0 ||
 		strcasecmp(appres.tgrid_unit, "10") == 0)
@@ -1106,7 +1106,7 @@ build_command(char *program, char *filename)
     return cmd;
 }
 
-/* define the strerror() function to return str_errlist[] if 
+/* define the strerror() function to return str_errlist[] if
    the system doesn't have the strerror() function already */
 
 #ifndef HAVE_STRERROR
@@ -1184,7 +1184,7 @@ map_to_palette(F_pic *pic)
 	return True;
 }
 
-/* return pointers to the line components of a dimension line. 
+/* return pointers to the line components of a dimension line.
    If passed dimline is not a dimension line, the result is False */
 
 Boolean
@@ -1291,8 +1291,8 @@ get_grid_spec(char *grid, Widget minor_grid_panel, Widget major_grid_panel)
 
 	/* if panel hasn't been up yet */
 	if (minor_grid_panel == (Widget) 0 || major_grid_panel == (Widget) 0) {
-	    sprintf(grid,"%s:%s%s", 
-			    	strlen(minor_grid)==0? "0": minor_grid, 
+	    sprintf(grid,"%s:%s%s",
+				strlen(minor_grid)==0? "0": minor_grid,
 				strlen(major_grid)==0? "0": major_grid,
 				appres.INCHES? "in":"mm");
 	    return;

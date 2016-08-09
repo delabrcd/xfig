@@ -135,7 +135,7 @@ The bulk of the documentation for
 is in an HTML-based reference guide.
 See the Help menu in
 .IR xfig
-or point your browser at 
+or point your browser at
 .IR @HTMLDIR@/html/index.html .
 There are both English and Japanese versions.
 .PP
@@ -154,7 +154,7 @@ package is used when printing or exporting the output from
 .IR xfig .
 The
 .IR fig2dev
-program from the 
+program from the
 .IR TransFig
 package is automatically called by
 .IR xfig
@@ -233,7 +233,7 @@ Use
 .I color
 as the background color for the canvas.
 If you want to set the background of everything in xfig
-(e.g. menus, etc.) use the general 
+(e.g. menus, etc.) use the general
 .B -bg
 option.
 .\"-------
@@ -246,7 +246,7 @@ This is the default.
 .At
 .BR \-centim [ ers ]
 .Ap
-Make centimeters the unit of choice.  See also 
+Make centimeters the unit of choice.  See also
 .B -metric.
 .\"-------
 .At
@@ -256,19 +256,19 @@ Use
 .I color
 as the default color for objects.
 If you want to set the foreground of everything in xfig
-(e.g. menus, etc.) use the general 
+(e.g. menus, etc.) use the general
 .B -fg
 option.
 .\"-------
 .At
 .BR \-correct_font_size
 .Ap
-Normally, 
+Normally,
 .I fig2dev
 uses 1/80 inch for font size increments (for historical reasons),
 instead of the more proper ``points'' (1/72 inch) that
 .I xfig
-uses.  This option makes xfig call fig2dev with the 
+uses.  This option makes xfig call fig2dev with the
 .BR -F
 option to make it use points (1/72 inch).
 .\"-------
@@ -300,7 +300,7 @@ The default is to allow panning in the negative region.
 .BR \-dontshowb [ alloons ]
 .Ap
 Prevents xfig from popping up the information balloons.
-See also 
+See also
 .B -showballoons.
 .\"-------
 .At
@@ -433,7 +433,7 @@ The default is to center the figure on the page.
 .Ap
 Set the resolution of the freehand drawing mode to
 .I resolution
-pixels.  This is the number of pixels the mouse must move before xfig 
+pixels.  This is the number of pixels the mouse must move before xfig
 adds another point to the object being drawn.
 .\"-------
 .At
@@ -442,17 +442,17 @@ adds another point to the object being drawn.
 .Ap
 You may use the \-geometry option or resource to
 .I size and/or position the xfig window,
-or you may use 
-.B -pwidth 
-and/or 
+or you may use
+.B -pwidth
+and/or
 .B -pheight
 to specify the canvas size in inches or centimeters.
-If you use the 
-.B -geom 
+If you use the
+.B -geom
 option to make the xfig window smaller
-than the default, you may have to use the 
-.B -but_per_row 
-option to 
+than the default, you may have to use the
+.B -but_per_row
+option to
 tell xfig to put 3 or 4 buttons per row on the left mode panel.
 .\"-------
 .At
@@ -510,7 +510,7 @@ The default is to show the panel.
 .BR \-icon_ [ view ]
 .Ap
 Show the library objects as icons.  This is the default.  The other
-mode is 
+mode is
 .B -list_view.
 .\"-------
 .At
@@ -527,14 +527,14 @@ Specify bitmap editor to use when ``Edit Image'' button is pressed
 in Picture Object panel.
 .\"-------
 .At
-.BR \-inc [ hes ] 
+.BR \-inc [ hes ]
 .BR (or -imperial)
 .Ap
 Make inches the unit of choice.
 This is the default.
 .\"-------
 .At
-.BR \-ins [ tallowncmap ] 
+.BR \-ins [ tallowncmap ]
 .Ap
 Install own colormap. Normally, xfig uses the current colormap.
 .\"-------
@@ -638,8 +638,8 @@ minimum being 40 and the maximum being 120.
 .At
 .BR \-lis [ t_view ]
 .Ap
-Show the library objects as a list of names. The default 
-mode is 
+Show the library objects as a list of names. The default
+mode is
 .B -icon_view.
 .\"-------
 .At
@@ -657,7 +657,7 @@ Limit the number of colors used for imported images to
 .At
 .BR \-me [ tric ]
 .Ap
-Make centimeters the unit of choice.  
+Make centimeters the unit of choice.
 The option
 .B -centimeters
 may also be used.
@@ -678,7 +678,7 @@ Use black and white only.
 .At
 .BR \-mu [ ltiple ]
 .Ap
-Sets multiple page mode for print or export. See also 
+Sets multiple page mode for print or export. See also
 .BR \-single.
 .\"-------
 .At
@@ -734,11 +734,11 @@ See also
 .I color
 .Ap
 Draw the page border on the canvas in this color (default light blue).
-The page border is turned on by the 
+The page border is turned on by the
 .B -showpageborder
 option
 (resource Fig.showpageborder),
-and shows the edges of the current 
+and shows the edges of the current
 .I export
 paper size.
 .\"-------
@@ -805,11 +805,11 @@ b0	JIS B0	1030mm x 1456mm
 .\"--------------------------------------------------------------------
 .\"-------
 .Sp
-Note that this doesn't affect the size of the drawing canvas. 
-Use the 
-.B -pheight 
-and 
-.B -pwidth 
+Note that this doesn't affect the size of the drawing canvas.
+Use the
+.B -pheight
+and
+.B -pwidth
 options for that.
 .\"-------
 .At
@@ -822,8 +822,8 @@ canvas
 .I height
 high (where
 .I height
-is either cm or in, depending on the 
-.B -metric 
+is either cm or in, depending on the
+.B -metric
 setting).
 .\"-------
 .At
@@ -843,8 +843,8 @@ canvas
 .I width
 wide (where
 .I width
-is either cm or in, depending on the 
-.B -metric 
+is either cm or in, depending on the
+.B -metric
 setting).
 .\"-------
 .At
@@ -886,7 +886,7 @@ will automatically switch to non-scaling fonts.
 .BR \-scale_factor
 .I scale
 .Ap
-Scale every figure read in by this value.  This is useful in conjunction with the 
+Scale every figure read in by this value.  This is useful in conjunction with the
 .B -update
 option to do batch scaling of figures.
 .\"-------
@@ -914,10 +914,10 @@ but allows the user to see all settable parameters.
 .At
 .BR \-showb [ alloons ]
 .Ap
-Forces 
+Forces
 .I xfig
 to pop up the information balloons when the mouse
-passws over a button. This is the default. See also 
+passws over a button. This is the default. See also
 .B -dontshowballoons .
 .\"-------
 .At
@@ -930,8 +930,8 @@ This is the default.
 .At
 .BR \-showl [ engths ]
 .Ap
-Makes 
-.I xfig 
+Makes
+.I xfig
 show the lengths of lines being drawn, in red text near the
 line itself.  Also, when points are moved or added.  In addition, imagine
 a triangle formed with the line segment as the hypotenuse,
@@ -950,10 +950,10 @@ This is generally only useful for debugging.
 .At
 .BR \-showp [ ageborder ]
 .Ap
-Makes 
-.I xfig 
+Makes
+.I xfig
 show the border of the current paper size in the color specified
-by the 
+by the
 .B -pageborder
 option (default: light blue).
 .\"-------
@@ -966,8 +966,8 @@ This is the default
 .At
 .BR \-si [ ngle ]
 .Ap
-Sets single page mode for print or export. 
-This is the default.  See also 
+Sets single page mode for print or export.
+This is the default.  See also
 .BR \-multiple.
 .\"-------
 .At
@@ -975,7 +975,7 @@ This is the default.  See also
 .I factor
 .Ap
 Enable smoothing when exporting to the bitmap formats (e.g. GIF, PNG, etc.). The allowed
-values are 0 (no smoothing), 2 or 4 (most smoothing).  This parameter is passed 
+values are 0 (no smoothing), 2 or 4 (most smoothing).  This parameter is passed
 to ghostscript in the \-dTextAlphaBits \-dGraphicsAlphaBits options to smooth the figure.
 .\"-------
 .At
@@ -1000,7 +1000,7 @@ to the \\backslash command, a brace '{' is turned into a brace command \\{, etc.
 Use
 .I command
 for the external spell checking program when using the spell check/search/replace
-popup.  
+popup.
 The string
 .I command
 should include the string ``%s'' which is replaced by a temporary filename.
@@ -1010,9 +1010,9 @@ Default is ``spell %s''.
 .BR \-spinner_d [ elay ]
 .I msec
 .Ap
-The delay (in milliseconds) before the spinner will automatically count up 
+The delay (in milliseconds) before the spinner will automatically count up
 or down when the button is pressed.
-Spinners are the (numeric) text widgets with an up- and down-arrow, which when 
+Spinners are the (numeric) text widgets with an up- and down-arrow, which when
 clicked, cause the value to be incremented/decremented.
 The default is 500 milliseconds.
 .\"-------
@@ -1089,10 +1089,10 @@ Set the starting text step.
 Specifies that xfig should use the input tablet instead of the mouse
 for drawing.  You must have the XInputExtension in your X server and
 an input tablet for this to work.  Also, you must modify the Imakefile
-to include the 
-.B USETAB 
-and 
-.B TABLIB 
+to include the
+.B USETAB
+and
+.B TABLIB
 variables.
 .\"-------
 .At
@@ -1106,7 +1106,7 @@ Turn on cursor (mouse) tracking arrows (default).
 .Ap
 Make the transparent color for GIF export
 .I color_number.
-This number is the color number according to the 
+This number is the color number according to the
 .B xfig
 color panel, starting at 0 (black) and ending at 31 (gold),
 or may be a user-defined color number, which is 32 or higher.
@@ -1349,7 +1349,7 @@ Please send bug reports, fixes, new features etc. to:
 \&@PACKAGE_BUGREPORT@
 .PP
 When reporting a bug, please first check if the problem is mentioned in
-the FAQ section of the HTML files (xfig Help menu).  
+the FAQ section of the HTML files (xfig Help menu).
 .PP
 If it is not mentioned there, be sure to report the operating system you
 are using (e.g. SunOS 4.1.3), type of X server and version (OpenWindows 3, X11R6.4,
@@ -1404,7 +1404,7 @@ The figure will print correctly, however.
 When you do a copy/rotate with multiple copies,
 only the creation of the last object can be undone with the Undo button.
 .PP
-Modifications to text using the popup search/update/replace/spell check panel 
+Modifications to text using the popup search/update/replace/spell check panel
 cannot be undone.
 .PP
 See the
@@ -1442,8 +1442,8 @@ full and unrestricted irrevocable, world-wide, paid up, royalty-free,
 nonexclusive right and license to deal in this software and
 documentation files (the "Software"), including without limitation the
 rights to use, copy, modify, merge, publish and/or distribute copies of
-the Software, and to permit persons who receive copies from any such 
-party to do so, with the only requirement being that this copyright 
+the Software, and to permit persons who receive copies from any such
+party to do so, with the only requirement being that this copyright
 notice remain intact.
 .PP
 THE AUTHORS DISCLAIMS ALL WARRANTIES WITH
@@ -1745,7 +1745,7 @@ Open/close compound feature written by
 .br
 Bill Taylor (bill@mainstream.com)
 .sp
-Library feature written by 
+Library feature written by
 .br
 Stephane Mancini (mancini@elecsrv.enst.fr)
 (object preview by Brian V. Smith)

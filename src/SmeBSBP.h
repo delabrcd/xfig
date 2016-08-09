@@ -8,8 +8,8 @@ Copyright (c) 1989, 1994  X Consortium
  nonexclusive right and license to deal in this software and
  documentation files (the "Software"), including without limitation the
  rights to use, copy, modify, merge, publish and/or distribute copies of
- the Software, and to permit persons who receive copies from any such 
- party to do so, with the only requirement being that this copyright 
+ the Software, and to permit persons who receive copies from any such
+ party to do so, with the only requirement being that this copyright
  notice remain intact.
 
 The above copyright notice and this permission notice shall be included in
@@ -29,9 +29,9 @@ in this Software without prior written authorization from the X Consortium.
  * Author:  Chris D. Peterson, MIT X Consortium
  */
 
-/* 
+/*
  * SmeP.h - Private definitions for Sme object
- * 
+ *
  */
 
 #ifndef _XawSmeBSBP_h

@@ -104,7 +104,7 @@ rotate_ccw_selected(void)
 static void
 rotate_selected(void)
 {
-    set_mousefun("rotate object", "copy & rotate", "set center", 
+    set_mousefun("rotate object", "copy & rotate", "set center",
 			LOC_OBJ, LOC_OBJ, "set center");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
@@ -122,7 +122,7 @@ static void
 set_unset_center(int x, int y)
 {
     if (setcenter) {
-      set_mousefun("rotate object", "copy & rotate", "set center", 
+      set_mousefun("rotate object", "copy & rotate", "set center",
 			LOC_OBJ, LOC_OBJ, "set center");
       draw_mousefun_canvas();
       setcenter = 0;
@@ -130,7 +130,7 @@ set_unset_center(int x, int y)
       /* second call to center_mark on same position deletes */
     }
     else {
-      set_mousefun("rotate object", "copy & rotate", "unset center", 
+      set_mousefun("rotate object", "copy & rotate", "unset center",
 			LOC_OBJ, LOC_OBJ, "unset center");
       draw_mousefun_canvas();
       setcenter = 1;
@@ -138,7 +138,7 @@ set_unset_center(int x, int y)
       setcenter_y = y;
       center_marker(setcenter_x,setcenter_y);
     }
-      
+
 }
 
 static void
@@ -146,7 +146,7 @@ init_rotate(F_line *p, int type, int x, int y, int px, int py)
 {
     copy = 0;
     act_rotnangle = cur_rotnangle;
-    if (setcenter) 
+    if (setcenter)
         rotate_search(p, type, x, y,setcenter_x,setcenter_y );
       /* remember rotation center, e.g for multiple rotation*/
     else
@@ -161,7 +161,7 @@ init_copynrotate(F_line *p, int type, int x, int y, int px, int py)
     copy = 1;
     act_rotnangle = cur_rotnangle;
     for ( i = 1; i <= cur_numcopies; act_rotnangle += cur_rotnangle, i++) {
-	if (setcenter) 
+	if (setcenter)
 	    rotate_search(p, type, x, y,setcenter_x,setcenter_y );
 	/* remember rotation center */
 	else

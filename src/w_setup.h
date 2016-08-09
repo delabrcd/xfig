@@ -21,7 +21,7 @@
 #define		PIX_PER_INCH		1200
 #define		PIX_PER_CM		450	/* closest to correct (472.4) and still
 						   have the rulers look good */
-						 
+
 /* shorthand */
 #define		PPI PIX_PER_INCH
 #define		PPCM PIX_PER_CM

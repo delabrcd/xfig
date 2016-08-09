@@ -31,14 +31,14 @@
 #include "w_util.h"
 
 static Boolean	getImageData(unsigned int *w, unsigned int *h, int *type,
-	int *nc, unsigned char *Red, unsigned char *Green, unsigned char *Blue);	  	/* returns zero on failure */
+	int *nc, unsigned char *Red, unsigned char *Green, unsigned char *Blue);		/* returns zero on failure */
 static Boolean	selectedRootArea(int *x_r, int *y_r, unsigned int *w_r, unsigned int *h_r, Window *cw);	/* returns zero on failure */
 static void	drawRect(int x, int y, int w, int h, int draw);
 static int	getCurrentColors(Window w, XColor *colors);	/* returns number of colors in map */
 
 static unsigned char *data;		/* pointer to captured & converted data */
 
-/* 
+/*
   statics which need to be set up before we can call
   drawRect - drawRect relies on GC being an xor so
   a second XDrawRectangle will erase the first
@@ -49,13 +49,13 @@ static GC       rectGC;
 
 
 Boolean
-captureImage(Widget window, char *filename)  	/* returns True on success */
+captureImage(Widget window, char *filename)	/* returns True on success */
 {
     unsigned char	Red[MAX_COLORMAP_SIZE],
 			Green[MAX_COLORMAP_SIZE],
 			Blue[MAX_COLORMAP_SIZE];
-    int      		numcols;
-    int      		captured;
+    int			numcols;
+    int			captured;
     unsigned int	width, height;
     Boolean		status;
 
@@ -197,7 +197,7 @@ getImageData(unsigned int *w, unsigned int *h, int *type, int *nc,
 	XDestroyImage(image);
 	return False;
     }
-     
+
     if (tool_vclass == TrueColor) {
 	byte_order = image->byte_order;			/* MSBFirst or LSBFirst */
 	bit_order = image->bitmap_bit_order;		/* MSBFirst or LSBFirst */
@@ -228,7 +228,7 @@ getImageData(unsigned int *w, unsigned int *h, int *type, int *nc,
 			case 1:
 				pix =  (unsigned char) *iptr;
 				break;
-			case 2: 
+			case 2:
 				pix =  (unsigned short) (*iptr << 8);
 				pix += (unsigned char) *(iptr+1);
 				break;
@@ -250,7 +250,7 @@ getImageData(unsigned int *w, unsigned int *h, int *type, int *nc,
 			case 1:
 				pix =  (unsigned char) *iptr;
 				break;
-			case 2: 
+			case 2:
 				pix =  (unsigned char) *iptr;
 				pix += (unsigned short) (*(iptr+1) << 8);
 				break;
@@ -287,7 +287,7 @@ getImageData(unsigned int *w, unsigned int *h, int *type, int *nc,
 	    iptr = rowptr;
 	} /* for (i=0; i<image->height ... */
 
-    } else if (tool_cells > 2) { 
+    } else if (tool_cells > 2) {
 	/* color image with color table (PseudoColor) */
 	for (i=0; i<numcols; i++) {
 	    colused[i] = 0;
@@ -374,14 +374,14 @@ getImageData(unsigned int *w, unsigned int *h, int *type, int *nc,
 					&wx, &wy, &msk),    \
      msk & (Button1Mask | Button2Mask | Button3Mask) )
 
-	
+
 /*
   let user mark which bit of the window we want, UI follows xfig:
-  	button1  marks start point, any other cancels
-  	button1 again marks end point - any other cancels
+	button1  marks start point, any other cancels
+	button1 again marks end point - any other cancels
 */
 
-static Boolean 
+static Boolean
 selectedRootArea(int *x_r, int *y_r, unsigned int *w_r, unsigned int *h_r, Window *cw)
 {
     int		x1, y1;			/* start point of user rect */
@@ -396,19 +396,19 @@ selectedRootArea(int *x_r, int *y_r, unsigned int *w_r, unsigned int *h_r, Windo
     XGCValues	gcv;
     unsigned long gcmask;
 
-    /* set up our local globals for drawRect */ 
+    /* set up our local globals for drawRect */
     rectWindow = XDefaultRootWindow(tool_d);
 
     XGrabPointer(tool_d, rectWindow, False, 0L,
-	 	GrabModeAsync, GrabModeSync, None,
- 			crosshair_cursor, CurrentTime);
-    while (PTR_BUTTON_STATE( win_x, win_y, mask ) == 0) 
+		GrabModeAsync, GrabModeSync, None,
+			crosshair_cursor, CurrentTime);
+    while (PTR_BUTTON_STATE( win_x, win_y, mask ) == 0)
 	;
 
     /* button 1 pressed, get whole window under pointer */
     if ( (mask & Button1Mask ) ) {
 	/* after user releases button */
-	while (PTR_BUTTON_STATE( win_x, win_y, mask ) != 0) 
+	while (PTR_BUTTON_STATE( win_x, win_y, mask ) != 0)
 	    ;
 	XUngrabPointer(tool_d, CurrentTime);
 	if (child_r == None)
@@ -428,21 +428,21 @@ selectedRootArea(int *x_r, int *y_r, unsigned int *w_r, unsigned int *h_r, Windo
 	return True;
     }
 
-	
+
     /* button 2 pressed, wait for release */
     if ( !(mask & Button2Mask ) ) {
 	XUngrabPointer(tool_d, CurrentTime);
-	return False; 
+	return False;
     } else {
-	while (PTR_BUTTON_STATE( win_x, win_y, mask ) != 0) 
+	while (PTR_BUTTON_STATE( win_x, win_y, mask ) != 0)
 	    ;
     }
 
     /* if we're here we got a button 2 press  & release */
-    /* so initialise for tracking box across display    */ 
+    /* so initialise for tracking box across display    */
 
-    last_x = x1 = x = win_x;  
-    last_y = y1 = y = win_y;  
+    last_x = x1 = x = win_x;
+    last_y = y1 = y = win_y;
     width = 0;
     height = 0;
 
@@ -456,7 +456,7 @@ selectedRootArea(int *x_r, int *y_r, unsigned int *w_r, unsigned int *h_r, Windo
 
     /* Wait for button press while tracking rectangle on screen */
     while ( PTR_BUTTON_STATE( win_x, win_y, mask ) == 0 ) {
-	if (win_x != last_x || win_y != last_y) {   
+	if (win_x != last_x || win_y != last_y) {
 	    drawRect(x, y, width, height, False);	/* remove any existing rectangle */
 
 	    x = min2(x1, win_x);
@@ -471,7 +471,7 @@ selectedRootArea(int *x_r, int *y_r, unsigned int *w_r, unsigned int *h_r, Windo
 	    drawRect(x, y, width, height, True);	/* display rectangle */
 	}
     }
- 
+
     drawRect(x, y, width, height, False);		/*  remove any remaining rect */
     XUngrabPointer(tool_d, CurrentTime);		/*  & let go the pointer */
 
@@ -479,10 +479,10 @@ selectedRootArea(int *x_r, int *y_r, unsigned int *w_r, unsigned int *h_r, Windo
     XSetFunction(tool_d, rectGC, GXcopy);
     XSetSubwindowMode(tool_d, rectGC, ClipByChildren);
 
-    if (width == 0 || height == 0 || !(mask & Button2Mask) )  
+    if (width == 0 || height == 0 || !(mask & Button2Mask) )
 	return False;	/* cancelled or selected nothing */
 
-    /* we have a rectangle - set up the return parameters */    
+    /* we have a rectangle - set up the return parameters */
     *x_r = x;     *y_r = y;
     *w_r = width; *h_r = height;
     if ( child_r == None )
@@ -624,10 +624,10 @@ getCurrentColors(Window w, XColor *colors)
 }
 
 
-/* 
+/*
   returns True if we can handle XImages from the visual class
   The current Image write functions & our image conversion routines
-  require us to produce a colormapped byte per pixel image 
+  require us to produce a colormapped byte per pixel image
   pointed to by data
 */
 
@@ -635,7 +635,7 @@ Boolean
 canHandleCapture(Display *d)
 {
     XWindowAttributes xwa;
- 
+
     XGetWindowAttributes(d, XDefaultRootWindow(d), &xwa);
 
     if (!xwa.colormap) {

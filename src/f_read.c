@@ -90,7 +90,7 @@ int		 proto;			/* file protocol*10 */
 float	         fproto, xfigproto;	/* floating values for protocol of figure
 					   file and current protocol */
 
-/* initialize the user color counter - then read figure file. 
+/* initialize the user color counter - then read figure file.
    Called from load_file(), merge_file(), preview_figure(), load_lib_obj(),
    and paste(), but NOT from read_figure() (import Fig as picture) */
 
@@ -185,7 +185,7 @@ Also, if merging, if the file being merged into the main figure
 has different units (inches/cm) it is rescaled to match the
 main figure.
 
-If update_figs is false, any imported images are read in, otherwise 
+If update_figs is false, any imported images are read in, otherwise
 they are not.  The latter case is used for the -update command-line
 option where the user just wants to read and re-write Fig files
 to bring them up-to-date.
@@ -292,7 +292,7 @@ readfp_fig(FILE *fp, F_compound *obj, Boolean merge, int xoff, int yoff, fig_set
 		file_msg("No Center/Flushleft specification");
 		return read_return(BAD_FORMAT);		/* error */
 	    }
-	    if ((strncasecmp(buf,"center",6) == 0) || 
+	    if ((strncasecmp(buf,"center",6) == 0) ||
 		(strncasecmp(buf,"flush",5) == 0)) {
 		    /* use negative to ensure 1/0 (strcmp may return 3 or 4 for false) */
 		    settings->flushleft = !strncasecmp(buf,"flush",5);
@@ -379,7 +379,7 @@ readfp_fig(FILE *fp, F_compound *obj, Boolean merge, int xoff, int yoff, fig_set
     }
 
     /* if merging a figure with different units, rescale for mixed units, HWS */
-    if (merge && (proto >= 30)) {		
+    if (merge && (proto >= 30)) {
        if (!appres.INCHES && settings->units)
 	   read_scale_compound(obj,(2.54*PIX_PER_CM)/((float)PIX_PER_INCH),0);
        if (appres.INCHES && !settings->units)
@@ -404,7 +404,7 @@ readfp_fig(FILE *fp, F_compound *obj, Boolean merge, int xoff, int yoff, fig_set
 	/* inches */
 	if (strcasecmp(appres.tgrid_unit, "default") != 0) {
 	    /* the user specified a units when he started, try to keep it */
-	    if (strcasecmp(appres.tgrid_unit, "tenth") == 0 || 
+	    if (strcasecmp(appres.tgrid_unit, "tenth") == 0 ||
 		strcasecmp(appres.tgrid_unit, "ten") == 0 ||
 		strcasecmp(appres.tgrid_unit, "1/10") == 0 ||
 		strcasecmp(appres.tgrid_unit, "10") == 0)
@@ -531,7 +531,7 @@ int read_objects(FILE *fp, F_compound *obj, int *res)
 	    file_msg("Incorrect object code at line %d.", line_no);
 	    continue;
 	} /* switch */
-	
+
     } /* while */
 
     if (feof(fp))
@@ -774,7 +774,7 @@ read_compoundobject(FILE *fp)
 	    break;
 	case O_END_COMPOUND:
 	    /* if compound def had no bounds or all zeroes, calculate bounds now */
-	    if (com->nwcorner.x == 0 && com->nwcorner.x == 0 && 
+	    if (com->nwcorner.x == 0 && com->nwcorner.x == 0 &&
 	        com->nwcorner.x == 0 && com->nwcorner.x == 0)
 		    compound_bound(com, &com->nwcorner.x, &com->nwcorner.y,
 					&com->secorner.x, &com->secorner.y);
@@ -786,8 +786,8 @@ read_compoundobject(FILE *fp)
     } /* while (read_line(fp) > 0) */
 
     if (feof(fp)) {
- 	compound_bound(com, &com->nwcorner.x, &com->nwcorner.y,
- 	           &com->secorner.x, &com->secorner.y);
+	compound_bound(com, &com->nwcorner.x, &com->nwcorner.y,
+	           &com->secorner.x, &com->secorner.y);
 	return com;
     } else {
 	numcom=0;
@@ -1031,7 +1031,7 @@ read_lineobject(FILE *fp)
 	p = q;
 	cnpts++;
     }
-    /* also, if it has fewer than 5 points and is a box, picture, or arcbox, 
+    /* also, if it has fewer than 5 points and is a box, picture, or arcbox,
        or if it has fewer than 3 points and it is a polygon remove it */
     if ((cnpts < 5 && (l->type == T_BOX || l->type == T_ARCBOX || l->type == T_PICTURE)) ||
 	(cnpts < 3 && l->type == T_POLYGON)) {
@@ -1204,7 +1204,7 @@ read_splineobject(FILE *fp)
           }
         }
 	if (closed_spline(s)) {
-	    F_point *ptr   = s->points; 
+	    F_point *ptr   = s->points;
 	    s->points = s->points->next;
 	    free (ptr);
 	}
@@ -1217,7 +1217,7 @@ read_splineobject(FILE *fp)
     }
 
     /* Read sfactors - the s parameter for splines */
-    
+
     count_lines_correctly(fp);
     if ((n = fscanf(fp, "%lf", &s_param)) != 1) {
 	file_msg(Err_incomp, "spline", save_line);
@@ -1378,7 +1378,7 @@ read_textobject(FILE *fp)
     more = False;
     if (proto < 22 && n == 13)
 	more = True;		/* in older xfig there is more if ^A wasn't found yet */
-    else if (proto >= 30) { 	/* in 3.0(2.2) there is more if \001 wasn't found */
+    else if (proto >= 30) {	/* in 3.0(2.2) there is more if \001 wasn't found */
 	len = strlen(s);
 	if ((strcmp(&s[len-4],"\\001") == 0) &&	/* if we find '\000' */
 	    !(backslash_count(s, len-5) % 2)) { /* and not '\\000' */
@@ -1504,7 +1504,7 @@ backslash_count(char *cp, int start)
   return count;
 }
 
-/* attach comments together */ 
+/* attach comments together */
 
 static char *
 attach_comments(void)
@@ -1567,7 +1567,7 @@ int save_comment(FILE *fp)
     /* remove any newline */
     if (buf[i-1] == '\n')
 	buf[i-1] = '\0';
-    i=1; 
+    i=1;
     if (buf[1] == ' ')	/* remove one leading blank from the comment, if there is one */
 	i=2;
     if (numcom < MAXCOMMENTS)
@@ -1791,7 +1791,7 @@ void merge_colors(F_compound *objects)
 		found_exist = False;
 		for (j=0; j<num_usr_cols; j++)
 		    /* compare only the upper 8-bits because the server may change the lower */
-		    if (colorUsed[j] && 
+		    if (colorUsed[j] &&
 			 (user_colors[j].red>>8 == n_user_colors[i].red>>8) &&
 			 (user_colors[j].green>>8 == n_user_colors[i].green>>8) &&
 			 (user_colors[j].blue>>8 == n_user_colors[i].blue>>8)) {

@@ -56,7 +56,7 @@ fig_colors colorNames[] = {
 		};
 
 char	*short_clrNames[] = {
-		"Default", 
+		"Default",
 		"Blk", "Blu", "Grn", "Cyn", "Red", "Mag", "Yel", "Wht",
 		"Bl4", "Bl3", "Bl2", "LBl", "Gr4", "Gr3", "Gr2",
 		"Cn4", "Cn3", "Cn2", "Rd4", "Rd3", "Rd2",
@@ -66,7 +66,7 @@ char	*short_clrNames[] = {
 /* current export/print background color */
 int		export_background_color = COLOR_NONE;
 
-/* these are allocated in main() in case we aren't using default colormap 
+/* these are allocated in main() in case we aren't using default colormap
    (so we can't use BlackPixelOfScreen...) */
 
 XColor		black_color, white_color;
@@ -136,7 +136,7 @@ XtAppContext	tool_app;
 
 Widget		canvas_sw, ps_fontmenu,		/* printer font menu tool */
 		latex_fontmenu,			/* printer font menu tool */
-		msg_panel, name_panel, cmd_form, mode_panel, 
+		msg_panel, name_panel, cmd_form, mode_panel,
 		d_label, e_label, mousefun,
 		ind_panel, ind_box, upd_ctrl,	/* indicator panel */
 		snap_indicator_panel,		/* snap indicator */
@@ -162,7 +162,7 @@ int		splash_onscreen = False; /* flag used to clear off splash graphic */
 time_t		figure_timestamp;	/* last time file was written externally (for -autorefresh) */
 
 GC		border_gc, button_gc, ind_button_gc, mouse_button_gc, pic_gc,
-		fill_color_gc, pen_color_gc, blank_gc, ind_blank_gc, 
+		fill_color_gc, pen_color_gc, blank_gc, ind_blank_gc,
 		mouse_blank_gc, gccache[NUMOPS], grid_gc,
 		fillgc, fill_gc[NUMFILLPATS],	/* fill style gc's */
 		tr_gc, tr_xor_gc, tr_erase_gc,	/* for the rulers */
@@ -177,7 +177,7 @@ unsigned long	ind_but_fg, ind_but_bg;
 unsigned long	mouse_but_fg, mouse_but_bg;
 
 float		ZOOM_FACTOR;	/* assigned in main.c */
-float		PIC_FACTOR;	/* assigned in main.c, updated in unit_panel_set() and 
+float		PIC_FACTOR;	/* assigned in main.c, updated in unit_panel_set() and
 					update_settings() when reading figure file */
 
 /* will be filled in with environment variable XFIGTMPDIR */
@@ -210,35 +210,35 @@ char    *just_items[] = {
 		to change the PAPER_xx definitions in resources.h */
 
 struct	paper_def paper_sizes[NUMPAPERSIZES] = {
-    {"Letter  ", "Letter  (8.5\" x 11\" / 216 x 279 mm)", LETTER_WIDTH, LETTER_HEIGHT}, 
-    {"Legal   ", "Legal   (8.5\" x 14\" / 216 x 356 mm)",   10200, 16800}, 
-    {"Tabloid ", "Tabloid ( 11\" x 17\" / 279 x 432 mm)",   13200, 20400}, 
-    {"A       ", "ANSI A  (8.5\" x 11\" / 216 x 279 mm)",   10200, 13200}, 
-    {"B       ", "ANSI B  ( 11\" x 17\" / 279 x 432 mm)",   13200, 20400}, 
-    {"C       ", "ANSI C  ( 17\" x 22\" / 432 x 559 mm)",   20400, 26400}, 
-    {"D       ", "ANSI D  ( 22\" x 34\" / 559 x 864 mm)",   26400, 40800}, 
-    {"E       ", "ANSI E  ( 34\" x 44\" / 864 x 1118 mm)",   40800, 52800}, 
-    {"A9      ", "ISO A9  (  37mm x   52mm)",  1748,  2467},
-    {"A8      ", "ISO A8  (  52mm x   74mm)",  2457,  3500},
-    {"A7      ", "ISO A7  (  74mm x  105mm)",  3496,  4960},
-    {"A6      ", "ISO A6  ( 105mm x  148mm)",  4960,  6992}, 
-    {"A5      ", "ISO A5  ( 148mm x  210mm)",  6992,  9921},
-    {"A4      ", "ISO A4  ( 210mm x  297mm)",  A4_WIDTH, A4_HEIGHT}, 
-    {"A3      ", "ISO A3  ( 297mm x  420mm)", 14031, 19843}, 
-    {"A2      ", "ISO A2  ( 420mm x  594mm)", 19843, 28063}, 
-    {"A1      ", "ISO A1  ( 594mm x  841mm)", 28063, 39732}, 
-    {"A0      ", "ISO A0  ( 841mm x 1189mm)", 39732, 56173}, 
-    {"B9      ", "JIS B9  (  45mm x   64mm)",  2117,  3017},
-    {"B8      ", "JIS B8  (  64mm x   91mm)",  3017,  4300},
-    {"B7      ", "JIS B7  (  91mm x  128mm)",  4300,  6050},
-    {"B6      ", "JIS B6  ( 128mm x  182mm)",  6050,  8598},
-    {"B5      ", "JIS B5  ( 182mm x  257mm)",  8598, 12150},
-    {"B4      ", "JIS B4  ( 257mm x  364mm)", 12150, 17200},
-    {"B3      ", "JIS B3  ( 364mm x  515mm)", 17200, 24333},
-    {"B2      ", "JIS B2  ( 515mm x  728mm)", 24333, 34400},
-    {"B1      ", "JIS B1  ( 728mm x 1030mm)", 34400, 48666},
-    {"B0      ", "JIS B0  (1030mm x 1456mm)", 48666, 68783},
-    {"B10     ", "JIS B10 (  32mm x   45mm)",  1516,  2117},
+    {"Letter"  , "Letter  (8.5\" x 11\" / 216 x 279 mm)", LETTER_WIDTH, LETTER_HEIGHT},
+    {"Legal"   , "Legal   (8.5\" x 14\" / 216 x 356 mm)",   10200, 16800},
+    {"Tabloid" , "Tabloid ( 11\" x 17\" / 279 x 432 mm)",   13200, 20400},
+    {"A"       , "ANSI A  (8.5\" x 11\" / 216 x 279 mm)",   10200, 13200},
+    {"B"       , "ANSI B  ( 11\" x 17\" / 279 x 432 mm)",   13200, 20400},
+    {"C"       , "ANSI C  ( 17\" x 22\" / 432 x 559 mm)",   20400, 26400},
+    {"D"       , "ANSI D  ( 22\" x 34\" / 559 x 864 mm)",   26400, 40800},
+    {"E"       , "ANSI E  ( 34\" x 44\" / 864 x 1118 mm)",   40800, 52800},
+    {"A9"      , "ISO A9  (  37mm x   52mm)",  1748,  2467},
+    {"A8"      , "ISO A8  (  52mm x   74mm)",  2457,  3500},
+    {"A7"      , "ISO A7  (  74mm x  105mm)",  3496,  4960},
+    {"A6"      , "ISO A6  ( 105mm x  148mm)",  4960,  6992},
+    {"A5"      , "ISO A5  ( 148mm x  210mm)",  6992,  9921},
+    {"A4"      , "ISO A4  ( 210mm x  297mm)",  A4_WIDTH, A4_HEIGHT},
+    {"A3"      , "ISO A3  ( 297mm x  420mm)", 14031, 19843},
+    {"A2"      , "ISO A2  ( 420mm x  594mm)", 19843, 28063},
+    {"A1"      , "ISO A1  ( 594mm x  841mm)", 28063, 39732},
+    {"A0"      , "ISO A0  ( 841mm x 1189mm)", 39732, 56173},
+    {"B9"      , "JIS B9  (  45mm x   64mm)",  2117,  3017},
+    {"B8"      , "JIS B8  (  64mm x   91mm)",  3017,  4300},
+    {"B7"      , "JIS B7  (  91mm x  128mm)",  4300,  6050},
+    {"B6"      , "JIS B6  ( 128mm x  182mm)",  6050,  8598},
+    {"B5"      , "JIS B5  ( 182mm x  257mm)",  8598, 12150},
+    {"B4"      , "JIS B4  ( 257mm x  364mm)", 12150, 17200},
+    {"B3"      , "JIS B3  ( 364mm x  515mm)", 17200, 24333},
+    {"B2"      , "JIS B2  ( 515mm x  728mm)", 24333, 34400},
+    {"B1"      , "JIS B1  ( 728mm x 1030mm)", 34400, 48666},
+    {"B0"      , "JIS B0  (1030mm x 1456mm)", 48666, 68783},
+    {"B10"     , "JIS B10 (  32mm x   45mm)",  1516,  2117},
     };
 
 char    *multiple_pages[] = {

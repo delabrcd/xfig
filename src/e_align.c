@@ -28,11 +28,12 @@
 #include "w_mousefun.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
-
 #include "u_bound.h"
 #include "u_markers.h"
 #include "u_translate.h"
 #include "w_cursor.h"
+
+#include <limits.h>	/* INT_MAX, INT_MIN */
 
 static int	llx, lly, urx, ury;
 static int	xcmin, ycmin, xcmax, ycmax;
@@ -78,8 +79,7 @@ align_selected(void)
 
 static void
 init_align_canvas(int x, int y, unsigned int shift)
-       		         
-                          	/* Shift Key Status from XEvent */
+/* Shift Key Status from XEvent */
 {
     int		    ux;
 

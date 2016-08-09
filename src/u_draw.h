@@ -40,12 +40,12 @@ void	quick_draw_spline(F_spline *spline, int operator);
 
 /* curve routine needed by arc() and show_boxradius() */
 
-void	curve(Window window, int depth, int xstart, int ystart, int xend, int yend, 
+void	curve(Window window, int depth, int xstart, int ystart, int xend, int yend,
 		Boolean draw_points, Boolean draw_center, int direction,
 		int a, int b, int xoff, int yoff, int op, int thick,
-		int style, float style_val, int fill_style, 
+		int style, float style_val, int fill_style,
 		Color pen_color, Color fill_color, int cap_style);
- 
+
 extern void angle_ellipse (int center_x, int center_y, int radius_x, int radius_y, float angle, int op, int depth, int thickness, int style, float style_val, int fill_style, int pen_color, int fill_color);
 extern void calc_arrow (int x1, int y1, int x2, int y2, int linethick, F_arrow *arrow, zXPoint *points, int *npoints, zXPoint *fillpoints, int *nfillpoints, zXPoint *clippts, int *nclippts);
 extern void compute_arcarrow_angle (float x1, float y1, int x2, int y2, int direction, F_arrow *arrow, int *x, int *y);

@@ -22,12 +22,12 @@
 <p>To export or print a <b>Fig</b> file,
 <b>xfig</b> calls <b>fig2dev</b>, the post-processor which converts the <b>Fig</b>
 file to the desired output language.  For printing, this is PostScript.
-For exporting, there are a dozen or so languages, including PostScript, EPS, 
+For exporting, there are a dozen or so languages, including PostScript, EPS,
 LaTeX, MetaFont, and bitmap formats such as GIF, JPEG, PPM and several others.
 See the <a href="#language"><i>Language</i></a> description of the Exporting section.
-<br>This means that you must have <b>fig2dev</b> installed on your system along 
+<br>This means that you must have <b>fig2dev</b> installed on your system along
 with <b>xfig</b>.  <b>Fig2dev</b>, which is part of the <b>TransFig</b>
-distribution is always available where you find <b>xfig</b>. 
+distribution is always available where you find <b>xfig</b>.
 See <a href="installation.html">Getting and Installing Xfig</a> for details.
 
 <p>
@@ -35,9 +35,9 @@ See <a href="installation.html">Getting and Installing Xfig</a> for details.
 
 <H2><font color="blue"><A NAME="print">Printing</A></font></H2>
 
-The <i>Print...</i> entry in the 
-<a href="main_menus.html#file-menu"><I>File</I> menu</a> 
-(or accelerator <TT>Meta-P</TT>) provides the facility 
+The <i>Print...</i> entry in the
+<a href="main_menus.html#file-menu"><I>File</I> menu</a>
+(or accelerator <TT>Meta-P</TT>) provides the facility
 to print figures to PostScript
 printers. Use <A HREF="#export">File/Export</A> if you want to store the output to a file.
 <br>
@@ -70,8 +70,8 @@ inch margin all around.
 <DD>
 Specify the orientation of the output as <I>Landscape</I> (horizontal)
 or <I>Portrait</I> (vertical). The default orientation is same as the
-orientation of the canvas which may be changed by 
-<A HREF="main_menus.html#port-land"><i>Portrait/Landscape</i></A> 
+orientation of the canvas which may be changed by
+<A HREF="main_menus.html#port-land"><i>Portrait/Landscape</i></A>
 in the <a href="main_menus.html#view-menu"><i>View</i> menu</a>.
 <P>
 
@@ -231,7 +231,7 @@ a pulldown menu of printers next to the entry.
 <I>Print Job Params</I>
 
 <DD>
-The string specified here will be passed as command-line options when executing 
+The string specified here will be passed as command-line options when executing
 <TT>lpr</TT> (<TT>lp</TT> on System V system). If <TT>%f</TT> is included in the string,
 (it may appear more than once) it will be replaced by the name of the figure.
 <P>
@@ -270,7 +270,7 @@ active according to the layer manager.
 
 <DD>
 Clicking this button will spool the figures in the <I>batch file</I>
-if any, or the current figure if none, to the printer. 
+if any, or the current figure if none, to the printer.
 The accelerator <TT>Meta-P</TT> will also perform this function.
 <P>
 The label of this button will be <I>Print BATCH to Printer</I> if there
@@ -303,7 +303,7 @@ when you want to send some figures to the printer at one time.
 <DD>
 Clicking this button will erase the accumulated figures in the <I>batch
 file</I>. The accelerator <TT>Meta-X</TT> will also perform this function.
-The figures are automatically deleted from the batch file when 
+The figures are automatically deleted from the batch file when
 <I>Print BATCH to Printer</I> is clicked.
 </DL>
 
@@ -311,12 +311,12 @@ The figures are automatically deleted from the batch file when
 
 <H2><font color="blue"><A NAME="export">Exporting</A></font></H2>
 
-The <i>Export...</i> entry in the 
-<a href="main_menus.html#file-menu"><I>File</I> menu</a> 
-(or accelerator <TT>Meta-X</TT>) provides the facility 
+The <i>Export...</i> entry in the
+<a href="main_menus.html#file-menu"><I>File</I> menu</a>
+(or accelerator <TT>Meta-X</TT>) provides the facility
 to output the figure in various format such as PostScript,
 GIF, JPEG, HP-GL, etc. to a file.
-This is useful when you want to read figures by other applications 
+This is useful when you want to read figures by other applications
 (LaTeX or FrameMaker, for example).
 See <a href="latex_and_xfig.html">LaTeX and Xfig</a> for hints about
 using <b>xfig</b> with LaTeX.
@@ -335,7 +335,7 @@ figure to a PostScript printer.
 
 <DD>
 Specify the format (language) to be generated as output. The default is
-<I>Encapsulated PostScript</I>, but may be changed with the resource 
+<I>Encapsulated PostScript</I>, but may be changed with the resource
 <TT>Fig.exportLanguage</TT>.
 
 <P>The following formats are available:
@@ -437,7 +437,7 @@ Portable Network Graphics
 <DT><img src="images/blueballdot.png" align=bottom alt="-">
 
 <A HREF="http://www.dcs.ed.ac.uk/%7Emxr/gfx/2d-hi.html">PPM</A>
-Portable Pixmap 
+Portable Pixmap
 
 <DT><img src="images/blueballdot.png" align=bottom alt="-">
 
@@ -452,7 +452,7 @@ Tag Image File Format
 <DT><img src="images/blueballdot.png" align=bottom alt="-">
 
 <A HREF="http://www.dcs.ed.ac.uk/%7Emxr/gfx/2d-hi.html">XBM</A>
-X11 Bitmap 
+X11 Bitmap
 
 <DT><img src="images/blueballdot.png" align=bottom alt="-">
 
@@ -469,7 +469,7 @@ This is especially useful when complex numerical formulas are included in
 the figure (see also <A HREF="attributes.html#text-flags">TEXT FLAGS</A>).
 
 <P>Not all of the features in <B>xfig</B> are supported by all export languages.
-For example, <a href="drawing.html#picture">imported pictures</a> 
+For example, <a href="drawing.html#picture">imported pictures</a>
 are not supported for IBMGL export.
 The PostScript export language supports all features
 of <B>xfig</B> and a fairly high quality output will be generated.
@@ -478,7 +478,7 @@ of <B>xfig</B> and a fairly high quality output will be generated.
 does the actual conversion from Fig to the output language.
 
 <P>To export the figure in a bitmap format such as GIF or JPEG, you must have the
-<A HREF="installation.html#ghostscript">GhostScript</A> and 
+<A HREF="installation.html#ghostscript">GhostScript</A> and
 <A HREF="installation.html#netpbm">netpbm</A>
 packages on your system.
 
@@ -486,7 +486,7 @@ packages on your system.
 <I>Magnification</I>
 
 <DD>
-Specify the magnification when exporting figure in percent of full size (%). 
+Specify the magnification when exporting figure in percent of full size (%).
 The default is 100% and may be set by the <TT>Fig.magnification</TT> resource.
 
 <P>
@@ -500,7 +500,7 @@ active according to the layer manager.
 <DT><img src="images/redball.png" align=bottom alt="-">
 <a name="border_margin"><I>Border Margin</I></a>
 <dd>
-When exporting to PostScript, Encapsulated PostScript, HTML MAP, or any 
+When exporting to PostScript, Encapsulated PostScript, HTML MAP, or any
 of the bitmap formats (e.g. GIF, JPEG, etc.), you may add a margin
 space around the figure.  The size of the margin is in pixels or 1/80th inch.
 
@@ -528,7 +528,7 @@ PSLatex, PDF and all the bitmap export formats.
 
 
 <DT><img src="images/redball.png" align=bottom alt="-">
-PostScript Options - These options will appear below the Grid options 
+PostScript Options - These options will appear below the Grid options
 when PostScript is selected as the export language.
 <p>
 <DT><img src="images/export-panel-postscript.png" align=bottom alt="-">
@@ -558,8 +558,8 @@ selected as <a href="#language"><I>Language</I></a>.
 <DD>
 Specify the orientation of the output as <I>Landscape</I> (horizontal)
 or <I>Portrait</I> (vertical). The default orientation is same as the
-orientation of the canvas which may be changed by 
-<A HREF="main_menus.html#port-land"><i>Portrait/Landscape</i></A> 
+orientation of the canvas which may be changed by
+<A HREF="main_menus.html#port-land"><i>Portrait/Landscape</i></A>
 in the <a href="main_menus.html#view-menu"><i>View</i> menu</a>.
 
 <DT><img src="images/redball.png" align=bottom alt="-">
@@ -584,8 +584,8 @@ is selected, this facility will not used. This is effective only if
 
 <DD>
 When exporting figure, the figure will be shifted to the right or down by the
-amount specified here. 
-Use negative numbers to shift it left and/or up. 
+amount specified here.
+Use negative numbers to shift it left and/or up.
 The unit of the amounts may be selected from
 <I>Inches</I>, <I>Centimeters</I>, and <I>Fig Units</I>(1/1200 inch in version 3.x).
 
@@ -593,7 +593,7 @@ The unit of the amounts may be selected from
 
 <p>
 <DT><img src="images/redball.png" align=bottom alt="-">
-Bitmap Options - These options will appear below the Grid options 
+Bitmap Options - These options will appear below the Grid options
 when any bitmap format is selected as the export language.
 <p>
 <DT><img src="images/export-panel-gif.png" align=bottom alt="-">
@@ -605,7 +605,7 @@ when any bitmap format is selected as the export language.
 <a name="smooth"><i>Smoothing</i></a>
 <dd>
 This will smooth the image by calling <b>fig2dev</b>
-with either the `<tt>-S 2</tt>' (<i>Some smoothing</i>) or <tt>-S 4</tt> (<i>More smoothing</i>) 
+with either the `<tt>-S 2</tt>' (<i>Some smoothing</i>) or <tt>-S 4</tt> (<i>More smoothing</i>)
 option to tell GhostScript to render at
 2x magnification which improves font rendering,
 then passes through <tt>pnmscale</tt> to reduce to original size,
@@ -620,7 +620,7 @@ For GIF export, it is possible to specify one of the colors as &quot;transparent
 When displaying the figure with GIF viewers that support Transparent GIF
 (such as <A HREF="http://www.netscape.com/">Netscape Navigator</A>, for
 example), the color will not appear but the background of the viewer will show
-through in place of the color.  
+through in place of the color.
 <BR>The default is <I>None</I>.
 <DT><img src="images/export-panel-gif.png" align=bottom alt="-">
 
@@ -774,9 +774,9 @@ then <I>Default File</I> will be set to the actual export file name.</DL>
 
 <h2><a name="imagemap">Generating an HTML Image Map</a></h2>
 
-It is possible to generate image map (clickable map) of HTML 3.2 
-by selecting <i>HTML Image Map</i> as 
-<a href="#language"><i>Language</i></a> 
+It is possible to generate image map (clickable map) of HTML 3.2
+by selecting <i>HTML Image Map</i> as
+<a href="#language"><i>Language</i></a>
 on the <a href="#export">Export panel</a>.
 <p>
 To use this facility,

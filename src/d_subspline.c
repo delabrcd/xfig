@@ -45,8 +45,8 @@ create_subspline(int *num_pts, F_spline *spline, F_point *point, F_sfactor **sfa
   if (*num_pts > MIN_NUMPOINTS_FOR_QUICK_REDRAW)
     {
       sub_spline = extract_subspline(spline, point);
-      if (sub_spline != NULL) 
-	*sub_sfactor = search_sfactor(sub_spline, 
+      if (sub_spline != NULL)
+	*sub_sfactor = search_sfactor(sub_spline,
 			  search_spline_point(sub_spline, point->x, point->y));
     }
     else
@@ -103,7 +103,7 @@ extract_subspline(F_spline *spline, F_point *point)
 
   if ((subspline = create_spline()) == NULL)
     return NULL;
-  
+
   *subspline            = *spline;
   subspline->next       = NULL;
   subspline->points     = NULL;
@@ -143,7 +143,7 @@ extract_subspline(F_spline *spline, F_point *point)
       free_spline(&subspline);
       return NULL;
     }
-  
+
   last_point = subspline->points;
   last_sfactor = subspline->sfactors;
 
@@ -160,7 +160,7 @@ extract_subspline(F_spline *spline, F_point *point)
 	cursor = cursor->next;
       else if (closed_spline(spline))
 	cursor = spline->points;
-      
+
       if (!add_subspline_point(spline, &last_point, &last_sfactor, cursor))
 	{
 	  free_spline(&subspline);

@@ -35,8 +35,8 @@
 </pre>
 <p>
 もし<b>常に</b>
-<a href="attributes.html#text-flags"><i>Special</i> フラグ</a> 
-と <a href="attributes.html#font-panel"><i>LaTeX</i> フォント</a> 
+<a href="attributes.html#text-flags"><i>Special</i> フラグ</a>
+と <a href="attributes.html#font-panel"><i>LaTeX</i> フォント</a>
 を選択して開始したいのであれば、<tt>.Xresources</tt> ファイルか
 あなたが使っているリソース・ファイルで次のように指定します：
 <pre>
@@ -62,15 +62,15 @@ DVI ファイルが必要な情報全てを保持することです。
 (C) では PostScript の描画機能と、
 LaTeX のテキストのタイプセット機能を用いることができます。
 <p>
-LaTeX 文書のプリアンブル (<tt>\begin{document}</tt> よりも前の部分) 
+LaTeX 文書のプリアンブル (<tt>\begin{document}</tt> よりも前の部分)
 に、次の行を置きます：
 <pre>
-        \input{psfig}
+        \usepackage{psfig}
 </pre>
 <p>
 プリアンプルは次のようなものとなるかも知れません：
 <pre>
-  \documentstyle[12pt,bezier,amstex]{article}  % include bezier curves
+  \documentclass[12pt,bezier,amstex]{article}  % include bezier curves
   \renewcommand\baselinestretch{1.0}           % single space
   \pagestyle{empty}                            % no headers and page numbers
   \oddsidemargin -10 true pt      % Left margin on odd-numbered pages.
@@ -84,7 +84,7 @@ LaTeX 文書のプリアンブル (<tt>\begin{document}</tt> よりも前の部分)
   \parindent=0pt                  % Do not indent paragraphs
   \parskip=0.15 true in
 
-  \input{psfig}           % Capability to place postscript drawings
+  \usepackage{psfig}           % Capability to place postscript drawings
 
 
   \begin{document}
@@ -97,7 +97,7 @@ LaTeX 文書のプリアンブル (<tt>\begin{document}</tt> よりも前の部分)
 LaTeX では、いくつかの特定の角度の線のみを描画することができます。
 線に矢印が付いている場合、この制限はさらに厳しくなります。
 楕円、スプラインなどの、いくつかの機能はサポートされていません。
-(<b>xfig</b> は <tt>bezier</tt> などの 
+(<b>xfig</b> は <tt>bezier</tt> などの
 LaTeX マクロ・パッケージによる利点を用いていません。)
 <p>
 この方法で線を描画する場合には、
@@ -114,10 +114,10 @@ LaTeX に取り込まれた際にそのコマンドは適切に解釈されます。
         $\int_0^9 f(x) dx$
 </pre>
 は関数 <i>f(x)</i> の 0 から 9 の積分となります。
-LaTeX ファイルを生成するためには、<b>xfig</b> の 
-<a href="main_menus.html#file-menu"><i>File</i> メニュー</a> 
+LaTeX ファイルを生成するためには、<b>xfig</b> の
+<a href="main_menus.html#file-menu"><i>File</i> メニュー</a>
 から <i>Export...</i> を選択し、
-エクスポートする <a href="printing.html#language"><i>Language</i></a> として 
+エクスポートする <a href="printing.html#language"><i>Language</i></a> として
 <i>LaTeX picture</i> を選択します。
 これによって <tt>.latex</tt> というサフィックスを持つファイルを生成し、
 直接 LaTeX 文書に取り込むことができます。
@@ -128,7 +128,7 @@ LaTeX ファイルを生成するためには、<b>xfig</b> の
   \begin{figure}[htbp]
   \begin{center}
 
-  \input{yourfile.latex} 
+  \input{yourfile.latex}
 
   \caption{The caption on your figure}
   \label{figure:yourreferencename}
@@ -143,10 +143,10 @@ LaTeX ファイルを生成するためには、<b>xfig</b> の
 しかし、このフォーマットが選択された場合には
 多数の PostScript フォント全てが使用可能となります。
 <p>
-図を描き終ったならば、<b>xfig</b> の 
-<a href="main_menus.html#file-menu"><i>File</i> メニュー</a> 
+図を描き終ったならば、<b>xfig</b> の
+<a href="main_menus.html#file-menu"><i>File</i> メニュー</a>
 から <i>Export...</i> を選択し、
-エクスポートする <a href="printing.html#language"><i>Language</i></a> として 
+エクスポートする <a href="printing.html#language"><i>Language</i></a> として
 <i>Encapsulated PostScript</i> を選択します。
 これによって、次のような方法によって LaTeX 文書に取り込むことができる、
  <tt>.eps</tt> というサフィックスを持つファイルを生成することができます。
@@ -163,7 +163,7 @@ LaTeX ファイルを生成するためには、<b>xfig</b> の
 <b>注意：</b> 環境によってはこの方法は使用できないかも知れません。
 また、この方法で生成される DVI ファイルは
 ポータブルではないものとなることがあります。
- 
+
 <h3>Type C ― Postscript/LaTeX の組み合わせ</h3>
 
 この方法ではどのような線や曲線を使うこともできます。
@@ -174,18 +174,18 @@ LaTeX ファイルを生成するためには、<b>xfig</b> の
         $\int_0^9 f(x) dx$
 </pre>
 のように入力すれば、それは LaTeX で処理されます。
-LaTeX で出力したいテキストについては 
+LaTeX で出力したいテキストについては
 <a href="attributes.html#text-flags"><i>Special</i> フラグ</a> を ON にし、
-PostScript で出力したいテキストについては 
+PostScript で出力したいテキストについては
 OFF にする必要があることに注意して下さい。
 
 <p>
 この方法を用いる場合には、
-<a href="main_menus.html#file-menu"><i>File</i> メニュー</a> 
+<a href="main_menus.html#file-menu"><i>File</i> メニュー</a>
 から <i>Export...</i> を選択し、
-エクスポートする <a href="printing.html#language"><i>Language</i></a> として 
+エクスポートする <a href="printing.html#language"><i>Language</i></a> として
 <i>Combined PostScript/LaTeX (both part)</i> を選択します。
-これによって、次のような方法によって LaTeX 文書に取り込むことができる 
+これによって、次のような方法によって LaTeX 文書に取り込むことができる
 <tt>.pstex_t</tt> というサフィックスを持つファイルと、
 PostScript のコードを含む <tt>.pstex</tt> というサフィックスを持つファイル
 を生成することができます。
@@ -222,9 +222,9 @@ PostScript のコードを含む <tt>.pstex</tt> というサフィックスを持つファイル
 <ol>
 <li>最初から <b>xfig</b> で正しい大きさで図を作成する。
 あるいは、図をエクスポートする際に、
-<a href="printing.html#export">Export パネル</a> の 
+<a href="printing.html#export">Export パネル</a> の
 <i>Magnification</i> での設定を変更することによって図の大きさを変更する。
-いずれの方法でも、LaTeX 文書上での図の大きさが気に入らなかった場合には 
+いずれの方法でも、LaTeX 文書上での図の大きさが気に入らなかった場合には
 <b>xfig</b> に戻らなければならない。
 <p>
 <li><tt>\scalebox</tt>、あるいは <tt>\resizebox</tt> を用いて、
@@ -253,7 +253,7 @@ LaTeX に図の大きさを変更させる。
 パラメータとして "<tt>!</tt>" を用いるとボックスのアスペクト比が保存されます。
 例えば：
 <pre>
-       \resizebox{5cm}{!}{fat cat} 
+       \resizebox{5cm}{!}{fat cat}
 </pre>
 は "<tt>fat cat</tt>" の幅を 5cm に、高さを適切に設定します。
 (Lamport の本の 129ページより)
@@ -304,11 +304,11 @@ includegraphics の任意のオプションも使えます。
 color パッケージは、テキストをカラーで出力する場合に必要です。
 そして、図を次のようにして取り込みます：
 <pre>
-  \input foo.pdftex 
+  \input foo.pdftex
 </pre>
 リサイズも可能です：
 <pre>
-  \resizebox{3cm}{!}{\input foo.pdftex} % sets the width to 3cm 
+  \resizebox{3cm}{!}{\input foo.pdftex} % sets the width to 3cm
 </pre>
 <p>
 利点： テキストとして書いたものが、文書中のコードと全く同様に扱われます。
@@ -348,7 +348,7 @@ PS として取り込むためには、その文書に
 <p>
 欠点： AMS-LaTeX は受け付けられず、大きな数式には適当ではありません。
 文書が英語以外である場合には、
-長いフレーズも酷いことになるかも知れません 
+長いフレーズも酷いことになるかも知れません
 (bebel パッケージは使えません)。
 
 <h3>MULTI-METAPOST</h3>
@@ -414,7 +414,7 @@ xfig の既存の深さの体系の恩恵。
 LaTeX テキストで ``mn'' と出力されることがあるかも知れません。
 ここで示すのは、あるユーザーがこの問題を回避するために行なったことです：
 <p>
-この問題は、エクスポート出力の LaTeX 部に生成された 
+この問題は、エクスポート出力の LaTeX 部に生成された
 <tt>\smash</tt> コマンドにあります。
 もしあなたのシステムで
 <tt>\mddefault</tt> と <tt>\updefault</tt> が正しく設定されていないならば、

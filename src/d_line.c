@@ -147,7 +147,7 @@ init_trace_drawing(int x, int y)
 	set_mousefun("next point", "final point", "cancel", "del point", "", "");
 	canvas_middlebut_proc = canvas_middlebut_save;
     }
-	
+
     draw_mousefun_canvas();
     set_cursor(null_cursor);
     elastic_line();
@@ -169,7 +169,7 @@ freehand_get_intermediatepoint(int x, int y)
     }
     get_intermediatepoint(x, y, 0);
 }
-    
+
 void
 get_intermediatepoint(int x, int y, int shift)
 {

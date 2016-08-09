@@ -88,7 +88,8 @@ AC_PROG_LN_S
 dnl  To the comfort of the maintainer
 dnl AC_PROG_SED
 dnl AC_CHECK_PROG([GIT], [git], [git], [no])
-dnl AM_CONDITIONAL([HAS_GIT_CONTROL],[test `$GIT -C $srcdir describe`])
+dnl AM_CONDITIONAL([HAS_GIT_CONTROL],
+dnl    [test `git -C $srcdir describe 2>/dev/null`])
 dnl then, bracket the version.m4 target in ./Makefile.am with
 dnl if HAS_GIT_CONTROL ... endif
 
@@ -121,7 +122,7 @@ AS_IF([test "x$tl_cv_libs_path_pow" = xno \
 # Checks for header files.
 AC_CHECK_HEADER_STDBOOL
 AC_HEADER_DIRENT
-AC_CHECK_HEADERS_ONCE([features.h limits.h sys/time.h])
+AC_CHECK_HEADERS_ONCE([features.h sys/time.h])
 
 # Provide for unusual include paths, as above for libraries.
 TL_CHECK_HEADER_PATH([png.h], [INCLUDEPATHS])dnl
@@ -178,6 +179,12 @@ AC_REPLACE_FUNCS([isascii strstr strchr strrchr strcasecmp strncasecmp \
 AC_CONFIG_LIBOBJ_DIR([lib])
 
 # Query user options
+AC_ARG_ENABLE(versioning, [AS_HELP_STRING([--enable-versioning],
+	[enable changing the version number, only useful for \
+	 hacking (default: disable)])],
+    [],[enableval=no])dnl
+AM_CONDITIONAL([ENABLE_VERSIONING], [test "x$enableval" = xyes])dnl
+
 AC_ARG_ENABLE(arrows4to14, [AS_HELP_STRING([--disable-arrows4to14],
 	[disable arrow types 4 to 14 (default: enable)])],
     [],[enableval=yes])dnl
@@ -226,32 +233,37 @@ AS_IF([test "$enableval" -gt 0], [], [enableval=20000])dnl
 AC_DEFINE_UNQUOTED([CACHE_SIZE_LIMIT], [$enableval],
    [Define to the maximum size of bitmaps (kB) cached in the X-server.])dnl
 
-AC_ARG_ENABLE(xpm-icon, [AS_HELP_STRING([--enable-xpm-icon],
-	[enable xpm color icon for xfig itself, sets --enable-xpm \
-		(default: disable)])],
-    [],[enable_xpm_icon=no])dnl
+AC_ARG_ENABLE(xpm-icon, [AS_HELP_STRING([--disable-xpm-icon],
+	[enable xpm color icon for xfig itself (default: enable)])],
+    [],[enable_xpm_icon=yes])dnl
+
+AC_ARG_ENABLE(xpm-splash, [AS_HELP_STRING([--enable-xpm-splash],
+	[enable xpm splash screen (default: disable)])],
+    [],[enable_xpm_splash=no])dnl
 
 AC_ARG_ENABLE(xpm, [AS_HELP_STRING([--disable-xpm],
 	[disable support for xpm color-bitmaps, internally \
 		 and for import/export (default: enable)])],
-    [AS_IF([test "x$enable_xpm_icon" = xyes], [enable_xpm=yes])],
-    [enable_xpm=yes])dnl
+    [], [enable_xpm=yes])dnl
 
 AS_IF([test "x$enable_xpm" = xyes],
     [TL_SEARCH_LIBS_PATH([XpmFree], [Xpm], [X_LIBPATHS])
      AS_IF([test "x$tl_cv_libs_path_XpmFree" = xno],
-	[enable_xpm=no; enable_xpm_icon=no])])dnl
+	[enable_xpm=no],
+	[AC_DEFINE([USE_XPM], 1,
+	    [Define to use xpm color-bitmaps and enable \
+		    import/export to xpm files.])])])
+AS_IF([test "x$enable_xpm" = xno],
+    [enable_xpm_icon=no; enable_xpm_splash=no])
 
-AS_IF([test "x$enable_xpm" = xyes],
-    [AC_DEFINE([USE_XPM], 1,
-	[Define to use xpm color-bitmaps and enable \
-		import/export to xpm files.])])
 AM_CONDITIONAL([USE_XPM], [test "x$enable_xpm" = xyes])dnl
 
 AS_IF([test "x$enable_xpm_icon" = xyes],
     [AC_DEFINE([USE_XPM_ICON], 1,
-	[Define to use xpm splash screen / color icon \
-		for xfig itself.])])
+	[Define to use xpm color icon for xfig itself.])])
+
+AS_IF([test "x$enable_xpm_splash" = xyes],
+    [AC_DEFINE([USE_XPM_SPLASH], 1, [Define to use xpm splash screen.])])
 
 AC_ARG_WITH(xaw3d1_5e, [AS_HELP_STRING([--without-xaw3d1_5e],
 	[do not use version Xaw3d >= 1.5e (default: use)])],
@@ -349,7 +361,7 @@ AS_IF([test "x$withval" != xyes],dnl
     [AC_DEFINE([NO_COMPKEYDB], 1,dnl
 	[Define to not use the Compose Key Database file shipped with xfig.])])
 
-AC_ARG_WITH(compkeydbdir, [AS_HELP_STRING([--with-compkeydbdir],
+AC_ARG_WITH(compkeydbdir, [AS_HELP_STRING([--with-compkeydbdir=<pathname>],
 	[specify directory for the compose key database file, CompKeyDB \
 		(default: $datadir/xfig)])],
     [], [withval='${datadir}/xfig'])dnl

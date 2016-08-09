@@ -31,7 +31,7 @@ quadratic(double * cv, double * zr, double * zi)
 #define qa cv[2]
 #define qb cv[1]
 #define qc cv[0]
-  
+
   if (qa == 0.0){
     if (qb == 0.0)
       return 0;
@@ -74,7 +74,7 @@ quadratic(double * cv, double * zr, double * zi)
     discrim = -discrim;
     zr[1] = zr[0] = -qb;
     zi[1] = zi[0] = sqrt(discrim);
-  } 
+  }
   else {
     if (qb < 0.0){
       qb = -qb;
@@ -86,7 +86,7 @@ quadratic(double * cv, double * zr, double * zi)
     }
     zr[0] = qc/qa;
     zr[1] = qa;
-    zi[0] = zi[1] = 0.0; 
+    zi[0] = zi[1] = 0.0;
   }
   return 2;
 }
@@ -100,10 +100,10 @@ cubic(double * cv, double * zr, double * zi)
 #define cb cv[2]
 #define cc cv[1]
 #define cd cv[0]
-  
+
   double discrim, q, r, dum1, s, t, term1, r13;
   int i;
-  
+
   if (ca == 0.0){
     return quadratic(cv, zr, zi);
   }
@@ -125,7 +125,7 @@ cubic(double * cv, double * zr, double * zi)
   r /= 54.0;
 
   discrim = pow(q, 3.0) + pow(r, 2.0);
-  zi[0] =  0.0; 		/* The first root is always real.*/
+  zi[0] =  0.0;			/* The first root is always real.*/
   term1 = (cb/3.0);
 
   if (discrim > 0.0) {		 /* one root real, two are complex */
@@ -145,7 +145,7 @@ cubic(double * cv, double * zr, double * zi)
   /* The remaining options are all real */
   zi[2] = zi[1] = 0.0;
 
-  if (discrim == 0.0){ 			/* All roots real, at least two are equal. */
+  if (discrim == 0.0){		/* All roots real, at least two are equal. */
     r13 = ((r < 0) ? -pow(-r,(1.0/3.0)) : pow(r,(1.0/3.0)));
     zr[0] = -term1 + 2.0*r13;
     zr[2] = zr[1] = -(r13 + term1);
@@ -166,7 +166,7 @@ cubic(double * cv, double * zr, double * zi)
 int
 quartic(double * ck, double * zr, double * zi)
 {
-  
+
 #define a ck[4]
 #define b ck[3]
 #define c ck[2]
@@ -180,7 +180,7 @@ quartic(double * ck, double * zr, double * zi)
 
   if (a == 0.0) {
     return cubic(ck, zr, zi);
-  } 
+  }
 
   if (e == 0.0) {
     int n;
@@ -239,7 +239,7 @@ quartic(double * ck, double * zr, double * zi)
   if (sqR >= 0.0) {
     if (sqR == 0.0) {
       dum1 = -(4.0*e) + y1*y1;
-      if (dum1 < 0.0) 		/* D and E will be complex */
+      if (dum1 < 0.0)		/* D and E will be complex */
 	z1Im = 2.0*sqrt(-dum1);
       else {
 	z1Re = 2.0*sqrt(dum1);
@@ -265,22 +265,22 @@ quartic(double * ck, double * zr, double * zi)
 
   /* At this point, z1 and z2 should be the terms under the square root for D and E */
 
-  if (z1Im == 0.0){ 		/* Both z1 and z2 real */
+  if (z1Im == 0.0){		/* Both z1 and z2 real */
     if (z1Re >= 0.0) DRe = sqrt(z1Re);
     else             DIm = sqrt(-z1Re);
     if (z2Re >= 0.0) ERe = sqrt(z2Re);
     else             EIm = sqrt(-z2Re);
   }
-  else { 		/* else (zIm != 0); calculate root of a complex number******** */
-    r = sqrt(z1Re*z1Re + z1Im*z1Im); 	/* Calculate r, the magnitude */
+  else {	/* ***else (zIm != 0); calculate root of a complex number*** */
+    r = sqrt(z1Re*z1Re + z1Im*z1Im);	/* Calculate r, the magnitude */
     r = sqrt(r);
 
-    dum1 = atan2(z1Im, z1Re); 		/* Calculate the angle between the two vectors */
-    dum1 /= 2; 				/* Divide this angle by 2 */
+    dum1 = atan2(z1Im, z1Re);		/* Calculate the angle between the two vectors */
+    dum1 /= 2;				/* Divide this angle by 2 */
     ERe = DRe = r*cos(dum1);		 /* Form the new complex value */
     DIm = r*sin(dum1);
-    EIm = -DIm; 
-  } 
+    EIm = -DIm;
+  }
 
   zr[0] = -term1 + (RRe + DRe)/2.0;
   zi[0] = (RIm + DIm)/2.0;
@@ -292,4 +292,4 @@ quartic(double * ck, double * zr, double * zi)
   zi[3] = -(RIm + EIm)/2.0;
 
   return 4;
-} 
+}

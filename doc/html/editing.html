@@ -124,7 +124,7 @@ See also <a href="#select-object">Selecting Objects</a>.
 Glue selected objects and make them a COMPOUND object.
 <dd>
 <p>
-This is useful to <a href="#move">move</a> 
+This is useful to <a href="#move">move</a>
 or <a href="#copy">copy</a> some objects together at the same time.
 It is also possible to scale part of a figure
 by <a href="#scale">scaling</a> a COMPOUND object
@@ -182,7 +182,7 @@ All other objects which were not in the COMPOUND object
 will become invisible temporarily,
 but they will reappear after all COMPOUND objects are closed.
 <p>
-If mouse button 2 (`open, keep visible') is clicked on the COMPOUND, 
+If mouse button 2 (`open, keep visible') is clicked on the COMPOUND,
 the other objects not in the COMPOUND object will become shades of gray,
 making it easy to align objects inside the compound with those outside.
 <p>
@@ -204,7 +204,7 @@ or the whole figure (Save All).
 <i>Note</i>:
 If you open a COMPOUND object,
 <a href="#delete">delete</a> an object in that COMPOUND object,
-close the COMPOUND object and 
+close the COMPOUND object and
 <a href="main_menus.html#undo">Undo</a> the delete operation,
 the object you deleted will reappear but it will outside of the COMPOUND object.
 Conversely, if you delete an object from the canvas,
@@ -231,7 +231,7 @@ If the endpoints are on the same line or spline, it will make a closed object.
 <p>
 To split a line or spline into two separate objects or to convert a box
 or polygon to a line, or to open a closed spline,
-click mouse button 2 (`Spline line/spline') 
+click mouse button 2 (`Spline line/spline')
 between two the points on the line/spline etc.
 
 
@@ -299,20 +299,20 @@ by clicking mouse button 2 (`new position') again.
 In any case, The scaling operation may be canceled
 by clicking mouse button 3 (`cancel').
 <p>
-It is not possible to scale 
+It is not possible to scale
 <a href="drawing.html#text">TEXT</a> objects
 directly with this function.
 To scale TEXT objects,
-use <a href="#edit">EDIT OBJECT</a> or <a href="#update">UPDATE</a> 
+use <a href="#edit">EDIT OBJECT</a> or <a href="#update">UPDATE</a>
 and change the size of the text
 (see <a href="attributes.html#text-size">TEXT SIZE</a>).
 However, if a <a href="#glue-compound">COMPOUND</a>
 object that includes TEXT objects is scaled,
-the TEXT objects will also be scaled 
-if the <a href="attributes.html#text-flags"><i>Rigid</i> flag</a> 
+the TEXT objects will also be scaled
+if the <a href="attributes.html#text-flags"><i>Rigid</i> flag</a>
 is not set.
 <p>
-You may use also <a href="#move-point">MOVE POINT</a> 
+You may use also <a href="#move-point">MOVE POINT</a>
 if you want to scale an object such as a BOX
 without keeping its horizontal/vertical ratio.
 
@@ -324,10 +324,10 @@ Align objects
 <dd>
 <p>
 How objects are aligned is set by
-<a href="attributes.html#vertical-align">VERTICAL ALIGN</a> 
+<a href="attributes.html#vertical-align">VERTICAL ALIGN</a>
 and <a href="attributes.html#horiz-align">HORIZONTAL ALIGN</a>.
 <p>
-Clicking on a <a href="#glue-compound">COMPOUND object</a> 
+Clicking on a <a href="#glue-compound">COMPOUND object</a>
 with mouse button 1 (`align compound')
 will align objects within the COMPOUND object.
 Clicking mouse button 2 (`align canvas') anywhere on the canvas
@@ -356,11 +356,11 @@ and <a href="editing.html#glue-compound">COMPOUND</a> objects,
 not only the selected point
 but the edges connected to the point will be moved.
 The object created by
-<a href="drawing.html#regular-polygon">REGULAR POLYGON</a> 
+<a href="drawing.html#regular-polygon">REGULAR POLYGON</a>
 is an ordinary <a href="drawing.html#polygon">POLYGON</a> object,
 and only the selected point will be moved.
 <p>
-Points may also be <a href="#add-point">added</a> 
+Points may also be <a href="#add-point">added</a>
 or <a href="#add-point">deleted</a>.
 If you want to move entire object, use <a href="#move">MOVE</a> instead.
 
@@ -384,11 +384,11 @@ It is not possible to add a point to
 <a href="drawing.html#box">BOX</a> or
 <a href="drawing.html#arc-box">ARC-BOX</a> objects.
 The object created by
-<a href="drawing.html#regular-polygon">REGULAR POLYGON</a> 
+<a href="drawing.html#regular-polygon">REGULAR POLYGON</a>
 is an ordinary <a href="drawing.html#polygon">POLYGON</a> object,
 and it is possible to add new points anywhere in it.
 <p>
-Points may also be <a href="#move-point">moved</a> 
+Points may also be <a href="#move-point">moved</a>
 or <a href="#add-point">deleted</a>.
 
 <hr>
@@ -406,14 +406,14 @@ will delete the point,
 and the points on either side of the point will connected directly.
 <p>
 It is not possible to delete points from a
-<a href="drawing.html#box">BOX</a> 
+<a href="drawing.html#box">BOX</a>
 or <a href="drawing.html#arc-box">ARC-BOX</a> object.
 The object created by
-<a href="drawing.html#regular-polygon">REGULAR POLYGON</a> 
+<a href="drawing.html#regular-polygon">REGULAR POLYGON</a>
 is ordinary <a href="drawing.html#polygon">POLYGON</a> object,
 and it is possible to delete points from it.
 <p>
-Points may also be <a href="#move-point">moved</a> 
+Points may also be <a href="#move-point">moved</a>
 or <a href="#add-point">added</a>.
 
 <hr>
@@ -429,7 +429,7 @@ and finish the move operation by
 clicking mouse button 1 (`place object') again at the new position.
 If you want to restrict the movement to horizontal or vertical,
 use mouse button 2 (`horiz/vert move') instead of mouse button 1.
-The operation may be canceled by clicking mouse button 3 (`cancel') in 
+The operation may be canceled by clicking mouse button 3 (`cancel') in
 either case.
 <p>
 If you want to move several objects at one time,
@@ -443,7 +443,7 @@ fall inside a COMPOUND object will also be moved.
 The SMART-LINKS feature
 only works with POLYLINES (not splines) touching a BOX, ARC-BOX, or COMPOUND.
 <p>
-Objects may also be <a href="#copy">copied</a> 
+Objects may also be <a href="#copy">copied</a>
 or <a href="#delete">deleted</a>.
 If you want to move a point of the object,
 use <a href="#move-point">MOVE POINT</a> instead.
@@ -477,7 +477,7 @@ This only works with POLYLINES (not splines) touching a BOX or ARC-BOX.
 It is also possible to make many copies in this mode,
 using <i>ARRAY PLACEMENT</i>.
 To do this, first set the number of copies to be created
-by setting <a href="attributes.html#num-x-copies">NUMBER OF X COPIES</a> 
+by setting <a href="attributes.html#num-x-copies">NUMBER OF X COPIES</a>
 and <a href="attributes.html#num-y-copies">NUMBER OF Y COPIES</a>.
 Then select the object to be copied by clicking the object
 with mouse button 1 (`copy object') or 2 (`constrained copy'),
@@ -503,7 +503,7 @@ To copy multiple objects into the <i>xfig cut buffer</i>,
 you must first put them into a COMPOUND object
 using <a href="#glue-compound">GLUE COMPOUND</a>.
 <p>
-Objects may also be <a href="#move">moved</a> 
+Objects may also be <a href="#move">moved</a>
 or <a href="#delete">deleted</a>.
 
 <hr>
@@ -545,7 +545,7 @@ to the attribute panel.
 Clicking an object with mouse button 1 (`update object')
 will apply the current settings of the attribute buttons selected for UPDATE
 to the object.
-If a <a href="editing.html#glue-compound">COMPOUND object</a> 
+If a <a href="editing.html#glue-compound">COMPOUND object</a>
 is clicked with mouse button 1 (`update object'),
 the attributes of all the objects in the COMPOUND object will be updated.
 <p>
@@ -558,7 +558,7 @@ This allows you to copy attributes from one object to another object.
 <a name="update-control">In UPDATE mode</a>,
 a small toggle button appears in the upper-right corner
 of each <a href="attributes.html">attribute button</a>,
-and only the attribute buttons whose toggle button is set <i>ON</i> 
+and only the attribute buttons whose toggle button is set <i>ON</i>
 will be used for update.
 Clicking the toggle button at the upper-right corner of an attribute button
 will toggle the button <i>ON</i>/<i>OFF</i>.
@@ -601,7 +601,7 @@ associated with the whole figure:<br>
 <img src="images/edit-figure-comments.png" align=bottom alt="[ Edit Figure Comment ]">
 <p>
 <a name="display-comments"></a>
-If the <b>Shift</b> key is held down while mouse button 2 (`show comments') 
+If the <b>Shift</b> key is held down while mouse button 2 (`show comments')
 is clicked on an object, any comments in the object are displayed
 in a popup until the mouse button is released:<br>
 <img src="images/show-comments.png" align=bottom alt="[ Show Comment ]">
@@ -620,7 +620,7 @@ Clicking the object with mouse button 2 (`copy &amp; flip')
 will make <b>copy</b> of the object flipped vertically/horizontally about that point,
 leaving original object as it was.
 <p>
-It is also possible to set the <i>anchor point</i> 
+It is also possible to set the <i>anchor point</i>
 about which the object will be flipped,
 by clicking mouse button 3 (`set anchor') at the point.
 A crosshair (+) indicates the anchor point on the canvas.
@@ -637,28 +637,28 @@ To rotate an object, use <a href="#rotate">ROTATE</a>.
 Rotate object
 <dd>
 <p>
-Clicking an object with mouse button 1 (`rotate object') 
+Clicking an object with mouse button 1 (`rotate object')
 will rotate the object to clockwise or counter-clockwise
 by the angle specified by
-<a href="attributes.html#rotation-angle">ROTATION ANGLE</a> 
+<a href="attributes.html#rotation-angle">ROTATION ANGLE</a>
 about the point that is clicked.
 <p>
 It is also possible to make many copies in this mode,
 using <i>COPY &amp; ROTATE</i>.
-Clicking object with mouse button 2 (`copy &amp; rotate') 
+Clicking object with mouse button 2 (`copy &amp; rotate')
 may make many copies rotated by the angle specified by the
 <a href="attributes.html#rotation-angle">ROTATION ANGLE</a>.
 The number of copies to be created may be set by
 <a href="attributes.html#num-copies">NUMBER OF COPIES</a>.
 <p>
 As in <a href="#flip">FLIP VERTICALLY/HORIZONTALLY</a>,
-it is possible to set the <i>anchor point</i> 
+it is possible to set the <i>anchor point</i>
 about which the object will be rotated,
 by clicking mouse button 3 (`set anchor').
 
 <p>
 <a href="drawing.html#box">BOX</a>,
-<a href="drawing.html#arc-box">ARC-BOX</a> 
+<a href="drawing.html#arc-box">ARC-BOX</a>
 and <a href="drawing.html#picture">PICTURE</a> objects,
 and <a href="editing.html#glue-compound">COMPOUND</a>
 objects containing any of those objects may only be rotated
@@ -702,8 +702,8 @@ open interpolated spline &lt;-&gt; closed interpolated spline
 </dl>
 <p>
 Finer control is possible for spline curves.
-See <a href="#edit-point">EDIT POINT</a> 
-and <a href="drawing.html#spline">About Spline Curves</a> 
+See <a href="#edit-point">EDIT POINT</a>
+and <a href="drawing.html#spline">About Spline Curves</a>
 for more information.
 
 <hr>
@@ -818,7 +818,7 @@ The corner markers are small square marks
 which are displayed at the corner point of objects
 which may be selected for any particular mode.
 <p>
-Most objects may also be selected by clicking on the line 
+Most objects may also be selected by clicking on the line
 connecting corner markers,
 but it may have a different meaning in some editing modes.
 For example in the <a href="#scale">SCALE OBJECT</a> mode,
@@ -827,7 +827,7 @@ to its horizontal/vertical ratio,
 but clicking on a line connecting corner markers (edge of the rectangle)
 will scale the object only in that direction (i.e. horizontally or vertically).
 <p>
-If <a href="attributes.html#point-position">POINT POSITION</a> 
+If <a href="attributes.html#point-position">POINT POSITION</a>
 is set to other than <i>Any</i>,
 objects which are not on the virtual grid may not be be selected.
 <p>
@@ -870,7 +870,7 @@ This shows a few of those Edit Panels.
 This is an ASCII text widget which may hold up to 50 lines of 200 characters each.
 <br>
 The whole figure may also have comments. To edit these,
-click mouse button 2 (`edit Fig comments') 
+click mouse button 2 (`edit Fig comments')
 on the canvas after choosing the <a href="#edit">Edit mode</a>.
 
 <dt>
@@ -944,11 +944,11 @@ and <a href="attributes.html#arrow-size">ARROW SIZE</a>)
 <dt>
 <img src="images/redballdot.png" align=bottom alt="-">
 <i>Center, Radius, Points, etc.</i>
-<dd>These fields indicate the position and size of the object, and 
+<dd>These fields indicate the position and size of the object, and
 the coordinates of any points, in <b>Fig</b> units (1/1200 inch).
 <br>
 <img src="images/pict-info.png" alt="">
-Note: For these entries, you may enter values followed by either &quot;c&quot; or &quot;i&quot; 
+Note: For these entries, you may enter values followed by either &quot;c&quot; or &quot;i&quot;
 for centimeters or inches respectively.
 </dl>
 
@@ -1056,7 +1056,7 @@ The captured image will be stored in a file
 such as <tt>figure1_828065129.pcx</tt>,
 which includes the current figure name
 and the time in seconds since 00:00:00 GMT, Jan 1, 1970.
-The file format will be PCX, and will be indicated in the 
+The file format will be PCX, and will be indicated in the
 picture type area.
 <p>
 You can't use this facility
@@ -1067,13 +1067,13 @@ if visual of your display is TrueColor or it is deeper than 8 bits.
 <img src="images/redballdot.png" align=bottom alt="-">
 <a name="edit-image"><i>Edit Image</i></a>
 <dd>Clicking this button will invoke an external bitmap editor
-(the default is <a href="installation.html#related-software"><b>xv</b></a>) 
+(the default is <a href="installation.html#related-software"><b>xv</b></a>)
 to edit the image.
-Program that will be invoked can be checked on the 
+Program that will be invoked can be checked on the
 <a href="global_settings.html">Global Settings panel</a>.
 <i>Edit Image</i> will invoke <b>xv</b> by default,
 but you can change it to invoke your favorite bitmap editor
-(<a href="installation.html#related-software"><b>xpaint</b></a> 
+(<a href="installation.html#related-software"><b>xpaint</b></a>
 or <a href="installation.html#gimp"><b>GIMP</b></a>, for example)
 with the resource <tt>Fig.image_editor</tt>
 or command-line argument <tt>-image_editor</tt>.
@@ -1116,7 +1116,7 @@ to select an image file to be imported.
 Click on an image file and press <b>Apply</b> to preview it,
 or double-click on it to choose it and close the browse panel.
 You may change directories in the same manner as in the file panels.
-The <b>Filename Mask</b> by default will show all image types that 
+The <b>Filename Mask</b> by default will show all image types that
 <b>xfig</b> can import.
 <br>
 <img src="images/image_browse.png" align=bottom alt="[ Browse Image Files ]">
@@ -1142,7 +1142,7 @@ if <i>Flipped about diag</i> is selected here.
 <dt>
 <img src="images/redballdot.png" align=bottom alt="-">
 <i>Cur H/W Ratio and Orig H/W Ratio</i>
-<dd>The current and original horizontal/vertical ratio of the image. 
+<dd>The current and original horizontal/vertical ratio of the image.
 
 <dt>
 <img src="images/redballdot.png" align=bottom alt="-">
@@ -1166,7 +1166,7 @@ by a percentage of the original size in the picture file.
 
 <h2><a name="edit-point">EDIT POINT</a></h2>
 
-The Edit Point panel is used to modify the <i>shape factor</i> 
+The Edit Point panel is used to modify the <i>shape factor</i>
 of control points of <a href="drawing.html#spline">spline curves</a>,
 and it will popup by clicking on a control point of spline curve
 with mouse button 3 (`edit point') in <a href="#edit">EDIT OBJECT</a> mode.
@@ -1176,7 +1176,7 @@ The <i>shape factor</i> will control the shape of the curve.
   <img src="images/edit-point-panel.png" alt="[Edit Point Panel]">
 </blockquote>
 <p>
-Clicking <i>Approximated</i>, <i>Angular</i>, or <i>Interpolated</i> 
+Clicking <i>Approximated</i>, <i>Angular</i>, or <i>Interpolated</i>
 button will set the shape factor to a preset value.
 The shape factor may also be set to arbitrary values
 by moving the slider on the left side of the panel.

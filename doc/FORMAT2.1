@@ -33,7 +33,7 @@ NOTE: THIS FILE FORMAT IS OBSOLETE.  THIS DOCUMENT IS ONLY PROVIDED
     output are separated by blank characters or new line ('\n').  The
     value of the not-used parameters will be -1.
 
-    Some fields are described as "enumeration type" or "bit vector"; the 
+    Some fields are described as "enumeration type" or "bit vector"; the
     values which these fields can take are defined in the header file object.h.
     The pen, arrow_type, and arrow_style fields are described as unused.
     These values may be defined in some future version of Fig.
@@ -57,7 +57,7 @@ NOTE: THIS FILE FORMAT IS OBSOLETE.  THIS DOCUMENT IS ONLY PROVIDED
 		   objects with smaller depth
 
     The area fill field is defined as follows:
-	
+
 	 0 = not filled
 	 1 = white
 	...  values from 2 to 20 are shades of grey, from lighter to darker
@@ -72,7 +72,7 @@ NOTE: THIS FILE FORMAT IS OBSOLETE.  THIS DOCUMENT IS ONLY PROVIDED
 
     The style_val field is defined as the length, in pixels, of the on/off dashes
     for dashed lines, and the distance between the dots, in pixels, for dotted lines
- 
+
     (3.1) ARC
 
     First line :
@@ -101,7 +101,7 @@ NOTE: THIS FILE FORMAT IS OBSOLETE.  THIS DOCUMENT IS ONLY PROVIDED
 	int	arrow_type		(not used)
 	int	arrow_style		(not used)
 	float	arrow_thickness		(pixels)
-	float 	arrow_width		(pixels)
+	float	arrow_width		(pixels)
 	float	arrow_height		(pixels)
 
     Backward arrow line (Optional; absent if backward_arrow is 0) :
@@ -256,12 +256,12 @@ NOTE: THIS FILE FORMAT IS OBSOLETE.  THIS DOCUMENT IS ONLY PROVIDED
     (3.6) TEXT
 	type	name			(brief description)
 	----	----			-------------------
-	int	object 			(always 4)
+	int	object			(always 4)
 	int	sub_type		(0 : Left justified
 					 1 : Center justified
 					 2 : Right justified)
-	int	font 			(enumeration type)
-	int	font_size 		(font size in points)
+	int	font			(enumeration type)
+	int	font_size		(font size in points)
 	int	pen			(not used)
 	int	color			(enumeration type)
 	int	depth			(enumeration type)

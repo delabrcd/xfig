@@ -92,7 +92,7 @@ static void	prescale_compound(F_compound *c, int x, int y);
 void
 scale_selected(void)
 {
-    set_mousefun("scale box", "scale about center", "", 
+    set_mousefun("scale box", "scale about center", "",
 			LOC_OBJ, LOC_OBJ, LOC_OBJ);
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
@@ -297,7 +297,7 @@ boxrelocate_ellipsepoint(F_ellipse *ellipse, int x, int y)
     draw_ellipse(ellipse, ERASE);
     if ((ellipse->type == T_CIRCLE_BY_RAD) ||
 	(ellipse->type == T_ELLIPSE_BY_RAD)) {
-	ellipse->end.x = x;	
+	ellipse->end.x = x;
 	ellipse->end.y = y;
     } else {
 	if (ellipse->start.x == fix_x)
@@ -833,7 +833,7 @@ rescale_dimension_line(F_compound *dimline, float scalex, float scaley, int refx
     if (!dimline_components(dimline, &line, &tick1, &tick2, &box))
 	/* not a dimension line, return */
 	return False;
-	
+
     /* see if user has deleted main line */
     if (!line)
 	return False;
@@ -876,7 +876,7 @@ rescale_dimension_line(F_compound *dimline, float scalex, float scaley, int refx
 	text->pen_style = -1;
 	text->type = T_CENTER_JUSTIFIED;
 	dimline->texts = text;
-    } 
+    }
     fixed_text = text && text->comments && (strncasecmp(text->comments,"fixed text", 10)==0);
     if (!fixed_text) {
 	/* length of the line */
@@ -1006,7 +1006,7 @@ rescale_dimension_line(F_compound *dimline, float scalex, float scaley, int refx
     dimline->nwcorner.y = y1;
     dimline->secorner.x = x2;
     dimline->secorner.y = y2;
-    
+
     return True;
 }
 
@@ -1024,7 +1024,7 @@ scale_line(F_line *l, float sx, float sy, int refx, int refy)
 	int h,w;
 	/* scale by the average of height/width factor */
 	l->radius = round(l->radius * (sx+sy)/2);
-	/* if the radius is larger than half the width or height, set it to the 
+	/* if the radius is larger than half the width or height, set it to the
 	   minimum of the width or heigth divided by 2 */
 	w = abs(l->points->x-l->points->next->next->x);
 	h = abs(l->points->y-l->points->next->next->y);
@@ -1072,7 +1072,7 @@ scale_arc(F_arc *a, float sx, float sy, int refx, int refy)
 		a->point[1].x++;	/* convex to the right -> ) */
 	    else
 		a->point[1].x--;	/* convex to the left -> ( */
-	} 
+	}
 	/* check ALSO for horizontally co-linear in case all three points are equal */
 	if (a->point[0].y == a->point[1].y) { /* horizontal, move middle point up or down */
 	    if (p[1].y > p[0].y)
@@ -1124,7 +1124,7 @@ scale_text(F_text *t, float sx, float sy, int refx, int refy)
     t->base_y = round(refy + (t->base_y - refy) * sy);
     if (!rigid_text(t)) {
         newsize = round(t->size * sx);
-	if (newsize < MIN_FONT_SIZE) 
+	if (newsize < MIN_FONT_SIZE)
 	    sx = (float) MIN_FONT_SIZE / t->size;
 	else if (MAX_FONT_SIZE < newsize)
 	    sx = (float) MAX_FONT_SIZE / t->size;
@@ -1293,7 +1293,7 @@ scale_radius(F_line *old, F_line *new, int owd, int oht, int nwd, int nht)
 	htscale = 1.0 * nht/oht;
 	/* scale by the average of height/width factor */
 	new->radius = round(new->radius * (wdscale+htscale)/2);
-	/* next, if the radius is larger than half the width, set it to the 
+	/* next, if the radius is larger than half the width, set it to the
 	   minimum of the width or heigth divided by 2 */
 	if ((new->radius > nwd/2) || (new->radius > nht/2))
 		new->radius = min2(nwd,nht)/2;
@@ -1412,7 +1412,7 @@ scale_arrows(F_line *obj, float sx, float sy)
     scale_arrow(obj->for_arrow,sx,sy);
     scale_arrow(obj->back_arrow,sx,sy);
 }
-	
+
 /* scale arrowhead by sx,sy - for now just use average
    of sx,sy for scale factor */
 

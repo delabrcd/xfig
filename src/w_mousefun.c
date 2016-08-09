@@ -187,7 +187,7 @@ mouse_balloon(void)
 static void
 mouse_unballoon(Widget widget, XtPointer closure, XEvent *event, Boolean *continue_to_dispatch)
 {
-    if (balloon_id) 
+    if (balloon_id)
 	XtRemoveTimeOut(balloon_id);
     balloon_id = (XtIntervalId) 0;
     if (mouse_balloon_popup != (Widget) 0) {
@@ -225,7 +225,7 @@ reset_mousefun(void)
     XDrawRectangle(tool_d, mousefun_pm, mouse_button_gc, MOUSE_LEFT_SPACE,
 		   (int) (MOUSEFUN_HT * 0.45), MOUSE_BUT_WID, MOUSE_BUT_HGT);
     /* draw a small line horizontally to the left of the left button */
-    XDrawLine(tool_d, mousefun_pm, mouse_button_gc, 
+    XDrawLine(tool_d, mousefun_pm, mouse_button_gc,
 		   MOUSE_LEFT_SPACE, (int) (MOUSEFUN_HT * 0.45 + MOUSE_BUT_HGT/2),
 		   MOUSE_LEFT_SPACE-5, (int) (MOUSEFUN_HT * 0.45 + MOUSE_BUT_HGT/2));
 
@@ -234,18 +234,18 @@ reset_mousefun(void)
 		   (int) (MOUSE_LEFT_SPACE + 1.5 * MOUSE_BUT_WID),
 		   (int) (MOUSEFUN_HT * 0.45), MOUSE_BUT_WID, MOUSE_BUT_HGT);
     /* draw a small line vertically above the middle button */
-    XDrawLine(tool_d, mousefun_pm, mouse_button_gc, 
+    XDrawLine(tool_d, mousefun_pm, mouse_button_gc,
 		   (int) (MOUSE_LEFT_SPACE + 1.5 * MOUSE_BUT_WID + 0.5*MOUSE_BUT_WID),
-		   (int) (MOUSEFUN_HT * 0.45), 
+		   (int) (MOUSEFUN_HT * 0.45),
 		   (int) (MOUSE_LEFT_SPACE + 1.5 * MOUSE_BUT_WID + 0.5*MOUSE_BUT_WID),
-		   (int) (MOUSEFUN_HT * 0.45 - 5)); 
+		   (int) (MOUSEFUN_HT * 0.45 - 5));
 
     /* draw the right button */
     XDrawRectangle(tool_d, mousefun_pm, mouse_button_gc,
 		   (int) (MOUSE_LEFT_SPACE + 3 * MOUSE_BUT_WID),
 		   (int) (MOUSEFUN_HT * 0.45), MOUSE_BUT_WID, MOUSE_BUT_HGT);
     /* draw a small line horizontally to the right of the right button */
-    XDrawLine(tool_d, mousefun_pm, mouse_button_gc, 
+    XDrawLine(tool_d, mousefun_pm, mouse_button_gc,
 		   (int) (MOUSE_LEFT_SPACE + 4 * MOUSE_BUT_WID),
 		   (int) (MOUSEFUN_HT * 0.45 + MOUSE_BUT_HGT/2),
 		   (int) (MOUSE_LEFT_SPACE + 4 * MOUSE_BUT_WID)+5,
@@ -296,8 +296,8 @@ void
 draw_mousefun_kbd(void)
 {
     if (keybd_pm == 0) {
-	keybd_pm = XCreatePixmapFromBitmapData(tool_d, canvas_win, 
-				kbd_ic.bits, kbd_ic.width, kbd_ic.height, 
+	keybd_pm = XCreatePixmapFromBitmapData(tool_d, canvas_win,
+				kbd_ic.bits, kbd_ic.width, kbd_ic.height,
 				mouse_but_fg, mouse_but_bg, tool_dpth);
     }
     /* copy the keyboard image pixmap into the mouse function pixmap */
@@ -314,7 +314,7 @@ void
 clear_mousefun_kbd(void)
 {
     XFillRectangle(tool_d, mousefun_pm, mouse_blank_gc,
-              MOUSEFUN_WD-10-kbd_ic.width, KBD_POS_Y, 
+              MOUSEFUN_WD-10-kbd_ic.width, KBD_POS_Y,
 	      kbd_ic.width, kbd_ic.height);
     FirstArg(XtNbackgroundPixmap, 0);
     SetValues(mousefun);

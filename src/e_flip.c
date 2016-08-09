@@ -94,7 +94,7 @@ flip_lr_selected(void)
 static void
 flip_selected(void)
 {
-    set_mousefun("flip", "copy & flip", "set anchor", 
+    set_mousefun("flip", "copy & flip", "set anchor",
 			LOC_OBJ, LOC_OBJ, "set anchor");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
@@ -111,7 +111,7 @@ static void
 set_unset_anchor(int x, int y)
 {
     if (setanchor) {
-      set_mousefun("flip", "copy & flip", "set anchor", 
+      set_mousefun("flip", "copy & flip", "set anchor",
 			LOC_OBJ, LOC_OBJ, "set anchor");
       draw_mousefun_canvas();
       setanchor = 0;
@@ -119,7 +119,7 @@ set_unset_anchor(int x, int y)
       /* second call to center_mark on same position deletes */
     }
     else {
-      set_mousefun("flip", "copy & flip", "unset anchor", 
+      set_mousefun("flip", "copy & flip", "unset anchor",
 			LOC_OBJ, LOC_OBJ, "unset anchor");
       draw_mousefun_canvas();
       setanchor = 1;
@@ -127,14 +127,14 @@ set_unset_anchor(int x, int y)
       setanchor_y = y;
       center_marker(setanchor_x,setanchor_y);
     }
-      
+
 }
 
 static void
 init_flip(F_line *p, int type, int x, int y, int px, int py)
 {
     copy = 0;
-    if (setanchor) 
+    if (setanchor)
 	flip_search(p, type, x, y,setanchor_x,setanchor_y );
 	/* remember rotation center, e.g for multiple rotation*/
     else
@@ -145,7 +145,7 @@ static void
 init_copynflip(F_line *p, int type, int x, int y, int px, int py)
 {
     copy = 1;
-    if (setanchor) 
+    if (setanchor)
 	flip_search(p, type, x, y,setanchor_x,setanchor_y );
 	/* remember rotation center, e.g for multiple rotation*/
     else

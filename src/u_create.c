@@ -526,7 +526,7 @@ copy_line(F_line *l)
 	if (l->pic->pixmap != 0) {
 	    line->pic->pixmap = XCreatePixmap(tool_d, tool_w,
 				width, height, tool_dpth);
-	    XCopyArea(tool_d, l->pic->pixmap, line->pic->pixmap, gccache[PAINT], 
+	    XCopyArea(tool_d, l->pic->pixmap, line->pic->pixmap, gccache[PAINT],
 				0, 0, width, height, 0, 0);
 	}
 	/* and copy any mask (GIF transparency) */
@@ -535,7 +535,7 @@ copy_line(F_line *l)
 	    /* need a 1-bit deep GC to copy it */
 	    one_bit_gc = XCreateGC(tool_d, line->pic->mask, (unsigned long) 0, 0);
 	    XSetForeground(tool_d, one_bit_gc, 0);
-	    XCopyArea(tool_d, l->pic->mask, line->pic->mask, one_bit_gc, 
+	    XCopyArea(tool_d, l->pic->mask, line->pic->mask, one_bit_gc,
 				0, 0, width, height, 0, 0);
 	}
     }
@@ -773,10 +773,10 @@ copy_compound(F_compound *c)
    It consists of:
    1. the line drawn by the user,
    2. "tick" lines at each endpoint if cur_dimline_ticks == True,
-   3. the length in a box overlaid in the middle of the line 
-   
+   3. the length in a box overlaid in the middle of the line
+
    all rolled into a compound object
-    
+
    Call with add_to_figure = True to add to main figure objects
 */
 
@@ -884,7 +884,7 @@ create_dimension_line(F_line *line, Boolean add_to_figure)
 
 	/* add this to the lines in the compound */
 	tick1->next = tick2;
-    } else 
+    } else
 	box->next = (F_line *) NULL;
 
     /* if user wants fixed text, add an empty string and a comment to the text part. */

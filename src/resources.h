@@ -19,7 +19,7 @@
 #define RESOURCES_H
 
 #include "paintop.h"
-#include "pathmax.h"
+#include <limits.h>		/* PATH_MAX, below */
 
 #define NUMSHADEPATS	21
 #define NUMTINTPATS	20
@@ -126,7 +126,7 @@ extern Pixmap		 fig_icon;
 /* version string for xfig (generated in main() )*/
 extern char		 xfig_version[];
 
-/* these are allocated in main() in case we aren't using default colormap 
+/* these are allocated in main() in case we aren't using default colormap
    (so we can't use BlackPixelOfScreen... */
 
 extern XColor		 black_color, white_color;
@@ -219,7 +219,7 @@ typedef struct _appres {
     Boolean	 shownums;		/* print vertex numbers above polyline points */
     Boolean	 show_pageborder;	/* show page border in color on canvas */
     Boolean	 specialtext;
-    char	*spellcheckcommand;	/* spell check command e.g. 
+    char	*spellcheckcommand;	/* spell check command e.g.
 					   "spell %s" or  "ispell -l < %s | sort -u" */
     int		 spinner_delay;		/* delay (ms) before spinner counts automatically */
     int		 spinner_rate;		/* rate (ms) at which spinner counts */
@@ -345,7 +345,7 @@ extern XtAppContext tool_app;
 
 extern Widget	canvas_sw, ps_fontmenu,		/* printer font menu tool */
 		latex_fontmenu,			/* printer font menu tool */
-		msg_form, msg_panel, name_panel, cmd_form, mode_panel, 
+		msg_form, msg_panel, name_panel, cmd_form, mode_panel,
 		d_label, e_label, mousefun,
 		ind_panel, ind_box, upd_ctrl,	/* indicator panel */
 		unitbox_sw, sideruler_sw, topruler_sw;
@@ -370,7 +370,7 @@ extern int	splash_onscreen;	/* flag used to clear off splash graphic */
 extern time_t	figure_timestamp;	/* last time file was written externally (for -autorefresh) */
 
 extern GC	border_gc, button_gc, ind_button_gc, mouse_button_gc, pic_gc,
-		fill_color_gc, pen_color_gc, blank_gc, ind_blank_gc, 
+		fill_color_gc, pen_color_gc, blank_gc, ind_blank_gc,
 		mouse_blank_gc, gccache[NUMOPS], grid_gc,
 		fillgc, fill_gc[NUMFILLPATS],	/* fill style gc's */
 		tr_gc, tr_xor_gc, tr_erase_gc,	/* for the rulers */

@@ -167,8 +167,8 @@ sel_place_lib_obj(void)
     canvas_ref_proc = null_proc;
     canvas_leftbut_proc = null_proc;
     canvas_middlebut_proc = null_proc;
-    canvas_rightbut_proc = null_proc; 
-  
+    canvas_rightbut_proc = null_proc;
+
     /* erase any object currently being dragged around the canvas */
     if (lib_compounds && action_on && new_c)
 	put_draw(ERASE);
@@ -179,7 +179,7 @@ static void
 put_draw(int paint_mode)
 {
   register int    x1, y1, x2, y2;
-  
+
   if (draw_box) {
       x1=cur_x;
       y1=cur_y;
@@ -190,7 +190,7 @@ put_draw(int paint_mode)
       if (paint_mode==ERASE)
 	redisplay_compound(new_c);
       else
-	redisplay_objects(new_c);      
+	redisplay_objects(new_c);
   }
 }
 
@@ -202,7 +202,7 @@ change_draw_mode(int x, int y)
     translate_compound(new_c,-new_c->nwcorner.x,-new_c->nwcorner.y);
     if (!draw_box)
 	translate_compound(new_c,cur_x,cur_y);
-    
+
     put_draw(PAINT);
 }
 
@@ -240,8 +240,8 @@ place_lib_object(int x, int y, unsigned int shift)
     canvas_ref_proc = null_proc;
     put_draw(ERASE);
     clean_up();
-    if (draw_box) 
-    	translate_compound(new_c,cur_x,cur_y);
+    if (draw_box)
+	translate_compound(new_c,cur_x,cur_y);
     /* remove it from the depths because it will be added when it is put in the main list */
     remove_compound_depth(new_c);
     add_compound(new_c);
@@ -269,13 +269,13 @@ move_object(int x, int y)
     int dx,dy;
     void  (*save_canvas_locmove_proc) ();
     void  (*save_canvas_ref_proc) ();
-  
+
     save_canvas_locmove_proc = canvas_locmove_proc;
     save_canvas_ref_proc = canvas_ref_proc;
     /* so we don't recurse infinitely */
     canvas_locmove_proc = null_proc;
     canvas_ref_proc = null_proc;
-    put_draw(ERASE);  
+    put_draw(ERASE);
     if (!draw_box) {
 	dx=x-cur_x;
 	dy=y-cur_y;
@@ -289,12 +289,12 @@ move_object(int x, int y)
 
 static void
 init_move_object(int x, int y)
-{	
+{
     cur_x=x;
     cur_y=y;
-    if (!draw_box)    
+    if (!draw_box)
 	translate_compound(new_c,x,y);
-    
+
     put_draw(PAINT);
     canvas_locmove_proc = move_object;
     canvas_ref_proc = move_object;

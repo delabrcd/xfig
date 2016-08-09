@@ -36,12 +36,12 @@ extern void set_cmap (Window window);
 
 extern	Widget	delunusedColors;
 
-/* 
+/*
  * color.h - color definitions
- * 
+ *
  * Author:	Christopher A. Kent
- * 		Western Research Laboratory
- * 		Digital Equipment Corporation
+ *		Western Research Laboratory
+ *		Digital Equipment Corporation
  * Date:	Sun Dec 13 1987
  */
 
@@ -55,16 +55,16 @@ Boolean alloc_color_cells(Pixel *pixels, int n);
  *
  * Revision 1.2  90/06/30  14:33:12  rlh2
  * patchlevel 1
- * 
+ *
  * Revision 1.1  90/05/10  11:16:54  rlh2
  * Initial revision
- * 
+ *
  * Revision 1.2  88/06/30  09:58:56  mikey
  * Handles CMY also.
- * 
+ *
  * Revision 1.1  88/06/30  09:10:53  mikey
  * Initial revision
- * 
+ *
  */
 
 typedef	struct _RGB {

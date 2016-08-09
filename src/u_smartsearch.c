@@ -92,28 +92,23 @@ init_smart_searchproc_right(void (*handlerproc) (/* ??? */))
 }
 
 
-void
+void					/* Shift Key Status from XEvent */
 smart_object_search_left(int x, int y, unsigned int shift)
-       		         
-                          	/* Shift Key Status from XEvent */
+
 {
     manipulate = handlerproc_left;
     do_smart_object_search(x, y, shift);
 }
 
-void
+void					/* Shift Key Status from XEvent */
 smart_object_search_middle(int x, int y, unsigned int shift)
-       		         
-                          	/* Shift Key Status from XEvent */
 {
     manipulate = handlerproc_middle;
     do_smart_object_search(x, y, shift);
 }
 
-void
+void					/* Shift Key Status from XEvent */
 smart_object_search_right(int x, int y, unsigned int shift)
-       		         
-                          	/* Shift Key Status from XEvent */
 {
     manipulate = handlerproc_right;
     do_smart_object_search(x, y, shift);
@@ -163,10 +158,8 @@ init_smart_search(void)
     }
 }
 
-void
+void					/* Shift Key Status from XEvent */
 do_smart_object_search(int x, int y, unsigned int shift)
-       		         
-                          	/* Shift Key Status from XEvent */
 {
     int		    px, py;
     Boolean	    found = False;
@@ -183,13 +176,13 @@ do_smart_object_search(int x, int y, unsigned int shift)
 	case O_SPLINE:
 	    found = smart_next_spline_found(x, y, TOLERANCE, &px, &py, shift);
 	    break;
-	case O_TXT: 
+	case O_TXT:
 	    found = smart_next_text_found(x, y, TOLERANCE, &px, &py, shift);
 	    break;
 	case O_ARC:
 	    found = smart_next_arc_found(x, y, TOLERANCE, &px, &py, shift);
 	    break;
-	case O_COMPOUND: 
+	case O_COMPOUND:
 	    found = smart_next_compound_found(x, y, TOLERANCE, &px, &py, shift);
 	    break;
 	}
@@ -226,8 +219,8 @@ do_smart_object_search(int x, int y, unsigned int shift)
     }
     if (!found) {		/* nothing found */
         /* dummy values */
-        smart_point1.x = smart_point1.y = 0;    
-        smart_point2.x = smart_point2.y = 0;    
+        smart_point1.x = smart_point1.y = 0;
+        smart_point2.x = smart_point2.y = 0;
 	csr_x = x;
 	csr_y = y;
 	type = -1;
@@ -306,7 +299,7 @@ smart_next_ellipse_found(int x, int y, int tolerance, int *px, int *py, int shif
       *px = round(ex);
       *py = round(ey);
       /* handle special case of very small ellipse */
-      if (fabs(ex - e->center.x) <= SING_TOLERANCE && 
+      if (fabs(ex - e->center.x) <= SING_TOLERANCE &&
           fabs(ey - e->center.y) <= SING_TOLERANCE) {
         x1 = x2 = *px;
         y1 = y2 = *py;
@@ -351,15 +344,13 @@ smart_next_line_found(int x, int y, int tolerance, int *px, int *py, int shift)
 	}
     }
     return 0;
-}              
+}
 
 Boolean
 smart_next_spline_found(int x, int y, int tolerance, int *px, int *py, int shift)
 /* We call `close_to_spline' which uses HIGH_PRECISION.
-   Think about it. 
+   Think about it.
    */
-       		                              
-       		          
 {
     int lx1, ly1, lx2, ly2;
 
@@ -373,7 +364,7 @@ smart_next_spline_found(int x, int y, int tolerance, int *px, int *py, int shift
     for (; s != NULL; s = prev_spline(objects.splines, s)) {
 	if (validspline_in_mask(s)) {
 	    n++;
-            if (close_to_spline(s, x, y, tolerance, px, py, 
+            if (close_to_spline(s, x, y, tolerance, px, py,
 				&lx1, &ly1, &lx2, &ly2)) {
               set_smart_points(lx1, ly1, lx2, ly2);
               return 1;
@@ -453,7 +444,7 @@ smart_next_compound_found(int x, int y, int tolerance, int *px, int *py, int shi
 }
 
 void smart_show_objecthighlight(void)
-{   
+{
     if (highlighting)
 	return;
     highlighting = 1;

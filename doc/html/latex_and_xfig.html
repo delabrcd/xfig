@@ -13,301 +13,139 @@
 <h1>LaTeX and Xfig</h1>
 <dl>
 <dd><img src="images/redballdot.png" alt="-">
-<a href="#LaTeX">Importing xfig figures into your LaTeX Files"</a>
-   by Eric Masson (ericm@kirk.ee.mcgill.ca),
+<a href="#LaTeX">How to Import Xfig Figures in Your LaTeX Files</a>
 <dd><img src="images/redballdot.png" alt="-">
-<a href="#picsize">Changing the Size of Pictures in pstex_t</a>
-   by Stephen Eglen (stephene@cogs.susx.ac.uk)
+<a href="#picsize">Changing the Size of Pictures</a>
 <dd><img src="images/redballdot.png" alt="-">
-<a href="#PDFLaTeX">Xfig and PDFLaTeX</a>
+<a href="#Metapost">Xfig and Metapost</a>
    by Josselin Mouette (jmouette@ens-lyon.fr)
-<dd><img src="images/redballdot.png" alt="-">
-<a href="#misc">Miscellaneous Notes</a>
+<!--<dd><img src="images/redballdot.png" alt="-">
+<a href="#misc">Miscellaneous Notes</a>-->
 </dl>
 
 <hr>
 <a name="LaTeX">
-<h3>How to Import Xfig Figures in Your LaTeX Files</h3></a>
+<h2>How to Import Xfig Figures in Your LaTeX Files</h2></a>
 
-When you call xfig use the following command line:
-<p>
+Xfig can generate output to may different formats which TeX or LaTeX can
+read. The final document is produced by one of the following methods.
 
-<tt>xfig -specialtext -latexfonts -startlatexFont default</tt>
-
-<p>
-If you want ALL of your figures to be started with special text and
-latex fonts, you can set the following resources in your .Xresources
-or whatever resource file you use:
-<p>
-<tt>
-Fig.latexfonts: true
-<br>
-Fig.specialtext: true
-</tt>
+<ol type="A">
+<li>The file generated from xfig is directly included or embedded into your
+TeX/LaTeX file. Usually, it will be necessary to load a macro package to
+enable TeX or LaTeX to process the file. The latex picture, tikz, pict2e,
+pstricks, epic and eepic output languages fall into this category.
 
 <p>
-There are several formats to which xfig can generate output and 
-latex can read. I will only cover three cases:
+For example, export your figure to tikz and include the generated file into
+your document with <tt>\input{fig1.tikz}</tt>. In the document preamble,
+load <tt>\usepackage{tikz}</tt> or, with TeX, use <tt>\input tikz.tex</tt>.
+If the figure contains color, <tt>\usepackage{color}</tt> is required. If
+images were imported into the xfig-drawing, <tt>\usepackage{graphics}</tt> is
+necessary. It depends on the LaTeX engine, e.g., xelatex, lualatex, latex +
+dvips, latex + dvipdfmx, pdflatex or others, whether the imported image can
+be processed with the <tt>\includegraphics</tt> command.</p></li>
 
-<br>
-(A) Export Fig format directly into latex form
-<br>
-(B) Export Fig in encapsulated postscript and import the
-    postscript in latex.
-<br>
-(C) Save the figure partly in postscript and partly in latex
-    form and superimpose them in your document. 
+<li><p>Export the figure from xfig to eps or pdf (or both) and import the
+file with <tt>\includegraphics</tt> into your document. For instance, write
+<tt>\usepackage{graphics}</tt> into the preamble and use
+<tt>\includegraphics{fig1.eps}</tt> or
+<tt>\includegraphics{fig1}</tt>. </p></li>
 
-<p>
-All three methods have their advantages and are equally simple
-to handle. In method (A) the advantage is that all your work 
-is in tex form and that your .dvi files will hold all the necessary
-information. In (B) you have all the power and fonts of postscript
-at your disposal. In (C) you get the drawing power of postscript
-and the typesetting of latex for your strings.
-
-<p>
-
-In your latex preamble (the part that preceeds your 
-\begin{document} statement) place the following lines:
-<p>
-<tt>\input{psfig}</tt>
-<p>
-So your preamble could look like this: 
-
-<pre>
-\documentstyle[12pt,bezier,amstex]{article}  % include bezier curves
-\renewcommand\baselinestretch{1.0}           % single space
-\pagestyle{empty}                            % no headers and page numbers
-\oddsidemargin -10 true pt      % Left margin on odd-numbered pages.
-\evensidemargin 10 true pt      % Left margin on even-numbered pages.
-\marginparwidth 0.75 true in    % Width of marginal notes.
-\oddsidemargin  0 true in       % Note that \oddsidemargin=\evensidemargin
-\evensidemargin 0 true in
-\topmargin -0.75 true in        % Nominal distance from top of page to top of
-\textheight 9.5 true in         % Height of text (including footnotes and figures)
-\textwidth 6.375 true in        % Width of text line.
-\parindent=0pt                  % Do not indent paragraphs
-\parskip=0.15 true in
-\usepackage{color}		% Need the color package
-\usepackage{epsfig}
-
-\input{psfig}           % Capability to place postscript drawings
- 
-</pre>
-And your document beginning could look like this:
-
-<pre>
-
-\begin{document}
-\end{document}
-
-</pre>
-
-<h3>TYPE A - Exporting directly to latex form</h3>
-
-In terms of drawing capabilities this is the weakest form you can use.
-Lines in latex can only be drawn at multiples of 30 and 45 degrees. 
-And lines with arrows can only be drawn at multiples of 45 degrees.
-Several features such as ellipses, splines, etc. are not supported 
-(xfig does not take advantage of available LaTeX macro packages 
-such as bezier). When drawing lines for type A drawings make
-sure you restrict yourself to the proper angle geometry in xfig.
-Otherwise when you export your figures to latex format, xfig
-will approximate your lines to the nearest angle available in latex.
-Usually this has unpleasant results. 
-
-<p>
-In this mode, you can type any LaTeX string on your 
-figure.  Once imported to LaTeX, the string  will be interpreted
-properly.  For example:
-<pre> 
-                $\int_0^9 f(x) dx$
-</pre>
-
-would result in a integration from 0 to 9 of the function f(x).
-<p>
-To create your LaTeX file just choose the export option off the
-xfig main menu. And then select LaTeX picture as the language
-to export. This will create a file with a .latex extension which
-you can then call directly into your latex document. For example
-this code would import the file yourfile.latex directly into latex
-format:
- 
-<pre> 
-
-\begin{figure}[htbp]
-\begin{center}
-
-\input{yourfile.latex} 
-
-\caption{The caption on your figure}
-\label{figure:yourreferencename}
-\end{center}
-\end{figure}
-
-</pre>
-
-<h3>TYPE B - Exporting to Encapsulated postscript</h3>
-
-There are no limitations in drawing figures of this type. Except that 
-one cannot use latex command strings in this format. However all
-of the many fonts of postscript are available when this format 
-is selected. Once you are done drawing your figure simply choose the 
-export menu off of the xfig main menu and select encapsulated postscript 
-as your output language. This will create a .eps file which you can then
-include into you latex ducument in the following way:
-
-<pre>
-
-\begin{figure}[htbp]
-\begin{center}
-\ \psfig{file=yourfile.eps}
-\end{center}
-\caption{Your caption}
-\label{figure:yourreference}
-\end{figure}
-
-</pre>
- 
-<h3>TYPE C - Postscript/Latex format</h3>
- 
-You can draw any lines or curves when using this format. 
-In this type of export, latex strings are permitted 
-you also have the postscript fonts available to you. Therefore
-you can type in strings such as
-
-<pre>
-
-                $\int_0^9 f(x) dx$
-</pre>
-
-and they will be processed by latex. You will need to export
-your file to the combined ps/latex (both parts) language.
-This will create both a .pstex
-file and a .pstex_t file. The .pstex_t
-file automatically calls the .pstex file and you do not need
-to include it explicitely in your tex file (users of the previous
-version please take note of this.) To include your figure
-just use something similar to this:
-
-<pre>
-\begin{figure}[htbp]
-\begin{center}
- 
-\input{yourfigure.pstex_t}
- 
-\caption{Your figure}
-\label{figure:example}
-\end{center}
-\end{figure}
-
-</pre>
-
-<hr>
-<a name="picsize">
-<h3>Changing the Size of Pictures in pstex_t</h3></a>
-If you just include the picture using 
-<tt>\input{file.psttext_t}</tt>
-you have no way of specifying the size of the picture. There are two
-solutions to this.
-<ol>
-<li>Draw it the right size in xfig to start with.  Or, when you are
-   exporting the figure, change the magnification of the picture by
-   using the magnification box in the export window.  Either way you
-   have to go back into xfig if you dont like the size of the image in
-   your latex document.
-
-<p>
-<li>Get LaTeX to change the size of the picture, using either <tt>\scalebox</tt>
-   or <tt>\resizebox</tt>.  These are general functions for scaling text or
-   pictures from the graphics package:
-
-   <p>
-   <ol type="A">
-   <li>
-   <tt>\scalebox{factor}{object}</tt>
-   <br>
-   Will scale the object by any factor.  
-   Factor is just a number (&lt; 1 = reduction; &gt; 1 = enlargement)
-   Object is normally some text or graphics
-
-   <p>
-   <li>
-   <tt>\scalebox{2}{ \input{file.pstex_t} }</tt>
-   <br>
-   will scale the picture by 2, dependent on driver (.ps works, but xdvi
-   wont).  Scaling bitmap fonts may produce ugly results, so try and
-   avoid them!
-
-   <p>
-   <li>
-   <tt>\resizebox{width}{ht} {stuff}</tt>
-   <br>
-   will resize &quot;stuff&quot; to be of size width x ht.  Using &quot;!&quot; as an argument
-   retains the aspect ratio of the box.
-   eg <tt>\resizebox{5cm}{!}{fat cat}</tt> will make &quot;fat cat&quot; appear 5 cm wide,
-   and suitably high.
-   (From p129, Lamport)
-   </ol>
+<li>Export the figure to two files, partially to eps or pdf or both,
+partially to a latex file, and include the latex file. The latex file
+contains the text and includes the eps or pdf file which contains the
+graphics. For example, try <tt>\input{fig1.pstex_t}</tt> for latex + eps,
+<tt>\input{fig1.pdf_t}</tt> for latex + pdf, or
+<tt>\input{fig1.pspdftex}</tt> for a latex file that includes an eps or a
+pdf file. The latter can be processed by any LaTeX engine.</li>
 </ol>
 
+<p>
+For methods A and C, the Text flag <tt>Special Text</tt> must be set for
+text that should be typeset using TeX. For instance, to render the text
+<tt>$\beta$</tt> in the xfig-drawing as &beta;. Otherwise, characters
+special to TeX are quoted and <tt>$\beta$</tt> prints as $\beta$. The choice
+of the font, namely, latex of postscript fonts, is irrelevant to the
+interpretation of text strings.</p>
+
+<p>
+The most powerful method, in terms of capabilities and output quality, is to
+export the figure to tikz. The file can be processed using TeX or LaTeX, TeX
+and Postscript fonts can be freely used and even mixed in the same figure,
+and the typesetting capabilities of TeX can be used. If xelatex is used, eps
+and pdf graphics can be imported into the same drawing. The tikz-file can be
+embedded into the TeX-document, hence a single document can contain all text
+and graphics.</p>
+
+<p>
+The postscript and pdf output languages support all capabilities of xfig,
+except that only postscript fonts can be used and text is not interpreted by
+TeX. With method C, all text which has the Text flag "Special Text" set is
+exported to the LaTeX file and a TeX-font is used. Text without the "Special
+Text" flag is printed using a Postscript-font. A variant of method B is to
+use the psfrag package and replace strings in the eps file from within
+LaTeX.</p>
+
+<p>
+To set the Text flag <tt>Special Text</tt> and use LaTeX-fonts for all text,
+use the commandline
+<pre>xfig -specialtext -latexfonts -startlatexFont default</pre>
+To start all drawings with LaTeX fonts and with Special Text set, put the
+following in your X-resources file, probably .Xresources in your home directory,
+<pre>
+Fig.latexfonts: true
+Fig.specialtext: true
+</pre></p>
+
+<p>
+With method A, other notable export formats are the pict2e and the pstricks
+output. The pict2e output language does not allow pattern fills and can not
+generate a background grid, but the macro package is much smaller and the
+document compiles faster than with the tikz macro package. The pstricks
+output language also generates graphics output which is on a par with the
+tikz or the postscript output.</p>
+
+<a name="picsize">
+<h3>Changing the Size of Pictures</h3></a>
+
+If possible, try to not scale drawings at all. Different line thicknesses
+should be a avoided, similarly to avoiding differently sized letters in
+text. The rulers at the top and at the side, and the magnification setting
+in the lower left corner of the xfig window may aid at producing the
+graphics at the right size.
+
+<p>
+If scaling cannot be avoided, the commands <tt>\scalebox</tt> and
+<tt>\resizebox</tt> from the graphics package can be used,
+<pre>
+\scalebox{1.5}{\input{fig1.pstex_t}}	% \scalebox{factor}{object}
+\resizebox{10cm}{!}{\input{fig1.latex}}	% \resizebox{width}{height}{object}
+</pre>
+An exclamation mark in place of one of the dimensions retains the aspect
+ratio of the object.</p>
+
+<p>
+To set the width of tikz-drawings produced by xfig, you can use
+<pre>
+\newlength\XFigwidth\XFigwidth84mm
+\newlength\XFigheight\XFigheight56mm
+</pre>
+before input'ing your figure.
+This will scale the coordinates of the drawing, but not line widths or
+text. If only one of the two dimensions is given, the
+figure retains its aspect ratio. To render subsequent figures in their
+original size, both dimensions must be undefined or set to zero,
+<pre>\XFigwidth0pt \XFigheight0pt</pre>
+
+</p>
+
 <hr>
-<a name="PDFLaTeX">
-<h1>xfig and PDFLaTeX</h1></a>
+<a name="Metapost">
+<h2>Xfig and Metapost</h2></a>
 written by Josselin Mouette (jmouette@ens-lyon.fr)
 
 <ol>
-<li>A STANDARD PDF FILE
-   <br>
-   In xfig, select the &quot;PDF&quot; export filter, which will generate a
-   <tt>foo.pdf</tt> file.  In your document, put in the preamble :
-    \usepackage[pdftex]{graphicx}
-    \DeclareGraphicsRule{.pdftex}{pdf}{.pdftex}{}
-   and insert your picture with <tt>\includegraphics{foo.pdf}</tt>
-   You may use all the includegraphics options as well.
-   Pros: Very easy to use.
-   Cons: The text in your figure will appear as is on your document,
-	 using postscript fonts; you cannot put some TeX code in it.
-
-<p>
-<li>A COMBINED PDF/LaTeX FILE
-   <br>
-   This is the method I would recommend in most cases. It may be
-   difficult for the beginner at the first time, but it is really
-   powerful.  If you choose this method, you'll have to set the xfig
-   fonts to LaTeX ones, and to set the &quot;special&quot; attribute of your
-   text boxes. To do this automatically, you can add these 2 lines in
-   your .Xresources or .Xdefaults (depends on your system):
-   <pre>
-    Fig.latexfonts: true
-    Fig.specialtext: true
-    </pre>
-   Then, when exporting, select the &quot;Combined PDF/LaTeX&quot; format.
-
-   Then, in your LaTeX file, put in the preamble:
-   <br>
-   <tt>\usepackage[pdftex]{graphicx,color}</tt>
-   <br>
-   The color package is required whenever you put some text in colors.
-   Then include the picture with:
-    <br>
-    <tt>\input foo.pdftex_t</tt>
-   <br>
-   You can also resize it:
-    <br>
-    <tt>\resizebox{3cm}{!}{\input foo.pdftex_t}  % sets the width to 3cm</tt>
-    <br>
-   Pros: Whatever is put in your text boxes is treated just as your
-	 document's code; that means you can use your own macros,
-	 which is really cool.
-    <br>
-   Cons: When putting big formulas on your figure, it is sometimes
-	 difficult to predict what place they will take because xfig and fig2dev
-	 don't know the bounding area of the text because they contain LaTeX
-	 directives that aren't printed.
-
-<p>
 <li>METAPOST
    <br>
    There is nothing special to do in xfig to use MetaPost. All the
@@ -316,7 +154,7 @@ written by Josselin Mouette (jmouette@ens-lyon.fr)
    packages like AMS-TeX, neither have you to your macros.
    In xfig, export your file with the MetaPost filter, it creates
    <tt>foo.mp</tt>.  Then, type mpost foo.mp, it will generate <tt>foo.0</tt>
-   (or <tt>foo.1</tt>, sometimes).  
+   (or <tt>foo.1</tt>, sometimes).
    In your document, put this in the preamble:
     <pre>
     \input supp-pdf.tex
@@ -357,10 +195,10 @@ written by Josselin Mouette (jmouette@ens-lyon.fr)
    Text at depth 50   /
    *** Nothing at depth 49
    Square at depth 48 \
-   Text at depth 48    > Second displayed layer
+   Text at depth 48    &gt; Second displayed layer
    Curve at depth 47  /
    ... and so on.
-   </pre>
+   </pre></p>
 
    <li>
    After exporting, mpost <tt>foo.mmp</tt> will create a set of files named
@@ -390,17 +228,6 @@ written by Josselin Mouette (jmouette@ens-lyon.fr)
    Cons: Are there any?
 
   </ol>
-
-<hr>
-<a name="misc">
-<h3>Some Other Notes</h3></a>
-
-Sometimes one may get &quot;mn&quot; in your LaTeX text.  Here is what one
-user did to work around that problem:
-<p>
-The problem was in the <tt>\smash</tt> part of a command that was generated in
-the latex part of the export.  If the <tt>\mddefault</tt> and <tt>\updefault</tt> are
-not set properly on your system you need to define them to do nothing.
 
 <hr>
 

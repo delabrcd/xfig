@@ -157,8 +157,8 @@ static XtActionsRec     menu_actions[] =
 
 menu_def file_menu_items[] = {
 	{"New         (Meta-N)",	0, new, False},
-	{"Open...     (Meta-O)",	0, popup_open_panel, False}, 
-	{"Merge...    (Meta-M)",	0, popup_merge_panel, False}, 
+	{"Open...     (Meta-O)",	0, popup_open_panel, False},
+	{"Merge...    (Meta-M)",	0, popup_merge_panel, False},
 #ifdef DIGITIZE
 	{"Digitize... (Meta-Z)",	0, popup_digitize_panel, False},
 #endif /* DIGITIZE */
@@ -347,7 +347,7 @@ create_main_menu(int menu_num, Widget beside)
 
 	/* now the menu itself */
 	menu->menuwidget = create_menu_item(menu);
-	
+
 #ifndef XAW3D1_5E
 	/* popup when mouse passes over button */
 	XtAddEventHandler(menu->widget, EnterWindowMask, False,
@@ -367,7 +367,7 @@ rebuild_file_menu(Widget menu)
     int j;
     char id[10];
 
-    if (menu == None) 
+    if (menu == None)
 	menu = main_menus[0].menuwidget;
 
     if (first) {
@@ -411,14 +411,14 @@ create_menu_item(main_menu_info *menup)
 	DeclareArgs(5);
 
 	FirstArg(XtNallowShellResize, True);
-	menu = XtCreatePopupShell(menup->menu_name, simpleMenuWidgetClass, 
+	menu = XtCreatePopupShell(menup->menu_name, simpleMenuWidgetClass,
 				menup->widget, Args, ArgCount);
 	/* make the menu items */
 	for (i = 0; menup->menu[i].name != NULL; i++) {
 	    if ((intptr_t) menup->menu[i].name == -1) {
 		/* put in a separator line */
 		FirstArg(XtNlineWidth, 2);
-		(void) XtCreateManagedWidget("line", smeLineObjectClass, 
+		(void) XtCreateManagedWidget("line", smeLineObjectClass,
 					menu, Args, ArgCount);
 		/* and add recently loaded files to the menu */
 		rebuild_file_menu(menu);
@@ -434,13 +434,13 @@ create_menu_item(main_menu_info *menup)
 		}
 #ifndef XAW3D1_5E
 		NextArg(XtNunderline, menup->menu[i].u_line); /* any underline */
-		entry = XtCreateManagedWidget(menup->menu[i].name, figSmeBSBObjectClass, 
+		entry = XtCreateManagedWidget(menup->menu[i].name, figSmeBSBObjectClass,
 					menu, Args, ArgCount);
 #else
-		entry = XtCreateManagedWidget(menup->menu[i].name, smeBSBObjectClass, 
+		entry = XtCreateManagedWidget(menup->menu[i].name, smeBSBObjectClass,
 					menu, Args, ArgCount);
 #endif
-		XtAddCallback(entry, XtNcallback, menup->menu[i].func, 
+		XtAddCallback(entry, XtNcallback, menup->menu[i].func,
 					(XtPointer) menup->widget);
 	    }
 	}
@@ -459,7 +459,7 @@ setup_main_menus(void)
     for (i = 0; i < NUM_CMD_MENUS; ++i) {
 	menu = &main_menus[i];
 	FirstArg(XtNfont, button_font); /* label font */
-	if ( menu->menu ) 
+	if ( menu->menu )
 	    NextArg(XtNleftBitmap, menu_arrow);     /* use menu arrow for pull-down */
 	SetValues(menu->widget);
     }
@@ -514,7 +514,7 @@ cmd_balloon(Widget w, XtPointer closure, XtPointer call_data)
 	NextArg(XtNvSpace, 0);
 	NextArg(XtNorientation, XtorientVertical);
 	box = XtCreateManagedWidget("box", boxWidgetClass, cmd_balloon_popup, Args, ArgCount);
-	
+
 	/* put left/right mouse button labels as message */
 	FirstArg(XtNborderWidth, 0);
 	NextArg(XtNlabel, menu->hint);
@@ -646,13 +646,13 @@ paste(Widget w, XtPointer closure, XtPointer call_data)
 	cur_c->next = NULL;
 
 	/* read in the cut buf file */
-	if (read_figc(cut_buf_name,cur_c,MERGE,DONT_REMAP_IMAGES,0,0,&settings)==0) {  
+	if (read_figc(cut_buf_name,cur_c,MERGE,DONT_REMAP_IMAGES,0,0,&settings)==0) {
 		compound_bound(cur_c,
 			     &cur_c->nwcorner.x,
 			     &cur_c->nwcorner.y,
 			     &cur_c->secorner.x,
 			     &cur_c->secorner.y);
-	  
+
 		/* save orig coords of object */
 		orig_paste_x = cur_c->nwcorner.x;
 		orig_paste_y = cur_c->nwcorner.y;
@@ -727,7 +727,7 @@ paste_draw(int paint_mode)
    if (paint_mode==ERASE)
 	redisplay_compound(new_c);
    else
-	redisplay_objects(new_c);      
+	redisplay_objects(new_c);
 }
 
 static void
@@ -736,13 +736,13 @@ move_paste_object(int x, int y)
     int dx,dy;
     void  (*save_canvas_locmove_proc) ();
     void  (*save_canvas_ref_proc) ();
-  
+
     save_canvas_locmove_proc = canvas_locmove_proc;
     save_canvas_ref_proc = canvas_ref_proc;
     /* so we don't recurse infinitely */
     canvas_locmove_proc = null_proc;
     canvas_ref_proc = null_proc;
-    paste_draw(ERASE);  
+    paste_draw(ERASE);
     dx=x-cur_x;
     dy=y-cur_y;
     translate_compound(new_c,dx,dy);
@@ -755,11 +755,11 @@ move_paste_object(int x, int y)
 
 static void
 init_move_paste_object(int x, int y)
-{	
+{
     cur_x=x;
     cur_y=y;
     translate_compound(new_c,x,y);
-    
+
     paste_draw(PAINT);
     canvas_locmove_proc = move_paste_object;
     canvas_ref_proc = move_paste_object;
@@ -987,7 +987,7 @@ popup_global_panel(Widget w)
 void create_global_panel(Widget w)
 {
 	DeclareArgs(10);
-	Widget	    	 beside, below, n_freehand, freehand, n_recent, recent;
+	Widget		 beside, below, n_freehand, freehand, n_recent, recent;
 	Widget		 delay_form, delay_spinner;
 	Position	 xposn, yposn;
 	char		 buf[80];
@@ -1008,19 +1008,19 @@ void create_global_panel(Widget w)
 	global_panel = XtCreateManagedWidget("global_panel", formWidgetClass,
 					     global_popup, NULL, ZERO);
 
-	below = CreateCheckbutton("Autorefresh figure      ", "auto_refresh", 
+	below = CreateCheckbutton("Autorefresh figure      ", "auto_refresh",
 			global_panel, NULL, NULL, MANAGE, LARGE_CHK,
 			&global.autorefresh, 0,0);
-	below = CreateCheckbutton("Track mouse in rulers   ", "track_mouse", 
+	below = CreateCheckbutton("Track mouse in rulers   ", "track_mouse",
 			global_panel, NULL, NULL, MANAGE, LARGE_CHK,
 			&global.tracking, 0,0);
-	below = CreateCheckbutton("Show page borders       ", "page_borders", 
+	below = CreateCheckbutton("Show page borders       ", "page_borders",
 			global_panel, below, NULL, MANAGE, LARGE_CHK,
 			&global.show_pageborder, 0,0);
-	below = CreateCheckbutton("Show depth manager      ", "depth_manager", 
+	below = CreateCheckbutton("Show depth manager      ", "depth_manager",
 			global_panel, below, NULL, MANAGE, LARGE_CHK,
 			&global.showdepthmanager, 0,0);
-	show_bal = CreateCheckbutton("Show info balloons      ", "show_balloons", 
+	show_bal = CreateCheckbutton("Show info balloons      ", "show_balloons",
 			global_panel, below, NULL, MANAGE, LARGE_CHK,
 			&global.showballoons,0,0);
 
@@ -1042,10 +1042,10 @@ void create_global_panel(Widget w)
 	NextArg(XtNbottom, XtChainTop);
 	NextArg(XtNleft, XtChainLeft);
 	NextArg(XtNright, XtChainLeft);
-	delay_label = beside = XtCreateManagedWidget("balloon_delay", labelWidgetClass, 
+	delay_label = beside = XtCreateManagedWidget("balloon_delay", labelWidgetClass,
 				delay_form, Args, ArgCount);
 	sprintf(buf, "%d", appres.balloon_delay);
-	delay_spinner = MakeIntSpinnerEntry(delay_form, &bal_delay, "balloon_delay", 
+	delay_spinner = MakeIntSpinnerEntry(delay_form, &bal_delay, "balloon_delay",
 			NULL, beside, (XtCallbackProc) NULL, buf, 0, 100000, 1, 40);
 	FirstArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainTop);
@@ -1053,16 +1053,16 @@ void create_global_panel(Widget w)
 	NextArg(XtNright, XtChainLeft);
 	SetValues(delay_spinner);
 
-	below = CreateCheckbutton("Show line lengths       ", "show_lengths", 
+	below = CreateCheckbutton("Show line lengths       ", "show_lengths",
 			global_panel, show_bal, NULL, MANAGE, LARGE_CHK,
 			&global.showlengths, 0, 0);
-	below = CreateCheckbutton("Show vertex numbers     ", "show_vertexnums", 
+	below = CreateCheckbutton("Show vertex numbers     ", "show_vertexnums",
 			global_panel, below, NULL, MANAGE, LARGE_CHK,
 			&global.shownums, 0, 0);
-	below = CreateCheckbutton("Allow negative coords   ", "show_vertexnums", 
+	below = CreateCheckbutton("Allow negative coords   ", "show_vertexnums",
 			global_panel, below, NULL, MANAGE, LARGE_CHK,
 			&global.allownegcoords, 0, 0);
-	below = CreateCheckbutton("Draw axis lines         ", "showaxislines", 
+	below = CreateCheckbutton("Draw axis lines         ", "showaxislines",
 			global_panel, below, NULL, MANAGE, LARGE_CHK,
 			&global.showaxislines, 0, 0);
 
@@ -1076,7 +1076,7 @@ void create_global_panel(Widget w)
 	freehand = XtCreateManagedWidget("freehand_resolution", labelWidgetClass,
 					global_panel, Args, ArgCount);
 	sprintf(buf,"%d",appres.freehand_resolution);
-	n_freehand = MakeIntSpinnerEntry(global_panel, &n_freehand_resolution, "freehand_res", 
+	n_freehand = MakeIntSpinnerEntry(global_panel, &n_freehand_resolution, "freehand_res",
 			below, freehand, (XtCallbackProc) NULL, buf, 0, 100000, 10, 26);
 	below = freehand;
 
@@ -1090,7 +1090,7 @@ void create_global_panel(Widget w)
 	recent = XtCreateManagedWidget("recent_file_entries", labelWidgetClass,
 					global_panel, Args, ArgCount);
 	sprintf(buf,"%d",max_recent_files);
-	n_recent = MakeIntSpinnerEntry(global_panel, &n_recent_files, "max_recent_files", 
+	n_recent = MakeIntSpinnerEntry(global_panel, &n_recent_files, "max_recent_files",
 			below, recent, (XtCallbackProc) NULL, buf, 0, MAX_RECENT_FILES, 1, 26);
 	below = recent;
 
@@ -1203,7 +1203,7 @@ global_panel_done(Widget w, XButtonEvent *ev)
 	if ((asp && !gsp) || (adz && !gdz)) {
 	    /* was on, turn off */
 	    clear_canvas();
-	    redisplay_canvas();		
+	    redisplay_canvas();
 	} else if ((!asp && gsp) || (!adz && gdz)) {
 	    /* if show_pageborder or showaxislines WAS off and is now on, draw them */
 	    /* was off, turn on */
@@ -1339,7 +1339,7 @@ file_balloon(void)
 	FirstArg(XtNborderWidth, 0);
 	NextArg(XtNhSpace, 0);
 	NextArg(XtNvSpace, 0);
-	box = XtCreateManagedWidget("box", boxWidgetClass, 
+	box = XtCreateManagedWidget("box", boxWidgetClass,
 				filename_balloon_popup, Args, ArgCount);
 	FirstArg(XtNborderWidth, 0);
 	NextArg(XtNlabel, "Current filename");
@@ -1353,7 +1353,7 @@ file_balloon(void)
 static void
 filename_unballoon(Widget widget, XtPointer closure, XEvent *event, Boolean *continue_to_dispatch)
 {
-    if (fballoon_id) 
+    if (fballoon_id)
 	XtRemoveTimeOut(fballoon_id);
     fballoon_id = (XtIntervalId) 0;
     if (filename_balloon_popup != (Widget) 0) {
@@ -1494,7 +1494,7 @@ refresh_character_panel(void)
 
 	if (!character_map_popup)
 	    return;
-	sprintf(fname, "%s font characters:", 
+	sprintf(fname, "%s font characters:",
 			using_ps? ps_fontinfo[work_font+1].name: latex_fontinfo[work_font+1].name);
 	/* change font name label */
 	FirstArg(XtNlabel, fname);
@@ -1518,12 +1518,12 @@ refresh_character_panel(void)
 static void
 character_panel_close(void)
 {
-	XtDestroyWidget(character_map_popup);	
+	XtDestroyWidget(character_map_popup);
 	character_map_popup = (Widget) 0;
 }
 
 /*
- * popup a window showing the symbol character map, each char in a 
+ * popup a window showing the symbol character map, each char in a
  * different button widget so the user paste directly into text
  * Activated from the View/Character Map menu
  */
@@ -1533,7 +1533,7 @@ character_panel_close(void)
 void
 popup_character_map(void)
 {
-	Widget	    	 beside, below;
+	Widget		 beside, below;
 	XFontStruct	*font;
 	intptr_t	 i;
 	int		 vertDist;
@@ -1559,7 +1559,7 @@ popup_character_map(void)
 	character_map_panel = XtCreateManagedWidget("character_map_panel", formWidgetClass,
 					     character_map_popup, NULL, ZERO);
 
-	sprintf(fname, "%s font characters:", 
+	sprintf(fname, "%s font characters:",
 			using_ps? ps_fontinfo[work_font+1].name: latex_fontinfo[work_font+1].name);
 	FirstArg(XtNlabel, fname);
 	NextArg(XtNborderWidth, 0);

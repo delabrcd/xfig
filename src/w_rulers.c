@@ -201,7 +201,7 @@ static ruler_skip ruler_skip_inches[] = {
   {  8.0,    SINCH, 4, 2},
   { 20.0,    SINCH, 2, 3},
   /* max_zoom == 0.0 indicates last element */
-  {  0.0,    SINCH, 1, 4},  
+  {  0.0,    SINCH, 1, 4},
 };
 
 static ruler_skip ruler_skip_tenth_inches[] = {
@@ -214,9 +214,9 @@ static ruler_skip ruler_skip_tenth_inches[] = {
   {  2.0,    TINCH,   10, 1},		/* label every     1 inch, tick 1/10 */
   {  5.0,    TINCH,    5, 1},		/* label every   1/2 inch, tick 1/10 */
   { 15.0,    TINCH/2,  2, 1},		/* label every  1/10 inch, tick 1/20 */
-  { 50.0,    TINCH/4,  2, 2},  		/* label every  1/20 inch, tick 1/40 */
+  { 50.0,    TINCH/4,  2, 2},		/* label every  1/20 inch, tick 1/40 */
   /* max_zoom == 0.0 indicates last element */
-  {  0.0,    TINCH/4,  1, 3},  		/* label every  1/40 inch, tick 1/40 */
+  {  0.0,    TINCH/4,  1, 3},		/* label every  1/40 inch, tick 1/40 */
 };
 
 static ruler_skip ruler_skip_metric[] = {
@@ -230,7 +230,7 @@ static ruler_skip ruler_skip_metric[] = {
   { 8.01,   ONEMM, 5, 1},
   {12.01,   ONEMM, 2, 1},
   /* max_zoom == 0.0 indicates last element */
-  { 0.0,    ONEMM, 1, 1},   
+  { 0.0,    ONEMM, 1, 1},
 };
 
 typedef struct ruler_info_struct {
@@ -449,7 +449,7 @@ unit_balloon(void)
 	FirstArg(XtNborderWidth, 0);
 	NextArg(XtNhSpace, 0);
 	NextArg(XtNvSpace, 0);
-	box = XtCreateManagedWidget("box", boxWidgetClass, unit_balloon_popup, 
+	box = XtCreateManagedWidget("box", boxWidgetClass, unit_balloon_popup,
 					Args, ArgCount);
 
 	/* now make two label widgets, one for left button and one for right */
@@ -499,7 +499,7 @@ unit_balloon(void)
 static void
 unit_unballoon(Widget widget, XtPointer closure, XEvent *event, Boolean *continue_to_dispatch)
 {
-    if (balloon_id) 
+    if (balloon_id)
 	XtRemoveTimeOut(balloon_id);
     balloon_id = (XtIntervalId) 0;
     if (unit_balloon_popup != (Widget) 0) {
@@ -538,7 +538,7 @@ unit_panel_set(Widget w, XButtonEvent *ev)
     pix = appres.INCHES? PIX_PER_INCH: PIX_PER_CM;
     if (scale_factor > pix) {
 	beep();
-    	file_msg("Scale factor must be <= %d", pix);
+	file_msg("Scale factor must be <= %d", pix);
 	return;
     }
 
@@ -557,7 +557,7 @@ unit_panel_set(Widget w, XButtonEvent *ev)
     if (old_rul_unit != appres.INCHES) {
 	/* if there are objects on the canvas, scale them to compensate for the
 	   difference in inches/metric PIX_PER_XX */
-	if (!emptyfigure()) { 
+	if (!emptyfigure()) {
 	  if (old_rul_unit)
 	    read_scale_compound(&objects,(2.54*PPCM)/((float)PPI),0);
 	  else
@@ -596,7 +596,7 @@ set_unit_indicator(Boolean use_userscale)
 	    /* IP */
 	    /* if user doesn't have "i", "in*", "f", "ft", "feet", "mi" or "mile" set units to "in" */
 	    if (strcmp(cur_fig_units, "i") != 0 && strncmp(cur_fig_units,"in",2) != 0 &&
-		strcmp(cur_fig_units, "f") != 0 && strcmp(cur_fig_units, "ft") != 0 && 
+		strcmp(cur_fig_units, "f") != 0 && strcmp(cur_fig_units, "ft") != 0 &&
 		strcmp(cur_fig_units, "feet") != 0 && strcmp(cur_fig_units, "mi") != 0 &&
 		strcmp(cur_fig_units, "mile") != 0)
 			strcpy(cur_fig_units, "in");
@@ -605,7 +605,7 @@ set_unit_indicator(Boolean use_userscale)
 	    /* Metric */
 	    /* if user doesn't have "mm", "cm", "dm", "m", or "km", then set units to "cm" */
 	    if (strcmp(cur_fig_units, "mm") != 0 && strcmp(cur_fig_units,"cm") != 0 &&
-		strcmp(cur_fig_units, "dm") != 0 && strcmp(cur_fig_units, "m") != 0 && 
+		strcmp(cur_fig_units, "dm") != 0 && strcmp(cur_fig_units, "m") != 0 &&
 		strcmp(cur_fig_units, "km") != 0)
 			strcpy(cur_fig_units, "cm");
 	    /* otherwise leave it as the user specified it */
@@ -703,7 +703,7 @@ popup_unit_panel(void)
     char	    buf[32];
     static Boolean  actions_added=False;
     int		    x;
-    static char    *rul_unit_items[] =  { "Metric (cm)        ", 
+    static char    *rul_unit_items[] =  { "Metric (cm)        ",
 					  "Imperial (fraction)",
 					  "Imperial (decimal) "};
     static char    *fig_unit_items[] =  { "Ruler units ",
@@ -721,7 +721,7 @@ popup_unit_panel(void)
     FirstArg(XtNwidth, &width);
     NextArg(XtNheight, &height);
     GetValues(tool);
-    /* position the popup 3/5 in from left (1/8 if mode panel on right) 
+    /* position the popup 3/5 in from left (1/8 if mode panel on right)
        and 1/3 down from top */
     if (appres.RHS_PANEL)
 	x = (width / 8);
@@ -805,7 +805,7 @@ popup_unit_panel(void)
 
     /* fraction checkbox (only manage if we're currently in fractional inches) */
 
-    fraction_checkbox = CreateCheckbutton("Show fractions", "display_fractions", 
+    fraction_checkbox = CreateCheckbutton("Show fractions", "display_fractions",
 			unit_panel, fig_unit_panel, user_unit_entry,
 			(appres.INCHES? MANAGE: DONT_MANAGE), SMALL_CHK,
 			&display_fractions, 0, 0);
@@ -1081,8 +1081,8 @@ void setup_topruler(void)
      */
 
     /* make pixmaps for top ruler arrow */
-    toparrow_pm = XCreatePixmapFromBitmapData(tool_d, topruler_win, 
-				trm_pr.bits, trm_pr.width, trm_pr.height, 
+    toparrow_pm = XCreatePixmapFromBitmapData(tool_d, topruler_win,
+				trm_pr.bits, trm_pr.width, trm_pr.height,
 				fg^bg, (unsigned long) 0, tool_dpth);
 
     /* now make the real xor gc */
@@ -1140,7 +1140,7 @@ get_skip_prec(void)
 		case MM_UNIT:	  ri = &ruler_metric;
 				  break;
 	}
-			
+
 	ruler_unit = ri->ruler_unit;
 	ticks = ri->ticks;
 	nticks = ri->nticks;
@@ -1390,12 +1390,12 @@ void setup_sideruler(void)
 
     /* make pixmaps for side ruler arrow */
     if (appres.RHS_PANEL) {
-	sidearrow_pm = XCreatePixmapFromBitmapData(tool_d, sideruler_win, 
-				srlm_pr.bits, srlm_pr.width, srlm_pr.height, 
+	sidearrow_pm = XCreatePixmapFromBitmapData(tool_d, sideruler_win,
+				srlm_pr.bits, srlm_pr.width, srlm_pr.height,
 				fg^bg, (unsigned long) 0, tool_dpth);
     } else {
-	sidearrow_pm = XCreatePixmapFromBitmapData(tool_d, sideruler_win, 
-				srrm_pr.bits, srrm_pr.width, srrm_pr.height, 
+	sidearrow_pm = XCreatePixmapFromBitmapData(tool_d, sideruler_win,
+				srrm_pr.bits, srrm_pr.width, srrm_pr.height,
 				fg^bg, (unsigned long) 0, tool_dpth);
     }
 

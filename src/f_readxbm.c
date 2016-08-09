@@ -73,8 +73,8 @@ read_xbm(FILE *file, int filetype, F_pic *pic)
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that this copyright
  * notice remain intact.
 */
 
@@ -129,7 +129,7 @@ initHexTable(void)
     hexTable[' '] = -1;	hexTable[','] = -1;
     hexTable['}'] = -1;	hexTable['\n'] = -1;
     hexTable['\t'] = -1;
-	
+
     initialized = True;
 }
 
@@ -186,10 +186,8 @@ NextInt(FILE *fstream)
 }
 
 int
-ReadDataFromBitmapFile(FILE *file, unsigned int *width, unsigned int *height, char **data_ret)
-               
-                                 	/* RETURNED */
-                    			/* RETURNED */
+ReadDataFromBitmapFile(FILE *file,
+		unsigned int *width, unsigned int *height, char **data_ret)
 {
     char *data = NULL;			/* working variable */
     char line[MAX_SIZE];		/* input line from file */

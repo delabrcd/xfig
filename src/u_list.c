@@ -175,7 +175,7 @@ list_delete_compound(F_compound **list, F_compound *compound)
 
     for (cc = c = *list; c != NULL; cc = c, c = c->next) {
 	if (c == compound) {
-	    if (c == *list) 
+	    if (c == *list)
 		*list = (*list)->next;
 	    else
 		cc->next = c->next;
@@ -381,7 +381,7 @@ list_add_compound(F_compound **list, F_compound *c)
 	*list = c;
     else
 	cc->next = c;
-    
+
     if (list == &objects.compounds) {
 	while (c) {
 	    add_compound_depth(c);
@@ -390,7 +390,7 @@ list_add_compound(F_compound **list, F_compound *c)
     }
 }
 
-/* increment objects_depth[depth] for a new object, and add to the 
+/* increment objects_depth[depth] for a new object, and add to the
    counter for this "type" (line, arc, etc) */
 
 void
@@ -804,39 +804,43 @@ void cut_objects(F_compound *objects, F_compound *tails)
     }
 }
 
-void remove_arc_depths(F_arc *a)
+void
+remove_arc_depths(F_arc *a)
 {
     for ( ; a; a= a->next)
 	remove_depth(O_ARC, a->depth);
 }
 
-void remove_ellipse_depths(F_ellipse *e)
+void
+remove_ellipse_depths(F_ellipse *e)
 {
     for ( ; e; e = e->next)
 	remove_depth(O_ELLIPSE, e->depth);
 }
 
-void remove_line_depths(F_line *l)
+void
+remove_line_depths(F_line *l)
 {
     for ( ; l; l = l->next)
 	remove_depth(O_POLYLINE, l->depth);
 }
 
-void remove_spline_depths(F_spline *s)
+void
+remove_spline_depths(F_spline *s)
 {
     for ( ; s; s = s->next)
 	remove_depth(O_SPLINE, s->depth);
 }
 
-void remove_text_depths(F_text *t)
+void
+remove_text_depths(F_text *t)
 {
     for ( ; t; t = t->next)
 	remove_depth(O_TXT, t->depth);
 }
 
-void append_point(int x, int y, F_point **point)    /** used in d_arcbox **/
-       		         
-           	          
+void
+append_point(int x, int y, F_point **point)    /** used in d_arcbox **/
 {
     F_point	   *p;
 
@@ -884,7 +888,7 @@ first_spline_point(int x, int y, double s, F_spline *spline)
 {
   F_point   *newpoint;
   F_sfactor *cpoint;
-  
+
   if ((newpoint = create_point()) == NULL)
     return False;
   if ((cpoint = create_sfactor()) == NULL)
@@ -1019,7 +1023,7 @@ search_line_point(F_line *line, int x, int y)
 {
   F_point *point;
 
-  for (point = line->points ; 
+  for (point = line->points ;
        point != NULL && (point->x != x || point->y != y); point = point->next);
   return point;
 }
@@ -1029,7 +1033,7 @@ search_spline_point(F_spline *spline, int x, int y)
 {
   F_point *point;
 
-  for (point = spline->points ; 
+  for (point = spline->points ;
        point != NULL && (point->x != x || point->y != y); point = point->next);
   return point;
 }
@@ -1041,7 +1045,7 @@ search_sfactor(F_spline *spline, F_point *selected_point)
   F_sfactor *c_point = spline->sfactors;
   F_point *cursor;
 
-  for (cursor = spline->points ; cursor != selected_point ; 
+  for (cursor = spline->points ; cursor != selected_point ;
        cursor = cursor->next)
     c_point = c_point->next;
   return c_point;
@@ -1313,17 +1317,15 @@ point_on_inside(F_point *p, int llx, int lly, int urx, int ury)
 {
     return ((p->x >= llx) && (p->x <= urx) &&
 	    (p->y >= lly) && (p->y <= ury));
-	    
+
 }
 
 void
-adjust_links(int mode, F_linkinfo *links, int dx, int dy, int cx, int cy, float sx, float sy, Boolean copying)
-       		         
-              	          
-       		           		/* delta */
-       		           		/* center of scale - NOT USED YET */
-         	           		/* scale factor - NOT USED YET */
-           	            
+adjust_links(int mode, F_linkinfo *links,
+	int dx, int dy,		/* delta */
+	int cx, int cy,		/* center of scale - NOT USED YET */
+	float sx, float sy,	/* scale factor - NOT USED YET */
+	Boolean copying)
 {
     F_linkinfo	   *k;
     F_line	   *l;

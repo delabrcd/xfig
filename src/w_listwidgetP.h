@@ -13,10 +13,10 @@
  *
  */
 
-/* 
+/*
    w_listwidgetP.h -
 
-   FigList - 
+   FigList -
    This is an attempt to subclass the listWidgetClass to add
    the functionality of up/down arrows to scroll up/down in the list
 */

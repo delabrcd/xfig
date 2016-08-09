@@ -14,8 +14,8 @@
  */
 
 /*
-    w_menuentryP.h - Private Header file for subclassed BSB Menu Entry object 
-    
+    w_menuentryP.h - Private Header file for subclassed BSB Menu Entry object
+
     This adds the underline resource to underline one character of the label
 */
 

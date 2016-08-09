@@ -298,7 +298,7 @@ do_export(Widget w)
 	} else if (strcmp(fval,default_export_file) != 0) {
 	    warnexist = True;		/* warn if the file exists and is diff. from default */
 	}
-	
+
 	/* get the magnification into appres.magnification */
 	get_magnif();
 
@@ -319,7 +319,7 @@ do_export(Widget w)
 	       }
 	     }
 	 }
-	
+
 	/* if not absolute path, change directory */
 	if (*fval != '/') {
 	    if (change_directory(cur_export_dir) != 0)

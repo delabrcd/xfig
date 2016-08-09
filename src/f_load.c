@@ -260,7 +260,7 @@ void merge_file(char *file, int xoff, int yoff)
 	if (c) {
 	    /* if there are no objects other than one compound, don't encapsulate
 		   it in another compound */
-	    if (c->arcs == 0 && c->ellipses == 0 && c->lines == 0 && 
+	    if (c->arcs == 0 && c->ellipses == 0 && c->lines == 0 &&
 		c->splines == 0 && c->texts == 0 &&
 		(c->compounds != 0 && c->compounds->next == 0)) {
 		    /* save ptr to embedded compound */
@@ -281,7 +281,7 @@ void merge_file(char *file, int xoff, int yoff)
 	    remap_imagecolors();
 	redraw_images(&objects);
 	if (c)
-	    redisplay_zoomed_region(c->nwcorner.x, c->nwcorner.y, 
+	    redisplay_zoomed_region(c->nwcorner.x, c->nwcorner.y,
 				c->secorner.x, c->secorner.y);
 	put_msg("%d object(s) read from \"%s\"", num_object, file);
 	set_action_object(F_ADD, O_COMPOUND);

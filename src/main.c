@@ -713,7 +713,7 @@ void main(int argc, char **argv)
 			fprintf(stderr, "%s", help_list[i]);
 			col += len;
 		    }
-	 	    fprintf(stderr,"\n  Note: all options may be abbreviated to minimum unique string.\n");
+		    fprintf(stderr,"\n  Note: all options may be abbreviated to minimum unique string.\n");
 		}
 		/* exit after -h or -v */
 		exit(0);
@@ -1365,12 +1365,12 @@ void main(int argc, char **argv)
 
 #define TABLETINCHES 11.7
 #define SETBUTEVT(d, e) ((d).serial = (e)->serial, \
-	(d).window 	= (e)->window, (d).root = (e)->root, \
-	(d).subwindow 	= (e)->subwindow, (d).time = (e)->time, \
-	(d).x 		= (e)->axis_data[0] / max2(tablet_res, 0.1), \
-	(d).state 	= (e)->state, \
-	(d).y 		= ((int) ht - (e)->axis_data[1] / max2(tablet_res, 0.1)), \
-	(d).button 	= (e)->button)
+	(d).window	= (e)->window, (d).root = (e)->root, \
+	(d).subwindow	= (e)->subwindow, (d).time = (e)->time, \
+	(d).x		= (e)->axis_data[0] / max2(tablet_res, 0.1), \
+	(d).state	= (e)->state, \
+	(d).y		= ((int) ht - (e)->axis_data[1] / max2(tablet_res, 0.1)), \
+	(d).button	= (e)->button)
 /* Switch buttons because of the layout of the buttons on the mouse */
 #define SWITCHBUTTONS(d) ((d).button = ((d).button == Button2) ? Button1 : \
         ((d).button == Button1) ? Button2 : \
@@ -1464,7 +1464,7 @@ void main(int argc, char **argv)
         FirstArg(XtNheight, &ht);
         NextArg(XtNwidth, &wd);
         GetValues(canvas_sw);
-	
+
 	/* "XtAppMainLoop" customized for extension events */
         /* For tablet puck motion events use the location */
         /* info to warp the cursor to the corresponding screen */
@@ -1648,7 +1648,7 @@ setup_visual(int *argc_p, char **argv, Arg *args)
 
 	/* now get the pixmap formats supported and find the bits-per-pixel
 	   for the depth we are using */
-	
+
 	pmf = XListPixmapFormats (tool_d, &n);
 	image_bpp = 0;
 	if (pmf) {
@@ -1951,7 +1951,7 @@ static	Dimension	refresh_w = 0;
 static	Dimension	msg_w = 0;
 static	Dimension	new_msg_width;
 
-/* Turn on autorefresh mode 
+/* Turn on autorefresh mode
  * Add a AppTimeOut and insert a label widget to the left of the
  * message window with a red background saying "Autorefresh Mode"
  */
@@ -1963,7 +1963,7 @@ set_autorefresh(void)
 
 	/* get the initial timestamp */
 	figure_timestamp = file_timestamp(cur_filename);
-	refresh_timeout_id = XtAppAddTimeOut(tool_app, CHECK_REFRESH_TIME, 
+	refresh_timeout_id = XtAppAddTimeOut(tool_app, CHECK_REFRESH_TIME,
 			(XtTimerCallbackProc) check_refresh, (XtPointer) NULL);
 	XtUnmanageChild(msg_panel);
 	if (!refresh_indicator) {
@@ -2038,7 +2038,7 @@ check_refresh(XtPointer client_data, XtIntervalId *id)
 	figure_timestamp = cur_timestamp;
 
 	/* keep being called */
-	(void) XtAppAddTimeOut(tool_app, CHECK_REFRESH_TIME, 
+	(void) XtAppAddTimeOut(tool_app, CHECK_REFRESH_TIME,
 			(XtTimerCallbackProc) check_refresh, (XtPointer) NULL);
 	return;
 }

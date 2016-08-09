@@ -397,10 +397,10 @@ altlength_msg(int type, int fx, int fy)
 
 		/* draw new lines */
 		/* horizontal (dx) */
-		pw_vector(canvas_win, cur_x+sdx, cur_y+sdy, fx+sdx, cur_y+sdy, INV_PAINT, 1, 
+		pw_vector(canvas_win, cur_x+sdx, cur_y+sdy, fx+sdx, cur_y+sdy, INV_PAINT, 1,
 				RUBBER_LINE, 0.0, RED);
 		/* vertical (dy) */
-		pw_vector(canvas_win, fx+sdx, cur_y+sdy, fx+sdx, fy+sdy, INV_PAINT, 1, 
+		pw_vector(canvas_win, fx+sdx, cur_y+sdy, fx+sdx, fy+sdy, INV_PAINT, 1,
 				RUBBER_LINE, 0.0, RED);
 
 		/* draw new text */
@@ -419,7 +419,7 @@ altlength_msg(int type, int fx, int fy)
 		    t1y = cur_y + sdy - 3.0/zoomscale;			/* above the line */
 		else
 		    t1y = cur_y + sdy + sizey.ascent + 3.0/zoomscale;	/* below the line */
-		pw_text(canvas_win, t1x, t1y, INV_PAINT, MAX_DEPTH+1, roman_font, 0.0, 
+		pw_text(canvas_win, t1x, t1y, INV_PAINT, MAX_DEPTH+1, roman_font, 0.0,
 				bufx, RED, COLOR_NONE);
 
 		t2y = (cur_y+fy)/2+sdy;
@@ -501,7 +501,7 @@ length_msg2(int x1, int y1, int x2, int y2, int x3, int y3)
 
 /* x2,y2 moving middle point */
 
-void 
+void
 arc_msg(int x1, int y1, int x2, int y2, int x3, int y3)
 {
     float	len1, len2, r;
@@ -538,7 +538,7 @@ lenmeas_msg(char *msgtext, float len, float totlen)
     make_dimension_string(len, lenstr, False);
     make_dimension_string(totlen, totlenstr, False);
 
-    if (totlen >= 0.0) 
+    if (totlen >= 0.0)
 	put_msg("Length of %s is %s, accumulated %s",
              msgtext, lenstr, totlenstr);
     else
@@ -553,7 +553,7 @@ areameas_msg(char *msgtext, float area, float totarea, int flag)
 
     make_dimension_string(area, areastr, True);
     make_dimension_string(totarea, totareastr, True);
-    if (flag) 
+    if (flag)
 	put_msg("Area of %s is %s, accumulated %s",
              msgtext, areastr, totareastr);
     else
@@ -729,7 +729,7 @@ popup_file_msg(void)
 
 /*
    Make a string from the length.
-   If the units are inches and there is a fractional value *and* 
+   If the units are inches and there is a fractional value *and*
    cur_gridunit == FRACT_UNIT, try to make a fraction out of it, e.g. 3/64
    If the units are area measure, pass square = True
 */
@@ -746,7 +746,7 @@ make_dimension_string(float length, char *str, Boolean square)
     if (!appres.INCHES) {
 	/* Metric */
 	if (square)
-	    sprintf(str, "%.3f square %s", length / 
+	    sprintf(str, "%.3f square %s", length /
 			(float)(PIX_PER_CM*PIX_PER_CM)*appres.userscale*appres.userscale,
 			cur_fig_units);
 	else {
@@ -810,7 +810,7 @@ make_dimension_string(float length, char *str, Boolean square)
 	/* square IP units */
 	/* make a %.xf format where x is the precision the user wants */
 	sprintf(format, "%%.%df square %%s", cur_dimline_prec);
-	sprintf(str, format, length / 
+	sprintf(str, format, length /
 			(float)(PIX_PER_INCH*PIX_PER_INCH)*appres.userscale*appres.userscale,
 			cur_fig_units);
     }

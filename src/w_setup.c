@@ -79,7 +79,7 @@ void setup_sizes(int new_canv_wd, int new_canv_ht)
     CMDFORM_WD = NUM_CMD_MENUS*(CMD_BUT_WD+INTERNAL_BW);
 
     /* filename panel to the right of the command menu buttons */
-    NAMEPANEL_WD = MODEPANEL_WD + CANVAS_WD + SIDERULER_WD - CMDFORM_WD - 
+    NAMEPANEL_WD = MODEPANEL_WD + CANVAS_WD + SIDERULER_WD - CMDFORM_WD -
 			MOUSEFUN_WD - INTERNAL_BW;
     if (NAMEPANEL_WD < 75)
 	NAMEPANEL_WD = 75;
@@ -91,7 +91,7 @@ void setup_sizes(int new_canv_wd, int new_canv_ht)
     INDPANEL_WD = MODEPANEL_WD + CANVAS_WD + SIDERULER_WD;
 
     /* space for both modepanel titles (Drawing modes and Editing modes) */
-    MODEPANEL_SPACE = 1 + CANVAS_HT + RULER_WD - 
+    MODEPANEL_SPACE = 1 + CANVAS_HT + RULER_WD -
 	(mode_sw_ht + INTERNAL_BW) * (ceil((double)NUM_MODE_SW/SW_PER_ROW) + 1);
     if (MODEPANEL_SPACE < 2)
 	MODEPANEL_SPACE = 2;

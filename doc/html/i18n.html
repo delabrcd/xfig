@@ -21,7 +21,7 @@ At now, it is known to worked under Japanese and Korean.
 Additional informations about this may available at
 <a href="http://member.nifty.ne.jp/tsato/xfig/">
 <i>http://member.nifty.ne.jp/tsato/xfig/</i></a>.
-Send any questions or comments about this internationalization facility to 
+Send any questions or comments about this internationalization facility to
 <a href="mailto:VEF00200@nifty.ne.jp"><i>VEF00200@nifty.ne.jp (T.Sato)</i></a>.
 
 <p>
@@ -60,7 +60,7 @@ they must be possible to connect to the <i>input method</i>.
 Use of X11R6 is recommended.)
 
 <p>
-<li>Appropriate <i>conversion server</i> 
+<li>Appropriate <i>conversion server</i>
 (<b>Canna</b> or <b>Wnn</b>, for example),
 and an <i>input method</i> (<b>kinput2</b> or <b>htt</b>, for example).
 These facilities may be implemented as a single program.
@@ -75,7 +75,7 @@ These facilities may be implemented as a single program.
 <h3><a name="install-xfig">Install <b>xfig</b></a></h3>
 
 <ol>
-<li>Get <a href="installation.html"><b>xfig.3.2.5d.tar.gz</b></a> 
+<li>Get <a href="installation.html"><b>xfig.3.2.5d.tar.gz</b></a>
 and <i>gunzip</i> and <i>untar</i> it.
 
 <p>
@@ -84,7 +84,7 @@ in <tt>xfig.3.2.5d/Imakefile</tt> (remove the <tt>XCOMM</tt> comment).
 
 <p>
 <li>If your C library supports the required locale,
-remove <tt>-DSETLOCALE</tt> from the definition of <tt>I18N_DEFS</tt> 
+remove <tt>-DSETLOCALE</tt> from the definition of <tt>I18N_DEFS</tt>
 in the <tt>Imakefile</tt>.
 If your C library doesn't support the required locale,
 make sure that <tt>-DSETLOCALE</tt> is specified.
@@ -97,7 +97,7 @@ make sure that <tt>-DSETLOCALE</tt> is specified.
 <h3><a name="install-fig2dev">Install <b>fig2dev</b></a></h3>
 
 <ol>
-<li>Get <a href="installation.html"><b>transfig.3.2.5e.tar.gz</b></a> 
+<li>Get <a href="installation.html"><b>transfig.3.2.5e.tar.gz</b></a>
 and <i>gunzip</i> and <i>untar</i> it.
 
 <p>
@@ -105,9 +105,9 @@ and <i>gunzip</i> and <i>untar</i> it.
 in <tt>transfig.3.2.5e/fig2dev/Imakefile</tt> (remove the <tt>XCOMM</tt> comment).
 
 <p>
-<li>If you want to install files like <tt>japanese.ps</tt> 
+<li>If you want to install files like <tt>japanese.ps</tt>
 to a directory other than <tt>/usr/local/lib/fig2dev</tt>,
-modify the definition of <tt>FIG2DEV_LIBDIR</tt> and <tt>I18N_DEV_DEFS</tt> 
+modify the definition of <tt>FIG2DEV_LIBDIR</tt> and <tt>I18N_DEV_DEFS</tt>
 in the <tt>Imakefile</tt>.
 
 <p>
@@ -119,12 +119,12 @@ in the <tt>Imakefile</tt>.
 <h2><a name="startup">Startup</a></h2>
 
 <ol>
-<li>Set the locale name for the language to be used 
-(such as <tt>ja_JP.eucJP</tt> or <tt>ko_KR.eucKR</tt>, for example) 
+<li>Set the locale name for the language to be used
+(such as <tt>ja_JP.eucJP</tt> or <tt>ko_KR.eucKR</tt>, for example)
 to the environment variable <tt>LANG</tt>.
 
 <p>
-<li>If it is necessary, set the environment variable <tt>XMODIFIERS</tt> 
+<li>If it is necessary, set the environment variable <tt>XMODIFIERS</tt>
 to specify the <i>input method</i> to be used.
 
 <p>
@@ -138,7 +138,7 @@ is available.
 <p>
 Without the <tt>-international</tt> option,
 <b>xfig</b> will work as normal (no internationalization).
-If you put &quot;<tt>Fig.international: true</tt>&quot; 
+If you put &quot;<tt>Fig.international: true</tt>&quot;
 into your <a href="#resource">resource file</a>,
 <tt>-international</tt> option may omitted.
 <p>
@@ -150,13 +150,13 @@ to enable internationalization.
 <h2><a name="input-text">Entering Text</a></h2>
 
 Using this internationalization facility,
-you may enter text in Japanese or some another languages 
-(henceforce, call &quot;international text&quot;) 
+you may enter text in Japanese or some another languages
+(henceforce, call &quot;international text&quot;)
 with the <a href="drawing.html#text">TEXT</a> facility.
 When entering international text,
-&quot;<i>Times-Roman</i>&quot; or &quot;<i>Times-Bold</i>&quot; 
-(may be displayed as &quot;<i>Times-Roman + Mincho</i>&quot; 
-and &quot;<i>Times-Bold + Gothic</i>&quot; in Japanese environment) 
+&quot;<i>Times-Roman</i>&quot; or &quot;<i>Times-Bold</i>&quot;
+(may be displayed as &quot;<i>Times-Roman + Mincho</i>&quot;
+and &quot;<i>Times-Bold + Gothic</i>&quot; in Japanese environment)
 must be selected as <a href="attributes.html#text-font">TEXT FONT</a>.
 <p>
 Input of international text will be started
@@ -174,7 +174,7 @@ The <i>input style</i> may be selected from
 The <i>input style</i> to be used
 may be selected with the <tt>inputStyle</tt> resource
 or the <tt>-inputStyle</tt> option.
-For example, <tt>xfig -international -inputStyle OverTheSpot</tt> 
+For example, <tt>xfig -international -inputStyle OverTheSpot</tt>
 will select <i>Over the Spot</i> as the input style.
 <p>
 <dl>
@@ -199,7 +199,7 @@ or the display on the canvas may get confused.
 </blockquote>
 
 <p>
-<dt><b>Root</b>:    
+<dt><b>Root</b>:
 <dd>The text under conversion will displayed in a separate window.
 <p>
 <blockquote>
@@ -228,7 +228,7 @@ With this default specification, non-desirable fonts may loaded
 (bad appearance of texts or long delay when starting of <b>xfig</b>
 may caused as the result, for example) on some systems.
 In such case, you may need to specify those fonts more definitive
-in the <a href="#resource">resource file</a> (<tt>app-defaults/Fig</tt>) 
+in the <a href="#resource">resource file</a> (<tt>app-defaults/Fig</tt>)
 and force the system to load the specified font:
 <p>
 <pre>
@@ -239,9 +239,9 @@ and force the system to load the specified font:
         -misc-fixed-medium-r-normal--14-*-*-*-*-*-*-*
 </pre>
 <p>
-If scalable fonts are available 
-(when X server which support scalable fonts 
-like <a href="http://X-TT.dsl.gr.jp/index.html">X-TrueType Server</a> 
+If scalable fonts are available
+(when X server which support scalable fonts
+like <a href="http://X-TT.dsl.gr.jp/index.html">X-TrueType Server</a>
 is in use, for example)
 appearance of text may improved by specifying large fonts, as:
 <p>
@@ -262,32 +262,32 @@ and it is possible to change them by modifying those files.
 
 <h4>Japanese</h4>
 
-By default, <tt>Ryumin-Light</tt> and <tt>GothicBBB-Medium</tt> 
+By default, <tt>Ryumin-Light</tt> and <tt>GothicBBB-Medium</tt>
 will used if they are available,
 and <tt>HeiseiMin-W3</tt> and <tt>HeiseiKakuGo-W5</tt> otherwise.
 <p>
-Locale name can one of <tt>japanese</tt>, <tt>ja</tt>, <tt>ja_JP</tt>, 
+Locale name can one of <tt>japanese</tt>, <tt>ja</tt>, <tt>ja_JP</tt>,
 <tt>ja_JP.ujis</tt>, <tt>ja_JP.eucJP</tt> and <tt>ja_JP.EUC</tt>.
 
 <h4>Korean</h4>
 
-By default, <tt>Munhwa-Regular</tt> and <tt>MunhwaGothic-Bold</tt> 
+By default, <tt>Munhwa-Regular</tt> and <tt>MunhwaGothic-Bold</tt>
 will used if they are available,
 and <tt>HLaTeX-Myoungjo-Regular</tt> and <tt>HLaTeX-Gothic-Regular</tt> otherwise.
 <p>
-Locale name can one of <tt>korean</tt>, <tt>ko</tt>, <tt>ko_KR</tt>, 
+Locale name can one of <tt>korean</tt>, <tt>ko</tt>, <tt>ko_KR</tt>,
 <tt>ko_KR.ujis</tt>, <tt>ko_KR.eucKR</tt> and <tt>ko_KR.EUC</tt>.
 
 <h4>Another Languages</h4>
 
-Because configuration file for languages other than Japanese and Korean 
+Because configuration file for languages other than Japanese and Korean
 is not prepared,
 you must make the file for the language and available fonts.
 <p>
-The file must installed into the directory 
+The file must installed into the directory
 specified when <b>fig2dev</b> is installed.
 The filename must locale name followed by &quot;<tt>.ps</tt>&quot;.
-For example, if locale name is <tt>zh_CN.eucCN</tt>, 
+For example, if locale name is <tt>zh_CN.eucCN</tt>,
 the filename must <tt>zh_CN.eucCN.ps</tt>.
 
 <h3><a name="resource">Setting Resources</a></h3>
@@ -299,29 +299,29 @@ without specifying options when executing the application.
 To make <b>xfig</b> works properly for multiple languages,
 it may be necessary to make suitable settings using this mechanism.
 <p>
-In the default configuration of X11R6, 
-if there is a resource file like 
-<tt>/usr/X11R6/lib/X11/<i>locale</i>/app-defaults/Fig</tt> 
-(here, <tt><i>locale</i></tt> is locale name or its &quot;language part&quot;), 
+In the default configuration of X11R6,
+if there is a resource file like
+<tt>/usr/X11R6/lib/X11/<i>locale</i>/app-defaults/Fig</tt>
+(here, <tt><i>locale</i></tt> is locale name or its &quot;language part&quot;),
 it will be loaded instead of
 <tt>/usr/X11R6/lib/X11/app-defaults/Fig</tt>.
-Therefore, if you wrote setting for Japanese environment in 
+Therefore, if you wrote setting for Japanese environment in
 <tt>/usr/X11R6/lib/X11/ja/app-defaults/Fig</tt>,
-the setting for Japanese environment will be used when 
+the setting for Japanese environment will be used when
 environment variable <tt>LANG</tt> is set to <tt>ja_JP.eucJP</tt> or so,
-and default setting in <tt>/usr/X11R6/lib/X11/app-defaults/Fig</tt> 
+and default setting in <tt>/usr/X11R6/lib/X11/app-defaults/Fig</tt>
 will be used otherwise.
 
 <h2><a name="notes">Notes</a></h2>
 
 <ul>
 <li>When entering international text, you must select
-&quot;<i>Times-Roman</i>&quot; or &quot;<i>Times-Bold</i>&quot; 
-(may be displayed as &quot;<i>Times-Roman + Mincho</i>&quot; 
+&quot;<i>Times-Roman</i>&quot; or &quot;<i>Times-Bold</i>&quot;
+(may be displayed as &quot;<i>Times-Roman + Mincho</i>&quot;
 and &quot;<i>Times-Bold + Gothic</i>&quot; in Japanese environment)
 as the <a href="attributes.html#text-font">TEXT FONT</a>.
 If any other font is selected,
-<a href="drawing.html#compose-char">Latin-1 characters</a> 
+<a href="drawing.html#compose-char">Latin-1 characters</a>
 will be available as in normal <b>xfig</b>.
 
 <p>
@@ -332,7 +332,7 @@ in <a href="drawing.html#text">TEXT</a> mode.
 
 <p>
 <li>When specifying <tt>international</tt> resource,
-you should specify as &quot;<tt>Fig.international: true</tt>&quot; 
+you should specify as &quot;<tt>Fig.international: true</tt>&quot;
 but not &quot;<tt>Fig*international: true</tt>&quot;.
 
 <p>
@@ -360,7 +360,7 @@ but unknown about another X11R5-based systems.
 
 <h2><a name="worked">Tested Environments</a></h2>
 
-At this time, <b>xfig</b>'s international facility 
+At this time, <b>xfig</b>'s international facility
 has been successfully worked on the following environments.
 
 <h3>Japanese</h3>
@@ -382,7 +382,7 @@ has been successfully worked on the following environments.
 </center>
 <p>
 <blockquote>
-* On IRIX 6.3, you may need to compile <b>xfig</b> 
+* On IRIX 6.3, you may need to compile <b>xfig</b>
 with IRIX's genuine <tt>cc</tt> (not with <tt>gcc</tt>),
 specifying compile option <tt>-N32 -mips3</tt>.
 Also, you may need to get source of JPEG library and compile it yourself,

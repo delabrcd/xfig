@@ -115,7 +115,7 @@ void redisplay_objects(F_compound *active_objects)
 {
     int		    depth;
     F_compound	   *objects, *save_objects;
-  
+
     objects = active_objects;
     save_objects = (F_compound *) NULL;
 
@@ -131,7 +131,7 @@ void redisplay_objects(F_compound *active_objects)
 	if (!save_objects)
 	    save_objects = objects;
 	/* put in any changes */
-	*((F_compound*)objects->GABPtr) = *objects;            
+	*((F_compound*)objects->GABPtr) = *objects;
 	/* follow parent to the top */
 	objects = objects->parent;
 	/* instruct lower level procs to draw gray */
@@ -198,7 +198,7 @@ void redisplay_arcobject(F_arc *arcs, int depth)
 {
     F_arc	   *arc;
     struct counts  *cp;
-    
+
     if (arcs == NULL)
 	return;
     cp = &counts[min2(depth, MAX_DEPTH)];
@@ -223,7 +223,7 @@ void redisplay_ellipseobject(F_ellipse *ellipses, int depth)
 {
     F_ellipse	   *ep;
     struct counts  *cp;
-    
+
     if (ellipses == NULL)
 	return;
     cp = &counts[min2(depth, MAX_DEPTH)];
@@ -249,7 +249,7 @@ void redisplay_lineobject(F_line *lines, int depth)
 {
     F_line	   *lp;
     struct counts  *cp;
-    
+
     if (lines == NULL)
 	return;
     cp = &counts[min2(depth, MAX_DEPTH)];
@@ -275,7 +275,7 @@ void redisplay_splineobject(F_spline *splines, int depth)
 {
     F_spline	   *spline;
     struct counts  *cp;
-    
+
     if (splines == NULL)
 	return;
     cp = &counts[min2(depth, MAX_DEPTH)];
@@ -300,7 +300,7 @@ void redisplay_textobject(F_text *texts, int depth)
 {
     F_text	   *text;
     struct counts  *cp;
-    
+
     if (texts == NULL)
 	return;
     cp = &counts[min2(depth, MAX_DEPTH)];
@@ -444,8 +444,8 @@ void redisplay_curobj(void)
 
 void redisplay_region(int xmin, int ymin, int xmax, int ymax)
 {
-    /* if we're generating a preview, don't redisplay the canvas 
-       but set request flag so preview will call us with full canvas 
+    /* if we're generating a preview, don't redisplay the canvas
+       but set request flag so preview will call us with full canvas
        after it is done generating the preview */
 
     if (preview_in_progress) {
@@ -473,7 +473,7 @@ void update_pageborder(void)
 {
     if (appres.show_pageborder) {
 	clear_canvas();
-	redisplay_canvas();		
+	redisplay_canvas();
     }
 }
 
@@ -489,13 +489,13 @@ void redisplay_pageborder(void)
     if (appres.showaxislines) {
 	/* set the color */
 	XSetForeground(tool_d, border_gc, axis_lines_color);
-	XDrawLine(tool_d, canvas_win, border_gc, round(-zoomxoff*zoomscale), 0, 
+	XDrawLine(tool_d, canvas_win, border_gc, round(-zoomxoff*zoomscale), 0,
 					  round(-zoomxoff*zoomscale), CANVAS_HT);
-	XDrawLine(tool_d, canvas_win, border_gc, 0, round(-zoomyoff*zoomscale), CANVAS_WD, 
+	XDrawLine(tool_d, canvas_win, border_gc, 0, round(-zoomyoff*zoomscale), CANVAS_WD,
 					  round(-zoomyoff*zoomscale));
     }
     /* now the page border if user wants it */
-    if (appres.show_pageborder) 
+    if (appres.show_pageborder)
 	redraw_pageborder();
 }
 

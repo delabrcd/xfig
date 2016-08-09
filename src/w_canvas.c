@@ -167,7 +167,7 @@ XtActionsRec	canvas_actions[] =
     {"PopdownKeyboardPanel", (XtActionProc)popdown_keyboard_panel},
 };
 
-/* need the ~Meta for the EventCanv action so that the accelerators still work 
+/* need the ~Meta for the EventCanv action so that the accelerators still work
    during text input */
 static String	canvas_translations =
    "<Motion>:EventCanv()\n\
@@ -285,14 +285,14 @@ void canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal 
 
 	/* draw crosshair cursor where pointer is */
 	if (appres.crosshair && action_on) {
-	    pw_vector(canvas_win, 0, last_y, (int)(CANVAS_WD*ZOOM_FACTOR), last_y, 
-			    		INV_PAINT, 1, RUBBER_LINE, 0.0, RED);
-	    pw_vector(canvas_win, last_x, 0, last_x, (int)(CANVAS_HT*ZOOM_FACTOR), 
-			    		INV_PAINT, 1, RUBBER_LINE, 0.0, RED);
-	    pw_vector(canvas_win, 0, cy, (int)(CANVAS_WD*ZOOM_FACTOR), cy, 
-			    		INV_PAINT, 1, RUBBER_LINE, 0.0, RED);
-	    pw_vector(canvas_win, cx, 0, cx, (int)(CANVAS_HT*ZOOM_FACTOR), 
-			    		INV_PAINT, 1, RUBBER_LINE, 0.0, RED);
+	    pw_vector(canvas_win, 0, last_y, (int)(CANVAS_WD*ZOOM_FACTOR), last_y,
+					INV_PAINT, 1, RUBBER_LINE, 0.0, RED);
+	    pw_vector(canvas_win, last_x, 0, last_x, (int)(CANVAS_HT*ZOOM_FACTOR),
+					INV_PAINT, 1, RUBBER_LINE, 0.0, RED);
+	    pw_vector(canvas_win, 0, cy, (int)(CANVAS_WD*ZOOM_FACTOR), cy,
+					INV_PAINT, 1, RUBBER_LINE, 0.0, RED);
+	    pw_vector(canvas_win, cx, 0, cx, (int)(CANVAS_HT*ZOOM_FACTOR),
+					INV_PAINT, 1, RUBBER_LINE, 0.0, RED);
 	}
 
 	last_x = x = sx = cx;	/* these are zoomed */
@@ -329,7 +329,7 @@ void canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal 
 	    pointer_click = 1;
 	/* add timer to reset the counter after n milliseconds */
 	/* after first removing any previous timer */
-	if (click_id) 
+	if (click_id)
 	    XtRemoveTimeOut(click_id);
 	click_id = XtAppAddTimeOut(tool_app, 300,
 			(XtTimerCallbackProc) reset_click_counter, (XtPointer) NULL);
@@ -348,7 +348,7 @@ void canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal 
 	   * could also just revert to the usual round_coords(), but i think that
 	   * might cause confusion.
 	   */
-	  
+
           if (False == snap_process(&vx, &vy, be->state & ShiftMask)) break;
           else {
             x = vx;
@@ -406,14 +406,14 @@ void canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal 
       case KeyPress:
       case KeyRelease:
 
-	XQueryPointer(event->display, event->window, 
+	XQueryPointer(event->display, event->window,
 			&rw, &cw, &rx, &ry, &cx, &cy, &mask);
 	/* save global shift state */
 	shift = mask & ShiftMask;
 
 	if (True == keyboard_input_available) {
 	  XMotionEvent	me;
-	  
+
 	  if (keyboard_state & ShiftMask)
 	    (*canvas_middlebut_proc) (keyboard_x, keyboard_y, 0);
 	  else if (keyboard_state & ControlMask)
@@ -427,7 +427,7 @@ void canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal 
 	   * the canvas that the coord has been entered by faking up a
 	   * motion event.
 	   */
-	  
+
 	  last_x = x = sx = cx = keyboard_x;	/* these are zoomed */
 	  last_y = y = sy = cy = keyboard_y;	/* coordinates!	    */
 
@@ -499,7 +499,7 @@ void canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal 
 			pan_origin();
 			break;
 		} /* switch (key) */
-	  } else if 
+	  } else if
 #ifdef NO_COMPKEYDB
 	     (key == XK_Multi_key && action_on && cur_mode == F_TEXT &&
 		!XLookupString(kpe, buf, sizeof(buf), NULL, &compstat) &&
@@ -525,7 +525,7 @@ void canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal 
 #ifdef NO_COMPKEYDB
 		    int oldstat = compose_key;
 		    if (XLookupString(kpe, &compose_buf[0], 1, NULL, &compstat) > 0) {
-		    	if (oldstat)
+			if (oldstat)
 			    setCompLED(0);
 			(*canvas_kbd_proc) (kpe, compose_buf[0], (KeySym) 0);
 			compose_key = 0;
@@ -617,7 +617,7 @@ reset_click_counter(widget, closure, event, continue_to_dispatch)
     XEvent*	    event;
     Boolean*	    continue_to_dispatch;
 {
-    if (click_id) 
+    if (click_id)
 	XtRemoveTimeOut(click_id);
     pointer_click = 0;
 }
@@ -1022,39 +1022,39 @@ void round_coords( int* x, int* y )
 	double c30 = cos( 30.0 / 180.0 * M_PI );		/* cos( 30 ) */
 	double s = posn_rnd[cur_gridunit][cur_pointposn];	/* whole grid interval */
 	double h = posn_hlf[cur_gridunit][cur_pointposn];	/* half grid interval */
-	
+
 	/* do all calculations in double */
 	xd = *x;
 	yd = *y;
-	
+
 	/* make sure the cursor is on grid */
 	if( ( cur_pointposn != P_ANY ) && ( !anypointposn ) ) {
-		if( cur_gridtype == GRID_ISO ) { 
+		if( cur_gridtype == GRID_ISO ) {
 			/* determine x */
-			xd = ( fabs( txx = fmod( xd, s * c30 ) ) < ( h * c30 ) ) ? 
-				 xd - txx : xd + ( xd >= 0 ? s * c30 : -s * c30 ) - txx; 
+			xd = ( fabs( txx = fmod( xd, s * c30 ) ) < ( h * c30 ) ) ?
+				 xd - txx : xd + ( xd >= 0 ? s * c30 : -s * c30 ) - txx;
 
 			/* determine y depending on x */
 			if( fabs( fmod( xd / ( s * c30 ), 2.0 ) ) > 0.5 ) {
-				yd = ( fabs( txx = fmod( yd + h, s ) ) < h ) ? 
-			 	 	 yd - txx : yd + ( yd >= 0 ? s : -s ) - txx; 
+				yd = ( fabs( txx = fmod( yd + h, s ) ) < h ) ?
+					 yd - txx : yd + ( yd >= 0 ? s : -s ) - txx;
 			} else {
-				yd = ( fabs( txx = fmod( yd, s ) ) < h ) ? 
-			 	 	 yd - txx : yd + ( yd >= 0 ? s : -s ) - txx; 
-		 	}
+				yd = ( fabs( txx = fmod( yd, s ) ) < h ) ?
+					 yd - txx : yd + ( yd >= 0 ? s : -s ) - txx;
+			}
 		}
-		
+
 		if( cur_gridtype == GRID_SQUARE ) {
 			/* determine x */
-			xd = ( fabs( txx = fmod( xd, s ) ) < h ) ? 
-				 xd - txx : xd + ( xd >= 0 ? s : -s ) - txx; 
-				 
+			xd = ( fabs( txx = fmod( xd, s ) ) < h ) ?
+				 xd - txx : xd + ( xd >= 0 ? s : -s ) - txx;
+
 			/* determine y */
-			yd = ( fabs( txx = fmod( yd, s ) ) < h ) ? 
-				 yd - txx : yd + ( yd >= 0 ? s : -s ) - txx; 						
+			yd = ( fabs( txx = fmod( yd, s ) ) < h ) ?
+				 yd - txx : yd + ( yd >= 0 ? s : -s ) - txx;
 		}
 	}
-	
+
 	/* store (return) result as integer */
 	*x = xd;
 	*y = yd;

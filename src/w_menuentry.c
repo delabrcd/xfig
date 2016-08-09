@@ -14,8 +14,8 @@
  */
 
 /*
-    w_menuentry.c - subclassed BSB Menu Entry object 
-    
+    w_menuentry.c - subclassed BSB Menu Entry object
+
     This adds the underline resource to underline one character of the label
 */
 
@@ -45,11 +45,11 @@
 static XtResource resources[] = {
   {XtNunderline,  XtCIndex, XtRInt, sizeof(int),
      offset(underline), XtRImmediate, (XtPointer) -1},
-};   
+};
 #undef offset
 
 /*
- * Semi Public function definitions. 
+ * Semi Public function definitions.
  */
 
 static void Redisplay(Widget w, XEvent *event, Region region);
@@ -73,17 +73,17 @@ FigSmeBSBClassRec figSmeBSBClassRec = {
     /* resources          */    resources,
     /* resource_count     */	XtNumber(resources),
     /* xrm_class          */    NULLQUARK,
-    /* compress_motion    */    FALSE, 
+    /* compress_motion    */    FALSE,
     /* compress_exposure  */    FALSE,
-    /* compress_enterleave*/ 	FALSE,
+    /* compress_enterleave*/	FALSE,
     /* visible_interest   */    FALSE,
     /* destroy            */    NULL,
     /* resize             */    XtInheritResize,
     /* expose             */    Redisplay,
     /* set_values         */    SetValues,
     /* set_values_hook    */	NULL,
-    /* set_values_almost  */	XtInheritSetValuesAlmost,  
-    /* get_values_hook    */	NULL,			
+    /* set_values_almost  */	XtInheritSetValuesAlmost,
+    /* get_values_hook    */	NULL,
     /* accept_focus       */    NULL,
     /* intrinsics version */	XtVersion,
     /* callback offsets   */    NULL,
@@ -95,7 +95,7 @@ FigSmeBSBClassRec figSmeBSBClassRec = {
     /* SimpleMenuClass Fields */
     /* highlight          */	XtInheritHighlight,
     /* unhighlight        */	XtInheritUnhighlight,
-    /* notify             */	XtInheritNotify,		
+    /* notify             */	XtInheritNotify,
     /* extension	  */	NULL
   },
 #ifdef XAW3D
@@ -105,10 +105,10 @@ FigSmeBSBClassRec figSmeBSBClassRec = {
   },
 #endif /* XAW3D */
   {
-    /* BSBClass Fields */  
+    /* BSBClass Fields */
     /* extension	  */    NULL
   }, {
-    /* FigBSBClass Fields */  
+    /* FigBSBClass Fields */
     /* dummy field	  */    0
   }
 };
@@ -120,7 +120,7 @@ WidgetClass figSmeBSBObjectClass = (WidgetClass) &figSmeBSBClassRec;
  *      Description: Redisplays underlining (if any) in the menu entry.
  *      Arguments: w - the simple menu widget.
  *                 event - the X event that caused this redisplay.
- *                 region - the region that needs to be repainted. 
+ *                 region - the region that needs to be repainted.
  *      Returns: none.
  */
 
@@ -171,7 +171,7 @@ Redisplay(Widget w, XEvent *event, Region region)
     } else {
 	gc = entry->sme_bsb.norm_gray_gc;
     }
-    
+
     if (entry->sme_bsb.label != NULL) {
 	int x_loc = entry->sme_bsb.left_margin;
 	int len = strlen(entry->sme_bsb.label);
@@ -227,14 +227,14 @@ Redisplay(Widget w, XEvent *event, Region region)
 
 #if (XtVersion >= 11006)
         if ( entry->sme.international==True ) {
-            y_loc += ((int)entry->rectangle.height - 
+            y_loc += ((int)entry->rectangle.height -
 		  (fontset_ascent + fontset_descent)) / 2 + fontset_ascent;
         } else {
-            y_loc += ((int)entry->rectangle.height - 
+            y_loc += ((int)entry->rectangle.height -
 		  (font_ascent + font_descent)) / 2 + font_ascent;
         }
 #else
-        y_loc += ((int)entry->rectangle.height - 
+        y_loc += ((int)entry->rectangle.height -
 		  (font_ascent + font_descent)) / 2 + font_ascent;
 #endif /* XtVersion R6 */
 
@@ -246,7 +246,7 @@ Redisplay(Widget w, XEvent *event, Region region)
 	    if ( ul != 0 )
 		ul_x1_loc += XTextWidth(entry->sme_bsb.font, label, ul);
 	    ul_wid = XTextWidth(entry->sme_bsb.font, &label[ul], 1) - 2;
-	    XDrawLine(XtDisplayOfObject(w), XtWindowOfObject(w), gc, 
+	    XDrawLine(XtDisplayOfObject(w), XtWindowOfObject(w), gc,
 				ul_x1_loc, y_loc+1, ul_x1_loc+ul_wid, y_loc+1);
 	}
     }

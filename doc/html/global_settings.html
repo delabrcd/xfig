@@ -16,10 +16,10 @@
   <img src="images/global-settings.png" alt="[Global Settings]">
 </blockquote>
 <p>
-This panel, which may be popped up with the <i>Global Settings</i> menu item 
-in the <a href="main_menus.html#edit-menu">Edit menu</a> 
+This panel, which may be popped up with the <i>Global Settings</i> menu item
+in the <a href="main_menus.html#edit-menu">Edit menu</a>
 or the keyboard accelerator <TT>Meta-G</TT>,
-allows the user to change various settings in <b>xfig</b>. 
+allows the user to change various settings in <b>xfig</b>.
 
 <dl>
 
@@ -57,7 +57,7 @@ or <a href="options.html#res-other">showpageborder</a> resource.
 <img src="images/blueballdot.png" align=bottom alt="-">
 Show info balloons. delay(ms)
 <dd>
-If this option is checked, <b>xfig</b> pops up a 
+If this option is checked, <b>xfig</b> pops up a
 <a href="miscellaneous.html#balloons">&quot;balloon&quot;</a> with information
 as the mouse passes over buttons or other areas of <b>xfig</b>. E.g.:
 <br>
@@ -81,7 +81,7 @@ they are being drawn, thus:
 <br>
 <img src="images/show-lengths.png" alt="[ Show length ]">
 <br>
-This option may also be turned on or off with the 
+This option may also be turned on or off with the
 <a href="options.html#showlengths">-showlength/-dontshowlength</a>
 command-line option or <a href="options.html#res-other">showlength</a> resource.
 
@@ -96,7 +96,7 @@ vertex of objects on the canvas thus:
 <br>
 For arcs, it also shows the center point.
 This is probably only useful for debugging of Fig files.
-This option may also be turned on or off with the 
+This option may also be turned on or off with the
 <a href="options.html#showvertex">-shownums/-dontshownums</a>
 command-line option or <a href="options.html#res-other">shownums</a> resource.
 
@@ -120,7 +120,7 @@ If checked (the default), <b>xfig</b> will draw X and Y axis lines through
 0,0 on the canvas
 <br>
 The initial setting can be set by
-<a href="options.html#com-modes">-showaxislines / -dontshowaxislines</a> 
+<a href="options.html#com-modes">-showaxislines / -dontshowaxislines</a>
 option or <a href="options.html#res-modes">showaxislines</a> resource.
 
 <dt>
@@ -149,18 +149,18 @@ for <a href="drawing.html#picture">imported images</a>.
 <br>
 The default is <b>64</b> and may also be set with the
 <a href="options.html#max_image_colors">-max_image_colors</a>
-command-line option 
+command-line option
 or <a href="options.html#res-other">max_image_colors</a> resource.
 
 <dt>
 <img src="images/blueballdot.png" align=bottom alt="-">
 Image editor
 <dd>
-This is the external program used when the 
-<a href="editing.html#edit-pict-panel"><i>Edit Image</i> button</a> 
-is pressed in the import picture editor.  
+This is the external program used when the
+<a href="editing.html#edit-pict-panel"><i>Edit Image</i> button</a>
+is pressed in the import picture editor.
 The default is <a href="http://www.trilon.com/xv/"><b>xv</b></a> .
-You may use this program to crop/rotate/change colors in etc. your 
+You may use this program to crop/rotate/change colors in etc. your
 imported image.  When you exit from this program <b>xfig</b> will
 re-import the image.
 <br>
@@ -173,12 +173,12 @@ or <a href="options.html#res-other">image_editor</a> resource.
 Spelling checker
 <dd>
 This is the external spelling check program which will
-be called when you use the spell check feature in <b>xfig</b> 
+be called when you use the spell check feature in <b>xfig</b>
 (<i>Spell Check...</i> in the <a href="main_menus.html#edit-menu">Edit menu</a>,
 or <tt>Meta-K</tt> accelerator).
 <br>
-The default is &quot;<tt>spell %f</tt>&quot;, 
-but it can be changed with 
+The default is &quot;<tt>spell %f</tt>&quot;,
+but it can be changed with
 <a href="options.html#com-other">-spellcheckcommand</a> option
 or <a href="options.html#res-other">spellcheckcommand</a> resource.
 The <b>%f</b> is necessary to tell <b>xfig</b> to insert the
@@ -193,7 +193,7 @@ This is the external web (HTML) browser that <b>xfig</b> will call to view help 
 The default is &quot;<tt>netscape -remote 'openFile(%f)' || netscape %f</tt>&quot;,
 it says to look for a running <b>Netscape</b> and open the pages in that.
 If none is running, a new one will start.
-The <b>%f</b> is necessary to tell <b>xfig</b> to insert the filename into the 
+The <b>%f</b> is necessary to tell <b>xfig</b> to insert the filename into the
 browser command.
 This can be set by <a href="options.html#res-other">browser</a> resource.
 
@@ -201,7 +201,7 @@ This can be set by <a href="options.html#res-other">browser</a> resource.
 <img src="images/blueballdot.png" align=bottom alt="-">
 PDF Viewer
 <dd>
-This is the external PDF (Portable Document Format) viewer that <b>xfig</b> will 
+This is the external PDF (Portable Document Format) viewer that <b>xfig</b> will
 call to view the <b>xfig</b> tutorial.
 <br>
 The default is &quot;<tt>acroread %f</tt>&quot;,

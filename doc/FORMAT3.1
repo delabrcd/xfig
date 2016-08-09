@@ -28,7 +28,7 @@ of 74 ((4+1)*15 - 1).
 This means that figures converted from 2.1 and older files are offset by
 14 Fig units but new objects entered with version 3.0 are correct.
 
-In version 3.1 the magnet grid is at intervals 0, 75, 150, etc instead of 
+In version 3.1 the magnet grid is at intervals 0, 75, 150, etc instead of
 -1, 74, 149, etc.
 Figures from 2.1 and older are correctly converted now and a warning is popped
 up when you read in a version 3.0 file that says you may have to offset the
@@ -124,7 +124,7 @@ Description of the Fig Format Follows
 	 are defined in color pseudo-objects (type 0)
 
     For WHITE color, the area fill field is defined as follows:
-	
+
 	-1 = not filled
 	 0 = black
 	...  values from 1 to 19 are shades of grey, from darker to lighter
@@ -133,7 +133,7 @@ Description of the Fig Format Follows
 	41-56 see patterns for colors, below
 
     For BLACK or DEFAULT color, the area fill field is defined as follows:
-	
+
 	-1 = not filled
 	 0 = white
 	...  values from 1 to 19 are shades of grey, from lighter to darker
@@ -280,7 +280,7 @@ Description of the Fig Format Follows
 	int	arrow_type		(enumeration type)
 	int	arrow_style		(enumeration type)
 	float	arrow_thickness		(1/80 inch)
-	float 	arrow_width		(Fig units)
+	float	arrow_width		(Fig units)
 	float	arrow_height		(Fig units)
 
     Backward arrow line (Optional; absent if backward_arrow is 0):
@@ -441,15 +441,15 @@ Description of the Fig Format Follows
     (3.7) TEXT
 	type	name			(brief description)
 	----	----			-------------------
-	int	object 			(always 4)
+	int	object			(always 4)
 	int	sub_type		(0: Left justified
 					 1: Center justified
 					 2: Right justified)
 	int	color			(enumeration type)
 	int	depth			(enumeration type)
 	int	pen_style		(enumeration , not used)
-	int	font 			(enumeration type)
-	float	font_size 		(font size in points)
+	int	font			(enumeration type)
+	float	font_size		(font size in points)
 	float	angle			(radians, the angle of the text)
 	int	font_flags		(bit vector)
 	float	height			(Fig units)

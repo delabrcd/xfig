@@ -49,7 +49,7 @@ read_png(FILE *file, int filetype, F_pic *pic)
     float scale = (appres.INCHES ?
 		    (float)PIX_PER_INCH :
 		    2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
-    
+
     /* read the png file here */
     png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,
 		(png_voidp) NULL, NULL, NULL);
@@ -57,7 +57,7 @@ read_png(FILE *file, int filetype, F_pic *pic)
 	close_picfile(file,filetype);
 	return FileInvalid;
     }
-		
+
     info_ptr = png_create_info_struct(png_ptr);
     if (!info_ptr) {
 	png_destroy_read_struct(&png_ptr, (png_infopp) NULL, (png_infopp) NULL);
@@ -79,7 +79,7 @@ read_png(FILE *file, int filetype, F_pic *pic)
 	close_picfile(file,filetype);
 	return FileInvalid;
     }
-	
+
     /* set up the input code */
     png_init_io(png_ptr, file);
 

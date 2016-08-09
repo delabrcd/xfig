@@ -15,7 +15,7 @@ grass2fig - The GRASS GIS (Geographic Resources Analysis Support System)
 	topological vector, image processing, and graphics production
 	functionality that operates on various platforms through a graphical
 	user interface and shell in X-Windows. It is released under GNU General
-	Public License (GPL). 
+	Public License (GPL).
 	The grass2fig program will convert a GRASS binary vector map to a
 	Fig file.
 ************************************************************************
@@ -35,7 +35,7 @@ xfigbar and xfigpie - Two C programs to produce bar and pie charts as Fig
 	http://www.johncon.com/john/archive/xfigutilities.shar.gz
 
 ************************************************************************
-mifXfig - MIF to XFig and XFig to MIF Converter 
+mifXfig - MIF to XFig and XFig to MIF Converter
 	see http://www.ida.liu.se/~vaden/teaching/m2f/ for details, but it
 	basically converts to and from MIF and Fig files
 	From Vadim Engelson (vaden@ida.liu.se)
@@ -110,9 +110,9 @@ pic2fig - converts PIC (used with troff/ditroff/etc) to Fig.
 GNU plotutils - includes an application for XY plotting (graph),
 	a plot filter (plot), a Tektronix translator (tek2plot),
 	a program for displaying font character maps (plotfont),
-	and a library for drawing 2-D vector graphics (libplot), 
+	and a library for drawing 2-D vector graphics (libplot),
 	all of which produce output in xfig format.
-	
+
 	http://www.gnu.org/software/plotutils/plotutils.html
 	by Robert S. Maier <rsm@math.arizona.edu>
 
@@ -147,13 +147,13 @@ cdraw2fig - converts cdraw to Fig
 	       $ fig2dev -Lpic example.fig > example.pic
 
 	Cheap Draw 2.0 was written by Bob Pratt and is available from the UNIXPC
-	archives at osu-cis.  
+	archives at osu-cis.
 
 ************************************************************************
 Msphinx - a friendly package to handle satellite images.
 
       Main features:
-      	Msphinx includes two types of analysis and processing functions:
+	Msphinx includes two types of analysis and processing functions:
 	   - Functions to process the basic data geometry and
 			projection planes.
 	   - Functions to manipulate and modify the graphic display and print.

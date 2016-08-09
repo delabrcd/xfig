@@ -43,7 +43,7 @@ extern void intersect_ellipse_ellipse_handler(F_ellipse *  e1, F_ellipse *  e2, 
 extern void intersect_ellipse_arc_handler(F_ellipse * e, F_arc * a, int x, int y,
 					  isect_cb_s * isect_cb);
 
-extern void intersect_ellipse_polyline_handler(F_ellipse * e, F_line *  l, int x, int y, 
+extern void intersect_ellipse_polyline_handler(F_ellipse * e, F_line *  l, int x, int y,
 					       isect_cb_s * isect_cb);
 
 extern void intersect_arc_arc_handler(F_arc * a1, F_arc * a2, int x, int y,

@@ -38,7 +38,7 @@
 <a href="i18n.html">国際化</a> も参照して下さい。
 <p>
 <ol>
-<li><b>xfig</b> のソース (<tt>xfig.3.2.5-alpha3.full.tar.gz</tt>) 
+<li><b>xfig</b> のソース (<tt>xfig.3.2.5-alpha3.full.tar.gz</tt>)
 を入手して、展開します。
 ソースの展開は、
 <p>
@@ -59,11 +59,11 @@
 <a href="ftp://ftp.x.org/contrib/applications/drawing_tools/xfig/">
 <i>ftp://ftp.x.org/contrib/applications/drawing_tools/xfig</i></a> や
 その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a>、
-もしくは任意の CTAN マシン 
+もしくは任意の CTAN マシン
 (例えば <a href="ftp://ftp.tex.ac.uk/pub/archive/graphics/">
-<i>ftp://ftp.tex.ac.uk/pub/archive/graphics</i></a>) 
+<i>ftp://ftp.tex.ac.uk/pub/archive/graphics</i></a>)
 から入手することができます。
-日本国内では <a href="http://www.ring.gr.jp">Ring Server</a> 
+日本国内では <a href="http://www.ring.gr.jp">Ring Server</a>
 や <a href="http://sunsite.sut.ac.jp/">SunSITE</a> などにも
 ミラーされていますので、
 できるだけ近くのサイトから入手するようにして下さい。
@@ -72,7 +72,7 @@
 <tt>xfig.3.2.5-alpha3.code_only.tar.gz</tt>、
 <tt>xfig.3.2.5-alpha3.docs_only.tar.gz</tt>、
 及び
-<tt>xfig.3.2.5-alpha3.libraries_only.tar.gz</tt> 
+<tt>xfig.3.2.5-alpha3.libraries_only.tar.gz</tt>
 として、それぞれソース・コード、ドキュメント、
 及びライブラリのみを含んだものも用意されています。
 
@@ -83,20 +83,20 @@
 <li>もし <b>xfig</b> を X11 のデフォルトのバイナリ・ディレクトリ以外に
 インストールしたいのであれば:
 <ul>
-<li>``<tt>BINDIR = ...</tt>'' のコメント・アウトを解除 
-(<tt>XCOMM</tt> を削除) し、そのディレクトリの指定を 
+<li>``<tt>BINDIR = ...</tt>'' のコメント・アウトを解除
+(<tt>XCOMM</tt> を削除) し、そのディレクトリの指定を
 <b>xfig</b> をインストールしたいディレクトリに書き換えます。
 <li>また、<tt>MKDIRHIER</tt> の定義が <tt>BINDIR</tt> の変更の影響を受けるため、
 ``<tt>MKDIRHIER = ...</tt>'' のコメント・アウトも解除し、
 <tt>mkdirhier</tt> コマンドのパスを指定する必要があるかも知れません。
 <li>そして、<tt>XAPPLOADDIR</tt> のコメント・アウトを解除し、
 app-defaults ファイルを置きたいディレクトリに変更します。
-このディレクトリを指すように 
+このディレクトリを指すように
 <tt>XAPPLRESDIR</tt> を設定することが必要となるでしょう。
 </ul>
 
 <p>
-<li>JPEG サポート機能を使用する場合には 
+<li>JPEG サポート機能を使用する場合には
 ``<tt>#define USEJPEG</tt>'' がコメント・アウトされていないことを確認し、
 また必要に応じて <tt>USEINSTALLEDJPEG</tt>、
 <tt>JPEGLIBDIR</tt> などの設定を変更します。
@@ -107,7 +107,7 @@ app-defaults ファイルを置きたいディレクトリに変更します。
 もし JPEG ライブラリがインストールされていない、
 あるいは古いバージョンのものがインストールされているならば、
 <a href="ftp://ftp.uu.net/graphics/jpeg">ftp://ftp.uu.net/graphics/jpeg</a> や
-<a href="ftp://ftp.x.org/contrib/libraries">ftp://ftp.x.org/contrib/libraries</a> 
+<a href="ftp://ftp.x.org/contrib/libraries">ftp://ftp.x.org/contrib/libraries</a>
 などから JPEG ライブラリのソースを入手し、
 <tt>USEINSTALLEDJPEG</tt> をコメント・アウトし、
 JPEG ライブラリのソースを展開したディレクトリを <tt>JPEGLIBDIR</tt> で指定します。
@@ -128,8 +128,8 @@ zlib ライブラリのソースは
 ftp://ftp.cdrom.com/pub/infozip/zlib</a> で見付けることができます。
 
 <p>
-<li>XPM サポート機能を使用する場合には 
-``<tt>#define USEXPM</tt>'' のコメント・アウトを解除し 
+<li>XPM サポート機能を使用する場合には
+``<tt>#define USEXPM</tt>'' のコメント・アウトを解除し
 (<tt>XCOMM</tt> を削除)、
 また必要に応じて <tt>XPMLIBDIR</tt> などの設定を変更します。
 この機能を使用するためには、
@@ -144,7 +144,7 @@ Xaw3d は、<tt>-DARROW_SCROLLBAR</tt> を指定せずに
 コンパイルされていなければなりません。
 
 <p>
-<li><a name="smallicons">小さいディスプレイ</a> 
+<li><a name="smallicons">小さいディスプレイ</a>
 (例えば 800x600 程度の) を使っている場合には、
 <b>xfig</b> のボタンを小さくしたいと思われるかも知れません。
 もしそうであれば、``<tt>#define USESMALLICONS</tt>'' の
@@ -171,7 +171,7 @@ Xaw3d は、<tt>-DARROW_SCROLLBAR</tt> を指定せずに
 ``<tt>#define NOSTRSTR</tt>'' のコメント・アウトを解除します。
 
 <p>
-<li>システムが <tt>strerror()</tt> をサポートしていない  
+<li>システムが <tt>strerror()</tt> をサポートしていない
 (しかし <tt>sys_errlist</tt> をサポートしている) ならば、
 ``<tt>NEED_STRERROR = -DNEED_STRERROR</tt>'' のコメント・アウトを解除します。
 
@@ -184,7 +184,7 @@ Xaw3d は、<tt>-DARROW_SCROLLBAR</tt> を指定せずに
 
 <p>
 <li><b>xfig</b> の国際化機能を有効としたい場合には、
-``<tt>#define I18N</tt>'' のコメント・アウトを解除 
+``<tt>#define I18N</tt>'' のコメント・アウトを解除
 (<tt>XCOMM</tt> を削除) します。
 詳細については、<a href="i18n.html">国際化</a>を参照して下さい。
 <p>
@@ -215,7 +215,7 @@ Xaw3d は、<tt>-DARROW_SCROLLBAR</tt> を指定せずに
 <tt>app-defaults</tt> ディレクトリに、
 それぞれ <tt>Fig</tt>、及び <tt>Fig-color</tt> という名前でコピーする
 <li><tt>CompKeyDB</tt>、<tt>Doc/html</tt> ディレクトリ、
-<tt>xfig-howto.pdf</tt>、及び <tt>xfig.pdf</tt> は、<tt>Imakefile</tt> の 
+<tt>xfig-howto.pdf</tt>、及び <tt>xfig.pdf</tt> は、<tt>Imakefile</tt> の
 <tt>XFIGLIBDIR</tt> で指定されたディレクトリにコピーする
 </ul>
 
@@ -234,9 +234,9 @@ Xaw3d は、<tt>-DARROW_SCROLLBAR</tt> を指定せずに
 <a href="i18n.html">国際化</a> も参照して下さい。
 <p>
 <ol>
-<li><b>transfig</b> のソース (<tt>transfig.3.2.5-alpha3.tar.gz</tt>) 
+<li><b>transfig</b> のソース (<tt>transfig.3.2.5-alpha3.tar.gz</tt>)
 を入手して、展開します。
-これは、<a href="#install-xfig"><b>xfig</b></a> 
+これは、<a href="#install-xfig"><b>xfig</b></a>
 と同じサイトから入手することができます。
 
 <p>
@@ -263,13 +263,13 @@ JPEG ライブラリが既にシステムにインストールされている場合には、
 もし JPEG ライブラリがインストールされていない、
 あるいは古いバージョンのものがインストールされているならば、
 <a href="ftp://ftp.uu.net/graphics/jpeg">ftp://ftp.uu.net/graphics/jpeg</a> や
-<a href="ftp://ftp.x.org/contrib/libraries">ftp://ftp.x.org/contrib/libraries</a> 
+<a href="ftp://ftp.x.org/contrib/libraries">ftp://ftp.x.org/contrib/libraries</a>
 などから JPEG ライブラリのソースを入手し、
 <tt>USEINSTALLEDJPEG</tt> をコメント・アウトし、
 JPEG ライブラリのソースを展開したディレクトリを <tt>JPEGLIBDIR</tt> で指定します。
 <p>
 JPEG サポート機能を使用しないならば、``<tt>#define USEJPEG</tt>'' を
-<tt>XCOMM</tt> ディレクティブを用いてコメント・アウト 
+<tt>XCOMM</tt> ディレクティブを用いてコメント・アウト
 (<tt>XCOMM #define USEJPEG</tt>) します。
 
 <p>
@@ -282,7 +282,7 @@ zlib ライブラリのソースは
 ftp://ftp.cdrom.com/pub/infozip/zlib</a> で見付けることができます。
 
 <p>
-<li>XPM サポート機能を使用する場合には 
+<li>XPM サポート機能を使用する場合には
 ``<tt>#define USEXPM</tt>'' のコメント・アウトを解除し、
 また必要に応じて <tt>XPMLIBDIR</tt> などの設定を変更します。
 この機能を使用するためには、
@@ -309,7 +309,7 @@ ftp://ftp.cdrom.com/pub/infozip/zlib</a> で見付けることができます。
 ``<tt>#define NOSTRSTR</tt>'' のコメント・アウトを解除します。
 
 <p>
-<li>システムが <tt>strerror()</tt> をサポートしていない  
+<li>システムが <tt>strerror()</tt> をサポートしていない
 (しかし <tt>sys_errlist</tt> をサポートしている) ならば、
 ``<tt>NEED_STRERROR = -DNEED_STRERROR</tt>'' のコメント・アウトを解除します。
 
@@ -321,7 +321,7 @@ ftp://ftp.cdrom.com/pub/infozip/zlib</a> で見付けることができます。
 
 <p>
 <li><b>fig2dev</b> の国際化機能を有効としたい場合には、
-``<tt>#define I18N</tt>'' のコメント・アウトを解除 
+``<tt>#define I18N</tt>'' のコメント・アウトを解除
 (<tt>XCOMM</tt> を削除) します。
 詳細については、<a href="i18n.html">国際化</a>を参照して下さい。
 <p>
@@ -370,13 +370,13 @@ Ghostscript は、pbmraw、ppmraw、pcx256、jpeg、及び tiff24nc ドライバを
 <b>Ghostscript</b> は、
 <a href="ftp://prep.ai.mit.edu/pub/gnu">ftp://prep.ai.mit.edu/pub/gnu</a>
 やその<a href="http://www.fsf.org/order/ftp.html">ミラー・サイト</a>、
-あるいは 
-<a href="ftp://ftp.cs.wisc.edu/ghost/aladdin">ftp://ftp.cs.wisc.edu/ghost/aladdin</a> 
+あるいは
+<a href="ftp://ftp.cs.wisc.edu/ghost/aladdin">ftp://ftp.cs.wisc.edu/ghost/aladdin</a>
 などから入手することができます。
 
 <p>
 <li><b>fig2dev</b> は、図のビットマップ形式での
-<a href="main_menus.html#export">エクスポート</a> に際して 
+<a href="main_menus.html#export">エクスポート</a> に際して
 <b>netpbm</b> パッケージの所定のコマンドを呼び出します。
 <p>
 実際に使用されることがあるコマンドは、
@@ -386,10 +386,10 @@ ppmtoacad、ppmtogif、ppmtopcx、ppmtopgm、ppmtojpeg、及び ppmtoxpm です。
 <b>netpbm</b> は、
 <a href="ftp://ftp.x.org/contrib/utilities/">
 ftp://ftp.x.org/contrib/utilities</a> や
-その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a> 
+その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a>
 の <tt>/contrib/utilities</tt>、
 あるいは <a href="ftp://ftp.cdrom.com/pub/X11/contrib/utilities/">
-ftp://ftp.cdrom.com/pub/X11/contrib/utilities</a> 
+ftp://ftp.cdrom.com/pub/X11/contrib/utilities</a>
 から入手することができます。
 <br>
 それが <b>ppmtojpeg</b> を含んでいることを確かめて下さい。
@@ -409,7 +409,7 @@ ftp://ftp.cdrom.com/pub/X11/contrib/utilities</a>
 ボタンなどを立体的に表示することが可能となります。
 これは、
 <a href="ftp://ftp.x.org/contrib/widgets/">ftp://ftp.x.org/contrib/widgets</a> や
-その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a> 
+その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a>
 の <tt>/contrib/widgets</tt> から入手することができます。
 
 <p>
@@ -417,7 +417,7 @@ ftp://ftp.cdrom.com/pub/X11/contrib/utilities</a>
 XPM フォーマットのイメージを取り扱うためのパッケージです。
 これは、
 <a href="ftp://ftp.x.org/contrib/libraries/">ftp://ftp.x.org/contrib/libraries</a> や
-その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a> 
+その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a>
 の <tt>/contrib/libraries</tt> から入手することができます。
 
 <p>
@@ -428,7 +428,7 @@ JPEG フォーマットのイメージを取り扱うためのパッケージです。
 です。
 これは、
 <a href="ftp://ftp.x.org/contrib/libraries/">ftp://ftp.x.org/contrib/libraries</a> や
-その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a> 
+その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a>
 の <tt>/contrib/libraries</tt> から入手することもできます。
 </ul>
 
@@ -438,8 +438,8 @@ JPEG フォーマットのイメージを取り扱うためのパッケージです。
 ここでは、関連するアプリケーションのリストを示します。
 <a href="http://SAL.KachinaTech.COM">
 <i>Scientific Applications on Linux (SAL)</i></a> からは、
-<a href="http://www.linux.or.jp">Linux</a> 用のアプリケーション 
-(その多くは、他の UNIX 互換プラットホーム上でも動作するかも知れない) 
+<a href="http://www.linux.or.jp">Linux</a> 用のアプリケーション
+(その多くは、他の UNIX 互換プラットホーム上でも動作するかも知れない)
 についての情報を得ることができます。
 また、Ian MacPhedran がメンテナンスしている
 <a href="http://duke.usask.ca/~macphed/soft/fig/">http://duke.usask.ca/~macphed/soft/fig/</a>
@@ -450,7 +450,7 @@ JPEG フォーマットのイメージを取り扱うためのパッケージです。
 <li><b>fig2dev (transfig)</b><br>
 <a href="#install-fig2dev">fig2dev</a> は、
 <b>xfig</b> で作成した図を種々のフォーマットに変換する機能を提供します。
-<b>xfig</b> は <a href="printing.html#export">Export</a> や 
+<b>xfig</b> は <a href="printing.html#export">Export</a> や
 <a href="printing.html#print">Print</a> に際して
 <b>fig2dev</b> を呼び出しますので、これは必須となります。
 <b>fig2dev</b> は <b>transfig</b> パッケージの一部であり、
@@ -465,8 +465,8 @@ JPEG フォーマットのイメージを取り扱うためのパッケージです。
 これ (少なくとも古いバージョン) は GPL に従って配布されており、
 <a href="ftp://prep.ai.mit.edu/pub/gnu">ftp://prep.ai.mit.edu/pub/gnu</a>
 やその<a href="http://www.fsf.org/order/ftp.html">ミラー・サイト</a>、
-あるいは 
-<a href="ftp://ftp.cs.wisc.edu/ghost/aladdin">ftp://ftp.cs.wisc.edu/ghost/aladdin</a> 
+あるいは
+<a href="ftp://ftp.cs.wisc.edu/ghost/aladdin">ftp://ftp.cs.wisc.edu/ghost/aladdin</a>
 などから入手することができます。
 <p>
 日本語を含んだ図を取り扱うためには、
@@ -483,8 +483,8 @@ osu-cis の UNIXPC アーカイブから入手することが可能です。
 
 <p>
 <li><b>chemtool</b><br>
-Fig フォーマットでの出力を行なう 
-(そして XBM よりも凝った出力のために transfig に頼っている) 
+Fig フォーマットでの出力を行なう
+(そして XBM よりも凝った出力のために transfig に頼っている)
 X11 用の化学構造エディタであり、
 <a href="http://www.uni-ulm.de/~s_tvolk/chemtool">
 http://www.uni-ulm.de/~s_tvolk/chemtool</a>
@@ -503,15 +503,15 @@ http://www.ise.fhg.de/radiance/pabs-toolbox/figbuild/figbuild.html</a>
 <p>
 <li><a name="gimp"><b>GIMP</b></a><br>
 <a href="http://www.gimp.org/">http://www.gimp.org/</a> からは、
-フリーの強力なイメージ操作ソフトウェアである 
-<b>GIMP</b> (GNU Image Manipulation Program) 
+フリーの強力なイメージ操作ソフトウェアである
+<b>GIMP</b> (GNU Image Manipulation Program)
 についての情報を得ることができます。
 
 <p>
 <li><a name="gnuplot"><b>gnuplot</b></a><br>
 <b>gnuplot</b> はグラフ作成パッケージであり、
 Fig フォーマットやその他のフォーマットでの出力を生成することができます。
-公式のディストリビューション・サイトは 
+公式のディストリビューション・サイトは
 <a href="ftp://ftp.dartmouth.edu/pub/gnuplot/">
 ftp://ftp.dartmouth.edu/pub/gnuplot</a> ですが、
 近くの <tt>comp.sources.misc</tt> アーカイブから入手することなども可能です。
@@ -525,15 +525,15 @@ X ウィンドウ・システム上のグラフィカル・ユーザー・インターフェースとシェルを通し
 オープン・ソースのグラフィカル・インフォメーション・システム (GIS) である。
 それは GNU General Public License (GPL) のもとにリリースされている。
 <a href="http://grass.itc.it/">http://grass.itc.it/</a> を参照のこと。
-<b>grass2fig</b> プログラムは 
+<b>grass2fig</b> プログラムは
 GRASS バイナリ・ベクタ・マップを Fig ファイルに変換する。
 
 <p>
 <li><a name="gzip"><b>gzip (gunzip)</b></a><br>
-<b>xfig</b> は、<b>gzip</b> によって圧縮されたファイルの読み込みに際して 
+<b>xfig</b> は、<b>gzip</b> によって圧縮されたファイルの読み込みに際して
 <b>gunzip</b> を呼び出します。
-<b>gzip</b> (<b>gunzip</b>) は 
-<a href="http://www.fsf.org/">Free Software Foundations</a> 
+<b>gzip</b> (<b>gunzip</b>) は
+<a href="http://www.fsf.org/">Free Software Foundations</a>
 のプロダクトであり、
 
 <a href="ftp://prep.ai.mit.edu/pub/gnu">ftp://prep.ai.mit.edu/pub/gnu</a>
@@ -542,10 +542,10 @@ GRASS バイナリ・ベクタ・マップを Fig ファイルに変換する。
 
 <p>
 <li><a name="hp2xx"><b>hp2xx</b></a><br>
-<b>hp2xx</b> を用いると、HP-GL ファイルを 
+<b>hp2xx</b> を用いると、HP-GL ファイルを
 PostScript、LaTeX、Fig などのフォーマットに変換することが可能です。
 これは、
-<a href="ftp://ftp.engr.usask.ca/pub/hp2xx/">ftp://ftp.engr.usask.ca/pub/hp2xx/</a> 
+<a href="ftp://ftp.engr.usask.ca/pub/hp2xx/">ftp://ftp.engr.usask.ca/pub/hp2xx/</a>
 から入手することができます。
 
 <p>
@@ -557,7 +557,7 @@ http://tech-www.informatik.uni-hamburg.de/applets/javafig/applet.html</a>
 
 <p>
 <li><b>mifXfig</b><br>
-<b>mifXfig</b> は MIF フォーマット (Framemaker(TM) のファイル) と 
+<b>mifXfig</b> は MIF フォーマット (Framemaker(TM) のファイル) と
 Fig フォーマットとのコンバータです。
 詳細は、
 <a href="http://www.ida.liu.se/~vaden/teaching/m2f/">
@@ -598,29 +598,29 @@ http://loasys.univ-lille1.fr/Msphinx/Msphinx_gb.html</a>
 <p>
 <li><a name="netpbm"><b>netpbm</b></a><br>
 <b>fig2dev</b> は、図のビットマップ形式での
-<a href="printing.html#export">エクスポート</a> に際して 
+<a href="printing.html#export">エクスポート</a> に際して
 <b>netpbm</b> パッケージの所定のコマンドを呼び出します。
 
 <b>netpbm</b> は、
 <a href="ftp://ftp.x.org/contrib/utilities/">
 ftp://ftp.x.org/contrib/utilities</a> や
-その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a> 
+その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a>
 の <tt>/contrib/utilities</tt>、
 あるいは <a href="ftp://ftp.cdrom.com/pub/X11/contrib/utilities/">
-ftp://ftp.cdrom.com/pub/X11/contrib/utilities</a> 
+ftp://ftp.cdrom.com/pub/X11/contrib/utilities</a>
 から入手することができます。
 
 <p>
 <li><b>pic2fig</b><br>
-troff や ditroff などで用いられる 
+troff や ditroff などで用いられる
 PIC フォーマットから Fig フォーマットへの変換プログラムです。
 これは、
 <a href="ftp://ftp.cs.orst.edu/localsrc/graphics/">
 ftp://ftp.cs.orst.edu/localsrc/graphics</a>、
-あるいは 
+あるいは
 <a href="ftp://ftp.x.org/contrib/utilities/">
 ftp://ftp.x.org/contrib/utilities</a> や
-その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a> 
+その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a>
 の <tt>/contrib/utilities</tt> から入手することができます。
 
 <p>
@@ -634,7 +634,7 @@ UNIX の plot フォーマットから Fig フォーマットへの変換プログラムです。
 XY プロット (graph)、plot フィルタ (plot)、
 Tektronix トランスレータ (tek2plot)、
 フォント・キャラクタ・マップ表示プログラム (plotfont)、
-及び 2D ベクタ・グラフィックの描画のためのライブラリ (libplot) 
+及び 2D ベクタ・グラフィックの描画のためのライブラリ (libplot)
 を含んでおり、全てが Fig フォーマットでの出力を生成することができる。
 by Robert S. Maier &lt;rsm@math.arizona.edu&gt;.
 <a href="http://www.gnu.org/software/plotutils/plotutils.html">
@@ -642,12 +642,12 @@ http://www.gnu.org/software/plotutils/plotutils.html</a> を参照。
 
 <p>
 <li><a name="pstoedit"><b>pstoedit</b></a><br>
-<b>pstoedit</b> は、PostScript ファイルを 
+<b>pstoedit</b> は、PostScript ファイルを
 fig フォーマットに変換するために用いることができます。
 これは、
 <a href="ftp://ftp.x.org/contrib/applications/tgif/pstoedit/">
 ftp://ftp.x.org/contrib/applications/tgif/pstoedit</a> や
-その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a> 
+その <a href="http://www.opengroup.org/tech/desktop/x/gettingx.htm">ミラー・サイト</a>
 の <tt>/contrib/applications/tgif/pstoedit</tt> から入手することができます。
 
 <p>
@@ -668,7 +668,7 @@ get xfigutilities.shar
 <p>
 <li><a name="xgraph"><b>xgraph</b></a><br>
 <b>xgraph</b> は X11 上で動作するグラフ作成パッケージです。
-<a href="ftp://iworks.ecn.uiowa.edu/">ftp://iworks.ecn.uiowa.edu</a> の 
+<a href="ftp://iworks.ecn.uiowa.edu/">ftp://iworks.ecn.uiowa.edu</a> の
 <tt>comp.hp</tt> には、
 Fig ファイルを生成することのできるバージョンが置かれています。
 
@@ -679,7 +679,7 @@ Fig ファイルを生成することのできるバージョンが置かれています。
 <a href="http://www.danbbs.dk/~torsten/xpaint">
 http://www.danbbs.dk/~torsten/xpaint</a> や、
 <a href="ftp://sunsite.unc.edu/pub/Linux/apps/graphics/draw/">
-ftp://sunsite.unc.edu/pub/Linux/apps/graphics/draw/</a> 
+ftp://sunsite.unc.edu/pub/Linux/apps/graphics/draw/</a>
 などの任意の SunSite から入手することができます。
 
 <p>

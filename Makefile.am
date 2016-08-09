@@ -20,19 +20,18 @@ dist_applications_DATA = xfig.desktop
 
 dist_compkeydb_DATA = CompKeyDB
 
-EXTRA_DIST = CHANGES FIGAPPS app-defaults xpm_splash_logo \
-	LATEX.AND.XFIG LATEX.AND.XFIG.zh_CN LATEX.AND.XFIG.zh_TW
+EXTRA_DIST = CHANGES FIGAPPS app-defaults splash-image update-version_m4
 
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 config.h.in config.h.in~ configure
 
+if ENABLE_VERSIONING
+# The generated Makefile lets configure and config.h.in depend on configure.ac,
+# and on all .m4 files. If configure.ac is changed, configure is re-created,
+# then config.h, probably only after version.m4 is updated, and configure
+# is again recreated and run. Only a nuisance, though.
 version.m4: configure.ac Makefile.am src/*.c src/*.h
-	if test `git describe` && test "`git describe --abbrev=1`" \
-		!= "`sed -n '/XFIG_V/ {s/.*\[\(.*\)\])/\1/;p}' $@`"; then \
-	sed -i "s/VERSION\], \[.*\]/VERSION], [`git describe --abbrev=1`]/" $@ \
-	&& sed -i "s/DATE\], \[.*\]/DATE], [`LC_TIME=C date +'%b %Y' -r $@`]/" $@; \
-	fi
-# To compare git date with version.m4 date; Easier with wildcards, like above.
-# && test `git show -s --pretty=%ct` gt `date +%s -r $@`
+	. ./update-version_m4
+endif
 
 # a fragment, to test compilation with different configure-flags
 compile-check: distdir

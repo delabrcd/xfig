@@ -55,7 +55,7 @@ extern Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 #define I_FONTSIZE	0x00000800
 #define I_FONT		0x00001000
 #define I_TEXTSTEP	0x00002000
-#define I_DIMLINE   	0x00004000
+#define I_DIMLINE	0x00004000
 #define I_ROTNANGLE	0x00008000
 #define I_NUMSIDES	0x00010000
 #define I_PEN_COLOR	0x00020000
@@ -106,7 +106,7 @@ extern Dimension UPD_CTRL_WD;		/* actual width is det. in setup_ind_panel */
 				I_BOXRADIUS | I_DEPTH | I_ARCTYPE | I_DIMLINE)
 #define I_ALIGN		(I_HALIGN | I_VALIGN)
 #define I_ROTATE	(I_MIN2 | I_ROTNANGLE | I_NUMCOPIES)
-#define I_COPY   	(I_MIN3 | I_NUMXCOPIES | I_NUMYCOPIES)
+#define I_COPY		(I_MIN3 | I_NUMXCOPIES | I_NUMYCOPIES)
 #define I_ADD_DEL_ARROW (I_LINEWIDTH | I_ARROWTYPE | I_ARROWSIZE)
 #define I_TANGENT       (I_MIN2 | I_LINE1 | I_DEPTH | I_ARROWTYPE | I_ARROWMODE | I_TANGNORMLEN)
 

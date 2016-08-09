@@ -13,8 +13,8 @@
  *
  */
 
-/* 
-   FigList - 
+/*
+   FigList -
 
    This is an attempt to subclass the listWidgetClass to add
    the functionality of up/down arrows to scroll up/down in the list
@@ -68,35 +68,35 @@ static XtActionsRec	actions[] = {
 #define superclass		(&listClassRec)
 FigListClassRec figListClassRec = {
 	{ /* core class part */
-    /* superclass	  	*/  (WidgetClass) superclass,
-    /* class_name	  	*/  "FigList",
-    /* widget_size	  	*/  sizeof(FigListRec),
-    /* class_initialize   	*/  XawInitializeWidgetSet,
+    /* superclass		*/  (WidgetClass) superclass,
+    /* class_name		*/  "FigList",
+    /* widget_size		*/  sizeof(FigListRec),
+    /* class_initialize		*/  XawInitializeWidgetSet,
     /* class_part_initialize	*/  NULL,
-    /* class_inited       	*/  FALSE,
-    /* initialize	  	*/  NULL,
+    /* class_inited		*/  FALSE,
+    /* initialize		*/  NULL,
     /* initialize_hook		*/  NULL,
-    /* realize		  	*/  XtInheritRealize,
-    /* actions		  	*/  actions,
-    /* num_actions	  	*/  XtNumber(actions),
-    /* resources	  	*/  NULL,
-    /* num_resources	  	*/  0,
-    /* xrm_class	  	*/  NULLQUARK,
-    /* compress_motion	  	*/  TRUE,
-    /* compress_exposure  	*/  FALSE,
+    /* realize			*/  XtInheritRealize,
+    /* actions			*/  actions,
+    /* num_actions		*/  XtNumber(actions),
+    /* resources		*/  NULL,
+    /* num_resources		*/  0,
+    /* xrm_class		*/  NULLQUARK,
+    /* compress_motion		*/  TRUE,
+    /* compress_exposure	*/  FALSE,
     /* compress_enterleave	*/  TRUE,
-    /* visible_interest	  	*/  FALSE,
-    /* destroy		  	*/  NULL,
-    /* resize		  	*/  XtInheritResize,
-    /* expose		  	*/  XtInheritExpose,
-    /* set_values	  	*/  NULL,
+    /* visible_interest		*/  FALSE,
+    /* destroy			*/  NULL,
+    /* resize			*/  XtInheritResize,
+    /* expose			*/  XtInheritExpose,
+    /* set_values		*/  NULL,
     /* set_values_hook		*/  NULL,
     /* set_values_almost	*/  XtInheritSetValuesAlmost,
     /* get_values_hook		*/  NULL,
-    /* accept_focus	 	*/  NULL,
+    /* accept_focus		*/  NULL,
     /* intrinsics version	*/  XtVersion,
-    /* callback_private   	*/  NULL,
-    /* tm_table		   	*/  defaultTranslations,
+    /* callback_private		*/  NULL,
+    /* tm_table			*/  defaultTranslations,
     /* query_geometry		*/  XtInheritQueryGeometry,
   },
 /* Simple class fields initialization */
@@ -139,7 +139,7 @@ SelectHome(Widget w, XEvent *event, String *params, Cardinal *num_params)
 static void
 SelectEnd(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
-    
+
     FigListWidget  lw = (FigListWidget) w;
 
     /* highlight and call any callbacks */
@@ -151,7 +151,7 @@ SelectEnd(Widget w, XEvent *event, String *params, Cardinal *num_params)
 static void
 SelectNext(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
-    
+
     FigListWidget  lw = (FigListWidget) w;
     int		   item;
 
@@ -255,7 +255,7 @@ void FigListFinishUp(Widget w, int item)
     /* call any callbacks */
     ret_value.string = lw->list.list[item];
     ret_value.list_index = item;
-    
+
     XtCallCallbacks( w, XtNcallback, (XtPointer) &ret_value);
 
     /* highlight new item */

@@ -81,7 +81,7 @@ init_spline_drawing2(int x, int y)
 	canvas_middlebut_proc = create_splineobject;
     } else {
 	min_num_points = CLOSED_SPLINE_MIN_NUM_POINTS;
-	init_trace_drawing(x, y);     
+	init_trace_drawing(x, y);
 	canvas_middlebut_save = create_splineobject;
 	canvas_middlebut_proc = null_proc;
     }
@@ -95,7 +95,7 @@ create_splineobject(int x, int y)
 {
     F_spline	   *spline;
 
-    if (x != fix_x || y != fix_y) 
+    if (x != fix_x || y != fix_y)
 	get_intermediatepoint(x, y, 0);
     if (num_point < min_num_points) {	/* too few points */
 	put_msg("Not enough points for spline");
@@ -141,7 +141,7 @@ create_splineobject(int x, int y)
     elastic_moveline(spline->points);	/* erase control vector */
     if (cur_mode == F_CLOSED_APPROX_SPLINE) {
 	spline->type = T_CLOSED_APPROX;
-    } else if (cur_mode == F_CLOSED_INTERP_SPLINE) {			
+    } else if (cur_mode == F_CLOSED_INTERP_SPLINE) {
 	spline->type = T_CLOSED_INTERP;
     } else {				/* It must be F_SPLINE */
 	if (autoforwardarrow_mode)
@@ -169,14 +169,14 @@ make_sfactors(F_spline *spl)
   F_point   *p = spl->points;
   F_sfactor *sp, *cur_sp;
   int       type_s = approx_spline(spl) ? S_SPLINE_APPROX : S_SPLINE_INTERP;
-  
+
   spl->sfactors = NULL;
   if ((sp = create_sfactor()) == NULL)
     return 0;
   spl->sfactors = cur_sp = sp;
   sp->s = closed_spline(spl) ? type_s : S_SPLINE_ANGULAR;
   p = p->next;
-  
+
   for(; p!=NULL ; p=p->next)
     {
       if ((sp = create_sfactor()) == NULL)
@@ -186,7 +186,7 @@ make_sfactors(F_spline *spl)
       sp->s = type_s;
       cur_sp = cur_sp->next;
     }
-  
+
   cur_sp->s = spl->sfactors->s;
   cur_sp->next = NULL;
   return 1;

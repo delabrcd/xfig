@@ -19,8 +19,8 @@
 
 typedef struct f_libobj {
     struct {
-	    	int x, y;
-		} corner;
+		int x, y;
+	} corner;
     struct f_compound *compound;
 }
 	F_libobject;

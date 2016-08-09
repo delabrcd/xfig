@@ -273,7 +273,7 @@ void
 toggle_polyline_polygon(F_line *line, F_point *previous_point, F_point *selected_point)
 {
   F_point *point, *last_pt;
-  
+
   last_pt = last_point(line->points);
 
   if (line->type == T_POLYLINE)
@@ -286,12 +286,12 @@ toggle_polyline_polygon(F_line *line, F_point *previous_point, F_point *selected
       }
       if ((point = create_point()) == NULL)
 	  return;
-      
+
       point->x = last_pt->x;
       point->y = last_pt->y;
       point->next = line->points;
       line->points = point;
-      
+
       line->type = T_POLYGON;
       clean_up();
       set_last_arrows(line->for_arrow, line->back_arrow);
@@ -302,7 +302,7 @@ toggle_polyline_polygon(F_line *line, F_point *previous_point, F_point *selected
       point = line->points;
       line->points = point->next;           /* unchain the first point */
       free((char *) point);
-            
+
       if ((line->points != selected_point) && (previous_point != NULL))
 	{
 	  last_pt->next = line->points;     /* let selected point become */
@@ -351,7 +351,7 @@ toggle_open_closed_spline(F_spline *spline, F_point *previous_point, F_point *se
   draw_spline(spline, ERASE);
 
   if (closed_spline(spline))
-    {      
+    {
       if (spline->points != selected_point)
 	{
 	  last_pt->next = spline->points;

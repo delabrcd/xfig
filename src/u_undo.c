@@ -64,9 +64,9 @@ extern void	swap_counts(void);	/* w_layers.c */
  * all the "next" fields of objects pointed to by object_tails to NULL.
  */
 
-F_compound	saved_objects = {0, 0, { 0, 0 }, { 0, 0 }, 
+F_compound	saved_objects = {0, 0, { 0, 0 }, { 0, 0 },
 				NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-F_compound	object_tails = {0, 0, { 0, 0 }, { 0, 0 }, 
+F_compound	object_tails = {0, 0, { 0, 0 }, { 0, 0 },
 				NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 F_arrow		*saved_for_arrow = (F_arrow *) NULL;
 F_arrow		*saved_back_arrow = (F_arrow *) NULL;
@@ -690,7 +690,7 @@ void undo_open_close(void)
 	last_for_arrow = last_back_arrow = NULL;
     }
     toggle_polyline_polygon(saved_objects.lines, last_prev_point,
-			    last_selected_point);   
+			    last_selected_point);
     break;
   case O_SPLINE:
     if (saved_objects.splines->type == T_OPEN_XSPLINE) {
@@ -714,7 +714,7 @@ void undo_open_close(void)
 				  last_selected_point);
     }
     break;
-  }   
+  }
 }
 
 void swap_newp_lastp(void)

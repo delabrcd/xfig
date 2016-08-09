@@ -23,10 +23,10 @@
  * with respect to this software, its quality, accuracy, merchantability, or
  * fitness for a particular purpose.  This software is provided "AS IS", and you,
  * its user, assume the entire risk as to its quality and accuracy.
- * 
+ *
  * This software is copyright (C) 1991-1996, Thomas G. Lane.
  * All Rights Reserved except as specified below.
- * 
+ *
  * Permission is hereby granted to use, copy, modify, and distribute this
  * software (or portions thereof) for any purpose, without fee, subject to these
  * conditions:
@@ -40,16 +40,16 @@
  * (3) Permission for use of this software is granted only if the user accepts
  * full responsibility for any undesirable consequences; the authors accept
  * NO LIABILITY for damages of any kind.
- * 
+ *
  * These conditions apply to any software derived from or based on the IJG code,
  * not just to the unmodified library.  If you use our work, you ought to
  * acknowledge us.
- * 
+ *
  * Permission is NOT granted for the use of any IJG author's name or company name
  * in advertising or publicity relating to this software or products derived from
  * it.  This software may be referred to only as "the Independent JPEG Group's
  * software".
- * 
+ *
  * We specifically permit and encourage the use of this software as the basis of
  * commercial products, provided that all warranty or liability claims are
  * assumed by the product vendor.
@@ -177,7 +177,7 @@ read_JPEG_file (FILE *file)
 
 	pict->pic_cache->bit_size.x = cinfo.image_width;
 	pict->pic_cache->bit_size.y = cinfo.image_height;
-	if ((pict->pic_cache->bitmap = (unsigned char *) 
+	if ((pict->pic_cache->bitmap = (unsigned char *)
 	  malloc(cinfo.image_width * cinfo.image_height)) == NULL) {
 	    file_msg("Can't alloc memory for JPEG image");
 	    longjmp(jerr.setjmp_buffer, 1);
@@ -199,7 +199,7 @@ read_JPEG_file (FILE *file)
 	 * output image dimensions available, as well as the output colormap
 	 * if we asked for color quantization.
 	 * In this example, we need to make an output work buffer of the right size.
-	 */ 
+	 */
 	/* JSAMPLEs per row in output buffer */
 	row_stride = cinfo.output_width * cinfo.output_components;
 	/* Make a one-row-high sample array that will go away when done with image */

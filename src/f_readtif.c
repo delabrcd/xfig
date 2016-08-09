@@ -42,7 +42,7 @@ read_tif(char *filename, int filetype, F_pic *pic)
 		return FileInvalid;
 	}
 	close(fd);
-	
+
 	/* make command to convert tif to pnm then to pcx into temp file */
 	/* for some reason, tifftopnm requires a file and can't work in a pipe */
 	sprintf(buf, "tifftopnm %s 2> /dev/null | ppmtopcx > %s 2> /dev/null",

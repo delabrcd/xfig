@@ -7,8 +7,8 @@
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that this copyright
  * notice remain intact.
  *
  */
@@ -36,16 +36,16 @@
 
 static XtResource resources[] = {
   {XtNsubMenu,  XtCSubMenu, XtRWidget, sizeof(Widget),
-     				offset(subMenu), XtRString, NULL},
+				offset(subMenu), XtRString, NULL},
   {XtNselectCascade,  XtCSelectCascade, XtRBoolean, sizeof(Boolean),
-     				offset(selectCascade), XtRBoolean, (XtPointer) False},
+				offset(selectCascade), XtRBoolean, (XtPointer) False},
   {"highlighted",  "Highlighted", XtRBoolean, sizeof(Boolean),
-     				offset(highlighted), XtRBoolean, (XtPointer) False},
-};   
+				offset(highlighted), XtRBoolean, (XtPointer) False},
+};
 #undef offset
 
 /*
- * Semi Public function definitions. 
+ * Semi Public function definitions.
  */
 
 static	void ClassInitialize(void);
@@ -53,7 +53,7 @@ static	void HighlightCascade(Widget w);
 static	void UnhighlightCascade(Widget w);
 static	void Notify(Widget w);
 
-/* 
+/*
  * Private Function Definitions.
  */
 
@@ -77,17 +77,17 @@ SmeCascadeClassRec smeCascadeClassRec = {
     /* resources          */    resources,
     /* resource_count     */	XtNumber(resources),
     /* xrm_class          */    NULLQUARK,
-    /* compress_motion    */    FALSE, 
+    /* compress_motion    */    FALSE,
     /* compress_exposure  */    FALSE,
-    /* compress_enterleave*/ 	FALSE,
+    /* compress_enterleave*/	FALSE,
     /* visible_interest   */    FALSE,
     /* destroy            */    NULL,
     /* resize             */    NULL,
     /* expose             */    XtInheritExpose,
     /* set_values         */    NULL,
     /* set_values_hook    */	NULL,
-    /* set_values_almost  */	XtInheritSetValuesAlmost,  
-    /* get_values_hook    */	NULL,			
+    /* set_values_almost  */	XtInheritSetValuesAlmost,
+    /* get_values_hook    */	NULL,
     /* accept_focus       */    NULL,
     /* intrinsics version */	XtVersion,
     /* callback offsets   */    NULL,
@@ -97,7 +97,7 @@ SmeCascadeClassRec smeCascadeClassRec = {
     /* extension	  */    NULL
   },{
     /* Simple Menu Entry (Sme) Fields */
-      
+
     /* highlight          */    HighlightCascade,
     /* unhighlight        */    UnhighlightCascade,
     /* notify             */    Notify,
@@ -110,11 +110,11 @@ SmeCascadeClassRec smeCascadeClassRec = {
   }, {
 #endif /* XAW3D */
 
-    /* SmeBSB Menu entry Fields */  
+    /* SmeBSB Menu entry Fields */
 
     /* extension	  */    NULL
   }, {
-    /* Cascade Menu entry Fields */  
+    /* Cascade Menu entry Fields */
 
     /* extension	  */    NULL
   }
@@ -159,12 +159,12 @@ popdown_subs(void)
  ************************************************************/
 
 /*	Function Name: ClassInitialize
- *	Description: Initializes the SmeBSBObject. 
+ *	Description: Initializes the SmeBSBObject.
  *	Arguments: none.
  *	Returns: none.
  */
 
-static void 
+static void
 ClassInitialize(void)
 {
     XawInitializeWidgetSet();
@@ -178,7 +178,7 @@ ClassInitialize(void)
  *                   to be fully visable if menu_on_screen is TRUE.
  *	Arguments: w - the simple menu widget.
  *                 x, y - the current location of the widget.
- *	Returns: none 
+ *	Returns: none
  *	Modified from SimpleMenu.c by Chris D. Peterson
  */
 
@@ -190,14 +190,14 @@ MoveMenu(Widget w, Position x, Position y)
     int			width = w->core.width + 2 * w->core.border_width;
     int			height = w->core.height + 2 * w->core.border_width;
 
-    if (x < 0) 
+    if (x < 0)
 	x = 0;
     else {
 	int scr_width = WidthOfScreen(XtScreen(w));
 	if (x + width > scr_width)
 	    x = scr_width - width;
     }
-	
+
     if (y < 0)
 	y = 0;
     else {
@@ -205,14 +205,14 @@ MoveMenu(Widget w, Position x, Position y)
 	if (y + height > scr_height)
 	    y = scr_height - height;
     }
-    
+
     XtSetArg(arglist[num_args], XtNx, x); num_args++;
     XtSetArg(arglist[num_args], XtNy, y); num_args++;
     XtSetValues(w, arglist, num_args);
 }
 
 /************************************************************
- * 
+ *
  * Highlight entry and pop up submenu of cascade entry.
  *
  ************************************************************/
@@ -294,12 +294,12 @@ HighlightCascade(Widget w)
 		popped_up[popped] = submenu;
 		popped++;
 	    }
-	} 
+	}
     }
 }
 
 /************************************************************
- * 
+ *
  * Check if the pointer is actually leaving the menu or is in a submenu.
  *
  ************************************************************/
@@ -314,7 +314,7 @@ UnhighlightCascade(Widget w)
     unsigned int     mask;
     SmeCascadeObject entry = (SmeCascadeObject) w;
     Widget	     submenu;
-    
+
     submenu = entry->sme_cascade.subMenu;
     if (submenu == NULL) {
 	if (entry->sme_cascade.highlighted) {
@@ -323,14 +323,14 @@ UnhighlightCascade(Widget w)
 	}
 	return;
     }
-	
+
     XtVaGetValues(w,
 		XtNx, &x,
 		XtNy, &y,
 		XtNheight, &height,
 		XtNwidth, &width,
 		NULL);
-    XQueryPointer(XtDisplayOfObject(w), 
+    XQueryPointer(XtDisplayOfObject(w),
 			XtWindowOfObject(w),
 			&root, &child, &root_x, &root_y, &px, &py, &mask);
     x = px-(int)x;
@@ -365,7 +365,7 @@ Notify(Widget w)
     int		     root_x, root_y, px, py;
     unsigned int     mask;
 
-    XQueryPointer(XtDisplayOfObject(w), 
+    XQueryPointer(XtDisplayOfObject(w),
 		  XtWindowOfObject(w),
 		  &root, &child, &root_x, &root_y, &px, &py, &mask);
 

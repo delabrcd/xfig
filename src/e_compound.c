@@ -21,7 +21,7 @@
  * open_compound lets the user select a compound with the left button,
  * then replaces the current drawing with that compound alone so that the
  * user can edit the insides of that compound without taking it apart.
- * 
+ *
  * close_compound pops out one compound; close_all_compounds pops all the way out.
  *
  */

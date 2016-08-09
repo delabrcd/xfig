@@ -109,11 +109,11 @@ write_pcx_head(FILE *file, pcxheadr *pcx_hd)
     for (i = 0; i < sizeof(pcx_hd->egapal); i++)
         putc(pcx_hd->egapal[i], file);
 
-    putc(pcx_hd->reserv, file);       
+    putc(pcx_hd->reserv, file);
     putc(pcx_hd->nplanes, file);
-    putword(pcx_hd->blp, file); 
-    putword(pcx_hd->palinfo, file);  
-    putword(pcx_hd->hscrnsiz, file);  
+    putword(pcx_hd->blp, file);
+    putword(pcx_hd->palinfo, file);
+    putword(pcx_hd->hscrnsiz, file);
     putword(pcx_hd->vscrnsiz, file);
 
     /* Write the reserved area at the end of the header */
@@ -122,10 +122,9 @@ write_pcx_head(FILE *file, pcxheadr *pcx_hd)
 }
 
 static void
-pcx_enc_scan(FILE *file, unsigned char *inbuffer, int bufsize)
-        	      
-                            	/* Pointer to buffer holding unencoded data */
-       		                /* Size of buffer holding unencoded data */
+pcx_enc_scan(FILE *file,
+	unsigned char *inbuffer,/* Pointer to buffer holding unencoded data */
+	int bufsize)		/* Size of buffer holding unencoded data */
 {
     register int index = 0;	/* Index into uncompressed data buffer */
     unsigned char runcount;	/* Length of encoded pixel run */
@@ -162,7 +161,7 @@ pcx_enc_scan(FILE *file, unsigned char *inbuffer, int bufsize)
 		putc(runvalue, file);
 	    } else {				/* Value is 64 to 255 */
 		putc(runcount | 0xC0, file);
-		putc(runvalue, file);       
+		putc(runvalue, file);
 	    }
 	}
 	index += runcount;  /* Jump ahead to next pixel run value */

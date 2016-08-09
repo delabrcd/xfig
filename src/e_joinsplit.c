@@ -58,7 +58,7 @@ void split_cspline (F_spline *cspline, F_spline *spline, F_point *point, F_sfact
 void
 join_split_selected(void)
 {
-    set_mousefun("Join Lines/Splines", "Split Line/Spline", "", 
+    set_mousefun("Join Lines/Splines", "Split Line/Spline", "",
 			LOC_OBJ, LOC_OBJ, LOC_OBJ);
     draw_mousefun_canvas();
     canvas_kbd_proc = null_proc;
@@ -153,7 +153,7 @@ join_splines(F_spline *spline, F_point *prev_point, F_point *selected_point)
 	    return;
 
 	/* only continue if the user has selected an end point */
-	if (prev_point != NULL && prev_point != spline->points && 
+	if (prev_point != NULL && prev_point != spline->points &&
 	    selected_point->next != NULL)
 		return;
 	init_searchproc_left(join_spline2);
@@ -298,7 +298,7 @@ join_spline2(F_line *obj, int type, int x, int y, F_point *p, F_point *q)
 
 /* Connect the points from line1 and line2 in the order determined
    by first1 and first2, which signify whether user clicked on first point
-   of respective line.  
+   of respective line.
    new_line must already have a copy of line1.
 */
 
@@ -349,7 +349,7 @@ connect_line_points(F_line *line1, Boolean first1, F_line *line2, Boolean first2
 
 /* Connect the points from spline1 and spline2 in the order determined
    by first1 and first2, which signify whether user clicked on first point
-   of respective spline.  
+   of respective spline.
    new_spline must already have a copy of spline1.
 */
 
@@ -442,7 +442,7 @@ split_line(int px, int py)
 	return;				/* A single point line - that would be tough to split */
 
     if (cur_l->type != T_POLYGON && cur_l->type != T_BOX && cur_l->type != T_ARCBOX) {
-	if (left_point == NULL) 	/* selected_point is the first point */
+	if (left_point == NULL)		/* selected_point is the first point */
 	    return;
 	else if (right_point == NULL)	/* last point */
 	    return;
@@ -554,7 +554,7 @@ split_spline(int px, int py)
 	   (right_point == NULL || right_point->next == NULL)) { /* last, OR only one point to the left */
 	    put_msg("Cutting there would result in a spline with only one point");
 	    beep();
-	    return;		
+	    return;
 	}
     }
 
@@ -654,7 +654,7 @@ void split_cspline(F_spline *cspline, F_spline *spline, F_point *point, F_sfacto
 	p->x = point->x;
 	p->y = point->y;
 	sf->s = csf->s;
-	if (point == splitp)	 
+	if (point == splitp)
 	    /* set sfactor on first point to 0.0 */
 	    sf->s = 0.0;
 	if (point->next == NULL && splitp == cspline->points)

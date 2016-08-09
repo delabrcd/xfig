@@ -174,7 +174,7 @@ get_arcpoint(int x, int y)
 
     if (num_point == 1) {
 	if (center_marked) {
-  	    set_mousefun("final angle", "", "cancel", "", "", "");
+	    set_mousefun("final angle", "", "cancel", "", "", "");
 	} else {
 	    set_mousefun("final point", "", "cancel", "", "", "");
 	}
@@ -228,7 +228,7 @@ create_arcobject(int lx, int ly)
 			    (double)(point[1].y - center_point.y));
 	point[1].x = center_point.x + r * cos(theta);
 	point[1].y = center_point.y + r * sin(theta);
-      
+
 	theta = compute_angle((double)(point[2].x - center_point.x),
 			    (double)(point[2].y - center_point.y));
 	point[2].x = center_point.x + r * cos(theta);
@@ -338,7 +338,7 @@ elastic_arc(void)
 			    (double)(tpoint[1].y - center_point.y));
 	tpoint[1].x = center_point.x + r * cos(theta1);
 	tpoint[1].y = center_point.y + r * sin(theta1);
-      
+
 	theta2 = compute_angle((double)(tpoint[2].x - center_point.x),
 			    (double)(tpoint[2].y - center_point.y));
 	tpoint[2].x = center_point.x + r * cos(theta2);

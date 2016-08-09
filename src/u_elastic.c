@@ -174,7 +174,7 @@ elastic_line(void)
 	      INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
 }
 
-/* this is only called by  get_intermediatepoint() for drawing lines and by 
+/* this is only called by  get_intermediatepoint() for drawing lines and by
    the canvas_locmove_proc for drawing arcs */
 
 void
@@ -467,7 +467,7 @@ void
 elastic_poly(int x1, int y1, int x2, int y2, int numsides)
 {
     register float  angle;
-    register int    nx, ny, i; 
+    register int    nx, ny, i;
     double	    dx, dy;
     double	    init_angle, mag;
     int		    ox, oy;
@@ -517,7 +517,7 @@ elastic_ebr(void)
     rx = cur_x - fix_x;
     ry = cur_y - fix_y;
     if (cur_angle != 0.0) {
-	angle_ellipse(fix_x, fix_y, rx, ry, cur_angle, INV_PAINT, MAX_DEPTH+1, 1, 
+	angle_ellipse(fix_x, fix_y, rx, ry, cur_angle, INV_PAINT, MAX_DEPTH+1, 1,
 	     RUBBER_LINE, 0.0, UNFILLED, DEFAULT, DEFAULT);
     } else {
 	x1 = fix_x + rx;
@@ -557,7 +557,7 @@ elastic_ebd(void)
     centy = (fix_y+cur_y)/2;
     length_msg(MSG_DIAM);
     if (cur_angle != 0.0) {
-	angle_ellipse(centx, centy, abs(cur_x-fix_x)/2, 
+	angle_ellipse(centx, centy, abs(cur_x-fix_x)/2,
 		  abs(cur_y-fix_y)/2, cur_angle,
 		  INV_PAINT, MAX_DEPTH+1, 1, RUBBER_LINE, 0.0, UNFILLED,
 		  DEFAULT, DEFAULT);
@@ -823,7 +823,7 @@ scaling_arc(int x, int y)
 
 void
 elastic_scale_curarc(void)
-{ 
+{
     elastic_scalearc(cur_a);
 }
 
@@ -879,7 +879,7 @@ void
 elastic_movetext(void)
 {
     pw_text(canvas_win, cur_x + x1off, cur_y + y1off, INV_PAINT, MAX_DEPTH+1,
-	    new_t->fontstruct, new_t->angle, 
+	    new_t->fontstruct, new_t->angle,
 	    new_t->cstring, new_t->color, COLOR_NONE);
 }
 

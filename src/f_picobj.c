@@ -238,7 +238,7 @@ void read_picobj(F_pic *pic, char *file, int color, Boolean force, Boolean *exis
     app_flush();
 }
 
-/* 
+/*
    Open the file 'name' and return its type (pipe or real file) in 'type'.
    Return the full name in 'retname'.  This will have a .gz or .Z if the file is
    zipped/compressed.

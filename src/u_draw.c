@@ -55,9 +55,9 @@ static Boolean add_closepoint(void);
 /* the spline definition stuff has been moved to u_draw_spline.c which
    is included later in this file */
 
-/************** ARRAY FOR ARROW SHAPES **************/ 
+/************** ARRAY FOR ARROW SHAPES **************/
 
-struct _fpnt { 
+struct _fpnt {
 		double x,y;
 	};
 
@@ -114,10 +114,10 @@ static struct _arrow_shape arrow_shapes[NUM_ARROW_TYPES] = {
 
 		   /* type 9a top-half filled concave spearhead */
 		   { 5, 1, 3, False, True, False, 2.6, {{-1.25,0.5},{0,0},{-1.25,-0.5},{-1.0,0},{-1.25,0.5}},
-			   			 {{-1.25,-0.5},{0,0},{-1,0}}},
+						 {{-1.25,-0.5},{0,0},{-1,0}}},
 		   /* type 9b bottom-half filled concave spearhead */
 		   { 5, 1, 3, False, True, False, 2.6, {{-1.25,0.5},{0,0},{-1.25,-0.5},{-1.0,0},{-1.25,0.5}},
-			   			 {{-1.25,0.5},{0,0},{-1,0}}},
+						 {{-1.25,0.5},{0,0},{-1,0}}},
 
 		   /* type 10o top-half simple triangle */
 		   { 4, 1, 0, True, True, True, 2.5, {{-1.0,0.5}, {0,0}, {-1,0.0}, {-1.0,0.5}}},
@@ -185,7 +185,7 @@ add_point(int x, int y)
 	    if (tmp_n > MAXNUMPTS) {
 		if (appres.DEBUG)
 		    fprintf(stderr,"add_point - reached MAXNUMPTS (%d)\n",tmp_n);
-	    	return False;
+		return False;
 	    }
 	    if (max_points == 0) {
 		tmp_p = (zXPoint *) malloc(tmp_n * sizeof(zXPoint));
@@ -205,7 +205,7 @@ add_point(int x, int y)
 	    max_points = tmp_n;
 	}
 	/* ignore identical points */
-	if (npoints > 0 && points[npoints-1].x == x && points[npoints-1].y == 
+	if (npoints > 0 && points[npoints-1].x == x && points[npoints-1].y ==
 y)
 		    return True;
 	points[npoints].x = x;
@@ -250,16 +250,16 @@ void draw_arc(F_arc *a, int op)
 	scy = ZOOMY(cy);
 	if (scx < clip_xmin+10 || scx > clip_xmax-10 ||
 	    scy < clip_ymin+10 || scy > clip_ymax-10)
-		set_clip_window(min2(scx-10,clip_xmin), min2(scy-10,clip_ymin), 
+		set_clip_window(min2(scx-10,clip_xmin), min2(scy-10,clip_ymin),
 				max2(scx+10,clip_xmax), max2(scy+10,clip_ymax));
 	sprintf(bufx,"c");
-	pw_text(canvas_win, cx, round(cy-3.0/zoomscale), 
+	pw_text(canvas_win, cx, round(cy-3.0/zoomscale),
 		op, a->depth, roman_font, 0.0, bufx, RED, COLOR_NONE);
 	pw_point(canvas_win, cx, cy, op, a->depth, 4, RED, CAP_ROUND);
 	for (i=1; i<=3; i++) {
 	    /* label the point number above the point */
 	    sprintf(bufx,"%d",i);
-	    pw_text(canvas_win, a->point[i-1].x, round(a->point[i-1].y-3.0/zoomscale), 
+	    pw_text(canvas_win, a->point[i-1].x, round(a->point[i-1].y-3.0/zoomscale),
 		op, a->depth, roman_font, 0.0, bufx, RED, COLOR_NONE);
 	    pw_point(canvas_win, a->point[i-1].x, a->point[i-1].y, op, a->depth, 4, RED, CAP_ROUND);
 	}
@@ -269,7 +269,7 @@ void draw_arc(F_arc *a, int op)
     /* fill points array but don't display the points yet */
 
     curve(canvas_win, a->depth,
-    	  round(a->point[0].x - rcx),
+	  round(a->point[0].x - rcx),
 	  round(rcy - a->point[0].y),
 	  round(a->point[2].x - rcx),
 	  round(rcy - a->point[2].y),
@@ -492,7 +492,7 @@ void angle_ellipse(int center_x, int center_y, int radius_x, int radius_y, float
 	sphisqr = sphi*sphi;
 	asqr = a*a;
 	bsqr = b*b;
-	
+
 	c1 = (cphisqr/asqr)+(sphisqr/bsqr);
 	c2 = ((cphi*sphi/asqr)-(cphi*sphi/bsqr))/c1;
 	c3 = (bsqr*cphisqr) + (asqr*sphisqr);
@@ -608,7 +608,7 @@ void draw_line(F_line *line, int op)
 		/* only draw the picture if there is a pixmap AND this layer is active */
 		draw_pic_pixmap(line, op);
 		return;
-	    } else if (line->pic->pic_cache->bitmap != NULL) { 
+	    } else if (line->pic->pic_cache->bitmap != NULL) {
 		/* if there is a pixmap but the layer is not active, draw it as a filled box */
 		line->type = T_BOX;
 		line->fill_style = NUMSHADEPATS-1;	 /* fill it */
@@ -672,7 +672,7 @@ void draw_line(F_line *line, int op)
 			line->thickness, line->pen_color, line->cap_style);
 	/* label the point number above the point */
 	if (appres.shownums && active_layer(line->depth)) {
-	    pw_text(canvas_win, x, round(y-3.0/zoomscale), PAINT, line->depth, 
+	    pw_text(canvas_win, x, round(y-3.0/zoomscale), PAINT, line->depth,
 			roman_font, 0.0, "0", RED, COLOR_NONE);
 	}
 	return;
@@ -705,7 +705,7 @@ void draw_line(F_line *line, int op)
     /* also create the arrowheads */
     clip_arrows(line,O_POLYLINE,op,0);
 
-    draw_point_array(canvas_win, op, line->depth, line->thickness, 
+    draw_point_array(canvas_win, op, line->depth, line->thickness,
 		     line->style, line->style_val, line->join_style,
 		     line->cap_style, line->fill_style,
 		     line->pen_color, line->fill_color);
@@ -760,7 +760,7 @@ void draw_arcbox(F_line *line, int op)
 static Boolean
 subset(int xmin1, int ymin1, int xmax1, int ymax1, int xmin2, int ymin2, int xmax2, int ymax2)
 {
-    return (xmin2 <= xmin1) && (xmax1 <= xmax2) && 
+    return (xmin2 <= xmin1) && (xmax1 <= xmax2) &&
            (ymin2 <= ymin1) && (ymax1 <= ymax2);
 }
 
@@ -811,14 +811,14 @@ void draw_pic_pixmap(F_line *box, int op)
     if (box->pic->mask) {
       /* mask is in rectangle (xmin,ymin)...(xmax,ymax)
          clip to rectangle (clip_xmin,clip_ymin)...(clip_xmax,clip_ymax) */
-      if (subset(xmin, ymin, xmax, ymax, clip_xmin, clip_ymin, clip_xmax, clip_ymax)) {        
+      if (subset(xmin, ymin, xmax, ymax, clip_xmin, clip_ymin, clip_xmax, clip_ymax)) {
 	gcv.clip_mask = box->pic->mask;
 	gcv.clip_x_origin = xmin;
 	gcv.clip_y_origin = ymin;
         clipmask = (Pixmap)0; /* don't need extra clipmask now */
       }
       else {
-        /* compute intersection of the two rectangles */        
+        /* compute intersection of the two rectangles */
         GC depth_one_gc;
         int xxmin, yymin, xxmax, yymax, ww, hh;
         xxmin = max2(xmin, clip_xmin);
@@ -827,8 +827,8 @@ void draw_pic_pixmap(F_line *box, int op)
         yymax = min2(ymax, clip_ymax);
         ww = xxmax - xxmin + 1;
         hh = yymax - yymin + 1;
-	/* 
-        The caller should have caught the case that pic and clip rectangle 
+	/*
+        The caller should have caught the case that pic and clip rectangle
         don't overlap. So we may assume ww > 0, hh > 0.
 	*/
         clipmask = XCreatePixmap(tool_d, canvas_win, ww, hh, 1);
@@ -841,7 +841,7 @@ void draw_pic_pixmap(F_line *box, int op)
         XFreeGC(tool_d, depth_one_gc);
 	gcv.clip_mask = clipmask;
 	gcv.clip_x_origin = xxmin;
-	gcv.clip_y_origin = yymin; 
+	gcv.clip_y_origin = yymin;
       }
       XChangeGC(tool_d, gccache[op], GCClipMask|GCClipXOrigin|GCClipYOrigin, &gcv);
     }
@@ -985,7 +985,7 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
 		fg = white_color.pixel;			/* gif, xpm after map_to_mono */
 		bg = black_color.pixel;
 	    }
-		
+
 	    box->pic->pixmap = XCreatePixmapFromBitmapData(tool_d, canvas_win,
 					(char *)data, width, height, fg,bg, tool_dpth);
 	    free(data);
@@ -1003,7 +1003,7 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
 	    unsigned short	*Spixel;
 	    unsigned char	*Cpixel;
 	    struct Cmap		*cmap = box->pic->pic_cache->cmap;
-	    Boolean	    	 endian;
+	    Boolean		 endian;
 	    unsigned char	 byte;
 
 	    /* figure what endian machine this is (big=True or little=False) */
@@ -1022,7 +1022,7 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
 		return;
 	    }
 	    /* allocate mask for any transparency information */
-	    if (box->pic->pic_cache->subtype == T_PIC_GIF && 
+	    if (box->pic->pic_cache->subtype == T_PIC_GIF &&
 	        box->pic->pic_cache->transp != TRANSP_NONE) {
 		    if ((mask = (unsigned char *) malloc((width+7)/8 * height)) == NULL) {
 			file_msg(ALLOC_PIC_ERR,box->pic->pic_cache->file);
@@ -1072,7 +1072,7 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
 			    cpixel = src + (i * cheight / width * cbpl);
 		    }
 		    /* if this pixel is the transparent color then clear the mask pixel */
-		    if (box->pic->pic_cache->transp != TRANSP_NONE && 
+		    if (box->pic->pic_cache->transp != TRANSP_NONE &&
 			(*cpixel==(unsigned char) box->pic->pic_cache->transp)) {
 			  if (type1) {
 			    if (hswap) {
@@ -1428,7 +1428,7 @@ int tempXErrorHandler (Display *display, XErrorEvent *event)
 
 /****************************************************************
 
- clip_arrows - calculate a clipping region which is the current 
+ clip_arrows - calculate a clipping region which is the current
 	clipping area minus the polygons at the arrowheads.
 
  This will prevent the object (line, spline etc.) from protruding
@@ -1508,7 +1508,7 @@ void clip_arrows(F_line *obj, int objtype, int op, int skip)
 		mainregion=newregion;
 	}
     }
-	
+
     /* get points for any backward arrowhead */
     if (obj->back_arrow) {
 	x = points[skip+1].x;
@@ -1572,7 +1572,7 @@ void clip_arrows(F_line *obj, int objtype, int op, int skip)
 		        |      /
 		        |    /
 		        |  /
-		        |/ 
+		        |/
 
  Fills points[] array with npoints arrowhead *outline* coordinates and
  fillpoints[] array with nfillpoints points for the part to be filled *IF*
@@ -1746,7 +1746,7 @@ void calc_arrow(int x1, int y1, int x2, int y2, int linethick, F_arrow *arrow, z
 	 */
 
 	*npoints = arrow_shapes[indx].numpts;
-	/* we'll shift the half arrowheads down by the difference of the main line thickness 
+	/* we'll shift the half arrowheads down by the difference of the main line thickness
 	   and the arrowhead thickness to make it flush with the main line */
 	if (arrow_shapes[indx].half)
 	    offset = ZOOM_FACTOR * (linethick - arrow->thickness)/2;
@@ -1881,10 +1881,10 @@ void draw_arrow(F_line *obj, F_arrow *arrow, zXPoint *points, int npoints, zXPoi
 ****************************************************************/
 
 void
-curve(Window window, int depth, int xstart, int ystart, int xend, int yend, 
+curve(Window window, int depth, int xstart, int ystart, int xend, int yend,
 	Boolean draw_points, Boolean draw_center, int direction,
 	int a, int b, int xoff, int yoff, int op, int thick,
-	int style, float style_val, int fill_style, 
+	int style, float style_val, int fill_style,
 	Color pen_color, Color fill_color, int cap_style)
 {
     register int    x, y;
@@ -1991,7 +1991,7 @@ curve(Window window, int depth, int xstart, int ystart, int xend, int yend,
 	if (!add_point(round((xoff + xstart)/zoom),round((yoff - ystart)/zoom)))
 		too_many_points();
     }
-	
+
     if (draw_points) {
 	draw_point_array(window, op, depth, thick, style, style_val, JOIN_BEVEL,
 			cap_style, fill_style, pen_color, fill_color);
@@ -2052,7 +2052,7 @@ draw_spline(F_spline *spline, int op)
 		     clip_xmin, clip_ymin, clip_xmax, clip_ymax))
 	return;
 
-    precision = (display_zoomscale < ZOOM_PRECISION) ? LOW_PRECISION 
+    precision = (display_zoomscale < ZOOM_PRECISION) ? LOW_PRECISION
                                                      : HIGH_PRECISION;
 
     if (appres.shownums && active_layer(spline->depth)) {
@@ -2096,11 +2096,11 @@ quick_draw_spline(F_spline *spline, int operator)
   float     step;
   F_point   *p0, *p1, *p2, *p3;
   F_sfactor *s0, *s1, *s2, *s3;
-  
+
   init_point_array();
 
   INIT_CONTROL_POINTS(spline, p0, s0, p1, s1, p2, s2, p3, s3);
- 
+
   for (k=0 ; p3!=NULL ; k++) {
       SPLINE_SEGMENT_LOOP(k, p0, p1, p2, p3, s1->s, s2->s, LOW_PRECISION);
       NEXT_CONTROL_POINTS(p0, s0, p1, s1, p2, s2, p3, s3);

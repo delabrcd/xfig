@@ -81,7 +81,7 @@ String  search_text_translations =
 	"<Key>Return: SearchText()";
 String  replace_text_translations =
 	"<Key>Return: ReplaceText()";
-String	search_results_translations = 
+String	search_results_translations =
 	"<Btn4Down>:	scroll-one-line-up()\n\
 	<Btn5Down>:	scroll-one-line-down()";
 
@@ -175,7 +175,7 @@ do_replace(Widget widget, XtPointer closure, XtPointer call_data)
   }
 }
 
-static Boolean 
+static Boolean
 replace_text_in_compound(F_compound *com, char *pattern, char *dst)
 {
   F_compound	*c;
@@ -186,12 +186,12 @@ replace_text_in_compound(F_compound *com, char *pattern, char *dst)
   char		 str[300];
 
   pat_len = strlen(pattern);
-  if (pat_len == 0) 
+  if (pat_len == 0)
 	return False;
 
   processed = False;
   for (c = com->compounds; c != NULL; c = c->next) {
-    if (replace_text_in_compound(c, pattern, dst)) 
+    if (replace_text_in_compound(c, pattern, dst))
 	processed = True;
   }
   for (t = com->texts; t != NULL; t = t->next) {
@@ -240,7 +240,7 @@ replace_text_in_compound(F_compound *com, char *pattern, char *dst)
   return processed;
 }
 
-static void 
+static void
 do_update(Widget widget, XtPointer closure, XtPointer call_data)
 {
   if (found_text_cnt > 0) {
@@ -249,15 +249,15 @@ do_update(Widget widget, XtPointer closure, XtPointer call_data)
     found_text_panel_dismiss();
     redisplay_canvas();
     set_modifiedflag();
-    show_search_msg("%d object%s updated", 
+    show_search_msg("%d object%s updated",
 	found_text_cnt, (found_text_cnt != 1)? "s":"");
   }
 }
 
-static void 
+static void
 found_text_panel_dismiss(void)
 {
-  if (found_text_panel != None) 
+  if (found_text_panel != None)
 	XtDestroyWidget(found_text_panel);
   found_text_panel = None;
 
@@ -265,7 +265,7 @@ found_text_panel_dismiss(void)
 }
 
 
-static void 
+static void
 show_search_result(char *format,...)
 {
   va_list ap;
@@ -297,7 +297,7 @@ show_search_result(char *format,...)
 
 /* show a one-line message in the search message (label) widget */
 
-static void 
+static void
 show_search_msg(char *format,...)
 {
   va_list ap;
@@ -311,7 +311,7 @@ show_search_msg(char *format,...)
   SetValues(search_msg_win);
 }
 
-static void 
+static void
 show_text_object(F_text *t)
 {
   float x, y;
@@ -329,7 +329,7 @@ show_text_object(F_text *t)
   found_text_cnt++;
 }
 
-static void 
+static void
 search_and_replace_text(Widget widget, XtPointer closure, XtPointer call_data)
 {
   char	*string;
@@ -350,10 +350,10 @@ search_and_replace_text(Widget widget, XtPointer closure, XtPointer call_data)
   if (strlen(string)!=0)
     search_text_in_compound(&objects, string, show_text_object);
 
-  if (found_text_cnt == 0) 
+  if (found_text_cnt == 0)
 	show_search_msg("No match");
-  else 
-	show_search_msg("%d line%s match%s", found_text_cnt, 
+  else
+	show_search_msg("%d line%s match%s", found_text_cnt,
 		(found_text_cnt != 1)? "s":"",
 		(found_text_cnt == 1)? "es":"");
 
@@ -364,7 +364,7 @@ search_and_replace_text(Widget widget, XtPointer closure, XtPointer call_data)
   }
 }
 
-static Boolean 
+static Boolean
 search_text_in_compound(F_compound *com, char *pattern, void (*proc) (/* ??? */))
 {
   F_compound *c;
@@ -373,7 +373,7 @@ search_text_in_compound(F_compound *com, char *pattern, void (*proc) (/* ??? */)
   int pat_len, i;
   processed = False;
   for (c = com->compounds; c != NULL; c = c->next) {
-    if (search_text_in_compound(c, pattern, proc)) 
+    if (search_text_in_compound(c, pattern, proc))
 	processed = True;
   }
   pat_len = strlen(pattern);
@@ -383,13 +383,13 @@ search_text_in_compound(F_compound *com, char *pattern, void (*proc) (/* ??? */)
       match = True;
     } else if (pat_len <= strlen(t->cstring)) {
       for (i = 0; !match && i <= strlen(t->cstring) - pat_len; i++) {
-        if (compare_string(&t->cstring[i], pattern)) 
+        if (compare_string(&t->cstring[i], pattern))
 	    match = True;
       }
     }
     if (match) {
       (*proc)(t);
-      if (proc != show_text_object) 
+      if (proc != show_text_object)
 	  processed = True;
     }
   }
@@ -399,18 +399,18 @@ search_text_in_compound(F_compound *com, char *pattern, void (*proc) (/* ??? */)
   return processed;
 }
 
-static void 
+static void
 search_panel_dismiss(Widget widget, XtPointer closure, XtPointer call_data)
 {
   found_text_panel_dismiss();
-  if (search_panel != None) 
+  if (search_panel != None)
 	XtDestroyWidget(search_panel);
   search_panel = None;
 }
 
 /* create and popup the search panel */
 
-void 
+void
 popup_search_panel(void)
 {
     static Boolean actions_added = False;
@@ -438,7 +438,7 @@ popup_search_panel(void)
     NextArg(XtNy, (Position) ry);
     NextArg(XtNcolormap, tool_cm);
     NextArg(XtNtitle, "Xfig: Search & Replace");
-    
+
     search_panel = XtCreatePopupShell("search_panel",
 				transientShellWidgetClass, tool,
 				Args, ArgCount);
@@ -448,9 +448,9 @@ popup_search_panel(void)
 	XtAppAddActions(tool_app, search_actions, XtNumber(search_actions));
 	actions_added = True;
     }
-    
+
     form = XtCreateManagedWidget("form", formWidgetClass, search_panel, NULL, 0) ;
-    
+
     FirstArg(XtNlabel, "  Search for:");
     NextArg(XtNborderWidth, 0);
     NextArg(XtNtop, XtChainTop);
@@ -459,7 +459,7 @@ popup_search_panel(void)
     NextArg(XtNright, XtChainLeft);
     label = XtCreateManagedWidget("search_lab", labelWidgetClass,
 				form, Args, ArgCount);
-    
+
     FirstArg(XtNfromHoriz, label);
     NextArg(XtNeditType, XawtextEdit);
     NextArg(XtNwidth, 200);
@@ -484,8 +484,8 @@ popup_search_panel(void)
 				form, Args, ArgCount);
     XtAddCallback(search_button, XtNcallback,
                 (XtCallbackProc) search_and_replace_text, (XtPointer) NULL);
-  
-    (void) CreateCheckbutton("Case sensitive", "case_sensitive", 
+
+    (void) CreateCheckbutton("Case sensitive", "case_sensitive",
 			form, NULL, search_button, MANAGE, SMALL_CHK, &case_sensitive, 0, 0);
     below = label;
 
@@ -513,7 +513,7 @@ popup_search_panel(void)
 				form, Args, ArgCount);
     XtOverrideTranslations(replace_text_widget,
 				XtParseTranslationTable(replace_text_translations));
-    
+
     FirstArg(XtNfromVert, below);
     NextArg(XtNfromHoriz, replace_text_widget);
     NextArg(XtNlabel, "Replace");
@@ -551,9 +551,9 @@ popup_search_panel(void)
     NextArg(XtNbottom, XtChainTop);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainLeft);
-    search_msg_win = XtCreateManagedWidget("search_msg_win", labelWidgetClass, 
+    search_msg_win = XtCreateManagedWidget("search_msg_win", labelWidgetClass,
 		    form, Args, ArgCount);
-    
+
     below = search_msg_win;
 
     /* make a text window to hold search results */
@@ -573,7 +573,7 @@ popup_search_panel(void)
 			form, Args, ArgCount);
     XtOverrideTranslations(search_results_win,
 				XtParseTranslationTable(search_results_translations));
-    
+
     below = search_results_win;
 
     /* make a dismiss button */
@@ -604,13 +604,13 @@ popup_search_panel(void)
 /* spell check section */
 /***********************/
 
-void 
+void
 popup_spell_check_panel(char **list, int nitems)
 {
   static Boolean actions_added = False;
   Widget form, dismiss_button, below, label;
   int x_val, y_val;
-  
+
   /* if panel already exists, just replace the list of words */
   if (spell_check_panel != None) {
     XawListChange(word_list, list, nitems, 0, False);
@@ -631,7 +631,7 @@ popup_spell_check_panel(char **list, int nitems)
 	XtAppAddActions(tool_app, spell_actions, XtNumber(spell_actions));
 	actions_added = True;
     }
-    
+
     form = XtCreateManagedWidget("form", formWidgetClass,
 				spell_check_panel, NULL, ZERO);
 
@@ -645,9 +645,9 @@ popup_spell_check_panel(char **list, int nitems)
     NextArg(XtNbottom, XtChainTop);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainRight);
-    spell_msg_win = XtCreateManagedWidget("spell_msg_win", labelWidgetClass, 
+    spell_msg_win = XtCreateManagedWidget("spell_msg_win", labelWidgetClass,
 				form, Args, ArgCount);
-    
+
     /* labels for list and correct word entry */
     FirstArg(XtNlabel, "Misspelled words    ");
     NextArg(XtNfromVert, spell_msg_win);
@@ -771,17 +771,17 @@ popup_spell_check_panel(char **list, int nitems)
 
 }
 
-static void 
+static void
 spell_panel_dismiss(Widget widget, XtPointer closure, XtPointer call_data)
 {
-  if (spell_check_panel != None) 
+  if (spell_check_panel != None)
 	XtDestroyWidget(spell_check_panel);
   spell_check_panel = None;
 }
 
 static void write_text_from_compound(FILE *fp, F_compound *com);
 
-void 
+void
 spell_check(void)
 {
   char	  filename[PATH_MAX];
@@ -823,7 +823,7 @@ spell_check(void)
     if (fp != NULL) {
       while (fgets(str, sizeof(str), fp) != NULL) {
         len = strlen(str);
-        if (str[len - 1] == '\n') 
+        if (str[len - 1] == '\n')
 	    str[len - 1] = '\0';
 	/* save the word in the list */
         miss_word_list[lines] = strdup(str);
@@ -831,7 +831,7 @@ spell_check(void)
 	if (lines >= MAX_MISSPELLED_WORDS)
 	    break;
       }
-      if (pclose(fp) == 0) 
+      if (pclose(fp) == 0)
 	  done = TRUE;
     }
     unlink(filename);
@@ -839,9 +839,9 @@ spell_check(void)
     /* put up the panel to show the results */
     popup_spell_check_panel(miss_word_list, lines);
 
-    if (!done) 
+    if (!done)
 	show_spell_msg("Can't exec \"%s\": %s", cmd, strerror(errno));
-    else if (lines == 0) 
+    else if (lines == 0)
 	show_spell_msg("No misspelled words found");
     else if (lines >= MAX_MISSPELLED_WORDS)
 	show_spell_msg("%d (limit) misspelled words found. There may be more.",
@@ -863,7 +863,7 @@ spell_check(void)
 
 /* locate all text objects and write them to file fp */
 
-static void 
+static void
 write_text_from_compound(FILE *fp, F_compound *com)
 {
     F_compound *c;
@@ -912,7 +912,7 @@ spell_correct_word(Widget widget, XtPointer closure, XtPointer call_data)
 
 /* show a one-line message in the spelling message (label) widget */
 
-static void 
+static void
 show_spell_msg(char *format,...)
 {
   va_list ap;

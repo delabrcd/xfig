@@ -20,7 +20,7 @@
 #ifndef W_ROTTEXT_H
 #define W_ROTTEXT_H
 
-#ifndef _XVERTEXT_INCLUDED_ 
+#ifndef _XVERTEXT_INCLUDED_
 #define _XVERTEXT_INCLUDED_
 
 
@@ -48,7 +48,7 @@
 
 /* ---------------------------------------------------------------------- */
 
-/* this shoulf be C++ compliant, thanks to 
+/* this shoulf be C++ compliant, thanks to
      vlp@latina.inesc.pt (Vasco Lopes Paulo) */
 
 #if defined(__cplusplus) || defined(c_plusplus)

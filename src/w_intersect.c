@@ -29,7 +29,7 @@
 #include <alloca.h>
 #include <math.h>
 #undef I
-  
+
 #define ISET_P1 (1 << 0)
 #define ISET_P2 (1 << 1)
 
@@ -38,7 +38,7 @@ intersect_state_e intersect_state = INTERSECT_INITIAL;
 static inline Boolean
 is_point_on_segment(double x1, double y1, double xc, double yc, double x2, double y2)
 {
-  return ((((x1 <= xc) && (xc <= x2)) || ((x1 >= xc) && (xc >= x2))) && 
+  return ((((x1 <= xc) && (xc <= x2)) || ((x1 >= xc) && (xc >= x2))) &&
 	  (((y1 <= yc) && (yc <= y2)) || ((y1 >= yc) && (yc >= y2)))) ? True : False;
 }
 
@@ -99,7 +99,7 @@ do_circle_ellipse_intersect(r, X, Y, e, x, y, arc, isect_cb)
 {
   double K, L, M, N;
   double hix, hiy;
-  
+
   double * poly;
   double * solr;
   double * soli;
@@ -108,11 +108,11 @@ do_circle_ellipse_intersect(r, X, Y, e, x, y, arc, isect_cb)
 
   double a = (double)(e->radiuses.x);
   double b = (double)(e->radiuses.y);
-  
+
   /* translate so center of ellipse is at origin */
   double EX = (double)(x - e->center.x);
   double EY = (double)(y - e->center.y);
-  
+
   /* rotate around ellipse angle so ellipse semi-axes are ortho to space */
   snap_rotate_vector (&EX, &EY, EX, EY, (double)(e->angle));
   snap_rotate_vector (&X,  &Y,  X,  Y,  (double)(e->angle));
@@ -139,10 +139,10 @@ do_circle_ellipse_intersect(r, X, Y, e, x, y, arc, isect_cb)
       double dd;
       double ix, cy, ey;
       int ix_idx, cy_idx, ey_idx;
-      
+
       for (ix_idx = 0; ix_idx < 2; ix_idx++) {			/* for +/- ix vals... */
 	double rxc, rxe, dt;
-	
+
 	ix = (ix_idx & 1) ? -solr[i] : solr[i];
 	rxc = pow(r, 2.0) - pow(ix - X, 2.0);
 	rxe = pow(a, 2.0) - pow(ix, 2.0);
@@ -151,7 +151,7 @@ do_circle_ellipse_intersect(r, X, Y, e, x, y, arc, isect_cb)
 	    cy = Y + ((cy_idx & 1) ? -sqrt(rxc) : sqrt(rxc));
 	    for (ey_idx = 0; ey_idx < 2; ey_idx++) {		/* and +/- ellipse slns */
 	      Boolean point_ok;
-	    
+
 	      ey = (b/a) * ((ey_idx & 1) ? -sqrt(rxe) : sqrt(rxe));
 
 	      if (arc) {
@@ -163,7 +163,7 @@ do_circle_ellipse_intersect(r, X, Y, e, x, y, arc, isect_cb)
 		point_ok = is_point_on_arc(arc, ittx, itty);
 	      }
 	      else point_ok = True;
-	      
+
 	      if (True == point_ok) {
 		dt = fabs(cy - ey);
 		if (dt < 1.0) {
@@ -196,7 +196,7 @@ do_circle_ellipse_intersect(r, X, Y, e, x, y, arc, isect_cb)
     snap_gy = ((int)rint(hiy)) + e->center.y;
   }
 }
-     
+
 static void
 circle_ellipse_intersect(c, e, x, y, isect_cb)
      F_ellipse * c;
@@ -240,7 +240,7 @@ do_circle_circle(PX, PY, X2, Y2, R1, R2, OX, OY, arc, arc2, isect_cb)
     double B = -2.0 * K * L;
     double C = pow(K, 2.0) - (pow(M, 2.0) * pow(R1, 2.0));
     double rx = pow(B, 2.0) - (4.0 * A * C);
-	  
+
     if (0.0 <= rx) {			/* should albays be true...*/
       double ix, iy;
       double hix, hiy;
@@ -260,22 +260,22 @@ do_circle_circle(PX, PY, X2, Y2, R1, R2, OX, OY, arc, arc2, isect_cb)
 	  for (ix_idx = 0; ix_idx < 2; ix_idx++) {
 	    double dd;
 	    Boolean point_ok;
-	  
+
 	    ix = (ix_idx & 1) ? -tix : tix;
 	    if (fabs(ix - ixa) < 1.0) {
 	      if (arc) {
 		int ittx, itty;
-	  
+
 		ittx = (int)rint(ix + OX);
 		itty = (int)rint(iy + OY);
 		point_ok = is_point_on_arc(arc, ittx, itty);
 
 		if (arc2 && (True == point_ok))
 		  point_ok = is_point_on_arc(arc2, ittx, itty);
-	    
+
 	      }
 	      else point_ok = True;
-	  
+
 	      if (True == point_ok) {
 		if (isect_cb) insert_isect(isect_cb, ix + OX, iy + OY, -1);
 		dd = hypot(iy - PY, ix - PX);
@@ -289,7 +289,7 @@ do_circle_circle(PX, PY, X2, Y2, R1, R2, OX, OY, arc, arc2, isect_cb)
 	  }
 	}
       }
-      
+
       snap_gx = (int)rint(hix + OX);
       snap_gy = (int)rint(hiy + OY);
       snap_found = True;
@@ -299,7 +299,7 @@ do_circle_circle(PX, PY, X2, Y2, R1, R2, OX, OY, arc, arc2, isect_cb)
     double theta = atan2(Y2, X2);
     double ix = R1 * cos(theta);
     double iy = R1 * sin(theta);
-    
+
     if (isect_cb) insert_isect(isect_cb, ix, iy, -1);
     snap_gx = (int)rint(ix);
     snap_gy = (int)rint(iy);
@@ -325,7 +325,7 @@ circle_circle_intersect(e1, e2, x, y, isect_cb)
   double R2 = (double)(e2->radiuses.x);
   double OX = (double)(e1->center.x);
   double OY = (double)(e1->center.y);
-  
+
   do_circle_circle(PX, PY, X2, Y2, R1, R2, OX, OY, NULL, NULL, isect_cb);
 }
 
@@ -338,7 +338,7 @@ non_ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
      int x, y;
      isect_cb_s * isect_cb;
 {						/* ellipse-ellipse -- non-orthogonal */
-  
+
   double A, B, C, D;
   double SIN, COS;
   double KV, KW;
@@ -359,14 +359,14 @@ non_ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
   double dist;
   double hix, hiy;
   int nsol, i, ix_idx, iye1_idx;
-  
+
   snap_rotate_vector (&PX, &PY, PX, PY, (double)(e1->angle));
   snap_rotate_vector (&X,  &Y,  X,  Y,  (double)(e1->angle));
-  
+
   poly = alloca(5 * sizeof(double));
   solr = alloca(4 * sizeof(double));
   soli = alloca(4 * sizeof(double));
-  
+
   /*
    * x^2 / a^2   +   y^2 / b^2  =  1			Eq  1,  origin ctrd, ortho, ellipse 1
    *
@@ -374,7 +374,7 @@ non_ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
    * B = b^2
    *
    */
-  
+
   A = pow(a, 2.0);
   B = pow(b, 2.0);
 
@@ -390,7 +390,7 @@ non_ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
    *               y      = sqrt(B  -  (B/A) x^2)	Eq  6, from Eq 5
    *
    */
-  
+
   /*
    * v^2 / c^2   +   w^2 / d^2  =  1			Eq  7,  [X Y] origin, non-ortho, ellipse 2
    *
@@ -398,11 +398,11 @@ non_ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
    * D = d^2
    *
    */
-  
+
   C = pow(c, 2.0);
   D = pow(d, 2.0);
-  
-  /*	
+
+  /*
    * v^2 / C  +  w^2 / D  =  1				Eq  8, from Eq 7
    *
    *  D v^2   +  C w^2    =  CD				Eq  9, from Eq 8
@@ -432,11 +432,11 @@ non_ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
    * KW = X SIN - Y COS
    *
    */
-  
+
   KV = (X * COS) + (Y * SIN);
   KW = (X * SIN) - (Y * COS);
 
-  
+
   /*
    * v = (x COS + y SIN) -  KV				Eq 16, from Eq 14
    * w = (x SIN - y COS) -  KW				Eq 17, from Eq 15
@@ -459,7 +459,7 @@ non_ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
    *   + (   D KV^2     +    C KW^2  - CD )  = 0
    *
    */
-  
+
   E =  (      D * pow(COS, 2.0)    +        C * pow(SIN, 2.0) );
   F = -(2.0 * D * COS * KV         +  2.0 * C * SIN * KW      );
   G =  (2.0 * D * COS * SIN        -  2.0 * C * COS * SIN     );
@@ -467,7 +467,7 @@ non_ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
   K =  (      D * pow(SIN, 2.0)    +        C * pow(COS, 2.0) );
   L =  (    ( D * pow(KV, 2.0)     +        C * pow(KW, 2.0) ) - C * D);
 
-   
+
   /*
    *
    *   E x^2  +  F x  +  G xy  +  H y  +  K y^2  +  L  = 0			Eq 22, from Eq 21
@@ -510,7 +510,7 @@ non_ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
    *   (M x^2  +  F x  +  N)^2  =  (G x + H)^2 (B - (B/A) x^2)			Eq 28, from Eq 27
    *
    *         M^2 x^4    +     FM x^3         +    MN x^2			Eq 29, from Eq 28
-   *                    +     FM x^3         +   F^2 x^2  +   FN x          
+   *                    +     FM x^3         +   F^2 x^2  +   FN x
    *                                         +    MN x^2  +   FN x  + N^2
    *		   = (G^2 x^2  + 2GH x  + H^2)  (B - (B/A) x^2)
    *
@@ -527,7 +527,7 @@ non_ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
   poly[0] = pow(N, 2.0)  -  B * pow(H, 2.0);
 
   nsol = quartic(poly, solr, soli);
-  
+
   for (i = 0; i < nsol; i++) {
     if (1.0 > fabs(soli[i])) {
       for (ix_idx = 0; ix_idx < 2; ix_idx++) {
@@ -538,7 +538,7 @@ non_ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
 	  for (iye1_idx = 0; iye1_idx < 2; iye1_idx++) {
 	    double v, w, res;
 	    iye1 = (b/a) * ((iye1_idx & 1) ? -sqrt(rx) : sqrt(rx));		/* e1 */
-	    
+
 	    v = (ix - X) * COS + (iye1 - Y) * SIN;
 	    w = (ix - X) * SIN - (iye1 - Y) * COS;
 	    res = (pow(v, 2.0) / C)  +  (pow(w, 2.0) / D);
@@ -590,7 +590,7 @@ ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
    * D = d^2
    *
    * x^2 / A  +  y^2 / B  = 1						Eq  3, from Eq 1
-   *	
+   *
    * (x - X)^2 / C  +  (y - Y)^2 / D  =  1				Eq  4, from Eq 2
    *
    * D(x - X)^2 / C  +  (y - Y)^2  =  D					Eq  4a, from Eq 4
@@ -604,9 +604,9 @@ ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
    *		      (y - Y)    =  (d/c)sqrt(C - (x - X)^2)		Eq  4e, from Eq 4d
    *
    *		      y  =  Y  + (d/c)sqrt(C - (x - X)^2)		Eq  4f, from Eq 4e
-   * 
+   *
    * B x^2  +  A y^2  =  AB						Eq  5, from Eq 3
-   * 
+   *
    *           A y^2  =  AB  -  B x^2					Eq  6, from Eq 5
    *
    *             y^2  =  B   -  (B/A) x^2	 =  B(A - x^2)/A		Eq  7, from Eq 6
@@ -653,7 +653,7 @@ ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
    * J x^4 - K x^3 + L x^2 - M x + N = 0					Eq 20, from Eq 19
    *
    */
-  
+
   double A, B, C, D;
   double E, F, G, H, J, K, L, M, N;
   double * poly;
@@ -672,24 +672,24 @@ ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
   double dist;
   double hix, hiy;
   int nsol, i, ix_idx, iye1_idx, iye2_idx;
-  
+
   snap_rotate_vector (&PX, &PY, PX, PY, (double)(e1->angle));
   snap_rotate_vector (&X,  &Y,  X,  Y,  (double)(e1->angle));
-  
+
   poly = alloca(5 * sizeof(double));
   solr = alloca(4 * sizeof(double));
   soli = alloca(4 * sizeof(double));
-  
+
   A = pow(a, 2.0);
   B = pow(b, 2.0);
   C = pow(c, 2.0);
   D = pow(d, 2.0);
-  
+
   E = D - (C * B)/A;
   F = 2.0 * D * X;
   G = ((D * pow(X, 2.0)) + (C * pow(Y, 2.0)) +  (C * B)) - (C * D);
   H = 2.0 * C * Y * (b/a);
-  
+
   J = pow(E, 2.0);
   K = 2.0 * E * F;
   L = (2.0 * E * G) + pow(F, 2.0) + pow(H, 2.0);
@@ -703,7 +703,7 @@ ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
   poly[0] =  N;
 
   nsol = quartic(poly, solr, soli);
-  
+
   for (i = 0; i < nsol; i++) {
     if (1.0 > fabs(soli[i])) {
       for (ix_idx = 0; ix_idx < 2; ix_idx++) {
@@ -713,9 +713,9 @@ ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
 	if (0.0 <= rx) {
 	  for (iye1_idx = 0; iye1_idx < 2; iye1_idx++) {
 	    iye1 = (b/a) * ((iye1_idx & 1) ? -sqrt(rx) : sqrt(rx));		/* e1 */
-	    
+
 	    /* y  =  Y  + (d/c)sqrt(C - (x - X)^2) */
-	    
+
 	    ex = C - pow(ix - X, 2.0);					/* for [X Y] ellipse 2 */
 	    if (0.0 <= ex) {
 	      for (iye2_idx = 0; iye2_idx < 2; iye2_idx++) {
@@ -808,7 +808,7 @@ do_intersect_ellipse_polyline(ecx, ecy, ea, eb, theta, l, x, y, arc, isect_cb)
   int seg_idx;
 
   /* fixme -- handle ellipse v. circle */
-  
+
   mind = HUGE_VAL;
   p_start = NULL;
   for (seg_idx = -1, p = l->points; p != NULL; seg_idx++, p = p->next) {
@@ -819,14 +819,14 @@ do_intersect_ellipse_polyline(ecx, ecy, ea, eb, theta, l, x, y, arc, isect_cb)
       double psy = (double)(p_start->y) - ecy;
       double pex = (double)(p->x) - ecx;
       double pey = (double)(p->y) - ecy;
-      
+
       /* rotate around ellipse angle so ellipse semi-axes are ortho to space */
       snap_rotate_vector (&psx, &psy, psx, psy, theta);
       snap_rotate_vector (&pex, &pey, pex, pey, theta);
-      
+
       if  (1) {					/* fixme find a quick screening test */
 	int iset = 0;
-	double M = pow(eb, 2.0);		
+	double M = pow(eb, 2.0);
 	double N = pow(ea, 2.0);
 	fget_line_from_points(c, psx, psy, pex, pey);
 
@@ -861,9 +861,9 @@ do_intersect_ellipse_polyline(ecx, ecy, ea, eb, theta, l, x, y, arc, isect_cb)
 	  /* normalise line coeffs... */
 	  double K = -c[1]/c[0];
 	  double L = -c[2]/c[0];
-	  
+
 	  double P = M * N;
-	  
+
 	  /* plug line into ellipse... */
 	  double W = (M * pow(K, 2.0)) + N;
 	  double X = 2.0 * K * L * M;
@@ -889,7 +889,7 @@ do_intersect_ellipse_polyline(ecx, ecy, ea, eb, theta, l, x, y, arc, isect_cb)
 	      iy1i = sqrt(-rx)/(2.0 * W);
 	      ix1 = K * iy1 + L;
 	      ix1i = K * iy1i;
-	      
+
 	      iy2 = -X/(2.0 * W);
 	      iy2i = -sqrt(-rx)/(2.0 * W);
 	      ix2 = K * iy2 + L;
@@ -900,7 +900,7 @@ do_intersect_ellipse_polyline(ecx, ecy, ea, eb, theta, l, x, y, arc, isect_cb)
 
 	      x2mag = hypot(ix2, ix2i);
 	      y2mag = hypot(iy2, iy2i);
-	      
+
 	      if ((1.0 > fabs(ix1) - x1mag) &&
 		  (1.0 > fabs(iy1) - y1mag) &&
 		  (1.0 > fabs(ix2) - x2mag) &&
@@ -911,16 +911,16 @@ do_intersect_ellipse_polyline(ecx, ecy, ea, eb, theta, l, x, y, arc, isect_cb)
 
 	if (0 != iset) {
 	  Boolean point_ok;
-	
+
 	  if ((iset & ISET_P1) && (!is_point_on_segment(psx, psy, ix1, iy1, pex, pey)))
 	    iset &= ~ISET_P1;
 	  if ((iset & ISET_P2) && (!is_point_on_segment(psx, psy, ix2, iy2, pex, pey)))
 	    iset &= ~ISET_P2;
-	  
+
 	  /* rotate back to screen space */
 	  snap_rotate_vector (&ix1, &iy1, ix1, iy1, -theta);
 	  snap_rotate_vector (&ix2, &iy2, ix2, iy2, -theta);
-	      
+
 	  /* translate back to screen space */
 	  ix1 +=  ecx;
 	  iy1 +=  ecy;
@@ -942,7 +942,7 @@ do_intersect_ellipse_polyline(ecx, ecy, ea, eb, theta, l, x, y, arc, isect_cb)
 	      }
 	    }
 	  }
-	  
+
 	  if (iset & ISET_P2) {
 	    point_ok = (NULL == arc)
 	      ? True
@@ -958,7 +958,7 @@ do_intersect_ellipse_polyline(ecx, ecy, ea, eb, theta, l, x, y, arc, isect_cb)
 	      }
 	    }
 	  }
-	  
+
 	  if (True == snap_found) {
 	    /* check if we're near a polyline segment endpoint.  if so, snap to it. */
 	    double de1 = hypot((double)(p_start->y - snap_gy),
@@ -1022,7 +1022,7 @@ delete_text_bounding_box(F_line * l)
 }
 
 F_line *
-build_text_bounding_box(F_text * t) 
+build_text_bounding_box(F_text * t)
 {
   /*
    * do everything wrt to a (rotated) square bounding box around the text.
@@ -1086,7 +1086,7 @@ intersect_ellipse_arc_handler(F_ellipse * e, F_arc * a, int x, int y, isect_cb_s
 		       (double)(a->center.x) - (double)(a->point[1].x));
       double X  = (double)(a->center.x) - (double)(e->center.x);
       double Y  = (double)(a->center.y) - (double)(e->center.y);
- 
+
       do_circle_ellipse_intersect(r, X, Y, e, x, y, a, isect_cb);
     }
     break;
@@ -1102,7 +1102,7 @@ intersect_ellipse_arc_handler(F_ellipse * e, F_arc * a, int x, int y, isect_cb_s
 			 (double)(a->center.x) - (double)(a->point[1].x));
       double OX = (double)(e->center.x);
       double OY = (double)(e->center.y);
-  
+
       do_circle_circle(PX, PY, X2, Y2, R1, R2, OX, OY, a, NULL, isect_cb);
     }
   }
@@ -1124,9 +1124,9 @@ intersect_polyline_polyline_handler(F_line * l1, F_line * l2, int x, int y, isec
 #define lE c2[1]
 #define lF c2[2]
   double ci[2][2];
-#define ciA ci[0][0]  
-#define ciB ci[0][1]  
-#define ciC ci[1][0]  
+#define ciA ci[0][0]
+#define ciB ci[0][1]
+#define ciC ci[1][0]
 #define ciD ci[1][1]
   double det;
   double ix, iy;
@@ -1155,7 +1155,7 @@ intersect_polyline_polyline_handler(F_line * l1, F_line * l2, int x, int y, isec
 	    if (isect_cb) {
 	      if ((True == is_point_on_segment((double)(p1_start->x), (double)(p1_start->y),
 					       ix, iy,
-					       (double)(p1->x), (double)(p1->y))) && 
+					       (double)(p1->x), (double)(p1->y))) &&
 		  (True == is_point_on_segment((double)(p2_start->x), (double)(p2_start->y),
 					       ix, iy,
 					       (double)(p2->x), (double)(p2->y))))
@@ -1290,7 +1290,7 @@ intersect_arc_arc_handler(F_arc * a1, F_arc * a2, int x, int y, isect_cb_s * ise
 		    (double)(a2->center.x) - (double)(a2->point[1].x));
   double OX = (double)(a1->center.x);
   double OY = (double)(a1->center.y);
-  
+
   do_circle_circle(PX, PY, X2, Y2, R1, R2, OX, OY, a1, a2, isect_cb);
 }
 

@@ -259,7 +259,7 @@ close_to_arc(F_arc *a, int xp, int yp, int d, float *px, float *py)
    vy = a->point[1].y - a->center.y;
    wx = a->point[2].x - a->center.x;
    wy = a->point[2].y - a->center.y;
-   if (((ux == 0.0) && (uy == 0.0)) || ((vx == 0.0) && (vy == 0.0)) || 
+   if (((ux == 0.0) && (uy == 0.0)) || ((vx == 0.0) && (vy == 0.0)) ||
        ((wx == 0.0) && (wy == 0.0)))
      return 0;
    rarc = sqrt(ux * ux + uy * uy);
@@ -297,14 +297,14 @@ close_to_arc(F_arc *a, int xp, int yp, int d, float *px, float *py)
    }
    else {
      if ((uang <= vang) && (vang <= wang))
-       ok = (uang <= pang) && (pang <= wang);     
+       ok = (uang <= pang) && (pang <= wang);
      else {
        wang -= 2*M_PI;
        if (uang <= pang)
          pang -= 2*M_PI;
          ok = (pang >= wang);
      }
-   }       
+   }
    if (!ok)
      return 0;
    /* generate point */
@@ -312,7 +312,7 @@ close_to_arc(F_arc *a, int xp, int yp, int d, float *px, float *py)
    sphi = sin(pang);
    dx = rarc;
    dy = 0;
-   rotate_vector(&dx, &dy, cphi, sphi);             
+   rotate_vector(&dx, &dy, cphi, sphi);
    *px = (float)(a->center.x + dx);
    *py = (float)(a->center.y + dy);
    return 1;
@@ -333,7 +333,7 @@ compute_ellipse_distance(double dx, double dy, double a, double b, double *dis, 
     if (dx == 0.0 && dy == 0.0)
         *dis = 0.0;        /* prevent core dumps */
     else
-       *dis = sqrt(dx * dx + dy * dy);    
+       *dis = sqrt(dx * dx + dy * dy);
     if (a * dy == 0.0 && b * dx == 0.0)
         *r = 0.0;		/* prevent core dumps */
     else
@@ -370,8 +370,8 @@ close_to_ellipse(F_ellipse *e, int xp, int yp, int d, float *ex, float *ey, floa
      if (fabs(dis - r) <= d) {
        wx = round(r * dx / dis);
        wy = round(r * dy / dis);
-       *ex = (float)(e->center.x + wx);     
-       *ey = (float)(e->center.y + wy);     
+       *ex = (float)(e->center.x + wx);
+       *ey = (float)(e->center.y + wy);
        if (a == 0.0) { /* degenerated */
          dvx = 0.0;
          dvy = b;
@@ -398,11 +398,11 @@ close_to_ellipse(F_ellipse *e, int xp, int yp, int d, float *ex, float *ey, floa
        qx = r * dx / dis;
        qy = r * dy / dis;
        if (a == 0.0) {
-         dvx = 0.0; 
+         dvx = 0.0;
          dvy = b;
        }
        else if (b == 0.0) {
-         dvx = a; 
+         dvx = a;
          dvy = 0.0;
        }
        else {
@@ -419,7 +419,7 @@ close_to_ellipse(F_ellipse *e, int xp, int yp, int d, float *ex, float *ey, floa
      }
    }
    return 0;
-}       
+}
 
 
 /********************* CLOSE TO POLYLINE ************************
@@ -470,7 +470,7 @@ close_to_polyline(F_line *l, int xp, int yp, int d, int sd, int *px, int *py, in
    }
    return 0;
 }
-    
+
 /********************* CLOSE TO SPLINE ************************
 
 Input arguments :
@@ -534,7 +534,7 @@ close_to_float_vector(float x1, float y1, float x2, float y2, float xp, float yp
 static int isfirst, prevx, prevy, firstx, firsty;
 static int tx, ty, td, px1, py1, px2, py2, foundx, foundy;
 
-/* dirty trick: redefine init_point_array to do nothing and 
+/* dirty trick: redefine init_point_array to do nothing and
    add_point to check distance */
 
 /**********************************/
@@ -562,14 +562,14 @@ add_point(int x, int y)
 	firsty = y;
 	isfirst = False;
     } else {
-	if (close_to_float_vector((float)prevx, (float)prevy, (float)x, (float)y, 
+	if (close_to_float_vector((float)prevx, (float)prevy, (float)x, (float)y,
                               (float)tx, (float)ty, (float)td, &ux, &uy, &lambda)) {
 	    foundx = round(ux);
 	    foundy = round(uy);
 	    px1 = prevx;
 	    py1 = prevy;
 	    px2 = x;
-	    py2 = y;            
+	    py2 = y;
 	    DONE = True;
 	}
     }
@@ -594,7 +594,7 @@ close_to_spline(F_spline *spline, int xp, int yp, int d, int *px, int *py, int *
     isfirst = True;
     precision = HIGH_PRECISION;
 
-    if (open_spline(spline)) 
+    if (open_spline(spline))
 	compute_open_spline(spline, precision);
     else
 	compute_closed_spline(spline, precision);
@@ -619,8 +619,7 @@ Return value : the angle of the vector in the range [0, 2PI)
 *************************************************************/
 
 double
-compute_angle(double dx, double dy)		/* compute the angle between 0 to 2PI  */
-          	       
+compute_angle(double dx, double dy)	/* compute the angle between 0 to 2PI */
 {
     double	alpha;
 
@@ -683,10 +682,10 @@ compute_direction(F_pos p1, F_pos p2, F_pos p3)
 Input arguments:
         p1, p2, p3 : Points
 Output arguments : angle in the range [0, 2PI)
-Return value : 0 on failure, 1 on success       
+Return value : 0 on failure, 1 on success
 *************************************************************/
 
-int 
+int
 compute_3p_angle(F_point *p1, F_point *p2, F_point *p3, double *alpha)
 {
     double	 vx, vy, wx, wy;
@@ -701,10 +700,10 @@ compute_3p_angle(F_point *p1, F_point *p2, F_point *p3, double *alpha)
     }
     dang = -atan2(wy, wx) + atan2(vy, vx); /* difference angle */
     if (dang < 0.0)
-        dang += 2*M_PI;      
+        dang += 2*M_PI;
     *alpha = dang;
     return(1);
-}    
+}
 
 
 /********************* COMPUTE LINE ANGLE *******************
@@ -716,7 +715,7 @@ Output arguments : angle in the range [0, 2PI)
 Return value : 0 on failure, 1 on success
 *************************************************************/
 
-int 
+int
 compute_line_angle(F_line *l, F_point *p, double *alpha)
 {
    F_point	*q, *vorq, *nachq;
@@ -738,7 +737,7 @@ compute_line_angle(F_line *l, F_point *p, double *alpha)
      }
    }
    return(0);
-}	
+}
 
 /********************* COMPUTE ARC ANGLE *******************
 
@@ -748,7 +747,7 @@ Output arguments : orientated angle
 Return value : 0 on failure, 1 on success
 *************************************************************/
 
-int 
+int
 compute_arc_angle(F_arc *a, double *alpha)
 {
    double	 ux, uy, vx, vy, wx, wy;
@@ -760,14 +759,14 @@ compute_arc_angle(F_arc *a, double *alpha)
    vy = a->point[1].y - a->center.y;
    wx = a->point[2].x - a->center.x;
    wy = a->point[2].y - a->center.y;
-   if (((ux == 0.0) && (uy == 0.0)) || ((vx == 0.0) && (vy == 0.0)) || 
+   if (((ux == 0.0) && (uy == 0.0)) || ((vx == 0.0) && (vy == 0.0)) ||
        ((wx == 0.0) && (wy == 0.0))) {
        return(0);
    }
    uang = atan2(uy, ux);
    vang = atan2(vy, vx);
    wang = atan2(wy, wx);
- 
+
    if (uang >= wang) {
       if ((uang >= vang) && (vang >= wang))
           dang = uang - wang;
@@ -782,13 +781,13 @@ compute_arc_angle(F_arc *a, double *alpha)
    }
    *alpha = dang;
    return(1);
-}   
+}
 
 /********************* COMPUTE POLY LENGTH *******************
 
 Input arguments :
         l : the polyline
-Output arguments : 
+Output arguments :
         *lp : computed length
 Return value : 0 on failure, 1 on success
 *************************************************************/
@@ -815,13 +814,13 @@ compute_poly_length(F_line *l, float *lp)
    }
    *lp = (float)length;
    return 1;
-}    
+}
 
 /********************* COMPUTE ARC LENGTH *******************
 
 Input arguments :
         a : the arc
-Output arguments : 
+Output arguments :
         *lp : computed length
 Return value : 0 on failure, 1 on success
 *************************************************************/
@@ -834,7 +833,7 @@ compute_arc_length(F_arc *a, float *lp)
      return 0;
    ux = a->point[0].x - a->center.x;
    uy = a->point[0].y - a->center.y;
-   if ((ux == 0.0) && (uy == 0.0)) 
+   if ((ux == 0.0) && (uy == 0.0))
      arcradius = 0.0;
    else
      arcradius = sqrt(ux*ux + uy*uy);
@@ -846,7 +845,7 @@ compute_arc_length(F_arc *a, float *lp)
 
 Input arguments :
         l : the polygon
-Output arguments : 
+Output arguments :
         *lp : computed area
 Return value : 0 on failure, 1 on success
 *************************************************************/
@@ -860,7 +859,7 @@ compute_poly_area(F_line *l, float *ap)
    area = 0.0;
    prevq = NULL;
    for (q = l->points; q != NULL; prevq = q, q = q->next) {
-     if (prevq) 
+     if (prevq)
        area += (float)-prevq->x * (float)q->y + (float)prevq->y * (float)q->x;
    }
    area /= 2.0;
@@ -871,7 +870,7 @@ compute_poly_area(F_line *l, float *ap)
 
 Input arguments :
         a : the arc
-Output arguments : 
+Output arguments :
         *lp : computed area
 Return value : 0 on failure, 1 on success
 *************************************************************/
@@ -880,16 +879,16 @@ int
 compute_arc_area(F_arc *a, float *ap)
 {
    double	 area, tri_area, alpha, ux, uy, arcradius;
-   
+
    if (!compute_arc_angle(a, &alpha))
 	return 0;
    ux = a->point[0].x - a->center.x;
    uy = a->point[0].y - a->center.y;
-   if ((ux == 0.0) && (uy == 0.0)) 
+   if ((ux == 0.0) && (uy == 0.0))
 	arcradius = 0.0;
    else
-	arcradius = sqrt(ux*ux + uy*uy);   
-   /* sector (`pie-shape') 
+	arcradius = sqrt(ux*ux + uy*uy);
+   /* sector (`pie-shape')
       A = (pi * r * r) * (alpha / 2pi) */
    area = 0.5 * alpha * arcradius * arcradius;
    /* open arc: subtract triangular area */
@@ -908,7 +907,7 @@ compute_arc_area(F_arc *a, float *ap)
 
 Input arguments :
         e : the ellipse
-Output arguments : 
+Output arguments :
         *lp : computed area
 Return value : 0 on failure, 1 on success
 *************************************************************/

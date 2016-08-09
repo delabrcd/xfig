@@ -54,7 +54,7 @@ int compose_compound (F_compound *c);
 void
 compound_selected(void)
 {
-    set_mousefun("tag object", "tag region", "compound tagged", 
+    set_mousefun("tag object", "tag region", "compound tagged",
 			LOC_OBJ, "", "");
     canvas_kbd_proc = null_proc;
     canvas_locmove_proc = null_proc;
@@ -165,7 +165,7 @@ create_compoundobject(int x, int y)
     compound_bound(c, &c->nwcorner.x, &c->nwcorner.y,
 		   &c->secorner.x, &c->secorner.y);
 
-    /* if zero width or height in the compound, adjust to next positioning 
+    /* if zero width or height in the compound, adjust to next positioning
        grid point or a few pixels if positioning grid is "ANY" */
     if (c->nwcorner.x == c->secorner.x) {
 	if (cur_pointposn != P_ANY) {

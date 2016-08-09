@@ -79,7 +79,7 @@ prior_keyboard_history(w, event)
     str = keyboard_history_read_pointer->str;
     XtVaSetValues(w, XtNstring, str, XtNinsertPosition, strlen(str) , NULL);
   }
-     
+
 }
 
 void
@@ -96,7 +96,7 @@ handle_keyboard_input(w, event)
      XKeyEvent *event;
 {
 
-#define WS "[[:space:]]*"  
+#define WS "[[:space:]]*"
 
 #define RELABS WS "([rRaA])?" WS
 
@@ -127,7 +127,7 @@ handle_keyboard_input(w, event)
 #define RECT_COORD "(" RELABS MAG COMMA_DELIM RELABS MAG ")"
 
 #define COORD   POLAR_COORD "|" RECT_COORD
-  
+
   char * coord = {COORD};
   regex_t preg;
   regmatch_t * pmatch = NULL;
@@ -137,14 +137,14 @@ handle_keyboard_input(w, event)
   DeclareArgs(2);
   char *val;
   double pix_per_unit = (double)(appres.INCHES? PIX_PER_INCH : PIX_PER_CM);
-  
+
   if (NULL == pmatch) {
-#if 1  
+#if 1
     regcomp(&preg, coord, REG_EXTENDED);
-#else  
+#else
     fprintf(stderr, "coord = \"%s\"\n\n", coord);
     if (REG_NOERROR != (rc = regcomp(&preg, coord, REG_EXTENDED))) {
-#define ERRBUF_SIZE 256    
+#define ERRBUF_SIZE 256
       char * errbuf = alloca(ERRBUF_SIZE);
       regerror(rc, &preg, errbuf, ERRBUF_SIZE);
       fprintf(stderr, "regcomp error: %s\n", errbuf);
@@ -159,12 +159,12 @@ handle_keyboard_input(w, event)
 #define M_POLAR_MAG_I_FORM		 3
 #define M_POLAR_MAG_I_FORM_INT		 4
 #define M_POLAR_MAG_I_FORM_FRAC		 5
-#define M_POLAR_MAG_I_FORM_FRAC_N	 6    
+#define M_POLAR_MAG_I_FORM_FRAC_N	 6
 #define M_POLAR_MAG_I_FORM_FRAC_D	 7
-#define M_POLAR_MAG_F			 8    
+#define M_POLAR_MAG_F			 8
 #define M_POLAR_PHASE			12
 #define M_POLAR_PHASE_UNITS		16
-    
+
 #define M_RECT_COORD			17
 #define M_RECT_COORD_X_RA		18
 #define M_RECT_COORD_X			19
@@ -174,7 +174,7 @@ handle_keyboard_input(w, event)
 #define M_RECT_COORD_X_I_FORM_FRAC_N	23
 #define M_RECT_COORD_X_I_FORM_FRAC_D	24
 #define M_RECT_COORD_X_F		25
-  
+
 #define M_RECT_COORD_Y_RA		29
 #define M_RECT_COORD_Y			30
 #define M_RECT_COORD_Y_I_FORM		31
@@ -186,7 +186,7 @@ handle_keyboard_input(w, event)
 
 #define IS_POLAR			(-1 != pmatch[M_POLAR_MAG].rm_so)
 #define IS_RECT				(-1 != pmatch[M_RECT_COORD].rm_so)
-  
+
 #define IS_POLAR_MAG_I_FORM		(-1 != pmatch[M_POLAR_MAG_I_FORM].rm_so)
 #define HAS_POLAR_MAG_I_FORM_FRAC	(-1 != pmatch[M_POLAR_MAG_I_FORM].rm_so)
 #define POLAR_MAG_I_FORM_INT		(&val[pmatch[M_POLAR_MAG_I_FORM_INT].rm_so])
@@ -196,7 +196,7 @@ handle_keyboard_input(w, event)
 #define POLAR_PHASE			(&val[pmatch[M_POLAR_PHASE].rm_so])
 #define HAS_POLAR_PHASE_UNITS		(-1 != pmatch[M_POLAR_PHASE_UNITS].rm_so)
 #define POLAR_PHASE_UNITS		(val[pmatch[M_POLAR_PHASE_UNITS].rm_so])
-  
+
 #define HAS_RECT_X_RA			(-1 != pmatch[M_RECT_COORD_X_RA].rm_so)
 #define RECT_X_RA			(val[pmatch[M_RECT_COORD_X_RA].rm_so])
 #define IS_RECT_X_I_FORM		(-1 != pmatch[M_RECT_COORD_X_I_FORM].rm_so)
@@ -205,7 +205,7 @@ handle_keyboard_input(w, event)
 #define RECT_X_I_FORM_FRAC_N		(&val[pmatch[M_RECT_COORD_X_I_FORM_FRAC_N].rm_so])
 #define RECT_X_I_FORM_FRAC_D		(&val[pmatch[M_RECT_COORD_X_I_FORM_FRAC_D].rm_so])
 #define RECT_X_F			(&val[pmatch[M_RECT_COORD_X_F].rm_so])
-  
+
 #define HAS_RECT_Y_RA			(-1 != pmatch[M_RECT_COORD_Y_RA].rm_so)
 #define RECT_Y_RA			(val[pmatch[M_RECT_COORD_Y_RA].rm_so])
 #define IS_RECT_Y_I_FORM		(-1 != pmatch[M_RECT_COORD_Y_I_FORM].rm_so)
@@ -214,8 +214,8 @@ handle_keyboard_input(w, event)
 #define RECT_Y_I_FORM_FRAC_N		(&val[pmatch[M_RECT_COORD_Y_I_FORM_FRAC_N].rm_so])
 #define RECT_Y_I_FORM_FRAC_D		(&val[pmatch[M_RECT_COORD_Y_I_FORM_FRAC_D].rm_so])
 #define RECT_Y_F			(&val[pmatch[M_RECT_COORD_Y_F].rm_so])
-  
-    
+
+
   FirstArg(XtNstring, &val);
   GetValues(w);
 
@@ -234,9 +234,9 @@ handle_keyboard_input(w, event)
     origin_x = fix_x;
     origin_y = fix_y;
   }
-  
+
   if (REG_NOERROR == (rc = regexec(&preg, val, preg.re_nsub, pmatch, 0))) {
-#if 0    
+#if 0
     int i;
     for (i = 0; i < 1 + preg.re_nsub; i++) {
       if (-1 != pmatch[i].rm_so) {
@@ -246,7 +246,7 @@ handle_keyboard_input(w, event)
 		&val[pmatch[i].rm_so]);
       }
     }
-#endif    
+#endif
 
     if (IS_POLAR) {
       if ((0 <= origin_x) && (0 <= origin_y)) {
@@ -295,7 +295,7 @@ handle_keyboard_input(w, event)
       double xv, yv;
       Boolean x_absolute = True;
       Boolean y_absolute = True;
-      
+
       if (HAS_RECT_X_RA) {
 	switch(RECT_X_RA) {
 	case 'r':
@@ -308,7 +308,7 @@ handle_keyboard_input(w, event)
 	  break;
 	}
       }
-      
+
       if (HAS_RECT_Y_RA) {
 	switch(RECT_Y_RA) {
 	case 'r':
@@ -324,7 +324,7 @@ handle_keyboard_input(w, event)
       else {	/* if x_abs has been set and y_abs is default, make y follow x */
 	if (HAS_RECT_X_RA) y_absolute = x_absolute;
       }
-      
+
       if (((0 > origin_x) || (0 > origin_y)) &&
 	  ((False == x_absolute) || (False == y_absolute))) {
 	put_msg("Relative coordinates require a current point.");
@@ -339,7 +339,7 @@ handle_keyboard_input(w, event)
 	      strtod(RECT_X_I_FORM_FRAC_D, NULL);
 	}
 	else xv = strtod(RECT_X_F, NULL);
-	
+
 	if (IS_RECT_Y_I_FORM) {
 	  yv = strtod(RECT_Y_I_FORM_INT, NULL);
 	  if (HAS_RECT_Y_I_FORM_FRAC)
@@ -380,7 +380,7 @@ handle_keyboard_input(w, event)
 	      = keyboard_history_write_pointer->next;
 	  }
 	  else {	/* new entry */
-	    keyboard_history[0].prior = 
+	    keyboard_history[0].prior =
 	      keyboard_history_write_pointer =
 	      keyboard_history_write_pointer->next =
 	      keyboard_history_read_pointer =
@@ -393,11 +393,11 @@ handle_keyboard_input(w, event)
 	  keyboard_history_write_pointer->str = strdup(val);
 	}
       }
-      
+
     }
-    
+
   }
-  
+
   popdown_keyboard_panel();
 }
 
@@ -486,7 +486,7 @@ popup_keyboard_panel(Widget widget,
 
   /* make sure we're in a drawing mode first */
   if (cur_mode >= FIRST_EDIT_MODE || cur_mode == F_PLACE_LIB_OBJ)
-  	return;
+	return;
 
   if (keyboard_panel == None) {
     create_keyboard_panel();

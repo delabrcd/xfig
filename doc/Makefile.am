@@ -44,7 +44,8 @@ $(srcdir)/xfig.man.in:
 install-data-hook:
 	cp -Rp "$(srcdir)/html" "$(DESTDIR)$(htmldir)" \
 	&& chmod -R u+rwX "$(DESTDIR)$(htmldir)"
-	cd "$(DESTDIR)$(htmldir)/html" && $(LN_S) japanese ja_JP.ujis
+	cd "$(DESTDIR)$(htmldir)/html" \
+	&& rm -f ja_JP.ujis && $(LN_S) japanese ja_JP.ujis
 
 uninstall-local:
 	rm -rf "$(DESTDIR)$(htmldir)/html"

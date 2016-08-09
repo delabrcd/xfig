@@ -149,7 +149,7 @@ void init_font(void)
 	    if ((fontlist = XListFonts(tool_d, template, 1, &count))==0)
 		appres.scalablefonts = False;   /* none, turn off request for them */
 	}
-	XFreeFontNames(fontlist); 
+	XFreeFontNames(fontlist);
     }
 
     /* no scalable fonts - query the server for all the font
@@ -298,7 +298,7 @@ lookfont(int fnum, int size)
 		put_msg("Font size %d not found, using larger %d point",size,nf->size);
 	} else if (!appres.scalablefonts) {	/* not found, use largest available */
 	    nf = oldnf;
-	    strcpy(fn,nf->fname);  		/* put the name in fn */
+	    strcpy(fn,nf->fname);		/* put the name in fn */
 	    if (size > nf->size)
 		put_msg("Font size %d not found, using smaller %d point",size,nf->size);
 	} else { /* scalablefonts; none yet of that size, alloc one and put it in the list */
@@ -1195,7 +1195,7 @@ pw_lines(Window w, zXPoint *points, int npoints, int op, int depth,
 	    pw_point(w, points[0].x, points[0].y, op, depth, line_width, pen_color, cap_style);
 	    return;
     }
-	
+
     if (line_style == PANEL_LINE) {
 	/* must use XPoint, not our zXPoint */
 	p = (XPoint *) malloc(npoints * sizeof(XPoint));
@@ -1393,7 +1393,7 @@ void set_line_stuff(int width, int style, float style_val, int join_style, int c
 	    if (style_val * display_zoomscale > 255.0)
 		dash_list[op][0] = dash_list[op][1] = (char) 255;	/* too large for X! */
 	    else
-	        dash_list[op][0] = dash_list[op][1] = 
+	        dash_list[op][0] = dash_list[op][1] =
 				(char) round(style_val * display_zoomscale);
 	    /* length of ON pixels for dotted */
 	    if (style == DOTTED_LINE)
@@ -1422,8 +1422,8 @@ void set_line_stuff(int width, int style, float style_val, int join_style, int c
                 if (fl[il] != 0.) {
 		    if (fl[il] * style_val * display_zoomscale > 255.0)
 			dash_list[op][il] = (char) 255;	/* too large for X! */
-	    	    else
-	        	dash_list[op][il] = (char) round(fl[il] * style_val * 
+		    else
+			dash_list[op][il] = (char) round(fl[il] * style_val *
 					display_zoomscale);
 		} else {
 		    dash_list[op][il] = (char)display_zoomscale;
@@ -1489,7 +1489,7 @@ void rescale_pattern(int patnum)
 	j = patnum-(NUMSHADEPATS+NUMTINTPATS);
 	/* first rescale the data */
 	scale_pattern(j);
- 	/* free any old pixmaps before creating new ones */
+	/* free any old pixmaps before creating new ones */
 	if (fill_pm[patnum]) {
 		XFreePixmap(tool_d,fill_pm[patnum]);
 	}
@@ -1626,7 +1626,7 @@ void zXFillPolygon(Display *d, Window w, GC gc, zXPoint *points, int n, int comp
 static void
 convert_sh(zXPoint *p, int n)
 {
-    int 	 i;
+    int		 i;
 
     for (i=0; i<n; i++) {
 	_pp_[i].x = ZOOMX(p[i].x);
@@ -1646,7 +1646,7 @@ chkalloc(int n)
 	if (_noalloc_)
 	    return False;
 	/* get either what we need +50 points or 500, whichever is larger */
-	i = max2(n+50, 500);	
+	i = max2(n+50, 500);
 	if (_npp_ == 0) {
 	    if ((tpp = (XPoint *) malloc(i * sizeof(XPoint))) == 0) {
 		fprintf(stderr,"\007Can't alloc memory for %d point array, exiting\n",i);
@@ -1677,19 +1677,19 @@ static int
 clip_poly(XPoint *inVertices, int npoints, XPoint *outVertices)
 {
 	/* clip to left edge */
-        npoints = SutherlandHodgmanPolygoClip (inVertices, outVertices, npoints, 
+        npoints = SutherlandHodgmanPolygoClip (inVertices, outVertices, npoints,
 					-100, CANVAS_HT*2, -100, -100);
         setup_next(npoints, inVertices, outVertices);
 	/* now to bottom edge */
-        npoints = SutherlandHodgmanPolygoClip (inVertices,outVertices, npoints, 
+        npoints = SutherlandHodgmanPolygoClip (inVertices,outVertices, npoints,
 					-100, CANVAS_HT*2, CANVAS_WD*2, CANVAS_HT*2);
         setup_next(npoints, inVertices, outVertices);
 	/* right edge */
-        npoints = SutherlandHodgmanPolygoClip (inVertices,outVertices, npoints, 
+        npoints = SutherlandHodgmanPolygoClip (inVertices,outVertices, npoints,
 					CANVAS_WD*2, -100, CANVAS_WD*2, CANVAS_HT*2);
         setup_next(npoints, inVertices, outVertices);
 	/* top edge */
-        npoints = SutherlandHodgmanPolygoClip (inVertices,outVertices, npoints, 
+        npoints = SutherlandHodgmanPolygoClip (inVertices,outVertices, npoints,
 					CANVAS_WD*2, -100, -100, -100);
         setup_next(npoints, inVertices, outVertices);
         return npoints;
@@ -1698,7 +1698,7 @@ clip_poly(XPoint *inVertices, int npoints, XPoint *outVertices)
 /*
  * The "SutherlandHodgmanPolygoClip" function is a critical function of the
  * polygon clipping. It uses the Sutherland_Hodgman algorithm to implement
- * a step in clipping a polygon to a clipping window. 
+ * a step in clipping a polygon to a clipping window.
  */
 
 int
@@ -1708,7 +1708,7 @@ SutherlandHodgmanPolygoClip (
     int		 inLength,		/* Number of entries in inVertices */
     int		 x1, int y1, int x2, int y2)	/* Edge of clip polygon */
 {
-	XPoint s,p;	/*Start, end point of current polygon edge*/ 
+	XPoint s,p;	/*Start, end point of current polygon edge*/
 	XPoint i;	/*Intersection point with a clip boundary*/
 	int j;		/*Vertex loop counter*/
 	int outpts;	/* number of points in output array */
@@ -1747,7 +1747,7 @@ SutherlandHodgmanPolygoClip (
 	return outpts;
 }      /*SutherlandHodgmanPolygonClip*/
 
-/* 
+/*
  * The "Inside" function returns TRUE if the vertex tested is on the inside
  * of the clipping boundary. "Inside" is defined as "to the left of
  * clipping boundary when one looks from the first vertex to the second
@@ -1758,16 +1758,16 @@ static Boolean
 inside (XPoint testVertex, int x1, int y1, int x2, int y2)
 {
     if (x2 > x1)              /*bottom edge*/
-	if (testVertex.y <= y1) 
+	if (testVertex.y <= y1)
 	    return True;
     if (x2 < x1)              /*top edge*/
-	if (testVertex.y >= y1) 
+	if (testVertex.y >= y1)
 	    return True;
     if (y2 > y1)              /*right edge*/
-	if (testVertex.x <= x2) 
+	if (testVertex.x <= x2)
 	    return True;
     if (y2 < y1)              /*left edge*/
-	if (testVertex.x >= x2) 
+	if (testVertex.x >= x2)
 	    return True;
     /* outside */
     return False;
@@ -1775,7 +1775,7 @@ inside (XPoint testVertex, int x1, int y1, int x2, int y2)
 
 /*
  * The "intersect" function calculates the intersection of the polygon edge
- * (vertex s to p) with the clipping boundary. 
+ * (vertex s to p) with the clipping boundary.
  */
 
 static void
@@ -1838,12 +1838,12 @@ clip_line(int x1, int y1, int x2, int y2,  short *x3, short *y3, short *x4, shor
 
   /* while not trivially accepted */
   while (outcode0 != 0 || outcode1 != 0)  {
-    if ((outcode0 & outcode1) != 0) { 		/* trivial reject */
+    if ((outcode0 & outcode1) != 0) {		/* trivial reject */
 	/* set line to a single point at the limits of the screen */
 	if ((outcode0|outcode1) & codebottom) *y3 = *y4 = CANVAS_HT;
-    	if ((outcode0|outcode1) & codetop)    *y3 = *y4 = 0;
-    	if ((outcode0|outcode1) & codeleft)   *x3 = *x4 = 0;
-    	if ((outcode0|outcode1) & coderight)  *x3 = *x4 = CANVAS_WD;
+	if ((outcode0|outcode1) & codetop)    *y3 = *y4 = 0;
+	if ((outcode0|outcode1) & codeleft)   *x3 = *x4 = 0;
+	if ((outcode0|outcode1) & coderight)  *x3 = *x4 = CANVAS_WD;
 	return;
     } else {
 	/* failed both tests, so calculate the line segment to clip */
@@ -1874,12 +1874,12 @@ clip_line(int x1, int y1, int x2, int y2,  short *x3, short *y3, short *x4, shor
 	};
 
 	if (outcodeout == outcode0) {		/* modify the first coordinate   */
-	    x1 = x; y1 = y;			/* update temporary variables    */  
+	    x1 = x; y1 = y;			/* update temporary variables    */
 	    outcode0 = compoutcode(x1, y1);	/* recalculate the outcode       */
 	}
 	else {
 	/* modify the second coordinate  */
-	    x2 = x; y2 = y;			/* update temporary variables    */  
+	    x2 = x; y2 = y;			/* update temporary variables    */
 	    outcode1 = compoutcode(x2, y2);	/* recalculate the outcode       */
 	}
     }

@@ -53,7 +53,7 @@
 などの警告が出力される</a>
 
 <p>
-<li><a href="#xclip">リクエスト <tt>X_SetClipRectangles</tt> に対する 
+<li><a href="#xclip">リクエスト <tt>X_SetClipRectangles</tt> に対する
 X のエラーが報告される、
 あるいは特定の向きの矢印の近くに太い線が表示される</a>
 
@@ -62,7 +62,7 @@ X のエラーが報告される、
 Computer Modern フォントではなく PostScript フォントで出力される</a>
 
 <p>
-<li><a href="#arc-boxes">エクスポートした PostScript ファイルを 
+<li><a href="#arc-boxes">エクスポートした PostScript ファイルを
 Ghostscript で表示させた際に、Arc-box が正しく表示されない</a>
 
 <p>
@@ -78,7 +78,7 @@ Ghostscript で表示させた際に、Arc-box が正しく表示されない</a>
   誤った %%BoundingBox が書かれる</a>
 
 <p>
-<li><a href="#gs550_pattern_bug">エクスポートした PostScript ファイルを 
+<li><a href="#gs550_pattern_bug">エクスポートした PostScript ファイルを
   Ghostscript 5.50 で表示すると、パターンが全て黒くなる</a>
 
 <p>
@@ -116,17 +116,17 @@ a-umlaute などの特殊な文字を入力できない</a>
 <h2><a name="faq-compile"><b>xfig</b> のコンパイルに際しての問題</a></h2>
 
 <ol>
-<li><a href="#alpha">DEC Alpha において、コンパイラが 
-<tt>u_bound.c</tt> に対して 
-``.mask must have pcreg from .frame set if any bits are set in .mask or .fmask'' 
+<li><a href="#alpha">DEC Alpha において、コンパイラが
+<tt>u_bound.c</tt> に対して
+``.mask must have pcreg from .frame set if any bits are set in .mask or .fmask''
 などと文句を言う</a>
 
 <p>
 <li><a href="#xpointer">コンパイルに際して <tt>XPointer</tt> が未定義であると報告される</a>
 
 <p>
-<li><a href="#get_appl">Sun のマシンで、リンカが 
-<tt>_get_applicationShellWidgetClass</tt> や <tt>_get_wmShellWidgetClass</tt> 
+<li><a href="#get_appl">Sun のマシンで、リンカが
+<tt>_get_applicationShellWidgetClass</tt> や <tt>_get_wmShellWidgetClass</tt>
 が未定義であるという誤ったエラー・メッセージを出力する</a>
 
 <p>
@@ -145,7 +145,7 @@ jpeg_destroy_decompress / jpeg_stdio_src'' などのエラーが出る</a>
 <p>
 <li><a href="#fontset">コンパイルに際して、
 ``w_menuentry.c: In function `Redisplay': /
-w_menuentry.c:129: structure has no member named `fontset' / 
+w_menuentry.c:129: structure has no member named `fontset' /
 w_menuentry.c:143: structure has no member named `international' ''
 などのエラーが出る</a>
 </ol>
@@ -198,12 +198,12 @@ w_menuentry.c:143: structure has no member named `international' ''
 <b>xfig</b> 3.2 では、<a href="authors.html#xspline">X-Spline</a> と呼ばれる
 新しいスプラインを使用しています。
 X-spline では１つの曲線の中で補間や近似を混在させることが可能であり、
-それぞれの点の近傍での曲線の挙動は 
+それぞれの点の近傍での曲線の挙動は
 shape factor と呼ばれる１つのパラメータによって制御されます。
 
 <p>
-<b>注意:</b> 以前のスプラインのモデル 
-(quadratic B-splines、及び Bezier with hidden points) 
+<b>注意:</b> 以前のスプラインのモデル
+(quadratic B-splines、及び Bezier with hidden points)
 はもはやサポートされていないため、
 <b>xfig</b> version 3.1 以前のファイルに含まれているスプライン曲線は
 自動的に X-spline に変換されます。
@@ -226,7 +226,7 @@ shape factor と呼ばれる１つのパラメータによって制御されます。
 <dt><tt>CompKeyDB</tt>
 <dd><tt>Imakefile</tt> の <tt>XFIGLIBDIR</tt> を
 このファイルを置きたいディレクトリに設定して <b>xfig</b> をコンパイルするか、
-もしくはリソース ``<tt>Fig*keyFile: <i>your_lib_area</i>/CompKeyDB</tt>'' 
+もしくはリソース ``<tt>Fig*keyFile: <i>your_lib_area</i>/CompKeyDB</tt>''
 によってそのファイルの場所を指定して下さい
 
 <dt><tt>Fig</tt>、及び <tt>Fig-color</tt>
@@ -249,7 +249,7 @@ Imakefile の <tt>XFIGLIBDIR</tt> が指すディレクトリにコピーすべきです。
 メーリング・リストやニューズグループはあるのか？</a></h3>
 
 <b>xfig</b> のためのメーリング・リストはありませんが、
-メールを <a href="mailto:bvsmith@lbl.gov">bvsmith@lbl.gov</a> 
+メールを <a href="mailto:bvsmith@lbl.gov">bvsmith@lbl.gov</a>
 へ送る、あるいはそれに関する質問を
 <a href="news:comp.windows.x">comp.windows.x</a>、
 <a href="news:comp.windows.x.apps">comp.windows.x.apps</a>、
@@ -259,7 +259,7 @@ Imakefile の <tt>XFIGLIBDIR</tt> が指すディレクトリにコピーすべきです。
 <a href="news:comp.os.linux.misc">comp.os.linux.misc</a>
 へポストすることができます。
 <b>fig2dev</b> に関する質問は、
-<a href="news:comp.text.tex">comp.text.tex</a> 
+<a href="news:comp.text.tex">comp.text.tex</a>
 へポストすることもできます。
 <p>
 (日本のユーザーは、バグ・レポートは
@@ -279,11 +279,11 @@ Imakefile の <tt>XFIGLIBDIR</tt> が指すディレクトリにコピーすべきです。
 
 <p>
 <dt>SOLUTION:
-<dd>リソース・ファイル <tt>Fig</tt>、及び  <tt>Fig-color</tt> 
-(<b>xfig</b> のソース配布においては、それぞれ 
-<tt>Fig.ad</tt>、及び <tt>Fig-color.ad</tt> という名前となっている) 
+<dd>リソース・ファイル <tt>Fig</tt>、及び  <tt>Fig-color</tt>
+(<b>xfig</b> のソース配布においては、それぞれ
+<tt>Fig.ad</tt>、及び <tt>Fig-color.ad</tt> という名前となっている)
 を所定のディレクトリにインストールして下さい。
-また、X サーバーにロードされる共通リソース・ファイル (<tt>.Xdefaults</tt>) に 
+また、X サーバーにロードされる共通リソース・ファイル (<tt>.Xdefaults</tt>) に
 ``<tt>*customization: -color</tt>'' を追加して、
 X サーバーを再起動して下さい。
 <p>
@@ -292,7 +292,7 @@ X サーバーを再起動して下さい。
 サフィックス <tt>-color</tt> を付けた app-defaults ファイル (例えば <tt>Fig-color</tt>) を
 通常のもの (例えば <tt>Fig</tt>) の代わりに読み込むように指定することが可能となっています。
 <tt>Fig-color</tt> の中には、色に関係しない設定を行なうために、
-通常の app-defaults ファイルを読み込むための 
+通常の app-defaults ファイルを読み込むための
 <tt>#include</tt> ステートメントが含まれています。
 </dl>
 
@@ -303,7 +303,7 @@ X サーバーを再起動して下さい。
 <dl>
 <dt>POSSIBLE CAUSE:
 <dd>一部の Linux システム (少なくとも 2.0.29) において、
-Athena ウィジェット・セット (libXaw) の変種である 
+Athena ウィジェット・セット (libXaw) の変種である
 libNextaw がこの問題を引き起こすようです。
 
 <p>
@@ -323,7 +323,7 @@ libNextaw がこの問題を引き起こすようです。
 
 <p>
 <dt>POSSIBLE CAUSE:
-<dd><b>xfig</b> と共に配布されている app-defaults ファイル 
+<dd><b>xfig</b> と共に配布されている app-defaults ファイル
 (<tt>Fig.ad</tt>、及び <tt>Fig-color.ad</tt>) を
 所定のディレクトリにインストールして下さい。
 この最も容易な方法は、``<tt>make install</tt>'' を用いることです。
@@ -331,7 +331,7 @@ libNextaw がこの問題を引き起こすようです。
 
 <hr>
 
-<h3><a name="xclip">リクエスト <tt>X_SetClipRectangles</tt> に対する 
+<h3><a name="xclip">リクエスト <tt>X_SetClipRectangles</tt> に対する
 X のエラーが報告される、
 あるいは特定の向きの矢印の近くに太い線が表示される</a></h3>
 
@@ -377,10 +377,10 @@ Computer Modern フォントではなく PostScript フォントで出力される</a></h3>
 <dl>
 <dt>POSSIBLE CAUSE AND SOLUTION:
 <dd>PostScript での出力を行なう際にフォントを LaTeX の制御下に置くためには、
-そのテキスト・オブジェクトを 
+そのテキスト・オブジェクトを
 ``<a href="attributes.html#text-flags">special</a>'' に設定し、
-また出力フォーマットとして 
-<a href="printing.html#export">Combined PostScript/LaTeX</a> (pstex) 
+また出力フォーマットとして
+<a href="printing.html#export">Combined PostScript/LaTeX</a> (pstex)
 を指定する必要があります。
 このモードは、special に設定されたテキスト・オブジェクトを LaTeX に渡し、
 ユーザーが LaTeX の数式モード、Computer Modern フォント、その他の機能を
@@ -389,7 +389,7 @@ Computer Modern フォントではなく PostScript フォントで出力される</a></h3>
 
 <hr>
 
-<h3><a name="arc-boxes">エクスポートした PostScript ファイルを 
+<h3><a name="arc-boxes">エクスポートした PostScript ファイルを
 Ghostscript で表示させた際に、Arc-box が正しく表示されない</a></h3>
 
 <dl>
@@ -434,7 +434,7 @@ Ghostscript で表示させた際に、Arc-box が正しく表示されない</a></h3>
 <dt>POSSIBLE CAUSE AND SOLUTION:
 <dd><tt>CompKeyDB</tt> ファイルの中で、
 小文字の定義が大文字の定義の前に置くようにして下さい。
-この問題は、<b>xfig</b> 2.1.5 以降に含まれている 
+この問題は、<b>xfig</b> 2.1.5 以降に含まれている
 <tt>CompKeyDB</tt> ファイルで発生することがあります。
 </dl>
 
@@ -453,7 +453,7 @@ Ghostscript で表示させた際に、Arc-box が正しく表示されない</a></h3>
 
 <hr>
 
-<h3><a name="gs550_pattern_bug">エクスポートした PostScript ファイルを 
+<h3><a name="gs550_pattern_bug">エクスポートした PostScript ファイルを
   Ghostscript 5.50 で表示すると、パターンが全て黒くなる</a></h3>
 
 <dl>
@@ -588,12 +588,12 @@ a-umlaute、c-cedilla などの Latin-1 キャラクタを生成するために
 <tt>xmodmap -e "keysym Super_R = Multi_key"</tt>
 </dl>
 </dl>
-  
+
 <hr>
 
-<h3><a name="alpha">DEC Alpha において、コンパイラが 
-<tt>u_bound.c</tt> に対して 
-``.mask must have pcreg from .frame set if any bits are set in .mask or .fmask'' 
+<h3><a name="alpha">DEC Alpha において、コンパイラが
+<tt>u_bound.c</tt> に対して
+``.mask must have pcreg from .frame set if any bits are set in .mask or .fmask''
 などと文句を言う</a></h3>
 
 <dl>
@@ -613,15 +613,15 @@ a-umlaute、c-cedilla などの Latin-1 キャラクタを生成するために
 <p>
 <dt>SOLUTION:
 <dd>新しいバージョンの OpenWindows にアップグレードするか、
-もしくは X11R5 や X11R6 
-(ソースは <a href="http://www.camb.opengroup.org/x/">Open Group</a> から入手可能) 
+もしくは X11R5 や X11R6
+(ソースは <a href="http://www.camb.opengroup.org/x/">Open Group</a> から入手可能)
 に切り替えるべきです。
 </dl>
 
 <hr>
 
-<h3><a name="get_appl">Sun のマシンで、リンカが 
-<tt>_get_applicationShellWidgetClass</tt> や <tt>_get_wmShellWidgetClass</tt> 
+<h3><a name="get_appl">Sun のマシンで、リンカが
+<tt>_get_applicationShellWidgetClass</tt> や <tt>_get_wmShellWidgetClass</tt>
 が未定義であるという誤ったエラー・メッセージを出力する</a></h3>
 
 <dl>
@@ -646,9 +646,9 @@ Sun のオフィスと連絡を取って以下のパッチを入手して下さい。
 </pre>
 
 <p>
-MIT X11R4 ライブラリのためのソース・パッチは 
+MIT X11R4 ライブラリのためのソース・パッチは
 Conrad Kimball (cek@sdc.boeing.com) によって作成されました;
-これはこの問題を回避するために R5 で行なわれたいくつかの修正を 
+これはこの問題を回避するために R5 で行なわれたいくつかの修正を
 R4 に反映させたものです。
 このパッチは、
 <tt>contrib/X11R4_sunos4.1.2_patch_version3.Z</tt> として公開されています。
@@ -710,7 +710,7 @@ undo_glue()
 <p>
 <dt>SOLUTION:
 <dd><tt>+O3</tt> の代わりに <tt>+O2</tt> を使うか、
-http://support.mayfield.hp.com/ に接続して 
+http://support.mayfield.hp.com/ に接続して
 <b>Patch Browsing and Downloading</b> を選択し、
 HP からコンパイラのパッチを入手して下さい。
 </dl>
@@ -730,7 +730,7 @@ jpeg_destroy_decompress / jpeg_stdio_src'' などのエラーが出る</a></h3>
 <dt>SOLUTION:
 <dd>そのライブラリ・ファイル (通常は <tt>/usr/local/lib/libjpeg.so</tt>、
 及び <tt>/usr/local/lib/libjpeg.a</tt>) と、
-ヘッダ・ファイル (通常は <tt>/usr/local/include/jpegdata.h</tt>) 
+ヘッダ・ファイル (通常は <tt>/usr/local/include/jpegdata.h</tt>)
 を削除して下さい。
 </dl>
 
@@ -738,7 +738,7 @@ jpeg_destroy_decompress / jpeg_stdio_src'' などのエラーが出る</a></h3>
 
 <h3><a name="fontset">コンパイルに際して、
 ``w_menuentry.c: In function `Redisplay': /
-w_menuentry.c:129: structure has no member named `fontset' / 
+w_menuentry.c:129: structure has no member named `fontset' /
 w_menuentry.c:143: structure has no member named `international' ''
 などのエラーが出る</a></h3>
 

@@ -109,11 +109,11 @@ static unsigned char balloons_off_bits[] = {
 
 #define spinup_width 9
 #define spinup_height 6
-static char spinup_bits[] = {
+static unsigned char spinup_bits[] = {
    0x10, 0x00, 0x38, 0x00, 0x7c, 0x00, 0xfe, 0x00, 0xff, 0x01, 0x00, 0x00};
 #define spindown_width 9
 #define spindown_height 6
-static char spindown_bits[] = {
+static unsigned char spindown_bits[] = {
    0x00, 0x00, 0xff, 0x01, 0xfe, 0x00, 0x7c, 0x00, 0x38, 0x00, 0x10, 0x00};
 
 #define mouse_r_width 19
@@ -148,7 +148,7 @@ static unsigned char menu_cascade_arrow_bits[] = {
    0xfe, 0x01, 0xfe, 0x00, 0x3e, 0x00, 0x0e, 0x00, 0x02, 0x00, 0x00, 0x00};
 
 /* diamond for library menu to indicate toplevel files.
- * For the XAW3D1_5E version, there is a single point on the left edge and the 
+ * For the XAW3D1_5E version, there is a single point on the left edge and the
  * diamond is moved to the right because the menu's 3D edge obscures it otherwise */
 
 #ifdef XAW3D1_5E
@@ -370,15 +370,15 @@ make_pulldown_menu(char **entries, Cardinal nent, int divide_line, char *divide_
 
     for (i = 0; i < nent; i++) {
 	if (i == divide_line) {
-	    (void) XtCreateManagedWidget(entries[i], smeLineObjectClass, pulldown_menu, 
+	    (void) XtCreateManagedWidget(entries[i], smeLineObjectClass, pulldown_menu,
 					NULL, ZERO);
 	    FirstArg(XtNlabel, divide_message);
-	    (void) XtCreateManagedWidget("menu_divider", smeBSBObjectClass, pulldown_menu, 
+	    (void) XtCreateManagedWidget("menu_divider", smeBSBObjectClass, pulldown_menu,
 					Args, ArgCount);
-	    (void) XtCreateManagedWidget(entries[i], smeLineObjectClass, pulldown_menu, 
+	    (void) XtCreateManagedWidget(entries[i], smeLineObjectClass, pulldown_menu,
 					NULL, ZERO);
 	}
-	entry = XtCreateManagedWidget(entries[i], smeBSBObjectClass, pulldown_menu, 
+	entry = XtCreateManagedWidget(entries[i], smeBSBObjectClass, pulldown_menu,
 					NULL, ZERO);
 	XtAddCallback(entry, XtNcallback, callback, (XtPointer) i);
     }
@@ -443,7 +443,7 @@ make_color_popup_menu(Widget parent, char *name, XtCallbackProc callback, Boolea
     XtTranslateCoords(parent, (Position) 0, (Position) height,
 		      &x_val, &y_val);
 
-    /* by using the name "menu", the menuButton that is using this 
+    /* by using the name "menu", the menuButton that is using this
      * shell will know to pop it up, since that is the default menu name */
     FirstArg(XtNx, x_val);
     NextArg(XtNy, y_val+4);
@@ -454,7 +454,7 @@ make_color_popup_menu(Widget parent, char *name, XtCallbackProc callback, Boolea
     /* outer box containing label, color box, and cancel button */
     FirstArg(XtNorientation, XtorientVertical);
     pop_form = XtCreateManagedWidget("color_menu_form", formWidgetClass,
-    				    pop_menu, Args, ArgCount);
+				    pop_menu, Args, ArgCount);
 
     /* get the background color of the form for the "Background" button */
     FirstArg(XtNbackground, &bgcolor);
@@ -462,11 +462,11 @@ make_color_popup_menu(Widget parent, char *name, XtCallbackProc callback, Boolea
 
     FirstArg(XtNlabel, name);
     label = XtCreateManagedWidget("color_menu_label", labelWidgetClass,
-    				    pop_form, Args, ArgCount);
+				    pop_form, Args, ArgCount);
 
     /* put the Background, None and Default outside the box/viewport */
     first = True;
-    for (i=(include_transp? TRANSP_BACKGROUND: 
+    for (i=(include_transp? TRANSP_BACKGROUND:
 			    include_backg? COLOR_NONE: DEFAULT); i<0; i++) {
 	set_color_name(i,buf);
 	FirstArg(XtNwidth, COLOR_BUT_WID);
@@ -512,14 +512,14 @@ make_color_popup_menu(Widget parent, char *name, XtCallbackProc callback, Boolea
     NextArg(XtNwidth, wd);
     NextArg(XtNheight, ht);
     NextArg(XtNborderWidth, 1);
-    viewp = XtCreateManagedWidget("color_viewp", viewportWidgetClass, 
-    				  pop_form, Args, ArgCount);
+    viewp = XtCreateManagedWidget("color_viewp", viewportWidgetClass,
+				  pop_form, Args, ArgCount);
 
     FirstArg(XtNorientation, XtorientVertical);
     NextArg(XtNhSpace, 0);	/* small space between entries */
     NextArg(XtNvSpace, 0);
     color_box = XtCreateManagedWidget("color_box", boxWidgetClass,
-    				    viewp, Args, ArgCount);
+				    viewp, Args, ArgCount);
 
     /* now make the buttons in the box */
     for (i = 0; i < NUM_STD_COLS+num_usr_cols; i++) {
@@ -556,7 +556,7 @@ make_color_popup_menu(Widget parent, char *name, XtCallbackProc callback, Boolea
     entry = XtCreateManagedWidget(buf, commandWidgetClass, pop_form,
 				      Args, ArgCount);
     XtAddCallback(entry, XtNcallback, (XtCallbackProc) cancel_color,
-    		  (XtPointer) pop_menu);
+		  (XtPointer) pop_menu);
 
     return pop_menu;
 }
@@ -575,7 +575,7 @@ set_color_name(int color, char *buf)
 }
 
 /*
- * Set the color name in the label of widget, set its foreground to 
+ * Set the color name in the label of widget, set its foreground to
  * that color, and set its background to a contrasting color
  */
 
@@ -765,7 +765,7 @@ MakeFloatSpinnerEntry(Widget parent, Widget *text, char *name, Widget below, Wid
 		below	- (Widget)  widget below which this one goes
 		beside	- (Widget)  widget beside which this one goes
 		callback - (XtCallbackProc) callback for the text widget and
-						spinners (0 if none) 
+						spinners (0 if none)
 						Callback is passed spin_struct which
 						has min, max
 		string	- (char*)   initial string for text widget
@@ -886,7 +886,7 @@ MakeSpinnerEntry(Widget parent, Widget *text, char *name, Widget below, Widget b
     NextArg(XtNbottom, XtRubber);
     NextArg(XtNdefaultDistance, 0);
     spinup = XtCreateManagedWidget("spinup", commandWidgetClass, inform, Args, ArgCount);
-    XtAddCallback(spinup, XtNcallback, 
+    XtAddCallback(spinup, XtNcallback,
 		(XtCallbackProc) (type==I_IVAL? inc_int_spinner: inc_flt_spinner),
 		(XtPointer) spinstruct);
     /* add event to start timer when user presses spinner */
@@ -912,7 +912,7 @@ MakeSpinnerEntry(Widget parent, Widget *text, char *name, Widget below, Widget b
     NextArg(XtNbottom, XtChainBottom);
     NextArg(XtNdefaultDistance, 0);
     spindown = XtCreateManagedWidget("spindown", commandWidgetClass, inform, Args, ArgCount);
-    XtAddCallback(spindown, XtNcallback, 
+    XtAddCallback(spindown, XtNcallback,
 		(XtCallbackProc) (type==I_IVAL? dec_int_spinner: dec_flt_spinner),
 		(XtPointer) spinstruct);
     /* add event to start timer when user presses spinner */
@@ -945,7 +945,7 @@ validate_int(Widget w, XtPointer info, XtPointer dum)
 
     for (i=0; i<strlen(buf); )
 	/* delete any non-digits (including leading "-" when min >= 0 */
-	if ((spins->min >= 0.0 && buf[i] == '-') || ((buf[i] < '0' || buf[i] > '9') && buf[i] != '-') || 
+	if ((spins->min >= 0.0 && buf[i] == '-') || ((buf[i] < '0' || buf[i] > '9') && buf[i] != '-') ||
 			(i != 0 && buf[i] == '-')) {
 	    memmove(&buf[i], &buf[i+1], strlen(&buf[i]));
 	    /* adjust cursor for char we just removed */
@@ -1006,7 +1006,7 @@ void file_msg_add_grab(void)
 
 void
 get_pointer_win_xy(int *xposn, int *yposn)
-{ 
+{
     Window	   win;
     int		   cx, cy;
 
@@ -1019,7 +1019,7 @@ get_pointer_win_xy(int *xposn, int *yposn)
 
 void
 get_pointer_root_xy(int *xposn, int *yposn)
-{ 
+{
     Window	   rw, cw;
     int		   cx, cy;
     unsigned int   mask;
@@ -1040,7 +1040,7 @@ check_action_on(void)
 	    finish_text_input(0,0,0);/* finish up any text input */
 	else {
 	    if (cur_mode == F_PLACE_LIB_OBJ)
-		cancel_place_lib_obj(0, 0, 0);	      
+		cancel_place_lib_obj(0, 0, 0);
 	    else {
 		put_msg("Finish (or cancel) the current operation before changing modes");
 		beep();
@@ -1199,11 +1199,11 @@ void create_bitmaps(void)
 	int	       i;
 
 	/* make a down-arrow for any pull-down menu buttons */
-	menu_arrow = XCreateBitmapFromData(tool_d, tool_w, 
+	menu_arrow = XCreateBitmapFromData(tool_d, tool_w,
 			(char *) menu_arrow_bits, menu_arrow_width, menu_arrow_height);
 	/* make a right-arrow for any cascade menu entries */
-	menu_cascade_arrow = XCreateBitmapFromData(tool_d, tool_w, 
-			(char *) menu_cascade_arrow_bits, 
+	menu_cascade_arrow = XCreateBitmapFromData(tool_d, tool_w,
+			(char *) menu_cascade_arrow_bits,
 			menu_cascade_arrow_width, menu_cascade_arrow_height);
 	/* make pixmap for red checkmark */
 	check_pm = XCreatePixmapFromBitmapData(tool_d, tool_w,
@@ -1222,10 +1222,10 @@ void create_bitmaps(void)
 		    (char *) sm_check_bits, sm_check_width, sm_check_height,
 		    colors[WHITE], colors[WHITE], tool_dpth);
 	/* create two bitmaps to show on/off state */
-	balloons_on_bitmap = XCreateBitmapFromData(tool_d, tool_w, 
+	balloons_on_bitmap = XCreateBitmapFromData(tool_d, tool_w,
 				 (char *) balloons_on_bits,
 				 balloons_on_width, balloons_on_height);
-	balloons_off_bitmap = XCreateBitmapFromData(tool_d, tool_w, 
+	balloons_off_bitmap = XCreateBitmapFromData(tool_d, tool_w,
 				 (char *) balloons_off_bits,
 				 balloons_off_width, balloons_off_height);
 	/* create the 1-plane bitmaps of the arrow images */
@@ -1234,21 +1234,21 @@ void create_bitmaps(void)
 	for (i = -1; i < NUM_ARROW_TYPES-1; i++) {
 	    arrow_pixmaps[i+1] = XCreateBitmapFromData(tool_d,canvas_win,
 				(i==-1? (char*) no_arrow_bits: (char*) arrowtype_choices[i].icon->bits),
-				32, 32); 
+				32, 32);
 	}
-	diamond_pixmap = XCreateBitmapFromData(tool_d, canvas_win, 
-			(char*) diamond_bits, diamond_width, diamond_height); 
+	diamond_pixmap = XCreateBitmapFromData(tool_d, canvas_win,
+			(char*) diamond_bits, diamond_width, diamond_height);
 	if (linestyle_pixmaps[0] == 0) {
 	    for (i=0; i<NUM_LINESTYLE_TYPES; i++)
 		linestyle_pixmaps[i] = XCreateBitmapFromData(tool_d,canvas_win,
-			(char*) linestyle_choices[i].icon->bits, 
-			linestyle_choices[i].icon->width, linestyle_choices[i].icon->height); 
+			(char*) linestyle_choices[i].icon->bits,
+			linestyle_choices[i].icon->width, linestyle_choices[i].icon->height);
 	}
 
 	/* create the bitmaps that look like mouse buttons pressed */
-	mouse_l = XCreateBitmapFromData(tool_d, tool_w, 
+	mouse_l = XCreateBitmapFromData(tool_d, tool_w,
 		(char *) mouse_l_bits, mouse_l_width, mouse_l_height);
-	mouse_r = XCreateBitmapFromData(tool_d, tool_w, 
+	mouse_r = XCreateBitmapFromData(tool_d, tool_w,
 		(char *) mouse_r_bits, mouse_r_width, mouse_r_height);
 }
 
@@ -1347,14 +1347,14 @@ CreateCheckbutton(char *label, char *widget_name, Widget parent, Widget below, W
 	/* user wants widget ID */
 	if (togwidg)
 	    *togwidg = toggle;
-	XtAddCallback(toggle, XtNcallback, (XtCallbackProc) toggle_checkbutton, 
+	XtAddCallback(toggle, XtNcallback, (XtCallbackProc) toggle_checkbutton,
 				(XtPointer) value);
 	if (user_callback)
 	    XtAddCallback(toggle, XtNcallback, (XtCallbackProc) user_callback,
 			(XtPointer) value);
 
 	/* get the height of the checkmark pixmap */
-	(void) XGetGeometry(tool_d, (large?check_pm:sm_check_pm), &root, 
+	(void) XGetGeometry(tool_d, (large?check_pm:sm_check_pm), &root,
 			&idum, &idum, &udum, &check_ht, &udum, &udum);
 
 	FirstArg(XtNlabel, label);
@@ -1470,13 +1470,13 @@ void resize_all(int width, int height)
     GetValues(canvas_sw);
     h = h+2*b;
     h2 = CANVAS_HT+2*b3+h2+2*b2 + 2;
-    /* if mode panel is taller than the canvas + topruler height, increase 
+    /* if mode panel is taller than the canvas + topruler height, increase
        but_per_row and decrease canvas width */
     /* but don't change it if user explicitely used -but_per_row */
     if (appres.but_per_row == 0) {
 	if (h > h2) {
 	    min_sw_per_row = (mode_sw_ht + INTERNAL_BW*2) * (NUM_MODE_SW+2) / h2 + 1;
-	    if (min_sw_per_row != SW_PER_ROW) 
+	    if (min_sw_per_row != SW_PER_ROW)
 		width -= (min_sw_per_row - SW_PER_ROW)*(mode_sw_wd+2*INTERNAL_BW);
 	    SW_PER_ROW = max2(min_sw_per_row, SW_PER_ROW);
 	    setup_sizes(width, height);
@@ -1602,7 +1602,7 @@ check_colors(void)
 	/* first try by #xxxxx form if exists, then by name from rgb.txt file */
 	if (!xallncol(colorNames[i+1].rgb,&color,&dum)) {
 	     /* can't allocate it, switch colormaps try again */
-	     if (!switch_colormap() || 
+	     if (!switch_colormap() ||
 	        (!xallncol(colorNames[i+1].rgb,&color,&dum))) {
 		    fprintf(stderr, "Not enough colormap entries available for basic colors\n");
 		    fprintf(stderr, "using monochrome mode.\n");
@@ -1677,7 +1677,7 @@ void XSyncOff(void)
 	XFlush(tool_d);
 }
 
-/* 
+/*
  * This will parse the hexadecimal form of the named colors in the standard color
  * names.  Some servers can't parse the hex form for XAllocNamedColor()
  */
@@ -1710,8 +1710,8 @@ xallncol(char *name, XColor *color, XColor *exact)
 
 Widget
 make_grid_options(Widget parent, Widget put_below, Widget put_beside, char *minor_grid_value, char *major_grid_value,
-		Widget *grid_minor_menu_button, Widget *grid_major_menu_button, Widget *grid_minor_menu, 
-		Widget *grid_major_menu, Widget *print_grid_minor_text, Widget *print_grid_major_text, 
+		Widget *grid_minor_menu_button, Widget *grid_major_menu_button, Widget *grid_minor_menu,
+		Widget *grid_major_menu, Widget *print_grid_minor_text, Widget *print_grid_major_text,
 		Widget *grid_unit_label, void (*grid_major_select) (/* ??? */), void (*grid_minor_select) (/* ??? */))
 {
 	Widget	below, beside;
@@ -1813,7 +1813,7 @@ make_grid_options(Widget parent, Widget put_below, Widget put_beside, char *mino
 	NextArg(XtNright, XtChainLeft);
 	*grid_unit_label = XtCreateManagedWidget("grid_unit_label", labelWidgetClass,
 					    parent, Args, ArgCount);
-	
+
 	return *grid_minor_menu_button;
 }
 
@@ -1962,8 +1962,8 @@ convert_gridstr(Widget widget, float mult)
 void splash_screen(void)
 {
 	GC		splash_gc;
-	XColor  	col, colbg;
-	Boolean 	fade;
+	XColor		col, colbg;
+	Boolean		fade;
 	int		red_step, green_step, blue_step;
 	Pixmap		letters_pm, spl_bckgnd, dum;
 	int		splash_x, splash_y;
@@ -1972,16 +1972,16 @@ void splash_screen(void)
 	Boolean		use_bitmap = False;
 	XGCValues	gcv;
 
-#ifdef USE_XPM
+#ifdef USE_XPM_SPLASH
 	XpmAttributes	spl_bckgnd_attr;
-#endif /* USE_XPM */
+#endif
 
 	/* center the splash on the canvas */
 	splash_x = (CANVAS_WD - spl_bckgnd_ic.width)/2;
 	splash_y = (CANVAS_HT - spl_bckgnd_ic.height)/2;
 
 	/* read the background for the splash screen */
-#ifdef USE_XPM
+#ifdef USE_XPM_SPLASH
 	if (all_colors_available) {
 	    /* use the color XPM bitmap */
 	    spl_bckgnd_attr.valuemask = XpmReturnPixels;
@@ -1995,9 +1995,9 @@ void splash_screen(void)
 		/* use mono */
 		use_bitmap = True;
 	}
-#else /* no XPM */
+#else
 	use_bitmap = True;
-#endif /* USE_XPM */
+#endif /* USE_XPM_SPLASH */
 
 	if (!all_colors_available || use_bitmap) {
 	    /* use the xbm bitmap */
@@ -2144,12 +2144,12 @@ void splash_screen(void)
 	    XFreeColors(tool_d, tool_cm, &col.pixel, 1, 0);
 
 	/* and the colors in the xpm image */
-#ifdef USE_XPM
+#ifdef USE_XPM_SPLASH
 	if (!use_bitmap)
 	    XFreeColors(tool_d, tool_cm,
 		spl_bckgnd_attr.pixels, spl_bckgnd_attr.npixels, 0);
-#endif /* USE_XPM */
-	    
+#endif
+
 	/* finally, set flag saying splash is on the screen so it will be cleared later */
 	splash_onscreen = True;
 }
@@ -2185,10 +2185,10 @@ InstallScroll(Widget widget)
 	_installscroll(XtParent(widget), widget);
 }
 
-/* 
+/*
  * Install wheel mouse scrolling for the scrollbar of the parent of the parent of the passed widget
  *
- * We look to the parent of the parent for the scrollbar because we have: 
+ * We look to the parent of the parent for the scrollbar because we have:
  *      viewport
  *        / \
  *     box   scrollbar

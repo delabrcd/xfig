@@ -13,7 +13,7 @@
 <h1>Fig Format 3.2</h1>
 
 This is a description of the <i>Fig Format 3.2</i>,
-which is a copy of <tt>xfig.3.2.x/Doc/FORMAT3.2</tt> 
+which is a copy of <tt>xfig.3.2.x/Doc/FORMAT3.2</tt>
 in the <b>xfig 3.2.x</b> source distribution.
 
 <p>
@@ -30,8 +30,8 @@ in the <b>xfig 3.2.x</b> source distribution.
  * nonexclusive right and license to deal in this software and
  * documentation files (the "Software"), including without limitation the
  * rights to use, copy, modify, merge, publish and/or distribute copies of
- * the Software, and to permit persons who receive copies from any such 
- * party to do so, with the only requirement being that this copyright 
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that this copyright
  * notice remain intact.
  */
 
@@ -69,7 +69,7 @@ hand-fitting may be needed in some pathological cases.
 
     The character # at the first column of a line indicates that the line
     is a comment line which will be preserved when the Fig file is read in.
-    The user may edit them with the popup editor.  
+    The user may edit them with the popup editor.
 
     The comment line(s) must immediately precede the object to which they
     are associated.  In the case of the "whole figure comments" mentioned
@@ -167,7 +167,7 @@ hand-fitting may be needed in some pathological cases.
 	 xfig preallocates for itself and the 32 standard colors (about 48).
 
     For WHITE color, the area fill field is defined as follows:
-	
+
 	-1 = not filled
 	 0 = black
 	...  values from 1 to 19 are shades of grey, from darker to lighter
@@ -176,7 +176,7 @@ hand-fitting may be needed in some pathological cases.
 	41-56 see patterns for colors, below
 
     For BLACK or DEFAULT color, the area fill field is defined as follows:
-	
+
 	-1 = not filled
 	 0 = white
 	...  values from 1 to 19 are shades of grey, from lighter to darker
@@ -347,7 +347,7 @@ hand-fitting may be needed in some pathological cases.
 	int	arrow_type		(enumeration type)
 	int	arrow_style		(enumeration type)
 	float	arrow_thickness		(1/80 inch)
-	float 	arrow_width		(Fig units)
+	float	arrow_width		(Fig units)
 	float	arrow_height		(Fig units)
 
     Backward arrow line (Optional; absent if backward_arrow is 0):
@@ -470,7 +470,7 @@ hand-fitting may be needed in some pathological cases.
 					     1: closed approximated spline
 					     2: open   interpolated spline
 					     3: closed interpolated spline
-					     4: open   x-spline 
+					     4: open   x-spline
 					     5: closed x-spline)
 	int	line_style		(See the end of this section)
 	int	thickness		(1/80 inch)
@@ -504,15 +504,15 @@ hand-fitting may be needed in some pathological cases.
     (3.7) TEXT
 	type	name			(brief description)
 	----	----			-------------------
-	int	object 			(always 4)
+	int	object			(always 4)
 	int	sub_type		(0: Left justified
 					     1: Center justified
 					     2: Right justified)
 	int	color			(enumeration type)
 	int	depth			(enumeration type)
 	int	pen_style		(enumeration , not used)
-	int	font 			(enumeration type)
-	float	font_size 		(font size in points)
+	int	font			(enumeration type)
+	float	font_size		(font size in points)
 	float	angle			(radians, the angle of the text)
 	int	font_flags		(bit vector)
 	float	height			(Fig units)

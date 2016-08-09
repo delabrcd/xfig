@@ -123,7 +123,7 @@ help_ok(Widget w, XtPointer closure, XtPointer call_data)
 	XtPopdown(help_popup);
 }
 
-void 
+void
 launch_about(Widget w, XtPointer closure, XtPointer call_data)
 {
     DeclareArgs(10);

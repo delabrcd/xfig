@@ -165,9 +165,9 @@ fix_splinepoint_adding(int x, int y)
     F_point	   *p;
 
     /* if this point is coincident with the point being added to, return */
-    if (((left_point == NULL) && 
+    if (((left_point == NULL) &&
 	   (cur_x == cur_s->points[0].x) && (cur_y == cur_s->points[0].y)) ||
-	   ((left_point != NULL) && 
+	   ((left_point != NULL) &&
 	   (left_point->x == cur_x) && (left_point->y == cur_y))) {
 	return;
     }
@@ -190,7 +190,7 @@ fix_splinepoint_adding(int x, int y)
 /*
  * Added_point is always inserted between left_point and
  * right_point, except in two cases. (1) left_point is NULL, the added_point
- * will be prepended to the list of points. (2) right_point is NULL, the 
+ * will be prepended to the list of points. (2) right_point is NULL, the
  * added_point will be appended to the end of the list.
  */
 
@@ -228,7 +228,7 @@ splinepoint_adding(F_spline *spline, F_point *left_point, F_point *added_point, 
 	}
       else
 	c->s = sfactor;
-     
+
       c->next = prev_sfactor->next;
       prev_sfactor->next = c;
       added_point->next = left_point->next; /*right_point;*/
@@ -280,9 +280,9 @@ fix_linepoint_adding(int x, int y)
     F_point	   *p;
 
     /* if this point is coincident with the point being added to, return */
-    if (((left_point == NULL) && 
+    if (((left_point == NULL) &&
 	   (cur_x == cur_l->points[0].x) && (cur_y == cur_l->points[0].y)) ||
-	   ((left_point != NULL) && 
+	   ((left_point != NULL) &&
 	   (left_point->x == cur_x) && (left_point->y == cur_y))) {
 	return;
     }

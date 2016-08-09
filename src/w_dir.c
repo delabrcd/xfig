@@ -343,7 +343,7 @@ create_dirinfo(Boolean file_exp, Widget parent, Widget below, Widget *ret_beside
     NextArg(XtNbottom, XtChainBottom);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainLeft);
-    w = XtCreateManagedWidget("mask_label", labelWidgetClass, 
+    w = XtCreateManagedWidget("mask_label", labelWidgetClass,
 				parent, Args, ArgCount);
 
     /* text widget for the filename mask */
@@ -360,7 +360,7 @@ create_dirinfo(Boolean file_exp, Widget parent, Widget below, Widget *ret_beside
     NextArg(XtNbottom, XtChainBottom);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainRight);
-    *mask_w = XtCreateManagedWidget("mask", asciiTextWidgetClass, 
+    *mask_w = XtCreateManagedWidget("mask", asciiTextWidgetClass,
 					parent, Args, ArgCount);
     XtOverrideTranslations(*mask_w, XtParseTranslationTable(mask_text_translations));
 
@@ -436,7 +436,7 @@ create_dirinfo(Boolean file_exp, Widget parent, Widget below, Widget *ret_beside
     NextArg(XtNbottom, XtChainBottom);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainLeft);
-    hidden = XtCreateManagedWidget("hidden", commandWidgetClass, 
+    hidden = XtCreateManagedWidget("hidden", commandWidgetClass,
 				parent, Args, ArgCount);
     XtAddCallback(hidden, XtNcallback, ShowHidden, (XtPointer) NULL);
 
@@ -641,7 +641,7 @@ DoChangeDir(char *dir)
     char	   *p;
     char	    ndir[PATH_MAX];
 
-    
+
     if (browse_up) {
 	strcpy(ndir, cur_browse_dir);
     } else if (file_up) {
@@ -700,7 +700,7 @@ DoChangeDir(char *dir)
     CurrentSelectionName[0] = '\0';
 }
 
-void 
+void
 CallbackRescan(Widget widget, XtPointer closure, XtPointer call_data)
 {
      Rescan(0, 0, 0, 0);

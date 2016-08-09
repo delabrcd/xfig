@@ -30,7 +30,8 @@
 #include "f_neuclrtab.h"
 #include "f_util.h"
 
-#include <stdio.h>
+/* #include <stdio.h>	inluded in fig.h */
+#include <limits.h>	/* INT_MAX */
 
 static	void initnet(void);
 static	void learn(void);
@@ -80,7 +81,7 @@ void neu_dith_colrs (register BYTE *bs, register COLR (*cs), int n);
 
 int
 neu_init(long int npixels)		/* initialize our sample array */
-    	        
+
 {
 	if (npixels < MIN_NEU_SAMPLES)
 		samplefac = 1;
@@ -91,7 +92,7 @@ neu_init(long int npixels)		/* initialize our sample array */
 
 int
 neu_init2(long int npixels)		/* initialize our sample array */
-    	        
+
 {
 	register int	nsleft;
 	register long	sv;
@@ -128,8 +129,8 @@ neu_init2(long int npixels)		/* initialize our sample array */
 }
 
 
-void neu_pixel(register BYTE *col)			/* add pixel to our samples */
-             	      
+void
+neu_pixel(register BYTE *col)			/* add pixel to our samples */
 {
 	if (!skipcount--) {
 		skipcount = nskip(cursamp);
@@ -141,7 +142,8 @@ void neu_pixel(register BYTE *col)			/* add pixel to our samples */
 }
 
 
-void neu_colrs(register COLR (*cs), register int n)		/* add a scanline to our samples */
+void
+neu_colrs(register COLR (*cs), register int n)	/* add a scanline to our samples */
 {
 	while (n > skipcount) {
 		cs += skipcount;
@@ -159,7 +161,6 @@ void neu_colrs(register COLR (*cs), register int n)		/* add a scanline to our sa
 
 int
 neu_clrtab(int ncolors)		/* make new color table using ncolors */
-   	        
 {
 	netsize = ncolors;
 	if (netsize > MAXNETSIZE) netsize = MAXNETSIZE;
@@ -179,7 +180,6 @@ neu_clrtab(int ncolors)		/* make new color table using ncolors */
 
 int
 neu_map_pixel(register BYTE *col)		/* get pixel for color */
-             	      
 {
 	return(inxsearch(col[N_BLU],col[N_GRN],col[N_RED]));
 }
@@ -240,9 +240,9 @@ void neu_dith_colrs(register BYTE *bs, register COLR (*cs), int n)	/* convert sc
 
 /* The following was adapted and modified slightly from the original */
 
-#define bool    	int
-#define false   	0
-#define true    	1
+#define bool		int
+#define false		0
+#define true		1
 
 /* network defs */
 #define maxnetpos	(netsize-1)
@@ -252,9 +252,9 @@ void neu_dith_colrs(register BYTE *bs, register COLR (*cs), int n)	/* convert sc
 /* defs for freq and bias */
 #define intbiasshift    16			/* bias for fractions */
 #define intbias		(((int) 1)<<intbiasshift)
-#define gammashift  	10			/* gamma = 1024 */
-#define gamma   	(((int) 1)<<gammashift)
-#define betashift  	10
+#define gammashift	10			/* gamma = 1024 */
+#define gamma		(((int) 1)<<gammashift)
+#define betashift	10
 #define beta		(intbias>>betashift)	/* beta = 1/1024 */
 #define betagamma	(intbias<<(gammashift-betashift))
 
@@ -263,7 +263,7 @@ void neu_dith_colrs(register BYTE *bs, register COLR (*cs), int n)	/* convert sc
 #define radiusbiasshift	6			/* at 32.0 biased by 6 bits */
 #define radiusbias	(((int) 1)<<radiusbiasshift)
 #define initradius	(initrad*radiusbias)	/* and decreases by a */
-#define radiusdec	30			/* factor of 1/30 each cycle */ 
+#define radiusdec	30			/* factor of 1/30 each cycle */
 
 /* defs for decreasing alpha factor */
 #define alphabiasshift	10			/* alpha starts at 1.0 */
@@ -306,7 +306,7 @@ initnet(void)
 {
 	register int i;
 	register int *p;
-	
+
 	for (i=0; i<netsize; i++) {
 		p = network[i];
 		p[0] = p[1] = p[2] = (i << (netbiasshift+8))/netsize;
@@ -361,7 +361,7 @@ inxbuild(void)
 
 static int
 inxsearch(register int b, register int g, register int r)  /* accepts real BGR values after net is unbiased */
-                   
+
 {
 	register int i,j,dist,a,bestd;
 	register int *p;
@@ -417,7 +417,7 @@ inxsearch(register int b, register int g, register int r)  /* accepts real BGR v
 
 static int
 contest(register int b, register int g, register int r)	/* accepts biased BGR values */
-                   
+
 {
 	register int i,dist,a,biasdist,betafreq;
 	int bestpos,bestbiaspos,bestd,bestbiasd;
@@ -454,7 +454,7 @@ contest(register int b, register int g, register int r)	/* accepts biased BGR va
 
 static void
 altersingle(register int alpha, register int i, register int b, register int g, register int r)	/* accepts biased BGR values */
-                           
+
 {
 	register int *n;
 
@@ -472,8 +472,8 @@ altersingle(register int alpha, register int i, register int b, register int g, 
 
 static void
 alterneigh(int rad, int i, register int b, register int g, register int r)	/* accents biased BGR values */
-          
-                   
+
+
 {
 	register int j,k,lo,hi,a;
 	register int *p, *q;
@@ -523,12 +523,12 @@ learn(void)
 	delta = samplepixels/ncycles;
 	alpha = initalpha;
 	radius = initradius;
-	
+
 	rad = radius >> radiusbiasshift;
 	if (rad <= 1) rad = 0;
-	for (i=0; i<rad; i++) 
+	for (i=0; i<rad; i++)
 		radpower[i] = alpha*(((rad*rad - i*i)*radbias)/(rad*rad));
-	
+
 	if ((lengthcount%prime1) != 0) step = 3*prime1;
 	else {
 		if ((lengthcount%prime2) !=0) step = 3*prime2;
@@ -537,7 +537,7 @@ learn(void)
 			else step = 3*prime4;
 		}
 	}
-	
+
 	i = 0;
 	while (i < samplepixels) {
 		b = p[0] << netbiasshift;
@@ -550,19 +550,19 @@ learn(void)
 
 		p += step;
 		if (p >= lim) p -= lengthcount;
-	
+
 		i++;
-		if (i%delta == 0) {	
+		if (i%delta == 0) {
 			alpha -= alpha / alphadec;
 			radius -= radius / radiusdec;
 			rad = radius >> radiusbiasshift;
 			if (rad <= 1) rad = 0;
-			for (j=0; j<rad; j++) 
+			for (j=0; j<rad; j++)
 				radpower[j] = alpha*(((rad*rad - j*j)*radbias)/(rad*rad));
 		}
 	}
 }
-	
+
 /* unbias network to give 0..255 entries */
 /* which can then be used for colour map */
 /* and record position i to prepare for sort */
@@ -580,12 +580,12 @@ unbiasnet(void)
 }
 
 /* Don't do this until the network has been unbiased */
-		
+
 static void
 cpyclrtab(void)
 {
 	register int i,j,k;
-	
+
 	for (j=0; j<netsize; j++) {
 		k = network[j][3];
 		for (i = 0; i < 3; i++)

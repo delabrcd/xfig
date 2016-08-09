@@ -265,12 +265,12 @@ do_merge(Widget w, XButtonEvent *ev)
 
 /*
    Set a flag requesting a load.  This is called by double clicking on a
-   filename or by pressing the Open button. 
+   filename or by pressing the Open button.
 
    If we aren't in the middle of previewing a file, do the actual load.
 
-   Otherwise just set a flag here because we are in the middle of a preview, 
-   since the first click on the filename started up preview_figure(). 
+   Otherwise just set a flag here because we are in the middle of a preview,
+   since the first click on the filename started up preview_figure().
 
    We can't do the load yet because the canvas_win variable is occupied by
    the pixmap for the preview, and we need to change it back to the real canvas
@@ -378,7 +378,7 @@ new_xfig_request(Widget w, XButtonEvent *ev)
     restore_user_colors();
     restore_nuser_colors();
 
-    if (emptyname(fname)) 
+    if (emptyname(fname))
 	put_msg("Launching new xfig...");
     else {
 	if (!strchr(fname,'.'))		/* if no suffix, add .fig */
@@ -395,7 +395,7 @@ new_xfig_request(Widget w, XButtonEvent *ev)
 	    if (emptyname(arg_filename) || strcmp(xargv[i], arg_filename) != 0)
 		xxargv[j++] = xargv[i];
 	}
-	if (!emptyname(fname)) 
+	if (!emptyname(fname))
 	    xxargv[j++] = fname;
 	xxargv[j] = NULL;
 	execvp(xxargv[0], xxargv);
@@ -491,7 +491,7 @@ do_save(Widget w, XButtonEvent *ev)
 	    if (!ok_to_write(fname, "SAVE"))
 		return;
 	    XtSetSensitive(save_button, False);
-	    if (appres.write_bak == True) 
+	    if (appres.write_bak == True)
 		(void) renamefile(fname);
 	    if (write_file(fname, True) == 0) {
 		FirstArg(XtNlabel, fname);
@@ -511,7 +511,7 @@ do_save(Widget w, XButtonEvent *ev)
 	if (!ok_to_write(cur_filename, "SAVE"))
 	    return;
 	/* not using popup => filename not changed so ok to write existing file */
-	warnexist = False;			
+	warnexist = False;
 	(void) renamefile(cur_filename);
 	if (write_file(cur_filename, True) == 0)
 	    reset_modifiedflag();
@@ -536,7 +536,7 @@ query_save(char *msg)
 {
     int		    qresult;
     if (!emptyfigure() && figure_modified && !aborting) {
-	if ((qresult = popup_query(QUERY_YESNOCAN, msg)) == RESULT_CANCEL) 
+	if ((qresult = popup_query(QUERY_YESNOCAN, msg)) == RESULT_CANCEL)
 	    return False;
 	else if (qresult == RESULT_YES) {
 	    save_request((Widget) 0, (XButtonEvent *) 0);
@@ -837,7 +837,7 @@ void create_file_panel(void)
 	NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
 	file_xoff_unit_panel = XtCreateManagedWidget(offset_unit_items[appres.INCHES? 0: 1],
 				menuButtonWidgetClass, file_panel, Args, ArgCount);
-	make_pulldown_menu(offset_unit_items, XtNumber(offset_unit_items), 
+	make_pulldown_menu(offset_unit_items, XtNumber(offset_unit_items),
 				   -1, "", file_xoff_unit_panel, file_xoff_unit_select);
 
 	/* put the Y offset below the X */
@@ -877,7 +877,7 @@ void create_file_panel(void)
 	NextArg(XtNleftBitmap, menu_arrow);	/* use menu arrow for pull-down */
 	file_yoff_unit_panel = XtCreateManagedWidget(offset_unit_items[appres.INCHES? 0: 1],
 				menuButtonWidgetClass, file_panel, Args, ArgCount);
-	make_pulldown_menu(offset_unit_items, XtNumber(offset_unit_items), 
+	make_pulldown_menu(offset_unit_items, XtNumber(offset_unit_items),
 				   -1, "", file_yoff_unit_panel, file_yoff_unit_select);
 
 	FirstArg(XtNlabel, " Current File");
@@ -984,9 +984,9 @@ void create_file_panel(void)
 
 	/* first create a pixmap for its background, into which we'll draw the figure */
 	/* actually, make one for landscape and one for portrait */
-	preview_land_pixmap = XCreatePixmap(tool_d, canvas_win, 
+	preview_land_pixmap = XCreatePixmap(tool_d, canvas_win,
 			PREVIEW_CANVAS_W, PREVIEW_CANVAS_H, tool_dpth);
-	preview_port_pixmap = XCreatePixmap(tool_d, canvas_win, 
+	preview_port_pixmap = XCreatePixmap(tool_d, canvas_win,
 			PREVIEW_CANVAS_H, PREVIEW_CANVAS_W, tool_dpth);
 
 	/* make a form for the preview widget so we can center it */
@@ -1163,7 +1163,7 @@ check_cancel(void)
 	return cancel_preview;
     }
     return False;
-	
+
 }
 
 static void
@@ -1177,9 +1177,9 @@ clear_preview(void)
 
     /* clear both port and land pixmap */
     XSetForeground(tool_d, gccache[ERASE], x_bg_color.pixel);
-    XFillRectangle(tool_d, preview_land_pixmap, gccache[ERASE], 0, 0, 
+    XFillRectangle(tool_d, preview_land_pixmap, gccache[ERASE], 0, 0,
 		   PREVIEW_CANVAS_W, PREVIEW_CANVAS_H);
-    XFillRectangle(tool_d, preview_port_pixmap, gccache[ERASE], 0, 0, 
+    XFillRectangle(tool_d, preview_port_pixmap, gccache[ERASE], 0, 0,
 		   PREVIEW_CANVAS_H, PREVIEW_CANVAS_W);
 
     FirstArg(XtNbackgroundPixmap, (Pixmap)0);
@@ -1283,7 +1283,7 @@ void preview_figure(char *filename, Widget parent, Widget canvas, Widget size_wi
     /* but use a "hand" cursor for the Preview Stop button */
     XDefineCursor(tool_d, XtWindow(preview_stop), pick9_cursor);
     process_pending();
-     
+
     /* if we haven't already saved colors of the images on the canvas */
     if (!image_colors_are_saved) {
 	image_colors_are_saved = True;
@@ -1317,7 +1317,7 @@ void preview_figure(char *filename, Widget parent, Widget canvas, Widget size_wi
 	clear_preview();
     } else {
 	/*
-	 *  successful read, get the size 
+	 *  successful read, get the size
 	*/
 
 	add_compound_depth(figure);	/* count objects at each depth */
@@ -1361,7 +1361,7 @@ void preview_figure(char *filename, Widget parent, Widget canvas, Widget size_wi
 	if (size_widget) {
 	    FirstArg(XtNlabel, figsize);
 	    SetValues(preview_size);
-    	}
+	}
 
 	/* now switch the drawing canvas to our preview window and set width/height */
 	if (settings.landscape) {
@@ -1375,7 +1375,7 @@ void preview_figure(char *filename, Widget parent, Widget canvas, Widget size_wi
 	}
 
 	/* scale to fit the preview canvas */
-	display_zoomscale = 
+	display_zoomscale =
 			min2((float)(pixwidth-8)/width, (float)(pixheight-8)/height) *
 				ZOOM_FACTOR;
 	/* limit magnification to 5.0 */
@@ -1477,7 +1477,7 @@ void preview_figure(char *filename, Widget parent, Widget canvas, Widget size_wi
 	do_load((Widget) 0, (XButtonEvent *) 0);
 	/* if redisplay_region was called don't bother because
 	   we're loading a file over it */
-	request_redraw = False;		
+	request_redraw = False;
     }
     if (file_merge_request) {
 	cancel_preview = False;

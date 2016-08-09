@@ -24,7 +24,7 @@ UCol 35 #440033		(User colors)
 
 Line ...		(PolyLine separate from Box and Polygon)
 Box			(three subtypes)
-  Box-Arcbox ...	
+  Box-Arcbox ...
   Box-Normal ...
   Box-Picture ...
 Poly ...
@@ -67,7 +67,7 @@ Add elliptical arcs
 Importing of Fig files as pictures
 Add new font choices done by Ian Cameron Smith (clint@hermit.org http://www.hermit.org/)
 Some kind of color pallette which is global (remains around between drawings)
-   o Also library of color pallettes? 
+   o Also library of color pallettes?
 
 *** END OF V4.0 IDEAS ***
 

@@ -51,7 +51,7 @@ extern F_arrow	  *forward_dim_arrow(void);
 extern F_arrow	  *backward_dim_arrow(void);
 
 extern F_arrow	  *new_arrow(int type, int style, float thickness, float wd, float ht);
-extern char   	  *new_string(int len);
+extern char	  *new_string(int len);
 extern F_linkinfo *new_link(F_line *l, F_point *ep, F_point *pp);
 
 #endif /* U_CREATE_H */

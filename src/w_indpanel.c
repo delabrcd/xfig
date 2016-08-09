@@ -391,7 +391,7 @@ ind_sw_info	ind_switches[] = {
     {I_FVAL, I_ROTNANGLE, "Rotn", "Angle", WIDE_IND_SW_WD,
 	NULL, &cur_rotnangle, inc_rotnangle, dec_rotnangle, show_rotnangle, -360.0, 360.0, 1.0},
     {I_IVAL, I_NUMSIDES, "Num", "Sides", NARROW_IND_SW_WD,
-	&cur_numsides, NULL, inc_numsides, dec_numsides, show_numsides, 
+	&cur_numsides, NULL, inc_numsides, dec_numsides, show_numsides,
 	MIN_POLY_SIDES, MAX_POLY_SIDES, 1.0},
     {I_IVAL, I_NUMCOPIES, "Num", "Copies", NARROW_IND_SW_WD,
 	&cur_numcopies, NULL, inc_numcopies, dec_numcopies, show_numcopies, 1, 99, 1.0},
@@ -446,7 +446,7 @@ ind_sw_info	ind_switches[] = {
     {I_CHOICE, I_ARROWSIZE, "Arrow Size", "", WIDE_IND_SW_WD,
 	NULL, NULL, inc_arrowsize, dec_arrowsize, show_arrowsize, 0, 0, 0.0},
     {I_IVAL, I_BOXRADIUS, "Box", "Curve", DEF_IND_SW_WD,
-	&cur_boxradius, NULL, inc_boxradius, dec_boxradius, show_boxradius, 
+	&cur_boxradius, NULL, inc_boxradius, dec_boxradius, show_boxradius,
 	MIN_BOX_RADIUS, MAX_BOX_RADIUS, 1.0},
     {I_DIMLINE, I_DIMLINE, "Dimension line", "", XWIDE_IND_SW_WD,
 	NULL, NULL, inc_dimline, dec_dimline, show_dimline, 0, 0, 0.0},
@@ -512,7 +512,7 @@ static unsigned char tog_bits[] = {
    0xff, 0x03, 0x01, 0x02, 0x03, 0x02, 0x07, 0x02, 0x0f, 0x02, 0x1f, 0x02,
    0x3f, 0x02, 0x7f, 0x02, 0xff, 0x02, 0xff, 0x03};
 
-/* create a ind_sw_info struct for the update widget 
+/* create a ind_sw_info struct for the update widget
    so we can use the balloon routines or the Tip widget */
 
 static ind_sw_info upd_sw_info, upd_set_sw_info, upd_clr_sw_info, upd_tog_sw_info;
@@ -527,7 +527,7 @@ init_ind_panel(Widget tool)
     int		 i;
 
     /* Make a widget which contains the label and toggle/set/clear form.
-       This will be managed and unmanaged as needed.  It's parent is the 
+       This will be managed and unmanaged as needed.  It's parent is the
        main form (tool) and the ind_panel will be chained to it when it
        is managed */
 
@@ -645,7 +645,7 @@ init_ind_panel(Widget tool)
     if (appres.showallbuttons) {	/* yes, but set cur_indmask to all later */
 	i = 2*DEF_IND_SW_HT+5*INTERNAL_BW; /* two rows high when showing all buttons */
     } else {
-	i = DEF_IND_SW_HT + 2*INTERNAL_BW;   
+	i = DEF_IND_SW_HT + 2*INTERNAL_BW;
     }
     /* account for the scrollbar thickness */
     i += MAX_SCROLL_WD;
@@ -1023,7 +1023,7 @@ ind_balloon(void)
 static void
 ind_unballoon(Widget widget, XtPointer closure, XEvent *event, Boolean *continue_to_dispatch)
 {
-    if (balloon_id) 
+    if (balloon_id)
 	XtRemoveTimeOut(balloon_id);
     balloon_id = (XtIntervalId) 0;
     if (ind_balloon_popup != (Widget) 0) {
@@ -1281,7 +1281,7 @@ set_arrow_size_state(Widget w, XtPointer closure, XtPointer call_data)
     /* check state of the toggle and set/remove checkmark */
     FirstArg(XtNstate, &state);
     GetValues(w);
-    
+
     if (state ) {
 	FirstArg(XtNbitmap, check_pm);
     } else {
@@ -1434,7 +1434,7 @@ void popup_arrowsize_panel(ind_sw_info *isw)
     NextArg(XtNbottom, XtChainTop);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainLeft);
-    beside = XtCreateManagedWidget("multlabel", labelWidgetClass, form, 
+    beside = XtCreateManagedWidget("multlabel", labelWidgetClass, form,
 				Args, ArgCount);
 
     /* toggle for using multiple of line width  */
@@ -1455,7 +1455,7 @@ void popup_arrowsize_panel(ind_sw_info *isw)
     NextArg(XtNbottom, XtChainTop);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainLeft);
-    multtoggle = XtCreateManagedWidget("multtoggle", toggleWidgetClass, form, 
+    multtoggle = XtCreateManagedWidget("multtoggle", toggleWidgetClass, form,
 				Args, ArgCount);
     XtAddCallback(multtoggle, XtNcallback, set_arrow_size_state, (XtPointer) NULL);
 
@@ -1463,7 +1463,7 @@ void popup_arrowsize_panel(ind_sw_info *isw)
 
     /* make a spinner entry widget for abs values */
     sprintf(buf,"%.1f",cur_arrowthick);
-    a_t_spin = beside = MakeFloatSpinnerEntry(form, &arrow_thick_w, "arrow_thickness", 
+    a_t_spin = beside = MakeFloatSpinnerEntry(form, &arrow_thick_w, "arrow_thickness",
 		abslabel, (Widget) NULL, (XtCallbackProc) 0, buf, 0.1, 10000.0, 1.0, 50);
 
     FirstArg(XtNfromHoriz, beside);
@@ -1477,7 +1477,7 @@ void popup_arrowsize_panel(ind_sw_info *isw)
 
     /* make a spinner for Thickness = Multiple of line width */
     sprintf(buf,"%.1f",cur_arrow_multthick);
-    m_t_spin = below = MakeFloatSpinnerEntry(form, &arrow_mult_thick_w, "arrow_mult_thickness", 
+    m_t_spin = below = MakeFloatSpinnerEntry(form, &arrow_mult_thick_w, "arrow_mult_thickness",
 		abslabel, beside, (XtCallbackProc) 0, buf, 0.1, 10000.0, 1.0, 50);
 
     /* save the "normal" background so we can switch between that and gray (insensitive) */
@@ -1489,7 +1489,7 @@ void popup_arrowsize_panel(ind_sw_info *isw)
 
     /* make a spinner entry widget for abs values */
     sprintf(buf,"%.1f",cur_arrowwidth);
-    a_w_spin = beside = MakeFloatSpinnerEntry(form, &arrow_width_w, "arrow_width", 
+    a_w_spin = beside = MakeFloatSpinnerEntry(form, &arrow_width_w, "arrow_width",
 		below, (Widget) NULL, (XtCallbackProc) 0, buf, 0.1, 10000.0, 1.0, 50);
 
     FirstArg(XtNfromHoriz, beside);
@@ -1503,14 +1503,14 @@ void popup_arrowsize_panel(ind_sw_info *isw)
 
     /* make a spinner for Width = Multiple of line width */
     sprintf(buf,"%.1f",cur_arrow_multwidth);
-    m_w_spin = below = MakeFloatSpinnerEntry(form, &arrow_mult_width_w, "arrow_mult_width", 
+    m_w_spin = below = MakeFloatSpinnerEntry(form, &arrow_mult_width_w, "arrow_mult_width",
 		below, beside, (XtCallbackProc) 0, buf, 0.1, 10000.0, 1.0, 50);
 
     /* make arrow length label and entries */
 
     /* make a spinner entry widget for abs values */
     sprintf(buf,"%.1f",cur_arrowheight);
-    a_h_spin = beside = MakeFloatSpinnerEntry(form, &arrow_height_w, "arrow_height", 
+    a_h_spin = beside = MakeFloatSpinnerEntry(form, &arrow_height_w, "arrow_height",
 		below, (Widget) NULL, (XtCallbackProc) 0, buf, 0.1, 10000.0, 1.0, 50);
 
     FirstArg(XtNfromHoriz, beside);
@@ -1524,7 +1524,7 @@ void popup_arrowsize_panel(ind_sw_info *isw)
 
     /* make a spinner for Height = Multiple of line width */
     sprintf(buf,"%.1f",cur_arrow_multheight);
-    m_h_spin = below = MakeFloatSpinnerEntry(form, &arrow_mult_height_w, "arrow_mult_height", 
+    m_h_spin = below = MakeFloatSpinnerEntry(form, &arrow_mult_height_w, "arrow_mult_height",
 		below, beside, (XtCallbackProc) 0, buf, 0.1, 10000.0, 1.0, 50);
 
     /* make spinners sensitive or insensitive */
@@ -1799,7 +1799,7 @@ void popup_choice_panel(ind_sw_info *isw)
 	    NextArg(XtNbottom, XtChainTop);
 	    NextArg(XtNleft, XtChainLeft);
 	    NextArg(XtNright, XtChainLeft);
-	    below = XtCreateManagedWidget("pattern_label", labelWidgetClass, 
+	    below = XtCreateManagedWidget("pattern_label", labelWidgetClass,
 					form, Args, ArgCount);
 	    beside = (Widget) 0;
 	    count = 0;
@@ -1840,11 +1840,11 @@ void popup_choice_panel(ind_sw_info *isw)
 				    labelWidgetClass, form, Args, ArgCount);
 
 	sprintf(buf, "%.1f", cur_dashlength);
-	below = MakeFloatSpinnerEntry(form, &dash_length, "dash_length", beside, label, 
+	below = MakeFloatSpinnerEntry(form, &dash_length, "dash_length", beside, label,
 			(XtCallbackProc) 0, buf, 0.0, 10000.0, 1.0, 50);
 
 	/* enable mousefun kbd icon */
-	XtAugmentTranslations(dash_length, 
+	XtAugmentTranslations(dash_length,
 		XtParseTranslationTable(kbd_translations));
 
 	/* dot gap */
@@ -1859,11 +1859,11 @@ void popup_choice_panel(ind_sw_info *isw)
 				    labelWidgetClass, form, Args, ArgCount);
 
 	sprintf(buf, "%.1f", cur_dotgap);
-	below = MakeFloatSpinnerEntry(form, &dot_gap, "dot_gap", below, label, 
+	below = MakeFloatSpinnerEntry(form, &dot_gap, "dot_gap", below, label,
 			(XtCallbackProc) 0, buf, 0.0, 10000.0, 1.0, 50);
 
 	/* enable mousefun kbd icon */
-	XtAugmentTranslations(dot_gap, 
+	XtAugmentTranslations(dot_gap,
 		XtParseTranslationTable(kbd_translations));
 	break;
     }
@@ -2230,11 +2230,11 @@ void popup_nval_panel(ind_sw_info *isw)
     /* int or float? */
     if (isw->type == I_IVAL) {
 	sprintf(buf, "%d", (*isw->i_varadr));
-	below = MakeIntSpinnerEntry(form, &newvalue, "value", label, newvalue, 
+	below = MakeIntSpinnerEntry(form, &newvalue, "value", label, newvalue,
 		(XtCallbackProc) 0, buf, isw->min, isw->max, (int)isw->inc, 45);
     } else {
 	sprintf(buf, "%.2f", (*isw->f_varadr));
-	below = MakeFloatSpinnerEntry(form, &newvalue, "value", label, newvalue, 
+	below = MakeFloatSpinnerEntry(form, &newvalue, "value", label, newvalue,
 		(XtCallbackProc) 0, buf, (float)isw->min, (float)isw->max, isw->inc, 55);
     }
     /* focus keyboard on text widget */
@@ -2245,7 +2245,7 @@ void popup_nval_panel(ind_sw_info *isw)
     /* enable mousefun kbd icon */
     XtAugmentTranslations(newvalue, XtParseTranslationTable(kbd_translations));
 
-    /* for the zoom panel, make an "integer zoom checkbutton" and 
+    /* for the zoom panel, make an "integer zoom checkbutton" and
        a "Fit to canvas" button */
 
     vdist = 4;
@@ -2481,7 +2481,7 @@ void popup_dimline_panel(ind_sw_info *isw)
 
     /* make a pixmap to draw it into */
     if (dimline_examp_pixmap == (Pixmap) 0)
-	dimline_examp_pixmap = XCreatePixmap(tool_d, canvas_win, 
+	dimline_examp_pixmap = XCreatePixmap(tool_d, canvas_win,
 					DIMLINE_PIXMAP_WIDTH, DIMLINE_PIXMAP_HEIGHT, tool_dpth);
     /* clear it */
     XFillRectangle(tool_d, dimline_examp_pixmap, ind_blank_gc, 0, 0,
@@ -2526,7 +2526,7 @@ void popup_dimline_panel(ind_sw_info *isw)
 				    lineform, Args, ArgCount);
     /* thickness spinner */
     sprintf(indbuf,"%d",dimline_thick);
-    beside = MakeIntSpinnerEntry(lineform, &line_thick_w, "line_thickness", 
+    beside = MakeIntSpinnerEntry(lineform, &line_thick_w, "line_thickness",
 		below, beside, dimline_panel_preview, indbuf, 0, MAX_LINE_WIDTH, 1, 30);
 
     below = beside;
@@ -2544,10 +2544,10 @@ void popup_dimline_panel(ind_sw_info *isw)
     NextArg(XtNfromHoriz, beside);
     NextArg(XtNbitmap, linestyle_pixmaps[dimline_style]);
     dimline_style_panel = XtCreateManagedWidget("dimline_style", menuButtonWidgetClass,
-    				    lineform, Args, ArgCount);
+				    lineform, Args, ArgCount);
     below = dimline_style_panel;
     make_pulldown_menu_images(linestyle_choices, NUM_LINESTYLE_TYPES,
-    		linestyle_pixmaps, NULL, dimline_style_panel, dimline_style_select);
+		linestyle_pixmaps, NULL, dimline_style_panel, dimline_style_select);
 
     (void) color_selection_panel("Color    ","line_color", "Line color", lineform, below, beside,
 			&line_color_button, &line_color_panel, dimline_color,
@@ -2580,7 +2580,7 @@ void popup_dimline_panel(ind_sw_info *isw)
 				    boxform, Args, ArgCount);
     /* thickness spinner */
     sprintf(indbuf,"%d",dimline_boxthick);
-    beside = MakeIntSpinnerEntry(boxform, &box_thick_w, "box_line_thickness", 
+    beside = MakeIntSpinnerEntry(boxform, &box_thick_w, "box_line_thickness",
 		below, beside, dimline_panel_preview, indbuf, 0, MAX_LINE_WIDTH, 1, 30);
 
     below = beside;
@@ -2630,7 +2630,7 @@ void popup_dimline_panel(ind_sw_info *isw)
     beside = left_arrow_type_panel;
 
     /* make pulldown menu with arrow type images */
-	    
+
     make_pulldown_menu_images(dim_arrowtype_choices,
 		NUM_DIM_ARROWTYPE_CHOICES, arrow_pixmaps, NULL,
 		left_arrow_type_panel, left_arrow_type_select);
@@ -2662,7 +2662,7 @@ void popup_dimline_panel(ind_sw_info *isw)
 				    arrowform, Args, ArgCount);
     /* length spinner */
     sprintf(indbuf,"%.1f",dimline_arrowlength);
-    beside = MakeFloatSpinnerEntry(arrowform, &arrow_length_w, "arrow_length", 
+    beside = MakeFloatSpinnerEntry(arrowform, &arrow_length_w, "arrow_length",
 		below, beside, dimline_panel_preview, indbuf, 0.1, 200.0, 1.0, 50);
 
     below = beside;
@@ -2676,7 +2676,7 @@ void popup_dimline_panel(ind_sw_info *isw)
 				    arrowform, Args, ArgCount);
     /* width spinner */
     sprintf(indbuf,"%.1f",dimline_arrowwidth);
-    beside = MakeFloatSpinnerEntry(arrowform, &arrow_width_w, "arrow_width", 
+    beside = MakeFloatSpinnerEntry(arrowform, &arrow_width_w, "arrow_width",
 		below, beside, dimline_panel_preview, indbuf, 0.1, 200.0, 1.0, 50);
 
     /****************************/
@@ -2713,7 +2713,7 @@ void popup_dimline_panel(ind_sw_info *isw)
 				    tickform, Args, ArgCount);
     /* thickness spinner */
     sprintf(indbuf,"%d",dimline_tickthick);
-    (void) MakeIntSpinnerEntry(tickform, &tick_thick_w, "tick_line_thickness", 
+    (void) MakeIntSpinnerEntry(tickform, &tick_thick_w, "tick_line_thickness",
 		below, beside, dimline_panel_preview, indbuf, 0, MAX_LINE_WIDTH, 1, 28);
 
     /***************************/
@@ -2747,7 +2747,7 @@ void popup_dimline_panel(ind_sw_info *isw)
     NextArg(XtNfromHoriz, beside);
     NextArg(XtNwidth, MAX_FONTIMAGE_WIDTH);
     NextArg(XtNinternalWidth, 2);
-    NextArg(XtNbitmap, dimline_psflag? 
+    NextArg(XtNbitmap, dimline_psflag?
 			psfont_menu_bitmaps[dimline_font + 1] :
 			latexfont_menu_bitmaps[dimline_font]);
     font_button = XtCreateManagedWidget("font", commandWidgetClass, textform, Args, ArgCount);
@@ -2765,8 +2765,8 @@ void popup_dimline_panel(ind_sw_info *isw)
 				    textform, Args, ArgCount);
     /* size spinner */
     sprintf(indbuf,"%d",dimline_fontsize);
-    beside = MakeIntSpinnerEntry(textform, &font_size_w, "font_size", 
-		below, beside, dimline_panel_preview, indbuf, 
+    beside = MakeIntSpinnerEntry(textform, &font_size_w, "font_size",
+		below, beside, dimline_panel_preview, indbuf,
 		MIN_FONT_SIZE, MAX_FONT_SIZE, 1, 30);
 
     below = beside;
@@ -2809,8 +2809,8 @@ void popup_dimline_panel(ind_sw_info *isw)
 				    stringform, Args, ArgCount);
     /* number of decimal places spinner */
     sprintf(indbuf,"%d",dimline_prec);
-    below = MakeIntSpinnerEntry(stringform, &dimline_precw, "precision", 
-		below, beside, dimline_panel_preview, indbuf, 
+    below = MakeIntSpinnerEntry(stringform, &dimline_precw, "precision",
+		below, beside, dimline_panel_preview, indbuf,
 		0, 10, 1, 30);
 
     /* Fixed text checkbutton */
@@ -3707,7 +3707,7 @@ show_gridmode(sw)
     ind_sw_info	   *sw;
 {
     update_choice_pixmap(sw, cur_gridmode);
-    
+
     /* check the new mode */
     if (cur_gridmode == GRID_0) {
 		put_msg("No grid");
@@ -3715,11 +3715,11 @@ show_gridmode(sw)
 	    cur_gridtype = GRID_SQUARE;
 		put_msg( "%s grid", grid_name[cur_gridunit][cur_gridmode] );
     } else {
-	 	/*cur_gridmode = cur_gridmode - GRID_4;*/
-	 	cur_gridtype = GRID_ISO;
-	 	put_msg( "%s isometric grid", grid_name[cur_gridunit][cur_gridmode - GRID_4] );
+		/*cur_gridmode = cur_gridmode - GRID_4;*/
+		cur_gridtype = GRID_ISO;
+		put_msg( "%s isometric grid", grid_name[cur_gridunit][cur_gridmode - GRID_4] );
     }
-    
+
     /* display new grid */
     setup_grid();
 }
@@ -3817,7 +3817,7 @@ show_boxradius(ind_sw_info *sw)
 	      DEF_IND_SW_WD, DEF_IND_SW_HT / 2, ERASE,
 	      DEF_IND_SW_HT, PANEL_LINE, 0.0, DEFAULT);
     /* draw current radius into pixmap */
-    curve(sw->pixmap, MAX_DEPTH+1, 0, cur_boxradius, -cur_boxradius, 0, 
+    curve(sw->pixmap, MAX_DEPTH+1, 0, cur_boxradius, -cur_boxradius, 0,
 	  DRAW_POINTS, DONT_DRAW_CENTER, 1, cur_boxradius, cur_boxradius,
 	  DEF_IND_SW_WD - 2, DEF_IND_SW_HT - 2, PAINT, 1, PANEL_LINE, 0.0, UNFILLED,
 	  DEFAULT, DEFAULT, CAP_BUTT);
@@ -3906,7 +3906,7 @@ show_fillstyle(ind_sw_info *sw)
 
 void recolor_fillstyles(void)
 {
-    int 	    i,j;
+    int		    i,j;
     float	    save_dispzoom, savezoom;
     Pixmap	    savepm;
     float	    savepm_zoom;
@@ -4224,8 +4224,7 @@ show_rotnangle(ind_sw_info *sw)
 /* called by angle measuring &c */
 
 static void
-show_rotnangle_0(ind_sw_info *sw, int panel) 
-               	       
+show_rotnangle_0(ind_sw_info *sw, int panel)
                /* called from panel? */
 {
     int i;
@@ -4242,7 +4241,7 @@ show_rotnangle_0(ind_sw_info *sw, int panel)
 
     /* write the rotation angle in the background pixmap */
     for (i = 0; i < 8; i++)
-      indbuf[i] = '\0';    
+      indbuf[i] = '\0';
     sprintf(indbuf, "%6.2f", cur_rotnangle);
     update_string_pixmap(sw, indbuf, sw->sw_width - 40, 22);
 
@@ -4360,7 +4359,7 @@ show_numxcopies(ind_sw_info *sw)
     else if (cur_numxcopies > 999)
 	cur_numxcopies = 999;
 
-    if (!cur_numxcopies) 
+    if (!cur_numxcopies)
       put_msg("Number of copies %2d in x-direction", cur_numxcopies);
     /* write the number of x copies in the background pixmap */
     indbuf[0] = indbuf[1] = indbuf[2] = indbuf[3] = indbuf[4] = '\0';
@@ -4392,7 +4391,7 @@ show_numycopies(ind_sw_info *sw)
     else if (cur_numycopies > 999)
 	cur_numycopies = 999;
 
-    if (!cur_numycopies) 
+    if (!cur_numycopies)
       put_msg("Number of copies %2d in y-direction", cur_numycopies);
     /* write the number of y copies in the background pixmap */
     indbuf[0] = indbuf[1] = indbuf[2] = indbuf[3] = indbuf[4] = '\0';
@@ -4470,7 +4469,7 @@ inc_zoom(ind_sw_info *sw)
 	    if (intzoom == display_zoomscale)
 		intzoom++;
 	    display_zoomscale = intzoom;
-	} else 
+	} else
 	    display_zoomscale = display_zoomscale * 1.5;
     }
     /* keep canvas centered */
@@ -4533,7 +4532,7 @@ dec_zoom(ind_sw_info *sw)
     /* don't allow zooming while previewing */
     if (preview_in_progress || check_action_on())
 	return;
-    
+
     prev_zoom = display_zoomscale;
 
     if (display_zoomscale <= (float) 0.1) {
@@ -4554,7 +4553,7 @@ dec_zoom(ind_sw_info *sw)
 	    if (intzoom == display_zoomscale)
 		intzoom--;
 	    display_zoomscale = intzoom;
-	} else 
+	} else
 	    display_zoomscale = display_zoomscale / 1.5;
 	if (display_zoomscale < (float) 1.0)
 		display_zoomscale = 1.0;
@@ -4650,7 +4649,7 @@ show_zoom(ind_sw_info *sw)
     /* don't allow zooming while previewing */
     if (preview_in_progress || check_action_on())
 	return;
-    
+
     if (display_zoomscale < MIN_ZOOM)
 	display_zoomscale = MIN_ZOOM;
     else if (display_zoomscale > MAX_ZOOM)
@@ -4836,5 +4835,5 @@ tog_selective_update(long unsigned int mask)
     }
     put_msg("Update command status SELECTIVELY toggled");
     cur_indmask=mask;
-    cur_updatemask =mask;	
+    cur_updatemask =mask;
 }

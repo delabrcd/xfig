@@ -28,7 +28,7 @@ of 74 ((4+1)*15 - 1).
 This means that figures converted from 2.1 and older files are offset by
 14 fig units but new objects entered with version 3.0 are correct.
 
-In version 3.1 the magnet grid is at intervals 0, 75, 150, etc instead of 
+In version 3.1 the magnet grid is at intervals 0, 75, 150, etc instead of
 -1, 74, 149, etc.
 Figures from 2.1 and older are correctly converted now and a warning is popped
 up when you read in a version 3.0 file that says you may have to offset the

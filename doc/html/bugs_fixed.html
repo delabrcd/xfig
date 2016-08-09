@@ -40,7 +40,7 @@
 	  changed definition of Q(s) from -s to -0.5 * s in u_draw_spline.c
 	<br><img src="images/blueballdot.png"> Allowance for stricter ghostscript in -dSAFER mode.  Was causing error on reading EPS images.
 	  From Hans de Goede
-	<br><img src="images/blueballdot.png"> Security vulnerability with importing images fixed 
+	<br><img src="images/blueballdot.png"> Security vulnerability with importing images fixed
 	  (RedHat bug # 657981 - xfig buffer overflow when opening .fig file with malicius color definition)
 	<br><img src="images/blueballdot.png"> When exporting to combined PS/PDF/LATEX the -D option to exclude all but active layers
 	  was not passed to fig2dev
@@ -52,7 +52,7 @@
 	<br><img src="images/blueballdot.png"> Renamed O_TEXT to O_TXT to avoid conflicts with system define
 	<br><img src="images/blueballdot.png"> On lines with Round or Projecting cap style and arrowheads, the line endpoint stuck out
 	  beyond the arrowhead
-	  
+
 <br>
 <br>
 	From Vladsilav Zavjalov:
@@ -61,7 +61,7 @@
 	<br><img src="images/blueballdot.png"> SEGV when zooming while creating object (e.g. text)
 	<br><img src="images/blueballdot.png"> Add locale_encoding appres which acts similar to euc_encoding, but uses system locale and
 	  mbrlen function for multibyte character length calculation.
-	<br><img src="images/blueballdot.png"> Move "file not found" error message from check_docfile() to launch_viewer(), 
+	<br><img src="images/blueballdot.png"> Move "file not found" error message from check_docfile() to launch_viewer(),
 	  remove excess check_docfile() call.
 	  Error message is not shown when looking for a locale-dependent docs. It is shown only
 	  if no docs found at all.
@@ -117,7 +117,7 @@
 
 <hr>
 <h2><a name="bugsfixed"><i>Bugs Fixed in xfig 3.2.5</i></a></h2>
-	<img src="images/blueballdot.png"> xfig would crash on 64-bit processors because of a missing include, which 
+	<img src="images/blueballdot.png"> xfig would crash on 64-bit processors because of a missing include, which
 	  causes new_string() to be declared implicitly as returning an integer.
 	  This may cause the top 32 bits to get lost and hence the crash.
 	<br><img src="images/blueballdot.png"> Blanks not preserved in imported picture filename when reading Fig file
@@ -127,7 +127,7 @@
 	<br><img src="images/blueballdot.png"> Also, vertex numbers are not shown on inactive (grayed) layers
 	<br><img src="images/blueballdot.png"> Widget shadow resources moved from Fig-color to Fig because they don't
 	  really have anything to do with color. There was a problem when running
-	  KDE because it set a global resource *Scrollbar*height: which made xfig 
+	  KDE because it set a global resource *Scrollbar*height: which made xfig
 	  freeze when *customization: -color was NOT used.
 	<br><img src="images/blueballdot.png"> The point positioning indicator is turned on when editing a compound
 	  object to show the user that it is used
@@ -137,11 +137,11 @@
 	<br><img src="images/blueballdot.png"> Centered text was changed to left-justified when flipped horizontally
 	  inside a compound object.
 	<br><img src="images/blueballdot.png"> With -v option, after reporting the version, xfig would say that -v
-	  was an unknown option 
+	  was an unknown option
 	<br><img src="images/blueballdot.png"> Local locale was being used when writing the xfig cut buffer file
 	  instead of switching to "C" locale.  This created commas instead of
 	  decimal (.) for numbers in those particular locales.
-	  From Dirk Osswald 
+	  From Dirk Osswald
 	<br><img src="images/blueballdot.png"> Local locale was used when forming command for calling fig2dev,
 	  resulting in commas instead of decimals for floating point numbers.
 	<br><img src="images/blueballdot.png"> count_user_colors buffer overflow fixed

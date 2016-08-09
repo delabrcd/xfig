@@ -31,7 +31,7 @@
 #
 #   TL_CHECK_HEADER_PATH([png.h], [/opt/local/include /sw/include])
 #
-#   # In the configure.ac file, you would write 
+#   # In the configure.ac file, you would write
 #   AC_SUBST([PATH_CPPFLAGS])
 #   # To have the standard autoconf macros, trivially AC_CHECK_HEADER
 #   # but, more importantly, AC_PATH_X, also profit from the extended

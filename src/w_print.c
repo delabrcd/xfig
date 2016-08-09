@@ -85,9 +85,9 @@ static void	overlap_select(Widget w, XtPointer new_overlap, XtPointer garbage);
 
 static void	printer_select(Widget w, XtPointer new_printer, XtPointer garbage);
 
-static Widget	dismiss, print, 
+static Widget	dismiss, print,
 		printer_text, param_text,
-		clear_batch, print_batch, 
+		clear_batch, print_batch,
 		num_batch,
 		printalltoggle, printactivetoggle, boundactivetoggle;
 
@@ -160,7 +160,7 @@ do_print(Widget w)
 
 	/* create popup panel if not already there so we have all the
 	   resources necessary (e.g. printer name etc.) */
-	if (!print_popup) 
+	if (!print_popup)
 		create_print_panel(w);
 
 	/* get the magnification into appres.magnification */
@@ -226,7 +226,7 @@ fit_page(void)
 	    pht = ux;
 	}
 	/* make magnification lesser of ratio of:
-	   page height / figure height or 
+	   page height / figure height or
 	   page width/figure width
 	*/
 	if (pwd/wd < pht/ht)
@@ -322,7 +322,7 @@ do_print_batch(Widget w)
 		close(fd);
 		batch_exists = True;
 	}
-	if (!print_popup) 
+	if (!print_popup)
 		create_print_panel(w);
 
 	/* get magnification into appres.magnification */
@@ -499,7 +499,7 @@ background_select(Widget w, XtPointer closure, XtPointer call_data)
     NextArg(XtNforeground, &fgcolor);
     GetValues(w);
 
-    /* get the colorname from the color button and put it and the colors 
+    /* get the colorname from the color button and put it and the colors
        in the menu button */
     FirstArg(XtNlabel, XtName(w));
     NextArg(XtNbackground, bgcolor);
@@ -602,7 +602,7 @@ popup_print_panel(Widget w)
 	/* and the background color menu */
 	XtDestroyWidget(background_menu);
 	background_menu = make_color_popup_menu(print_background_panel,
-	    				"Background Color", background_select, 
+					"Background Color", background_select,
 					NO_TRANSP, INCL_BACKG);
     } else {
 	create_print_panel(w);
@@ -767,12 +767,12 @@ void create_print_panel(Widget w)
 	print_papersize_panel = XtCreateManagedWidget("papersize",
 					   menuButtonWidgetClass,
 					   print_panel, Args, ArgCount);
-	papersize_menu = XtCreatePopupShell("menu", simpleMenuWidgetClass, 
+	papersize_menu = XtCreatePopupShell("menu", simpleMenuWidgetClass,
 				    print_papersize_panel, NULL, ZERO);
 
 	/* make the menu items */
 	for (i = 0; i < XtNumber(paper_sizes); i++) {
-	    entry = XtCreateManagedWidget(paper_sizes[i].fname, smeBSBObjectClass, 
+	    entry = XtCreateManagedWidget(paper_sizes[i].fname, smeBSBObjectClass,
 					papersize_menu, NULL, ZERO);
 	    XtAddCallback(entry, XtNcallback, papersize_select, (XtPointer) i);
 	}
@@ -901,7 +901,7 @@ void create_print_panel(Widget w)
 	set_but_col(print_background_panel, export_background_color);
 
 	/* make color menu */
-	background_menu = make_color_popup_menu(print_background_panel, 
+	background_menu = make_color_popup_menu(print_background_panel,
 					"Background Color", background_select,
 					NO_TRANSP, INCL_BACKG);
 	/* grid options */
@@ -966,8 +966,8 @@ void create_print_panel(Widget w)
 		    buf[0]='\0';
 		    len=0;
 		    for (i=0; i<strlen(printer_val); i++) {
-		    	buf[len++] = printer_val[i];
-		    	if (printer_val[i]=='\\')
+			buf[len++] = printer_val[i];
+			if (printer_val[i]=='\\')
 			    buf[len++]='\\';
 		    }
 		    buf[len++]='\0';
@@ -1170,7 +1170,7 @@ switch_print_layers(Widget w, XtPointer closure, XtPointer call_data)
     /* check state of the toggle and set/remove checkmark */
     FirstArg(XtNstate, &state);
     GetValues(w);
-    
+
     if (state ) {
 	FirstArg(XtNbitmap, sm_check_pm);
     } else {
@@ -1211,7 +1211,7 @@ switch_bound(Widget w, XtPointer closure, XtPointer call_data)
     /* check state of the toggle and set/remove checkmark */
     FirstArg(XtNstate, &state);
     GetValues(w);
-    
+
     if (state ) {
 	FirstArg(XtNbitmap, sm_check_pm);
     } else {
@@ -1337,7 +1337,7 @@ make_layer_choice(char *label_all, char *label_active, Widget parent, Widget bel
 	NextArg(XtNinternalHeight, 1);
 	NextArg(XtNlabel, "  ");
 	NextArg(XtNsensitive, (print_all_layers? False : True)); /* make opposite button sens */
-	NextArg(XtNstate, print_all_layers); 	/* initial state */
+	NextArg(XtNstate, print_all_layers);	/* initial state */
 	NextArg(XtNradioData, 1);		/* when this is pressed the value is 1 */
 	printalltoggle = XtCreateManagedWidget("printalltoggle", toggleWidgetClass,
 				form, Args, ArgCount);

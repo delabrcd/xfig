@@ -112,7 +112,7 @@ write_objects(FILE *fp)
     F_text	   *t;
 
     /*
-     * A 2 for the orientation means that the origin (0,0) is at the upper 
+     * A 2 for the orientation means that the origin (0,0) is at the upper
      * left corner of the screen (2nd quadrant).
      */
 
@@ -173,8 +173,8 @@ void write_fig_header(FILE *fp)
 			&objects.secorner.x, &objects.secorner.y);
 	fprintf(fp, "Header {\n");
 	fprintf(fp, "    Resolution	%d\n", appres.INCHES? PIX_PER_INCH: PIX_PER_CM);
-	fprintf(fp, "    Bounds	%d %d %d %d\n", 
-				objects.nwcorner.x, objects.nwcorner.y, 
+	fprintf(fp, "    Bounds	%d %d %d %d\n",
+				objects.nwcorner.x, objects.nwcorner.y,
 				objects.secorner.x, objects.secorner.y);
 	fprintf(fp, "    Orient	%s\n", appres.landscape? "Landscape": "Portrait");
 	fprintf(fp, "    Units	%s\n", appres.INCHES? "Inches": "Metric");
@@ -233,14 +233,14 @@ void write_colordefs(FILE *fp)
 {
     int		    i;
 
-    if (num_usr_cols == 0) 
+    if (num_usr_cols == 0)
 	return;
 
     if (appres.write_v40)
 	fprintf(fp, "UserColors {\n");
     for (i=0; i<num_usr_cols; i++) {
 	if (colorUsed[i])
-	    fprintf(fp, "%s %d #%02x%02x%02x\n", appres.write_v40? "  Ucol": "0", 
+	    fprintf(fp, "%s %d #%02x%02x%02x\n", appres.write_v40? "  Ucol": "0",
 		i+NUM_STD_COLS,
 		user_colors[i].red/256,
 		user_colors[i].green/256,
@@ -314,8 +314,8 @@ void write_compound(FILE *fp, F_compound *com)
     write_comments(fp, com->comments);
 
     if (appres.write_v40) {
-	fprintf(fp, "Compound (%d %d %d %d) {\n", 
-			com->nwcorner.x, com->nwcorner.y, 
+	fprintf(fp, "Compound (%d %d %d %d) {\n",
+			com->nwcorner.x, com->nwcorner.y,
 			com->secorner.x, com->secorner.y);
     } else {
 	/* V3.2 */
@@ -424,8 +424,8 @@ void write_line(FILE *fp, F_line *l)
 	/* V3.2 */
 	fprintf(fp, "%d %d %d %d %d %d %d %d %d %.3f %d %d %d %d %d %d\n",
 	    O_POLYLINE, l->type, l->style, l->thickness,
-	    l->pen_color, l->fill_color, l->depth, l->pen_style, 
-	    l->fill_style, l->style_val, l->join_style, l->cap_style, 
+	    l->pen_color, l->fill_color, l->depth, l->pen_style,
+	    l->fill_style, l->style_val, l->join_style, l->cap_style,
 	    l->radius,
 	    l->for_arrow ? 1 : 0, l->back_arrow ? 1 : 0, npts);
 	/* write any arrowheads */
@@ -439,7 +439,7 @@ void write_line(FILE *fp, F_line *l)
 	    picfile = l->pic->pic_cache->file;
 	    if (picfile == NULL || strlen(picfile) == 0) {
 		s1 = "<empty>";
-	    } else if (strncmp(picfile, cur_file_dir, strlen(cur_file_dir))==0 && 
+	    } else if (strncmp(picfile, cur_file_dir, strlen(cur_file_dir))==0 &&
 		strlen(picfile) > strlen(cur_file_dir) && picfile[strlen(cur_file_dir)] == '/') {
 		/* use relative path if the file is under current directory */
 		    s1 = &picfile[strlen(cur_file_dir)+1];
@@ -480,7 +480,7 @@ void write_spline(FILE *fp, F_spline *s)
 	npts++;
     fprintf(fp, "%d %d %d %d %d %d %d %d %d %.3f %d %d %d %d\n",
 	    O_SPLINE, s->type, s->style, s->thickness,
-	    s->pen_color, s->fill_color, s->depth, s->pen_style, 
+	    s->pen_color, s->fill_color, s->depth, s->pen_style,
 	    s->fill_style, s->style_val, s->cap_style,
 	    s->for_arrow ? 1 : 0, s->back_arrow ? 1 : 0, npts);
     /* write any arrowheads */

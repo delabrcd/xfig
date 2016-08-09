@@ -1,4 +1,4 @@
-#!/bin/csh 
+#!/bin/csh
 echo This will make the xfig.ps file.
 echo -n psroffing...
 psroff -t -man xfig.man > xfig.ps

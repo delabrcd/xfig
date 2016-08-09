@@ -76,7 +76,7 @@ static int signed_area = 0;
 static float total_area = 0.0;
 
 /***************************************************************************
- ANGLE MEASURING 
+ ANGLE MEASURING
  ***************************************************************************/
 
 
@@ -135,7 +135,7 @@ init_anglemeas_object(char *p, int type, int x, int y, F_point *pp, F_point *pq)
 {
     switch(type) {
     case O_POLYLINE:
-        cur_l = (F_line*)p; 
+        cur_l = (F_line*)p;
         anglemeas_line(cur_l, pq); /* do_point_search returns `near' point in *q */
         break;
     case O_ARC:
@@ -149,7 +149,7 @@ init_anglemeas_object(char *p, int type, int x, int y, F_point *pp, F_point *pq)
 
 /* line angle */
 
-static void 
+static void
 anglemeas_line(F_line *l, F_point *p)
 {
    double lineangle;
@@ -161,12 +161,12 @@ anglemeas_line(F_line *l, F_point *p)
      angle_save(lineangle);
    }
    else
-     put_msg("Can't compute angle at endpoint");     
+     put_msg("Can't compute angle at endpoint");
 }
 
 /* arc angle */
 
-static void 
+static void
 anglemeas_arc(F_arc *a)
 {
    double dang;
@@ -185,7 +185,7 @@ init_anglemeas_threepoints(int px, int py)
 {
     set_cursor(arrow_cursor);
     set_mousefun("angle tip", "", "cancel", "", "", LOC_OBJ);
-    draw_mousefun_canvas();    
+    draw_mousefun_canvas();
     canvas_rightbut_proc = cancel_anglemeas;
     pa.x = fix_x = cur_x = px;
     pa.y = fix_y = cur_y = py;
@@ -247,8 +247,8 @@ anglemeas_third(int x, int y)
    pc.y = cur_y = y;
    elastic_line();
    /* erase? */
-   pw_vector(canvas_win, pa.x, pa.y, pb.x, pb.y, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);   
-   pw_vector(canvas_win, pb.x, pb.y, pc.x, pc.y, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);   
+   pw_vector(canvas_win, pa.x, pa.y, pb.x, pb.y, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
+   pw_vector(canvas_win, pb.x, pb.y, pc.x, pc.y, INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
    if (compute_3p_angle(&pa, &pb, &pc, &uangle)) {
       if (uangle > M_PI)
         uangle -= 2*M_PI;
@@ -256,7 +256,7 @@ anglemeas_third(int x, int y)
       angle_save(uangle);
    }
    else
-       put_msg("Can't compute angle");   
+       put_msg("Can't compute angle");
    update_markers(save_objmask);
    anglemeas_selected();
    draw_mousefun_canvas();
@@ -287,7 +287,7 @@ freehand_line_nomsg(int x, int y)
 }
 
 /***************************************************************************
- LENGTH MEASURING 
+ LENGTH MEASURING
  ***************************************************************************/
 
 void lenmeas_selected(void)
@@ -306,7 +306,7 @@ void lenmeas_selected(void)
     reset_action_on();
 }
 
-static void 
+static void
 init_lenmeas_object(char *p, int type, int x, int y, int px, int py)
 {
     float	    len;
@@ -372,14 +372,14 @@ init_lenmeas_object(char *p, int type, int x, int y, int px, int py)
 	put_msg("Sorry, can't measure length of this object");
 }
 
-static void 
+static void
 init_lenmeas_object_l(char *p, int type, int x, int y, int px, int py)
 {
   save_len = 0;
   init_lenmeas_object(p, type, x, y, px, py);
 }
 
-static void 
+static void
 init_lenmeas_object_m(char *p, int type, int x, int y, int px, int py)
 {
   save_len = 1;
@@ -391,10 +391,10 @@ clear_lenmeas_memory(void)
 {
    total_len = 0.0;
    put_msg("length reset to 0");
-}   
+}
 
 /***************************************************************************
- AREA MEASURING 
+ AREA MEASURING
  ***************************************************************************/
 
 void areameas_selected(void)
@@ -414,7 +414,7 @@ void areameas_selected(void)
 }
 
 
-static void 
+static void
 init_areameas_object(char *p, int type, int x, int y, int px, int py)
 {
     float	    area;
@@ -475,14 +475,14 @@ init_areameas_object(char *p, int type, int x, int y, int px, int py)
 	put_msg("Sorry, can't measure area of this object");
 }
 
-static void 
+static void
 init_areameas_object_l(char *p, int type, int x, int y, int px, int py)
 {
   save_area = 0;
   init_areameas_object(p, type, x, y, px, py);
 }
 
-static void 
+static void
 init_areameas_object_m(char *p, int type, int x, int y, int px, int py)
 {
   save_area = 1;
@@ -498,4 +498,4 @@ clear_areameas_memory(int x, int y, int arg)
      put_msg("signed area reset to 0");
    else
      put_msg("area reset to 0");
-}   
+}

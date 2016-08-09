@@ -177,7 +177,7 @@ void popup_browse_panel(Widget w)
     FirstArg(XtNstring, local_dir);
     SetValues(browse_dir);
     FirstArg(XtNstring, browse_filename);
-    SetValues(browse_selfile);	
+    SetValues(browse_selfile);
 
     XtPopup(browse_popup, XtGrabNonexclusive);
     Rescan(0, 0, 0, 0);

@@ -24,8 +24,8 @@
 
 /************************  Objects  **********************/
 
-F_compound	objects = {0, 0, { 0, 0 }, { 0, 0 }, 
-				NULL, NULL, NULL, NULL, NULL, 
+F_compound	objects = {0, 0, { 0, 0 }, { 0, 0 },
+				NULL, NULL, NULL, NULL, NULL,
 				(char*) NULL, NULL, NULL, False, NULL, NULL};
 
 /************  global object pointers ************/

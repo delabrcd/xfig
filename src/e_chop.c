@@ -68,25 +68,25 @@ typedef enum {
   PTYPE_END_PLINE,
   PTYPE_CUT
 } ptype_e;
-  
+
 typedef struct {
   int x;
   int y;
   ptype_e ptype;
   double dist;
 } s_point_s;
-  
+
 typedef struct {
   s_point_s * points;
   int points_next;
   int points_max;
 } l_point_s;
-#define POINTS_INCR	8  
+#define POINTS_INCR	8
 
 void
 chop_selected(void)
 {
-    set_mousefun("Select axe object", "Select log object", "Clear axe list", 
+    set_mousefun("Select axe object", "Select log object", "Clear axe list",
 			LOC_OBJ, LOC_OBJ, LOC_OBJ);
     draw_mousefun_canvas();
     canvas_kbd_proc = null_proc;
@@ -170,15 +170,15 @@ static void
 create_new_line( int x, int y, F_point ** this_point, F_line ** this_line, F_line * l)
 {
   *this_line  = create_line();
-  (*this_line)->type 		= l->type;
-  (*this_line)->style 		= l->style;
-  (*this_line)->thickness 	= l->thickness;
-  (*this_line)->pen_color 	= l->pen_color;
-  (*this_line)->fill_color 	= l->fill_color;
-  (*this_line)->depth 		= l->depth;
-  (*this_line)->pen_style 	= l->pen_style;
-  (*this_line)->join_style 	= l->join_style;
-  (*this_line)->cap_style 	= l->cap_style;
+  (*this_line)->type		= l->type;
+  (*this_line)->style		= l->style;
+  (*this_line)->thickness	= l->thickness;
+  (*this_line)->pen_color	= l->pen_color;
+  (*this_line)->fill_color	= l->fill_color;
+  (*this_line)->depth		= l->depth;
+  (*this_line)->pen_style	= l->pen_style;
+  (*this_line)->join_style	= l->join_style;
+  (*this_line)->cap_style	= l->cap_style;
   (*this_line)->fill_style	= l->fill_style;
   (*this_line)->style_val		= l->style_val;
   if (l->for_arrow) {
@@ -251,7 +251,7 @@ dice_polygons(int nr_segs, l_point_s * top_l_points, F_line * l)
   s_point_s * points;
   int nr_points = 0;
 
-  
+
   for (i = 0; i < nr_segs; i++) {		/* analyse points */
     for (j = 0; j < top_l_points[i].points_next; j++) {
       if ((-1 == start_point) && (PTYPE_CUT == top_l_points[i].points[j].ptype)) /* find first cut */
@@ -264,23 +264,23 @@ dice_polygons(int nr_segs, l_point_s * top_l_points, F_line * l)
 
   if (T_PIE_WEDGE_ARC == cur_arctype)
     snap_polyline_focus_handler(l, 0, 0);
-	    
+
   points = alloca(nr_points * sizeof(s_point_s));
   for (k = 0, i = 0; i < nr_segs; i++) {		/* serialise the points */
     for (j = 0; j < top_l_points[i].points_next; j++, k++) {
       points[k] = top_l_points[i].points[j];
     }
   }
-  
+
   rc = 0;
   this_line = NULL;
   for (i = 0; i <= nr_points; i++) {		/* yes, i do mean "<=" */
     j = (start_point + i) % nr_points;
-      
+
     this_x     = points[j].x;
     this_y     = points[j].y;
     this_ptype = points[j].ptype;
-      
+
     switch(this_ptype) {
     case PTYPE_END_PLINE:
     case PTYPE_END_VERTEX:
@@ -290,7 +290,7 @@ dice_polygons(int nr_segs, l_point_s * top_l_points, F_line * l)
       if (this_line) {				/* will be null on first cut point */
 	float area;
 	F_point * i_point;
-	
+
 	append_point(this_x, this_y, &this_point);	/* current point */
 	if (T_PIE_WEDGE_ARC == cur_arctype)
 	  append_point(snap_gx, snap_gy, &this_point);	/* centerpoint */
@@ -304,7 +304,7 @@ dice_polygons(int nr_segs, l_point_s * top_l_points, F_line * l)
 #if 0	  /* this creates bizarre but interesting results... */
 	  if (T_PIE_WEDGE_ARC == cur_arctype)
 	    insert_point(snap_gx, snap_gy, i_point);
-#endif	  
+#endif
 	  rc++;
 	}
 	this_line = NULL;
@@ -344,11 +344,11 @@ dice_polylines(int nr_segs, l_point_s * top_l_points, F_line * l)
     for (j = 0; (False == completed) && (j < top_l_points[i].points_next); j++) {
       F_line  * this_line;
       F_point * this_point;
-      
+
       int this_x     = top_l_points[i].points[j].x;
       int this_y     = top_l_points[i].points[j].y;
       int this_ptype = top_l_points[i].points[j].ptype;
-      
+
       switch(this_ptype) {
       case PTYPE_END_VERTEX:
 	/* do nothing -- same as next start vertex */
@@ -370,7 +370,7 @@ dice_polylines(int nr_segs, l_point_s * top_l_points, F_line * l)
 	if (True == check_poly(this_line, NULL, T_POLYLINE)) rc++;	/* chk for dup adjacent pts */
 	else delete_line(this_line);
 	completed = True;		/* catches anomalous case of cut following end of pline */
-	break;				
+	break;
       case PTYPE_START_VERTEX:
 	append_point(this_x, this_y, &this_point);
 	last_x = this_x;
@@ -413,15 +413,15 @@ chop_polyline(F_line * l, int x, int y)
     beep();
     return -1;
   }
-  
+
   rc = 0;
-  
+
   isect_cb.nr_isects = 0;
   isect_cb.max_isects = 0;
   isect_cb.isects = NULL;
 
   /* chopping polyline l by various things */
-  
+
   runnable = True;
   for (i = 0; i < axe_objects_next; i++) {
     switch (axe_objects[i].type) {
@@ -459,7 +459,7 @@ chop_polyline(F_line * l, int x, int y)
     {
       struct f_point * pp;
       int p_idx;
-    
+
       for (p_idx = -1, pp = NULL, p = l->points;
 	   p != NULL;
 	   p = p->next, p_idx++) {
@@ -482,12 +482,12 @@ chop_polyline(F_line * l, int x, int y)
 	pp = p;
       }
     }
-    
+
     for (j = 0; j < isect_cb.nr_isects; j++) {		/* insert isect points */
       int next_p;
-      
+
       int t_idx = isect_cb.isects[j].seg_idx;
-      
+
       next_p = top_l_points[t_idx].points_next;
       if (next_p >= top_l_points[t_idx].points_max) {
 	top_l_points[t_idx].points_max += POINTS_INCR;
@@ -502,7 +502,7 @@ chop_polyline(F_line * l, int x, int y)
       top_l_points[t_idx].points[next_p].ptype = PTYPE_CUT;
       top_l_points[t_idx].points_next += 1;
     }
-    
+
     for (i = 0; i < nr_segs; i++)		/* sort points by dist along seg */
       qsort(top_l_points[i].points, top_l_points[i].points_next,
 	    sizeof(s_point_s), point_sort_fcn);
@@ -515,7 +515,7 @@ chop_polyline(F_line * l, int x, int y)
       delete_line(l);
       redisplay_canvas();
     }
-  
+
     if (isect_cb.isects) free(isect_cb.isects);
 
     for (i = 0; i < nr_segs; i++) {
@@ -537,17 +537,17 @@ chop_arc(F_arc * a, int x, int y)
   F_arc * this_arc = copy_arc(a);
 
   rc = 0;
-  
+
   isect_cb.nr_isects = 0;
   isect_cb.max_isects = 0;
   isect_cb.isects = NULL;;
-  
-  /* 								seg_idx irrelevant */
+
+  /*							seg_idx irrelevant */
   insert_isect(&isect_cb, (double)(a->point[0].x), (double)(a->point[0].y), -1);
   insert_isect(&isect_cb, (double)(a->point[2].x), (double)(a->point[2].y), -1);
 
   /* chopping arc a by various things */
-  
+
   runnable = True;
   for (i = 0; i < axe_objects_next; i++) {
     switch (axe_objects[i].type) {
@@ -578,7 +578,7 @@ chop_arc(F_arc * a, int x, int y)
     double dsy = (double)(a->point[sp].y) - (double)(a->center.y);
     double rx = hypot((double)(a->point[1].y) - (double)(a->center.y),
 		      (double)(a->point[1].x) - (double)(a->center.x));
-    
+
     /*
      * dist = ((x2 - x0)(y0 - y)  -  (y2 - y0)(x0 - x))/mag((x2 - x0), (y2 - y0))
      *
@@ -586,12 +586,12 @@ chop_arc(F_arc * a, int x, int y)
      * x2, y2 = start point
      * dsx, dsy = start vector = (x2- x0),(y2 - y0)
      * dx, dy = t-vector
-     * 
+     *
      * dist = dsx * dy  -  dsy * dx		(magnitude irrelevant)
      *
      */
 
-#define lp_distance(dx, dy)      ((dsx * (dy))  -  (dsy * (dx))) 
+#define lp_distance(dx, dy)      ((dsx * (dy))  -  (dsy * (dx)))
 
     s_points = malloc(isect_cb.nr_isects * sizeof(s_point_s));
     for (i = 0; i < isect_cb.nr_isects; i++) {
@@ -600,7 +600,7 @@ chop_arc(F_arc * a, int x, int y)
       double dy = (double)(isect_cb.isects[i].y) - (double)(a->center.y);
       double c = hypot((double)(isect_cb.isects[i].y - a->point[sp].y),
 		       (double)(isect_cb.isects[i].x - a->point[sp].x));
-      
+
       if (0.0 > c) c = 0.0;
       else if (c > (2.0 * rx)) c = 2.0 * rx;
 
@@ -614,7 +614,7 @@ chop_arc(F_arc * a, int x, int y)
        * cos C = 1 - c^2 / (2 r^2)
        *
        */
-      
+
       C = acos(1 - (pow(c, 2.0) / (2.0 * pow(rx, 2.0))));
 
       dist = lp_distance(dx, dy);
@@ -627,15 +627,15 @@ chop_arc(F_arc * a, int x, int y)
       s_points[i].dist = C;
     }
 
-    
+
     qsort(s_points, isect_cb.nr_isects, sizeof(s_point_s),
 	  (1 == a->direction) ? point_sort_reverse_fcn : point_sort_fcn);
-    
+
     for (i = 1; i < isect_cb.nr_isects; i++) {
 
       if ((rx * fabs(sin(s_points[i - 1].dist - s_points[i].dist))) > 5.0) {
 	double vmag, vpha;
-	
+
 	vsumx = ((double)(s_points[i - 1].x + s_points[i].x)) - (2.0 * (double)(a->center.x));
 	vsumy = ((double)(s_points[i - 1].y + s_points[i].y)) - (2.0 * (double)(a->center.y));
 	vmag = hypot(vsumy, vsumx);
@@ -651,11 +651,11 @@ chop_arc(F_arc * a, int x, int y)
 	else if (fabs(s_points[i - 1].dist -  s_points[i].dist) < 0.01) {
 	  snap_rotate_vector(&vsumx, &vsumy, vsumx, vsumy, M_PI - .001);
 	}
-#endif	
+#endif
 
 	this_arc->point[0].x = s_points[i - 1].x;
 	this_arc->point[0].y = s_points[i - 1].y;
-      
+
 	this_arc->point[1].x = (int)rint((double)(a->center.x) + vsumx);
 	this_arc->point[1].y = (int)rint((double)(a->center.y) + vsumy);
 
@@ -666,11 +666,11 @@ chop_arc(F_arc * a, int x, int y)
 	rc++;
       }
     }
-    
+
     delete_arc(a);
     redisplay_canvas();
   }			/* end of runnable */
-  
+
   if (s_points) free(s_points);
   if (isect_cb.isects) free(isect_cb.isects);
   return rc;
@@ -686,13 +686,13 @@ chop_ellipse(F_ellipse * e, int x, int y)
   s_point_s * s_points = NULL;
 
   rc = 0;
-  
+
   isect_cb.nr_isects = 0;
   isect_cb.max_isects = 0;
   isect_cb.isects = NULL;;
-  
+
   /* chopping ellipse e by various things */
-  
+
   runnable = True;
   for (i = 0; i < axe_objects_next; i++) {
     switch (axe_objects[i].type) {
@@ -733,7 +733,7 @@ chop_ellipse(F_ellipse * e, int x, int y)
     s_points[isect_cb.nr_isects].x    = s_points[0].x;
     s_points[isect_cb.nr_isects].y    = s_points[0].y;
     s_points[isect_cb.nr_isects].dist = (2.0 * M_PI) + s_points[0].dist;
-    
+
     switch(e->type) {
     case T_ELLIPSE_BY_RAD:
     case T_ELLIPSE_BY_DIA:
@@ -747,7 +747,7 @@ chop_ellipse(F_ellipse * e, int x, int y)
 	double vmag, vpha;
 	double vsumx, vsumy;
 	double rx = (double)(e->radiuses.x);
-	
+
 	int sp = i;
 	int ep = i + 1;
 	F_arc * arc = create_arc();
@@ -759,12 +759,12 @@ chop_ellipse(F_ellipse * e, int x, int y)
 	arc->fill_color	= e->fill_color;
 	arc->fill_style	= e->fill_style;
 	arc->pen_style	= e->pen_style;
-	arc->style	= e->style;   
+	arc->style	= e->style;
 	arc->style_val	= e->style_val;
 	arc->direction	= 0;
 	arc->center.x	= e->center.x;
 	arc->center.y	= e->center.y;
-	
+
 	vsumx = ((double)(s_points[sp].x + s_points[ep].x)) - (2.0 * (double)(arc->center.x));
 	vsumy = ((double)(s_points[sp].y + s_points[ep].y)) - (2.0 * (double)(arc->center.y));
 	vmag = hypot(vsumy, vsumx);
@@ -773,16 +773,16 @@ chop_ellipse(F_ellipse * e, int x, int y)
 	vsumy *= rx/vmag;
 
 	if (fabs(s_points[sp].dist -  s_points[ep].dist) > M_PI) {
-	  vsumx *= -1.0;	
+	  vsumx *= -1.0;
 	  vsumy *= -1.0;
 	}
 	else if (fabs(s_points[sp].dist -  s_points[ep].dist) < 0.01) {
 	  snap_rotate_vector(&vsumx, &vsumy, vsumx, vsumy, M_PI - .001);
 	}
-	
+
 	arc->point[0].x = s_points[sp].x;
 	arc->point[0].y = s_points[sp].y;
-      
+
 	arc->point[1].x = (int)rint((double)(arc->center.x) + vsumx);
 	arc->point[1].y = (int)rint((double)(arc->center.y) + vsumy);
 
@@ -792,15 +792,15 @@ chop_ellipse(F_ellipse * e, int x, int y)
 	add_arc(arc);
 	rc++;
 
-	
+
       }
-      
+
       delete_ellipse(e);
       redisplay_canvas();
       break;
     }						/* switch type */
   }						/* if runnable */
-  
+
   if (s_points) free(s_points);
   if (isect_cb.isects) free(isect_cb.isects);
   return rc;

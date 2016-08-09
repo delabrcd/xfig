@@ -25,6 +25,8 @@
 #include "w_layers.h"
 #include "w_zoom.h"
 
+#include <limits.h>	/* INT_MIN */
+
 #define set_marker(win,x,y,w,h) \
 	XDrawRectangle(tool_d,(win),gccache[INV_PAINT], \
 	     ZOOMX(x)-((w-1)/2),ZOOMY(y)-((w-1)/2),(w),(h))
@@ -219,7 +221,7 @@ void update_markers(int mask)
 		toggle_ellipsemarker(e);
     if (CHANGED_MASK(M_TEXT_NORMAL) || CHANGED_MASK(M_TEXT_HIDDEN))
 	for (t = objects.texts; t != NULL; t = t->next) {
-	    if (active_layer(t->depth) && 
+	    if (active_layer(t->depth) &&
 		((hidden_text(t) && CHANGED_MASK(M_TEXT_HIDDEN))   ||
 		((!hidden_text(t)) && CHANGED_MASK(M_TEXT_NORMAL))))
 		    toggle_textmarker(t);
@@ -233,7 +235,7 @@ void update_markers(int mask)
 	CHANGED_MASK(M_POLYLINE_BOX))
 	for (l = objects.lines; l != NULL; l = l->next) {
 	    if (active_layer(l->depth) &&
-		((((l->type == T_BOX || l->type == T_ARCBOX || 
+		((((l->type == T_BOX || l->type == T_ARCBOX ||
 		   l->type == T_PICTURE)) && CHANGED_MASK(M_POLYLINE_BOX)) ||
 		((l->type == T_POLYLINE) && CHANGED_MASK(M_POLYLINE_LINE)) ||
 		((l->type == T_POLYGON) && CHANGED_MASK(M_POLYLINE_POLYGON))))

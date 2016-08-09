@@ -281,7 +281,7 @@ typedef struct f_line {
 #define					JOIN_ROUND	1
 #define					JOIN_BEVEL	2
     int		    radius;	/* corner radius for T_ARCBOX */
-    F_pic   	   *pic;	/* picture object, if type = T_PICTURE */
+    F_pic	   *pic;	/* picture object, if type = T_PICTURE */
     char	   *comments;
     struct f_line  *next;
 }

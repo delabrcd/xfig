@@ -3,6 +3,26 @@ Changes to Xfig
 Version 3.2
 =============================================================================
 
+Patchlevel 6 (August 2016)
+
+NEW FEATURES:
+	o Add compile switch to enable xpm-icon and xpm-splash screen
+
+	  independently (--enable-xpm-icon, --enable-xpm-splash).
+	o New compile switch --enable-versioning, calls update_version_m4
+	  to get version information from a source control system.
+
+BUGS FIXED:
+	o Update documentation to LaTeX and Xfig.
+	From Roland Rosenfeld <roland@spinnaker.de>:
+	o Update LaTeX documentation, use \documentclass instead of
+	  \documentstyle, \usepackage instead of \input.
+	o Builds on hurd, had to #include <limits.h> in a few places.
+	o Use application/x-xfig, not image/x-xfig in xfig.desktop file.
+	  See https://bugs.launchpad.net/ubuntu/+source/xfig/+bug/690067 and
+	  https://bugs.launchpad.net/ubuntu/+source/xfig/+bug/1045848 .
+
+-----------------------------------
 Patchlevel 6-rc (July 2016)
 
 NEW FEATURES:

@@ -57,7 +57,7 @@ f_blend(double numerator, double denominator)
 
 static inline double
 g_blend(double u, double q)             /* p equals 2 */
-                 
+
 {
   return(u*(q + u*(2*q + u*(8 - 12*q + u*(14*q - 11 + u*(4 - 5*q))))));
 }
@@ -87,10 +87,10 @@ static inline
 void positive_s1_influence(int k, double t, double s1, double *A0, double *A2)
 {
   double Tk;
-  
+
   Tk = k+1+s1;
   *A0 = (t+k+1<Tk) ? f_blend(t+k+1-Tk, k-Tk) : 0.0;
-  
+
   Tk = k+1-s1;
   *A2 = f_blend(t+k+1-Tk, k+2-Tk);
 }
@@ -100,9 +100,9 @@ void positive_s2_influence(int k, double t, double s2, double *A1, double *A3)
 {
   double Tk;
 
-  Tk = k+2+s2; 
+  Tk = k+2+s2;
   *A1 = f_blend(t+k+1-Tk, k+1-Tk);
-  
+
   Tk = k+2-s2;
   *A3 = (t+k+1>Tk) ? f_blend(t+k+1-Tk, k+3-Tk) : 0.0;
 }
@@ -136,7 +136,7 @@ step_computing(int k, F_point *p0, F_point *p1, F_point *p2, F_point *p3, double
   int    xstart, ystart, xend, yend, xmid, ymid, xlength, ylength;
   int    start_to_end_dist, number_of_steps;
   float  step, angle_cos, scal_prod, xv1, xv2, yv1, yv2, sides_length_prod;
-  
+
   /* This function computes the step used to draw the segment (p1, p2)
      (xv1, yv1) : coordinates of the vector from middle to origin
      (xv2, yv2) : coordinates of the vector from middle to extremity */
@@ -148,17 +148,17 @@ step_computing(int k, F_point *p0, F_point *p1, F_point *p2, F_point *p3, double
   if (s1>0) {
       if (s2<0) {
 	  positive_s1_influence(k, 0.0, s1, &A_blend[0], &A_blend[2]);
-	  negative_s2_influence(0.0, s2, &A_blend[1], &A_blend[3]); 
+	  negative_s2_influence(0.0, s2, &A_blend[1], &A_blend[3]);
       } else {
 	  positive_s1_influence(k, 0.0, s1, &A_blend[0], &A_blend[2]);
-	  positive_s2_influence(k, 0.0, s2, &A_blend[1], &A_blend[3]); 
+	  positive_s2_influence(k, 0.0, s2, &A_blend[1], &A_blend[3]);
       }
       point_computing(A_blend, p0, p1, p2, p3, &xstart, &ystart);
   } else {
       xstart = p1->x;
       ystart = p1->y;
   }
-  
+
   /* compute coordinates  of the extremity */
   if (s2>0) {
       if (s1<0) {
@@ -166,7 +166,7 @@ step_computing(int k, F_point *p0, F_point *p1, F_point *p2, F_point *p3, double
 	  positive_s2_influence(k, 1.0, s2, &A_blend[1], &A_blend[3]);
       } else {
 	  positive_s1_influence(k, 1.0, s1, &A_blend[0], &A_blend[2]);
-	  positive_s2_influence(k, 1.0, s2, &A_blend[1], &A_blend[3]); 
+	  positive_s2_influence(k, 1.0, s2, &A_blend[1], &A_blend[3]);
       }
       point_computing(A_blend, p0, p1, p2, p3, &xend, &yend);
   } else {
@@ -181,7 +181,7 @@ step_computing(int k, F_point *p0, F_point *p1, F_point *p2, F_point *p3, double
 	  positive_s2_influence(k, 0.5, s2, &A_blend[1], &A_blend[3]);
       } else {
 	  positive_s1_influence(k, 0.5, s1, &A_blend[0], &A_blend[2]);
-	  positive_s2_influence(k, 0.5, s2, &A_blend[1], &A_blend[3]); 
+	  positive_s2_influence(k, 0.5, s2, &A_blend[1], &A_blend[3]);
 	}
   } else if (s1<0) {
       negative_s1_influence(0.5, s1, &A_blend[0], &A_blend[2]);
@@ -198,7 +198,7 @@ step_computing(int k, F_point *p0, F_point *p1, F_point *p2, F_point *p3, double
   yv2 = yend - ymid;
 
   scal_prod = xv1*xv2 + yv1*yv2;
-  
+
   sides_length_prod = sqrt((xv1*xv1 + yv1*yv1)*(xv2*xv2 + yv2*yv2));
 
   /* compute cosinus of origin-middle-extremity angle, which approximates the
@@ -206,7 +206,7 @@ step_computing(int k, F_point *p0, F_point *p1, F_point *p2, F_point *p3, double
   if (sides_length_prod == 0.0)
     angle_cos = 0.0;
   else
-    angle_cos = scal_prod/sides_length_prod; 
+    angle_cos = scal_prod/sides_length_prod;
 
   xlength = xend - xstart;
   ylength = yend - ystart;
@@ -223,7 +223,7 @@ step_computing(int k, F_point *p0, F_point *p1, F_point *p2, F_point *p3, double
     step = 1;
   else
     step = precision/number_of_steps;
-  
+
   if ((step > MAX_SPLINE_STEP) || (step == 0))
     step = MAX_SPLINE_STEP;
   return (step);
@@ -234,8 +234,8 @@ spline_segment_computing(float step, int k, F_point *p0, F_point *p1, F_point *p
 {
   double A_blend[4];
   double t;
-  
-  if (s1<0) {  
+
+  if (s1<0) {
      if (s2<0) {
 	 for (t=0.0 ; t<1 ; t+=step) {
 	     negative_s1_influence(t, s1, &A_blend[0], &A_blend[2]);
@@ -264,7 +264,7 @@ spline_segment_computing(float step, int k, F_point *p0, F_point *p1, F_point *p
 	     positive_s2_influence(k, t, s2, &A_blend[1], &A_blend[3]);
 
 	     point_adding(A_blend, p0, p1, p2, p3);
-      } 
+      }
   }
 }
 
@@ -331,10 +331,10 @@ compute_open_spline(F_spline *spline, float precision)
     COPY_CONTROL_POINT(p2, s2, p3, s3);
     SPLINE_SEGMENT_LOOP(k, p0, p1, p2, p3, s1->s, s2->s, precision);
   }
-  
+
   if (!add_point(p3->x, p3->y))
     too_many_points();
-  
+
   return True;
 }
 
@@ -351,7 +351,7 @@ compute_closed_spline(F_spline *spline, float precision)
   DONE = False;
 
   INIT_CONTROL_POINTS(spline, p0, s0, p1, s1, p2, s2, p3, s3);
-  COPY_CONTROL_POINT(first, s_first, p0, s0); 
+  COPY_CONTROL_POINT(first, s_first, p0, s0);
 
   for (k = 0 ; p3 != NULL ; k++) {
       SPLINE_SEGMENT_LOOP(k, p0, p1, p2, p3, s1->s, s2->s, precision);

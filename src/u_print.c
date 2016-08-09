@@ -326,7 +326,7 @@ print_to_file(char *file, char *lang, float mag, int xoff, int yoff,
 	strcat(prcmd,outfile);
 
     /* EPS (Encapsulated PostScript) output */
-    } else if (!strncmp(lang, "eps", 3)) {	
+    } else if (!strncmp(lang, "eps", 3)) {
 	/* matches all "eps", "eps_ascii", "eps_mono_tiff" and "eps_color_tiff" */
 	sprintf(tmpcmd, "-b %d -n %s", border, name);
 	strcat(prcmd, tmpcmd);
@@ -597,11 +597,14 @@ print_to_file(char *file, char *lang, float mag, int xoff, int yoff,
 	strcat(prcmd,outfile);
 
     /* epic, eepic, eepicemu, latex, pictex */
-    } else if (!strcmp(lang, "epic") || !strcmp(lang, "eepic") || !strcmp(lang, "eepicemu") ||
-		!strcmp(lang, "latex") || !strcmp(lang, "pictex")) {
+    } else if (!strcmp(lang, "epic") || !strcmp(lang, "eepic") ||
+		!strcmp(lang, "eepicemu") || !strcmp(lang, "latex") ||
+		!strcmp(lang, "pictex") || !strcmp(lang, "pict2e") ||
+		!strcmp(lang, "tikz")) {
 	sprintf(tmpcmd, "-E %d %s %s",
 		appres.encoding, tmp_fig_file, outfile);
 	strcat(prcmd, tmpcmd);
+
     /* tk? */
     } else if (!strcmp(lang, "tk")) {
 	/* yes, append background option */
@@ -613,6 +616,7 @@ print_to_file(char *file, char *lang, float mag, int xoff, int yoff,
 	sprintf(tmpcmd, "%s %s",
 		tmp_fig_file, outfile);
 	strcat(prcmd, tmpcmd);
+
     /* Everything else */
     } else {
 	sprintf(tmpcmd, "%s %s",
@@ -674,7 +678,7 @@ void gen_print_cmd(char *cmd, char *file, char *printer, char *pr_params)
 		shell_protect_string(file));
 #endif /* (defined(SYSV) || defined(SVR4)) && !defined(BSDLPR) */
 	put_msg("Printing on \"%s\" with %s paper size in %s mode ...     ",
-		shell_protect_string(printer), 
+		shell_protect_string(printer),
 		paper_sizes[appres.papersize].sname,
 		appres.landscape ? "LANDSCAPE" : "PORTRAIT");
     }
@@ -696,10 +700,10 @@ exec_prcmd(char *command, char *msg)
 	return 1;
     }
     close(fd);
-    
+
     /* direct any output from fig2dev to this file */
-    strcat(command, " 2> "); 
-    strcat(command, errfname); 
+    strcat(command, " 2> ");
+    strcat(command, errfname);
     if (appres.DEBUG)
 	fprintf(stderr,"Execing: %s\n",command);
     status=system(command);
@@ -708,7 +712,7 @@ exec_prcmd(char *command, char *msg)
 	if ((errfile = fopen(errfname, "r")) == NULL) {
 	    file_msg("Error during %s. No messages available.",msg);
 	} else {
-  	    if (fgets(str,sizeof(str)-1,errfile) != NULL) {
+	    if (fgets(str,sizeof(str)-1,errfile) != NULL) {
 		rewind(errfile);
 		file_msg("Error during %s.  Messages:",msg);
 		while (fgets(str,sizeof(str)-1,errfile) != NULL) {
@@ -724,7 +728,7 @@ exec_prcmd(char *command, char *msg)
     return status;
 }
 
-/* 
+/*
    make an rgb string from color (e.g. #31ab12)
    if the color is < 0, make empty string
 */

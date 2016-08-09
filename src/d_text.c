@@ -45,6 +45,7 @@
 #endif
 
 #include <sys/wait.h>  /* waitpid() */
+#include <limits.h>
 
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
@@ -127,7 +128,7 @@ static void	move_blinking_cursor(int x, int y);
 static void	track_text_select();
 static Boolean	text_selection_showing = False;
 static int	startp, endp;
-static int 	prev_indx, lensel = 0;
+static int	prev_indx, lensel = 0;
 static int	start_text_select = -1;
 static int	start_sel_x, start_sel_y;
 static Boolean	click_on_text = False;
@@ -384,7 +385,7 @@ overlay_text_input(int x, int y)
 	canvas_font = lookfont(x_fontnum(work_psflag, work_font),
 			   work_fontsize);
 	/* get the ZOOMED font for actually drawing on the canvas */
-	canvas_zoomed_font = lookfont(x_fontnum(work_psflag, work_font), 
+	canvas_zoomed_font = lookfont(x_fontnum(work_psflag, work_font),
 				  round(work_fontsize*display_zoomscale));
 	/* save the working font structure */
 	work_fontstruct = canvas_zoomed_font;
@@ -521,10 +522,10 @@ init_text_input(int x, int y)
 
 	    /* load the X font and get its id for this font and size UNZOOMED */
 	    /* this is to get widths etc for the unzoomed chars */
-	    canvas_font = lookfont(x_fontnum(work_psflag, work_font), 
+	    canvas_font = lookfont(x_fontnum(work_psflag, work_font),
 			   work_fontsize);
 	    /* get the ZOOMED font for actually drawing on the canvas */
-	    canvas_zoomed_font = lookfont(x_fontnum(work_psflag, work_font), 
+	    canvas_zoomed_font = lookfont(x_fontnum(work_psflag, work_font),
 			   round(work_fontsize*display_zoomscale));
 	    /* save the working font structure */
 	    work_fontstruct = canvas_zoomed_font;
@@ -563,7 +564,7 @@ init_text_input(int x, int y)
 
 	/* load the X font and get its id for this font, size and angle UNZOOMED */
 	/* this is to get widths etc for the unzoomed chars */
-	canvas_font = lookfont(x_fontnum(work_psflag, work_font), 
+	canvas_font = lookfont(x_fontnum(work_psflag, work_font),
 			   work_fontsize);
 
 	toggle_textmarker(cur_t);
@@ -633,7 +634,7 @@ init_text_input(int x, int y)
 	    start_text_select = prev_indx = leng_prefix;
 	}
 #endif /* SEL_TEXT */
-	    
+
 	leng_suffix -= leng_prefix;
 	strncpy(prefix, cur_t->cstring, leng_prefix);
 	prefix[leng_prefix]='\0';
@@ -757,14 +758,14 @@ prefix_length(char *string, int where_p)
 				 * where_c chars */
     if (l < where_p) {
 	do {			/* add the width of next char to l */
-	    l += (char_wid = ZOOM_FACTOR * char_advance(canvas_font, 
+	    l += (char_wid = ZOOM_FACTOR * char_advance(canvas_font,
 				(unsigned char) string[where_c++]));
 	} while (l < where_p);
 	if (l - (char_wid >> 1) >= where_p)
 	    where_c--;
     } else if (l > where_p) {
 	do {			/* subtract the width of last char from l */
-	    l -= (char_wid = ZOOM_FACTOR * char_advance(canvas_font, 
+	    l -= (char_wid = ZOOM_FACTOR * char_advance(canvas_font,
 				(unsigned char) string[--where_c]));
 	} while (l > where_p);
 	if (l + (char_wid >> 1) <= where_p)
@@ -774,7 +775,7 @@ prefix_length(char *string, int where_p)
 	fprintf(stderr, "xfig file %s line %d: Error in prefix_length - adjusted\n", __FILE__, __LINE__);
 	where_c = 0;
     }
-    if ( where_c > len_c ) 
+    if ( where_c > len_c )
 	return (len_c);
     return (where_c);
 }
@@ -797,7 +798,7 @@ static void	(*cr_proc) ();
 static void
 draw_cursor(int x, int y)
 {
-    pw_vector(pw, x, y, 
+    pw_vector(pw, x, y,
 		round(x-ch_height*sin_t),
 		round(y-ch_height*cos_t),
 		INV_PAINT, 1, RUBBER_LINE, 0.0, DEFAULT);
@@ -842,7 +843,7 @@ void do_char(unsigned char ch, int op)
     char	     c[2];
 
     c[0] = ch; c[1] = '\0';
-    pw_text(pw, cur_x, cur_y, op, MAX_DEPTH+1, canvas_zoomed_font, 
+    pw_text(pw, cur_x, cur_y, op, MAX_DEPTH+1, canvas_zoomed_font,
 	    work_angle, c, work_textcolor, COLOR_NONE);
 }
 
@@ -859,7 +860,7 @@ void erase_char(unsigned char ch)
 void do_prefix(int op)
 {
     if (leng_prefix)
-	pw_text(pw, cbase_x, cbase_y, op, MAX_DEPTH+1, canvas_zoomed_font, 
+	pw_text(pw, cbase_x, cbase_y, op, MAX_DEPTH+1, canvas_zoomed_font,
 		work_angle, prefix, work_textcolor, COLOR_NONE);
 }
 
@@ -876,7 +877,7 @@ void erase_prefix(void)
 void do_suffix(int op)
 {
     if (leng_suffix)
-	pw_text(pw, cur_x, cur_y, op, MAX_DEPTH+1, canvas_zoomed_font, 
+	pw_text(pw, cur_x, cur_y, op, MAX_DEPTH+1, canvas_zoomed_font,
 		work_angle, suffix, work_textcolor, COLOR_NONE);
 }
 
@@ -893,10 +894,10 @@ void erase_suffix(void)
 void
 erase_char_string(void)
 {
-    pw_text(pw, cbase_x, cbase_y, ERASE, MAX_DEPTH+1, canvas_zoomed_font, 
+    pw_text(pw, cbase_x, cbase_y, ERASE, MAX_DEPTH+1, canvas_zoomed_font,
 	    work_angle, prefix, work_textcolor, COLOR_NONE);
     if (leng_suffix)
-	pw_text(pw, cur_x, cur_y, ERASE, MAX_DEPTH+1, canvas_zoomed_font, 
+	pw_text(pw, cur_x, cur_y, ERASE, MAX_DEPTH+1, canvas_zoomed_font,
 		work_angle, suffix, work_textcolor, COLOR_NONE);
 }
 
@@ -936,22 +937,22 @@ draw_char_string(void)
 		cbase_y = cbase_y + (prefix_width + suffix_width) * sin_t / 2;
 		break;
 	}
-      
-	pw_text(pw, cbase_x, cbase_y, PAINT, MAX_DEPTH+1, canvas_zoomed_font, 
+
+	pw_text(pw, cbase_x, cbase_y, PAINT, MAX_DEPTH+1, canvas_zoomed_font,
 	      work_angle, prefix, work_textcolor, COLOR_NONE);
 	cur_x = cbase_x + prefix_width * cos_t;
 	cur_y = cbase_y - prefix_width * sin_t;
 	if (leng_suffix)
-	    pw_text(pw, cur_x, cur_y, PAINT, MAX_DEPTH+1, canvas_zoomed_font, 
+	    pw_text(pw, cur_x, cur_y, PAINT, MAX_DEPTH+1, canvas_zoomed_font,
 		work_angle, suffix, work_textcolor, COLOR_NONE);
 	move_blinking_cursor(cur_x, cur_y);
 	return;
     }
 #endif /* I18N */
-    pw_text(pw, cbase_x, cbase_y, PAINT, MAX_DEPTH+1, canvas_zoomed_font, 
+    pw_text(pw, cbase_x, cbase_y, PAINT, MAX_DEPTH+1, canvas_zoomed_font,
 	    work_angle, prefix, work_textcolor, COLOR_NONE);
     if (leng_suffix)
-	pw_text(pw, cur_x, cur_y, PAINT, MAX_DEPTH+1, canvas_zoomed_font, 
+	pw_text(pw, cur_x, cur_y, PAINT, MAX_DEPTH+1, canvas_zoomed_font,
 		work_angle, suffix, work_textcolor, COLOR_NONE);
     move_blinking_cursor(cur_x, cur_y);
 }
@@ -1035,7 +1036,7 @@ char_handler(XKeyEvent *kpe, unsigned char c, KeySym keysym)
 #ifdef I18N
 	    if (appres.international && is_i18n_font(canvas_font))
 	      erase_char_string();
-	    else	      
+	    else
 #endif  /* I18N */
 	    for (i=leng_prefix-1; i>=0; i--)
 		move_cur(-1, prefix[i], 1.0);
@@ -1059,7 +1060,7 @@ char_handler(XKeyEvent *kpe, unsigned char c, KeySym keysym)
 #ifdef I18N
 	    if (appres.international && is_i18n_font(canvas_font))
 	      erase_char_string();
-	    else	      
+	    else
 #endif  /* I18N */
 	    for (i=0; i<leng_suffix; i++)
 		move_cur(1, suffix[i], 1.0);
@@ -1323,7 +1324,7 @@ char_handler(XKeyEvent *kpe, unsigned char c, KeySym keysym)
 	    /* turn off blinking cursor temporarily */
 	    turn_off_blinking_cursor();
 	    /* erase the selection characters */
-	    pw_text(pw, start_sel_x, start_sel_y, PAINT, MAX_DEPTH+1, canvas_zoomed_font, 
+	    pw_text(pw, start_sel_x, start_sel_y, PAINT, MAX_DEPTH+1, canvas_zoomed_font,
 		work_angle, text_selection, CANVAS_BG, CANVAS_BG);
 	    switch (work_textjust) {
 		case T_LEFT_JUSTIFIED:
@@ -1488,7 +1489,7 @@ track_text_select (int x, int y)
 	    selection_dir =  1;		/* selecting to the right */
 	click_on_text = False;
     }
-	
+
     if (indx > start_text_select) {
 	/* selecting right */
 	if (selection_dir == -1) {
@@ -1502,7 +1503,7 @@ track_text_select (int x, int y)
 	    lensel = 0;
 	    /* restart prev_index */
 	    prev_indx = start_text_select;
-	} 
+	}
 	if (indx > prev_indx) {
 	    /* we selected right, and are still moving right */
 	    for (i=0; i < (indx-prev_indx); i++) {
@@ -1662,7 +1663,7 @@ draw_selection (int x, int y, char *string)
 {
     /* turn off blinking cursor temporarily */
     turn_off_blinking_cursor();
-    pw_text(pw, x, y, PAINT, MAX_DEPTH+1, canvas_zoomed_font, 
+    pw_text(pw, x, y, PAINT, MAX_DEPTH+1, canvas_zoomed_font,
 		work_angle, string, CANVAS_BG, work_textcolor);
     /* turn on blinking cursor again */
     turn_on_blinking_cursor(draw_cursor, draw_cursor,
@@ -1676,7 +1677,7 @@ undraw_selection (int x, int y, char *string)
 {
     /* turn off blinking cursor temporarily */
     turn_off_blinking_cursor();
-    pw_text(pw, x, y, PAINT, MAX_DEPTH+1, canvas_zoomed_font, 
+    pw_text(pw, x, y, PAINT, MAX_DEPTH+1, canvas_zoomed_font,
 		work_angle, string, work_textcolor, CANVAS_BG);
     /* turn on blinking cursor again */
     turn_on_blinking_cursor(draw_cursor, draw_cursor,
@@ -1809,7 +1810,7 @@ move_blinking_cursor(int x, int y)
 }
 
 /*
- * Reload the font structure for all texts, the saved texts and the 
+ * Reload the font structure for all texts, the saved texts and the
    current work_fontstruct.
  */
 
@@ -1845,7 +1846,7 @@ reload_compoundfont(F_compound *compounds)
 void
 reload_text_fstruct(F_text *t)
 {
-    t->fontstruct = lookfont(x_fontnum(psfont_text(t), t->font), 
+    t->fontstruct = lookfont(x_fontnum(psfont_text(t), t->font),
 			round(t->size*display_zoomscale));
     t->zoom = zoomscale;
 }
@@ -2148,7 +2149,7 @@ open_preedit_proc(int x, int y)
     } else {  /* parent process; wait until xfig-preedit is up */
         for (i = 0; i < 10 && !is_preedit_running(); i++) sleep(1);
     }
-    if (is_preedit_running()) 
+    if (is_preedit_running())
 	put_msg("Pre-edit window opened");
     else
 	put_msg("Can't open pre-edit window");
@@ -2168,7 +2169,7 @@ paste_preedit_proc(int x, int y)
   } else if ((fp = fopen(preedit_filename, "r")) != NULL) {
     init_text_input(x, y);
     while ((ch = getc(fp)) != EOF) {
-      if (ch == '\\') 
+      if (ch == '\\')
 	new_text_line();
       else
 	prefix[leng_prefix++] = ch;

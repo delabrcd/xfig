@@ -236,7 +236,7 @@ void free_GCs(void)
 #ifdef USE_XPM
 	/* free any colors from the xfig xpm icon (if used) */
 	if (xfig_icon_attr.npixels > 0) {
-	    XFreeColors(tool_d, tool_cm, 
+	    XFreeColors(tool_d, tool_cm,
 			xfig_icon_attr.pixels, xfig_icon_attr.npixels,
 			(unsigned long) 0);
 	}
@@ -269,18 +269,18 @@ void free_Fonts(void)
     for (nf = x_fontinfo[i].xfontlist; nf != NULL;) {
       XUnloadFont(tool_d, nf->fid);
       if (nf->fstruct != NULL)
-	  XFreeFont(tool_d, nf->fstruct); 
+	  XFreeFont(tool_d, nf->fstruct);
       nf = nf->next;
-    } 
+    }
   }
   if (bold_font!=NULL) {
-    XFreeFont(tool_d, bold_font); 
+    XFreeFont(tool_d, bold_font);
   }
   if (roman_font!=NULL) {
-    XFreeFont(tool_d, roman_font); 
+    XFreeFont(tool_d, roman_font);
   };
   if (button_font!=NULL) {
-    XFreeFont(tool_d, button_font); 
+    XFreeFont(tool_d, button_font);
   };
 	XFreeGC(tool_d, sr_xor_gc);
 

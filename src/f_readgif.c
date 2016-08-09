@@ -75,7 +75,7 @@ read_gif(FILE *file, int filetype, F_pic *pic)
 {
 	char		buf[BUFLEN],pcxname[PATH_MAX];
 	FILE		*giftopcx;
-	struct Cmap 	localColorMap[MAX_COLORMAP_SIZE];
+	struct Cmap	localColorMap[MAX_COLORMAP_SIZE];
 	int		i, stat, size, fd;
 	int		useGlobalColormap;
 	unsigned int	bitPixel, red, green, blue;
@@ -135,7 +135,7 @@ read_gif(FILE *file, int filetype, F_pic *pic)
 			return PicSuccess;	/* all done */
 		}
 
-		if (c == '!') { 		/* Extension */
+		if (c == '!') {			/* Extension */
 			if (! ReadOK(file,&c,1))
 				file_msg("GIF read error on extension function code");
 			(void) DoGIFextension(file, c);
@@ -169,7 +169,7 @@ read_gif(FILE *file, int filetype, F_pic *pic)
 	/* close it and open it again (it may be a pipe so we can't just rewind) */
 	close_picfile(file, filetype);
 	file = open_picfile(pic->pic_cache->file, &filetype, PIPEOK, pcxname);
-	
+
 	/* now call giftopnm and ppmtopcx */
 
 	/* make name for temp output file */
@@ -204,7 +204,7 @@ read_gif(FILE *file, int filetype, F_pic *pic)
 	/* remove temp file */
 	unlink(pcxname);
 
-	/* now match original transparent colortable index with possibly new 
+	/* now match original transparent colortable index with possibly new
 	   colortable from ppmtopcx */
 	if (pic->pic_cache->transp != TRANSP_NONE) {
 	    if (useGlobalColormap) {

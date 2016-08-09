@@ -68,7 +68,7 @@ read_pcx(FILE *file, int filetype, F_pic *pic)
     float scale = (appres.INCHES ?
 		    (float)PIX_PER_INCH :
 		    2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
-    
+
     status = _read_pcx(file,pic);
     if (status != 1) {
 	close_picfile(file,filetype);
@@ -130,7 +130,7 @@ int _read_pcx(FILE *pcxfile, F_pic *pic)
 	      case 4: real_bpp=4; break;
 	    }
 	    break;
-	  
+
 	  case 8:
 	    switch(header.nplanes) {
 	      case 1: real_bpp=8; break;
@@ -169,7 +169,7 @@ int _read_pcx(FILE *pcxfile, F_pic *pic)
 	for (yy=0; yy<h; yy++) {
 	  plane = 0;
 	  pmask = 1;
-	  
+
 	  y = yy;
 	  x = 0;
 	  while (y == yy) {
@@ -199,7 +199,7 @@ int _read_pcx(FILE *pcxfile, F_pic *pic)
 		pic->pic_cache->cmap[1].red = pic->pic_cache->cmap[1].green = pic->pic_cache->cmap[1].blue = 255;
 		pic->pic_cache->numcols = 2;
 		break;
-	  
+
 	    case 2:
 	    case 3:
 	    case 4:
@@ -232,14 +232,14 @@ int _read_pcx(FILE *pcxfile, F_pic *pic)
 		if (i < pic->pic_cache->numcols-2)
 		    pic->pic_cache->numcols = i+2;
 		break;
-	  
+
 	    case 24:
 		/* no palette, must use neural net to reduce to 256 colors with palette */
 		if (!map_to_palette(pic))
 		    return FileInvalid;		/* out of memory or something */
 		break;
 	}
-	return PicSuccess;  
+	return PicSuccess;
 }
 
 
@@ -296,7 +296,7 @@ dispbyte(unsigned char *ptr,int *xp,int *yp,int c,int w,int h,
 			return;
 		}
 		break;
-	  
+
 	  case 8:
 		*(ptr+(*yp)*w+*xp)=c;
 		(*xp)++;
@@ -305,7 +305,7 @@ dispbyte(unsigned char *ptr,int *xp,int *yp,int c,int w,int h,
 		    (*yp)++;
 		}
 		break;
-	  
+
 	  case 24:
 		*(ptr+((*yp)*w+*xp)*3+(2-(*planep)))=c;
 		(*xp)++;

@@ -38,11 +38,11 @@ version 3.2.5.  It now states that:
 
 	Any party obtaining a copy of these files is granted, free of charge, a
 	full and unrestricted irrevocable, world-wide, paid up, royalty-free,
-	nonexclusive right and license to deal in this software and documentation 
-	files (the "Software"), including without limitation the rights to use, 
+	nonexclusive right and license to deal in this software and documentation
+	files (the "Software"), including without limitation the rights to use,
 	copy, modify, merge, publish distribute, sublicense and/or sell copies of
-	the Software, and to permit persons who receive copies from any such 
-	party to do so, with the only requirement being that the above copyright 
+	the Software, and to permit persons who receive copies from any such
+	party to do so, with the only requirement being that the above copyright
 	and this permission notice remain intact.
 
 The license for 3.2.4 didn't allow selling xfig unless it was simply included in a
@@ -78,8 +78,8 @@ NOTE 3: It is highly recommended that you use Type1 fonts for xfig.
 
 	For other X systems you can install the following ghostscript files
 	into your X11 Type1 fonts directory (usu. /usr/lib/X11/fonts/Type1) for
-	the best scalable on-screen fonts.  You need to update the "fonts.dir" 
-	and "fonts.scale" files to reflect these fonts.  
+	the best scalable on-screen fonts.  You need to update the "fonts.dir"
+	and "fonts.scale" files to reflect these fonts.
 
 	Basically, if you copy the following lines into those two files and
 	update the count in the first line to include them, then do an
@@ -124,7 +124,7 @@ The environment variable XAPPLRESDIR can be used to point to the directory
 where the app-defaults resource files reside.
 
 On Sun systems running Openwindows you probably need to set the environment
-variable XUSERFILESEARCHPATH to point to your app-defaults directory, and 
+variable XUSERFILESEARCHPATH to point to your app-defaults directory, and
 append a "%N" to the path, e.g. /users/me/xfig/app-defaults/%N
 
 From Brian V. Smith:
@@ -162,7 +162,7 @@ o For a 3D look, I recommend using Kaleb Keithley's 3D Athena Widget set, a
 
 o If the Xaw or Xaw3d Athena widget sets are compiled with the ARROW_SCROLLBAR
   style of scrollbars, there is no StartScroll action and you won't be able to
-  scroll using the wheel on the mouse.  
+  scroll using the wheel on the mouse.
   If you want to be able to scroll using the wheel, you must recompile the Xaw
   library from sources, disabling the ARROW_SCROLLBAR option.
 
@@ -316,7 +316,7 @@ PROBLEM:
 
 POSSIBLE CAUSE AND SOLUTION:
 	You probably have version 1.5 of the 3D Xaw Athena widget set so you need
-	to remove the "XCOMM" from this line in the Imakefile: #define XAW3D1_5E 
+	to remove the "XCOMM" from this line in the Imakefile: #define XAW3D1_5E
 	then do "xmkmf" and "make install.all"
 ________________________________________________________________________________
 PROBLEM:
@@ -350,22 +350,22 @@ POSSIBLE CAUSE AND SOLUTION:
 --- XPolyReg.c	Wed Nov 15 09:41:13 1995
 ***************
 *** 402,408 ****
-  	    if (numRects && pts->x == rects->x1 && pts->y == rects->y2 &&
-  		pts[1].x == rects->x2 &&
-  		(numRects == 1 || rects[-1].y1 != rects->y1) &&
-! 		(!i || pts[2].y > pts[1].y)) {
-  		rects->y2 = pts[1].y + 1;
-  		continue;
-  	    }
+	    if (numRects && pts->x == rects->x1 && pts->y == rects->y2 &&
+		pts[1].x == rects->x2 &&
+		(numRects == 1 || rects[-1].y1 != rects->y1) &&
+!		(!i || pts[2].y > pts[1].y)) {
+		rects->y2 = pts[1].y + 1;
+		continue;
+	    }
 --- 402,409 ----
-  	    if (numRects && pts->x == rects->x1 && pts->y == rects->y2 &&
-  		pts[1].x == rects->x2 &&
-  		(numRects == 1 || rects[-1].y1 != rects->y1) &&
-! 		/* Fixed version from X11 R6 */
-! 		(i && pts[2].y > pts[1].y)) {
-  		rects->y2 = pts[1].y + 1;
-  		continue;
-  	    }
+	    if (numRects && pts->x == rects->x1 && pts->y == rects->y2 &&
+		pts[1].x == rects->x2 &&
+		(numRects == 1 || rects[-1].y1 != rects->y1) &&
+!		/* Fixed version from X11 R6 */
+!		(i && pts[2].y > pts[1].y)) {
+		rects->y2 = pts[1].y + 1;
+		continue;
+	    }
 ________________________________________________________________________________
 PROBLEM:
 	When using LaTeX fonts in Xfig I always end up with postscript

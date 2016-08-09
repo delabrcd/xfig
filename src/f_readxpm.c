@@ -23,7 +23,7 @@
 #include "f_util.h"
 
 /* attempt to read a XPM (color pixmap) file */
-/* the filename is passed since XpmReadFileToXpmImage needs a name 
+/* the filename is passed since XpmReadFileToXpmImage needs a name
    instead of a FILE pointer.  This is fine because it handles compressed files */
 
 /* return codes:  PicSuccess (1) : success
@@ -70,7 +70,7 @@ read_xpm(char *file, int filetype, F_pic *pic)
 	pic->pic_cache->subtype = T_PIC_XPM;
 	pic->pic_cache->numcols = image.ncolors;
 	pic->pixmap = None;
-	pic->pic_cache->bitmap = (unsigned char *) 
+	pic->pic_cache->bitmap = (unsigned char *)
 					malloc(image.width*image.height*sizeof(unsigned char));
 	if (pic->pic_cache->bitmap == NULL) {
 	    file_msg("cannot allocate space for XPM image");

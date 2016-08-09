@@ -138,7 +138,7 @@ static void     turn_on(mode_sw_info *msw);
 /* The M_XXX indicate which objects are selectable when the mode is on, and
    the I_XXX say which indicator buttons will appear on the indicator panel */
 
-/* IMPORTANT NOTE:  The "popup" boolean must be True for those commands which 
+/* IMPORTANT NOTE:  The "popup" boolean must be True for those commands which
    may popup a window.  Because the command button is set insensitive in those
    cases, the LeaveWindow event never happens on that button so the balloon popup
    would never be destroyed in that case.  */
@@ -252,7 +252,7 @@ mode_sw_info mode_switches[] = {
     {&rotCCW_ic, F_ROTATE, rotate_ccw_selected, M_ALL,
        I_ROTATE,
        "ROTATE objects counter-clockwise   (Shift-r)", False},
-    {&convert_ic, F_CONVERT, convert_selected, M_VARPTS_OBJECT | M_POLYLINE_BOX, 
+    {&convert_ic, F_CONVERT, convert_selected, M_VARPTS_OBJECT | M_POLYLINE_BOX,
        0,
        "CONVERSION between lines, polygons and splines   (v)", False},
     {&autoarrow_ic, F_AUTOARROW, arrow_head_selected, M_OPEN_OBJECT,
@@ -567,7 +567,7 @@ mode_balloon(void)
 static void
 mode_unballoon(Widget widget, XtPointer closure, XEvent *event, Boolean *continue_to_dispatch)
 {
-    if (balloon_id) 
+    if (balloon_id)
 	XtRemoveTimeOut(balloon_id);
     balloon_id = (XtIntervalId) 0;
     if (mode_balloon_popup != (Widget) 0) {
@@ -650,7 +650,7 @@ sel_mode_but(Widget widget, XtPointer closure, XEvent *event, Boolean *continue_
 	cur_mode = msw->mode;
 	anypointposn = !(msw->indmask & I_POINTPOSN);
 	new_objmask = msw->objmask;
-	if ((cur_mode == F_ROTATE) && 
+	if ((cur_mode == F_ROTATE) &&
 	    fabs(cur_rotnangle) != 90.0 && fabs(cur_rotnangle) != 180.0)
 		new_objmask = M_ROTATE_ANGLE;
 	update_markers(new_objmask);

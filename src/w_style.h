@@ -35,7 +35,7 @@ typedef enum Element_type {
 } Element_type;
 
 typedef struct Element {
-  char *name; 
+  char *name;
   Element_type type;
   void *value,* toset;
   unsigned long flag;

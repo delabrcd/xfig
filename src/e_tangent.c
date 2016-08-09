@@ -107,16 +107,16 @@ tangent_normal_line(int x, int y, float vx, float vy)
 {
     int dx, dy, xl, yl, xr, yr;
     F_line	   *line;
- 
+
     dx = round(vx);
-    dy = round(vy);   
+    dy = round(vy);
 
     xl = x - dx;
     yl = y - dy;
     xr = x + dx;
     yr = y + dy;
 
-    if ((first_point = create_point()) == NULL) 
+    if ((first_point = create_point()) == NULL)
         return;
     cur_point = first_point;
     first_point->x = xl;
@@ -124,7 +124,7 @@ tangent_normal_line(int x, int y, float vx, float vy)
     first_point->next = NULL;
     append_point(x, y, &cur_point);
     append_point(xr, yr, &cur_point);
-    
+
     if ((line = create_line()) == NULL)
         return; /* an error occured */
     line->type = T_POLYLINE;

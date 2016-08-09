@@ -92,7 +92,7 @@ file refers to the &quot;grafbase.mf&quot; file which I don't have</a>
 <li><a href="#mntext">I am getting get "mn" in my LaTeX text</a>
 
 <p>
-<li><a href="#gs700_pattern_bug">Pattern fills are going beyond the bounds of the polygons when I 
+<li><a href="#gs700_pattern_bug">Pattern fills are going beyond the bounds of the polygons when I
 export to EPS, GIF, etc., although they look fine on the screen</a>
 
 <p>
@@ -101,7 +101,7 @@ export to EPS, GIF, etc., although they look fine on the screen</a>
 
 <p>
 <li><a href="#en_US">fig2dev says:
-	&quot;can't open file: /usr/X11R6/lib/X11/fig2dev/en_US.ps&quot; 
+	&quot;can't open file: /usr/X11R6/lib/X11/fig2dev/en_US.ps&quot;
 	(or some other xx_xx.ps file)</a>
 <p>
 <li><a href="#XUSERFILESEARCHPATH">xfig won't find the app-defaults file in my personal directory
@@ -135,17 +135,17 @@ isn't visible.</a>
 <h2><a name="faq-compile">Problems when compiling <b>xfig</b></a></h2>
 
 <ol>
-<li><a href="#alpha">On a DEC Alpha the compiler may complain about something 
+<li><a href="#alpha">On a DEC Alpha the compiler may complain about something
 like &quot;.mask must have pcreg from .frame set if any bits are set in .mask or .fmask&quot;
 in the file <tt>u_bound.c</tt></a>
 
 <p>
-<li><a href="#xpointer"><tt>XPointer</tt> is undefined or unknown when 
+<li><a href="#xpointer"><tt>XPointer</tt> is undefined or unknown when
 I compile <b>xfig</b></a>
 
 <p>
 <li><a href="#get_appl">On Sun machines the linker may give erroneous
-error messages about <tt>_get_applicationShellWidgetClass</tt> and 
+error messages about <tt>_get_applicationShellWidgetClass</tt> and
 <tt>_get_wmShellWidgetClass</tt> are undefined</a>
 
 <p>
@@ -253,7 +253,7 @@ hand-fitting may be needed in some pathological cases.
 <hr>
 
 <li>
-<h3><a name="install_pers">How can I install <b>xfig</b> in a personal 
+<h3><a name="install_pers">How can I install <b>xfig</b> in a personal
 directory?</a></h3>
 
 There are several files that you need:
@@ -282,9 +282,9 @@ where <tt>XFIGLIBDIR</tt> in the Imakefile points.
 <li>
 <h3><a name="mailing_list">Is there a mailing list or newsgroup specifically for <b>xfig</b>?</a></h3>
 
-There are no mailing lists for <b>xfig</b>, but you may send email 
+There are no mailing lists for <b>xfig</b>, but you may send email
 to <a href="mailto:bvsmith@lbl.gov">bvsmith@lbl.gov</a>
-or post questions about it to 
+or post questions about it to
 <a href="news:comp.windows.x">comp.windows.x</a>,
 <a href="news:comp.windows.x.apps">comp.windows.x.apps</a>,
 <a href="news:comp.os.linux.x">comp.os.linux.x</a>,
@@ -292,7 +292,7 @@ or post questions about it to
 or
 <a href="news:comp.os.linux.misc">comp.os.linux.misc</a>.
 Questions about <b>TransFig</b> or <b>fig2dev</b> may also
-be posted to 
+be posted to
 <a href="news:comp.text.tex">comp.text.tex</a>.
 
 </ol>
@@ -355,7 +355,7 @@ like &quot;Warning: Actions not found: ModeOpenCompound&quot;</a></h3>
 <p>
 <dt>SOLUTION:
 <dd>Install the app-default file (<tt>Fig.ad</tt>)
-which comes with the <b>xfig</b>.  
+which comes with the <b>xfig</b>.
 <br>
 This is most easily done with &quot;<tt>make install</tt>&quot;.
 </dl>
@@ -380,22 +380,22 @@ or thick line shows through arrowhead in certain orientations</a></h3>
 --- XPolyReg.c	Wed Nov 15 09:41:13 1995
 ***************
 *** 402,408 ****
-  	    if (numRects &amp;&amp; pts-&gt;x == rects-&gt;x1 &amp;&amp; pts-&gt;y == rects-&gt;y2 &amp;&amp;
-  		pts[1].x == rects-&gt;x2 &amp;&amp;
-  		(numRects == 1 || rects[-1].y1 != rects-&gt;y1) &amp;&amp;
-! 		(!i || pts[2].y &gt; pts[1].y)) {
-  		rects-&gt;y2 = pts[1].y + 1;
-  		continue;
-  	    }
+	    if (numRects &amp;&amp; pts-&gt;x == rects-&gt;x1 &amp;&amp; pts-&gt;y == rects-&gt;y2 &amp;&amp;
+		pts[1].x == rects-&gt;x2 &amp;&amp;
+		(numRects == 1 || rects[-1].y1 != rects-&gt;y1) &amp;&amp;
+!		(!i || pts[2].y &gt; pts[1].y)) {
+		rects-&gt;y2 = pts[1].y + 1;
+		continue;
+	    }
 --- 402,409 ----
-  	    if (numRects &amp;&amp; pts-&gt;x == rects-&gt;x1 &amp;&amp; pts-&gt;y == rects-&gt;y2 &amp;&amp;
-  		pts[1].x == rects-&gt;x2 &amp;&amp;
-  		(numRects == 1 || rects[-1].y1 != rects-&gt;y1) &amp;&amp;
-! 		/* Fixed version from X11 R6 */
-! 		(i &amp;&amp; pts[2].y &gt; pts[1].y)) {
-  		rects-&gt;y2 = pts[1].y + 1;
-  		continue;
-  	    }
+	    if (numRects &amp;&amp; pts-&gt;x == rects-&gt;x1 &amp;&amp; pts-&gt;y == rects-&gt;y2 &amp;&amp;
+		pts[1].x == rects-&gt;x2 &amp;&amp;
+		(numRects == 1 || rects[-1].y1 != rects-&gt;y1) &amp;&amp;
+!		/* Fixed version from X11 R6 */
+!		(i &amp;&amp; pts[2].y &gt; pts[1].y)) {
+		rects-&gt;y2 = pts[1].y + 1;
+		continue;
+	    }
 </pre>
 </dl>
 
@@ -408,9 +408,9 @@ I always end up with PostScript fonts</a></h3>
 <dl>
 <dt>POSSIBLE CAUSE AND SOLUTION:
 <dd>To put fonts under the control of LaTeX when generating PostScript output,
-you must tag the text object as 
+you must tag the text object as
 &quot;<a href="attributes.html#text-flags">special</a>&quot; and then use
-<a href="printing.html#export">Combined PostScript/LaTeX</a> (pstex) 
+<a href="printing.html#export">Combined PostScript/LaTeX</a> (pstex)
 output mode.
 This mode forces special text objects to be passed through to LaTeX,
 allowing the use of Math mode and Computer Modern fonts among other things.
@@ -496,7 +496,7 @@ file refers to the &quot;grafbase.mf&quot; file which I don't have</a></h3>
 <dl>
 <dt>POSSIBLE CAUSE AND SOLUTION:
 <dd>The grafbase.mf file should be on your system if you have MetaFont, but if
-you don't have it you can get it from 
+you don't have it you can get it from
 <a href="ftp://ctan.tug.org/tex-archive/graphics/fig2mf/">
 ftp://ctan.tug.org/tex-archive/graphics/fig2mf/</a>
 </dl>
@@ -526,7 +526,7 @@ not set up properly on your system you need to define them to do nothing.
 <hr>
 
 <li>
-<h3><a name="gs700_pattern_bug">Pattern fills are going beyond the bounds of the polygons when I 
+<h3><a name="gs700_pattern_bug">Pattern fills are going beyond the bounds of the polygons when I
 export to EPS, GIF, etc., although they look fine on the screen</a></h3>
 <dl>
 <dt>POSSIBLE CAUSE AND SOLUTION:
@@ -552,7 +552,7 @@ Don't mix the 2D and 3D widget libraries (Xaw and Xaw3d) and header files.
 <!-- ********************** -->
 <li>
 <h3><a name="en_US">fig2dev says:
-	&quot;can't open file: /usr/X11R6/lib/X11/fig2dev/en_US.ps&quot; 
+	&quot;can't open file: /usr/X11R6/lib/X11/fig2dev/en_US.ps&quot;
 	(or some other xx_xx.ps file)</a>
 </h3>
 <dl>
@@ -572,9 +572,9 @@ Download newer versions of xfig and transfig RPMs from RedHat.
 </h3>
 <dl>
 <dt>POSSIBLE CAUSE AND SOLUTION:
-<dd>If you are using Sun's Openwindows X server you need to set a different 
+<dd>If you are using Sun's Openwindows X server you need to set a different
 environment variable, <b>XUSERFILESEARCHPATH</b> to point to your personal
-app-defaults directory, and append a &quot;%N&quot; to the path, e.g. 
+app-defaults directory, and append a &quot;%N&quot; to the path, e.g.
 <blockquote>
 <tt>setenv XUSERFILESEARCHPATH $HOME/app-defaults/<b>%N</b></tt>
 </blockquote>
@@ -591,16 +591,16 @@ app-defaults directory, and append a &quot;%N&quot; to the path, e.g.
 <li>
 The <b>CompKeyDB</b> file may not be installed.  This is the file that tells
 xfig how to handle the multi-key sequences to produce the Latin-1 characters
-such as 
+such as
 <IMG SRC="images/a-umlaut.png" ALT="a umlaut" >
-(a-umlaute), <IMG SRC="images/c-cedilla.png" ALT="c cedilla" align=top> 
+(a-umlaute), <IMG SRC="images/c-cedilla.png" ALT="c cedilla" align=top>
 (c-cedilla), etc. You should do a <tt>make install</tt> to fully
 install xfig and its support files.
 <li>
 Your keyboard doesn't have a <b>&quot;Multi_key&quot;</b> key.  On some systems
 (e.g. Sun Sparcstations), there is a compose key or &quot;Multi_key&quot; which handles these sequences.
 If your keyboard doesn't have such a key you can remap another key (e.g. the &quot;Windows&quot;
-keys, known to the X server as <b>Super_L</b> and <b>Super_R</b> to the Multi_key using 
+keys, known to the X server as <b>Super_L</b> and <b>Super_R</b> to the Multi_key using
 the <b>xmodmap</b> program:
 <p>
 <tt>
@@ -620,7 +620,7 @@ the digits are entered in reverse order.</h3>
 <dd>
 There is a bug in the RedHat Xaw Athena widget set.  Any of the Xaw3d (3-D) Athena
 widget sets will work properly.
-Uncomment the  &quot;#define XAW3D&quot; line in the Imakefile and recompile xfig 
+Uncomment the  &quot;#define XAW3D&quot; line in the Imakefile and recompile xfig
 according to the instructions in the <tt>README</tt> file.
 </dl>
 
@@ -643,7 +643,7 @@ in your LaTeX document.
 <dd>
 Your X server (screen) fonts may not be the same as the PostScript fonts that fig2dev
 uses when exporting.  If you use the ghostscript fonts in your X server things will
-improve.  To do this, see 
+improve.  To do this, see
 <a href="installation.html#install-ghostfonts">Installing Ghostscript's Type1 fonts under X.</a>
 </dl>
 
@@ -664,9 +664,9 @@ Try mwm or twm or KDE.
 <dt>POSSIBLE CAUSE AND SOLUTION:
 <dd>
 When the Xaw or Xaw3d Athena widget sets are compiled with the <b><t>ARROW_SCROLLBAR</t></b> style of
-scrollbars there is no <t>StartScroll</t> action and you won't be able to scroll using the 
-wheel on the mouse.  
-If you want to be able to scroll using the wheel, you must recompile the Xaw library from 
+scrollbars there is no <t>StartScroll</t> action and you won't be able to scroll using the
+wheel on the mouse.
+If you want to be able to scroll using the wheel, you must recompile the Xaw library from
 sources, disabling the <b><t>ARROW_SCROLLBAR</t></b> option.
 <br>
 From xfig version 3.2.5 on, it checks if this action exists and doesn't give the warning.
@@ -684,8 +684,8 @@ From xfig version 3.2.5 on, it checks if this action exists and doesn't give the
 <ol>
 
 <li>
-<h3><a name="alpha">On a DEC Alpha the compiler may complain about something 
-about something like &quot;.mask must have pcreg from .frame set if any 
+<h3><a name="alpha">On a DEC Alpha the compiler may complain about something
+about something like &quot;.mask must have pcreg from .frame set if any
 bits are set in .mask or .fmask&quot;
 in the file <tt>u_bound.c</tt></a></h3>
 
@@ -697,7 +697,7 @@ in the file <tt>u_bound.c</tt></a></h3>
 <hr>
 
 <li>
-<h3><a name="xpointer"><tt>XPointer</tt> is undefined or unknown when 
+<h3><a name="xpointer"><tt>XPointer</tt> is undefined or unknown when
 I compile <b>xfig</b></a></h3>
 
 <dl>
@@ -715,8 +715,8 @@ or switch to the public X server from the
 <hr>
 
 <li>
-<h3><a name="get_appl">On Sun machines the linker may give erroneous 
-error messages about <tt>_get_applicationShellWidgetClass</tt> and 
+<h3><a name="get_appl">On Sun machines the linker may give erroneous
+error messages about <tt>_get_applicationShellWidgetClass</tt> and
 <tt>_get_wmShellWidgetClass</tt> are undefined</a></h3>
 
 <dl>
@@ -856,7 +856,7 @@ but your Intrinsics library <b>does</b> have those components.
 
 <p>
 <dt>SOLUTION:
-<dd>Either get a newer version of the Xaw3d widgets from 
+<dd>Either get a newer version of the Xaw3d widgets from
 <a href="ftp://ftp.x.org/contrib/widgets/Xaw3d">ftp://ftp.x.org/contrib/widgets/Xaw3d</a>
 or use your system's 2D Athena widgets (Xaw).
 The latter is acheived by:
@@ -865,7 +865,7 @@ The latter is acheived by:
 <br>
 2. doing a &quot;rm w_menuentry.o&quot;,
 <br>
-3. &quot;make Makefile&quot; 
+3. &quot;make Makefile&quot;
 <br>
 4. &quot;make&quot;
 <hr>

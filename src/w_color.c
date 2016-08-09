@@ -45,7 +45,7 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
  *
- * Author:  Richard Hesketh / rlh2@ukc.ac.uk, 
+ * Author:  Richard Hesketh / rlh2@ukc.ac.uk,
  *                Computing Lab. University of Kent at Canterbury, UK
  */
 
@@ -512,7 +512,7 @@ void create_color_panel(Widget form, Widget label, Widget cancel, ind_sw_info *i
 	NextArg(XtNbottom, XtChainBottom);
 	NextArg(XtNleft, XtChainLeft);
 	NextArg(XtNright, XtChainRight);
-	userViewport = XtCreateManagedWidget("userViewport", viewportWidgetClass, 
+	userViewport = XtCreateManagedWidget("userViewport", viewportWidgetClass,
 			userForm, Args, ArgCount);
 
 	FirstArg(XtNhSpace, USR_COL_SP);		/* spacing between cells */
@@ -761,7 +761,7 @@ void create_color_panel(Widget form, Widget label, Widget cancel, ind_sw_info *i
 	/* initialize the two color cells to the current pen/fill colors */
 	restore_mixed_colors();
 
-	/* get the name of the scrollbar in the user color viewport so we can 
+	/* get the name of the scrollbar in the user color viewport so we can
 	   make it solid instead of the default grey pixmap */
 	sb = XtNameToWidget(userViewport, "vertical");
 	FirstArg(XtNthumb, None);
@@ -828,17 +828,17 @@ void restore_mixed_colors(void)
 	mixed_color[1].red &= 0xff00;
 	mixed_color[1].green &= 0xff00;
 	mixed_color[1].blue &= 0xff00;
-	
+
 	/* put the color name or number in the indicators */
 	set_mixed_name(0, cur_pencolor);
 	set_mixed_name(1, cur_fillcolor);
 	if (!all_colors_available) {
 	    if (mixedColor[0] != (Widget) 0) {
 		/* change the background of the widgets */
-		FirstArg(XtNbackground, 
+		FirstArg(XtNbackground,
 			(cur_pencolor==WHITE? x_bg_color.pixel: x_fg_color.pixel));
 		SetValues(mixedColor[0]);
-		FirstArg(XtNbackground, 
+		FirstArg(XtNbackground,
 			(cur_fillcolor==WHITE? x_bg_color.pixel: x_fg_color.pixel));
 		SetValues(mixedColor[1]);
 	    }
@@ -959,7 +959,7 @@ void set_mixed_name(int i, int col)
     SetValues(mixedColor[i]);
 }
 
-/* come here when cancel is pressed.  This is in addition to the 
+/* come here when cancel is pressed.  This is in addition to the
    cancel callback routine that gets called in w_indpanel.c */
 
 static void
@@ -1274,7 +1274,7 @@ add_color_cell(Boolean use_exist, int indx, int r, int g, int b)
 	    } else {
 		/* already exists, just set its color and map it */
 		FirstArg(XtNforeground, x_bg_color.pixel);
-		NextArg(XtNbackground, (all_colors_available? 
+		NextArg(XtNbackground, (all_colors_available?
 			user_colors[indx].pixel: x_fg_color.pixel));
 		SetValues(colorMemory[indx]);
 		XtManageChild(colorMemory[indx]);
@@ -1300,9 +1300,9 @@ void create_cell(int indx, XColor color)
     sprintf(labl,"%d", indx+NUM_STD_COLS);
     colorMemory[indx] = XtVaCreateManagedWidget("colorMemory",
 	labelWidgetClass, userBox,
-	XtNlabel, labl, 
+	XtNlabel, labl,
 	XtNforeground, x_bg_color.pixel,
-	XtNbackground, (all_colors_available? 
+	XtNbackground, (all_colors_available?
 		user_colors[indx].pixel: x_fg_color.pixel),
 	XtNwidth, USR_COL_W, XtNheight, USR_COL_H,
 	XtNborder, (colors_used[indx]? x_color(GREEN):x_color(BLACK)),
@@ -1315,7 +1315,7 @@ void create_cell(int indx, XColor color)
 }
 
 /*
-   allocate n colormap entries.  If not enough cells are available, switch 
+   allocate n colormap entries.  If not enough cells are available, switch
    to a private colormap.  If we are already using a private colormap return
    False.  The pixel numbers allocated are returned in the Pixel array pixels[]
    The new colormap (if used) is set into the main (tool) window and the color
@@ -1448,14 +1448,14 @@ color_used(int color, F_compound *list)
 }
 
 /* come here when either the edit pen or edit fill button is pressed */
-static void 
+static void
 switch_edit(Widget w, XtPointer client_data, XtPointer call_data)
 {
 	edit_fill = (intptr_t) XawToggleGetCurrent(mixedEdit[0]) - 1;
 	/* sometimes XawToggleGetCurrent() returns 0 if the
 	   toggle hasn't been set manually */
- 	if (edit_fill == -1)
- 		edit_fill = 1;
+	if (edit_fill == -1)
+		edit_fill = 1;
 	/* only make triple value sensitive if a user color */
 	if (mixed_color_indx[edit_fill] >= NUM_STD_COLS) {
 	    XtSetSensitive(tripleValue[edit_fill], True);
@@ -1556,7 +1556,7 @@ set_std_color(int color)
 		  mixed_color[edit_fill].green = x_bg_color.green;
 		  mixed_color[edit_fill].blue = x_bg_color.blue;
 	    } else {
-		XParseColor(tool_d, tool_cm, 
+		XParseColor(tool_d, tool_cm,
 			colorNames[color+1].rgb, &mixed_color[edit_fill]);
 	    }
 	    /* now change the background of the widget */
@@ -1573,7 +1573,7 @@ set_std_color(int color)
 	rgb_values[edit_fill].g = mixed_color[edit_fill].green;
 	rgb_values[edit_fill].b = mixed_color[edit_fill].blue;
 	set_mixed_color(edit_fill);
-		
+
 	/* undraw any box around the current user-memory cell */
 	erase_boxed(current_memory);
 	/* update the mixedColor stuff and scrollbars */
@@ -1797,7 +1797,7 @@ update_triple(void)
 	char hexvalue[10];
 
 	(void) sprintf(hexvalue, "#%02x%02x%02x",
-			COLOR(edit_fill-2,red), 
+			COLOR(edit_fill-2,red),
 			COLOR(edit_fill-2,green),
 			COLOR(edit_fill-2,blue));
 	FirstArg(XtNstring, hexvalue);
@@ -1947,7 +1947,7 @@ Scrolled(Widget w, XtPointer closure, XtPointer call_data)
 	Thumbed(w, closure, (XtPointer)(&pass_value));
 }
 
-	
+
 
 static void
 Update_HSV(Widget w, XtPointer closure, XtPointer call_data)
@@ -2054,7 +2054,7 @@ void move_lock(void)
 void
 next_pencolor(ind_sw_info *sw)
 {
-    while ((++cur_pencolor < NUM_STD_COLS+num_usr_cols) && 
+    while ((++cur_pencolor < NUM_STD_COLS+num_usr_cols) &&
 	   (cur_pencolor >= NUM_STD_COLS && colorFree[cur_pencolor-NUM_STD_COLS]))
 		;
     if (cur_pencolor >= NUM_STD_COLS+num_usr_cols)
@@ -2126,7 +2126,7 @@ show_pencolor(void)
 void
 next_fillcolor(ind_sw_info *sw)
 {
-    while ((++cur_fillcolor < NUM_STD_COLS+num_usr_cols) && 
+    while ((++cur_fillcolor < NUM_STD_COLS+num_usr_cols) &&
 	   (cur_fillcolor >= NUM_STD_COLS && colorFree[cur_fillcolor-NUM_STD_COLS]))
 		;
     if (cur_fillcolor >= NUM_STD_COLS+num_usr_cols)
@@ -2202,17 +2202,17 @@ void set_cmap(Window window)
     XSetWindowColormap(tool_d, window, tool_cm);
 }
 
-/* 
+/*
  * color.c - color helper routines
- * 
+ *
  * Author:	Christopher A. Kent
- * 		Western Research Laboratory
- * 		Digital Equipment Corporation
+ *		Western Research Laboratory
+ *		Digital Equipment Corporation
  * Date:	Sun Dec 13 1987
  * Copyright (c) 1987 Christopher A. Kent
  */
 
-/* 
+/*
  * See David F. Rogers, "Procedural Elements for Computer Graphics",
  * McGraw-Hill, for the theory behind these routines.
  */
@@ -2224,16 +2224,16 @@ void set_cmap(Window window)
  *
  * Revision 1.2  90/06/30  14:32:48  rlh2
  * patchlevel 1
- * 
+ *
  * Revision 1.1  90/05/10  11:17:30  rlh2
  * Initial revision
- * 
+ *
  * Revision 1.2  88/06/30  09:58:36  mikey
  * Handles CMY also.
- * 
+ *
  * Revision 1.1  88/06/30  09:10:32  mikey
  * Initial revision
- * 
+ *
  */
 
 #define	MAX_INTENSITY	65535			    /* for X11 */
@@ -2253,7 +2253,7 @@ HSVToRGB(HSV hsv)
 	RGB	rgb;
 	float	p, q, t, f;
 	int	i;
-	
+
 	if (hsv.s == 0.0)
 		rgb = PctToRGB(hsv.v, hsv.v, hsv.v);
 	else {
@@ -2298,11 +2298,11 @@ RGBToHSV(RGB rgb)
 	float	rr, gg, bb;
 	float	min, max;
 	float	rc, gc, bc;
-	
+
 	rr = (float) rgb.r / (float) MAX_INTENSITY;
 	gg = (float) rgb.g / (float) MAX_INTENSITY;
 	bb = (float) rgb.b / (float) MAX_INTENSITY;
-	
+
 	max = max2(max2(rr, gg), bb);
 	min = min2(min2(rr, gg), bb);
 	hsv.v = max;
@@ -2338,14 +2338,14 @@ RGB
 PctToRGB(float rr, float gg, float bb)
 {
 	RGB	rgb;
-	
+
 	if (rr > 1.0)
 		rr = 1.0;
 	if (gg > 1.0)
 		gg = 1.0;
 	if (bb > 1.0)
 		bb = 1.0;
-	
+
 	rgb.r = (int)(0.5 + rr * MAX_INTENSITY);
 	rgb.g = (int)(0.5 + gg * MAX_INTENSITY);
 	rgb.b = (int)(0.5 + bb * MAX_INTENSITY);
@@ -2379,7 +2379,7 @@ PctToRGB(float rr, float gg, float bb)
 **     Lookup what window the event is over
 **     Query the pixel value
  */
-static void 
+static void
 DoGrabPixel(Widget w, Pixel *p, Colormap *cmap)
 {
     int x, y, nx, ny;
@@ -2424,7 +2424,7 @@ typedef struct {
     XtIntervalId id;
 } GrabInfo;
 
-static void 
+static void
 doGrab(Widget w, int width, int height, int *x, int *y)
 {
     XtAppContext app = XtWidgetToApplicationContext(w);
@@ -2484,7 +2484,7 @@ doGrab(Widget w, int width, int height, int *x, int *y)
  * If the child window has a colormap, return that; otherwise return
  * the default colormap for the display.
  */
-static void 
+static void
 xyToWindowCmap(Display *dpy, int x, int y, Window base, int *nx, int *ny, Window *window, Colormap *cmap)
 {
     Window twin;

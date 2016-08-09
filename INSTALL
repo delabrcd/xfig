@@ -20,8 +20,11 @@ Type ./configure --help for all options.
 
 On Mac Darwin, OS X 10.11.1 (El Capitan), using XQuartz and having installed
 jpeg, libpng and zlib via Macports, the following command worked:
-	./configure --with-appdefaultdir=/opt/X11/share/X11/app-default
+	./configure --with-appdefaultdir=/opt/X11/share/X11/app-defaults
 	make -j; make install-strip
+To install xfig under /usr/share on debian, try
+	./configure --prefix=/usr --with-appdefaultdir=/etc/X11/app-defaults
+	make -j; make install
 
 On old systems, it may be necessary to define ANCIENT from the make command,
 	./configure; make -DANCIENT; make install

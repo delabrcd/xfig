@@ -69,7 +69,7 @@ snap_rotate_vector(double * dx, double * dy, double x, double y, double theta)
 
 
 /* returns the perpendicular distance from a point to a line	*/
-/* defined by two points 					*/
+/* defined by two points					*/
 
 static double
 point_to_line(px, py, l1, l2)
@@ -304,11 +304,11 @@ check_alignment(double x,  double y,
 		double PX, double PY)
 {
   double theta, phi;
-  
+
   /* angle from found point to ref point	*/
   theta = atan2(PY - y, PX - x);
   if (0.0 > theta) theta += M_PI;
-  
+
   /* angle of normal at found point	*/
   phi = atan2(y * pow(a, 2.0), x * pow(b, 2.0));
   if (0.0 > phi) phi += M_PI;
@@ -363,15 +363,15 @@ snap_ellipse_normal_ellipse_handler(e, x, y, cur_point_x, cur_point_y)
   double iy[2];
   double dtheta[2];
   int sel_idx;
-  
+
   /* translate to ellipse origin */
   double PX = cur_point_x - (double)(e->center.x);
   double PY = cur_point_y - (double)(e->center.y);
   double X  = (double)(x - e->center.x);
   double Y  = (double)(y - e->center.y);
-  
+
   mind = HUGE_VAL;
-      
+
   /* rotate around ellipse angle so ellipse semi-axes are ortho to space */
   snap_rotate_vector (&PX, &PY, PX, PY, (double)(e->angle));
   snap_rotate_vector (&X,  &Y,  X,  Y,  (double)(e->angle));
@@ -385,7 +385,7 @@ snap_ellipse_normal_ellipse_handler(e, x, y, cur_point_x, cur_point_y)
 
   /* fixme -- do something about cases where a < b (swap the coords around?)*/
   tf = pow(a, 2.0) - pow(b, 2.0);
-  
+
   c[4] = pow(tf, 2.0);
   c[3] = -2.0 * pow(a, 2.0) * PX * tf;
   c[2] = pow(a, 2.0) * (((pow(a, 2.0) * pow(PX, 2.0)) +
@@ -407,17 +407,17 @@ snap_ellipse_normal_ellipse_handler(e, x, y, cur_point_x, cur_point_y)
     sel_idx = (dtheta[0] < dtheta[1]) ? 0 : 1;
 
     dist = hypot(iy[sel_idx] - Y, ix[sel_idx] - X);
-    
+
     if (dist < mind) {
       /* rotate back to space axes */
       snap_rotate_vector (&ix[sel_idx], &iy[sel_idx],
 			  ix[sel_idx],  iy[sel_idx],
 			  -((double)(e->angle)));
-    
+
       /* translate back to space axes */
       ix[sel_idx] += (double)(e->center.x);
       iy[sel_idx] += (double)(e->center.y);
-    
+
       snap_gx = (int)rint(ix[sel_idx]);
       snap_gy = (int)rint(iy[sel_idx]);
       snap_found = True;
@@ -426,7 +426,7 @@ snap_ellipse_normal_ellipse_handler(e, x, y, cur_point_x, cur_point_y)
     }
   }
 }
-      
+
 
 /*                                                                      */
 /*  locate the point on the given circle such that the segment drawn    */
@@ -451,9 +451,9 @@ circle_normal_handler(center_x, center_y, radius, x, y, cur_point_x, cur_point_y
   if ((center_y == (double)(cur_point_y)) &&
       (center_x == (double)(cur_point_x))) {
     /* check for cur_point at center.  if so, draw a radius near the */
-    /* event point 						   */
+    /* event point						   */
     a = atan2(center_y - (double)y, center_x - (double)x);
-  }	
+  }
   else {
     a = atan2(center_y - (double)(cur_point_y),
 	      center_x - (double)(cur_point_x));
@@ -580,11 +580,11 @@ snap_ellipse_tangent_ellipse_handler(e, x, y)
    * (Y - y) / (X - x) = -Bx / Ay						(Eq 1)
    *
    * [YA]y - Ay^2 = -[XB]x + Bx^2						(Eq 2, from Eq 1)
-   *	
+   *
    * (x^2 / [a^2]) + (y^2 / [b^2]) = 1						(Eq 3)
-   *	
+   *
    * (x^2 / A) + (y^2 / B) = 1
-   *	
+   *
    * B x^2 + A y^2 = [AB]							(Eq 4, from Eq 3)
    *
    * -------------------------------------------------------
@@ -601,19 +601,19 @@ snap_ellipse_tangent_ellipse_handler(e, x, y)
    *
    * [Ya]y - [a b^2] = -[Xb]sqrt(B - y^2)					(Eq 10, from Eq 9)
    *
-   * 	K = Ya
+   *	K = Ya
    *	L = a b^2
    *	M = Xb
    *
-   * Ky - L = -Msqrt(B - y^2)				
+   * Ky - L = -Msqrt(B - y^2)
    *
-   * (Ky - L)^2 = M^2 (B - y^2)	
+   * (Ky - L)^2 = M^2 (B - y^2)
    *
    * [K^2]y^2 - [2KL]y + [L^2] = [M^2 B] - [M^2] y^2
    *
    * [K^2 + M^2]y^2 - [2KL]y + [L^2 - M^2 B] = 0
    *
-   * 	P = K^2 + M^2
+   *	P = K^2 + M^2
    *	Q = -2KL
    *	R = L^2 - M^2 B
    *
@@ -624,7 +624,7 @@ snap_ellipse_tangent_ellipse_handler(e, x, y)
   double A, B;
   double K, L, M;
   double P, Q, R;
-  
+
   double a = (double)(e->radiuses.x);
   double b = (double)(e->radiuses.y);
 
@@ -634,7 +634,7 @@ snap_ellipse_tangent_ellipse_handler(e, x, y)
   double PY = (double)(cur_point->y - e->center.y);
   double X  = (double)(x - e->center.x);
   double Y  = (double)(y - e->center.y);
-    
+
   /* rotate around ellipse angle so ellipse semi-axes are ortho to space */
   snap_rotate_vector (&PX, &PY, PX, PY, (double)(e->angle));
   snap_rotate_vector (&X,  &Y,  X,  Y,  (double)(e->angle));
@@ -659,7 +659,7 @@ snap_ellipse_tangent_ellipse_handler(e, x, y)
       double dist;
       double mind = HUGE_VAL;
       int xi, yi, px, py;
-      
+
       ty[0] = ((-Q) + sqrt(rx))/(2.0 * P);
       ty[1] = ((-Q) - sqrt(rx))/(2.0 * P);
       tx[0] = (a/b) * sqrt(pow(b, 2.0) - pow(ty[0], 2.0));
@@ -712,12 +712,12 @@ snap_ellipse_endpoint_handler(e, x, y)
     double dist;
     double xx = (double)((i & 1) ? 0 : ((i & 2) ? e->radiuses.x : -(e->radiuses.x)));
     double xy = (double)((i & 1) ? ((i & 2) ? e->radiuses.y : -(e->radiuses.y)) : 0);
-    
+
     snap_rotate_vector(&rx, &ry, xx, xy, -((double)e->angle));
-    
+
     rx += (double)(e->center.x);
     ry += (double)(e->center.y);
-    
+
     dist = hypot(rx - (double)x, ry - (double)y);
     if (dist < mind) {
       mind = dist;
@@ -857,7 +857,7 @@ snap_text_handler(t, x, y)
      int x;
      int y;
 {
-  F_line * f_line_p = build_text_bounding_box(t); 
+  F_line * f_line_p = build_text_bounding_box(t);
   snap_polyline_handler(f_line_p, x, y);
   delete_text_bounding_box(f_line_p);
 }
@@ -880,17 +880,17 @@ is_point_on_arc(a, x, y)
    * skip normalisation for this test.
    *
    */
-  
+
   double d1, dt;
   double dx = (double)(a->point[2].x - a->point[0].x);
   double dy = (double)(a->point[2].y - a->point[0].y);
 
   d1 = (dx * (double)(a->point[0].y - a->point[1].y))
     -  (dy * (double)(a->point[0].x - a->point[1].x));
-  
+
   dt = (dx * (double)(a->point[0].y - y))
     -  (dy * (double)(a->point[0].x - x));
-  
+
   return (signbit_(d1) == signbit_(dt)) ? True : False;
 }
 
@@ -1209,14 +1209,14 @@ snap_endpoint(w, closure, call_data)
     XtPointer closure;
     XtPointer call_data;
 {
-  
+
   /* snap to:									*/
   /*		polyline (incl box and polygon) vertices		-- done	*/
   /*		ellipse (but not circle) semi-axis endpoints		-- done	*/
   /*		spline endpoints					-- todo	*/
   /*		text bounding box vertices (?)				-- done	*/
   /*		arc endpoints						-- done	*/
-  
+
   XtVaSetValues(snap_indicator_label, XtNlabel, "Endpoint" , NULL);
   snap_mode = SNAP_MODE_ENDPOINT;
 }
@@ -1227,14 +1227,14 @@ snap_midpoint(w, closure, call_data)
     XtPointer closure;
     XtPointer call_data;
 {
-  
+
   /* snap to:									*/
   /*		polyline (incl box and polygon) segment midpoints	-- done	*/
   /*		ellipse and circle centerpoints				-- done	*/
   /*		spline midpoints					-- todo	*/
   /*		text bounding box segment midpoints (?)			-- done	*/
   /*		arc midpoints						-- done	*/
-  
+
   XtVaSetValues(snap_indicator_label, XtNlabel, "Midpoint" , NULL);
   snap_mode = SNAP_MODE_MIDPOINT;
 }
@@ -1245,10 +1245,10 @@ snap_nearest(w, closure, call_data)
     XtPointer closure;
     XtPointer call_data;
 {
-  
+
   /* snap to:									*/
   /*		nearest object							*/
-  
+
   XtVaSetValues(snap_indicator_label, XtNlabel, "Nearest" , NULL);
   snap_mode = SNAP_MODE_NEAREST;
 }
@@ -1259,7 +1259,7 @@ snap_focus(w, closure, call_data)
     XtPointer closure;
     XtPointer call_data;
 {
-  
+
   /* snap to:									*/
   /*		closed polyline (box and polygon) centroids		-- done	*/
   /*		open polyline centroids (?)				-- done	*/
@@ -1268,7 +1268,7 @@ snap_focus(w, closure, call_data)
   /*		open spline centroids (?)				-- ????	*/
   /*		text bounding box centroids (?)				-- done	*/
   /*		arc centroids (or origin ?)				-- done	*/
-  
+
   XtVaSetValues(snap_indicator_label, XtNlabel, "Focus" , NULL);
   snap_mode = SNAP_MODE_FOCUS;
 }
@@ -1279,7 +1279,7 @@ snap_diameter(w, closure, call_data)
     XtPointer closure;
     XtPointer call_data;
 {
-  
+
   /* snap to:									*/
   /*		closed polyline (box and polygon) point opp centroids	-- done	*/
   /*		open polyline  (?)					-- done	*/
@@ -1306,7 +1306,7 @@ snap_intersect(w, closure, call_data)
     XtPointer closure;
     XtPointer call_data;
 {
-  
+
   /* snap to the intersection of the next two objects selected.			*/
 
   XtVaSetValues(snap_indicator_label, XtNlabel, "Intersect" , NULL);
@@ -1320,16 +1320,16 @@ snap_normal(w, closure, call_data)
     XtPointer closure;
     XtPointer call_data;
 {
-  
-  /* for current polyline, box, or polygon, snap to a point on the target 	*/
+
+  /* for current polyline, box, or polygon, snap to a point on the target	*/
   /* such that the segment defined by that point and the existing current	*/
   /* point is normal to:							*/
   /*		polyline (incl box and polygon) segments		-- done	*/
-  /*		ellipses and circles 					-- done	*/
+  /*		ellipses and circles					-- done	*/
   /*		spline (?)						-- ????	*/
   /*		text bounding box segments (?)				-- ????	*/
-  /*		arcs 							-- done	*/
-  
+  /*		arcs							-- done	*/
+
   if ((F_POLYLINE != cur_mode) &&
       (F_BOX      != cur_mode) &&
       (F_POLYGON  != cur_mode)) {
@@ -1354,16 +1354,16 @@ snap_tangent(w, closure, call_data)
     XtPointer closure;
     XtPointer call_data;
 {
-  
-  /* for current polyline, box, or polygon, snap to a point on the target 	*/
+
+  /* for current polyline, box, or polygon, snap to a point on the target	*/
   /* such that the segment defined by that point and the existing current	*/
   /* point is tangent to:							*/
   /*		polyline (?)						-- ????	*/
-  /*		ellipses and circles 					-- done	*/
+  /*		ellipses and circles					-- done	*/
   /*		spline (?)						-- ????	*/
   /*		text bounding box segments (?)				-- ????	*/
-  /*		arcs 							-- done	*/
-  
+  /*		arcs							-- done	*/
+
   if ((F_POLYLINE != cur_mode) &&
       (F_BOX      != cur_mode) &&
       (F_POLYGON  != cur_mode)) {
@@ -1391,7 +1391,7 @@ init_snap_panel(parent)
 {
   Widget dlabel;
   DeclareArgs(10);
-  
+
 
   /* MOUSEFUN_HT and ind_panel height aren't known yet */
   LAYER_HT = TOPRULER_HT + CANVAS_HT;
@@ -1414,7 +1414,7 @@ init_snap_panel(parent)
   NextArg(XtNbottom, XtChainTop);
   NextArg(XtNleft, XtChainLeft);
   NextArg(XtNright, XtChainRight);
-  dlabel = XtCreateManagedWidget("snap_dlabel", labelWidgetClass, snap_indicator_panel, 
+  dlabel = XtCreateManagedWidget("snap_dlabel", labelWidgetClass, snap_indicator_panel,
 				 Args, ArgCount);
 
   /* snap mode indicator */

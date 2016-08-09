@@ -120,7 +120,7 @@ init_depth_panel(Widget parent)
     Widget	 layer_viewform;
 
     /* MOUSEFUN_HT and ind_panel height aren't known yet */
-    LAYER_HT = TOPRULER_HT + CANVAS_HT;	
+    LAYER_HT = TOPRULER_HT + CANVAS_HT;
 
     /* main form to hold all the layer stuff */
 
@@ -131,7 +131,7 @@ init_depth_panel(Widget parent)
     NextArg(XtNleft, XtChainRight);
     NextArg(XtNright, XtChainRight);
     NextArg(XtNfromVert, snap_indicator_panel);
-    layer_form = XtCreateWidget("layer_form",formWidgetClass, parent, Args, ArgCount);     
+    layer_form = XtCreateWidget("layer_form",formWidgetClass, parent, Args, ArgCount);
     if (appres.showdepthmanager)
 	XtManageChild(layer_form);
 
@@ -141,7 +141,7 @@ init_depth_panel(Widget parent)
     NextArg(XtNbottom, XtChainTop);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainRight);
-    label = XtCreateManagedWidget("layer_label", labelWidgetClass, layer_form, 
+    label = XtCreateManagedWidget("layer_label", labelWidgetClass, layer_form,
 				Args, ArgCount);
 
     /* buttons to make all active, all inactive or toggle all */
@@ -213,7 +213,7 @@ init_depth_panel(Widget parent)
     NextArg(XtNfont, bold_font);
     NextArg(XtNlabel, "  ");
     NextArg(XtNsensitive, (gray_layers? False : True));	/* make opposite button sens */
-    NextArg(XtNstate, gray_layers); 	/* initial state */
+    NextArg(XtNstate, gray_layers);	/* initial state */
     NextArg(XtNradioData, 1);		/* when this is pressed the value is 1 */
     graytoggle = XtCreateManagedWidget("graytoggle", toggleWidgetClass,
 				layer_form, Args, ArgCount);
@@ -291,7 +291,7 @@ init_depth_panel(Widget parent)
     NextArg(XtNleft, XtChainRight);
     NextArg(XtNright, XtChainRight);
     layer_viewform = XtCreateManagedWidget("layer_viewform",formWidgetClass,
-			layer_form, Args, ArgCount);     
+			layer_form, Args, ArgCount);
 
     /* label - "Front" */
 
@@ -314,7 +314,7 @@ init_depth_panel(Widget parent)
     NextArg(XtNbottom, XtChainBottom);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainRight);
-    layer_viewp = XtCreateManagedWidget("layer_viewp", viewportWidgetClass, 
+    layer_viewp = XtCreateManagedWidget("layer_viewp", viewportWidgetClass,
 			layer_viewform, Args, ArgCount);
     /* popup when mouse passes over button */
 
@@ -348,7 +348,7 @@ init_depth_panel(Widget parent)
     below = XtCreateManagedWidget("backlabel", labelWidgetClass,
 				layer_viewform, Args, ArgCount);
 
-    /* make actions/translations for user to click on a layer "button" and 
+    /* make actions/translations for user to click on a layer "button" and
        to redraw buttons on expose */
     XtAppAddActions(tool_app, layer_actions, XtNumber(layer_actions));
     XtOverrideTranslations(layer_canvas,
@@ -410,7 +410,7 @@ update_layers(void)
     for (i = min_depth; i <= max_depth; i++) {
       if (object_depths[i] > 0) height += TOT_B_HEIGHT;
     }
-    
+
     /* set height of canvas for all buttons */
     FirstArg(XtNheight, (Dimension)height);
     SetValues(layer_canvas);
@@ -470,10 +470,10 @@ draw_layer_button(Window win, int but)
 
     /* draw in the checkmark or a blank */
     if (active_layer(but))
-	XCopyArea(tool_d, sm_check_pm, win, button_gc, 0, 0, 
+	XCopyArea(tool_d, sm_check_pm, win, button_gc, 0, 0,
 		sm_check_width, sm_check_height, x+1, y+1);
     else
-	XCopyArea(tool_d, sm_null_check_pm, win, button_gc, 0, 0, 
+	XCopyArea(tool_d, sm_null_check_pm, win, button_gc, 0, 0,
 		sm_check_width, sm_check_height, x+1, y+1);
 
     /* now draw in the layer number for the button */
@@ -604,7 +604,7 @@ sweep_layer(Widget w, XButtonEvent *event, String *params, Cardinal *nparams)
       }
     }
 
-    if (changed) 
+    if (changed)
 	redisplay_canvas();
 }
 
@@ -681,7 +681,7 @@ switch_layer_mode(Widget w, XtPointer closure, XtPointer call_data)
     /* check state of the toggle and set/remove checkmark */
     FirstArg(XtNstate, &state);
     GetValues(w);
-    
+
     if (state ) {
 	FirstArg(XtNbitmap, sm_check_pm);
     } else {
@@ -830,9 +830,9 @@ layer_balloon(Widget w, XtPointer closure, XtPointer call_data)
 	NextArg(XtNhSpace, 0);
 	NextArg(XtNvSpace, 0);
 	NextArg(XtNorientation, XtorientVertical);
-	box = XtCreateManagedWidget("box", boxWidgetClass, 
+	box = XtCreateManagedWidget("box", boxWidgetClass,
 				layer_balloon_popup, Args, ArgCount);
-	
+
 	/* make label for mouse message */
 	/* if the message was passed via the callback */
 	if (popmsg) {

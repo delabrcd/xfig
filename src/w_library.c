@@ -141,8 +141,8 @@ struct lib_rec {
 };
 
 static struct lib_rec	*cur_library=NULL;
-static char	 	*cur_library_name=NULL;
-static char	 	*cur_library_path=NULL, **cur_objects_names;
+static char		*cur_library_name=NULL;
+static char		*cur_library_path=NULL, **cur_objects_names;
 
 /* types for view menu */
 static char	 *viewtypes[] = {"List View", "Icon View"};
@@ -364,7 +364,7 @@ load_library(Widget w, XtPointer new_library, XtPointer garbage)
 
 static void
 put_object_sel(Widget w, XButtonEvent *ev)
-{ 	
+{
     int	    obj;
 
     /* if there is no library loaded, ignore select */
@@ -417,7 +417,7 @@ load_lib_obj(int obj)
 	if (read_figc(fname, c, MERGE, REMAP_IMAGES, 0, 0, &settings)==0) {
 	    /* if there are no other objects than one compound, don't encapsulate
 		it in another compound */
-	    if (c->arcs == 0 && c->ellipses == 0 && c->lines == 0 && 
+	    if (c->arcs == 0 && c->ellipses == 0 && c->lines == 0 &&
 		c->splines == 0 && c->texts == 0) {
 		/* but first check that there is a compound */
 		if (c->compounds == 0) {
@@ -601,7 +601,7 @@ create_library_panel(void)
 					library_popup, NULL, ZERO);
     XtAugmentTranslations(library_popup,
 			 XtParseTranslationTable(library_translations));
-	
+
     FirstArg(XtNlabel, "Load a Library");
     NextArg(XtNwidth, MAIN_WIDTH-4);
     NextArg(XtNborderWidth, 0);
@@ -645,12 +645,12 @@ create_library_panel(void)
 					    library_form, Args, ArgCount);
     /* make the menu and attach it to the button */
     (void) make_library_menu(library_menu_button, "menu",
-    					library_rec, num_library_names);
+				library_rec, num_library_names);
 
     if (!actions_added) {
 	XtAppAddActions(tool_app, library_actions, XtNumber(library_actions));
 	actions_added = True;
-    }		
+    }
 
     /* Status indicator label */
     FirstArg(XtNlabel, " Status:");
@@ -834,7 +834,7 @@ create_library_panel(void)
     NextArg(XtNallowVert, True);
     icon_viewport = XtCreateManagedWidget("icon_vport", viewportWidgetClass,
 					  icon_form, Args, ArgCount);
-					
+
     /* make a box widget to hold the object icons */
 
     FirstArg(XtNorientation, XtorientVertical);
@@ -1027,7 +1027,7 @@ make_library_menu(Widget parent, char *name, struct lib_rec **librec, int num)
     char	     menu_name[200];
     int		     i;
 
-    menu = XtCreatePopupShell(name, simpleMenuWidgetClass, 
+    menu = XtCreatePopupShell(name, simpleMenuWidgetClass,
 				parent, NULL, ZERO);
 #ifndef XAW3D1_5E
     /* if this is the toplevel menu, add a callback to popdown any submenus if
@@ -1038,7 +1038,7 @@ make_library_menu(Widget parent, char *name, struct lib_rec **librec, int num)
 	XtAddCallback(menu, XtNpopdownCallback, (XtCallbackProc) popdown_subs, (XtPointer) NULL);
     }
 #endif /* XAW3D1_5E */
-    
+
     for (i = 0; i < num; i++) {
 #ifndef XAW3D1_5E
 	if (librec[i]->figs_at_top && librec[i]->nsubs) {
@@ -1054,9 +1054,9 @@ make_library_menu(Widget parent, char *name, struct lib_rec **librec, int num)
 #ifndef XAW3D1_5E
 	    /* Make the submenu */
 	    submenu = make_library_menu(menu, menu_name, librec[i]->subdirs,
-  					librec[i]->nsubs);
+					librec[i]->nsubs);
 	    /* and inform Xaw about it */
-  	    FirstArg(XtNsubMenu, submenu);
+	    FirstArg(XtNsubMenu, submenu);
 	    NextArg(XtNrightMargin, 9);
 #else
 	    FirstArg(XtNmenuName, XtNewString(submenu_name));
@@ -1329,7 +1329,7 @@ ScanLibraryDirectory(Boolean at_top, struct lib_rec **librec, char *path, char *
 			free(librec[recnum]);
 		    }
 		}
-	    } 
+	    }
 	}
     }
     closedir(dirp);
@@ -1476,7 +1476,7 @@ MakeObjectLibrary(char *library_dir, char **objects_names, F_libobject **libobje
 	    /* make a new pixmap if one doesn't exist */
 	    if (!lib_icons[itm])
 		lib_icons[itm] = XCreatePixmap(tool_d, canvas_win,
-					appres.library_icon_size, appres.library_icon_size, 
+					appres.library_icon_size, appres.library_icon_size,
 					tool_dpth);
 	    /* preview the object into this pixmap */
 	    status = preview_libobj(itm, lib_icons[itm], appres.library_icon_size, 4);
@@ -1558,7 +1558,7 @@ MakeLibraryFileList(char *dir_name, char **obj_list)
   dirp = opendir(dir_name);
   if (dirp == NULL) {
     libraryStatus("Can't open %s",dir_name);
-    return False;	
+    return False;
   }
 
   for (i=0;i<N_LIB_OBJECT_MAX;i++)
@@ -1750,7 +1750,7 @@ static	int	    old_item = -1;
 
 static void
 sel_item_icon(Widget w, XButtonEvent *ev)
-{ 	
+{
     int		    i;
     F_compound	   *compound;
 

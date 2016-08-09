@@ -80,7 +80,7 @@ popup_digitize_panel(Widget w)
 	FirstArg(XtNlabel, &tmpstr);
 	GetValues(example_filename);
 	example_save = strdup(tmpstr);
-	
+
 	XtPopup(digitize_popup, XtGrabNonexclusive);
 }
 
@@ -88,8 +88,8 @@ static void
 create_digitize_panel(void)
 {
 	DeclareArgs(20);
-	Widget	    	beside, below, done_but;
-	Widget		file_prefix_seq; 
+	Widget		beside, below, done_but;
+	Widget		file_prefix_seq;
 	Position	xposn, yposn;
 
 	XtTranslateCoords(tool, (Position) 0, (Position) 0, &xposn, &yposn);
@@ -162,7 +162,7 @@ create_digitize_panel(void)
 	NextArg(XtNright, XtChainLeft);
 	beside = XtCreateManagedWidget("starting_num_label", labelWidgetClass,
 					digitize_panel, Args, ArgCount);
-	
+
 	/* spinner for starting sequence number */
 
 	below = file_prefix_seq = MakeIntSpinnerEntry(digitize_panel, &digitize_file_seq,
@@ -186,7 +186,7 @@ create_digitize_panel(void)
 	NextArg(XtNright, XtChainLeft);
 	beside = XtCreateManagedWidget("file_suffix_label", labelWidgetClass,
 					digitize_panel, Args, ArgCount);
-	
+
 	/* entry for file suffix */
 
 	FirstArg(XtNstring, "xy");
@@ -393,7 +393,7 @@ update_example(Widget w, XtPointer info, XtPointer dum)
     prefix = panel_get_value(digitize_file_prefix);
     seq    = atoi(panel_get_value(digitize_file_seq));
     suffix = panel_get_value(digitize_file_suffix);
-	
+
     /* make the sequence have 4 digits */
     sprintf(example,"%s_%04d.%s", prefix, seq, suffix);
     FirstArg(XtNlabel, example);
@@ -412,7 +412,7 @@ switch_file_mode(Widget w, XtPointer closure, XtPointer call_data)
     /* check state of the toggle and set/remove checkmark */
     FirstArg(XtNstate, &state);
     GetValues(w);
-    
+
     if (state ) {
 	FirstArg(XtNbitmap, sm_check_pm);
     } else {

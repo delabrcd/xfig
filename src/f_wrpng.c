@@ -28,7 +28,7 @@
  * Call with:
  *
  * file - handle opened for writing
- * data - pointer to data (index values for IMAGE_PALETTE, 
+ * data - pointer to data (index values for IMAGE_PALETTE,
  *			   rgb triples for IMAGE_RGB)
  * type - IMAGE_PALETTE, IMAGE_RGB
  * Red, Green, Blue - colormap values for IMAGE_PALETTE type
@@ -52,7 +52,7 @@ write_png(FILE *file, unsigned char *data, int type, unsigned char *Red, unsigne
 		(png_voidp) NULL, NULL, NULL);
     if (!png_ptr)
 	return False;
-		
+
     info_ptr = png_create_info_struct(png_ptr);
     if (!info_ptr) {
 	png_destroy_write_struct(&png_ptr, (png_infopp) NULL);
@@ -65,7 +65,7 @@ write_png(FILE *file, unsigned char *data, int type, unsigned char *Red, unsigne
 	png_destroy_write_struct(&png_ptr, &info_ptr);
 	return False;
     }
-	
+
     /* set up the output code */
     png_init_io(png_ptr, file);
 
@@ -84,7 +84,7 @@ write_png(FILE *file, unsigned char *data, int type, unsigned char *Red, unsigne
     png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
 
     /* write the header info */
-    png_set_IHDR(png_ptr, info_ptr, width, height, bit_depth, color_type, 
+    png_set_IHDR(png_ptr, info_ptr, width, height, bit_depth, color_type,
 		 interlace_type, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
     if (type == IMAGE_PALETTE) {

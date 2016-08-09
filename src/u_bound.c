@@ -37,7 +37,7 @@
 #define		half(z1 ,z2)		((z1+z2)/2.0)
 #define         MIN_MAX(X1, X2, Y1, Y2)  \
                 *xmax = max2(*xmax, X1); \
-         	*xmin = min2(*xmin, X2); \
+		*xmin = min2(*xmin, X2); \
 	        *ymax = max2(*ymax, Y1); \
 	        *ymin = min2(*ymin, Y2)
 
@@ -125,16 +125,16 @@ void arc_bound(F_arc *arc, int *xmin, int *ymin, int *xmax, int *ymax)
 		by = (int) (arc->center.y + radius + 1.0);
 	}
     }
-    
-    /* If we have a pie wedge then the center must be considered 
+
+    /* If we have a pie wedge then the center must be considered
      * when calc. the bounding box.
      */
 
     if(arc->type == T_PIE_WEDGE_ARC) {
-    	bx = max2(bx,arc->center.x);
-    	by = max2(by,arc->center.y);
-    	sx = min2(sx,arc->center.x);
-    	sy = min2(sy,arc->center.y);
+	bx = max2(bx,arc->center.x);
+	by = max2(by,arc->center.y);
+	sx = min2(sx,arc->center.x);
+	sy = min2(sy,arc->center.y);
     }
 
     /* don't adjust by line thickness if = 1 */
@@ -183,7 +183,7 @@ void active_compound_bound(F_compound *compound, int *xmin, int *ymin, int *xmax
     llx = lly = urx = ury = 0;
 
     for (a = compound->arcs; a != NULL; a = a->next) {
-    	if (active_only && !active_layer(a->depth))
+	if (active_only && !active_layer(a->depth))
 	    continue;
 	arc_bound(a, &sx, &sy, &bx, &by);
 	if (first) {
@@ -201,7 +201,7 @@ void active_compound_bound(F_compound *compound, int *xmin, int *ymin, int *xmax
     }
 
     for (c = compound->compounds; c != NULL; c = c->next) {
-    	active_compound_bound(c, &sx, &sy, &bx, &by, active_only);
+	active_compound_bound(c, &sx, &sy, &bx, &by, active_only);
 	sx = c->nwcorner.x;
 	sy = c->nwcorner.y;
 	bx = c->secorner.x;
@@ -221,7 +221,7 @@ void active_compound_bound(F_compound *compound, int *xmin, int *ymin, int *xmax
     }
 
     for (e = compound->ellipses; e != NULL; e = e->next) {
-    	if (active_only && !active_layer(e->depth))
+	if (active_only && !active_layer(e->depth))
 	    continue;
 	ellipse_bound(e, &sx, &sy, &bx, &by);
 	if (first) {
@@ -239,7 +239,7 @@ void active_compound_bound(F_compound *compound, int *xmin, int *ymin, int *xmax
     }
 
     for (l = compound->lines; l != NULL; l = l->next) {
-    	if (active_only && !active_layer(l->depth))
+	if (active_only && !active_layer(l->depth))
 	    continue;
 	line_bound(l, &sx, &sy, &bx, &by);
 	if (first) {
@@ -257,7 +257,7 @@ void active_compound_bound(F_compound *compound, int *xmin, int *ymin, int *xmax
     }
 
     for (s = compound->splines; s != NULL; s = s->next) {
-    	if (active_only && !active_layer(s->depth))
+	if (active_only && !active_layer(s->depth))
 	    continue;
 	spline_bound(s, &sx, &sy, &bx, &by);
 	if (first) {
@@ -276,7 +276,7 @@ void active_compound_bound(F_compound *compound, int *xmin, int *ymin, int *xmax
 
     for (t = compound->texts; t != NULL; t = t->next) {
 	int    dum;
-    	if (active_only && !active_layer(t->depth))
+	if (active_only && !active_layer(t->depth))
 	    continue;
 	text_bound(t, &sx, &sy, &bx, &by,
 		  &dum,&dum,&dum,&dum,&dum,&dum,&dum,&dum);
@@ -367,7 +367,7 @@ void ellipse_bound(F_ellipse *e, int *xmin, int *ymin, int *xmax, int *ymax)
 	sphisqr = sphi*sphi;
 	asqr = a*a;
 	bsqr = b*b;
-	
+
 	c1 = (cphisqr/asqr)+(sphisqr/bsqr);
 	c2 = ((cphi*sphi/asqr)-(cphi*sphi/bsqr))/c1;
 	c3 = (bsqr*cphisqr) + (asqr*sphisqr);
@@ -455,9 +455,9 @@ static void
 general_spline_bound(F_spline *s, int *xmin, int *ymin, int *xmax, int *ymax)
 {
   F_point   *cur_point, *next_point;
-  F_sfactor *cur_sfactor;     
+  F_sfactor *cur_sfactor;
   int       x0, y0, x1, y1, x2, y2 ,x ,y;
-  
+
   cur_point = s->points;
   cur_sfactor = s->sfactors;
   *xmin = *xmax = x0 = x1 = cur_point->x;
@@ -465,9 +465,9 @@ general_spline_bound(F_spline *s, int *xmin, int *ymin, int *xmax, int *ymax)
   next_point = cur_point->next;
   x2 = next_point->x;
   y2 = next_point->y;
-  
+
   while (1)
-    {   
+    {
       cur_point = next_point;
       next_point = next_point->next;
 
@@ -482,7 +482,7 @@ general_spline_bound(F_spline *s, int *xmin, int *ymin, int *xmax, int *ymax)
       y1 = y2;
       x2 = next_point->x;
       y2 = next_point->y;
-      
+
       if (cur_sfactor->s < 0)
 	{
 	  x = abs(x2 - x0)>>2;
@@ -492,7 +492,7 @@ general_spline_bound(F_spline *s, int *xmin, int *ymin, int *xmax, int *ymax)
 	{
 	  x = y = 0;
 	}
-      
+
       MIN_MAX((x1+x), (x1-x), (y1+y), (y1-y));
       if (cur_point->next==NULL)
 	break;
@@ -628,7 +628,7 @@ void arrow_bound(int objtype, F_line *obj, int *xmin, int *ymin, int *xmax, int 
 	    p2x = a->point[2].x;	/* forward tip */
 	    p2y = a->point[2].y;
 	} else {
-	    /* this doesn't work very well for a spline with few points 
+	    /* this doesn't work very well for a spline with few points
 		and lots of curvature */
 	    /* locate last point (forward tip) and next-to-last point */
 	    for (p = obj->points; p->next; p = p->next)
@@ -703,7 +703,7 @@ int x, y;
 {
     int x_old = x, y_old = y;
     int i = 0;
-    
+
     /* no grid */
     if( cur_pointposn == P_ANY ) return x;
 
@@ -716,7 +716,7 @@ int x, y;
 		y = y_old;
 		round_coords( &x, &y );
 	} while( x > x_old );
-        
+
     /* assign result */
     return x;
 }
@@ -727,7 +727,7 @@ int x, y;
 {
     int x_old = x, y_old = y;
     int i = 0;
-    
+
     /* no grid */
     if( cur_pointposn == P_ANY ) return y;
 
@@ -740,7 +740,7 @@ int x, y;
 		y = y_old - i++;
 		round_coords( &x, &y );
 	} while( y > y_old );
-        
+
     /* assign result */
     return y;
 }
@@ -754,7 +754,7 @@ int x, y;
 {
     int x_old = x, y_old = y;
     int i = 0;
-    
+
     /* no grid */
     if( cur_pointposn == P_ANY ) return x;
 
@@ -767,7 +767,7 @@ int x, y;
 		y = y_old;
 		round_coords( &x, &y );
 	} while( x < x_old );
-        
+
     /* assign result */
     return x;
 }
@@ -778,7 +778,7 @@ int x, y;
 {
     int x_old = x, y_old = y;
     int i = 0;
-    
+
     /* no grid */
     if( cur_pointposn == P_ANY ) return y;
 
@@ -791,7 +791,7 @@ int x, y;
 		y = y_old + i++;
 		round_coords( &x, &y );
 	} while( y < y_old );
-        
+
     /* assign result */
     return y;
 }

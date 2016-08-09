@@ -106,7 +106,7 @@ get_arrow_mode(F_line *object)
     else
 	return L_FBARROWS;
 }
-    
+
 static int
 get_arrow_type(F_line *object)
 {
@@ -123,7 +123,7 @@ get_arrow_type(F_line *object)
 	type = 0;
     return type;
 }
-    
+
 /* update the indicator buttons FROM the selected object */
 
 static void
@@ -174,7 +174,7 @@ init_update_settings(F_line *p, int type, int x, int y, int px, int py)
 		cur_dimline_font = dtext->font;
 		cur_dimline_fontsize = dtext->size;
 		cur_dimline_psflag = (dtext->flags & PSFONT_TEXT)? 1:0;
-		cur_dimline_fixed = (dtext->comments && 
+		cur_dimline_fixed = (dtext->comments &&
 				     (strncasecmp(dtext->comments,"fixed text", 10)==0));
 	    }
 	}
@@ -423,7 +423,7 @@ void update_ellipse(F_ellipse *ellipse)
     up_part(ellipse->thickness, cur_linewidth, I_LINEWIDTH);
     up_part(ellipse->angle, cur_elltextangle*M_PI/180.0, I_ELLTEXTANGLE);
     up_part(ellipse->style, cur_linestyle, I_LINESTYLE);
-    up_part(ellipse->style_val, cur_styleval * (cur_linewidth + 1) / 2, 
+    up_part(ellipse->style_val, cur_styleval * (cur_linewidth + 1) / 2,
 	    I_LINESTYLE);
     up_part(ellipse->fill_style, cur_fillstyle, I_FILLSTYLE);
     up_part(ellipse->pen_color, cur_pencolor, I_PEN_COLOR);
@@ -438,7 +438,7 @@ void update_arc(F_arc *arc)
     draw_arc(arc, ERASE);
     up_part(arc->thickness, cur_linewidth, I_LINEWIDTH);
     up_part(arc->style, cur_linestyle, I_LINESTYLE);
-    up_part(arc->style_val, cur_styleval * (cur_linewidth + 1) / 2, 
+    up_part(arc->style_val, cur_styleval * (cur_linewidth + 1) / 2,
 	    I_LINESTYLE);
     up_part(arc->fill_style, cur_fillstyle, I_FILLSTYLE);
     up_part(arc->type, cur_arctype, I_ARCTYPE);
@@ -470,7 +470,7 @@ void update_line(F_line *line)
 	up_part(line->thickness, cur_linewidth, I_LINEWIDTH);
     if (line->type != T_PICTURE) {
 	up_part(line->style, cur_linestyle, I_LINESTYLE);
-	up_part(line->style_val, cur_styleval * (cur_linewidth + 1) / 2, 
+	up_part(line->style_val, cur_styleval * (cur_linewidth + 1) / 2,
 		I_LINESTYLE);
 	up_part(line->join_style, cur_joinstyle, I_JOINSTYLE);
 	up_part(line->cap_style, cur_capstyle, I_CAPSTYLE);
@@ -529,7 +529,7 @@ void update_spline(F_spline *spline)
     draw_spline(spline, ERASE);
     up_part(spline->thickness, cur_linewidth, I_LINEWIDTH);
     up_part(spline->style, cur_linestyle, I_LINESTYLE);
-    up_part(spline->style_val, cur_styleval * (cur_linewidth + 1) / 2, 
+    up_part(spline->style_val, cur_styleval * (cur_linewidth + 1) / 2,
 	    I_LINESTYLE);
     if (spline->type == T_OPEN_APPROX || spline->type == T_OPEN_INTERP)
 	up_part(spline->cap_style, cur_capstyle, I_CAPSTYLE);
@@ -552,7 +552,7 @@ void fix_fillstyle(void *obj)
     F_line *object = obj;
     if (object->fill_color == BLACK || object->fill_color == DEFAULT ||
 	object->fill_color == DEFAULT) {
-	    if (object->fill_style >= NUMSHADEPATS && 
+	    if (object->fill_style >= NUMSHADEPATS &&
 		object->fill_style < NUMSHADEPATS+NUMTINTPATS)
 			object->fill_style = UNFILLED;
     }
@@ -576,7 +576,7 @@ void up_arrow(F_line *object)
 	    up_part(object->for_arrow->thickness,
 				cur_arrow_multthick*object->thickness, I_ARROWSIZE);
 	    up_part(object->for_arrow->wd,
-	   			cur_arrow_multwidth*object->thickness, I_ARROWSIZE);
+				cur_arrow_multwidth*object->thickness, I_ARROWSIZE);
 	    up_part(object->for_arrow->ht,
 				cur_arrow_multheight*object->thickness, I_ARROWSIZE);
 	}
@@ -702,7 +702,7 @@ void update_compound(F_compound *compound)
 		dbox->next = (F_line *) NULL;
 	}
        /* now put the new line list into the compound */
-       if (dline) 
+       if (dline)
 	   compound->lines = dline;
        else
 	   compound->lines = dbox;
@@ -799,8 +799,8 @@ void update_texts(F_text *texts)
 void up_dashdot(float styleval, int style, unsigned int mask)
 {
 	if ((style == DASH_LINE) ||
-	    (style == DASH_DOT_LINE) || 
-	    (style == DASH_2_DOTS_LINE) || 
+	    (style == DASH_DOT_LINE) ||
+	    (style == DASH_2_DOTS_LINE) ||
 	    (style == DASH_3_DOTS_LINE)) {
 		cur_dashlength = styleval;
 	} else if (style == DOTTED_LINE) {

@@ -60,7 +60,7 @@ extern Boolean snap_msg_set;
 extern int snap_gx;
 extern int snap_gy;
 extern Boolean snap_found;
-extern Widget snap_indicator_panel;  
+extern Widget snap_indicator_panel;
 extern Widget snap_indicator_label;
 
 #  define signbit_(x) \
