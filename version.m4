@@ -1,9 +1,17 @@
-# Version information
+#
+# This file is part of FIG: Facility for Interactive Generation of figures
+#
+# version.m4: Version information
 # This file is included by configure.ac.
+# Author: Thomas Loimer <thomas.loimer@tuwien.ac.at>, 2017
 
-m4_define([XFIG_VERSION], [3.2.6])
+dnl The version information is kept separately from configure.ac.
+dnl Thus, configure.ac can remain unchanged between different versions.
+dnl The values in this file are set by update_version_m4 if
+dnl ./configure is called with --enable_versioning.
 
-dnl m4_define must be called before AC_INIT - but, I believe,
-dnl shell-variables can only be defined after a call to AC_INIT.
+m4_define([XFIG_VERSION], [3.2.6a])
+
+dnl AC_INIT does not have access to shell variables.
 dnl Therefore, define RELEASEDATE as a macro.
-m4_define([RELEASEDATE], [Aug 2016])
+m4_define([RELEASEDATE], [Jan 2017])

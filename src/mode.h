@@ -21,6 +21,9 @@
 #define MODE_H
 
 #include <limits.h>	/* PATH_MAX, below */
+#ifndef PATH_MAX
+#define PATH_MAX	1024
+#endif
 
 #define		F_NULL			0
 #define	    FIRST_DRAW_MODE	    F_CIRCLE_BY_RAD

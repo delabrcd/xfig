@@ -36,7 +36,7 @@
 #   # To have the standard autoconf macros, trivially AC_CHECK_HEADER
 #   # but, more importantly, AC_PATH_X, also profit from the extended
 #   # search path
-#   my_save_CPPFLAGS=$CPPFLAGs
+#   my_save_CPPFLAGS=$CPPFLAGS
 #   CPPFLAGS="CPPFLAGS $PATH_CPPFLAGS"
 #   AC_PATH_X
 #   CPPFLAGS=$my_save_CPPFLAGS

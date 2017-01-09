@@ -651,9 +651,6 @@ void main(int argc, char **argv)
     /* generate version string for various uses */
     sprintf(xfig_version, "Xfig %s", PACKAGE_VERSION);
 
-    /* ratio of Fig units to display resolution (80ppi) */
-    ZOOM_FACTOR = PIX_PER_INCH/DISPLAY_PIX_PER_INCH;
-
     /* make a copy of the version */
     (void) strcpy(tool_name, xfig_version);
     (void) sprintf(file_header, "#FIG %s", PROTOCOL_VERSION);
@@ -788,6 +785,9 @@ void main(int argc, char **argv)
     /* get width, height of screen */
     screen_wd = WidthOfScreen(XtScreen(tool));
     screen_ht = HeightOfScreen(XtScreen(tool));
+
+    /* ratio of Fig units to display resolution (80ppi) */
+    ZOOM_FACTOR = PIX_PER_INCH/DISPLAY_PIX_PER_INCH;
 
     /* get the FIG2DEV_DIR environment variable (if any is set) for the path
        to fig2dev, in case the user wants one not in the normal search path */
@@ -1832,7 +1832,7 @@ set_xpm_icon(void)
 {
     xpm_icon_status = -1;
 
-#ifdef USE_XPM_ICON
+#ifdef USE_XPM
     /********************************************/
     /* use the XPM color icon for color display */
     /********************************************/
@@ -1867,12 +1867,12 @@ set_xpm_icon(void)
 				figure_ic.width, figure_ic.height);
 	}
     } else {
-#endif /* USE_XPM_ICON */
+#endif /* USE_XPM */
 	fig_icon = XCreateBitmapFromData(tool_d, tool_w, (char *) figure_ic.bits,
 				figure_ic.width, figure_ic.height);
-#ifdef USE_XPM_ICON
+#ifdef USE_XPM
     }
-#endif /* USE_XPM_ICON */
+#endif /* USE_XPM */
 
     FirstArg(XtNtitle, tool_name);
     NextArg(XtNiconPixmap, fig_icon);

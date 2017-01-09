@@ -20,6 +20,9 @@
 
 #include "paintop.h"
 #include <limits.h>		/* PATH_MAX, below */
+#ifndef PATH_MAX
+#define PATH_MAX	1024
+#endif
 
 #define NUMSHADEPATS	21
 #define NUMTINTPATS	20

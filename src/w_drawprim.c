@@ -3,6 +3,7 @@
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
  * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2017 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -1345,7 +1346,7 @@ void set_line_stuff(int width, int style, float style_val, int join_style, int c
       case PANEL_LINE:
 	break;
       default:
-	width = round(display_zoomscale * width);
+	width = round(display_zoomscale * (width > 1 ? width - 1 : 0.5));
 	break;
     }
 

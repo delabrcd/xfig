@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.2 -->
-<!-- CreationDate: Tue Aug  9 12:16:26 2016 -->
+<!-- Creator     : groff version 1.22.3 -->
+<!-- CreationDate: Tue Jan 10 00:27:40 2017 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -192,7 +192,7 @@ everything in xfig (e.g. menus, etc.) use the general
 <p style="margin-left:22%;">Normally, <i>fig2dev</i> uses
 1/80 inch for font size increments (for historical reasons),
 instead of the more proper
-&rsquo;&rsquo;points&rsquo;&rsquo; (1/72 inch) that
+&lsquo;&lsquo;points&rsquo;&rsquo; (1/72 inch) that
 <i>xfig</i> uses. This option makes xfig call fig2dev with
 the <b>-F</b> option to make it use points (1/72 inch).</p>
 
@@ -723,7 +723,7 @@ attribute is used for figures that will be used with
 <i>LaTeX</i> and is applicable only to the display of the
 document in <i>xfig</i>. It means that the text itself is
 not shown onscreen, but only the string
-&rsquo;&rsquo;&lt;text&gt;&rsquo;&rsquo;. This is to keep
+&lsquo;&lsquo;&lt;text&gt;&rsquo;&rsquo;. This is to keep
 long sequences of <i>LaTeX</i> formatting commands from
 making the screen messy and hard to read. The default for
 the <i>Hidden</i> flag is <i>off</i>.</p>
@@ -753,7 +753,7 @@ icon.</p>
 <i>editor</i></p>
 
 <p style="margin-left:22%;">Specify bitmap editor to use
-when &rsquo;&rsquo;Edit Image&rsquo;&rsquo; button is
+when &lsquo;&lsquo;Edit Image&rsquo;&rsquo; button is
 pressed in Picture Object panel.</p>
 
 
@@ -799,14 +799,14 @@ exporting to the jpeg format. The default is 75.</p>
 
 <p style="margin-left:22%;">Use <i>compose-key-file</i>
 instead of <i>CompKeyDB</i> for compose (meta) key database.
-If there are no &rsquo;&rsquo;<b>/</b>&rsquo;&rsquo;s in the
+If there are no &lsquo;&lsquo;<b>/</b>&rsquo;&rsquo;s in the
 name, the file must reside in the <i>xfig</i> library
 directory, <i>$XFIGLIBDIR</i>, usually
 <b>/usr/local/lib/X11/xfig</b>. If there are any
-&rsquo;&rsquo;<b>/</b>&rsquo;&rsquo;s in the name it is
+&lsquo;&lsquo;<b>/</b>&rsquo;&rsquo;s in the name it is
 taken as is (not relative to <i>$XFIGLIBDIR</i>). If there
-is a leading &rsquo;&rsquo;<b>~/</b>&rsquo;&rsquo; in the
-string then the &rsquo;&rsquo;<b>~</b>&rsquo;&rsquo; is
+is a leading &lsquo;&lsquo;<b>~/</b>&rsquo;&rsquo; in the
+string then the &lsquo;&lsquo;<b>~</b>&rsquo;&rsquo; is
 expanded to the user&rsquo;s home directory.</p>
 
 
@@ -1692,9 +1692,9 @@ etc.</p>
 <p style="margin-left:22%;">Use <i>command</i> for the
 external spell checking program when using the spell
 check/search/replace popup. The string <i>command</i> should
-include the string &rsquo;&rsquo;%s&rsquo;&rsquo; which is
+include the string &lsquo;&lsquo;%s&rsquo;&rsquo; which is
 replaced by a temporary filename. Default is
-&rsquo;&rsquo;spell %s&rsquo;&rsquo;.</p>
+&lsquo;&lsquo;spell %s&rsquo;&rsquo;.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>&minus;spinner_d</b>[<b>elay</b>]
@@ -1759,10 +1759,10 @@ width.</p>
 
 <p style="margin-left:22%;">Set the starting point
 positioning mode (0 to 4) In imperial (inches) mode,
-positioning mode 0 is &rsquo;&rsquo;any&rsquo;&rsquo;, mode
+positioning mode 0 is &lsquo;&lsquo;any&rsquo;&rsquo;, mode
 1 is 1/16 inch, mode 2 is 1/4 inch, mode 3 is 1/2 inch and
 mode 4 is 1 inch. In metric mode, mode 0 is
-&rsquo;&rsquo;any&rsquo;&rsquo;, mode 1 is 1mm, mode 2 is
+&lsquo;&lsquo;any&rsquo;&rsquo;, mode 1 is 1mm, mode 2 is
 5mm, mode 3 is 10mm and mode 4 is 20mm.</p>
 
 
@@ -1837,7 +1837,7 @@ printed with the length information when drawing objects.
 For example if the <i>userscale</i> = 1.0 and the
 <i>userunit</i> = <i>ft</i> then a line which is 3 inches
 long on the canvas would be displayed as
-&rsquo;&rsquo;length = 3 ft&rsquo;&rsquo; when it is being
+&lsquo;&lsquo;length = 3 ft&rsquo;&rsquo; when it is being
 drawn.</p>
 
 <p style="margin-left:22%; margin-top: 1em">After
@@ -3803,7 +3803,7 @@ fee is hereby granted, provided that the above copyright
 notice appear in all copies and that both that copyright
 <br>
 notice and this permission notice appear in supporting <br>
-documentation. This software is provided &rsquo;&rsquo;as
+documentation. This software is provided &lsquo;&lsquo;as
 is&rsquo;&rsquo; without <br>
 express or implied warranty.</p>
 
@@ -4002,9 +4002,9 @@ Ross Martin (martin@trcsun3.eas.asu.edu)</p>
 quantization using neural network by: <br>
 Anthony Dekker (dekker@ACM.org) <br>
 [NEUQUANT Neural-Net quantization algorithm by Anthony
-Dekker, 1994. See &rsquo;&rsquo;Kohonen neural networks for
+Dekker, 1994. See &lsquo;&lsquo;Kohonen neural networks for
 optimal colour quantization&rsquo;&rsquo; in
-&rsquo;&rsquo;Network: Computation in Neural
+&lsquo;&lsquo;Network: Computation in Neural
 Systems&rsquo;&rsquo; Vol. 5 (1994) pp 351-367. for a
 discussion of the algorithm.]</p>
 
@@ -4027,7 +4027,7 @@ Greg LaCoste (greg@seismo.do.usbr.gov)</p>
 
 <p style="margin-left:17%; margin-top: 1em">The only
 difference between protocol version 3.0 and version 3.1 is
-that the position of the &rsquo;&rsquo;magnet&rsquo;&rsquo;
+that the position of the &lsquo;&lsquo;magnet&rsquo;&rsquo;
 has been shifted by 14 fig units. In the 2.1 and older
 versions of xfig the grid was in multiples of 5 fig units,
 but they were on intervals 4, 9, 14, 19, etc. When version
@@ -4058,7 +4058,7 @@ approximation points in a same curve. More precisely, it
 means that an X-spline curve is neither an interpolated
 spline nor an approximated one, it is BOTH (the behaviour of
 each point is controlled by one single parameter called
-&rsquo;&rsquo;shape factor&rsquo;&rsquo;). For additional
+&lsquo;&lsquo;shape factor&rsquo;&rsquo;). For additional
 information about X-splines, see:</p>
 
 

@@ -21,6 +21,9 @@
 /* Define to 1 if using `alloca.c'. */
 #undef C_ALLOCA
 
+/* Define to use ghostscript for rendering of embedded eps or pdf-images. */
+#undef GSBIT
+
 /* Define to 1 if you have `alloca', as a function or macro. */
 #undef HAVE_ALLOCA
 
@@ -140,9 +143,6 @@
 /* Define to 1 if `vfork' works. */
 #undef HAVE_WORKING_VFORK
 
-/* Define to 1 if the system has the type `_Bool'. */
-#undef HAVE__BOOL
-
 /* Define to enable internationalization features. */
 #undef I18N
 
@@ -197,14 +197,14 @@
 /* Define to enable support for importing jpeg files. */
 #undef USE_JPEG
 
+/* Define to show a splash screen. */
+#undef USE_SPLASH
+
+/* Define for using an input tablet. */
+#undef USE_TAB
+
 /* Define to use xpm color-bitmaps and enable import/export to xpm files. */
 #undef USE_XPM
-
-/* Define to use xpm color icon for xfig itself. */
-#undef USE_XPM_ICON
-
-/* Define to use xpm splash screen. */
-#undef USE_XPM_SPLASH
 
 /* Version number of package */
 #undef VERSION

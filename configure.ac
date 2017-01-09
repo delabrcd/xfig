@@ -58,7 +58,7 @@ AC_SUBST(PATH_LDFLAGS)
 dnl The options are written to AUTOMAKE_OPTIONS. A minimum version
 dnl of automake, e.g., 1.6.1, can also be put into AM_INIT_AUTOMAKE.
 # AM_INIT_AUTOMAKE([-Wall foreign dist-xz no-dist-gzip subdir-objects])
-AM_INIT_AUTOMAKE([-Wall foreign dist-xz subdir-objects])
+AM_INIT_AUTOMAKE([-Wall foreign dist-xz no-dist-gzip subdir-objects])
 dnl  -Wall.....enable all (automake) warnings
 dnl  -Werror...and report them as error
 dnl  foreign...do no require the files ChangeLog COPYING AUTHORS NEWS
@@ -120,7 +120,6 @@ AS_IF([test "x$tl_cv_libs_path_pow" = xno \
 # CPPFLAGS="$CPPFLAGS $PATH_CPPFLAGS"
 
 # Checks for header files.
-AC_CHECK_HEADER_STDBOOL
 AC_HEADER_DIRENT
 AC_CHECK_HEADERS_ONCE([features.h sys/time.h])
 
@@ -213,6 +212,14 @@ AS_IF([test "x$enableval" = xyes],
 AM_CONDITIONAL([USE_JPEG], [test "x$enableval" = xyes && \
 	test "x$tl_cv_libs_path_jpeg_read_header" != xno])dnl
 
+AC_ARG_WITH(gs, [AS_HELP_STRING([--without-gs],
+	[do not use ghostscript to render embedded eps or pdf images)])],
+    [],[withval=yes])dnl
+AS_IF([test "x$withval" = xyes],
+    [AC_DEFINE([GSBIT], 1,
+	[Define to use ghostscript for rendering of embedded \
+		eps or pdf-images.])])dnl
+
 dnl With # as comment, configure fails on the lines below!
 dnl Currently only w_rottext.c includes CACHE_[XIMAGES|BITMAPS], logic there
 dnl sets CACHE_BITMAPS if CACHE_XIMAGES is not set.
@@ -231,39 +238,26 @@ AC_ARG_ENABLE(cache-size, [AS_HELP_STRING([--enable-cache-size=<kB>],
     [], [enableval=20000])dnl
 AS_IF([test "$enableval" -gt 0], [], [enableval=20000])dnl
 AC_DEFINE_UNQUOTED([CACHE_SIZE_LIMIT], [$enableval],
-   [Define to the maximum size of bitmaps (kB) cached in the X-server.])dnl
-
-AC_ARG_ENABLE(xpm-icon, [AS_HELP_STRING([--disable-xpm-icon],
-	[enable xpm color icon for xfig itself (default: enable)])],
-    [],[enable_xpm_icon=yes])dnl
-
-AC_ARG_ENABLE(xpm-splash, [AS_HELP_STRING([--enable-xpm-splash],
-	[enable xpm splash screen (default: disable)])],
-    [],[enable_xpm_splash=no])dnl
+    [Define to the maximum size of bitmaps (kB) cached in the X-server.])dnl
 
 AC_ARG_ENABLE(xpm, [AS_HELP_STRING([--disable-xpm],
 	[disable support for xpm color-bitmaps, internally \
 		 and for import/export (default: enable)])],
-    [], [enable_xpm=yes])dnl
-
-AS_IF([test "x$enable_xpm" = xyes],
+    [], [enableval=yes])dnl
+AS_IF([test "x$enableval" = xyes],
     [TL_SEARCH_LIBS_PATH([XpmFree], [Xpm], [X_LIBPATHS])
      AS_IF([test "x$tl_cv_libs_path_XpmFree" = xno],
-	[enable_xpm=no],
-	[AC_DEFINE([USE_XPM], 1,
-	    [Define to use xpm color-bitmaps and enable \
+	[enableval=no],
+	[AC_DEFINE([USE_XPM], 1, [Define to use xpm color-bitmaps and enable \
 		    import/export to xpm files.])])])
-AS_IF([test "x$enable_xpm" = xno],
-    [enable_xpm_icon=no; enable_xpm_splash=no])
+AM_CONDITIONAL([USE_XPM], [test "x$enableval" = xyes])dnl
 
-AM_CONDITIONAL([USE_XPM], [test "x$enable_xpm" = xyes])dnl
-
-AS_IF([test "x$enable_xpm_icon" = xyes],
-    [AC_DEFINE([USE_XPM_ICON], 1,
-	[Define to use xpm color icon for xfig itself.])])
-
-AS_IF([test "x$enable_xpm_splash" = xyes],
-    [AC_DEFINE([USE_XPM_SPLASH], 1, [Define to use xpm splash screen.])])
+AC_ARG_ENABLE(splash, [AS_HELP_STRING([--enable-splash],
+	[enable splash screen (default: disable)])],
+    [], [enableval=no])dnl
+AS_IF([test "x$enableval" = xyes],
+    [AC_DEFINE([USE_SPLASH], 1, [Define to show a splash screen.])])
+AM_CONDITIONAL([USE_SPLASH], [test "x$enableval" = xyes])dnl
 
 AC_ARG_WITH(xaw3d1_5e, [AS_HELP_STRING([--without-xaw3d1_5e],
 	[do not use version Xaw3d >= 1.5e (default: use)])],
@@ -297,6 +291,15 @@ AS_IF([test "x$withval" = xyes],
 	[X_LIBPATHS], [$X_LIBS])])
 AM_CONDITIONAL([XAW3D1_5E],
     [test "x$withval" = xyes && test "x$with_xaw3d1_5e" = xyes])dnl
+
+AC_ARG_ENABLE(tablet, [AS_HELP_STRING([--enable-tablet],
+	[enable support for tablet device (default: disable)])],
+    [], [enableval=no])dnl
+AS_IF([test "x$enableval" = xyes],
+    [TL_SEARCH_LIBS_PATH([XFreeDeviceList], [Xi], [X_LIBPATHS])
+     AS_IF([test "x$tl_cv_libs_path_XFreeDeviceList" != xno],
+	[AC_DEFINE([USE_TAB], 1,
+	    [Define for using an input tablet.])])])
 
 AC_ARG_ENABLE(comp-led, [AS_HELP_STRING([--enable-comp-led=#],
     [turn on the compose indicator LED when entering \
@@ -439,3 +442,18 @@ AC_CONFIG_FILES([Makefile
 		tests/atlocal])dnl
 
 AC_OUTPUT
+
+AC_MSG_NOTICE([
+  Compile, \$CC=$CC \$PATH_CPPFLAGS=${PATH_CPPFLAGS:-<empty>} \\
+	\$CPPFLAGS=${CPPFLAGS:-<empty>} \$CFLAGS=${CFLAGS:-<empty>}
+  Link, $CC \$CFLAGS=${CFLAGS:-<empty>} \$PATH_LDFLAGS=${PATH_LDFLAGS:-<empty>} \\
+	\$LDFLAGS=${LDFLAGS:-<empty>} <object> \\
+	\$X_LIBS=${X_LIBS:-<empty>} \$LIBS=${LIBS:-<empty>}
+
+Installation locations:
+  $APPDEFAULTDIR/ Fig	(--with-appdefaultdir)
+  $APPLICATIONSDIR/ xfig.desktop	(--with-applicationsdir)
+  $ICONDIR/ xfig.png	(--with-icondir)
+  $PKGDATADIR/ Libraries (--datarootdir)
+  $HTMLDIR/ html	(--htmldir)
+  $DOCDIR/ doc-files	(--docdir)])

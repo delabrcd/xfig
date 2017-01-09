@@ -61,7 +61,11 @@ xfig_SOURCES = d_arcbox.c d_arcbox.h d_arc.c d_arc.h d_box.c d_box.h \
 	splash.xbm version.xbm
 
 if USE_XPM
-xfig_SOURCES += f_readxpm.c f_readxpm.h splash.xpm
+xfig_SOURCES += f_readxpm.c f_readxpm.h
+endif
+
+if USE_SPLASH
+xfig_SOURCES += splash.xpm
 endif
 
 if USE_JPEG
@@ -84,7 +88,7 @@ EXTRA_DIST = u_draw_spline.c
 # defined in config.h ( = $(CONFIG_HEADER))
 f_save.$(OBJEXT) main.$(OBJEXT) u_error.$(OBJEXT): $(CONFIG_HEADER)
 
-if USE_XPM
+if USE_SPLASH
 w_icons.$(OBJEXT): version.xbm splash.xbm splash.xpm
 else
 w_icons.$(OBJEXT): version.xbm splash.xbm

@@ -3,11 +3,23 @@ Changes to Xfig
 Version 3.2
 =============================================================================
 
+Patchlevel 6a (January 2017)
+
+CHANGES:
+	o Draw lines with the same width as in PostScript and other outputs.
+
+BUGS FIXED:
+	o Add compile-switch --enable-tablet for using an input tablet.
+	o Eventually, sorted out the xpm switches. Only use --enable-xpm-splash.
+	o Improve ./configure and add diagnostic output. Looks now for headers
+	  and libraries in unusal places, for compilation under mac darwin when
+	  using fink or macports.
+
+-----------------------------------
 Patchlevel 6 (August 2016)
 
 NEW FEATURES:
 	o Add compile switch to enable xpm-icon and xpm-splash screen
-
 	  independently (--enable-xpm-icon, --enable-xpm-splash).
 	o New compile switch --enable-versioning, calls update_version_m4
 	  to get version information from a source control system.

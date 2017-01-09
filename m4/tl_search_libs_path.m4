@@ -5,7 +5,7 @@
 # SYNOPSIS
 #
 #   TL_SEARCH_LIBS_PATH(FUNCTION, LIBRARIES, SEARCH-PATHS,
-#			[OTHER-LIBRARIES])
+#			[OTHER-LIBRARIES], [SOURCE])
 #
 #   Check, whether FUNCTION exists in LIBRARIES. Call
 #   AC_SEARCH_LIBS(FUNCTION, LIBRARIES). Set ac_cv_search_FUNCTION, as
@@ -15,7 +15,7 @@
 #   tl_cv_libs_path_FUNCTION to the path, `-LPATH, where a LIBRARY
 #   providing FUNCTION was found, or to `no', if none was found. If
 #   found, prepend `-lLIBRARY' to LIBS and prepend `-LPATH' to LDFLAGS
-#   and PATH_LDFLAGS.
+#   and PATH_LDFLAGS. Run AC_LINK_IFELSE with SOURCE, if given.
 #
 #   The test is based on AC_SEARCH_LIBS in autoconf version 2.69.
 #
@@ -65,7 +65,7 @@
 
 
 #   TL_SEARCH_LIBS_PATH(FUNCTION, LIBRARIES, SEARCH-PATHS,
-#			[OTHER-LIBRARIES])
+#			[OTHER-LIBRARIES], [SOURCE])
 
 AC_DEFUN([TL_SEARCH_LIBS_PATH],
 [tl_libs_path_save_LDFLAGS=$LDFLAGS
@@ -76,7 +76,9 @@ AC_SEARCH_LIBS([$1], [$2],
 	[tl_libs_path_save_LIBS=$LIBS
 	 AS_VAR_SET([TL_libs_path], [no])
 	 AS_UNSET([tl_result])
-	 AC_LANG_CONFTEST([AC_LANG_CALL([], [$1])])
+	 m4_ifval([$5],
+	    [AC_LANG_CONFTEST([AC_LANG_SOURCE([$5])])],
+	    [AC_LANG_CONFTEST([AC_LANG_CALL([], [$1])])])
 	 AS_FOR([TL_dir], [tl_dir], $3,
 	    [AS_IF([test -d TL_dir],
 		[LDFLAGS="-L[]TL_dir $tl_libs_path_save_LDFLAGS"

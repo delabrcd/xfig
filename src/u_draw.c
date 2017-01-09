@@ -1637,7 +1637,7 @@ void calc_arrow(int x1, int y1, int x2, int y2, int linethick, F_arrow *arrow, z
     tipmv = arrow_shapes[indx].tipmv;
     lpt = 0.0;
     if (tipmv > 0.0)
-	lpt = th / (2.0 * sin(atan(wd / (tipmv * len))));
+	lpt = th * sqrt(wd*wd + tipmv*tipmv*len*len) / 2.0 / wd;
     else if (tipmv == 0.0)
 	lpt = th / 2.0;	/* types which have blunt end */
 			/* (Don't adjust those with tipmv < 0) */
@@ -1661,8 +1661,8 @@ void calc_arrow(int x1, int y1, int x2, int y2, int linethick, F_arrow *arrow, z
     yb = mx * sina + my * cosa;
 
     /* (xa,ya) is the rotated endpoint (used in ROTX and ROTY macros) */
-    xa =  xb * cosa + yb * sina + 0.5;
-    ya = -xb * sina + yb * cosa + 0.5;
+    xa = round(xb * cosa + yb * sina);
+    ya = round(-xb * sina + yb * cosa);
 
     miny =  100000.0;
     maxy = -100000.0;

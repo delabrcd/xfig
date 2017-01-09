@@ -3024,7 +3024,7 @@ static char fig_bits[] = {
 
 icon_struct	figure_ic = { fig_width, fig_height, (char*) fig_bits };
 
-#ifdef USE_XPM_ICON
+#ifdef USE_XPM
 
 /* XPM version of xfig icon - first in full color for TrueColor displays,
    then in reduced color for 256 color-mapped displays */
@@ -3222,14 +3222,14 @@ char * fig_reduced_c_icon_X[] = {
 "AAAADAAAAAAAAAAAAAAAAAAAAAAuuufuuuAAuuuuuuuuuuuuuuuffuuffuuuuuuu"
 };
 
-#endif /* USE_XPM_ICON */
+#endif /* USE_XPM */
 
 /* bitmap of letters for splash screen ("3.2.X") */
 #include "version.xbm"
 
 /* splash background in XPM */
 
-#ifdef USE_XPM
+#ifdef USE_SPLASH
 #include "splash.xpm"
 #endif
 

@@ -1965,23 +1965,26 @@ void splash_screen(void)
 	XColor		col, colbg;
 	Boolean		fade;
 	int		red_step, green_step, blue_step;
-	Pixmap		letters_pm, spl_bckgnd, dum;
+	Pixmap		letters_pm;
 	int		splash_x, splash_y;
 	int		i, x, y, width;
 	unsigned long	plane_mask;
-	Boolean		use_bitmap = False;
 	XGCValues	gcv;
-
-#ifdef USE_XPM_SPLASH
+#ifdef USE_SPLASH
+	Pixmap		spl_bckgnd, dum;
+	Boolean		use_bitmap = False;
+#ifdef USE_XPM
 	XpmAttributes	spl_bckgnd_attr;
 #endif
+#endif /* USE_SPLASH */
 
 	/* center the splash on the canvas */
 	splash_x = (CANVAS_WD - spl_bckgnd_ic.width)/2;
 	splash_y = (CANVAS_HT - spl_bckgnd_ic.height)/2;
 
+#ifdef USE_SPLASH
 	/* read the background for the splash screen */
-#ifdef USE_XPM_SPLASH
+#ifdef USE_XPM
 	if (all_colors_available) {
 	    /* use the color XPM bitmap */
 	    spl_bckgnd_attr.valuemask = XpmReturnPixels;
@@ -1997,7 +2000,7 @@ void splash_screen(void)
 	}
 #else
 	use_bitmap = True;
-#endif /* USE_XPM_SPLASH */
+#endif /* USE_XPM */
 
 	if (!all_colors_available || use_bitmap) {
 	    /* use the xbm bitmap */
@@ -2007,10 +2010,12 @@ void splash_screen(void)
 	    /* one-bit deep pixmap */
 	    use_bitmap = True;
 	}
+#endif /* USE_SPLASH */
 
-	/* if we have a color visual, fade the letters from dark color up to the background */
-
-	/* we'll start the text at sort of a bluish-purple */
+	/* if we have a color visual, fade the letters from dark color
+	 * up to the background
+	 * we'll start the text at sort of a bluish-purple
+	 */
 	col.flags = DoRed|DoGreen|DoBlue;
 	col.red   = 0x66<<8;
 	col.green = 0x55<<8;
@@ -2055,11 +2060,12 @@ void splash_screen(void)
 	splash_gc = makegc(PAINT, col.pixel, colbg.pixel);
 
 	XSetForeground(tool_d, splash_gc, col.pixel);
-	/* find the step size to go from starting color to the background color */
+	/* step size to go from the starting color to the background color */
 	red_step   = (x_bg_color.red-col.red)/COLSTEPS;
 	green_step = (x_bg_color.green-col.green)/COLSTEPS;
 	blue_step  = (x_bg_color.blue-col.blue)/COLSTEPS;
 
+#ifdef USE_SPLASH
 	/* write the background on the canvas */
 	if (use_bitmap) {
 	    /* this is the monochrome background */
@@ -2074,6 +2080,7 @@ void splash_screen(void)
 	}
 
 	app_flush();
+#endif
 
 	/* make the 1-plane bitmap for the version letters "3.X.X" */
 	letters_pm = XCreateBitmapFromData(tool_d, tool_w,
@@ -2105,7 +2112,7 @@ void splash_screen(void)
 
 	/* now ramp it up to the background color to fade it */
 	if (fade) {
-	    for (i=0; i<COLSTEPS-1; i++) {
+	    for (i=0; i<COLSTEPS-1; ++i) {
 		XStoreColor(tool_d, tool_cm, &col);
 		/* change the color in the colormap */
 		XSetForeground(tool_d, splash_gc, col.pixel);
@@ -2116,8 +2123,9 @@ void splash_screen(void)
 		col.blue  += blue_step;
 	    }
 	} else {
-	    /* for fading the text in TrueColor, re-write the pixmap in a changing color */
-	    for (i=0; i<COLSTEPS-1; i++) {
+	    /* for fading the text in TrueColor, re-write
+	     * the pixmap in a changing color */
+	    for (i=0; i<COLSTEPS-1; ++i) {
 		XAllocColor(tool_d, tool_cm, &col);
 		gcv.foreground = col.pixel;
 		XChangeGC(tool_d, splash_gc, GCForeground, &gcv);
@@ -2133,7 +2141,9 @@ void splash_screen(void)
 
 	/* free up the pixmaps */
 	XFreePixmap(tool_d, letters_pm);
+#ifdef USE_SPLASH
 	XFreePixmap(tool_d, spl_bckgnd);
+#endif
 
 	/* and the GC */
 	XFreeGC(tool_d, splash_gc);
@@ -2144,7 +2154,7 @@ void splash_screen(void)
 	    XFreeColors(tool_d, tool_cm, &col.pixel, 1, 0);
 
 	/* and the colors in the xpm image */
-#ifdef USE_XPM_SPLASH
+#if defined(USE_XPM) && defined(USE_SPLASH)
 	if (!use_bitmap)
 	    XFreeColors(tool_d, tool_cm,
 		spl_bckgnd_attr.pixels, spl_bckgnd_attr.npixels, 0);
