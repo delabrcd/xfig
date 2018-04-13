@@ -32,9 +32,6 @@
 #include "u_search.h"
 #include "f_util.h"
 #include <math.h>
-#ifndef __FreeBSD__
-#include <alloca.h>
-#endif
 
 int snap_gx;
 int snap_gy;
@@ -350,11 +347,11 @@ snap_ellipse_normal_ellipse_handler(e, x, y, cur_point_x, cur_point_y)
    *
    */
 
-  double * c;
-  double * solr;
-  double * soli;
+  double c[5];
+  double solr[4];
+  double soli[4];
   double tf;
-  double a, b;
+  double a, b, a2;
   int nsol;
   int i;
   double dist;
@@ -376,29 +373,25 @@ snap_ellipse_normal_ellipse_handler(e, x, y, cur_point_x, cur_point_y)
   snap_rotate_vector (&PX, &PY, PX, PY, (double)(e->angle));
   snap_rotate_vector (&X,  &Y,  X,  Y,  (double)(e->angle));
 
-  c    = alloca(5 * sizeof(double));
-  solr = alloca(4 * sizeof(double));
-  soli = alloca(4 * sizeof(double));
-
   a = (double)(e->radiuses.x);
   b = (double)(e->radiuses.y);
 
   /* fixme -- do something about cases where a < b (swap the coords around?)*/
-  tf = pow(a, 2.0) - pow(b, 2.0);
+  a2 = a * a;
+  tf = a2 - b * b;
 
-  c[4] = pow(tf, 2.0);
-  c[3] = -2.0 * pow(a, 2.0) * PX * tf;
-  c[2] = pow(a, 2.0) * (((pow(a, 2.0) * pow(PX, 2.0)) +
-			 (pow(b, 2.0) * pow(PY, 2.0))) - c[4]);
-  c[1] = 2.0 * pow(a, 4.0) * PX * tf;
-  c[0] = -pow(a, 6.0) * pow(PX, 2.0);
+  c[4] = tf * tf ;
+  c[3] = -2.0 * a2 * PX * tf;
+  c[2] = a2 * (a2 * PX * PX + b * b * PY * PY - c[4]);
+  c[1] = 2.0 * a2 * a2 * PX * tf;
+  c[0] = -a2 * a2 * a2 * PX * PX;
 
   nsol = quartic(c, solr, soli);
 
   for (i = 0; i < 4; i++) {
     ix[0] = ix[1] = solr[i];
-    iy[0] =  b * sqrt(1.0 - pow((ix[0]/a), 2.0));
-    iy[1] = -b * sqrt(1.0 - pow((ix[1]/a), 2.0));
+    iy[0] =  b * sqrt(1.0 - ix[0]*ix[0]/a2);
+    iy[1] = -b * sqrt(1.0 - ix[1]*ix[1]/a2);
 
     dtheta[0] = check_alignment(ix[0], iy[0], a, b, PX, PY);
     dtheta[1] = check_alignment(ix[1], iy[1], a, b, PX, PY);
@@ -803,7 +796,7 @@ snap_spline_handler(s, x, y)
     break;
   case SNAP_MODE_FOCUS:
     {
-      F_line * f_line_p = alloca(sizeof(F_line));
+      F_line f_line_p[1];
       f_line_p->type = T_POLYLINE;
       f_line_p->points = s->points;
       snap_polyline_handler(f_line_p, x, y);

@@ -109,7 +109,7 @@
 .PD
 ..
 .\"-------
-.TH xfig 1 "@RELEASEDATE@" "Xfig @PACKAGE_VERSION@"
+.TH xfig 1 "@RELEASE_DATE@" "Xfig @PACKAGE_VERSION@"
 .SH NAME
 xfig - Facility for Interactive Generation of figures under X11
 .br
@@ -149,29 +149,28 @@ is available from
 @PACKAGE_URL@.
 .PP
 The
-.I TransFig
+.I Fig2dev
 package is used when printing or exporting the output from
 .IR xfig .
 The
 .IR fig2dev
-program from the
-.IR TransFig
-package is automatically called by
+program is automatically called by
 .IR xfig
 as a back-end processor to produce various types of output:
 .PP
-LaTeX, Metafont, PostScript or Encapsulated PostScript,
-tk (tcl/tk tool command language/tool kit package),
+LaTeX, Metafont, PDF, PostScript or Encapsulated PostScript,
+CGM and EMF (mostyl used under Windows),
+tk (tcl/tk tool command language/tool kit package), SVG,
 GIF, JPEG, PCX, PNG, PPM, TIFF,
-XBM, XPM, AutoCAD Slide, IBM-GL (HP/GL), Pic and
+XBM, XPM, Gerber, AutoCAD Slide, IBM-GL (HP/GL), Pic and
 PiCTeX.
- For use with TeX/LaTeX: box, epic, eepic, eepicemu,
+For use with TeX/LaTeX: box, epic, eepic, eepicemu,
 pict2e, pstricks, tikz.
 .PP
 See man fig2dev for all options.
 .PP
 The
-.I TransFig
+.I Fig2dev
 package is available from
 @PACKAGE_URL@.
 .SH OPTIONS
@@ -190,7 +189,7 @@ This is the default
 .At
 .BR \-au [ torefresh ]
 Make xfig look at the timestamp on the .fig file and
-automatically load it and display it everytime it changes.
+automatically load it and display it every time it changes.
 .\"-------
 .At
 .BR \-bal [ loon_delay ]
@@ -348,7 +347,7 @@ Choices are:
 .ta \n(t0u
 .\" set n to length of longest line
 .di xx
-eepicemu	LaTeX picture + eepicemu macros
+pdftex	Combined PDF/LaTeX (both PDF and LaTeX parts)
 .nr n \n(.nu
 .di
 .rm xx
@@ -358,32 +357,34 @@ Name	Language
 .if t \l'\nnu'
 .\" DATA
 Vector formats:
+ps	PostScript
+eps	Encapsulated PostScript
+pdf	PDF (Portable Document Format)
 box	LaTeX box (figure boundary)
 latex	LaTeX picture
+pict2e	LaTeX picture + pict2e macros
+tikz	LaTeX picture + tikz macros
 epic	LaTeX picture + epic macros
 eepic	LaTeX picture + eepic macros
 eepicemu	LaTeX picture + eepicemu macros
-pictex	PiCTeX macros
-hpl	HPGL (IBMGL)
-eps	Encapuslated PostScript
-eps_ascii	Encapuslated PostScript with ASCII preview
-eps_mono_tiff	Encapuslated PostScript with monochrome binary (TIFF) preview
-eps_color_tiff	Encapuslated PostScript with color binary (TIFF) preview
-ps	PostScript
-pdf	PDF (Portable Document Format)
 pstex	Combined PS/LaTeX (both PS and LaTeX parts)
 pdftex	Combined PDF/LaTeX (both PDF and LaTeX parts)
+pspdftex	Combined PS/PDF/LaTeX (three parts)
+pictex	PiCTeX macros
+cgm	Computer Graphcis Meta file
+emf	Enhanced Meta file
+dxf	Drawing Interchange format
+gbx	Gerber (RS-247-X)
+ibmgl	HPGL/2 or IBMGL
 textyl	Textyl special commands
 tpic	TPIC
 pic	PIC
 mf	MF (MetaFont)
 mp	MP (MetaPost)
-mmp	MMP (Multi-MetaPost)
-cgm	CGM (Computer Graphics Meta file)
-bcgm	Binary CGM (Computer Graphics Meta file)
-emf	Enhanced Meta file)
-tk	Tk (of the tcl/tk fame)
-svg	SVG (Scalable Vector Graphics (XML variant))
+tk	Tk (Tcl/Tk toolkit)
+ptk	Perl/Tk
+shape	LaTeX shape paragraph definition
+svg	SVG (Scalable Vector Graphics)
 
 Bitmap formats:
 gif	GIF
@@ -393,9 +394,7 @@ png	PNG
 ppm	PPM (portable pixmap package)
 sld	(AutoCad slide)
 tiff	TIFF
-xbm	X11 Bitmap
-xpm	X11 Pixmap (XPM3 package)
-
+xbm	X11 Bitmap@XPM_MAN@
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
 .DT
@@ -411,7 +410,7 @@ xpm	X11 Pixmap (XPM3 package)
 .Ap
 Set the size of the border margin around the figure for exporting
 to bitmap, PostScript, Encapsulated PostScript, or HTML MAP formats.
-This is in units of pixels (1/80th inch).
+This is in units of points (1/72th inch).
 The default is 0.
 .\"-------
 .At
@@ -984,11 +983,10 @@ to ghostscript in the \-dTextAlphaBits \-dGraphicsAlphaBits options to smooth th
 Start
 .I xfig
 with the
-.I "special text"
+.I "TeX text"
 mode for text objects.
-Special text means that special characters in the string are not specially
-processed but are passed directly to
-.IR LaTeX .
+This means that characters that have a special meaning to TeX/LaTeX,
+e.g., '$' or '\e', are not quoted but left untouched in the text string.
 This is most useful for writing LaTeX equations.
 If this flag is not set, then the backslash character '\\' is changed
 to the \\backslash command, a brace '{' is turned into a brace command \\{, etc.
@@ -1330,8 +1328,8 @@ visual	string	*	\-visual
 write_bak	boolean	true	\-write_bak
 zoom	float	1.0	\-zoom
 
-* Default visual and depth depend on the X server. Use \fIxdpyinfo\fR to see what visuals
-and depths are supported.
+* Default visual and depth depend on the X server. Use \fIxdpyinfo\fR
+to see what visuals and depths are supported.
 .if n \l'\nnu\&-'
 .if t \l'\nnu'
 .if n .RE
@@ -1348,17 +1346,6 @@ Please send bug reports, fixes, new features etc. to:
 .br
 \&@PACKAGE_BUGREPORT@
 .PP
-When reporting a bug, please first check if the problem is mentioned in
-the FAQ section of the HTML files (xfig Help menu).
-.PP
-If it is not mentioned there, be sure to report the operating system you
-are using (e.g. SunOS 4.1.3), type of X server and version (OpenWindows 3, X11R6.4,
-XFree86 3.2.2, etc) and color depth (e.g. 8bpp, 16bpp), and most
-importantly the version of xfig or fig2dev that is having the problem.
-.PP
-.\"It is also VERY useful to me if you can provide a stack trace from a debugger
-.\"such as gdb, dbx, ups, etc, if the bug causes xfig to crash.
-.PP
 Because of the difference of some fonts in some X servers and the PostScript
 fonts on printers, text alignment can be problematic.
 .PP
@@ -1367,25 +1354,6 @@ as a by product of the operation.
 You may need to use
 .I Redraw
 in these cases.
-.PP
-Some servers do not allow bitmaps/pixmaps taller than the screen height
-or wider than the screen width.
-That is why there is a limit on the width
-of the top ruler and height of the side ruler.
-If you need wider/taller rulers AND your server allows bigger pixmaps,
-you may define
-.B MAX_TOPRULER_WD
-and/or
-.B MAX_SIDERULER_HT
-in your Imakefile in the
-.I DEFINES
-line.
-For example,
-to have a maximum top ruler width of 1160 pixels, add
-.B \-DMAX_TOPRULER_WD=1160
-to your
-.I DEFINES
-line in the Imakefile.
 .PP
 If the image is panned or the
 .I xfig
@@ -1406,14 +1374,10 @@ only the creation of the last object can be undone with the Undo button.
 .PP
 Modifications to text using the popup search/update/replace/spell check panel
 cannot be undone.
-.PP
-See the
-.B README
-file for troubleshooting.
 .SH "SEE ALSO"
 .PP
 fig2dev(1)
-.RI ( TransFig
+.RI ( Fig2dev
 package)
 .PP
 gs(1)
@@ -1431,8 +1395,9 @@ revamped the look and feel which became version 2.1.
 .SH COPYRIGHT
 .nf
 Original Copyright (c) 1985 by Supoj Sutanthavibul
-Parts Copyright (c) 1994-2013 by Brian V. Smith
+Parts Copyright (c) 1989-2015 by Brian V. Smith
 Parts Copyright (c) 1991 by Paul King
+Parts Copyright (c) 2016-2018 by Thomas Loimer
 Other Copyrights may be found in various files
 .Sp
 .fi
@@ -1774,5 +1739,5 @@ See the
 file for all the credits.
 .sp
 The
-.I TransFig
+.I Fig2dev
 package was written by Micah Beck and is maintained by Thomas Loimer.

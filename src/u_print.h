@@ -1,8 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2018 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -15,12 +16,18 @@
  *
  */
 
-char	*shell_protect_string(char *string);
-extern	Boolean  print_hpgl_pcl_switch;
-extern	Boolean  hpgl_specified_font;
-extern	void	  print_to_printer(char *printer, char *backgrnd, float mag, Boolean print_all_layers, Boolean bound_active_layers, char *grid, char *params);
-extern  int       print_to_file(char *file, char *lang, float mag, int xoff, int yoff, char *backgrnd, char *transparent, Boolean use_transp_backg,
-			Boolean print_all_layers, Boolean bound_active_layers, int border, Boolean smooth, char *grid, Boolean overlap);
-extern void make_rgb_string (int color, char *rgb_string);
-extern void gen_print_cmd(char *cmd, char *file, char *printer, char *pr_params);
-
+extern Boolean	print_all_layers;
+extern Boolean	bound_active_layers;
+extern Boolean	print_hpgl_pcl_switch;
+extern Boolean	hpgl_specified_font;
+extern Boolean	pdf_pagemode;
+extern int	preview_type;
+extern void	print_to_printer(char *printer, char *backgrnd, float mag,
+			Boolean print_all_layers, Boolean bound_active_layers,
+			char *grid, char *params);
+extern int	print_to_file(char *file, int xoff, int yoff, char *backgrnd,
+			char *transparent, Boolean use_transp_backg, int border,
+			char *grid);
+extern void	make_rgb_string (int color, char *rgb_string);
+extern void	gen_print_cmd(char *cmd, char *file, char *printer,
+				char *pr_params);

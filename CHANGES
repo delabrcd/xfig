@@ -3,16 +3,52 @@ Changes to Xfig
 Version 3.2
 =============================================================================
 
+Patchlevel 7 (April 2017)
+
+NEW FEATURES:
+	o Export to pdf now allows to choose between output to a full-page pdf,
+	  or cropping to the bounding box (the default behavior).
+	o Enable horizontal scrolling with mouse buttons 6 and 7 (sideway push
+	  of mouse wheel, or horizontal movement on touchpad).
+
+CHANGES:
+	o Rename the text flag "Special Flag" to "TeX Flag".
+	o Interpolated splines are now created with the recommended value of the
+	  shape factor of -0.5, not with -1.0. A description of the shape factor
+	  as used in xfig has been added in the file doc/FORMAT3.2
+
+BUGS FIXED:
+	Ticket numbers refer to https://sourceforge.net/p/mcj/tickets/#.
+	Debian bug numbers refer to https://bugs.debian.org/#.
+	o Center canvas around cursor when zooming by pressing CTRL and using a
+	  wheel-mouse.
+	o Apply xfig-3.2.6a-fallback-for-nonscalable-fonts.patch and
+	  xfig-3.2.6a-scalable-fonts.patch from Hans de Goede.
+	o Apply debian patches 08_every_time.patch, 10_RELEASE_DATE.patch,
+	  11_declare_swap_colors.patch, from Roland Rosenfeld.
+	o Apply debian patch 07_colorsliderarrows.patch. Debian bug #870365.
+	o Change map of India to disputed boundaries, from
+	  https://en.wikipedia.org/wiki/File:India_disputed_areas_map.svg,
+	  retrieved 2018-02-25. Debian bug #270799, 09_india_disputed.patch
+	o Prevent integer overflow in {floor,ceil}_coords_{x,y}(). Fixes debian
+	  bug #300436. Also prevent integer overflow in round_coords().
+	o Completely remove alloca.h and alloca() from the code.
+	o When entering the "Save as..." dialog, moving to a new directory and
+	  pressing "Cancel", a subsequent "Save" wrote to the new directory.
+	  This happened analogously for the "Export" dialog. Fixed, ticket #9.
+
+-----------------------------------
 Patchlevel 6a (January 2017)
 
 CHANGES:
-	o Draw lines with the same width as in PostScript and other outputs.
+	o Draw lines with the same width on screen as in PostScript and other
+	  outputs.
 
 BUGS FIXED:
 	o Add compile-switch --enable-tablet for using an input tablet.
 	o Eventually, sorted out the xpm switches. Only use --enable-xpm-splash.
 	o Improve ./configure and add diagnostic output. Looks now for headers
-	  and libraries in unusal places, for compilation under mac darwin when
+	  and libraries in unusual places, for compilation under mac darwin when
 	  using fink or macports.
 
 -----------------------------------
@@ -69,7 +105,7 @@ BUGS FIXED:
 	o Move Xfuncs.h and Xosdefs.h out from fig.h. Commit #b433478
 	o Move -l flags from LDFLAGS to LDADD. Commit #2d57c85
 
-	From Roland Rosenfeld. Bug numers refer to https://bugs.debian.org/#.
+	From Roland Rosenfeld. Bug numbers refer to https://bugs.debian.org/#.
 	o Do not link with -lXmu, if linking with Xaw3d > 1.5e.
 	o Make japanese documentation available for LANG=ja_JP.ujis.
 	o Set the Creation date in xfig_man.html to the date when
@@ -77,7 +113,7 @@ BUGS FIXED:
 	o Really fix reading png files,
 	  https://bugzilla.redhat.com/show_bug.cgi?id=1150330
 	o Delete some superfluos files, fix typos (Caribbean),
-	  add semicolon in xfig.desktop (bug # 812477).
+	  add semicolon in xfig.desktop (debian bug #812477).
 
 	From Brian V. Smith:
 	o old link for "Xfig On Microsoft Windows"
@@ -104,23 +140,23 @@ BUGS FIXED:
 	From Roland Rosenfeld. Bug numbers refer to https://bugs.debian.org/#.
 	In fact, most of the bugs below, also those from other sources, were
 	fixed by applying the debian-patches.
-	o Position independent executables work, fixes bug # 756791.
+	o Position independent executables work, fixes #756791.
 	o Revert previous change of X-spline parameter.
 	o Use C locale for fig2dev, to correctly interpret decimal point.
-	  Fixes bug # 782737.
-	o Correct grid mode distances in man page. Bug # 314820.
+	  Fixes debian bug #782737.
+	o Correct grid mode distances in man page. Debian bug #314820.
 	o Extend xfig.desktop.
 	o Fix unsecure use of temporary file. From Thomas Hoger, gentoo.
-	  Debian Bug # 565341.
+	  Debian bug #565341.
 	o Escape - in man-page.
 	o Securely print string.
 	o Restore old shadow behaviour.
-	o Fix reading "/MediaBox" when importing pdf. Closes Bug # 530898.
-	o With -papersize b1, use B1, not B10. Bug 535181.
+	o Fix reading "/MediaBox" when importing pdf. Closes debian bug #530898.
+	o With -papersize b1, use B1, not B10. Debian bug #535181.
 
 	From Vladislav Zavjalov. Information on bugs is found
 	at https://bugzilla.altlinux.org/show_bug.cgi?id=#
-	o Do not use fontsets for symbol and dingbat fonts, bug # 26579.
+	o Do not use fontsets for symbol and dingbat fonts, #26579.
 	o Fix compiler warnigs in w_indpanel.c. Commit feabe27.
 	o Restore correct depths when loading a figure, then undo.
 	  Commit b5c79b3.
@@ -136,13 +172,13 @@ BUGS FIXED:
 	  some 64-bit systems when opening main menu.
 
 	o Missing argument may cause crash or undefined behaviour.
-	  Debian bug # 795642. From Michael Tautschnig.
+	  Debian bug #795642. From Michael Tautschnig.
 
 	From Hans de Goede. Bug information
 	at https://bugzilla.redhat.com/show_bug.cgi?id=#.
-	o Patch for importing png-files, Red Hat bug # 1150330. From David Kaufmann.
-	o Fix crash when changing arrow size. Bug # 1046102.
-	o Fix crash when creating dash-dotted lines. Bug # 1023744.
+	o Patch for importing png-files, bug #1150330. From David Kaufmann.
+	o Fix crash when changing arrow size. Red Hat bug #1046102.
+	o Fix crash when creating dash-dotted lines. Red Hat bug #1023744.
 	  From Michael Srb, thanks to Maurizio Pollini and David Kaufmann.
 	o Fix crash on exit. From Peter Volkov at gentoo
 
@@ -465,7 +501,7 @@ NOTE:
 NEW FEATURES:
 	o -autorefresh command-line option (resource: Fig.autorefresh) which
 	  will make xfig look at the timestamp on the .fig file and
-	  automatically load it and display it everytime it changes.
+	  automatically load it and display it every time it changes.
 	o Removed requirement to compile with WHEELMOUSE when using wheelmouse
 	o New tower computers (Libraries/Computers/AOpenKF45E.fig and
 	  AOpenKF45E.fig from Dirko van Schalkwyk)

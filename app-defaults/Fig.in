@@ -24,7 +24,7 @@ Fig.ghostscript:		gs
 ! Browser - put your favorite browser here.
 !		This is for viewing the xfig html reference.
 ! For firefox, this command will open the help pages in a running firefox,
-!     or start a new netscape if one isn't already running
+!     or start a new instance if one isn't already running
 Fig.browser:			xdg-open %f
 
 ! pdfviewer - put your favorite pdf viewer here.

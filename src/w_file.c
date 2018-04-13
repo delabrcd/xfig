@@ -86,6 +86,7 @@ static Boolean	file_cancel_request = False;
 static Boolean	file_load_request = False;
 static Boolean	file_save_request = False;
 static Boolean	file_merge_request = False;
+static char	save_file_dir[PATH_MAX];
 
 /* these are in fig units */
 
@@ -168,8 +169,11 @@ file_panel_dismiss(void)
 {
     int i;
 
-    if (cur_file_dir[0] != '\0')
+    /* this function is only called from the Open, Save as and Merge panels */
+    if (save_file_dir[0] != '\0') {
+	update_file_export_dir(save_file_dir);
 	change_directory(cur_file_dir);
+    }
 
     if (image_colors_are_saved) {
 	/* restore image colors on canvas */
@@ -232,8 +236,8 @@ do_merge(Widget w, XButtonEvent *ev)
     FirstArg(XtNstring, &fval);
     GetValues(file_selfile);	/* check the ascii widget for a filename */
     strcpy(fname, fval);
-    if (emptyname(fname))
-	strcpy(fname, cur_filename);	/* "Filename" widget empty, use current filename */
+    if (emptyname(fname))		/* "Filename" widget empty, */
+	strcpy(fname, cur_filename);	/*  use current filename */
 
     if (!strchr(fname,'.'))	/* if no suffix, add .fig */
 	strcat(fname,".fig");
@@ -341,6 +345,7 @@ do_load(Widget w, XButtonEvent *ev)
 	if (emptyname_msg(fname, "LOAD"))
 	    return;
 	if (change_directory(dval) == 0) {
+	    strcpy(save_file_dir, dval);
 	    file_getxyoff(&xoff,&yoff);	/* get x/y offsets from panel */
 	    if (load_file(fname, xoff, yoff) == 0) {
 		FirstArg(XtNlabel, fname);
@@ -456,6 +461,7 @@ do_save(Widget w, XButtonEvent *ev)
     /* go to the file directory */
     if (change_directory(cur_file_dir) != 0)
 	return;
+    strcpy(save_file_dir, cur_file_dir);
 
     /* if the user used a keyboard accelerator or right button on File but the filename
        is empty, popup the file panel to force him/her to enter a name */
@@ -498,7 +504,6 @@ do_save(Widget w, XButtonEvent *ev)
 		SetValues(cfile_text);
 		if (strcmp(fname, cur_filename) != 0) {
 		    update_cur_filename(fname);	/* update cur_filename */
-		    update_def_filename();	/* update the default export filename */
 		}
 		reset_modifiedflag();
 		if (file_up)
@@ -944,6 +949,7 @@ void create_file_panel(void)
 
 	/* make the directory list etc */
 	change_directory(cur_file_dir);
+	strcpy(save_file_dir, cur_file_dir);
 	create_dirinfo(True, file_panel, file_selfile, &beside, &butbelow, &file_mask,
 		       &file_dir, &file_flist, &file_dlist, FILE_ALT_WID, True);
 

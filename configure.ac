@@ -1,14 +1,25 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 #
-# This file is part of FIG - Facility for Interactive Generation of figures
-#
-# Copyright (c) 2016 Thomas Loimer <thomas.loimer@tuwien.ac.at>
-#
-# Copying and distribution of this file, with or without modification,
-# are permitted in any medium without royalty provided the copyright
-# notice and this notice are preserved. This file is offered as-is,
-# without any warranty.
+
+AC_COPYRIGHT([FIG : Facility for Interactive Generation of figures
+Copyright (c) 1985-1988 by Supoj Sutanthavibul
+Parts Copyright (c) 1989-2015 by Brian V. Smith
+Parts Copyright (c) 1991 by Paul King
+Parts Copyright (c) 2016-2018 by Thomas Loimer
+
+Any party obtaining a copy of these files is granted, free of charge, a
+full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+nonexclusive right and license to deal in this software and documentation
+files (the "Software"), including without limitation the rights to use,
+copy, modify, merge, publish distribute, sublicense and/or sell copies
+of the Software, and to permit persons who receive copies from any such
+party to do so, with the only requirement being that the above copyright
+and this permission notice remain intact.
+])
+
+# configure.ac
+# Author: Thomas Loimer, 2016-2018
 
 dnl The minimum autoconf version to process this file. In version 2.60,
 dnl the directory variables changed, see info autoconf, section 4.8.3.
@@ -33,26 +44,6 @@ AC_DEFINE([PROTOCOL_VERSION], ["3.2"],
 	[Define the fig file format. Identical to major.minor \
 		substring of xfig version.])
 AC_SUBST([RELEASE_DATE], ["RELEASEDATE"])dnl
-dnl For the tests. (How to quote output-variable from interpretation
-dnl as m4-variable.
-dnl AC_SUBST([FIG@&t@_VERSION], ["FIG_VERSION"])dnl
-dnl AC_SUBST([PATCH@&t@LEVEL], ["PATCHLEVEL"])dnl
-
-AC_CONFIG_MACRO_DIR([m4])
-
-# Add unusual search paths here.
-# Macports by default installs under /opt/local, fink under /sw.
-m4_define([LIBPATHS], [/opt/local/lib /sw/lib])
-m4_define([INCLUDEPATHS], [/opt/local/include /sw/include])
-m4_define([X_LIBPATHS], [LIBPATHS /opt/X11/lib ])
-m4_define([X_INC_PATHS], [INCLUDEPATHS /opt/X11/include])
-dnl To search in additional paths, use
-dnl TL_SEARCH_LIBS_PATH instead of AC_SEARCH_LIBS, and
-dnl TL_CHECK_HEADER_PATH instead of AC_CHECK_HEADER.
-dnl The TL_-macros set PATH_CPPFLAGS, PATH_LDFLAGS and LIBS to
-dnl report their findings.
-AC_SUBST(PATH_CPPFLAGS)
-AC_SUBST(PATH_LDFLAGS)
 
 # Set automake options.
 dnl The options are written to AUTOMAKE_OPTIONS. A minimum version
@@ -64,8 +55,9 @@ dnl  -Werror...and report them as error
 dnl  foreign...do no require the files ChangeLog COPYING AUTHORS NEWS
 dnl		README INSTALL
 dnl  subdir-objects...place objects into the dir where the corresponding
-dnl		source file resides, not into the build tree;
+dnl		source file resides, not into the current build directory;
 dnl		necessary to use LIBOBJS from /lib in /src
+
 
 # Check whether ./configure resides in the correct directory.
 AC_CONFIG_SRCDIR([src/main.c])
@@ -73,6 +65,7 @@ AC_CONFIG_SRCDIR([src/main.c])
 # Write the variables determined by ./configure into config.h.
 # Therefore, make sure to #include "config.h" in each source file.
 AC_CONFIG_HEADERS([config.h])
+
 
 # Checks for programs.
 AC_PROG_CC
@@ -84,76 +77,57 @@ AS_IF([test "x$ac_cv_prog_cc_stdc" = xno],dnl
 # Sets MKDIR_P - which is, however, set anyhow
 AC_PROG_MKDIR_P
 AC_PROG_LN_S
-
-dnl  To the comfort of the maintainer
-dnl AC_PROG_SED
-dnl AC_CHECK_PROG([GIT], [git], [git], [no])
-dnl AM_CONDITIONAL([HAS_GIT_CONTROL],
-dnl    [test `git -C $srcdir describe 2>/dev/null`])
-dnl then, bracket the version.m4 target in ./Makefile.am with
-dnl if HAS_GIT_CONTROL ... endif
+# ranlib and ar are needed to create the convenience library libxfig.a.
+# Unit tests are linked to libxfig.a.
+AC_PROG_RANLIB
+AM_PROG_AR
 
 # Search for pkg-config and set PKG_CONFIG to the path found, else empty.
 # PKG_PROG_PKG_CONFIG
 # On debian, pkg-config does not find xaw3d. On archlinux, pkg-config
 # --libs xaw3d yields -lXaw3d -lXmu -lXt -lX11 -- but -lXmu is not
-# strictly necessary. Therefore, do not use pkg-config, we know better.
+# strictly necessary. Use hard-coded paths instead of pkg-config.
 
 dnl Not useful for packagers.
 dnl AC_CHECK_PROG(XDG_ICON, [xdg-icon-resource], [xdg-icon-resource])
 dnl AC_CHECK_PROG(XDG_MENU, [xdg-desktop-menu], [xdg-desktop-menu])
 
+
 # Checks for libraries.
-xfig_save_LDFLAGS="$LDFLAGS"
-TL_SEARCH_LIBS_PATH([pow], [m], [LIBPATHS])dnl
+AC_SEARCH_LIBS([pow], [m])dnl
 dnl AC_SEARCH_LIBS([deflate], [z])  # libz is not needed.
-TL_SEARCH_LIBS_PATH([png_read_info], [png], [LIBPATHS])
-AS_IF([test "x$tl_cv_libs_path_pow" = xno \
-	|| test "x$tl_cv_libs_path_png_read_info" = xno],
+AC_SEARCH_LIBS([png_read_info], [png])
+AS_IF([test "x$ac_cv_search_pow" = xno \
+	|| test "x$ac_cv_search_png_read_info" = xno],
     [AC_MSG_ERROR([Necessary libraries not found.])])
-# Now, LIBS may contain a -lLIB, which is not found in the standard
-# search path. But LIBS is added to any compilation attempt further
-# below. Therefore, temporarily add PATH_LDFLAGS to LDFLAGS, even
-# when only testing header files. It might be wise, to collect all
-# TL_SEARCH_LIBS_PATH together. No need to save PATH_CPPFLAGS.
-# LDFLAGS="$PATH_LDFLAGS $LDFLAGS"
-# CPPFLAGS="$CPPFLAGS $PATH_CPPFLAGS"
+
 
 # Checks for header files.
 AC_HEADER_DIRENT
-AC_CHECK_HEADERS_ONCE([features.h sys/time.h])
-
-# Provide for unusual include paths, as above for libraries.
-TL_CHECK_HEADER_PATH([png.h], [INCLUDEPATHS])dnl
+AC_CHECK_HEADERS_ONCE([features.h sys/time.h png.h])
 
 # Get X header and library location.
-# Simply add libraries to LIBS, x_includes to PATH_CPPFLAGS
-# and x_libraries to PATH_LDFLAGS.
-# The search for png.h might have added a path to CPPFLAGS. Provide
-# that to AC_PATH_X.
-xfig_save_CPPFLAGS="$CPPFLAGS"
-# do not add spaces, as with the simple CPPFLAGS="$CPPFLAGS $PATH_CPPFLAGS"
-AS_IF([test -n "$PATH_CPPFLAGS"], [AS_IF([test -n "$CPPFLAGS"],
-	[CPPFLAGS="$CPPFLAGS $PATH_CPPFLAGS"], [CPPFLAGS="$PATH_CPPFLAGS"])])
+# Simply add libraries to LIBS, x_includes to XCPPFLAGS
+# and x_libraries to XLDFLAGS.
+AC_SUBST([XLIBS])
+AC_SUBST([XCPPFLAGS])
+AC_SUBST([XLDFLAGS])
 AC_PATH_X
 AS_IF([test "x$no_x" != xyes],
     [AS_IF([test -n "$x_includes"],
-	[PATH_CPPFLAGS="$PATH_CPPFLAGS -I$x_includes"])
+	[XCPPFLAGS="-I$x_includes $XCPPFLAGS"])
      AS_IF([test -n "$x_libraries"],
-	[PATH_LDFLAGS="-L$x_libraries $PATH_LDFLAGS"])])
+	[XLDFLAGS="$XLDFLAGS -L$x_libraries"])])
 # (1) Add "-lXt -lX11" to LIBS.
 # The check below did not work on Darwin (quote in AC_PATH_X: Do not try a
-# hair to link a X-program), therefore, use hard-coded X_LIBS
+# hair to link a X-program), therefore, use hard-coded XLIBS
 # Further below, though, linking with -lXpm or -lXaw works.
-X_LIBS="-lXt -lX11"
-AC_SUBST([X_LIBS])
+XLIBS="-lXt -lX11"
 # (2) Do not give up, check in unusual places.
-#TL_SEARCH_LIBS_PATH([XBell], [X11], [X_LIBPATHS])
-#TL_SEARCH_LIBS_PATH([XtName], [Xt], [X_LIBPATHS])
-#AS_IF([test -n "$PATH_LDFLAGS"], [AS_IF([test -n "$LDFLAGS"],
-#	[LDFLAGS="$PATH_LDFLAGS $LDFLAGS"], [LDFLAGS="$PATH_LDFLAGS"])])
-TL_CHECK_HEADER_PATH([X11/X.h], [X_INC_PATHS])
-CPPFLAGS="$xfig_save_CPPFLAGS"
+#AC_SEARCH_LIBS([XBell], [X11])
+#AC_SEARCH_LIBS([XtName], [Xt])
+AC_CHECK_HEADER([X11/X.h])
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_PID_T
@@ -165,7 +139,6 @@ AC_CHECK_DECL([REG_NOERROR],[],
 	[[#include <regex.h>]])dnl
 
 # Checks for library functions.
-AC_FUNC_ALLOCA
 AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
@@ -197,7 +170,7 @@ AC_ARG_ENABLE(i18n, [AS_HELP_STRING([--disable-i18n],
 AS_IF([test "x$enableval" = xyes],
     [AC_DEFINE([I18N], 1,
 	[Define to enable internationalization features.])dnl
-     AC_DEFINE([I18N_USE_PREEDIT], 1,
+    AC_DEFINE([I18N_USE_PREEDIT], 1,
 	[Define to use preediting with i18n.])])
 AM_CONDITIONAL([I18N], [test "x$enableval" = xyes])dnl
 
@@ -205,12 +178,11 @@ AC_ARG_ENABLE(jpeg, [AS_HELP_STRING([--disable-jpeg],
 	[disable support to import jpeg files (default: enable)])],
     [],[enableval=yes])
 AS_IF([test "x$enableval" = xyes],
-    [TL_SEARCH_LIBS_PATH([jpeg_read_header], [jpeg], [LIBPATHS])
-     AS_IF([test "x$tl_cv_libs_path_jpeg_read_header" != xno],
+    [AC_SEARCH_LIBS([jpeg_read_header], [jpeg],
 	[AC_DEFINE([USE_JPEG], 1,
 	    [Define to enable support for importing jpeg files.])])])
 AM_CONDITIONAL([USE_JPEG], [test "x$enableval" = xyes && \
-	test "x$tl_cv_libs_path_jpeg_read_header" != xno])dnl
+	test "x$ac_cv_search_jpeg_read_header" != xno])dnl
 
 AC_ARG_WITH(gs, [AS_HELP_STRING([--without-gs],
 	[do not use ghostscript to render embedded eps or pdf images)])],
@@ -245,11 +217,12 @@ AC_ARG_ENABLE(xpm, [AS_HELP_STRING([--disable-xpm],
 		 and for import/export (default: enable)])],
     [], [enableval=yes])dnl
 AS_IF([test "x$enableval" = xyes],
-    [TL_SEARCH_LIBS_PATH([XpmFree], [Xpm], [X_LIBPATHS])
-     AS_IF([test "x$tl_cv_libs_path_XpmFree" = xno],
-	[enableval=no],
+    [AC_SEARCH_LIBS([XpmFree], [Xpm],
 	[AC_DEFINE([USE_XPM], 1, [Define to use xpm color-bitmaps and enable \
-		    import/export to xpm files.])])])
+		import/export to xpm files.])
+	 AM_SUBST_NOTMAKE(XPM_MAN)
+	 AC_SUBST(XPM_MAN, ["
+xpm	X11 Pixmap"])], [enableval=no])])
 AM_CONDITIONAL([USE_XPM], [test "x$enableval" = xyes])dnl
 
 AC_ARG_ENABLE(splash, [AS_HELP_STRING([--enable-splash],
@@ -266,7 +239,6 @@ AC_ARG_WITH(xaw3d1_5e, [AS_HELP_STRING([--without-xaw3d1_5e],
 AC_ARG_WITH(xaw3d, [AS_HELP_STRING([--without-xaw3d],
 	[do not use X Athena Widget toolkit with 3D-effects (default: use)])],
     [],[withval=yes])dnl
-
 dnl AS_IF([test -n "$PKG_CONFIG" && `$PKG_CONFIG --exists xaw3d`],dnl
 dnl    [AS_IF([test "x$withval" = xyes],dnl
 dnl	[PKG_CHECK_MODULES(XAW, xaw3d)],
@@ -274,21 +246,20 @@ dnl	[PKG_CHECK_MODULES(XAW, xaw7, [],
 dnl	    [AC_MSG_WARN("$XAW_PKG_ERRORS")
 dnl	     PKG_CHECK_MODULES(XAW, xaw6)])dnl
 
-# Re-use PATH_CPPFLAGS to really set config-CPPFLAGS.
 AS_IF([test "x$withval" = xyes],
-    [AS_IF([test -z "$PATH_CPPFLAGS"],
-	[PATH_CPPFLAGS="-DXAW_INTERNATIONALIZATION"],
-	[PATH_CPPFLAGS="$PATH_CPPFLAGS -DXAW_INTERNATIONALIZATION"])
+    [AS_IF([test -z "$XCPPFLAGS"],
+	[XCPPFLAGS="-DXAW_INTERNATIONALIZATION"],
+	[XCPPFLAGS="$XCPPFLAGS -DXAW_INTERNATIONALIZATION"])
      AC_DEFINE([XAW3D], 1,
 		[Define to use X Athena Widgets with 3D-effects.])
      AS_IF([test "x$with_xaw3d1_5e" = xyes],
-	[X_LIBS="-lXaw3d $X_LIBS"
-	 AC_DEFINE([XAW3D1_5E], 1,
+	[XLIBS="-lXaw3d $XLIBS"
+	AC_DEFINE([XAW3D1_5E], 1,
 		[Define to use version Xaw3d >= 1.5e.])],
-	[X_LIBS="-lXaw3d -lXmu $X_LIBS"])],
-    [X_LIBS="-lXmu $X_LIBS"
-     TL_SEARCH_LIBS_PATH([XawInitializeWidgetSet], [Xaw8 Xaw7 Xaw6],
-	[X_LIBPATHS], [$X_LIBS])])
+	[XLIBS="-lXaw3d -lXmu $XLIBS"])],
+    [XLIBS="-lXmu $XLIBS"
+     AC_SEARCH_LIBS([XawInitializeWidgetSet], [Xaw8 Xaw7 Xaw6], [], [],
+	     [$XLIBS])])
 AM_CONDITIONAL([XAW3D1_5E],
     [test "x$withval" = xyes && test "x$with_xaw3d1_5e" = xyes])dnl
 
@@ -296,10 +267,8 @@ AC_ARG_ENABLE(tablet, [AS_HELP_STRING([--enable-tablet],
 	[enable support for tablet device (default: disable)])],
     [], [enableval=no])dnl
 AS_IF([test "x$enableval" = xyes],
-    [TL_SEARCH_LIBS_PATH([XFreeDeviceList], [Xi], [X_LIBPATHS])
-     AS_IF([test "x$tl_cv_libs_path_XFreeDeviceList" != xno],
-	[AC_DEFINE([USE_TAB], 1,
-	    [Define for using an input tablet.])])])
+    [AC_SEARCH_LIBS([XFreeDeviceList], [Xi],
+	    [AC_DEFINE([USE_TAB], 1, [Define for using an input tablet.])])])
 
 AC_ARG_ENABLE(comp-led, [AS_HELP_STRING([--enable-comp-led=#],
     [turn on the compose indicator LED when entering \
@@ -370,7 +339,6 @@ AC_ARG_WITH(compkeydbdir, [AS_HELP_STRING([--with-compkeydbdir=<pathname>],
     [], [withval='${datadir}/xfig'])dnl
 AC_SUBST(compkeydbdir, ["$withval"])dnl
 
-LDFLAGS="$xfig_save_LDFLAGS"
 
 # Set the variables for substitution in xfig.man
 # This builds on the side-effect of the AC_SUBST above, to write, e.g.,
@@ -425,7 +393,7 @@ AM_CONDITIONAL([XFIG_LIBRARIES],
     [test "x$withval" = xyes && test -d "$srcdir/Libraries"])dnl
 
 # Autotest infrastructure.
-AC_CONFIG_TESTDIR([tests])dnl
+AC_CONFIG_TESTDIR([tests], [src${PATH_SEPARATOR}tests])dnl
 AM_MISSING_PROG([AUTOM4TE], [autom4te])dnl
 
 dnl If doc/xfig_man.html.in is not present, simply touch it, e.g.
@@ -444,11 +412,11 @@ AC_CONFIG_FILES([Makefile
 AC_OUTPUT
 
 AC_MSG_NOTICE([
-  Compile, \$CC=$CC \$PATH_CPPFLAGS=${PATH_CPPFLAGS:-<empty>} \\
-	\$CPPFLAGS=${CPPFLAGS:-<empty>} \$CFLAGS=${CFLAGS:-<empty>}
-  Link, $CC \$CFLAGS=${CFLAGS:-<empty>} \$PATH_LDFLAGS=${PATH_LDFLAGS:-<empty>} \\
-	\$LDFLAGS=${LDFLAGS:-<empty>} <object> \\
-	\$X_LIBS=${X_LIBS:-<empty>} \$LIBS=${LIBS:-<empty>}
+  Compile, CC=$CC XCPPFLAGS=${XCPPFLAGS:-<empty>} \\
+	CPPFLAGS=${CPPFLAGS:-<empty>} CFLAGS=${CFLAGS:-<empty>}
+  Link, $CC CFLAGS=${CFLAGS:-<empty>} XLDFLAGS=${XLDFLAGS:-<empty>} \\
+	LDFLAGS=${LDFLAGS:-<empty>} <object> \\
+	XLIBS=${XLIBS:-<empty>} LIBS=${LIBS:-<empty>}
 
 Installation locations:
   $APPDEFAULTDIR/ Fig	(--with-appdefaultdir)

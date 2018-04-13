@@ -94,7 +94,7 @@ in a file with objects that have negative coordinates.
 <p>
 <dt><kbd>-autorefresh </kbd>
 <dd>Make xfig look at the timestamp on the .fig file and
-automatically load it and display it everytime it changes.
+automatically load it and display it every time it changes.
 
 <p>
 <dt><kbd>-dontshowaxislines </kbd> (<kbd>-dontshowa</kbd>)
@@ -189,7 +189,7 @@ See also <a href="#axislines">axislines</a> option for the color of the zero lin
 
 <p>
 <dt><kbd>-specialtext </kbd> (<kbd>-spec</kbd>)
-<dd>Set the <i>Special</i> flag of
+<dd>Set the <i>TeX</i> flag of
 <a href="attributes.html#text-flags">TEXT FLAGS</a> to <i>ON</i>.
 The default is <i>off</i>.
 
@@ -314,27 +314,35 @@ This the the default.
 <pre>
 <b>Vector formats:</b>
      box        LaTeX box (figure boundary)
+     shape      ShapePar definition
      latex      LaTeX picture
      epic       LaTeX picture + epic macros
      eepic      LaTeX picture + eepic macros
      eepicemu   LaTeX picture + eepicemu macros
+     tikz       LaTeX picture + tikz macros
+     pict2e     LaTeX picture + pict2e macros
+     pstricks   LaTeX + pstricks macros
      pictex     PiCTeX macros
      ibmgl      IBMGL (or HPGL)
      eps        Encapsulated PostScript
      ps         PostScript
+     pspdf      EPS and PDF (two files)
      pdf        Portable Document Format
      pstex      Combined PS/LaTeX (both PS and LaTeX parts)
+     pdftex     Combined PDF/LaTeX (both PDF and LaTeX parts)
+     pspdftex   Combined PS/PDF/LaTeX (three files)
      textyl     Textyl \special commands
      tpic       TPIC
      pic        PIC
      html       HTML Image map
      mf         MF (MetaFont)
      mp         MP (MetaPost)
-     mmp        MMP (Multi-MetaPost)
      cgm        CGM (Computer Graphics Metafile)
-     binary cgm
      emf        EMF (Enhanced Metafile Format)
-     tk         Tk (ala Tcl/Tk)
+     dxf        DXF (Drawing Interchange Format)
+     gbx        GBX (Gerber, RS-247-X)
+     tk         Tk (aka Tcl/Tk)
+     ptk        Perl/Tk
 <b>Bitmap formats:</b>
      gif        GIF
      jpg        JPEG (JFIF)
@@ -827,7 +835,7 @@ when reading in a file with objects that have negative coordinates.
 <p>
 <dt><kbd>autorefresh </kbd>
 <dd>Make xfig look at the timestamp on the .fig file and
-automatically load it and display it everytime it changes.
+automatically load it and display it every time it changes.
 <br>
 <b>Option:</b> <tt>-autorefresh</tt>
 <br>
@@ -881,7 +889,7 @@ PostScript fonts will be used.
 
 <p>
 <dt><kbd>specialtext </kbd> (<kbd>SpecialText</kbd>)
-<dd>Set initial value of the <i>Special</i> flag of the
+<dd>Set initial value of the <i>TeX</i> flag of the
 <a href="attributes.html#text-flags">TEXT FLAGS</a>.
 <br>
 <b>Option:</b> <tt>-specialtext</tt>
@@ -1318,7 +1326,7 @@ for PICTURE object is clicked.
 <br>
 <b>Option:</b> <tt>-image_editor</tt>
 <br>
-<b>Default:</b> <FONT color="#AA00AA"><tt>xv</tt></font>
+<b>Default:</b> <FONT color="#AA00AA"><tt>xdg-open</tt></font>
 
 <p>
 <dt><kbd>keyFile </kbd> (<kbd>KeyFile</kbd>)
@@ -1377,7 +1385,7 @@ and shows the edges of the current <i>export</i> paper size.
 <dt><kbd>pdfviewer </kbd> (<kbd>Viewer</kbd>)
 <dd>Specify the external program to use to view the PDF help files.
 <br>
-<b>Default:</b> <FONT color="#AA00AA"><tt>acroread %f</tt></font>
+<b>Default:</b> <FONT color="#AA00AA"><tt>xdg-open %f</tt></font>
 
 <p>
 <dt><kbd>showballoons </kbd> (<kbd>showBalloons</kbd>)

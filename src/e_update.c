@@ -550,11 +550,10 @@ void update_spline(F_spline *spline)
 void fix_fillstyle(void *obj)
 {
     F_line *object = obj;
-    if (object->fill_color == BLACK || object->fill_color == DEFAULT ||
-	object->fill_color == DEFAULT) {
-	    if (object->fill_style >= NUMSHADEPATS &&
+    if (object->fill_color == BLACK || object->fill_color == DEFAULT) {
+	if (object->fill_style >= NUMSHADEPATS &&
 		object->fill_style < NUMSHADEPATS+NUMTINTPATS)
-			object->fill_style = UNFILLED;
+	    object->fill_style = UNFILLED;
     }
     /* a little sanity check */
     if (object->fill_style < DEFAULT)

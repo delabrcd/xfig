@@ -3,6 +3,7 @@
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
  * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2018 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -20,25 +21,26 @@
 #include "mode.h"
 #include "object.h"
 #include "paintop.h"
+#include "d_box.h"
 #include "d_line.h"
+#include "e_compound.h"
+#include "e_glue.h"
+#include "f_read.h"
+#include "f_save.h"
 #include "u_create.h"
 #include "u_draw.h"
 #include "u_elastic.h"
 #include "u_redraw.h"
 #include "u_search.h"
 #include "u_list.h"
+#include "u_markers.h"
 #include "u_undo.h"
 #include "w_canvas.h"
+#include "w_cursor.h"
 #include "w_layers.h"
 #include "w_mousefun.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
-#include "d_box.h"
-#include "e_compound.h"
-#include "e_glue.h"
-#include "f_save.h"
-#include "u_markers.h"
-#include "w_cursor.h"
 
 static void	init_delete(F_line *p, int type, int x, int y, int px, int py);
 static void	init_delete_region(int x, int y), delete_region(int x, int y), cancel_delete_region(void);

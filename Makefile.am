@@ -1,14 +1,24 @@
 ## Run automake on this file to produce Makefile.in
-# This file is part of FIG - Facility for Interactive Generation of figures
-#
-# Copyright (c) 2016 Thomas Loimer <thomas.loimer@tuwien.ac.at>
-#
-# Copying and distribution of this file, with or without modification,
-# are permitted in any medium without royalty provided the copyright
-# notice and this notice are preserved. This file is offered as-is,
-# without any warranty.
 
-ACLOCAL_AMFLAGS = -I m4
+# FIG : Facility for Interactive Generation of figures
+# Copyright (c) 1985-1988 by Supoj Sutanthavibul
+# Parts Copyright (c) 1989-2015 by Brian V. Smith
+# Parts Copyright (c) 1991 by Paul King
+# Parts Copyright (c) 2016-2018 by Thomas Loimer
+#
+# Any party obtaining a copy of these files is granted, free of charge, a
+# full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+# nonexclusive right and license to deal in this software and documentation
+# files (the "Software"), including without limitation the rights to use,
+# copy, modify, merge, publish distribute, sublicense and/or sell copies
+# of the Software, and to permit persons who receive copies from any such
+# party to do so, with the only requirement being that the above copyright
+# and this permission notice remain intact.
+#
+#
+# Makefile.am
+# Author: Thomas Loimer, 2016-2017
+
 
 SUBDIRS = src doc tests
 
@@ -20,18 +30,9 @@ dist_applications_DATA = xfig.desktop
 
 dist_compkeydb_DATA = CompKeyDB
 
-EXTRA_DIST = CHANGES FIGAPPS app-defaults splash-image update-version_m4
+EXTRA_DIST = CHANGES FIGAPPS HACKING app-defaults splash-image update-version_m4
 
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 config.h.in config.h.in~ configure
-
-if ENABLE_VERSIONING
-# The generated Makefile lets configure and config.h.in depend on configure.ac,
-# and on all .m4 files. If configure.ac is changed, configure is re-created,
-# then config.h, probably only after version.m4 is updated, and configure
-# is again recreated and run. Only a nuisance, though.
-version.m4: configure.ac Makefile.am src/*.c src/*.h
-	. ./update-version_m4
-endif
 
 # a fragment, to test compilation with different configure-flags
 compile-check: distdir

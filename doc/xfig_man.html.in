@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.3 -->
-<!-- CreationDate: Tue Jan 10 00:27:40 2017 -->
+<!-- CreationDate: Sat Apr 14 00:57:24 2018 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -81,25 +81,24 @@ middle button.</p>
 available from @PACKAGE_URL@.</p>
 
 <p style="margin-left:11%; margin-top: 1em">The
-<i>TransFig</i> package is used when printing or exporting
-the output from <i>xfig</i>. The <i>fig2dev</i> program from
-the <i>TransFig</i> package is automatically called by
-<i>xfig</i> as a back-end processor to produce various types
-of output:</p>
+<i>Fig2dev</i> package is used when printing or exporting
+the output from <i>xfig</i>. The <i>fig2dev</i> program is
+automatically called by <i>xfig</i> as a back-end processor
+to produce various types of output:</p>
 
 <p style="margin-left:11%; margin-top: 1em">LaTeX,
-Metafont, PostScript or Encapsulated PostScript, tk (tcl/tk
-tool command language/tool kit package), GIF, JPEG, PCX,
-PNG, PPM, TIFF, XBM, XPM, AutoCAD Slide, IBM-GL (HP/GL), Pic
-and PiCTeX. <br>
-For use with TeX/LaTeX: box, epic, eepic, eepicemu, pict2e,
-pstricks, tikz.</p>
+Metafont, PDF, PostScript or Encapsulated PostScript, CGM
+and EMF (mostyl used under Windows), tk (tcl/tk tool command
+language/tool kit package), SVG, GIF, JPEG, PCX, PNG, PPM,
+TIFF, XBM, XPM, Gerber, AutoCAD Slide, IBM-GL (HP/GL), Pic
+and PiCTeX. For use with TeX/LaTeX: box, epic, eepic,
+eepicemu, pict2e, pstricks, tikz.</p>
 
 <p style="margin-left:11%; margin-top: 1em">See man fig2dev
 for all options.</p>
 
 <p style="margin-left:11%; margin-top: 1em">The
-<i>TransFig</i> package is available from @PACKAGE_URL@.</p>
+<i>Fig2dev</i> package is available from @PACKAGE_URL@.</p>
 
 <h2>OPTIONS
 <a name="OPTIONS"></a>
@@ -121,7 +120,7 @@ region of the canvas. This is the default</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>&minus;au</b>[<b>torefresh</b>]
 Make xfig look at the timestamp on the .fig file and
-automatically load it and display it everytime it
+automatically load it and display it every time it
 changes.</p>
 
 
@@ -272,13 +271,43 @@ to be used for when exporting a fig file. Choices are:</p>
 
 
 <p>Language
--------------------------------------------------</p> </td></tr>
+---------------------------------------------------------------</p> </td></tr>
 </table>
 
 <p style="margin-left:22%;">Vector formats:</p>
 
 <table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="6%">
+
+
+<p>ps</p></td>
+<td width="72%">
+
+
+<p>PostScript</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="6%">
+
+
+<p>eps</p></td>
+<td width="72%">
+
+
+<p>Encapsulated PostScript</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="6%">
+
+
+<p>pdf</p></td>
+<td width="72%">
+
+
+<p>PDF (Portable Document Format)</p></td></tr>
 <tr valign="top" align="left">
 <td width="22%"></td>
 <td width="6%">
@@ -299,6 +328,26 @@ to be used for when exporting a fig file. Choices are:</p>
 
 
 <p>LaTeX picture</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="6%">
+
+
+<p>pict2e</p></td>
+<td width="72%">
+
+
+<p>LaTeX picture + pict2e macros</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="6%">
+
+
+<p>tikz</p></td>
+<td width="72%">
+
+
+<p>LaTeX picture + tikz macros</p></td></tr>
 <tr valign="top" align="left">
 <td width="22%"></td>
 <td width="6%">
@@ -334,88 +383,6 @@ to be used for when exporting a fig file. Choices are:</p>
 <td width="6%">
 
 
-<p>pictex</p></td>
-<td width="72%">
-
-
-<p>PiCTeX macros</p></td></tr>
-<tr valign="top" align="left">
-<td width="22%"></td>
-<td width="6%">
-
-
-<p>hpl</p></td>
-<td width="72%">
-
-
-<p>HPGL (IBMGL)</p></td></tr>
-<tr valign="top" align="left">
-<td width="22%"></td>
-<td width="6%">
-
-
-<p>eps</p></td>
-<td width="72%">
-
-
-<p>Encapuslated PostScript</p></td></tr>
-<tr valign="top" align="left">
-<td width="22%"></td>
-<td width="6%">
-
-
-<p>eps_ascii</p></td>
-<td width="72%">
-
-
-<p>Encapuslated PostScript with ASCII preview</p></td></tr>
-<tr valign="top" align="left">
-<td width="22%"></td>
-<td width="6%">
-
-
-<p>eps_mono_tiff</p></td>
-<td width="72%">
-
-
-<p>Encapuslated PostScript with monochrome binary (TIFF)
-preview</p> </td></tr>
-<tr valign="top" align="left">
-<td width="22%"></td>
-<td width="6%">
-
-
-<p>eps_color_tiff</p></td>
-<td width="72%">
-
-
-<p>Encapuslated PostScript with color binary (TIFF)
-preview</p> </td></tr>
-<tr valign="top" align="left">
-<td width="22%"></td>
-<td width="6%">
-
-
-<p>ps</p></td>
-<td width="72%">
-
-
-<p>PostScript</p></td></tr>
-<tr valign="top" align="left">
-<td width="22%"></td>
-<td width="6%">
-
-
-<p>pdf</p></td>
-<td width="72%">
-
-
-<p>PDF (Portable Document Format)</p></td></tr>
-<tr valign="top" align="left">
-<td width="22%"></td>
-<td width="6%">
-
-
 <p>pstex</p></td>
 <td width="72%">
 
@@ -431,6 +398,76 @@ preview</p> </td></tr>
 
 
 <p>Combined PDF/LaTeX (both PDF and LaTeX parts)</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="6%">
+
+
+<p>pspdftex</p></td>
+<td width="72%">
+
+
+<p>Combined PS/PDF/LaTeX (three parts)</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="6%">
+
+
+<p>pictex</p></td>
+<td width="72%">
+
+
+<p>PiCTeX macros</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="6%">
+
+
+<p>cgm</p></td>
+<td width="72%">
+
+
+<p>Computer Graphcis Meta file</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="6%">
+
+
+<p>emf</p></td>
+<td width="72%">
+
+
+<p>Enhanced Meta file</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="6%">
+
+
+<p>dxf</p></td>
+<td width="72%">
+
+
+<p>Drawing Interchange format</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="6%">
+
+
+<p>gbx</p></td>
+<td width="72%">
+
+
+<p>Gerber (RS-247-X)</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="6%">
+
+
+<p>ibmgl</p></td>
+<td width="72%">
+
+
+<p>HPGL/2 or IBMGL</p></td></tr>
 <tr valign="top" align="left">
 <td width="22%"></td>
 <td width="6%">
@@ -486,51 +523,31 @@ preview</p> </td></tr>
 <td width="6%">
 
 
-<p>mmp</p></td>
-<td width="72%">
-
-
-<p>MMP (Multi-MetaPost)</p></td></tr>
-<tr valign="top" align="left">
-<td width="22%"></td>
-<td width="6%">
-
-
-<p>cgm</p></td>
-<td width="72%">
-
-
-<p>CGM (Computer Graphics Meta file)</p></td></tr>
-<tr valign="top" align="left">
-<td width="22%"></td>
-<td width="6%">
-
-
-<p>bcgm</p></td>
-<td width="72%">
-
-
-<p>Binary CGM (Computer Graphics Meta file)</p></td></tr>
-<tr valign="top" align="left">
-<td width="22%"></td>
-<td width="6%">
-
-
-<p>emf</p></td>
-<td width="72%">
-
-
-<p>Enhanced Meta file)</p></td></tr>
-<tr valign="top" align="left">
-<td width="22%"></td>
-<td width="6%">
-
-
 <p>tk</p></td>
 <td width="72%">
 
 
-<p>Tk (of the tcl/tk fame)</p></td></tr>
+<p>Tk (Tcl/Tk toolkit)</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="6%">
+
+
+<p>ptk</p></td>
+<td width="72%">
+
+
+<p>Perl/Tk</p></td></tr>
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="6%">
+
+
+<p>shape</p></td>
+<td width="72%">
+
+
+<p>LaTeX shape paragraph definition</p></td></tr>
 <tr valign="top" align="left">
 <td width="22%"></td>
 <td width="6%">
@@ -540,7 +557,7 @@ preview</p> </td></tr>
 <td width="72%">
 
 
-<p>SVG (Scalable Vector Graphics (XML variant))</p></td></tr>
+<p>SVG (Scalable Vector Graphics)</p></td></tr>
 </table>
 
 <p style="margin-left:22%; margin-top: 1em">Bitmap
@@ -627,18 +644,8 @@ formats:</p>
 <td width="72%">
 
 
-<p>X11 Bitmap</p></td></tr>
-<tr valign="top" align="left">
-<td width="22%"></td>
-<td width="6%">
-
-
-<p>xpm</p></td>
-<td width="72%">
-
-
-<p>X11 Pixmap (XPM3 package)
--------------------------------------------------</p> </td></tr>
+<p>X11 Bitmap@XPM_MAN@
+---------------------------------------------------------------</p> </td></tr>
 </table>
 
 
@@ -648,7 +655,7 @@ formats:</p>
 <p style="margin-left:22%;">Set the size of the border
 margin around the figure for exporting to bitmap,
 PostScript, Encapsulated PostScript, or HTML MAP formats.
-This is in units of pixels (1/80th inch). The default is
+This is in units of points (1/72th inch). The default is
 0.</p>
 
 
@@ -1676,14 +1683,14 @@ smooth the figure.</p>
 <p style="margin-left:11%; margin-top: 1em"><b>&minus;spec</b>[<b>ialtext</b>]</p>
 
 <p style="margin-left:22%;">Start <i>xfig</i> with the
-<i>special text</i> mode for text objects. Special text
-means that special characters in the string are not
-specially processed but are passed directly to <i>LaTeX</i>.
-This is most useful for writing LaTeX equations. If this
-flag is not set, then the backslash character
-&rsquo;\&rsquo; is changed to the \backslash command, a
-brace &rsquo;{&rsquo; is turned into a brace command \{,
-etc.</p>
+<i>TeX text</i> mode for text objects. This means that
+characters that have a special meaning to TeX/LaTeX, e.g.,
+&rsquo;$&rsquo; or &rsquo;\&rsquo;, are not quoted but left
+untouched in the text string. This is most useful for
+writing LaTeX equations. If this flag is not set, then the
+backslash character &rsquo;\&rsquo; is changed to the
+\backslash command, a brace &rsquo;{&rsquo; is turned into a
+brace command \{, etc.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>&minus;spel</b>[<b>lcheckcommand</b>]
@@ -3657,9 +3664,8 @@ to the command line arguments:</p>
 </table>
 
 <p style="margin-left:6%; margin-top: 1em">* Default visual
-and depth depend on the X server. Use <i>xdpyinfo</i> to see
-what visuals <br>
-and depths are supported.
+and depth depend on the X server. Use <i>xdpyinfo</i> <br>
+to see what visuals and depths are supported.
 -------------------------------------------------------------------</p>
 
 <h2>BUGS and RESTRICTIONS
@@ -3671,17 +3677,6 @@ and depths are supported.
 reports, fixes, new features etc. to: <br>
 @PACKAGE_BUGREPORT@</p>
 
-<p style="margin-left:11%; margin-top: 1em">When reporting
-a bug, please first check if the problem is mentioned in the
-FAQ section of the HTML files (xfig Help menu).</p>
-
-<p style="margin-left:11%; margin-top: 1em">If it is not
-mentioned there, be sure to report the operating system you
-are using (e.g. SunOS 4.1.3), type of X server and version
-(OpenWindows 3, X11R6.4, XFree86 3.2.2, etc) and color depth
-(e.g. 8bpp, 16bpp), and most importantly the version of xfig
-or fig2dev that is having the problem.</p>
-
 <p style="margin-left:11%; margin-top: 1em">Because of the
 difference of some fonts in some X servers and the
 PostScript fonts on printers, text alignment can be
@@ -3691,18 +3686,6 @@ problematic.</p>
 operations employ smart redrawing of objects which are
 altered as a by product of the operation. You may need to
 use <i>Redraw</i> in these cases.</p>
-
-<p style="margin-left:11%; margin-top: 1em">Some servers do
-not allow bitmaps/pixmaps taller than the screen height or
-wider than the screen width. That is why there is a limit on
-the width of the top ruler and height of the side ruler. If
-you need wider/taller rulers AND your server allows bigger
-pixmaps, you may define <b>MAX_TOPRULER_WD</b> and/or
-<b>MAX_SIDERULER_HT</b> in your Imakefile in the
-<i>DEFINES</i> line. For example, to have a maximum top
-ruler width of 1160 pixels, add
-<b>&minus;DMAX_TOPRULER_WD=1160</b> to your <i>DEFINES</i>
-line in the Imakefile.</p>
 
 <p style="margin-left:11%; margin-top: 1em">If the image is
 panned or the <i>xfig</i> window iconified and de-iconified
@@ -3724,16 +3707,13 @@ last object can be undone with the Undo button.</p>
 to text using the popup search/update/replace/spell check
 panel cannot be undone.</p>
 
-<p style="margin-left:11%; margin-top: 1em">See the
-<b>README</b> file for troubleshooting.</p>
-
 <h2>SEE ALSO
 <a name="SEE ALSO"></a>
 </h2>
 
 
 <p style="margin-left:11%; margin-top: 1em">fig2dev(1)
-(<i>TransFig</i> package)</p>
+(<i>Fig2dev</i> package)</p>
 
 <p style="margin-left:11%; margin-top: 1em">gs(1)
 (<i>Ghostscript</i> PostScript previewer)</p>
@@ -3761,8 +3741,9 @@ features, revamped the look and feel which became version
 
 <p style="margin-left:11%; margin-top: 1em">Original
 Copyright (c) 1985 by Supoj Sutanthavibul <br>
-Parts Copyright (c) 1994-2013 by Brian V. Smith <br>
+Parts Copyright (c) 1989-2015 by Brian V. Smith <br>
 Parts Copyright (c) 1991 by Paul King <br>
+Parts Copyright (c) 2016-2018 by Thomas Loimer <br>
 Other Copyrights may be found in various files</p>
 
 <p style="margin-left:11%; margin-top: 1em">Any party
@@ -4125,7 +4106,7 @@ fixes/cleanups etc. by a host of faithful users.</p>
 <b>CHANGES</b> file for all the credits.</p>
 
 <p style="margin-left:11%; margin-top: 1em">The
-<i>TransFig</i> package was written by Micah Beck and is
+<i>Fig2dev</i> package was written by Micah Beck and is
 maintained by Thomas Loimer.</p>
 <hr>
 </body>

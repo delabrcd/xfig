@@ -239,7 +239,7 @@ static XtResource application_resources[] = {
     {"rulerthick", "RulerThick", XtRInt, sizeof(int),
       XtOffset(appresPtr, rulerthick), XtRImmediate, (caddr_t) 0},
     {"image_editor", "ImageEditor", XtRString, sizeof(char *),
-      XtOffset(appresPtr, image_editor), XtRString, (caddr_t) "xv"},
+      XtOffset(appresPtr, image_editor), XtRString, (caddr_t) "xdg-open"},
     {"magnification", "Magnification", XtRFloat, sizeof(float),
       XtOffset(appresPtr, magnification), XtRFloat, (caddr_t) & F100},
     {"paper_size", "Papersize", XtRString, sizeof(char *),
@@ -271,9 +271,9 @@ static XtResource application_resources[] = {
     {"pageborder", "Color",   XtRString, sizeof(char *),
       XtOffset(appresPtr, pageborder), XtRString, (caddr_t) "lightblue"},
     {"browser", "Browser", XtRString, sizeof(char *),
-      XtOffset(appresPtr, browser), XtRString, (caddr_t) "firefox"},
+      XtOffset(appresPtr, browser), XtRString, (caddr_t) "xdg-open %f"},
     {"pdfviewer", "Viewer", XtRString, sizeof(char *),
-      XtOffset(appresPtr, pdf_viewer), XtRString, (caddr_t) "acroread"},
+      XtOffset(appresPtr, pdf_viewer), XtRString, (caddr_t) "xdg-open %f"},
     {"spinner_delay", "spinnerDelay",   XtRInt, sizeof(int),
       XtOffset(appresPtr, spinner_delay), XtRImmediate, (caddr_t) 500},
     {"spinner_rate", "spinnerRate",   XtRInt, sizeof(int),
@@ -1188,7 +1188,7 @@ void main(int argc, char **argv)
 	XtManageChild(mode_panel);
 
 	/* move the depth manager to its right */
-	FirstArg(XtNfromHoriz, mode_panel)
+	FirstArg(XtNfromHoriz, mode_panel);
 	SetValues(layer_form);
 
     }

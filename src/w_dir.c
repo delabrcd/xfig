@@ -172,20 +172,28 @@ ShowHidden(Widget w, XtPointer client_data, XtPointer ret_val)
     DoChangeDir(".");
 }
 
+/* if the export dir diverged from the file dir, leave it there */
+void
+update_file_export_dir(const char *restrict dir)
+{
+    if (!strcmp(cur_file_dir, cur_export_dir))
+	strcpy(cur_export_dir, dir);
+    strcpy(cur_file_dir, dir);
+}
+
+
 void
 GoHome(Widget w, XtPointer client_data, XtPointer ret_val)
 {
     char	    dir[PATH_MAX];
 
     parseuserpath("~",dir);
-    if (browse_up) {
+    if (browse_up)
 	strcpy(cur_browse_dir,dir);
-    } else if (file_up) {
-	strcpy(cur_file_dir,dir);
-	strcpy(cur_export_dir,dir);	/* set export directory to file directory */
-    } else if (export_up) {
+    else if (file_up)
+	update_file_export_dir(dir);
+    else if (export_up)
 	strcpy(cur_export_dir,dir);
-    }
     DoChangeDir(dir);
 }
 
@@ -213,8 +221,7 @@ SetDir(Widget widget, XEvent *event, String *params, Cardinal *num_params)
 	strcpy(cur_browse_dir,ndir);	/* save in global var */
     } else if (file_up) {
 	GetValues(file_dir);
-	strcpy(cur_file_dir,ndir);	/* save in global var */
-	strcpy(cur_export_dir,ndir);	/* set export directory to file directory */
+	update_file_export_dir(ndir);
     } else if (export_up) {
 	GetValues(exp_dir);
 	strcpy(cur_export_dir,ndir);	/* save in global var */
@@ -685,8 +692,7 @@ DoChangeDir(char *dir)
 	NewList(browse_dlist, dirlist);
     } else if (file_up) {
 	SetValues(file_dir);
-	strcpy(cur_file_dir,ndir);	/* update global var */
-	strcpy(cur_export_dir,ndir);	/* set export directory to file directory */
+	update_file_export_dir(ndir);
 	XawTextSetInsertionPoint(file_dir, strlen(ndir));
 	NewList(file_flist,filelist);
 	NewList(file_dlist,dirlist);
@@ -733,8 +739,7 @@ Rescan(Widget widget, XEvent *event, String *params, Cardinal *num_params)
 	GetValues(file_dir);
 	if (change_directory(dir))	/* make sure we are there */
 	    return;
-	strcpy(cur_file_dir,dir);	/* save in global var */
-	strcpy(cur_export_dir,dir);	/* set export directory to file directory */
+	update_file_export_dir(dir);
 	(void) MakeFileList(dir, dirmask, &dir_list, &file_list);
 	NewList(file_flist,file_list);
 	NewList(file_dlist,dir_list);

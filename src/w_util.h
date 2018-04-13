@@ -148,10 +148,10 @@ extern	Boolean	nuser_colors_saved;
 #define DeclareStaticArgs(n)  static Arg Args[n]; static int ArgCountMax = n; static int ArgCount
 
 #define FirstArg(name, val) \
-	{ XtSetArg(Args[0], (name), (val)); ArgCount=1;}
+	do { XtSetArg(Args[0], (name), (val)); ArgCount=1;} while (0)
 #define NextArg(name, val) \
-	{ assert(ArgCount < ArgCountMax); \
-	  XtSetArg(Args[ArgCount], (name), (val)); ArgCount++;}
+	do { assert(ArgCount < ArgCountMax); \
+		XtSetArg(Args[ArgCount], (name), (val)); ArgCount++;} while (0)
 #define GetValues(n)	XtGetValues(n, Args, ArgCount)
 #define SetValues(n)	XtSetValues(n, Args, ArgCount)
 

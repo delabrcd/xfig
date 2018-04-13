@@ -1,23 +1,35 @@
 ## Run automake on this file to produce Makefile.in
-# This file is part of FIG - Facility for Interactive Generation of figures
-#
-# Copyright (c) 2016 Thomas Loimer <thomas.loimer@tuwien.ac.at>
-#
-# Copying and distribution of this file, with or without modification,
-# are permitted in any medium without royalty provided the copyright
-# notice and this notice are preserved. This file is offered as-is,
-# without any warranty.
 
-AM_CPPFLAGS = $(PATH_CPPFLAGS) -DXFIGLIBDIR=\"$(compkeydbdir)\" \
- -DOBJLIBDIR=\"$(pkgdatadir)/Libraries\" -DXFIGDOCDIR=\"$(docdir)\"
+# FIG : Facility for Interactive Generation of figures
+# Copyright (c) 1985-1988 by Supoj Sutanthavibul
+# Parts Copyright (c) 1989-2015 by Brian V. Smith
+# Parts Copyright (c) 1991 by Paul King
+# Parts Copyright (c) 2016-2018 by Thomas Loimer
+#
+# Any party obtaining a copy of these files is granted, free of charge, a
+# full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+# nonexclusive right and license to deal in this software and documentation
+# files (the "Software"), including without limitation the rights to use,
+# copy, modify, merge, publish distribute, sublicense and/or sell copies
+# of the Software, and to permit persons who receive copies from any such
+# party to do so, with the only requirement being that the above copyright
+# and this permission notice remain intact.
+#
+#
+# Makefile.am
+# Author: Thomas Loimer, 2016-2018
 
-AM_LDFLAGS = $(PATH_LDFLAGS)
-#AM_CFLAGS = -Wno-parentheses
+# The default ARFLAGS are "cru". However, ar now outputs the warning
+# "`u' modifier ignored since `D' is the default...".
+ARFLAGS = cr
+AM_CPPFLAGS = $(XCPPFLAGS) -DNDEBUG -DXFIGLIBDIR="\"$(compkeydbdir)\"" \
+	-DOBJLIBDIR="\"$(pkgdatadir)/Libraries\"" -DXFIGDOCDIR="\"$(docdir)\""
+AM_LDFLAGS = $(XLDFLAGS)
 # LIBOBJS must be placed in LDADD or xfig_LDADD - otherwise, the
 # lib-dir is not distributed
 # LIBOBJS may contain the replacement functions from AC_REPLACE_FUNCS.
-xfig_LDADD = $(LIBOBJS) $(X_LIBS)
-# xmkmf compiliert mit, abgesehen von obigem: -DNEWARROWPROTO
+xfig_LDADD = $(LIBOBJS) $(XLIBS)
+# xmkmf, in addition, sets the flag -DNEWARROWPROTO
 
 bin_PROGRAMS = xfig
 
@@ -84,6 +96,11 @@ endif
 
 EXTRA_DIST = u_draw_spline.c
 
+# Create a convenience library. Unit tests are linked with libxfig.a.
+check_LIBRARIES = libxfig.a
+libxfig_a_SOURCES = $(xfig_SOURCES)
+libxfig_a_LIBADD = $(LIBOBJS)
+
 # These files depend on PACKAGE_VERSION, which is
 # defined in config.h ( = $(CONFIG_HEADER))
 f_save.$(OBJEXT) main.$(OBJEXT) u_error.$(OBJEXT): $(CONFIG_HEADER)
@@ -99,6 +116,14 @@ MAINTAINERCLEANFILES = Makefile.in
 version.xbm: version.fig.in $(top_srcdir)/version.m4
 	fig2dev -L ppm version.fig | ppmtopgm | pgmtopbm | pnmcrop \
 	| pbmtoxbm | sed '1,3 s/noname_/letters_/; 3 s/char/unsigned &/' > $@
+
+if ENABLE_VERSIONING
+# The Makefile generated in $top_srcdir lets configure and config.h.in
+# depend on configure.ac and on all .m4-files.
+$(top_srcdir)/version.m4: $(top_srcdir)/configure.ac $(top_srcdir)/Makefile.am \
+			  $(srcdir)/Makefile.am $(srcdir)/*.c $(srcdir)/*.h
+	cd $(top_srcdir) && ./update-version_m4
+endif
 
 # $(srcdir) is most probably not necessary
 splash.xpm: $(top_srcdir)/splash-image/spl_bckgnd.fig

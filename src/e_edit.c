@@ -403,7 +403,11 @@ static XtActionsRec compound_actions[] =
 #define SFACTOR_BAR_WIDTH (SFACTOR_BAR_HEIGHT/10)
 #define SFACTOR_SIGN(x) ( (x) < 0 ? 1.0 : -1.0)
 #define SFACTOR_TO_PERCENTAGE(x) ((-(x) + 1.0) / 2.0)
-#define PERCENTAGE_TO_CONTROL(x) (-(SFACTOR_BAR_HEIGHT/100) * (x) + 1.0)
+/*
+ * The division by 1.- 0.5*THUMB_H allows to move the slider between
+ * 1.0 and -1.0, exactly and inclusively.
+ */
+#define PERCENTAGE_TO_CONTROL(x) (-(2./(1.-0.5*THUMB_H)) * (x) + 1.0)
 
 static void update_sfactor_value(double new_value);
 static struct sfactor_def
@@ -2240,11 +2244,11 @@ void make_window_text(F_text *t)
     static char	   *textjust_items[] = {
     "Left justified ", "Centered       ", "Right justified"};
     static char	   *hidden_text_items[] = {
-    "Normal ", "Hidden "};
+    "Normal", "Hidden"};
     static char	   *rigid_text_items[] = {
-    "Normal ", "Rigid  "};
+    "Normal", "Rigid "};
     static char	   *special_text_items[] = {
-    "Normal ", "Special"};
+    "Normal", "TeX   "};
 
     set_cursor(panel_cursor);
     toggle_textmarker(t);
@@ -2361,7 +2365,7 @@ void make_window_text(F_text *t)
     NextArg(XtNbottom, XtChainBottom);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainLeft);
-    beside = XtCreateManagedWidget("   Special Flag", labelWidgetClass,
+    beside = XtCreateManagedWidget("       TeX Flag", labelWidgetClass,
 				   form, Args, ArgCount);
 
     FirstArg(XtNfromVert, below);
@@ -3643,7 +3647,9 @@ scroll_sfactor_value(Widget panel_local, XtPointer closure, XtPointer _num_pixel
 static void
 update_sfactor_value(double new_value)
 {
-  if (new_value < S_SPLINE_INTERP || new_value > S_SPLINE_APPROX)
+  /* To get exactly -1.0, a little bit of overshoot must be allowed.
+     For +1.0, an overshoot is not necessary. */
+  if (new_value < -1.01 || new_value > 1.)
     return;
 
   if (new_value == S_SPLINE_ANGULAR)

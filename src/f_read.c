@@ -1,8 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2018 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -322,6 +323,10 @@ readfp_fig(FILE *fp, F_compound *obj, Boolean merge, int xoff, int yoff, fig_set
 		    return read_return(BAD_FORMAT);		/* error */
 		}
 		settings->magnification = atoi(buf);
+		if (settings->magnification <= 0.) {
+		    file_msg("Negative Magnification is not supported");
+		    return read_return(BAD_FORMAT);
+		}
 
 		/* read multiple page flag now */
 		if (read_line(fp) < 0) {
@@ -341,6 +346,10 @@ readfp_fig(FILE *fp, F_compound *obj, Boolean merge, int xoff, int yoff, fig_set
 		    return read_return(BAD_FORMAT);		/* error */
 		}
 		settings->transparent = atoi(buf);
+		if (settings->transparent < CANVAS_BG) { /* see object.h */
+		    file_msg("Invalid transparent color specification");
+		    return read_return(BAD_FORMAT);
+		}
 	    }
 	}
 	/* now read the figure itself */
@@ -451,6 +460,12 @@ int read_objects(FILE *fp, F_compound *obj, int *res)
     /* read the resolution (ppi) and the coordinate system used (upper-left or lower-left) */
     if (sscanf(buf, "%d%d\n", &ppi, &coord_sys) != 2) {
 	file_msg("Figure resolution or coordinate specifier missing in line %d.", line_no);
+	return BAD_FORMAT;
+    }
+
+    if (ppi <= 0.) {
+	file_msg("Negative figure resolution (%g) is not supported in line %d.",
+			ppi, line_no);
 	return BAD_FORMAT;
     }
 
@@ -708,7 +723,8 @@ read_compoundobject(FILE *fp)
 	       &com->secorner.x, &com->secorner.y);
     /* if compound spec has no bounds, set to 0 and calculate later */
     if (n <= 0) {
-	com->nwcorner.x =com->nwcorner.y = com->secorner.x = com->secorner.y = 0;
+	com->nwcorner.x = com->nwcorner.y =
+		com->secorner.x = com->secorner.y = 0;
     } else if (n != 4) {
 	/* otherwise, if there aren't 4 numbers, complain */
 	file_msg(Err_incomp, "compound", save_line);
@@ -774,9 +790,9 @@ read_compoundobject(FILE *fp)
 	    break;
 	case O_END_COMPOUND:
 	    /* if compound def had no bounds or all zeroes, calculate bounds now */
-	    if (com->nwcorner.x == 0 && com->nwcorner.x == 0 &&
-	        com->nwcorner.x == 0 && com->nwcorner.x == 0)
-		    compound_bound(com, &com->nwcorner.x, &com->nwcorner.y,
+	    if (com->nwcorner.x == 0 && com->nwcorner.y == 0 &&
+			com->secorner.x == 0 && com->secorner.y == 0)
+		compound_bound(com, &com->nwcorner.x, &com->nwcorner.y,
 					&com->secorner.x, &com->secorner.y);
 	    return com;
 	default:

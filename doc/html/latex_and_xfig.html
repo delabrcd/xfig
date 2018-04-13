@@ -28,7 +28,12 @@
 <h2>How to Import Xfig Figures in Your LaTeX Files</h2></a>
 
 Xfig can generate output to may different formats which TeX or LaTeX can
-read. The final document is produced by one of the following methods.
+read.
+Most importantly, in order that TeX/LaTeX interprets text in the figure,
+the <a href="attributes.html#text-flags">text flag</a> <i>TeX Flag</i>
+must be set on the text.
+The final document is produced by one of the following methods.
+
 
 <ol type="A">
 <li>The file generated from xfig is directly included or embedded into your
@@ -62,7 +67,7 @@ pdf file. The latter can be processed by any LaTeX engine.</li>
 </ol>
 
 <p>
-For methods A and C, the Text flag <tt>Special Text</tt> must be set for
+For methods A and C, the Text flag <tt>TeX Text</tt> must be set for
 text that should be typeset using TeX. For instance, to render the text
 <tt>$\beta$</tt> in the xfig-drawing as &beta;. Otherwise, characters
 special to TeX are quoted and <tt>$\beta$</tt> prints as $\beta$. The choice
@@ -81,17 +86,17 @@ and graphics.</p>
 <p>
 The postscript and pdf output languages support all capabilities of xfig,
 except that only postscript fonts can be used and text is not interpreted by
-TeX. With method C, all text which has the Text flag "Special Text" set is
-exported to the LaTeX file and a TeX-font is used. Text without the "Special
+TeX. With method C, all text which has the Text flag "TeX Text" set is
+exported to the LaTeX file and a TeX-font is used. Text without the "TeX
 Text" flag is printed using a Postscript-font. A variant of method B is to
 use the psfrag package and replace strings in the eps file from within
 LaTeX.</p>
 
 <p>
-To set the Text flag <tt>Special Text</tt> and use LaTeX-fonts for all text,
+To set the Text flag <tt>TeX Text</tt> and use LaTeX-fonts for all text,
 use the commandline
 <pre>xfig -specialtext -latexfonts -startlatexFont default</pre>
-To start all drawings with LaTeX fonts and with Special Text set, put the
+To start all drawings with LaTeX fonts and with TeX Text set, put the
 following in your X-resources file, probably .Xresources in your home directory,
 <pre>
 Fig.latexfonts: true

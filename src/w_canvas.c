@@ -3,13 +3,14 @@
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
  * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2017 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
- * the Software, and to permit persons who receive copies from any such
+ * copy, modify, merge, publish distribute, sublicense and/or sell copies
+ * of the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
  *
@@ -50,13 +51,14 @@
 #include "w_cursor.h"
 #include "w_grid.h"
 
-static void popup_mode_panel(Widget widget, XButtonEvent *event, String *params, Cardinal *num_params);
-static void popdown_mode_panel(void);
-
+#include <limits.h>
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
 #include <X11/Xatom.h>
+
+static void popup_mode_panel(Widget widget, XButtonEvent *event, String *params, Cardinal *num_params);
+static void popdown_mode_panel(void);
 
 /*********************** EXPORTS ************************/
 
@@ -399,6 +401,14 @@ void canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal 
 	else if (be->button == Button5 && !shift)
 	    /* pan up with wheelmouse */
 	    pan_up(event->state & ShiftMask);
+
+	else if (be->button == 6 /* Button6 */ && !shift)
+	    /* pan right with wheelmouse or touchpad */
+	    pan_right(event->state & ShiftMask);
+
+	else if (be->button == 7 /* Button7 */ && !shift)
+	    /* pan left with wheelmouse or touchpad */
+	    pan_left(event->state & ShiftMask);
 
 	break;
 
@@ -1013,50 +1023,84 @@ static void popup_mode_panel(Widget widget, XButtonEvent *event, String *params,
   active_mode_panel = panel;
 }
 
-
-/* macro which rounds coordinates depending on point positioning mode */		// isometric grid
-void round_coords( int* x, int* y )
+/* round coordinate on square grid */
+static void
+round_square(int *x, const int spacing, const int half)
 {
-	double txx;						/* position from nearest whole grid */
-	double xd, yd;						/* new coordinates */
-	double c30 = cos( 30.0 / 180.0 * M_PI );		/* cos( 30 ) */
-	double s = posn_rnd[cur_gridunit][cur_pointposn];	/* whole grid interval */
-	double h = posn_hlf[cur_gridunit][cur_pointposn];	/* half grid interval */
+	if (*x < INT_MIN + half + 1) {
+		*x = -(INT_MAX / spacing) * spacing;
+	} else if (*x >= INT_MAX - half) {
+		*x = (INT_MAX / spacing) * spacing;
+	} else {
+		int d = *x % spacing;
 
-	/* do all calculations in double */
-	xd = *x;
-	yd = *y;
-
-	/* make sure the cursor is on grid */
-	if( ( cur_pointposn != P_ANY ) && ( !anypointposn ) ) {
-		if( cur_gridtype == GRID_ISO ) {
-			/* determine x */
-			xd = ( fabs( txx = fmod( xd, s * c30 ) ) < ( h * c30 ) ) ?
-				 xd - txx : xd + ( xd >= 0 ? s * c30 : -s * c30 ) - txx;
-
-			/* determine y depending on x */
-			if( fabs( fmod( xd / ( s * c30 ), 2.0 ) ) > 0.5 ) {
-				yd = ( fabs( txx = fmod( yd + h, s ) ) < h ) ?
-					 yd - txx : yd + ( yd >= 0 ? s : -s ) - txx;
-			} else {
-				yd = ( fabs( txx = fmod( yd, s ) ) < h ) ?
-					 yd - txx : yd + ( yd >= 0 ? s : -s ) - txx;
-			}
-		}
-
-		if( cur_gridtype == GRID_SQUARE ) {
-			/* determine x */
-			xd = ( fabs( txx = fmod( xd, s ) ) < h ) ?
-				 xd - txx : xd + ( xd >= 0 ? s : -s ) - txx;
-
-			/* determine y */
-			yd = ( fabs( txx = fmod( yd, s ) ) < h ) ?
-				 yd - txx : yd + ( yd >= 0 ? s : -s ) - txx;
-		}
+		/*
+		 * The standard guarantees that
+		 *   (a/b)*b + a%b == a.
+		 * But, for a < 0, it is implementation defined whether, e.g.,
+		 *   -7 / 3 == -2  &&  -7 % 3 == -1, or
+		 *   -7 / 3 == -3  &&  -7 % 3 == 2.
+		 */
+		if (d > 0)
+			*x += d < half ? -d : -d + spacing;
+		else if (d < 0)
+			*x += d < -half ? -d - spacing : -d;
 	}
-
-	/* store (return) result as integer */
-	*x = xd;
-	*y = yd;
 }
 
+/* macro which rounds coordinates depending on point positioning mode */		// isometric grid
+void
+round_coords(int *x, int *y)
+{
+	const int spacing = posn_rnd[cur_gridunit][cur_pointposn];
+	const int half = posn_hlf[cur_gridunit][cur_pointposn];
+
+
+	/* make sure the cursor is on grid */
+	if (cur_pointposn == P_ANY || anypointposn)
+		return;
+
+	if (cur_gridtype == GRID_ISO) {
+		/* do all calculations in double */
+		double xd = *x;
+		double yd = *y;
+		const double c30 = sqrt(0.75);		/* cos(30) */
+		double txx;		/* position from nearest whole grid */
+		const double s = spacing;		/* whole grid interval */
+		const double h = half;			/* half grid interval */
+
+		/* determine x */
+		xd = ( fabs( txx = fmod( xd, s * c30 ) ) < ( h * c30 ) ) ?
+			xd - txx : xd + ( xd >= 0 ? s * c30 : -s * c30 ) - txx;
+
+		/* determine y depending on x */
+		if( fabs( fmod( xd / ( s * c30 ), 2.0 ) ) > 0.5 ) {
+			yd = ( fabs( txx = fmod( yd + h, s ) ) < h ) ?
+				yd - txx : yd + ( yd >= 0 ? s : -s ) - txx;
+		} else {
+			yd = ( fabs( txx = fmod( yd, s ) ) < h ) ?
+				yd - txx : yd + ( yd >= 0 ? s : -s ) - txx;
+		}
+
+		/* check for overflow */
+		if (xd < INT_MIN || xd > INT_MAX ||
+				yd < INT_MIN || yd > INT_MAX) {
+			if (xd < INT_MIN)
+				*x = xd + s * c30;
+			else if (xd > INT_MAX)
+				*x = xd - s * c30;
+			if (yd < INT_MIN)
+				*y = yd + s; /* h gave segfault */
+			else if  (yd > INT_MAX)
+				*y = yd - s; /* h gave segfault */
+			round_coords(x, y);
+		} else {
+			/* store (return) result as integer */
+			*x = xd;
+			*y = yd;
+		}
+	} else {	/* cur_gridtype == GRID_SQUARE */
+		round_square(x, spacing, half);
+		round_square(y, spacing, half);
+	}
+}

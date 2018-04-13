@@ -828,7 +828,7 @@ This is the default.
 <p>
 <dt><img src="images/text-flags-button.png" alt="">
   <a name="text-flags">(TEXT FLAGS)</a>
-<dd>Set the <i>Hidden</i>, <i>Rigid</i> and <i>Special</i> flags
+<dd>Set the <i>Hidden</i>, <i>Rigid</i> and <i>TeX</i> flags
 of <a href="drawing.html#text">TEXT</a> objects.
 These flags are used for special situations,
 and they are all <i>OFF</i> by default.
@@ -856,16 +856,18 @@ the size of the font of the TEXT object will not be changed
 when a <a href="editing.html#glue-compound">COMPOUND object</a>
 which includes the TEXT object is <a href="editing.html#scale">scaled</a>.
 <p>
-If the <i>Special</i> flag is <i>ON</i>,
-special characters (such as `<tt>\</tt>', for example)
+If the <i>TeX</i> flag is <i>ON</i>,
+special characters (such as `<tt>\</tt>' or `<tt>$</tt>', for example)
 in text will not be specially processed
 but passed to the output `as is' when
 <a href="printing.html#export">Exporting</a>.
 This may be used to put LaTeX commands in text.
 The use of LaTeX commands is especially helpful to
 put complex mathematical formulas in the figure, for example.
-If the <i>Special</i> flag is <i>OFF</i>,
-the text will be processed before output.
+If the <i>TeX</i> flag is <i>OFF</i>,
+the text will be processed before output, and special characters will be quoted.
+For example, `<tt>\</tt>' will be replaced by  `<tt>\backslash</tt>', and
+`<tt>$</tt>' will be replaced by `<tt>\$</tt>'.
 
 <hr>
 

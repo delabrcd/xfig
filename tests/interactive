@@ -1,0 +1,39 @@
+Below a description of the behavior of xfig, to be checked interactively.
+
+
+Testsuite 1:
+============
+Expected values for the file (Save as), export and image directories.
+In the code, these are called cur_file_dir, cur_export_dir and cur_browse_dir.
+
+mkdir tt;
+cd tt;
+mkdir save save2 export image new
+Create a figure new/o.fig, Exit;
+Provide an image tt/image/a.jpg
+
+Start xfig in tt; Create a new figure
+Save as.., cd to tt/save, save as tt/save/f.fig
+Save as.., cd to tt, Cancel; Save as..
+	Result 1: Current dir is tt/save/
+Export.., cd to tt/export, export as tt/export/f.eps
+Save as..
+	Result 2: Current dir is tt/save
+Add a line to the figure, Save as..
+	Result 3: Current dir is tt/save
+Export..
+	Result 4: Current dir is tt/export
+Export..,  cd to tt, Cancel; Export..
+	Result 5: Current dir is tt/export
+Open image tool, browse to tt/image/, import a.jpg; Save as..
+	Result 6: Current dir is tt/save
+Again open image tool
+	Result 7: Current dir is tt/image
+(The original image dir is not restored on Cancel.)
+cd to tt, Cancel; Open image tool
+	Result 8: Current dir is tt
+Merge dir always stays save dir
+Merge.., cd to tt/new, Merge new/o.fig; Save as..
+	Result 9: Current dir is tt/save
+Start xfig, Open.., Go Home, Cancel; Save as..
+	Result 10: Current file and export dir is $HOME, not invalid

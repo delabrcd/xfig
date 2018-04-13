@@ -26,7 +26,6 @@
 #include "w_msgpanel.h"
 #include "f_util.h"
 #include "u_quartic.h"
-#include <alloca.h>
 #include <math.h>
 #undef I
 
@@ -100,9 +99,9 @@ do_circle_ellipse_intersect(r, X, Y, e, x, y, arc, isect_cb)
   double K, L, M, N;
   double hix, hiy;
 
-  double * poly;
-  double * solr;
-  double * soli;
+  double poly[5];
+  double solr[4];
+  double soli[4];
   double mind = HUGE_VAL;
   int nsol, i;
 
@@ -116,10 +115,6 @@ do_circle_ellipse_intersect(r, X, Y, e, x, y, arc, isect_cb)
   /* rotate around ellipse angle so ellipse semi-axes are ortho to space */
   snap_rotate_vector (&EX, &EY, EX, EY, (double)(e->angle));
   snap_rotate_vector (&X,  &Y,  X,  Y,  (double)(e->angle));
-
-  poly = alloca(5 * sizeof(double));
-  solr = alloca(4 * sizeof(double));
-  soli = alloca(4 * sizeof(double));
 
   K = 1.0 - pow(b/a, 2.0);
   L = 2.0 * X;
@@ -343,9 +338,9 @@ non_ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
   double SIN, COS;
   double KV, KW;
   double E, F, G, H, K, L, M, N;
-  double * poly;
-  double * solr;
-  double * soli;
+  double poly[5];
+  double solr[4];
+  double soli[4];
   double ix, iye1;
   double PX = (double)(x - e1->center.x);
   double PY = (double)(y - e1->center.y);
@@ -362,10 +357,6 @@ non_ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
 
   snap_rotate_vector (&PX, &PY, PX, PY, (double)(e1->angle));
   snap_rotate_vector (&X,  &Y,  X,  Y,  (double)(e1->angle));
-
-  poly = alloca(5 * sizeof(double));
-  solr = alloca(4 * sizeof(double));
-  soli = alloca(4 * sizeof(double));
 
   /*
    * x^2 / a^2   +   y^2 / b^2  =  1			Eq  1,  origin ctrd, ortho, ellipse 1
@@ -656,9 +647,9 @@ ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
 
   double A, B, C, D;
   double E, F, G, H, J, K, L, M, N;
-  double * poly;
-  double * solr;
-  double * soli;
+  double poly[5];
+  double solr[4];
+  double soli[4];
   double ix, iye1, iye2;
   double PX = (double)(x - e1->center.x);
   double PY = (double)(y - e1->center.y);
@@ -675,10 +666,6 @@ ortho_ellipse_ellipse_intersect(e1, e2, x, y, isect_cb)
 
   snap_rotate_vector (&PX, &PY, PX, PY, (double)(e1->angle));
   snap_rotate_vector (&X,  &Y,  X,  Y,  (double)(e1->angle));
-
-  poly = alloca(5 * sizeof(double));
-  solr = alloca(4 * sizeof(double));
-  soli = alloca(4 * sizeof(double));
 
   A = pow(a, 2.0);
   B = pow(b, 2.0);

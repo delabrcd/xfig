@@ -329,11 +329,10 @@ void create_color_panel(Widget form, Widget label, Widget cancel, ind_sw_info *i
 		FirstArg(XtNlabel, (i==0)? "Edit Pen": "Edit Fill");
 		NextArg(XtNwidth, 70);
 		/* make it so that only one of the edit buttons are pressed */
-		if (i) {
-		    NextArg(XtNradioGroup, mixedEdit[0])
-		} else {
+		if (i)
+		    NextArg(XtNradioGroup, mixedEdit[0]);
+		else
 		    NextArg(XtNstate, True);	/* start with edit pen */
-		}
 		NextArg(XtNradioData, (XtPointer) (i+1));	/* can't use 0 */
 		mixedEdit[i] = XtCreateManagedWidget("mixedEdit", toggleWidgetClass,
 							mixedForm[i], Args, ArgCount);
@@ -944,7 +943,7 @@ void set_mixed_name(int i, int col)
     char	buf[20];
 
     if (col < NUM_STD_COLS) {
-	FirstArg(XtNlabel, colorNames[col+1].name)
+	FirstArg(XtNlabel, colorNames[col+1].name);
 	if (col == WHITE)
 		fore = x_fg_color.pixel;
 	else
@@ -1561,7 +1560,7 @@ set_std_color(int color)
 	    }
 	    /* now change the background of the widget */
 	    if (color == WHITE)
-		FirstArg(XtNbackground, x_bg_color.pixel)
+		FirstArg(XtNbackground, x_bg_color.pixel);
 	    else
 		FirstArg(XtNbackground, x_fg_color.pixel);
 	    SetValues(mixedColor[edit_fill]);
@@ -1919,15 +1918,15 @@ Scrolled(Widget w, XtPointer closure, XtPointer call_data)
 			pos = 255 - (int)(locked_top * 255 + 0.5);
 			break;
 		case S_HUE:
-			hsv_values.h += (going_up? -blip: blip);
+			hsv_values.h += (going_up? blip: -blip);
 			ThumbHSV(w, 1.0-hsv_values.h);
 			return;
 		case S_SAT:
-			hsv_values.s += (going_up? -blip: blip);
+			hsv_values.s += (going_up? blip: -blip);
 			ThumbHSV(w, 1.0-hsv_values.s);
 			return;
 		case S_VAL:
-			hsv_values.v += (going_up? -blip: blip);
+			hsv_values.v += (going_up? blip: -blip);
 			ThumbHSV(w, 1.0-hsv_values.v);
 			return;
 		default:
@@ -1935,7 +1934,7 @@ Scrolled(Widget w, XtPointer closure, XtPointer call_data)
 			exit(1);
 	}
 
-	if (going_up) {
+	if (!going_up) {
 		if (pos > 0)
 			pos--;
 	} else {

@@ -1,7 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2018 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -59,7 +61,9 @@ void	fontpane_popup(int *psfont_adr, int *latexfont_adr, int *psflag_adr, void (
 void	make_pulldown_menu_images(choice_info *entries, Cardinal nent, Pixmap *images, char **texts, Widget parent, XtCallbackProc callback);
 void	tog_selective_update(long unsigned int mask);
 unsigned long cur_indmask;	/* mask showing which indicator buttons are mapped */
-void	inc_zoom(ind_sw_info *sw), dec_zoom(ind_sw_info *sw), fit_zoom(ind_sw_info *sw);
+void	inc_zoom_centered(ind_sw_info *sw);
+void	dec_zoom_centered(ind_sw_info *sw);
+void	fit_zoom(ind_sw_info *sw);
 ind_sw_info ind_switches[];
 ind_sw_info *fill_style_sw;
 ind_sw_info *pen_color_button, *fill_color_button, *depth_button;
@@ -379,7 +383,8 @@ ind_sw_info	*fill_style_sw;
 
 ind_sw_info	ind_switches[] = {
     {I_FVAL, 0, "Zoom", "", NARROW_IND_SW_WD,		/* always show zoom button */
-	NULL, &display_zoomscale, inc_zoom, dec_zoom, show_zoom, MIN_ZOOM, MAX_ZOOM, 1.0},
+	NULL, &display_zoomscale, inc_zoom_centered, dec_zoom_centered,
+	show_zoom, MIN_ZOOM, MAX_ZOOM, 1.0},
     {I_CHOICE, 0, "Grid", "Mode", DEF_IND_SW_WD,	/* and grid button */			// isometric grid
 	&cur_gridmode, NULL, inc_choice, dec_choice, show_gridmode, 0, 0, 0.0,
 	gridmode_choices, NUM_GRIDMODE_CHOICES, (NUM_GRIDMODE_CHOICES+1)/2},
@@ -1954,9 +1959,9 @@ special_text_select(Widget w, XtPointer new_special_text, XtPointer call_data)
     SetValues(special_text_panel);
     special_text_flag = (intptr_t) new_special_text;
     if (special_text_flag)
-	put_msg("Text will be printed as special during print/export");
+	put_msg("Text may contain characters with special meaning for TeX/LaTeX");
     else
-	put_msg("Text will be printed as normal during print/export");
+	put_msg("Characters special to TeX will be quoted during print/export");
 }
 
 void popup_flags_panel(ind_sw_info *isw)
@@ -1966,11 +1971,11 @@ void popup_flags_panel(ind_sw_info *isw)
     char	    buf[50];
     static Boolean  actions_added=False;
     static char    *hidden_text_items[] = {
-    "Normal ", "Hidden "};
+    "Normal", "Hidden"};
     static char    *rigid_text_items[] = {
-    "Normal ", "Rigid  "};
+    "Normal", "Rigid "};
     static char    *special_text_items[] = {
-    "Normal ", "Special"};
+    "Normal", "TeX   "};
 
     nval_i = isw;
     XtSetSensitive(nval_i->button, False);
@@ -2021,7 +2026,7 @@ void popup_flags_panel(ind_sw_info *isw)
     NextArg(XtNbottom, XtChainTop);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainLeft);
-    beside = XtCreateManagedWidget(" Hidden Flag", labelWidgetClass,
+    beside = XtCreateManagedWidget("Hidden Flag", labelWidgetClass,
                                    form, Args, ArgCount);
 
     FirstArg(XtNfromVert, label);
@@ -2047,7 +2052,7 @@ void popup_flags_panel(ind_sw_info *isw)
     NextArg(XtNbottom, XtChainTop);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainLeft);
-    beside = XtCreateManagedWidget("  Rigid Flag", labelWidgetClass,
+    beside = XtCreateManagedWidget(" Rigid Flag", labelWidgetClass,
                                    form, Args, ArgCount);
 
     FirstArg(XtNfromVert, below);
@@ -2073,7 +2078,7 @@ void popup_flags_panel(ind_sw_info *isw)
     NextArg(XtNbottom, XtChainTop);
     NextArg(XtNleft, XtChainLeft);
     NextArg(XtNright, XtChainLeft);
-    beside = XtCreateManagedWidget("Special Flag", labelWidgetClass,
+    beside = XtCreateManagedWidget("   TeX Flag", labelWidgetClass,
                                    form, Args, ArgCount);
 
     FirstArg(XtNfromVert, below);
@@ -3963,7 +3968,7 @@ dec_flags(ind_sw_info *sw)
 static void
 show_flags(ind_sw_info *sw)
 {
-    put_msg("Text flags: Hidden=%s, Special=%s, Rigid=%s (Button 1 to change)",
+    put_msg("Text flags: Hidden=%s, TeX=%s, Rigid=%s (Button 1 to change)",
 		(cur_textflags & HIDDEN_TEXT) ? "on" : "off",
 		(cur_textflags & SPECIAL_TEXT) ? "on" : "off",
 		(cur_textflags & RIGID_TEXT) ? "on" : "off");
@@ -3972,15 +3977,15 @@ show_flags(ind_sw_info *sw)
     switch(cur_flagshown) {
 	case 0:
 	    sprintf(indbuf, "hidden=%s",
-			(cur_textflags & HIDDEN_TEXT) ? "on  " : "off ");
+			(cur_textflags & HIDDEN_TEXT) ? "on " : "off");
 	    break;
 	case 1:
-	    sprintf(indbuf, "special=%s",
-			(cur_textflags & SPECIAL_TEXT) ? "on " : "off");
+	    sprintf(indbuf, "TeX=%s",
+			(cur_textflags & SPECIAL_TEXT) ? "on    " : "off   ");
 	    break;
 	default:
 	    sprintf(indbuf, "rigid=%s",
-			(cur_textflags & RIGID_TEXT) ? "on   " : "off  ");
+			(cur_textflags & RIGID_TEXT) ? "on  " : "off ");
     }
     update_string_pixmap(sw, indbuf, 6, 26);
 }
@@ -4401,56 +4406,15 @@ show_numycopies(ind_sw_info *sw)
 
 /* ZOOM */
 
-#define BACKX2(x) round(x/display_zoomscale*ZOOM_FACTOR+zoomxoff)
-#define BACKY2(y) round(y/display_zoomscale*ZOOM_FACTOR+zoomyoff)
-
-/* zoom in either from wheel or accelerator, centering canvas on mouse */
-
+/* zoom in */
 void
-wheel_inc_zoom()
+inc_zoom(void)
 {
-    Window	 root, child;
-    int		 x1, y1, junk;
-    int		 hot_x, hot_y;
-    int		 cw, ch;
-    Boolean	 centering;
+    float	 intzoom;
 
     /* don't allow zooming while previewing */
     if (preview_in_progress || check_action_on())
 	return;
-
-    XQueryPointer(tool_d, canvas_win, &root, &child,
-		  &junk, &junk, &x1, &y1, (unsigned int*) &junk);
-    centering = False;
-    if (0 <= x1 && x1 <= CANVAS_WD && 0 <= y1 && y1 <= CANVAS_HT) {
-	centering = True;
-	hot_x = BACKX2(x1);
-	hot_y = BACKY2(y1);
-    }
-    inc_zoom((ind_sw_info *) NULL);
-    if (centering) {
-	cw = CANVAS_WD*ZOOM_FACTOR / display_zoomscale;
-	ch = CANVAS_HT*ZOOM_FACTOR / display_zoomscale;
-	zoomxoff = hot_x - cw/2;
-	zoomyoff = hot_y - ch/2;
-    }
-    show_zoom(zoom_sw);
-}
-
-/* zoom in, keeping original canvas center */
-
-void
-inc_zoom(ind_sw_info *sw)
-{
-    float	 intzoom, prev_zoom;
-    int		 centerx, centery;
-    int		 cw, ch;
-
-    /* don't allow zooming while previewing */
-    if (preview_in_progress || check_action_on())
-	return;
-
-    prev_zoom = display_zoomscale;
 
     if (display_zoomscale < (float) 0.1) {
 	display_zoomscale = (int)(display_zoomscale * 100.0 + 0.1) + 1.0;
@@ -4472,68 +4436,17 @@ inc_zoom(ind_sw_info *sw)
 	} else
 	    display_zoomscale = display_zoomscale * 1.5;
     }
-    /* keep canvas centered */
-    cw = CANVAS_WD*ZOOM_FACTOR / prev_zoom;
-    ch = CANVAS_HT*ZOOM_FACTOR / prev_zoom;
-    centerx = cw/2 + zoomxoff;
-    centery = ch/2 + zoomyoff;
-    cw = CANVAS_WD*ZOOM_FACTOR / display_zoomscale;
-    ch = CANVAS_HT*ZOOM_FACTOR / display_zoomscale;
-    zoomxoff = centerx - cw/2;
-    zoomyoff = centery - ch/2;
-
-    /* use zoom_sw instead of one passed to us because we might have come
-       here from an accelerator */
-    show_zoom(zoom_sw);
 }
 
-/* zoom out either from wheel or accelerator, centering canvas on mouse */
-
+/* zoom out */
 void
-wheel_dec_zoom()
+dec_zoom(void)
 {
-    Window	 root, child;
-    int		 x1, y1, junk;
-    int		 hot_x, hot_y;
-    int		 cw, ch;
-    Boolean	 centering;
+    float	 intzoom;
 
     /* don't allow zooming while previewing */
     if (preview_in_progress || check_action_on())
 	return;
-
-    XQueryPointer(tool_d, canvas_win, &root, &child,
-		  &junk, &junk, &x1, &y1, (unsigned int *) &junk);
-    centering = False;
-    if (0 <= x1 && x1 <= CANVAS_WD && 0 <= y1 && y1 <= CANVAS_HT) {
-	centering = True;
-	hot_x = BACKX2(x1);
-	hot_y = BACKY2(y1);
-    }
-    dec_zoom((ind_sw_info *) NULL);
-    if (centering) {
-	cw = CANVAS_WD*ZOOM_FACTOR / display_zoomscale;
-	ch = CANVAS_HT*ZOOM_FACTOR / display_zoomscale;
-	zoomxoff = hot_x - cw/2;
-	zoomyoff = hot_y - ch/2;
-    }
-    show_zoom(zoom_sw);
-}
-
-/* zoom out, keeping original canvas center */
-
-void
-dec_zoom(ind_sw_info *sw)
-{
-    float	 intzoom, prev_zoom;
-    int		 centerx, centery;
-    int		 cw, ch;
-
-    /* don't allow zooming while previewing */
-    if (preview_in_progress || check_action_on())
-	return;
-
-    prev_zoom = display_zoomscale;
 
     if (display_zoomscale <= (float) 0.1) {
 	display_zoomscale = ((int)(display_zoomscale * 100.0 + 0.1)) - 1.0;
@@ -4558,19 +4471,86 @@ dec_zoom(ind_sw_info *sw)
 	if (display_zoomscale < (float) 1.0)
 		display_zoomscale = 1.0;
     }
-    /* keep canvas centered */
-    cw = CANVAS_WD*ZOOM_FACTOR / prev_zoom;
-    ch = CANVAS_HT*ZOOM_FACTOR / prev_zoom;
-    centerx = cw/2 + zoomxoff;
-    centery = ch/2 + zoomyoff;
-    cw = CANVAS_WD*ZOOM_FACTOR / display_zoomscale;
-    ch = CANVAS_HT*ZOOM_FACTOR / display_zoomscale;
-    zoomxoff = centerx - cw/2;
-    zoomyoff = centery - ch/2;
+}
 
-    /* use zoom_sw instead of one passed to us because we might have come
-       here from an accelerator */
-    show_zoom(zoom_sw);
+/* zoom in or out, keeping location x,y fixed */
+void
+zoom_focus(int x, int y, void(* zoom)())
+{
+	double	stretch;
+
+	/*
+	 * zoomxoff = -(CANVAS_WD/2.)*ZOOM_FACTOR/prev_zoom + zoomxoff +
+	 *		(CANVAS_WD/2.)*ZOOM_FACTOR/display_zoomscale;
+	 * stretch = 0.5*ZOOM_FACTOR*(-1./prev_zoom + 1./display_zoomscale);
+	 * and: zoomscale = display_zoomscale / ZOOM_FACTOR;
+	 */
+
+	stretch = 1. / display_zoomscale;	/* previous zoomscale */
+	zoom();
+	stretch -= 1. / display_zoomscale;	/* new zoomscale */
+	stretch *= ZOOM_FACTOR;
+	zoomxoff += stretch * x;
+	zoomyoff += stretch * y;
+
+	/* use zoom_sw instead of one passed to us because we might have come
+           here from an accelerator */
+	show_zoom(zoom_sw);
+}
+
+void
+inc_zoom_centered(ind_sw_info *sw)
+{
+	zoom_focus(CANVAS_WD/2, CANVAS_HT/2, inc_zoom);
+}
+
+void
+dec_zoom_centered(ind_sw_info *sw)
+{
+	zoom_focus(CANVAS_WD/2, CANVAS_HT/2, dec_zoom);
+}
+
+/* zoom in either from wheel or accelerator, centering canvas on mouse */
+void
+wheel_inc_zoom()
+{
+    Window	 root, child;
+    int		 x1, y1, junk;
+
+    /* don't allow zooming while previewing */
+    if (preview_in_progress || check_action_on())
+	return;
+
+    XQueryPointer(tool_d, canvas_win, &root, &child,
+		  &junk, &junk, &x1, &y1, (unsigned int*) &junk);
+
+    if (x1 < 0 || x1 > CANVAS_WD || y1 < 0 || y1 > CANVAS_HT) {
+	    x1 = CANVAS_WD / 2;
+	    y1 = CANVAS_HT / 2;
+    }
+    zoom_focus(x1, y1, inc_zoom);
+}
+
+
+/* zoom out either from wheel or accelerator, centering canvas on mouse */
+void
+wheel_dec_zoom()
+{
+    Window	 root, child;
+    int		 x1, y1, junk;
+
+    /* don't allow zooming while previewing */
+    if (preview_in_progress || check_action_on())
+	return;
+
+    XQueryPointer(tool_d, canvas_win, &root, &child,
+		  &junk, &junk, &x1, &y1, (unsigned int *) &junk);
+
+    if (x1 < 0 || x1 > CANVAS_WD || y1 < 0|| y1 > CANVAS_HT) {
+	    x1 = CANVAS_WD / 2;
+	    y1 = CANVAS_HT / 2;
+    }
+    zoom_focus(x1, y1, dec_zoom);
 }
 
 /* zoom figure to fully fit in canvas */

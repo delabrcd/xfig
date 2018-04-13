@@ -1,7 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2018 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -50,40 +52,42 @@ Widget	print_overlap_panel;
 Widget	printer_menu_button;
 Widget	print_mag_text;
 Widget	print_background_panel;
-void	print_update_figure_size(void);
-Boolean	print_all_layers=True;
-Boolean	bound_active_layers=False;
 Widget	print_grid_minor_text, print_grid_major_text;
 Widget	print_grid_minor_menu_button, print_grid_minor_menu;
 Widget	print_grid_major_menu_button, print_grid_major_menu;
 Widget	print_grid_unit_label;
 
+void	print_update_figure_size(void);
+void	do_print(Widget w), do_print_batch(Widget w);
+
 /* LOCAL */
 
 DeclareStaticArgs(15);
 
-static Widget	beside;
-
+static char	print_msg[] = "PRINT";
+static int	num_batch_figures=0;
+static Boolean	writing_batch=False;
 #define MAX_PRINTERS 1000		/* for those systems using lprng :-) */
 static char    *printer_names[MAX_PRINTERS];
 static int	parse_printcap(char **names);
 static int	numprinters;
 
-static void	orient_select(Widget w, XtPointer new_orient, XtPointer garbage);
+static Widget	beside;
 
-static void	just_select(Widget w, XtPointer new_just, XtPointer garbage);
+static void	orient_select(Widget w, XtPointer new, XtPointer garbage);
+static void	just_select(Widget w, XtPointer new, XtPointer garbage);
 static Widget	just_lab;
 
-static void	papersize_select(Widget w, XtPointer new_papersize, XtPointer garbage);
+static void	papersize_select(Widget w, XtPointer new, XtPointer garbage);
 static Widget	papersize_menu;
 
-static void	background_select(Widget w, XtPointer closure, XtPointer call_data);
+static void	background_select(Widget w, XtPointer data, XtPointer call_data);
 static Widget	background_menu;
 
-static void	multiple_select(Widget w, XtPointer new_multiple, XtPointer garbage);
-static void	overlap_select(Widget w, XtPointer new_overlap, XtPointer garbage);
-
-static void	printer_select(Widget w, XtPointer new_printer, XtPointer garbage);
+static void	multiple_select(Widget w, XtPointer new, XtPointer garbage);
+static void	overlap_select(Widget w, XtPointer new, XtPointer garbage);
+static void	printer_select(Widget w, XtPointer new, XtPointer garbage);
+static void	switch_print_layers(Widget, XtPointer, XtPointer);
 
 static Widget	dismiss, print,
 		printer_text, param_text,
@@ -97,14 +101,12 @@ static void	update_figure_size(void);
 static void	fit_page(void);
 
 static Position xposn, yposn;
-static String   prn_translations =
-        "<Message>WM_PROTOCOLS: DismissPrint()\n";
 static void     print_panel_dismiss(Widget w, XButtonEvent *ev), do_clear_batch(Widget w);
 static void	get_magnif(void);
-static void update_mag(Widget widget, XtPointer item, XtPointer event);
-void		do_print(Widget w), do_print_batch(Widget w);
-static void /* XtCallbackProc */ switch_print_layers(Widget w, XtPointer closure,
-							XtPointer call_data);
+static void	update_mag(Widget widget, XtPointer item, XtPointer event);
+
+static String   prn_translations =
+        "<Message>WM_PROTOCOLS: DismissPrint()\n";
 
 /* callback list to keep track of magnification window */
 
@@ -126,9 +128,8 @@ static XtActionsRec     prn_actions[] =
     {"UpdateMag", (XtActionProc) update_mag},
 };
 
-
-void create_print_panel (Widget w);
-void update_batch_count (void);
+static void create_print_panel(Widget w);
+static void update_batch_count(void);
 
 static void
 print_panel_dismiss(Widget w, XButtonEvent *ev)
@@ -139,8 +140,6 @@ print_panel_dismiss(Widget w, XButtonEvent *ev)
     get_magnif();
     XtPopdown(print_popup);
 }
-
-static char	print_msg[] = "PRINT";
 
 void
 do_print(Widget w)
@@ -289,17 +288,15 @@ update_figure_size(void)
     }
 }
 
-static int num_batch_figures=0;
-static Boolean writing_batch=False;
-
 void
 do_print_batch(Widget w)
 {
-	FILE	   *infp,*outfp;
-	char	    tmp_exp_file[PATH_MAX];
-	char	    str[255];
-	char	    backgrnd[10], grid[80];
-   int       fd;
+	FILE	*infp,*outfp;
+	char	tmp_exp_file[PATH_MAX];
+	char	str[255];
+	char	backgrnd[10], grid[80];
+	int	fd;
+	int	save_exp_lang;
 
 	if (writing_batch || emptyfigure_msg(print_msg))
 		return;
@@ -343,27 +340,28 @@ do_print_batch(Widget w)
 	/* get grid params and assemble into fig2dev parm */
 	get_grid_spec(grid, print_grid_minor_text, print_grid_major_text);
 
-	print_to_file(tmp_exp_file, "ps", appres.magnification, 0, 0, backgrnd,
-			NULL, False, print_all_layers, bound_active_layers, 0,
-			False, grid, appres.overlap);
+	save_exp_lang = cur_exp_lang;
+	cur_exp_lang = LANG_PS;
+	print_to_file(tmp_exp_file, 0,0, backgrnd, NULL, False, 0, grid);
+	cur_exp_lang = save_exp_lang;
 	put_msg("Appending to batch file \"%s\" (%s mode) ... done",
 		    batch_file, appres.landscape ? "LANDSCAPE" : "PORTRAIT");
 	app_flush();		/* make sure message gets displayed */
 
 	/* now append that to the batch file */
 	if ((infp = fopen(tmp_exp_file, "rb")) == NULL) {
-		file_msg("Error during PRINT - can't open temporary file to read");
+		file_msg("Error during PRINT - cannot open temporary file to read");
 		return;
-		}
+	}
 	if ((outfp = fopen(batch_file, "ab")) == NULL) {
-		file_msg("Error during PRINT - can't open print file to append");
+		file_msg("Error during PRINT - cannot open print file to append");
 		return;
-		}
+	}
 	while (fgets(str,255,infp) != NULL)
 		(void) fputs(str,outfp);
 	fclose(infp);
 	fclose(outfp);
-	unlink(tmp_exp_file);
+	remove(tmp_exp_file);
 	/* count this batch figure */
 	num_batch_figures++ ;
 	/* and update the label widget */

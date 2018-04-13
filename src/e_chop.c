@@ -19,9 +19,6 @@
 /* >>>>>>>>>>>>>>>>>>> fixme -- don't forget undo ! <<<<<<<<<<<<<<<< */
 
 #include <stdlib.h>
-#ifndef __FreeBSD__
-#include <alloca.h>
-#endif
 #include <math.h>
 #include "fig.h"
 #include "resources.h"
@@ -81,7 +78,7 @@ typedef struct {
   int points_next;
   int points_max;
 } l_point_s;
-#define POINTS_INCR	8
+#define POINTS_INCR	64
 
 void
 chop_selected(void)
@@ -248,33 +245,40 @@ dice_polygons(int nr_segs, l_point_s * top_l_points, F_line * l)
   int this_ptype;
   F_line  * this_line;
   F_point * this_point;
-  s_point_s * points;
+#define	MAX_POINTS	128
+  s_point_s tmppts[MAX_POINTS];
+  s_point_s *points = tmppts;
   int nr_points = 0;
 
 
-  for (i = 0; i < nr_segs; i++) {		/* analyse points */
-    for (j = 0; j < top_l_points[i].points_next; j++) {
-      if ((-1 == start_point) && (PTYPE_CUT == top_l_points[i].points[j].ptype)) /* find first cut */
-	start_point = nr_points;
-      nr_points++;
+  for (i = 0; i < nr_segs; ++i) {		/* analyse points */
+    for (j = 0; j < top_l_points[i].points_next; ++j) {
+      if (-1 == start_point && PTYPE_CUT == top_l_points[i].points[j].ptype)
+	start_point = nr_points;		/* find first cut */
+      ++nr_points;
     }
   }
 
-  if (-1 == start_point) return 0;		/* no cuts, shouldn't be possible ... */
+  if (-1 == start_point) return 0;	/* no cuts, shouldn't be possible ... */
 
   if (T_PIE_WEDGE_ARC == cur_arctype)
     snap_polyline_focus_handler(l, 0, 0);
 
-  points = alloca(nr_points * sizeof(s_point_s));
-  for (k = 0, i = 0; i < nr_segs; i++) {		/* serialise the points */
-    for (j = 0; j < top_l_points[i].points_next; j++, k++) {
+  if (nr_points > MAX_POINTS) {
+    if ((points = malloc(nr_points * sizeof(s_point_s))) == NULL) {
+      put_msg("Not enough memory - cannot crop.");
+      return -1;
+    }
+  }
+  for (k = 0, i = 0; i < nr_segs; ++i) {	/* serialise the points */
+    for (j = 0; j < top_l_points[i].points_next; ++j, ++k) {
       points[k] = top_l_points[i].points[j];
     }
   }
 
   rc = 0;
   this_line = NULL;
-  for (i = 0; i <= nr_points; i++) {		/* yes, i do mean "<=" */
+  for (i = 0; i <= nr_points; ++i) {		/* yes, i do mean "<=" */
     j = (start_point + i) % nr_points;
 
     this_x     = points[j].x;
@@ -287,7 +291,7 @@ dice_polygons(int nr_segs, l_point_s * top_l_points, F_line * l)
       /* do nothing -- same as next start vertex */
       break;
     case PTYPE_CUT:
-      if (this_line) {				/* will be null on first cut point */
+      if (this_line) {			/* will be null on first cut point */
 	float area;
 	F_point * i_point;
 
@@ -297,15 +301,16 @@ dice_polygons(int nr_segs, l_point_s * top_l_points, F_line * l)
 	append_point(start_x, start_y, &this_point);	/* close pgon */
 	add_line(this_line);
 	area = 0.0;
-	if (True == check_poly(this_line, &i_point, T_POLYGON))	/* chk for dup adjacent pts */
-	  compute_poly_area(this_line, &area);	/* make sure the pgon is real; */
+	/* check for duplicate adjacent points */
+	if (True == check_poly(this_line, &i_point, T_POLYGON))
+	  compute_poly_area(this_line, &area);	/* make sure the pgon is real */
 	if (0.0 >= area) delete_line(this_line);
 	else {
 #if 0	  /* this creates bizarre but interesting results... */
 	  if (T_PIE_WEDGE_ARC == cur_arctype)
 	    insert_point(snap_gx, snap_gy, i_point);
 #endif
-	  rc++;
+	  ++rc;
 	}
 	this_line = NULL;
       }
@@ -326,6 +331,8 @@ dice_polygons(int nr_segs, l_point_s * top_l_points, F_line * l)
     }			/* end of switch point type */
   }			/* end of points loop */
 
+  if (points != tmppts)
+    free(points);
   return rc;
 }
 
@@ -340,8 +347,8 @@ dice_polylines(int nr_segs, l_point_s * top_l_points, F_line * l)
   ptype_e last_ptype = PTYPE_NONE;
 
   rc = 0;
-  for (i = 0; (False == completed) && (i < nr_segs); i++) {		/* analyse points */
-    for (j = 0; (False == completed) && (j < top_l_points[i].points_next); j++) {
+  for (i = 0; False == completed && i < nr_segs; ++i) {   /* analyse points */
+    for (j = 0; False == completed && j < top_l_points[i].points_next; ++j) {
       F_line  * this_line;
       F_point * this_point;
 
@@ -356,7 +363,9 @@ dice_polylines(int nr_segs, l_point_s * top_l_points, F_line * l)
       case PTYPE_CUT:
 	append_point(this_x, this_y, &this_point);
 	add_line(this_line);
-	if (True == check_poly(this_line, NULL, T_POLYLINE)) rc++;	/* chk for dup adjacent pts */
+	/* check for duplicate adjacent points */
+	if (True == check_poly(this_line, NULL, T_POLYLINE)) 
+	  ++rc;
 	else delete_line(this_line);
 
 	create_new_line(this_x, this_y, &this_point, &this_line, l);
@@ -367,9 +376,13 @@ dice_polylines(int nr_segs, l_point_s * top_l_points, F_line * l)
       case PTYPE_END_PLINE:
 	append_point(this_x, this_y, &this_point);
 	add_line(this_line);
-	if (True == check_poly(this_line, NULL, T_POLYLINE)) rc++;	/* chk for dup adjacent pts */
-	else delete_line(this_line);
-	completed = True;		/* catches anomalous case of cut following end of pline */
+	/* check for duplicate adjacent points */
+	if (True == check_poly(this_line, NULL, T_POLYLINE))
+	  ++rc;
+	else
+	  delete_line(this_line);
+	/* catches anomalous case of cut following end of pline */
+	completed = True;
 	break;
       case PTYPE_START_VERTEX:
 	append_point(this_x, this_y, &this_point);
@@ -433,14 +446,16 @@ chop_polyline(F_line * l, int x, int y)
 	runnable = False;
 	break;
       }
-      else intersect_polyline_polyline_handler((F_line *)(axe_objects[i].object), l,
-					       x, y, &isect_cb);
+      else intersect_polyline_polyline_handler(
+		(F_line *)(axe_objects[i].object), l, x, y, &isect_cb);
       break;
     case O_ARC:
-      intersect_polyline_arc_handler(l, (F_arc *)(axe_objects[i].object),  x, y, &isect_cb);
+      intersect_polyline_arc_handler(l, (F_arc *)(axe_objects[i].object),
+				     x, y, &isect_cb);
       break;
     case O_ELLIPSE:
-      intersect_ellipse_polyline_handler((F_ellipse *)(axe_objects[i].object), l, x, y, &isect_cb);
+      intersect_ellipse_polyline_handler((F_ellipse *)(axe_objects[i].object),
+					 l, x, y, &isect_cb);
       break;
     }
   }
@@ -451,10 +466,14 @@ chop_polyline(F_line * l, int x, int y)
       beep();
       return -1;
     }
-    for (p = l->points, nr_verts = 0; p != NULL; p = p->next, nr_verts++); /* just counting */
+    for (p = l->points, nr_verts = 0; p != NULL; p = p->next)
+      ++nr_verts;		/* just counting */
     nr_segs = nr_verts - 1;
 
-    top_l_points = alloca(nr_segs * sizeof(l_point_s));
+    if ((top_l_points = malloc(nr_segs * sizeof(l_point_s))) == NULL) {
+      put_msg("Not enough memory - cannot crop.");
+      return -1;
+    }
 
     {
       struct f_point * pp;
@@ -462,7 +481,7 @@ chop_polyline(F_line * l, int x, int y)
 
       for (p_idx = -1, pp = NULL, p = l->points;
 	   p != NULL;
-	   p = p->next, p_idx++) {
+	   p = p->next, ++p_idx) {
 	if (pp) {
 	  top_l_points[p_idx].points_next = 2;
 	  top_l_points[p_idx].points_max = POINTS_INCR;
@@ -483,7 +502,7 @@ chop_polyline(F_line * l, int x, int y)
       }
     }
 
-    for (j = 0; j < isect_cb.nr_isects; j++) {		/* insert isect points */
+    for (j = 0; j < isect_cb.nr_isects; ++j) {		/* insert isect points*/
       int next_p;
 
       int t_idx = isect_cb.isects[j].seg_idx;
@@ -492,7 +511,7 @@ chop_polyline(F_line * l, int x, int y)
       if (next_p >= top_l_points[t_idx].points_max) {
 	top_l_points[t_idx].points_max += POINTS_INCR;
 	top_l_points[t_idx].points = realloc(top_l_points[t_idx].points,
-					     top_l_points[t_idx].points_max * sizeof(s_point_s));
+			top_l_points[t_idx].points_max * sizeof(s_point_s));
       }
       top_l_points[t_idx].points[next_p].x =  isect_cb.isects[j].x;
       top_l_points[t_idx].points[next_p].y =  isect_cb.isects[j].y;
@@ -503,7 +522,7 @@ chop_polyline(F_line * l, int x, int y)
       top_l_points[t_idx].points_next += 1;
     }
 
-    for (i = 0; i < nr_segs; i++)		/* sort points by dist along seg */
+    for (i = 0; i < nr_segs; i++)	/* sort points by dist along seg */
       qsort(top_l_points[i].points, top_l_points[i].points_next,
 	    sizeof(s_point_s), point_sort_fcn);
 
@@ -518,9 +537,11 @@ chop_polyline(F_line * l, int x, int y)
 
     if (isect_cb.isects) free(isect_cb.isects);
 
-    for (i = 0; i < nr_segs; i++) {
-      if (top_l_points[i].points) free(top_l_points[i].points);
+    for (i = 0; i < nr_segs; ++i) {
+      if (top_l_points[i].points)
+	free(top_l_points[i].points);
     }
+    free(top_l_points);
   }		/* end of check for 0 isects */
 
   return rc;

@@ -3,6 +3,7 @@
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
  * Parts Copyright (c) 1989-2007 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2017 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -705,17 +706,17 @@ int x, y;
     int i = 0;
 
     /* no grid */
-    if( cur_pointposn == P_ANY ) return x;
+    if( cur_pointposn == P_ANY || x == INT_MIN ) return x;
 
     /* smaller than zero inverts problem */
     if( x < 0 ) return -ceil_coords_x( -x, y );
 
     /* adjust x coordinate to be on grid */
-	do {
-		x = x_old - i++;
-		y = y_old;
-		round_coords( &x, &y );
-	} while( x > x_old );
+    do {
+	x = x_old - i++;
+	y = y_old;
+	round_coords( &x, &y );
+    } while( x > x_old );
 
     /* assign result */
     return x;
@@ -729,17 +730,17 @@ int x, y;
     int i = 0;
 
     /* no grid */
-    if( cur_pointposn == P_ANY ) return y;
+    if( cur_pointposn == P_ANY || y == INT_MIN ) return y;
 
     /* smaller than zero inverts problem */
     if( y < 0 ) return -ceil_coords_y( x, -y );
 
     /* adjust y coordinate to be on grid */
-	do {
-		x = x_old;
-		y = y_old - i++;
-		round_coords( &x, &y );
-	} while( y > y_old );
+    do {
+	x = x_old;
+	y = y_old - i++;
+	round_coords( &x, &y );
+    } while( y > y_old );
 
     /* assign result */
     return y;
@@ -759,14 +760,18 @@ int x, y;
     if( cur_pointposn == P_ANY ) return x;
 
     /* smaller than zero inverts problem */
-    if( x < 0 ) return -floor_coords_x( -x, y );
+    if( x < 0 ) {
+	if (x == INT_MIN)
+		x = -INT_MAX;
+	return -floor_coords_x( -x, y );
+    }
 
     /* adjust x coordinate to be on grid */
-	do {
-		x = x_old + i++;
-		y = y_old;
-		round_coords( &x, &y );
-	} while( x < x_old );
+    do {
+	x = x_old + i++;
+	y = y_old;
+	round_coords( &x, &y );
+    } while( x < x_old && x < INT_MAX);
 
     /* assign result */
     return x;
@@ -783,14 +788,18 @@ int x, y;
     if( cur_pointposn == P_ANY ) return y;
 
     /* smaller than zero inverts problem */
-    if( y < 0 ) return -floor_coords_y( x, -y );
+    if( y < 0 ) {
+	if (y == INT_MIN)
+		y = -INT_MAX;
+	return -floor_coords_y( x, -y );
+    }
 
     /* adjust y coordinate to be on grid */
-	do {
-		x = x_old;
-		y = y_old + i++;
-		round_coords( &x, &y );
-	} while( y < y_old );
+    do {
+	x = x_old;
+	y = y_old + i++;
+	round_coords( &x, &y );
+    } while( y < y_old );
 
     /* assign result */
     return y;

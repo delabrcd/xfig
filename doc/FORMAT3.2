@@ -482,12 +482,17 @@ Description of the Fig Format Follows
 
     Control points line :
 
-    There is one shape factor for each point. The value of this factor
-    must be between -1 (which means that the spline is interpolated at
-    this point) and 1 (which means that the spline is approximated at
-    this point). The spline is always smooth in the neighbourhood of a
-    control point, except when the value of	the factor is 0 for which
-    there is a first-order discontinuity (i.e. angular point).
+    There is one shape factor for each point. For positive values of this
+    factor, the spline is approximated at this point, for negative values the
+    spline is interpolated at this point. The spline is always smooth in the
+    neighbourhood of a control point, except when the value of the factor is 0
+    for which there is a first-order discontinuity (i.e., an angular point).
+    Recommended values for this factor are 1.0 for an approximated spline, 0.0
+    for an angular point and -0.5 for interpolated splines.
+    The shape factor used here corresponds to the parameter s_k defined in
+    section 4.1 of Blanc & Schlick (1995) for values greater than 0, for values
+    smaller than 0 it corresponds to the negative of the parameter q defined in
+    section 5.1 of Blanc & Schlick (1995).
 
 
     ============================================================================

@@ -1,6 +1,22 @@
 #! /bin/sh
 # Generated from testsuite.at by GNU Autoconf 2.69.
 #
+# FIG : Facility for Interactive Generation of figures
+# Copyright (c) 1985-1988 by Supoj Sutanthavibul
+# Parts Copyright (c) 1989-2015 by Brian V. Smith
+# Parts Copyright (c) 1991 by Paul King
+# Parts Copyright (c) 2016-2018 by Thomas Loimer
+#
+# Any party obtaining a copy of these files is granted, free of charge, a
+# full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+# nonexclusive right and license to deal in this software and documentation
+# files (the "Software"), including without limitation the rights to use,
+# copy, modify, merge, publish distribute, sublicense and/or sell copies
+# of the Software, and to permit persons who receive copies from any such
+# party to do so, with the only requirement being that the above copyright
+# and this permission notice remain intact.
+#
+#
 # Copyright (C) 2009-2012 Free Software Foundation, Inc.
 #
 # This test suite is free software; the Free Software Foundation gives
@@ -590,8 +606,10 @@ at_tested='xfig'
 # numerical order.
 at_format='?'
 # Description of all the test groups.
-at_help_all="1;testsuite.at:7;Report version;version;
-2;testsuite.at:17;Validate desktop file;xfig.desktop;
+at_help_all="1;testsuite.at:26;Report version;version;
+2;testsuite.at:35;Validate desktop file;xfig.desktop;
+3;testsuite.at:57;Allow coordinates equal to INT_MIN;u_bound.c;
+4;testsuite.at:62;Test round_coords();w_canvas.c;
 "
 # List of the all the test groups.
 at_groups_all=`$as_echo "$at_help_all" | sed 's/;.*//'`
@@ -605,7 +623,7 @@ at_fn_validate_ranges ()
   for at_grp
   do
     eval at_value=\$$at_grp
-    if test $at_value -lt 1 || test $at_value -gt 2; then
+    if test $at_value -lt 1 || test $at_value -gt 4; then
       $as_echo "invalid test group: $at_value" >&2
       exit 1
     fi
@@ -904,7 +922,7 @@ fi
 # List of tests.
 if $at_list_p; then
   cat <<_ATEOF || at_write_fail=1
-xfig 3.2.6a test suite test groups:
+xfig 3.2.7 test suite test groups:
 
  NUM: FILE-NAME:LINE     TEST-GROUP-NAME
       KEYWORDS
@@ -945,8 +963,24 @@ _ATEOF
   exit $at_write_fail
 fi
 if $at_version_p; then
-  $as_echo "$as_me (xfig 3.2.6a)" &&
+  $as_echo "$as_me (xfig 3.2.7)" &&
   cat <<\_ATEOF || at_write_fail=1
+
+FIG : Facility for Interactive Generation of figures
+Copyright (c) 1985-1988 by Supoj Sutanthavibul
+Parts Copyright (c) 1989-2015 by Brian V. Smith
+Parts Copyright (c) 1991 by Paul King
+Parts Copyright (c) 2016-2018 by Thomas Loimer
+
+Any party obtaining a copy of these files is granted, free of charge, a
+full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+nonexclusive right and license to deal in this software and documentation
+files (the "Software"), including without limitation the rights to use,
+copy, modify, merge, publish distribute, sublicense and/or sell copies
+of the Software, and to permit persons who receive copies from any such
+party to do so, with the only requirement being that the above copyright
+and this permission notice remain intact.
+
 
 Copyright (C) 2012 Free Software Foundation, Inc.
 This test suite is free software; the Free Software Foundation gives
@@ -962,9 +996,12 @@ case $at_groups in #(
   * ) at_print_banners=false ;;
 esac
 # Text for banner N, set to a single space once printed.
-# Banner 1. testsuite.at:5
+# Banner 1. testsuite.at:24
 # Category starts at test group 1.
 at_banner_text_1="Rudimentary tests"
+# Banner 2. testsuite.at:55
+# Category starts at test group 3.
+at_banner_text_2="Unit tests"
 
 # Take any -C into account.
 if $at_change_dir ; then
@@ -1124,13 +1161,13 @@ fi
 exec 5>>"$at_suite_log"
 
 # Banners and logs.
-$as_echo "## ----------------------- ##
-## xfig 3.2.6a test suite. ##
-## ----------------------- ##"
+$as_echo "## ---------------------- ##
+## xfig 3.2.7 test suite. ##
+## ---------------------- ##"
 {
-  $as_echo "## ----------------------- ##
-## xfig 3.2.6a test suite. ##
-## ----------------------- ##"
+  $as_echo "## ---------------------- ##
+## xfig 3.2.7 test suite. ##
+## ---------------------- ##"
   echo
 
   $as_echo "$as_me: command line was:"
@@ -1374,7 +1411,7 @@ IFS=$as_save_IFS
   esac
   if test -f "$at_program_"; then
     {
-      $as_echo "$at_srcdir/testsuite.at:1: $at_program_ --version"
+      $as_echo "$at_srcdir/testsuite.at:20: $at_program_ --version"
       "$at_program_" --version </dev/null
       echo
     } >&5 2>&1
@@ -1973,7 +2010,7 @@ _ASBOX
   $as_echo "Please send $at_msg and all information you think might help:
 
    To: <thomas.loimer@tuwien.ac.at>
-   Subject: [xfig 3.2.6a] $as_me: $at_fail_list${at_fail_list:+ failed${at_xpass_list:+, }}$at_xpass_list${at_xpass_list:+ passed unexpectedly}
+   Subject: [xfig 3.2.7] $as_me: $at_fail_list${at_fail_list:+ failed${at_xpass_list:+, }}$at_xpass_list${at_xpass_list:+ passed unexpectedly}
 
 You may investigate any problem if you feel able to do so, in which
 case the test suite provides a good starting point.  Its output may
@@ -1988,7 +2025,7 @@ exit 0
 ## Actual tests. ##
 ## ------------- ##
 #AT_START_1
-at_fn_group_banner 1 'testsuite.at:7' \
+at_fn_group_banner 1 'testsuite.at:26' \
   "Report version" "                                 " 1
 at_xfail=no
 (
@@ -1996,12 +2033,11 @@ at_xfail=no
   $at_traceon
 
 
-
 # Use atlocal to get variables from ./configure
 # Use _UNQUOTED, to use variables in [stdout], [stderr]
 { set +x
-$as_echo "$at_srcdir/testsuite.at:12: xfig -v"
-at_fn_check_prepare_trace "testsuite.at:12"
+$as_echo "$at_srcdir/testsuite.at:30: xfig -v"
+at_fn_check_prepare_trace "testsuite.at:30"
 ( $at_check_trace; xfig -v
 ) >>"$at_stdout" 2>>"$at_stderr" 5>&-
 at_status=$? at_failed=false
@@ -2010,7 +2046,7 @@ echo >>"$at_stderr"; $as_echo "Xfig $PACKAGE_VERSION
 " | \
   $at_diff - "$at_stderr" || at_failed=:
 at_fn_diff_devnull "$at_stdout" || at_failed=:
-at_fn_check_status 0 $at_status "$at_srcdir/testsuite.at:12"
+at_fn_check_status 0 $at_status "$at_srcdir/testsuite.at:30"
 $at_failed && at_fn_log_failure
 $at_traceon; }
 
@@ -2020,7 +2056,7 @@ $at_traceon; }
 read at_status <"$at_status_file"
 #AT_STOP_1
 #AT_START_2
-at_fn_group_banner 2 'testsuite.at:17' \
+at_fn_group_banner 2 'testsuite.at:35' \
   "Validate desktop file" "                          " 1
 at_xfail=no
 (
@@ -2028,20 +2064,19 @@ at_xfail=no
   $at_traceon
 
 
-
-$as_echo "testsuite.at:20" >"$at_check_line_file"
+$as_echo "testsuite.at:37" >"$at_check_line_file"
 (! desktop-file-validate --help) \
-  && at_fn_check_skip 77 "$at_srcdir/testsuite.at:20"
+  && at_fn_check_skip 77 "$at_srcdir/testsuite.at:37"
 { set +x
-$as_echo "$at_srcdir/testsuite.at:21: desktop-file-validate \$top_srcdir/xfig.desktop"
-at_fn_check_prepare_dynamic "desktop-file-validate $top_srcdir/xfig.desktop" "testsuite.at:21"
+$as_echo "$at_srcdir/testsuite.at:38: desktop-file-validate \$top_srcdir/xfig.desktop"
+at_fn_check_prepare_dynamic "desktop-file-validate $top_srcdir/xfig.desktop" "testsuite.at:38"
 ( $at_check_trace; desktop-file-validate $top_srcdir/xfig.desktop
 ) >>"$at_stdout" 2>>"$at_stderr" 5>&-
 at_status=$? at_failed=false
 $at_check_filter
 at_fn_diff_devnull "$at_stderr" || at_failed=:
 at_fn_diff_devnull "$at_stdout" || at_failed=:
-at_fn_check_status 0 $at_status "$at_srcdir/testsuite.at:21"
+at_fn_check_status 0 $at_status "$at_srcdir/testsuite.at:38"
 $at_failed && at_fn_log_failure
 $at_traceon; }
 
@@ -2050,3 +2085,57 @@ $at_traceon; }
 ) 5>&1 2>&1 7>&- | eval $at_tee_pipe
 read at_status <"$at_status_file"
 #AT_STOP_2
+#AT_START_3
+at_fn_group_banner 3 'testsuite.at:57' \
+  "Allow coordinates equal to INT_MIN" "             " 2
+at_xfail=no
+(
+  $as_echo "3. $at_setup_line: testing $at_desc ..."
+  $at_traceon
+
+
+{ set +x
+$as_echo "$at_srcdir/testsuite.at:59: \"\$abs_builddir\"/test1"
+at_fn_check_prepare_dynamic "\"$abs_builddir\"/test1" "testsuite.at:59"
+( $at_check_trace; "$abs_builddir"/test1
+) >>"$at_stdout" 2>>"$at_stderr" 5>&-
+at_status=$? at_failed=false
+$at_check_filter
+at_fn_diff_devnull "$at_stderr" || at_failed=:
+at_fn_diff_devnull "$at_stdout" || at_failed=:
+at_fn_check_status 0 $at_status "$at_srcdir/testsuite.at:59"
+$at_failed && at_fn_log_failure
+$at_traceon; }
+
+  set +x
+  $at_times_p && times >"$at_times_file"
+) 5>&1 2>&1 7>&- | eval $at_tee_pipe
+read at_status <"$at_status_file"
+#AT_STOP_3
+#AT_START_4
+at_fn_group_banner 4 'testsuite.at:62' \
+  "Test round_coords()" "                            " 2
+at_xfail=no
+(
+  $as_echo "4. $at_setup_line: testing $at_desc ..."
+  $at_traceon
+
+
+{ set +x
+$as_echo "$at_srcdir/testsuite.at:64: \"\$abs_builddir\"/test2"
+at_fn_check_prepare_dynamic "\"$abs_builddir\"/test2" "testsuite.at:64"
+( $at_check_trace; "$abs_builddir"/test2
+) >>"$at_stdout" 2>>"$at_stderr" 5>&-
+at_status=$? at_failed=false
+$at_check_filter
+at_fn_diff_devnull "$at_stderr" || at_failed=:
+at_fn_diff_devnull "$at_stdout" || at_failed=:
+at_fn_check_status 0 $at_status "$at_srcdir/testsuite.at:64"
+$at_failed && at_fn_log_failure
+$at_traceon; }
+
+  set +x
+  $at_times_p && times >"$at_times_file"
+) 5>&1 2>&1 7>&- | eval $at_tee_pipe
+read at_status <"$at_status_file"
+#AT_STOP_4

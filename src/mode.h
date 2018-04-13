@@ -1,8 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2018 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -14,8 +15,6 @@
  * and this permission notice remain intact.
  *
  */
-
-/* File date v3.2.5c 19-06-2008 */
 
 #ifndef MODE_H
 #define MODE_H
@@ -128,14 +127,15 @@ enum		{ MM_UNIT, FRACT_UNIT, TENTH_UNIT };
 #define		GRID_2			2
 #define		GRID_3			3
 #define		GRID_4			4
-#define		GRID_ISO_1		5			// isometric grid
+#define		GRID_ISO_1		5		/* isometric grid */
 #define		GRID_ISO_2		6
 #define		GRID_ISO_3		7
 #define		GRID_ISO_4		8
 #define		GRID_SQUARE		0
 #define		GRID_ISO		1
 
-extern int	cur_gridtype, cur_gridmode, cur_gridunit, old_gridunit, grid_unit;		// isometric grid
+extern int	cur_gridtype, cur_gridmode;
+extern int	cur_gridunit, old_gridunit, grid_unit;
 extern int	grid_spacing[NUM_GRID_UNITS][GRID_4];
 extern char    *grid_name[NUM_GRID_UNITS][GRID_4+1];
 
@@ -203,9 +203,6 @@ extern int	min_num_points;
 enum {
 	LANG_PS,
 	LANG_EPS,
-	LANG_EPS_ASCII,
-	LANG_EPS_MONO_TIFF,
-	LANG_EPS_COLOR_TIFF,
 	LANG_PDF,
 	LANG_PSPDF,
 	LANG_BOX,
@@ -220,19 +217,20 @@ enum {
 	LANG_PDFTEX,
 	LANG_PSPDFTEX,
 	LANG_PICTEX,
+	LANG_CGM,
+	LANG_EMF,
+	LANG_DXF,
+	LANG_GBX,
 	LANG_IBMGL,
+	LANG_MAP,
 	LANG_TEXTYL,
 	LANG_TPIC,
 	LANG_PIC,
-	LANG_MAP,
 	LANG_MF,
 	LANG_MP,
-	LANG_MMP,
-	LANG_CGM,
-	LANG_BCGM,	/* binary cgm */
-	LANG_EMF,
 	LANG_TK,
-	LANG_SHAPE,	/* ShapePar definition */
+	LANG_PTK,
+	LANG_SHAPE,
 	LANG_SVG,
 /* bitmap formats should follow here, starting with GIF */
 	LANG_GIF,

@@ -1,3 +1,9 @@
+All files contain a copyright notice as below.
+Authors or contributors of a substantial portion of a file
+are listed below the copyright notice, cf. Makefile.am.
+The maintainer adds his copyright line at the top,
+on the occasion of a modification of the file.
+
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
@@ -15,31 +21,3 @@
  * and this permission notice remain intact.
  *
  */
-
-/*
- * dirstruct.h
- * Author: Thomas Loimer, 2016
- *
- */
-
-#ifndef DIRSTRUCT
-
-/* See info autoconf, AC_HEADER_DIRENT: All current systems have dirent.h
- * -- but, for ancient systems. See info autoconf AC_HEADER_DIRENT */
-#ifdef HAVE_DIRENT_H
-#include <dirent.h>
-#define DIRSTRUCT struct dirent
-#else /* HAVE_DIRENT_H */
-#ifdef HAVE_SYS_NDIR_H
-#include <sys/ndir.h>
-#endif
-#ifdef HAVE_SYS_DIR_H
-#include <sys/dir.h>
-#endif
-#ifdef HAVE_NDIR_H
-#include <ndir.h>
-#endif
-#define DIRSTRUCT struct direct
-#endif /* HAVE_DIRENT_H */
-
-#endif

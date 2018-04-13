@@ -109,12 +109,15 @@ emptyfigure_msg(char *msg)
 int
 change_directory(char *path)
 {
-    if (path == NULL || *path == '\0')
+    static char	cwd[PATH_MAX];
+
+    if (!strcmp(path, cwd) || path == NULL || *path == '\0')
 	return 0;
     if (chdir(path) == -1) {
 	file_msg("Can't go to directory %s, : %s", path, strerror(errno));
 	return 1;
     }
+    strcpy(cwd, path);
     return 0;
 }
 

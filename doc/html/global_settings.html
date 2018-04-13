@@ -159,7 +159,8 @@ Image editor
 This is the external program used when the
 <a href="editing.html#edit-pict-panel"><i>Edit Image</i> button</a>
 is pressed in the import picture editor.
-The default is <a href="http://www.trilon.com/xv/"><b>xv</b></a> .
+The default is &quot;<tt>xdg-open</tt>&quot;, which opens the preferred
+image viewer/editor of your desktop.
 You may use this program to crop/rotate/change colors in etc. your
 imported image.  When you exit from this program <b>xfig</b> will
 re-import the image.
@@ -190,9 +191,8 @@ HTML Browser
 <dd>
 This is the external web (HTML) browser that <b>xfig</b> will call to view help files.
 <br>
-The default is &quot;<tt>netscape -remote 'openFile(%f)' || netscape %f</tt>&quot;,
-it says to look for a running <b>Netscape</b> and open the pages in that.
-If none is running, a new one will start.
+The default is &quot;<tt>xdg-open %f</tt>&quot;,
+it says to use the default html-browser of your desktop environment.
 The <b>%f</b> is necessary to tell <b>xfig</b> to insert the filename into the
 browser command.
 This can be set by <a href="options.html#res-other">browser</a> resource.
@@ -202,11 +202,9 @@ This can be set by <a href="options.html#res-other">browser</a> resource.
 PDF Viewer
 <dd>
 This is the external PDF (Portable Document Format) viewer that <b>xfig</b> will
-call to view the <b>xfig</b> tutorial.
-<br>
-The default is &quot;<tt>acroread %f</tt>&quot;,
-which will invoke <A HREF="http://www.adobe.com/"><b>Acrobat Reader</b></a>.
-The <b>%f</b> is necessary to tell <b>xfig</b> to insert the filename into the viewer command.
+The default is &quot;<tt>xdg-open %f</tt>&quot;,
+which will invoke the default pdf-viewer of your desktop environment.
+The <b>%f</b> is necessary to tell <b>xfig</b> to insert the filename into the command.
 This can be set by <a href="options.html#res-other">pdfviewer</a> resource.
 </dl>
 

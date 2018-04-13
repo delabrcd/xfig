@@ -1,7 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2007 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2018 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -13,8 +15,6 @@
  * and this permission notice remain intact.
  *
  */
-
-/* File date v3.2.5c 30-09-2011 */
 
 #include "fig.h"
 #include "figx.h"
@@ -45,16 +45,15 @@
 /* EXPORTS */
 
 Boolean	export_up = False;
-
 char	default_export_file[PATH_MAX];
 
 Widget	export_popup;	/* the main export popup */
 Widget	export_panel;	/* the form it's in */
-Widget	exp_selfile,	/* output (selected) file widget */
-	exp_mask,	/* mask widget */
-	exp_dir,	/* current directory widget */
-	exp_flist,	/* file list widget */
-	exp_dlist;	/* dir list widget */
+Widget	exp_selfile;	/* output (selected) file widget */
+Widget	exp_mask;	/* mask widget */
+Widget	exp_dir;	/* current directory widget */
+Widget	exp_flist;	/* file list widget */
+Widget	exp_dlist;	/* dir list widget */
 
 Widget	top_section, bottom_section, postscript_form, bitmap_form;
 Widget  ps_form_label;
@@ -65,26 +64,23 @@ Widget	export_multiple_panel;
 Widget	export_overlap_panel;
 Widget	export_mag_text;
 Widget	mag_spinner;
-void	export_update_figure_size(void);
 Widget	export_transp_panel;
 Widget	export_background_panel;
-
 Widget	export_grid_minor_text, export_grid_major_text;
 Widget	export_grid_minor_menu_button, export_grid_minor_menu;
 Widget	export_grid_major_menu_button, export_grid_major_menu;
 Widget	export_grid_unit_label;
 
+void	export_update_figure_size(void);
+void	do_export(Widget w);
+
 /* LOCAL */
 
-Widget	export_grid_label;
-
+static char	save_export_dir[PATH_MAX];
 /* these are in fig2dev print units (1/72 inch) */
-
 static float    offset_unit_conv[] = { 72.0, 72.0/2.54, 72.0/PIX_PER_INCH };
-
 /* the bounding box of the figure when the export panel was popped up */
 static int	ux,uy,lx,ly;
-
 static String	file_list_translations =
 	"<Btn1Down>,<Btn1Up>: Set()Notify()\n\
 	<Btn1Up>(2): Export()\n\
@@ -92,17 +88,9 @@ static String	file_list_translations =
 static String	file_name_translations =
 	"<Key>Return: ExportFile()\n\
 	<Key>Escape: CancelExport()";
-
-void		do_export(Widget w);
-static XtActionsRec	file_name_actions[] =
-{
-    {"ExportFile", (XtActionProc) do_export},
+static XtActionsRec	file_name_actions[] = {
+	{"ExportFile", (XtActionProc) do_export},
 };
-static void     export_panel_cancel(Widget w, XButtonEvent *ev);
-
-/* callback list to keep track of magnification window */
-
-static void update_mag(Widget widget, Widget *item, int *event);
 
 String  exp_translations =
         "<Message>WM_PROTOCOLS: DismissExport()";
@@ -115,60 +103,43 @@ String  export_translations =
 	Ctrl<Key>U: multiply(4)\n\
 	<Key>F18: PastePanelKey()";
 
-static XtActionsRec     export_actions[] =
-{
-    {"DismissExport", (XtActionProc) export_panel_cancel},
-    {"CancelExport", (XtActionProc) export_panel_cancel},
-    {"Export", (XtActionProc) do_export},
-    {"UpdateMag", (XtActionProc) update_mag},
+static void     export_panel_cancel(Widget w, XButtonEvent *ev);
+static void	update_mag(Widget widget, Widget *item, int *event);
+static XtActionsRec     export_actions[] = {
+	{"DismissExport", (XtActionProc) export_panel_cancel},
+	{"CancelExport", (XtActionProc) export_panel_cancel},
+	{"Export", (XtActionProc) do_export},
+	{"UpdateMag", (XtActionProc) update_mag},
+};
+static char	*smooth_choices[] = {
+	" No smoothing ",
+	"Some smoothing",
+	"More smoothing"
+};
+static char	*preview_items[] = {
+	"     None      ",
+	" ASCII (EPSI)  ",
+	"  Color TIFF   ",
+	"Monochrome TIFF"
 };
 
-static char	*smooth_choices[] = {
-		    " No smoothing ",
-		    "Some smoothing",
-		    "More smoothing"};
-
 static char	named_file[60];
+static intptr_t	xoff_unit_setting, yoff_unit_setting;
 
-static void	orient_select(Widget w, XtPointer client_data, XtPointer call_data);
-
-static void	lang_select(Widget w, XtPointer new_lang, XtPointer call_data);
+static Widget	export_grid_label;
 static Widget	lang_panel, lang_lab;
-
 static Widget	layer_choice;
-
 static Widget	border_lab, border_text, border_spinner;
-
-static void	background_select(Widget w, XtPointer client_data, XtPointer call_data);
-static Widget	background_lab, background_menu;
-
-static void	transp_select(Widget w, XtPointer client_data, XtPointer call_data);
 static Widget	transp_lab, transp_menu;
-
+static Widget	background_lab, background_menu;
+static Widget	just_lab;
+static Widget	papersize_lab;
+static Widget	fitpage;
+static Widget	multiple_lab;
 static Widget	quality_lab, quality_text, quality_spinner;
-
 static Widget	smooth_menu_button;
 static Widget	smooth_lab;
-
 static Widget	orient_lab;
-
-static void	just_select(Widget w, XtPointer client_data, XtPointer call_data);
-static Widget	just_lab;
-
-static void	papersize_select(Widget w, XtPointer client_data, XtPointer call_data);
-static Widget	papersize_lab;
-
-static void	multiple_select(Widget w, XtPointer client_data, XtPointer call_data);
-static Widget	multiple_lab;
-static void	overlap_select(Widget w, XtPointer client_data, XtPointer call_data);
-
-static void	get_magnif(void);
-static void	get_quality(void);
-
-static void	update_figure_size(void);
-static Widget	fitpage;
-static void	fit_page(void);
-
 static Widget	cancel_but, export_but;
 static Widget	dfile_lab, dfile_text, nfile_lab;
 static Widget	mag_lab;
@@ -177,20 +148,34 @@ static Widget	exp_off_lab, exp_xoff_lab, exp_yoff_lab;
 static Widget	export_offset_x, export_offset_y;
 static Widget	exp_xoff_unit_panel;
 static Widget	exp_yoff_unit_panel;
-
 static Widget   pcl_cmd_label;
 static Widget   pcl_cmd_checkbox;
 static Widget   hpgl_font_label;
 static Widget   hpgl_font_checkbox;
+static Widget	pdf_lab, pdf_pagemode_label, pdf_pagemode_checkbox;
+static Widget	preview_lab, preview_panel;
 
-static intptr_t	xoff_unit_setting, yoff_unit_setting;
+/* callbacks */
+static void	lang_select(Widget w, XtPointer new_lang, XtPointer call_data);
+static void	orient_select(Widget, XtPointer client_dat, XtPointer call_dat);
+static void	preview_select(Widget, XtPointer, XtPointer);
+static void	just_select(Widget, XtPointer client_data, XtPointer call_data);
+static void	transp_select(Widget, XtPointer, XtPointer);
+static void	background_select(Widget, XtPointer, XtPointer);
+static void	papersize_select(Widget w, XtPointer, XtPointer);
+static void	multiple_select(Widget w, XtPointer, XtPointer);
+static void	overlap_select(Widget w, XtPointer, XtPointer);
+
+static void	get_magnif(void);
+static void	get_quality(void);
+static void	update_figure_size(void);
+static void	fit_page(void);
+static void	create_export_panel(Widget w);
+static void	manage_optional(void);
+static void	set_export_mask(int lang);
 
 DeclareStaticArgs(15);
 
-
-void create_export_panel (Widget w);
-void manage_optional (void);
-void set_export_mask (int lang);
 
 static void
 export_panel_dismiss(void)
@@ -200,6 +185,8 @@ export_panel_dismiss(void)
     /* the other things like paper size, justification, etc. are already
        updated because they are from menus */
     get_magnif();
+    if (save_export_dir[0] != '\0')
+	strcpy(cur_export_dir, save_export_dir);
 
     /* get the image quality value too */
     get_quality();
@@ -235,7 +222,8 @@ void exp_getxyoff(int *ixoff, int *iyoff)
 
 
 static char	export_msg[] = "EXPORT";
-static char	exp_msg[] = "The current figure is modified.\nDo you want to save it before exporting?";
+static char	exp_msg[] =
+    "The current figure is modified.\nDo you want to save it before exporting?";
 
 void
 do_export(Widget w)
@@ -276,8 +264,8 @@ do_export(Widget w)
 	if (!export_popup)
 		create_export_panel(w);
 
-	/* if there is no default export name (e.g. if user has done "New" and not
-		   entered a name) then make one up */
+	/* if there is no default export name (e.g. if user has done "New" and
+	   not entered a name) then make one up */
 	if (!default_export_file || default_export_file[0] == '\0') {
 	    /* for tiff and jpeg use three-letter suffixes */
 	    if (cur_exp_lang==LANG_TIFF)
@@ -288,7 +276,8 @@ do_export(Widget w)
 		/* for pdftex, just use .pdf */
 		sprintf(default_export_file,"NoName.pdf");
 	    else
-		sprintf(default_export_file,"NoName.%s",lang_items[cur_exp_lang]);
+		sprintf(default_export_file, "NoName.%s",
+				lang_items[cur_exp_lang]);
 	}
 
 	fval = panel_get_value(exp_selfile);
@@ -308,7 +297,8 @@ do_export(Widget w)
 	/* get any grid spec */
 	get_grid_spec(grid, export_grid_minor_text, export_grid_major_text);
 
-	/* make sure that the export file isn't one of the picture files (e.g. xxx.eps) */
+	/* make sure that the export file isn't one
+	   of the picture files (e.g. xxx.eps) */
 	for (l = objects.lines; l != NULL; l = l->next) {
 	    if (l->type == T_PICTURE && l->pic->pic_cache) {
 	       if (strcmp(fval,l->pic->pic_cache->file) == 0) {
@@ -324,6 +314,7 @@ do_export(Widget w)
 	if (*fval != '/') {
 	    if (change_directory(cur_export_dir) != 0)
 		return;
+	    strcpy(save_export_dir, cur_export_dir);
 	}
 
 	/* make the export button insensitive during the export */
@@ -336,7 +327,7 @@ do_export(Widget w)
 	/* convert the transparent color to an RGB hex value */
 	if (cur_exp_lang == LANG_GIF) {
 	    /* use the mapped color for the transparent color */
-	    /* the color was mapped from  Fig.color -> X.color -> mapped.color */
+	    /* the color was mapped from Fig.color -> X.color -> mapped.color */
 	    transp = appres.transparent;
 	    /* make background transparent */
 	    if (transp == TRANSP_BACKGROUND) {
@@ -364,15 +355,14 @@ do_export(Widget w)
 	appres.export_margin = border;
 
 	/* call fig2dev to export the file */
-	if (print_to_file(fval, lang_items[cur_exp_lang],
-			      appres.magnification, xoff, yoff, backgrnd,
-			      (transp == TRANSP_NONE? NULL: transparent),
-			      use_transp_backg, print_all_layers, bound_active_layers,
-			      border, appres.smooth_factor, grid, appres.overlap) == 0) {
+	if (print_to_file(fval, xoff, yoff, backgrnd,
+				transp == TRANSP_NONE? NULL: transparent,
+				use_transp_backg, border, grid) == 0) {
 		FirstArg(XtNlabel, fval);
 		SetValues(dfile_text);		/* set the default filename */
 		if (strcmp(fval,default_export_file) != 0)
-		    strcpy(default_export_file,fval); /* and copy to default */
+			/* and copy to default */
+			strcpy(default_export_file,fval);
 		export_panel_dismiss();
 	}
 
@@ -380,133 +370,151 @@ do_export(Widget w)
 }
 
 static void
+preview_select(Widget w, XtPointer client_data, XtPointer call_data)
+{
+	if (preview_type != (int) client_data) {
+		FirstArg(XtNlabel, XtName(w));
+		SetValues(preview_panel);
+		preview_type = (int) client_data;
+	}
+}
+
+static void
 orient_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
-    if (appres.landscape != (int) client_data) {
-	change_orient();
-	appres.landscape = (int) client_data;
-	/* make sure that paper size is appropriate */
-	papersize_select(export_papersize_panel, (XtPointer) appres.papersize, (XtPointer) 0);
-    }
+	if (appres.landscape != (int) client_data) {
+		change_orient();
+		appres.landscape = (int) client_data;
+		/* make sure that paper size is appropriate */
+		papersize_select(export_papersize_panel,
+				(XtPointer) appres.papersize, (XtPointer) 0);
+	}
 }
 
 static void
 just_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
-    FirstArg(XtNlabel, XtName(w));
-    SetValues(export_just_panel);
-    /* change print justification if it exists */
-    if (print_just_panel)
-	SetValues(print_just_panel);
-    appres.flushleft = (client_data? True: False);
+	FirstArg(XtNlabel, XtName(w));
+	SetValues(export_just_panel);
+	/* change print justification if it exists */
+	if (print_just_panel)
+		SetValues(print_just_panel);
+	appres.flushleft = (client_data? True: False);
 }
 
 static void
 papersize_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
-    intptr_t papersize = (intptr_t) client_data;
+	intptr_t papersize = (intptr_t) client_data;
 
-    FirstArg(XtNlabel, paper_sizes[papersize].fname);
-    SetValues(export_papersize_panel);
-    /* change print papersize if it exists */
-    if (print_papersize_panel)
-	SetValues(print_papersize_panel);
-    appres.papersize = papersize;
-    /* update the red line showing the new page size */
-    update_pageborder();
+	FirstArg(XtNlabel, paper_sizes[papersize].fname);
+	SetValues(export_papersize_panel);
+	/* change print papersize if it exists */
+	if (print_papersize_panel)
+		SetValues(print_papersize_panel);
+	appres.papersize = papersize;
+	/* update the red line showing the new page size */
+	update_pageborder();
 }
 
 static void
 multiple_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
-    intptr_t multiple = (intptr_t) client_data;
+	intptr_t multiple = (intptr_t) client_data;
 
-    FirstArg(XtNlabel, multiple_pages[multiple]);
-    SetValues(export_multiple_panel);
-    /* change print multiple if it exists */
-    if (print_multiple_panel)
-	SetValues(print_multiple_panel);
-    appres.multiple = (multiple? True : False);
-    /* if multiple pages, disable justification (must be flush left) */
-    if (appres.multiple) {
-	XtSetSensitive(just_lab, False);
-	XtSetSensitive(export_just_panel, False);
-	if (cur_exp_lang == LANG_PS)
-	    XtSetSensitive(export_overlap_panel, True);
-	if (print_just_panel) {
-	    XtSetSensitive(just_lab, False);
-	    XtSetSensitive(print_just_panel, False);
-	    XtSetSensitive(print_overlap_panel, True);
+	FirstArg(XtNlabel, multiple_pages[multiple]);
+	SetValues(export_multiple_panel);
+	/* change print multiple if it exists */
+	if (print_multiple_panel)
+		SetValues(print_multiple_panel);
+	appres.multiple = (multiple? True : False);
+	/* if multiple pages, disable justification (must be flush left) */
+	if (appres.multiple) {
+		XtSetSensitive(just_lab, False);
+		XtSetSensitive(export_just_panel, False);
+		if (cur_exp_lang == LANG_PS || cur_exp_lang == LANG_PDF)
+			XtSetSensitive(export_overlap_panel, True);
+		if (print_just_panel) {
+			XtSetSensitive(just_lab, False);
+			XtSetSensitive(print_just_panel, False);
+			XtSetSensitive(print_overlap_panel, True);
+		}
+	} else {
+		XtSetSensitive(just_lab, True);
+		XtSetSensitive(export_just_panel, True);
+		XtSetSensitive(export_overlap_panel, False);
+		if (print_just_panel) {
+			XtSetSensitive(just_lab, True);
+			XtSetSensitive(print_just_panel, True);
+			XtSetSensitive(print_overlap_panel, False);
+		}
 	}
-    } else {
-	XtSetSensitive(just_lab, True);
-	XtSetSensitive(export_just_panel, True);
-	XtSetSensitive(export_overlap_panel, False);
-	if (print_just_panel) {
-	    XtSetSensitive(just_lab, True);
-	    XtSetSensitive(print_just_panel, True);
-	    XtSetSensitive(print_overlap_panel, False);
-	}
-    }
 }
 
 static void
 overlap_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
-    intptr_t overlap = (intptr_t) client_data;
+	intptr_t overlap = (intptr_t) client_data;
 
-    FirstArg(XtNlabel, overlap_pages[overlap]);
-    SetValues(export_overlap_panel);
-    /* change print overlap if it exists */
-    if (print_overlap_panel)
-	SetValues(print_overlap_panel);
-    appres.overlap = (overlap? True : False);
+	FirstArg(XtNlabel, overlap_pages[overlap]);
+	SetValues(export_overlap_panel);
+	/* change print overlap if it exists */
+	if (print_overlap_panel)
+		SetValues(print_overlap_panel);
+	appres.overlap = (overlap? True : False);
 }
 
 static void
-set_postscript_options(void)
+set_postscript_pdf_options(void)
 {
 	/* enable or disable features available for PostScript */
 
-	/* if multiple pages, enable overlap and disable justification (must be flush left) */
-	if (appres.multiple) {
-	    XtSetSensitive(export_overlap_panel, True);
-	    XtSetSensitive(just_lab, False);
-	    XtSetSensitive(export_just_panel, False);
-	    if (print_just_panel) {
-		XtSetSensitive(just_lab, False);
-		XtSetSensitive(print_just_panel, False);
-	    }
+	if (cur_exp_lang == LANG_PDF && !pdf_pagemode) {
+		XtSetSensitive(postscript_form, False);
+		return;
 	} else {
-	    XtSetSensitive(export_overlap_panel, False);
-	    XtSetSensitive(just_lab, True);
-	    XtSetSensitive(export_just_panel, True);
-	    if (print_just_panel) {
+		XtSetSensitive(postscript_form, True);
+	}
+	/* if multiple pages, enable overlap and
+	   disable justification (must be flush left) */
+	if (appres.multiple) {
+		XtSetSensitive(export_overlap_panel, True);
+		XtSetSensitive(just_lab, False);
+		XtSetSensitive(export_just_panel, False);
+		if (print_just_panel) {
+			XtSetSensitive(just_lab, False);
+			XtSetSensitive(print_just_panel, False);
+		}
+	} else {
+		XtSetSensitive(export_overlap_panel, False);
 		XtSetSensitive(just_lab, True);
-		XtSetSensitive(print_just_panel, True);
-	    }
+		XtSetSensitive(export_just_panel, True);
+		if (print_just_panel) {
+			XtSetSensitive(just_lab, True);
+			XtSetSensitive(print_just_panel, True);
+		}
 	}
 }
 
 static void
 lang_select(Widget w, XtPointer new_lang, XtPointer call_data)
 {
-    FirstArg(XtNlabel, XtName(w));
-    SetValues(lang_panel);
-    cur_exp_lang = (int) new_lang;
+	FirstArg(XtNlabel, XtName(w));
+	SetValues(lang_panel);
+	cur_exp_lang = (int) new_lang;
 
-    /* enable or disable features available for PostScript or other languages */
-    if (cur_exp_lang == LANG_PS)
-	set_postscript_options();
+	if (cur_exp_lang == LANG_PS || cur_exp_lang == LANG_PDF)
+		set_postscript_pdf_options();
 
-    /* manage optional buttons/menus etc */
-    manage_optional();
+	/* manage optional buttons/menus etc */
+	manage_optional();
 
-    update_def_filename();
-    FirstArg(XtNlabel, default_export_file);
-    SetValues(dfile_text);
-    /* set the new wildcard mask based on the current export language */
-    set_export_mask(cur_exp_lang);
+	update_def_filename();
+	FirstArg(XtNlabel, default_export_file);
+	SetValues(dfile_text);
+
+	/* set the new wildcard mask based on the current export language */
+	set_export_mask(cur_exp_lang);
 }
 
 /***
@@ -514,31 +522,29 @@ lang_select(Widget w, XtPointer new_lang, XtPointer call_data)
    e.g. make *.jpg for jpeg output
 ***/
 
-void set_export_mask(int lang)
+static void
+set_export_mask(int lang)
 {
-    char	    mask[100];
+	char	    mask[100];
 
-    /* make wildcard mask based on filename suffix for output language */
-    /* for tiff and jpeg use three-letter suffixes */
-    if (cur_exp_lang==LANG_TIFF)
-	strcpy(mask, "*.tif");
-    else if (cur_exp_lang==LANG_JPEG)
-	strcpy(mask, "*.jpg");
-    else if (cur_exp_lang==LANG_PDFTEX)
-	/* for pdftex, just use .pdf */
-	strcpy(mask, "*.pdf");
-    else if (cur_exp_lang == LANG_EPS_ASCII ||
-	     cur_exp_lang == LANG_EPS_MONO_TIFF ||
-	     cur_exp_lang == LANG_EPS_COLOR_TIFF)
-	/* just .eps for all eps files */
-	strcpy(mask, "*.eps");
-    else
-	sprintf(mask,"*.%s",lang_items[lang]);
-    FirstArg(XtNstring, mask);
-    SetValues(exp_mask);
+	/* make wildcard mask based on filename suffix for output language */
+	/* for tiff and jpeg use three-letter suffixes */
+	if (cur_exp_lang==LANG_TIFF)
+		strcpy(mask, "*.tif");
+	else if (cur_exp_lang==LANG_JPEG)
+		strcpy(mask, "*.jpg");
+	else if (cur_exp_lang==LANG_PDFTEX)
+		/* for pdftex, just use .pdf */
+		strcpy(mask, "*.pdf");
+	else if (cur_exp_lang == LANG_EPS)
+		strcpy(mask, "*.eps");
+	else
+		sprintf(mask,"*.%s",lang_items[lang]);
+	FirstArg(XtNstring, mask);
+	SetValues(exp_mask);
 
-    /* rescan current directory */
-    Rescan(0, 0, 0, 0);
+	/* rescan current directory */
+	Rescan(0, 0, 0, 0);
 }
 
 /* user has chosen a smooth factor from the pulldown menu */
@@ -546,10 +552,10 @@ void set_export_mask(int lang)
 static void
 smooth_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
-    intptr_t new_smooth = (intptr_t) client_data;
-    appres.smooth_factor = new_smooth==0? 1: new_smooth*2;
-    FirstArg(XtNlabel, smooth_choices[new_smooth]);
-    SetValues(smooth_menu_button);
+	intptr_t new_smooth = (intptr_t) client_data;
+	appres.smooth_factor = new_smooth == 0 ? 1 : new_smooth*2;
+	FirstArg(XtNlabel, smooth_choices[new_smooth]);
+	SetValues(smooth_menu_button);
 }
 
 /* user selected a background color from the menu */
@@ -557,25 +563,25 @@ smooth_select(Widget w, XtPointer client_data, XtPointer call_data)
 static void
 background_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
-    Pixel	    bgcolor, fgcolor;
+	Pixel	    bgcolor, fgcolor;
 
-    /* get the colors from the color button just pressed */
-    FirstArg(XtNbackground, &bgcolor);
-    NextArg(XtNforeground, &fgcolor);
-    GetValues(w);
+	/* get the colors from the color button just pressed */
+	FirstArg(XtNbackground, &bgcolor);
+	NextArg(XtNforeground, &fgcolor);
+	GetValues(w);
 
-    /* get the colorname from the color button and put it and the colors
-       in the menu button */
-    FirstArg(XtNlabel, XtName(w));
-    NextArg(XtNbackground, bgcolor);
-    NextArg(XtNforeground, fgcolor);
-    SetValues(export_background_panel);
-    /* update the print panel too if it exists */
-    if (print_background_panel)
-	SetValues(print_background_panel);
-    export_background_color = (int)client_data;
+	/* get the colorname from the color button and put it and the colors
+	   in the menu button */
+	FirstArg(XtNlabel, XtName(w));
+	NextArg(XtNbackground, bgcolor);
+	NextArg(XtNforeground, fgcolor);
+	SetValues(export_background_panel);
+	/* update the print panel too if it exists */
+	if (print_background_panel)
+		SetValues(print_background_panel);
+	export_background_color = (int)client_data;
 
-    XtPopdown(background_menu);
+	XtPopdown(background_menu);
 }
 
 /* user selected a transparent color from the menu */
@@ -583,87 +589,87 @@ background_select(Widget w, XtPointer client_data, XtPointer call_data)
 static void
 transp_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
-    Pixel	    bgcolor, fgcolor;
+	Pixel	    bgcolor, fgcolor;
 
-    /* get the colors from the color button just pressed */
-    FirstArg(XtNbackground, &bgcolor);
-    NextArg(XtNforeground, &fgcolor);
-    GetValues(w);
+	/* get the colors from the color button just pressed */
+	FirstArg(XtNbackground, &bgcolor);
+	NextArg(XtNforeground, &fgcolor);
+	GetValues(w);
 
-    /* get the colorname from the color button and put it and the colors
-       in the menu button */
-    FirstArg(XtNlabel, XtName(w));
-    NextArg(XtNbackground, bgcolor);
-    NextArg(XtNforeground, fgcolor);
-    SetValues(export_transp_panel);
-    appres.transparent = (int)client_data;
+	/* get the colorname from the color button and put it and the colors
+	   in the menu button */
+	FirstArg(XtNlabel, XtName(w));
+	NextArg(XtNbackground, bgcolor);
+	NextArg(XtNforeground, fgcolor);
+	SetValues(export_transp_panel);
+	appres.transparent = (int)client_data;
 
-    XtPopdown(transp_menu);
+	XtPopdown(transp_menu);
 }
 
 /* come here when user chooses minor grid interval from menu */
 
 void
-export_grid_minor_select(Widget w, XtPointer new_grid_choice, XtPointer call_data)
+export_grid_minor_select(Widget w,
+			XtPointer new_grid_choice, XtPointer call_data)
 {
-    char *val;
-    grid_minor = (int) new_grid_choice;
+	char *val;
+	grid_minor = (int) new_grid_choice;
 
-    /* put selected grid value in the text area */
-    /* first get rid of any "mm" following the value */
-    val = strtok(strdup(grid_choices[grid_minor]), " ");
-    FirstArg(XtNstring, val);
-    SetValues(export_grid_minor_text);
-    free(val);
+	/* put selected grid value in the text area */
+	/* first get rid of any "mm" following the value */
+	val = strtok(strdup(grid_choices[grid_minor]), " ");
+	FirstArg(XtNstring, val);
+	SetValues(export_grid_minor_text);
+	free(val);
 }
 
 /* come here when user chooses major grid interval from menu */
 
 void
-export_grid_major_select(Widget w, XtPointer new_grid_choice, XtPointer call_data)
+export_grid_major_select(Widget w,
+			XtPointer new_grid_choice, XtPointer call_data)
 {
-    char *val;
-    grid_major = (int) new_grid_choice;
+	char *val;
+	grid_major = (int) new_grid_choice;
 
-    /* put selected grid value in the text area */
-    /* first get rid of any "mm" following the value */
-    val = strtok(strdup(grid_choices[grid_major]), " ");
-    FirstArg(XtNstring, val);
-    SetValues(export_grid_major_text);
-    free(val);
+	/* put selected grid value in the text area */
+	/* first get rid of any "mm" following the value */
+	val = strtok(strdup(grid_choices[grid_major]), " ");
+	FirstArg(XtNstring, val);
+	SetValues(export_grid_major_text);
+	free(val);
 }
 
 
 /* enable/disable optional buttons etc depending on export language */
 
-void manage_optional(void)
+static void
+manage_optional(void)
 {
 	Widget below;
 
 	/* if language is GIF, enable the transparent color choices */
 	if (cur_exp_lang == LANG_GIF) {
-	    XtManageChild(transp_lab);
-	    XtManageChild(export_transp_panel);
+		XtManageChild(transp_lab);
+		XtManageChild(export_transp_panel);
 	} else {
-	    XtUnmanageChild(transp_lab);
-	    XtUnmanageChild(export_transp_panel);
+		XtUnmanageChild(transp_lab);
+		XtUnmanageChild(export_transp_panel);
 	}
 
 	/* if the export language is JPEG, manage the image quality choices */
 	if (cur_exp_lang == LANG_JPEG) {
-	    XtManageChild(quality_lab);
-	    XtManageChild(quality_spinner);
+		XtManageChild(quality_lab);
+		XtManageChild(quality_spinner);
 	} else {
-	    XtUnmanageChild(quality_lab);
-	    XtUnmanageChild(quality_spinner);
+		XtUnmanageChild(quality_lab);
+		XtUnmanageChild(quality_spinner);
 	}
 
 	/* if language is a bitmap format or PS/EPS/PDF/PSTEX/PSPDF or MAP,
 	   manage the border margin stuff */
 	if (cur_exp_lang == LANG_PS || cur_exp_lang == LANG_EPS ||
-		cur_exp_lang == LANG_EPS_ASCII ||
-		cur_exp_lang == LANG_EPS_MONO_TIFF ||
-		cur_exp_lang == LANG_EPS_COLOR_TIFF ||
 		cur_exp_lang == LANG_PDF || cur_exp_lang == LANG_PSTEX ||
 		cur_exp_lang == LANG_PSPDF || cur_exp_lang == LANG_PICT2E ||
 		cur_exp_lang == LANG_TIKZ || cur_exp_lang == LANG_MAP ||
@@ -676,10 +682,10 @@ void manage_optional(void)
 	}
 
 	/* if language is a bitmap format, tk or PS/EPS/PDF/PSTEX/PSPDF manage the background color and grid */
-	if (cur_exp_lang == LANG_PS || cur_exp_lang == LANG_EPS || cur_exp_lang == LANG_EPS_ASCII ||
-		cur_exp_lang == LANG_EPS_MONO_TIFF || cur_exp_lang == LANG_EPS_COLOR_TIFF ||
-		cur_exp_lang == LANG_PDF || cur_exp_lang == LANG_PSTEX || cur_exp_lang == LANG_TK ||
-		cur_exp_lang == LANG_PSPDF || cur_exp_lang >= FIRST_BITMAP_LANG) {
+	if (cur_exp_lang == LANG_PS || cur_exp_lang == LANG_EPS ||
+			cur_exp_lang == LANG_PDF || cur_exp_lang ==LANG_PSTEX ||
+			cur_exp_lang == LANG_TK || cur_exp_lang == LANG_PSPDF ||
+			cur_exp_lang >= FIRST_BITMAP_LANG) {
 	    XtManageChild(background_lab);
 	    XtManageChild(export_background_panel);
 	} else {
@@ -687,10 +693,10 @@ void manage_optional(void)
 	    XtUnmanageChild(export_background_panel);
 	}
 	/* for all of the above *EXCEPT* tk, manage grid options */
-	if (cur_exp_lang == LANG_PS || cur_exp_lang == LANG_EPS || cur_exp_lang == LANG_EPS_ASCII ||
-		cur_exp_lang == LANG_EPS_MONO_TIFF || cur_exp_lang == LANG_EPS_COLOR_TIFF ||
-		cur_exp_lang == LANG_PDF || cur_exp_lang == LANG_PSTEX || cur_exp_lang == LANG_PSPDF ||
-		cur_exp_lang >= FIRST_BITMAP_LANG) {
+	if (cur_exp_lang == LANG_PS || cur_exp_lang == LANG_EPS ||
+			cur_exp_lang == LANG_PDF || cur_exp_lang ==LANG_PSTEX ||
+			cur_exp_lang == LANG_PSPDF ||
+			cur_exp_lang >= FIRST_BITMAP_LANG) {
 	    XtManageChild(export_grid_label);
 	    XtManageChild(export_grid_minor_menu_button);
 	    XtManageChild(export_grid_minor_text);
@@ -706,11 +712,33 @@ void manage_optional(void)
 	    XtUnmanageChild(export_grid_unit_label);
 	}
 
+	if (cur_exp_lang == LANG_PS || cur_exp_lang == LANG_EPS) {
+		XtUnmanageChild(pdf_lab);
+		XtUnmanageChild(pdf_pagemode_checkbox);
+		XtUnmanageChild(pdf_pagemode_label);
+		XtManageChild(preview_lab);
+		XtManageChild(preview_panel);
+	} else if (cur_exp_lang == LANG_PDF) {
+		XtUnmanageChild(preview_lab);
+		XtUnmanageChild(preview_panel);
+		XtManageChild(pdf_lab);
+		XtManageChild(pdf_pagemode_checkbox);
+		XtManageChild(pdf_pagemode_label);
+	} else {
+		XtUnmanageChild(pdf_lab);
+		XtUnmanageChild(pdf_pagemode_checkbox);
+		XtUnmanageChild(pdf_pagemode_label);
+		XtUnmanageChild(preview_lab);
+		XtUnmanageChild(preview_panel);
+	}
+
 	/* now manage either the PostScript form, the Bitmap form or neither */
-	if (cur_exp_lang == LANG_PS) {
+	if (cur_exp_lang == LANG_PS || cur_exp_lang == LANG_PDF) {
 	    XtUnmanageChild(postscript_form);
-	    FirstArg(XtNlabel, "Postscript Options");
-	    SetValues(ps_form_label);
+	    if (cur_exp_lang == LANG_PDF && !pdf_pagemode)
+		    XtSetSensitive(postscript_form, False);
+	    else
+		    XtSetSensitive(postscript_form, True);
 	    XtManageChild(multiple_lab);
 	    XtManageChild(export_multiple_panel);
 	    XtManageChild(export_overlap_panel);
@@ -731,11 +759,10 @@ void manage_optional(void)
 	    XtUnmanageChild(bitmap_form);
 	    below = postscript_form;
 	} else if (cur_exp_lang == LANG_IBMGL) {
-	    /* Use all of the Postscript form except the multiple page options
-	     */
+	    /* Use all of the Postscript form except the multiple page,
+	       the pagemode and the preview options */
 	    XtUnmanageChild(postscript_form);
-	    FirstArg(XtNlabel, "HPGL Options");
-	    SetValues(ps_form_label);
+	    XtSetSensitive(postscript_form, True);
 	    XtUnmanageChild(multiple_lab);
 	    XtUnmanageChild(export_multiple_panel);
 	    XtUnmanageChild(export_overlap_panel);
@@ -1010,11 +1037,10 @@ toggle_hpgl_pcl_switch(Widget w, XtPointer closure, XtPointer call_data)
     FirstArg(XtNstate, &state);
     GetValues(w);
 
-    if (state ) {
+    if (state )
 	FirstArg(XtNbitmap, sm_check_pm);
-    } else {
+    else
 	FirstArg(XtNbitmap, sm_null_check_pm);
-    }
     SetValues(w);
 
     /* set global state */
@@ -1032,17 +1058,37 @@ toggle_hpgl_font(Widget w, XtPointer closure, XtPointer call_data)
     FirstArg(XtNstate, &state);
     GetValues(w);
 
-    if (state ) {
+    if (state )
 	FirstArg(XtNbitmap, sm_check_pm);
-    } else {
+    else
 	FirstArg(XtNbitmap, sm_null_check_pm);
-    }
     SetValues(w);
 
     /* set global state */
     hpgl_specified_font = state;
 
     return;
+}
+
+static void /* XtCallbackProc */
+toggle_pdf_pagemode(Widget w, XtPointer closure, XtPointer call_data)
+{
+	Boolean state;
+
+	/* check state of the toggle and set/remove checkmark */
+	FirstArg(XtNstate, &state);
+	GetValues(w);
+	if (state) {
+		FirstArg(XtNbitmap, sm_null_check_pm);
+		XtSetSensitive(postscript_form, True);
+	} else {
+		FirstArg(XtNbitmap, sm_check_pm);
+		XtSetSensitive(postscript_form, False);
+	}
+	SetValues(w);
+	/* set global state */
+	pdf_pagemode = state;
+	return;
 }
 
 void create_export_panel(Widget w)
@@ -1055,7 +1101,6 @@ void create_export_panel(Widget w)
 	float		 mult;
 	intptr_t	 i;
 	Position	 xposn, yposn;
-
 	xoff_unit_setting = yoff_unit_setting = (int) appres.INCHES? 0: 1;
 
 	XtTranslateCoords(tool, (Position) 0, (Position) 0, &xposn, &yposn);
@@ -1225,21 +1270,96 @@ void create_export_panel(Widget w)
 	NextArg(XtNbottom, XtChainTop);
 	NextArg(XtNleft, XtChainLeft);
 	NextArg(XtNright, XtChainLeft);
-	export_grid_label = beside = XtCreateManagedWidget("grid_label", labelWidgetClass,
+	export_grid_label = XtCreateManagedWidget("grid_label", labelWidgetClass,
 					    export_panel, Args, ArgCount);
-	top_section = below = make_grid_options(export_panel, border_lab, beside, minor_grid, major_grid,
+	make_grid_options(export_panel, border_lab,
+			export_grid_label, minor_grid, major_grid,
 				&export_grid_minor_menu_button, &export_grid_major_menu_button,
 				&export_grid_minor_menu, &export_grid_major_menu,
 				&export_grid_minor_text, &export_grid_major_text,
 				&export_grid_unit_label,
 				export_grid_major_select, export_grid_minor_select);
 
+	/*
+	 * last row, alternatively for PDF / EPS / PS:
+	 * for PDF a checkbox whether pagemode or cropped to bounding box,
+	 * for EPS/PS drop-down menu to choose embedded preview
+	 */
+
+	/* label pagemode */
+	FirstArg(XtNlabel, "  Page mode");
+	NextArg(XtNfromVert, export_grid_label);
+	NextArg(XtNborderWidth, 0);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	top_section = pdf_lab = XtCreateManagedWidget("pdf_label",
+			labelWidgetClass, export_panel, Args, ArgCount);
+
+	/* checkbox pagemode */
+	FirstArg(XtNbitmap, pdf_pagemode ? sm_null_check_pm : sm_check_pm);
+	NextArg(XtNfromVert, export_grid_label);
+	NextArg(XtNfromHoriz, pdf_lab);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	NextArg(XtNinternalWidth, 1);
+	NextArg(XtNinternalHeight, 1);
+	NextArg(XtNstate, pdf_pagemode);
+	pdf_pagemode_checkbox = XtCreateManagedWidget("pdf_pagemode_checkbox",
+			toggleWidgetClass, export_panel, Args, ArgCount);
+	XtAddCallback(pdf_pagemode_checkbox, XtNcallback,
+			(XtCallbackProc)toggle_pdf_pagemode, (XtPointer) NULL);
+
+	/* description to the right of the checkbox pagemode */
+	FirstArg(XtNlabel, "Crop to Bounding Box");
+	NextArg(XtNfromVert, export_grid_label);
+	NextArg(XtNfromHoriz, pdf_pagemode_checkbox);
+	NextArg(XtNborderWidth, 0);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	pdf_pagemode_label = XtCreateManagedWidget("pdf_pagemode_label",
+			labelWidgetClass, export_panel, Args, ArgCount);
+	/* end pagemode */
+
+	/* choose a preview: none, ASCII, color tiff or monochrome tiff */
+	/* label preview*/
+	FirstArg(XtNlabel, "Add Preview");
+	NextArg(XtNfromVert, export_grid_label);
+	NextArg(XtNborderWidth, 0);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	preview_lab = XtCreateManagedWidget("preview_label",
+			labelWidgetClass, export_panel, Args, ArgCount);
+
+	/* drop-down menu preview */
+	FirstArg(XtNlabel, preview_items[preview_type]);
+	NextArg(XtNfromVert, export_grid_label);
+	NextArg(XtNfromHoriz, preview_lab);
+	NextArg(XtNborderWidth, INTERNAL_BW);
+	NextArg(XtNtop, XtChainTop);
+	NextArg(XtNbottom, XtChainTop);
+	NextArg(XtNleft, XtChainLeft);
+	NextArg(XtNright, XtChainLeft);
+	NextArg(XtNleftBitmap, menu_arrow);
+	preview_panel = XtCreateManagedWidget("preview", menuButtonWidgetClass,
+			export_panel, Args, ArgCount);
+	make_pulldown_menu(preview_items, XtNumber(preview_items), -1, "",
+			preview_panel, preview_select);
+	/* end preview */
+
 	/*************************************************************/
 	/* Put the Bitmap export options in their own frame.         */
 	/* Don't manage it unless the export language is bitmap type */
 	/*************************************************************/
 
-	FirstArg(XtNborderWidth, 1);
+	FirstArg(XtNborderWidth, 0);
 	NextArg(XtNfromVert, top_section);
 	NextArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainTop);
@@ -1268,7 +1388,7 @@ void create_export_panel(Widget w)
 	smooth_lab = XtCreateManagedWidget("smooth_label", labelWidgetClass,
 					bitmap_form, Args, ArgCount);
 
-	/* make a pulldown menu for smooth (No smoothing=1, Some=2, More=3, Most=4) */
+	/* make a pulldown menu for smooth (No smoothing=1, Some=2, More=4) */
 	FirstArg(XtNlabel, smooth_choices[appres.smooth_factor==1? 0: appres.smooth_factor/2]);
 	NextArg(XtNfromVert, below);
 	NextArg(XtNfromHoriz, smooth_lab);
@@ -1346,7 +1466,7 @@ void create_export_panel(Widget w)
 	/* Don't manage it unless the export language is PS/HPGL type */
 	/**************************************************************/
 
-	FirstArg(XtNborderWidth, 1);
+	FirstArg(XtNborderWidth, 0);
 	NextArg(XtNfromVert, top_section);
 	NextArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainTop);
@@ -1355,7 +1475,7 @@ void create_export_panel(Widget w)
 	postscript_form = XtCreateWidget("postscript_form", formWidgetClass,
 					     export_panel, Args, ArgCount);
 	/* now a label */
-	FirstArg(XtNlabel, "PostScript Options");
+/*	FirstArg(XtNlabel, "PostScript Options");
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainTop);
@@ -1363,11 +1483,10 @@ void create_export_panel(Widget w)
 	NextArg(XtNright, XtChainLeft);
 	below = ps_form_label = XtCreateManagedWidget("postscript_label", labelWidgetClass,
 					postscript_form, Args, ArgCount);
-
+*/
 	/* paper size */
-
 	FirstArg(XtNlabel, " Paper Size");
-	NextArg(XtNfromVert, below);
+//	NextArg(XtNfromVert, below);
 	NextArg(XtNborderWidth, 0);
 	NextArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainTop);
@@ -1377,7 +1496,7 @@ void create_export_panel(Widget w)
 					 postscript_form, Args, ArgCount);
 
 	FirstArg(XtNlabel, paper_sizes[appres.papersize].fname);
-	NextArg(XtNfromVert, below);
+//	NextArg(XtNfromVert, below);
 	NextArg(XtNfromHoriz, papersize_lab);
 	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNresizable, True);
@@ -1402,7 +1521,7 @@ void create_export_panel(Widget w)
 	/* Fit Page */
 
 	FirstArg(XtNlabel, "Fit to Page");
-	NextArg(XtNfromVert, below);
+//	NextArg(XtNfromVert, below);
 	NextArg(XtNfromHoriz, export_papersize_panel);
 	NextArg(XtNhorizDistance, 9);
 	NextArg(XtNborderWidth, INTERNAL_BW);
@@ -1552,6 +1671,7 @@ void create_export_panel(Widget w)
 					     postscript_form, Args, ArgCount);
 	FirstArg(XtNfromHoriz, export_offset_x);
 	NextArg(XtNfromVert, export_multiple_panel);
+	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainTop);
 	NextArg(XtNleft, XtChainLeft);
@@ -1590,6 +1710,7 @@ void create_export_panel(Widget w)
 					     postscript_form, Args, ArgCount);
 	FirstArg(XtNfromHoriz, export_offset_y);
 	NextArg(XtNfromVert, export_multiple_panel);
+	NextArg(XtNborderWidth, INTERNAL_BW);
 	NextArg(XtNtop, XtChainTop);
 	NextArg(XtNbottom, XtChainTop);
 	NextArg(XtNleft, XtChainLeft);
@@ -1614,7 +1735,6 @@ void create_export_panel(Widget w)
 					      postscript_form, Args, ArgCount);
 
 	/* (HPGL) checkbox for including PCL switch */
-
 	FirstArg(XtNbitmap, (print_hpgl_pcl_switch
 			     ? sm_check_pm : sm_null_check_pm));
 	NextArg(XtNfromVert, exp_off_lab);
@@ -1628,11 +1748,9 @@ void create_export_panel(Widget w)
 	NextArg(XtNlabel, "  ");
 	NextArg(XtNstate, print_hpgl_pcl_switch);	/* initial state */
 	pcl_cmd_checkbox = XtCreateManagedWidget("pcl_cmd_checkbox",
-						 toggleWidgetClass,
-						 postscript_form,
-						 Args, ArgCount);
+			toggleWidgetClass, postscript_form, Args, ArgCount);
 	XtAddCallback(pcl_cmd_checkbox, XtNcallback,
-		      (XtCallbackProc)toggle_hpgl_pcl_switch,(XtPointer) NULL);
+		      (XtCallbackProc)toggle_hpgl_pcl_switch, (XtPointer) NULL);
 
 	/* (HPGL) Use 'SD' font command */
 	FirstArg(XtNlabel, "Use Specified Font");  /* Label */
@@ -1644,11 +1762,9 @@ void create_export_panel(Widget w)
 	NextArg(XtNleft, XtChainLeft);
 	NextArg(XtNright, XtChainLeft);
 	hpgl_font_label = XtCreateManagedWidget("hpgl_font_label",
-					      labelWidgetClass,
-					      postscript_form, Args, ArgCount);
+			labelWidgetClass, postscript_form, Args, ArgCount);
 
-	/* (HPGL)checkbox for including PCL switch */
-
+	/* (HPGL) checkbox to use 'SD' font command */
 	FirstArg(XtNbitmap, (hpgl_specified_font
 			     ? sm_check_pm : sm_null_check_pm));
 	NextArg(XtNfromVert, exp_off_lab);
@@ -1660,21 +1776,23 @@ void create_export_panel(Widget w)
 	NextArg(XtNinternalWidth, 1);
 	NextArg(XtNinternalHeight, 1);
 	NextArg(XtNlabel, "  ");
-	NextArg(XtNstate, print_hpgl_pcl_switch);	/* initial state */
+	NextArg(XtNstate, hpgl_specified_font);	/* initial state */
 	hpgl_font_checkbox = XtCreateManagedWidget("hpgl_font_checkbox",
-						   toggleWidgetClass,
-						   postscript_form,
-						   Args, ArgCount);
+			toggleWidgetClass, postscript_form, Args, ArgCount);
 	XtAddCallback(hpgl_font_checkbox, XtNcallback,
-		      (XtCallbackProc)toggle_hpgl_font, (XtPointer) NULL);
+			(XtCallbackProc)toggle_hpgl_font, (XtPointer) NULL);
 
 
 	/***** End of PostScript/HPGL Option form *****/
 
 	/* now manage either the PostScript form, the Bitmap form or neither */
-	if (cur_exp_lang == LANG_PS) {
+	if (cur_exp_lang == LANG_PS || cur_exp_lang == LANG_PDF) {
 		XtManageChild(postscript_form);
 		below = postscript_form;
+		if (pdf_pagemode || cur_exp_lang == LANG_PS)
+			XtSetSensitive(postscript_form, True);
+		else
+			XtSetSensitive(postscript_form, False);
 	} else if (cur_exp_lang >= FIRST_BITMAP_LANG) {
 		XtManageChild(bitmap_form);
 		below = bitmap_form;
@@ -1757,6 +1875,7 @@ void create_export_panel(Widget w)
 
 	/* create the directory widgets */
 	change_directory(cur_export_dir);
+	strcpy(save_export_dir, cur_file_dir);
 	create_dirinfo(False, bottom_section, exp_selfile, &beside, &below,
 		       &exp_mask, &exp_dir, &exp_flist, &exp_dlist, E_FILE_WIDTH, False);
 	/* make <return> or double click in the file list window export the file */
@@ -1823,15 +1942,6 @@ void update_def_filename(void)
 	    strcat(default_export_file, ".tif");
 	else if (cur_exp_lang == LANG_JPEG)
 	    strcat(default_export_file, ".jpg");
-	else if (cur_exp_lang == LANG_EPS_ASCII)
-	    /* just use .eps for suffix (not eps_ascii) */
-	    strcat(default_export_file, ".eps");
-	else if (cur_exp_lang == LANG_EPS_MONO_TIFF)
-	    /* and add _mtif to show that it has monochrome tiff */
-	    strcat(default_export_file, "_mtiff.eps");
-	else if (cur_exp_lang == LANG_EPS_COLOR_TIFF)
-	    /* and add _ctif to show that it has color tiff */
-	    strcat(default_export_file, "_ctiff.eps");
 	else if (cur_exp_lang==LANG_PDFTEX)
 	    /* for pdftex, just use .pdf */
 	    strcat(default_export_file, ".pdf");

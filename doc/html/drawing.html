@@ -392,7 +392,7 @@ By default, end &quot;ticks&quot;, arrowheads and a box around the text are
 automatically included in the dimension line, but these are controlled
 in the attributes listed below.
 Here are several examples of dimension lines:
-<img src="images/dimension-lines.png" alt="">
+<img style="vertical-align: text-top" src="images/dimension-lines.png" alt="">
 
 <dl>
 <dt><b>Related Attributes:</b>
@@ -581,7 +581,7 @@ It is also possible to capture an image from the screen using the
 It is possible to read image files in the following image formats:
 <dl>
 <dd><img src="images/blueballdot.png" align=bottom alt="-">
-<A HREF="http://www.adobe.com/prodindex/postscript/overview.html#whatpostscript">EPSF (Encapsulated PostScript)</a>
+<A HREF="https://www.adobe.com/devnet/postscript.html">EPS (Encapsulated PostScript)</a>
 <br>
 <dd><img src="images/blueballdot.png" align=bottom alt="-">
 <A HREF="http://www.dcs.ed.ac.uk/%7Emxr/gfx/2d-hi.html">GIF</A>
@@ -626,7 +626,7 @@ or <a href="installation.html#gimp"><b>GIMP</b></a>.
 The
 <a href="editing.html#edit-image"><i>Edit Image</i> button</a>
 on the <a href="editing.html#edit-pict-panel">Edit panel</a>
-will start an external image editor (default is <tt>xv</tt>
+will start an external image editor (default is <tt>xdg-open</tt>
 and it may be changed to your favorite image editor, e.g. <tt>xpaint</tt> by
 changing the <a href="options.html#resources"><tt>Fig.image_editor</tt> resource</a>
 or starting <b>xfig</b> with the <tt>-image_editor</tt> option followed
@@ -638,7 +638,7 @@ or <a href="installation.html#hp2xx"><b>hp2xx</b></a> to first
 convert them to <b>Fig</b> files then
 <a href="main_menus.html#file-menu">Load or Merge</a> them into <b>xfig</b>.
 <p>
-To import EPSF files, <b>xfig</b> invokes
+To import EPS files, <b>xfig</b> invokes
 <a href="installation.html#ghostscript"><b>GhostScript</b></a>
 to render the image.
 <b>GhostScript</b> must be compiled with `pcx256' and `pbmraw' drivers.
@@ -691,8 +691,7 @@ is set to non-zero, the text will rotated by the angle, positive being
 counter-clockwise.
 <p>
 It is possible to enter Latin-1 glyphs
-such as `<img src="images/a-umlaut.png" alt="a umlaut">' or
-`<img src="images/c-cedilla.png" alt="c cedilla" align=top>'
+such as `&auml;' or `&ccedil;'
 (Compose characters) using the COMPOSE (META) key.
 See <a href="#compose-char">Latin-1 Characters</a> about this.  These tables
 also show the keyboard mapping for glyphs from the Symbol font.
@@ -971,7 +970,7 @@ Welding - common welding patterns and errors
 It is hoped that users will contribute Fig objects to the libraries to
 expand and enhance them for all <b>xfig</b> users.
 If you wish to contribute any Fig objects to existing or new libraries, please send
-them to me at <a href="mailto:bvsmith@lbl.gov">bvsmith@lbl.gov</a>.
+them to <a href="mailto:thomas.loimer@tuwien.ac.at">thomas.loimer@tuwien.ac.at</a>.
 You may restrict their usage by users if you
 wish, but all will benefit if you allow free usage, i.e. copying, using them
 in published reports, etc.
@@ -1084,8 +1083,8 @@ Users may select from four types of spline curves on the
 <a href="drawing.html">Drawing Mode Panel</a> of <b>xfig</b>.
 It is also possible to change the type of spline curves using
 <a href="editing.html#spline-line">SPLINE &lt;-&gt; LINE</a>,
-or adjust the shape of the curve by adjusting
-&quot;<a href="#xspline">shape factor</a>&quot; after curve has been created.
+or adjust the shape of the curve by adjusting the
+&quot;<a href="#xspline">shape factor</a>&quot; after a curve has been created.
 <p>
 <dl>
 <dd><img src="images/blueballdot.png" align=bottom alt="-">
@@ -1097,11 +1096,11 @@ Smooth closed curve which approximates specified points.
 Smooth curve which approximates specified points.
 <br>
 <dd><img src="images/blueballdot.png" align=bottom alt="-">
-<a href="#closed-interp-spline">CLOSED INTERPORATED SPLINE</a><br>
+<a href="#closed-interp-spline">CLOSED INTERPOLATED SPLINE</a><br>
 Smooth closed curve which passes through specified points.
 <br>
 <dd><img src="images/blueballdot.png" align=bottom alt="-">
-<a href="#interp-spline">OPEN INTERPORATED SPLINE</a><br>
+<a href="#interp-spline">OPEN INTERPOLATED SPLINE</a><br>
 Smooth curve which passes through specified points.
 </dl>
 
@@ -1123,10 +1122,10 @@ Using splines, curves such as the following may be easily drawn.
 <b>xfig</b>'s new
 <a href="authors.html#xspline">X-Spline</a>
 is bit more flexible.
-Each points (<i>control points</i>) of spline has `<i>shape factor</i>'
-and value of the <i>shape factor</i> controls
-behavior of the curve near the point.
-Value of <i>shape factor</i> can be changed independently
+Each point (<i>control point</i>) of the spline has a `<i>shape factor</i>'.
+The value of the <i>shape factor</i> controls
+the behavior of the curve near the point.
+The value of the <i>shape factor</i> can be changed independently
 using <a href="editing.html#edit-point">EDIT POINT</a>,
 and it is possible to mix approximated spline, interpolated spline
 and polyline in one continued curve.
@@ -1151,11 +1150,11 @@ some pathological cases.
 
 In <a href="#text">TEXT</a> mode,
 the following Latin-1 glyphs may be entered using the COMPOSE (META) key.
-For example to enter `<img src="images/a-umlaut.png" alt="a umlaut">',
+For example to enter `&auml;',
 press and release the COMPOSE key (or META or ALT key),
 enter the character `<tt>a</tt>',
 and then the character `<tt>&quot;</tt>' (double quote).
-To enter `<img src="images/c-cedilla.png" alt="c cedilla" align=top>',
+To enter `&ccedil;',
 enter COMPOSE, `<tt>c</tt>' and `<tt>,</tt>'.
 <p>
 <blockquote>

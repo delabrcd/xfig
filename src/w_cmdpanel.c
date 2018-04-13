@@ -195,8 +195,8 @@ menu_def view_menu_items[] = {
 	{"Manage Styles...      (Ctrl-Y)",  7, popup_manage_style_panel, False},
 	{"Redraw                (Ctrl-L)",  0, redisplay_canvas, False},
 	{"Portrait/Landscape    (Meta-C)",  3, change_orient, False},
-	{"Zoom In               (Shift-Z)", 5, inc_zoom, False},
-	{"Zoom Out              (z)",	    5, dec_zoom, False},
+	{"Zoom In               (Shift-Z)", 5, inc_zoom_centered, False},
+	{"Zoom Out              (z)",	    5, dec_zoom_centered, False},
 	{"Zoom to Fit canvas    (Ctrl-Z)",  8, fit_zoom, False},
 	{"Unzoom",			    0, unzoom, False},
 	{"Pan to origin",		    0, pan_origin, False},
@@ -597,11 +597,12 @@ void goodbye(Boolean abortflag)
     /* free all the loaded X-Fonts*/
     free_Fonts();
 
-    chdir(orig_dir);
-
     XtDestroyWidget(tool);
+
     /* generate a fault to cause core dump */
     if (abortflag) {
+	/* go to orig_dir, in case core dumps go to the cwd */
+	(void) change_directory(orig_dir);
 	abort();
     }
     exit(0);

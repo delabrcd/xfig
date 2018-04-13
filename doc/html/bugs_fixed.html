@@ -12,18 +12,132 @@
 
 <hr>
 <h2>Current release:</h2>
-<h2><a name="bugsfixedd">Bugs Fixed in <i>xfig 3.2.5d</i> </a></h2>
-	<img src="images/blueballdot.png"> old link for "Xfig On Microsoft Windows (Getting and Installing Xfig html page)
+<h2><a name="bugsfixedd">Bugs Fixed in <i>xfig 3.2.7</i> </a></h2>
+	Ticket numbers refer to https://sourceforge.net/p/mcj/tickets/#.
+	Debian bug numbers refer to https://bugs.debian.org/#.
+	<br><img src="images/blueballdot.png"> Interpolated splines are now created with the recommended value of the
+	  shape factor of -0.5, not with -1.0. A description of the shape factor
+	  as used in xfig has been added in the file doc/FORMAT3.2
+	<br><img src="images/blueballdot.png"> Apply xfig-3.2.6a-fallback-for-nonscalable-fonts.patch and
+	  xfig-3.2.6a-scalable-fonts.patch from Hans de Goede.
+	<br><img src="images/blueballdot.png"> Apply debian patches 08_every_time.patch, 10_RELEASE_DATE.patch,
+	  11_declare_swap_colors.patch, from Roland Rosenfeld.
+	<br><img src="images/blueballdot.png"> Apply debian patch 07_colorsliderarrows.patch. Debian bug #870365.
+	<br><img src="images/blueballdot.png"> Change map of India to disputed boundaries, from
+	  https://en.wikipedia.org/wiki/File:India_disputed_areas_map.svg,
+	  retrieved 2018-02-25. Debian bug #270799, 09_india_disputed.patch
+	<br><img src="images/blueballdot.png"> Prevent integer overflow in {floor,ceil}_coords_{x,y}(). Fixes debian
+	  bug #300436. Also prevent integer overflow in round_coords().
+	<br><img src="images/blueballdot.png"> Completely remove alloca.h and alloca() from the code.
+	<br><img src="images/blueballdot.png"> When entering the "Save as..." dialog, moving to a new directory and
+	  pressing "Cancel", a subsequent "Save" wrote to the new directory.
+	  This happened analogously for the "Export" dialog. Fixed, ticket #9.
+
+
+<br><br> <img src="images/blueramp.png" alt="-">
+<h2>Older releases of xfig:</h2>
+
+<h2><a name="bugsfixedb">Bugs Fixed in <i>xfig 3.2.6a</i></a></h2>
+	<img src="images/blueballdot.png"> Add compile-switch --enable-tablet for using an input tablet.
+	<br><img src="images/blueballdot.png"> Eventually, sorted out the xpm switches. Only use --enable-xpm-splash.
+	<br><img src="images/blueballdot.png"> Improve ./configure and add diagnostic output.
+
+<hr>
+<h2><a name="bugsfixedb">Bugs Fixed in <i>xfig 3.2.6</i></a></h2>
+	<br><img src="images/blueballdot.png"> Update documentation to LaTeX and Xfig.
+	From Roland Rosenfeld <roland@spinnaker.de>:
+	<br><img src="images/blueballdot.png"> Update LaTeX documentation, use \documentclass instead of
+	  \documentstyle, \usepackage instead of \input.
+	<br><img src="images/blueballdot.png"> Builds on hurd, had to #include <limits.h> in a few places.
+	<br><img src="images/blueballdot.png"> Use application/x-xfig, not image/x-xfig in xfig.desktop file.
+	  See https://bugs.launchpad.net/ubuntu/+source/xfig/+bug/690067 and
+	  https://bugs.launchpad.net/ubuntu/+source/xfig/+bug/1045848 .
+
+<hr>
+<h2><a name="bugsfixedb">Bugs Fixed in <i>xfig 3.2.6-rc</i></a></h2>
+	<img src="images/blueballdot.png"> Should compile on Mac (Darwin) after installing dependencies using
+	  Macports, Fink or Homebrew.
+	<br><img src="images/blueballdot.png"> To compile on ancient systems, try make -DANCIENT.
+	<br><img src="images/blueballdot.png"> Report correct paths to installed files in the man page.
+	<br<br>><img src="images/blueballdot.png"> Add pathmax.h and dirstruct.h, to define DIRSTRUCT and PATH_MAX.
+
+	<br><br>From Vladislav Zavjalov; Commit numbers refer to
+	http://git.altlinux.org/people/slazav/packages/?p=xfig.git;a=commit;h=#
+	<br><img src="images/blueballdot.png"> Preserve comments when deleting objects; Commit #6c42e5c
+	<br><img src="images/blueballdot.png"> Restore colors and main comment after Delete All + Undo; #34f6105
+	<br><img src="images/blueballdot.png"> Draw horizontal scrollbar if property buttons are too wide to fit
+	  on the screen. Commit #e9c1394
+	<br><img src="images/blueballdot.png"> Add save8bit app-resource to allow saving 8-bit files. #5bd9fbb
+	<br><img src="images/blueballdot.png"> Move Xfuncs.h and Xosdefs.h out from fig.h. Commit #b433478
+	<br><img src="images/blueballdot.png"> Move -l flags from LDFLAGS to LDADD. Commit #2d57c85
+
+	<br><br>From Roland Rosenfeld. Bug numbers refer to https://bugs.debian.org/#.
+	<br><img src="images/blueballdot.png"> Do not link with -lXmu, if linking with Xaw3d > 1.5e.
+	<br><img src="images/blueballdot.png"> Make japanese documentation available for LANG=ja_JP.ujis.
+	<br><img src="images/blueballdot.png"> Set the Creation date in xfig_man.html to the date when
+	  creating the source tarball.
+	<br><img src="images/blueballdot.png"> Really fix reading png files,
+	  https://bugzilla.redhat.com/show_bug.cgi?id=1150330
+	<br><img src="images/blueballdot.png"> Delete some superfluos files, fix typos (Caribbean),
+	  add semicolon in xfig.desktop (debian bug #812477).
+
+	<br><br>From Brian V. Smith:
+	<br><img src="images/blueballdot.png"> old link for "Xfig On Microsoft Windows (Getting and Installing Xfig html page)
 	<br><img src="images/blueballdot.png"> dash_list wrong dimension causes segfault on some line styles
 	<br><img src="images/blueballdot.png"> Should handle systems where REG_NOERROR (regular expression) is undefined now
 	<br><img src="images/blueballdot.png"> Missing xfig_man.html
 	<br><img src="images/blueballdot.png"> When exporting, wasn't setting locale to "C" for all command-line parameters, so floating point numbers would contain "," instead of "."
 	<br><img src="images/blueballdot.png"> Didn't allow enough space for fonts (would segfault when popping up File panels)
 	<br><img src="images/blueballdot.png"> Moving arc point would segfault
-<br> <img src="images/blueramp.png" alt="-">
-<h2>Older releases of xfig:</h2>
 
+<hr>
+<h2><a name="bugsfixedb">Bugs Fixed in <i>xfig 3.2.6-beta</i></a></h2>
 
+	From Roland Rosenfeld. Bug numbers refer to https://bugs.debian.org/#.
+	In fact, most of the bugs below, also those from other sources, were
+	fixed by applying the debian-patches.
+	<br><img src="images/blueballdot.png"> Position independent executables work, fixes #756791.
+	<br><img src="images/blueballdot.png"> Revert previous change of X-spline parameter.
+	<br><img src="images/blueballdot.png"> Use C locale for fig2dev, to correctly interpret decimal point.
+	  Fixes debian bug #782737.
+	<br><img src="images/blueballdot.png"> Correct grid mode distances in man page. Debian bug #314820.
+	<br><img src="images/blueballdot.png"> Extend xfig.desktop.
+	<br><img src="images/blueballdot.png"> Fix unsecure use of temporary file. From Thomas Hoger, gentoo.
+	  Debian bug #565341.
+	<br><img src="images/blueballdot.png"> Escape - in man-page.
+	<br><img src="images/blueballdot.png"> Securely print string.
+	<br><img src="images/blueballdot.png"> Restore old shadow behaviour.
+	<br><img src="images/blueballdot.png"> Fix reading "/MediaBox" when importing pdf. Closes debian bug #530898.
+	<br><img src="images/blueballdot.png"> With -papersize b1, use B1, not B10. Debian bug #535181.
+
+	<br><br>From Vladislav Zavjalov. Information on bugs is found
+	at https://bugzilla.altlinux.org/show_bug.cgi?id=#
+	<br><img src="images/blueballdot.png"> Do not use fontsets for symbol and dingbat fonts, #26579.
+	<br><img src="images/blueballdot.png"> Fix compiler warnigs in w_indpanel.c. Commit feabe27.
+	<br><img src="images/blueballdot.png"> Restore correct depths when loading a figure, then undo.
+	  Commit b5c79b3.
+	<br><img src="images/blueballdot.png"> Restore filename after delete region, undo. Commit 219d690.
+	<br><img src="images/blueballdot.png"> Restore user color when opening new fig-file. Commit fccd915.
+	<br><img src="images/blueballdot.png"> Restore correct depths when joining lines with different depths.
+	  Commit a77bcaf.
+	<br><img src="images/blueballdot.png"> Fix xfontlist->fset initialization. Commit a592399.
+	<br><img src="images/blueballdot.png"> Fix default origin (100000,100000) -> (0,0) for filled objects.
+	  Commit 4d87e60.
+	<br><img src="images/blueballdot.png"> Fix 100% cpu-load by save panel. Commit 81a4596.
+	<br><img src="images/blueballdot.png"> Do not use local SimpleMenu.c with XAW3D1_5E. Would segfault on
+	  some 64-bit systems when opening main menu.
+	<br><img src="images/blueballdot.png"> Missing argument may cause crash or undefined behaviour.
+	  Debian bug #795642. From Michael Tautschnig.
+
+	<br><br>From Hans de Goede. Bug information
+	at https://bugzilla.redhat.com/show_bug.cgi?id=#.
+	<br><img src="images/blueballdot.png"> Patch for importing png-files, bug #1150330. From David Kaufmann.
+	<br><img src="images/blueballdot.png"> Fix crash when changing arrow size. Red Hat bug #1046102.
+	<br><img src="images/blueballdot.png"> Fix crash when creating dash-dotted lines. Red Hat bug #1023744.
+	<br>From Michael Srb, thanks to Maurizio Pollini and David Kaufmann.
+	<br><img src="images/blueballdot.png"> Fix crash on exit. From Peter Volkov at gentoo
+
+<hr>
 <h2><a name="bugsfixedc">Bugs Fixed in <i>xfig 3.2.5c</i></a></h2>
 	<img src="images/blueballdot.png"> Increased default width of layer panel from 58 to 64 to accomodate scrollbar width
 	<br><img src="images/blueballdot.png"> missing comma in FIXED_JAPANESE_PDF #ifdef case in w_cmdpanel.c
@@ -71,7 +185,6 @@
 	<br><img src="images/blueballdot.png"> Warnings about different size of int and void * on 64-bit system.
 	  To fix this problem I changed int to intptr_t in some places.
 <hr>
-
 <h2><a name="bugsfixedb">Bugs Fixed in <i>xfig 3.2.5b</i></a></h2>
 	<img src="images/blueballdot.png"> Dimension line indicator incorrectly showed arrow length/width
 	<br><img src="images/blueballdot.png"> Several patches from Fedora xfig maintainer

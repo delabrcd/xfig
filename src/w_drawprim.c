@@ -69,6 +69,7 @@ static Pixel	gc_color[NUMOPS], gc_background[NUMOPS];
 static XRectangle clip[1];
 static int	parsesize(char *name);
 static Boolean	openwinfonts;
+static Boolean  font_scalable[NUM_FONTS];
 
 #define MAXNAMES 300
 
@@ -89,6 +90,7 @@ void init_font(void)
     struct xfont   *newfont, *nf;
     int		    f, count, i, p, ss;
     char	    template[300];
+    char	    backup_template[300];
     char	  **fontlist, **fname;
 
     if (appres.boldFont == NULL || *appres.boldFont == '\0')
@@ -131,49 +133,67 @@ void init_font(void)
     if (appres.scalablefonts) {
 	/* first look for OpenWindow style font names (e.g. times-roman) */
 	if ((fontlist = XListFonts(tool_d, ps_fontinfo[1].name, 1, &count))!=0) {
-		openwinfonts = True;	/* yes, use them */
-		for (f=0; f<NUM_FONTS; f++)	/* copy the OpenWindow font names */
-		    x_fontinfo[f].template = ps_fontinfo[f+1].name;
+            openwinfonts = True; /* yes, use them */
+            for (f=0; f<NUM_FONTS; f++) { /* copy the OpenWindow font names */
+                x_fontinfo[f].template = ps_fontinfo[f+1].name;
+                font_scalable[f] = True;
+            }
+            XFreeFontNames(fontlist);
 	} else {
-	    strcpy(template,x_fontinfo[0].template);  /* nope, check for font size 0 */
-	    strcat(template,"0-0-*-*-*-*-");
-	    /* add ISO8859 (if not Symbol font or ZapfDingbats) to font name in non-international mode*/
-	    if (
+            for (f = 0; f < NUM_FONTS; f++) {
+                strcpy(template,x_fontinfo[f].template);  /* nope, check for font size 0 */
+                strcat(template,"0-0-*-*-*-*-");
+                /* add ISO8859 (if not Symbol font or ZapfDingbats) to font name in non-international mode*/
+                if (
 #ifdef I18N
-		!appres.international &&
+                    !appres.international &&
 #endif
-		strstr(template,"ymbol") == NULL &&
-		strstr(template,"ingbats") == NULL)
-		    strcat(template,"ISO8859-*");
-	    else
-		strcat(template,"*-*");
-	    if ((fontlist = XListFonts(tool_d, template, 1, &count))==0)
-		appres.scalablefonts = False;   /* none, turn off request for them */
+                    strstr(template,"ymbol") == NULL &&
+                    strstr(template,"ingbats") == NULL)
+                        strcat(template,"ISO8859-*");
+                else
+                    strcat(template,"*-*");
+
+                if ((fontlist = XListFonts(tool_d, template, 1, &count)))
+                    font_scalable[f] = True;
+                else
+                    font_scalable[f] = False;
+
+                XFreeFontNames(fontlist);
+            }
 	}
-	XFreeFontNames(fontlist);
     }
 
     /* no scalable fonts - query the server for all the font
        names and sizes and build a list of them */
 
-    if (!appres.scalablefonts) {
-	for (f = 0; f < NUM_FONTS; f++) {
+    for (f = 0; f < NUM_FONTS; f++) {
+        if (!font_scalable[f]) {
 	    nf = NULL;
 	    strcpy(template,x_fontinfo[f].template);
 	    strcat(template,"*-*-*-*-*-*-");
+	    strcpy(backup_template,x_backup_fontinfo[f].template);
+	    strcat(backup_template,"*-*-*-*-*-*-");
 	    /* add ISO8859 (if not Symbol font or ZapfDingbats) to font name in non-international mode*/
 	    if (
 #ifdef I18N
 		!appres.international &&
 #endif
 		strstr(template,"ymbol") == NULL &&
-		strstr(template,"ingbats") == NULL)
+		strstr(template,"ingbats") == NULL) {
 		    strcat(template,"ISO8859-*");
-	    else
+		    strcat(backup_template,"ISO8859-*");
+	    } else {
 		strcat(template,"*-*");
+		strcat(backup_template,"*-*");
+            }
 	    /* don't free the Fontlist because we keep pointers into it */
 	    p = 0;
-	    if ((fontlist = XListFonts(tool_d, template, MAXNAMES, &count))==0) {
+
+	    if ((fontlist = XListFonts(tool_d, template, MAXNAMES, &count))==0)
+	        fontlist = XListFonts(tool_d, backup_template, MAXNAMES, &count);
+
+            if (fontlist == 0) {
 		/* no fonts by that name found, substitute the -normal font name */
 		flist[p].fn = appres.normalFont;
 		flist[p++].s = 12;	/* just set the size to 12 */
@@ -210,8 +230,8 @@ void init_font(void)
 			nf->next = NULL;
 		    }
 	    } /* next size */
-	} /* next font, f */
-    } /* !appres.scalablefonts */
+        } /* !font_scalable[f] */
+    } /* next font, f */
 }
 
 /* parse the point size of font 'name' */
@@ -223,16 +243,17 @@ parsesize(char *name)
     int		    s;
     char	   *np;
 
-    for (np = name; *(np + 1); np++)
-	if (*np == '-' && *(np + 1) == '-')	/* look for the -- */
-	    break;
-    s = 0;
-    if (*(np + 1)) {
-	np += 2;		/* point past the -- */
-	s = atoi(np);		/* get the point size */
-    } else
-	fprintf(stderr, "Can't parse '%s'\n", name);
-    return s;
+    for (np = name; *(np + 1); np++) {
+        /* look for "--" */
+	if (strncmp(np, "--", 2) == 0)
+	    return atoi(np + 2);
+        /* For "-b&h-lucida-*-normal-sans-<point-size>-*" */
+        if (strncmp(np, "-normal-sans-", 13) == 0)
+	    return atoi(np + 13);
+    }
+
+    fprintf(stderr, "Can't parse '%s'\n", name);
+    return 0;
 }
 
 /*
@@ -279,11 +300,11 @@ lookfont(int fnum, int size)
 	nf = x_fontinfo[fnum].xfontlist;
 	oldnf = nf;
 	if (nf != NULL) {
-	    if (nf->size > size && !appres.scalablefonts)
+	    if (nf->size > size && !font_scalable[fnum])
 		found = True;
 	    else {
 		while (nf != NULL) {
-		    if (nf->size == size || (!appres.scalablefonts &&
+		    if (nf->size == size || (!font_scalable[fnum] &&
 			   (nf->size >= size && oldnf->size <= size))) {
 			found = True;
 			break;
@@ -297,7 +318,7 @@ lookfont(int fnum, int size)
 	    strcpy(fn,nf->fname);  /* put the name in fn */
 	    if (size < nf->size)
 		put_msg("Font size %d not found, using larger %d point",size,nf->size);
-	} else if (!appres.scalablefonts) {	/* not found, use largest available */
+	} else if (!font_scalable[fnum]) {	/* not found, use largest available */
 	    nf = oldnf;
 	    strcpy(fn,nf->fname);		/* put the name in fn */
 	    if (size > nf->size)

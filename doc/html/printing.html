@@ -26,8 +26,8 @@ For exporting, there are a dozen or so languages, including PostScript, EPS,
 LaTeX, MetaFont, and bitmap formats such as GIF, JPEG, PPM and several others.
 See the <a href="#language"><i>Language</i></a> description of the Exporting section.
 <br>This means that you must have <b>fig2dev</b> installed on your system along
-with <b>xfig</b>.  <b>Fig2dev</b>, which is part of the <b>TransFig</b>
-distribution is always available where you find <b>xfig</b>.
+with <b>xfig</b>. 
+<b>Fig2dev</b> is always available where you find <b>xfig</b>.
 See <a href="installation.html">Getting and Installing Xfig</a> for details.
 
 <p>
@@ -208,9 +208,6 @@ You may print a light-gray grid on the page by choosing a minor (thin) and/or
 a major (thick) grid spacing from pulldown menus or entering the spacing
 directly in the entry.  The units of grid spacing are inches or mm, depending
 on the units of the figure.
-<br>
-The grid options is only available for PostScript, Encapsulated PostScript,
-PSLatex, PDF and all the bitmap export formats.
 
 <P>
 <DT><img src="images/redball.png" align=bottom alt="-">
@@ -345,19 +342,25 @@ Specify the format (language) to be generated as output. The default is
 PostScript
 
 <DT><img src="images/blueballdot.png" align=bottom alt="-">
-Encapsulated PostScript (EPSF)
-
-<DT><img src="images/blueballdot.png" align=bottom alt="-">
-EPS With ASCII (EPSI) preview
-
-<DT><img src="images/blueballdot.png" align=bottom alt="-">
-EPS With monochrome TIFF preview
-
-<DT><img src="images/blueballdot.png" align=bottom alt="-">
-EPS With color TIFF preview
+Encapsulated PostScript (EPS)
 
 <DT><img src="images/blueballdot.png" align=bottom alt="-">
 <a name="pdf_export">PDF (Portable Document Format)</a>
+
+<DT><img src="images/blueballdot.png" align=bottom alt="-">
+EPS and PDF (two files)
+
+<DT><img src="images/blueballdot.png" align=bottom alt="-">
+LaTeX box (figure boundary)
+
+<DT><img src="images/blueballdot.png" align=bottom alt="-">
+LaTeX picture environment
+
+<DT><img src="images/blueballdot.png" align=bottom alt="-">
+TeX/LaTeX with tikz macros
+
+<DT><img src="images/blueballdot.png" align=bottom alt="-">
+LaTeX with pstricks macros
 
 <DT><img src="images/blueballdot.png" align=bottom alt="-">
 Combined PostScript/LaTeX
@@ -366,13 +369,19 @@ Combined PostScript/LaTeX
 Combined PDF/LaTeX
 
 <DT><img src="images/blueballdot.png" align=bottom alt="-">
-LaTeX picture environment
+Combined PostScript/PDF/LaTeX (three files)
 
 <DT><img src="images/blueballdot.png" align=bottom alt="-">
 PicTeX macros
 
 <DT><img src="images/blueballdot.png" align=bottom alt="-">
 IBMGL (HP-GL)
+
+<DT><img src="images/blueballdot.png" align=bottom alt="-">
+DXF (Drawing Interchange Format)
+
+<DT><img src="images/blueballdot.png" align=bottom alt="-">
+GBX (Gerber, RS-247-X)
 
 <DT><img src="images/blueballdot.png" align=bottom alt="-">
 Textyl  \special commands
@@ -393,24 +402,21 @@ MF (MetaFont)
 MP (MetaPost)
 
 <DT><img src="images/blueballdot.png" align=bottom alt="-">
-MMP (Multi-MetaPost)
-
-<DT><img src="images/blueballdot.png" align=bottom alt="-">
 <a name="cgm_export">CGM</a>
 (Computer Graphics Metafile - useful to import into Microsoft WORD, etc.)
-
-<DT><img src="images/blueballdot.png" align=bottom alt="-">
-<a name="binarycgm_export">Binary CGM</a>
 
 <DT><img src="images/blueballdot.png" align=bottom alt="-">
 <a name="emf_export">EMF</a>
 (Enhanced Metafile)
 
 <DT><img src="images/blueballdot.png" align=bottom alt="-">
-SVG (Scalable Vector Graphics - beta driver)
+SVG (Scalable Vector Graphics)
 
 <DT><img src="images/blueballdot.png" align=bottom alt="-">
 Tk (Tck/Tk toolkit canvas)
+
+<DT><img src="images/blueballdot.png" align=bottom alt="-">
+Perl/Tk
 
 </DL>
 
@@ -474,7 +480,7 @@ are not supported for IBMGL export.
 The PostScript export language supports all features
 of <B>xfig</B> and a fairly high quality output will be generated.
 
-<P>The <b>fig2dev</b> program, part of the <b>TransFig</b> package available with <b>xfig</b>
+<P>The <b>fig2dev</b> program, part of the <b>Fig2dev</b> package available with <b>xfig</b>
 does the actual conversion from Fig to the output language.
 
 <P>To export the figure in a bitmap format such as GIF or JPEG, you must have the
@@ -520,8 +526,8 @@ a major (thick) grid spacing from pulldown menus or entering the spacing
 directly in the entry.  The units of grid spacing are inches or mm, depending
 on the units of the figure.
 <br>
-The grid option is only available for PostScript, Encapsulated PostScript,
-PSLatex, PDF and all the bitmap export formats.
+The grid option is available for PostScript, Encapsulated PostScript,
+PDF, PSLatex, PDFLatex, pstricks, tikz and all the bitmap export formats.
 
 <P>The default is <I>None</I>.
 

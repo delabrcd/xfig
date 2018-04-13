@@ -18,9 +18,6 @@
 
 #include <sys/types.h>
 #include <regex.h>
-#ifndef __FreeBSD__
-#include <alloca.h>
-#endif
 #include <string.h>
 
 #include "fig.h"

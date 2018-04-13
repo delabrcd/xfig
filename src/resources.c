@@ -1,8 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2018 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -217,28 +218,28 @@ struct	paper_def paper_sizes[NUMPAPERSIZES] = {
     {"B"       , "ANSI B  ( 11\" x 17\" / 279 x 432 mm)",   13200, 20400},
     {"C"       , "ANSI C  ( 17\" x 22\" / 432 x 559 mm)",   20400, 26400},
     {"D"       , "ANSI D  ( 22\" x 34\" / 559 x 864 mm)",   26400, 40800},
-    {"E"       , "ANSI E  ( 34\" x 44\" / 864 x 1118 mm)",   40800, 52800},
-    {"A9"      , "ISO A9  (  37mm x   52mm)",  1748,  2467},
-    {"A8"      , "ISO A8  (  52mm x   74mm)",  2457,  3500},
-    {"A7"      , "ISO A7  (  74mm x  105mm)",  3496,  4960},
-    {"A6"      , "ISO A6  ( 105mm x  148mm)",  4960,  6992},
-    {"A5"      , "ISO A5  ( 148mm x  210mm)",  6992,  9921},
-    {"A4"      , "ISO A4  ( 210mm x  297mm)",  A4_WIDTH, A4_HEIGHT},
-    {"A3"      , "ISO A3  ( 297mm x  420mm)", 14031, 19843},
-    {"A2"      , "ISO A2  ( 420mm x  594mm)", 19843, 28063},
-    {"A1"      , "ISO A1  ( 594mm x  841mm)", 28063, 39732},
-    {"A0"      , "ISO A0  ( 841mm x 1189mm)", 39732, 56173},
-    {"B9"      , "JIS B9  (  45mm x   64mm)",  2117,  3017},
-    {"B8"      , "JIS B8  (  64mm x   91mm)",  3017,  4300},
-    {"B7"      , "JIS B7  (  91mm x  128mm)",  4300,  6050},
-    {"B6"      , "JIS B6  ( 128mm x  182mm)",  6050,  8598},
-    {"B5"      , "JIS B5  ( 182mm x  257mm)",  8598, 12150},
-    {"B4"      , "JIS B4  ( 257mm x  364mm)", 12150, 17200},
-    {"B3"      , "JIS B3  ( 364mm x  515mm)", 17200, 24333},
-    {"B2"      , "JIS B2  ( 515mm x  728mm)", 24333, 34400},
-    {"B1"      , "JIS B1  ( 728mm x 1030mm)", 34400, 48666},
-    {"B0"      , "JIS B0  (1030mm x 1456mm)", 48666, 68783},
-    {"B10"     , "JIS B10 (  32mm x   45mm)",  1516,  2117},
+    {"E"       , "ANSI E  ( 34\" x 44\" / 864 x 1118mm)",   40800, 52800},
+    {"A9"      , "ISO A9  (  37 x   52 mm)           ",  1748,  2467},
+    {"A8"      , "ISO A8  (  52 x   74 mm)           ",  2457,  3500},
+    {"A7"      , "ISO A7  (  74 x  105 mm)           ",  3496,  4960},
+    {"A6"      , "ISO A6  ( 105 x  148 mm)           ",  4960,  6992},
+    {"A5"      , "ISO A5  ( 148 x  210 mm)           ",  6992,  9921},
+    {"A4"      , "ISO A4  ( 210 x  297 mm)           ",  A4_WIDTH, A4_HEIGHT},
+    {"A3"      , "ISO A3  ( 297 x  420 mm)           ", 14031, 19843},
+    {"A2"      , "ISO A2  ( 420 x  594 mm)           ", 19843, 28063},
+    {"A1"      , "ISO A1  ( 594 x  841 mm)           ", 28063, 39732},
+    {"A0"      , "ISO A0  ( 841 x 1189 mm)           ", 39732, 56173},
+    {"B9"      , "JIS B9  (  45 x   64 mm)           ",  2117,  3017},
+    {"B8"      , "JIS B8  (  64 x   91 mm)           ",  3017,  4300},
+    {"B7"      , "JIS B7  (  91 x  128 mm)           ",  4300,  6050},
+    {"B6"      , "JIS B6  ( 128 x  182 mm)           ",  6050,  8598},
+    {"B5"      , "JIS B5  ( 182 x  257 mm)           ",  8598, 12150},
+    {"B4"      , "JIS B4  ( 257 x  364 mm)           ", 12150, 17200},
+    {"B3"      , "JIS B3  ( 364 x  515 mm)           ", 17200, 24333},
+    {"B2"      , "JIS B2  ( 515 x  728 mm)           ", 24333, 34400},
+    {"B1"      , "JIS B1  ( 728 x 1030 mm)           ", 34400, 48666},
+    {"B0"      , "JIS B0  (1030 x 1456 mm)           ", 48666, 68783},
+    {"B10"     , "JIS B10 (  32 x   45 mm)           ",  1516,  2117},
     };
 
 char    *multiple_pages[] = {

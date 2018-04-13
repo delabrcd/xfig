@@ -227,7 +227,7 @@ void popup_close_compound(void)
     close_compound_form = XtCreateManagedWidget("close_compound_form", formWidgetClass,
 				       close_compound_popup, (XtPointer) NULL, 0);
 
-    FirstArg(XtNlabel, "Close This Compound")
+    FirstArg(XtNlabel, "Close This Compound");
     close_compoundw = XtCreateManagedWidget("close_compound",
 					commandWidgetClass, close_compound_form,
 					Args, ArgCount);

@@ -1,8 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2018 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -24,18 +25,19 @@ extern Widget	print_multiple_panel;
 extern Widget	print_overlap_panel;
 extern Widget	print_mag_text;
 extern Widget	print_background_panel;
-extern Widget	make_layer_choice(char *label_all, char *label_active, Widget parent, Widget below, Widget beside, int hdist, int vdist);
+extern Widget	make_layer_choice(char *label_all, char *label_active,
+	Widget parent, Widget below, Widget beside, int hdist, int vdist);
 
 extern void	print_update_figure_size(void);
 extern void	popup_print_panel(Widget w);
 extern void	do_print(Widget w);
 extern void	do_print_batch(Widget w);
-extern Boolean	print_all_layers;
-extern Boolean	bound_active_layers;
 
 extern Widget	print_grid_minor_text, print_grid_major_text;
 extern Widget	print_grid_minor_menu_button, print_grid_minor_menu;
 extern Widget	print_grid_major_menu_button, print_grid_major_menu;
 extern Widget	print_grid_unit_label;
-extern void	print_grid_minor_select(Widget w, XtPointer new_grid_choice, XtPointer garbage);
-extern void	print_grid_major_select(Widget w, XtPointer new_grid_choice, XtPointer garbage);
+extern void	print_grid_minor_select(Widget w, XtPointer new_grid_choice,
+					XtPointer garbage);
+extern void	print_grid_major_select(Widget w, XtPointer new_grid_choice,
+					XtPointer garbage);
