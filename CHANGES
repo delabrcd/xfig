@@ -2,7 +2,16 @@ Changes to Xfig
 =============================================================================
 Version 3.2
 =============================================================================
+Patchlevel 7a (May 2017)
 
+BUGS FIXED:
+	Ticket numbers refer to https://sourceforge.net/p/mcj/tickets/#.
+	Debian bug numbers refer to https://bugs.debian.org/#.
+	o Really fix ticket #9, debian bug #270113. When entering the "Open.."
+	  dialog, moving to a new directory, pressing Cancel, a subsequent
+	  "Save" placed the figure file into the new directory.
+
+-----------------------------------
 Patchlevel 7 (April 2017)
 
 NEW FEATURES:

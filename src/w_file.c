@@ -172,7 +172,7 @@ file_panel_dismiss(void)
     /* this function is only called from the Open, Save as and Merge panels */
     if (save_file_dir[0] != '\0') {
 	update_file_export_dir(save_file_dir);
-	change_directory(cur_file_dir);
+	change_directory(save_file_dir);
     }
 
     if (image_colors_are_saved) {
@@ -458,13 +458,11 @@ do_save(Widget w, XButtonEvent *ev)
 	    close_all_compounds();
     }
 
-    /* go to the file directory */
-    if (change_directory(cur_file_dir) != 0)
-	return;
-    strcpy(save_file_dir, cur_file_dir);
-
-    /* if the user used a keyboard accelerator or right button on File but the filename
-       is empty, popup the file panel to force him/her to enter a name */
+    /*
+     * if the user used a keyboard accelerator or right button on File
+     * but the filename is empty, popup the file panel to force him/her
+     * to enter a name
+     */
     if (emptyname(cur_filename) && !file_up) {
 	put_msg("No filename, please enter name");
 	beep();
@@ -473,7 +471,7 @@ do_save(Widget w, XButtonEvent *ev)
     }
     if (file_popup) {
 	FirstArg(XtNstring, &fval);
-	GetValues(file_selfile);	/* check the ascii widget for a filename */
+	GetValues(file_selfile);    /* check the ascii widget for a filename */
 	strcpy(fname, fval);
 	if (emptyname(fname)) {
 	    strcpy(fname, cur_filename); /* "Filename" widget empty, use current filename */
@@ -489,11 +487,15 @@ do_save(Widget w, XButtonEvent *ev)
 	if (emptyname_msg(fname, "Save"))
 	    return;
 
-	/* get the directory from the ascii widget */
-	FirstArg(XtNstring, &dval);
-	GetValues(file_dir);
+	if (file_up) {
+	    /* get the directory from the ascii widget */
+	    FirstArg(XtNstring, &dval);
+	    GetValues(file_dir);
+	    strcpy(save_file_dir, dval);
+	}
 
-	if (change_directory(dval) == 0) {
+	/* go to the file directory */
+	if (change_directory(save_file_dir) == 0) {
 	    if (!ok_to_write(fname, "SAVE"))
 		return;
 	    XtSetSensitive(save_button, False);
@@ -511,7 +513,12 @@ do_save(Widget w, XButtonEvent *ev)
 	    }
 	    XtSetSensitive(save_button, True);
 	}
-    } else {
+    } else { /* !file_popup */
+	/*
+	 * !file_popup, so the file panel was never created and the user
+	 * never had the possibility to change directory.
+	 * Also, save_file_dir = "" (I believe)
+	 */
 	/* see if writable */
 	if (!ok_to_write(cur_filename, "SAVE"))
 	    return;

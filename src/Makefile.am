@@ -128,7 +128,7 @@ endif
 # $(srcdir) is most probably not necessary
 splash.xpm: $(top_srcdir)/splash-image/spl_bckgnd.fig
 	fig2dev -L xpm $(top_srcdir)/splash-image/spl_bckgnd.fig \
-	| sed '1d; 2 {s/static //; s/noname/spl_bckgnd_xpm/}' > $@
+	| sed '2 {s/static //; s/noname/spl_bckgnd_xpm/}' > $@
 
 splash.xbm: $(top_srcdir)/splash-image/spl_bckgnd.fig
 	fig2dev -L xbm -S 4 $(top_srcdir)/splash-image/spl_bckgnd.fig \
