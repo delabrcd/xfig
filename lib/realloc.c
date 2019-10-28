@@ -48,9 +48,8 @@ rpl_realloc(void *p, size_t n)
 	if (p == NULL) {
 		if (n == 0)
 			n = 1;
-		result = malloc(n);
+		return malloc(n);
 	} else {
-		result = realloc(p, n);
-
-	return result;
+		return realloc(p, n);
+	}
 }

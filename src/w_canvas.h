@@ -8,7 +8,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -36,6 +36,7 @@ extern void	toggle_show_lengths(void);
 extern void	toggle_show_vertexnums(void);
 extern void	toggle_show_borders(void);
 extern void	round_coords(int *x, int *y);		// isometric grid
+extern int	point_spacing(void);
 
 extern void		canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal *nparams);
 extern void	paste_primary_selection(void);

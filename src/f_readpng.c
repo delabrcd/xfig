@@ -6,7 +6,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -40,7 +40,7 @@ read_png(FILE *file, int filetype, F_pic *pic)
     int		    bit_depth, color_type, interlace_type;
     int		    compression_type, filter_type;
     png_bytep	   *row_pointers;
-    char	   *ptr;
+    unsigned char   *ptr;
     int		    num_palette;
     png_colorp	    palette;
     png_color_16    background;

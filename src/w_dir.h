@@ -9,7 +9,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -68,7 +68,6 @@ extern void	update_file_export_dir(const char *restrict dir);
 
 /* Xdir function declarations. */
 
-extern Boolean		MakeFileList(char *dir_name, char *mask, char ***dir_list, char ***file_list);
 extern char	       *SaveString();
 extern void		MakeFullPath(char *root, char *filename, char *pathname);
 extern Boolean		IsDirectory(char *path, char *file);

@@ -9,7 +9,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -24,6 +24,7 @@
 #include "f_read.h"
 #include "u_fonts.h"
 #include "u_create.h"
+#include "w_canvas.h"
 #include "w_drawprim.h"
 #include "w_export.h"
 #include "w_file.h"
@@ -65,6 +66,7 @@ static F_text     *read_textobject(FILE *fp);
 static F_spline   *read_splineobject(FILE *fp);
 static F_arc      *read_arcobject(FILE *fp);
 static F_compound *read_compoundobject(FILE *fp);
+static int	  save_comment(void);
 static char	  *attach_comments(void);
 static void	   count_lines_correctly(FILE *fp);
 static int	   read_return(int status);
@@ -109,7 +111,6 @@ void convert_arrow (int *type, float *wd, float *ht);
 void fix_angle (float *angle);
 void skip_line (FILE *fp);
 int backslash_count (char *cp, int start);
-int save_comment (FILE *fp);
 void renumber_comp (F_compound *compound);
 void renumber (int *color);
 
@@ -404,32 +405,35 @@ readfp_fig(FILE *fp, F_compound *obj, Boolean merge, int xoff, int yoff, fig_set
     /* get bounding box of whole figure */
     compound_bound(obj,&obj->nwcorner.x,&obj->nwcorner.y,&obj->secorner.x,&obj->secorner.y);
 
-    /* ask the user if the figure should be shifted if there are negative coords */
-    if (!update_figs)
+    /* ask the user if the figure should be shifted
+       if there are negative coords */
+    if (!update_figs) {
 	shift_figure(obj);
 
-    /* now update the grid/ruler units */
-    if (settings->units) {
-	/* inches */
-	if (strcasecmp(appres.tgrid_unit, "default") != 0) {
-	    /* the user specified a units when he started, try to keep it */
-	    if (strcasecmp(appres.tgrid_unit, "tenth") == 0 ||
-		strcasecmp(appres.tgrid_unit, "ten") == 0 ||
-		strcasecmp(appres.tgrid_unit, "1/10") == 0 ||
-		strcasecmp(appres.tgrid_unit, "10") == 0)
+	/* now update the grid/ruler units */
+	if (settings->units) {
+	    /* inches */
+	    if (strcasecmp(appres.tgrid_unit, "default") != 0) {
+		/* the user specified a units when he started, try to keep it */
+		if (strcasecmp(appres.tgrid_unit, "tenth") == 0 ||
+			strcasecmp(appres.tgrid_unit, "ten") == 0 ||
+			strcasecmp(appres.tgrid_unit, "1/10") == 0 ||
+			strcasecmp(appres.tgrid_unit, "10") == 0)
 		    settings->grid_unit = TENTH_UNIT;
 		else
 		    settings->grid_unit = FRACT_UNIT;
+	    } else {
+		settings->grid_unit = FRACT_UNIT;
+	    }
 	} else {
-	    settings->grid_unit = FRACT_UNIT;
+	    /* metric, only choice */
+	    settings->grid_unit = MM_UNIT;
 	}
-    } else {
-	/* metric, only choice */
-	settings->grid_unit = MM_UNIT;
-    }
+    } /* !update_figs */
+
     /* return with status */
     return read_return(status);
-}
+    }
 
 /* clear defer_update_layers counter, update the layer buttons and return status */
 
@@ -1561,7 +1565,7 @@ int read_line(FILE *fp)
 	}
 	line_no++;
 	if (*buf == '#') {		/* save any comments */
-	    if (save_comment(fp) < 0)
+	    if (save_comment() < 0)
 		return -1;
 	} else if (*buf != '\n')	/* Skip empty lines */
 	    return 1;
@@ -1570,25 +1574,30 @@ int read_line(FILE *fp)
 
 /* save a comment line to be stored with the *subsequent* object */
 
-int save_comment(FILE *fp)
+static int
+save_comment(void)
 {
-    int		    i;
+	size_t	i;
 
-    i=strlen(buf);
-    /* see if we've allocated space for this comment */
-    if (comments[numcom])
-	free(comments[numcom]);
-    if ((comments[numcom] = (char*) new_string(i+1)) == NULL)
-	    return -1;
-    /* remove any newline */
-    if (buf[i-1] == '\n')
-	buf[i-1] = '\0';
-    i=1;
-    if (buf[1] == ' ')	/* remove one leading blank from the comment, if there is one */
-	i=2;
-    if (numcom < MAXCOMMENTS)
+	/* skip too many comment lines */
+	if (numcom == MAXCOMMENTS)
+		return 2;
+
+	i = strlen(buf);
+	/* see if we've allocated space for this comment */
+	if (comments[numcom])
+		free(comments[numcom]);
+	if ((comments[numcom] = (char*)new_string(i+1)) == NULL)
+		return -1;
+	/* remove any newline */
+	if (buf[i-1] == '\n')
+		buf[i-1] = '\0';
+	i = 1;
+	if (buf[1] == ' ')
+		/* remove one leading blank from the comment, if there is one */
+		i = 2;
 	strcpy(comments[numcom++], &buf[i]);
-    return 1;
+	return 1;
 }
 
 /* skip to the end of the current line */
@@ -1655,7 +1664,7 @@ void shift_figure(F_compound *obj)
 
     /* shift the whole figure to keep it "on the page" */
     dx = dy = 0;
-    rnd = posn_rnd[cur_gridunit][cur_pointposn];
+    rnd = point_spacing();
     if (lowx < 0) {
 	dx = -lowx+rnd;	/* and round up to small grid */
     }

@@ -9,7 +9,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies
  * of the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -1048,13 +1048,25 @@ round_square(int *x, const int spacing, const int half)
 	}
 }
 
+
+int
+point_spacing(void)
+{
+	int	grid_unit;
+	int	spacing;
+
+	grid_unit = (appres.userscale != 1.0 && appres.INCHES) ?
+		TENTH_UNIT : cur_gridunit;
+	spacing = (int)(posn_rnd[grid_unit][cur_pointposn] / appres.userscale);
+	return spacing;
+}
+
 /* macro which rounds coordinates depending on point positioning mode */		// isometric grid
 void
 round_coords(int *x, int *y)
 {
-	const int spacing = posn_rnd[cur_gridunit][cur_pointposn];
-	const int half = posn_hlf[cur_gridunit][cur_pointposn];
-
+	const int	spacing = point_spacing();
+	const int	half = spacing / 2;
 
 	/* make sure the cursor is on grid */
 	if (cur_pointposn == P_ANY || anypointposn)

@@ -9,7 +9,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -2878,9 +2878,11 @@ void popup_dimline_panel(ind_sw_info *isw)
 }
 
 static void
-line_color_select(Widget w, XtPointer new_color, XtPointer call_data)
+line_color_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
-    dimline_color = (Color) new_color;
+	ptr_int	new_color = {client_data};
+
+    dimline_color = (Color) new_color.val;
     color_select(line_color_button, dimline_color);
     if (line_color_panel) {
 	XtPopdown(line_color_panel);
@@ -2889,9 +2891,11 @@ line_color_select(Widget w, XtPointer new_color, XtPointer call_data)
 }
 
 static void
-box_color_select(Widget w, XtPointer new_color, XtPointer call_data)
+box_color_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
-    dimline_boxcolor = (Color) new_color;
+	ptr_int	new_color = {client_data};
+
+    dimline_boxcolor = (Color) new_color.val;
     color_select(box_color_button, dimline_boxcolor);
     if (box_color_panel) {
 	XtPopdown(box_color_panel);
@@ -2900,9 +2904,11 @@ box_color_select(Widget w, XtPointer new_color, XtPointer call_data)
 }
 
 static void
-text_color_select(Widget w, XtPointer new_color, XtPointer call_data)
+text_color_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
-    dimline_textcolor = (Color) new_color;
+	ptr_int	new_color = {client_data};
+
+    dimline_textcolor = (Color) new_color.val;
     color_select(text_color_button, dimline_textcolor);
     if (text_color_panel) {
 	XtPopdown(text_color_panel);

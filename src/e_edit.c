@@ -11,7 +11,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -3217,7 +3217,7 @@ generic_window(char *object_type, char *sub_type, icon_struct *icon, void (*d_pr
 	XtAddCallback(but1, XtNcallback,
 	    (XtCallbackProc) grab_button, (XtPointer) NULL);
 
-	if ( cur_image_editor != NULL && *cur_image_editor != (char) 0) {
+	if (*cur_image_editor != '\0') {
 	    FirstArg(XtNlabel,"Edit Image");
 	    NextArg(XtNfromHoriz, but1);
 	    NextArg(XtNfromVert, label);
@@ -4041,6 +4041,8 @@ Widget
 color_selection_panel(char *label, char *wname, char *name, Widget parent, Widget below, Widget beside, Widget *button, Widget *popup, int color, XtCallbackProc callback)
 {
 
+	/* avoid a -Wint-to-void-pointer-cast warning */
+	intptr_t	col = color;
     FirstArg(XtNfromVert, below);
     NextArg(XtNborderWidth, 0);
     NextArg(XtNtop, XtChainBottom);
@@ -4066,7 +4068,7 @@ color_selection_panel(char *label, char *wname, char *name, Widget parent, Widge
      * callback
      */
     /* also set the label */
-    (callback)(below, (XtPointer) color, NULL);
+    (callback)(below, (XtPointer) col, NULL);
     *popup = make_color_popup_menu(below, name, callback, NO_TRANSP, NO_BACKG);
 
     return *button;
@@ -4873,9 +4875,10 @@ line_style_select(Widget w, XtPointer new_style, XtPointer call_data)
 }
 
 static void
-pen_color_select(Widget w, XtPointer new_color, XtPointer call_data)
+pen_color_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
-    pen_color = (Color) new_color;
+	ptr_int	new_color = {client_data};
+    pen_color = (Color) new_color.val;
     color_select(pen_col_button, pen_color);
     if (pen_color_popup) {
 	XtPopdown(pen_color_popup);
@@ -4885,7 +4888,8 @@ pen_color_select(Widget w, XtPointer new_color, XtPointer call_data)
 static void
 fill_color_select(Widget w, XtPointer new_color, XtPointer call_data)
 {
-    fill_color = (Color) new_color;
+	ptr_int	_new_color = {new_color};
+    fill_color = (Color) _new_color.val;
     color_select(fill_col_button, fill_color);
     if (fill_color_popup) {
 	XtPopdown(fill_color_popup);

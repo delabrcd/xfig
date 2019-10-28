@@ -4,13 +4,13 @@
 # Copyright (c) 1985-1988 by Supoj Sutanthavibul
 # Parts Copyright (c) 1989-2015 by Brian V. Smith
 # Parts Copyright (c) 1991 by Paul King
-# Parts Copyright (c) 2016-2017 by Thomas Loimer
+# Parts Copyright (c) 2016-2019 by Thomas Loimer
 #
 # Any party obtaining a copy of these files is granted, free of charge, a
 # full and unrestricted irrevocable, world-wide, paid up, royalty-free,
 # nonexclusive right and license to deal in this software and documentation
 # files (the "Software"), including without limitation the rights to use,
-# copy, modify, merge, publish distribute, sublicense and/or sell copies
+# copy, modify, merge, publish, distribute, sublicense and/or sell copies
 # of the Software, and to permit persons who receive copies from any such
 # party to do so, with the only requirement being that the above copyright
 # and this permission notice remain intact.
@@ -20,7 +20,8 @@
 # Author: Thomas Loimer, 2016
 
 dist_doc_DATA = FORMAT1.3 FORMAT1.4 FORMAT2.0 FORMAT2.1 FORMAT3.0 \
-	FORMAT3.1 FORMAT3.2 xfig-howto.pdf xfig_ref_en.pdf
+	FORMAT3.1 FORMAT3.2 xfig-howto.pdf xfig_ref_en.pdf \
+	$(srcdir)/html/images/xfig-title.png
 
 doc_DATA = xfig_man.html
 
@@ -29,6 +30,10 @@ man1_MANS = xfig.man
 EXTRA_DIST  = html MAKEPS
 
 MAINTAINERCLEANFILES = Makefile.in
+
+$(srcdir)/html/images/xfig-title.png: $(srcdir)/html/images/xfig-title.fig.in \
+					$(top_srcdir)/version.m4
+		fig2dev -L png -S4 $(srcdir)/html/images/xfig-title.fig >$@
 
 # Below, $< is not fully portable, see info autoconf "Portable Make",
 # use $? instead. man is sensitive to spaces after the options.

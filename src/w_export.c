@@ -9,7 +9,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -266,7 +266,7 @@ do_export(Widget w)
 
 	/* if there is no default export name (e.g. if user has done "New" and
 	   not entered a name) then make one up */
-	if (!default_export_file || default_export_file[0] == '\0') {
+	if (default_export_file[0] == '\0') {
 	    /* for tiff and jpeg use three-letter suffixes */
 	    if (cur_exp_lang==LANG_TIFF)
 		sprintf(default_export_file,"NoName.tif");
@@ -372,22 +372,26 @@ do_export(Widget w)
 static void
 preview_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
-	if (preview_type != (int) client_data) {
+	ptr_int		data = {client_data};
+
+	if (preview_type != data.val) {
 		FirstArg(XtNlabel, XtName(w));
 		SetValues(preview_panel);
-		preview_type = (int) client_data;
+		preview_type = data.val;
 	}
 }
 
 static void
 orient_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
-	if (appres.landscape != (int) client_data) {
+	ptr_int		data = {client_data};
+
+	if (appres.landscape != data.val) {
 		change_orient();
-		appres.landscape = (int) client_data;
+		appres.landscape = data.val;
 		/* make sure that paper size is appropriate */
 		papersize_select(export_papersize_panel,
-				(XtPointer) appres.papersize, (XtPointer) 0);
+				data.ptr, (XtPointer) 0);
 	}
 }
 
@@ -497,11 +501,13 @@ set_postscript_pdf_options(void)
 }
 
 static void
-lang_select(Widget w, XtPointer new_lang, XtPointer call_data)
+lang_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
+	ptr_int		new_lang = {client_data};
+
 	FirstArg(XtNlabel, XtName(w));
 	SetValues(lang_panel);
-	cur_exp_lang = (int) new_lang;
+	cur_exp_lang = new_lang.val;
 
 	if (cur_exp_lang == LANG_PS || cur_exp_lang == LANG_PDF)
 		set_postscript_pdf_options();
@@ -563,6 +569,7 @@ smooth_select(Widget w, XtPointer client_data, XtPointer call_data)
 static void
 background_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
+	ptr_int	data = {client_data};
 	Pixel	    bgcolor, fgcolor;
 
 	/* get the colors from the color button just pressed */
@@ -579,7 +586,7 @@ background_select(Widget w, XtPointer client_data, XtPointer call_data)
 	/* update the print panel too if it exists */
 	if (print_background_panel)
 		SetValues(print_background_panel);
-	export_background_color = (int)client_data;
+	export_background_color = data.val;
 
 	XtPopdown(background_menu);
 }
@@ -590,6 +597,7 @@ static void
 transp_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
 	Pixel	    bgcolor, fgcolor;
+	ptr_int	data = {client_data};
 
 	/* get the colors from the color button just pressed */
 	FirstArg(XtNbackground, &bgcolor);
@@ -602,7 +610,7 @@ transp_select(Widget w, XtPointer client_data, XtPointer call_data)
 	NextArg(XtNbackground, bgcolor);
 	NextArg(XtNforeground, fgcolor);
 	SetValues(export_transp_panel);
-	appres.transparent = (int)client_data;
+	appres.transparent = data.val;
 
 	XtPopdown(transp_menu);
 }
@@ -613,15 +621,22 @@ void
 export_grid_minor_select(Widget w,
 			XtPointer new_grid_choice, XtPointer call_data)
 {
-	char *val;
-	grid_minor = (int) new_grid_choice;
+	char	buf[MAX_GRID_STRLEN];
+	char	*val;
+	ptr_int	grid = {new_grid_choice};
+
+	grid_minor = grid.val;
 
 	/* put selected grid value in the text area */
 	/* first get rid of any "mm" following the value */
-	val = strtok(strdup(grid_choices[grid_minor]), " ");
+	if (strlen(grid_choices[grid_minor]) >= MAX_GRID_STRLEN) {
+		file_msg("Cannot apply new minor grid size '%s'. "
+			 "Please report this bug.\n", grid_choices[grid_minor]);
+		return;
+	}
+	val = strtok(strcpy(buf, grid_choices[grid_minor]), " ");
 	FirstArg(XtNstring, val);
 	SetValues(export_grid_minor_text);
-	free(val);
 }
 
 /* come here when user chooses major grid interval from menu */
@@ -630,15 +645,22 @@ void
 export_grid_major_select(Widget w,
 			XtPointer new_grid_choice, XtPointer call_data)
 {
-	char *val;
-	grid_major = (int) new_grid_choice;
+	char	buf[MAX_GRID_STRLEN];
+	char	*val;
+	ptr_int	grid = {new_grid_choice};
+
+	grid_major = grid.val;
 
 	/* put selected grid value in the text area */
 	/* first get rid of any "mm" following the value */
-	val = strtok(strdup(grid_choices[grid_major]), " ");
+	if (strlen(grid_choices[grid_major]) >= MAX_GRID_STRLEN) {
+		file_msg("Cannot apply new major grid size '%s'. "
+			 "Please report this bug.\n", grid_choices[grid_major]);
+		return;
+	}
+	val = strtok(strcpy(buf, grid_choices[grid_major]), " ");
 	FirstArg(XtNstring, val);
 	SetValues(export_grid_major_text);
-	free(val);
 }
 
 

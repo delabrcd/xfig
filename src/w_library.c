@@ -7,7 +7,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -1101,12 +1101,14 @@ make_library_menu(Widget parent, char *name, struct lib_rec **librec, int num)
 /* user has chosen view from pulldown menu */
 
 static void
-sel_view(Widget w, XtPointer new_view, XtPointer garbage)
+sel_view(Widget w, XtPointer client_data, XtPointer garbage)
 {
-    if (appres.icon_view == (int) new_view)
+    ptr_int	new_view = {client_data};
+
+    if (appres.icon_view == new_view.val)
 	return;
 
-    appres.icon_view = (int) new_view;
+    appres.icon_view = new_view.val;
 
     /* change the label in the menu button */
     FirstArg(XtNlabel, viewtypes[(int) appres.icon_view]);

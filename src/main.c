@@ -1,14 +1,15 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2019 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -631,7 +632,8 @@ struct  geom   geom;
 int setup_visual (int *argc_p, char **argv, Arg *args);
 void get_pointer_mapping (void);
 
-void main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
     Widget	    children[NCHILDREN];
     XEvent	    event;
@@ -640,7 +642,6 @@ void main(int argc, char **argv)
     XWMHints	   *wmhints;
     int		    i,j;
     XColor	    dumcolor;
-    char	    version[30];
     char	   *dval;
     char	    tmpstr[PATH_MAX];
 
@@ -1314,17 +1315,15 @@ void main(int argc, char **argv)
     process_pending();
 
     /* now that everything is up, check the version number in the app-defaults */
-    sprintf(version,"%s", PACKAGE_VERSION);
-    if (!appres.version || strcasecmp(appres.version,version) < 0) {
-	if (!appres.version) {
-	    file_msg("Either you have a very old app-defaults file installed (Fig),");
-	    file_msg("or there is none installed at all.");
-	} else {
-	    file_msg("The app-defaults file (version: %s) is older", appres.version);
-	    file_msg("    than this version of xfig (%s).",version);
-	}
+    /*
+     * The app-defaults file did not change for ages, there are sane
+     * defaults provided, hence announcing an old version is more disruptive
+     * to the user than simply continuing with an old version.
+     */
+    if (!appres.version) {
+	file_msg("Either you have a very old app-defaults file installed (Fig),");
+	file_msg("or there is none installed at all.");
 	file_msg("You should install the correct version or you may lose some features.");
-	file_msg("This may be done with \"make install\" in the xfig source directory.");
 	beep();
 	beep();
     }

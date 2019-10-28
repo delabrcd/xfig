@@ -27,29 +27,61 @@
 <a name="LaTeX">
 <h2>How to Import Xfig Figures in Your LaTeX Files</h2></a>
 
-Xfig can generate output to may different formats which TeX or LaTeX can
+Xfig can generate output to many different formats which TeX or LaTeX can
 read.
 Most importantly, in order that TeX/LaTeX interprets text in the figure,
 the <a href="attributes.html#text-flags">text flag</a> <i>TeX Flag</i>
 must be set on the text.
-The final document is produced by one of the following methods.
-
+The final document is produced by one of the following methods:
 
 <ol type="A">
 <li>The file generated from xfig is directly included or embedded into your
 TeX/LaTeX file. Usually, it will be necessary to load a macro package to
-enable TeX or LaTeX to process the file. The latex picture, tikz, pict2e,
-pstricks, epic and eepic output languages fall into this category.
+enable TeX or LaTeX to process the file. The <tt>latex</tt>, <tt>tikz</tt>,
+<tt>pict2e</tt>, <tt>pstricks</tt>, <tt>epic</tt> and <tt>eepic</tt> output
+languages fall into this category.
 
-<p>
-For example, export your figure to tikz and include the generated file into
-your document with <tt>\input{fig1.tikz}</tt>. In the document preamble,
-load <tt>\usepackage{tikz}</tt> or, with TeX, use <tt>\input tikz.tex</tt>.
-If the figure contains color, <tt>\usepackage{color}</tt> is required. If
-images were imported into the xfig-drawing, <tt>\usepackage{graphics}</tt> is
-necessary. It depends on the LaTeX engine, e.g., xelatex, lualatex, latex +
-dvips, latex + dvipdfmx, pdflatex or others, whether the imported image can
-be processed with the <tt>\includegraphics</tt> command.</p></li>
+<dl>
+    <dt><tt>latex</tt></dt>
+    <dd>Include the generated file with, e.g., <tt>\input{fig1.latex}</tt>
+	into your document, or simply embed it. No packages are required, but
+	the capabilities of the <tt>latex</tt> output language are quite
+	limited.</dd>
+    <dt><tt>tikz</tt></dt>
+    <dd><tt>\input{fig1.tikz}</tt> or embed the contents of the generated
+	tikz file into the TeX-document. In the preamble of a LaTeX document,
+	use<br>
+	<tt>\usepackage{tikz, graphics} % graphics, if the figure contains
+		embedded images<br>
+	\usetikzlibrary{arrows.meta, %
+	if the figure contains arrow-tips<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	bending, &nbsp;&nbsp;&nbsp; %
+	arrow tips on arcs are &quot;bent,&quot; i.e., deformed a bit<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	patterns &nbsp;&nbsp;&nbsp; %
+	if the figure contains pattern fills<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</tt><br></dd>
+    <dt><tt>pict2e</tt></dt>
+	<dd>Embed or <tt>\input</tt> the generated file into your LaTeX
+	document. In the preamble include<br>
+	<tt>\usepackage{pict2e,<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	color, &nbsp;&nbsp;&nbsp; % if the figure contains color<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	graphics &nbsp; % if the figure contains embedded images<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	}</tt></dd>
+    <dt><tt>pstricks</tt></dt>
+	<dd><tt>\usepackage{pstricks}</tt></dd>
+    <dt><tt>epic</tt></dt>
+	<dd><tt>\usepackage{epic}</tt></dd>
+    <dt><tt>eepic</tt></dt>
+	<dd><tt>\usepackage{epic,eepic} % order matters!</tt></dd>
+</dl>
 
 <li><p>Export the figure from xfig to eps or pdf (or both) and import the
 file with <tt>\includegraphics</tt> into your document. For instance, write

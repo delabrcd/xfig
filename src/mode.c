@@ -9,7 +9,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -41,11 +41,6 @@ int	posn_rnd[NUM_GRID_UNITS][P_GRID4 + 1] = {
 		{ 0, PPI/16, PPI/8, PPI/4, PPI/2, PPI},		/* 1/16" mode */
 		{ 0, PPI/20, PPI/10, PPI/5, PPI/2, PPI},	/* 1/10" mode */
 };
-int	posn_hlf[NUM_GRID_UNITS][P_GRID4 + 1] = {
-		{ 0, PPCM/20, PPCM/10, PPCM/4, PPCM/2, PPCM},
-		{ 0, PPI/32, PPI/16, PPI/8, PPI/4, PPI/2},
-		{ 0, PPI/40, PPI/20, PPI/10, PPI/4, PPI/2},
-};
 int	grid_spacing[NUM_GRID_UNITS][GRID_4] = {
 		{ PPCM/5, PPCM/2, PPCM, PPCM*2},    /* 2mm, 5mm, 10mm, 20mm */
 		{ PPI/8, PPI/4, PPI/2, PPI},	    /* 1/8", 1/4", 1/2", 1" */
@@ -54,7 +49,7 @@ int	grid_spacing[NUM_GRID_UNITS][GRID_4] = {
 
 /* the first entry in each unit category is only used for point positioning */
 char	*grid_name[NUM_GRID_UNITS][GRID_4+1] = {
-		{ "1mm", "2 mm", "5 mm", "10 mm", "20 mm"},
+		{ "1 mm", "2 mm", "5 mm", "10 mm", "20 mm"},
 		{ "1/16 inch", "1/8 inch", "1/4 inch", "1/2 inch", "1 inch"},
 		{ "0.05 inch", "0.1 inch", "0.2 inch", "0.5 inch", "1.0 inch"},
 };

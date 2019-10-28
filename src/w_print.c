@@ -9,7 +9,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -401,13 +401,17 @@ void update_batch_count(void)
 }
 
 static void
-orient_select(Widget w, XtPointer new_orient, XtPointer garbage)
+orient_select(Widget w, XtPointer data, XtPointer garbage)
 {
-    if (appres.landscape != (int) new_orient) {
+	ptr_int		tmp = {data};
+	int new_orient = tmp.val;
+
+    if (appres.landscape != new_orient) {
 	change_orient();
-	appres.landscape = (int) new_orient;
+	appres.landscape = new_orient;
 	/* make sure that paper size is appropriate */
-	papersize_select(print_papersize_panel, (XtPointer) appres.papersize, (XtPointer) 0);
+	tmp.val = appres.papersize;
+	papersize_select(print_papersize_panel, tmp.ptr, (XtPointer) 0);
     }
 }
 
@@ -488,9 +492,10 @@ overlap_select(Widget w, XtPointer new_overlap, XtPointer garbage)
 /* user selected a background color from the menu */
 
 static void
-background_select(Widget w, XtPointer closure, XtPointer call_data)
+background_select(Widget w, XtPointer client_data, XtPointer call_data)
 {
     Pixel	    bgcolor, fgcolor;
+    ptr_int	    closure = {client_data};
 
     /* get the colors from the color button just pressed */
     FirstArg(XtNbackground, &bgcolor);
@@ -506,7 +511,7 @@ background_select(Widget w, XtPointer closure, XtPointer call_data)
     /* update the export panel too if it exists */
     if (export_background_panel)
 	SetValues(export_background_panel);
-    export_background_color = (int)closure;
+    export_background_color = closure.val;
 
     XtPopdown(background_menu);
 }
@@ -516,15 +521,23 @@ background_select(Widget w, XtPointer closure, XtPointer call_data)
 void
 print_grid_minor_select(Widget w, XtPointer new_grid_choice, XtPointer garbage)
 {
-    char *val;
-    grid_minor = (int) new_grid_choice;
+    char	buf[MAX_GRID_STRLEN];
+    char	*val;
+    ptr_int	grid = {new_grid_choice};
+
+    grid_minor = grid.val;
 
     /* put selected grid value in the text area */
     /* first get rid of any "mm" following the value */
-    val = strtok(strdup(grid_choices[grid_minor]), " ");
+    if (strlen(grid_choices[grid_minor]) >= MAX_GRID_STRLEN) {
+	file_msg("Cannot apply new minor grid size '%s'. "
+		"Please report this bug.\n",
+		grid_choices[grid_minor]);
+	return;
+    }
+    val = strtok(strcpy(buf, grid_choices[grid_minor]), " ");
     FirstArg(XtNstring, val);
     SetValues(print_grid_minor_text);
-    free(val);
 }
 
 /* come here when user chooses major grid interval from menu */
@@ -532,15 +545,23 @@ print_grid_minor_select(Widget w, XtPointer new_grid_choice, XtPointer garbage)
 void
 print_grid_major_select(Widget w, XtPointer new_grid_choice, XtPointer garbage)
 {
-    char *val;
-    grid_major = (int) new_grid_choice;
+    char	buf[MAX_GRID_STRLEN];
+    char	*val;
+    ptr_int	grid = {new_grid_choice};
+
+    grid_major = grid.val;
 
     /* put selected grid value in the text area */
     /* first get rid of any "mm" following the value */
-    val = strtok(strdup(grid_choices[grid_major]), " ");
+    if (strlen(grid_choices[grid_major]) >= MAX_GRID_STRLEN) {
+	file_msg("Cannot apply new major grid size '%s'. "
+		"Please report this bug.\n",
+		grid_choices[grid_major]);
+	return;
+    }
+    val = strtok(strcpy(buf, grid_choices[grid_major]), " ");
     FirstArg(XtNstring, val);
     SetValues(print_grid_major_text);
-    free(val);
 }
 
 static void

@@ -7,7 +7,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -27,7 +27,9 @@
 */
 
 
-int ReadDataFromBitmapFile (FILE *file, unsigned int *width, unsigned int *height, char **data_ret);
+static int
+ReadDataFromBitmapFile (FILE *file, unsigned int *width,
+				unsigned int *height, unsigned char **data_ret);
 
 int
 read_xbm(FILE *file, int filetype, F_pic *pic)
@@ -186,10 +188,9 @@ NextInt(FILE *fstream)
 }
 
 int
-ReadDataFromBitmapFile(FILE *file,
-		unsigned int *width, unsigned int *height, char **data_ret)
-{
-    char *data = NULL;			/* working variable */
+ReadDataFromBitmapFile(FILE *file, unsigned int *width, unsigned int *height,
+			unsigned char **data_ret) {
+    unsigned char *data = NULL;		/* working variable */
     char line[MAX_SIZE];		/* input line from file */
     int size;				/* number of bytes of data */
     char name_and_type[MAX_SIZE];	/* an input line */
@@ -254,12 +255,12 @@ ReadDataFromBitmapFile(FILE *file,
 	bytes_per_line = (ww+7)/8 + padding;
 
 	size = bytes_per_line * hh;
-	data = (char *) malloc ((unsigned int) size);
+	data = malloc ((unsigned int) size);
 	if (!data)
 	  RETURN (BitmapNoMemory);
 
 	if (version10p) {
-	    char *ptr;
+	    unsigned char *ptr;
 	    int bytes;
 
 	    for (bytes=0, ptr=data; bytes<size; (bytes += 2)) {
@@ -270,7 +271,7 @@ ReadDataFromBitmapFile(FILE *file,
 		  *(ptr++) = value >> 8;
 	    }
 	} else {
-	    char *ptr;
+	    unsigned char *ptr;
 	    int bytes;
 
 	    for (bytes=0, ptr=data; bytes<size; bytes++, ptr++) {

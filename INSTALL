@@ -17,8 +17,8 @@ Important options to configure are
 	--without-xfig-libraries	do not install xfig libraries files,
 				currently 2531 fig files, 16 MB.
 Type ./configure --help for all options.
-When runninn ./configure, the values of various flags are printed at the
-very very end of its output.
+When running ./configure, the values of various flags are printed at the
+very end of its output.
 
 On Mac Darwin, OS X 10.11.1 (El Capitan), using XQuartz and having installed
 jpeg, libpng and zlib via Macports, the following command should work:

@@ -9,7 +9,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -483,8 +483,11 @@ print_to_file(char *file, int xoff, int yoff, char *backgrnd, char *transparent,
 
 	} else if (cur_exp_lang == LANG_PCX || cur_exp_lang == LANG_PNG ||
 			cur_exp_lang == LANG_TIFF || cur_exp_lang == LANG_XBM ||
-			cur_exp_lang == LANG_XPM || cur_exp_lang == LANG_PPM ||
-			cur_exp_lang == LANG_JPEG || cur_exp_lang == LANG_GIF) {
+#ifdef USE_XPM
+			cur_exp_lang == LANG_XPM ||
+#endif
+			cur_exp_lang == LANG_PPM || cur_exp_lang == LANG_JPEG ||
+			cur_exp_lang == LANG_GIF) {
 
 		/* GIF must come before giving background option */
 		if (cur_exp_lang == LANG_GIF) {

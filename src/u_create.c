@@ -9,7 +9,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -457,14 +457,14 @@ create_picture_entry(void)
 
     picture = malloc(sizeof(struct _pics));
 
-    picture->file = picture->realname = (unsigned char *) NULL;
-    picture->bitmap = (unsigned char *) NULL;
+    picture->file = picture->realname = NULL;
+    picture->bitmap = NULL;
     picture->transp = TRANSP_NONE;
     picture->numcols = 0;
     picture->refcount = 0;
     picture->prev = picture->next = NULL;
     if (appres.DEBUG)
-	fprintf(stderr,"create picture entry %x\n",(intptr_t) picture);
+	fprintf(stderr,"create picture entry %p\n", picture);
     return picture;
 }
 

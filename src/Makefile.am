@@ -10,7 +10,7 @@
 # full and unrestricted irrevocable, world-wide, paid up, royalty-free,
 # nonexclusive right and license to deal in this software and documentation
 # files (the "Software"), including without limitation the rights to use,
-# copy, modify, merge, publish distribute, sublicense and/or sell copies
+# copy, modify, merge, publish, distribute, sublicense and/or sell copies
 # of the Software, and to permit persons who receive copies from any such
 # party to do so, with the only requirement being that the above copyright
 # and this permission notice remain intact.
@@ -125,11 +125,11 @@ $(top_srcdir)/version.m4: $(top_srcdir)/configure.ac $(top_srcdir)/Makefile.am \
 	cd $(top_srcdir) && ./update-version_m4
 endif
 
-# $(srcdir) is most probably not necessary
-splash.xpm: $(top_srcdir)/splash-image/spl_bckgnd.fig
+splash.xpm: $(top_srcdir)/splash-image/spl_bckgnd.fig.in \
+		$(top_srcdir)/version.m4
 	fig2dev -L xpm $(top_srcdir)/splash-image/spl_bckgnd.fig \
 	| sed '2 {s/static //; s/noname/spl_bckgnd_xpm/}' > $@
 
-splash.xbm: $(top_srcdir)/splash-image/spl_bckgnd.fig
+splash.xbm: $(top_srcdir)/splash-image/spl_bckgnd.fig $(top_srcdir)/version.m4
 	fig2dev -L xbm -S 4 $(top_srcdir)/splash-image/spl_bckgnd.fig \
 	| sed '1,3 s/noname/spl_bckgnd/; 3 s/char/unsigned &/' > $@

@@ -6,20 +6,20 @@ AC_COPYRIGHT([FIG : Facility for Interactive Generation of figures
 Copyright (c) 1985-1988 by Supoj Sutanthavibul
 Parts Copyright (c) 1989-2015 by Brian V. Smith
 Parts Copyright (c) 1991 by Paul King
-Parts Copyright (c) 2016-2018 by Thomas Loimer
+Parts Copyright (c) 2016-2019 by Thomas Loimer
 
 Any party obtaining a copy of these files is granted, free of charge, a
 full and unrestricted irrevocable, world-wide, paid up, royalty-free,
 nonexclusive right and license to deal in this software and documentation
 files (the "Software"), including without limitation the rights to use,
-copy, modify, merge, publish distribute, sublicense and/or sell copies
+copy, modify, merge, publish, distribute, sublicense and/or sell copies
 of the Software, and to permit persons who receive copies from any such
 party to do so, with the only requirement being that the above copyright
 and this permission notice remain intact.
 ])
 
 # configure.ac
-# Author: Thomas Loimer, 2016-2018
+# Author: Thomas Loimer, 2016-2019
 
 dnl The minimum autoconf version to process this file. In version 2.60,
 dnl the directory variables changed, see info autoconf, section 4.8.3.
@@ -44,6 +44,12 @@ AC_DEFINE([PROTOCOL_VERSION], ["3.2"],
 	[Define the fig file format. Identical to major.minor \
 		substring of xfig version.])
 AC_SUBST([RELEASE_DATE], ["RELEASEDATE"])dnl
+
+dnl No success with "AC_SUBST(RELEASEYEAR, m4_shift(m4_split(RELEASEDATE)))".
+m4_define([RELEASEYEAR], m4_split(RELEASEDATE))
+AC_SUBST([RELEASE_YEAR], m4_shift(RELEASEYEAR))
+AC_DEFINE_UNQUOTED([RELEASE_YEAR], ["$RELEASE_YEAR"],
+	[Define the year of the release.])
 
 # Set automake options.
 dnl The options are written to AUTOMAKE_OPTIONS. A minimum version
@@ -401,8 +407,10 @@ dnl touch -r doc/FORMAT1.3 doc/xfig_man.html.in
 
 AC_CONFIG_FILES([Makefile
 		app-defaults/Fig
+		splash-image/spl_bckgnd.fig
 		src/Makefile
 		src/version.fig
+		doc/html/images/xfig-title.fig
 		doc/Makefile
 		doc/xfig.man
 		doc/xfig_man.html

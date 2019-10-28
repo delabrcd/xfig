@@ -1,14 +1,15 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2019 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -31,11 +32,15 @@
 #include "u_redraw.h"
 #include "w_cursor.h"
 
-static void	add_arrow_head(F_line *obj, int type, int x, int y, F_point *p, F_point *q);
-static void	delete_arrow_head(F_line *obj, int type, int x, int y, F_point *p, F_point *q);
-static void	add_linearrow(F_line *line, F_point *prev_point, F_point *selected_point);
+static void	add_arrow_head(F_line *obj, int type, int x, int y,
+				F_point *p, F_point *q, int pnum);
+static void	delete_arrow_head(F_line *obj, int type, int x, int y,
+				F_point *p, F_point *q, int pnum);
+static void	add_linearrow(F_line *line, F_point *prev_point,
+				F_point *selected_point);
 static void	add_arcarrow(F_arc *arc, int point_num);
-static void	add_splinearrow(F_spline *spline, F_point *prev_point, F_point *selected_point);
+static void	add_splinearrow(F_spline *spline, F_point *prev_point,
+				F_point *selected_point);
 
 
 
@@ -56,43 +61,43 @@ arrow_head_selected(void)
 }
 
 static void
-add_arrow_head(F_line *obj, int type, int x, int y, F_point *p, F_point *q)
+add_arrow_head(F_line *obj, int type, int x, int y, F_point *p, F_point *q,
+		int pnum)
 {
-    switch (type) {
-    case O_POLYLINE:
-	cur_l = (F_line *) obj;
-	add_linearrow(cur_l, p, q);
-	break;
-    case O_SPLINE:
-	cur_s = (F_spline *) obj;
-	add_splinearrow(cur_s, p, q);
-	break;
-    case O_ARC:
-	cur_a = (F_arc *) obj;
-	/* dirty trick - arc point number is stored in p */
-	add_arcarrow(cur_a, (int) p);
-	break;
-    }
+	switch (type) {
+	case O_POLYLINE:
+		cur_l = (F_line *) obj;
+		add_linearrow(cur_l, p, q);
+		break;
+	case O_SPLINE:
+		cur_s = (F_spline *) obj;
+		add_splinearrow(cur_s, p, q);
+		break;
+	case O_ARC:
+		cur_a = (F_arc *) obj;
+		add_arcarrow(cur_a, pnum);
+		break;
+	}
 }
 
 static void
-delete_arrow_head(F_line *obj, int type, int x, int y, F_point *p, F_point *q)
+delete_arrow_head(F_line *obj, int type, int x, int y, F_point *p, F_point *q,
+		int pnum)
 {
-    switch (type) {
-    case O_POLYLINE:
-	cur_l = (F_line *) obj;
-	delete_linearrow(cur_l, p, q);
-	break;
-    case O_SPLINE:
-	cur_s = (F_spline *) obj;
-	delete_splinearrow(cur_s, p, q);
-	break;
-    case O_ARC:
-	cur_a = (F_arc *) obj;
-	/* dirty trick - arc point number is stored in p */
-	delete_arcarrow(cur_a, (int) p);
-	break;
-    }
+	switch (type) {
+	case O_POLYLINE:
+		cur_l = (F_line *) obj;
+		delete_linearrow(cur_l, p, q);
+		break;
+	case O_SPLINE:
+		cur_s = (F_spline *) obj;
+		delete_splinearrow(cur_s, p, q);
+		break;
+	case O_ARC:
+		cur_a = (F_arc *) obj;
+		delete_arcarrow(cur_a, pnum);
+		break;
+	}
 }
 
 static void

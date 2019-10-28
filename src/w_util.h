@@ -8,7 +8,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -60,9 +60,10 @@
 #define	LARGE_CHK	True	/* use large checkmark */
 #define	SMALL_CHK	False	/* use small checkmark (don't use large) */
 
-/* number of arrow types */
 
-#define NUM_ARROW_TYPES		30
+#define NUM_ARROW_TYPES		30	/* number of arrow types */
+
+#define MAX_GRID_STRLEN		8	/* max strlen in grid_xxx_choices[] */
 
 /* EXPORTS */
 
@@ -162,6 +163,12 @@ typedef struct {
 	float	min, max;	/* min, max values allowed */
 	float	inc;		/* how much to inc/dec spinner with each click */
 } spin_struct;
+
+/* A clumsy exercise to avoid -Wpointer-to-int-cast warnings.	*/
+typedef union {
+	XtPointer	ptr;
+	int		val;
+} ptr_int;
 
 extern void app_flush (void);
 extern void file_msg_add_grab (void);

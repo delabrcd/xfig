@@ -9,7 +9,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -168,7 +168,7 @@ make_sfactors(F_spline *spl)
 {
   F_point   *p = spl->points;
   F_sfactor *sp, *cur_sp;
-  int       type_s = approx_spline(spl) ? S_SPLINE_APPROX : S_SPLINE_INTERP;
+  double     type_s = approx_spline(spl) ? S_SPLINE_APPROX : S_SPLINE_INTERP;
 
   spl->sfactors = NULL;
   if ((sp = create_sfactor()) == NULL)

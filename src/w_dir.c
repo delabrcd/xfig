@@ -9,7 +9,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -77,15 +77,18 @@ static char    *dirmask;
 
 static Widget	hidden;
 static Boolean	show_hidden = False;
+static Boolean	actions_added=False;
 
 /* Functions */
-
-void		DoChangeDir(char *dir),
-		SetDir(Widget widget, XEvent *event, String *params, Cardinal *num_params),
-		Rescan(Widget widget, XEvent *event, String *params, Cardinal *num_params),
-		CallbackRescan(Widget widget, XtPointer closure, XtPointer call_data);
-
-static void	ParentDir(Widget w, XEvent *event, String *params, Cardinal *num_params);
+static void	DoChangeDir(char *dir);
+static void	SetDir(Widget widget, XEvent *event, String *params,
+				Cardinal *num_params);
+static void	ParentDir(Widget w, XEvent *event, String *params,
+				Cardinal *num_params);
+static void	CallbackRescan(Widget widget, XtPointer closure,
+				XtPointer call_data);
+static Boolean	MakeFileList(char *dir_name, char *mask, char ***_dirs,
+				char ***files);
 
 /* Static variables */
 
@@ -266,7 +269,6 @@ void parseuserpath(char *path, char *longpath)
     }
 }
 
-static Boolean      actions_added=False;
 
 /* the file_exp parm just changes the vertical offset for the Rescan button */
 /* make the filename list file_width wide */
@@ -523,7 +525,8 @@ SPComp(char **s1, char **s2)
     return (strcmp(*s1, *s2));
 }
 
-#define MAX_MASKS 20
+#define MAX_MASKS	20
+#define MAX_MASK_LEN	64
 
 Boolean
 MakeFileList(char *dir_name, char *mask, char ***dir_list, char ***file_list)
@@ -534,6 +537,7 @@ MakeFileList(char *dir_name, char *mask, char ***dir_list, char ***file_list)
     char	 **last_file, **last_dir;
     int		   nmasks,i;
     char	  *wild[MAX_MASKS],*cmask;
+    char	buf[MAX_MASK_LEN];
     Boolean	   match;
 
     set_temp_cursor(wait_cursor);
@@ -559,8 +563,13 @@ MakeFileList(char *dir_name, char *mask, char ***dir_list, char ***file_list)
     app_flush();
 
     /* make copy of mask */
-    cmask = strdup(mask);
-    if ((cmask == NULL) || (*cmask == '\0'))
+    if (strlen(mask) < MAX_MASK_LEN) {
+	    cmask = buf;
+	    strcpy(cmask, mask);
+    } else {
+	    cmask = strdup(mask);
+    }
+    if (*cmask == '\0')
 	strcpy(cmask,"*");
     wild[0] = strtok(cmask," \t");
     nmasks = 1;
@@ -617,7 +626,8 @@ MakeFileList(char *dir_name, char *mask, char ***dir_list, char ***file_list)
     *dir_list = dirlist;
     reset_cursor();
     closedir(dirp);
-    free(cmask);	/* free copy of mask */
+    if (cmask != buf)
+	    free(cmask);	/* free copy of mask */
     return True;
 }
 

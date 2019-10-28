@@ -8,7 +8,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -267,7 +267,8 @@ void free_Fonts(void)
 
   for (i=0; i<NUM_FONTS; i++) {
     for (nf = x_fontinfo[i].xfontlist; nf != NULL;) {
-      XUnloadFont(tool_d, nf->fid);
+      /* Uncommented, see ticket #54, https://sourceforge.net/p/mcj/tickets/54*/
+      /* XUnloadFont(tool_d, nf->fid); */
       if (nf->fstruct != NULL)
 	  XFreeFont(tool_d, nf->fstruct);
       nf = nf->next;

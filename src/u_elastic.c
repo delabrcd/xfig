@@ -8,7 +8,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -194,7 +194,7 @@ latex_line(int x, int y)
 
     elastic_line();
     latex_endpoint(fix_x, fix_y, x, y, &cur_x, &cur_y, latexarrow_mode,
-		   (cur_pointposn == P_ANY) ? 1 : posn_rnd[cur_gridunit][cur_pointposn]);
+		(cur_pointposn == P_ANY) ? 1 : max2(1, point_spacing()));
     length_msg(MSG_LENGTH);
     elastic_line();
     c = (x == cur_x && y == cur_y) ? null_cursor : crosshair_cursor;

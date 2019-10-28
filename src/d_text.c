@@ -8,7 +8,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -52,6 +52,7 @@
 #include <wchar.h>
 
 #ifdef SEL_TEXT
+#include <X11/Xmu/Atoms.h>
 Boolean	text_selection_active;
 #endif /* SEL_TEXT */
 
@@ -134,6 +135,8 @@ static int	start_sel_x, start_sel_y;
 static Boolean	click_on_text = False;
 static char	text_selection[500] = {'\0'};
 static Boolean	selection_dir = 0;
+static void	draw_selection (int x, int y, char *string);
+static void	undraw_selection (int x, int y, char *string);
 #endif /* SEL_TEXT */
 
 #ifdef I18N

@@ -6,7 +6,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -350,12 +350,13 @@ fontpane_select(Widget w, XtPointer closure, XtPointer call_data)
 {
     MenuItemRec	   *mi = (MenuItemRec *) closure;
     char	   *font_name = mi->label;
+    ptr_int	data = {mi->info};
 
     if (*flag_sel)
-	*font_ps_sel = (int) mi->info;	/* set ps font to one selected */
+	*font_ps_sel = data.val;
     else
-	*font_latex_sel = (int) mi->info;	/* set latex font to one
-						 * selected */
+	*font_latex_sel = data.val;
+
     put_msg("Font: %s", font_name);
     /* put image of font in indicator window */
     (*font_setimage) (font_widget);

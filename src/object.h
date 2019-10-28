@@ -9,7 +9,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies
  * of the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -108,7 +108,7 @@ struct _pics {
 	char *realname;		/* in case the actual file is compressed
 				   (.gz, etc) */
 	time_t time_stamp;	/* to see if the file has changed */
-	char *bitmap;
+	unsigned char *bitmap;
 	enum pictypes subtype;
 	int size_x, size_y;	/* picture size (fig units) */
 	F_pos bit_size;		/* size of bitmap in pixels */

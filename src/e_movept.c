@@ -8,7 +8,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -37,6 +37,7 @@
 #include "u_geom.h"
 #include "u_redraw.h"
 #include "w_cursor.h"
+#include "w_util.h"
 
 /* local routine declarations */
 
@@ -145,9 +146,13 @@ init_move_point(F_line *obj, int type, int x, int y, F_point *p, F_point *q, int
 	break;
       case O_COMPOUND:
 	force_noanglegeom();
-	/* dirty trick - posn of corner is stored in p and q */
-	cur_x = (int) p;
-	cur_y = (int) q;
+	{
+		/* dirty trick - posn of corner is stored in p and q */
+		ptr_int	point = {p};
+		cur_x = point.val;
+		point.ptr = q;
+		cur_y = point.val;
+	}
 	cur_c = (F_compound *) obj;
 	init_compoundpointmoving();
 	break;

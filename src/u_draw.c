@@ -11,7 +11,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -1009,7 +1009,7 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
 	    /* figure what endian machine this is (big=True or little=False) */
 	    endian = True;
 	    bpl = 1;
-	    Cpixel = (char *) &bpl;
+	    Cpixel = (unsigned char *) &bpl;
 	    /* look at first byte of integer */
 	    if (Cpixel[0] == 1)
 		endian = False;
@@ -1017,7 +1017,7 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
 	    cbpp = 1;
 	    cbpl = cwidth * cbpp;
 	    bpl = width * image_bpp;
-	    if ((data = (unsigned char *) malloc(bpl * height)) == NULL) {
+	    if ((data = malloc(bpl * height)) == NULL) {
 		file_msg(ALLOC_PIC_ERR,box->pic->pic_cache->file);
 		return;
 	    }
@@ -1105,7 +1105,7 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
 			*Lpixel = (unsigned int) cmap[*cpixel].pixel;
 			/* swap the 4 bytes on big-endian machines */
 			if (endian) {
-			    Cpixel = (char *) Lpixel;
+			    Cpixel = (unsigned char *) Lpixel;
 			    byte = Cpixel[0]; Cpixel[0] = Cpixel[3]; Cpixel[3] = byte;
 			    byte = Cpixel[1]; Cpixel[1] = Cpixel[2]; Cpixel[2] = byte;
 			}
@@ -1129,7 +1129,7 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
 			*Spixel = (unsigned short)cmap[*cpixel].pixel;
 			/* swap the 2 bytes on big-endian machines */
 			if (endian) {
-			    Cpixel = (char *) Lpixel;
+			    Cpixel = (unsigned char *) Lpixel;
 			    byte = Cpixel[0]; Cpixel[0] = Cpixel[1]; Cpixel[1] = byte;
 			}
 		    } else {

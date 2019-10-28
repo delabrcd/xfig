@@ -8,7 +8,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -477,7 +477,7 @@ int valid_rot_angle(F_compound *c)
     F_line         *l;
     F_compound     *c1;
 
-    if (fabs(act_rotnangle) == 90.0 || fabs(act_rotnangle == 180.0))
+    if (fabs(act_rotnangle) == 90.0 || fabs(act_rotnangle) == 180.0)
 	return 1; /* always valid */
     for (l = c->lines; l != NULL; l = l->next)
 	if (l->type == T_ARCBOX || l->type == T_BOX)

@@ -2,7 +2,22 @@ Changes to Xfig
 =============================================================================
 Version 3.2
 =============================================================================
-Patchlevel 7a (May 2017)
+Patchlevel 7b (Oct 2019)
+
+NEW FEATURES:
+	o New drawings in Electronic/Schematic library. Thanks to Niko Sauer.
+
+BUGS FIXED:
+	Ticket numbers refer to https://sourceforge.net/p/mcj/tickets/#.
+	o When exiting, cleanly pull down all windows. Ticket #54.
+	o Adding and deleting arrows to arcs works, ticket #46.
+	o Allow more than 100 comment lines, ticket #47.
+	o Make `xfig -update' work again, would segfault.
+	o Correctly draw interpolated splines, ticket #35.
+	o Position points on grid, if appres.userspacing unequal 1. Ticket #31.
+
+-----------------------------------
+Patchlevel 7a (May 2018)
 
 BUGS FIXED:
 	Ticket numbers refer to https://sourceforge.net/p/mcj/tickets/#.
@@ -12,7 +27,7 @@ BUGS FIXED:
 	  "Save" placed the figure file into the new directory.
 
 -----------------------------------
-Patchlevel 7 (April 2017)
+Patchlevel 7 (April 2018)
 
 NEW FEATURES:
 	o Export to pdf now allows to choose between output to a full-page pdf,

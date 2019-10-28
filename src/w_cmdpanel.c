@@ -7,7 +7,7 @@
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish distribute, sublicense and/or sell copies of
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
@@ -591,6 +591,8 @@ void goodbye(Boolean abortflag)
     /* delete any batch print file */
     if (batch_exists)
 	unlink(batch_file);
+
+    XSync(tool_d, False);	/* https://sourceforge.net/p/mcj/tickets/54 */
 
     /* free all the GC's */
     free_GCs();
@@ -1614,7 +1616,12 @@ popup_character_map(void)
 static void
 paste_char(Widget w, XtPointer client_data, XtPointer call_data)
 {
-    unsigned char chr = (unsigned char) client_data;
+	union	{
+		XtPointer	ptr;
+		unsigned char	val;
+	}	ptr_val = {client_data};
+
+    unsigned char chr = ptr_val.val;
 
     /* only allow during text input */
     if (canvas_kbd_proc != (void (*)())char_handler)
