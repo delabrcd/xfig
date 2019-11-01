@@ -20,8 +20,7 @@
 # Author: Thomas Loimer, 2016
 
 dist_doc_DATA = FORMAT1.3 FORMAT1.4 FORMAT2.0 FORMAT2.1 FORMAT3.0 \
-	FORMAT3.1 FORMAT3.2 xfig-howto.pdf xfig_ref_en.pdf \
-	$(srcdir)/html/images/xfig-title.png
+	FORMAT3.1 FORMAT3.2 xfig-howto.pdf xfig_ref_en.pdf
 
 doc_DATA = xfig_man.html
 
@@ -70,6 +69,8 @@ install-data-hook:
 	&& chmod -R u+rwX "$(DESTDIR)$(htmldir)"
 	cd "$(DESTDIR)$(htmldir)/html" \
 	&& rm -f ja_JP.ujis && $(LN_S) japanese ja_JP.ujis
+	cd "$(DESTDIR)$(htmldir)/html/images" && \
+		rm -f xfig-title.fig xfig-title.fig.in
 
 uninstall-local:
 	rm -rf "$(DESTDIR)$(htmldir)/html"

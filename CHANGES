@@ -9,6 +9,7 @@ NEW FEATURES:
 
 BUGS FIXED:
 	Ticket numbers refer to https://sourceforge.net/p/mcj/tickets/#.
+	o Fix core dump when clicking File -> Export. Ticket #45.
 	o When exiting, cleanly pull down all windows. Ticket #54.
 	o Adding and deleting arrows to arcs works, ticket #46.
 	o Allow more than 100 comment lines, ticket #47.

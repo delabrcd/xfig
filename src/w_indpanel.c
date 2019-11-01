@@ -384,7 +384,7 @@ ind_sw_info	*fill_style_sw;
 ind_sw_info	ind_switches[] = {
     {I_FVAL, 0, "Zoom", "", NARROW_IND_SW_WD,		/* always show zoom button */
 	NULL, &display_zoomscale, inc_zoom_centered, dec_zoom_centered,
-	show_zoom, MIN_ZOOM, MAX_ZOOM, 1.0},
+	show_zoom, 0 /* MIN_ZOOM */, MAX_ZOOM, 1.0},
     {I_CHOICE, 0, "Grid", "Mode", DEF_IND_SW_WD,	/* and grid button */			// isometric grid
 	&cur_gridmode, NULL, inc_choice, dec_choice, show_gridmode, 0, 0, 0.0,
 	gridmode_choices, NUM_GRIDMODE_CHOICES, (NUM_GRIDMODE_CHOICES+1)/2},
