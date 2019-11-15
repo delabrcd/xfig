@@ -65,12 +65,15 @@ int X_error_handler(Display *d, XErrorEvent *err_ev)
     /* uninstall error handlers so we don't recurse if another error happens! */
     XSetErrorHandler(NULL);
     XSetIOErrorHandler((XIOErrorHandler) NULL);
-    XGetErrorText(tool_d, (int) (err_ev->error_code), err_msg, MAXERRMSGLEN - 1);
+    if (!err_ev)
+	return 0;
+    XGetErrorText(tool_d, (int)(err_ev->error_code), err_msg, MAXERRMSGLEN - 1);
     (void) fprintf(stderr,
 	   "xfig%s: X error trapped - error message follows:\n%s\n",
 		PACKAGE_VERSION, err_msg);
     (void) sprintf(ernum, "%d", (int)err_ev->request_code);
-    XGetErrorDatabaseText(tool_d, "XRequest", ernum, "<Unknown>", err_msg, MAXERRMSGLEN);
+    XGetErrorDatabaseText(tool_d, "XRequest", ernum, "<Unknown>", err_msg,
+		MAXERRMSGLEN);
     (void) fprintf(stderr, "Request code: %s\n",err_msg);
     emergency_quit(True);
     return 0;
