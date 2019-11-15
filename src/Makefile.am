@@ -130,6 +130,8 @@ splash.xpm: $(top_srcdir)/splash-image/spl_bckgnd.fig.in \
 	fig2dev -L xpm $(top_srcdir)/splash-image/spl_bckgnd.fig \
 	| sed '2 {s/static //; s/noname/spl_bckgnd_xpm/}' > $@
 
-splash.xbm: $(top_srcdir)/splash-image/spl_bckgnd.fig $(top_srcdir)/version.m4
-	fig2dev -L xbm -S 4 $(top_srcdir)/splash-image/spl_bckgnd.fig \
+splash.xbm: $(top_srcdir)/splash-image/spl_bckgnd.fig.in \
+		$(top_srcdir)/version.m4
+	fig2dev -L ppm -S 4 $(top_srcdir)/splash-image/spl_bckgnd.fig \
+	| ppmtopgm | pgmtopbm -d8 | pbmtoxbm \
 	| sed '1,3 s/noname/spl_bckgnd/; 3 s/char/unsigned &/' > $@
