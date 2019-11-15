@@ -374,7 +374,7 @@ print_to_file(char *file, int xoff, int yoff, char *backgrnd, char *transparent,
 			/* make it suitable for pstex. */
 			strcpy(tmpcmd, prcmd);
 			strcat(tmpcmd, ".eps");
-			(void) exec_prcmd(tmpcmd, "EXPORT of PostScript part");
+			(void) exec_prcmd(tmpcmd, "EXPORT of EPS part");
 
 			/* make it suitable for pdftex. */
 			strsub(prcmd, "ps", "pdf", tmpcmd, 0);
@@ -696,7 +696,7 @@ build_layer_list(char *layers)
 {
 	char	list[PATH_MAX], notlist[PATH_MAX], num[10];
 	int	layer, len, notlen;
-	int	firstyes, lastyes, firstno, lastno;
+	int	firstyes, lastyes = 0, firstno, lastno = 0;
 
 	layers[0] = '\0';
 

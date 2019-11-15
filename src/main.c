@@ -60,7 +60,7 @@
 
 /* input extensions for an input tablet */
 #ifdef USE_TAB
-#include "X11/extensions/XInput.h"
+#include <X11/extensions/XInput.h>
 #endif /* USE_TAB */
 
 #ifdef I18N

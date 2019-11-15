@@ -1971,7 +1971,9 @@ xim_initialize(Widget w)
       if (xim_style == 0) xim_style = style_root;
     }
   }
-  if (xim_style != preferred_style) {
+  if (xim_style != preferred_style && *modifier_list != '\0' &&
+	!strstr(modifier_list,"@im=local") &&
+	!strstr(modifier_list,"@im=none")) {
     fprintf(stderr, "xfig: this input-method doesn't support %s input style\n",
 	    appres.xim_input_style);
     if (xim_style == 0) {

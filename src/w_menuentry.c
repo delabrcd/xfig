@@ -172,7 +172,7 @@ Redisplay(Widget w, XEvent *event, Region region)
 	gc = entry->sme_bsb.norm_gray_gc;
     }
 
-    if (entry->sme_bsb.label != NULL) {
+    if (entry->sme_bsb.label != XtName((Widget)entry)) {
 	int x_loc = entry->sme_bsb.left_margin;
 	int len = strlen(entry->sme_bsb.label);
 	char * label = entry->sme_bsb.label;
