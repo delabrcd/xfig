@@ -2,7 +2,7 @@ AT_COPYRIGHT([FIG : Facility for Interactive Generation of figures
 Copyright (c) 1985-1988 by Supoj Sutanthavibul
 Parts Copyright (c) 1989-2015 by Brian V. Smith
 Parts Copyright (c) 1991 by Paul King
-Parts Copyright (c) 2016-2018 by Thomas Loimer
+Parts Copyright (c) 2016-2019 by Thomas Loimer
 
 Any party obtaining a copy of these files is granted, free of charge, a
 full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -15,7 +15,7 @@ and this permission notice remain intact.
 ])
 
 # testsuite.at
-# Author: Thomas Loimer, 2016-2018
+# Author: Thomas Loimer, 2016-2019
 
 AT_INIT
 AT_COLOR_TESTS
@@ -79,10 +79,12 @@ AT_BANNER([Unit tests])
 
 AT_SETUP([Allow coordinates equal to INT_MIN])
 AT_KEYWORDS(u_bound.c)
+AT_SKIP_IF([test ! -x "$abs_builddir"/test1])
 AT_CHECK("$abs_builddir"/test1, 0)
 AT_CLEANUP
 
 AT_SETUP([Test round_coords()])
 AT_KEYWORDS(w_canvas.c)
+AT_SKIP_IF([test ! -x "$abs_builddir"/test2])
 AT_CHECK("$abs_builddir"/test2, 0)
 AT_CLEANUP

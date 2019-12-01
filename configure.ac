@@ -64,6 +64,7 @@ dnl  subdir-objects...place objects into the dir where the corresponding
 dnl		source file resides, not into the current build directory;
 dnl		necessary to use LIBOBJS from /lib in /src
 
+AC_CONFIG_MACRO_DIR([m4])
 
 # Check whether ./configure resides in the correct directory.
 AC_CONFIG_SRCDIR([src/main.c])
@@ -143,6 +144,12 @@ AC_CHECK_DECL([REG_NOERROR],[],
 	[AC_DEFINE([REG_NOERROR], 0,dnl
 		[Define to 0 if not provided by regex.h.])],dnl
 	[[#include <regex.h>]])dnl
+# The option --allow-multiple-definition is aquivalent to -z muldefs.
+# The latter would not error out, e.g., "-z NoTeXisting" does only
+# produce a warning, not an error, on gnu ld.
+AX_CHECK_LINK_FLAG([-allow-multiple-definition])dnl
+AM_CONDITIONAL([ALLOW_MULTIPLE_DEFINITION],
+	[test "x$ax_cv_check_ldflags___allow_multiple_definition" = xyes])dnl
 
 # Checks for library functions.
 AC_FUNC_FORK

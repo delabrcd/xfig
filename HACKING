@@ -30,13 +30,16 @@ Compiling from development sources
 To build from the development sources, the autoconf tools must be installed.
 In the top source directory, do
   autoreconf -i
-# -i ... install missing files (depmod, install-sh, etc.)
+  # -i ... install missing files (depmod, install-sh, etc.)
   ./configure; make; make install
 
-Alternatives: make -sj, make install-strip (strips debugging symbols).
 Optionally, make check and, after installing, make install-check.
 Only very rudimentary tests are provided, thus not much is gained
-from running them.
+from running them. Some tests require that the linker understands the
+"-allow-multiple-definition" option. This does not seem to be the
+case for the standard linker of BSD-variants and Darwin.
+Try "make check LDFLAGS=-fuse-ld=gold" or "-fuse-ld=lld" to use a linker
+that understands this option and allows multiply defined symbols.
 
 The version of the package is given in the file version.m4.
 Edit the file to adapt the version string. If the sources are maintained
