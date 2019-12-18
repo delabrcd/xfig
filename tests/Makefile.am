@@ -42,7 +42,7 @@ $(srcdir)/package.m4: $(top_srcdir)/configure.ac
 AM_CPPFLAGS = -I$(top_srcdir)/src $(XCPPFLAGS)
 
 if ALLOW_MULTIPLE_DEFINITION
-AM_LDFLAGS = -Wl,-allow-multiple-definition $(XLDFLAGS)
+AM_LDFLAGS = -Wl,--allow-multiple-definition $(XLDFLAGS)
 LDADD = $(top_builddir)/src/libxfig.a $(XLIBS)
 
 check_PROGRAMS = test1 test2

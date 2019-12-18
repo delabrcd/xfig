@@ -147,9 +147,10 @@ AC_CHECK_DECL([REG_NOERROR],[],
 # The option --allow-multiple-definition is aquivalent to -z muldefs.
 # The latter would not error out, e.g., "-z NoTeXisting" does only
 # produce a warning, not an error, on gnu ld.
-AX_CHECK_LINK_FLAG([-allow-multiple-definition])dnl
+# KEEP IN SYNC with the actual link flags in tests/Makefile.am!
+AX_CHECK_LINK_FLAG([-Wl,--allow-multiple-definition])dnl
 AM_CONDITIONAL([ALLOW_MULTIPLE_DEFINITION],
-	[test "x$ax_cv_check_ldflags___allow_multiple_definition" = xyes])dnl
+	[test "x$ax_cv_check_ldflags___Wl___allow_multiple_definition" = xyes])dnl
 
 # Checks for library functions.
 AC_FUNC_FORK
