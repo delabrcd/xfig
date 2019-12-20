@@ -4,7 +4,7 @@
 # Copyright (c) 1985-1988 by Supoj Sutanthavibul
 # Parts Copyright (c) 1989-2015 by Brian V. Smith
 # Parts Copyright (c) 1991 by Paul King
-# Parts Copyright (c) 2016-2018 by Thomas Loimer
+# Parts Copyright (c) 2016-2019 by Thomas Loimer
 #
 # Any party obtaining a copy of these files is granted, free of charge, a
 # full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -17,7 +17,7 @@
 #
 #
 # Makefile.am
-# Author: Thomas Loimer, 2016-2018
+# Author: Thomas Loimer, 2016-2019
 
 # The default ARFLAGS are "cru". However, ar now outputs the warning
 # "`u' modifier ignored since `D' is the default...".
@@ -113,9 +113,15 @@ endif
 
 MAINTAINERCLEANFILES = Makefile.in
 
+# pgmtopbm might fail and produce an all-white image, see
+# https://sourceforge.net/p/mcj/tickets/70
+# Try again (the line with $(FGREP)), using ImageMagick's convert-program.
 version.xbm: version.fig.in $(top_srcdir)/version.m4
 	fig2dev -L ppm version.fig | ppmtopgm | pgmtopbm | pnmcrop \
-	| pbmtoxbm | sed '1,3 s/noname_/letters_/; 3 s/char/unsigned &/' > $@
+	| pbmtoxbm | sed '1,3 s/noname_/letters_/; 3 s/char/unsigned &/' >$@
+	$(FGREP) 0xff $@ || fig2dev -L ppm version.fig | \
+		convert ppm:- -trim xbm:- | \
+		$(SED) '1,3 s/-_/letters_/; 3 s/char/unsigned &/' >$@
 
 if ENABLE_VERSIONING
 # The Makefile generated in $top_srcdir lets configure and config.h.in

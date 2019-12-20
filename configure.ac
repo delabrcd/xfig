@@ -81,12 +81,14 @@ AC_PROG_CC_STDC
 AS_IF([test "x$ac_cv_prog_cc_stdc" = xno],dnl
       [AC_C_CONST
        AC_C_INLINE])
+AC_PROG_FGREP
+AC_PROG_LN_S
 # Sets MKDIR_P - which is, however, set anyhow
 AC_PROG_MKDIR_P
-AC_PROG_LN_S
 # ranlib and ar are needed to create the convenience library libxfig.a.
 # Unit tests are linked to libxfig.a.
 AC_PROG_RANLIB
+AC_PROG_SED
 AM_PROG_AR
 
 # Search for pkg-config and set PKG_CONFIG to the path found, else empty.
