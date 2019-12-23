@@ -115,11 +115,12 @@ MAINTAINERCLEANFILES = Makefile.in
 
 # pgmtopbm might fail and produce an all-white image, see
 # https://sourceforge.net/p/mcj/tickets/70
-# Try again (the line with $(FGREP)), using ImageMagick's convert-program.
+# The -threshold option to pgmtopbm should fix this issue. Nevertheless, check
+# and try again (the line with $(FGREP)), using ImageMagick's convert-program.
 version.xbm: version.fig.in $(top_srcdir)/version.m4
-	fig2dev -L ppm version.fig | ppmtopgm | pgmtopbm | pnmcrop \
+	-fig2dev -L ppm version.fig | ppmtopgm | pgmtopbm -threshold | pnmcrop \
 	| pbmtoxbm | sed '1,3 s/noname_/letters_/; 3 s/char/unsigned &/' >$@
-	$(FGREP) 0xff $@ || fig2dev -L ppm version.fig | \
+	$(FGREP) -q 0xff $@ || fig2dev -L ppm version.fig | \
 		convert ppm:- -trim xbm:- | \
 		$(SED) '1,3 s/-_/letters_/; 3 s/char/unsigned &/' >$@
 
