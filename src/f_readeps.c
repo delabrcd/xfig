@@ -52,6 +52,39 @@ read_epsf(FILE *file, int filetype, F_pic *pic)
     return read_epsf_pdf(file, filetype, pic, False);
 }
 
+/*
+ * Scan a pdf-file for a /MediaBox specification.
+ * Return 0 on success, -1 on failure.
+ */
+static int
+scan_mediabox(FILE *file, int *llx, int *lly, int *urx, int *ury)
+{
+	/* the line length of pdfs should not exceed 256 characters */
+	char	buf[300];
+	char	*s;
+	double	lx, ly, ux, uy;
+
+	while (fgets(buf, sizeof buf, file) != NULL) {
+		if ((s = strstr(buf, "/MediaBox"))) {
+			s = strchr(s, '[');
+			if (s && sscanf(s + 1, "%lf %lf %lf %lf",
+						&lx, &ly, &ux, &uy) == 4) {
+				*llx = (int)floor(lx);
+				*lly = (int)floor(ly);
+				*urx = (int)ceil(ux);
+				*ury = (int)ceil(uy);
+				return 0;
+			} else {
+				/* do not try to search for a second
+				   occurrence of /MediaBox */
+				return -1;
+			}
+		}
+	}
+
+	return -1;
+}
+
 int
 read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
 {
@@ -73,29 +106,20 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
     llx = lly = urx = ury = 0;
     foundbbx = False;
     nested = 0;
-    while (fgets(buf, 300, file) != NULL) {
-
-	/* look for /MediaBox for pdf file */
-	if (pdf_flag) {
-	  char *s;
-	  for(s=buf; (s=strchr(s,'/')); s++) {
-	    if (!strncmp(s, "/MediaBox", 8)) {	/* look for the MediaBox spec */
-		char       *c;
-
-		c = strchr(s, '[');
-		if (c && sscanf(c+1, "%d %d %d %d", &llx, &lly, &urx, &ury) < 4) {
+    if (pdf_flag) {
+	    if (scan_mediabox(file, &llx, &lly, &urx, &ury)) {
 		    llx = lly = 0;
 		    urx = paper_sizes[0].width * 72 / PIX_PER_INCH;
 		    ury = paper_sizes[0].height * 72 / PIX_PER_INCH;
-		    file_msg("Bad MediaBox in header, assuming %s size",
+		    file_msg("Bad MediaBox in pdf file, assuming %s size",
 			     appres.INCHES ? "Letter" : "A4");
 		    app_flush();
-		}
-		break;
 	    }
-	  }
-	    /* look for bounding box */
-	} else if (!nested && !strncmp(buf, "%%BoundingBox:", 14)) {
+	    /* TODO: if text scanning does not work, call gs / pdfinfo
+	       to return the MediaBox */
+    } else {
+    while (fgets(buf, 300, file) != NULL) {
+	if (!nested && !strncmp(buf, "%%BoundingBox:", 14)) {
 	    if (!strstr(buf, "(atend)")) {	/* make sure doesn't say (atend) */
 		float       rllx, rlly, rurx, rury;
 
@@ -116,6 +140,7 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
 	} else if (nested && !strncmp(buf, "%%End", 5)) {
 	    --nested;
 	}
+    }
     }
     if (!pdf_flag && !foundbbx) {
 	file_msg("No bounding box found in EPS file");
