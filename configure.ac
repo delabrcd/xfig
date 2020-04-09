@@ -6,7 +6,7 @@ AC_COPYRIGHT([FIG : Facility for Interactive Generation of figures
 Copyright (c) 1985-1988 by Supoj Sutanthavibul
 Parts Copyright (c) 1989-2015 by Brian V. Smith
 Parts Copyright (c) 1991 by Paul King
-Parts Copyright (c) 2016-2019 by Thomas Loimer
+Parts Copyright (c) 2016-2020 by Thomas Loimer
 
 Any party obtaining a copy of these files is granted, free of charge, a
 full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -19,24 +19,18 @@ and this permission notice remain intact.
 ])
 
 # configure.ac
-# Author: Thomas Loimer, 2016-2019
+# Author: Thomas Loimer, 2016-2020
 
 dnl The minimum autoconf version to process this file. In version 2.60,
 dnl the directory variables changed, see info autoconf, section 4.8.3.
 AC_PREREQ([2.60])
 
-dnl Define VERSION in version.m4
+dnl Define XFIG_VERSION and RELEASEDATE in version.m4
 m4_include([version.m4])
 
 # Initialize
 AC_INIT([xfig], [XFIG_VERSION], [thomas.loimer@tuwien.ac.at],
 	[], [https://sourceforge.net/projects/mcj/])
-dnl AC_INIT([FULL-PACKAGE-NAME], [VERSION], [BUG-REPORT-ADDRESS],
-dnl	[TARNAME], [URL])
-dnl TARNAME defaults to FULL-PACKAGE-NAME, converted to lower case
-dnl and all characters other than alphanumerics and _ changed to -.
-dnl defines PACKAGE_NAME, PACKAGE_TARNAME, PACKAGE_VERSION, PACKAGE_STRING,
-dnl PACKAGE_BUGREPORT and PACKAGE_URL
 
 # Define variables that are written into config.h.
 dnl Need to double-quote (shell-)vars identical to m4-variables.
@@ -54,7 +48,6 @@ AC_DEFINE_UNQUOTED([RELEASE_YEAR], ["$RELEASE_YEAR"],
 # Set automake options.
 dnl The options are written to AUTOMAKE_OPTIONS. A minimum version
 dnl of automake, e.g., 1.6.1, can also be put into AM_INIT_AUTOMAKE.
-# AM_INIT_AUTOMAKE([-Wall foreign dist-xz no-dist-gzip subdir-objects])
 AM_INIT_AUTOMAKE([-Wall foreign dist-xz no-dist-gzip subdir-objects])
 dnl  -Wall.....enable all (automake) warnings
 dnl  -Werror...and report them as error
@@ -113,7 +106,7 @@ AS_IF([test "x$ac_cv_search_pow" = xno \
 
 # Checks for header files.
 AC_HEADER_DIRENT
-AC_CHECK_HEADERS_ONCE([features.h sys/time.h png.h])
+AC_CHECK_HEADERS_ONCE([sys/time.h png.h])
 
 # Get X header and library location.
 # Simply add libraries to LIBS, x_includes to XCPPFLAGS

@@ -1,8 +1,10 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
+ *
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -174,9 +176,9 @@ void undo_join_split(void)
 	new_l = saved_objects.lines;		/* the original */
 	old_l = latest_line;			/* the changed object */
 	/* swap old with new */
-	bcopy((char*)old_l, (char*)&swp_l, sizeof(F_line));
-	bcopy((char*)new_l, (char*)old_l, sizeof(F_line));
-	bcopy((char*)&swp_l, (char*)new_l, sizeof(F_line));
+	memcpy(&swp_l, old_l, sizeof(F_line));
+	memcpy(old_l, new_l, sizeof(F_line));
+	memcpy(new_l, &swp_l, sizeof(F_line));
 	/* this assumes that the object are at the end of the objects list */
 	/* correct the depth counts if necessary */
 	if (!new_l->next && old_l->next){ /* join undo */
@@ -191,9 +193,9 @@ void undo_join_split(void)
 	new_s = saved_objects.splines;		/* the original */
 	old_s = latest_spline;			/* the changed object */
 	/* swap old with new */
-	bcopy((char*)old_s, (char*)&swp_s, sizeof(F_spline));
-	bcopy((char*)new_s, (char*)old_s, sizeof(F_spline));
-	bcopy((char*)&swp_s, (char*)new_s, sizeof(F_spline));
+	memcpy(&swp_s, old_s, sizeof(F_spline));
+	memcpy(old_s, new_s, sizeof(F_spline));
+	memcpy(new_s, &swp_s, sizeof(F_spline));
 	/* this assumes that the object are at the end of the objects list */
 	/* correct the depth counts if necessary */
 	if (!new_s->next && old_s->next){ /* join undo */
@@ -351,9 +353,9 @@ void undo_change(void)
 	remove_depth(O_POLYLINE, old_l->depth);
 	add_depth(O_POLYLINE, new_l->depth);
 	/* swap old with new */
-	bcopy((char*)old_l, (char*)&swp_l, sizeof(F_line));
-	bcopy((char*)new_l, (char*)old_l, sizeof(F_line));
-	bcopy((char*)&swp_l, (char*)new_l, sizeof(F_line));
+	memcpy(&swp_l, old_l, sizeof(F_line));
+	memcpy(old_l, new_l, sizeof(F_line));
+	memcpy(new_l, &swp_l, sizeof(F_line));
 	/* but keep the next pointers unchanged */
 	swp_l.next = old_l->next;
 	old_l->next = new_l->next;
@@ -368,9 +370,9 @@ void undo_change(void)
 	remove_depth(O_ELLIPSE, old_e->depth);
 	add_depth(O_ELLIPSE, new_e->depth);
 	/* swap old with new */
-	bcopy((char*)old_e, (char*)&swp_e, sizeof(F_ellipse));
-	bcopy((char*)new_e, (char*)old_e, sizeof(F_ellipse));
-	bcopy((char*)&swp_e, (char*)new_e, sizeof(F_ellipse));
+	memcpy(&swp_e, old_e, sizeof(F_ellipse));
+	memcpy(old_e, new_e, sizeof(F_ellipse));
+	memcpy(new_e, &swp_e, sizeof(F_ellipse));
 	/* but keep the next pointers unchanged */
 	swp_e.next = old_e->next;
 	old_e->next = new_e->next;
@@ -385,9 +387,9 @@ void undo_change(void)
 	remove_depth(O_TXT, old_t->depth);
 	add_depth(O_TXT, new_t->depth);
 	/* swap old with new */
-	bcopy((char*)old_t, (char*)&swp_t, sizeof(F_text));
-	bcopy((char*)new_t, (char*)old_t, sizeof(F_text));
-	bcopy((char*)&swp_t, (char*)new_t, sizeof(F_text));
+	memcpy(&swp_t, old_t, sizeof(F_text));
+	memcpy(old_t, new_t, sizeof(F_text));
+	memcpy(new_t, &swp_t, sizeof(F_text));
 	/* but keep the next pointers unchanged */
 	swp_t.next = old_t->next;
 	old_t->next = new_t->next;
@@ -402,9 +404,9 @@ void undo_change(void)
 	remove_depth(O_SPLINE, old_s->depth);
 	add_depth(O_SPLINE, new_s->depth);
 	/* swap old with new */
-	bcopy((char*)old_s, (char*)&swp_s, sizeof(F_spline));
-	bcopy((char*)new_s, (char*)old_s, sizeof(F_spline));
-	bcopy((char*)&swp_s, (char*)new_s, sizeof(F_spline));
+	memcpy(&swp_s, old_s, sizeof(F_spline));
+	memcpy(old_s, new_s, sizeof(F_spline));
+	memcpy(new_s, &swp_s, sizeof(F_spline));
 	/* but keep the next pointers unchanged */
 	swp_s.next = old_s->next;
 	old_s->next = new_s->next;
@@ -419,9 +421,9 @@ void undo_change(void)
 	remove_depth(O_ARC, old_a->depth);
 	add_depth(O_ARC, new_a->depth);
 	/* swap old with new */
-	bcopy((char*)old_a, (char*)&swp_a, sizeof(F_arc));
-	bcopy((char*)new_a, (char*)old_a, sizeof(F_arc));
-	bcopy((char*)&swp_a, (char*)new_a, sizeof(F_arc));
+	memcpy(&swp_a, old_a, sizeof(F_arc));
+	memcpy(old_a, new_a, sizeof(F_arc));
+	memcpy(new_a, &swp_a, sizeof(F_arc));
 	/* but keep the next pointers unchanged */
 	swp_a.next = old_a->next;
 	old_a->next = new_a->next;
@@ -436,9 +438,9 @@ void undo_change(void)
 	remove_compound_depth(old_c);
 	add_compound_depth(new_c);
 	/* swap old with new */
-	bcopy((char*)old_c, (char*)&swp_c, sizeof(F_compound));
-	bcopy((char*)new_c, (char*)old_c, sizeof(F_compound));
-	bcopy((char*)&swp_c, (char*)new_c, sizeof(F_compound));
+	memcpy(&swp_c, old_c, sizeof(F_compound));
+	memcpy(old_c, new_c, sizeof(F_compound));
+	memcpy(new_c, &swp_c, sizeof(F_compound));
 	/* but keep the next pointers unchanged */
 	swp_c.next = old_c->next;
 	old_c->next = new_c->next;

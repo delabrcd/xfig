@@ -1,6 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 2000-2007 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -17,16 +20,14 @@
 #include "resources.h"
 #include "object.h"
 #include "f_neuclrtab.h"
+#include "f_picobj.h"
 #include "f_util.h"
 #include "w_indpanel.h"
 #include "w_color.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
 
-#include "f_picobj.h"
-
 #include <png.h>
-
 
 
 int
@@ -188,7 +189,7 @@ read_png(FILE *file, int filetype, F_pic *pic)
     /* copy it to our bitmap */
     ptr = pic->pic_cache->bitmap;
     for (i=0; i<h; i++) {
-	bcopy(row_pointers[i], ptr, rowsize);
+	memcpy(ptr, row_pointers[i], rowsize);
 	ptr += rowsize;
     }
     /* put in width, height */

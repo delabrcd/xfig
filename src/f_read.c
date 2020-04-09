@@ -3,7 +3,7 @@
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
  * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 2016-2018 by Thomas Loimer
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -39,7 +39,6 @@
 #include "d_spline.h"
 #include "e_update.h"
 #include "f_picobj.h"
-#include "f_readold.h"
 #include "f_util.h"
 #include "u_bound.h"
 #include "u_free.h"
@@ -47,6 +46,8 @@
 #include "u_translate.h"
 #include "w_util.h"
 #include "w_layers.h"
+
+extern int read_1_3_objects(FILE *fp, char *buf, F_compound *obj); /* f_readold.c */
 
 /* EXPORTS */
 
@@ -251,7 +252,7 @@ readfp_fig(FILE *fp, F_compound *obj, Boolean merge, int xoff, int yoff, fig_set
 	for (i=0; i<MAXCOMMENTS; i++)
 	    comments[i] = (char *) NULL;
     com_alloc = True;
-    bzero((char*)obj, COMOBJ_SIZE);
+    memset(obj, 0, COMOBJ_SIZE);
     line_no = 1;
     /* read the version header line (e.g. #FIG 3.2) */
     if (fgets(buf, BUF_SIZE, fp) == 0)

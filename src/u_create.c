@@ -1,8 +1,10 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
+ *
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -515,7 +517,7 @@ copy_line(F_line *l)
 	    return NULL;
 	}
 	/* copy all the numbers and the pointer to the picture repository (pic->pic_cache) */
-	bcopy(l->pic, line->pic, PIC_SIZE);
+	memcpy(line->pic, l->pic, PIC_SIZE);
 	/* increase reference count for this picture */
 	if (line->pic->pic_cache)
 	    line->pic->pic_cache->refcount++;

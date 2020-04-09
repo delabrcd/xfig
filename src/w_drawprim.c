@@ -1,9 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 2017 by Thomas Loimer
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -1570,7 +1570,7 @@ void scale_pattern(int indx)
 	    free(ndata);
     /* allocate new space for zoomed bytes */
     pattern_images[indx].cdata = ndata = (char *) malloc(nbytes * nheight);
-    bzero(ndata, nbytes * nheight);	/* clear memory */
+    memset(ndata, 0, (size_t)(nbytes * nheight));
 
     /* create a new bitmap at the specified size (requires interpolation) */
     if (nwidth >= width) {		/* new is larger, loop over its matrix */

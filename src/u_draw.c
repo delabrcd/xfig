@@ -1,8 +1,10 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
+ *
  * Parts Copyright (c) 1992 by James Tough
  * Parts Copyright (c) 1998 by Georg Stemmer
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
@@ -874,11 +876,11 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
     int		    i,j,k;
     int		    bwidth;
     unsigned char  *data, *tdata, *mask;
-    int		    nbytes;
     int		    bbytes;
-    int		    ibit, jbit, jnb;
+    int		    ibit, jbit;
     int		    wbit;
     int		    fg, bg;
+    size_t	    jnb, nbytes;
     XImage	   *image;
     Boolean	    type1,hswap,vswap;
 
@@ -920,7 +922,7 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
 		free(data);
 		return;
 	    }
-	    bzero((char*)data, nbytes * height);	/* clear memory */
+	    memset(data, 0, nbytes * height);
 	    if ((!flipped && (rotation == 0 || rotation == 180)) ||
 		(flipped && !(rotation == 0 || rotation == 180))) {
 		for (j = 0; j < height; j++) {
@@ -957,11 +959,11 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
 		    if (check_cancel())
 			break;
 		    jnb = j*nbytes;
-		    bzero((char*)tdata, nbytes);
+		    memset(tdata, 0, nbytes);
 		    for (i = 0; i < width; i++)
 			if (*(data + jnb + (width - i - 1) / 8) & (1 << ((width - i - 1) & 7)))
 			    *(tdata + i / 8) += (1 << (i & 7));
-		    bcopy(tdata, data + j * nbytes, nbytes);
+		    memcpy(data + j * nbytes, tdata, nbytes);
 		}
 
 	    /* vertical swap */
@@ -969,9 +971,9 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
 		(flipped && !(rotation == 180 || rotation == 270))) {
 		for (j = 0; j < (height + 1) / 2; j++) {
 		    jnb = j*nbytes;
-		    bcopy(data + jnb, tdata, nbytes);
-		    bcopy(data + (height - j - 1) * nbytes, data + jnb, nbytes);
-		    bcopy(tdata, data + (height - j - 1) * nbytes, nbytes);
+		    memcpy(tdata, data + jnb, nbytes);
+		    memmove(data + jnb, data + (height - j - 1) * nbytes, nbytes);
+		    memcpy(data + (height - j - 1) * nbytes, tdata, nbytes);
 		}
 	    }
 
@@ -1034,7 +1036,7 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
 			*(mask+i)=  (unsigned char) 255;
 	    }
 	    bwidth = (width+7)/8;
-	    bzero((char*)data, bpl * height);
+	    memset(data, 0, bpl * height);
 
 	    type1 = False;
 	    hswap = False;

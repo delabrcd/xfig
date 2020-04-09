@@ -362,7 +362,7 @@ handle_keyboard_input(w, event)
     if (True == keyboard_input_available) {
       if (NULL == keyboard_history) {
 	keyboard_history = malloc(KEYBOARD_HISTORY_MAX * sizeof(keyboard_history_s));
-	bzero(keyboard_history, KEYBOARD_HISTORY_MAX * sizeof(keyboard_history_s));
+	memset(keyboard_history, 0, KEYBOARD_HISTORY_MAX*sizeof(keyboard_history_s));
 	keyboard_history_nr_etys = 1;
 	keyboard_history_read_pointer = keyboard_history_write_pointer = &keyboard_history[0];
 	keyboard_history[0].next  = keyboard_history_read_pointer;

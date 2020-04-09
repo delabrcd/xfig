@@ -45,10 +45,9 @@ xfig_SOURCES = d_arcbox.c d_arcbox.h d_arc.c d_arc.h d_box.c d_box.h \
 	e_movept.h e_placelib.c e_placelib.h e_rotate.c e_rotate.h e_scale.c \
 	e_scale.h e_tangent.c e_tangent.h e_update.c e_update.h fig.h figx.h \
 	f_load.c f_load.h f_neuclrtab.c f_neuclrtab.h f_picobj.c f_picobj.h \
-	f_read.c f_readeps.c f_readeps.h f_readgif.c f_readgif.h f_read.h \
-	f_readold.c f_readold.h f_readpcx.c f_readpcx.h f_readpng.c \
-	f_readpng.h f_readppm.c f_readppm.h f_readtif.c f_readtif.h \
-	f_readxbm.c f_readxbm.h f_readxpm.h f_save.c f_save.h f_util.c \
+	f_read.c f_readeps.c f_readgif.c f_read.h \
+	f_readold.c f_readpcx.c f_readpcx.h f_readpng.c \
+	f_readppm.c f_readtif.c f_readxbm.c f_save.c f_save.h f_util.c \
 	f_util.h f_wrpcx.c f_wrpng.c f_wrpng.h main.c main.h mode.c mode.h \
 	object.c object.h paintop.h pcx.h resources.c resources.h \
 	u_bound.c u_bound.h u_create.c u_create.h u_drag.c u_drag.h u_draw.c \
@@ -69,11 +68,11 @@ xfig_SOURCES = d_arcbox.c d_arcbox.h d_arc.c d_arc.h d_box.c d_box.h \
 	w_mousefun.c w_mousefun.h w_msgpanel.c w_msgpanel.h w_print.c \
 	w_print.h w_rottext.c w_rottext.h w_rulers.c w_rulers.h w_setup.c \
 	w_setup.h w_snap.c w_snap.h w_srchrepl.c w_srchrepl.h w_style.c \
-	w_style.h w_util.c w_util.h w_zoom.c w_zoom.h Xfuncs.h Xosdefs.h \
-	splash.xbm version.xbm
+	w_style.h w_util.c w_util.h w_zoom.c w_zoom.h splash.xbm version.xbm \
+	xfig_math.h
 
 if USE_XPM
-xfig_SOURCES += f_readxpm.c f_readxpm.h
+xfig_SOURCES += f_readxpm.c
 endif
 
 if USE_SPLASH
@@ -81,7 +80,7 @@ xfig_SOURCES += splash.xpm
 endif
 
 if USE_JPEG
-xfig_SOURCES += f_readjpg.c f_readjpg.h
+xfig_SOURCES += f_readjpg.c
 endif
 
 if I18N

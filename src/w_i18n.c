@@ -1,6 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1995-2002 by T. Sato
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -10,6 +13,11 @@
  * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
+ *
+ */
+
+/*
+ * Copyright (c) 1995-2002 by T. Sato
  */
 
 #include "fig.h"
@@ -682,7 +690,7 @@ void i18n_draw_text(dpy, drawable, gc, x, y, str, len, drawbg)
       from_image = XGetImage(dpy, text_bitmap, 0, 0,
 		     text_bitmap_width, text_bitmap_height, 1, ZPixmap);
 
-      bzero(to_image_data, to_image_size);  /* clear to_image */
+      memset(to_image_data, 0, (size_t)to_image_size);
       if (1.0 < scale) {  /* scale up */
 	ScaleUp(from_image, to_image, base_width, base_height, scale);
       } else {  /* scale down */

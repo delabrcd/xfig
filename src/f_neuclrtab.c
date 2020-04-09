@@ -1,13 +1,17 @@
 /*
  * FIG : Facility for Interactive Generation of figures
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
+ *
  * Copyright (c) 1994 Anthony Dekker
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
  *
  * [NEUQUANT Neural-Net quantization algorithm by Anthony Dekker, 1994.
  * See "Kohonen neural networks for optimal colour quantization"
  * in "Network: Computation in Neural Systems" Vol. 5 (1994) pp 351-367.
  * for a discussion of the algorithm.]
- *
+
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
@@ -19,19 +23,22 @@
  *
  */
 
-
 /*
  * Neural-Net quantization algorithm based on work of Anthony Dekker
  */
 
-#include "fig.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <limits.h>		/* INT_MAX */
+#include <sys/types.h>
+#include <X11/Intrinsic.h>	/* Boolean */
+
 #include "resources.h"
 #include "object.h"
 #include "f_neuclrtab.h"
 #include "f_util.h"
 
-/* #include <stdio.h>	inluded in fig.h */
-#include <limits.h>	/* INT_MAX */
 
 static	void initnet(void);
 static	void learn(void);
@@ -109,7 +116,7 @@ neu_init2(long int npixels)		/* initialize our sample array */
 	npleft = npixels;
 	nsleft = nsamples;
 	while (nsleft) {
-		rval = frandom();	/* random distance to next sample */
+		rval = drand48();	/* random distance to next sample */
 		sv = 0;
 		cumprob = 0.;
 		while ((cumprob += (1.-cumprob)*nsleft/(npleft-sv)) < rval)
@@ -214,7 +221,7 @@ void neu_dith_colrs(register BYTE *bs, register COLR (*cs), int n)	/* convert sc
 			return;
 		}
 		N = n;
-		bzero((char *)cerr, 3*N*sizeof(short));
+		memset(cerr, 0, 3*N*sizeof(short));
 	}
 	err[0] = err[1] = err[2] = 0;
 	for (x = 0; x < n; x++) {

@@ -1,8 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1992 by Brian Boyter
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -15,14 +16,24 @@
  *
  */
 
-#include "fig.h"
+/*
+ * Import eps files.
+ * Copyright (c) 1992 by Brian Boyter
+ */
+
+#include <ctype.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <X11/Intrinsic.h>
+
 #include "resources.h"
 #include "object.h"
 #include "f_picobj.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
-
 #include "w_util.h"
+#include "xfig_math.h"
 
 int         _read_pcx(FILE *pcxfile, F_pic *pic);
 Boolean	    bitmap_from_gs();
@@ -88,7 +99,7 @@ scan_mediabox(FILE *file, int *llx, int *lly, int *urx, int *ury)
 int
 read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
 {
-    int         nbitmap;
+    size_t      nbitmap;
     Boolean     bitmapz;
     Boolean     foundbbx;
     int         nested;
@@ -202,17 +213,17 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
 	    return FileInvalid;
 	} else {
 	    nbitmap = (pic->pic_cache->bit_size.x + 7) / 8 * pic->pic_cache->bit_size.y;
-	    pic->pic_cache->bitmap = (unsigned char *) malloc(nbitmap);
+	    pic->pic_cache->bitmap = malloc(nbitmap);
 	    if (pic->pic_cache->bitmap == NULL) {
-		file_msg("Could not allocate %d bytes of memory for %s bitmap\n",
-			 pdf_flag ? "PDF" : "EPS", nbitmap);
+		file_msg("Could not allocate %zd bytes of memory for %s bitmap\n",
+			 nbitmap, pdf_flag ? "PDF" : "EPS");
 		close_picfile(file,filetype);
 		return PicSuccess;
 	    }
 	    /* for whatever reason, ghostscript wasn't available or didn't work but there
 	     * is a preview bitmap - use that */
 	    mp = pic->pic_cache->bitmap;
-	    bzero((char *) mp, nbitmap);	/* init bitmap to zero */
+	    memset(mp, 0, nbitmap);
 	    last = pic->pic_cache->bitmap + nbitmap;
 	    flag = True;
 	    while (fgets(buf, 300, file) != NULL && mp < last) {
@@ -282,7 +293,8 @@ bitmap_from_gs(file, filetype, pic, urx, llx, ury, lly, pdf_flag)
     char        buf[300];
     FILE       *tmpfp, *pixfile, *gsfile;
     char       *driver;
-    int         status, wid, ht, nbitmap, fd;
+    int         status, wid, ht, fd;
+    size_t      nbitmap;
     char        tmpfile[PATH_MAX],
 		pixnam[PATH_MAX],
 		errnam[PATH_MAX],
@@ -414,10 +426,10 @@ bitmap_from_gs(file, filetype, pic, urx, llx, ury, lly, pdf_flag)
     if (tool_cells <= 2 || appres.monochrome) {
 	pic->pic_cache->numcols = 0;
 	nbitmap = (pic->pic_cache->bit_size.x + 7) / 8 * pic->pic_cache->bit_size.y;
-	pic->pic_cache->bitmap = (unsigned char *) malloc(nbitmap);
+	pic->pic_cache->bitmap = malloc(nbitmap);
 	if (pic->pic_cache->bitmap == NULL) {
-	    file_msg("Could not allocate %d bytes of memory for %s bitmap\n",
-		     pdf_flag ? "PDF" : "EPS", nbitmap);
+	    file_msg("Could not allocate %zd bytes of memory for %s bitmap\n",
+		     nbitmap, pdf_flag ? "PDF" : "EPS");
 	    return False;
 	}
 	fgets(buf, 300, pixfile);
