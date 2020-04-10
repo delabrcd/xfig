@@ -3,14 +3,14 @@
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
  * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 2016-2018 by Thomas Loimer
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
  * nonexclusive right and license to deal in this software and documentation
  * files (the "Software"), including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense and/or sell copies
- * of the Software, and to permit persons who receive copies from any such
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
  * party to do so, with the only requirement being that the above copyright
  * and this permission notice remain intact.
  *
@@ -18,6 +18,9 @@
 
 #ifndef OBJECT_H
 #define OBJECT_H
+
+#include <X11/Intrinsic.h>
+#include "resources.h"
 
 /* values to signify color used for transparent GIF color */
 
@@ -82,17 +85,19 @@ enum pictypes {
 	T_PIC_NONE,
 	T_PIC_EPS,
 	T_PIC_GIF,
-#ifdef USE_JPEG
+#ifdef HAVE_JPEG
 	T_PIC_JPEG,
-#endif				/* USE_JPEG */
+#endif
 	T_PIC_PCX,
+#ifdef HAVE_PNG
 	T_PIC_PNG,
+#endif
 	T_PIC_PPM,
 	T_PIC_TIF,
 	T_PIC_XBM,
 #ifdef USE_XPM
 	T_PIC_XPM,
-#endif				/* USE_XPM */
+#endif
 	LAST_PIC
 };
 

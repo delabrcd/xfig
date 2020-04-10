@@ -1,7 +1,11 @@
 /*
  * FIG : Facility for Interactive Generation of figures
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
+ *
  * Copyright (c) 1995 Jim Daley (jdaley@cix.compulink.co.uk)
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -24,11 +28,15 @@
 #include "object.h"
 #include "w_capture.h"
 #include "w_msgpanel.h"
-
 #include "f_util.h"
-#include "f_wrpng.h"
 #include "w_drawprim.h"
 #include "w_util.h"
+
+#ifdef HAVE_PNG
+extern Boolean write_png(FILE *file, unsigned char *data, int type,
+			unsigned char *Red, unsigned char *Green,
+			unsigned char *Blue, int numcols, int width,int height);
+#endif
 
 static Boolean	getImageData(unsigned int *w, unsigned int *h, int *type,
 	int *nc, unsigned char *Red, unsigned char *Green, unsigned char *Blue);		/* returns zero on failure */
@@ -51,6 +59,11 @@ static GC       rectGC;
 Boolean
 captureImage(Widget window, char *filename)	/* returns True on success */
 {
+#ifndef HAVE_PNG
+	(void) window, filename;
+	file_msg("Screen capture not possible without png support.");
+	return False;
+#else
     unsigned char	Red[MAX_COLORMAP_SIZE],
 			Green[MAX_COLORMAP_SIZE],
 			Blue[MAX_COLORMAP_SIZE];
@@ -106,6 +119,7 @@ captureImage(Widget window, char *filename)	/* returns True on success */
    }
 
    return ( captured );
+#endif	/* HAVE_PNG */
 }
 
 /*

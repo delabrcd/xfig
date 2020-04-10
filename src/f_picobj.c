@@ -1,8 +1,11 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1992 by Brian Boyter
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
+ *
+ * Copyright (c) 1992 by Brian Boyter
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -39,17 +42,19 @@ extern	int	read_gif(FILE *file, int filetype, F_pic *pic);
 extern	int	read_pcx(FILE *file, int filetype, F_pic *pic);
 extern	int	read_epsf(FILE *file, int filetype, F_pic *pic);
 extern	int	read_pdf(FILE *file, int filetype, F_pic *pic);
-extern	int	read_png(FILE *file, int filetype, F_pic *pic);
 extern	int	read_ppm(FILE *file, int filetype, F_pic *pic);
 extern	int	read_tif(char *filename, int filetype, F_pic *pic);
 extern	int	read_xbm(FILE *file, int filetype, F_pic *pic);
 
-#ifdef USE_JPEG
+#ifdef HAVE_JPEG
 extern	int	read_jpg(FILE *file, int filetype, F_pic *pic);
-#endif /* USE_JPEG */
+#endif
+#ifdef HAVE_PNG
+extern	int	read_png(FILE *file, int filetype, F_pic *pic);
+#endif
 #ifdef USE_XPM
 extern	int	read_xpm(FILE *file, int filetype, F_pic *pic);
-#endif /* USE_XPM */
+#endif
 
 #define MAX_SIZE 255
 
@@ -69,14 +74,17 @@ static	 struct hdr {
 			{"TIFF", "II*\000",	    4, read_tif,	False},
 			{"TIFF", "MM\000*",	    4, read_tif,	False},
 			{"XBM", "#define",	    7, read_xbm,	True},
-#ifdef USE_JPEG
-			{"JPEG", "\377\330\377\340", 4, read_jpg,	True},
-			{"JPEG", "\377\330\377\341", 4, read_jpg,       True},
-#endif /* USE_JPEG */
-			{"PNG", "\211\120\116\107\015\012\032\012", 8, read_png, True},
+#ifdef HAVE_JPEG
+			{"JPEG", "\377\330\377\340", 4,read_jpg,	True},
+			{"JPEG", "\377\330\377\341", 4,read_jpg,	True},
+#endif
+#ifdef HAVE_PNG
+			{"PNG", "\211\120\116\107\015\012\032\012",
+						     8, read_png,	True},
+#endif
 #ifdef USE_XPM
 			{"XPM", "/* XPM */",	    9, read_xpm,	False},
-#endif /* USE_XPM */
+#endif
 			};
 
 #define NUMHEADERS sizeof(headers)/sizeof(headers[0])

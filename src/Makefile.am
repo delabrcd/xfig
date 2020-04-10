@@ -46,9 +46,9 @@ xfig_SOURCES = d_arcbox.c d_arcbox.h d_arc.c d_arc.h d_box.c d_box.h \
 	e_scale.h e_tangent.c e_tangent.h e_update.c e_update.h fig.h figx.h \
 	f_load.c f_load.h f_neuclrtab.c f_neuclrtab.h f_picobj.c f_picobj.h \
 	f_read.c f_readeps.c f_readgif.c f_read.h \
-	f_readold.c f_readpcx.c f_readpcx.h f_readpng.c \
+	f_readold.c f_readpcx.c f_readpcx.h \
 	f_readppm.c f_readtif.c f_readxbm.c f_save.c f_save.h f_util.c \
-	f_util.h f_wrpcx.c f_wrpng.c f_wrpng.h main.c main.h mode.c mode.h \
+	f_util.h f_wrpcx.c main.c main.h mode.c mode.h \
 	object.c object.h paintop.h pcx.h resources.c resources.h \
 	u_bound.c u_bound.h u_create.c u_create.h u_drag.c u_drag.h u_draw.c \
 	u_draw.h u_elastic.c u_elastic.h u_error.c u_error.h u_fonts.c \
@@ -71,16 +71,20 @@ xfig_SOURCES = d_arcbox.c d_arcbox.h d_arc.c d_arc.h d_box.c d_box.h \
 	w_style.h w_util.c w_util.h w_zoom.c w_zoom.h splash.xbm version.xbm \
 	xfig_math.h
 
+if HAVE_JPEG
+xfig_SOURCES += f_readjpg.c
+endif
+
+if HAVE_PNG
+xfig_SOURCES += f_readpng.c f_wrpng.c
+endif
+
 if USE_XPM
 xfig_SOURCES += f_readxpm.c
 endif
 
 if USE_SPLASH
 xfig_SOURCES += splash.xpm
-endif
-
-if USE_JPEG
-xfig_SOURCES += f_readjpg.c
 endif
 
 if I18N

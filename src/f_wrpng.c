@@ -1,6 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 2001-2007 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -13,14 +16,11 @@
  *
  */
 
-#include "fig.h"
-#include "resources.h"
-#include "object.h"
-#include "f_neuclrtab.h"
-#include "w_msgpanel.h"
-#include "w_setup.h"
+#include <stdlib.h>
+#include <X11/Intrinsic.h>	/* Boolean */
 #include <png.h>
-#include <zlib.h>
+
+#include "resources.h"		/* IMAGE_PALETTE */
 
 /*
  * Write PNG file from rgb data
@@ -81,7 +81,7 @@ write_png(FILE *file, unsigned char *data, int type, unsigned char *Red, unsigne
     }
 
     /* set best compression */
-    png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
+    png_set_compression_level(png_ptr, 6);
 
     /* write the header info */
     png_set_IHDR(png_ptr, info_ptr, width, height, bit_depth, color_type,

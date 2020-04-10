@@ -98,15 +98,11 @@ dnl AC_CHECK_PROG(XDG_MENU, [xdg-desktop-menu], [xdg-desktop-menu])
 # Checks for libraries.
 AC_SEARCH_LIBS([pow], [m])dnl
 dnl AC_SEARCH_LIBS([deflate], [z])  # libz is not needed.
-AC_SEARCH_LIBS([png_read_info], [png])
-AS_IF([test "x$ac_cv_search_pow" = xno \
-	|| test "x$ac_cv_search_png_read_info" = xno],
-    [AC_MSG_ERROR([Necessary libraries not found.])])
 
 
 # Checks for header files.
 AC_HEADER_DIRENT
-AC_CHECK_HEADERS_ONCE([sys/time.h png.h])
+AC_CHECK_HEADERS_ONCE([sys/time.h])
 
 # Get X header and library location.
 # Simply add libraries to LIBS, x_includes to XCPPFLAGS
@@ -129,6 +125,26 @@ XLIBS="-lXt -lX11"
 #AC_SEARCH_LIBS([XBell], [X11])
 #AC_SEARCH_LIBS([XtName], [Xt])
 AC_CHECK_HEADER([X11/X.h])
+
+
+# Check for jpeg and png libraries and header files
+dnl First search for the header, only then search for the libs. The other way
+dnl round, the found library would be prepended to LIBS, unnecessarily.
+AC_CHECK_HEADER([jpeglib.h],
+    [AC_SEARCH_LIBS([jpeg_read_header], [jpeg],
+	[AC_DEFINE([HAVE_JPEG], 1,
+	    [Define to 1 if you have the jpeg library and header files.])])],
+    [], [AC_INCLUDES_DEFAULT])
+AM_CONDITIONAL([HAVE_JPEG], [test $ac_cv_header_jpeglib_h = yes && \
+	test "x$ac_cv_search_jpeg_read_header" != xno])dnl
+
+AC_CHECK_HEADER([png.h],
+    [AC_SEARCH_LIBS([png_read_info], [png],
+	[AC_DEFINE([HAVE_PNG], 1,
+	    [Define to 1 if you have the png library and header files.])])],
+    [], [AC_INCLUDES_DEFAULT])
+AM_CONDITIONAL([HAVE_PNG], [test $ac_cv_header_png_h = yes && \
+	test "x$ac_cv_search_png_read_info" != xno])dnl
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -182,16 +198,6 @@ AS_IF([test "x$enableval" = xyes],
     AC_DEFINE([I18N_USE_PREEDIT], 1,
 	[Define to use preediting with i18n.])])
 AM_CONDITIONAL([I18N], [test "x$enableval" = xyes])dnl
-
-AC_ARG_ENABLE(jpeg, [AS_HELP_STRING([--disable-jpeg],
-	[disable support to import jpeg files (default: enable)])],
-    [],[enableval=yes])
-AS_IF([test "x$enableval" = xyes],
-    [AC_SEARCH_LIBS([jpeg_read_header], [jpeg],
-	[AC_DEFINE([USE_JPEG], 1,
-	    [Define to enable support for importing jpeg files.])])])
-AM_CONDITIONAL([USE_JPEG], [test "x$enableval" = xyes && \
-	test "x$ac_cv_search_jpeg_read_header" != xno])dnl
 
 AC_ARG_WITH(gs, [AS_HELP_STRING([--without-gs],
 	[do not use ghostscript to render embedded eps or pdf images)])],

@@ -1,10 +1,12 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
+ *
  * Change function implemented by Frank Schmuck (schmuck@svax.cs.cornell.edu)
  * X version by Jon Tombs <jon@uk.ac.oxford.robots>
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
- * Parts Copyright (c) 1991 by Paul King
  * Parts Copyright (c) 1995 by C. Blanc and C. Schlick
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
@@ -257,13 +259,17 @@ Boolean	dim_cursor = False;			/* to reset cursor back to line mode */
 
 static char	*pic_names[] = {
 			"--", "EPS/PS", "GIF",
-#ifdef USE_JPEG
+#ifdef HAVE_JPEG
 			"JPEG",
-#endif /* USE_JPEG */
-			"PCX", "PNG", "PPM", "TIFF", "XBM",
+#endif
+			"PCX",
+#ifdef HAVE_PNG
+			"PNG",
+#endif
+			"PPM", "TIFF", "XBM",
 #ifdef USE_XPM
 			"XPM",
-#endif /* USE_XPM */
+#endif
 		};
 
 static int	ellipse_flag;
@@ -1741,16 +1747,18 @@ void make_window_line(F_line *l)
 
 	/* although the EPS may have colors, the actual number is not known */
 	if (new_l->pic != 0 && new_l->pic->pic_cache && (
+#ifdef HAVE_PNG
 	     new_l->pic->pic_cache->subtype == T_PIC_PNG ||
+#endif
 #ifdef USE_XPM
 	     new_l->pic->pic_cache->subtype == T_PIC_XPM ||
-#endif /* USE_XPM */
+#endif
 	     new_l->pic->pic_cache->subtype == T_PIC_PCX ||
 	     new_l->pic->pic_cache->subtype == T_PIC_PPM ||
 	     new_l->pic->pic_cache->subtype == T_PIC_TIF ||
-#ifdef USE_JPEG
+#ifdef HAVE_JPEG
 	     new_l->pic->pic_cache->subtype == T_PIC_JPEG ||
-#endif /* USE_JPEG */
+#endif
 	     new_l->pic->pic_cache->subtype == T_PIC_GIF))
 		sprintf(buf,"%3d",new_l->pic->pic_cache->numcols);
 	else
@@ -2087,13 +2095,15 @@ get_new_line_values(void)
 	     new_l->pic->pic_cache->subtype == T_PIC_PCX ||
 	     new_l->pic->pic_cache->subtype == T_PIC_PPM ||
 	     new_l->pic->pic_cache->subtype == T_PIC_TIF ||
+#ifdef HAVE_PNG
 	     new_l->pic->pic_cache->subtype == T_PIC_PNG ||
+#endif
 #ifdef USE_XPM
 	     new_l->pic->pic_cache->subtype == T_PIC_XPM ||
-#endif /* USE_XPM */
-#ifdef USE_JPEG
+#endif
+#ifdef HAVE_JPEG
 	     new_l->pic->pic_cache->subtype == T_PIC_JPEG ||
-#endif /* USE_JPEG */
+#endif
 	     new_l->pic->pic_cache->subtype == T_PIC_GIF)
 		sprintf(buf,"%3d",new_l->pic->pic_cache->numcols);
 	else
@@ -2121,7 +2131,8 @@ get_new_line_values(void)
 		new_l->pic->pic_cache->bit_size.x, new_l->pic->pic_cache->bit_size.y);
 	/* recolor and redraw all pictures if this is a NEW picture */
 	if (reread_file || !existing && file_changed && !appres.monochrome &&
-	   (new_l->pic->pic_cache->numcols > 0) && (new_l->pic->pic_cache->bitmap != 0)) {
+				(new_l->pic->pic_cache->numcols > 0) &&
+				(new_l->pic->pic_cache->bitmap != 0)) {
 		reread_file = False;
 		/* remap all picture colors */
 		remap_imagecolors();
@@ -2130,21 +2141,10 @@ get_new_line_values(void)
 		/* and redraw all of the pictures already on the canvas */
 		redraw_images(&objects);
 		put_msg("Read %s image of %dx%d pixels and %d colors OK",
-			  new_l->pic->pic_cache->subtype == T_PIC_EPS? "EPS":
-			    new_l->pic->pic_cache->subtype == T_PIC_GIF? "GIF":
-#ifdef USE_JPEG
-			      new_l->pic->pic_cache->subtype == T_PIC_JPEG? "JPEG":
-#endif /* USE_JPEG */
-				new_l->pic->pic_cache->subtype == T_PIC_PCX? "PCX":
-				  new_l->pic->pic_cache->subtype == T_PIC_PPM? "PPM":
-				    new_l->pic->pic_cache->subtype == T_PIC_TIF? "TIFF":
-				      new_l->pic->pic_cache->subtype == T_PIC_PNG? "PNG":
-#ifdef USE_XPM
-				        new_l->pic->pic_cache->subtype == T_PIC_XPM? "XPM":
-#endif /* USE_XPM */
-					"Unknown",
-			new_l->pic->pic_cache->bit_size.x, new_l->pic->pic_cache->bit_size.y,
-			new_l->pic->pic_cache->numcols);
+				pic_names[new_l->pic->pic_cache->subtype],
+				new_l->pic->pic_cache->bit_size.x,
+				new_l->pic->pic_cache->bit_size.y,
+				new_l->pic->pic_cache->numcols);
 		app_flush();
 	}
 
