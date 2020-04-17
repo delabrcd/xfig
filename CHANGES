@@ -4,6 +4,9 @@ Version 3.2
 =============================================================================
 Patchlevel Xx (Xxx 20xx)
 
+BUGS FIXED:
+	o Get correct bounding box (/MediaBox) of embedded pdf files.
+
 -----------------------------------
 Patchlevel 7b (Oct 2019)
 

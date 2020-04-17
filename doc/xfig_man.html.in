@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.3 -->
-<!-- CreationDate: Mon Apr  2 00:31:58 2018 -->
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Sun Apr 19 18:40:21 2020 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -118,10 +118,11 @@ for xfig and quit.</p>
 region of the canvas. This is the default</p>
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>&minus;au</b>[<b>torefresh</b>]
-Make xfig look at the timestamp on the .fig file and
-automatically load it and display it every time it
-changes.</p>
+<p style="margin-left:11%; margin-top: 1em"><b>&minus;au</b>[<b>torefresh</b>]</p>
+
+<p style="margin-left:22%;">Make xfig look at the timestamp
+on the .fig file and automatically load it and display it
+every time it changes.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>&minus;bal</b>[<b>loon_delay</b>]
@@ -157,7 +158,7 @@ canvas height for small screens.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>&minus;cbg</b>
-color</p>
+<i>color</i></p>
 
 <p style="margin-left:22%;">Use <i>color</i> as the
 background color for the canvas. If you want to set the
@@ -178,7 +179,7 @@ choice. See also <b>-metric.</b></p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>&minus;cfg</b>
-color</p>
+<i>color</i></p>
 
 <p style="margin-left:22%;">Use <i>color</i> as the default
 color for objects. If you want to set the foreground of
@@ -696,12 +697,25 @@ buttons per row on the left mode panel.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>&minus;gh</b>[<b>ostscript</b>]
-<i>postscript-interpreter</i></p>
+<i>ghostscript executable</i></p>
 
-<p style="margin-left:22%;">Select the PostScript (tm)
-interpreter of your choice. The default is ghostscript (gs).
-This is needed when importing Encapsulated PostScript
-files.</p>
+<p style="margin-left:22%;">Specify the name or path to the
+ghostscript executable. This is needed when importing PDF or
+Encapsulated PostScript files. The default is @GSEXE@. To
+disable calling ghostscript, set both the <i>ghostscript
+executable</i> and the <i>library</i> to empty strings,
+<b>&minus;ghostscript &quot;&quot; &minus;gslib
+&quot;&quot;</b></p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>&minus;gs</b>[<b>lib</b>]
+<i>ghostscript shared library</i></p>
+
+<p style="margin-left:22%;">Specify the name or path
+&quot;&quot; to the ghostscript library. Defaults to
+@GSLIB@. If available, xfig will link into this library.
+This is a bit faster than opening a shell and calling the
+ghostscript executable.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>&minus;grid_c</b>[<b>olor</b>]

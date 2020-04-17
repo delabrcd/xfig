@@ -4,7 +4,7 @@
 # Copyright (c) 1985-1988 by Supoj Sutanthavibul
 # Parts Copyright (c) 1989-2015 by Brian V. Smith
 # Parts Copyright (c) 1991 by Paul King
-# Parts Copyright (c) 2016-2019 by Thomas Loimer
+# Parts Copyright (c) 2016-2020 by Thomas Loimer
 #
 # Any party obtaining a copy of these files is granted, free of charge, a
 # full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -17,14 +17,14 @@
 #
 #
 # tests/Makefile.am
-# Author: Thomas Loimer, 2016-2019
+# Author: Thomas Loimer, 2016
 
 # testsuite and package.m4 must be distributed, hence they are
 # written into the source tree
 TESTSUITE = $(srcdir)/testsuite
 # list here all files contributing to testsuite.at
 TESTSUITE_AT = testsuite.at
-EXTRA_DIST = interactive testsuite package.m4 $(TESTSUITE_AT) atlocal.in
+EXTRA_DIST = interactive testsuite package.m4 $(TESTSUITE_AT) atlocal.in data
 
 DISTCLEANFILES = atconfig
 MAINTAINERCLEANFILES = Makefile.in $(TESTSUITE) $(srcdir)/package.m4
@@ -45,7 +45,7 @@ if ALLOW_MULTIPLE_DEFINITION
 AM_LDFLAGS = -Wl,--allow-multiple-definition $(XLDFLAGS)
 LDADD = $(top_builddir)/src/libxfig.a $(XLIBS)
 
-check_PROGRAMS = test1 test2
+check_PROGRAMS = test1 test2 test3
 
 $(top_builddir)/src/libxfig.a:
 	cd $(top_builddir)/src && $(MAKE) $(AM_MAKEFLAGS) libxfig.a

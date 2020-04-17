@@ -127,7 +127,7 @@ XLIBS="-lXt -lX11"
 AC_CHECK_HEADER([X11/X.h])
 
 
-# Check for jpeg and png libraries and header files
+# Check for libraries and header files
 dnl First search for the header, only then search for the libs. The other way
 dnl round, the found library would be prepended to LIBS, unnecessarily.
 AC_CHECK_HEADER([jpeglib.h],
@@ -145,6 +145,15 @@ AC_CHECK_HEADER([png.h],
     [], [AC_INCLUDES_DEFAULT])
 AM_CONDITIONAL([HAVE_PNG], [test $ac_cv_header_png_h = yes && \
 	test "x$ac_cv_search_png_read_info" != xno])dnl
+
+AC_CHECK_HEADER([dlfcn.h],
+    [AC_SEARCH_LIBS([dlopen], [dl],
+	[AC_DEFINE([HAVE_DLOPEN], 1,
+	    [Define to 1 if you have the dynamic link library and header \
+			files.])])],
+    [], [AC_INCLUDES_DEFAULT])
+AM_CONDITIONAL([HAVE_DLOPEN], [test $ac_cv_header_dlfcn_h = yes && \
+	test "x$ac_cv_search_dlopen" != xno])dnl
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -206,6 +215,29 @@ AS_IF([test "x$withval" = xyes],
     [AC_DEFINE([GSBIT], 1,
 	[Define to use ghostscript for rendering of embedded \
 		eps or pdf-images.])])dnl
+
+AC_ARG_WITH(gsexe, [AS_HELP_STRING([--with-gsexe=<name>],
+       [specify filename or path of the ghostscript executable (default: gs)])],
+    [AS_IF([test "x$withval" = xno], [withval=""])],
+    [withval=yes])dnl
+AS_IF([test "x$withval" = xyes], [withval="gs"])
+AC_DEFINE_UNQUOTED([GSEXE], ["$withval"],
+    [Define to the filename or path of the ghostscript executable.])dnl
+AC_SUBST([GSEXE], ["$withva"l])
+
+# Set the location of the ghostscript library for dynamically linking
+AC_ARG_WITH(gslib, [AS_HELP_STRING([--with-gslib=<name>],
+	[specify filename or path of the ghostscript library \
+		(default: libgs.so.9)])],
+    [AS_IF([test "x$withval" = xno], [withval=""])],
+    [withval=yes])dnl
+AS_IF([test "x$withval" = xyes], [withval="libgs.so.9"])
+AC_DEFINE_UNQUOTED([GSLIB], ["$withval"],
+    [Define to the filename or path of the ghostscript library.])dnl
+AC_SUBST([GSLIB], ["$withval"])
+
+AC_ARG_WITH(gs, [AS_HELP_STRING([--with-gsexe="" --with-gslib=""],
+			[do not use ghostscript])])
 
 dnl With # as comment, configure fails on the lines below!
 dnl Currently only w_rottext.c includes CACHE_[XIMAGES|BITMAPS], logic there
@@ -295,7 +327,7 @@ AS_IF([test "$enableval" -ge 1 && test "$enableval" -le 4],
 	 when entering multi-key characters.])])dnl
 
 printcapfile="/etc/printcap"
-AC_ARG_WITH(printcap, [AS_HELP_STRING([--with-printcap=<pathname>],
+AC_ARG_WITH(printcap, [AS_HELP_STRING([--with-printcap=<path>],
 	[specify path to printcap file (default: /etc/printcap)])],
     [AS_IF([test "x$withval" = xno || test "x$withval" = xyes],
 	[AC_MSG_NOTICE([using $printcapfile as printcap file])],
@@ -312,7 +344,7 @@ dnl	AS_IF([test -n "$PKG_CONFIG"],dnl
 dnl	[appdefaultdir="$($PKG_CONFIG --variable=appdefaultdir xt)"],dnl
 
 default_appdefaultdir=
-AC_ARG_WITH(appdefaultdir, [AS_HELP_STRING([--with-appdefaultdir=<pathname>],
+AC_ARG_WITH(appdefaultdir, [AS_HELP_STRING([--with-appdefaultdir=<path>],
 	[specifiy directory for X resources file (default: \
 		${datarootdir}/X11/app-defaults)])],
     [],[withval='${datarootdir}/X11/app-defaults'])dnl
@@ -328,13 +360,13 @@ AS_IF([test "x$prefix" = xNONE],
      APPDEFAULTDIR=`eval echo "$APPDEFAULTDIR"`;])dnl
 AC_SUBST([APPDEFAULTDIR])dnl
 
-AC_ARG_WITH(icondir, [AS_HELP_STRING([--with-icondir=<pathname>],
+AC_ARG_WITH(icondir, [AS_HELP_STRING([--with-icondir=<path>],
 	[specify icon directory, to put xfig.png \
 		(default: $datarootdir/pixmaps)])],
     [], [withval='${datarootdir}/pixmaps'])dnl
 AC_SUBST(icondir, ["$withval"])dnl
 
-AC_ARG_WITH(applicationsdir, AS_HELP_STRING([--with-applicationsdir=<pathname>],
+AC_ARG_WITH(applicationsdir, AS_HELP_STRING([--with-applicationsdir=<path>],
 	[specify directory for xfig.desktop file \
 		(default: $datarootdir/applications)]),
     [], [withval='${datarootdir}/applications'])dnl
@@ -348,7 +380,7 @@ AS_IF([test "x$withval" != xyes],dnl
     [AC_DEFINE([NO_COMPKEYDB], 1,dnl
 	[Define to not use the Compose Key Database file shipped with xfig.])])
 
-AC_ARG_WITH(compkeydbdir, [AS_HELP_STRING([--with-compkeydbdir=<pathname>],
+AC_ARG_WITH(compkeydbdir, [AS_HELP_STRING([--with-compkeydbdir=<path>],
 	[specify directory for the compose key database file, CompKeyDB \
 		(default: $datadir/xfig)])],
     [], [withval='${datadir}/xfig'])dnl

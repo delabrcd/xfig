@@ -248,8 +248,10 @@ void read_picobj(F_pic *pic, char *file, int color, Boolean force, Boolean *exis
 
 /*
    Open the file 'name' and return its type (pipe or real file) in 'type'.
-   Return the full name in 'retname'.  This will have a .gz or .Z if the file is
-   zipped/compressed.
+   Return the full name in 'retname'. This will have a .gz or .Z if the file is
+   gzipped/compressed, and the caller accepts a pipe.
+   If a pipe is not ok, uncompress the file, name and retname will contain the
+   uncompressed filename.
    The return value is the FILE stream.
 */
 

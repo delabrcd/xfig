@@ -1,8 +1,9 @@
 \" FIG : Facility for Interactive Generation of figures
 .\" @configure_input@
-.\" Parts Copyright (c) 1994-2013 by Brian V. Smith
+.\" Copyright (c) 1985-1988 by Supoj Sutanthavibul
+.\" Parts Copyright (c) 1989-2015 by Brian V. Smith
 .\" Parts Copyright (c) 1991 by Paul King
-.\" Copyright (c) 1985 by Supoj Sutanthavibul
+.\" Parts Copyright (c) 2016-2020 by Thomas Loimer
 .\" The X Consortium, and any party obtaining a copy of these files from
 .\" the X Consortium, directly or indirectly, is granted, free of charge, a
 .\" full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -188,6 +189,7 @@ This is the default
 .\"-------
 .At
 .BR \-au [ torefresh ]
+.Ap
 Make xfig look at the timestamp on the .fig file and
 automatically load it and display it every time it changes.
 .\"-------
@@ -226,7 +228,8 @@ This is useful in conjunction with the
 parameter to reduce the canvas height for small screens.
 .\"-------
 .At
-.BR \-cbg " color"
+.B \-cbg
+.I color
 .Ap
 Use
 .I color
@@ -237,7 +240,7 @@ If you want to set the background of everything in xfig
 option.
 .\"-------
 .At
-.BR \-center
+.B \-center
 .Ap
 Set the print option to print the figure centered on the page.
 This is the default.
@@ -249,7 +252,8 @@ Make centimeters the unit of choice.  See also
 .B -metric.
 .\"-------
 .At
-.BR \-cfg " color"
+.B \-cfg
+.I color
 .Ap
 Use
 .I color
@@ -456,10 +460,27 @@ tell xfig to put 3 or 4 buttons per row on the left mode panel.
 .\"-------
 .At
 .BR \-gh [ ostscript ]
-.I postscript-interpreter
+.I ghostscript executable
 .Ap
-Select the PostScript (tm) interpreter of your choice.  The default is ghostscript (gs).
-This is needed when importing Encapsulated PostScript files.
+Specify the name or path to the ghostscript executable.
+This is needed when importing PDF or Encapsulated PostScript files.
+The default is @GSEXE@.
+To disable calling ghostscript, set both the
+.I ghostscript executable
+and the
+.I library
+to empty strings,
+.B "\-ghostscript """" \-gslib """""
+.
+.\"-------
+.At
+.BR \-gs [ lib ]
+.I ghostscript shared library
+.Ap
+Specify the name or path "" to the ghostscript library. Defaults to @GSLIB@.
+If available, xfig will link into this library.
+This is a bit faster than opening a shell and calling the ghostscript
+executable.
 .\"-------
 .At
 .BR \-grid_c [ olor ]

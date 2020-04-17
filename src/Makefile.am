@@ -4,7 +4,7 @@
 # Copyright (c) 1985-1988 by Supoj Sutanthavibul
 # Parts Copyright (c) 1989-2015 by Brian V. Smith
 # Parts Copyright (c) 1991 by Paul King
-# Parts Copyright (c) 2016-2019 by Thomas Loimer
+# Parts Copyright (c) 2016-2020 by Thomas Loimer
 #
 # Any party obtaining a copy of these files is granted, free of charge, a
 # full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -17,7 +17,7 @@
 #
 #
 # Makefile.am
-# Author: Thomas Loimer, 2016-2019
+# Author: Thomas Loimer, 2016
 
 # The default ARFLAGS are "cru". However, ar now outputs the warning
 # "`u' modifier ignored since `D' is the default...".
@@ -52,7 +52,8 @@ xfig_SOURCES = d_arcbox.c d_arcbox.h d_arc.c d_arc.h d_box.c d_box.h \
 	object.c object.h paintop.h pcx.h resources.c resources.h \
 	u_bound.c u_bound.h u_create.c u_create.h u_drag.c u_drag.h u_draw.c \
 	u_draw.h u_elastic.c u_elastic.h u_error.c u_error.h u_fonts.c \
-	u_fonts.h u_free.c u_free.h u_geom.c u_geom.h u_list.c u_list.h \
+	u_fonts.h u_free.c u_free.h u_geom.c u_geom.h u_ghostscript.c u_list.c \
+	u_list.h \
 	u_markers.c u_markers.h u_pan.c u_pan.h u_print.c u_print.h \
 	u_quartic.c u_quartic.h u_redraw.c u_redraw.h u_scale.c u_scale.h \
 	u_search.c u_search.h u_smartsearch.c u_smartsearch.h u_translate.c \

@@ -132,9 +132,9 @@ static XtActionsRec	main_actions[] =
 };
 
 static XtResource application_resources[] = {
+	/* {name, class, type, size, offset, default type, &(default value)} */
     {"geometry",  "XtCGeometry",    XtRString,  sizeof(char *),
       XtOffset(appresPtr, geometry), XtRString, (caddr_t) NULL},
-
     {"version",  "version",    XtRString,  sizeof(char *),
       XtOffset(appresPtr,version), XtRString, (caddr_t) NULL},
     {"zoom", "Zoom", XtRFloat, sizeof(float),
@@ -298,7 +298,9 @@ static XtResource application_resources[] = {
     {"freehand_resolution", "Hints",   XtRInt, sizeof(int),
       XtOffset(appresPtr, freehand_resolution), XtRImmediate, (caddr_t) 25},
     {"ghostscript", "Ghostscript",   XtRString, sizeof(char *),
-      XtOffset(appresPtr, ghostscript), XtRString, (caddr_t) "gs"},
+      XtOffset(appresPtr, ghostscript), XtRString, (caddr_t) GSEXE},
+    {"gslib", "Ghostscript",   XtRString, sizeof(char *),
+      XtOffset(appresPtr, gslib), XtRString, (caddr_t) GSLIB},
     {"correct_font_size", "Size",   XtRBoolean, sizeof(Boolean),
       XtOffset(appresPtr, correct_font_size), XtRBoolean, (caddr_t) & true},
     {"encoding", "Encoding", XtRInt, sizeof(int),
@@ -378,9 +380,10 @@ XrmOptionDescRec options[] =
     {"-noflipvisualhints", ".flipvisualhints", XrmoptionNoArg, "False"},
     {"-flushleft", ".flushleft", XrmoptionNoArg, "True"},
     {"-freehand_resolution", ".freehand_resolution", XrmoptionSepArg, 0},
-    {"-ghostscript", ".ghostscript", XrmoptionSepArg, "gs"},
+    {"-ghostscript", ".ghostscript", XrmoptionSepArg, GSEXE},
     {"-grid_color", ".grid_color", XrmoptionSepArg, "lightblue"},
     {"-grid_unit", ".grid_unit", XrmoptionSepArg, "default"},
+    {"-gslib", ".gslib", XrmoptionSepArg, GSLIB},
     {"-hiddentext", ".hiddentext", XrmoptionNoArg, "True"},
     {"-dontshowdepthmanager", ".showdepthmanager", XrmoptionNoArg, "False"},
     {"-iconGeometry", ".iconGeometry", XrmoptionSepArg, (caddr_t) NULL},
@@ -498,6 +501,7 @@ char *help_list[] = {
 	"[-ghostscript <gsname>] ",
 	"[-grid_color <grid_color>] ",
 	"[-grid_unit <grid_unit>] ",
+	"[-gslib <gslibrary name>] ",
 	"[-hiddentext] ",
 	"[-dontshowdepthmanager] ",
 	"[-iconGeometry <geom>] ",

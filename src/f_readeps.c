@@ -21,11 +21,21 @@
  * Copyright (c) 1992 by Brian Boyter
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <ctype.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <X11/Intrinsic.h>
+
+#ifdef GSBIT
+#include <errno.h>
+#include <unistd.h>
+#endif
 
 #include "resources.h"
 #include "object.h"
@@ -35,6 +45,7 @@
 #include "w_util.h"
 #include "xfig_math.h"
 
+extern int	gs_mediabox();
 int         _read_pcx(FILE *pcxfile, F_pic *pic);
 Boolean	    bitmap_from_gs();
 
@@ -104,6 +115,7 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
     Boolean     foundbbx;
     int         nested;
     char       *cp;
+    char	retname[PATH_MAX];
     unsigned char *mp;
     unsigned int hexnib;
     int         flag;
@@ -118,7 +130,15 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
     foundbbx = False;
     nested = 0;
     if (pdf_flag) {
-	    if (scan_mediabox(file, &llx, &lly, &urx, &ury)) {
+	    /* First, do a simply text-scan for "/MediaBox", failing that,
+	       rewind, close and open, and call ghostscript.	*/
+	    if (scan_mediabox(file, &llx, &lly, &urx, &ury) != 0 &&
+			    /* that semi-abstracted open_picfile() layer
+			       is a _disaster_! */
+			    (close_picfile(file, filetype),
+			    file = open_picfile(pic->pic_cache->file, &filetype,
+				    false, retname)) &&
+			    gs_mediabox(retname, &llx, &lly, &urx, &ury)) {
 		    llx = lly = 0;
 		    urx = paper_sizes[0].width * 72 / PIX_PER_INCH;
 		    ury = paper_sizes[0].height * 72 / PIX_PER_INCH;
@@ -126,8 +146,6 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
 			     appres.INCHES ? "Letter" : "A4");
 		    app_flush();
 	    }
-	    /* TODO: if text scanning does not work, call gs / pdfinfo
-	       to return the MediaBox */
     } else {
     while (fgets(buf, 300, file) != NULL) {
 	if (!nested && !strncmp(buf, "%%BoundingBox:", 14)) {
@@ -198,10 +216,11 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
     }
 #ifdef GSBIT
     /* if monochrome and a preview bitmap exists, don't use gs */
-    if ((!appres.monochrome || !bitmapz) && !bad_bbox) {
+    if ((!appres.monochrome || !bitmapz) && !bad_bbox &&
+		    (*appres.ghostscript || *appres.gslib)) {
 	useGS = bitmap_from_gs(file, filetype, pic, urx, llx, ury, lly, pdf_flag);
     }
-#endif /* GSBIT */
+#endif
     if (!useGS) {
 	if (!bitmapz) {
 	    file_msg("EPS object read OK, but no preview bitmap found/generated");
