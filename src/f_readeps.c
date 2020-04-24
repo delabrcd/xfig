@@ -32,17 +32,11 @@
 #include <stdlib.h>
 #include <X11/Intrinsic.h>
 
-#ifdef GSBIT
-#include <errno.h>
-#include <unistd.h>
-#endif
-
 #include "resources.h"
 #include "object.h"
 #include "f_picobj.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
-#include "w_util.h"
 #include "xfig_math.h"
 
 /* u_ghostscript.c */
@@ -215,7 +209,6 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
 	    }
 	}
     }
-#ifdef GSBIT
     /* if monochrome and a preview bitmap exists, don't use gs */
     if ((!appres.monochrome || !bitmapz) && !bad_bbox &&
 		    (*appres.ghostscript || *appres.gslib)) {
@@ -223,7 +216,6 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
 	file = open_picfile(pic->pic_cache->file, &filetype, true, retname);
 	useGS = !gs_bitmap(pic->pic_cache->file, pic, llx, lly, urx, ury);
     }
-#endif
     if (!useGS) {
 	if (!bitmapz) {
 	    file_msg("EPS object read OK, but no preview bitmap found/generated");

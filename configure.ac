@@ -208,14 +208,6 @@ AS_IF([test "x$enableval" = xyes],
 	[Define to use preediting with i18n.])])
 AM_CONDITIONAL([I18N], [test "x$enableval" = xyes])dnl
 
-AC_ARG_WITH(gs, [AS_HELP_STRING([--without-gs],
-	[do not use ghostscript to render embedded eps or pdf images)])],
-    [],[withval=yes])dnl
-AS_IF([test "x$withval" = xyes],
-    [AC_DEFINE([GSBIT], 1,
-	[Define to use ghostscript for rendering of embedded \
-		eps or pdf-images.])])dnl
-
 AC_ARG_WITH(gsexe, [AS_HELP_STRING([--with-gsexe=<name>],
        [specify filename or path of the ghostscript executable (default: gs)])],
     [AS_IF([test "x$withval" = xno], [withval=""])],
