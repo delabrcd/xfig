@@ -53,10 +53,10 @@ struct pcxhed
 
 
 /* prototypes */
-void dispbyte(unsigned char *ptr,int *xp,int *yp,int c,int w,int h,
-              int real_bpp,int byteline,int *planep,int *pmaskp);
+static void	dispbyte(unsigned char *ptr,int *xp,int *yp,int c,int w,int h,
+			int real_bpp,int byteline,int *planep,int *pmaskp);
 
-int	_read_pcx(FILE *pcxfile, F_pic *pic);
+static int	_read_pcx(FILE *pcxfile, F_pic *pic);
 
 
 int

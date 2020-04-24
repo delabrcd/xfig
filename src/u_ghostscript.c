@@ -36,14 +36,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "object.h"
 #include "resources.h"
+#include "f_util.h"		/* map_to_pattern(), map_to_mono() */
 #include "w_msgpanel.h"		/* file_msg() */
 
 /*
- * EXPORTS
- * int gs_mediabox(char *file, int *llx, int* lly, int *urx, int *ury);
+ * Exported functions: gs_mediabox(), gs_bitmap().
+ * These are currently only used in f_readeps.c, hence
+ * an extra header file is not provided.
  */
 
+#define BITMAP_PPI	160	/* the resolution for rendering bitmaps */
 #define GS_ERROR	(-2)
 
 #ifdef HAVE_DLOPEN
@@ -52,33 +56,25 @@
  * Dynamically link into the ghostscript library.
  * If invoked via the library, ghostscript calls three callback functions when
  * wishing to read from stdin or write to stdout or stderr, respectively.
- * A pointer to data can be passed to ghostscript, which is available to the
- * callback functions.
- * Here, set up calls to ghostscript to
- *   1. read a pdf file, scanning the output for the /MediaBox specification,
- *   2. read an eps or pdf file, converting to a pixmap and storing that in a
- *      buffer which was malloc()'ed by the caller,
- *  2a. as above, but reading from a stream. A temporary file may be created.
+ * However, if a device is given, ghostscript writes directly to stdout. This
+ * was found rather late, therefore some functions below are more modular than
+ * necessary.
+ * Here, set up calls to ghostscript and callback functions to read a pdf
+ * file, scanning the output for the /MediaBox specification.
  *
  * If linking into the library by dlopen() fails, call the ghostscript
- * executable via popen("gs..", "r"). In that case, in case of (2a) above,
- * a temporary file is created.
+ * executable via popen("gs..", "r").
  */
 
 /*
  * callback data struct
- * Define only one. Otherwise different stderr_callbacks, with the same
- * functionality but expecting different callback data, would have to be
- * defined.
+ * A pointer to this struct can be passed to ghostscript, which
+ * is then passed to the callback functions.
  */
 struct _callback_data {
 	int	*bb;		/* for stdout_mediabox() callback function */
-	FILE	*in;		/* not used for gs_bitmap_from_stream */
-	char	*out;		/* not a buf, must come from a malloc() call */
-	size_t	outsize;
 	char	*errbuf;	/* fixed buffer */
 	int	errsize;
-	/* char	*tmpfile;	fail, if realloc() == NULL	*/
 };
 
 /* callback functions  */
@@ -89,22 +85,6 @@ stdin_void(void *caller_handle, char *buf, int len)
 	(void)buf;
 
 	return len;
-}
-
-static int
-stdin_stream(void *caller_handle, char *buf, int len)
-{
-	struct _callback_data	*data = (struct _callback_data *)caller_handle;
-	int	n;
-
-	n = fread(buf, (size_t)1, (size_t)len, data->in);
-	if (n < len) {
-		if (ferror(data->in))
-			return -1;
-		else if (feof(data->in))
-			return 0;
-	}
-	return n;
 }
 
 static int
@@ -147,43 +127,16 @@ stdout_mediabox(void *caller_handle, const char *str, int len)
 		data->bb[3] = (int)ceil(fbb[3]);
 	} else {
 		/* Either the pdf is corrupt, which yields a matching failure,
-		 * a read error occured or EOF is reached.
-		 * Since ghostscript still returns with zero from a corrupt pdf,
-		 * use the bounding box to report the, most likely, corrupt pdf.
+		 * or a read error occured or EOF is reached.
+		 * Ghostscript returns with zero from a corrupt pdf, and writes
+		 * error information to stdout.
+		 * Use the bounding box to report a, most likely, corrupt pdf.
 		 */
 		data->bb[0] = data->bb[1] = data->bb[2] = 0;
 		data->bb[3] = GS_ERROR;
 	}
 	setlocale(LC_NUMERIC, "");	/* restore original locale */
 
-	return len;
-}
-
-static int
-stdout_buf(void *caller_handle, const char *str, int len)
-{
-	struct _callback_data	*data = (struct _callback_data *)caller_handle;
-	char			*new;
-	static size_t		add = 16 * BUFSIZ;
-	static size_t		outpos = 0;
-
-	/* something happened, e.g., no more memory available */
-	if (data->out == NULL)
-		return len;
-
-	if (outpos + len > data->outsize) {
-		if (add < outpos + len - data->outsize)
-			add = outpos + len - data->outsize;
-		if ((new = realloc(data->out, data->outsize + add)) == NULL) {
-			free(data->out);
-			data->out = NULL;
-			return len;
-		}
-		add *= 2;
-	}
-
-	memcpy(data->out + outpos, str, (size_t)len);
-	outpos += len;
 	return len;
 }
 
@@ -239,14 +192,11 @@ gslib(struct _callback_data *data, int (*gs_stdin)(void *, char*, int),
 	int	(*gs_exit)(void *);
 
 
-	if (*appres.gslib == '\0')
-		return call_gsexe;
-
 	if (appres.DEBUG)
 		fprintf(stderr, "Trying to dynamically open ghostscript "
 				"library %s...\n", appres.gslib);
 
-	/* open the ghostscript library, e.g., libgs.so under linux,
+	/* open the ghostscript library, e.g., libgs.so.9 under linux,
 	   /opt/local/lib/libgs.dylib under darwin */
 	gslib = dlopen(appres.gslib, RTLD_LAZY | RTLD_LOCAL);
 	if (gslib == NULL)
@@ -330,31 +280,33 @@ gslib(struct _callback_data *data, int (*gs_stdin)(void *, char*, int),
 
 /*
  * Call ghostscript.
- * Return a file stream for reading, as if opened by
+ * Return an open file stream for reading,
  *   *out = popen({exenew, exeold}, "r");
- * Decide, whether exenew or exeold is used.
+ * The user must call pclose(out) after calling gsexe(&out,...).
+ * Use exenew for gs > 9.49, exeold otherwise.
  * Return 0 for success, -1 on failure to call ghostscript.
  */
 static int
 gsexe(FILE **out, bool *isnew, char *exenew, char *exeold)
 {
-	static bool	has_version = false;
+#define	old_version	1
+#define	new_version	2
+#define no_version	0
+	static int	version = no_version;
 	const int	failure = -1;
-	int		n;
-	int		stat;
-	double		rev;
-	size_t		len;
-	char		cmd_buf[128];
-	char		*cmd = cmd_buf;
-	const char	version_arg[] = " --version";
 	char		*exe;
 	FILE		*fp;
 
 
-	if (*appres.ghostscript == '\0')
-		return failure;
+	if (version == no_version) {
+		int		n;
+		int		stat;
+		size_t		len;
+		double		rev;
+		char		cmd_buf[128];
+		char		*cmd = cmd_buf;
+		const char	version_arg[] = " --version";
 
-	if (!has_version) {
 		if (appres.DEBUG)
 			fprintf(stderr,
 				"Trying to call ghostscript executable %s...\n",
@@ -384,37 +336,41 @@ gsexe(FILE **out, bool *isnew, char *exenew, char *exeold)
 		if (n != 1 || stat != 0)
 			return failure;
 
-		has_version = true;
-
 		if (rev > 9.49) {
 			exe = exenew;
+			version = new_version;
 			*isnew = true;
 		} else {
 			exe = exeold;
+			version = old_version;
 			*isnew = false;
 		}
 
 		if (appres.DEBUG)
 			fprintf(stderr, "...version %.2f\nCommand line: %s",
 					rev, exe);
-	} else { /* !has_version */
-		if (isnew)
+	} else { /* version == no_version */
+		if (version == new_version) {
 			exe = exenew;
-		else
+			*isnew = true;
+		} else {
 			exe = exeold;
+			*isnew = false;
+		}
+#undef new_version
+#undef old_version
+#undef no_version
 
 		if (appres.DEBUG)
 			fprintf(stderr,
 				"Calling ghostscript.\nCommand line: %s", exe);
 	}
 
-
 	if ((*out = popen(exe, "r")) == NULL)
 		return failure;
 
 	return 0;
 }
-
 
 /*
  * Call ghostscript to extract the /MediaBox from the pdf given in file.
@@ -424,7 +380,7 @@ gsexe(FILE **out, bool *isnew, char *exenew, char *exeold)
  * gs < 9.50:
  *    gs -q -dNODISPLAY -dNOSAFER -c \
  *	"(in.pdf) (r) file runpdfbegin 1 pdfgetpage /MediaBox pget pop == quit"
- * Command line, modified a bit, from
+ * The command line was found, and modified a bit, at
  *https://stackoverflow.com/questions/2943281/using-ghostscript-to-get-page-size
  * Beginning with gs 9.50, "-dSAFER" is the default, and permission to access
  * files must be explicitly given with the --permit-file-{read,write,..}
@@ -447,6 +403,8 @@ gsexe_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 	double	bb[4] = { 0.0, 0.0, -1.0, -1.0 };
 	FILE	*gs_output;
 
+	if (*appres.ghostscript == '\0')
+		return -1;
 
 	exenew = "%s -q -dNODISPLAY \"--permit-file-read=%s\" -c \"(%s) (r) "
 		"file runpdfbegin 1 pdfgetpage /MediaBox pget pop == quit\"";
@@ -518,24 +476,24 @@ gsexe_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 static int
 gslib_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 {
-	int	stat;
-	int	bb[4] = { 0, 0, -1, -1};
-	char	*fmt;
-	size_t	len;
-	char	errbuf[256] = "";
-	char	*argnew[6];
-	char	*argold[6];
-	char	permit_buf[sizeof errbuf];
-	char	cmd_buf[sizeof errbuf];
-
+	int		stat;
+	int		bb[4] = { 0, 0, -1, -1};
+	char		*fmt;
+	size_t		len;
+	const int	argc = 6;
+	char		errbuf[256] = "";
+	char		*argnew[argc];
+	char		*argold[argc];
+	char		permit_buf[sizeof errbuf];
+	char		cmd_buf[sizeof errbuf];
 	struct _callback_data	data = {
 		bb,		/* bb */
-		NULL,		/* in */
-		NULL,		/* out */
-		(size_t)0,	/* outsize */
 		errbuf,		/* errbuf */
 		sizeof errbuf	/* errsize */
 	};
+
+	if (*appres.gslib == '\0')
+		return -1;
 
 	/* write the argument list and command line */
 	argnew[0] = appres.gslib;
@@ -553,6 +511,7 @@ gslib_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 	argold[4] = argnew[4];
 	/* argold[5] = argnew[5], assigned below */
 
+	/* write and, if necessary, malloc() argument strings */
 	fmt = argnew[3];
 	len = strlen(file) + strlen(fmt) - 1;
 	if (len > sizeof permit_buf) {
@@ -622,4 +581,151 @@ gs_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 		file_msg("If available, error messages are displayed above.");
 	}
 	return stat;
+}
+
+/*
+ * Invoke the command
+ *   gs -q -sDEVICE=bitrgb -dRedValues=256 -r72 -g<widht>x<height> -o- <file>,
+ * to obtain a 24bit bitmap of RGB-Values. (It is sufficient to give one out of
+ * -dGreenValues=256, -dBlueValues=256 or -dRedValues=256.)
+ * The neural net that reduces the bitmap to a colormapped image of 256 colors
+ * expects BGR triples. However, the map_to_palette() function in f_util.c does
+ * not make any difference between the colors. Hence, leave the triples in the
+ * bitmap in place, but swap the red and blue values in the colormap.
+ * In contrast, before applying map_to_mono(), the color values must be changed
+ * in the bitmap.
+ *
+ * Instead of -llx -lly translate, the commands passed to ghostscript used to
+ * be:
+    -llx -lly translate
+    % mark dictionary (otherwise fails for tiger.ps (e.g.):
+    % many ps files don't 'end' their dictionaries)
+    countdictstack
+    mark
+    /oldshowpage {showpage} bind def
+    /showpage {} def
+    /initgraphics {} def	<<< this nasty command should never be used!
+    /initmmatrix {} def		<<< this one too
+    (psfile) run
+    oldshowpage
+    % clean up stacks and dicts
+    cleartomark
+    countdictstack exch sub { end } repeat
+    quit
+ */
+int
+gs_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
+{
+#define string_of(ppi)	#ppi
+#define	rgb_fmt(ppi)	"%s -q -dSAFER -sDEVICE=bitrgb -dBlueValues=256 -r" \
+			string_of(ppi) " -g%dx%d -o- -c '%d %d translate' -f %s"
+#define	bw_fmt(ppi)	"%s -q -dSAFER -sDEVICE=bit -r" string_of(ppi)	    \
+			" -g%dx%d -o- -c '%d %d translate' -f %s"
+	int		stat;
+	int		c, w, h;
+	const int	failure = -1;
+	size_t		len;
+	size_t		len_bitmap;
+	char		*fmt;
+	char		*exe;
+	unsigned char	*pos;
+	char		exe_buf[256];
+	FILE		*gs_output;
+
+	if (*appres.ghostscript == '\0')
+		return failure;
+
+	/* This is the size, to which a pixmap is rendered for display
+	   on the canvas, at a magnification of 2.
+	   The +1 is sometimes correct, sometimes not */
+	w = (urx - llx) * BITMAP_PPI / 72 + 1;
+	h = (ury - lly) * BITMAP_PPI / 72 + 1;
+	if (tool_cells <= 2 || appres.monochrome) {
+		fmt = bw_fmt(BITMAP_PPI);
+		len_bitmap = (w + 7) / 8 * h;
+		pic->pic_cache->numcols = 0;
+	} else {
+		fmt = rgb_fmt(BITMAP_PPI);
+		len_bitmap = w * h * 3;
+	}
+	pic->pic_cache->bit_size.x = w;
+	pic->pic_cache->bit_size.y = h;
+
+	/* malloc() buffer for the command line, if necessary; The "+ 80" allows
+	   four integers of 20 digits each. */
+	len = strlen(fmt) + strlen(file) + strlen(appres.ghostscript) + 80;
+	if (len > sizeof exe_buf) {
+		if ((exe = malloc(len)) == NULL)
+			return failure;
+	} else {
+		exe = exe_buf;
+	}
+
+	/* still check for overflow, because of the integers */
+	if (len <= sizeof exe_buf)
+		len = sizeof exe_buf;
+	c = snprintf(exe, len, fmt, appres.ghostscript, w, h, -llx, -lly, file);
+	if (c >= len) {
+		if (exe == exe_buf) {
+			if ((exe = malloc((size_t)(c + 1))) == NULL)
+				return failure;
+		} else {
+			if ((exe = realloc(exe, (size_t)(c + 1))) == NULL) {
+				free(exe);
+				return failure;
+			}
+		}
+		sprintf(exe, fmt, appres.ghostscript, w, h, -llx, -lly, file);
+	}
+#undef rgb_fmt
+#undef bw_fmt
+
+	if (appres.DEBUG)
+		fprintf(stderr, "Calling ghostscript. Command:\n  %s\n", exe);
+
+	gs_output = popen(exe, "r");
+	if (gs_output == NULL)
+		file_msg("Cannot open pipe with command:\n%s", exe);
+	if (exe != exe_buf)
+		free(exe);
+	if (gs_output == NULL)
+		return failure;
+
+	if ((pic->pic_cache->bitmap = malloc(len_bitmap)) == NULL) {
+		file_msg("Out of memory.\nCannot create pixmap for %s.", file);
+		return failure;
+	}
+
+	/* write result to pic->pic_cache->bitmap */
+	pos = pic->pic_cache->bitmap;
+	while ((c = fgetc(gs_output)) != EOF &&
+			pos - pic->pic_cache->bitmap < len_bitmap)
+		*(pos++) = (unsigned char)c;
+	stat = pclose(gs_output);
+	/* if reading stops just at the last byte in the file,
+	   neither must c == EOF, nor does feof() necessarily return true. */
+	if (pos - pic->pic_cache->bitmap != len_bitmap) {
+		free(pic->pic_cache->bitmap);
+		file_msg("Error reading pixmap to render %s.", file);
+		return failure;
+	}
+	if (stat)
+		return GS_ERROR;
+
+	if (tool_cells > 2 && !appres.monochrome) {
+		if (!map_to_palette(pic)) {
+			file_msg("Cannot create colormapped image for %s.",
+					file);
+			return failure;
+		}
+		/* swap red and blue in the colormap */
+		for (c = 0; c < pic->pic_cache->numcols; ++c) {
+			unsigned short	tmp = pic->pic_cache->cmap[c].red;
+			pic->pic_cache->cmap[c].red =
+				pic->pic_cache->cmap[c].blue;
+			pic->pic_cache->cmap[c].blue = tmp;
+		}
+	}
+
+	return 0;
 }
