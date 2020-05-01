@@ -5,6 +5,7 @@ Version 3.2
 Patchlevel Xx (Xxx 20xx)
 
 BUGS FIXED:
+	o Read compressed files, but do not silently uncompress them.
 	o Get correct bounding box (/MediaBox) of embedded pdf files.
 
 -----------------------------------

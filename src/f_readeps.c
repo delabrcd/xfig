@@ -30,6 +30,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <X11/Intrinsic.h>
 
 #include "resources.h"
@@ -37,6 +38,7 @@
 #include "f_picobj.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
+#include "w_util.h"
 #include "xfig_math.h"
 
 /* u_ghostscript.c */
@@ -127,19 +129,21 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
     if (pdf_flag) {
 	    /* First, do a simply text-scan for "/MediaBox", failing that,
 	       rewind, close and open, and call ghostscript.	*/
-	    if (scan_mediabox(file, &llx, &lly, &urx, &ury) != 0 &&
-			    /* that semi-abstracted open_picfile() layer
-			       is a _disaster_! */
-			    (close_picfile(file, filetype),
-			    file = open_picfile(pic->pic_cache->file, &filetype,
-				    false, retname)) &&
-			    gs_mediabox(retname, &llx, &lly, &urx, &ury)) {
-		    llx = lly = 0;
+	    if (scan_mediabox(file, &llx, &lly, &urx, &ury)) {
+		    close_file(file, filetype);
+		    if (!uncompressed_file(retname, pic->pic_cache->file) &&
+			    gs_mediabox(*retname ? retname :
+				    pic->pic_cache->file, &llx, &lly, &urx,
+				    &ury)) {
+			    llx = lly = 0;
 		    urx = paper_sizes[0].width * 72 / PIX_PER_INCH;
 		    ury = paper_sizes[0].height * 72 / PIX_PER_INCH;
 		    file_msg("Bad MediaBox in pdf file, assuming %s size",
 			     appres.INCHES ? "Letter" : "A4");
 		    app_flush();
+		    }
+		    if (*retname)
+			    unlink(retname);
 	    }
     } else {
     while (fgets(buf, 300, file) != NULL) {
@@ -149,7 +153,7 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
 
 		if (sscanf(strchr(buf, ':') + 1, "%f %f %f %f", &rllx, &rlly, &rurx, &rury) < 4) {
 		    file_msg("Bad EPS file: %s", file);
-		    close_picfile(file,filetype);
+		    close_file(file,filetype);
 		    return FileInvalid;
 		}
 		foundbbx = True;
@@ -168,7 +172,7 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
     }
     if (!pdf_flag && !foundbbx) {
 	file_msg("No bounding box found in EPS file");
-	close_picfile(file,filetype);
+	close_file(file,filetype);
 	return FileInvalid;
     }
     if ((urx - llx) == 0) {
@@ -192,7 +196,7 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
     if ((bad_bbox = (urx <= llx || ury <= lly))) {
 	file_msg("Bad values in %s",
 		 pdf_flag ? "/MediaBox" : "EPS bounding box");
-	close_picfile(file,filetype);
+	close_file(file,filetype);
 	return FileInvalid;
     }
     bitmapz = False;
@@ -212,18 +216,25 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
     /* if monochrome and a preview bitmap exists, don't use gs */
     if ((!appres.monochrome || !bitmapz) && !bad_bbox &&
 		    (*appres.ghostscript || *appres.gslib)) {
-	close_picfile(file,filetype);
-	file = open_picfile(pic->pic_cache->file, &filetype, true, retname);
-	useGS = !gs_bitmap(pic->pic_cache->file, pic, llx, lly, urx, ury);
+	    //if (!pdf_flag)
+	//	    close_file(file,filetype);
+	    if (!uncompressed_file(retname, pic->pic_cache->file)) {
+		    useGS = !gs_bitmap(*retname ? retname: pic->pic_cache->file,
+				    pic, llx, lly, urx, ury);
+		    if (*retname)
+			    unlink(retname);
+	    }
     }
     if (!useGS) {
 	if (!bitmapz) {
 	    file_msg("EPS object read OK, but no preview bitmap found/generated");
-	    close_picfile(file,filetype);
+	    if (!pdf_flag)
+		    close_file(file,filetype);
 	    return PicSuccess;
 	} else if (pic->pic_cache->bit_size.x <= 0 || pic->pic_cache->bit_size.y <= 0) {
 	    file_msg("Strange bounding-box/bitmap-size error, no bitmap found/generated");
-	    close_picfile(file,filetype);
+	    if (!pdf_flag)
+		    close_file(file,filetype);
 	    return FileInvalid;
 	} else {
 	    nbitmap = (pic->pic_cache->bit_size.x + 7) / 8 * pic->pic_cache->bit_size.y;
@@ -231,7 +242,8 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
 	    if (pic->pic_cache->bitmap == NULL) {
 		file_msg("Could not allocate %zd bytes of memory for %s bitmap\n",
 			 nbitmap, pdf_flag ? "PDF" : "EPS");
-		close_picfile(file,filetype);
+		if (!pdf_flag)
+			close_file(file,filetype);
 		return PicSuccess;
 	    }
 	    /* for whatever reason, ghostscript wasn't available or didn't work but there
@@ -270,7 +282,8 @@ read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
     }
     /* put in type */
     pic->pic_cache->subtype = T_PIC_EPS;
-    close_picfile(file,filetype);
+    if (!pdf_flag)
+	    close_file(file,filetype);
     return PicSuccess;
 }
 

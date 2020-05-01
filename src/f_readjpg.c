@@ -1,8 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * This software is copyright (C) 1991-1996, Thomas G. Lane.
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
- * All Rights Reserved except as specified below.
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -21,8 +22,8 @@
  *
  * The authors make NO WARRANTY or representation, either express or implied,
  * with respect to this software, its quality, accuracy, merchantability, or
- * fitness for a particular purpose.  This software is provided "AS IS", and you,
- * its user, assume the entire risk as to its quality and accuracy.
+ * fitness for a particular purpose.  This software is provided "AS IS", and
+ * you, its user, assume the entire risk as to its quality and accuracy.
  *
  * This software is copyright (C) 1991-1996, Thomas G. Lane.
  * All Rights Reserved except as specified below.
@@ -30,8 +31,8 @@
  * Permission is hereby granted to use, copy, modify, and distribute this
  * software (or portions thereof) for any purpose, without fee, subject to these
  * conditions:
- * (1) If any part of the source code for this software is distributed, then this
- * README file must be included, with this copyright and no-warranty notice
+ * (1) If any part of the source code for this software is distributed, then
+ * this README file must be included, with this copyright and no-warranty notice
  * unaltered; and any additions, deletions, or changes to the original files
  * must be clearly indicated in accompanying documentation.
  * (2) If only executable code is distributed, then the accompanying
@@ -45,10 +46,10 @@
  * not just to the unmodified library.  If you use our work, you ought to
  * acknowledge us.
  *
- * Permission is NOT granted for the use of any IJG author's name or company name
- * in advertising or publicity relating to this software or products derived from
- * it.  This software may be referred to only as "the Independent JPEG Group's
- * software".
+ * Permission is NOT granted for the use of any IJG author's name or company
+ * name in advertising or publicity relating to this software or products
+ * derived from it.  This software may be referred to only as "the Independent
+ * JPEG Group's software".
  *
  * We specifically permit and encourage the use of this software as the basis of
  * commercial products, provided that all warranty or liability claims are
@@ -56,15 +57,18 @@
  *
  */
 
-#include "fig.h"
+#include <setjmp.h>
+#include <stdio.h>
+#include <stdlib.h>
+/* jpeglib.h does not include some standard headers, but needs them */
+#include <jpeglib.h>
+
 #include "resources.h"
 #include "object.h"
 #include "f_picobj.h"
 #include "f_util.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
-#include <setjmp.h>
-#include <jpeglib.h>
 
 static	Boolean	read_JPEG_file(FILE *file);
 
@@ -84,7 +88,7 @@ read_jpg(FILE *file, int filetype, F_pic *pic)
 				2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
 	pict = pic;
 	if (!read_JPEG_file(file)) {
-	    close_picfile(file,filetype);
+	    close_file(file,filetype);
 	    return FileInvalid;
 	}
 
@@ -99,7 +103,7 @@ read_jpg(FILE *file, int filetype, F_pic *pic)
 	if (tool_cells <= 2 || appres.monochrome)
 	    map_to_mono(pic);
 
-	close_picfile(file,filetype);
+	close_file(file,filetype);
 	return PicSuccess;
 }
 

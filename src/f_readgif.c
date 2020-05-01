@@ -1,7 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Parts Copyright (c) 1990 David Koblas
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -14,17 +16,10 @@
  *
  */
 
-#include "fig.h"
-#include "resources.h"
-#include "object.h"
-#include "f_picobj.h"
-#include "w_msgpanel.h"
-
-#include "f_readpcx.h"
-
-#define BUFLEN 1024
-
-/* Some of the following code is extracted from giftopnm.c, from the netpbm package */
+/*
+ * Some of the following code is extracted from giftopnm.c,
+ * from the netpbm package
+ */
 
 /* +-------------------------------------------------------------------+ */
 /* | Copyright 1990, David Koblas.                                     | */
@@ -35,6 +30,17 @@
 /* |   notice appear in supporting documentation.  This software is    | */
 /* |   provided "as is" without express or implied warranty.           | */
 /* +-------------------------------------------------------------------+ */
+
+
+#include "fig.h"
+#include "resources.h"
+#include "object.h"
+#include "f_picobj.h"
+#include "w_msgpanel.h"
+
+#include "f_readpcx.h"
+
+#define BUFLEN 1024
 
 
 static Boolean	ReadColorMap(FILE *fd, unsigned int number, struct Cmap *cmap);
@@ -166,9 +172,7 @@ read_gif(FILE *file, int filetype, F_pic *pic)
 	/* save transparent indicator */
 	pic->pic_cache->transp = Gif89.transparent;
 
-	/* close it and open it again (it may be a pipe so we can't just rewind) */
-	close_picfile(file, filetype);
-	file = open_picfile(pic->pic_cache->file, &filetype, PIPEOK, pcxname);
+	file = rewind_file(file, pic->pic_cache->file, &filetype);
 
 	/* now call giftopnm and ppmtopcx */
 
@@ -184,7 +188,7 @@ read_gif(FILE *file, int filetype, F_pic *pic)
 	sprintf(buf, "giftopnm -quiet | ppmtopcx -quiet > %s", pcxname);
 	if ((giftopcx = popen(buf,"w" )) == 0) {
 	    file_msg("Cannot open pipe to giftopnm or ppmtopcx\n");
-	    close_picfile(file,filetype);
+	    close_file(file,filetype);
 	    return FileInvalid;
 	}
 	while ((size=fread(buf, 1, BUFLEN, file)) != 0) {
@@ -194,7 +198,7 @@ read_gif(FILE *file, int filetype, F_pic *pic)
 	pclose(giftopcx);
 	if ((giftopcx = fopen(pcxname, "rb")) == NULL) {
 	    file_msg("Can't open temp output file\n");
-	    close_picfile(file,filetype);
+	    close_file(file,filetype);
 	    return FileInvalid;
 	}
 	/* now call read_pcx to read the pcx file */

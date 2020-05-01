@@ -22,21 +22,22 @@
 *  (mcgrant@rascals.stanford.edu) adapted from Marc Goldburg's
 *  (marcg@rascals.stanford.edu) original idea and code. */
 
-#include "fig.h"
-#include "resources.h"
-#include "object.h"
-#include "paintop.h"
-#include "f_picobj.h"
-#include "f_util.h"
-#include "u_create.h"
-#include "u_elastic.h"
-#include "w_canvas.h"
-#include "w_msgpanel.h"
-#include "w_setup.h"
-#include "mode.h"
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>		/* time_t */
 
-#include "w_file.h"
-#include "w_util.h"
+#include "resources.h"		/* TMPDIR */
+#include "object.h"
+#include "f_picobj.h"
+#include "f_util.h"		/* file_timestamp() */
+#include "u_create.h"		/* create_picture_entry() */
+#include "w_file.h"		/* check_cancel() */
+#include "w_msgpanel.h"
+#include "w_util.h"		/* app_flush() */
 
 extern	int	read_gif(FILE *file, int filetype, F_pic *pic);
 extern	int	read_pcx(FILE *file, int filetype, F_pic *pic);
@@ -56,7 +57,10 @@ extern	int	read_png(FILE *file, int filetype, F_pic *pic);
 extern	int	read_xpm(FILE *file, int filetype, F_pic *pic);
 #endif
 
-#define MAX_SIZE 255
+enum	streamtype {
+	regular_file,
+	pipe_stream
+};
 
 static	 struct hdr {
 	    char	*type;
@@ -87,7 +91,6 @@ static	 struct hdr {
 #endif
 			};
 
-#define NUMHEADERS sizeof(headers)/sizeof(headers[0])
 
 /*
  * Check through the pictures repository to see if "file" is already there.
@@ -98,14 +101,13 @@ static	 struct hdr {
  * If "force" is true, read the file unconditionally.
  */
 
-
-
-void read_picobj(F_pic *pic, char *file, int color, Boolean force, Boolean *existing)
+void
+read_picobj(F_pic *pic, char *file, int color, Boolean force, Boolean *existing)
 {
     FILE	   *fd;
     int		    type;
     int		    i,j,c;
-    char	    buf[20],realname[PATH_MAX];
+    char	    buf[20];
     Boolean	    found, reread;
     struct _pics   *pics, *lastpic;
     time_t	    mtime;
@@ -195,14 +197,12 @@ void read_picobj(F_pic *pic, char *file, int color, Boolean force, Boolean *exis
     pic->pixmap = (Pixmap) NULL;
 
     /* open the file and read a few bytes of the header to see what it is */
-    if ((fd=open_picfile(file, &type, PIPEOK, realname)) == NULL) {
+    if ((fd=open_file(file, &type)) == NULL) {
 	file_msg("No such picture file: %s",file);
 	return;
     }
     /* get the modified time and save it */
     pics->time_stamp = file_timestamp(file);
-    /* and save the realname (it may be compressed) */
-    pics->realname = strdup(realname);
 
     /* read some bytes from the file */
     for (i=0; i<15; i++) {
@@ -210,10 +210,9 @@ void read_picobj(F_pic *pic, char *file, int color, Boolean force, Boolean *exis
 	    break;
 	buf[i]=(char) c;
     }
-    close_picfile(fd,type);
 
     /* now find which header it is */
-    for (i=0; i<NUMHEADERS; i++) {
+    for (i=0; i<(int)(sizeof headers/sizeof(headers[0])); ++i) {
 	found = True;
 	for (j=headers[i].nbytes-1; j>=0; j--)
 	    if (buf[j] != headers[i].bytes[j]) {
@@ -225,15 +224,47 @@ void read_picobj(F_pic *pic, char *file, int color, Boolean force, Boolean *exis
     }
     if (found) {
 	if (headers[i].pipeok) {
-	    /* open it again (it may be a pipe so we can't just rewind) */
-	    fd=open_picfile(file, &type, headers[i].pipeok, realname);
-	    if ( (*headers[i].readfunc)(fd,type,pic) == FileInvalid) {
+		rewind_file(fd, file, &type);
+	    if ((*headers[i].readfunc)(fd,type,pic) == FileInvalid) {
 		file_msg("%s: Bad %s format",file, headers[i].type);
 	    }
 	} else {
-	    /* those routines that can't take a pipe (e.g. xpm) get the real filename */
-	    if ( (*headers[i].readfunc)(realname,type,pic) == FileInvalid) {
+		/* routines that cannot take a pipe get the name of the file, if
+		   it is not compressed, or the name of a temporary file. */
+		char	plainname_buf[64];
+		char	*plainname = plainname_buf;
+		char	*name;
+
+		if (strlen(TMPDIR) + UNCOMPRESS_ADD > sizeof plainname_buf) {
+			plainname = malloc(strlen(TMPDIR) + UNCOMPRESS_ADD);
+			if (plainname == NULL) {
+				file_msg("Out of memory, could not read picture"
+						" file %s.", file);
+				return;
+			}
+		}
+		if (!uncompressed_file(plainname, file)) {
+			file_msg("Could not uncompress picture file %s.", file);
+			if (*plainname) {
+				unlink(plainname);
+				if (plainname != plainname_buf)
+					free(plainname);
+			}
+			return;
+		}
+
+		if (*plainname)
+			name = plainname;
+		else
+			name = file;
+
+	    if ((*headers[i].readfunc)(name,type,pic) == FileInvalid) {
 		file_msg("%s: Bad %s format",file, headers[i].type);
+	    }
+	    if (*plainname) {
+		    unlink(plainname);
+		    if (plainname != plainname_buf)
+			    free(plainname);
 	    }
 	}
 	put_msg("Reading Picture object file...Done");
@@ -247,107 +278,255 @@ void read_picobj(F_pic *pic, char *file, int color, Boolean force, Boolean *exis
 }
 
 /*
-   Open the file 'name' and return its type (pipe or real file) in 'type'.
-   Return the full name in 'retname'. This will have a .gz or .Z if the file is
-   gzipped/compressed, and the caller accepts a pipe.
-   If a pipe is not ok, uncompress the file, name and retname will contain the
-   uncompressed filename.
-   The return value is the FILE stream.
-*/
-
-FILE *
-open_picfile(char *name, int *type, Boolean pipeok, char *retname)
+ * Given "name", search and return the name of an appropriate file on disk in
+ * "name_on_disk". This may be "name", or "name" with a compression suffix
+ * appended, e.g., "name.gz". If the file must be uncompressed, return the
+ * compression command in a static string pointed to by "uncompress", otherwise
+ * let "uncompress" point to the empty string. The caller must provide a buffer
+ * name_on_disk[] where: sizeof name_on_disk >= strlen(name) + FILEONDISK_ADD.
+ * Return 0 on success, -1 for failure.
+ */
+static int
+file_on_disk(char *name, char *name_on_disk, const char **uncompress)
 {
-    char	 unc[PATH_MAX+20];	/* temp buffer for gunzip command */
-    FILE	*fstream;		/* handle on file  */
-    struct stat	 status;
-    char	*gzoption;
+	int i;
+	char *suffix;
+	struct stat	status;
+	static const char *filetypes[][2] = {
+		/* sorted by popularity? */
+#define FILEONDISK_ADD	5	/* must be max(strlen(filetypes[0][])) + 1 */
+		{ ".gz",	"gunzip -c" },
+		{ ".Z",		"gunzip -c" },
+		{ ".z",		"gunzip -c" },
+		{ ".zip",	"unzip -p"  },
+		{ ".bz2",	"bunzip2 -c" },
+		{ ".bz",	"bunzip2 -c" },
+		{ ".xz",	"unxz -c" }
+	};
+	const int	filetypes_len =
+				(int)(sizeof filetypes / sizeof(filetypes[1]));
 
-    *type = 0;
-    *retname = '\0';
-    if (pipeok)
-	gzoption = "-c";		/* tell gunzip to output to stdout */
-    else
-	gzoption = "";
+	strcpy(name_on_disk, name);
 
-    /* see if the filename ends with .Z or with .z or .gz */
-    /* if so, generate gunzip command and use pipe (filetype = 1) */
-    if ((strlen(name) > 3 && !strcmp(".gz", name + (strlen(name)-3))) ||
-	       (strlen(name) > 2 && !strcmp(".Z", name + (strlen(name)-3))) ||
-	       (strlen(name) > 2 && !strcmp(".z", name + (strlen(name)-2)))) {
-	sprintf(unc,"gunzip -q %s %s",gzoption,name);
-	*type = 1;
-    /* none of the above, see if the file with .Z or .gz or .z appended exists */
-    } else {
-	strcpy(retname, name);
-	strcat(retname, ".Z");
-	if (!stat(retname, &status)) {
-	    sprintf(unc, "gunzip %s %s",gzoption,retname);
-	    *type = 1;
-	    name = retname;
-	} else {
-	    strcpy(retname, name);
-	    strcat(retname, ".z");
-	    if (!stat(retname, &status)) {
-		sprintf(unc, "gunzip %s %s",gzoption,retname);
-		*type = 1;
-		name = retname;
-	    } else {
-		strcpy(retname, name);
-		strcat(retname, ".gz");
-		if (!stat(retname, &status)) {
-		    sprintf(unc, "gunzip %s %s",gzoption,retname);
-		    *type = 1;
-		    name = retname;
+	if (stat(name, &status)) {
+		/* File not found. Now try, whether a file with one of
+		   the known suffices appended exists. */
+		suffix = name_on_disk + strlen(name_on_disk);
+		for (i = 0; i < filetypes_len; ++i) {
+			strcpy(suffix, filetypes[i][0]);
+			if (!stat(name_on_disk, &status)) {
+				*uncompress = filetypes[i][1];
+				break;
+			}
 		}
-	    }
+		if (i == filetypes_len) {
+			/* no, not found */
+			*name_on_disk = '\0';
+			return -1;
+		}
+	} else {
+		/* File exists. Check, whether the name has one of the known
+		   compression suffices. */
+		char	*end = name + strlen(name);
+		for (i = 0; i < filetypes_len; ++i) {
+			suffix = end - strlen(filetypes[i][0]);
+			if (!strcmp(suffix, filetypes[i][0])) {
+				*uncompress = filetypes[i][1];
+				break;
+			}
+		}
+		if (i == filetypes_len)
+			*uncompress = "";
 	}
-    }
-    /* if a pipe, but the caller needs a file, uncompress the file now */
-    if (*type == 1 && !pipeok) {
-	char *p;
-	system(unc);
-	if (p=strrchr(name,'.')) {
-	    *p = '\0';		/* terminate name before last .gz, .z or .Z */
-	}
-	strcpy(retname, name);
-	/* force to plain file now */
-	*type = 0;
-    }
 
-    /* no appendages, just see if it exists */
-    /* and restore the original name */
-    strcpy(retname, name);
-    if (stat(name, &status) != 0) {
-	fstream = NULL;
-    } else {
-	switch (*type) {
-	  case 0:
-	    fstream = fopen(name, "rb");
-	    break;
-	  case 1:
-	    fstream = popen(unc,"r");
-	    break;
-	}
-    }
-    return fstream;
+	return 0;
 }
 
-void
-close_picfile(FILE *file, int type)
+/*
+ * Open the file "name". Return an open file stream. Also, return an opaque data
+ * object, which later must be passed to close_file(). (Well, opaque, an
+ * integer in the range between 0 and 1.)
+ */
+FILE *
+open_file(char *name, int *filetype)
 {
-    char	 line[MAX_SIZE];
-    int		 stat;
+	char		name_on_disk_buf[256];
+	char		*name_on_disk = name_on_disk_buf;
+	const char	*uncompress;
+	size_t		len;
 
-    if (file == 0)
-	return;
-    if (type == 0) {
-	if ((stat=fclose(file)) != 0)
-	    file_msg("Error closing picture file: %s",strerror(errno));
-    } else {
-	/* for a pipe, must read everything or we'll get a broken pipe message */
-        while(fgets(line,MAX_SIZE,file))
-		;
-	pclose(file);
-    }
+	len = strlen(name) + FILEONDISK_ADD;
+	if (len > sizeof name_on_disk_buf) {
+		if ((name_on_disk = malloc(len)) == NULL) {
+			file_msg("Out of memory.");
+			return NULL;
+		}
+	}
+
+	if (file_on_disk(name, name_on_disk, &uncompress))
+		return NULL;
+
+	if (*uncompress) {
+		/* a compressed file */
+		char		command_buf[256];
+		char		*command = command_buf;
+		FILE		*fp;
+
+		len = strlen(name_on_disk) + strlen(uncompress) + 2;
+		if (len > sizeof command_buf) {
+			if ((command = malloc(len)) == NULL) {
+				file_msg("Out of memory.");
+				return NULL;
+			}
+		}
+		sprintf(command, "%s %s", uncompress, name_on_disk);
+		*filetype = pipe_stream;
+		fp =  popen(command, "r");
+		if (command != command_buf)
+			free(command);
+		return fp;
+	} else {
+		/* uncompressed file */
+		*filetype = regular_file;
+		return fopen(name_on_disk, "rb");
+	}
+}
+
+/*
+ * Close a file stream opened by open_file().
+ */
+int
+close_file(FILE *fp, int filetype)
+{
+	if (fp == NULL)
+		return -1;
+
+	if (filetype == regular_file) {
+		if (fclose(fp) != 0) {
+			file_msg("Error closing picture file: %s",
+					strerror(errno));
+			return -1;
+		}
+	} else if (filetype == pipe_stream) {
+		char	trash[BUFSIZ];
+		/* for a pipe, must read everything or
+		   we'll get a broken pipe message */
+		while (fread(trash, (size_t)1, (size_t)BUFSIZ, fp) ==
+				(size_t)BUFSIZ)
+			;
+		return pclose(fp);
+	} else {
+		file_msg("Error on line %d in %s. Please report this error.",
+				__LINE__, __FILE__);
+		return -1;
+	}
+	return 0;
+}
+
+FILE *
+rewind_file(FILE *fp, char *name, int *filetype)
+{
+	if (*filetype == regular_file) {
+		rewind(fp);
+		return fp;
+	} else if (*filetype == pipe_stream) {
+		close_file(fp, *filetype);
+		/* if, in the meantime, e.g., the file on disk
+		   was uncompressed, change the filetype. */
+		return open_file(name, filetype);
+	}
+	file_msg("Internal error, line %d in %s. Please report this error.",
+				__LINE__, __FILE__);
+	return NULL;
+}
+
+
+/*
+ * Return the name of a file that contains the uncompressed contents of "name"
+ * in "plainname". If plainname[0] == '\0', the original file is not compressed.
+ * The length of plainname[] must be at least strlen(TMPDIR) + UNCOMPRESS_ADD;
+ * To use uncompressed_file(), do
+ *   uncompressed_file(plainname, name);
+ *   .. * do something *
+ *   if (*plainname)
+ *        unlink(plainname);
+ * Return 0 on success, -1 on failure.
+ */
+int
+uncompressed_file(char *plainname, char *name)
+{
+	char		name_on_disk_buf[256];
+	char		*name_on_disk = name_on_disk_buf;
+	const char	*uncompress;
+	int		ret = -1;
+	size_t		len;
+
+	len = strlen(name) + FILEONDISK_ADD;
+	if (len > sizeof name_on_disk_buf) {
+		if ((name_on_disk = malloc(len)) == NULL) {
+			file_msg("Out of memory.");
+			return ret;
+		}
+	}
+
+	if (file_on_disk(name, name_on_disk, &uncompress))
+		goto end;
+
+	if (*uncompress) {
+		/* uncompress to a temporary file */
+		char		command_buf[256];
+		char		*command = command_buf;
+		int		fd;
+
+		/* UNCOMPRESS_ADD = sizeof("/xfigXXXXXX") */
+		if (sprintf(plainname, "%s/xfigXXXXXX", TMPDIR) < 0) {
+			fd = errno;
+			file_msg("Could not write temporary file, error: %s",
+					strerror(fd));
+			goto end;
+		}
+
+		if ((fd = mkstemp(plainname)) == -1) {
+			fd = errno;
+			file_msg("Could not open temporary file %s, error: %s",
+					plainname, strerror(fd));
+			goto end;
+		}
+
+		len = strlen(name_on_disk) + strlen(uncompress) + 12;
+		if (len > sizeof command_buf) {
+			if ((command = malloc(len)) == NULL) {
+				file_msg("Out of memory.");
+				close(fd);
+				goto end;
+			}
+		}
+
+		/*
+		 * One could already here redirect stdout to the fd of our tmp
+		 * file - but then, how to re-open stdout?
+		 *   close(1);
+		 *   dup(fd);	* takes the lowest integer found, now 1 *
+		 *   close(fd);
+		 */
+		sprintf(command, "%s %s 1>&%d", uncompress, name_on_disk, fd);
+
+		if (system(command) == 0)
+			ret = 0;
+		else
+			file_msg("Could not uncompress %s, command: %s",
+					name_on_disk, command);
+		close(fd);
+		if (command != command_buf)
+			free(command);
+	} else {
+		/* uncompressed file */
+		*plainname = '\0';
+		ret = 0;
+	}
+
+end:
+	if (name_on_disk != name_on_disk_buf)
+		free(name_on_disk);
+	return ret;
 }

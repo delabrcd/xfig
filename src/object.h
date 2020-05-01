@@ -19,6 +19,10 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+#if defined HAVE_CONFIG_H && !defined VERSION
+#include "config.h"
+#endif
+
 #include <X11/Intrinsic.h>
 #include "resources.h"
 

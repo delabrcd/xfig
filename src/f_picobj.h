@@ -1,9 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1992 by Brian Boyter
- * DPS option Copyright 1992 by Dave Hale
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -16,9 +16,12 @@
  *
  */
 
-extern FILE		*open_picfile(char *name, int *type, Boolean pipeok, char *retname);
-extern void		 close_picfile(FILE *file, int type);
+#include <stdio.h>
 
-#define PIPEOK		True
-#define PIPE_NOTOK	False
-extern void read_picobj (F_pic *pic, char *file, int color, Boolean force, Boolean *existing);
+#define UNCOMPRESS_ADD	12	/* see the definition of uncompressed_file() */
+extern int	uncompressed_file(char *plainname, char *name);
+extern FILE	*open_file(char *name, int *filetype);
+extern int	close_file(FILE *fp, int filetype);
+extern FILE	*rewind_file(FILE *fp, char *name, int *filetype);
+extern void	read_picobj(F_pic *pic, char *file, int color, Boolean force,
+				Boolean *existing);

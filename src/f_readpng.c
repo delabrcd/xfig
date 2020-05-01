@@ -16,16 +16,13 @@
  *
  */
 
-#include "fig.h"
+#include <stdlib.h>
+
 #include "resources.h"
 #include "object.h"
-#include "f_neuclrtab.h"
 #include "f_picobj.h"
-#include "f_util.h"
-#include "w_indpanel.h"
-#include "w_color.h"
-#include "w_msgpanel.h"
-#include "w_setup.h"
+#include "f_util.h"		/* map_to_mono(), map_to_palette() */
+#include "w_setup.h"		/* PIX_PER_INCH */
 
 #include <png.h>
 
@@ -55,21 +52,21 @@ read_png(FILE *file, int filetype, F_pic *pic)
     png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,
 		(png_voidp) NULL, NULL, NULL);
     if (!png_ptr) {
-	close_picfile(file,filetype);
+	close_file(file,filetype);
 	return FileInvalid;
     }
 
     info_ptr = png_create_info_struct(png_ptr);
     if (!info_ptr) {
 	png_destroy_read_struct(&png_ptr, (png_infopp) NULL, (png_infopp) NULL);
-	close_picfile(file,filetype);
+	close_file(file,filetype);
 	return FileInvalid;
     }
 
     end_info = png_create_info_struct(png_ptr);
     if (!end_info) {
 	png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp) NULL);
-	close_picfile(file,filetype);
+	close_file(file,filetype);
 	return FileInvalid;
     }
 
@@ -77,7 +74,7 @@ read_png(FILE *file, int filetype, F_pic *pic)
     if (setjmp(png_jmpbuf(png_ptr))) {
 	/* if we get here there was a problem reading the file */
 	png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-	close_picfile(file,filetype);
+	close_file(file,filetype);
 	return FileInvalid;
     }
 
@@ -172,7 +169,7 @@ read_png(FILE *file, int filetype, F_pic *pic)
 	if ((row_pointers[i] = malloc(rowsize)) == NULL) {
 	    for (j=0; j<i; j++)
 		free(row_pointers[j]);
-	    close_picfile(file,filetype);
+	    close_file(file,filetype);
 	    return FileInvalid;
 	}
     }
@@ -182,7 +179,7 @@ read_png(FILE *file, int filetype, F_pic *pic)
 
     /* allocate the bitmap */
     if ((pic->pic_cache->bitmap=malloc(rowsize*h))==NULL) {
-	close_picfile(file,filetype);
+	close_file(file,filetype);
 	return FileInvalid;
     }
 
@@ -199,7 +196,7 @@ read_png(FILE *file, int filetype, F_pic *pic)
     if (color_type == PNG_COLOR_TYPE_RGB || color_type == PNG_COLOR_TYPE_RGB_ALPHA) {
 	/* no palette, must use neural net to reduce to 256 colors with palette */
 	if (!map_to_palette(pic)) {
-	    close_picfile(file,filetype);
+	    close_file(file,filetype);
 	    return FileInvalid;		/* out of memory or something */
 	}
 	pic->pic_cache->numcols = 256;
@@ -222,6 +219,6 @@ read_png(FILE *file, int filetype, F_pic *pic)
     if (tool_cells <= 2 || appres.monochrome)
 	map_to_mono(pic);
 
-    close_picfile(file,filetype);
+    close_file(file,filetype);
     return PicSuccess;
 }

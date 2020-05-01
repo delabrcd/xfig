@@ -1,7 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2007 by Brian V. Smith
- * Parts Copyright, 1987, Massachusetts Institute of Technology
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -14,7 +16,22 @@
  *
  */
 
-#include "fig.h"
+/*
+ * This file contains a modified version of the
+ * XReadBitmapFromFile() routine from the X11R5 distribution.
+ * Parts Copyright, 1987, Massachusetts Institute of Technology
+ * See the copyright notice below.
+ *
+ */
+
+
+#include <ctype.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <X11/Intrinsic.h>
+#include <X11/Xutil.h>
+
 #include "resources.h"
 #include "object.h"
 #include "f_picobj.h"
@@ -51,10 +68,10 @@ read_xbm(FILE *file, int filetype, F_pic *pic)
 	pic->pic_cache->bit_size.y = y;
 	pic->pic_cache->size_x = x * scale;
 	pic->pic_cache->size_y = y * scale;
-	close_picfile(file,filetype);
+	close_file(file,filetype);
 	return PicSuccess;
     }
-    close_picfile(file,filetype);
+    close_file(file,filetype);
     /* Non Bitmap file */
     return FileInvalid;
 }

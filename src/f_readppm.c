@@ -1,6 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1999-2007 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -13,13 +16,17 @@
  *
  */
 
-#include "fig.h"
+
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "resources.h"
 #include "object.h"
 #include "f_picobj.h"
-#include "w_msgpanel.h"
-
 #include "f_readpcx.h"
+#include "w_msgpanel.h"
 
 #define BUFLEN 1024
 
@@ -48,7 +55,7 @@ read_ppm(FILE *file, int filetype, F_pic *pic)
 	sprintf(buf, "ppmtopcx > %s 2> /dev/null", pcxname);
 	if ((giftopcx = popen(buf,"w" )) == 0) {
 	    file_msg("Cannot open pipe to ppmtopcx\n");
-	    close_picfile(file,filetype);
+	    close_file(file,filetype);
 	    return FileInvalid;
 	}
 	while ((size=fread(buf, 1, BUFLEN, file)) != 0) {
@@ -58,7 +65,7 @@ read_ppm(FILE *file, int filetype, F_pic *pic)
 	pclose(giftopcx);
 	if ((giftopcx = fopen(pcxname, "rb")) == NULL) {
 	    file_msg("Can't open temp output file\n");
-	    close_picfile(file,filetype);
+	    close_file(file,filetype);
 	    return FileInvalid;
 	}
 	/* now call read_pcx to read the pcx file */
@@ -66,6 +73,6 @@ read_ppm(FILE *file, int filetype, F_pic *pic)
 	pic->pic_cache->subtype = T_PIC_PPM;
 	/* remove temp file */
 	unlink(pcxname);
-	close_picfile(file,filetype);
+	close_file(file,filetype);
 	return stat;
 }

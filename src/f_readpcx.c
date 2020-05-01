@@ -1,7 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Based on (public domain) code from Russell Marks
- * Parts Copyright (c) 2000-2007 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -14,7 +16,15 @@
  *
  */
 
-#include "fig.h"
+/*
+ * f_readpcx.c
+ * Based on (public domain) code from Russell Marks
+ *
+ */
+
+
+#include <stdlib.h>
+
 #include "resources.h"
 #include "object.h"
 #include "f_neuclrtab.h"
@@ -71,7 +81,7 @@ read_pcx(FILE *file, int filetype, F_pic *pic)
 
     status = _read_pcx(file,pic);
     if (status != 1) {
-	close_picfile(file,filetype);
+	close_file(file,filetype);
 	return FileInvalid;
     }
 
@@ -84,7 +94,7 @@ read_pcx(FILE *file, int filetype, F_pic *pic)
     if (tool_cells <= 2 || appres.monochrome)
 	map_to_mono(pic);
 
-    close_picfile(file,filetype);
+    close_file(file,filetype);
     return PicSuccess;
 }
 
