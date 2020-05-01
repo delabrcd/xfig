@@ -114,8 +114,6 @@ typedef struct f_pos {
 
 struct _pics {
 	char *file;
-	char *realname;		/* in case the actual file is compressed
-				   (.gz, etc) */
 	time_t time_stamp;	/* to see if the file has changed */
 	unsigned char *bitmap;
 	enum pictypes subtype;

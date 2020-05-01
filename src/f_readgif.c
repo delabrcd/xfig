@@ -236,7 +236,7 @@ read_gif(FILE *file, int filetype, F_pic *pic)
 static Boolean
 ReadColorMap(FILE *fd, unsigned int number, struct Cmap *cmap)
 {
-	int		i;
+	unsigned int	i;
 	unsigned char	rgb[3];
 
 	for (i = 0; i < number; ++i) {

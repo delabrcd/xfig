@@ -23,6 +23,7 @@
 *  (marcg@rascals.stanford.edu) original idea and code. */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,220 +63,33 @@ enum	streamtype {
 	pipe_stream
 };
 
-static	 struct hdr {
-	    char	*type;
-	    char	*bytes;
-	    int		 nbytes;
-	    int		(*readfunc)();
-	    Boolean	pipeok;
-	}
-	headers[]= {    {"GIF", "GIF",		    3, read_gif,	True},
-			{"PCX", "\012\005\001",	    3, read_pcx,	True},
-			{"EPS", "%!",		    2, read_epsf,	True},
-			{"PDF", "%PDF",		    2, read_pdf,	True},
-			{"PPM", "P3",		    2, read_ppm,	True},
-			{"PPM", "P6",		    2, read_ppm,	True},
-			{"TIFF", "II*\000",	    4, read_tif,	False},
-			{"TIFF", "MM\000*",	    4, read_tif,	False},
-			{"XBM", "#define",	    7, read_xbm,	True},
+static struct _haeders {
+	char	*type;
+	char	*bytes;
+	int	(*readfunc)();
+	Boolean	pipeok;
+} headers[] = {
+	{"GIF",	"GIF",				read_gif,	True},
+	{"PCX", "\012\005\001",			read_pcx,	True},
+	{"EPS", "%!",				read_epsf,	True},
+	{"PDF", "%PDF",				read_pdf,	True},
+	{"PPM", "P3",				read_ppm,	True},
+	{"PPM", "P6",				read_ppm,	True},
+	{"TIFF", "II*\000",			read_tif,	False},
+	{"TIFF", "MM\000*",			read_tif,	False},
+	{"XBM", "#define",			read_xbm,	True},
 #ifdef HAVE_JPEG
-			{"JPEG", "\377\330\377\340", 4,read_jpg,	True},
-			{"JPEG", "\377\330\377\341", 4,read_jpg,	True},
+	{"JPEG", "\377\330\377\340",		read_jpg,	True},
+	{"JPEG", "\377\330\377\341",		read_jpg,	True},
 #endif
 #ifdef HAVE_PNG
-			{"PNG", "\211\120\116\107\015\012\032\012",
-						     8, read_png,	True},
+	{"PNG", "\211\120\116\107\015\012\032\012",	read_png,	True},
 #endif
 #ifdef USE_XPM
-			{"XPM", "/* XPM */",	    9, read_xpm,	False},
+	{"XPM", "/* XPM */",			read_xpm,	False},
 #endif
-			};
+};
 
-
-/*
- * Check through the pictures repository to see if "file" is already there.
- * If so, set the pic->pic_cache pointer to that repository entry and set
- * "existing" to True.
- * If not, read the file via the relevant reader and add to the repository
- * and set "existing" to False.
- * If "force" is true, read the file unconditionally.
- */
-
-void
-read_picobj(F_pic *pic, char *file, int color, Boolean force, Boolean *existing)
-{
-    FILE	   *fd;
-    int		    type;
-    int		    i,j,c;
-    char	    buf[20];
-    Boolean	    found, reread;
-    struct _pics   *pics, *lastpic;
-    time_t	    mtime;
-
-    pic->color = color;
-    /* don't touch the flipped flag - caller has already set it */
-    pic->pixmap = (Pixmap) NULL;
-    pic->hw_ratio = 0.0;
-    pic->pix_rotation = 0;
-    pic->pix_width = 0;
-    pic->pix_height = 0;
-    pic->pix_flipped = 0;
-
-    /* check if user pressed cancel button */
-    if (check_cancel())
-	return;
-
-    put_msg("Reading Picture object file...");
-    app_flush();
-
-    /* look in the repository for this filename */
-    lastpic = pictures;
-    reread = False;
-    for (pics = pictures; pics; pics = pics->next) {
-	if (strcmp(pics->file, file)==0) {
-	    /* found it - make sure the timestamp is >= the timestamp of the file  */
-	    /* check both the "realname" and the original name */
-	    if ((mtime = file_timestamp(pics->realname) < 0))
-		mtime = file_timestamp(pics->file);
-	    if (mtime < 0) {
-		/* oops, doesn't exist? */
-		file_msg("Error %s on %s",strerror(errno),file);
-		return;
-	    }
-	    /* or if force is true then reread it */
-	    if (force || (mtime > pics->time_stamp)) {
-		reread = True;
-		break;			/* no, re-read the file */
-	    }
-	    pic->pic_cache = pics;
-	    pics->refcount++;
-	    if (appres.DEBUG)
-		fprintf(stderr,"Found stored picture %s, count=%d\n",file,pics->refcount);
-	    /* if there is a bitmap, return, otherwise fall through and reread the file */
-	    if (pics->bitmap != NULL) {
-		*existing = True;
-		put_msg("Reading Picture object file...found cached picture");
-		/* must set the h/w ratio here */
-		pic->hw_ratio = (float) pic->pic_cache->bit_size.y/pic->pic_cache->bit_size.x;
-		return;
-	    }
-	    if (appres.DEBUG)
-		fprintf(stderr,"Re-reading file\n");
-	}
-	/* keep pointer to last entry */
-	lastpic = pics;
-    }
-    *existing = False;
-    if (reread) {
-	if (appres.DEBUG)
-	    fprintf(stderr,"Timestamp changed, reread file %s\n",file);
-    } else if (pics == NULL) {
-	/* didn't find it in the repository, add it */
-	pics = create_picture_entry();
-	if (lastpic) {
-	    /* add to list */
-	    lastpic->next = pics;
-	    pics->prev = lastpic;
-	} else {
-	    /* first one */
-	    pictures = pics;
-	}
-	pics->file = strdup(file);
-	pics->refcount = 1;
-	pics->bitmap = (unsigned char *) NULL;
-	pics->subtype = T_PIC_NONE;
-	pics->numcols = 0;
-	pics->size_x = 0;
-	pics->size_y = 0;
-	pics->bit_size.x = 0;
-	pics->bit_size.y = 0;
-	if (appres.DEBUG)
-	    fprintf(stderr,"New picture %s\n",file);
-    }
-    /* put it in the pic */
-    pic->pic_cache = pics;
-    pic->pixmap = (Pixmap) NULL;
-
-    /* open the file and read a few bytes of the header to see what it is */
-    if ((fd=open_file(file, &type)) == NULL) {
-	file_msg("No such picture file: %s",file);
-	return;
-    }
-    /* get the modified time and save it */
-    pics->time_stamp = file_timestamp(file);
-
-    /* read some bytes from the file */
-    for (i=0; i<15; i++) {
-	if ((c=getc(fd))==EOF)
-	    break;
-	buf[i]=(char) c;
-    }
-
-    /* now find which header it is */
-    for (i=0; i<(int)(sizeof headers/sizeof(headers[0])); ++i) {
-	found = True;
-	for (j=headers[i].nbytes-1; j>=0; j--)
-	    if (buf[j] != headers[i].bytes[j]) {
-		found = False;
-		break;
-	    }
-	if (found)
-	    break;
-    }
-    if (found) {
-	if (headers[i].pipeok) {
-		rewind_file(fd, file, &type);
-	    if ((*headers[i].readfunc)(fd,type,pic) == FileInvalid) {
-		file_msg("%s: Bad %s format",file, headers[i].type);
-	    }
-	} else {
-		/* routines that cannot take a pipe get the name of the file, if
-		   it is not compressed, or the name of a temporary file. */
-		char	plainname_buf[64];
-		char	*plainname = plainname_buf;
-		char	*name;
-
-		if (strlen(TMPDIR) + UNCOMPRESS_ADD > sizeof plainname_buf) {
-			plainname = malloc(strlen(TMPDIR) + UNCOMPRESS_ADD);
-			if (plainname == NULL) {
-				file_msg("Out of memory, could not read picture"
-						" file %s.", file);
-				return;
-			}
-		}
-		if (!uncompressed_file(plainname, file)) {
-			file_msg("Could not uncompress picture file %s.", file);
-			if (*plainname) {
-				unlink(plainname);
-				if (plainname != plainname_buf)
-					free(plainname);
-			}
-			return;
-		}
-
-		if (*plainname)
-			name = plainname;
-		else
-			name = file;
-
-	    if ((*headers[i].readfunc)(name,type,pic) == FileInvalid) {
-		file_msg("%s: Bad %s format",file, headers[i].type);
-	    }
-	    if (*plainname) {
-		    unlink(plainname);
-		    if (plainname != plainname_buf)
-			    free(plainname);
-	    }
-	}
-	put_msg("Reading Picture object file...Done");
-	return;
-    }
-
-    /* none of the above */
-    file_msg("%s: Unknown image format",file);
-    put_msg("Reading Picture object file...Failed");
-    app_flush();
-}
 
 /*
  * Given "name", search and return the name of an appropriate file on disk in
@@ -284,7 +98,7 @@ read_picobj(F_pic *pic, char *file, int color, Boolean force, Boolean *existing)
  * compression command in a static string pointed to by "uncompress", otherwise
  * let "uncompress" point to the empty string. The caller must provide a buffer
  * name_on_disk[] where: sizeof name_on_disk >= strlen(name) + FILEONDISK_ADD.
- * Return 0 on success, -1 for failure.
+ * Return 0 on success, or FileInvalid if the file is not found.
  */
 static int
 file_on_disk(char *name, char *name_on_disk, const char **uncompress)
@@ -322,7 +136,7 @@ file_on_disk(char *name, char *name_on_disk, const char **uncompress)
 		if (i == filetypes_len) {
 			/* no, not found */
 			*name_on_disk = '\0';
-			return -1;
+			return FileInvalid;
 		}
 	} else {
 		/* File exists. Check, whether the name has one of the known
@@ -340,6 +154,234 @@ file_on_disk(char *name, char *name_on_disk, const char **uncompress)
 	}
 
 	return 0;
+}
+
+/*
+ * Compare the picture information in pic with "file". If the file on disk
+ * is newer than the picture information, set "reread" to true.
+ * If a cached picture bitmap already exists, set "existing" to true.
+ * Return FileInvalid, if "file" is not found, otherwise return 0.
+ */
+static int
+get_picture_status(F_pic *pic, struct _pics *pics, char *file, bool force,
+		bool *reread, bool *existing)
+{
+	char		name_on_disk_buf[256];
+	char		*name_on_disk = name_on_disk_buf;
+	const char	*uncompress;
+	time_t		mtime;
+
+	/* get the name of the file on disk */
+	if (strlen(pics->file) + FILEONDISK_ADD > sizeof name_on_disk_buf) {
+		name_on_disk = malloc(strlen(pics->file) + FILEONDISK_ADD);
+		if (name_on_disk == NULL) {
+			file_msg("Out of memory.");
+			return -1;
+		}
+	}
+	if (file_on_disk(pics->file, name_on_disk, &uncompress)) {
+		if (name_on_disk != name_on_disk_buf)
+			free(name_on_disk);
+		return FileInvalid;
+	}
+
+	/* check the timestamp */
+	mtime = file_timestamp(name_on_disk);
+	if (name_on_disk != name_on_disk_buf)
+		free(name_on_disk);
+	if (mtime < 0) {
+		/* oops, doesn't exist? */
+		file_msg("Error %s on %s", strerror(errno), file);
+		return FileInvalid;
+	}
+	if (force || mtime > pics->time_stamp) {
+		if (appres.DEBUG && mtime > pics->time_stamp)
+			fprintf(stderr, "Timestamp changed, reread file %s\n",
+					file);
+		*reread = true;
+		return 0;
+	}
+
+	pic->pic_cache = pics;
+	pics->refcount++;
+
+	if (appres.DEBUG)
+		fprintf(stderr, "Found stored picture %s, count=%d\n", file,
+				pics->refcount);
+
+	/* there is a cached bitmap */
+	if (pics->bitmap != NULL) {
+		*existing = true;
+		*reread = false;
+		put_msg("Reading Picture object file...found cached picture");
+	} else {
+		*existing = false;
+		*reread = true;
+		if (appres.DEBUG)
+			fprintf(stderr, "Re-reading file %s\n", file);
+	}
+	return 0;
+}
+
+/*
+ * Check through the pictures repository to see if "file" is already there.
+ * If so, set the pic->pic_cache pointer to that repository entry and set
+ * "existing" to True.
+ * If not, read the file via the relevant reader and add to the repository
+ * and set "existing" to False.
+ * If "force" is true, read the file unconditionally.
+ */
+void
+read_picobj(F_pic *pic, char *file, int color, Boolean force, Boolean *existing)
+{
+	FILE		*fp;
+	int		type;
+	int		i;
+	char		buf[16];
+	bool		reread;
+	struct _pics	*pics, *lastpic;
+
+	pic->color = color;
+	/* don't touch the flipped flag - caller has already set it */
+	pic->pixmap = (Pixmap)0;
+	pic->hw_ratio = 0.0;
+	pic->pix_rotation = 0;
+	pic->pix_width = 0;
+	pic->pix_height = 0;
+	pic->pix_flipped = 0;
+
+	/* check if user pressed cancel button */
+	if (check_cancel())
+		return;
+
+	put_msg("Reading Picture object file...");
+	app_flush();
+
+	/* look in the repository for this filename */
+	lastpic = pictures;
+	for (pics = pictures; pics; pics = pics->next) {
+		if (strcmp(pics->file, file) == 0) {
+			/* check, whether picture exists, or must be re-read */
+			if (get_picture_status(pic, pics, file, force, &reread,
+						(bool *)existing) ==FileInvalid)
+				return;
+			if (!reread && *existing) {
+				/* must set the h/w ratio here */
+				pic->hw_ratio =(float)pic->pic_cache->bit_size.y
+					/ pic->pic_cache->bit_size.x;
+				return;
+			}
+			break;
+		}
+		/* keep pointer to last entry */
+		lastpic = pics;
+	}
+
+	if (pics == NULL) {
+		/* didn't find it in the repository, add it */
+		pics = create_picture_entry();
+		if (lastpic) {
+			/* add to list */
+			lastpic->next = pics;
+			pics->prev = lastpic;
+		} else {
+			/* first one */
+			pictures = pics;
+		}
+		pics->file = strdup(file);
+		pics->refcount = 1;
+		pics->bitmap = NULL;
+		pics->subtype = T_PIC_NONE;
+		pics->numcols = 0;
+		pics->size_x = 0;
+		pics->size_y = 0;
+		pics->bit_size.x = 0;
+		pics->bit_size.y = 0;
+		if (appres.DEBUG)
+			fprintf(stderr, "New picture %s\n", file);
+	}
+	/* put it in the pic */
+	pic->pic_cache = pics;
+	pic->pixmap = (Pixmap)0;
+
+	if (appres.DEBUG)
+		fprintf(stderr, "Reading file %s\n", file);
+
+	/* open the file and read a few bytes of the header to see what it is */
+	if ((fp = open_file(file, &type)) == NULL) {
+		file_msg("No such picture file: %s",file);
+		return;
+	}
+	/* get the modified time and save it */
+	pics->time_stamp = file_timestamp(file);
+
+	/* read some bytes from the file */
+	for (i = 0; i < (int)sizeof buf; ++i) {
+		int	c;
+		if ((c = getc(fp)) == EOF)
+			break;
+		buf[i] = (char)c;
+	}
+
+	/* now find which header it is */
+	for (i = 0; i < (int)(sizeof headers / sizeof(headers[0])); ++i)
+		if (!memcmp(buf, headers[i].bytes, strlen(headers[i].bytes)))
+			break;
+
+	/* not found */
+	if (i == (int)(sizeof headers / sizeof(headers[0]))) {
+		file_msg("%s: Unknown image format", file);
+		put_msg("Reading Picture object file...Failed");
+		app_flush();
+		return;
+	}
+
+	if (headers[i].pipeok) {
+		rewind_file(fp, file, &type);
+		if ((*headers[i].readfunc)(fp,type,pic) == FileInvalid) {
+			file_msg("%s: Bad %s format", file, headers[i].type);
+		}
+	} else {
+		/* routines that cannot take a pipe get the name of the file, if
+		   it is not compressed, or the name of a temporary file. */
+		char	plainname_buf[64];
+		char	*plainname = plainname_buf;
+		char	*name;
+
+		if (strlen(TMPDIR) + UNCOMPRESS_ADD > sizeof plainname_buf) {
+			plainname = malloc(strlen(TMPDIR) + UNCOMPRESS_ADD);
+			if (plainname == NULL) {
+				file_msg("Out of memory, could not read picture"
+						" file %s.", file);
+				return;
+			}
+		}
+		if (!uncompressed_file(plainname, file)) {
+			file_msg("Could not uncompress picture file %s.", file);
+			if (*plainname) {
+				unlink(plainname);
+				if (plainname != plainname_buf)
+					free(plainname);
+			}
+			return;
+		}
+
+		if (*plainname)
+			name = plainname;
+		else
+			name = file;
+
+		if ((*headers[i].readfunc)(name, type, pic) == FileInvalid)
+			file_msg("%s: Bad %s format", file, headers[i].type);
+		if (*plainname) {
+			unlink(plainname);
+			if (plainname != plainname_buf)
+				free(plainname);
+		}
+	}
+
+	put_msg("Reading Picture object file...Done");
+	return;
 }
 
 /*

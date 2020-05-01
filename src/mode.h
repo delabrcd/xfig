@@ -3,7 +3,7 @@
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
  * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
- * Parts Copyright (c) 2016-2018 by Thomas Loimer
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -16,12 +16,18 @@
  *
  */
 
+
 #ifndef MODE_H
 #define MODE_H
 
-#include <limits.h>	/* PATH_MAX, below */
+#include <X11/Intrinsic.h>	/* Boolean */
+#include <limits.h>		/* PATH_MAX, below */
 #ifndef PATH_MAX
 #define PATH_MAX	1024
+#endif
+
+#ifndef RESOURCES_H
+#include "resources.h"
 #endif
 
 #define		F_NULL			0

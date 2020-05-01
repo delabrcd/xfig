@@ -18,29 +18,28 @@
  *
  */
 
-#include "fig.h"
-#include "resources.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+
 #include "mode.h"
 #include "object.h"
 #include "e_edit.h"
-#include "u_create.h"
-#include "w_indpanel.h"
-#include "w_layers.h"
-#include "w_msgpanel.h"
-#include "w_setup.h"
-#include "w_util.h"
-
 #include "e_scale.h"
+#include "u_create.h"
 #include "u_free.h"
 #include "u_list.h"
 #include "w_cursor.h"
 #include "w_modepanel.h"
 #include "w_mousefun.h"
+#include "w_msgpanel.h"
+#include "w_setup.h"
+#include "w_util.h"
 
 static char	Err_mem[] = "Running out of memory.";
 
-/****************** ARROWS ****************/
 
+/****************** ARROWS ****************/
 
 
 F_arrow *
@@ -459,7 +458,7 @@ create_picture_entry(void)
 
     picture = malloc(sizeof(struct _pics));
 
-    picture->file = picture->realname = NULL;
+    picture->file = NULL;
     picture->bitmap = NULL;
     picture->transp = TRANSP_NONE;
     picture->numcols = 0;

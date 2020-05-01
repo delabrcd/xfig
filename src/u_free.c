@@ -1,8 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -15,22 +16,19 @@
  *
  */
 
-#include "fig.h"
-#include "resources.h"
+
+#if defined HAVE_CONFIG_H && !defined VERSION
+#include "config.h"
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "object.h"
 #include "u_fonts.h"
+#include "u_free.h"
 #include "w_drawprim.h"
 
-
-void free_ellipse (F_ellipse **list);
-void free_line (F_line **list);
-void free_spline (F_spline **list);
-void free_text (F_text **list);
-void free_linestorage (F_line *l);
-void free_splinestorage (F_spline *s);
-void free_points (F_point *first_point);
-void free_sfactors (F_sfactor *sf);
-void free_picture_entry (struct _pics *picture);
 
 void free_arc(F_arc **list)
 {
@@ -169,19 +167,17 @@ void free_picture_entry(struct _pics *picture)
 
     if (picture->refcount == 0) {
 	fprintf(stderr, "Error freeing picture %p %s with refcount = 0\n",
-		picture, picture->file);
+			(void *)picture, picture->file);
 	return;
     }
     picture->refcount--;
     if (picture->refcount == 0) {
 	if (appres.DEBUG)
 	    fprintf(stderr,"Delete picture %p %s, refcount = %d\n",
-				picture, picture->file, picture->refcount);
+			    (void *)picture, picture->file, picture->refcount);
 	if (picture->bitmap)
 	    free((char *) picture->bitmap);
 	free(picture->file);
-	if (picture->realname)
-	    free(picture->realname);
 	/* unlink from list */
 	if (picture->next)
 	    picture->next->prev = picture->prev;
@@ -193,8 +189,9 @@ void free_picture_entry(struct _pics *picture)
 	free(picture);
     } else {
 	if (appres.DEBUG)
-	    fprintf(stderr,"Decrease refcount for picture %p %s, refcount = %d\n",
-				picture, picture->file, picture->refcount);
+	    fprintf(stderr,
+			"Decrease refcount for picture %p %s, refcount = %d\n",
+			(void *)picture, picture->file, picture->refcount);
     }
 }
 

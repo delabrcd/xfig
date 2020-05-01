@@ -30,11 +30,10 @@
 int
 read_png(FILE *file, int filetype, F_pic *pic)
 {
-    register int    i, j;
     png_structp	    png_ptr;
     png_infop	    info_ptr;
     png_infop	    end_info;
-    png_uint_32	    w, h, rowsize;
+    png_uint_32	    i, j, w, h, rowsize;
     int		    bit_depth, color_type, interlace_type;
     int		    compression_type, filter_type;
     png_bytep	   *row_pointers;
@@ -148,11 +147,11 @@ read_png(FILE *file, int filetype, F_pic *pic)
 	png_set_expand(png_ptr);
 	/* make a gray colormap */
 	num_palette = 256;
-	for (i = 0; i < num_palette; i++)
+	for (i = 0; i < (png_uint_32)num_palette; ++i)
 	    pic->pic_cache->cmap[i].red = pic->pic_cache->cmap[i].green = pic->pic_cache->cmap[i].blue = i;
     } else {
 	/* transfer the palette to the object's colormap */
-	for (i=0; i<num_palette; i++) {
+	for (i = 0; i < (png_uint_32)num_palette; ++i) {
 	    pic->pic_cache->cmap[i].red   = palette[i].red;
 	    pic->pic_cache->cmap[i].green = palette[i].green;
 	    pic->pic_cache->cmap[i].blue  = palette[i].blue;
