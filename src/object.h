@@ -88,6 +88,7 @@
 enum pictypes {
 	T_PIC_NONE,
 	T_PIC_EPS,
+	T_PIC_PDF,
 	T_PIC_GIF,
 #ifdef HAVE_JPEG
 	T_PIC_JPEG,

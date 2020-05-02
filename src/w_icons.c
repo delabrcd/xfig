@@ -1,8 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -15,8 +16,11 @@
  *
  */
 
-#include "fig.h"
-#include "resources.h"
+
+#if defined HAVE_CONFIG_H && !defined VERSION
+#include "config.h"
+#endif
+
 #include "w_icons.h"
 
 /*********** icons for mode panel *****************/
@@ -2983,7 +2987,7 @@ icon_struct	kbd_ic = { kbd_width, kbd_height,
 
 #define fig_width 64
 #define fig_height 64
-static char fig_bits[] = {
+static unsigned char fig_bits[] = {
  0x55,0x55,0x55,0x55,0x55,0xb5,0x6d,0xdb,0x55,0x55,0xa9,0xa4,0x54,0xd5,0xb6,
  0xb5,0x2a,0x95,0x4a,0x95,0xd2,0x6a,0xdb,0xde,0xa9,0x52,0xaa,0x52,0xf5,0xab,
  0x6d,0x6b,0x55,0x55,0x49,0xaa,0xea,0xd7,0xaa,0xd5,0xaa,0x4a,0x25,0x49,0x6a,

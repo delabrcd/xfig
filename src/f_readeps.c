@@ -21,7 +21,7 @@
  * Copyright (c) 1992 by Brian Boyter
  */
 
-#ifdef HAVE_CONFIG_H
+#if defined HAVE_CONFIG_H && !defined VERSION
 #include "config.h"
 #endif
 
@@ -31,7 +31,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <X11/Intrinsic.h>
 
 #include "resources.h"
 #include "object.h"
@@ -46,42 +45,26 @@ extern int	gs_mediabox(char *file, int *llx, int *lly, int *urx, int *ury);
 extern int	gs_bitmap(char *file, F_pic *pic, int llx, int lly,
 						int urx, int ury);
 
-/* read a PDF file */
+static void	lower(char *buf);
+static int	hex(char c);
 
-
-int read_epsf_pdf (FILE *file, int filetype, F_pic *pic, Boolean pdf_flag);
-void lower (char *buf);
-int hex (char c);
-
-int
-read_pdf(FILE *file, int filetype, F_pic *pic)
-{
-    return read_epsf_pdf(file, filetype, pic, True);
-}
-
-/* read an EPS file */
-
-/* return codes:  PicSuccess   (1) : success
-		  FileInvalid (-2) : invalid file
-*/
-
-int
-read_epsf(FILE *file, int filetype, F_pic *pic)
-{
-    return read_epsf_pdf(file, filetype, pic, False);
-}
 
 /*
  * Scan a pdf-file for a /MediaBox specification.
  * Return 0 on success, -1 on failure.
  */
 static int
-scan_mediabox(FILE *file, int *llx, int *lly, int *urx, int *ury)
+scan_mediabox(char *name, int *llx, int *lly, int *urx, int *ury)
 {
 	/* the line length of pdfs should not exceed 256 characters */
 	char	buf[300];
 	char	*s;
+	int	ret = -1;	/* prime with failure */
 	double	lx, ly, ux, uy;
+	FILE	*file;
+
+	if ((file = fopen(name, "rb")) == NULL)
+		return -1;
 
 	while (fgets(buf, sizeof buf, file) != NULL) {
 		if ((s = strstr(buf, "/MediaBox"))) {
@@ -92,215 +75,258 @@ scan_mediabox(FILE *file, int *llx, int *lly, int *urx, int *ury)
 				*lly = (int)floor(ly);
 				*urx = (int)ceil(ux);
 				*ury = (int)ceil(uy);
-				return 0;
+				ret = 0;
 			} else {
 				/* do not try to search for a second
 				   occurrence of /MediaBox */
-				return -1;
-			}
-		}
-	}
-
-	return -1;
-}
-
-int
-read_epsf_pdf(FILE *file, int filetype, F_pic *pic, Boolean pdf_flag)
-{
-    size_t      nbitmap;
-    Boolean     bitmapz;
-    Boolean     foundbbx;
-    int         nested;
-    char       *cp;
-    char	retname[PATH_MAX];
-    unsigned char *mp;
-    unsigned int hexnib;
-    int         flag;
-    char        buf[300];
-    int         llx, lly, urx, ury, bad_bbox;
-    unsigned char *last;
-    Boolean     useGS;
-
-    useGS = False;
-
-    llx = lly = urx = ury = 0;
-    foundbbx = False;
-    nested = 0;
-    if (pdf_flag) {
-	    /* First, do a simply text-scan for "/MediaBox", failing that,
-	       rewind, close and open, and call ghostscript.	*/
-	    if (scan_mediabox(file, &llx, &lly, &urx, &ury)) {
-		    close_file(file, filetype);
-		    if (!uncompressed_file(retname, pic->pic_cache->file) &&
-			    gs_mediabox(*retname ? retname :
-				    pic->pic_cache->file, &llx, &lly, &urx,
-				    &ury)) {
-			    llx = lly = 0;
-		    urx = paper_sizes[0].width * 72 / PIX_PER_INCH;
-		    ury = paper_sizes[0].height * 72 / PIX_PER_INCH;
-		    file_msg("Bad MediaBox in pdf file, assuming %s size",
-			     appres.INCHES ? "Letter" : "A4");
-		    app_flush();
-		    }
-		    if (*retname)
-			    unlink(retname);
-	    }
-    } else {
-    while (fgets(buf, 300, file) != NULL) {
-	if (!nested && !strncmp(buf, "%%BoundingBox:", 14)) {
-	    if (!strstr(buf, "(atend)")) {	/* make sure doesn't say (atend) */
-		float       rllx, rlly, rurx, rury;
-
-		if (sscanf(strchr(buf, ':') + 1, "%f %f %f %f", &rllx, &rlly, &rurx, &rury) < 4) {
-		    file_msg("Bad EPS file: %s", file);
-		    close_file(file,filetype);
-		    return FileInvalid;
-		}
-		foundbbx = True;
-		llx = round(rllx);
-		lly = round(rlly);
-		urx = round(rurx);
-		ury = round(rury);
-		break;
-	    }
-	} else if (!strncmp(buf, "%%Begin", 7)) {
-	    ++nested;
-	} else if (nested && !strncmp(buf, "%%End", 5)) {
-	    --nested;
-	}
-    }
-    }
-    if (!pdf_flag && !foundbbx) {
-	file_msg("No bounding box found in EPS file");
-	close_file(file,filetype);
-	return FileInvalid;
-    }
-    if ((urx - llx) == 0) {
-	llx = lly = 0;
-	urx = (appres.INCHES ? LETTER_WIDTH : A4_WIDTH) * 72 / PIX_PER_INCH;
-	ury = (appres.INCHES ? LETTER_HEIGHT : A4_HEIGHT) * 72 / PIX_PER_INCH;
-	file_msg("Bad %s, assuming %s size",
-		 pdf_flag ? "/MediaBox" : "EPS bounding box",
-		 appres.INCHES ? "Letter" : "A4");
-	app_flush();
-    }
-    pic->hw_ratio = (float) (ury - lly) / (float) (urx - llx);
-
-    pic->pic_cache->size_x = round((urx - llx) * PIC_FACTOR);
-    pic->pic_cache->size_y = round((ury - lly) * PIC_FACTOR);
-    /* make 2-entry colormap here if we use monochrome */
-    pic->pic_cache->cmap[0].red = pic->pic_cache->cmap[0].green = pic->pic_cache->cmap[0].blue = 0;
-    pic->pic_cache->cmap[1].red = pic->pic_cache->cmap[1].green = pic->pic_cache->cmap[1].blue = 255;
-    pic->pic_cache->numcols = 0;
-
-    if ((bad_bbox = (urx <= llx || ury <= lly))) {
-	file_msg("Bad values in %s",
-		 pdf_flag ? "/MediaBox" : "EPS bounding box");
-	close_file(file,filetype);
-	return FileInvalid;
-    }
-    bitmapz = False;
-
-    /* look for a preview bitmap */
-    if (!pdf_flag) {
-	while (fgets(buf, 300, file) != NULL) {
-	    lower(buf);
-	    if (!strncmp(buf, "%%beginpreview", 14)) {
-		sscanf(buf, "%%%%beginpreview: %d %d %*d",
-		       &pic->pic_cache->bit_size.x, &pic->pic_cache->bit_size.y);
-		bitmapz = True;
-		break;
-	    }
-	}
-    }
-    /* if monochrome and a preview bitmap exists, don't use gs */
-    if ((!appres.monochrome || !bitmapz) && !bad_bbox &&
-		    (*appres.ghostscript || *appres.gslib)) {
-	    //if (!pdf_flag)
-	//	    close_file(file,filetype);
-	    if (!uncompressed_file(retname, pic->pic_cache->file)) {
-		    useGS = !gs_bitmap(*retname ? retname: pic->pic_cache->file,
-				    pic, llx, lly, urx, ury);
-		    if (*retname)
-			    unlink(retname);
-	    }
-    }
-    if (!useGS) {
-	if (!bitmapz) {
-	    file_msg("EPS object read OK, but no preview bitmap found/generated");
-	    if (!pdf_flag)
-		    close_file(file,filetype);
-	    return PicSuccess;
-	} else if (pic->pic_cache->bit_size.x <= 0 || pic->pic_cache->bit_size.y <= 0) {
-	    file_msg("Strange bounding-box/bitmap-size error, no bitmap found/generated");
-	    if (!pdf_flag)
-		    close_file(file,filetype);
-	    return FileInvalid;
-	} else {
-	    nbitmap = (pic->pic_cache->bit_size.x + 7) / 8 * pic->pic_cache->bit_size.y;
-	    pic->pic_cache->bitmap = malloc(nbitmap);
-	    if (pic->pic_cache->bitmap == NULL) {
-		file_msg("Could not allocate %zd bytes of memory for %s bitmap\n",
-			 nbitmap, pdf_flag ? "PDF" : "EPS");
-		if (!pdf_flag)
-			close_file(file,filetype);
-		return PicSuccess;
-	    }
-	    /* for whatever reason, ghostscript wasn't available or didn't work but there
-	     * is a preview bitmap - use that */
-	    mp = pic->pic_cache->bitmap;
-	    memset(mp, 0, nbitmap);
-	    last = pic->pic_cache->bitmap + nbitmap;
-	    flag = True;
-	    while (fgets(buf, 300, file) != NULL && mp < last) {
-		lower(buf);
-		if (!strncmp(buf, "%%endpreview", 12) ||
-		    !strncmp(buf, "%%endimage", 10))
-		    break;
-		cp = buf;
-		if (*cp != '%')
-		    break;
-		cp++;
-		while (*cp != '\0') {
-		    if (isxdigit(*cp)) {
-			hexnib = hex(*cp);
-			if (flag) {
-			    flag = False;
-			    *mp = hexnib << 4;
-			} else {
-			    flag = True;
-			    *mp = *mp + hexnib;
-			    mp++;
-			    if (mp >= last)
 				break;
 			}
-		    }
-		    cp++;
 		}
-	    }
 	}
-    }
-    /* put in type */
-    pic->pic_cache->subtype = T_PIC_EPS;
-    if (!pdf_flag)
-	    close_file(file,filetype);
-    return PicSuccess;
+
+	fclose(file);
+	return ret;
 }
 
+
+/*
+ * Check the bounding box, and provide a fallback for invalid values.
+ */
+static void
+correct_boundingbox(int *llx, int *lly, int *urx, int *ury, const char *box) {
+
+	if (*urx - *llx > 0 && *ury - *lly > 0)
+		return;
+
+	/* bad bounding box */
+	*llx = *lly = 0;
+	*urx = paper_sizes[appres.papersize].width * 72 / PIX_PER_INCH;
+	*ury = paper_sizes[appres.papersize].height * 72 / PIX_PER_INCH;
+	file_msg("Bad %s, assuming %s size", box,
+			paper_sizes[appres.papersize].sname);
+	app_flush();
+}
+
+
+/*
+ * Read a pdf file. The filename "name" refers to an uncompressed file.
+ * Return gs_bitmap().
+ */
 int
+read_pdf(char *name, int filetype, F_pic *pic)
+{
+	/*
+	 * read_pdf() is called from read_picobj(), where it receives the name
+	 * of an already uncompressed file
+	 */
+	(void)	filetype;
+	/* prime with an invalid bounding box */
+	int	llx = 0, lly = 0, urx = 0, ury = 0;
+
+	/* Find the /MediaBox */
+	/* First, do a simply text-scan for "/MediaBox", failing that,
+	   call ghostscript.	*/
+	if (scan_mediabox(name, &llx, &lly, &urx, &ury))
+		gs_mediabox(name, &llx, &lly, &urx, &ury);
+
+	/* provide A4 or Letter bounding box, if reading /MediaBox fails */
+	correct_boundingbox(&llx, &lly, &urx, &ury, "/MediaBox");
+
+	/* set picture properties */
+	pic->hw_ratio = (float) (ury - lly) / (float) (urx - llx);
+	pic->pic_cache->subtype = T_PIC_PDF;
+	pic->pic_cache->size_x = round((urx - llx) * PIC_FACTOR);
+	pic->pic_cache->size_y = round((ury - lly) * PIC_FACTOR);
+	/* make 2-entry colormap here if we use monochrome */
+	pic->pic_cache->cmap[0].red = pic->pic_cache->cmap[0].green =
+		pic->pic_cache->cmap[0].blue = 0;
+	pic->pic_cache->cmap[1].red = pic->pic_cache->cmap[1].green =
+		pic->pic_cache->cmap[1].blue = 255;
+	pic->pic_cache->numcols = 0;
+
+	/* create the bitmap */
+	return gs_bitmap(name, pic, llx, lly, urx, ury);
+}
+
+
+/*
+ * Read an EPS file.
+ * Return codes:	PicSuccess (1): success
+ *			FileInvalid (-2): invalid file
+ */
+int
+read_eps(char *name, int filetype, F_pic *pic)
+{
+	(void)		filetype;
+
+	bool		bitmapz;
+	bool		flag;
+	int		llx, lly, urx, ury;
+	int		nested;
+	char		*cp;
+	unsigned char	*mp;
+	unsigned int	hexnib;
+	unsigned char	*last;
+	char		buf[300];
+	size_t		nbitmap;
+	FILE		*file;
+
+	if ((file = fopen(name, "rb")) == NULL)
+		return FileInvalid;
+
+	/* invalid bounding box */
+	llx = lly = urx = ury = 0;
+
+	/* scan for the bounding box */
+	nested = 0;
+	while (fgets(buf, sizeof buf, file) != NULL) {
+		if (!nested && !strncmp(buf, "%%BoundingBox:", 14)) {
+			/* make sure doesn't say (atend) */
+			if (!strstr(buf, "(atend)")) {
+				float       rllx, rlly, rurx, rury;
+
+				if (sscanf(strchr(buf, ':') + 1, "%f %f %f %f",
+						&rllx,&rlly,&rurx,&rury) < 4) {
+					file_msg("Bad EPS file: %s",
+							/* name might be a
+							   temporary file */
+							pic->pic_cache->file);
+					fclose(file);
+					return FileInvalid;
+				}
+				llx = floor(rllx);
+				lly = floor(rlly);
+				urx = ceil(rurx);
+				ury = ceil(rury);
+				if (appres.DEBUG)
+					fputs("Found EPS Bounding Box\n",
+							stderr);
+				break;
+			}
+		} else if (!strncmp(buf, "%%Begin", 7)) {
+			++nested;
+		} else if (nested && !strncmp(buf, "%%End", 5)) {
+			--nested;
+		}
+	}
+
+	/* if bounding box is invalid, provide fallback values */
+	correct_boundingbox(&llx, &lly, &urx, &ury, "EPS bounding box");
+
+	/* set picture properties */
+	pic->hw_ratio = (float) (ury - lly) / (float) (urx - llx);
+	pic->pic_cache->subtype = T_PIC_EPS;
+	pic->pic_cache->size_x = round((urx - llx) * PIC_FACTOR);
+	pic->pic_cache->size_y = round((ury - lly) * PIC_FACTOR);
+	/* make 2-entry colormap here if we use monochrome */
+	pic->pic_cache->cmap[0].red = pic->pic_cache->cmap[0].green =
+		pic->pic_cache->cmap[0].blue = 0;
+	pic->pic_cache->cmap[1].red = pic->pic_cache->cmap[1].green =
+		pic->pic_cache->cmap[1].blue = 255;
+	pic->pic_cache->numcols = 0;
+
+
+	/* look for a preview bitmap */
+	bitmapz = False;
+	while (fgets(buf, sizeof buf, file) != NULL) {
+		lower(buf);
+		if (!strncmp(buf, "%%beginpreview", 14)) {
+			sscanf(buf, "%%%%beginpreview: %d %d %*d",
+					&pic->pic_cache->bit_size.x,
+					&pic->pic_cache->bit_size.y);
+			bitmapz = true;
+			if (appres.DEBUG)
+				fputs("Found preview bitmap.\n", stderr);
+			break;
+		}
+	}
+
+	/* use ghostscript, if a preview bitmap does not exist */
+	if (!bitmapz && (*appres.ghostscript || *appres.gslib) &&
+		!gs_bitmap(name, pic, llx, lly, urx, ury)) {
+		fclose(file);
+		return PicSuccess;
+	}
+
+	if (!bitmapz) {
+		file_msg("EPS object read OK, but no preview bitmap "
+				"found/generated");
+		fclose(file);
+		return PicSuccess;
+	}
+
+	/* bitmapz == true */
+	if (pic->pic_cache->bit_size.x <= 0 || pic->pic_cache->bit_size.y <=0) {
+		file_msg("Strange bounding-box/bitmap-size error, no bitmap "
+				"found/generated");
+		fclose(file);
+		return FileInvalid;
+	}
+
+	/* read the preview bitmap */
+	nbitmap = (pic->pic_cache->bit_size.x + 7) / 8 *
+						pic->pic_cache->bit_size.y;
+	pic->pic_cache->bitmap = malloc(nbitmap);
+	if (pic->pic_cache->bitmap == NULL) {
+		file_msg("Could not allocate %zd bytes of memory for "
+				"EPS bitmap", nbitmap);
+		fclose(file);
+		return PicSuccess;
+	}
+
+	if (appres.DEBUG)
+		fputs("Reading preview bitmap in EPS file.\n", stderr);
+
+	mp = pic->pic_cache->bitmap;
+	memset(mp, 0, nbitmap);
+	last = pic->pic_cache->bitmap + nbitmap;
+	flag = true;
+	while (fgets(buf, sizeof buf, file) != NULL && mp < last) {
+		lower(buf);
+		if (!strncmp(buf, "%%endpreview", 12) ||
+				!strncmp(buf, "%%endimage", 10))
+			break;
+		cp = buf;
+		if (*cp != '%')
+			break;
+		cp++;
+		while (*cp != '\0') {
+			if (isxdigit(*cp)) {
+				hexnib = hex(*cp);
+				if (flag) {
+					flag = false;
+					*mp = hexnib << 4;
+				} else {
+					flag = true;
+					*mp = *mp + hexnib;
+					mp++;
+					if (mp >= last)
+						break;
+				}
+			}
+			cp++;
+		}
+	}
+	fclose(file);
+	return PicSuccess;
+}
+
+
+static int
 hex(char c)
 {
-    if (isdigit(c))
-	return (c - 48);
-    else
-	return (c - 87);
+	if (isdigit(c))
+		return c - 48;
+	else
+		return c - 87;
 }
 
-void lower(char *buf)
+static void
+lower(char *buf)
 {
-    while (*buf) {
-	if (isupper(*buf))
-	    *buf = (char) tolower(*buf);
-	buf++;
-    }
+	while (*buf) {
+		if (isupper(*buf))
+			*buf = (char)tolower(*buf);
+		++buf;
+	}
 }

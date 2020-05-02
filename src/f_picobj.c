@@ -42,10 +42,10 @@
 
 extern	int	read_gif(FILE *file, int filetype, F_pic *pic);
 extern	int	read_pcx(FILE *file, int filetype, F_pic *pic);
-extern	int	read_epsf(FILE *file, int filetype, F_pic *pic);
-extern	int	read_pdf(FILE *file, int filetype, F_pic *pic);
+extern	int	read_eps(char *name, int filetype, F_pic *pic);
+extern	int	read_pdf(char *name, int filetype, F_pic *pic);
 extern	int	read_ppm(FILE *file, int filetype, F_pic *pic);
-extern	int	read_tif(char *filename, int filetype, F_pic *pic);
+extern	int	read_tif(char *name, int filetype, F_pic *pic);
 extern	int	read_xbm(FILE *file, int filetype, F_pic *pic);
 
 #ifdef HAVE_JPEG
@@ -55,7 +55,7 @@ extern	int	read_jpg(FILE *file, int filetype, F_pic *pic);
 extern	int	read_png(FILE *file, int filetype, F_pic *pic);
 #endif
 #ifdef USE_XPM
-extern	int	read_xpm(FILE *file, int filetype, F_pic *pic);
+extern	int	read_xpm(char *name, int filetype, F_pic *pic);
 #endif
 
 enum	streamtype {
@@ -71,8 +71,8 @@ static struct _haeders {
 } headers[] = {
 	{"GIF",	"GIF",				read_gif,	True},
 	{"PCX", "\012\005\001",			read_pcx,	True},
-	{"EPS", "%!",				read_epsf,	True},
-	{"PDF", "%PDF",				read_pdf,	True},
+	{"EPS", "%!",				read_eps,	False},
+	{"PDF", "%PDF",				read_pdf,	False},
 	{"PPM", "P3",				read_ppm,	True},
 	{"PPM", "P6",				read_ppm,	True},
 	{"TIFF", "II*\000",			read_tif,	False},
@@ -356,7 +356,7 @@ read_picobj(F_pic *pic, char *file, int color, Boolean force, Boolean *existing)
 				return;
 			}
 		}
-		if (!uncompressed_file(plainname, file)) {
+		if (uncompressed_file(plainname, file)) {
 			file_msg("Could not uncompress picture file %s.", file);
 			if (*plainname) {
 				unlink(plainname);

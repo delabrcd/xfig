@@ -258,7 +258,7 @@ Boolean	dim_cursor = False;			/* to reset cursor back to line mode */
 /*********************************************************************/
 
 static char	*pic_names[] = {
-			"--", "EPS/PS", "GIF",
+			"--", "EPS/PS", "PDF", "GIF",
 #ifdef HAVE_JPEG
 			"JPEG",
 #endif

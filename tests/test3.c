@@ -35,7 +35,8 @@ extern int	gs_mediabox(char *file, int *llx, int *lly, int *urx, int *ury);
 int
 main(int argc, char *argv[])
 {
-	int llx, lly, urx, ury;
+	(void)	argc;
+	int	llx, lly, urx, ury;
 
 	appres.ghostscript = GSEXE;
 	appres.gslib = GSLIB;

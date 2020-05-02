@@ -592,8 +592,8 @@ gs_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
  * expects BGR triples. However, the map_to_palette() function in f_util.c does
  * not make any difference between the colors. Hence, leave the triples in the
  * bitmap in place, but swap the red and blue values in the colormap.
- * In contrast, before applying map_to_mono(), the color values must be changed
- * in the bitmap.
+ * For monochrome bitmap, use -sDEVICE=bit.
+ * Return 0 on success, -1 for failure, or GS_ERROR.
  *
  * Instead of -llx -lly translate, the commands passed to ghostscript used to
  * be:

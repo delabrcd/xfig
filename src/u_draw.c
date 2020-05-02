@@ -638,10 +638,9 @@ void draw_line(F_line *line, int op)
 	txt = textsize(canvas_font, strlen(string), string);
 	/* if the box is large enough, put the filename in the four corners */
 	if (xmax - xmin > 2.5*txt.length) {
-	    int u,d,w,marg;
+	    int u,d,marg;
 	    u = txt.ascent;
 	    d = txt.descent;
-	    w = txt.length;
 	    marg = 6 * ZOOM_FACTOR;	/* margin space around text */
 
 	    pw_text(canvas_win, xmin+marg, ymin+u+marg, op, line->depth,
@@ -980,7 +979,8 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
 	    if (box->pic->pic_cache->subtype == T_PIC_XBM) {
 		fg = x_color(box->pen_color);		/* xbm, use object pen color */
 		bg = x_bg_color.pixel;
-	    } else if (box->pic->pic_cache->subtype == T_PIC_EPS) {
+	    } else if (box->pic->pic_cache->subtype == T_PIC_EPS ||
+			box->pic->pic_cache->subtype == T_PIC_PDF) {
 		fg = black_color.pixel;			/* pbm from gs is inverted */
 		bg = white_color.pixel;
 	    } else {
