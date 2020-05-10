@@ -20,42 +20,37 @@
  *
  */
 
-#include "fig.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <X11/Intrinsic.h> /* includes X11/Xlib.h */	/* Boolean */
+#include <X11/ImUtil.h>	/* must first include X11/Xlib.h */
+			/* _XInitImageFuncPtrs() */
+
 #include "resources.h"
 #include "mode.h"
 #include "object.h"
-#include "paintop.h"
-#include "d_text.h"
-#include "f_util.h"
-#include "u_bound.h"
-#include "u_create.h"
+#include "d_text.h"		/* reload_text_fstruct() */
+#include "f_util.h"		/* xf_basename() */
+#include "u_bound.h"		/* <obj>_bound(), overlapping() */
 #include "u_draw.h"
-#include "u_fonts.h"
-#include "u_geom.h"
-#include "u_error.h"
-#include "u_list.h"
-#include "w_canvas.h"
-#include "w_drawprim.h"
-#include "w_file.h"
-#include "w_indpanel.h"
-#include "w_layers.h"
-#include "w_msgpanel.h"
-#include "w_setup.h"
-#include "w_util.h"
-#include "w_zoom.h"
-#include "u_redraw.h"
-#include "w_cursor.h"
-#include <X11/ImUtil.h>	/* _XInitImageFuncPtrs() */
+#include "u_geom.h"		/* compute_angle() */
+#include "u_error.h"		/* X_error_handler() */
+#include "w_canvas.h"		/* clip_xmax, clip_xmin */
+#include "w_file.h"		/* check_cancel() */
+#include "w_layers.h"		/* active_layer() */
+#include "w_msgpanel.h"		/* put_msg() */
+#include "w_util.h"		/* NUM_ARROW_TYPES */
+#include "u_redraw.h"		/* redisplay_line() */
+#include "w_cursor.h"		/* reset_cursor() */
+#include "xfig_math.h"
 
 static Boolean add_point(int x, int y);
 static void init_point_array(void);
 static Boolean add_closepoint(void);
 
+/* the spline definition stuff has been moved to u_draw_spline.c */
 #include "u_draw_spline.c"
-
-
-/* the spline definition stuff has been moved to u_draw_spline.c which
-   is included later in this file */
 
 /************** ARRAY FOR ARROW SHAPES **************/
 
@@ -76,73 +71,101 @@ struct _arrow_shape {
 	};
 
 static struct _arrow_shape arrow_shapes[NUM_ARROW_TYPES] = {
-		   /* number of points, index of tip, {datapairs} */
-		   /* first point must be upper-left point of tail, then tip */
+	/* number of points, index of tip, {datapairs} */
+	/* first point must be upper-left point of tail, then tip */
 
-		   /* type 0 */
-		   { 3, 1, 0, True, True, False, 2.15, {{-1,0.5}, {0,0}, {-1,-0.5}}},
-		   /* place holder for what would be type 0 filled */
-		   { 0 },
-		   /* type 1a simple triangle */
-		   { 4, 1, 0, True, True, False, 2.1, {{-1.0,0.5}, {0,0}, {-1.0,-0.5}, {-1.0,0.5}}},
-		   /* type 1b filled simple triangle*/
-		   { 4, 1, 0, True, True, False, 2.1, {{-1.0,0.5}, {0,0}, {-1.0,-0.5}, {-1.0,0.5}}},
-		   /* type 2a concave spearhead */
-		   { 5, 1, 0, True, True, False, 2.6, {{-1.25,0.5},{0,0},{-1.25,-0.5},{-1.0,0},{-1.25,0.5}}},
-		   /* type 2b filled concave spearhead */
-		   { 5, 1, 0, True, True, False, 2.6, {{-1.25,0.5},{0,0},{-1.25,-0.5},{-1.0,0},{-1.25,0.5}}},
-		   /* type 3a convex spearhead */
-		   { 5, 1, 0, True, True, False, 1.5, {{-0.75,0.5},{0,0},{-0.75,-0.5},{-1.0,0},{-0.75,0.5}}},
-		   /* type 3b filled convex spearhead */
-		   { 5, 1, 0, True, True, False, 1.5, {{-0.75,0.5},{0,0},{-0.75,-0.5},{-1.0,0},{-0.75,0.5}}},
-		   /* type 4a diamond */
-		   { 5, 1, 0, True, True, False, 1.15, {{-0.5,0.5},{0,0},{-0.5,-0.5},{-1.0,0},{-0.5,0.5}}},
-		   /* type 4b filled diamond */
-		   { 5, 1, 0, True, True, False, 1.15, {{-0.5,0.5},{0,0},{-0.5,-0.5},{-1.0,0},{-0.5,0.5}}},
-		   /* type 5a/b circle - handled in code */
-		   { 0, 0, 0, True, True, False, 0.0 },
-		   { 0, 0, 0, True, True, False, 0.0 },
-		   /* type 6a/b half circle - handled in code */
-		   { 0, 0, 0, True, True, False, -1.0 },
-		   { 0, 0, 0, True, True, False, -1.0 },
-		   /* type 7a square */
-		   { 5, 1, 0, True, True, False, 0.0, {{-1.0,0.5},{0,0.5},{0,-0.5},{-1.0,-0.5},{-1.0,0.5}}},
-		   /* type 7b filled square */
-		   { 5, 1, 0, True, True, False, 0.0, {{-1.0,0.5},{0,0.5},{0,-0.5},{-1.0,-0.5},{-1.0,0.5}}},
-		   /* type 8a reverse triangle */
-		   { 4, 1, 0, True, False, False, 0.0, {{-1.0,0},{0,0.5},{0,-0.5},{-1.0,0}}},
-		   /* type 8b filled reverse triangle */
-		   { 4, 1, 0, True, False, False, 0.0, {{-1.0,0},{0,0.5},{0,-0.5},{-1.0,0}}},
-
-		   /* type 9a top-half filled concave spearhead */
-		   { 5, 1, 3, False, True, False, 2.6, {{-1.25,0.5},{0,0},{-1.25,-0.5},{-1.0,0},{-1.25,0.5}},
-						 {{-1.25,-0.5},{0,0},{-1,0}}},
-		   /* type 9b bottom-half filled concave spearhead */
-		   { 5, 1, 3, False, True, False, 2.6, {{-1.25,0.5},{0,0},{-1.25,-0.5},{-1.0,0},{-1.25,0.5}},
-						 {{-1.25,0.5},{0,0},{-1,0}}},
-
-		   /* type 10o top-half simple triangle */
-		   { 4, 1, 0, True, True, True, 2.5, {{-1.0,0.5}, {0,0}, {-1,0.0}, {-1.0,0.5}}},
-		   /* type 10f top-half filled simple triangle*/
-		   { 4, 1, 0, True, True, True, 2.5, {{-1.0,0.5}, {0,0}, {-1,0.0}, {-1.0,0.5}}},
-		   /* type 11o top-half concave spearhead */
-		   { 4, 1, 0, True, True, True, 3.5, {{-1.25,0.5}, {0,0}, {-1,0}, {-1.25,0.5}}},
-		   /* type 11f top-half filled concave spearhead */
-		   { 4, 1, 0, True, True, True, 3.5, {{-1.25,0.5}, {0,0}, {-1,0}, {-1.25,0.5}}},
-		   /* type 12o top-half convex spearhead */
-		   { 4, 1, 0, True, True, True, 2.5, {{-0.75,0.5}, {0,0}, {-1,0}, {-0.75,0.5}}},
-		   /* type 12f top-half filled convex spearhead */
-		   { 4, 1, 0, True, True, True, 2.5, {{-0.75,0.5}, {0,0}, {-1,0}, {-0.75,0.5}}},
-
-		   /* type 13a "wye" */
-		   { 3, 0, 0, True, True, False, -1.0, {{0,0.5},{-1.0,0},{0,-0.5}}},
-		   /* type 13b bar */
-		   { 2, 1, 0, True, True, False, 0.0, {{0,0.5},{0,-0.5}}},
-		   /* type 14a two-prong fork */
-		   { 4, 0, 0, True, True, False, -1.0, {{0,0.5},{-1.0,0.5},{-1.0,-0.5},{0,-0.5}}},
-		   /* type 14b backward two-prong fork */
-		   { 4, 1, 0, True, True, False, 0.0, {{-1.0,0.5,},{0,0.5},{0,-0.5},{-1.0,-0.5}}},
-		};
+	/* type 0 */
+	{ 3, 1, 0, True, True, False, 2.15, {{-1,0.5}, {0,0}, {-1,-0.5}}, {0}},
+	/* place holder for what would be type 0 filled */
+	{ 0 },
+	/* type 1a simple triangle */
+	{ 4, 1, 0, True, True, False, 2.1,
+			{{-1.0,0.5}, {0.,0.}, {-1.0,-0.5}, {-1.0,0.5}}, {0}},
+	/* type 1b filled simple triangle*/
+	{ 4, 1, 0, True, True, False, 2.1,
+			{{-1.0,0.5}, {0.,0.}, {-1.0,-0.5}, {-1.0,0.5}}, {0}},
+	/* type 2a concave spearhead */
+	{ 5, 1, 0, True, True, False, 2.6,
+			{{-1.25,0.5},{0.,0.},{-1.25,-0.5},{-1.,0.},{-1.25,0.5}},
+			{0}},
+	/* type 2b filled concave spearhead */
+	{ 5, 1, 0, True, True, False, 2.6,
+			{{-1.25,0.5},{0.,0.},{-1.25,-0.5},{-1.,0.},{-1.25,0.5}},
+			{0}},
+	/* type 3a convex spearhead */
+	{ 5, 1, 0, True, True, False, 1.5,
+			{{-0.75,0.5},{0.,0.},{-0.75,-0.5},{-1.,0.},{-0.75,0.5}},
+			{0}},
+	/* type 3b filled convex spearhead */
+	{ 5, 1, 0, True, True, False, 1.5,
+			{{-0.75,0.5},{0.,0.},{-0.75,-0.5},{-1.,0.},{-0.75,0.5}},
+			{0}},
+	/* type 4a diamond */
+	{ 5, 1, 0, True, True, False, 1.15,
+			{{-0.5,0.5},{0.,0.},{-0.5,-0.5},{-1.0,0.},{-0.5,0.5}},
+			{0}},
+	/* type 4b filled diamond */
+	{ 5, 1, 0, True, True, False, 1.15,
+			{{-0.5,0.5},{0.,0.},{-0.5,-0.5},{-1.0,0.},{-0.5,0.5}},
+			{0}},
+	/* type 5a/b circle - handled in code */
+	{ 0, 0, 0, True, True, False, 0.0, {0}, {0}},
+	{ 0, 0, 0, True, True, False, 0.0, {0}, {0}},
+	/* type 6a/b half circle - handled in code */
+	{ 0, 0, 0, True, True, False, -1.0, {0}, {0}},
+	{ 0, 0, 0, True, True, False, -1.0, {0}, {0}},
+	/* type 7a square */
+	{ 5, 1, 0, True, True, False, 0.0,
+			{{-1.0,0.5},{0.,0.5},{0.,-0.5},{-1.0,-0.5},{-1.0,0.5}},
+			{0}},
+	/* type 7b filled square */
+	{ 5, 1, 0, True, True, False, 0.0,
+			{{-1.0,0.5},{0.,0.5},{0.,-0.5},{-1.0,-0.5},{-1.0,0.5}},
+			{0}},
+	/* type 8a reverse triangle */
+	{ 4, 1, 0, True, False, False, 0.0,
+			{{-1.0,0.},{0.,0.5},{0.,-0.5},{-1.0,0}}, {0}},
+	/* type 8b filled reverse triangle */
+	{ 4, 1, 0, True, False, False, 0.0,
+			{{-1.0,0.},{0.,0.5},{0.,-0.5},{-1.0,0.}}, {0}},
+	/* type 9a top-half filled concave spearhead */
+	{ 5, 1, 3, False, True, False, 2.6,
+			{{-1.25,0.5},{0.,0.},{-1.25,-0.5},{-1.,0.},{-1.25,0.5}},
+			{{-1.25,-0.5},{0.,0.},{-1.,0.}}},
+	/* type 9b bottom-half filled concave spearhead */
+	{ 5, 1, 3, False, True, False, 2.6,
+			{{-1.25,0.5},{0.,0.},{-1.25,-0.5},{-1.,0.},{-1.25,0.5}},
+			{{-1.25,0.5},{0.,0.},{-1,0}}},
+	/* type 10o top-half simple triangle */
+	{ 4, 1, 0, True, True, True, 2.5,
+			{{-1.0,0.5}, {0.,0.}, {-1.,0.0}, {-1.0,0.5}}, {0}},
+	/* type 10f top-half filled simple triangle*/
+	{ 4, 1, 0, True, True, True, 2.5,
+			{{-1.0,0.5}, {0.,0.}, {-1.,0.0}, {-1.0,0.5}}, {0}},
+	/* type 11o top-half concave spearhead */
+	{ 4, 1, 0, True, True, True, 3.5,
+			{{-1.25,0.5}, {0.,0.}, {-1.,0.}, {-1.25,0.5}}, {0}},
+	/* type 11f top-half filled concave spearhead */
+	{ 4, 1, 0, True, True, True, 3.5,
+			{{-1.25,0.5}, {0.,0.}, {-1.,0.}, {-1.25,0.5}}, {0}},
+	/* type 12o top-half convex spearhead */
+	{ 4, 1, 0, True, True, True, 2.5,
+			{{-0.75,0.5}, {0.,0.}, {-1.,0.}, {-0.75,0.5}}, {0}},
+	/* type 12f top-half filled convex spearhead */
+	{ 4, 1, 0, True, True, True, 2.5,
+			{{-0.75,0.5}, {0.,0.}, {-1.,0.}, {-0.75,0.5}}, {0}},
+	/* type 13a "wye" */
+	{ 3, 0, 0, True, True, False, -1.0,
+			{{0,0.5},{-1.0,0.},{0.,-0.5}}, {0}},
+	/* type 13b bar */
+	{ 2, 1, 0, True, True, False, 0.0, {{0.,0.5},{0.,-0.5}}, {0}},
+	/* type 14a two-prong fork */
+	{ 4, 0, 0, True, True, False, -1.0,
+			{{0,0.5},{-1.0,0.5},{-1.0,-0.5},{0.,-0.5}}, {0}},
+	/* type 14b backward two-prong fork */
+	{ 4, 1, 0, True, True, False, 0.0,
+			{{-1.0,0.5,},{0.,0.5},{0.,-0.5},{-1.0,-0.5}}, {0}},
+};
 
 /************** POLYGON/CURVE DRAWING FACILITIES ****************/
 
@@ -1016,7 +1039,18 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
 	    if (Cpixel[0] == 1)
 		endian = False;
 
-	    cbpp = 1;
+	    /*
+	     * See comments (around XPutPixel() ?) in
+	     * http://gitlab.freedesktop.org/xorg/libX11/src/ImUtil.c,
+	     * where it is assumed that all formats have bits_per_pixel <= 32,
+	     * where bits_per_pixel is a field in struct XVisualInfo.
+	     */
+	    if (tool_vclass == TrueColor && image_bpp == 4 &&
+			    box->pic->pic_cache->numcols <= 0)
+		    /* no colormap, argb quadruples */
+		    cbpp = 4;
+	    else
+		    cbpp = 1;
 	    cbpl = cwidth * cbpp;
 	    bpl = width * image_bpp;
 	    if ((data = malloc(bpl * height)) == NULL) {
@@ -1059,19 +1093,21 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
 			break;
 
 		if (type1) {
-			src = box->pic->pic_cache->bitmap + (j * cheight / height * cbpl);
+			src = box->pic->pic_cache->bitmap +
+				(j * cheight / height) * cbpl;
 			dst = data + (j * bpl);
 		} else {
-			src = box->pic->pic_cache->bitmap + (j * cbpl / height);
+			src = box->pic->pic_cache->bitmap + (j * cwidth /
+					height) * cbpp;
 			dst = data + (j * bpl);
 		}
 
 		pixel = dst;
 		for( i=0; i<width; i++ ) {
 		    if (type1) {
-			    cpixel = src + (i * cbpl / width );
+			    cpixel = src + (i * cwidth / width) * cbpp;
 		    } else {
-			    cpixel = src + (i * cheight / width * cbpl);
+			    cpixel = src + (i * cheight / width * cwidth) * cbpp;
 		    }
 		    /* if this pixel is the transparent color then clear the mask pixel */
 		    if (box->pic->pic_cache->transp != TRANSP_NONE &&
@@ -1104,7 +1140,12 @@ void create_pic_pixmap(F_line *box, int rotation, int width, int height, int fli
 		    }
 		    if (image_bpp == 4) {
 			Lpixel = (unsigned int *) pixel;
-			*Lpixel = (unsigned int) cmap[*cpixel].pixel;
+			if (box->pic->pic_cache->numcols <= 0)
+						/* && tool_v == TrueColor */
+				/* no colormap, rgb color */
+			    *Lpixel = *(unsigned int *)cpixel;
+			else
+			    *Lpixel = (unsigned int)cmap[*cpixel].pixel;
 			/* swap the 4 bytes on big-endian machines */
 			if (endian) {
 			    Cpixel = (unsigned char *) Lpixel;

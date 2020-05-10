@@ -1,6 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1989-2007 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -13,26 +16,36 @@
  *
  */
 
-#include "fig.h"
+#if defined HAVE_CONFIG_H && !defined VERSION
+#include "config.h"
+#endif
+
+#include <errno.h>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "resources.h"
 #include "object.h"
 #include "mode.h"
 #include "f_neuclrtab.h"
 #include "f_read.h"
+#include "f_save.h"		/* write_file() */
 #include "f_util.h"
-#include "u_create.h"
-#include "w_file.h"
-#include "w_indpanel.h"
-#include "w_color.h"
-#include "w_util.h"
-#include "w_icons.h"
-#include "w_msgpanel.h"
-
-#include "f_save.h"
-#include "u_fonts.h"
+#include "u_create.h"		/* new_string() */
+#include "u_fonts.h"		/* psfontnum() */
+#include "w_file.h"		/* renamefile() */
+#include "w_color.h"		/* YStoreColors(), alloc_color_cells() */
 #include "w_cursor.h"
+#include "w_icons.h"		/* panel_get_value() */
+#include "w_indpanel.h"		/* ind_sw_info */
+#include "w_msgpanel.h"
+#include "w_util.h"		/* popup_query() */
+#include "xfig_math.h"
 
-#include <time.h>
 
 /* LOCALS */
 
@@ -41,7 +54,6 @@ int	count_pixels(void);
 
 
 /* PROCEDURES */
-
 
 void beep (void);
 void alloc_imagecolors (int num);
@@ -67,43 +79,43 @@ emptyname(char *name)
 int
 emptyname_msg(char *name, char *msg)
 {
-    int		    returnval;
+	int	returnval;
 
-    if (returnval = emptyname(name)) {
-	put_msg("No file name specified, %s command ignored", msg);
-	beep();
-    }
-    return (returnval);
+	if ((returnval = emptyname(name))) {
+		put_msg("No file name specified, %s command ignored", msg);
+		beep();
+	}
+	return returnval;
 }
 
 int
 emptyfigure(void)
 {
-    if (objects.texts != NULL)
-	return (0);
-    if (objects.lines != NULL)
-	return (0);
-    if (objects.ellipses != NULL)
-	return (0);
-    if (objects.splines != NULL)
-	return (0);
-    if (objects.arcs != NULL)
-	return (0);
-    if (objects.compounds != NULL)
-	return (0);
-    return (1);
+	if (objects.texts != NULL)
+		return 0;
+	if (objects.lines != NULL)
+		return 0;
+	if (objects.ellipses != NULL)
+		return 0;
+	if (objects.splines != NULL)
+		return 0;
+	if (objects.arcs != NULL)
+		return 0;
+	if (objects.compounds != NULL)
+		return 0;
+	return 1;
 }
 
 int
 emptyfigure_msg(char *msg)
 {
-    int		    returnval;
+	int	returnval;
 
-    if (returnval = emptyfigure()) {
-	put_msg("Empty figure, %s command ignored", msg);
-	beep();
-    }
-    return (returnval);
+	if ((returnval = emptyfigure())) {
+		put_msg("Empty figure, %s command ignored", msg);
+		beep();
+	}
+	return returnval;
 }
 
 int
@@ -203,14 +215,13 @@ ok_to_write(char *file_name, char *op_name)
 char *
 xf_basename(char *filename)
 {
-    char	   *p;
-    if (filename == NULL || *filename == '\0')
-	return filename;
-    if (p=strrchr(filename,'/')) {
-	return ++p;
-    } else {
-	return filename;
-    }
+	char	*p;
+	if (filename == NULL || *filename == '\0')
+		return filename;
+	if ((p = strrchr(filename,'/')))
+		return ++p;
+	else
+		return filename;
 }
 
 static int	  scol, ncolors;
@@ -383,90 +394,92 @@ void alloc_imagecolors(int num)
 int
 count_colors(void)
 {
-    int		    ncolors;
-    struct _pics   *pics;
+	int		ncolors = 0;
+	struct _pics	*pics;
 
-    ncolors = 0;
-    for (pics = pictures; pics; pics = pics->next)
-	if (pics->bitmap != NULL)
-		ncolors += pics->numcols;
-    return ncolors;
+	for (pics = pictures; pics; pics = pics->next)
+		if (pics->bitmap != NULL && pics->numcols > 0)
+			ncolors += pics->numcols;
+	return ncolors;
 }
 
 int
 count_pixels(void)
 {
-    int		    npixels;
-    struct _pics   *pics;
+	int		npixels = 0;
+	struct _pics	*pics;
 
-    npixels = 0;
-    for (pics = pictures; pics; pics = pics->next)
-	if (pics->bitmap != NULL && pics->numcols > 0)
-	    npixels += pics->bit_size.x * pics->bit_size.y;
-    return npixels;
+	for (pics = pictures; pics; pics = pics->next)
+		if (pics->bitmap != NULL && pics->numcols > 0)
+			npixels += pics->bit_size.x * pics->bit_size.y;
+	return npixels;
 }
 
-void readjust_cmap(void)
+void
+readjust_cmap(void)
 {
-    struct _pics   *pics;
-    int		   i, j;
+	struct _pics	*pics;
+	int		i, j;
 
-    /* first adjust the colormaps in the repository */
-    for (pics = pictures; pics; pics = pics->next)
-	if (pics->bitmap != NULL && pics->numcols > 0) {
-	    for (i=0; i<pics->numcols; i++) {
-		j = pics->cmap[i].pixel;
-		pics->cmap[i].pixel = image_cells[j].pixel;
-		scol++;
-	    }
-	}
+	/* first adjust the colormaps in the repository */
+	for (pics = pictures; pics; pics = pics->next)
+		if (pics->bitmap != NULL && pics->numcols > 0) {
+			for (i = 0; i < pics->numcols; ++i) {
+				j = pics->cmap[i].pixel;
+				pics->cmap[i].pixel = image_cells[j].pixel;
+				++scol;
+			}
+		}
 
-    /* now free up all pixmaps in picture objects */
-    /* start with main list */
-    free_pixmaps(&objects);
+	/* now free up all pixmaps in picture objects */
+	/* start with main list */
+	free_pixmaps(&objects);
 }
 
-void free_pixmaps(F_compound *obj)
+void
+free_pixmaps(F_compound *obj)
 {
-    F_line	   *l;
-    F_compound	   *c;
+	F_line		*l;
+	F_compound	*c;
 
-    /* traverse the compounds in this compound */
-    for (c = obj->compounds; c != NULL; c = c->next) {
-	free_pixmaps(c);
-    }
-    for (l = obj->lines; l != NULL; l = l->next) {
-	if (l->type == T_PICTURE) {
-	    if (l->pic->pixmap != (Pixmap) NULL) {
-		if (l->pic->pixmap)
-		    XFreePixmap(tool_d, l->pic->pixmap);
-		l->pic->pixmap = 0;		/* this will force regeneration of the pixmap */
-		if (l->pic->mask != 0)
-		    XFreePixmap(tool_d, l->pic->mask);
-		l->pic->mask = 0;
-	    }
+	/* traverse the compounds in this compound */
+	for (c = obj->compounds; c != NULL; c = c->next) {
+		free_pixmaps(c);
 	}
-    }
+	for (l = obj->lines; l != NULL; l = l->next) {
+		if (l->type != T_PICTURE)
+			continue;
+		if (l->pic->pixmap != (Pixmap)0 &&
+					l->pic->pic_cache->numcols > 0) {
+			XFreePixmap(tool_d, l->pic->pixmap);
+			/* this will force regeneration of the pixmap */
+			l->pic->pixmap = (Pixmap)0;
+			if (l->pic->mask != (Pixmap)0)
+				XFreePixmap(tool_d, l->pic->mask);
+			l->pic->mask = (Pixmap)0;
+		}
+	}
 }
 
-void extract_cmap(void)
+void
+extract_cmap(void)
 {
-    struct _pics   *pics;
-    int		    i;
+	struct _pics	*pics;
+	int		i;
 
-    /* extract the colormaps in the repository */
-    for (pics = pictures; pics; pics = pics->next)
-	if (pics->bitmap != NULL && pics->numcols > 0) {
-	    for (i=0; i<pics->numcols; i++) {
-		image_cells[scol].red   = pics->cmap[i].red << 8;
-		image_cells[scol].green = pics->cmap[i].green << 8;
-		image_cells[scol].blue  = pics->cmap[i].blue << 8;
-		pics->cmap[i].pixel = scol;
-		scol++;
-	    }
-	}
-    /* now free up the pixmaps */
-    free_pixmaps(&objects);
+	/* extract the colormaps in the repository */
+	for (pics = pictures; pics; pics = pics->next)
+		if (pics->bitmap != NULL && pics->numcols > 0) {
+			for (i = 0; i < pics->numcols; ++i) {
+				image_cells[scol].red = pics->cmap[i].red << 8;
+				image_cells[scol].green=pics->cmap[i].green <<8;
+				image_cells[scol].blue = pics->cmap[i].blue <<8;
+				pics->cmap[i].pixel = scol;
+				++scol;
+			}
+		}
+	/* now free up the pixmaps */
+	free_pixmaps(&objects);
 }
 
 void add_all_pixels(void)
@@ -1093,7 +1106,7 @@ build_command(char *program, char *filename)
     if (!cmd)
 	return (char *) NULL;
     strcpy(cmd,program);
-    while (c1=strstr(cmd,"%f")) {
+    while ((c1 = strstr(cmd,"%f"))) {
 	repl = True;
 	strcpy(cmd2, c1+2);		/* save tail */
 	strcpy(c1, filename);		/* change %f to filename */

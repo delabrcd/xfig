@@ -99,7 +99,7 @@
 #define DEF_RECENT_FILES	5
 
 /* for picture files */
-#define	MAX_COLORMAP_SIZE	MAX_USR_COLS
+#define	MAX_COLORMAP_SIZE	256
 
 /* for JPEG export */
 #define	DEF_JPEG_QUALITY	75

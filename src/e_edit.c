@@ -20,7 +20,20 @@
  *
  */
 
-#include "fig.h"
+#if defined HAVE_CONFIG_H && !defined VERSION
+#include "config.h"
+#endif
+
+#include <errno.h>
+#include <math.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/wait.h>		/* waitpid() */
+#include <time.h>
+#include <unistd.h>
+#include <X11/Intrinsic.h>	/* Widget, Boolean */
+
 #include "figx.h"
 #include "resources.h"
 #include "mode.h"
@@ -64,12 +77,10 @@
 #include "w_color.h"
 #include "w_cursor.h"
 #include "w_dir.h"
-
 #ifdef I18N
 #include "w_i18n.h"
 #endif
-#include <sys/wait.h>  /* waitpid() */
-#include <time.h>
+#include "xfig_math.h"
 
 /* EXPORTS */
 
@@ -1746,7 +1757,8 @@ void make_window_line(F_line *l)
 				       form, Args, ArgCount);
 
 	/* although the EPS may have colors, the actual number is not known */
-	if (new_l->pic != 0 && new_l->pic->pic_cache && (
+	if (new_l->pic != 0 && new_l->pic->pic_cache &&
+			new_l->pic->pic_cache->numcols > 0 && (
 #ifdef HAVE_PNG
 	     new_l->pic->pic_cache->subtype == T_PIC_PNG ||
 #endif
@@ -2091,7 +2103,7 @@ get_new_line_values(void)
 	/* number of colors */
 	/* although the FIG and EPS may have colors, the actual number is not known */
 	FirstArg(XtNlabel, buf);
-	if (
+	if (new_l->pic->pic_cache->numcols > 0 && (
 	     new_l->pic->pic_cache->subtype == T_PIC_PCX ||
 	     new_l->pic->pic_cache->subtype == T_PIC_PPM ||
 	     new_l->pic->pic_cache->subtype == T_PIC_TIF ||
@@ -2104,7 +2116,7 @@ get_new_line_values(void)
 #ifdef HAVE_JPEG
 	     new_l->pic->pic_cache->subtype == T_PIC_JPEG ||
 #endif
-	     new_l->pic->pic_cache->subtype == T_PIC_GIF)
+	     new_l->pic->pic_cache->subtype == T_PIC_GIF))
 		sprintf(buf,"%3d",new_l->pic->pic_cache->numcols);
 	else
 		strcpy(buf,"N/A");

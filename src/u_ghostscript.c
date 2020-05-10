@@ -21,7 +21,7 @@
  * Autor: Thomas Loimer, 2020.
  */
 
-#ifdef HAVE_CONFIG_H
+#if defined HAVE_CONFIG_H && !defined VERSION
 #include "config.h"
 #endif
 
@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <X11/X.h>		/* TrueColor */
 
 #include "object.h"
 #include "resources.h"
@@ -622,7 +623,7 @@ gs_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
 #define	bw_fmt(ppi)	"%s -q -dSAFER -sDEVICE=bit -r" string_of(ppi)	    \
 			" -g%dx%d -o- -c '%d %d translate' -f %s"
 	int		stat;
-	int		c, w, h;
+	int		w, h;
 	const int	failure = -1;
 	size_t		len;
 	size_t		len_bitmap;
@@ -646,7 +647,10 @@ gs_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
 		pic->pic_cache->numcols = 0;
 	} else {
 		fmt = rgb_fmt(BITMAP_PPI);
-		len_bitmap = w * h * 3;
+		if (tool_vclass == TrueColor && image_bpp == 4)
+			len_bitmap = w * h * image_bpp;
+		else
+			len_bitmap = w * h * 3;
 	}
 	pic->pic_cache->bit_size.x = w;
 	pic->pic_cache->bit_size.y = h;
@@ -664,13 +668,14 @@ gs_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
 	/* still check for overflow, because of the integers */
 	if (len <= sizeof exe_buf)
 		len = sizeof exe_buf;
-	c = snprintf(exe, len, fmt, appres.ghostscript, w, h, -llx, -lly, file);
-	if (c >= len) {
+	stat = snprintf(exe, len, fmt, appres.ghostscript, w, h, -llx, -lly,
+			file);
+	if ((size_t)stat >= len) {
 		if (exe == exe_buf) {
-			if ((exe = malloc((size_t)(c + 1))) == NULL)
+			if ((exe = malloc((size_t)(stat + 1))) == NULL)
 				return failure;
 		} else {
-			if ((exe = realloc(exe, (size_t)(c + 1))) == NULL) {
+			if ((exe = realloc(exe, (size_t)(stat + 1))) == NULL) {
 				free(exe);
 				return failure;
 			}
@@ -698,32 +703,50 @@ gs_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
 
 	/* write result to pic->pic_cache->bitmap */
 	pos = pic->pic_cache->bitmap;
-	while ((c = fgetc(gs_output)) != EOF &&
-			pos - pic->pic_cache->bitmap < len_bitmap)
-		*(pos++) = (unsigned char)c;
+	if (tool_vclass == TrueColor && image_bpp == 4) {
+		int	c[3];
+		while ((c[0] = fgetc(gs_output)) != EOF &&
+				(c[1] = fgetc(gs_output)) != EOF &&
+				(c[2] = fgetc(gs_output)) != EOF &&
+				(size_t)(pos - pic->pic_cache->bitmap) <
+								len_bitmap) {
+			/* this should take care of endian-ness */
+			*(unsigned int *)pos = ((unsigned int)c[0] << 16) +
+				((unsigned int)c[1] << 8) + (unsigned int)c[2];
+			pos += image_bpp;
+		}
+		pic->pic_cache->numcols = -1;	/* no colormap */
+	} else {
+		int	c[3];
+		/* map_to_palette() expects BGR triples, swap the RGB triples */
+		while ((c[0] = fgetc(gs_output)) != EOF &&
+				(c[1] = fgetc(gs_output)) != EOF &&
+				(c[2] = fgetc(gs_output)) != EOF &&
+				(size_t)(pos - pic->pic_cache->bitmap) <
+								len_bitmap) {
+			*(pos++) = (unsigned char)c[2];
+			*(pos++) = (unsigned char)c[1];
+			*(pos++) = (unsigned char)c[0];
+		}
+	}
 	stat = pclose(gs_output);
-	/* if reading stops just at the last byte in the file,
-	   neither must c == EOF, nor does feof() necessarily return true. */
-	if (pos - pic->pic_cache->bitmap != len_bitmap) {
+	/* if reading stops just at the last byte in the file, then
+	   neither is c[?] == EOF, nor does feof() necessarily return true. */
+	if ((size_t)(pos - pic->pic_cache->bitmap) != len_bitmap) {
 		free(pic->pic_cache->bitmap);
 		file_msg("Error reading pixmap to render %s.", file);
 		return failure;
 	}
-	if (stat)
+	if (stat) {
+		free(pic->pic_cache->bitmap);
 		return GS_ERROR;
+	}
 
-	if (tool_cells > 2 && !appres.monochrome) {
+	if (tool_vclass != TrueColor && tool_cells > 2 && !appres.monochrome) {
 		if (!map_to_palette(pic)) {
 			file_msg("Cannot create colormapped image for %s.",
 					file);
 			return failure;
-		}
-		/* swap red and blue in the colormap */
-		for (c = 0; c < pic->pic_cache->numcols; ++c) {
-			unsigned short	tmp = pic->pic_cache->cmap[c].red;
-			pic->pic_cache->cmap[c].red =
-				pic->pic_cache->cmap[c].blue;
-			pic->pic_cache->cmap[c].blue = tmp;
 		}
 	}
 
