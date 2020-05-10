@@ -481,7 +481,7 @@ gslib_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 	int		bb[4] = { 0, 0, -1, -1};
 	char		*fmt;
 	size_t		len;
-	const int	argc = 6;
+#define argc	6
 	char		errbuf[256] = "";
 	char		*argnew[argc];
 	char		*argold[argc];
@@ -539,11 +539,12 @@ gslib_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 
 	/* call into the ghostscript library */
 	stat = gslib(&data, stdin_void, stdout_mediabox, stderr_buf,
-			6 /* argcnew */, 6 /* argcold */, argnew, argold);
+				argc, argc, argnew, argold);
 	if (argnew[3] != permit_buf)
 		free(argnew[3]);
 	if (argnew[5] != cmd_buf)
 		free(argnew[5]);
+#undef argc
 
 	if (stat == 0) {
 		if (data.bb[1] == 0 && data.bb[3] == GS_ERROR)
@@ -619,9 +620,9 @@ gs_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
 {
 #define string_of(ppi)	#ppi
 #define	rgb_fmt(ppi)	"%s -q -dSAFER -sDEVICE=bitrgb -dBlueValues=256 -r" \
-			string_of(ppi) " -g%dx%d -o- -c '%d %d translate' -f %s"
+	string_of(ppi) " -g%dx%d -sPageList=1 -o- -c '%d %d translate' -f %s"
 #define	bw_fmt(ppi)	"%s -q -dSAFER -sDEVICE=bit -r" string_of(ppi)	    \
-			" -g%dx%d -o- -c '%d %d translate' -f %s"
+			" -g%dx%d -sPageList=1 -o- -c '%d %d translate' -f %s"
 	int		stat;
 	int		w, h;
 	const int	failure = -1;
@@ -734,11 +735,13 @@ gs_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
 	   neither is c[?] == EOF, nor does feof() necessarily return true. */
 	if ((size_t)(pos - pic->pic_cache->bitmap) != len_bitmap) {
 		free(pic->pic_cache->bitmap);
+		pic->pic_cache->bitmap = NULL;
 		file_msg("Error reading pixmap to render %s.", file);
 		return failure;
 	}
 	if (stat) {
 		free(pic->pic_cache->bitmap);
+		pic->pic_cache->bitmap = NULL;
 		return GS_ERROR;
 	}
 
