@@ -704,7 +704,15 @@ gs_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
 
 	/* write result to pic->pic_cache->bitmap */
 	pos = pic->pic_cache->bitmap;
-	if (tool_vclass == TrueColor && image_bpp == 4) {
+	if (tool_cells <= 2 || appres.monochrome) {
+		int	c;
+		while ((c = fgetc(gs_output)) != EOF &&
+			(size_t)(pos - pic->pic_cache->bitmap) < len_bitmap) {
+			*(pos++) = (unsigned char)c;
+		}
+		pic->pic_cache->numcols = 0;
+
+	} else if (tool_vclass == TrueColor && image_bpp == 4) {
 		int	c[3];
 		while ((c[0] = fgetc(gs_output)) != EOF &&
 				(c[1] = fgetc(gs_output)) != EOF &&
@@ -717,6 +725,7 @@ gs_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
 			pos += image_bpp;
 		}
 		pic->pic_cache->numcols = -1;	/* no colormap */
+
 	} else {
 		int	c[3];
 		/* map_to_palette() expects BGR triples, swap the RGB triples */
