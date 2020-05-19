@@ -17,62 +17,382 @@
  */
 
 
-#include <errno.h>
+#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+#include <X11/Xmd.h>	/* CARD32 */
 
 #include "resources.h"
 #include "object.h"
 #include "f_picobj.h"
-#include "f_readpcx.h"
+#include "f_util.h"
 #include "w_msgpanel.h"
+#include "w_setup.h"	/* PIX_PER_INCH, PIX_PER_CM */
 
-#define BUFLEN 1024
 
 /* return codes:  PicSuccess (1) : success
 		  FileInvalid (-2) : invalid file
 */
 
 
+static int
+skip_comments_whitespace(FILE *file)
+{
+	int	c;
+
+	while ((c = fgetc(file)) != EOF) {
+		if (c == '#')
+			while ((c = fgetc(file)) != EOF && c != '\n')
+				;
+		if (c != ' ' && c != '\n' && c != '\r' && c != '\f' &&
+				c != '\t' && c != '\v')
+			break;
+	}
+	if (c == EOF) {
+		return EOF;
+	} else {
+		ungetc(c, file);
+		return 0;
+	}
+}
+
+#define THREE_BYTEPERPIXEL	(tool_vclass != TrueColor || image_bpp != 4 \
+					|| appres.monochrome)
+
+static int
+read_8bitppm(FILE *file, unsigned char *restrict dst, unsigned int width,
+						unsigned int height)
+{
+	int		c[3];
+	unsigned int	w;
+
+	if (THREE_BYTEPERPIXEL) {
+		while (height-- > 0u) {
+			w = width;
+			while (w-- > 0u) {
+				if ((c[0] = fgetc(file)) == EOF ||
+						(c[1] = fgetc(file)) == EOF ||
+						(c[2] = fgetc(file)) == EOF)
+					return FileInvalid;
+				/* map_to_palette expects BGR triples */
+				*(dst++) = (unsigned char)c[2];
+				*(dst++) = (unsigned char)c[1];
+				*(dst++) = (unsigned char)c[0];
+			}
+		}
+		return PicSuccess;
+	}
+
+	while (height-- > 0u) {
+		w = width;
+		while (w-- > 0u) {
+			if ((c[0] = fgetc(file)) == EOF ||
+					(c[1] = fgetc(file)) == EOF ||
+					(c[2] = fgetc(file)) == EOF)
+				return FileInvalid;
+			*(CARD32 *)dst = ((CARD32)c[0] << 16) +
+					((CARD32)c[1] << 8) + (CARD32)c[2];
+			dst += sizeof(CARD32);
+		}
+	}
+	return PicSuccess;
+}
+
+static void
+scale_to_255(unsigned char *restrict byte, unsigned maxval, unsigned rowbytes,
+		unsigned height)
+{
+	unsigned int	w;
+	const unsigned	rnd = maxval / 2;
+
+	/* This scales also the unused alpha channel for TrueColor visuals. One
+	   would have to check endian-ness, to avoid the unecessary scaling */
+	while (height-- > 0u) {
+		w = rowbytes;
+		while (w-- > 0u) {
+			*byte = (*byte * 255u + rnd) / maxval;
+			++byte;
+		}
+	}
+}
+
+/*
+ * Read the next six bytes from file, which correspond to a rgb triplet with two
+ * bytes for each channel, and return the values scaled into the range 0--255.
+ */
+static int
+read6bytes(FILE *file, unsigned maxval, unsigned *r, unsigned *g, unsigned *b)
+{
+	int		c[6];
+	const uint32_t	rnd = maxval / 2;
+
+	if ((c[0] = fgetc(file)) == EOF || (c[1] = fgetc(file)) == EOF ||
+		   (c[2] = fgetc(file)) == EOF || (c[3] = fgetc(file)) == EOF ||
+		   (c[4] = fgetc(file)) == EOF || (c[5] = fgetc(file)) == EOF)
+		return FileInvalid;
+
+	/* scale to the range 0 - 255 */
+	/* two-byte ppm files have the most significant byte first */
+	*r = ((((uint32_t)c[0] << 8) + c[1]) * 255u + rnd) / maxval;
+	*g = ((((uint32_t)c[2] << 8) + c[3]) * 255u + rnd) / maxval;
+	*b = ((((uint32_t)c[4] << 8) + c[5]) * 255u + rnd) / maxval;
+
+	if (*r > 255u)
+		*r = 255u;
+	if (*g > 255u)
+		*g = 255u;
+	if (*b > 255u)
+		*b = 255u;
+
+	return 0;
+}
+
+static int
+read_16bitppm(FILE *file, unsigned char *restrict dst, unsigned int maxval,
+		unsigned int width, unsigned int height)
+{
+	unsigned int	w;
+	unsigned int	r, g, b;
+
+	if (THREE_BYTEPERPIXEL) {
+		while (height-- > 0u) {
+			w = width;
+			while (w-- > 0u) {
+				if (read6bytes(file, maxval, &r, &g, &b))
+					return FileInvalid;
+
+				/* map_to_palette expects BGR triples */
+				*(dst++) = (unsigned char)b;
+				*(dst++) = (unsigned char)g;
+				*(dst++) = (unsigned char)r;
+			}
+		}
+		return PicSuccess;
+	}
+
+	while (height-- > 0u) {
+		w = width;
+		while (w-- > 0u) {
+			if (read6bytes(file, maxval, &r, &g, &b))
+				return FileInvalid;
+			*(CARD32 *)dst = ((CARD32)r << 16) + ((CARD32)g << 8) +
+						(CARD32)b;
+			dst += sizeof(CARD32);
+		}
+	}
+	return PicSuccess;
+}
+
+static int
+read_asciippm(FILE *file, unsigned char *restrict dst, unsigned int width,
+						unsigned int height)
+{
+	int		c[3];
+	unsigned int	w;
+
+	if (THREE_BYTEPERPIXEL) {
+		while (height-- > 0u) {
+			w = width;
+			while (w-- > 0u) {
+				if (fscanf(file, " %u %u %u", c, c+1, c+2) != 3)
+					return FileInvalid;
+
+				if (c[0] > 255) c[0] = 255;
+				if (c[1] > 255) c[1] = 255;
+				if (c[2] > 255) c[2] = 255;
+
+				/* map_to_palette expects BGR triples */
+				*(dst++) = (unsigned char)c[2];
+				*(dst++) = (unsigned char)c[1];
+				*(dst++) = (unsigned char)c[0];
+			}
+		}
+		return PicSuccess;
+	}
+
+	/* four bytes per pixel */
+	while (height-- > 0u) {
+		w = width;
+		while (w-- > 0u) {
+			if (fscanf(file, " %u %u %u", c, c + 1, c + 2) != 3)
+				return FileInvalid;
+
+			if (c[0] > 255) c[0] = 255;
+			if (c[1] > 255) c[1] = 255;
+			if (c[2] > 255) c[2] = 255;
+
+			*(CARD32 *)dst = ((CARD32)c[0] << 16) +
+					((CARD32)c[1] << 8) + (CARD32)c[2];
+			dst += sizeof(CARD32);
+		}
+	}
+	return PicSuccess;
+}
+
+/*
+ * Read a ppm file encoded with ascii decimal numbers, and scale to
+ * the range 0--255. The function above, read_asciippm(), does not scale.
+ */
+static int
+read_ascii_max_ppm(FILE *file, unsigned char *restrict dst, unsigned int maxval,
+			unsigned int width, unsigned int height)
+{
+	int		c[3];
+	unsigned int	w;
+	const uint32_t	rnd = maxval / 2;
+
+	if (THREE_BYTEPERPIXEL) {
+		while (height-- > 0u) {
+			w = width;
+			while (w-- > 0u) {
+				if (fscanf(file, " %u %u %u", c, c+1, c+2) != 3)
+					return FileInvalid;
+
+				/* scale to the range 0--255 */
+				c[0] = ((uint32_t)c[0] * 255u + rnd) / maxval;
+				c[1] = ((uint32_t)c[1] * 255u + rnd) / maxval;
+				c[2] = ((uint32_t)c[2] * 255u + rnd) / maxval;
+				if (c[0] > 255) c[0] = 255;
+				if (c[1] > 255) c[1] = 255;
+				if (c[2] > 255) c[2] = 255;
+
+				/* map_to_palette expects BGR triples */
+				*(dst++) = (unsigned char)c[2];
+				*(dst++) = (unsigned char)c[1];
+				*(dst++) = (unsigned char)c[0];
+			}
+		}
+		return PicSuccess;
+	}
+
+	/* four bytes per pixel */
+	while (height-- > 0u) {
+		w = width;
+		while (w-- > 0u) {
+			if (fscanf(file, " %u %u %u", c, c + 1, c + 2) != 3)
+				return FileInvalid;
+
+			/* scale to the range 0--255 */
+			c[0] = ((uint32_t)c[0] * 255u + rnd) / maxval;
+			c[1] = ((uint32_t)c[1] * 255u + rnd) / maxval;
+			c[2] = ((uint32_t)c[2] * 255u + rnd) / maxval;
+			if (c[0] > 255) c[0] = 255;
+			if (c[1] > 255) c[1] = 255;
+			if (c[2] > 255) c[2] = 255;
+
+			*(CARD32 *)dst = ((CARD32)c[0] << 16) +
+					((CARD32)c[1] << 8) + (CARD32)c[2];
+			dst += sizeof(CARD32);
+		}
+	}
+	return PicSuccess;
+}
 
 int
 read_ppm(FILE *file, int filetype, F_pic *pic)
 {
-	char	 buf[BUFLEN],pcxname[PATH_MAX];
-	FILE	*giftopcx;
-	int	 stat, size, fd;
+	int		c;
+	int		magic;
+	int		stat = FileInvalid;
+	unsigned int	height = 0u;
+	unsigned int	width = 0u;
+	unsigned int	rowbytes;
+	unsigned int	maxval = 0u;
 
-	/* make name for temp output file */
-	snprintf(pcxname, sizeof(pcxname), "%s/xfig-pcx.XXXXXX", TMPDIR);
-	if ((fd = mkstemp(pcxname)) == -1) {
-	    file_msg("Cannot open temp file %s: %s\n", pcxname, strerror(errno));
-	    return FileInvalid;
-	}
-	close(fd);
+	/* get the magic number */
+	if ((c = fgetc(file)) == EOF || c != 'P')
+		goto end;
+	if ((magic = fgetc(file)) == EOF || (magic != '6' && magic != '3'))
+		goto end;
 
-	/* make command to convert gif to pcx into temp file */
-	sprintf(buf, "ppmtopcx > %s 2> /dev/null", pcxname);
-	if ((giftopcx = popen(buf,"w" )) == 0) {
-	    file_msg("Cannot open pipe to ppmtopcx\n");
-	    close_file(file,filetype);
-	    return FileInvalid;
+	if (skip_comments_whitespace(file))
+		goto end;
+
+	if (fscanf(file, "%u", &width) != 1)
+		goto end;
+
+	if (skip_comments_whitespace(file))
+		goto end;
+
+	if (fscanf(file, "%u", &height) != 1 || width == 0u || height == 0u)
+		goto end;
+
+	if (skip_comments_whitespace(file))
+		goto end;
+
+	if (fscanf(file, "%u", &maxval) != 1 || maxval > 65535u || maxval == 0u)
+		goto end;
+
+	if (skip_comments_whitespace(file))
+		goto end;
+
+	if (width > INT16_MAX || height > INT16_MAX) { /* large enough */
+		file_msg("PPM file %u x %u too large.", width, height);
+		goto end;
 	}
-	while ((size=fread(buf, 1, BUFLEN, file)) != 0) {
-	    fwrite(buf, size, 1, giftopcx);
+
+	rowbytes = width * (THREE_BYTEPERPIXEL ? 3u : sizeof(CARD32));
+	pic->pic_cache->bitmap = malloc(height * rowbytes);
+	if (pic->pic_cache->bitmap == NULL) {
+		file_msg("Out of memory, could not read PPM file.");
+		goto end;
 	}
-	/* close pipe */
-	pclose(giftopcx);
-	if ((giftopcx = fopen(pcxname, "rb")) == NULL) {
-	    file_msg("Can't open temp output file\n");
-	    close_file(file,filetype);
-	    return FileInvalid;
+
+	if (magic == '6') {
+		if (appres.DEBUG)
+			fprintf(stderr, "Reading raw PPM file, %u x %u, max. "
+					"value %u.\n", width, height, maxval);
+		if (maxval < 256u) {
+			stat = read_8bitppm(file, pic->pic_cache->bitmap,
+					width, height);
+			if (maxval != 255u)
+				scale_to_255(pic->pic_cache->bitmap, maxval,
+						rowbytes, height);
+		} else {
+			stat = read_16bitppm(file, pic->pic_cache->bitmap,
+						maxval, width, height);
+		}
+	} else { /* magic == '3' */
+		if (appres.DEBUG)
+			fprintf(stderr, "Reading ascii PPM file, %u x %u, max. "
+					"value %u.\n", width, height, maxval);
+		if (maxval == 255u)
+			stat = read_asciippm(file, pic->pic_cache->bitmap,
+					width, height);
+		else
+			stat = read_ascii_max_ppm(file, pic->pic_cache->bitmap,
+					maxval, width, height);
 	}
-	/* now call read_pcx to read the pcx file */
-	stat = read_pcx(giftopcx, filetype, pic);
+
+	if (stat != PicSuccess) {
+		free(pic->pic_cache->bitmap);
+		goto end;
+	}
+
+	/* stat == PicSuccess) */
+	pic->pic_cache->bit_size.x = width;
+	pic->pic_cache->bit_size.y = height;
+	pic->hw_ratio = (float)height / width;
+	pic->pic_cache->size_x = width * PIC_FACTOR + 0.5;
+	pic->pic_cache->size_y = height * PIC_FACTOR + 0.5;
+	pic->pixmap = None;
 	pic->pic_cache->subtype = T_PIC_PPM;
-	/* remove temp file */
-	unlink(pcxname);
-	close_file(file,filetype);
+
+	if (THREE_BYTEPERPIXEL) {
+		if (map_to_palette(pic)) {
+			stat = PicSuccess;
+		} else {
+			file_msg("Cannot create colormapped PPM image.");
+			stat = FileInvalid;
+		}
+		if (appres.monochrome || tool_cells <= 2)
+			map_to_mono(pic);
+	} else {
+		/* tell pic_create_pixmap() that this is a TrueColor pixmap */
+		pic->pic_cache->numcols = -1;
+	}
+
+end:
+	close_file(file, filetype);
 	return stat;
 }
