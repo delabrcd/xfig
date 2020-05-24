@@ -70,10 +70,10 @@
 #include "w_msgpanel.h"
 #include "w_setup.h"
 
-static	Boolean	read_JPEG_file(FILE *file);
 
-static	F_pic	   *pict;
-static	unsigned char *bitmapptr;
+static void	error_exit(j_common_ptr cinfo);
+static void	error_output(j_common_ptr cinfo);
+static int	read_JPEG_file(FILE *file, F_pic *pic);
 
 /* return codes:  PicSuccess (1) : success
 		  FileInvalid (-2) : invalid file
@@ -82,80 +82,46 @@ static	unsigned char *bitmapptr;
 int
 read_jpg(FILE *file, int filetype, F_pic *pic)
 {
-	/* make scale factor smaller for metric */
-	float scale = (appres.INCHES ?
-				(float)PIX_PER_INCH :
-				2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
-	pict = pic;
-	if (!read_JPEG_file(file)) {
-	    close_file(file,filetype);
-	    return FileInvalid;
+
+	if (read_JPEG_file(file, pic)) {
+		close_file(file, filetype);
+		return FileInvalid;
 	}
-
-	/* number of colors is put in by read_JPEG_file() */
-	pic->pixmap = None;
-	pic->pic_cache->subtype = T_PIC_JPEG;
-	pic->pic_cache->size_x = pic->pic_cache->bit_size.x * scale;
-	pic->pic_cache->size_y = pic->pic_cache->bit_size.y * scale;
-	pic->hw_ratio = (float) pic->pic_cache->bit_size.y/pic->pic_cache->bit_size.x;
-
-	/* we have the image here, see if we need to map it to monochrome display */
 	if (tool_cells <= 2 || appres.monochrome)
-	    map_to_mono(pic);
+		map_to_mono(pic);
 
-	close_file(file,filetype);
+	close_file(file, filetype);
 	return PicSuccess;
 }
 
-/* These static variables are needed by the error routines. */
-
-static	jmp_buf setjmp_buffer;		/* for return to caller */
-static	void	error_exit(j_common_ptr cinfo);
-static	void	error_output(j_common_ptr cinfo);
-
-struct error_mgr {
-  struct jpeg_error_mgr pub;	/* "public" fields */
-
-  jmp_buf setjmp_buffer;	/* for return to caller */
-};
-
-typedef struct error_mgr * error_ptr;
 
 /*
- * OK, here is the main function that actually causes everything to happen.
- * We assume here that the JPEG file is already open and that all
- * decompression parameters can be default values.
- * The routine returns True if successful, False if not.
+ * Return codes: 0 - success, (-1) - failure
  */
-
-static Boolean
-read_JPEG_file (FILE *file)
+static int
+read_JPEG_file(FILE *file, F_pic *pic)
 {
-	int i;
-
-	/* This struct contains the JPEG decompression parameters and pointers to
-	 * working space (which is allocated as needed by the JPEG library).
-	 */
-	struct jpeg_decompress_struct cinfo;
-
-	JSAMPARRAY buffer;	/* Output row buffer */
-	int row_stride;		/* physical row width in output buffer */
-	struct error_mgr jerr;	/* error handler */
+	int				i;
+	size_t				bitmap_row;	/* row size of bitmap */
+	static jmp_buf			setjmp_buffer;
+	struct jpeg_decompress_struct	cinfo;
+	struct jpeg_error_mgr		jerr;		/* error handler */
 
 	/* Step 1: allocate and initialize JPEG decompression object */
 
-	/* We set up the normal JPEG error routines, then override error_exit. */
-	cinfo.err = jpeg_std_error(&jerr.pub);
-	jerr.pub.error_exit = error_exit;
-	jerr.pub.output_message = error_output;
+	/* Set up the normal JPEG error routines, then override error_exit. */
+	cinfo.err = jpeg_std_error(&jerr);
+	jerr.error_exit = error_exit;
+	jerr.output_message = error_output;
+	cinfo.client_data = (void *)&setjmp_buffer;
 
 	/* Establish the setjmp return context for error_exit to use. */
-	if (setjmp(jerr.setjmp_buffer)) {
-	  /* If we get here, the JPEG code has signaled an error.
-	   * We need to clean up the JPEG object and return.
-	   */
-	  jpeg_destroy_decompress(&cinfo);
-	  return False;
+	if (setjmp(setjmp_buffer)) {
+		/* an error has occured */
+		jpeg_destroy_decompress(&cinfo);
+		if (pic->pic_cache->bitmap != NULL)
+			free(pic->pic_cache->bitmap);
+		return -1;
 	}
 	/* Now we can initialize the JPEG decompression object. */
 	jpeg_create_decompress(&cinfo);
@@ -166,127 +132,238 @@ read_JPEG_file (FILE *file)
 
 	/* Step 3: read file parameters with jpeg_read_header() */
 
-	(void) jpeg_read_header(&cinfo, True);
+	(void)jpeg_read_header(&cinfo, TRUE);
 	/* We can ignore the return value from jpeg_read_header since
 	 *   (a) suspension is not possible with the stdio data source, and
 	 *   (b) we passed TRUE to reject a tables-only JPEG file as an error.
 	 * See libjpeg.doc for more info.
 	 */
 
-	/* We want a colormapped color space */
-	/* Let the jpeg library do a two-pass over the image to make nice colors */
-	cinfo.quantize_colors = True;
-
-	/* Now fill in the pict parameters */
-
-	pict->pic_cache->bit_size.x = cinfo.image_width;
-	pict->pic_cache->bit_size.y = cinfo.image_height;
-	if ((pict->pic_cache->bitmap = (unsigned char *)
-	  malloc(cinfo.image_width * cinfo.image_height)) == NULL) {
-	    file_msg("Can't alloc memory for JPEG image");
-	    longjmp(jerr.setjmp_buffer, 1);
+	if (tool_vclass == TrueColor && image_bpp == 4 && !appres.monochrome) {
+#ifdef JCS_EXTENSIONS
+#ifdef WORDS_BIGENDIAN
+		cinfo.out_color_space = JCS_EXT_XRGB;
+#else
+		cinfo.out_color_space = JCS_EXT_BGRX;
+#endif
+#else
+		cinfo.out_color_space = JCS_RGB;
+#endif
+		bitmap_row = 4 * cinfo.image_width;
+	} else {
+		/* colormapped color space */
+		cinfo.quantize_colors = TRUE;
+		/*
+		 * Defaults:
+		 * cinfo.two_pass_quantize = TRUE;  (Use a custom colormap by
+		 *			making an extra pass over the image.)
+		 * cinfo.desired_number_of_colors = 256;
+		 */
+		bitmap_row = cinfo.image_width;
 	}
-	bitmapptr = pict->pic_cache->bitmap;
+
+
+	/* Now fill in the pic parameters */
+
+	pic->pic_cache->bitmap = malloc(bitmap_row * cinfo.image_height);
+	if (pic->pic_cache->bitmap == NULL) {
+		file_msg("Can't alloc memory for JPEG image");
+		jpeg_destroy_decompress(&cinfo);
+		return -1;
+	}
 
 	/* Step 4: set parameters for decompression */
-
-	/* In this example, we don't need to change any of the defaults set by
-	 * jpeg_read_header(), so we do nothing here.
-	 */
 
 	/* Step 5: Start decompressor */
 
 	jpeg_start_decompress(&cinfo);
 
-	/* We may need to do some setup of our own at this point before reading
+	/*
+	 * We may need to do some setup of our own at this point before reading
 	 * the data.  After jpeg_start_decompress() we have the correct scaled
 	 * output image dimensions available, as well as the output colormap
 	 * if we asked for color quantization.
-	 * In this example, we need to make an output work buffer of the right size.
 	 */
-	/* JSAMPLEs per row in output buffer */
-	row_stride = cinfo.output_width * cinfo.output_components;
-	/* Make a one-row-high sample array that will go away when done with image */
-	buffer = (*cinfo.mem->alloc_sarray)
-		((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
 
-	/* Step 6: while (scan lines remain to be read) */
-	/*           jpeg_read_scanlines(...); */
-
-	/* Here we use the library's state variable cinfo.output_scanline as the
-	 * loop counter, so that we don't have to keep track ourselves.
+	/*
+	 * Step 6: Read the image into the bitmap:
+	 *	while (scan lines remain to be read)
+	 *		jpeg_read_scanlines(...);
 	 */
-	while (cinfo.output_scanline < cinfo.output_height) {
-	  (void) jpeg_read_scanlines(&cinfo, buffer, 1);
-	  for (i = 0; i < row_stride; i++)
-		*bitmapptr++ = (unsigned char) buffer[0][i];
-	}
+	if (tool_vclass == TrueColor && image_bpp == 4 && !appres.monochrome) {
+#ifdef JCS_EXTENSIONS	/* cinfo.output_components == 4, BGRX color space */
+		JSAMPROW	one_row;
 
-	/* Step 7: fill up the colortable in the pict object */
-	/* (Must do this before jpeg_finish_decompress or jpeg_destroy_decompress) */
+		while (cinfo.output_scanline < cinfo.output_height) {
+			one_row = pic->pic_cache->bitmap +
+					cinfo.output_scanline * bitmap_row;
+			/* slow modes (the default) return only one scanline at
+			   a time, even if more are requested */
+			(void)jpeg_read_scanlines(&cinfo, &one_row, 1);
+		}
+#else	/* cinfo.output_components == 3 */
+		JSAMPARRAY	buffer;
+		JSAMPLE		*src;
+		unsigned char	*pos = pic->pic_cache->bitmap;
+		buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr) &cinfo,
+				JPOOL_IMAGE, cinfo.output_width *
+						cinfo.output_components, 1);
+		while (cinfo.output_scanline < cinfo.output_height) {
+			(void)jpeg_read_scanlines(&cinfo, buffer, 1);
+			src = buffer[0];
+			for (i = 0; (unsigned)i < cinfo.output_width; ++i) {
+#ifdef WORDS_BIGENDIAN
+				*pos++ = *src++;
+				*pos++ = *src++;
+				*pos++ = *src++;
+				++pos;
+#else
+				*(pos + 2) = *src++;
+				*(pos + 1) = *src++;
+				*pos = *src++;
+				pos += image_bpp;
+#endif
+			}
+		}
+#endif
+		/* indicate, that this is a TrueColor bitmap */
+		pic->pic_cache->numcols = -1;
 
-	pict->pic_cache->numcols = cinfo.actual_number_of_colors;
-	for (i = 0; i < pict->pic_cache->numcols; i++) {
-	    pict->pic_cache->cmap[i].red   = cinfo.colormap[0][i];
-	    /* set other colors to first if grayscale */
-	    if (cinfo.jpeg_color_space == JCS_GRAYSCALE) {
-		pict->pic_cache->cmap[i].green = pict->pic_cache->cmap[i].blue = pict->pic_cache->cmap[i].red;
-	    } else {
-		pict->pic_cache->cmap[i].green = cinfo.colormap[1][i];
-		pict->pic_cache->cmap[i].blue  = cinfo.colormap[2][i];
-	    }
-	}
+	} else { /* tool_vclass != TrueColor || .. */
+		/* colormapped jpeg */
+		int	r, g, b;
+
+		/* this here below is the same code as for TrueColor visuals
+		   with BGRX color space above */
+		JSAMPROW	one_row;
+		while (cinfo.output_scanline < cinfo.output_height) {
+			one_row = pic->pic_cache->bitmap +
+				cinfo.output_scanline * bitmap_row;
+			/* slow modes (the default) return only one scanline at
+			 * a time, even if more are requested */
+			(void)jpeg_read_scanlines(&cinfo, &one_row, 1);
+		}
+
+
+		/* Step 7: fill up the colortable in the pic object */
+
+		pic->pic_cache->numcols = cinfo.actual_number_of_colors;
+
+		if (cinfo.out_color_components == 3) {
+			r = 0;
+			g = 1;
+			b = 2;
+		} else { /* cinfo.out_color_components == 1 */
+			r = 0;
+			g = 0;
+			b = 0;
+		}
+		for (i = 0; i < pic->pic_cache->numcols; ++i) {
+			pic->pic_cache->cmap[i].red = cinfo.colormap[r][i];
+			pic->pic_cache->cmap[i].green = cinfo.colormap[g][i];
+			pic->pic_cache->cmap[i].blue = cinfo.colormap[b][i];
+		}
+
+	}	/* if (tool_vlass == TrueColor && .. */
 
 	/* Step 8: Finish decompression */
 
-	(void) jpeg_finish_decompress(&cinfo);
+	(void)jpeg_finish_decompress(&cinfo);
 	/* We can ignore the return value since suspension is not possible
 	 * with the stdio data source.
 	 */
 
 	/* Step 9: Release JPEG decompression object */
 
-	/* This is an important step since it will release a good deal of memory. */
 	jpeg_destroy_decompress(&cinfo);
 
 	/* At this point you may want to check to see whether any corrupt-data
 	 * warnings occurred (test whether jerr.pub.num_warnings is nonzero).
 	 */
+	/* jpeglib anyhow calls error_output(), see below, for warnings,
+	   hence warnings are already displayed. The code below is useless. */
+	/*
+	 * if (jerr.num_warnings > 0) {
+	 *	file_msg("Probably invalid jpeg file, message:");
+	 *	error_output((j_common_ptr)&cinfo);
+	 * }
+	 */
 
-	/* And we're done! */
-	return True;
+	/* fill the pic struct */
+	pic->pixmap = None;
+	pic->pic_cache->subtype = T_PIC_JPEG;
+	pic->pic_cache->bit_size.x = (int)cinfo.image_width;
+	pic->pic_cache->bit_size.y = (int)cinfo.image_height;
+	pic->hw_ratio = (float)cinfo.image_width / cinfo.image_height;
+	if (cinfo.density_unit == 1) {
+		/* dots / inch */
+		if (appres.INCHES) {
+			pic->pic_cache->size_x = pic->pic_cache->bit_size.x *
+				PIX_PER_INCH / cinfo.X_density + 0.5;
+			pic->pic_cache->size_y = pic->pic_cache->bit_size.y *
+				PIX_PER_INCH / cinfo.Y_density + 0.5;
+		} else {
+			pic->pic_cache->size_x = pic->pic_cache->bit_size.x *
+				PIX_PER_CM * 2.54 / cinfo.X_density + 0.5;
+			pic->pic_cache->size_y = pic->pic_cache->bit_size.y *
+				PIX_PER_CM * 2.54 / cinfo.Y_density + 0.5;
+		}
+	} else if (cinfo.density_unit == 2) {
+		/* dots / cm */
+		if (appres.INCHES) {
+			pic->pic_cache->size_x = pic->pic_cache->bit_size.x *
+				PIX_PER_INCH / (cinfo.X_density * 2.54) + 0.5;
+			pic->pic_cache->size_y = pic->pic_cache->bit_size.y *
+				PIX_PER_INCH / (cinfo.Y_density * 2.54) + 0.5;
+		} else {
+			pic->pic_cache->size_x = pic->pic_cache->bit_size.x *
+				PIX_PER_CM / cinfo.X_density + 0.5;
+			pic->pic_cache->size_y = pic->pic_cache->bit_size.y *
+				PIX_PER_CM / cinfo.Y_density + 0.5;
+		}
+	} else {
+		/* unknown, default to 72 dpi */
+		pic->pic_cache->size_x =
+			pic->pic_cache->bit_size.x * PIC_FACTOR + 0.5;
+		pic->pic_cache->size_y =
+			pic->pic_cache->bit_size.y * PIC_FACTOR *
+			(cinfo.X_density == 0 || cinfo.Y_density == 0 ? 1. :
+			 (double)cinfo.X_density / cinfo.Y_density) + 0.5;
+	}
+
+	return 0;
 }
 
+
 /*
- * Here's the routine that will replace the standard error_exit method:
+ * The standard error_exit() method of libjpeg calls exit(). Replace the
+ * standard error_exit() method with this routine here, which
+ * returns control to the caller.
  */
 
 static void
 error_exit (j_common_ptr cinfo)
 {
-    char buffer[JMSG_LENGTH_MAX];
-    /* cinfo->err really points to a error_mgr struct, so coerce pointer */
-    error_ptr err = (error_ptr) cinfo->err;
+	char	buffer[JMSG_LENGTH_MAX];
 
-    /* Display the message if it is NOT "Not a JPEG file" */
-    /* However, since the error number is not public we have to parse the string */
+	/* Display the message if it is NOT "Not a JPEG file" */
+	/* However, since the error number is not public, parse the string */
 
-    /* Format the message */
-    (*cinfo->err->format_message) (cinfo, buffer);
+	/* Format the message */
+	(*cinfo->err->format_message)(cinfo, buffer);
 
-    if (strncmp(buffer,"Not a JPEG file",15)!=0)
-	file_msg("%s", buffer);
+	if (strncmp(buffer, "Not a JPEG file", 15) != 0)
+		file_msg("%s", buffer);
 
-    /* Return control to the setjmp point */
-    longjmp(err->setjmp_buffer, 1);
+	/* Return control to the setjmp point */
+	longjmp(*(jmp_buf *)cinfo->client_data, 1);
 }
 
 static void
 error_output(j_common_ptr cinfo)
 {
-  char	buffer[JMSG_LENGTH_MAX];
+	char	buffer[JMSG_LENGTH_MAX];
 
-  (*cinfo->err->format_message)(cinfo, buffer);
-
-   file_msg("%s", buffer);
+	(*cinfo->err->format_message)(cinfo, buffer);
+	file_msg("%s", buffer);
 }

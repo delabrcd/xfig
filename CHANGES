@@ -5,11 +5,14 @@ Version 3.2
 Patchlevel Xx (Xxx 20xx)
 
 NEW FEATURES:
+	o The resolution given in embedded png and jpeg image files is obeyed.
 	o Embedded image files are displayed in full color, not reduced to
 	  a maximum of 256 colors.
 	o Display embedded pdf files.
 
 BUGS FIXED:
+	o The default resolution of embedded raster images is changed
+	  from 80 dpi to 72 dpi.
 	o Read compressed files, but do not silently uncompress them.
 	o Get correct bounding box (/MediaBox) of embedded pdf files.
 

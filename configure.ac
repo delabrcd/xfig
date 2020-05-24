@@ -157,6 +157,9 @@ AM_CONDITIONAL([HAVE_DLOPEN], [test $ac_cv_header_dlfcn_h = yes && \
 
 
 # Checks for typedefs, structures, and compiler characteristics.
+AC_C_BIGENDIAN
+AC_C_INLINE
+AC_C_RESTRICT
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 AC_CHECK_DECLS([S_IFDIR, S_IWRITE],[],[],[[#include <sys/stat.h>]])dnl

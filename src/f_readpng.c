@@ -246,10 +246,8 @@ read_png(FILE *file, int filetype, F_pic *pic)
 		scale = PIX_PER_INCH * 100. / 2.54;
 	else
 		scale = PIX_PER_CM * 100.;
-	pic->pic_cache->size_x =
-			pic->pic_cache->bit_size.x * scale / res_x + 0.5;
-	pic->pic_cache->size_y =
-			pic->pic_cache->bit_size.y * scale / res_y + 0.5;
+	pic->pic_cache->size_x = w * scale / res_x + 0.5;
+	pic->pic_cache->size_y = h * scale / res_y + 0.5;
 
 	if (bit_depth != 1) {
 		/* use neural net to reduce to 256 colors with palette */
