@@ -34,6 +34,7 @@
 #include "resources.h"		/* TMPDIR */
 #include "object.h"
 #include "f_picobj.h"
+#include "f_readpcx.h"		/* read_pcx() */
 #include "f_util.h"		/* file_timestamp() */
 #include "u_create.h"		/* create_picture_entry() */
 #include "w_file.h"		/* check_cancel() */
@@ -41,13 +42,11 @@
 #include "w_util.h"		/* app_flush() */
 
 extern	int	read_gif(FILE *file, int filetype, F_pic *pic);
-extern	int	read_pcx(FILE *file, int filetype, F_pic *pic);
 extern	int	read_eps(char *name, int filetype, F_pic *pic);
 extern	int	read_pdf(char *name, int filetype, F_pic *pic);
 extern	int	read_ppm(FILE *file, int filetype, F_pic *pic);
 extern	int	read_tif(char *name, int filetype, F_pic *pic);
 extern	int	read_xbm(FILE *file, int filetype, F_pic *pic);
-
 #ifdef HAVE_JPEG
 extern	int	read_jpg(FILE *file, int filetype, F_pic *pic);
 #endif
