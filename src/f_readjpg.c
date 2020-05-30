@@ -57,6 +57,10 @@
  *
  */
 
+#if defined HAVE_CONFIG_H && !defined VERSION
+#include "config.h"
+#endif
+
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,10 +79,10 @@ static void	error_exit(j_common_ptr cinfo);
 static void	error_output(j_common_ptr cinfo);
 static int	read_JPEG_file(FILE *file, F_pic *pic);
 
+
 /* return codes:  PicSuccess (1) : success
 		  FileInvalid (-2) : invalid file
 */
-
 int
 read_jpg(FILE *file, int filetype, F_pic *pic)
 {
@@ -294,42 +298,12 @@ read_JPEG_file(FILE *file, F_pic *pic)
 	pic->pic_cache->subtype = T_PIC_JPEG;
 	pic->pic_cache->bit_size.x = (int)cinfo.image_width;
 	pic->pic_cache->bit_size.y = (int)cinfo.image_height;
-	pic->hw_ratio = (float)cinfo.image_width / cinfo.image_height;
-	if (cinfo.density_unit == 1) {
-		/* dots / inch */
-		if (appres.INCHES) {
-			pic->pic_cache->size_x = pic->pic_cache->bit_size.x *
-				PIX_PER_INCH / cinfo.X_density + 0.5;
-			pic->pic_cache->size_y = pic->pic_cache->bit_size.y *
-				PIX_PER_INCH / cinfo.Y_density + 0.5;
-		} else {
-			pic->pic_cache->size_x = pic->pic_cache->bit_size.x *
-				PIX_PER_CM * 2.54 / cinfo.X_density + 0.5;
-			pic->pic_cache->size_y = pic->pic_cache->bit_size.y *
-				PIX_PER_CM * 2.54 / cinfo.Y_density + 0.5;
-		}
-	} else if (cinfo.density_unit == 2) {
-		/* dots / cm */
-		if (appres.INCHES) {
-			pic->pic_cache->size_x = pic->pic_cache->bit_size.x *
-				PIX_PER_INCH / (cinfo.X_density * 2.54) + 0.5;
-			pic->pic_cache->size_y = pic->pic_cache->bit_size.y *
-				PIX_PER_INCH / (cinfo.Y_density * 2.54) + 0.5;
-		} else {
-			pic->pic_cache->size_x = pic->pic_cache->bit_size.x *
-				PIX_PER_CM / cinfo.X_density + 0.5;
-			pic->pic_cache->size_y = pic->pic_cache->bit_size.y *
-				PIX_PER_CM / cinfo.Y_density + 0.5;
-		}
-	} else {
-		/* unknown, default to 72 dpi */
-		pic->pic_cache->size_x =
-			pic->pic_cache->bit_size.x * PIC_FACTOR + 0.5;
-		pic->pic_cache->size_y =
-			pic->pic_cache->bit_size.y * PIC_FACTOR *
-			(cinfo.X_density == 0 || cinfo.Y_density == 0 ? 1. :
-			 (double)cinfo.X_density / cinfo.Y_density) + 0.5;
-	}
+	pic->hw_ratio = (float)cinfo.image_height / cinfo.image_width;
+	image_size(&pic->pic_cache->size_x, &pic->pic_cache->size_y,
+			pic->pic_cache->bit_size.x, pic->pic_cache->bit_size.y,
+			cinfo.density_unit == 1u ? 'i' :
+					(cinfo.density_unit == 2u ? 'c': 'u'),
+			(float)cinfo.X_density, (float)cinfo.Y_density);
 
 	return 0;
 }

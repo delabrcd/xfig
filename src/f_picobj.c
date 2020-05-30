@@ -482,7 +482,6 @@ rewind_file(FILE *fp, char *name, int *filetype)
 	return NULL;
 }
 
-
 /*
  * Return the name of a file that contains the uncompressed contents of "name"
  * in "plainname". If plainname[0] == '\0', the original file is not compressed.
@@ -571,4 +570,46 @@ end:
 	if (name_on_disk != name_on_disk_buf)
 		free(name_on_disk);
 	return ret;
+}
+
+/*
+ * Compute the image dimension (size_x, size_y) in Fig-units from the number of
+ * pixels and the resolution in x- and y-direction, pixels_x, pixels_y, and
+ * res_x and res_y, respectively.
+ * The resolution is given in pixels / cm or pixels / inch, depending on
+ * whether 'c' or 'i' is passed to unit. For any other character passed to unit,
+ * a resolution of 72 pixels per inch is assumed.
+ */
+void
+image_size(int *size_x, int *size_y, int pixels_x, int pixels_y,
+		char unit, float res_x, float res_y)
+{
+	/* exclude negative and absurdly small values */
+	if (res_x < 1. || res_y < 1.) {
+		res_x = 72.0f;
+		res_y = 72.0f;
+		unit = 'i';
+	}
+
+	if (unit == 'i') {		/* pixel / inch */
+		if (appres.INCHES) {
+			/* *size_x = pixels_x * PIX_PER_INCH / res_x + 0.5; */
+			*size_x = pixels_x * PIX_PER_INCH / res_x + 0.5;
+			*size_y = pixels_y * PIX_PER_INCH / res_y + 0.5;
+		} else {
+			*size_x = pixels_x * PIX_PER_CM * 2.54 / res_x + 0.5;
+			*size_y = pixels_y * PIX_PER_CM * 2.54 / res_y + 0.5;
+		}
+	} else if (unit == 'c') {	/* pixel / cm */
+		if (appres.INCHES) {
+			*size_x = pixels_x * PIX_PER_INCH / (res_x * 2.54) +0.5;
+			*size_y = pixels_y * PIX_PER_INCH / (res_y * 2.54) +0.5;
+		} else {
+			*size_x = pixels_x * PIX_PER_CM / res_x + 0.5;
+			*size_y = pixels_y * PIX_PER_CM / res_y + 0.5;
+		}
+	} else {			/* unknown, default to 72 ppi */
+		*size_x = pixels_x * PIC_FACTOR + 0.5;
+		*size_y = pixels_y * PIC_FACTOR * res_x / res_y + 0.5;
+	}
 }

@@ -25,3 +25,5 @@ extern int	close_file(FILE *fp, int filetype);
 extern FILE	*rewind_file(FILE *fp, char *name, int *filetype);
 extern void	read_picobj(F_pic *pic, char *file, int color, Boolean force,
 				Boolean *existing);
+extern void	image_size(int *size_x, int *size_y, int pixels_x, int pixels_y,
+				char unit, float res_x, float res_y);
