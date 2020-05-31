@@ -72,7 +72,6 @@
 #include "f_picobj.h"
 #include "f_util.h"
 #include "w_msgpanel.h"
-#include "w_setup.h"
 
 
 static void	error_exit(j_common_ptr cinfo);

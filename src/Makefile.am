@@ -45,16 +45,14 @@ xfig_SOURCES = d_arcbox.c d_arcbox.h d_arc.c d_arc.h d_box.c d_box.h \
 	e_movept.h e_placelib.c e_placelib.h e_rotate.c e_rotate.h e_scale.c \
 	e_scale.h e_tangent.c e_tangent.h e_update.c e_update.h fig.h figx.h \
 	f_load.c f_load.h f_neuclrtab.c f_neuclrtab.h f_picobj.c f_picobj.h \
-	f_read.c f_readeps.c f_readgif.c f_read.h \
-	f_readold.c f_readpcx.c f_readpcx.h \
-	f_readppm.c f_readtif.c f_readxbm.c f_save.c f_save.h f_util.c \
+	f_read.c f_readeps.c f_readgif.c f_read.h f_readold.c f_readpcx.c \
+	f_readpcx.h f_readppm.c f_readxbm.c f_save.c f_save.h f_util.c \
 	f_util.h f_wrpcx.c main.c main.h mode.c mode.h \
 	object.c object.h paintop.h pcx.h resources.c resources.h \
 	u_bound.c u_bound.h u_create.c u_create.h u_drag.c u_drag.h u_draw.c \
 	u_draw.h u_elastic.c u_elastic.h u_error.c u_error.h u_fonts.c \
 	u_fonts.h u_free.c u_free.h u_geom.c u_geom.h u_ghostscript.c u_list.c \
-	u_list.h \
-	u_markers.c u_markers.h u_pan.c u_pan.h u_print.c u_print.h \
+	u_list.h u_markers.c u_markers.h u_pan.c u_pan.h u_print.c u_print.h \
 	u_quartic.c u_quartic.h u_redraw.c u_redraw.h u_scale.c u_scale.h \
 	u_search.c u_search.h u_smartsearch.c u_smartsearch.h u_translate.c \
 	u_translate.h u_undo.c u_undo.h w_browse.c w_browse.h w_canvas.c \
@@ -78,6 +76,10 @@ endif
 
 if HAVE_PNG
 xfig_SOURCES += f_readpng.c f_wrpng.c
+endif
+
+if HAVE_TIFF
+xfig_SOURCES += f_readtif.c
 endif
 
 if USE_XPM

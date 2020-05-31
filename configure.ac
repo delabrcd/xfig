@@ -146,6 +146,14 @@ AC_CHECK_HEADER([png.h],
 AM_CONDITIONAL([HAVE_PNG], [test $ac_cv_header_png_h = yes && \
 	test "x$ac_cv_search_png_read_info" != xno])dnl
 
+AC_CHECK_HEADER([tiffio.h],
+    [AC_SEARCH_LIBS([TIFFOpen], [tiff],
+	[AC_DEFINE([HAVE_TIFF], 1,
+	    [Define to 1 if you have the tiff library and header files.])])],
+    [], [AC_INCLUDES_DEFAULT])
+AM_CONDITIONAL([HAVE_TIFF], [test $ac_cv_header_tiffio_h = yes && \
+	test "x$ac_cv_search_TIFFOpen" != xno])dnl
+
 AC_CHECK_HEADER([dlfcn.h],
     [AC_SEARCH_LIBS([dlopen], [dl],
 	[AC_DEFINE([HAVE_DLOPEN], 1,

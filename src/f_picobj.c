@@ -39,13 +39,16 @@
 #include "u_create.h"		/* create_picture_entry() */
 #include "w_file.h"		/* check_cancel() */
 #include "w_msgpanel.h"
+#include "w_setup.h"		/* PIX_PER_INCH, PIX_PER_CM */
 #include "w_util.h"		/* app_flush() */
 
 extern	int	read_gif(FILE *file, int filetype, F_pic *pic);
 extern	int	read_eps(char *name, int filetype, F_pic *pic);
 extern	int	read_pdf(char *name, int filetype, F_pic *pic);
 extern	int	read_ppm(FILE *file, int filetype, F_pic *pic);
+#ifdef HAVE_TIFF
 extern	int	read_tif(char *name, int filetype, F_pic *pic);
+#endif
 extern	int	read_xbm(FILE *file, int filetype, F_pic *pic);
 #ifdef HAVE_JPEG
 extern	int	read_jpg(FILE *file, int filetype, F_pic *pic);
@@ -74,8 +77,10 @@ static struct _haeders {
 	{"PDF", "%PDF",				read_pdf,	False},
 	{"PPM", "P3",				read_ppm,	True},
 	{"PPM", "P6",				read_ppm,	True},
+#ifdef HAVE_TIFF
 	{"TIFF", "II*\000",			read_tif,	False},
 	{"TIFF", "MM\000*",			read_tif,	False},
+#endif
 	{"XBM", "#define",			read_xbm,	True},
 #ifdef HAVE_JPEG
 	{"JPEG", "\377\330\377\340",		read_jpg,	True},
@@ -592,7 +597,6 @@ image_size(int *size_x, int *size_y, int pixels_x, int pixels_y,
 
 	if (unit == 'i') {		/* pixel / inch */
 		if (appres.INCHES) {
-			/* *size_x = pixels_x * PIX_PER_INCH / res_x + 0.5; */
 			*size_x = pixels_x * PIX_PER_INCH / res_x + 0.5;
 			*size_y = pixels_y * PIX_PER_INCH / res_y + 0.5;
 		} else {
