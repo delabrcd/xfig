@@ -88,7 +88,7 @@ read_png(FILE *file, int filetype, F_pic *pic)
 	png_get_IHDR(png_ptr, info_ptr, &w, &h, &bit_depth, &color_type,
 			&interlace_type, &compression_type, &filter_type);
 	if (appres.DEBUG)
-		fprintf(stderr, "Reading png image %u x %u, bit depth %d, %s "
+		fprintf(stderr, "Reading PNG image %u x %u, bit depth %d, %s "
 			"alpha channel, %s, %s color map.\n", w, h, bit_depth,
 			color_type & PNG_COLOR_MASK_ALPHA ? "with" : "without",
 			color_type & PNG_COLOR_MASK_COLOR? "color": "grayscale",

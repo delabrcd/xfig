@@ -1,6 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
- * Copyright (c) 1999-2007 by Brian V. Smith
+ * Copyright (c) 1985-1988 by Supoj Sutanthavibul
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
+ * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -25,6 +28,7 @@
 #include "resources.h"
 #include "object.h"
 #include "f_picobj.h"		/* image_size() */
+#include "f_util.h"		/* map_to_palette(), map_to_mono() */
 #include "w_msgpanel.h"
 
 
@@ -44,8 +48,6 @@ int
 read_tif(char *filename, int filetype, F_pic *pic)
 {
 	(void)		filetype;
-	unsigned char	tmp;
-	unsigned char	*p;
 	int		stat = FileInvalid;
 	uint16		unit;
 	uint32		w, h;
@@ -61,37 +63,25 @@ read_tif(char *filename, int filetype, F_pic *pic)
 		return stat;
 
 	/* read image width and height */
-	if (TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w) != 1)
-		goto end;
-        if (TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h) != 1)
-		goto end;
-	if (w == 0 || h == 0)
-		goto end;
+	if (TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w) != 1) {
+		TIFFClose(tif);
+		return stat;
+	}
+        if (TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h) != 1) {
+		TIFFClose(tif);
+		return stat;
+	}
+	if (w == 0 || h == 0) {
+		TIFFClose(tif);
+		return stat;
+	}
 
 	/* allocate memory for image data */
 	if ((pic->pic_cache->bitmap = malloc(w * h * sizeof(uint32))) == NULL) {
 		file_msg("Out of memory");
-		goto end;
+		TIFFClose(tif);
+		return stat;
 	}
-	stat = TIFFReadRGBAImageOriented(tif, w, h,
-		      (uint32 *)pic->pic_cache->bitmap, ORIENTATION_TOPLEFT, 0);
-	if (stat == 0) {
-		if (pic->pic_cache->bitmap)
-			free(pic->pic_cache->bitmap);
-		stat = FileInvalid;
-		goto end;
-	} else {
-		stat = PicSuccess;
-	}
-
-#ifndef WORDS_BIGENDIAN
-	p = pic->pic_cache->bitmap;
-	while (p < pic->pic_cache->bitmap + w * h * sizeof(uint32)) {
-		tmp = *p;  *p = *(p + 2);  *(p + 2) = tmp;
-	//	tmp = *(p + 1); *(p + 1) = *(p + 2); *(p + 2) = tmp;
-		p += sizeof(uint32);	/* must be 4 */
-	}
-#endif
 
 	/* get image resolution, alias density */
 	if (TIFFGetField(tif, TIFFTAG_RESOLUTIONUNIT, &unit) != 1)
@@ -102,19 +92,98 @@ read_tif(char *filename, int filetype, F_pic *pic)
 		res_y = 0.0f;
 		unit = 1;	/* 1 - none, 2 - per inch, 3 - per cm */
 	}
-
 	/* set pixmap properties */
 	pic->pixmap = None;
 	pic->pic_cache->subtype = T_PIC_TIF;
-	pic->pic_cache->numcols = -1;
-	pic->pic_cache->bit_size.x = (int)w;
-	pic->pic_cache->bit_size.y = (int)h;
+	pic->pic_cache->bit_size.x = (int)w;	/* needed in */
+	pic->pic_cache->bit_size.y = (int)h;	/* map_to_palette() below */
 	pic->hw_ratio = (float)h / w;
 	image_size(&pic->pic_cache->size_x, &pic->pic_cache->size_y,
 			pic->pic_cache->bit_size.x, pic->pic_cache->bit_size.y,
 			unit == 2u ? 'i': (unit == 3u ? 'c': 'u'), res_x,res_y);
 
-end:
+	if (appres.DEBUG)
+		fprintf(stderr, "Reading TIFF image, size %d x %d, resolution "
+				"%.0f x %.0f%s.\n", pic->pic_cache->bit_size.x,
+				pic->pic_cache->bit_size.y, res_x, res_y,
+				unit == 2u ? " pixel per inch" :
+					(unit == 3u ? " pixel per cm" : "" ));
+
+	/* read the image */
+	stat = TIFFReadRGBAImageOriented(tif, w, h,
+		      (uint32 *)pic->pic_cache->bitmap, ORIENTATION_TOPLEFT, 0);
 	TIFFClose(tif);
-	return stat;
+	if (stat == 0) {
+		if (pic->pic_cache->bitmap)
+			free(pic->pic_cache->bitmap);
+		return FileInvalid;
+	}
+
+	/* provide the pixmap */
+	if (tool_vclass == TrueColor && image_bpp == 4 && !appres.monochrome) {
+		/* either a full-color pixmap, format ARGB */
+		unsigned char	*p;
+		unsigned char	tmp;
+#ifdef WORDS_BIGENDIAN
+		/* change RGBA to ARGB */
+		/* as long as the alpha channel is not used, the fastest would
+		   be to read the image with an offset of one */
+		p = pic->pic_cache->bitmap;
+		while (p < pic->pic_cache->bitmap + w * h * sizeof(uint32)) {
+			/* tmp = *(p + 3); alpha channel not used */
+			*(p + 3) = *(p + 2);
+			*(p + 2) = *(p + 1);
+			*(p + 1) = *p;
+			p += sizeof(uint32);	/* must be 4 */
+		}
+#else
+		/* swap RGBA to BGRA */
+		p = pic->pic_cache->bitmap;
+		while (p < pic->pic_cache->bitmap + w * h * sizeof(uint32)) {
+			tmp = *p;  *p = *(p + 2);  *(p + 2) = tmp;
+			p += sizeof(uint32);	/* must be 4 */
+		}
+#endif
+		/* indicate, that this is a TrueColor pixmap */
+		pic->pic_cache->numcols = -1;
+
+	} else { /* tool_vclass != TrueColor || .. */
+		/* or a pixmap with a colormap, one byte per pixel */
+		/* write BGR triples for map_to_palette */
+		unsigned char	*src;
+		unsigned char	*dst;
+		unsigned char	tmp;
+
+		/* write the first two triples */
+		tmp = *pic->pic_cache->bitmap;
+		*pic->pic_cache->bitmap = *(pic->pic_cache->bitmap + 2);
+		*(pic->pic_cache->bitmap + 2) = tmp;
+
+		src = pic->pic_cache->bitmap + 4;	/* RGBA RGBA */
+		dst = pic->pic_cache->bitmap + 3;	/* BGRB GR   */
+		tmp = *src;
+		*dst++ = *(src + 2);
+		*dst++ = *(src + 1);
+		*dst++ = tmp;
+		src += 4;		/* sizeof(uint32) */
+		while (src < pic->pic_cache->bitmap + w * h * sizeof(uint32)) {
+			*dst++ = *(src + 2);
+			*dst++ = *(src + 1);
+			*dst++ = *src;
+			src += 4;	/* sizeof(uint32) */
+		}
+		pic->pic_cache->bitmap = realloc(pic->pic_cache->bitmap,
+						w * h * 3 * sizeof(char));
+
+		/* map_to_palette() reduces to 256 colors */
+		pic->pic_cache->numcols = 256;
+		if (!map_to_palette(pic)) {
+			/* map_to_palette() frees pic->pic_cache->bitmap */
+			return FileInvalid;
+		}
+		if (tool_cells <= 2 || appres.monochrome)
+			map_to_mono(pic);
+	}
+
+	return PicSuccess;
 }

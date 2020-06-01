@@ -1,13 +1,29 @@
 Type
 
-	./configure; make; make install
+	./configure --with-appdefaultdir=</path/to/your/app-defaults>
+	make
+	make install
 
-to build xfig and install it below /usr/local. Optionally, run
-`make check' after make and `make installcheck', after installation.
+to build xfig and install it below /usr/local.  For requirements, see below.
+
+Optionally, run `make check' after make and `make installcheck' after
+installation. A variation to the above is to do "make -sj" to do a parallel
+build (-j) and be less verbose (-s) and use the "make install-strip" target,
+which strips debugging symbols from the final executable.
+
+The path given by the --with-appdefaultdir option varies between systems.
+It may be one of "/usr/share/X11/app-defaults", "/etc/X11/app-defaults",
+"/opt/X11/share/app-defaults", or others. This path is a property of your
+X-server, not of xfig. Therefore, the path expected by your X-server must be
+passed to xfig with this option.
+At installation time, the app-defaults file of xfig is placed into this
+directory. The X-server reads the X-resources contained in this file. The
+client, in this case xfig, obtains the resources from the X-server at run time.
 
 Important options to configure are
 	--prefix=<path>		root of installation tree, default /usr/local
-	--without-xpm-icon	disable the xpm splash icon
+	--with-gsexe=<path>	path of the ghostscript executable
+	--with-gslib=<path>	path of the ghostscript runtime library
 	--with-appdefaultdir=<path>	directory to install the X resources
 				file to, default $prefix/share/X11/app-defaults/
 	--with-icondir=<path>	directory to install the xfig icon to,
@@ -16,26 +32,31 @@ Important options to configure are
 				default $prefix/share/applications/
 	--without-xfig-libraries	do not install xfig libraries files,
 				currently 2531 fig files, 16 MB.
-Type ./configure --help for all options.
+Type ./configure --help for help text on all options.
 When running ./configure, the values of various flags are printed at the
 very end of its output.
 
+
+Requirements:
+The following runtime libraries and header file must be installed:
+libx11, libxt, libxaw, libxi, libxpm;
+Optionally, libxaw3d, libpng, libjpeg, libtiff, gs.
+
+Usually, if a package manager is used, the runtime libraries are contained in a
+"lib*" package, the header files in a "lib*-dev" or "lib*-devel" package,
+e.g., "libx11" and "libx11-dev".
+
+
 On Mac Darwin, OS X 10.11.1 (El Capitan), using XQuartz and having installed
-jpeg, libpng and zlib via Macports, the following command should work:
+jpeg, libpng, libtiff and zlib via Macports, the following command should work:
 	./configure LDFLAGS=-L/opt/local/lib CPPFLAGS=-I/opt/local/include \
 		--with-appdefaultdir=/opt/X11/share/X11/app-defaults
 	make -j; make install-strip
-The option -j does a parallel build. The target install-strip strips debugging
-symbols from the executable.
-To install xfig under /usr/share on debian, try
+
+On debian, to install xfig under /usr/share, try
 	./configure --prefix=/usr --with-appdefaultdir=/etc/X11/app-defaults
 	make -j; make install
 
-On old systems, it may be necessary to define ANCIENT from the make command,
-	./configure; make -DANCIENT; make install
-The preprocessor macro ANCIENT can not be defined by ./configure,
-but must be set when invoking make.
 
-Please report bug fixes or suggestions for improvement
-to thomas.loimer@tuwien.ac.at. I am also very interested to learn about
-conditions where it is necessary to compile with make -DANCIENT.
+Please report bug fixes or suggestions for improvement to
+thomas.loimer@tuwien.ac.at.
