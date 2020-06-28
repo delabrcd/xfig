@@ -47,7 +47,8 @@
 #include "w_util.h"
 #include "w_layers.h"
 
-extern int read_1_3_objects(FILE *fp, char *buf, F_compound *obj); /* f_readold.c */
+extern int	read_1_3_objects(FILE *fp, char *buf, F_compound *obj,
+				int *resolution);	/* f_readold.c */
 
 /* EXPORTS */
 
@@ -361,7 +362,7 @@ readfp_fig(FILE *fp, F_compound *obj, Boolean merge, int xoff, int yoff, fig_set
 	file_msg("Seeing if this figure is Fig format 1.3");
 	file_msg("If this doesn't work then this is not a Fig file.");
 	proto = 13;
-	status = read_1_3_objects(fp, buf, obj);
+	status = read_1_3_objects(fp, buf, obj, &resolution);
     }
     /* don't go any further if there was an error in reading the figure */
     if (status != 0) {
@@ -369,7 +370,7 @@ readfp_fig(FILE *fp, F_compound *obj, Boolean merge, int xoff, int yoff, fig_set
     }
 
     n_num_usr_cols++;	/* number of user colors = max index + 1 */
-    /*******************************************************************************
+    /***************************************************************************
 	The older versions of xfig (1.3 to 2.1) used values that ended in 4 or 9
 	for coordinates on the "grid".  When multiplied by 15 for the 3.0
 	resolution these values ended up 14 "new" pixels off the grid.
@@ -377,10 +378,14 @@ readfp_fig(FILE *fp, F_compound *obj, Boolean merge, int xoff, int yoff, fig_set
 	For 3.0 files, 1 is added to the coordinates, and in addition, the USER
 	is supposed to set the x and y offset in the file panel both to the
 	amount necessary to correct the problem.
-	For older files 1 is first added to coordinates then they are multiplied by 15.
-    ********************************************************************************/
+	For older files 1 is first added to coordinates then they are multiplied
+	by 15.
+    ***************************************************************************/
+    /* See also doc/FORMAT3.0 */
 
-    if (proto == 30) {
+    /* I do not see, where 1 is first added. */
+    if (proto == 30 || proto == 13) {
+	    /* Fig 1.3 objects seem to lie on "nice" coordinates. */
        scale_figure(obj,((float)PIX_PER_INCH)/resolution,0);
     } else if (resolution != PIX_PER_INCH) {
        if (proto == 21 && resolution == 76 && !settings->units)

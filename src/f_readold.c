@@ -53,7 +53,7 @@ static F_compound *read_1_3_compoundobject(FILE *fp);
 
 
 int
-read_1_3_objects(FILE *fp, char *buf, F_compound *obj)
+read_1_3_objects(FILE *fp, char *buf, F_compound *obj, int *resolution)
 {
     F_ellipse	   *e, *le = NULL;
     F_line	   *l, *ll = NULL;
@@ -62,14 +62,14 @@ read_1_3_objects(FILE *fp, char *buf, F_compound *obj)
     F_arc	   *a, *la = NULL;
     F_compound	   *c, *lc = NULL;
     int		    n;
-    int		    object, pixperinch, canvaswid, canvasht, coord_sys;
+    int		    object, canvaswid, canvasht, coord_sys;
 
-    n = sscanf(buf, "%d%d%d%d\n", &pixperinch, &coord_sys, &canvaswid, &canvasht);
+    n = sscanf(buf, "%d%d%d%d\n", resolution, &coord_sys, &canvaswid, &canvasht);
     if (n != 4) {
 	file_msg("Incorrect format in the first line in input file");
 	return (-1);
     }
-    obj->nwcorner.x = pixperinch;
+    obj->nwcorner.x = *resolution;
     obj->nwcorner.y = coord_sys;
     while (fscanf(fp, "%d", &object) == 1) {
 	switch (object) {
