@@ -478,7 +478,6 @@ read_1_3_textobject(FILE *fp)
 	return (NULL);
 
     t->type = T_LEFT_JUSTIFIED;
-    t->size = 18;		/* size field wasn't used in version 1.3 */
     t->flags = RIGID_TEXT;	/* same with flags (called style) */
     t->color = BLACK;
     t->depth = 0;
@@ -506,6 +505,10 @@ read_1_3_textobject(FILE *fp)
 	free((char *) t);
 	return (NULL);
     }
+
+    /* The size field was not used in version 1.3.
+       Set it to the height, as a crude estimate. */
+    t->size = t->ascent;
 
     if (!strlen(t->cstring)) {
 	free(t->cstring);

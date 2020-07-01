@@ -669,6 +669,10 @@ main(int argc, char **argv)
 			TMPDIR = "/tmp";
 	}
 
+    /* ratio of Fig units to display resolution (80ppi) */
+    /* might also be needed when updating a figure */
+    ZOOM_FACTOR = PIX_PER_INCH/DISPLAY_PIX_PER_INCH;
+
     /* first check args to see if user wants to scale the figure as it is
 	read in and make sure it is a resonable (positive) number */
     for (i=1; i<argc-1; i++)
@@ -684,7 +688,26 @@ main(int argc, char **argv)
 	/* see if user just wants to update Fig files to current version */
 	/*****************************************************************/
 
-	/* yes, go do it and exit */
+	/* if the fig file contains text objects,
+	   update_fig_files() depends on font information */
+	cnt = setup_visual(&argc, argv, args);
+	init_font();
+	/* v1.3 fig files query display_zoomscale in read_1_3_textobject()
+	   in f_readold.c */
+	display_zoomscale = 1.0f;
+	/* v1.3 fig files need some appres values in readfp_fig() in f_read.c */
+	appres.landscape = True;
+	appres.flushleft = False;
+	appres.INCHES = True;
+	appres.papersize = 0;
+	appres.magnification = 100.0f;
+	appres.multiple = False;
+	appres.transparent = -2;
+	/* and use scalable fonts, if available */
+	appres.scalablefonts = True;
+	/* but do not set correct_font_size; Originally, font sizes were given
+	   in pixel, and xfig displayed with 80 pixels to the inch. */
+
 	exit(update_fig_files(argc,argv));
 
     } else if (argc > 1) {
@@ -790,9 +813,6 @@ main(int argc, char **argv)
     /* get width, height of screen */
     screen_wd = WidthOfScreen(XtScreen(tool));
     screen_ht = HeightOfScreen(XtScreen(tool));
-
-    /* ratio of Fig units to display resolution (80ppi) */
-    ZOOM_FACTOR = PIX_PER_INCH/DISPLAY_PIX_PER_INCH;
 
     /* get the FIG2DEV_DIR environment variable (if any is set) for the path
        to fig2dev, in case the user wants one not in the normal search path */
