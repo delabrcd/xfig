@@ -16,52 +16,67 @@
  *
  */
 
-#include "fig.h"
-#include "figx.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+#include "f_read.h"
+
+#include <ctype.h>		/* isdigit() */
+#include <errno.h>
+#include <limits.h>		/* PATH_MAX */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
+#ifdef I18N
+#include <locale.h>
+#endif
+
 #include "resources.h"
 #include "object.h"
 #include "mode.h"
-#include "f_read.h"
-#include "u_fonts.h"
-#include "u_create.h"
-#include "w_canvas.h"
-#include "w_drawprim.h"
-#include "w_export.h"
-#include "w_file.h"
-#include "w_print.h"
-#include "w_indpanel.h"
-#include "w_color.h"
-#include "w_msgpanel.h"
-#include "w_setup.h"
-#include "w_util.h"
-#include "w_zoom.h"
 
 #include "d_spline.h"
 #include "e_update.h"
 #include "f_picobj.h"
 #include "f_util.h"
 #include "u_bound.h"
+#include "u_create.h"
+#include "u_fonts.h"
 #include "u_free.h"
 #include "u_scale.h"
 #include "u_translate.h"
-#include "w_util.h"
+#include "w_canvas.h"
+#include "w_color.h"
+#include "w_drawprim.h"
+#include "w_file.h"
 #include "w_layers.h"
+#include "w_msgpanel.h"
+#include "w_setup.h"
+#include "w_util.h"
+#include "w_zoom.h"
+
+#include "xfig_math.h"
 
 extern int	read_1_3_objects(FILE *fp, char *buf, F_compound *obj,
 				int *resolution);	/* f_readold.c */
 
 /* EXPORTS */
 
-int		 defer_update_layers = 0; /* if != 0, update_layers() doesn't update */
-int		 line_no, save_line;	/* current input line number */
-int		 num_object;		/* current number of objects */
-char		*read_file_name;	/* current input file name */
+int	defer_update_layers = 0; /* if != 0, update_layers() doesn't update */
+void	fix_angle (float *angle);
+int	line_no, save_line;	/* current input line number */
+int	num_object;		/* current number of objects */
+char	*read_file_name;	/* current input file name */
+void	swap_colors (void);
 
 /* LOCAL */
 
 static char	Err_incomp[] = "Incomplete %s object at line %d.";
 
-static void        read_colordef(FILE *fp);
+static void        read_colordef(void);
 static F_ellipse  *read_ellipseobject(void);
 static F_line     *read_lineobject(FILE *fp);
 static F_text     *read_textobject(FILE *fp);
@@ -86,38 +101,38 @@ static Boolean	   contains_picture(F_compound *compound);
 /* input buffer length */
 #define	BUF_SIZE	1024
 
-char		 buf[BUF_SIZE];		/* input buffer */
-char		*comments[MAXCOMMENTS];	/* comments saved for current object */
-int		 numcom;		/* current comment index */
-Boolean		 com_alloc = False;	/* whether or not the comment array has been init. */
-int		 TFX;			/* true for 1.4TFX protocol */
-int		 proto;			/* file protocol*10 */
-float	         fproto, xfigproto;	/* floating values for protocol of figure
-					   file and current protocol */
+static char	buf[BUF_SIZE];		/* input buffer */
+static char	*comments[MAXCOMMENTS];	/* comments saved for current object */
+static int	numcom;			/* current comment index */
+static Boolean	com_alloc = False;	/* whether or not the comment array
+					   has been initialized */
+static int	TFX;			/* true for 1.4TFX protocol */
+static int	proto;			/* file protocol*10 */
+static float	fproto, xfigproto;	/* floating values for protocol of
+					   figure file and current protocol */
 
 /* initialize the user color counter - then read figure file.
    Called from load_file(), merge_file(), preview_figure(), load_lib_obj(),
    and paste(), but NOT from read_figure() (import Fig as picture) */
 
-
-void merge_colors (F_compound *objects);
-void swap_colors (void);
-int readfp_fig (FILE *fp, F_compound *obj, Boolean merge, int xoff, int yoff, fig_settings *settings);
-int read_line (FILE *fp);
-int read_objects (FILE *fp, F_compound *obj, int *res);
-void scale_figure (F_compound *obj, float mul, int offset);
-void shift_figure (F_compound *obj);
-void fix_depth (int *depth);
-void check_color (int *color);
-void convert_arrow (int *type, float *wd, float *ht);
-void fix_angle (float *angle);
-void skip_line (FILE *fp);
-int backslash_count (char *cp, int start);
-void renumber_comp (F_compound *compound);
-void renumber (int *color);
+static void	merge_colors (F_compound *objects);
+static int	readfp_fig (FILE *fp, F_compound *obj, Boolean merge, int xoff,
+				int yoff, fig_settings *settings);
+static int	read_line (FILE *fp);
+static int	read_objects (FILE *fp, F_compound *obj, int *res);
+static void	scale_figure (F_compound *obj, float mul, int offset);
+static void	shift_figure (F_compound *obj);
+static void	fix_depth (int *depth);
+static void	check_color (int *color);
+static void	convert_arrow (int *type, float *wd, float *ht);
+static void	skip_line (FILE *fp);
+static int	backslash_count (char *cp, int start);
+static void	renumber_comp (F_compound *compound);
+static void	renumber (int *color);
 
 int
-read_figc(char *file_name, F_compound *obj, Boolean merge, Boolean remapimages, int xoff, int yoff, fig_settings *settings)
+read_figc(char *file_name, F_compound *obj, Boolean merge, Boolean remapimages,
+		int xoff, int yoff, fig_settings *settings)
 {
     int i,status;
 
@@ -226,7 +241,7 @@ read_fig(char *file_name, F_compound *obj, Boolean merge, int xoff, int yoff, fi
     }
 }
 
-int
+static int
 readfp_fig(FILE *fp, F_compound *obj, Boolean merge, int xoff, int yoff, fig_settings *settings)
 {
     int		    status;
@@ -234,7 +249,7 @@ readfp_fig(FILE *fp, F_compound *obj, Boolean merge, int xoff, int yoff, fig_set
     int		    resolution;
     char	    versstring[10];
 
-    defer_update_layers = 1;		/* prevent update_layers() from updating */
+    defer_update_layers = 1;	/* prevent update_layers() from updating */
 
     /* initialize settings structure in case we read an older Fig format */
     settings->landscape = appres.landscape;
@@ -452,7 +467,8 @@ read_return(int status)
     return status;
 }
 
-int read_objects(FILE *fp, F_compound *obj, int *res)
+static int
+read_objects(FILE *fp, F_compound *obj, int *res)
 {
     F_ellipse	   *e, *le = NULL;
     F_line	   *l, *ll = NULL;
@@ -492,7 +508,7 @@ int read_objects(FILE *fp, F_compound *obj, int *res)
 	}
 	switch (object) {
 	case O_COLOR_DEF:
-	    read_colordef(fp);
+	    read_colordef();
 	    if (num_object) {
 		file_msg("Color definitions must come before other objects (line %d).",
 			line_no);
@@ -565,7 +581,8 @@ int read_objects(FILE *fp, F_compound *obj, int *res)
 	return errno;
 }				/* read_objects */
 
-int parse_papersize(char *size)
+int
+parse_papersize(char *size)
 {
     int i,len;
     char *c;
@@ -592,7 +609,7 @@ int parse_papersize(char *size)
 }
 
 static void
-read_colordef(FILE *fp)
+read_colordef(void)
 {
     int		    c,r,g,b;
 
@@ -1516,7 +1533,7 @@ read_textobject(FILE *fp)
 }
 
 /* akm 28/2/95 - count consecutive backslashes backwards */
-int
+static int
 backslash_count(char *cp, int start)
 {
   int i, count = 0;
@@ -1563,7 +1580,8 @@ attach_comments(void)
     return comp;
 }
 
-int read_line(FILE *fp)
+static int
+read_line(FILE *fp)
 {
     while (1) {
 	if (NULL == fgets(buf, BUF_SIZE, fp)) {
@@ -1608,7 +1626,8 @@ save_comment(void)
 
 /* skip to the end of the current line */
 
-void skip_line(FILE *fp)
+static void
+skip_line(FILE *fp)
 {
     while (fgetc(fp) != '\n') {
 	if (feof(fp))
@@ -1618,7 +1637,8 @@ void skip_line(FILE *fp)
 
 /* make sure angle is 0 to 2PI */
 
-void fix_angle(float *angle)
+void
+fix_angle(float *angle)
 {
     while (*angle < 0.0)
 	*angle += M_2PI;
@@ -1626,7 +1646,8 @@ void fix_angle(float *angle)
 	*angle -= M_2PI;
 }
 
-void fix_depth(int *depth)
+static void
+fix_depth(int *depth)
 {
     if (*depth>MAX_DEPTH) {
 	    *depth=MAX_DEPTH;
@@ -1640,9 +1661,9 @@ void fix_depth(int *depth)
 	}
 }
 
-char shift_msg[] = "The figure has objects which have negative coordinates,\ndo you wish to shift it back on the page?";
 
-void shift_figure(F_compound *obj)
+static void
+shift_figure(F_compound *obj)
 {
     F_ellipse	   *e;
     F_arc	   *a;
@@ -1652,6 +1673,7 @@ void shift_figure(F_compound *obj)
     F_text	   *t;
     int		    lowx,lowy,dx,dy;
     int		    rnd;
+    char shift_msg[] = "The figure has objects which have negative coordinates,\ndo you wish to shift it back on the page?";
 
     /* if user is allowing negative coords, return */
     if (appres.allownegcoords)
@@ -1694,7 +1716,8 @@ void shift_figure(F_compound *obj)
 	translate_text(t, dx, dy);
 }
 
-void scale_figure(F_compound *obj, float mul, int offset)
+static void
+scale_figure(F_compound *obj, float mul, int offset)
 {
     /* scale the whole figure for new pixels per inch */
     if (mul != 1.0)
@@ -1711,7 +1734,8 @@ void scale_figure(F_compound *obj, float mul, int offset)
 
 /* check if user color <color> is defined */
 
-void check_color(int *color)
+void
+check_color(int *color)
 {
     if (*color < NUM_STD_COLS)
 	return;
@@ -1791,7 +1815,8 @@ void swap_colors(void)
 
 static int    renum[MAX_USR_COLS];
 
-void merge_colors(F_compound *objects)
+static void
+merge_colors(F_compound *objects)
 {
     Boolean	    found_exist;
     int		    i,j,newval;
@@ -1874,7 +1899,8 @@ void merge_colors(F_compound *objects)
     num_usr_cols = n_num_usr_cols;
 }
 
-void renumber_comp(F_compound *compound)
+static void
+renumber_comp(F_compound *compound)
 {
 	F_arc	   *a;
 	F_text	   *t;
@@ -1909,7 +1935,8 @@ void renumber_comp(F_compound *compound)
 	}
 }
 
-void renumber(int *color)
+static void
+renumber(int *color)
 {
     if (*color < NUM_STD_COLS)
 	return;
@@ -1946,7 +1973,8 @@ count_lines_correctly(FILE *fp)
 /* make sure arrow style value is legal and convert arrow width and height to
  * same units as thickness in V4.0 and later we will save the values in these units */
 
-void convert_arrow(int *type, float *wd, float *ht)
+static void
+convert_arrow(int *type, float *wd, float *ht)
 {
     if (*type >= NUM_ARROW_TYPES/2)
 	*type = 0;

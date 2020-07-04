@@ -1,8 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -15,19 +16,23 @@
  *
  */
 
-#include "fig.h"
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "resources.h"
 #include "object.h"
+#include "d_spline.h"
 #include "f_read.h"
-#include "f_util.h"
 #include "u_create.h"
 #include "u_fonts.h"
+#include "u_free.h"
 #include "w_drawprim.h"
 #include "w_msgpanel.h"
 #include "w_zoom.h"
+#include "xfig_math.h"
 
-#include "d_spline.h"
-#include "u_free.h"
 
 /*******    Fig 1.3 subtype of objects	  *******/
 #define			DRAW_ELLIPSE_BY_RAD	1
@@ -43,12 +48,12 @@
 #define			DRAW_CLOSEDSPLINE	11
 #define			DRAW_COMPOUND		13
 
-static F_ellipse *read_1_3_ellipseobject(FILE *fp);
-static F_line  *read_1_3_lineobject(FILE *fp);
-static F_text  *read_1_3_textobject(FILE *fp);
-static F_spline *read_1_3_splineobject(FILE *fp);
-static F_arc   *read_1_3_arcobject(FILE *fp);
-static F_compound *read_1_3_compoundobject(FILE *fp);
+static F_ellipse	*read_1_3_ellipseobject(FILE *fp);
+static F_line		*read_1_3_lineobject(FILE *fp);
+static F_text		*read_1_3_textobject(FILE *fp);
+static F_spline		*read_1_3_splineobject(FILE *fp);
+static F_arc		*read_1_3_arcobject(FILE *fp);
+static F_compound	*read_1_3_compoundobject(FILE *fp);
 
 
 

@@ -1,8 +1,9 @@
 /*
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985-1988 by Supoj Sutanthavibul
- * Parts Copyright (c) 1989-2007 by Brian V. Smith
+ * Parts Copyright (c) 1989-2015 by Brian V. Smith
  * Parts Copyright (c) 1991 by Paul King
+ * Parts Copyright (c) 2016-2020 by Thomas Loimer
  *
  * Any party obtaining a copy of these files is granted, free of charge, a
  * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
@@ -15,6 +16,11 @@
  *
  */
 
+#include <X11/Intrinsic.h>	/* Boolean */
+#include <X11/Xlib.h>		/* False, True */
+
+#include "object.h"
+
 /* errors from read_figc in addition to those in errno.h (e.g. ENOENT) */
 #define	BAD_FORMAT		-1
 #define	EMPTY_FILE		-2
@@ -26,27 +32,28 @@
 #define REMAP_IMAGES		True
 #define DONT_REMAP_IMAGES	False
 
-extern int	 defer_update_layers;	/* if != 0, update_layers() doesn't update */
+extern int	 defer_update_layers;	/* if == 0, update_layers() updates */
 extern int	 line_no;
 extern int	 num_object;
 extern char	*read_file_name;
 
 /* structure which is filled by readfp_fig */
-
 typedef struct {
-    Boolean	landscape;
-    Boolean	flushleft;
-    Boolean	units;
-    int		grid_unit;
-    int		papersize;
-    float	magnification;
-    Boolean	multiple;
-    int		transparent;
-    } fig_settings;
+	Boolean	landscape;
+	Boolean	flushleft;
+	Boolean	units;
+	int	grid_unit;
+	int	papersize;
+	float	magnification;
+	Boolean	multiple;
+	int	transparent;
+} fig_settings;
 
 extern Boolean	 uncompress_file(char *name);
-extern int	 read_figc(char *file_name, F_compound *obj, Boolean merge, Boolean remapimages, int xoff, int yoff, fig_settings *settings);
-extern int	 read_fig(char *file_name, F_compound *obj, Boolean merge, int xoff, int yoff, fig_settings *settings);
-extern int parse_papersize(char *size);
-extern void fix_angle (float *angle);
-extern void swap_colors (void);
+extern int	 read_figc(char *file_name, F_compound *obj, Boolean merge,
+	Boolean remapimages, int xoff, int yoff, fig_settings *settings);
+extern int	 read_fig(char *file_name, F_compound *obj, Boolean merge,
+			     int xoff, int yoff, fig_settings *settings);
+extern int	parse_papersize(char *size);
+extern void	fix_angle (float *angle);
+extern void	swap_colors (void);

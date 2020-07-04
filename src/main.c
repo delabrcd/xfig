@@ -16,80 +16,100 @@
  *
  */
 
-#include "fig.h"
-#include "figx.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+#include "main.h"
+
+#include <errno.h>
+#include <limits.h>
+#include <locale.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
+#include <unistd.h>
+#include <sys/types.h>
+
+#include <X11/IntrinsicP.h>
+#include <X11/CoreP.h>		/* requires X11/IntrinsicP.h */
+#include <X11/Shell.h>
+#include <X11/StringDefs.h>
+#include <X11/Xlib.h>
+#include <X11/Xresource.h>
+#include <X11/Xutil.h>
+#include <X11/xpm.h>
+#ifdef I18N
+#include <X11/keysym.h>
+#endif
+#ifdef USE_TAB		/* input extensions for an input tablet */
+#include <X11/extensions/XInput.h>
+#endif
+#ifdef XAW3D
+#include <X11/Xaw3d/Form.h>
+#include <X11/Xaw3d/Label.h>
+#else
+#include <X11/Xaw/Form.h>
+#include <X11/Xaw/Label.h>
+#endif /* XAW3D */
+
 #include "resources.h"
 #include "object.h"
-#include "main.h"
 #include "mode.h"
 #include "d_text.h"
 #include "e_edit.h"
+#include "f_load.h"
 #include "f_read.h"
 #include "f_util.h"
 #include "u_error.h"
-#include "u_fonts.h"
 #include "u_redraw.h"
 #include "u_undo.h"
 #include "w_canvas.h"
-#include "w_indpanel.h"
+#include "w_cmdpanel.h"
 #include "w_color.h"
 #include "w_cursor.h"
-#include "w_cmdpanel.h"
 #include "w_digitize.h"
 #include "w_drawprim.h"
+#include "w_export.h"
 #include "w_file.h"
 #include "w_fontpanel.h"
-#include "w_export.h"
 #include "w_help.h"
 #include "w_icons.h"
-#include "w_indpanel.h"
 #include "w_layers.h"
 #include "w_library.h"
-#include "w_msgpanel.h"
 #include "w_modepanel.h"
 #include "w_mousefun.h"
+#include "w_msgpanel.h"
 #include "w_print.h"
 #include "w_rulers.h"
-#include "w_srchrepl.h"
 #include "w_setup.h"
+#include "w_snap.h"
+#include "w_srchrepl.h"
 #include "w_style.h"
 #include "w_util.h"
 #include "w_zoom.h"
-#include "w_snap.h"
-#include "f_load.h"
+#include "xfig_math.h"
 
-/* input extensions for an input tablet */
-#ifdef USE_TAB
-#include <X11/extensions/XInput.h>
-#endif /* USE_TAB */
-
-#ifdef I18N
-#include <X11/keysym.h>
-#endif  /* I18N */
-
-#include <X11/IntrinsicP.h>
 
 /* EXPORTS */
 
-Boolean	    geomspec;
+Boolean	geomspec;
+char	*arg_filename = NULL;
+Atom	wm_protocols[2];
+int	xargc;		/* keeps copies of the command-line arguments */
+char	**xargv;
 
 /* LOCALS */
 
-int		update_fig_files();
+static int	cnt;
 static int	screen_res;
-static void	make_cut_buf_name(void);
-static void	check_resource_ranges(void);
-static void	set_icon_geom(void);
-static void	set_max_image_colors(void);
-static void	parse_canvas_colors(void);
-static void	set_xpm_icon(void);
-static void	resize_canvas(void);
-static void check_refresh(XtPointer client_data, XtIntervalId *id);
-
-/************** FIG options ******************/
+static int	xpm_icon_status; /* status from reading the xpm icon */
+static Arg	args[10];
 
 DeclareStaticArgs(10);
-char    *arg_filename = NULL;
 
 static Boolean	true = True;
 static Boolean	false = False;
@@ -98,6 +118,22 @@ static float	Fone = 1.0;
 static float	F100 = 100.0;
 static float	FDef_arrow_wd = DEF_ARROW_WID;
 static float	FDef_arrow_ht = DEF_ARROW_HT;
+
+static String	tool_translations =
+			"<Message>WM_PROTOCOLS:Quit()\n";
+static String	form_translations =
+			"<ConfigureNotify>:ResizeForm()\n";
+
+typedef struct
+{
+	Visual	*visual;
+	int	depth;
+} OptionsRec;
+static OptionsRec	Options;
+
+static struct geom {
+	int wid, ht;
+} geom;
 
 /* actions so that we may install accelerators at the top level */
 static XtActionsRec	main_actions[] =
@@ -129,6 +165,18 @@ static XtActionsRec	main_actions[] =
     {"HowToGuide",	(XtActionProc) launch_howto},
     {"AboutXfig",	(XtActionProc) launch_about},
     {"SpinnerUpDown",	(XtActionProc) spinner_up_down},
+};
+
+static XtActionsRec	form_actions[] =
+{
+    {"ResizeForm", (XtActionProc) check_for_resize},
+    {"Quit", (XtActionProc) my_quit},
+};
+
+static XtActionsRec text_panel_actions[] =
+{
+    {"PastePanelKey", (XtActionProc) paste_panel_key} ,
+    {"EmptyTextKey", (XtActionProc) clear_text_key} ,
 };
 
 static XtResource application_resources[] = {
@@ -346,9 +394,10 @@ static XtResource application_resources[] = {
 #endif  /* I18N */
 };
 
-/* BE SURE TO UPDATE THE -help COMMAND OPTION LIST IF ANY CHANGES ARE MADE HERE */
-
-XrmOptionDescRec options[] =
+/*
+ * BE SURE TO UPDATE THE -help COMMAND OPTION LIST IF ANY CHANGES ARE MADE HERE
+ */
+static XrmOptionDescRec options[] =
 {
     {"-visual", "*visual", XrmoptionSepArg, NULL},
     {"-depth", "*depth", XrmoptionSepArg, NULL},
@@ -469,7 +518,7 @@ XrmOptionDescRec options[] =
 #endif  /* I18N */
 };
 
-char *help_list[] = {
+static char *help_list[] = {
 	"[-allownegcoords] ",
 	"[-autorefresh] ",
 	"[-axislines <color>] ",
@@ -580,44 +629,7 @@ char *help_list[] = {
 	"  [file] ",
 	NULL } ;
 
-Atom wm_protocols[2];
-
-static String	tool_translations =
-			"<Message>WM_PROTOCOLS:Quit()\n";
-static String	form_translations =
-			"<ConfigureNotify>:ResizeForm()\n";
-XtActionsRec	form_actions[] =
-{
-    {"ResizeForm", (XtActionProc) check_for_resize},
-    {"Quit", (XtActionProc) my_quit},
-};
-
-static XtActionsRec text_panel_actions[] =
-{
-    {"PastePanelKey", (XtActionProc) paste_panel_key} ,
-    {"EmptyTextKey", (XtActionProc) clear_text_key} ,
-};
-
-struct geom {
-	int wid,ht;
-	};
-
-#define NCHILDREN	9
-
-static Arg	    args[10];
-static int	    cnt;
-
-/* to get any visual the user specifies */
-
-typedef struct
-{
-	Visual	*visual;
-	int	depth;
-} OptionsRec;
-
-OptionsRec	Options;
-
-XtResource resources[] =
+static XtResource resources[] =
 {
 	{"visual", "Visual", XtRVisual, sizeof (Visual *),
 	XtOffsetOf (OptionsRec, visual), XtRImmediate, NULL},
@@ -625,20 +637,22 @@ XtResource resources[] =
 	XtOffsetOf (OptionsRec, depth), XtRImmediate, NULL},
 };
 
-XtTimerCallbackProc manage_layer_buttons();
+static void	make_cut_buf_name(void);
+static void	check_resource_ranges(void);
+static void	set_icon_geom(void);
+static void	set_max_image_colors(void);
+static void	parse_canvas_colors(void);
+static void	set_xpm_icon(void);
+static void	resize_canvas(void);
+static void	check_refresh(XtPointer client_data, XtIntervalId *id);
+static int	setup_visual (int *argc_p, char **argv, Arg *args);
+static void	get_pointer_mapping (void);
 
-int	xargc;		/* keeps copies of the command-line arguments */
-char  **xargv;
-int	xpm_icon_status; /* status from reading the xpm icon */
-struct  geom   geom;
-
-
-int setup_visual (int *argc_p, char **argv, Arg *args);
-void get_pointer_mapping (void);
 
 int
 main(int argc, char **argv)
 {
+#define NCHILDREN	9
     Widget	    children[NCHILDREN];
     XEvent	    event;
     int		    ichild;
@@ -1275,11 +1289,11 @@ main(int argc, char **argv)
 	strcpy(cur_filename, arg_filename);
 
     /* save path if specified in filename */
-    if (dval=strrchr(cur_filename, '/')) {
+    if ((dval = strrchr(cur_filename, '/'))) {
 	strcpy(cur_file_dir, cur_filename);
 	/* remove path from filename */
 	strcpy(cur_filename, dval+1);
-	if (dval=strrchr(cur_file_dir, '/'))
+	if ((dval = strrchr(cur_file_dir, '/')))
 	    *dval = '\0';  /* terminate path at the last "/" */
 	change_directory(cur_file_dir);		/* go there */
 	/* and get back the canonical (absolute) path */
@@ -1592,7 +1606,7 @@ notablet:
 
 /* setup all the visual and depth stuff */
 
-int
+static int
 setup_visual(int *argc_p, char **argv, Arg *args)
 {
 	int	       i, n, cnt;
@@ -1955,7 +1969,8 @@ resize_canvas(void)
 
 /* flip the mouse hints if the pointer mapping is reversed */
 
-void get_pointer_mapping(void)
+static void
+get_pointer_mapping(void)
 {
 	unsigned char mapping[3];
 	int	      nmap;
