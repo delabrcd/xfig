@@ -396,19 +396,21 @@ void canvas_selected(Widget tool, XButtonEvent *event, String *params, Cardinal 
 
 	else if (be->button == Button4 && !shift)
 	    /* pan down with wheelmouse */
-	    pan_down(event->state & ShiftMask);
+	    pan_down(0);
 
 	else if (be->button == Button5 && !shift)
 	    /* pan up with wheelmouse */
-	    pan_up(event->state & ShiftMask);
+	    pan_up(0);
 
-	else if (be->button == 6 /* Button6 */ && !shift)
+	else if ((be->button == 6 /* Button6 */ && !shift) ||
+		(be->button == Button4 && shift))
 	    /* pan right with wheelmouse or touchpad */
-	    pan_right(event->state & ShiftMask);
+	    pan_right(0);
 
-	else if (be->button == 7 /* Button7 */ && !shift)
+	else if ((be->button == 7 /* Button7 */ && !shift) ||
+		(be->button == Button5 && shift))
 	    /* pan left with wheelmouse or touchpad */
-	    pan_left(event->state & ShiftMask);
+	    pan_left(0);
 
 	break;
 

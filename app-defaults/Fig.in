@@ -540,8 +540,10 @@ Fig*spinner_form*Command.translations: #override \
 ! if Control is pressed, zoom in/zoom out via wheel rotation.
 !
 Fig*canvas.translations: #override \
-    Shift<Btn4Down>: PopupModePanel(draw) \n\
-    Shift<Btn5Down>: PopupModePanel(edit) \n\
+    Alt<Btn4Down>: PopupModePanel(draw) \n\
+    Meta<Btn4Down>: PopupModePanel(draw) \n\
+    Alt<Btn5Down>: PopupModePanel(edit) \n\
+    Meta<Btn5Down>: PopupModePanel(edit) \n\
     Ctrl<Key>k:  PopupKeyboardPanel(edit)
 
 Fig*draw_menu*translations: #override \

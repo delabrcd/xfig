@@ -4,6 +4,13 @@ Version 3.2
 =============================================================================
 Patchlevel Xx (Xxx 20xx)
 
+USER INTERFACE CHANGES:
+	o Shift + Wheel Up pans left, Shift + Wheel Down pans right.
+	  Alt or Meta + Wheel Up pops up the edit panel, Alt or Meta + Wheel
+	  Down pops up the drawing panel. Previously, Shift + Wheel Up or Down
+	  popped up the edit or drawing panel, respectively, and panning
+	  sideways could only be achieved by moving the wheel sideways.
+
 NEW FEATURES:
 	o Obey the resolution given in embedded png, tiff and jpeg image files.
 	o Embedded image files are displayed in full color, not reduced to
