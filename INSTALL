@@ -23,7 +23,6 @@ client, in this case xfig, obtains the resources from the X-server at run time.
 Important options to configure are
 	--prefix=<path>		root of installation tree, default /usr/local
 	--with-gsexe=<path>	path of the ghostscript executable
-	--with-gslib=<path>	path of the ghostscript runtime library
 	--with-appdefaultdir=<path>	directory to install the X resources
 				file to, default $prefix/share/X11/app-defaults/
 	--with-icondir=<path>	directory to install the xfig icon to,
@@ -40,7 +39,7 @@ very end of its output.
 Requirements:
 The following runtime libraries and header file must be installed:
 libx11, libxt, libxaw, libxi, libxpm;
-Optionally, libxaw3d, libpng, libjpeg, libtiff, gs.
+Optionally, libxaw3d, libpng, libjpeg, libtiff, libgs or ghostscript.
 
 Usually, if a package manager is used, the runtime libraries are contained in a
 "lib*" package, the header files in a "lib*-dev" or "lib*-devel" package,

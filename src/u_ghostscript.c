@@ -25,10 +25,6 @@
 #include "config.h"
 #endif
 
-#ifdef HAVE_DLOPEN
-#include <dlfcn.h>
-#endif
-
 #include <locale.h>
 #include <math.h>
 #include <stdbool.h>
@@ -36,6 +32,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <X11/X.h>		/* TrueColor */
+
+#ifdef HAVE_GSLIB
+#include <ghostscript/gdevdsp.h>
+#include <ghostscript/gserrors.h>
+#include <ghostscript/iapi.h>
+#endif
 
 #include "object.h"
 #include "resources.h"
@@ -51,10 +53,8 @@
 #define BITMAP_PPI	160	/* the resolution for rendering bitmaps */
 #define GS_ERROR	(-2)
 
-#ifdef HAVE_DLOPEN
-
 /*
- * Dynamically link into the ghostscript library.
+ * Link into the ghostscript library.
  * If invoked via the library, ghostscript calls three callback functions when
  * wishing to read from stdin or write to stdout or stderr, respectively.
  * However, if a device is given, ghostscript writes directly to stdout. This
@@ -67,6 +67,7 @@
  * executable via popen("gs..", "r").
  */
 
+#ifdef HAVE_GSLIB
 /*
  * callback data struct
  * A pointer to this struct can be passed to ghostscript, which
@@ -149,16 +150,6 @@ stdout_mediabox(void *caller_handle, const char *str, int len)
 	return len;
 }
 
-/*
- * Type and function definitions see
- * <ghostscript/iapi.h> and <ghostscript/ierrors.h>.
- */
-struct gsapi_revision_s {
-	const char	*product;
-	const char	*copyright;
-	long		revision;
-	long		revisiondate;
-};
 
 /*
  * Link into the ghostscript library with argcnew and argvnew[] for gs >= 9.50,
@@ -180,63 +171,10 @@ gslib(struct _callback_data *data, int (*gs_stdin)(void *, char*, int),
 	char		**argv;
 	struct gsapi_revision_s	rev;
 	void		*minst = NULL;
-	void		*gslib;
 
-	/* in iapi.h, these are enums */
-	int		GS_ARG_ENCODING_UTF8 = 1;
-	/* int		gs_error_ok = 0; */
-	int		gs_error_Fatal = -100;
-	int		gs_error_Quit = -101;
-	/* int		gs_error_NeedInput = -106; */
-
-	/* function handles */
-	int	(*gs_revision)(struct gsapi_revision_s *, int);
-	int	(*gs_new_instance)(void **, void *);
-	int	(*gs_set_stdio)(void *, int (*)(void *, char*, int),
-			int (*)(void *, const char*, int),
-			int (*)(void *, const char*, int));
-	int	(*gs_init_with_args)(void *, int, char **);
-	int	(*gs_set_arg_encoding)(void *, int);
-	int	(*gs_delete_instance)(void *);
-	int	(*gs_exit)(void *);
-
-
-	if (appres.DEBUG)
-		fprintf(stderr, "Trying to dynamically open ghostscript "
-				"library %s...\n", appres.gslib);
-
-	/* open the ghostscript library, e.g., libgs.so.9 under linux,
-	   /opt/local/lib/libgs.dylib under darwin */
-	gslib = dlopen(appres.gslib, RTLD_LAZY | RTLD_LOCAL);
-	if (gslib == NULL)
-		return call_gsexe;
-
-	/* ... and retrieve the symbols */
-	gs_revision = (int (*)(struct gsapi_revision_s *, int))
-		dlsym(gslib, "gsapi_revision");
-	gs_new_instance = (int (*)(void**, void *))
-		dlsym(gslib, "gsapi_new_instance");
-	gs_set_stdio = (int (*)(void *, int (*)(void *, char*, int),
-			int (*)(void *, const char*, int),
-			int (*)(void *, const char*, int)))
-		dlsym(gslib, "gsapi_set_stdio");
-	gs_set_arg_encoding = (int (*)(void *, int))
-		dlsym(gslib, "gsapi_set_arg_encoding");
-	gs_init_with_args = (int (*)(void *, int, char **))
-		dlsym(gslib, "gsapi_init_with_args");
-	gs_exit = (int (*)(void *))dlsym(gslib, "gsapi_exit");
-	gs_delete_instance = (int (*)(void *))
-		dlsym(gslib, "gsapi_delete_instance");
-
-	/* ... found all symbols? */
-	if (gs_revision == NULL || gs_new_instance == NULL ||
-			gs_set_stdio == NULL || gs_set_arg_encoding == NULL ||
-			gs_init_with_args == NULL || gs_exit == NULL ||
-			gs_delete_instance == NULL)
-		return call_gsexe;
 
 	/* get gs version */
-	if (gs_revision(&rev, (int)(sizeof rev)))
+	if (gsapi_revision(&rev, (int)(sizeof rev)))
 		return call_gsexe;
 
 	if (rev.revision >= 950) {
@@ -254,21 +192,20 @@ gslib(struct _callback_data *data, int (*gs_stdin)(void *, char*, int),
 		fputc('\n', stderr);
 	}
 
-	code = gs_new_instance(&minst, (void *)data);
+	code = gsapi_new_instance(&minst, (void *)data);
 	if (code < 0) {
 		return call_gsexe;
 	}
 	/* All gsapi_*() functions below return an int, but some
 	   probably do not return an useful error code. */
-	gs_set_stdio(minst, gs_stdin, gs_stdout, gs_stderr);
-	code = gs_set_arg_encoding(minst, GS_ARG_ENCODING_UTF8);
+	gsapi_set_stdio(minst, gs_stdin, gs_stdout, gs_stderr);
+	code = gsapi_set_arg_encoding(minst, GS_ARG_ENCODING_UTF8);
 	if (code == 0)
-		code = gs_init_with_args(minst, argc, argv);
+		code = gsapi_init_with_args(minst, argc, argv);
 	if (code == 0 || code == gs_error_Quit || code < 0 ||
 			code <= gs_error_Fatal)
-		code = gs_exit(minst);
-	gs_delete_instance(minst);
-	dlclose(gslib);
+		code = gsapi_exit(minst);
+	gsapi_delete_instance(minst);
 
 	if (code == 0 || code == gs_error_Quit) {
 		return 0;
@@ -285,7 +222,7 @@ gslib(struct _callback_data *data, int (*gs_stdin)(void *, char*, int),
 		file_msg("Ghostscript error message:\n%s", data->errbuf);
 	return GS_ERROR;
 }
-#endif /* HAVE_DLOPEN */
+#endif /* HAVE_GSLIB */
 
 /*
  * Call ghostscript.
@@ -401,7 +338,8 @@ gsexe(FILE **out, bool *isnew, char *exenew, char *exeold)
  * files must be explicitly given with the --permit-file-{read,write,..}
  * options. Before gs 9.50, "-dNOSAFER" is the default.
  *
- * Return 0 on success, -1 on failure, -2 (GS_ERROR) for a ghostscript-error.
+ * Return 0 on success, -1 on failure, -2 (GS_ERROR) for a ghostscript-error,
+ * -3 if the path to the ghostscript executable is not given.
  */
 static int
 gsexe_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
@@ -420,7 +358,7 @@ gsexe_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 	FILE	*gs_output;
 
 	if (*appres.ghostscript == '\0')
-		return -1;
+		return -3;
 
 	exenew = "%s -q -dNODISPLAY \"--permit-file-read=%s\" -c \"(%s) (r) "
 		"file runpdfbegin 1 pdfgetpage /MediaBox pget pop == quit\"";
@@ -493,7 +431,11 @@ gsexe_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 	return 0;
 }
 
-#ifdef HAVE_DLOPEN
+#ifdef HAVE_GSLIB
+/*
+ * Return codes: 0..success, -1..within the function, an error occured,
+ *  gs_error..the ghostscript interpreter returned an error
+ */
 static int
 gslib_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 {
@@ -513,11 +455,8 @@ gslib_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 		sizeof errbuf	/* errsize */
 	};
 
-	if (*appres.gslib == '\0')
-		return -1;
-
 	/* write the argument list and command line */
-	argnew[0] = appres.gslib;
+	argnew[0] = "libgs";
 	argnew[1] = "-q";
 	argnew[2] = "-dNODISPLAY";
 	argnew[3] = "--permit-file-read=%s";	/* file */
@@ -577,7 +516,7 @@ gslib_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 
 	return stat;
 }
-#endif /* HAVE_DLOPEN */
+#endif /* HAVE_GSLIB */
 
 /*
  * Call ghostscript to extract the /MediaBox from the pdf given in file.
@@ -587,17 +526,12 @@ int
 gs_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 {
 	int	stat;
-	if (appres.ghostscript[0] == '\0'
-#ifdef HAVE_DLOPEN
-			&& appres.gslib[0] == '\0'
-#endif
-	   )
-		return -1;
-#ifdef HAVE_DLOPEN
+
+#ifdef HAVE_GSLIB
 	stat = gslib_mediabox(file, llx, lly, urx, ury);
 	if (stat == -1)
 #endif
-	stat = gsexe_mediabox(file, llx, lly, urx, ury);
+		stat = gsexe_mediabox(file, llx, lly, urx, ury);
 	if (stat == GS_ERROR) {
 		file_msg("Could not parse file '%s' with ghostscript.", file);
 		file_msg("If available, error messages are displayed above.");

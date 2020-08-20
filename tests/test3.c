@@ -39,12 +39,9 @@ main(int argc, char *argv[])
 	int	llx, lly, urx, ury;
 
 	appres.ghostscript = GSEXE;
-	appres.gslib = GSLIB;
 
-	if (*appres.gslib == '\0' && *appres.ghostscript == '\0')
+	if (gs_mediabox(argv[1], &llx, &lly, &urx, &ury) == -3)
 		return 77;
-	else
-		gs_mediabox(argv[1], &llx, &lly, &urx, &ury);
 
 	if (llx == -1 && lly == -1 && urx == 73 && ury == 73)
 		return 0;

@@ -463,24 +463,8 @@ tell xfig to put 3 or 4 buttons per row on the left mode panel.
 .I ghostscript executable
 .Ap
 Specify the name or path to the ghostscript executable.
-This is needed when importing PDF or Encapsulated PostScript files.
 The default is @GSEXE@.
-To disable calling ghostscript, set both the
-.I ghostscript executable
-and the
-.I library
-to empty strings,
-.B "\-ghostscript """" \-gslib """""
-.
-.\"-------
-.At
-.BR \-gs [ lib ]
-.I ghostscript shared library
-.Ap
-Specify the name or path "" to the ghostscript library. Defaults to @GSLIB@.
-If available, xfig will link into this library.
-This is a bit faster than opening a shell and calling the ghostscript
-executable.
+@gsman@
 .\"-------
 .At
 .BR \-grid_c [ olor ]
@@ -1279,7 +1263,7 @@ inches	boolean	true	\-inches (true),
 			\-metric (false)
 installowncmap	boolean	false	\-installowncmap
 internalborderwidth	integer	1	\-internalBW
-international	International	boolean	false	\-international
+international	boolean	false	\-international
 jpeg_quality	integer	75	\-jpeg_quality
 justify	boolean	false	\-left (false),
 			\-right (true)

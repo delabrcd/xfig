@@ -130,6 +130,21 @@ AC_CHECK_HEADER([X11/X.h])
 # Check for libraries and header files
 dnl First search for the header, only then search for the libs. The other way
 dnl round, the found library would be prepended to LIBS, unnecessarily.
+AC_CHECK_HEADER([ghostscript/iapi.h],
+    [AC_SEARCH_LIBS([gsapi_revision], [gs],
+	[AC_DEFINE([HAVE_GSLIB], 1,
+	    [Define to 1 if you have the ghostscript library and header files.])])],
+    [], [AC_INCLUDES_DEFAULT])
+AS_IF([test $ac_cv_header_ghostscript_iapi_h = yes && \
+	test "x$ac_cv_search_gsapi_revision" != xno],
+    [gsman="This version of xfig links into the ghostscript library.
+The ghostscript executable is not needed, it is only called as a fallback-solution."],
+    [gsman="This is needed when importing PDF or Encapsulated
+PostScript files. To disable calling ghostscript, set to the empty string,
+.BR \"\-ghostscript \"\"\"\"\" ."])dnl
+AC_SUBST([gsman])
+AM_SUBST_NOTMAKE([gsman])
+
 AC_CHECK_HEADER([jpeglib.h],
     [AC_SEARCH_LIBS([jpeg_read_header], [jpeg],
 	[AC_DEFINE([HAVE_JPEG], 1,
@@ -153,15 +168,6 @@ AC_CHECK_HEADER([tiffio.h],
     [], [AC_INCLUDES_DEFAULT])
 AM_CONDITIONAL([HAVE_TIFF], [test $ac_cv_header_tiffio_h = yes && \
 	test "x$ac_cv_search_TIFFOpen" != xno])dnl
-
-AC_CHECK_HEADER([dlfcn.h],
-    [AC_SEARCH_LIBS([dlopen], [dl],
-	[AC_DEFINE([HAVE_DLOPEN], 1,
-	    [Define to 1 if you have the dynamic link library and header \
-			files.])])],
-    [], [AC_INCLUDES_DEFAULT])
-AM_CONDITIONAL([HAVE_DLOPEN], [test $ac_cv_header_dlfcn_h = yes && \
-	test "x$ac_cv_search_dlopen" != xno])dnl
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -220,27 +226,14 @@ AS_IF([test "x$enableval" = xyes],
 AM_CONDITIONAL([I18N], [test "x$enableval" = xyes])dnl
 
 AC_ARG_WITH(gsexe, [AS_HELP_STRING([--with-gsexe=<name>],
-       [specify filename or path of the ghostscript executable (default: gs)])],
+       [specify filename or path of the ghostscript executable (default: gs);
+ empty string, "", to avoid calling the executable])],
     [AS_IF([test "x$withval" = xno], [withval=""])],
     [withval=yes])dnl
 AS_IF([test "x$withval" = xyes], [withval="gs"])
 AC_DEFINE_UNQUOTED([GSEXE], ["$withval"],
     [Define to the filename or path of the ghostscript executable.])dnl
-AC_SUBST([GSEXE], ["$withva"l])
-
-# Set the location of the ghostscript library for dynamically linking
-AC_ARG_WITH(gslib, [AS_HELP_STRING([--with-gslib=<name>],
-	[specify filename or path of the ghostscript library \
-		(default: libgs.so.9)])],
-    [AS_IF([test "x$withval" = xno], [withval=""])],
-    [withval=yes])dnl
-AS_IF([test "x$withval" = xyes], [withval="libgs.so.9"])
-AC_DEFINE_UNQUOTED([GSLIB], ["$withval"],
-    [Define to the filename or path of the ghostscript library.])dnl
-AC_SUBST([GSLIB], ["$withval"])
-
-AC_ARG_WITH(gs, [AS_HELP_STRING([--with-gsexe="" --with-gslib=""],
-			[do not use ghostscript])])
+AC_SUBST([GSEXE], ["$withval"])
 
 dnl With # as comment, configure fails on the lines below!
 dnl Currently only w_rottext.c includes CACHE_[XIMAGES|BITMAPS], logic there
