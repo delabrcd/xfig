@@ -241,8 +241,7 @@ read_eps(char *name, int filetype, F_pic *pic)
 	}
 
 	/* use ghostscript, if a preview bitmap does not exist */
-	if (!bitmapz && (*appres.ghostscript || *appres.gslib) &&
-		!gs_bitmap(name, pic, llx, lly, urx, ury)) {
+	if (!bitmapz && !gs_bitmap(name, pic, llx, lly, urx, ury)) {
 		fclose(file);
 		return PicSuccess;
 	}

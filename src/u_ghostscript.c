@@ -25,6 +25,7 @@
 #include "config.h"
 #endif
 
+#include <inttypes.h>		/* includes stdint.h */
 #include <locale.h>
 #include <math.h>
 #include <stdbool.h>
@@ -170,7 +171,7 @@ gslib(struct _callback_data *data, int (*gs_stdin)(void *, char*, int),
 	int		argc;
 	char		**argv;
 	struct gsapi_revision_s	rev;
-	void		*minst = NULL;
+	void		*minst = NULL;	/* must be initialized to NULL */
 
 
 	/* get gs version */
@@ -185,7 +186,8 @@ gslib(struct _callback_data *data, int (*gs_stdin)(void *, char*, int),
 		argv = (char **)argvold;
 	}
 	if (appres.DEBUG) {
-		fprintf(stderr, "\t...revision %ld\n", rev.revision);
+		fprintf(stderr, "Using ghostscript library, revision %ld\n",
+				rev.revision);
 		fputs("Arguments:", stderr);
 		for (i = 0; i < argc; ++i)
 			fprintf(stderr, " %s", argv[i]);
@@ -241,7 +243,6 @@ gsexe(FILE **out, bool *isnew, char *exenew, char *exeold)
 	static int	version = no_version;
 	const int	failure = -1;
 	char		*exe;
-	char		*savelocale;
 	FILE		*fp;
 
 
@@ -299,7 +300,7 @@ gsexe(FILE **out, bool *isnew, char *exenew, char *exeold)
 		}
 
 		if (appres.DEBUG)
-			fprintf(stderr, "...version %.2f\nCommand line: %s",
+			fprintf(stderr, "...version %.2f\nCommand line: %s\n",
 					rev, exe);
 	} else { /* version == no_version */
 		if (version == new_version) {
@@ -315,7 +316,8 @@ gsexe(FILE **out, bool *isnew, char *exenew, char *exeold)
 
 		if (appres.DEBUG)
 			fprintf(stderr,
-				"Calling ghostscript.\nCommand line: %s", exe);
+				"Calling ghostscript.\nCommand line: %s\n",
+				exe);
 	}
 
 	if ((*out = popen(exe, "r")) == NULL)
@@ -353,7 +355,6 @@ gsexe_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 	char	exeold_buf[sizeof exenew_buf];
 	char	*exenew;
 	char	*exeold;
-	char	*savelocale;
 	double	bb[4] = { 0.0, 0.0, -1.0, -1.0 };
 	FILE	*gs_output;
 
@@ -434,7 +435,7 @@ gsexe_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 #ifdef HAVE_GSLIB
 /*
  * Return codes: 0..success, -1..within the function, an error occured,
- *  gs_error..the ghostscript interpreter returned an error
+ *  GS_ERROR..the ghostscript interpreter returned an error
  */
 static int
 gslib_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
@@ -520,7 +521,7 @@ gslib_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 
 /*
  * Call ghostscript to extract the /MediaBox from the pdf given in file.
- * Return 0 on success, -1 on failure, -2 (GS_ERROR) for a ghostscript error.
+ * Return 0 on success, -1 on failure, GS_ERROR (-2) for a ghostscript error.
  */
 int
 gs_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
@@ -540,43 +541,50 @@ gs_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 }
 
 /*
- * Invoke the command
- *   gs -q -sDEVICE=bitrgb -dRedValues=256 -r72 -g<widht>x<height> -o- <file>,
+ * Invoke (approximately) the command
+ *
+ *   gs [..] -sDEVICE=bitrgb -dRedValues=256 -r<ppi> -g<widht>x<height> \
+ *	-o- <file>,
+ *
  * to obtain a 24bit bitmap of RGB-Values. (It is sufficient to give one out of
  * -dGreenValues=256, -dBlueValues=256 or -dRedValues=256.)
- * The neural net that reduces the bitmap to a colormapped image of 256 colors
- * expects BGR triples. However, the map_to_palette() function in f_util.c does
- * not make any difference between the colors. Hence, leave the triples in the
- * bitmap in place, but swap the red and blue values in the colormap.
- * For monochrome bitmap, use -sDEVICE=bit.
- * Return 0 on success, -1 for failure, or GS_ERROR.
+ * For monochrome images, invoke
  *
- * Instead of -llx -lly translate, the commands passed to ghostscript used to
- * be:
-    -llx -lly translate
-    % mark dictionary (otherwise fails for tiger.ps (e.g.):
-    % many ps files don't 'end' their dictionaries)
-    countdictstack
-    mark
-    /oldshowpage {showpage} bind def
-    /showpage {} def
-    /initgraphics {} def	<<< this nasty command should never be used!
-    /initmmatrix {} def		<<< this one too
-    (psfile) run
-    oldshowpage
-    % clean up stacks and dicts
-    cleartomark
-    countdictstack exch sub { end } repeat
-    quit
+ *   gs [..] -sDEVICE=bit -r<ppi> -g<widht>x<height> -o- <file>.
+ *
+ * The neural net that reduces the bitmap to a colormapped image of 256 colors
+ * expects BGR triples. Hence, swap the red and blue values.
+ * Return 0 on success, -1 for failure, or GS_ERROR if ghostscript returned with
+ * a non-zero exit code.
+ *
  */
-int
-gs_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
+static int
+gsexe_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
 {
 #define string_of(ppi)	#ppi
 #define	rgb_fmt(ppi)	"%s -q -dSAFER -sDEVICE=bitrgb -dBlueValues=256 -r" \
 	string_of(ppi) " -g%dx%d -sPageList=1 -o- -c '%d %d translate' -f %s"
 #define	bw_fmt(ppi)	"%s -q -dSAFER -sDEVICE=bit -r" string_of(ppi)	    \
 			" -g%dx%d -sPageList=1 -o- -c '%d %d translate' -f %s"
+/*
+ * Instead of -llx -lly translate, the commands passed to ghostscript used to
+ * be:
+ *  -llx -lly translate
+ *  % mark dictionary (otherwise fails for tiger.ps (e.g.):
+ *  % many ps files don't 'end' their dictionaries)
+ *  countdictstack
+ *  mark
+ *  /oldshowpage {showpage} bind def
+ *  /showpage {} def
+ *  /initgraphics {} def	<<< this nasty command should never be used!
+ *  /initmmatrix {} def		<<< this one too
+ *  (psfile) run
+ *  oldshowpage
+ *  % clean up stacks and dicts
+ *  cleartomark
+ *  countdictstack exch sub { end } repeat
+ *  quit
+ */
 	int		stat;
 	int		w, h;
 	const int	failure = -1;
@@ -717,4 +725,362 @@ gs_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
 	}
 
 	return 0;
+}
+
+#ifdef HAVE_GSLIB
+
+/* Data provided to the callback functions */
+struct calldata {
+	int		width;
+	int		height;
+	int		raster;
+	unsigned char	*img;
+};
+
+
+/*
+ * Callback functions for the ghostscript display device.
+ * The functions are sorted in the order they are called.
+ * See ghostscript/gdevdsp.h.
+ */
+static int
+display_open(void *handle, void *device)
+{
+	(void) device;
+	(void) handle;
+
+	return 0;
+}
+
+static int
+display_presize(void *handle, void *device, int width, int height,
+        int raster, unsigned int format)
+{
+	(void) device;
+	(void) raster;
+	(void) format;
+	struct calldata	*data = (struct calldata *)handle;
+
+	if (width == data->width && height == data->height) {
+		return 0;
+	} else {
+		if (appres.DEBUG)
+			fputs("display_presize: Wrong image dimensions.\n",
+					stderr);
+		return -1;
+	}
+}
+
+static void *
+display_memalloc(void *handle, void *device, unsigned long size)
+{
+	(void) device;
+	struct calldata	*data = (struct calldata *)handle;
+
+	data->img = malloc((size_t)size);
+
+	if (appres.DEBUG && data->img == NULL)
+		fputs("gslib_bitmap() - display_memalloc(): Out of memory.\n",
+				stderr);
+
+	return (void *)data->img;
+}
+
+static int
+display_size(void *handle, void *device, int width, int height,
+        int raster, unsigned int format, unsigned char *pimage)
+{
+	(void) device;
+	(void) raster;
+	(void) format;
+	(void) pimage;
+	struct calldata	*data = (struct calldata *)handle;
+
+	if (width == data->width && height == data->height) {
+		data->raster = raster;
+		return 0;
+	} else {
+		if (appres.DEBUG)
+			fputs("display_size: Wrong image dimensions.\n",
+					stderr);
+		return -1;
+	}
+}
+
+static int
+display_sync(void *handle, void *device)
+{
+	(void) handle;
+	(void) device;
+
+	return 0;
+}
+
+static int
+display_page(void *handle, void *device, int copies, int flush)
+{
+	(void) handle;
+	(void) device;
+	(void) copies;
+	(void) flush;
+
+	/* Other error codes cause messages from ghostscript on stderr. */
+	return gs_error_InterpreterExit;
+}
+
+static int
+display_preclose(void *handle, void *device)
+{
+	(void) handle;
+	(void) device;
+
+	return 0;
+}
+
+static int
+display_memfree(void *handle, void *device, void *mem)
+{
+	(void) handle;
+	(void) device;
+	(void) mem;
+
+	return 0;
+}
+
+static int
+display_close(void *handle, void *device)
+{
+	(void) handle;
+	(void) device;
+
+	return 0;
+}
+
+/*
+ * Link into the ghostscript library, writing to the display device.
+ * Return 0 on success, -1 on failure, or GS_ERROR for a ghostscript error.
+ * TODO: With a corrupt pdf, ghostscript will write messages to stdout and
+ * return 0. A stdout callback should be used to catch these messages.
+ * Warning messages seem to be directed to stderr.
+ * TODO: After gs 9.52, ghostscript uses a callout function for registering the
+ * callback functions. Implement that interface.
+ */
+static int
+gslib_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
+{
+	int		code;
+	int		w, h;
+	int		format;
+	int		rowstride;
+	const int	failure = -1;
+	const int	argc = 14;
+	char		*arg[14];
+			/* the digits in a hexadezimal number are 2 * sizeof */
+	char		arg6[20 + 2 * sizeof(uintptr_t)];
+			/* the number of digits in a decimal number are less
+			 * than ((sizeof(int) / 2) * 3 + sizeof(int)) + 2,
+			 * see https://stackoverflow.com/questions/43787672
+			 */
+#define	DIGITS_IN_INT	(((sizeof(int)/ 2) * 3 + sizeof(int)) + 2)
+	char		arg7[17 + DIGITS_IN_INT];
+	char		arg8[3 + DIGITS_IN_INT];
+	char		arg9[4 + 2 * DIGITS_IN_INT];
+	char		arg11[12 + 2 * DIGITS_IN_INT];
+#undef DIGITS_IN_INT
+	void		*minst = NULL;	/* must be initialized to NULL */
+	struct calldata handle;		/* passed to the callback functions */
+#undef DIGITS_IN_INT
+
+	/* callback structure for "display" device */
+	struct display_callback_s callback_functions = {
+		sizeof(struct display_callback_s),
+		DISPLAY_VERSION_MAJOR,
+		DISPLAY_VERSION_MINOR,
+		display_open,
+		display_preclose,
+		display_close,
+		display_presize,
+		display_size,
+		display_sync,
+		display_page,
+		NULL,	/* display_update */
+		display_memalloc,
+		display_memfree,
+		NULL	/* display_separation */
+	};
+
+
+	/* This should be the size to which a pixmap is rendered for display
+	   on the canvas, at a magnification of 2.
+	   The +1 is sometimes correct, sometimes not */
+	w = (urx - llx) * BITMAP_PPI / 72 + 1;
+	h = (ury - lly) * BITMAP_PPI / 72 + 1;
+	handle.width = w;
+	handle.height = h;
+
+	/* Set the format flags for -dDisplayFormat=%d. */
+	/* DISPLAY_ROW_ALIGN_x must be equal or greater than
+	   the size of a pointer */
+	format = DISPLAY_TOPFIRST | DISPLAY_ROW_ALIGN_8;
+	if (tool_cells <= 2 || appres.monochrome) {
+		format |= DISPLAY_COLORS_NATIVE | /*  DISPLAY_ALPHA_NONE */
+			DISPLAY_DEPTH_1;
+
+		rowstride = (w + 7) / 8;
+		/* size = (size_t)((w + 7) / 8 * h); */
+		pic->pic_cache->numcols = 0;
+	} else {
+		format = DISPLAY_COLORS_RGB | DISPLAY_DEPTH_8 |
+#ifdef WORDS_BIGENDIAN
+				DISPLAY_BIGENDIAN;	/* RGB */
+#else
+				DISPLAY_LITTLEENDIAN;	/* BGR */
+#endif
+		if (tool_vclass == TrueColor && image_bpp == 4) {
+#ifdef WORDS_BIGENDIAN
+			format |= DISPLAY_UNUSED_FIRST;	/* xRGB */
+#else
+			format |= DISPLAY_UNUSED_LAST;	/* BGRX */
+#endif
+			rowstride = w * image_bpp;
+			/* size = (size_t)(w * h * image_bpp); */
+			pic->pic_cache->numcols = -1;
+		} else {
+			/* DISPLAY_ALPHA_NONE ... == 0, not necessary */
+			rowstride = w * 3;
+			/* size = (size_t)(w * h * 3); */
+			/* not necessary to set pic->pic_cache->numcols */
+		}
+	}
+
+	/* Start using ghostscript. Below, arg[] may point to malloc()'d buffers
+	 * which would have to be free()'d if gsexe_bitmap() is called
+	 * further below. */
+	code = gsapi_new_instance(&minst, NULL);
+	if (code == 0)
+		code = gsapi_set_display_callback(minst, &callback_functions);
+	else
+		return gsexe_bitmap(file, pic, llx, lly, urx, ury);
+
+	/*
+	 * Options to ghostscript: It was not possible to use switches from the
+	 * family of -dLastPage=1 or -sPageList=1, because these resulted in an
+	 * all white pixmap. Therefore, interrupt the interpreter by having the
+	 * display_page() callback return gs_error_InterpreterExit. For this
+	 * error code, ghostscript returns 0 and does not write messages to
+	 * stderr.
+	 */
+	arg[0] = "libgs";
+	arg[1] = "-q";
+	arg[2] = "-dSAFER";	/* default for gs >= 9.50; for gs < 9.50,
+				   default is -dNOSAFER */
+	arg[3] = "-dBATCH";
+	arg[4] = "-dNOPAUSE";
+	arg[5] = "-sDEVICE=display";
+	arg[6] = "-sDisplayHandle=16#%" PRIxPTR;
+	arg[7] = "-dDisplayFormat=%d";
+	arg[8] = "-r%d";	/* resolution */
+	arg[9] = "-g%dx%d";	/* width x height */
+	arg[10] = "-c";
+	arg[11] = "%d %d translate";
+	arg[12] = "-f";		/* terminate list of tokens for the -c switch */
+	arg[13] = file;
+
+	sprintf(arg6, arg[6], (uintptr_t)&handle);
+	arg[6] = arg6;
+	sprintf(arg7, arg[7], format);
+	arg[7] = arg7;
+	sprintf(arg8, arg[8], BITMAP_PPI);
+	arg[8] = arg8;
+	sprintf(arg9, arg[9], w, h);
+	arg[9] = arg9;
+	sprintf(arg11, arg[11], -llx, -lly);
+	arg[11] = arg11;
+
+	if (appres.DEBUG) {
+		int	i;
+		fputs("Using ghostscript library, arguments:\n ", stderr);
+		for (i = 0; i < argc; ++i) {
+			fputc(' ', stderr);
+			fputs(arg[i], stderr);
+		}
+		fputc('\n', stderr);
+	}
+
+	if (code == 0)
+		code = gsapi_set_arg_encoding(minst, GS_ARG_ENCODING_UTF8);
+	if (code == 0)
+		code = gsapi_init_with_args(minst, argc, arg);
+	if (code != 0 && code != gs_error_Quit)
+		gsapi_exit(minst);
+	else
+		code = gsapi_exit(minst);
+
+	gsapi_delete_instance(minst);
+
+	if (code != 0 && code != gs_error_Quit) {
+		free(handle.img);
+		return GS_ERROR;
+	}
+	/* code == 0 || code == gs_error_Quit */
+	if (rowstride > handle.raster) {
+		if (appres.DEBUG)
+			fputs("The pixmap rendered by ghostscript is larger "
+					"than xfig expected.\n", stderr);
+		free(handle.img);
+		return failure;
+	} else if (rowstride < handle.raster) {
+		/* Move pixmap data to the alignment expected by xfig. */
+		int		i;
+		unsigned char	*src;
+		unsigned char	*dst;
+
+		for (i = 1; i < h; ++i) {
+			src = handle.img + i * handle.raster;
+			dst = handle.img + i * rowstride;
+			for (src = handle.img + i * handle.raster;
+			     src < handle.img + i * handle.raster + rowstride;
+					) {
+				*(dst++) = *(src++);
+			}
+		}
+		handle.img = realloc(handle.img, (size_t)(dst - handle.img));
+	}
+
+	pic->pic_cache->bit_size.x = w;
+	pic->pic_cache->bit_size.y = h;
+	pic->pic_cache->bitmap = handle.img;
+
+	if (tool_vclass != TrueColor && tool_cells > 2 && !appres.monochrome) {
+		if (!map_to_palette(pic)) {
+			file_msg("Cannot create colormapped image for %s.",
+					file);
+			return failure;
+		}
+	}
+
+	return 0;
+}
+#endif /* HAVE_GSLIB */
+
+/*
+ * Create a pixmap in pic->pic_cache->bitmap from the ps/eps/pdf file "file"
+ * having the bounding box llx lly urx ury.
+ * Return 0 on success, -1 on failure, or GS_ERROR for a ghostscript error.
+ */
+int
+gs_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
+{
+	int	stat;
+
+#ifdef HAVE_GSLIB
+	stat = gslib_bitmap(file, pic, llx, lly, urx, ury);
+#else
+	stat = gsexe_bitmap(file, pic, llx, lly, urx, ury);
+#endif
+	if (stat == GS_ERROR) {
+		file_msg("Could not create pixmap from '%s' with ghostscript.",
+				file);
+	}
+	return stat;
 }
