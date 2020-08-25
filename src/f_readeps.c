@@ -75,11 +75,9 @@ scan_mediabox(char *name, int *llx, int *lly, int *urx, int *ury)
 				*urx = (int)ceil(ux);
 				*ury = (int)ceil(uy);
 				ret = 0;
-			} else {
-				/* do not try to search for a second
-				   occurrence of /MediaBox */
-				break;
 			}
+			/* do not search for a second occurrence of /MediaBox */
+			break;
 		}
 	}
 
