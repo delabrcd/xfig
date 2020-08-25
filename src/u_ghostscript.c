@@ -26,7 +26,6 @@
 #endif
 
 #include <inttypes.h>		/* includes stdint.h */
-#include <locale.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -114,21 +113,13 @@ stdout_mediabox(void *caller_handle, const char *str, int len)
 {
 	struct _callback_data	*data = (struct _callback_data *)caller_handle;
 	int	err;
-	char	*savelocale;
 	double	fbb[4];
 
 	/* This rests on the assumption that ghostscript writes the required
 	   information all at once to str. Should use a buffer, instead. */
 
-	/* gs always uses full stops as decimal character */
-	savelocale = setlocale(LC_NUMERIC, NULL);
-	if (strcmp(savelocale, "C") && strcmp(savelocale, "POSIX"))
-		/* the locale is neiter "C" nor "POSIX" */
-		setlocale(LC_NUMERIC, "C");
-	else
-		/* either "C" or "POSIX", no need to change back */
-		savelocale = "";
-
+	/* gs always uses full stops as decimal character. The locale is already
+	   set to C in read_pdf() */
 	err = sscanf(str, "[%lf %lf %lf %lf]", fbb, fbb+1, fbb+2, fbb+3);
 	if (err == 4) {
 		data->bb[0] = (int)floor(fbb[0]);
@@ -145,8 +136,6 @@ stdout_mediabox(void *caller_handle, const char *str, int len)
 		data->bb[0] = data->bb[1] = data->bb[2] = 0;
 		data->bb[3] = GS_ERROR;
 	}
-	if (*savelocale)
-		setlocale(LC_NUMERIC, savelocale);
 
 	return len;
 }
@@ -277,14 +266,10 @@ gsexe(FILE **out, bool *isnew, char *exenew, char *exeold)
 			return failure;
 
 		/* scan for the ghostscript version */
-		savelocale = setlocale(LC_NUMERIC, NULL);
-		if (strcmp(savelocale, "C") && strcmp(savelocale, "POSIX"))
-			setlocale(LC_NUMERIC, "C");
-		else
-			savelocale = "";
+		/* Currently, gsexe() is only called from gsexe_mediabox(), and
+		 * the locale is already set to C in read_pdf. If this changes,
+		 * make sure to have here the C or POSIX locale. */
 		n = fscanf(fp, "%lf", &rev);
-		if (*savelocale)
-			setlocale(LC_NUMERIC, savelocale);
 		stat = pclose(fp);
 		if (n != 1 || stat != 0)
 			return failure;
@@ -405,15 +390,8 @@ gsexe_mediabox(char *file, int *llx, int *lly, int *urx, int *ury)
 	}
 
 	/* scan the output */
-	savelocale = setlocale(LC_NUMERIC, NULL);
-	if (strcmp(savelocale, "C") && strcmp(savelocale, "POSIX"))
-		setlocale(LC_NUMERIC, "C");
-	else
-		savelocale = "";
 	n = fscanf(gs_output, "[%lf %lf %lf %lf]", bb, bb+1, bb+2, bb+3);
 	stat = pclose(gs_output);
-	if (*savelocale)
-		setlocale(LC_NUMERIC, savelocale);
 	if (n != 4 || stat != 0) {
 		if (stat) {
 			file_msg("Error calling ghostscript. Command:\n%s",

@@ -31,6 +31,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#ifdef I18N
+#include <locale.h>
+#endif
 
 #include "resources.h"
 #include "object.h"
@@ -55,8 +58,12 @@ static int	hex(char c);
 static int
 scan_mediabox(char *name, int *llx, int *lly, int *urx, int *ury)
 {
-	/* the line length of pdfs should not exceed 256 characters */
-	char	buf[300];
+	/*
+	 * The line length of pdfs should not exceed 256 characters. However, in
+	 * pdfs, the line end character might be a carriage return, while
+	 * fgets() reads lines ended by newlines.
+	 */
+	char	buf[512];
 	char	*s;
 	int	ret = -1;	/* prime with failure */
 	double	lx, ly, ux, uy;
@@ -112,19 +119,31 @@ correct_boundingbox(int *llx, int *lly, int *urx, int *ury, const char *box) {
 int
 read_pdf(char *name, int filetype, F_pic *pic)
 {
-	/*
-	 * read_pdf() is called from read_picobj(), where it receives the name
-	 * of an already uncompressed file
-	 */
 	(void)	filetype;
+	char	*savelocale;
 	/* prime with an invalid bounding box */
 	int	llx = 0, lly = 0, urx = 0, ury = 0;
 
-	/* Find the /MediaBox */
-	/* First, do a simply text-scan for "/MediaBox", failing that,
-	   call ghostscript.	*/
+	/*
+	 * Find the /MediaBox. First, do a simple text-scan for "/MediaBox",
+	 * failing that, call ghostscript. Both scan_mediabox() and
+	 * gs_mediabox() need the C or POSIX locale. Do not reset the locale to
+	 * the environment, because read_pdf might be called from readfp_fig(),
+	 * which temporarily sets and needs the C locale.
+	 */
+#ifdef I18N
+	savelocale = setlocale(LC_NUMERIC, NULL);
+	if (strcmp(savelocale, "C") && strcmp(savelocale, "POSIX"))
+		setlocale(LC_NUMERIC, "C");
+	else
+		savelocale = "";
+#endif
 	if (scan_mediabox(name, &llx, &lly, &urx, &ury))
 		gs_mediabox(name, &llx, &lly, &urx, &ury);
+#ifdef I18N
+	if (*savelocale)
+		setlocale(LC_NUMERIC, savelocale);
+#endif
 
 	/* provide A4 or Letter bounding box, if reading /MediaBox fails */
 	correct_boundingbox(&llx, &lly, &urx, &ury, "/MediaBox");
