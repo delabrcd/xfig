@@ -21,7 +21,7 @@
  * Autor: Thomas Loimer, 2020.
  */
 
-#if defined HAVE_CONFIG_H && !defined VERSION
+#ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
@@ -707,6 +707,57 @@ gsexe_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
 
 #ifdef HAVE_GSLIB
 
+struct _stdio_data {
+	size_t	errsize;
+	size_t	errpos;
+	size_t	outsize;
+	size_t	outpos;
+	char	*outbuf;
+	char	*errbuf;
+};
+
+static int
+bitmap_stderr(void *data_handle, const char *str, int len)
+{
+	struct _stdio_data	*data = (struct _stdio_data *)data_handle;
+	char	*buf = data->errbuf;
+	size_t	*pos = &(data->errpos);
+	size_t	*size = &(data->errsize);
+
+	/* buffer full, comparison for == should be sufficient */
+	if (*pos >= *size - 1)
+		return len;
+
+	if (*pos + len >= *size)	/* leave space for terminating '\0' */
+		len = *size - *pos - 1;
+	memcpy(buf + *pos, str, (size_t)len);
+	*pos += len;
+	buf[*pos] = '\0';
+
+	return len;
+}
+
+static int
+bitmap_stdout(void *data_handle, const char *str, int len)
+{
+	struct _stdio_data	*data = (struct _stdio_data *)data_handle;
+	char	*buf = data->outbuf;
+	size_t	*pos = &(data->outpos);
+	size_t	*size = &(data->outsize);
+
+	/* buffer full, comparison for == should be sufficient */
+	if (*pos >= *size - 1)
+		return len;
+
+	if (*pos + len >= *size)	/* leave space for terminating '\0' */
+		len = *size - *pos - 1;
+	memcpy(buf + *pos, str, (size_t)len);
+	*pos += len;
+	buf[*pos] = '\0';
+
+	return len;
+}
+
 /* Data provided to the callback functions */
 struct calldata {
 	int		width;
@@ -866,8 +917,18 @@ gslib_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
 	char		arg11[12 + 2 * DIGITS_IN_INT];
 #undef DIGITS_IN_INT
 	void		*minst = NULL;	/* must be initialized to NULL */
+	char		errbuf[BUFSIZ];
+	char		outbuf[BUFSIZ];
 	struct calldata handle;		/* passed to the callback functions */
-#undef DIGITS_IN_INT
+
+	struct _stdio_data stdio_data = {
+		sizeof errbuf,		/* errsize */
+		(size_t) 0,		/* errpos */
+		sizeof outbuf,		/* outsize */
+		(size_t) 0,		/* outpos */
+		outbuf,
+		errbuf
+	};
 
 	/* callback structure for "display" device */
 	struct display_callback_s callback_functions = {
@@ -931,15 +992,6 @@ gslib_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
 		}
 	}
 
-	/* Start using ghostscript. Below, arg[] may point to malloc()'d buffers
-	 * which would have to be free()'d if gsexe_bitmap() is called
-	 * further below. */
-	code = gsapi_new_instance(&minst, NULL);
-	if (code == 0)
-		code = gsapi_set_display_callback(minst, &callback_functions);
-	else
-		return gsexe_bitmap(file, pic, llx, lly, urx, ury);
-
 	/*
 	 * Options to ghostscript: It was not possible to use switches from the
 	 * family of -dLastPage=1 or -sPageList=1, because these resulted in an
@@ -985,6 +1037,15 @@ gslib_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
 		fputc('\n', stderr);
 	}
 
+	/* call ghostscript */
+	code = gsapi_new_instance(&minst, (void *)&stdio_data);
+	if (code == 0)
+		code = gsapi_set_stdio(minst,NULL,bitmap_stdout,bitmap_stderr);
+	else
+		return gsexe_bitmap(file, pic, llx, lly, urx, ury);
+
+	if (code == 0)
+		code = gsapi_set_display_callback(minst, &callback_functions);
 	if (code == 0)
 		code = gsapi_set_arg_encoding(minst, GS_ARG_ENCODING_UTF8);
 	if (code == 0)
@@ -995,6 +1056,13 @@ gslib_bitmap(char *file, F_pic *pic, int llx, int lly, int urx, int ury)
 		code = gsapi_exit(minst);
 
 	gsapi_delete_instance(minst);
+
+	if (stdio_data.outpos > (size_t)0)
+		file_msg("Message from ghostscript when creating pixmap:\n%s",
+				stdio_data.outbuf);
+	if (stdio_data.errpos > (size_t)0)
+		file_msg("Error message from ghostscript when creating pixmap:\n%s",
+				stdio_data.errbuf);
 
 	if (code != 0 && code != gs_error_Quit) {
 		free(handle.img);
