@@ -32,13 +32,19 @@
 /* +-------------------------------------------------------------------+ */
 
 
-#include "fig.h"
-#include "resources.h"
+#include <X11/Intrinsic.h>	/* Boolean */
+#include <X11/Xlib.h>		/* True, False */
+#include <stdio.h>
+#include <stdlib.h>		/* mkstemp */
+#include <string.h>		/* mkstemp */
+#include <unistd.h>		/* close, unlink */
+
+#include "resources.h"		/* PATH_MAX */
 #include "object.h"
 #include "f_picobj.h"
+#include "f_readpcx.h"
 #include "w_msgpanel.h"
 
-#include "f_readpcx.h"
 
 #define BUFLEN 1024
 
@@ -119,7 +125,7 @@ read_gif(FILE *file, int filetype, F_pic *pic)
 
 	if (BitSet(buf[4], LOCALCOLORMAP)) {	/* Global Colormap */
 		if (!ReadColorMap(file,GifScreen.BitPixel,GifScreen.ColorMap)) {
-			return FileInvalid;	/* error reading global colormap */
+			return FileInvalid;  /* error reading global colormap */
 		}
 	}
 
@@ -187,19 +193,19 @@ read_gif(FILE *file, int filetype, F_pic *pic)
 	/* make command to convert gif to pcx into temp file */
 	sprintf(buf, "giftopnm -quiet | ppmtopcx -quiet > %s", pcxname);
 	if ((giftopcx = popen(buf,"w" )) == 0) {
-	    file_msg("Cannot open pipe to giftopnm or ppmtopcx\n");
-	    close_file(file,filetype);
-	    return FileInvalid;
+		unlink(pcxname);
+		file_msg("Cannot open pipe to giftopnm or ppmtopcx\n");
+		return FileInvalid;
 	}
-	while ((size=fread(buf, 1, BUFLEN, file)) != 0) {
-	    fwrite(buf, size, 1, giftopcx);
-	}
+	while ((size=fread(buf, 1, BUFLEN, file)) != 0)
+		fwrite(buf, size, 1, giftopcx);
 	/* close pipe */
 	pclose(giftopcx);
+
 	if ((giftopcx = fopen(pcxname, "rb")) == NULL) {
-	    file_msg("Can't open temp output file\n");
-	    close_file(file,filetype);
-	    return FileInvalid;
+		unlink(pcxname);
+		file_msg("Can't open temp output file\n");
+		return FileInvalid;
 	}
 	/* now call read_pcx to read the pcx file */
 	stat = read_pcx(giftopcx, filetype, pic);

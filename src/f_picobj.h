@@ -17,6 +17,9 @@
  */
 
 #include <stdio.h>
+#include <X11/Intrinsic.h>	/* Boolean */
+
+#include "object.h"		/* F_pic */
 
 #define UNCOMPRESS_ADD	12	/* see the definition of uncompressed_file() */
 extern int	uncompressed_file(char *plainname, char *name);

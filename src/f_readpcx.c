@@ -23,16 +23,14 @@
  */
 
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <X11/X.h>
 
 #include "resources.h"
 #include "object.h"
-#include "f_neuclrtab.h"
-#include "f_picobj.h"
 #include "f_util.h"
-#include "w_indpanel.h"
-#include "w_color.h"
-#include "w_msgpanel.h"
 #include "w_setup.h"
 
 /* This is based on: */
@@ -81,7 +79,6 @@ read_pcx(FILE *file, int filetype, F_pic *pic)
 
     status = _read_pcx(file,pic);
     if (status != 1) {
-	close_file(file,filetype);
 	return FileInvalid;
     }
 
@@ -94,7 +91,6 @@ read_pcx(FILE *file, int filetype, F_pic *pic)
     if (tool_cells <= 2 || appres.monochrome)
 	map_to_mono(pic);
 
-    close_file(file,filetype);
     return PicSuccess;
 }
 
@@ -224,6 +220,8 @@ int _read_pcx(FILE *pcxfile, F_pic *pic)
 
 	    case 8:
 		/* 8-bit */
+		/* FIXME: pcxfile might refer to a pipe, fseek() would return
+		   ESPIPE */
 		fseek(pcxfile, -768L, SEEK_END);/* locate colormap in last 768 bytes of file */
 		for (x=0; x<256; x++) {
 		    pic->pic_cache->cmap[x].red   = fgetc(pcxfile);
@@ -245,6 +243,7 @@ int _read_pcx(FILE *pcxfile, F_pic *pic)
 
 	    case 24:
 		/* no palette, must use neural net to reduce to 256 colors with palette */
+		/* FIXME no need to use palette, if TrueColor */
 		if (!map_to_palette(pic))
 		    return FileInvalid;		/* out of memory or something */
 		break;

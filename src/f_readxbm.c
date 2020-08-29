@@ -27,14 +27,13 @@
 
 #include <ctype.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <X11/Intrinsic.h>
+#include <string.h>
+#include <X11/Xlib.h>		/* Bool, True, False */
 #include <X11/Xutil.h>
 
 #include "resources.h"
 #include "object.h"
-#include "f_picobj.h"
 #include "w_setup.h"
 
 /* attempt to read a bitmap file */
@@ -68,10 +67,9 @@ read_xbm(FILE *file, int filetype, F_pic *pic)
 	pic->pic_cache->bit_size.y = y;
 	pic->pic_cache->size_x = x * scale;
 	pic->pic_cache->size_y = y * scale;
-	close_file(file,filetype);
 	return PicSuccess;
     }
-    close_file(file,filetype);
+
     /* Non Bitmap file */
     return FileInvalid;
 }

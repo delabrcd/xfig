@@ -17,7 +17,7 @@
  */
 
 #include <X11/Intrinsic.h>	/* Boolean */
-#include <X11/Xlib.h>		/* False, True */
+#include <X11/Xlib.h>		/* True, False*/
 
 #include "object.h"
 

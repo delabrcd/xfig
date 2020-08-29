@@ -18,10 +18,12 @@
 
 #include <png.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <X11/X.h>		/* TrueColor, None */
+#include <X11/Xlib.h>		/* XColor */
 
 #include "resources.h"
 #include "object.h"
-#include "f_picobj.h"
 #include "f_util.h"		/* map_to_mono(), map_to_palette() */
 #include "w_msgpanel.h"		/* file_msg() */
 #include "w_setup.h"		/* PIX_PER_INCH */
@@ -30,6 +32,8 @@
 int
 read_png(FILE *file, int filetype, F_pic *pic)
 {
+	(void)filetype;
+
 	int		bpp;
 	int		bit_depth, color_type, interlace_type;
 	int		compression_type, filter_type;
@@ -48,7 +52,6 @@ read_png(FILE *file, int filetype, F_pic *pic)
 	png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,
 			(png_voidp)NULL, NULL, NULL);
 	if (!png_ptr) {
-		close_file(file, filetype);
 		return FileInvalid;
 	}
 
@@ -56,7 +59,6 @@ read_png(FILE *file, int filetype, F_pic *pic)
 	if (!info_ptr) {
 		png_destroy_read_struct(&png_ptr, (png_infopp)NULL,
 					(png_infopp)NULL);
-		close_file(file, filetype);
 		return FileInvalid;
 	}
 	/*
@@ -74,7 +76,6 @@ read_png(FILE *file, int filetype, F_pic *pic)
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
 		if (pic->pic_cache->bitmap)
 			free(pic->pic_cache->bitmap);
-		close_file(file, filetype);
 		return FileInvalid;
 	}
 
@@ -217,7 +218,6 @@ read_png(FILE *file, int filetype, F_pic *pic)
 	pic->pic_cache->bitmap = malloc(h * row_bytes);
 	if (pic->pic_cache->bitmap == NULL) {
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
-		close_file(file, filetype);
 		file_msg("Out of memory.");
 		return FileInvalid;
 	}
@@ -231,7 +231,6 @@ read_png(FILE *file, int filetype, F_pic *pic)
 	/* clean up */
 	png_read_end(png_ptr, (png_infop)NULL);
 	png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
-	close_file(file,filetype);
 
 	/* assign width, height and other information to pic object */
 	/* bit_size is needed in map_to_palette() below */

@@ -57,15 +57,17 @@
  *
  */
 
-#if defined HAVE_CONFIG_H && !defined VERSION
+#ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 /* jpeglib.h does not include some standard headers, but needs them */
 #include <jpeglib.h>
+#include <X11/X.h>	/* TrueColor, None */
 
 #include "resources.h"
 #include "object.h"
@@ -87,13 +89,11 @@ read_jpg(FILE *file, int filetype, F_pic *pic)
 {
 
 	if (read_JPEG_file(file, pic)) {
-		close_file(file, filetype);
 		return FileInvalid;
 	}
 	if (tool_cells <= 2 || appres.monochrome)
 		map_to_mono(pic);
 
-	close_file(file, filetype);
 	return PicSuccess;
 }
 

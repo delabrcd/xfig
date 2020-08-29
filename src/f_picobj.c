@@ -22,6 +22,11 @@
 *  (mcgrant@rascals.stanford.edu) adapted from Marc Goldburg's
 *  (marcg@rascals.stanford.edu) original idea and code. */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+#include "f_picobj.h"
+
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -30,10 +35,11 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>		/* time_t */
+#include <X11/X.h>		/* Pixmap */
+#include <X11/Xlib.h>		/* True, False*/
 
 #include "resources.h"		/* TMPDIR */
 #include "object.h"
-#include "f_picobj.h"
 #include "f_readpcx.h"		/* read_pcx() */
 #include "f_util.h"		/* file_timestamp() */
 #include "u_create.h"		/* create_picture_entry() */
@@ -345,6 +351,7 @@ read_picobj(F_pic *pic, char *file, int color, Boolean force, Boolean *existing)
 		if ((*headers[i].readfunc)(fp,type,pic) == FileInvalid) {
 			file_msg("%s: Bad %s format", file, headers[i].type);
 		}
+		close_file(fp, type);
 	} else {
 		/* routines that cannot take a pipe get the name of the file, if
 		   it is not compressed, or the name of a temporary file. */
@@ -352,6 +359,7 @@ read_picobj(F_pic *pic, char *file, int color, Boolean force, Boolean *existing)
 		char	*plainname = plainname_buf;
 		char	*name;
 
+		close_file(fp, type);
 		if (strlen(TMPDIR) + UNCOMPRESS_ADD > sizeof plainname_buf) {
 			plainname = malloc(strlen(TMPDIR) + UNCOMPRESS_ADD);
 			if (plainname == NULL) {

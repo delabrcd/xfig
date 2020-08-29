@@ -16,18 +16,20 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"		/* restrict */
+#endif
 
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <X11/X.h>	/* TrueColor, None */
 #include <X11/Xmd.h>	/* CARD32 */
 
 #include "resources.h"
 #include "object.h"
-#include "f_picobj.h"
 #include "f_util.h"
 #include "w_msgpanel.h"
-#include "w_setup.h"	/* PIX_PER_INCH, PIX_PER_CM */
 
 
 /* return codes:  PicSuccess (1) : success
@@ -291,6 +293,8 @@ read_ascii_max_ppm(FILE *file, unsigned char *restrict dst, unsigned int maxval,
 int
 read_ppm(FILE *file, int filetype, F_pic *pic)
 {
+	(void)filetype;
+
 	int		c;
 	int		magic;
 	int		stat = FileInvalid;
@@ -301,41 +305,41 @@ read_ppm(FILE *file, int filetype, F_pic *pic)
 
 	/* get the magic number */
 	if ((c = fgetc(file)) == EOF || c != 'P')
-		goto end;
+		return stat;
 	if ((magic = fgetc(file)) == EOF || (magic != '6' && magic != '3'))
-		goto end;
+		return stat;
 
 	if (skip_comments_whitespace(file))
-		goto end;
+		return stat;
 
 	if (fscanf(file, "%u", &width) != 1)
-		goto end;
+		return stat;
 
 	if (skip_comments_whitespace(file))
-		goto end;
+		return stat;
 
 	if (fscanf(file, "%u", &height) != 1 || width == 0u || height == 0u)
-		goto end;
+		return stat;
 
 	if (skip_comments_whitespace(file))
-		goto end;
+		return stat;
 
 	if (fscanf(file, "%u", &maxval) != 1 || maxval > 65535u || maxval == 0u)
-		goto end;
+		return stat;
 
 	if (skip_comments_whitespace(file))
-		goto end;
+		return stat;
 
 	if (width > INT16_MAX || height > INT16_MAX) { /* large enough */
 		file_msg("PPM file %u x %u too large.", width, height);
-		goto end;
+		return stat;
 	}
 
 	rowbytes = width * (THREE_BYTEPERPIXEL ? 3u : sizeof(CARD32));
 	pic->pic_cache->bitmap = malloc(height * rowbytes);
 	if (pic->pic_cache->bitmap == NULL) {
 		file_msg("Out of memory, could not read PPM file.");
-		goto end;
+		return stat;
 	}
 
 	if (magic == '6') {
@@ -366,7 +370,7 @@ read_ppm(FILE *file, int filetype, F_pic *pic)
 
 	if (stat != PicSuccess) {
 		free(pic->pic_cache->bitmap);
-		goto end;
+		return stat;
 	}
 
 	/* stat == PicSuccess) */
@@ -392,7 +396,5 @@ read_ppm(FILE *file, int filetype, F_pic *pic)
 		pic->pic_cache->numcols = -1;
 	}
 
-end:
-	close_file(file, filetype);
 	return stat;
 }
