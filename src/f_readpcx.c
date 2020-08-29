@@ -70,28 +70,27 @@ static int	_read_pcx(FILE *pcxfile, F_pic *pic);
 int
 read_pcx(FILE *file, int filetype, F_pic *pic)
 {
-    int		    status;
+	(void)filetype;
 
-    /* make scale factor smaller for metric */
-    float scale = (appres.INCHES ?
-		    (float)PIX_PER_INCH :
-		    2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
+	/* make scale factor smaller for metric */
+	const double scale =
+		(appres.INCHES ? (double)PIX_PER_INCH : 2.54*PIX_PER_CM)
+		/ DISPLAY_PIX_PER_INCH;
 
-    status = _read_pcx(file,pic);
-    if (status != 1) {
-	return FileInvalid;
-    }
+	if (_read_pcx(file,pic) != PicSuccess)
+		return FileInvalid;
 
-    pic->pixmap = None;
-    pic->hw_ratio = (float) pic->pic_cache->bit_size.y / pic->pic_cache->bit_size.x;
-    pic->pic_cache->subtype = T_PIC_PCX;
-    pic->pic_cache->size_x = pic->pic_cache->bit_size.x * scale;
-    pic->pic_cache->size_y = pic->pic_cache->bit_size.y * scale;
-    /* if monochrome display map bitmap */
-    if (tool_cells <= 2 || appres.monochrome)
-	map_to_mono(pic);
+	pic->pixmap = None;
+	pic->hw_ratio = (float)pic->pic_cache->bit_size.y
+					/ pic->pic_cache->bit_size.x;
+	pic->pic_cache->subtype = T_PIC_PCX;
+	pic->pic_cache->size_x = pic->pic_cache->bit_size.x * scale;
+	pic->pic_cache->size_y = pic->pic_cache->bit_size.y * scale;
+	/* if monochrome display map bitmap */
+	if (tool_cells <= 2 || appres.monochrome)
+		map_to_mono(pic);
 
-    return PicSuccess;
+	return PicSuccess;
 }
 
 /* _read_pcx() is called from read_pcx() and read_epsf().

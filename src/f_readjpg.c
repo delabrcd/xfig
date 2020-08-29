@@ -87,6 +87,7 @@ static int	read_JPEG_file(FILE *file, F_pic *pic);
 int
 read_jpg(FILE *file, int filetype, F_pic *pic)
 {
+	(void)filetype;
 
 	if (read_JPEG_file(file, pic)) {
 		return FileInvalid;

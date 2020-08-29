@@ -50,28 +50,29 @@ ReadDataFromBitmapFile (FILE *file, unsigned int *width,
 int
 read_xbm(FILE *file, int filetype, F_pic *pic)
 {
-    int status;
-    unsigned int x, y;
-    /* make scale factor smaller for metric */
-    float scale = (appres.INCHES ?
-			(float)PIX_PER_INCH :
-			2.54*PIX_PER_CM)/(float)DISPLAY_PIX_PER_INCH;
+	(void)filetype;
 
-    /* first try for a X Bitmap file format */
-    status = ReadDataFromBitmapFile(file, &x, &y, &pic->pic_cache->bitmap);
-    if (status == BitmapSuccess) {
-	pic->pic_cache->subtype = T_PIC_XBM;
-	pic->hw_ratio = (float) y / x;
-	pic->pic_cache->numcols = 0;
-	pic->pic_cache->bit_size.x = x;
-	pic->pic_cache->bit_size.y = y;
-	pic->pic_cache->size_x = x * scale;
-	pic->pic_cache->size_y = y * scale;
-	return PicSuccess;
-    }
+	unsigned int	x, y;
+	/* make scale factor smaller for metric */
+	const double	scale =
+		(appres.INCHES ? (double)PIX_PER_INCH : 2.54*PIX_PER_CM)
+						/ DISPLAY_PIX_PER_INCH;
 
-    /* Non Bitmap file */
-    return FileInvalid;
+	/* first try for a X Bitmap file format */
+	if (ReadDataFromBitmapFile(file, &x, &y, &pic->pic_cache->bitmap)
+			== BitmapSuccess) {
+		pic->pic_cache->subtype = T_PIC_XBM;
+		pic->hw_ratio = (float) y / x;
+		pic->pic_cache->numcols = 0;
+		pic->pic_cache->bit_size.x = x;
+		pic->pic_cache->bit_size.y = y;
+		pic->pic_cache->size_x = x * scale;
+		pic->pic_cache->size_y = y * scale;
+		return PicSuccess;
+	}
+
+	/* Non Bitmap file */
+	return FileInvalid;
 }
 
 /* The following is a modified version of the
