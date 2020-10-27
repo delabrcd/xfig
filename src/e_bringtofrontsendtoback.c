@@ -72,7 +72,29 @@ void bringtofrontsendtoback_selected(void) {
   manage_update_buts();
 }
 
-static void init_bring_to_front(F_line *p, int type, int x, int y, int px,
+static void bring_to_front(F_line *p, int type, int x, int y, int px, int py){
+  cur_depth = 0
+  for (int i=0; i<MAX_DEPTH; i++){ //Find the lowest object's depth
+        if (object_depths[i]){
+                cur_depth = i;
+		break;
+        }
+  }
+  helper(p, type, x, y, px, py); //p or *p?
+}
+
+void init_send_to_back(F_line *p, int type, int x, int y, int px, int py) {
+  cur_depth = 0
+  for (int i=0; i<MAX_DEPTH; i++){ //Find the highest object's depth
+          if (object_depths[MAX_DEPTH-i]){
+                  cur_depth = MAX_DEPTH-i;
+		  break;
+          }
+  }
+  helper(p, type, x, y, px, py);
+}
+
+static void helper(F_line *p, int type, int x, int y, int px,
                                 int py) {
   int largest;
   Boolean dontupdate = False;
@@ -191,9 +213,6 @@ static void init_bring_to_front(F_line *p, int type, int x, int y, int px,
     put_msg("Object(s) UPDATED");
 }
 
-void init_send_to_back(F_line *p, int type, int x, int y, int px, int py) {
-  // Refer to comment block in bringtofrontsendtoback_selected
-}
 
 void update_compound(F_compound *compound) {
   F_line *dline, *dtick1, *dtick2, *dbox;
@@ -230,4 +249,53 @@ void update_compounds(F_compound *compounds) {
 
   for (c = compounds; c != NULL; c = c->next)
     update_compound(c);
+}
+
+void update_arcs(F_arc *arcs)
+{
+    F_arc          *a;
+
+    for (a = arcs; a != NULL; a = a->next)
+        up_depth_part(a->depth, cur_depth);
+}
+
+void update_compounds(F_compound *compounds)
+{
+    F_compound     *c;
+
+    for (c = compounds; c != NULL; c = c->next)
+        up_depth_part(c->depth, cur_depth);
+
+}
+
+void update_ellipses(F_ellipse *ellipses)
+{
+    F_ellipse      *e;
+
+    for (e = ellipses; e != NULL; e = e->next)
+        up_depth_part(e->depth, cur_depth);
+}
+
+void update_lines(F_line *lines)
+{
+    F_line         *l;
+
+    for (l = lines; l != NULL; l = l->next)
+        up_depth_part(l->depth, cur_depth);
+}
+
+void update_splines(F_spline *splines)
+{
+    F_spline       *s;
+
+    for (s = splines; s != NULL; s = s->next)
+        up_depth_part(s->depth, cur_depth);
+}
+
+void update_texts(F_text *texts)
+{
+    F_text         *t;
+
+    for (t = texts; t != NULL; t = t->next)
+        up_depth_part(t->depth, cur_depth);
 }
