@@ -1,5 +1,3 @@
-// No idea what needs to be imported so I just coppied these from e_update.c
-#include "d_text.h"
 #include "fig.h"
 #include "mode.h"
 #include "object.h"
@@ -12,7 +10,7 @@
 #include "w_canvas.h"
 #include "w_drawprim.h"
 #include "w_indpanel.h"
-#include "w_layers.h" //Added(?)
+#include "w_layers.h"
 #include "w_mousefun.h"
 #include "w_msgpanel.h"
 #include "w_setup.h"
@@ -27,14 +25,8 @@
 #include "w_cursor.h"
 #include "w_util.h"
 
-void bringtofrontsendtoback_selected(
-    void); // this might just go in the header file??
+void bringtofrontsendtoback_selected(void);
 
-/* Is this necessary??
-#define up_part(lv,rv,mask) \
-                if (cur_updatemask & (mask)) \
-                    (lv) = (rv)
-*/
 static Boolean keep_depth = False;
 static int delta_depth;
 
@@ -49,13 +41,14 @@ static void init_bring_to_front(F_line *p, int type, int x, int y, int px,
 static void init_send_to_back(F_line *p, int type, int x, int y, int px,
                               int py);
 
-void update_compound(F_compound *compound);
-void update_lines(F_line *lines);
-void update_splines(F_spline *splines);
-void update_ellipses(F_ellipse *ellipses);
-void update_arcs(F_arc *arcs);
-void update_texts(F_text *texts);
-void update_compounds(F_compound *compounds);
+void btfstb_compound(F_compound *compound);
+void btfstb_lines(F_line *lines);
+void btfstb_splines(F_spline *splines);
+void btfstb_elipses(F_ellipse *ellipses);
+void btfstb_arcs(F_arc *arcs);
+void btfstb_texts(F_text *texts);
+void btfstb_compounds(F_compound *compounds);
+static void handle_object(F_line *p, int type, int x, int y, int px, int py);
 
 void bringtofrontsendtoback_selected(void) {
   set_mousefun("bring to front", "", "send to back", LOC_OBJ, LOC_OBJ, LOC_OBJ);
@@ -72,30 +65,30 @@ void bringtofrontsendtoback_selected(void) {
   manage_update_buts();
 }
 
-static void bring_to_front(F_line *p, int type, int x, int y, int px, int py){
-  cur_depth = 0
-  for (int i=0; i<MAX_DEPTH; i++){ //Find the lowest object's depth
-        if (object_depths[i]){
-                cur_depth = i;
-		break;
-        }
+static void init_bring_to_front(F_line *p, int type, int x, int y, int px,
+                                int py) {
+  cur_depth = 0;
+  for (int i = 0; i < MAX_DEPTH; i++) { // Find the lowest object's depth
+    if (object_depths[i]) {
+      cur_depth = i;
+      break;
+    }
   }
-  helper(p, type, x, y, px, py); //p or *p?
+  handle_object(p, type, x, y, px, py); // p or *p?
 }
 
 void init_send_to_back(F_line *p, int type, int x, int y, int px, int py) {
-  cur_depth = 0
-  for (int i=0; i<MAX_DEPTH; i++){ //Find the highest object's depth
-          if (object_depths[MAX_DEPTH-i]){
-                  cur_depth = MAX_DEPTH-i;
-		  break;
-          }
+  cur_depth = 0;
+  for (int i = 0; i < MAX_DEPTH; i++) { // Find the highest object's depth
+    if (object_depths[MAX_DEPTH - i]) {
+      cur_depth = MAX_DEPTH - i;
+      break;
+    }
   }
-  helper(p, type, x, y, px, py);
+  handle_object(p, type, x, y, px, py);
 }
 
-static void helper(F_line *p, int type, int x, int y, int px,
-                                int py) {
+static void handle_object(F_line *p, int type, int x, int y, int px, int py) {
   int largest;
   Boolean dontupdate = False;
   int old_psfont_flag, new_psfont_flag;
@@ -125,7 +118,7 @@ static void helper(F_line *p, int type, int x, int y, int px,
         dontupdate = True;
       }
     }
-    update_compound(new_c);
+    btfstb_compound(new_c);
     keep_depth = False;
 
     change_compound(cur_c, new_c);
@@ -213,8 +206,7 @@ static void helper(F_line *p, int type, int x, int y, int px,
     put_msg("Object(s) UPDATED");
 }
 
-
-void update_compound(F_compound *compound) {
+void btfstb_compound(F_compound *compound) {
   F_line *dline, *dtick1, *dtick2, *dbox;
   F_text *dtext;
 
@@ -231,12 +223,12 @@ void update_compound(F_compound *compound) {
     if (dtext)
       up_depth_part(dtext->depth, cur_depth);
   } else {
-    update_lines(compound->lines);
-    update_splines(compound->splines);
-    update_ellipses(compound->ellipses);
-    update_arcs(compound->arcs);
-    update_texts(compound->texts);
-    update_compounds(compound->compounds);
+    btfstb_lines(compound->lines);
+    btfstb_splines(compound->splines);
+    btfstb_elipses(compound->ellipses);
+    btfstb_arcs(compound->arcs);
+    btfstb_texts(compound->texts);
+    btfstb_compounds(compound->compounds);
   }
   // Is this necessary?
   compound_bound(compound, &compound->nwcorner.x, &compound->nwcorner.y,
@@ -244,58 +236,44 @@ void update_compound(F_compound *compound) {
 }
 
 // Functions that update many objects (For compounds)
-void update_compounds(F_compound *compounds) {
+void btfstb_compounds(F_compound *compounds) {
   F_compound *c;
 
   for (c = compounds; c != NULL; c = c->next)
-    update_compound(c);
+    btfstb_compound(c);
 }
 
-void update_arcs(F_arc *arcs)
-{
-    F_arc          *a;
+void btfstb_arcs(F_arc *arcs) {
+  F_arc *a;
 
-    for (a = arcs; a != NULL; a = a->next)
-        up_depth_part(a->depth, cur_depth);
+  for (a = arcs; a != NULL; a = a->next)
+    up_depth_part(a->depth, cur_depth);
 }
 
-void update_compounds(F_compound *compounds)
-{
-    F_compound     *c;
+void btfstb_elipses(F_ellipse *ellipses) {
+  F_ellipse *e;
 
-    for (c = compounds; c != NULL; c = c->next)
-        up_depth_part(c->depth, cur_depth);
-
+  for (e = ellipses; e != NULL; e = e->next)
+    up_depth_part(e->depth, cur_depth);
 }
 
-void update_ellipses(F_ellipse *ellipses)
-{
-    F_ellipse      *e;
+void btfstb_lines(F_line *lines) {
+  F_line *l;
 
-    for (e = ellipses; e != NULL; e = e->next)
-        up_depth_part(e->depth, cur_depth);
+  for (l = lines; l != NULL; l = l->next)
+    up_depth_part(l->depth, cur_depth);
 }
 
-void update_lines(F_line *lines)
-{
-    F_line         *l;
+void btfstb_splines(F_spline *splines) {
+  F_spline *s;
 
-    for (l = lines; l != NULL; l = l->next)
-        up_depth_part(l->depth, cur_depth);
+  for (s = splines; s != NULL; s = s->next)
+    up_depth_part(s->depth, cur_depth);
 }
 
-void update_splines(F_spline *splines)
-{
-    F_spline       *s;
+void btfstb_texts(F_text *texts) {
+  F_text *t;
 
-    for (s = splines; s != NULL; s = s->next)
-        up_depth_part(s->depth, cur_depth);
-}
-
-void update_texts(F_text *texts)
-{
-    F_text         *t;
-
-    for (t = texts; t != NULL; t = t->next)
-        up_depth_part(t->depth, cur_depth);
+  for (t = texts; t != NULL; t = t->next)
+    up_depth_part(t->depth, cur_depth);
 }
