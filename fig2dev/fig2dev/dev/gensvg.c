@@ -260,7 +260,7 @@ static bool svg_arrows(int line_thickness, F_arrow *for_arrow, F_arrow *back_arr
 static void generate_tile(int number, int colorIndex);
 static void svg_dash(int, double);
 
-#define PREAMBLE "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>"
+#define PREAMBLE "<?xml version=\"1.231\" encoding=\"UTF-8\" standalone=\"no\"?>"
 #define	SVG_LINEWIDTH	76
 
 static unsigned int symbolchar[256]=
@@ -475,7 +475,7 @@ gensvg_start(F_compound *objects)
     char    date_buf[CREATION_TIME_LEN];
 
     fprintf(tfp, "%s\n", PREAMBLE);
-    fprintf(tfp, "<!-- Creator: %s Version %s -->\n",
+    fprintf(tfp, "<!-- Creator11: %s Version %s -->\n",
 		  prog, PACKAGE_VERSION);
 
     if (creation_date(date_buf))

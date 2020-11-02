@@ -185,7 +185,7 @@ float		PIC_FACTOR;	/* assigned in main.c, updated in unit_panel_set() and
 char	       *TMPDIR;
 
 /* will contain environment variable FIG2DEV_DIR, if any */
-char	       *fig2dev_path;
+char	       *fig2dev_path = "$HOME/xfig/fig2dev/fig2dev";
 char	        fig2dev_cmd[PATH_MAX];
 
 /***** translations used for asciiTextWidgets in general windows *****/

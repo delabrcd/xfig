@@ -576,7 +576,7 @@ print_to_file(char *file, int xoff, int yoff, char *backgrnd, char *transparent,
 
 	/* now execute fig2dev */
 	if (exec_prcmd(prcmd, "EXPORT") == 0)
-		put_msg("Export to \"%s\" done", file);
+		put_msg("Export to \"%s\" done - %s", file, prcmd);
 
 	/* and reset the cursor */
 	reset_cursor();
