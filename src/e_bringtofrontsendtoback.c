@@ -28,7 +28,7 @@
 void bringtofrontsendtoback_selected(void);
 
 static Boolean keep_depth = False;
-static int delta_depth;
+static int delta_depth, btfstb_depth;
 
 #define min(a, b) ((a) < (b)) ? (a) : (b)
 
@@ -40,6 +40,7 @@ static void init_bring_to_front(F_line *p, int type, int x, int y, int px,
                                 int py);
 static void init_send_to_back(F_line *p, int type, int x, int y, int px,
                               int py);
+static void init_set_depth(F_line *p, int type, int x, int y, int px, int py);
 
 void btfstb_compound(F_compound *compound);
 void btfstb_lines(F_line *lines);
@@ -50,45 +51,67 @@ void btfstb_texts(F_text *texts);
 void btfstb_compounds(F_compound *compounds);
 static void handle_object(F_line *p, int type, int x, int y, int px, int py);
 
-void bringtofrontsendtoback_selected(void) {
-  set_mousefun("bring to front", "", "send to back", LOC_OBJ, LOC_OBJ, LOC_OBJ);
+void 
+bringtofrontsendtoback_selected(void) 
+{
+  set_mousefun("Bring to front", "Set depth", "Send to back", LOC_OBJ, LOC_OBJ,
+               LOC_OBJ);
   canvas_kbd_proc = null_proc;
   canvas_locmove_proc = null_proc;
   canvas_ref_proc = null_proc;
   init_searchproc_left(init_bring_to_front);
+  init_searchproc_middle(init_set_depth);
   init_searchproc_right(init_send_to_back);
   canvas_leftbut_proc = object_search_left;
-  canvas_middlebut_proc = null_proc;
+  canvas_middlebut_proc = object_search_middle;
   canvas_rightbut_proc = object_search_right;
   set_cursor(pick9_cursor);
   reset_action_on();
   manage_update_buts();
 }
 
-static void init_bring_to_front(F_line *p, int type, int x, int y, int px,
-                                int py) {
-  cur_depth = 0;
+static void 
+init_bring_to_front(F_line *p, int type, int x, int y, int px,
+                                int py) 
+{
+  btfstb_depth = 0;
   for (int i = 0; i < MAX_DEPTH; i++) { // Find the lowest object's depth
     if (object_depths[i]) {
-      cur_depth = i;
+      btfstb_depth = i - 1;
+      if (btfstb_depth < 0) {
+        btfstb_depth = 0;
+      }
       break;
     }
   }
   handle_object(p, type, x, y, px, py); // p or *p?
 }
 
-void init_send_to_back(F_line *p, int type, int x, int y, int px, int py) {
-  cur_depth = 0;
+static void 
+init_set_depth(F_line *p, int type, int x, int y, int px, int py) 
+{
+  btfstb_depth = cur_depth;
+  handle_object(p, type, x, y, px, py);
+}
+
+static void init_send_to_back(F_line *p, int type, int x, int y, int px,
+                              int py) {
+  btfstb_depth = 0;
   for (int i = 0; i < MAX_DEPTH; i++) { // Find the highest object's depth
     if (object_depths[MAX_DEPTH - i]) {
-      cur_depth = MAX_DEPTH - i;
+      btfstb_depth = MAX_DEPTH - i + 1;
+      if (btfstb_depth > MAX_DEPTH) {
+        btfstb_depth = MAX_DEPTH;
+      }
       break;
     }
   }
   handle_object(p, type, x, y, px, py);
 }
 
-static void handle_object(F_line *p, int type, int x, int y, int px, int py) {
+static void 
+handle_object(F_line *p, int type, int x, int y, int px, int py) 
+{
   int largest;
   Boolean dontupdate = False;
   int old_psfont_flag, new_psfont_flag;
@@ -107,7 +130,7 @@ static void handle_object(F_line *p, int type, int x, int y, int px, int py) {
     new_c = copy_compound(cur_c);
     keep_depth = True;
     largest = find_largest_depth(cur_c);
-    delta_depth = cur_depth - find_smallest_depth(cur_c);
+    delta_depth = btfstb_depth - find_smallest_depth(cur_c);
     /* if renumbering would make depths too large don't allow it */
     if ((delta_depth + largest > MAX_DEPTH) && (cur_updatemask & I_DEPTH)) {
       if (popup_query(QUERY_YESNO,
@@ -133,7 +156,7 @@ static void handle_object(F_line *p, int type, int x, int y, int px, int py) {
     new_l = copy_line(cur_l);
     // Replacing update_line(new_l); in e_update.c
     draw_line(new_l, ERASE);
-    up_depth_part(new_l->depth, cur_depth);
+    up_depth_part(new_l->depth, btfstb_depth);
     // Do we need to include e_update.c update_line's arrowhead func aswell?
 
     change_line(cur_l, new_l);
@@ -148,7 +171,7 @@ static void handle_object(F_line *p, int type, int x, int y, int px, int py) {
     new_t = copy_text(cur_t);
     // Replacing update_text(new_t); in e_update.c
     draw_text(new_t, ERASE);
-    up_depth_part(new_t->depth, cur_depth);
+    up_depth_part(new_t->depth, btfstb_depth);
 
     change_text(cur_t, new_t);
     /* redraw anything near the old text */
@@ -162,7 +185,7 @@ static void handle_object(F_line *p, int type, int x, int y, int px, int py) {
     new_e = copy_ellipse(cur_e);
     // in place of update_eclipse(new_e); in e_update.c
     draw_ellipse(new_e, ERASE);
-    up_depth_part(new_e->depth, cur_depth);
+    up_depth_part(new_e->depth, btfstb_depth);
 
     change_ellipse(cur_e, new_e);
     /* redraw anything near the old ellipse */
@@ -176,7 +199,7 @@ static void handle_object(F_line *p, int type, int x, int y, int px, int py) {
     new_a = copy_arc(cur_a);
     // Replacing update_arc(new_a); in e_update.c
     draw_arc(new_a, ERASE);
-    up_depth_part(new_a->depth, cur_depth);
+    up_depth_part(new_a->depth, btfstb_depth);
 
     change_arc(cur_a, new_a);
     /* redraw anything near the old arc */
@@ -190,7 +213,7 @@ static void handle_object(F_line *p, int type, int x, int y, int px, int py) {
     new_s = copy_spline(cur_s);
     // Replacing update_spline(new_s); in e_update.c
     draw_spline(new_s, ERASE);
-    up_depth_part(new_s->depth, cur_depth);
+    up_depth_part(new_s->depth, btfstb_depth);
 
     change_spline(cur_s, new_s);
     /* redraw anything near the old spline */
@@ -206,22 +229,25 @@ static void handle_object(F_line *p, int type, int x, int y, int px, int py) {
     put_msg("Object(s) UPDATED");
 }
 
-void btfstb_compound(F_compound *compound) {
+void 
+btfstb_compound(F_compound *compound) 
+{
   F_line *dline, *dtick1, *dtick2, *dbox;
   F_text *dtext;
 
-  /* if this is a dimension line, update its settings from the dimline settings
+  /* if this is a dimension line, update its settings from the dimline
+   * settings
    */
   if (dimline_components(compound, &dline, &dtick1, &dtick2, &dbox)) {
-    up_depth_part(dline->depth, cur_depth);
+    up_depth_part(dline->depth, btfstb_depth);
     if (dbox)
-      up_depth_part(dbox->depth, cur_depth);
+      up_depth_part(dbox->depth, btfstb_depth);
     if (dtick1)
-      up_depth_part(dtick1->depth, cur_depth);
+      up_depth_part(dtick1->depth, btfstb_depth);
     if (dtick2)
-      up_depth_part(dtick2->depth, cur_depth);
+      up_depth_part(dtick2->depth, btfstb_depth);
     if (dtext)
-      up_depth_part(dtext->depth, cur_depth);
+      up_depth_part(dtext->depth, btfstb_depth);
   } else {
     btfstb_lines(compound->lines);
     btfstb_splines(compound->splines);
@@ -230,13 +256,13 @@ void btfstb_compound(F_compound *compound) {
     btfstb_texts(compound->texts);
     btfstb_compounds(compound->compounds);
   }
-  // Is this necessary?
   compound_bound(compound, &compound->nwcorner.x, &compound->nwcorner.y,
                  &compound->secorner.x, &compound->secorner.y);
 }
 
 // Functions that update many objects (For compounds)
-void btfstb_compounds(F_compound *compounds) {
+void btfstb_compounds(F_compound *compounds) 
+{
   F_compound *c;
 
   for (c = compounds; c != NULL; c = c->next)
@@ -247,33 +273,33 @@ void btfstb_arcs(F_arc *arcs) {
   F_arc *a;
 
   for (a = arcs; a != NULL; a = a->next)
-    up_depth_part(a->depth, cur_depth);
+    up_depth_part(a->depth, btfstb_depth);
 }
 
 void btfstb_elipses(F_ellipse *ellipses) {
   F_ellipse *e;
 
   for (e = ellipses; e != NULL; e = e->next)
-    up_depth_part(e->depth, cur_depth);
+    up_depth_part(e->depth, btfstb_depth);
 }
 
 void btfstb_lines(F_line *lines) {
   F_line *l;
 
   for (l = lines; l != NULL; l = l->next)
-    up_depth_part(l->depth, cur_depth);
+    up_depth_part(l->depth, btfstb_depth);
 }
 
 void btfstb_splines(F_spline *splines) {
   F_spline *s;
 
   for (s = splines; s != NULL; s = s->next)
-    up_depth_part(s->depth, cur_depth);
+    up_depth_part(s->depth, btfstb_depth);
 }
 
 void btfstb_texts(F_text *texts) {
   F_text *t;
 
   for (t = texts; t != NULL; t = t->next)
-    up_depth_part(t->depth, cur_depth);
+    up_depth_part(t->depth, btfstb_depth);
 }
