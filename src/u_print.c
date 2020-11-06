@@ -288,8 +288,8 @@ print_to_file(char *file, int xoff, int yoff, char *backgrnd, char *transparent,
 	if (cur_exp_lang == LANG_PSPDFTEX)
 		real_lang = "pstex";
 
-	if (cur_exp_lang == LANG_VDX)
-		real_lang = "svg";
+	//if (cur_exp_lang == LANG_VDX)
+		//real_lang = "svg";
 
 #ifdef I18N
 	/* set the numeric locale to C so we get decimal points for numbers */

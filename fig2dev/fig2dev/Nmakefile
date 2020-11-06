@@ -93,7 +93,7 @@ FIG2DEV_SRCS = bound.c colors.c creationdate.c fig2dev.c free.c \
 	dev/gensvg.c dev/gentextyl.c dev/gentikz.c dev/gentk.c dev/gentpic.c \
 	dev/psencode.c dev/readeps.c dev/readgif.c dev/readjpg.c dev/readpcx.c \
 	dev/readpics.c dev/readppm.c dev/readtif.c dev/readxbm.c \
-	dev/setfigfont.c dev/texfonts.c dev/tkpattern.c dev/xtmpfile.c
+	dev/setfigfont.c dev/texfonts.c dev/tkpattern.c dev/xtmpfile.c dev/genvdx.c
 
 FIG2DEV_HEADERS = alloc.h bool.h bound.h colors.h creationdate.h drivers.h \
 	fig2dev.h free.h localmath.h messages.h object.h pi.h read.h trans_spline.h \

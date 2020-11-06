@@ -53,6 +53,7 @@ extern struct driver dev_gbx;
 extern struct driver dev_shape;
 
 extern struct driver dev_dxf;
+extern struct driver dev_vdx;
 
 /* all the bitmap formats use the dev_bitmaps driver */
 
@@ -101,6 +102,7 @@ struct {
 	{"tpic",	&dev_tpic},
 	{"xbm",		&dev_bitmaps},
 	{"xpm",		&dev_bitmaps},
+	{"vdx",		&dev_vdx},
 	{"",		NULL}
 };
 
