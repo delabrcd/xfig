@@ -512,7 +512,7 @@ genvdx_start(F_compound *objects)
 	vh = ceil((ury - lly) * 72. * mag / ppi);
     }
 
-	fputs("<!-- Splines are not handled by fig2dev as a whole, so splines appear as Polygons-->", tfp);
+	fputs("<!-- Splines are not handled by fig2dev as a whole, so splines appear as Polygons-->\n", tfp);
 	fputs("<!-- Data for some values are numbers. For what these numbers mean consult /xfig/doc/FORMAT3.2-->\n", tfp);
 	fputs("<!-- Points are displayed in fig units. To convert to cm multiply by 2.22 repeating -->\n", tfp);
 
@@ -978,15 +978,15 @@ genvdx_arc(F_arc *a)
 	fprintf(tfp, "\n\t\tFillStyle=\"%d\"", a->fill_style);
 	fprintf(tfp, "\n\t\tLineStyle=\"%s\"",vdx_dash_string(a->style));
 	fprintf(tfp, "\n\t\tDot_Dash_Length=\"%1.1f\"",a->style_val);
-	// fprintf(tfp, "\n\t\tPoints=\"");
-	// for(int i = 0; i = 3; i++){
-	// 	fprintf(tfp, "(%d,%d)",a->point[i].x, a->point[i].y);
-	// 	if(i<2){
-	// 		fprintf(tfp, ",");
-	// 	}
-	// }
-	// fprintf(tfp, "\"");
-	// fprintf(tfp, "\n\t\tCenter=\"(%2.2f,%2.2f)\"", a->center.x, a->center.y);
+	fprintf(tfp, "\n\t\tPoints=\"");
+	for(int i = 0; i < 3; i++){
+		fprintf(tfp, "(%d,%d)",a->point[i].x, a->point[i].y);
+		if(i<2){
+			fprintf(tfp, ",");
+		}
+	}
+	fprintf(tfp, "\"");
+	fprintf(tfp, "\n\t\tCenter=\"(%2.2f,%2.2f)\"", a->center.x, a->center.y);
 	// fprintf(tfp, );
 
     // fprintf(tfp, "\n\tDepth=\"%d\"\n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"\n\tLineStyle=\"%s\"",a->depth,rgbColorVal(a->pen_color),rgbColorVal(a->fill_color),a->fill_style,vdx_dash_string(a->style));
@@ -1112,6 +1112,11 @@ genvdx_ellipse(F_ellipse *e)
 	fprintf(tfp, "\n\t\tLineStyle=\"%s\"",vdx_dash_string(e->style));
 	fprintf(tfp, "\n\t\tDot_Dash_Length=\"%1.1f\"",e->style_val);
 	// TODO: Add points for circles/ellipses
+	fprintf(tfp, "\n\t\tCenter=\"(%2.2d,%2.2d)\"", e->center.x, e->center.y);
+	if(e->type == T_ELLIPSE_BY_DIA || e->type == T_ELLIPSE_BY_RAD)
+		fprintf(tfp, "\n\t\tRadii=\"x:%2.2d, y:%2.2d\"", e->radiuses.x, e->radiuses.y);
+	if(e->type == T_CIRCLE_BY_DIA || e->type == T_CIRCLE_BY_RAD)
+		fprintf(tfp, "\n\t\tRadius=\"%2.2d\"", e->radiuses.x);
 	fprintf(tfp,"/>\n");
 	// fprintf(tfp, );
 
