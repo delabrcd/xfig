@@ -1,3 +1,19 @@
+/*
+ * FIG : Facility for Interactive Generation of figures
+ * Copyright (c) 1989-2007 by Brian V. Smith
+ * Parts Copyright (c) 2020 by Caleb DeLaBruere, Zachary Chapman
+ *
+ * Any party obtaining a copy of these files is granted, free of charge, a
+ * full and unrestricted irrevocable, world-wide, paid up, royalty-free,
+ * nonexclusive right and license to deal in this software and documentation
+ * files (the "Software"), including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense and/or sell copies of
+ * the Software, and to permit persons who receive copies from any such
+ * party to do so, with the only requirement being that the above copyright
+ * and this permission notice remain intact.
+ *
+ */
+
 #include "fig.h"
 #include "mode.h"
 #include "object.h"
@@ -19,7 +35,6 @@
 #include "e_scale.h"
 #include "f_util.h"
 #include "u_bound.h"
-//#include "u_fonts.h" Not sure if it even matters to keep/remove this
 #include "u_free.h"
 #include "u_redraw.h"
 #include "w_cursor.h"
@@ -27,11 +42,15 @@
 
 void bringtofrontsendtoback_selected(void);
 
+// NOTE CDD - bringtofrontsendtoback will from now on be referred to as btfstb 
+//            for readability
+
 static Boolean keep_depth = False;
 static int delta_depth, btfstb_depth;
 
 #define min(a, b) ((a) < (b)) ? (a) : (b)
 
+// Macro for updating the depth of an object, duplicate of that found in e_update.c
 #define up_depth_part(lv, rv)                                                  \
   if (cur_updatemask & I_DEPTH)                                                \
   (lv) = keep_depth ? (min((lv) + delta_depth, MAX_DEPTH)) : (rv)
@@ -51,6 +70,7 @@ void btfstb_texts(F_text *texts);
 void btfstb_compounds(F_compound *compounds);
 static void handle_object(F_line *p, int type, int x, int y, int px, int py, Bool bringtofront);
 
+// Init function for BTFSTB mode
 void 
 bringtofrontsendtoback_selected(void) 
 {
@@ -70,23 +90,28 @@ bringtofrontsendtoback_selected(void)
   manage_update_buts();
 }
 
+// Button handler for bring to front (left click)
 static void 
 init_bring_to_front(F_line *p, int type, int x, int y, int px,
                                 int py) 
 {
   btfstb_depth = 0;
-  for (int i = 0; i < MAX_DEPTH; i++) { // Find the lowest object's depth
+  // Find the lowest object's depth
+  for (int i = 0; i <= MAX_DEPTH; i++) { 
     if (object_depths[i]) {
+      // Shallowest depth found
       btfstb_depth = i - 1;
+      // Check if an object is already at depth 0
       if (btfstb_depth < 0) {
         btfstb_depth = 0;
       }
       break;
     }
   }
-  handle_object(p, type, x, y, px, py, True); // p or *p?
+  handle_object(p, type, x, y, px, py, True);
 }
 
+// Button handler for set depth (middle click)
 static void 
 init_set_depth(F_line *p, int type, int x, int y, int px, int py) 
 {
@@ -94,12 +119,16 @@ init_set_depth(F_line *p, int type, int x, int y, int px, int py)
   handle_object(p, type, x, y, px, py, False);
 }
 
+// Button handler for send to back (right click)
 static void init_send_to_back(F_line *p, int type, int x, int y, int px,
                               int py) {
   btfstb_depth = 0;
-  for (int i = 0; i < MAX_DEPTH; i++) { // Find the highest object's depth
+  // Find the highest object's depth
+  for (int i = 0; i <= MAX_DEPTH; i++) { 
     if (object_depths[MAX_DEPTH - i]) {
+      // Deepest depth found
       btfstb_depth = MAX_DEPTH - i + 1;
+      // Check if an object is already at max depth 
       if (btfstb_depth > MAX_DEPTH) {
         btfstb_depth = MAX_DEPTH;
       }
@@ -109,9 +138,11 @@ static void init_send_to_back(F_line *p, int type, int x, int y, int px,
   handle_object(p, type, x, y, px, py, False);
 }
 
+// Update the depth for every type of object that the user might select
 static void 
 handle_object(F_line *p, int type, int x, int y, int px, int py, Bool bringtofront) 
 {
+  char status_message[40];
   int largest;
   Boolean dontupdate = False;
   int old_psfont_flag, new_psfont_flag;
@@ -125,12 +156,13 @@ handle_object(F_line *p, int type, int x, int y, int px, int py, Bool bringtofro
     new_c = copy_compound(cur_c);
     keep_depth = True;
     largest = find_largest_depth(cur_c);
-    if (bringtofront){ // if renumbering would make depth too small, don't allow it //
+    if (bringtofront){ 
         delta_depth = btfstb_depth - find_largest_depth(cur_c);
+        // if renumbering would make depth too small, don't allow it
         if ((delta_depth + find_smallest_depth(cur_c) < 0) && (cur_updatemask & I_DEPTH)) {
             if (popup_query(QUERY_YESNO,
-            			"Some depths would exceed minimum - those objects\nwill "
-            			"be set to maximum depth. Update anyway?") !=
+            			"Some depths would be below minimum - those objects\nwill "
+            			"be set to minimum depth. Update anyway?") !=
             	RESULT_YES) {
             	delta_depth = 0;
             	dontupdate = True;
@@ -235,9 +267,11 @@ handle_object(F_line *p, int type, int x, int y, int px, int py, Bool bringtofro
   }
   reset_cursor();
   if (!dontupdate)
-    put_msg("Object(s) UPDATED");
+    sprintf(status_message, "Object(s) sent to DEPTH %d", btfstb_depth);
+    put_msg(status_message);
 }
 
+// Compounds require special processing for depth updating
 void 
 btfstb_compound(F_compound *compound) 
 {
