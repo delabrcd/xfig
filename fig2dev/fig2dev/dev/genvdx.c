@@ -512,7 +512,7 @@ genvdx_start(F_compound *objects)
 	vh = ceil((ury - lly) * 72. * mag / ppi);
     }
 
-	fputs("<!--Data for some values are numbers. For what these numbers mean consult /xfig/doc/FORMAT3.2-->\n", tfp);
+	fputs("<!-- Data for some values are numbers. For what these numbers mean consult /xfig/doc/FORMAT3.2-->\n", tfp);
 
     fputs("<Canvas\n", tfp);
     // fputs("\txmlns:xlink=\"http://www.w3.org/1999/xlink\"\n", tfp);
@@ -670,46 +670,50 @@ genvdx_line(F_line *l)
 
     //TODO: Need to add change image box stuff still
     if (l->type == T_PIC_BOX ) {
-	fprintf(tfp,"<!-- Image -->\n");
-	fprintf(tfp,
-	    "<image xlink:href=\"file://%s\" preserveAspectRatio=\"none\"\n",
-	    l->pic->file);
-	p = l->points;
-	px = p->x;
-	py = p->y;
-	px2 = p->next->next->x;
-	py2 = p->next->next->y;
-	width = px2 - px;
-	height = py2 - py;
-	rotation = 0;
-	if (width<0 && height < 0)
-		rotation = 180;
-	else if (width < 0 && height >= 0)
-		rotation = 90;
-	else if (width >= 0 && height <0)
-		rotation = 270;
-	if (l->pic->flipped) rotation -= 90;
-	if (width < 0) {
-	    px = px2;
-	    width = -width;
-	}
-	if (height < 0) {
-	    py = py2;
-	    height = -height;
-	}
-	px2 = px + width/2;
-	py2 = py + height/2;
-	if (l->pic->flipped) {
-	    fprintf(tfp,
-		"transform=\"rotate(%d %d %d) scale(-1,1) translate(%d,%d)\"\n",
-		rotation, px2, py2, -2*px2, 0);
-	} else if (rotation !=0) {
-	fprintf(tfp,"transform=\"rotate(%d %d %d)\"\n",rotation,px2,py2);
-	}
+		fprintf(tfp, "\t<POLYLINE\n\t\tType=\"Picture Object\"");
+		print_vdxcomments("\n\t\tComments=\"", l->comments, "\" ");
+		fprintf(tfp,"\n\t\txlink:href=\"file://%s\"",l->pic->file);
+		fprintf(tfp,"\n\t\tDepth=\"%d\"", l->depth);
+		// fprintf(tfp,"<!--Width and Height are in pixels-->");
+		// fprintf(tfp,"\n\t\tWidth=\"%d\"\n\t\tHeight=\"%d\"", l->pic->pix_width, l->pic->pix_height);
+		// fprintf(tfp,"\n\t\tRotation=\"%d\"", l->pic->pix_rotation);
+		fprintf(tfp,"/>\n");
 
-	fprintf(tfp,"x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\"/>\n",
-	px, py, width, height);
-    return;
+		// p = l->points;
+		// px = p->x;
+		// py = p->y;
+		// px2 = p->next->next->x;
+		// py2 = p->next->next->y;
+		// width = px2 - px;
+		// height = py2 - py;
+		// rotation = 0;
+		// if (width<0 && height < 0)
+		// 	rotation = 180;
+		// else if (width < 0 && height >= 0)
+		// 	rotation = 90;
+		// else if (width >= 0 && height <0)
+		// 	rotation = 270;
+		// if (l->pic->flipped) rotation -= 90;
+		// if (width < 0) {
+		// 	px = px2;
+		// 	width = -width;
+		// }
+		// if (height < 0) {
+		// 	py = py2;
+		// 	height = -height;
+		// }
+		// px2 = px + width/2;
+		// py2 = py + height/2;
+		// if (l->pic->flipped) {
+		// 	fprintf(tfp,
+		// 	"transform=\"rotate(%d %d %d) scale(-1,1) translate(%d,%d)\"\n",
+		// 	rotation, px2, py2, -2*px2, 0);
+		// } else if (rotation !=0) {
+		// 	fprintf(tfp,"transform=\"rotate(%d %d %d)\"\n",rotation,px2,py2);
+		// }
+		// fprintf(tfp,"x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\"/>\n", px, py, width, height);
+
+		return;
     }
 
     if (l->thickness <= 0 && l->fill_style == UNFILLED &&
