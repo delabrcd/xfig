@@ -708,7 +708,7 @@ genvdx_line(F_line *l)
 
 	fprintf(tfp, "<POLYLINE \n\tType=\"%s\" ",type_str);
 	print_vdxcomments("\n\tComments=\"", l->comments, "\" ");
-       	fprintf(tfp, "\n\tDepth=\"%d\" \n\tPenColor=\"%d\"\n\tFillColor=\"%d\" \n\tFillStyle=\"%d\" />\n",l->depth,rgbColorVal(l->pen_color),l->fill_color,l->fill_style);
+       	fprintf(tfp, "\n\tDepth=\"%d\" \n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"/>\n",l->depth,rgbColorVal(l->pen_color),rgbColorVal(l->fill_color),l->fill_style);
 
     // if (l->type == T_BOX || l->type == T_ARC_BOX || l->type == T_POLYGON) {
 
@@ -822,16 +822,40 @@ genvdx_spline( /* not used by fig2dev */
 	F_spline *s)
 {
     F_point *p;
-    fprintf(tfp, "<!-- Spline -->\n");
-    print_vdxcomments("<!-- ", s->comments, " -->\n");
+	
+    switch(s->type){
+	case T_OPEN_APPROX:
+		type_str = "Open approximated spline";
+		break;
+	case T_CLOSED_APPROX:
+		type_str = "Closed approximated spline";
+		break;
+	case T_OPEN_INTERPOLATED:
+		type_str = "Open interpolated spline";
+		break;
+	case T_CLOSED_INTERPOLATED:
+		type_str = "Closed interpolated spline";
+		break;
 
-    fprintf(tfp, "<path style=\"stroke:#%6.6x;stroke-width:%d\" d=\"",
-	     rgbColorVal(s->pen_color), (int) ceil (linewidth_adj(s->thickness)));
-    fprintf(tfp, "M %d,%d\n C", s->points->x , s->points->y );
-    for (p = s->points++; p; p = p->next) {
-	fprintf(tfp, "%d,%d\n", p->x , p->y );
+	//TODO:Figure out Xsplines
+	// case T_OPEN_XSPLINE:
+	// 	type_str = ""
+	// T_CLOSED_XSPLINE
+
     }
-    fprintf(tfp, "\"/>\n");
+
+    
+    fprintf(tfp, "<SPLINE\n\tType=\"%s\"",type_str);
+    print_vdxcomments("\n\tComments=\"", s->comments, "\" ");
+    fprintf(tfp, "\n\tDepth=\"%d\"\n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\" />\n",s->depth,rgbColorVal(s->pen_color),rgbColorVal(s->fill_color),s->fill_style);
+    
+    //fprintf(tfp, "<path style=\"stroke:#%6.6x;stroke-width:%d\" d=\"",
+//	     rgbColorVal(s->pen_color), (int) ceil (linewidth_adj(s->thickness)));
+  //  fprintf(tfp, "M %d,%d\n C", s->points->x , s->points->y );
+    //for (p = s->points++; p; p = p->next) {
+//	fprintf(tfp, "%d,%d\n", p->x , p->y );
+  //  }
+    //fprintf(tfp, "\"/>\n");
 }
 
 void
@@ -846,9 +870,11 @@ genvdx_arc(F_arc *a)
 	    !a->for_arrow && !a->back_arrow)
 	return;
 
-    fputs("<!-- Arc -->\n", tfp);
-    print_vdxcomments("<!-- ", a->comments, " -->\n");
+    fprintf(tfp, "<ARC \n\tType=\"Arc drawing: specified by 3 points\"");
+    print_vdxcomments("\n\tComments=\"", a->comments, "\" ");
+    fprintf(tfp, "\n\tDepth=\"%d\"\n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"",a->depth,rgbColorVal(a->pen_color),rgbColorVal(a->fill_color),a->fill_style);
 
+    //TODO: Figure out arrows
     if (a->for_arrow || a->back_arrow) {
 	if (a->for_arrow) {
 	    forw2.x = a->point[2].x;
@@ -876,6 +902,7 @@ genvdx_arc(F_arc *a)
     dx = a->point[0].x - a->center.x;
     dy = a->point[0].y - a->center.y;
     radius = sqrt(dx * dx + dy * dy);
+    fprintf(tfp, "\n\tRadius=\"%f\" ",radius);
 
     x = (a->point[0].x-a->center.x) * (a->point[2].x-a->center.x) +
 		(a->point[0].y-a->center.y) * (a->point[2].y-a->center.y);
@@ -887,50 +914,51 @@ genvdx_arc(F_arc *a)
     else
 	angle = atan2(y,x);
     if (angle < 0.0) angle += 2.*M_PI;
-    angle *= 180./M_PI;
+    	angle *= 180./M_PI;
     if (a->direction == 1)
 	angle = 360. - angle;
+    fprintf(tfp, "\n\tAngle=\"%f\" />\n",angle); 
 
-    if (has_clip) {
-	INIT_PAINT_W_CLIP(a->fill_style, a->thickness, a->for_arrow,
-		a->back_arrow, &forw1, &forw2, &back1, &back2);
-    } else {
-	INIT_PAINT(a->fill_style);
-    }
+//    if (has_clip) {
+//	INIT_PAINT_W_CLIP(a->fill_style, a->thickness, a->for_arrow,
+//		a->back_arrow, &forw1, &forw2, &back1, &back2);
+  //  } else {
+//	INIT_PAINT(a->fill_style);
+  //  }
 
     /* paint the object */
-    fputs("<path d=\"M", tfp);
-    if (a->type == T_PIE_WEDGE_ARC)
-		fprintf(tfp, " %ld,%ld L",
-			lround(a->center.x), lround(a->center.y));
-    fprintf(tfp, " %d,%d A %ld %ld %d %d %d %d %d",
-	     a->point[0].x , a->point[0].y ,
-	     lround(radius), lround(radius), 0,
-	     (fabs(angle) > 180.) ? 1 : 0,
-	     (fabs(angle) > 0. && a->direction == 0) ? 1 : 0,
-	     a->point[2].x , a->point[2].y );
-    if (a->type == T_PIE_WEDGE_ARC)
-	fputs(" z", tfp);
-    fputc('\"', tfp);
+    //fputs("<path d=\"M", tfp);
+//    if (a->type == T_PIE_WEDGE_ARC)
+//		fprintf(tfp, " %ld,%ld L",
+//			lround(a->center.x), lround(a->center.y));
+  //  fprintf(tfp, " %d,%d A %ld %ld %d %d %d %d %d",
+//	     a->point[0].x , a->point[0].y ,
+//	     lround(radius), lround(radius), 0,
+//	     (fabs(angle) > 180.) ? 1 : 0,
+//	     (fabs(angle) > 0. && a->direction == 0) ? 1 : 0,
+//	     a->point[2].x , a->point[2].y );
+  //  if (a->type == T_PIE_WEDGE_ARC)
+//	fputs(" z", tfp);
+  //  fputc('\"', tfp);
 
-    if (has_clip)
-	continue_paint_w_clip_vdx(a->fill_style, a->pen_color, a->fill_color);
-    else
-	continue_paint_vdx(a->fill_style, a->pen_color, a->fill_color);
+    //if (has_clip)
+//	continue_paint_w_clip_vdx(a->fill_style, a->pen_color, a->fill_color);
+  //  else
+//	continue_paint_vdx(a->fill_style, a->pen_color, a->fill_color);
+//
+  //  if (a->thickness) {
+//	fprintf(tfp, "\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\"",
+//		rgbColorVal(a->pen_color),
+//		(int) ceil(linewidth_adj(a->thickness)));
+//	put_capstyle(a->cap_style);
+//	if (a->style > SOLID_LINE)
+//	    vdx_dash(a->style, a->style_val);
+  //  }
 
-    if (a->thickness) {
-	fprintf(tfp, "\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\"",
-		rgbColorVal(a->pen_color),
-		(int) ceil(linewidth_adj(a->thickness)));
-	put_capstyle(a->cap_style);
-	if (a->style > SOLID_LINE)
-	    vdx_dash(a->style, a->style_val);
-    }
-
-    fputs("/>\n", tfp);
-    if (a->for_arrow || a->back_arrow)
-	(void) vdx_arrows(a->thickness, a->for_arrow, a->back_arrow,
-			&forw1, &forw2, &back1, &back2, a->pen_color);
+    //fputs("/>\n", tfp);
+    //if (a->for_arrow || a->back_arrow)
+//	(void) vdx_arrows(a->thickness, a->for_arrow, a->back_arrow,
+//			&forw1, &forw2, &back1, &back2, a->pen_color);
 }
 
 void
@@ -957,9 +985,9 @@ genvdx_ellipse(F_ellipse *e)
 			break;
 	}
 
-	fprintf(tfp, "<%s \n\tType=\"%s\" ",header,type_str);
+	fprintf(tfp, "<%s\n\tType=\"%s\" ",header,type_str);
 	print_vdxcomments("\n\tComments=\"", e->comments, "\" ");
-    	fprintf(tfp, "\n\tDepth=\"%d\" \n\tPenColor=\"%d\"\n\tFillColor=\"%d\" \n\tFillStyle=\"%d\" />\n",e->depth,rgbColorVal(e->pen_color),e->fill_color,e->fill_style);
+    	fprintf(tfp, "\n\tDepth=\"%d\" \n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\" \n\tFillStyle=\"%d\"/>\n",e->depth,rgbColorVal(e->pen_color),rgbColorVal(e->fill_color),e->fill_style);
 
     //int cx = e->center.x ;
     //int cy = e->center.y ;
@@ -1020,101 +1048,96 @@ genvdx_text(F_text *t)
 	int dy = 0;
 #endif
 
-	fprintf(tfp, "<!-- Text -->\n");
-	print_vdxcomments("<!-- ", t->comments, " -->\n");
+	fprintf(tfp, "<Text\n\tType=\"Text\"");
+	print_vdxcomments("\n\tComments=\"", t->comments, "\"");
+	fprintf(tfp, "\n\tDepth=\"%d\"\n\tText=\"%s\"\n\tFontFamily=\"%s\"\n\tFontSize=\"%d\"\n\tFontStyle=\"%s\"\n\tFillColor=\"#%6.6x\"\n\tx=\"%d\"\n\ty=\"%d\"/>\n",t->depth, t->cstring,family[t->font/4], (int)ceil(t->size*12),((t->font%2 == 0 || t->font>31) ? "normal" : "italic"),rgbColorVal(t->color),x,y);
 
-	if (t->angle != 0.) {
-		fprintf(tfp,
-			"<g transform=\"translate(%d,%d) rotate(%.0f)\" >\n",
-			x, y, degrees(t->angle));
-	x = y = 0;
-	}
-	fputs("<text xml:space=\"preserve\" ", tfp);
-	fprintf(tfp, "x=\"%d\" y=\"%d\" fill=\"#%6.6x\" font-family=\"%s\" ",
-			x, y, rgbColorVal(t->color), family[t->font / 4]);
-	fprintf(tfp,
-		"font-style=\"%s\" font-weight=\"%s\" font-size=\"%d\" text-anchor=\"%s\">",
-		((t->font % 2 == 0 || t->font > 31) ? "normal" : "italic"),
-		((t->font % 4 < 2 || t->font > 31) ? "normal" : "bold"),
-		(int)ceil(t->size * 12), anchor[t->type]);
 
-	if (t->font == 32) {
-		for (cp = (unsigned char *)t->cstring; *cp; ++cp) {
-			ch = *cp;
-			fprintf(tfp, "&#%d;", symbolchar[ch]);
-		}
-	} else if (t->font == 34) {
-		for (cp = (unsigned char *)t->cstring; *cp; ++cp) {
-			ch = *cp;
-			fprintf(tfp, "&#%d;", dingbatchar[ch]);
-		}
-	} else if (special_text(t)) {
-		int supsub = 0;
-#ifdef NOSUPER
-		int old_dy=0;
-#endif
-		for (cp = (unsigned char *)t->cstring; *cp; cp++) {
-			ch = *cp;
-			if (( supsub == 2 &&ch == '}' ) || supsub==1) {
-#ifdef NOSUPER
-				fprintf(tfp,"</tspan><tspan dy=\"%d\">",-dy);
-				old_dy=-dy;
-#else
-				fprintf(tfp,"</tspan>");
-#endif
-				supsub = 0;
-				if (ch == '}') {
-					++cp;
-					ch = *cp;
-				}
-			}
-			if (ch == '_' || ch == '^') {
-				supsub=1;
-#ifdef NOSUPER
-				if (dy != 0)
-					fprintf(tfp,"</tspan>");
-				if (ch == '_')
-					dy = 35.;
-				if (ch == '^')
-					dy = -50.;
-				fprintf(tfp,
-					"<tspan font-size=\"%d\" dy=\"%d\">",
-					(int)ceil(t->size * 8), dy + old_dy);
-				old_dy = 0;
-#else
-				fprintf(tfp,
-					"<tspan font-size=\"%d\" baseline-shift=\"",
-					(int)ceil(t->size * 8));
-				if (ch == '_')
-					fprintf(tfp,"sub\">");
-				if (ch == '^')
-					fprintf(tfp,"super\">");
-#endif
-				++cp;
-				ch = *cp;
-				if (ch == '{' ) {
-					supsub=2;
-					++cp;
-					ch = *cp;
-				}
-			}
-#ifdef NOSUPER
-			else old_dy=0;
-#endif
-			if (ch != '$')
-				put_sanitized_char_vdx(ch);
-		}
-	} else {
-		for (cp = (unsigned char *)t->cstring; *cp; ++cp)
-			put_sanitized_char_vdx((int)*cp);
-	}
-#ifdef NOSUPER
-	if (dy != 0)
-		fprintf(tfp,"</tspan>");
-#endif
-	fprintf(tfp, "</text>\n");
-	if (t->angle != 0)
-		fprintf(tfp, "</g>");
+//	fprintf(tfp, "x=\"%d\" y=\"%d\" fill=\"#%6.6x\" font-family=\"%s\" ",
+//			x, y, rgbColorVal(t->color), family[t->font / 4]);
+//	fprintf(tfp,
+//		"font-style=\"%s\" font-weight=\"%s\" font-size=\"%d\" text-anchor=\"%s\">",
+//		((t->font % 2 == 0 || t->font > 31) ? "normal" : "italic"),
+//		((t->font % 4 < 2 || t->font > 31) ? "normal" : "bold"),
+//		(int)ceil(t->size * 12), anchor[t->type]);
+
+//	if (t->font == 32) {
+//		for (cp = (unsigned char *)t->cstring; *cp; ++cp) {
+//			ch = *cp;
+//			fprintf(tfp, "&#%d;", symbolchar[ch]);
+//		}
+//	} else if (t->font == 34) {
+//		for (cp = (unsigned char *)t->cstring; *cp; ++cp) {
+//			ch = *cp;
+//			fprintf(tfp, "&#%d;", dingbatchar[ch]);
+//		}
+//	} else if (special_text(t)) {
+//		int supsub = 0;
+//#ifdef NOSUPER
+//		int old_dy=0;
+//#endif
+//		for (cp = (unsigned char *)t->cstring; *cp; cp++) {
+//			ch = *cp;
+//			if (( supsub == 2 &&ch == '}' ) || supsub==1) {
+//#ifdef NOSUPER
+//				fprintf(tfp,"</tspan><tspan dy=\"%d\">",-dy);
+//				old_dy=-dy;
+//#else
+//				fprintf(tfp,"</tspan>");
+//#endif
+//				supsub = 0;
+//				if (ch == '}') {
+//					++cp;
+//					ch = *cp;
+//				}
+//			}
+//			if (ch == '_' || ch == '^') {
+//				supsub=1;
+//#ifdef NOSUPER
+//				if (dy != 0)
+//					fprintf(tfp,"</tspan>");
+//				if (ch == '_')
+//					dy = 35.;
+//				if (ch == '^')
+//					dy = -50.;
+//				fprintf(tfp,
+//					"<tspan font-size=\"%d\" dy=\"%d\">",
+//					(int)ceil(t->size * 8), dy + old_dy);
+//				old_dy = 0;
+//#else
+//				fprintf(tfp,
+//					"<tspan font-size=\"%d\" baseline-shift=\"",
+//					(int)ceil(t->size * 8));
+//				if (ch == '_')
+//					fprintf(tfp,"sub\">");
+//				if (ch == '^')
+//					fprintf(tfp,"super\">");
+//#endif
+//				++cp;
+//				ch = *cp;
+//				if (ch == '{' ) {
+//					supsub=2;
+//					++cp;
+//					ch = *cp;
+//				}
+//			}
+//#ifdef NOSUPER
+//			else old_dy=0;
+//#endif
+//			if (ch != '$')
+//				put_sanitized_char_vdx(ch);
+//		}
+//	} else {
+//		for (cp = (unsigned char *)t->cstring; *cp; ++cp)
+//			put_sanitized_char_vdx((int)*cp);
+//	}
+//#ifdef NOSUPER
+//	if (dy != 0)
+///		fprintf(tfp,"</tspan>");
+//#endif
+//	fprintf(tfp, "</text>\n");
+//	if (t->angle != 0)
+//		fprintf(tfp, "</g>");
 }
 
 static void
