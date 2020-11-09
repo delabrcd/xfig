@@ -936,47 +936,72 @@ genvdx_arc(F_arc *a)
 void
 genvdx_ellipse(F_ellipse *e)
 {
-    int cx = e->center.x ;
-    int cy = e->center.y ;
 
-    if (e->type == T_CIRCLE_BY_RAD || e->type == T_CIRCLE_BY_DIA) {
-	int r = e->radiuses.x ;
-	fputs("<!-- Circle -->\n", tfp);
-	print_vdxcomments("<!-- ", e->comments, " -->\n");
+    char *header;
+	switch(e->type){
+		case T_ELLIPSE_BY_DIA:
+			type_str = "Ellipse specified by diamter";
+			header = "ELLIPSE";
+			break;
+		case T_ELLIPSE_BY_RAD:
+			type_str = "Ellipse specified by radii";
+			header = "ELLIPSE";
+			break;
+		case T_CIRCLE_BY_DIA:
+			type_str = "Circle specified by diameter";
+			header = "CIRCLE";
+			break;
+		case T_CIRCLE_BY_RAD:
+			type_str = "Circle specified by radius";
+			header = "CIRCLE";
+			break;
+	}
 
-	INIT_PAINT(e->fill_style);
+	fprintf(tfp, "<%s \n\tType=\"%s\" ",header,type_str);
+	print_vdxcomments("\n\tComments=\"", e->comments, "\" ");
+    	fprintf(tfp, "\n\tDepth=\"%d\" \n\tPenColor=\"%d\"\n\tFillColor=\"%d\" \n\tFillStyle=\"%d\" />\n",e->depth,rgbColorVal(e->pen_color),e->fill_color,e->fill_style);
+
+    //int cx = e->center.x ;
+    //int cy = e->center.y ;
+
+    //if (e->type == T_CIRCLE_BY_RAD || e->type == T_CIRCLE_BY_DIA) {
+	//int r = e->radiuses.x ;
+	//fputs("<!-- Circle -->\n", tfp);
+	//print_vdxcomments("<!-- ", e->comments, " -->\n");
+
+	//INIT_PAINT(e->fill_style);
 
 	/* paint the object */
-	fprintf(tfp, "<circle cx=\"%d\" cy=\"%d\" r=\"%d\"", cx, cy, r);
+	//fprintf(tfp, "<circle cx=\"%d\" cy=\"%d\" r=\"%d\"", cx, cy, r);
 
-    } else { /* T_ELLIPSE_BY_RAD or T_ELLIPSE_BY_DIA */
-	int rx = e->radiuses.x ;
-	int ry = e->radiuses.y ;
-	fputs("<!-- Ellipse -->\n", tfp);
-	print_vdxcomments("<!-- ", e->comments, " -->\n");
+    //} else { /* T_ELLIPSE_BY_RAD or T_ELLIPSE_BY_DIA */
+	//int rx = e->radiuses.x ;
+	//int ry = e->radiuses.y ;
+	//fputs("<!-- Ellipse -->\n", tfp);
+	//print_vdxcomments("<!-- ", e->comments, " -->\n");
 
-	INIT_PAINT(e->fill_style);
+	//INIT_PAINT(e->fill_style);
 
 	/* now paint object */
-	if (e->angle == 0.0)
-	    fprintf(tfp, "<ellipse cx=\"%d\" cy=\"%d\"", cx, cy);
-	else
-	    fprintf(tfp,
-		    "<ellipse transform=\"translate(%d,%d) rotate(%.0f)\"",
-		    cx, cy, degrees(e->angle));
-	fprintf(tfp, " rx=\"%d\" ry=\"%d\"", rx, ry);
-    } /* end T_CIRCLE... or T_ELLIPSE... */
+	//if (e->angle == 0.0)
+	    //fprintf(tfp, "<ellipse cx=\"%d\" cy=\"%d\"", cx, cy);
+	//else
+	    //fprintf(tfp,
+		   // "<ellipse transform=\"translate(%d,%d) rotate(%.0f)\"",
+		    //cx, cy, degrees(e->angle));
+	//fprintf(tfp, " rx=\"%d\" ry=\"%d\"", rx, ry);
+   // } /* end T_CIRCLE... or T_ELLIPSE... */
 
-    continue_paint_vdx(e->fill_style, e->pen_color, e->fill_color);
+    //continue_paint_vdx(e->fill_style, e->pen_color, e->fill_color);
 
-    if (e->thickness) {
-	fprintf(tfp, "\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\"",
-		rgbColorVal(e->pen_color),
-		(int) ceil(linewidth_adj(e->thickness)));
-	if (e->style > SOLID_LINE)
-	    vdx_dash(e->style, e->style_val);
-    }
-    fputs("/>\n", tfp);
+    //if (e->thickness) {
+	//fprintf(tfp, "\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\"",
+		//rgbColorVal(e->pen_color),
+		//(int) ceil(linewidth_adj(e->thickness)));
+	//if (e->style > SOLID_LINE)
+	    //vdx_dash(e->style, e->style_val);
+   // }
+    //fputs("/>\n", tfp);
 }
 
 void
