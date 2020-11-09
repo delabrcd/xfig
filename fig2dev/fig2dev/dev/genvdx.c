@@ -262,7 +262,7 @@ static void generate_tile(int number, int colorIndex);
 static void vdx_dash(int, double);
 
 #define PREAMBLE "<?xml version=\"1.231\" encoding=\"UTF-8\" standalone=\"no\"?>"
-#define	SVG_LINEWIDTH	76
+#define	VDX_LINEWIDTH	76
 
 static unsigned int symbolchar[256]=
 {0,0,0,0,0,0,0,0,0,0,
@@ -317,6 +317,8 @@ static unsigned int dingbatchar[256]=
 0x27AA,0x27AB,0x27AC,0x27AD,0x27AE,0x27AF,0,0x27B1,0x27B2,0x27B3,0x27B4,
 0x27B5,0x27B6,0x27B7,0x27B8,0x27B9,0x27BA,0x27BB,0x27BC,0x27BD,0x27BE,0
 };
+
+char *type_str; /*string value of an objects type*/
 
 static int	tileno = -1;	/* number of current tile */
 static int	pathno = -1;	/* number of current path */
@@ -462,7 +464,7 @@ genvdx_option(char opt, char *optarg)
 	    paperspec = true;
 	    break;
 	default:
-	    put_msg (Err_badarg, opt, "svg");
+	    put_msg (Err_badarg, opt, "vdx");
 	    exit (1);
     }
 }
@@ -634,6 +636,7 @@ genvdx_line(F_line *l)
     F_point	*p;
 
 
+    //TODO: Need to add change image box stuff still
     if (l->type == T_PIC_BOX ) {
 	fprintf(tfp,"<!-- Image -->\n");
 	fprintf(tfp,
@@ -682,115 +685,136 @@ genvdx_line(F_line *l)
 	return;
 
     /* l->type == T_BOX, T_ARC_BOX, T_POLYGON or T_POLYLINE */
-    fprintf(tfp, "<!-- Line -->\n");
-    print_vdxcomments("<!-- ", l->comments, " -->\n");
+    //fprintf(tfp, "<!-- Line -->\n");
+    //print_vdxcomments("<!-- ", l->comments, " -->\n");
 
-    if (l->type == T_BOX || l->type == T_ARC_BOX || l->type == T_POLYGON) {
-
-	INIT_PAINT(l->fill_style);
-
-	if (l->type == T_POLYGON) {
-	    chars = fputs("<polygon points=\"", tfp);
-	    for (p = l->points; p->next; p = p->next) {
-		chars += fprintf(tfp, " %d,%d", p->x , p->y);
-		if (chars > SVG_LINEWIDTH) {
-		    fputc('\n', tfp);
-		    chars = 0;
-		}
-	    }
-	    fputc('\"', tfp);
-	} else {	/* T_BOX || T_ARC_BOX */
-	    px = l->points->next->next->x;
-	    py = l->points->next->next->y;
-	    width = l->points->x - px;
-	    height = l->points->y - py;
-	    if (width < 0) {
-		px = l->points->x;
-		width = -width;
-	    }
-	    if (height < 0) {
-		py = l->points->y;
-		height = -height;
-	    }
-
-	    fprintf(tfp, "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\"",
-			px, py, width, height);
-	    if (l->type == T_ARC_BOX)
-		fprintf(tfp, " rx=\"%d\"", l->radius);
-	}
-
-    continue_paint_vdx(l->fill_style, l->pen_color, l->fill_color);
-
-    /* http://jwatt.org/SVG Authoring Guidelines.html recommends to
-       use px unit for stroke width */
-    if (l->thickness) {
-	fprintf(tfp, "\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\"",
-		rgbColorVal(l->pen_color),
-		(int) ceil(linewidth_adj(l->thickness)));
-	put_joinstyle(l->join_style);
-	put_capstyle(l->cap_style);
-	if (l->style > SOLID_LINE)
-	    vdx_dash(l->style, l->style_val);
-    }
-    fputs("/>\n", tfp);
-
-    return;
+    /*Determines the int value for the type and sets the string equivilent*/
+    switch (l->type){
+	    case T_BOX: 
+		    type_str = "Box";
+		    break;
+	    case T_ARC_BOX:
+		    type_str = "ArcBox";
+		    break;
+	    case T_POLYGON:
+		    type_str = "Polygon";
+		    break;
+	    case T_POLYLINE:
+		    type_str = "Polyline";
+		    break;
+	    default: 
+		    type_str = "type";
     }
 
-    if (l->type == T_POLYLINE) {
-	bool	has_clip = false;
+	fprintf(tfp, "<POLYLINE \n\tType=\"%s\" ",type_str);
+	print_vdxcomments("\n\tComments=\"", l->comments, "\" ");
+       	fprintf(tfp, "\n\tDepth=\"%d\" \n\tPenColor=\"%d\"\n\tFillColor=\"%d\" \n\tFillStyle=\"%d\" />\n",l->depth,rgbColorVal(l->pen_color),l->fill_color,l->fill_style);
 
-	if (l->for_arrow || l->back_arrow) {
-	    has_clip = vdx_arrows(l->thickness, l->for_arrow, l->back_arrow,
-			    &(l->last[1]), l->last, (F_pos *)l->points->next,
-			    (F_pos *)l->points, INIT);
-	    if (l->fill_style == UNFILLED && l->thickness <= 0) {
-		(void) vdx_arrows(l->thickness, l->for_arrow, l->back_arrow,
-			    &(l->last[1]), l->last, (F_pos *)l->points->next,
-			    (F_pos *)l->points, l->pen_color);
-		return;
-	    }
-	}
+    // if (l->type == T_BOX || l->type == T_ARC_BOX || l->type == T_POLYGON) {
 
-	if (has_clip) {
-	    INIT_PAINT_W_CLIP(l->fill_style, l->thickness, l->for_arrow,
-		    l->back_arrow, &(l->last[1]), l->last,
-		    (F_pos *)l->points->next, (F_pos *)l->points);
-	} else {
-	    INIT_PAINT(l->fill_style);
-	}
+	// INIT_PAINT(l->fill_style);
 
-	chars = fputs("<polyline points=\"", tfp);
-	for (p = l->points; p; p = p->next) {
-	    chars += fprintf(tfp, " %d,%d", p->x , p->y);
-	    if (chars > SVG_LINEWIDTH) {
-		fputc('\n', tfp);
-		chars = 0;
-	    }
-	}
-	fputc('\"', tfp);
+	// if (l->type == T_POLYGON) {
+	//     chars = fputs("<POLYLINE type=\"Polygon\" points=\"", tfp);
+	//     for (p = l->points; p->next; p = p->next) {
+	// 	chars += fprintf(tfp, " %d,%d", p->x , p->y);
+	// 	if (chars > VDX_LINEWIDTH) {
+	// 	    fputc('\n', tfp);
+	// 	    chars = 0;
+	// 	}
+	//     }
+	//     fputc('\"', tfp);
+	// } else {	/* T_BOX || T_ARC_BOX */
+	//     px = l->points->next->next->x;
+	//     py = l->points->next->next->y;
+	//     width = l->points->x - px;
+	//     height = l->points->y - py;
+	//     if (width < 0) {
+	// 	px = l->points->x;
+	// 	width = -width;
+	//     }
+	//     if (height < 0) {
+	// 	py = l->points->y;
+	// 	height = -height;
+	//     }
 
-	if (has_clip)
-	    continue_paint_w_clip_vdx(l->fill_style, l->pen_color, l->fill_color);
-	else
-	    continue_paint_vdx(l->fill_style, l->pen_color, l->fill_color);
+	//     fprintf(tfp, "<POLYLINE type=\"%s\" x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\"",type_str,px, py, width, height);
+	//     if (l->type == T_ARC_BOX)
+	// 	fprintf(tfp, " rx=\"%d\"", l->radius);
+	// }
 
-	if (l->thickness) {
-	    fprintf(tfp, "\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\"",
-		    rgbColorVal(l->pen_color),
-		    (int) ceil(linewidth_adj(l->thickness)));
-	    put_joinstyle(l->join_style);
-	    put_capstyle(l->cap_style);
-	    if (l->style > SOLID_LINE)
-		vdx_dash(l->style, l->style_val);
-	}
+    // continue_paint_vdx(l->fill_style, l->pen_color, l->fill_color);
 
-	fputs("/>\n", tfp);
-	if (l->for_arrow || l->back_arrow)
-	    (void) vdx_arrows(l->thickness, l->for_arrow, l->back_arrow,
-			&(l->last[1]), l->last, (F_pos *)l->points->next,
-			(F_pos *)l->points, l->pen_color);
-    }	/* l->type == T_POLYLINE */
+    // /* http://jwatt.org/SVG Authoring Guidelines.html recommends to
+    //    use px unit for stroke width */
+    // if (l->thickness) {
+	// fprintf(tfp, "\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\"",
+	// 	rgbColorVal(l->pen_color),
+	// 	(int) ceil(linewidth_adj(l->thickness)));
+	// put_joinstyle(l->join_style);
+	// put_capstyle(l->cap_style);
+	// if (l->style > SOLID_LINE)
+	//     vdx_dash(l->style, l->style_val);
+    // }
+    // fputs("/>\n", tfp);
+
+    // return;
+    // }
+
+    // if (l->type == T_POLYLINE) {
+	// bool	has_clip = false;
+
+	// if (l->for_arrow || l->back_arrow) {
+	//     has_clip = vdx_arrows(l->thickness, l->for_arrow, l->back_arrow,
+	// 		    &(l->last[1]), l->last, (F_pos *)l->points->next,
+	// 		    (F_pos *)l->points, INIT);
+	//     if (l->fill_style == UNFILLED && l->thickness <= 0) {
+	// 	(void) vdx_arrows(l->thickness, l->for_arrow, l->back_arrow,
+	// 		    &(l->last[1]), l->last, (F_pos *)l->points->next,
+	// 		    (F_pos *)l->points, l->pen_color);
+	// 	return;
+	//     }
+	// }
+
+	// if (has_clip) {
+	//     INIT_PAINT_W_CLIP(l->fill_style, l->thickness, l->for_arrow,
+	// 	    l->back_arrow, &(l->last[1]), l->last,
+	// 	    (F_pos *)l->points->next, (F_pos *)l->points);
+	// } else {
+	//     INIT_PAINT(l->fill_style);
+	// }
+
+	// chars = fputs("<POLYLINE type=\"Polyline\" points=\"",tfp);
+	// for (p = l->points; p; p = p->next) {
+	//     chars += fprintf(tfp, " %d,%d", p->x , p->y);
+	//     if (chars > VDX_LINEWIDTH) {
+	// 	fputc('\n', tfp);
+	// 	chars = 0;
+	//     }
+	// }
+	// fputc('\"', tfp);
+
+	// if (has_clip)
+	//     continue_paint_w_clip_vdx(l->fill_style, l->pen_color, l->fill_color);
+	// else
+	//     continue_paint_vdx(l->fill_style, l->pen_color, l->fill_color);
+
+	// if (l->thickness) {
+	//     fprintf(tfp, "\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\"",
+	// 	    rgbColorVal(l->pen_color),
+	// 	    (int) ceil(linewidth_adj(l->thickness)));
+	//     put_joinstyle(l->join_style);
+	//     put_capstyle(l->cap_style);
+	//     if (l->style > SOLID_LINE)
+	// 	vdx_dash(l->style, l->style_val);
+	// }
+
+	// fputs("/>\n", tfp);
+	// if (l->for_arrow || l->back_arrow)
+	//     (void) vdx_arrows(l->thickness, l->for_arrow, l->back_arrow,
+	// 		&(l->last[1]), l->last, (F_pos *)l->points->next,
+	// 		(F_pos *)l->points, l->pen_color);
+    // }	/* l->type == T_POLYLINE */
 }
 
 void
@@ -1085,7 +1109,7 @@ arrow_path(F_arrow *arrow, F_pos *arrow2, int pen_color, int npoints,
     for (i = 0; i < npoints; ++i) {
 	chars += fprintf(tfp, " %d,%d", points[i].x ,
 		points[i].y );
-	if (chars > SVG_LINEWIDTH) {
+	if (chars > VDX_LINEWIDTH) {
 	    fputc('\n', tfp);
 	    chars = 0;
 	}
