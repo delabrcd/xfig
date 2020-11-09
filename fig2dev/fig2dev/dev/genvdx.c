@@ -512,7 +512,9 @@ genvdx_start(F_compound *objects)
 	vh = ceil((ury - lly) * 72. * mag / ppi);
     }
 
+	fputs("<!-- Splines are not handled by fig2dev as a whole, so splines appear as Polygons-->", tfp);
 	fputs("<!-- Data for some values are numbers. For what these numbers mean consult /xfig/doc/FORMAT3.2-->\n", tfp);
+	fputs("<!-- Points are displayed in fig units. To convert to cm multiply by 2.22 repeating -->\n", tfp);
 
     fputs("<Canvas\n", tfp);
     // fputs("\txmlns:xlink=\"http://www.w3.org/1999/xlink\"\n", tfp);
@@ -667,13 +669,26 @@ genvdx_line(F_line *l)
     int		px2,py2,width,height,rotation;
     F_point	*p;
 
-
-    //TODO: Need to add change image box stuff still
     if (l->type == T_PIC_BOX ) {
 		fprintf(tfp, "\t<POLYLINE\n\t\tType=\"Picture Object\"");
 		print_vdxcomments("\n\t\tComments=\"", l->comments, "\" ");
 		fprintf(tfp,"\n\t\txlink:href=\"file://%s\"",l->pic->file);
 		fprintf(tfp,"\n\t\tDepth=\"%d\"", l->depth);
+		fprintf(tfp, "\n\t\tPoints=\"");
+		chars += '\t';
+		chars += '\t';
+		for(p = l->points; p->next; p = p->next){
+			chars += fprintf(tfp, "(%d,%d)",p->x, p->y);
+			if(p->next->next){
+				chars += fprintf(tfp, ",");
+			}
+
+			if(chars > VDX_LINEWIDTH){
+				fputs("\n\t\t", tfp);
+				chars = 0;
+			}
+		}
+	fprintf(tfp, "\"");
 		// fprintf(tfp,"<!--Width and Height are in pixels-->");
 		// fprintf(tfp,"\n\t\tWidth=\"%d\"\n\t\tHeight=\"%d\"", l->pic->pix_width, l->pic->pix_height);
 		// fprintf(tfp,"\n\t\tRotation=\"%d\"", l->pic->pix_rotation);
@@ -750,7 +765,21 @@ genvdx_line(F_line *l)
 	fprintf(tfp, "\n\t\tFillStyle=\"%d\"",l->fill_style);
 	fprintf(tfp, "\n\t\tLineStyle=\"%s\"",vdx_dash_string(l->style));
 	fprintf(tfp, "\n\t\tDot_Dash_Length=\"%1.1f\"",l->style_val);
-	// fprintf(tfp, );
+	fprintf(tfp, "\n\t\tPoints=\"");
+	chars += '\t';
+	chars += '\t';
+	for(p = l->points; p->next; p = p->next){
+		chars += fprintf(tfp, "(%d,%d)",p->x, p->y);
+		if(p->next->next){
+			chars += fprintf(tfp, ",");
+		}
+
+		if(chars > VDX_LINEWIDTH){
+			fputs("\n\t\t", tfp);
+			chars = 0;
+		}
+	}
+	fprintf(tfp, "\"");
 	// fprintf(tfp, );
 	fprintf(tfp,"/>\n");
     // if (l->type == T_BOX || l->type == T_ARC_BOX || l->type == T_POLYGON) {
@@ -864,6 +893,7 @@ void
 genvdx_spline( /* not used by fig2dev */
 	F_spline *s)
 {
+	char chars;
     F_point *p;
 	
     switch(s->type){
@@ -887,9 +917,8 @@ genvdx_spline( /* not used by fig2dev */
 
     }
 
-    
+    fprintf(tfp, "\n<!-- ENTERING SPLINE CODE SECTION-->\n");
     fprintf(tfp, "\t<SPLINE\n\tType=\"%s\"",type_str);
-
 	print_vdxcomments("\n\tComments=\"", s->comments, "\" ");
     fprintf(tfp, "\n\t\tDepth=\"%d\" ",s->depth);
 	fprintf(tfp, "\n\t\tPenColor=\"#%6.6x\"",rgbColorVal(s->pen_color));
@@ -897,6 +926,21 @@ genvdx_spline( /* not used by fig2dev */
 	fprintf(tfp, "\n\t\tFillStyle=\"%d\"", s->fill_style);
 	fprintf(tfp, "\n\t\tLineStyle=\"%s\"",vdx_dash_string(s->style));
 	fprintf(tfp, "\n\t\tDot_Dash_Length=\"%1.1f\"",s->style_val);
+	fprintf(tfp, "\n\t\tPoints=\"");
+	chars += '\t';
+	chars += '\t';
+	for(p = s->points; p->next; p = p->next){
+		chars += fprintf(tfp, "(%d,%d)",p->x, p->y);
+		if(p->next->next){
+			chars += fprintf(tfp, ",");
+		}
+
+		if(chars > VDX_LINEWIDTH){
+			fputs("\n\t\t", tfp);
+			chars = 0;
+		}
+	}
+	fprintf(tfp, "\"");
 	// fprintf(tfp, );
 	// fprintf(tfp, );
 	fprintf(tfp,"/>\n");
@@ -934,6 +978,15 @@ genvdx_arc(F_arc *a)
 	fprintf(tfp, "\n\t\tFillStyle=\"%d\"", a->fill_style);
 	fprintf(tfp, "\n\t\tLineStyle=\"%s\"",vdx_dash_string(a->style));
 	fprintf(tfp, "\n\t\tDot_Dash_Length=\"%1.1f\"",a->style_val);
+	// fprintf(tfp, "\n\t\tPoints=\"");
+	// for(int i = 0; i = 3; i++){
+	// 	fprintf(tfp, "(%d,%d)",a->point[i].x, a->point[i].y);
+	// 	if(i<2){
+	// 		fprintf(tfp, ",");
+	// 	}
+	// }
+	// fprintf(tfp, "\"");
+	// fprintf(tfp, "\n\t\tCenter=\"(%2.2f,%2.2f)\"", a->center.x, a->center.y);
 	// fprintf(tfp, );
 
     // fprintf(tfp, "\n\tDepth=\"%d\"\n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"\n\tLineStyle=\"%s\"",a->depth,rgbColorVal(a->pen_color),rgbColorVal(a->fill_color),a->fill_style,vdx_dash_string(a->style));
@@ -1058,6 +1111,7 @@ genvdx_ellipse(F_ellipse *e)
 	fprintf(tfp, "\n\t\tFillStyle=\"%d\"", e->fill_style);
 	fprintf(tfp, "\n\t\tLineStyle=\"%s\"",vdx_dash_string(e->style));
 	fprintf(tfp, "\n\t\tDot_Dash_Length=\"%1.1f\"",e->style_val);
+	// TODO: Add points for circles/ellipses
 	fprintf(tfp,"/>\n");
 	// fprintf(tfp, );
 
@@ -1133,7 +1187,7 @@ genvdx_text(F_text *t)
 	fprintf(tfp, "\n\t\tFillColor=\"#%6.6x\"", rgbColorVal(t->color));
 	fprintf(tfp, "\n\t\tx=\"%d\"", x);
 	// fprintf(tfp, );
-	fprintf(tfp, "\n\t\ty=\"%d\"\n", y);
+	fprintf(tfp, "\n\t\ty=\"%d\"", y);
 	fprintf(tfp,"/>\n");
 
 
