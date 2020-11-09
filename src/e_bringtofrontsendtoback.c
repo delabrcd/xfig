@@ -49,7 +49,7 @@ void btfstb_elipses(F_ellipse *ellipses);
 void btfstb_arcs(F_arc *arcs);
 void btfstb_texts(F_text *texts);
 void btfstb_compounds(F_compound *compounds);
-static void handle_object(F_line *p, int type, int x, int y, int px, int py);
+static void handle_object(F_line *p, int type, int x, int y, int px, int py, Bool bringtofront);
 
 void 
 bringtofrontsendtoback_selected(void) 
@@ -84,14 +84,14 @@ init_bring_to_front(F_line *p, int type, int x, int y, int px,
       break;
     }
   }
-  handle_object(p, type, x, y, px, py); // p or *p?
+  handle_object(p, type, x, y, px, py, True); // p or *p?
 }
 
 static void 
 init_set_depth(F_line *p, int type, int x, int y, int px, int py) 
 {
   btfstb_depth = cur_depth;
-  handle_object(p, type, x, y, px, py);
+  handle_object(p, type, x, y, px, py, False);
 }
 
 static void init_send_to_back(F_line *p, int type, int x, int y, int px,
@@ -106,22 +106,17 @@ static void init_send_to_back(F_line *p, int type, int x, int y, int px,
       break;
     }
   }
-  handle_object(p, type, x, y, px, py);
+  handle_object(p, type, x, y, px, py, False);
 }
 
 static void 
-handle_object(F_line *p, int type, int x, int y, int px, int py) 
+handle_object(F_line *p, int type, int x, int y, int px, int py, Bool bringtofront) 
 {
   int largest;
   Boolean dontupdate = False;
   int old_psfont_flag, new_psfont_flag;
   F_line *dline, *dtick1, *dtick2, *dbox;
   F_text *dtext;
-
-  // TODO: READ THE SHALLOWEST OBJECTS DEPTH OUTSIDE OF THE COMPOUND
-  // how do we set cur_depth to said depth?
-  // Everywhere cur_depth is referenced, I believe it needs to be replaced
-  // with our oen target depth
 
   switch (type) {
   case O_COMPOUND:
@@ -130,16 +125,30 @@ handle_object(F_line *p, int type, int x, int y, int px, int py)
     new_c = copy_compound(cur_c);
     keep_depth = True;
     largest = find_largest_depth(cur_c);
-    delta_depth = btfstb_depth - find_smallest_depth(cur_c);
-    /* if renumbering would make depths too large don't allow it */
-    if ((delta_depth + largest > MAX_DEPTH) && (cur_updatemask & I_DEPTH)) {
-      if (popup_query(QUERY_YESNO,
-                      "Some depths would exceed maximum - those objects\nwill "
-                      "be set to maximum depth. Update anyway?") !=
-          RESULT_YES) {
-        delta_depth = 0;
-        dontupdate = True;
-      }
+    if (bringtofront){ // if renumbering would make depth too small, don't allow it //
+        delta_depth = btfstb_depth - find_largest_depth(cur_c);
+        if ((delta_depth + find_smallest_depth(cur_c) < 0) && (cur_updatemask & I_DEPTH)) {
+            if (popup_query(QUERY_YESNO,
+            			"Some depths would exceed minimum - those objects\nwill "
+            			"be set to maximum depth. Update anyway?") !=
+            	RESULT_YES) {
+            	delta_depth = 0;
+            	dontupdate = True;
+            }
+        }
+    }
+    else{
+        delta_depth = btfstb_depth - find_smallest_depth(cur_c);
+        /* if renumbering would make depths too large don't allow it */
+        if ((delta_depth + largest > MAX_DEPTH) && (cur_updatemask & I_DEPTH)) {
+          if (popup_query(QUERY_YESNO,
+                          "Some depths would exceed maximum - those objects\nwill "
+                          "be set to maximum depth. Update anyway?") !=
+              RESULT_YES) {
+            delta_depth = 0;
+            dontupdate = True;
+          }
+        }
     }
     btfstb_compound(new_c);
     keep_depth = False;
