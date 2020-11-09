@@ -19,185 +19,12 @@
 
 /*
  *
- * gensvg.c: convert fig to SVG
+ * genvdx.c: convert fig to VDX
  *
- *  from fig2svg -- convert FIG 3.2 to SVG
- *
- *  Original author:  Anthony Starks (ajstarks@home.com)
- *  Created: 17 May 2000
- *  Converted to gensvg by Brian Smith
- *  Further modified by Martin Kroeker (martin@ruby.chemie.uni-freiburg.de)
- *  incorporating changes by Philipp Hahn and Justus Piater
- *  Modified by Thomas Loimer
- *
- *  Changes:
- *
- *  by Thomas Loimer <thomas.loimer@tuwien.ac.at>
- *
- *  2019-05-11
- *	- Output utf8-encoded text
- *	- Parse and replace characters <, > and & in comments by &lt; &gt; &amp;
- *
- *  2017-01-04
- *	- Fix pattern definitions. Use clip paths when painting objects with
- *	  arrows instead of retracting the line. Let the viewer do any
- *	  magnification. Use properties instead of attributes (e.g.,
- *	  stroke="red" instead of style="stroke:red;"). Implement pie-wedge
- *	  arcs. Add a todo list, see below.
- *
- * Changes before 2006
- *
- *  PH: Philipp Hahn
- *  JP: Justus Piater
- *  MK: Martin Kroeker
- *  BS: Brian Smith
- *  RE: Russell Edwards
- *
- *  MK 04-Dec-02: partial support for the symbol font, bigger fontscale, text alignment,
- *  dashed and dotted lines, bugfix for missing % in stroke-color statement of arcs
- *  FIXME: lacks support for arrowheads; fill patterns; percent grayscale fills
- *  MK 08-Dec-02: rotated text; shades and tints of fill colors; filled circles
- *  MK 11-Dec-02: scaling;proper font/slant/weight support; changed arc code
- *  12-Dec-02: fixes by Brian Smith: scale factor, orientation, ellipse fills
- *  MK 14-Dec-02: arc code rewrite, simplified line style handling,
- *  arrowheads on arcs and lines (FIXME: not clipped), stroke->color command
- *  is simply 'stroke'
- *  MK 15-Dec-02: catch pattern fill flags, convert to tinted fills for now
- *  MK 18-Dec-02: fill patterns; fixes by BS: arrowhead scale & position,
- *  circle by diameter
- *  PH 03-Feb-03: Fix CIRCLE_BY_DIA, color/fill styles, update SVG DTD
- *  MK 10-Feb-03: do not encode space characters when in symbol font;
- *		  always encode characters '&', '<' and '>'. Leave non-
- *		  alphabetic characters in the lower half of the symbol
- *		  font unchanged.
- *  MK 12-Feb-03: Added complete character conversion tables for the symbol
- *		  and dingbat fonts (based on the information in Unicode
- *		  Inc.'s symbol.txt and zdingbat.txt tables, version 0.2)
- *  MK 18-Feb-03: Added cap and join style fields for line and arc
- *  MK 24-Feb-03: Symbol and Dingbat fonts are no longer translated to
- *		  font-family="Times" with both bold and italic flags set.
- *  MK 17-Jun-03: Fix for rotation angle bug. Correct rendering of 'tinted'
- *		  colors using code from www.cs.rit.edu. Added forgotten
- *		  pattern fill option for ellipses (circles).
- *  JP 21-Jan-04: Calculate proper bounding box instead of current paper
- *		  dimensions. Added missing semicolons in some property
- *		  strings, and proper linebreak characters in multi-line
- *		  format strings.
- *  MK 23-Jan-04: Pattern-filled objects are now drawn twice - painting the
- *		  pattern over the fill color (if any). This solves the problem
- *		  of missing color support in pattern fills (as reported by JP)
- *		  Corrected filling of ellipses, which was still B/W only.
- *		  Fixed bad tiling of diagonal patterns 1 - 3 (the old formula
- *		  favoured exact angles over seamless tiling). Updated DTD.
- *  MK 25-Jan-04: Endpoints of polylines are now truncated when arrowheads
- *		  are drawn. Corrected rendering of type 0 (stick) arrowheads.
- *  MK 28-Jan-04: Fix for arc arrowhead orientation.
- *  MK 31-Jan-04: Corrected arc angle calculation (this time for good ?)
- *  MK 22-Feb-04: Picture support
- *  JP	1-Mar-04: Closed arrowheads should use polygons instead of polylines
- *  JP	3-Mar-04: Corrected font family selection
- *  JP 26-Mar-04: Corrected (and simplified) calculation of white-tinted
- *		  fill colors (and removed the HSV/RGB conversion code)
- *  MK 29-Mar-04: Added code for rounded boxes (polyline subtype 4)
- *  MK 30-Mar-04: Added code for boxes, explicit support for polygons
- *  MK 10-Apr-04: Added xml-space:preserve qualifier on texts to preserve
- *		  whitespace. Rewrote fill pattern handling to generate
- *		  patterns as needed - adding support for penwidth and color.
- *		  Corrected tiling of all shingle patterns and reversal
- *		  of horizontal shingles.
- *  RE	6-May-04: Changed degrees() to double for more precision
- *		  Added linewidth() to transform all line widths in the
- *		   same way as genps.c : thin lines get thinner
- *		  Changed circle radius to use F_ellipse::radiuses.x instead
- *		   of start and end (which seemed not to work correctly)
- *		   Query: Is this broken for byradius or bydiameter??
- *		  Added rotation to ellipses
- *		  Changed back to mapping Symbol to Times, greeks look a bit
- *		   better. Ultimately embedding PS fonts would be better.
- *		  Removed newlines inside <text> printf, otherwise they get
- *		   rendered as spaces due to xml:space="preserve"
- *		  Removed extraneous comma between two halves of format
- *		   string in gensvg_arc, fixes Seg fault.
- *  MK	3-Aug-04  Split the multi-line format string in gensvg_arc in two to
- *		  get rid of (compiler version-dependant) segfaults for good.
- *  MK 11-Sep-05: Added explicit stroke color to text to prevent black outline
- *		  on colored text.
- *		  Added support for latex-special formatted text, converting
- *		  sub- and superscripts to either baseline-shift=sub/super
- *		  (the intended way of doing this in SVG) or "dy" offsets
- *		  (less elegant, but more likely to be supported by browsers
- *		  and editors) depending on the NOSUPER define below.
- *		  Tested with Batik-1.6, konqueror-3.4, firefox-1.5b1,
- *		  inkscape-0.41
- *  MK 15-Sep-05: Use a font-family list of "Times,Symbol" for symbol
- *		  characters - the Times fontface does not contain all
- *		  elements of the Symbol font on all platforms.
- *  MK	4-Nov-05: Corrected length and appearance of stick-type arrows.
- *  MK	2-Jan-06: Added support for filled arcs.
- *  MK 26-Feb-06: Added support for dashed circles, ellipses and arcs.
- *		  Dash/gap lengths are now drawn according to style_val.
- *		  Fixed several glitches uncovered by splint.
- *  MK 22-Apr-06: Corrected blue component of shaded colors (was always
- *		  zero due to missing parentheses around typecast). Corrected
- *		  arrowheads of large arrows by adding an increased miterlimit.
- *		  Corrected position of backward arrowheads on polylines with
- *		  both forward and backward arrows.
- *  MK	2-Jul-06: Patterns do not inherit their line width from the parent object
- *		  (which may be zero if no visible boundary is desired), so always
- *		  use linewidth:1
- *  MK 22-Oct-06: Changed unicode variant of lowercase phi to match its X11 Symbol
- *		  counterpart.
- *  *********************************************************************************
- *
- *  An excerpt from http://www.w3.org/TR/2011/REC-SVG11-20110816/:
- *  °°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
- *  W3 recommendations for
- *  1.3 SVG Namespace, Public Identifier and System Identifier
- *
- *  The following are the SVG 1.1 namespace, public identifier and system identifier:
- *
- *  SVG Namespace:
- *	http://www.w3.org/2000/svg
- *	xmlns:xlink="http://www.w3.org/1999/xlink"
- *  Public Identifier for SVG 1.1:
- *	PUBLIC "-//W3C//DTD SVG 1.1//EN"
- *  System Identifier for the SVG 1.1 Recommendation:
- *	http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd
- *
- *  The following is an example document type declaration for an SVG document:
- *
- *  <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
- *	     "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
- *
- *  Note that DTD listed in the System Identifier is a modularized DTD (ie. its
- *  contents are spread over multiple files), which means that a validator may have
- *  to fetch the multiple modules in order to validate. For that reason, there is
- *  a single flattened DTD available that corresponds to the SVG 1.1 modularized DTD.
- *  It can be found at http://www.w3.org/Graphics/SVG/1.1/DTD/svg11-flat.dtd.
- *
- *  While a DTD is provided in this specification, the use of DTDs for
- *  validating XML documents is known to be problematic.  In particular, DTDs
- *  do not handle namespaces gracefully.  It is not recommended that
- *  a DOCTYPE declaration be included in SVG documents.
- *  *********************************************************************************
- */
+ *  Author:  Kyle Narod
+ *  Created: 6 November 2020
 
-/* TODO
- *	* identify pattern by number and color (int pattern[22], an
- *	  int has 32 bits, need 32 standard colors plus 512 user colors)
- *	* create nicer color commands ("white", "blue", etc. )
- *	  and "currentColor" for default
- *	* get put_precision from gentikz.c, prec 0 or 1
- *	  for, e.g., center of image, for rotation
- *	* ellipses: for dashed lines, put cap style "round"
- *	* need char *fig_color_names, or use int array?
- *	* image rotation - around center necessary?
- *	* check line stipples, compare with genps.c
- *	* see, if BLACK_FILL, WHITE_FILL can be replaced
- *	* use pdftocairo, where available?
- *      * defs until now: tile%d, p%d, cp%d
- *	* probably change to pattern%d, c%d (color)
- *
+ * Comments from svg left in for reference
  *	* Correct color values;
  *	  hex codes see Fig_color_names in fig2dev.c, or, identical,
 	  colorNames in xfig/src/resources.c
@@ -265,65 +92,7 @@ static const char* vdx_dash_string(int);
 #define PREAMBLE "<?xml version=\"1.231\" encoding=\"UTF-8\" standalone=\"no\"?>"
 #define	VDX_LINEWIDTH	76
 
-static unsigned int symbolchar[256]=
-{0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,
-0,0,0x0020,0x0021,0x2200,0x0023,0x2203,0x0025,
-0x0026,0x220B,0x0028,0x0029,0x2217,0x002B,0x002C,0x2212,0x002E,0x002F,0x0030,
-0x0031,0x0032,0x0033,0x0034,0x0035,0x0036,0x0037,0x0038,0x0039,0x003A,0x003B,
-0x003C,0x003D,0x003E,0x003F,0x2245,0x0391,0x0392,0x03A7,0x0394,0x0395,
-0x03A6,0x0393,0x0397,0x0399,0x03D1,0x039A,0x039B,0x039C,0x039D,0x039F,0x03A0,
-0x0398,0x03A1,0x03A3,0x03A4,0x03A5,0x03C2,0x03A9,0x039E,0x03A8,0x0396,
-0x005B,0x2234,0x005D,0x22A5,0x005F,0xF8E5,0x03B1,0x03B2,0x03C7,0x03B4,0x03B5,
-0x03D5 /*0x03C6*/,0x03B3,0x03B7,0x03B9,0x03D5,0x03BA,0x03BB,0x03BC,0x03BD,0x03BF,
-0x03C0,0x03B8,0x03C1,0x03C3,0x03C4,0x03C5,0x03D6,0x03C9,0x03BE,0x03C8,0x03B6,
-0x007B,0x007C,0x007D,0x223C,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0, 0,0,
-0,0,0x20AC,0x03D2,0x2032,0x2264,0x2044,0x221E,
-0x0192,0x2663,0x2666,0x2665,0x2660,0x2194,0x2190,0x2191,0x2192,0x2193,0x00B0,
-0x00B1,0x2033,0x2265,0x00D7,0x221D,0x2202,0x2022,0x00F7,0x2260,0x2261,0x2248,
-0x2026,0xF8E6,0xF8E7,0x21B5,0x2135,0x2111,0x211C,0x2118,0x2297,0x2295,0x2205,
-0x2229,0x222A,0x2283,0x2287,0x2284,0x2282,0x2286,0x2208,0x2209,0x2220,0x2207,
-0xF6DA,0xF6D9,0xF6DB,0x220F,0x221A,0x22C5,0x00AC,0x2227,0x2228,0x21D4,0x21D0,
-0x21D1,0x21D2,0x21D3,0x25CA,0x2329,0xF8E8,0xF8E9,0xF8EA,0x2211,0xF8EB,0xF8EC,
-0xF8ED,0xF8EE,0xF8EF,0xF8F0,0xF8F1,0xF8F2,0xF8F3,0xF8F4,0,0x232A,0x222B,0x2320,
-0xF8F5,0x2321,0xF8F6,0xF8F7,0xF8F8,0xF8F9,0xF8FA,0xF8FB,0xF8FC,0xF8FD,0xF8FE,0
-};
-
-static unsigned int dingbatchar[256]=
-{0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0x0020,
-0x2701,0x2702,0x2703,0x2704,0x260E,0x2706,0x2707,0x2708,0x2709,0x261B,
-0x261E,0x270C,0x270D,0x270E,0x270F,0x2710,0x2711,0x2712,0x2713,0x2714,
-0x2715,0x2716,0x2717,0x2718,0x2719,0x271A,0x271B,0x271C,0x271D,0x271E,
-0x271F,0x2720,0x2721,0x2722,0x2723,0x2724,0x2725,0x2726,0x2727,0x2605,
-0x2729,0x272A,0x272B,0x272C,0x272D,0x272E,0x272F,0x2730,0x2731,0x2732,
-0x2733,0x2734,0x2735,0x2736,0x2737,0x2738,0x2739,0x273A,0x273B,0x273C,
-0x273D,0x273E,0x273F,0x2740,0x2741,0x2742,0x2743,0x2744,0x2745,0x2746,
-0x2747,0x2748,0x2749,0x274A,0x274B,0x25CF,0x274D,0x25A0,0x274F,0x2750,
-0x2751,0x2752,0x25B2,0x25BC,0x25C6,0x2756,0x25D7,0x2758,0x2759,0x275A,
-0x275B,0x275C,0x275D,0x275E,0,0xF8D7,0xF8D8,0xF8D9,0xF8DA,0xF8DB,
-0xF8DC,0xF8DD,0xF8DE,0xF8DF,0xF8E0,0xF8E1,0xF8E2,0xF8E3,0xF8E4,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0x2761,0x2762,0x2763,
-0x2764,0x2765,0x2766,0x2767,0x2663,0x2666,0x2665,0x2660,0x2460,0x2461,
-0x2462,0x2463,0x2464,0x2465,0x2466,0x2467,0x2468,0x2469,0x2776,0x2777,
-0x2778,0x2779,0x277A,0x277B,0x277C,0x277D,0x277E,0x277F,0x2780,0x2781,
-0x2782,0x2783,0x2784,0x2785,0x2786,0x2787,0x2788,0x2789,0x278A,0x278B,
-0x278C,0x278D,0x278E,0x278F,0x2790,0x2791,0x2792,0x2793,0x2794,0x2192,
-0x2194,0x2195,0x2798,0x2799,0x279A,0x279B,0x279C,0x279D,0x279E,0x279F,
-0x27A0,0x27A1,0x27A2,0x27A3,0x27A4,0x27A5,0x27A6,0x27A7,0x27A8,0x27A9,
-0x27AA,0x27AB,0x27AC,0x27AD,0x27AE,0x27AF,0,0x27B1,0x27B2,0x27B3,0x27B4,
-0x27B5,0x27B6,0x27B7,0x27B8,0x27B9,0x27BA,0x27BB,0x27BC,0x27BD,0x27BE,0
-};
-
 char *type_str; /*string value of an objects type*/
-
-static int	tileno = -1;	/* number of current tile */
-static int	pathno = -1;	/* number of current path */
-static int	clipno = -1;	/* number of current clip path */
 
 static void
 put_capstyle(int c)
@@ -487,73 +256,39 @@ genvdx_start(F_compound *objects)
     fprintf(tfp, "<!-- Magnification: %.3g -->\n", mag);
 
 
-    if (paperspec) {
-	/* convert paper size from ppi to inches */
-	for (pd = paperdef; pd->name != NULL; ++pd)
-	    if (strcasecmp(papersize, pd->name) == 0) {
-		pagewidth = pd->width;
-		pageheight = pd->height;
-		strcpy(papersize, pd->name);	/* use the "nice" form */
-		break;
-	    }
-	if (pagewidth < 0 || pageheight < 0) {
-	    (void) fprintf(stderr, "Unknown paper size `%s'\n", papersize);
-	    exit(1);
-	}
-	if (landscape) {
-	    vh = pagewidth;
-	    vw = pageheight;
-	} else {
-	    vw = pagewidth;
-	    vh = pageheight;
-	}
-    } else {
-	vw = ceil((urx - llx) * 72. * mag / ppi);
-	vh = ceil((ury - lly) * 72. * mag / ppi);
-    }
+    // if (paperspec) {
+	// /* convert paper size from ppi to inches */
+	// for (pd = paperdef; pd->name != NULL; ++pd)
+	//     if (strcasecmp(papersize, pd->name) == 0) {
+	// 	pagewidth = pd->width;
+	// 	pageheight = pd->height;
+	// 	strcpy(papersize, pd->name);	/* use the "nice" form */
+	// 	break;
+	//     }
+	// if (pagewidth < 0 || pageheight < 0) {
+	//     (void) fprintf(stderr, "Unknown paper size `%s'\n", papersize);
+	//     exit(1);
+	// }
+	// if (landscape) {
+	//     vh = pagewidth;
+	//     vw = pageheight;
+	// } else {
+	//     vw = pagewidth;
+	//     vh = pageheight;
+	// }
+    // } else {
+	// vw = ceil((urx - llx) * 72. * mag / ppi);
+	// vh = ceil((ury - lly) * 72. * mag / ppi);
+    // }
 
 	fputs("<!-- Splines are not handled by fig2dev as a whole, so splines appear as Polygons-->\n", tfp);
 	fputs("<!-- Data for some values are numbers. For what these numbers mean consult /xfig/doc/FORMAT3.2-->\n", tfp);
 	fputs("<!-- Points are displayed in fig units. To convert to cm multiply by 2.22 repeating -->\n", tfp);
 
     fputs("<Canvas\n", tfp);
-    // fputs("\txmlns:xlink=\"http://www.w3.org/1999/xlink\"\n", tfp);
     fprintf(tfp,
 	"\twidth=\"%dpt\"\n\theight=\"%dpt\"\n\tviewBox=\"%d %d %d %d\">\n",
 	vw, vh, llx, lly, urx - llx , ury - lly);
-	// fprintf(tfp, "<!--\tFillStyle Value\t\tDescription of Pattern\n \
-	// 	-1\t\tNot Filled\n \
-	// 	0\t\tBlack\n \
-	// 	...\t\t1-19 are shades of a color and black\n \
-	// 	20\t\tFull Saturation of the color\n \
-	// 	...\t\t21-40 are shades of the color and white\n \
-	// 	41\t\t30 degrees left diagonal\n \
-	// 	42\t\t30 degrees right diagonal\n \
-	// 	43\t\t30 degrees crosshatch\n \
-	// 	44\t\t45 degrees left diagonal\n \
-	// 	45\t\t45 degrees right diagonal\n \
-	// 	46\t\t45 degrees crosshatch\n \
-	// 	47\t\thorizontal bricks\n \
-	// 	48\t\tvertical bricks\n \
-	// 	49\t\thorizontal lines\n \
-	// 	50\t\tvertical lines\n \
-	// 	51\t\tcrosshatch\n \
-	// 	52\t\tleft-pointing shingles\n \
-	// 	53\t\tight-pointing shingles\n \
-	// 	54\t\tvertical left-pointing shingles\n \
-	// 	55\t\tvertical right-pointing shingles\n \
-	// 	56\t\tfish scales\n \
-	// 	57\t\tsmall fish scales\n \
-	// 	58\t\tcircles\n \
-	// 	59\t\thexagons\n \
-	// 	60\t\toctagons\n \
-	// 	61\t\thorizontal sawtooth\n \
-	// 	62\t\tvertical sawtooth-->\n");
-
-    // if (objects->comments)
-	// print_vdxcomments("<desc>", objects->comments, "</desc>\n");
-    // fputs("<g fill=\"none\">\n", tfp);
-
 }
 
 int
@@ -562,6 +297,10 @@ genvdx_end(void)
     fprintf(tfp, "</Canvas>\n");
     return 0;
 }
+
+static int	tileno = -1;	/* number of current tile */
+static int	pathno = -1;	/* number of current path */
+static int	clipno = -1;	/* number of current clip path */
 
 /*
  *	paint objects without arrows
@@ -622,44 +361,44 @@ genvdx_end(void)
 	if (fill_style == UNFILLED)				\
 		fputs("</defs>\n", tfp)
 
-void
-continue_paint_vdx(int fill_style, int pen_color, int fill_color)
-{
-    if (fill_style > NUMFILLS) {
-	fprintf(tfp, " id=\"p%d\"/>\n", ++pathno);
-	generate_tile(fill_style - NUMFILLS, pen_color);
-	fputs("</defs>\n", tfp);
-	fprintf(tfp, "<use xlink:href=\"#p%d\" fill=\"#%6.6x\"/>\n",
-		pathno, rgbColorVal(fill_color));
-	fprintf(tfp, "<use xlink:href=\"#p%d\" fill=\"url(#tile%d)\"",
-		pathno, tileno);
-    } else if (fill_style > UNFILLED) {	/* && fill_style <= NUMFILLS */
-	fprintf(tfp, " fill=\"#%6.6x\"", rgbFillVal(fill_color, fill_style));
-    }
-}
+// void
+// continue_paint_vdx(int fill_style, int pen_color, int fill_color)
+// {
+//     if (fill_style > NUMFILLS) {
+// 	fprintf(tfp, " id=\"p%d\"/>\n", ++pathno);
+// 	generate_tile(fill_style - NUMFILLS, pen_color);
+// 	fputs("</defs>\n", tfp);
+// 	fprintf(tfp, "<use xlink:href=\"#p%d\" fill=\"#%6.6x\"/>\n",
+// 		pathno, rgbColorVal(fill_color));
+// 	fprintf(tfp, "<use xlink:href=\"#p%d\" fill=\"url(#tile%d)\"",
+// 		pathno, tileno);
+//     } else if (fill_style > UNFILLED) {	/* && fill_style <= NUMFILLS */
+// 	fprintf(tfp, " fill=\"#%6.6x\"", rgbFillVal(fill_color, fill_style));
+//     }
+// }
 
-void
-continue_paint_w_clip_vdx(int fill_style, int pen_color, int fill_color)
-{
-    if (fill_style > UNFILLED) {
-	fprintf(tfp, " id=\"p%d\"/>\n", ++pathno);
-	if (fill_style > NUMFILLS) {
-	    generate_tile(fill_style - NUMFILLS, pen_color);
-	}
-	fputs("</defs>\n", tfp);
-	fprintf(tfp, "<use xlink:href=\"#p%d\" ", pathno);
-	if (fill_style > NUMFILLS) {
-	    fprintf(tfp, "fill=\"#%6.6x\"/>\n", rgbColorVal(fill_color));
-	    fprintf(tfp, "<use xlink:href=\"#p%d\" fill=\"url(#tile%d)\"/> ",
-		    pathno, tileno);
-	} else {
-	    fprintf(tfp, "fill=\"#%6.6x\"/>\n",
-			rgbFillVal(fill_color, fill_style));
-	}
-	fprintf(tfp, "<use xlink:href=\"#p%d\"", pathno);
-    }
-    fprintf(tfp, " clip-path=\"url(#cp%d)\"", clipno);
-}
+// void
+// continue_paint_w_clip_vdx(int fill_style, int pen_color, int fill_color)
+// {
+//     if (fill_style > UNFILLED) {
+// 	fprintf(tfp, " id=\"p%d\"/>\n", ++pathno);
+// 	if (fill_style > NUMFILLS) {
+// 	    generate_tile(fill_style - NUMFILLS, pen_color);
+// 	}
+// 	fputs("</defs>\n", tfp);
+// 	fprintf(tfp, "<use xlink:href=\"#p%d\" ", pathno);
+// 	if (fill_style > NUMFILLS) {
+// 	    fprintf(tfp, "fill=\"#%6.6x\"/>\n", rgbColorVal(fill_color));
+// 	    fprintf(tfp, "<use xlink:href=\"#p%d\" fill=\"url(#tile%d)\"/> ",
+// 		    pathno, tileno);
+// 	} else {
+// 	    fprintf(tfp, "fill=\"#%6.6x\"/>\n",
+// 			rgbFillVal(fill_color, fill_style));
+// 	}
+// 	fprintf(tfp, "<use xlink:href=\"#p%d\"", pathno);
+//     }
+//     fprintf(tfp, " clip-path=\"url(#cp%d)\"", clipno);
+// }
 
 void
 genvdx_line(F_line *l)
@@ -688,12 +427,10 @@ genvdx_line(F_line *l)
 				chars = 0;
 			}
 		}
-	fprintf(tfp, "\"");
-		// fprintf(tfp,"<!--Width and Height are in pixels-->");
-		// fprintf(tfp,"\n\t\tWidth=\"%d\"\n\t\tHeight=\"%d\"", l->pic->pix_width, l->pic->pix_height);
-		// fprintf(tfp,"\n\t\tRotation=\"%d\"", l->pic->pix_rotation);
+		fprintf(tfp, "\"");
 		fprintf(tfp,"/>\n");
 
+		// TODO: uncomment this and inspect
 		// p = l->points;
 		// px = p->x;
 		// py = p->y;
@@ -736,8 +473,6 @@ genvdx_line(F_line *l)
 	return;
 
     /* l->type == T_BOX, T_ARC_BOX, T_POLYGON or T_POLYLINE */
-    //fprintf(tfp, "<!-- Line -->\n");
-    //print_vdxcomments("<!-- ", l->comments, " -->\n");
 
     /*Determines the int value for the type and sets the string equivilent*/
     switch (l->type){
@@ -759,6 +494,7 @@ genvdx_line(F_line *l)
 
 	fprintf(tfp, "\t<POLYLINE \n\t\tType=\"%s\" ",type_str);
 	print_vdxcomments("\n\t\tComments=\"", l->comments, "\" ");
+	fprintf(tfp, "\n\t\tWidth=\"%d\"", l->thickness/15);
     fprintf(tfp, "\n\t\tDepth=\"%d\" ",l->depth);
 	fprintf(tfp, "\n\t\tPenColor=\"#%6.6x\"",rgbColorVal(l->pen_color));
 	fprintf(tfp, "\n\t\tFillColor=\"#%6.6x\"",rgbColorVal(l->fill_color));
@@ -780,7 +516,6 @@ genvdx_line(F_line *l)
 		}
 	}
 	fprintf(tfp, "\"");
-	// fprintf(tfp, );
 	fprintf(tfp,"/>\n");
     // if (l->type == T_BOX || l->type == T_ARC_BOX || l->type == T_POLYGON) {
 
@@ -917,10 +652,10 @@ genvdx_spline( /* not used by fig2dev */
 
     }
 
-    fprintf(tfp, "\n<!-- ENTERING SPLINE CODE SECTION-->\n");
     fprintf(tfp, "\t<SPLINE\n\tType=\"%s\"",type_str);
 	print_vdxcomments("\n\tComments=\"", s->comments, "\" ");
     fprintf(tfp, "\n\t\tDepth=\"%d\" ",s->depth);
+	fprintf(tfp, "\n\t\tWidth=\"%d\"", s->thickness/15);
 	fprintf(tfp, "\n\t\tPenColor=\"#%6.6x\"",rgbColorVal(s->pen_color));
 	fprintf(tfp, "\n\t\tFillColor=\"#%6.6x\"",rgbColorVal(s->fill_color));
 	fprintf(tfp, "\n\t\tFillStyle=\"%d\"", s->fill_style);
@@ -941,20 +676,7 @@ genvdx_spline( /* not used by fig2dev */
 		}
 	}
 	fprintf(tfp, "\"");
-	// fprintf(tfp, );
-	// fprintf(tfp, );
 	fprintf(tfp,"/>\n");
-
-    // print_vdxcomments("\n\tComments=\"", s->comments, "\" ");
-    // fprintf(tfp, "\n\tDepth=\"%d\"\n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"\n\tLineStyle=\"%s\"/>\n",s->depth,rgbColorVal(s->pen_color),rgbColorVal(s->fill_color),s->fill_style,vdx_dash_string(s->style));
-    
-    //fprintf(tfp, "<path style=\"stroke:#%6.6x;stroke-width:%d\" d=\"",
-//	     rgbColorVal(s->pen_color), (int) ceil (linewidth_adj(s->thickness)));
-  //  fprintf(tfp, "M %d,%d\n C", s->points->x , s->points->y );
-    //for (p = s->points++; p; p = p->next) {
-//	fprintf(tfp, "%d,%d\n", p->x , p->y );
-  //  }
-    //fprintf(tfp, "\"/>\n");
 }
 
 void
@@ -969,9 +691,19 @@ genvdx_arc(F_arc *a)
 	    !a->for_arrow && !a->back_arrow)
 	return;
 
-    fprintf(tfp, "\t<ARC \n\t\tType=\"Arc drawing: specified by 3 points\"");
-    print_vdxcomments("\n\t\tComments=\"", a->comments, "\" ");
+	switch(a->type){
+		case T_OPEN_ARC:
+			type_str = "Open";
+			break;
+		case T_PIE_WEDGE_ARC:
+			type_str = "Pie-Wedge";
+			break;
+	}
 
+    fprintf(tfp, "\t<ARC \n\t\tType=\"Arc Drawing: Specified by 3 Points\"");
+    print_vdxcomments("\n\t\tComments=\"", a->comments, "\" ");
+	fprintf(tfp, "\n\t\tArcType=\"%s\"", type_str);
+	fprintf(tfp, "\n\t\tWidth=\"%d\"", a->thickness/15);
    	fprintf(tfp, "\n\t\tDepth=\"%d\" ",a->depth);
 	fprintf(tfp, "\n\t\tPenColor=\"#%6.6x\"",rgbColorVal(a->pen_color));
 	fprintf(tfp, "\n\t\tFillColor=\"#%6.6x\"",rgbColorVal(a->fill_color));
@@ -987,33 +719,31 @@ genvdx_arc(F_arc *a)
 	}
 	fprintf(tfp, "\"");
 	fprintf(tfp, "\n\t\tCenter=\"(%2.2f,%2.2f)\"", a->center.x, a->center.y);
-	// fprintf(tfp, );
-
-    // fprintf(tfp, "\n\tDepth=\"%d\"\n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"\n\tLineStyle=\"%s\"",a->depth,rgbColorVal(a->pen_color),rgbColorVal(a->fill_color),a->fill_style,vdx_dash_string(a->style));
 
     //TODO: Figure out arrows
     if (a->for_arrow || a->back_arrow) {
-	if (a->for_arrow) {
-	    forw2.x = a->point[2].x;
-	    forw2.y = a->point[2].y;
-	    compute_arcarrow_angle(a->center.x, a->center.y,
-		    (double) forw2.x, (double) forw2.y, a->direction,
-		    a->for_arrow, &(forw1.x), &(forw1.y));
-	}
-	if (a->back_arrow) {
-	    back2.x = a->point[0].x;
-	    back2.y = a->point[0].y;
-	    compute_arcarrow_angle(a->center.x, a->center.y,
-		    (double) back2.x, (double) back2.y, a->direction ^ 1,
-		    a->back_arrow, &(back1.x), &(back1.y));
-	}
-	has_clip = vdx_arrows(a->thickness, a->for_arrow, a->back_arrow,
-				&forw1, &forw2, &back1, &back2, INIT);
-	if (a->fill_style == UNFILLED && a->thickness <= 0) {
-	    (void) vdx_arrows(a->thickness, a->for_arrow, a->back_arrow,
-				&forw1, &forw2, &back1, &back2, a->pen_color);
-	    return;
-	}
+		if (a->for_arrow) {
+			forw2.x = a->point[2].x;
+			forw2.y = a->point[2].y;
+			compute_arcarrow_angle(a->center.x, a->center.y,
+				(double) forw2.x, (double) forw2.y, a->direction,
+				a->for_arrow, &(forw1.x), &(forw1.y));
+		}
+		if (a->back_arrow) {
+			back2.x = a->point[0].x;
+			back2.y = a->point[0].y;
+			compute_arcarrow_angle(a->center.x, a->center.y,
+				(double) back2.x, (double) back2.y, a->direction ^ 1,
+				a->back_arrow, &(back1.x), &(back1.y));
+		}
+		
+		has_clip = vdx_arrows(a->thickness, a->for_arrow, a->back_arrow,
+					&forw1, &forw2, &back1, &back2, INIT);
+		if (a->fill_style == UNFILLED && a->thickness <= 0) {
+			(void) vdx_arrows(a->thickness, a->for_arrow, a->back_arrow,
+					&forw1, &forw2, &back1, &back2, a->pen_color);
+			return;
+		}
     }
 
     dx = a->point[0].x - a->center.x;
@@ -1027,13 +757,13 @@ genvdx_arc(F_arc *a)
 		(a->point[0].y-a->center.y) * (a->point[2].x-a->center.x);
 
     if (x == 0.0 && y == 0.0)
-	angle=0.0;
+		angle=0.0;
     else
-	angle = atan2(y,x);
+		angle = atan2(y,x);
     if (angle < 0.0) angle += 2.*M_PI;
     	angle *= 180./M_PI;
     if (a->direction == 1)
-	angle = 360. - angle;
+		angle = 360. - angle;
     fprintf(tfp, "\n\t\tAngle=\"%f\"",angle); 
 	fprintf(tfp,"/>\n");
 
@@ -1082,8 +812,8 @@ genvdx_arc(F_arc *a)
 void
 genvdx_ellipse(F_ellipse *e)
 {
-
     char *header;
+
 	switch(e->type){
 		case T_ELLIPSE_BY_DIA:
 			type_str = "Ellipse specified by diamter";
@@ -1105,64 +835,20 @@ genvdx_ellipse(F_ellipse *e)
 
 	fprintf(tfp, "\t<%s\n\t\tType=\"%s\" ",header,type_str);
 	print_vdxcomments("\n\t\tComments=\"", e->comments, "\" ");
+	fprintf(tfp, "\n\t\tWidth=\"%d\"", e->thickness/15);
     fprintf(tfp, "\n\t\tDepth=\"%d\" ",e->depth);
 	fprintf(tfp, "\n\t\tPenColor=\"#%6.6x\"",rgbColorVal(e->pen_color));
 	fprintf(tfp, "\n\t\tFillColor=\"#%6.6x\"",rgbColorVal(e->fill_color));
 	fprintf(tfp, "\n\t\tFillStyle=\"%d\"", e->fill_style);
 	fprintf(tfp, "\n\t\tLineStyle=\"%s\"",vdx_dash_string(e->style));
 	fprintf(tfp, "\n\t\tDot_Dash_Length=\"%1.1f\"",e->style_val);
-	// TODO: Add points for circles/ellipses
+	fprintf(tfp, "\n\t\tAngle=\"%2.2f\"", (e->angle * (180/3.14159)));
 	fprintf(tfp, "\n\t\tCenter=\"(%2.2d,%2.2d)\"", e->center.x, e->center.y);
 	if(e->type == T_ELLIPSE_BY_DIA || e->type == T_ELLIPSE_BY_RAD)
 		fprintf(tfp, "\n\t\tRadii=\"x:%2.2d, y:%2.2d\"", e->radiuses.x, e->radiuses.y);
 	if(e->type == T_CIRCLE_BY_DIA || e->type == T_CIRCLE_BY_RAD)
 		fprintf(tfp, "\n\t\tRadius=\"%2.2d\"", e->radiuses.x);
 	fprintf(tfp,"/>\n");
-	// fprintf(tfp, );
-
-	// fprintf(tfp, "\n\tDepth=\"%d\" \n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\" \n\tFillStyle=\"%d\" \n\tLineStyle=\"%s\"/>\n",e->depth,rgbColorVal(e->pen_color),rgbColorVal(e->fill_color),e->fill_style,vdx_dash_string(e->style));
-
-    //int cx = e->center.x ;
-    //int cy = e->center.y ;
-
-    //if (e->type == T_CIRCLE_BY_RAD || e->type == T_CIRCLE_BY_DIA) {
-	//int r = e->radiuses.x ;
-	//fputs("<!-- Circle -->\n", tfp);
-	//print_vdxcomments("<!-- ", e->comments, " -->\n");
-
-	//INIT_PAINT(e->fill_style);
-
-	/* paint the object */
-	//fprintf(tfp, "<circle cx=\"%d\" cy=\"%d\" r=\"%d\"", cx, cy, r);
-
-    //} else { /* T_ELLIPSE_BY_RAD or T_ELLIPSE_BY_DIA */
-	//int rx = e->radiuses.x ;
-	//int ry = e->radiuses.y ;
-	//fputs("<!-- Ellipse -->\n", tfp);
-	//print_vdxcomments("<!-- ", e->comments, " -->\n");
-
-	//INIT_PAINT(e->fill_style);
-
-	/* now paint object */
-	//if (e->angle == 0.0)
-	    //fprintf(tfp, "<ellipse cx=\"%d\" cy=\"%d\"", cx, cy);
-	//else
-	    //fprintf(tfp,
-		   // "<ellipse transform=\"translate(%d,%d) rotate(%.0f)\"",
-		    //cx, cy, degrees(e->angle));
-	//fprintf(tfp, " rx=\"%d\" ry=\"%d\"", rx, ry);
-   // } /* end T_CIRCLE... or T_ELLIPSE... */
-
-    //continue_paint_vdx(e->fill_style, e->pen_color, e->fill_color);
-
-    //if (e->thickness) {
-	//fprintf(tfp, "\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\"",
-		//rgbColorVal(e->pen_color),
-		//(int) ceil(linewidth_adj(e->thickness)));
-	//if (e->style > SOLID_LINE)
-	    //vdx_dash(e->style, e->style_val);
-   // }
-    //fputs("/>\n", tfp);
 }
 
 void
@@ -1183,16 +869,16 @@ genvdx_text(F_text *t)
 
 	fprintf(tfp, "\t<Text\n\t\tType=\"Text\"");
 	print_vdxcomments("\n\t\tComments=\"", t->comments, "\"");
+	fprintf(tfp, "\n\t\tSize=\"%d\"", (int)ceil(t->size));
+	fprintf(tfp, "\n\t\tPenColor=\"#%6.6x\"", rgbColorVal(t->color));
 	fprintf(tfp, "\n\t\tDepth=\"%d\" ",t->depth);
-	fprintf(tfp, "\n\t\tText=\"%s\"",t->cstring);
-	fprintf(tfp, "\n\t\tFontFamily=\"%s\"",family[t -> font / 4]);
-	fprintf(tfp, "\n\t\tFontSize=\"%d\"", (int)ceil(t->size * 12));
-	fprintf(tfp, "\n\t\tFontStyle=\"%s\"",
-		((t->font % 2 == 0 || t->font > 31) ? "normal" : "italics"));
-	fprintf(tfp, "\n\t\tFillColor=\"#%6.6x\"", rgbColorVal(t->color));
+	fprintf(tfp, "\n\t\tAngle=\"%2.2f\"", (t->angle * (180/3.14159)));
+	// Dev choice to omit flags and justification
+	// fprintf(tfp, "\n\t\tFlags=\"%d\"", t->flags);
 	fprintf(tfp, "\n\t\tx=\"%d\"", x);
-	// fprintf(tfp, );
 	fprintf(tfp, "\n\t\ty=\"%d\"", y);
+	fprintf(tfp, "\n\t\tFontFamily=\"%s\"",family[t -> font / 4]);
+	fprintf(tfp, "\n\t\tText=\"%s\"",t->cstring);
 	fprintf(tfp,"/>\n");
 
 
@@ -1406,126 +1092,126 @@ vdx_arrows(int line_thickness, F_arrow *for_arrow, F_arrow *back_arrow,
     return true;
 }
 
-static void
-generate_tile(int number, int colorIndex)
-{
-    static const struct pattern {
-	char*	size;
-	char*	code;
-    }	pattern[NUMPATTERNS] = {
-	/* 0	30 degrees left diagonal */
-	{"width=\"134\" height=\"67\">",
-	 "\"M -7,30 73,70 M 61,-3 141,37\""},
-	/* 1 	30 degrees right diagonal */
-	{"width=\"134\" height=\"67\">",
-	 /* M 0 33.5 67 0 M 67 67 134 33.5 */
-	 "\"M -7,37 73,-3 M 61,70 141,30\""},
-	 /* 2	30 degrees crosshatch */
-	{"width=\"134\" height=\"67\">",
-	 "\"M -7,30 73,70 M 61,-3 141,37 M -7,37 73,-3 M 61,70 141,30\""},
-	 /* 3	45 degrees left diagonal */
-	{"width=\"134\" height=\"134\">",
-	 "\"M -4,63 71,138 M 63,-4 138,71\""},
-	 /* 4	45 degrees right diagonal */
-	{"width=\"134\" height=\"134\">",
-	 "\"M -4,71 71,-4 M 63,138 138,63\""},
-	 /* 5	45 degrees crosshatch */
-	{"width=\"134\" height=\"134\">",
-	 "\"M-4,63 71,138 M63,-4 138,71 M-4,71 71,-4 M63,138 138,63\""},
-	 /* 6	horizontal bricks */
-	{"width=\"268\" height=\"268\">",
-	 "\"M-1,67 H269 M-1,201 H269 M67,-1 V67 M67,201 V269 M201,67 V201\""},
-	 /* 7	vertical bricks */
-	{"width=\"268\" height=\"268\">",
-	 "\"M67,-1 V269 M201,-1 V269 M-1,67 H67 M201,67 H269 M67,201 H201\""},
-	 /* 8	horizontal lines */
-	{"width=\"268\" height=\"67\">",
-	 "\"M -1,30 H 269\""},
-	 /* 9	vertical lines */
-	{"width=\"67\" height=\"268\">",
-	 "\"M 30,-1 V 269\""},
-	 /* 10	crosshatch */
-	{"width=\"67\" height=\"67\">",
-	 "\"M -1,30 H 68 M 30,-1 V 68\""},
-	 /* 11	left-pointing shingles */
-	{"width=\"402\" height=\"402\">",
-	 "\"M-1,30 H403 M-1,164 H403 M-1,298 H403 M238,30 l-67,134 M372,164 l-67,134 M104,298 l-60,120 M37,30 l20,-40\""},
-	 /* 12	right-pointing shingles */
-	{"width=\"402\" height=\"402\">",
-	 "\"M-1,30 H403 M-1,164 H403 M-1,298 H403 M164,30 l67,134 M30,164 l67,134 M298,298 l60,120 M365,30 l-20,-40\""},
-	 /* 13  vertical left-pointing shingles */
-	{"width=\"402\" height=\"402\">",
-	 "\"M30,-1 V403 M164,-1 V403 M298,-1 V403 M30,164 l134,67 M164,30 l134,67 M298,298 l120,60 M30,365 l-40,-20\""},
-	 /* 14	vertical right-pointing shingles */
-	{"width=\"402\" height=\"402\">",
-	 "\"M30,-1 V403 M164,-1 V403 M298,-1 V403 M30,238 l134,-67 M164,372 l134,-67 M298,104 l120,-60 M30,37 l-40,20\""},
-	 /* 15	fish scales */
-	{"width=\"268\" height=\"140\">",
-	 "\"M-104,-30 a167.5,167.5 0 0,0 268,0 a167.5,167.5 0 0,0 134,67 m0,3 a167.5,167.5 0 0,1 -268,0 a167.5,167.5 0 0,1 -134,67 m134,70 a167.5,167.5 0 0,0 134,-67 a167.5,167.5 0 0,0 134,67\""},
-	 /* 16	small fish scales */
-	{"width=\"134\" height=\"134\">",
-	 "\"M164,-30 a67,67 0 0,1 -134,0 a67,67 0 0,1 -67,67 a67,67 0 0,0 134,0 a67,67 0 0,0 67,67 a67,67 0 0,1 -134,0 a67,67 0 0,1 -67,67\""},
-	 /* 17	circles */
-	{"width=\"268\" height=\"268\">",
-	 "\"M0,134 a134,134 0 0,0 134,-134 a134,134 0 0,0 134,134 a134,134 0 0,0 -134,134 a134,134 0 0,0 -134,-134\""},
-	 /* 18	hexagons */
-	{"width=\"402\" height=\"232\">",
-	 "\"m97,-86 -67,116 67,116 -67,116 M231,-86 l67,116 l-67,116 l67,116 M-1,30 h31 m268,0 h105 M97,146 h134\""},
-	 /* 19	octagons */
-	{"width=\"280\" height=\"280\">",
-	 "\"m-1,140 59,0 82,-82 82,82 -82,82 -82,-82 m82,82 v59 m0,-282 v59 m82,82 h59\""},
-	 /* 20	horizontal sawtooth */
-	{"width=\"134\" height=\"134\">",
-	 "\"m-4,63 67,67 67,-67 20,20\""},
-	 /* 21	vertical sawtooth */
-	{"width=\"134\" height=\"134\">",
-	 "\"m63,-4 67,67 -67,67 20,20\""},
-    };
+// static void
+// generate_tile(int number, int colorIndex)
+// {
+//     static const struct pattern {
+// 	char*	size;
+// 	char*	code;
+//     }	pattern[NUMPATTERNS] = {
+// 	/* 0	30 degrees left diagonal */
+// 	{"width=\"134\" height=\"67\">",
+// 	 "\"M -7,30 73,70 M 61,-3 141,37\""},
+// 	/* 1 	30 degrees right diagonal */
+// 	{"width=\"134\" height=\"67\">",
+// 	 /* M 0 33.5 67 0 M 67 67 134 33.5 */
+// 	 "\"M -7,37 73,-3 M 61,70 141,30\""},
+// 	 /* 2	30 degrees crosshatch */
+// 	{"width=\"134\" height=\"67\">",
+// 	 "\"M -7,30 73,70 M 61,-3 141,37 M -7,37 73,-3 M 61,70 141,30\""},
+// 	 /* 3	45 degrees left diagonal */
+// 	{"width=\"134\" height=\"134\">",
+// 	 "\"M -4,63 71,138 M 63,-4 138,71\""},
+// 	 /* 4	45 degrees right diagonal */
+// 	{"width=\"134\" height=\"134\">",
+// 	 "\"M -4,71 71,-4 M 63,138 138,63\""},
+// 	 /* 5	45 degrees crosshatch */
+// 	{"width=\"134\" height=\"134\">",
+// 	 "\"M-4,63 71,138 M63,-4 138,71 M-4,71 71,-4 M63,138 138,63\""},
+// 	 /* 6	horizontal bricks */
+// 	{"width=\"268\" height=\"268\">",
+// 	 "\"M-1,67 H269 M-1,201 H269 M67,-1 V67 M67,201 V269 M201,67 V201\""},
+// 	 /* 7	vertical bricks */
+// 	{"width=\"268\" height=\"268\">",
+// 	 "\"M67,-1 V269 M201,-1 V269 M-1,67 H67 M201,67 H269 M67,201 H201\""},
+// 	 /* 8	horizontal lines */
+// 	{"width=\"268\" height=\"67\">",
+// 	 "\"M -1,30 H 269\""},
+// 	 /* 9	vertical lines */
+// 	{"width=\"67\" height=\"268\">",
+// 	 "\"M 30,-1 V 269\""},
+// 	 /* 10	crosshatch */
+// 	{"width=\"67\" height=\"67\">",
+// 	 "\"M -1,30 H 68 M 30,-1 V 68\""},
+// 	 /* 11	left-pointing shingles */
+// 	{"width=\"402\" height=\"402\">",
+// 	 "\"M-1,30 H403 M-1,164 H403 M-1,298 H403 M238,30 l-67,134 M372,164 l-67,134 M104,298 l-60,120 M37,30 l20,-40\""},
+// 	 /* 12	right-pointing shingles */
+// 	{"width=\"402\" height=\"402\">",
+// 	 "\"M-1,30 H403 M-1,164 H403 M-1,298 H403 M164,30 l67,134 M30,164 l67,134 M298,298 l60,120 M365,30 l-20,-40\""},
+// 	 /* 13  vertical left-pointing shingles */
+// 	{"width=\"402\" height=\"402\">",
+// 	 "\"M30,-1 V403 M164,-1 V403 M298,-1 V403 M30,164 l134,67 M164,30 l134,67 M298,298 l120,60 M30,365 l-40,-20\""},
+// 	 /* 14	vertical right-pointing shingles */
+// 	{"width=\"402\" height=\"402\">",
+// 	 "\"M30,-1 V403 M164,-1 V403 M298,-1 V403 M30,238 l134,-67 M164,372 l134,-67 M298,104 l120,-60 M30,37 l-40,20\""},
+// 	 /* 15	fish scales */
+// 	{"width=\"268\" height=\"140\">",
+// 	 "\"M-104,-30 a167.5,167.5 0 0,0 268,0 a167.5,167.5 0 0,0 134,67 m0,3 a167.5,167.5 0 0,1 -268,0 a167.5,167.5 0 0,1 -134,67 m134,70 a167.5,167.5 0 0,0 134,-67 a167.5,167.5 0 0,0 134,67\""},
+// 	 /* 16	small fish scales */
+// 	{"width=\"134\" height=\"134\">",
+// 	 "\"M164,-30 a67,67 0 0,1 -134,0 a67,67 0 0,1 -67,67 a67,67 0 0,0 134,0 a67,67 0 0,0 67,67 a67,67 0 0,1 -134,0 a67,67 0 0,1 -67,67\""},
+// 	 /* 17	circles */
+// 	{"width=\"268\" height=\"268\">",
+// 	 "\"M0,134 a134,134 0 0,0 134,-134 a134,134 0 0,0 134,134 a134,134 0 0,0 -134,134 a134,134 0 0,0 -134,-134\""},
+// 	 /* 18	hexagons */
+// 	{"width=\"402\" height=\"232\">",
+// 	 "\"m97,-86 -67,116 67,116 -67,116 M231,-86 l67,116 l-67,116 l67,116 M-1,30 h31 m268,0 h105 M97,146 h134\""},
+// 	 /* 19	octagons */
+// 	{"width=\"280\" height=\"280\">",
+// 	 "\"m-1,140 59,0 82,-82 82,82 -82,82 -82,-82 m82,82 v59 m0,-282 v59 m82,82 h59\""},
+// 	 /* 20	horizontal sawtooth */
+// 	{"width=\"134\" height=\"134\">",
+// 	 "\"m-4,63 67,67 67,-67 20,20\""},
+// 	 /* 21	vertical sawtooth */
+// 	{"width=\"134\" height=\"134\">",
+// 	 "\"m63,-4 67,67 -67,67 20,20\""},
+//     };
 
-    fprintf(tfp,
-	    "<pattern id=\"tile%d\" patternUnits=\"userSpaceOnUse\"\n",
-	    ++tileno);
-    fputs("\tx=\"0\" y=\"0\" ", tfp);
-    fputs(pattern[number - 1].size, tfp);
-    /* Draw pattern lines with a width of .45 bp ( = 7.5 Fig units at
-       ppi = 1200), consistent with line widths in gentikz.c.
-       In genps.c, patterns are drawn with a linewidth of 1 bp
-       ( = 16.6 Fig units, at 1200 ppi), or .7 bp ( = 11.7 Fig units). */
-    fprintf(tfp,
-	    "\n<g stroke-width=\"%.2g\" stroke=\"#%6.6x\" fill=\"none\">\n",
-	    0.5*ppi/80., rgbColorVal(colorIndex));
-    fputs("<path d=", tfp);
-    fputs(pattern[number - 1].code, tfp);
-    fputs("/>\n</g>\n</pattern>\n", tfp);
-}
+//     fprintf(tfp,
+// 	    "<pattern id=\"tile%d\" patternUnits=\"userSpaceOnUse\"\n",
+// 	    ++tileno);
+//     fputs("\tx=\"0\" y=\"0\" ", tfp);
+//     fputs(pattern[number - 1].size, tfp);
+//     /* Draw pattern lines with a width of .45 bp ( = 7.5 Fig units at
+//        ppi = 1200), consistent with line widths in gentikz.c.
+//        In genps.c, patterns are drawn with a linewidth of 1 bp
+//        ( = 16.6 Fig units, at 1200 ppi), or .7 bp ( = 11.7 Fig units). */
+//     fprintf(tfp,
+// 	    "\n<g stroke-width=\"%.2g\" stroke=\"#%6.6x\" fill=\"none\">\n",
+// 	    0.5*ppi/80., rgbColorVal(colorIndex));
+//     fputs("<path d=", tfp);
+//     fputs(pattern[number - 1].code, tfp);
+//     fputs("/>\n</g>\n</pattern>\n", tfp);
+// }
 
-static void
-vdx_dash(int style, double val)
-{
-	fprintf(tfp, " stroke-dasharray=\"");
-	switch(style) {
-	case 1:
-	default:
-		fprintf(tfp,"%ld %ld\"", lround(val*10), lround(val*10));
-		break;
-	case 2:
-		fprintf(tfp,"10 %ld\"", lround(val*10));
-		break;
-	case 3:
-		fprintf(tfp,"%ld %ld 10 %ld\"", lround(val*10),
-			lround(val*5), lround(val*5));
-		break;
-	case 4:
-		fprintf(tfp,"%ld %ld 10 %ld 10 %ld\"", lround(val*10),
-			lround(val*3), lround(val*3), lround(val*3));
-		break;
-	case 5:
-		fprintf(tfp,"%ld %ld 10 %ld 10 %ld 10 %ld\"", lround(val*10),
-			lround(val*3), lround(val*3), lround(val*3),
-			lround(val*3));
-		break;
-	}
-}
+// static void
+// vdx_dash(int style, double val)
+// {
+// 	fprintf(tfp, " stroke-dasharray=\"");
+// 	switch(style) {
+// 	case 1:
+// 	default:
+// 		fprintf(tfp,"%ld %ld\"", lround(val*10), lround(val*10));
+// 		break;
+// 	case 2:
+// 		fprintf(tfp,"10 %ld\"", lround(val*10));
+// 		break;
+// 	case 3:
+// 		fprintf(tfp,"%ld %ld 10 %ld\"", lround(val*10),
+// 			lround(val*5), lround(val*5));
+// 		break;
+// 	case 4:
+// 		fprintf(tfp,"%ld %ld 10 %ld 10 %ld\"", lround(val*10),
+// 			lround(val*3), lround(val*3), lround(val*3));
+// 		break;
+// 	case 5:
+// 		fprintf(tfp,"%ld %ld 10 %ld 10 %ld 10 %ld\"", lround(val*10),
+// 			lround(val*3), lround(val*3), lround(val*3),
+// 			lround(val*3));
+// 		break;
+// 	}
+// }
 
 static const char*
 vdx_dash_string(int style)
