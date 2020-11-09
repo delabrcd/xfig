@@ -260,7 +260,7 @@ static bool vdx_arrows(int line_thickness, F_arrow *for_arrow, F_arrow *back_arr
 	F_pos *forw1, F_pos *forw2, F_pos *back1, F_pos *back2, int pen_color);
 static void generate_tile(int number, int colorIndex);
 static void vdx_dash(int, double);
-static const char* vdx_dash_string(int, double);
+static const char* vdx_dash_string(int);
 
 #define PREAMBLE "<?xml version=\"1.231\" encoding=\"UTF-8\" standalone=\"no\"?>"
 #define	VDX_LINEWIDTH	76
@@ -709,8 +709,15 @@ genvdx_line(F_line *l)
 
 	fprintf(tfp, "<POLYLINE \n\tType=\"%s\" ",type_str);
 	print_vdxcomments("\n\tComments=\"", l->comments, "\" ");
-       	fprintf(tfp, "\n\tDepth=\"%d\" \n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"\n\tLineStyle=\"%s\"/>\n",l->depth,rgbColorVal(l->pen_color),rgbColorVal(l->fill_color),l->fill_style,vdx_dash_string(l->style,l->style_val));
-	//vdx_dash_string(l->style, l->style_val);
+    fprintf(tfp, "\n\tDepth=\"%d\" ",l->depth);
+	fprintf(tfp, "\n\tPenColor=\"#%6.6x\"",rgbColorVal(l->pen_color));
+	fprintf(tfp, "\n\tFillColor=\"#%6.6x\"",rgbColorVal(l->fill_color));
+	fprintf(tfp, "\n\tFillStyle");
+	fprintf(tfp, "\n\tLineStyle=\"%s\"",vdx_dash_string(l->style));
+	fprintf(tfp, "\n\tDot_Dash_Length=\"%1.1f\"",l->style_val);
+	// fprintf(tfp, );
+	// fprintf(tfp, );
+	fprintf(tfp,"/>\n");
     // if (l->type == T_BOX || l->type == T_ARC_BOX || l->type == T_POLYGON) {
 
 	//INIT_PAINT(l->fill_style);
@@ -847,8 +854,20 @@ genvdx_spline( /* not used by fig2dev */
 
     
     fprintf(tfp, "<SPLINE\n\tType=\"%s\"",type_str);
-    print_vdxcomments("\n\tComments=\"", s->comments, "\" ");
-    fprintf(tfp, "\n\tDepth=\"%d\"\n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"\n\tLineStyle=\"%s\"/>\n",s->depth,rgbColorVal(s->pen_color),rgbColorVal(s->fill_color),s->fill_style,vdx_dash_string(s->style,s->style_val));
+
+	print_vdxcomments("\n\tComments=\"", s->comments, "\" ");
+    fprintf(tfp, "\n\tDepth=\"%d\" ",s->depth);
+	fprintf(tfp, "\n\tPenColor=\"#%6.6x\"",rgbColorVal(s->pen_color));
+	fprintf(tfp, "\n\tFillColor=\"#%6.6x\"",rgbColorVal(s->fill_color));
+	fprintf(tfp, "\n\tFillStyle");
+	fprintf(tfp, "\n\tLineStyle=\"%s\"",vdx_dash_string(s->style));
+	fprintf(tfp, "\n\tDot_Dash_Length=\"%1.1f\"",s->style_val);
+	// fprintf(tfp, );
+	// fprintf(tfp, );
+	fprintf(tfp,"/>\n");
+
+    // print_vdxcomments("\n\tComments=\"", s->comments, "\" ");
+    // fprintf(tfp, "\n\tDepth=\"%d\"\n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"\n\tLineStyle=\"%s\"/>\n",s->depth,rgbColorVal(s->pen_color),rgbColorVal(s->fill_color),s->fill_style,vdx_dash_string(s->style));
     
     //fprintf(tfp, "<path style=\"stroke:#%6.6x;stroke-width:%d\" d=\"",
 //	     rgbColorVal(s->pen_color), (int) ceil (linewidth_adj(s->thickness)));
@@ -873,7 +892,16 @@ genvdx_arc(F_arc *a)
 
     fprintf(tfp, "<ARC \n\tType=\"Arc drawing: specified by 3 points\"");
     print_vdxcomments("\n\tComments=\"", a->comments, "\" ");
-    fprintf(tfp, "\n\tDepth=\"%d\"\n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"\n\tLineStyle=\"%s\"",a->depth,rgbColorVal(a->pen_color),rgbColorVal(a->fill_color),a->fill_style,vdx_dash_string(a->style,a->style_val));
+
+   	fprintf(tfp, "\n\tDepth=\"%d\" ",a->depth);
+	fprintf(tfp, "\n\tPenColor=\"#%6.6x\"",rgbColorVal(a->pen_color));
+	fprintf(tfp, "\n\tFillColor=\"#%6.6x\"",rgbColorVal(a->fill_color));
+	fprintf(tfp, "\n\tFillStyle");
+	fprintf(tfp, "\n\tLineStyle=\"%s\"",vdx_dash_string(a->style));
+	fprintf(tfp, "\n\tDot_Dash_Length=\"%1.1f\"",a->style_val);
+	// fprintf(tfp, );
+
+    // fprintf(tfp, "\n\tDepth=\"%d\"\n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"\n\tLineStyle=\"%s\"",a->depth,rgbColorVal(a->pen_color),rgbColorVal(a->fill_color),a->fill_style,vdx_dash_string(a->style));
 
     //TODO: Figure out arrows
     if (a->for_arrow || a->back_arrow) {
@@ -918,7 +946,8 @@ genvdx_arc(F_arc *a)
     	angle *= 180./M_PI;
     if (a->direction == 1)
 	angle = 360. - angle;
-    fprintf(tfp, "\n\tAngle=\"%f\" />\n",angle); 
+    fprintf(tfp, "\n\tAngle=\"%f\"",angle); 
+	fprintf(tfp,"/>\n");
 
 //    if (has_clip) {
 //	INIT_PAINT_W_CLIP(a->fill_style, a->thickness, a->for_arrow,
@@ -988,7 +1017,16 @@ genvdx_ellipse(F_ellipse *e)
 
 	fprintf(tfp, "<%s\n\tType=\"%s\" ",header,type_str);
 	print_vdxcomments("\n\tComments=\"", e->comments, "\" ");
-    	fprintf(tfp, "\n\tDepth=\"%d\" \n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\" \n\tFillStyle=\"%d\" \n\tLineStyle=\"%s\"/>\n",e->depth,rgbColorVal(e->pen_color),rgbColorVal(e->fill_color),e->fill_style,vdx_dash_string(e->style,e->style_val));
+    fprintf(tfp, "\n\tDepth=\"%d\" ",e->depth);
+	fprintf(tfp, "\n\tPenColor=\"#%6.6x\"",rgbColorVal(e->pen_color));
+	fprintf(tfp, "\n\tFillColor=\"#%6.6x\"",rgbColorVal(e->fill_color));
+	fprintf(tfp, "\n\tFillStyle");
+	fprintf(tfp, "\n\tLineStyle=\"%s\"",vdx_dash_string(e->style));
+	fprintf(tfp, "\n\tDot_Dash_Length=\"%1.1f\"",e->style_val);
+	fprintf(tfp,"/>\n");
+	// fprintf(tfp, );
+
+	// fprintf(tfp, "\n\tDepth=\"%d\" \n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\" \n\tFillStyle=\"%d\" \n\tLineStyle=\"%s\"/>\n",e->depth,rgbColorVal(e->pen_color),rgbColorVal(e->fill_color),e->fill_style,vdx_dash_string(e->style));
 
     //int cx = e->center.x ;
     //int cy = e->center.y ;
@@ -1051,7 +1089,17 @@ genvdx_text(F_text *t)
 
 	fprintf(tfp, "<Text\n\tType=\"Text\"");
 	print_vdxcomments("\n\tComments=\"", t->comments, "\"");
-	fprintf(tfp, "\n\tDepth=\"%d\"\n\tText=\"%s\"\n\tFontFamily=\"%s\"\n\tFontSize=\"%d\"\n\tFontStyle=\"%s\"\n\tFillColor=\"#%6.6x\"\n\tx=\"%d\"\n\ty=\"%d\"/>\n",t->depth, t->cstring,family[t->font/4], (int)ceil(t->size*12),((t->font%2 == 0 || t->font>31) ? "normal" : "italic"),rgbColorVal(t->color),x,y);
+	fprintf(tfp, "\n\tDepth=\"%d\" ",t->depth);
+	fprintf(tfp, "\n\tText=\"%s\"",t->cstring);
+	fprintf(tfp, "\n\tFontFamily=\"%s\"",family[t -> font / 4]);
+	fprintf(tfp, "\n\tFontSize=\"%d\"", (int)ceil(t->size * 12));
+	fprintf(tfp, "\n\tFontStyle=\"%s\"",
+		((t->font % 2 == 0 || t->font > 31) ? "normal" : "italics"));
+	fprintf(tfp, "\n\tFillColor=\"#%6.6x\"", rgbColorVal(t->color));
+	fprintf(tfp, "\n\tx=\"%d\"", x);
+	// fprintf(tfp, );
+	fprintf(tfp, "\n\ty=\"%d\"/>\n", y);
+	fprintf(tfp,"/>\n");
 
 
 //	fprintf(tfp, "x=\"%d\" y=\"%d\" fill=\"#%6.6x\" font-family=\"%s\" ",
@@ -1386,7 +1434,7 @@ vdx_dash(int style, double val)
 }
 
 static const char*
-vdx_dash_string(int style, double val)
+vdx_dash_string(int style)
 {
 	switch(style) {
 	case 0:
@@ -1397,11 +1445,11 @@ vdx_dash_string(int style, double val)
 	case 2:
 		return "Dashed-Small";
 	case 3:
-		return "Dashed-BigtoSmall";
+		return "Dashed-Dot";
 	case 4:
-		return "Dashed-BigtoSmallx2";
+		return "Dashed-Dotx2";
 	case 5:
-		return "Dashed-BigtoSmallx3";
+		return "Dashed-Dotx3";
 	}
 }
 
