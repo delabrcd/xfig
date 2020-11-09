@@ -511,22 +511,53 @@ genvdx_start(F_compound *objects)
 	vw = ceil((urx - llx) * 72. * mag / ppi);
 	vh = ceil((ury - lly) * 72. * mag / ppi);
     }
-    fputs("<vdx\txmlns=\"http://www.w3.org/2000/svg\"\n", tfp);
-    fputs("\txmlns:xlink=\"http://www.w3.org/1999/xlink\"\n", tfp);
-    fprintf(tfp,
-	"\twidth=\"%dpt\" height=\"%dpt\"\n\tviewBox=\"%d %d %d %d\">\n",
-	vw, vh, llx, lly, urx - llx , ury - lly);
 
-    if (objects->comments)
-	print_vdxcomments("<desc>", objects->comments, "</desc>\n");
-    fputs("<g fill=\"none\">\n", tfp);
+	fputs("<!--Data for some values are numbers. For what these numbers mean consult /xfig/doc/FORMAT3.2-->\n", tfp);
+
+    fputs("<Canvas\n", tfp);
+    // fputs("\txmlns:xlink=\"http://www.w3.org/1999/xlink\"\n", tfp);
+    fprintf(tfp,
+	"\twidth=\"%dpt\"\n\theight=\"%dpt\"\n\tviewBox=\"%d %d %d %d\">\n",
+	vw, vh, llx, lly, urx - llx , ury - lly);
+	// fprintf(tfp, "<!--\tFillStyle Value\t\tDescription of Pattern\n \
+	// 	-1\t\tNot Filled\n \
+	// 	0\t\tBlack\n \
+	// 	...\t\t1-19 are shades of a color and black\n \
+	// 	20\t\tFull Saturation of the color\n \
+	// 	...\t\t21-40 are shades of the color and white\n \
+	// 	41\t\t30 degrees left diagonal\n \
+	// 	42\t\t30 degrees right diagonal\n \
+	// 	43\t\t30 degrees crosshatch\n \
+	// 	44\t\t45 degrees left diagonal\n \
+	// 	45\t\t45 degrees right diagonal\n \
+	// 	46\t\t45 degrees crosshatch\n \
+	// 	47\t\thorizontal bricks\n \
+	// 	48\t\tvertical bricks\n \
+	// 	49\t\thorizontal lines\n \
+	// 	50\t\tvertical lines\n \
+	// 	51\t\tcrosshatch\n \
+	// 	52\t\tleft-pointing shingles\n \
+	// 	53\t\tight-pointing shingles\n \
+	// 	54\t\tvertical left-pointing shingles\n \
+	// 	55\t\tvertical right-pointing shingles\n \
+	// 	56\t\tfish scales\n \
+	// 	57\t\tsmall fish scales\n \
+	// 	58\t\tcircles\n \
+	// 	59\t\thexagons\n \
+	// 	60\t\toctagons\n \
+	// 	61\t\thorizontal sawtooth\n \
+	// 	62\t\tvertical sawtooth-->\n");
+
+    // if (objects->comments)
+	// print_vdxcomments("<desc>", objects->comments, "</desc>\n");
+    // fputs("<g fill=\"none\">\n", tfp);
 
 }
 
 int
 genvdx_end(void)
 {
-    fprintf(tfp, "</g>\n</vdx>\n");
+    fprintf(tfp, "</Canvas>\n");
     return 0;
 }
 
@@ -707,14 +738,14 @@ genvdx_line(F_line *l)
 		    type_str = "type";
     }
 
-	fprintf(tfp, "<POLYLINE \n\tType=\"%s\" ",type_str);
-	print_vdxcomments("\n\tComments=\"", l->comments, "\" ");
-    fprintf(tfp, "\n\tDepth=\"%d\" ",l->depth);
-	fprintf(tfp, "\n\tPenColor=\"#%6.6x\"",rgbColorVal(l->pen_color));
-	fprintf(tfp, "\n\tFillColor=\"#%6.6x\"",rgbColorVal(l->fill_color));
-	fprintf(tfp, "\n\tFillStyle");
-	fprintf(tfp, "\n\tLineStyle=\"%s\"",vdx_dash_string(l->style));
-	fprintf(tfp, "\n\tDot_Dash_Length=\"%1.1f\"",l->style_val);
+	fprintf(tfp, "\t<POLYLINE \n\t\tType=\"%s\" ",type_str);
+	print_vdxcomments("\n\t\tComments=\"", l->comments, "\" ");
+    fprintf(tfp, "\n\t\tDepth=\"%d\" ",l->depth);
+	fprintf(tfp, "\n\t\tPenColor=\"#%6.6x\"",rgbColorVal(l->pen_color));
+	fprintf(tfp, "\n\t\tFillColor=\"#%6.6x\"",rgbColorVal(l->fill_color));
+	fprintf(tfp, "\n\t\tFillStyle=\"%d\"",l->fill_style);
+	fprintf(tfp, "\n\t\tLineStyle=\"%s\"",vdx_dash_string(l->style));
+	fprintf(tfp, "\n\t\tDot_Dash_Length=\"%1.1f\"",l->style_val);
 	// fprintf(tfp, );
 	// fprintf(tfp, );
 	fprintf(tfp,"/>\n");
@@ -853,15 +884,15 @@ genvdx_spline( /* not used by fig2dev */
     }
 
     
-    fprintf(tfp, "<SPLINE\n\tType=\"%s\"",type_str);
+    fprintf(tfp, "\t<SPLINE\n\tType=\"%s\"",type_str);
 
 	print_vdxcomments("\n\tComments=\"", s->comments, "\" ");
-    fprintf(tfp, "\n\tDepth=\"%d\" ",s->depth);
-	fprintf(tfp, "\n\tPenColor=\"#%6.6x\"",rgbColorVal(s->pen_color));
-	fprintf(tfp, "\n\tFillColor=\"#%6.6x\"",rgbColorVal(s->fill_color));
-	fprintf(tfp, "\n\tFillStyle");
-	fprintf(tfp, "\n\tLineStyle=\"%s\"",vdx_dash_string(s->style));
-	fprintf(tfp, "\n\tDot_Dash_Length=\"%1.1f\"",s->style_val);
+    fprintf(tfp, "\n\t\tDepth=\"%d\" ",s->depth);
+	fprintf(tfp, "\n\t\tPenColor=\"#%6.6x\"",rgbColorVal(s->pen_color));
+	fprintf(tfp, "\n\t\tFillColor=\"#%6.6x\"",rgbColorVal(s->fill_color));
+	fprintf(tfp, "\n\t\tFillStyle=\"%d\"", s->fill_style);
+	fprintf(tfp, "\n\t\tLineStyle=\"%s\"",vdx_dash_string(s->style));
+	fprintf(tfp, "\n\t\tDot_Dash_Length=\"%1.1f\"",s->style_val);
 	// fprintf(tfp, );
 	// fprintf(tfp, );
 	fprintf(tfp,"/>\n");
@@ -890,15 +921,15 @@ genvdx_arc(F_arc *a)
 	    !a->for_arrow && !a->back_arrow)
 	return;
 
-    fprintf(tfp, "<ARC \n\tType=\"Arc drawing: specified by 3 points\"");
-    print_vdxcomments("\n\tComments=\"", a->comments, "\" ");
+    fprintf(tfp, "\t<ARC \n\t\tType=\"Arc drawing: specified by 3 points\"");
+    print_vdxcomments("\n\t\tComments=\"", a->comments, "\" ");
 
-   	fprintf(tfp, "\n\tDepth=\"%d\" ",a->depth);
-	fprintf(tfp, "\n\tPenColor=\"#%6.6x\"",rgbColorVal(a->pen_color));
-	fprintf(tfp, "\n\tFillColor=\"#%6.6x\"",rgbColorVal(a->fill_color));
-	fprintf(tfp, "\n\tFillStyle");
-	fprintf(tfp, "\n\tLineStyle=\"%s\"",vdx_dash_string(a->style));
-	fprintf(tfp, "\n\tDot_Dash_Length=\"%1.1f\"",a->style_val);
+   	fprintf(tfp, "\n\t\tDepth=\"%d\" ",a->depth);
+	fprintf(tfp, "\n\t\tPenColor=\"#%6.6x\"",rgbColorVal(a->pen_color));
+	fprintf(tfp, "\n\t\tFillColor=\"#%6.6x\"",rgbColorVal(a->fill_color));
+	fprintf(tfp, "\n\t\tFillStyle=\"%d\"", a->fill_style);
+	fprintf(tfp, "\n\t\tLineStyle=\"%s\"",vdx_dash_string(a->style));
+	fprintf(tfp, "\n\t\tDot_Dash_Length=\"%1.1f\"",a->style_val);
 	// fprintf(tfp, );
 
     // fprintf(tfp, "\n\tDepth=\"%d\"\n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"\n\tLineStyle=\"%s\"",a->depth,rgbColorVal(a->pen_color),rgbColorVal(a->fill_color),a->fill_style,vdx_dash_string(a->style));
@@ -931,7 +962,7 @@ genvdx_arc(F_arc *a)
     dx = a->point[0].x - a->center.x;
     dy = a->point[0].y - a->center.y;
     radius = sqrt(dx * dx + dy * dy);
-    fprintf(tfp, "\n\tRadius=\"%f\" ",radius);
+    fprintf(tfp, "\n\t\tRadius=\"%f\" ",radius);
 
     x = (a->point[0].x-a->center.x) * (a->point[2].x-a->center.x) +
 		(a->point[0].y-a->center.y) * (a->point[2].y-a->center.y);
@@ -946,7 +977,7 @@ genvdx_arc(F_arc *a)
     	angle *= 180./M_PI;
     if (a->direction == 1)
 	angle = 360. - angle;
-    fprintf(tfp, "\n\tAngle=\"%f\"",angle); 
+    fprintf(tfp, "\n\t\tAngle=\"%f\"",angle); 
 	fprintf(tfp,"/>\n");
 
 //    if (has_clip) {
@@ -1015,14 +1046,14 @@ genvdx_ellipse(F_ellipse *e)
 			break;
 	}
 
-	fprintf(tfp, "<%s\n\tType=\"%s\" ",header,type_str);
-	print_vdxcomments("\n\tComments=\"", e->comments, "\" ");
-    fprintf(tfp, "\n\tDepth=\"%d\" ",e->depth);
-	fprintf(tfp, "\n\tPenColor=\"#%6.6x\"",rgbColorVal(e->pen_color));
-	fprintf(tfp, "\n\tFillColor=\"#%6.6x\"",rgbColorVal(e->fill_color));
-	fprintf(tfp, "\n\tFillStyle");
-	fprintf(tfp, "\n\tLineStyle=\"%s\"",vdx_dash_string(e->style));
-	fprintf(tfp, "\n\tDot_Dash_Length=\"%1.1f\"",e->style_val);
+	fprintf(tfp, "\t<%s\n\t\tType=\"%s\" ",header,type_str);
+	print_vdxcomments("\n\t\tComments=\"", e->comments, "\" ");
+    fprintf(tfp, "\n\t\tDepth=\"%d\" ",e->depth);
+	fprintf(tfp, "\n\t\tPenColor=\"#%6.6x\"",rgbColorVal(e->pen_color));
+	fprintf(tfp, "\n\t\tFillColor=\"#%6.6x\"",rgbColorVal(e->fill_color));
+	fprintf(tfp, "\n\t\tFillStyle=\"%d\"", e->fill_style);
+	fprintf(tfp, "\n\t\tLineStyle=\"%s\"",vdx_dash_string(e->style));
+	fprintf(tfp, "\n\t\tDot_Dash_Length=\"%1.1f\"",e->style_val);
 	fprintf(tfp,"/>\n");
 	// fprintf(tfp, );
 
@@ -1087,18 +1118,18 @@ genvdx_text(F_text *t)
 	int dy = 0;
 #endif
 
-	fprintf(tfp, "<Text\n\tType=\"Text\"");
-	print_vdxcomments("\n\tComments=\"", t->comments, "\"");
-	fprintf(tfp, "\n\tDepth=\"%d\" ",t->depth);
-	fprintf(tfp, "\n\tText=\"%s\"",t->cstring);
-	fprintf(tfp, "\n\tFontFamily=\"%s\"",family[t -> font / 4]);
-	fprintf(tfp, "\n\tFontSize=\"%d\"", (int)ceil(t->size * 12));
-	fprintf(tfp, "\n\tFontStyle=\"%s\"",
+	fprintf(tfp, "\t<Text\n\t\tType=\"Text\"");
+	print_vdxcomments("\n\t\tComments=\"", t->comments, "\"");
+	fprintf(tfp, "\n\t\tDepth=\"%d\" ",t->depth);
+	fprintf(tfp, "\n\t\tText=\"%s\"",t->cstring);
+	fprintf(tfp, "\n\t\tFontFamily=\"%s\"",family[t -> font / 4]);
+	fprintf(tfp, "\n\t\tFontSize=\"%d\"", (int)ceil(t->size * 12));
+	fprintf(tfp, "\n\t\tFontStyle=\"%s\"",
 		((t->font % 2 == 0 || t->font > 31) ? "normal" : "italics"));
-	fprintf(tfp, "\n\tFillColor=\"#%6.6x\"", rgbColorVal(t->color));
-	fprintf(tfp, "\n\tx=\"%d\"", x);
+	fprintf(tfp, "\n\t\tFillColor=\"#%6.6x\"", rgbColorVal(t->color));
+	fprintf(tfp, "\n\t\tx=\"%d\"", x);
 	// fprintf(tfp, );
-	fprintf(tfp, "\n\ty=\"%d\"/>\n", y);
+	fprintf(tfp, "\n\t\ty=\"%d\"\n", y);
 	fprintf(tfp,"/>\n");
 
 
