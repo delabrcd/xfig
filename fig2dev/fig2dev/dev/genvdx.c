@@ -260,6 +260,7 @@ static bool vdx_arrows(int line_thickness, F_arrow *for_arrow, F_arrow *back_arr
 	F_pos *forw1, F_pos *forw2, F_pos *back1, F_pos *back2, int pen_color);
 static void generate_tile(int number, int colorIndex);
 static void vdx_dash(int, double);
+static const char* vdx_dash_string(int, double);
 
 #define PREAMBLE "<?xml version=\"1.231\" encoding=\"UTF-8\" standalone=\"no\"?>"
 #define	VDX_LINEWIDTH	76
@@ -708,11 +709,11 @@ genvdx_line(F_line *l)
 
 	fprintf(tfp, "<POLYLINE \n\tType=\"%s\" ",type_str);
 	print_vdxcomments("\n\tComments=\"", l->comments, "\" ");
-       	fprintf(tfp, "\n\tDepth=\"%d\" \n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"/>\n",l->depth,rgbColorVal(l->pen_color),rgbColorVal(l->fill_color),l->fill_style);
-
+       	fprintf(tfp, "\n\tDepth=\"%d\" \n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"\n\tLineStyle=\"%s\"/>\n",l->depth,rgbColorVal(l->pen_color),rgbColorVal(l->fill_color),l->fill_style,vdx_dash_string(l->style,l->style_val));
+	//vdx_dash_string(l->style, l->style_val);
     // if (l->type == T_BOX || l->type == T_ARC_BOX || l->type == T_POLYGON) {
 
-	// INIT_PAINT(l->fill_style);
+	//INIT_PAINT(l->fill_style);
 
 	// if (l->type == T_POLYGON) {
 	//     chars = fputs("<POLYLINE type=\"Polygon\" points=\"", tfp);
@@ -743,7 +744,7 @@ genvdx_line(F_line *l)
 	// 	fprintf(tfp, " rx=\"%d\"", l->radius);
 	// }
 
-    // continue_paint_vdx(l->fill_style, l->pen_color, l->fill_color);
+    //continue_paint_vdx(l->fill_style, l->pen_color, l->fill_color);
 
     // /* http://jwatt.org/SVG Authoring Guidelines.html recommends to
     //    use px unit for stroke width */
@@ -847,7 +848,7 @@ genvdx_spline( /* not used by fig2dev */
     
     fprintf(tfp, "<SPLINE\n\tType=\"%s\"",type_str);
     print_vdxcomments("\n\tComments=\"", s->comments, "\" ");
-    fprintf(tfp, "\n\tDepth=\"%d\"\n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\" />\n",s->depth,rgbColorVal(s->pen_color),rgbColorVal(s->fill_color),s->fill_style);
+    fprintf(tfp, "\n\tDepth=\"%d\"\n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"\n\tLineStyle=\"%s\"/>\n",s->depth,rgbColorVal(s->pen_color),rgbColorVal(s->fill_color),s->fill_style,vdx_dash_string(s->style,s->style_val));
     
     //fprintf(tfp, "<path style=\"stroke:#%6.6x;stroke-width:%d\" d=\"",
 //	     rgbColorVal(s->pen_color), (int) ceil (linewidth_adj(s->thickness)));
@@ -872,7 +873,7 @@ genvdx_arc(F_arc *a)
 
     fprintf(tfp, "<ARC \n\tType=\"Arc drawing: specified by 3 points\"");
     print_vdxcomments("\n\tComments=\"", a->comments, "\" ");
-    fprintf(tfp, "\n\tDepth=\"%d\"\n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"",a->depth,rgbColorVal(a->pen_color),rgbColorVal(a->fill_color),a->fill_style);
+    fprintf(tfp, "\n\tDepth=\"%d\"\n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\"\n\tFillStyle=\"%d\"\n\tLineStyle=\"%s\"",a->depth,rgbColorVal(a->pen_color),rgbColorVal(a->fill_color),a->fill_style,vdx_dash_string(a->style,a->style_val));
 
     //TODO: Figure out arrows
     if (a->for_arrow || a->back_arrow) {
@@ -987,7 +988,7 @@ genvdx_ellipse(F_ellipse *e)
 
 	fprintf(tfp, "<%s\n\tType=\"%s\" ",header,type_str);
 	print_vdxcomments("\n\tComments=\"", e->comments, "\" ");
-    	fprintf(tfp, "\n\tDepth=\"%d\" \n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\" \n\tFillStyle=\"%d\"/>\n",e->depth,rgbColorVal(e->pen_color),rgbColorVal(e->fill_color),e->fill_style);
+    	fprintf(tfp, "\n\tDepth=\"%d\" \n\tPenColor=\"#%6.6x\"\n\tFillColor=\"#%6.6x\" \n\tFillStyle=\"%d\" \n\tLineStyle=\"%s\"/>\n",e->depth,rgbColorVal(e->pen_color),rgbColorVal(e->fill_color),e->fill_style,vdx_dash_string(e->style,e->style_val));
 
     //int cx = e->center.x ;
     //int cy = e->center.y ;
@@ -1381,6 +1382,26 @@ vdx_dash(int style, double val)
 			lround(val*3), lround(val*3), lround(val*3),
 			lround(val*3));
 		break;
+	}
+}
+
+static const char*
+vdx_dash_string(int style, double val)
+{
+	switch(style) {
+	case 0:
+	default:
+		return "Solid";
+	case 1:
+		return "Dashed";
+	case 2:
+		return "Dashed-Small";
+	case 3:
+		return "Dashed-BigtoSmall";
+	case 4:
+		return "Dashed-BigtoSmallx2";
+	case 5:
+		return "Dashed-BigtoSmallx3";
 	}
 }
 
