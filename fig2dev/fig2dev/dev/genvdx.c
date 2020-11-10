@@ -64,6 +64,7 @@
  *
  */
 
+/* Copied  from gensvg.c */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -77,22 +78,24 @@
 #include <math.h>
 
 #include "fig2dev.h"	/* includes bool.h and object.h */
-//#include "object.h"	/* includes X11/xpm.h */
+#include "object.h"	/* includes X11/xpm.h */
 #include "bound.h"
 #include "creationdate.h"
 #include "messages.h"
 #include "pi.h"
 
+/* Copied from gensvg.c not fully sure if needed. */
 static bool vdx_arrows(int line_thickness, F_arrow *for_arrow, F_arrow *back_arrow,
 	F_pos *forw1, F_pos *forw2, F_pos *back1, F_pos *back2, int pen_color);
 static void generate_tile(int number, int colorIndex);
 static void vdx_dash(int, double);
 static const char* vdx_dash_string(int);
 
+/* Copied from gensvg.c */
 #define PREAMBLE "<?xml version=\"1.231\" encoding=\"UTF-8\" standalone=\"no\"?>"
 #define	VDX_LINEWIDTH	76
 
-char *type_str; /*string value of an objects type*/
+char *type_str; /*string value of an object's type*/
 
 static void
 put_capstyle(int c)
@@ -112,6 +115,10 @@ put_joinstyle(int j)
 	    fputs(" stroke-linejoin=\"bevel\"", tfp);
 }
 
+/*
+*	Takes in an int which corresponds to the index of hex colors. 
+* 	Returns the corresponding hex color.
+*/
 static unsigned int
 rgbColorVal(int colorIndex)
 {				/* taken from genptk.c */
@@ -136,6 +143,10 @@ rgbColorVal(int colorIndex)
     return rgb;
 }
 
+/*
+*	Copied from gensvg.c not sure if needed. Looks to be used for returning a different RGB value
+* 	used to paint stuff, which we didn't do.
+*/
 static unsigned int
 rgbFillVal(int colorIndex, int area_fill)
 {
@@ -177,12 +188,18 @@ rgbFillVal(int colorIndex, int area_fill)
     return rgb;
 }
 
+/*
+*	Copied from gensvg.c. Converts radians to degrees, did not use.
+*/
 static double
 degrees(double angle)
 {
    return -angle / M_PI * 180.0;
 }
 
+/*
+* Copied from gensvg.c Used for adjusting the line width. Did not use.
+*/
 static double
 linewidth_adj(int linewidth)
 {
@@ -191,6 +208,9 @@ linewidth_adj(int linewidth)
 		linewidth / 2. : (double)(linewidth-THICK_SCALE);
 }
 
+/*
+* Copied from gensvg.c, used for print_vdxcomments below
+*/
 void
 put_sanitized_char_vdx(int c)
 {
@@ -209,6 +229,10 @@ put_sanitized_char_vdx(int c)
 	}
 }
 
+/*
+* Copied from gensvg.c. Used to output the comments from an object to the output file
+* Takes in string to go before the comments, the comments itself and then a string to go after the comments
+*/
 void
 print_vdxcomments(char *s1, F_comment *comments, char *s2)
 {
@@ -222,6 +246,10 @@ print_vdxcomments(char *s1, F_comment *comments, char *s2)
 	}
 }
 
+/*
+* Copied from gensvg.c Did not use explicitly, but I believe this is for using this driver from command line.
+* Did not update it, so this will act exactly how gensvg.c does.
+*/
 void
 genvdx_option(char opt, char *optarg)
 {
@@ -239,6 +267,9 @@ genvdx_option(char opt, char *optarg)
     }
 }
 
+/*
+* Start function for the driver. Prints header comments.
+*/
 void
 genvdx_start(F_compound *objects)
 {
@@ -282,15 +313,17 @@ genvdx_start(F_compound *objects)
     // }
 
 	fputs("<!-- Splines are not handled by fig2dev as a whole, so splines appear as Polygons-->\n", tfp);
-	fputs("<!-- Data for some values are numbers. For what these numbers mean consult /xfig/doc/FORMAT3.2-->\n", tfp);
-	fputs("<!-- Points are displayed in fig units. To convert to cm multiply by 2.22 repeating -->\n", tfp);
-
+	fputs("<!-- PenColor and FillColor values are hex numbers and the patterns for FillStyles are represented as integers. For what these numbers mean consult /xfig/doc/FORMAT3.2-->\n", tfp);
+	fputs("<!-- Points are displayed in fig units. To convert to cm divide by 2.22 repeating -->\n", tfp);
     fputs("<Canvas\n", tfp);
     fprintf(tfp,
 	"\twidth=\"%dpt\"\n\theight=\"%dpt\"\n\tviewBox=\"%d %d %d %d\">\n",
 	vw, vh, llx, lly, urx - llx , ury - lly);
 }
 
+/*
+* End function for driver. Prints ending tags
+*/
 int
 genvdx_end(void)
 {
@@ -298,6 +331,7 @@ genvdx_end(void)
     return 0;
 }
 
+// Copied from gensvg.c Did not use.
 static int	tileno = -1;	/* number of current tile */
 static int	pathno = -1;	/* number of current path */
 static int	clipno = -1;	/* number of current clip path */
@@ -400,6 +434,9 @@ static int	clipno = -1;	/* number of current clip path */
 //     fprintf(tfp, " clip-path=\"url(#cp%d)\"", clipno);
 // }
 
+/*
+* Line Function for the driver. Takes in a line and prints out all details for the Line
+*/
 void
 genvdx_line(F_line *l)
 {
@@ -624,6 +661,10 @@ genvdx_line(F_line *l)
     // }	/* l->type == T_POLYLINE */
 }
 
+/*
+* Spline function for the driver. Fig2dev doesn't actually use splines so splines are represented as Polygons
+* Edited for completeness and in case splines are at one point called
+*/
 void
 genvdx_spline( /* not used by fig2dev */
 	F_spline *s)
@@ -679,6 +720,9 @@ genvdx_spline( /* not used by fig2dev */
 	fprintf(tfp,"/>\n");
 }
 
+/*
+* Arc function for driver. Takes in an arc and prints out all of its details.
+*/
 void
 genvdx_arc(F_arc *a)
 {
@@ -765,7 +809,27 @@ genvdx_arc(F_arc *a)
     if (a->direction == 1)
 		angle = 360. - angle;
     fprintf(tfp, "\n\t\tAngle=\"%f\"",angle); 
-	fprintf(tfp,"/>\n");
+	
+
+	//Print Arrows info here
+	if(a->for_arrow || a->back_arrow){
+		//If there are any arrow objects to be added, close <ARC with >
+		fprintf(tfp,">\n");
+		if(a->for_arrow){
+			fputs("\n\t\t<FrontArrow", tfp);
+			fprintf(tfp, "\n\t\t\tPoint=\"(%d,%d)\"", a->point[2].x, a->point[2].y);
+			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", a->for_arrow->thickness);
+			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", a->for_arrow->wid);
+			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", a->for_arrow->ht);
+			fputs("/>\n", tfp);
+		}
+		fputs("\t</ARC>\n", tfp);
+	}else{
+		fputs("/>\n",tfp);
+	}
+
+	
+
 
 //    if (has_clip) {
 //	INIT_PAINT_W_CLIP(a->fill_style, a->thickness, a->for_arrow,
@@ -809,6 +873,10 @@ genvdx_arc(F_arc *a)
 //			&forw1, &forw2, &back1, &back2, a->pen_color);
 }
 
+/*
+* Ellipse/Circle function for driver. Takes in an ellipse (circles are of the same "object" with a different type)
+* Prints all data for the ellipse/circle to the output file.
+*/ 
 void
 genvdx_ellipse(F_ellipse *e)
 {
@@ -816,7 +884,7 @@ genvdx_ellipse(F_ellipse *e)
 
 	switch(e->type){
 		case T_ELLIPSE_BY_DIA:
-			type_str = "Ellipse specified by diamter";
+			type_str = "Ellipse specified by diameter";
 			header = "ELLIPSE";
 			break;
 		case T_ELLIPSE_BY_RAD:
@@ -851,6 +919,9 @@ genvdx_ellipse(F_ellipse *e)
 	fprintf(tfp,"/>\n");
 }
 
+/*
+* Text function for the driver. Takes in a text object and prints all of its details to the output file.
+*/
 void
 genvdx_text(F_text *t)
 {
@@ -969,6 +1040,10 @@ genvdx_text(F_text *t)
 //		fprintf(tfp, "</g>");
 }
 
+/*
+* Copied from gensvg.c. Did not use or edit. Looks to print out the details
+* for arrowheads on objects. Used in vdx_arrows.
+*/
 static void
 arrow_path(F_arrow *arrow, F_pos *arrow2, int pen_color, int npoints,
 	F_pos points[], int nfillpoints, F_pos *fillpoints
@@ -984,32 +1059,32 @@ arrow_path(F_arrow *arrow, F_pos *arrow2, int pen_color, int npoints,
 	    (points[0].x == points[npoints-1].x &&
 	     points[0].y == points[npoints-1].y ? "polygon" : "polyline"));
     for (i = 0; i < npoints; ++i) {
-	chars += fprintf(tfp, " %d,%d", points[i].x ,
-		points[i].y );
-	if (chars > VDX_LINEWIDTH) {
-	    fputc('\n', tfp);
-	    chars = 0;
-	}
+		chars += fprintf(tfp, " %d,%d", points[i].x ,
+			points[i].y );
+		if (chars > VDX_LINEWIDTH) {
+			fputc('\n', tfp);
+			chars = 0;
+		}
     }
     fprintf(tfp,
 	"\"\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\" stroke-miterlimit=\"8\"",
 	rgbColorVal(pen_color),
 	(int) ceil(linewidth_adj((int)arrow->thickness)));
     if (arrow->type < 13 && (arrow->style != 0 || nfillpoints != 0)) {
-	if (nfillpoints == 0)
-	    fprintf(tfp, " fill=\"#%6.6x\"/>\n", rgbColorVal(pen_color));
-	else { /* fill the special area */
-	    fprintf(tfp, "/>\n<path d=\"M ");
-	    for (i = 0; i < nfillpoints; ++i) {
-		fprintf(tfp, "%d,%d ", fillpoints[i].x ,
-			fillpoints[i].y );
-	    }
-	    fprintf(tfp, "z\"\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\"",
-		    rgbColorVal(pen_color),
-		    (int) ceil(linewidth_adj((int)arrow->thickness)));
-	    fprintf(tfp, " stroke-miterlimit=\"8\" fill=\"#%6.6x\"/>\n",
-		    rgbColorVal(pen_color));
-	}
+		if (nfillpoints == 0)
+			fprintf(tfp, " fill=\"#%6.6x\"/>\n", rgbColorVal(pen_color));
+		else { /* fill the special area */
+			fprintf(tfp, "/>\n<path d=\"M ");
+			for (i = 0; i < nfillpoints; ++i) {
+			fprintf(tfp, "%d,%d ", fillpoints[i].x ,
+				fillpoints[i].y );
+			}
+			fprintf(tfp, "z\"\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\"",
+				rgbColorVal(pen_color),
+				(int) ceil(linewidth_adj((int)arrow->thickness)));
+			fprintf(tfp, " stroke-miterlimit=\"8\" fill=\"#%6.6x\"/>\n",
+				rgbColorVal(pen_color));
+		}
     } else
       fprintf(tfp, "/>\n");
 #ifdef DEBUG
@@ -1023,6 +1098,9 @@ arrow_path(F_arrow *arrow, F_pos *arrow2, int pen_color, int npoints,
 #endif
 }
 
+/*
+* Copied from gensvg.c used to output the data for forward and backward arrows
+*/
 static bool
 vdx_arrows(int line_thickness, F_arrow *for_arrow, F_arrow *back_arrow,
 	F_pos *forw1, F_pos *forw2, F_pos *back1, F_pos *back2, int pen_color)
@@ -1213,6 +1291,9 @@ vdx_arrows(int line_thickness, F_arrow *for_arrow, F_arrow *back_arrow,
 // 	}
 // }
 
+/*
+* Function that takes in a LineStyle's integer value and returns the matching string
+*/
 static const char*
 vdx_dash_string(int style)
 {
