@@ -84,36 +84,15 @@
 #include "messages.h"
 #include "pi.h"
 
-/* Copied from gensvg.c not fully sure if needed. */
-static bool vdx_arrows(int line_thickness, F_arrow *for_arrow, F_arrow *back_arrow,
-	F_pos *forw1, F_pos *forw2, F_pos *back1, F_pos *back2, int pen_color);
-static void generate_tile(int number, int colorIndex);
-static void vdx_dash(int, double);
 static const char* vdx_dash_string(int);
 
 /* Copied from gensvg.c */
+//Header for the vdx file
 #define PREAMBLE "<?xml version=\"1.231\" encoding=\"UTF-8\" standalone=\"no\"?>"
+//Max chars per line in the vdx file used for formatting the points list
 #define	VDX_LINEWIDTH	76
 
 char *type_str; /*string value of an object's type*/
-
-static void
-put_capstyle(int c)
-{
-	if (c == 1)
-	    fputs(" stroke-linecap=\"round\"", tfp);
-	else if (c == 2)
-	    fputs(" stroke-linecap=\"square\"", tfp);
-}
-
-static void
-put_joinstyle(int j)
-{
-	if (j == 1)
-	    fputs(" stroke-linejoin=\"round\"", tfp);
-	else if (j == 2)
-	    fputs(" stroke-linejoin=\"bevel\"", tfp);
-}
 
 /*
 *	Takes in an int which corresponds to the index of hex colors. 
@@ -142,63 +121,8 @@ rgbColorVal(int colorIndex)
 	    | (user_colors[colorIndex - NUM_STD_COLS].b & 0xff);
     return rgb;
 }
-
 /*
-*	Copied from gensvg.c not sure if needed. Looks to be used for returning a different RGB value
-* 	used to paint stuff, which we didn't do.
-*/
-static unsigned int
-rgbFillVal(int colorIndex, int area_fill)
-{
-    unsigned int	rgb, r, g, b;
-    double	t;
-    short	tintflag = 0;
-
-    if (colorIndex == BLACK_COLOR || colorIndex == DEFAULT) {
-	if (area_fill > NUMSHADES - 1)
-	    area_fill = NUMSHADES - 1;
-	area_fill = NUMSHADES - 1 - area_fill;
-	colorIndex = WHITE_COLOR;
-    }
-
-    rgb = rgbColorVal(colorIndex);
-
-    if (area_fill > NUMSHADES - 1) {
-	tintflag = 1;
-	area_fill -= NUMSHADES - 1;
-    }
-
-    t = (double) area_fill / (NUMSHADES - 1);
-    if (tintflag) {
-	r = ((rgb & ~0xFFFF) >> 16);
-	g = ((rgb & 0xFF00) >> 8);
-	b = (rgb & ~0xFFFF00) ;
-
-	r += t * (0xFF-r);
-	g += t * (0xff-g);
-	b += t * (0xff-b);
-
-	rgb = ((r &0xff) << 16) + ((g&0xff) << 8) + (b&0xff);
-    } else {
-	rgb = (((int) (t * ((rgb & ~0xFFFF) >> 16)) << 16) +
-		((int) (t * ((rgb & 0xFF00) >> 8)) << 8) +
-		((int) (t * (rgb & ~0xFFFF00))) );
-    }
-
-    return rgb;
-}
-
-/*
-*	Copied from gensvg.c. Converts radians to degrees, did not use.
-*/
-static double
-degrees(double angle)
-{
-   return -angle / M_PI * 180.0;
-}
-
-/*
-* Copied from gensvg.c Used for adjusting the line width. Did not use.
+* Copied from gensvg.c Used for adjusting the line width. Did not use explicitly
 */
 static double
 linewidth_adj(int linewidth)
@@ -286,31 +210,32 @@ genvdx_start(F_compound *objects)
 	fprintf(tfp, "<!-- CreationDate: %s -->\n", date_buf);
     fprintf(tfp, "<!-- Magnification: %.3g -->\n", mag);
 
-
-    // if (paperspec) {
-	// /* convert paper size from ppi to inches */
-	// for (pd = paperdef; pd->name != NULL; ++pd)
-	//     if (strcasecmp(papersize, pd->name) == 0) {
-	// 	pagewidth = pd->width;
-	// 	pageheight = pd->height;
-	// 	strcpy(papersize, pd->name);	/* use the "nice" form */
-	// 	break;
-	//     }
-	// if (pagewidth < 0 || pageheight < 0) {
-	//     (void) fprintf(stderr, "Unknown paper size `%s'\n", papersize);
-	//     exit(1);
-	// }
-	// if (landscape) {
-	//     vh = pagewidth;
-	//     vw = pageheight;
-	// } else {
-	//     vw = pagewidth;
-	//     vh = pageheight;
-	// }
-    // } else {
-	// vw = ceil((urx - llx) * 72. * mag / ppi);
-	// vh = ceil((ury - lly) * 72. * mag / ppi);
-    // }
+	//Copied fro gensvg.c
+	//Calculates dimensions of the canvas
+	 if (paperspec) {
+		/* convert paper size from ppi to inches */
+		for (pd = paperdef; pd->name != NULL; ++pd)
+			if (strcasecmp(papersize, pd->name) == 0) {
+			pagewidth = pd->width;
+			pageheight = pd->height;
+			strcpy(papersize, pd->name);	/* use the "nice" form */
+			break;
+			}
+		if (pagewidth < 0 || pageheight < 0) {
+			(void) fprintf(stderr, "Unknown paper size `%s'\n", papersize);
+			exit(1);
+		}
+		if (landscape) {
+			vh = pagewidth;
+			vw = pageheight;
+		} else {
+			vw = pagewidth;
+			vh = pageheight;
+		}
+    } else {
+		vw = ceil((urx - llx) * 72. * mag / ppi);
+		vh = ceil((ury - lly) * 72. * mag / ppi);
+    }
 
 	fputs("<!-- Splines are not handled by fig2dev as a whole, so splines appear as Polygons-->\n", tfp);
 	fputs("<!-- PenColor and FillColor values are hex numbers and the patterns for FillStyles are represented as integers. For what these numbers mean consult /xfig/doc/FORMAT3.2-->\n", tfp);
@@ -331,109 +256,6 @@ genvdx_end(void)
     return 0;
 }
 
-// Copied from gensvg.c Did not use.
-static int	tileno = -1;	/* number of current tile */
-static int	pathno = -1;	/* number of current path */
-static int	clipno = -1;	/* number of current clip path */
-
-/*
- *	paint objects without arrows
- *	****************************
- *
- *	PATTERN					FILL		UNFILLED
- * a|	<defs>
- *
- *	<path d="..				<path d="..	<path d="..
- *
- * b|	id="p%d"/>				fill="#fillcol"
- * b|	generate_tile(pen_color)
- * b|	</defs>
- * b|	<use xlink:href="#p%d" fill="#col"/>
- * b|	<use xlink:href="#p%d" fill="url(#tile%d)"
- *
- *	    -----------   ...continue with "stroke=..." etc.   -----------
- *	/>				/>				/>
- *
- *	a| INIT_PAINT,  b| continue_paint_vdx
- *
- *	paint objects with arrows
- *	*************************
- *
- *	has_clip = svg_arrows(..., INIT)
- *	if (UNFILLED && thickness == 0) {svg_arrows(..); return;}
- *
- *	PATTERN				FILL				UNFILLED
- * c|	<defs>				<defs>				<defs>
- * c|	    -----------------   svg_arrows(..., CLIP)    ---------------
- *									</defs>
- *	    -----------------   <path polyline points="...  ------------
- * d|	id="p%d"/>			id="p%d"/>
- * d|	generate_tile(pen_color)
- * d|	</defs>				</defs>
- * d|	<use ..#p%d fill="#col"/>	<use ..."#p%d" fill="#fillcol"/>
- * d|	<use ..#p%d fill="url(#tile%d)"/>
- * d|	<use ..#p%d			<use ..#p%d
- * d|	    -----------------   clip-path="#cp%d"   --------------------
- *	    -------------   ...continue with "stroke=..." etc.   -------
- *	/>				/>				/>
- *	    -----------------   svg_arrows(..., pen_color)   ------------
- *
- *	c| INIT_PAINT_W_CLIP,  d| continue_paint_w_clip_vdx
- */
-
-#define	INIT	-9	/* Change this, if pen_color may be negative. */
-#define	CLIP	-8
-
-#define	INIT_PAINT(fill_style) \
-		if (fill_style > NUMFILLS) fputs("<defs>\n", tfp)
-
-#define	INIT_PAINT_W_CLIP(fill_style, thickness, for_arrow, back_arrow,	\
-			  forw1, forw2, back1, back2)			\
-	fputs("<defs>\n", tfp);					\
-	(void)  vdx_arrows(thickness, for_arrow, back_arrow,	\
-		forw1, forw2, back1, back2, CLIP);		\
-	if (fill_style == UNFILLED)				\
-		fputs("</defs>\n", tfp)
-
-// void
-// continue_paint_vdx(int fill_style, int pen_color, int fill_color)
-// {
-//     if (fill_style > NUMFILLS) {
-// 	fprintf(tfp, " id=\"p%d\"/>\n", ++pathno);
-// 	generate_tile(fill_style - NUMFILLS, pen_color);
-// 	fputs("</defs>\n", tfp);
-// 	fprintf(tfp, "<use xlink:href=\"#p%d\" fill=\"#%6.6x\"/>\n",
-// 		pathno, rgbColorVal(fill_color));
-// 	fprintf(tfp, "<use xlink:href=\"#p%d\" fill=\"url(#tile%d)\"",
-// 		pathno, tileno);
-//     } else if (fill_style > UNFILLED) {	/* && fill_style <= NUMFILLS */
-// 	fprintf(tfp, " fill=\"#%6.6x\"", rgbFillVal(fill_color, fill_style));
-//     }
-// }
-
-// void
-// continue_paint_w_clip_vdx(int fill_style, int pen_color, int fill_color)
-// {
-//     if (fill_style > UNFILLED) {
-// 	fprintf(tfp, " id=\"p%d\"/>\n", ++pathno);
-// 	if (fill_style > NUMFILLS) {
-// 	    generate_tile(fill_style - NUMFILLS, pen_color);
-// 	}
-// 	fputs("</defs>\n", tfp);
-// 	fprintf(tfp, "<use xlink:href=\"#p%d\" ", pathno);
-// 	if (fill_style > NUMFILLS) {
-// 	    fprintf(tfp, "fill=\"#%6.6x\"/>\n", rgbColorVal(fill_color));
-// 	    fprintf(tfp, "<use xlink:href=\"#p%d\" fill=\"url(#tile%d)\"/> ",
-// 		    pathno, tileno);
-// 	} else {
-// 	    fprintf(tfp, "fill=\"#%6.6x\"/>\n",
-// 			rgbFillVal(fill_color, fill_style));
-// 	}
-// 	fprintf(tfp, "<use xlink:href=\"#p%d\"", pathno);
-//     }
-//     fprintf(tfp, " clip-path=\"url(#cp%d)\"", clipno);
-// }
-
 /*
 * Line Function for the driver. Takes in a line and prints out all details for the Line
 */
@@ -446,8 +268,46 @@ genvdx_line(F_line *l)
     F_point	*p;
 
     if (l->type == T_PIC_BOX ) {
+
+		switch(l->pic->subtype){
+			case P_EPS:
+				type_str = "EPS/PS";
+				break;
+			case P_XBM:
+				type_str = "XBM";
+				break;
+			case P_XPM:
+				type_str = "XPM";
+				break;
+			case P_GIF:
+				type_str = "GIF";
+				break;
+			case P_JPEG:
+				type_str = "JPEG";
+				break;
+			case P_PCX:
+				type_str = "PCX";
+				break;
+			case P_PPM:
+				type_str = "PPM";
+				break;
+			case P_TIF:
+				type_str = "TIFF";
+				break;
+			case P_PNG:
+				type_str = "PNG";
+				break;
+			default:
+				type_str = "PDF";
+				break;
+		}
+
+
 		fprintf(tfp, "\t<POLYLINE\n\t\tType=\"Picture Object\"");
 		print_vdxcomments("\n\t\tComments=\"", l->comments, "\" ");
+		//TODO: FIX A XFIG BUG FOR SUBTYPES
+		fprintf(tfp, "\n\t\tSubtype=\"%d\"", l->pic->subtype);
+		fprintf(tfp, "\n\t\tPenColor=\"%d\"", rgbColorVal(l->pen_color));
 		fprintf(tfp,"\n\t\txlink:href=\"file://%s\"",l->pic->file);
 		fprintf(tfp,"\n\t\tDepth=\"%d\"", l->depth);
 		fprintf(tfp, "\n\t\tPoints=\"");
@@ -464,43 +324,13 @@ genvdx_line(F_line *l)
 				chars = 0;
 			}
 		}
+		//Calculate width and length by subtracting x and y coords of opposite corners
+		int w = l->points->next->next[0].x-l->points[0].x;
+		int len = l->points->next->next[0].y-l->points[0].y;
 		fprintf(tfp, "\"");
+		fprintf(tfp, "\n\t\tWidth=\"%d\"", w);
+		fprintf(tfp, "\n\t\tLength=\"%d\"",len);
 		fprintf(tfp,"/>\n");
-
-		// TODO: uncomment this and inspect
-		// p = l->points;
-		// px = p->x;
-		// py = p->y;
-		// px2 = p->next->next->x;
-		// py2 = p->next->next->y;
-		// width = px2 - px;
-		// height = py2 - py;
-		// rotation = 0;
-		// if (width<0 && height < 0)
-		// 	rotation = 180;
-		// else if (width < 0 && height >= 0)
-		// 	rotation = 90;
-		// else if (width >= 0 && height <0)
-		// 	rotation = 270;
-		// if (l->pic->flipped) rotation -= 90;
-		// if (width < 0) {
-		// 	px = px2;
-		// 	width = -width;
-		// }
-		// if (height < 0) {
-		// 	py = py2;
-		// 	height = -height;
-		// }
-		// px2 = px + width/2;
-		// py2 = py + height/2;
-		// if (l->pic->flipped) {
-		// 	fprintf(tfp,
-		// 	"transform=\"rotate(%d %d %d) scale(-1,1) translate(%d,%d)\"\n",
-		// 	rotation, px2, py2, -2*px2, 0);
-		// } else if (rotation !=0) {
-		// 	fprintf(tfp,"transform=\"rotate(%d %d %d)\"\n",rotation,px2,py2);
-		// }
-		// fprintf(tfp,"x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\"/>\n", px, py, width, height);
 
 		return;
     }
@@ -538,6 +368,8 @@ genvdx_line(F_line *l)
 	fprintf(tfp, "\n\t\tFillStyle=\"%d\"",l->fill_style);
 	fprintf(tfp, "\n\t\tLineStyle=\"%s\"",vdx_dash_string(l->style));
 	fprintf(tfp, "\n\t\tDot_Dash_Length=\"%1.1f\"",l->style_val);
+	if(l->type == T_ARC_BOX)
+		fprintf(tfp, "\n\t\tCornerRadius=\"%d\"", l->radius/15);
 	fprintf(tfp, "\n\t\tPoints=\"");
 	chars += '\t';
 	chars += '\t';
@@ -564,9 +396,9 @@ genvdx_line(F_line *l)
 		if(l->for_arrow){
 			fputs("\n\t\t<FrontArrow", tfp);
 			fprintf(tfp, "\n\t\t\tType=\"%d\"\n\t\t\tStyle=\"%d\"", l->for_arrow->type, l->for_arrow->style);
-			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", l->for_arrow->thickness);
-			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", l->for_arrow->wid);
-			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", l->for_arrow->ht);
+			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", l->for_arrow->thickness/15);
+			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", l->for_arrow->wid/15);
+			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", l->for_arrow->ht/15);
 			fprintf(tfp, "\n\t\t\tPoint=\"(%d,%d)\"", last.x, last.y);
 			fputs("/>\n", tfp);
 		}
@@ -574,9 +406,9 @@ genvdx_line(F_line *l)
 		if(l->back_arrow){
 			fputs("\n\t\t<BackArrow", tfp);
 			fprintf(tfp, "\n\t\t\tType=\"%d\"\n\t\t\tStyle=\"%d\"", l->back_arrow->type, l->back_arrow->style);
-			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", l->back_arrow->thickness);
-			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", l->back_arrow->wid);
-			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", l->back_arrow->ht);
+			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", l->back_arrow->thickness/15);
+			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", l->back_arrow->wid/15);
+			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", l->back_arrow->ht/15);
 			fprintf(tfp, "\n\t\t\tPoint=\"(%d,%d)\"", l->points[0].x, l->points[0].y);
 			fputs("/>\n", tfp);
 		}
@@ -584,112 +416,6 @@ genvdx_line(F_line *l)
 	}else{
 		fputs("/>\n",tfp);
 	}
-	// fprintf(tfp,"/>\n");
-    // if (l->type == T_BOX || l->type == T_ARC_BOX || l->type == T_POLYGON) {
-
-	//INIT_PAINT(l->fill_style);
-
-	// if (l->type == T_POLYGON) {
-	//     chars = fputs("<POLYLINE type=\"Polygon\" points=\"", tfp);
-	//     for (p = l->points; p->next; p = p->next) {
-	// 	chars += fprintf(tfp, " %d,%d", p->x , p->y);
-	// 	if (chars > VDX_LINEWIDTH) {
-	// 	    fputc('\n', tfp);
-	// 	    chars = 0;
-	// 	}
-	//     }
-	//     fputc('\"', tfp);
-	// } else {	/* T_BOX || T_ARC_BOX */
-	//     px = l->points->next->next->x;
-	//     py = l->points->next->next->y;
-	//     width = l->points->x - px;
-	//     height = l->points->y - py;
-	//     if (width < 0) {
-	// 	px = l->points->x;
-	// 	width = -width;
-	//     }
-	//     if (height < 0) {
-	// 	py = l->points->y;
-	// 	height = -height;
-	//     }
-
-	//     fprintf(tfp, "<POLYLINE type=\"%s\" x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\"",type_str,px, py, width, height);
-	//     if (l->type == T_ARC_BOX)
-	// 	fprintf(tfp, " rx=\"%d\"", l->radius);
-	// }
-
-    //continue_paint_vdx(l->fill_style, l->pen_color, l->fill_color);
-
-    // /* http://jwatt.org/SVG Authoring Guidelines.html recommends to
-    //    use px unit for stroke width */
-    // if (l->thickness) {
-	// fprintf(tfp, "\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\"",
-	// 	rgbColorVal(l->pen_color),
-	// 	(int) ceil(linewidth_adj(l->thickness)));
-	// put_joinstyle(l->join_style);
-	// put_capstyle(l->cap_style);
-	// if (l->style > SOLID_LINE)
-	//     vdx_dash(l->style, l->style_val);
-    // }
-    // fputs("/>\n", tfp);
-
-    // return;
-    // }
-
-    // if (l->type == T_POLYLINE) {
-	// bool	has_clip = false;
-
-	// if (l->for_arrow || l->back_arrow) {
-	//     has_clip = vdx_arrows(l->thickness, l->for_arrow, l->back_arrow,
-	// 		    &(l->last[1]), l->last, (F_pos *)l->points->next,
-	// 		    (F_pos *)l->points, INIT);
-	//     if (l->fill_style == UNFILLED && l->thickness <= 0) {
-	// 	(void) vdx_arrows(l->thickness, l->for_arrow, l->back_arrow,
-	// 		    &(l->last[1]), l->last, (F_pos *)l->points->next,
-	// 		    (F_pos *)l->points, l->pen_color);
-	// 	return;
-	//     }
-	// }
-
-	// if (has_clip) {
-	//     INIT_PAINT_W_CLIP(l->fill_style, l->thickness, l->for_arrow,
-	// 	    l->back_arrow, &(l->last[1]), l->last,
-	// 	    (F_pos *)l->points->next, (F_pos *)l->points);
-	// } else {
-	//     INIT_PAINT(l->fill_style);
-	// }
-
-	// chars = fputs("<POLYLINE type=\"Polyline\" points=\"",tfp);
-	// for (p = l->points; p; p = p->next) {
-	//     chars += fprintf(tfp, " %d,%d", p->x , p->y);
-	//     if (chars > VDX_LINEWIDTH) {
-	// 	fputc('\n', tfp);
-	// 	chars = 0;
-	//     }
-	// }
-	// fputc('\"', tfp);
-
-	// if (has_clip)
-	//     continue_paint_w_clip_vdx(l->fill_style, l->pen_color, l->fill_color);
-	// else
-	//     continue_paint_vdx(l->fill_style, l->pen_color, l->fill_color);
-
-	// if (l->thickness) {
-	//     fprintf(tfp, "\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\"",
-	// 	    rgbColorVal(l->pen_color),
-	// 	    (int) ceil(linewidth_adj(l->thickness)));
-	//     put_joinstyle(l->join_style);
-	//     put_capstyle(l->cap_style);
-	//     if (l->style > SOLID_LINE)
-	// 	vdx_dash(l->style, l->style_val);
-	// }
-
-	// fputs("/>\n", tfp);
-	// if (l->for_arrow || l->back_arrow)
-	//     (void) vdx_arrows(l->thickness, l->for_arrow, l->back_arrow,
-	// 		&(l->last[1]), l->last, (F_pos *)l->points->next,
-	// 		(F_pos *)l->points, l->pen_color);
-    // }	/* l->type == T_POLYLINE */
 }
 
 /*
@@ -760,9 +486,9 @@ genvdx_spline( /* not used by fig2dev */
 		if(s->for_arrow){
 			fputs("\n\t\t<FrontArrow", tfp);
 			fprintf(tfp, "\n\t\t\tType=\"%d\"\n\t\t\tStyle=\"%d\"", s->for_arrow->type, s->for_arrow->style);
-			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", s->for_arrow->thickness);
-			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", s->for_arrow->wid);
-			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", s->for_arrow->ht);
+			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", s->for_arrow->thickness/15);
+			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", s->for_arrow->wid/15);
+			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", s->for_arrow->ht/15);
 			fprintf(tfp, "\n\t\t\tPoint=\"(%d,%d)\"", last.x, last.y);
 			fputs("/>\n", tfp);
 		}
@@ -770,9 +496,9 @@ genvdx_spline( /* not used by fig2dev */
 		if(s->back_arrow){
 			fputs("\n\t\t<BackArrow", tfp);
 			fprintf(tfp, "\n\t\t\tType=\"%d\"\n\t\t\tStyle=\"%d\"", s->back_arrow->type, s->back_arrow->style);
-			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", s->back_arrow->thickness);
-			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", s->back_arrow->wid);
-			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", s->back_arrow->ht);
+			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", s->back_arrow->thickness/15);
+			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", s->back_arrow->wid/15);
+			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", s->back_arrow->ht/15);
 			fprintf(tfp, "\n\t\t\tPoint=\"(%d,%d)\"", s->points[0].x, s->points[0].y);
 			fputs("/>\n", tfp);
 		}
@@ -826,32 +552,6 @@ genvdx_arc(F_arc *a)
 	fprintf(tfp, "\"");
 	fprintf(tfp, "\n\t\tCenter=\"(%2.2f,%2.2f)\"", a->center.x, a->center.y);
 
-    //TODO: Figure out arrows
-    if (a->for_arrow || a->back_arrow) {
-		if (a->for_arrow) {
-			forw2.x = a->point[2].x;
-			forw2.y = a->point[2].y;
-			compute_arcarrow_angle(a->center.x, a->center.y,
-				(double) forw2.x, (double) forw2.y, a->direction,
-				a->for_arrow, &(forw1.x), &(forw1.y));
-		}
-		if (a->back_arrow) {
-			back2.x = a->point[0].x;
-			back2.y = a->point[0].y;
-			compute_arcarrow_angle(a->center.x, a->center.y,
-				(double) back2.x, (double) back2.y, a->direction ^ 1,
-				a->back_arrow, &(back1.x), &(back1.y));
-		}
-		
-		has_clip = vdx_arrows(a->thickness, a->for_arrow, a->back_arrow,
-					&forw1, &forw2, &back1, &back2, INIT);
-		if (a->fill_style == UNFILLED && a->thickness <= 0) {
-			(void) vdx_arrows(a->thickness, a->for_arrow, a->back_arrow,
-					&forw1, &forw2, &back1, &back2, a->pen_color);
-			return;
-		}
-    }
-
     dx = a->point[0].x - a->center.x;
     dy = a->point[0].y - a->center.y;
     radius = sqrt(dx * dx + dy * dy);
@@ -872,7 +572,6 @@ genvdx_arc(F_arc *a)
 		angle = 360. - angle;
     fprintf(tfp, "\n\t\tAngle=\"%f\"",angle); 
 	
-
 	//Print Arrows info here
 	if(a->for_arrow || a->back_arrow){
 		//If there are any arrow objects to be added, close <ARC with >
@@ -880,9 +579,9 @@ genvdx_arc(F_arc *a)
 		if(a->for_arrow){
 			fputs("\n\t\t<FrontArrow", tfp);
 			fprintf(tfp, "\n\t\t\tType=\"%d\"\n\t\t\tStyle=\"%d\"", a->for_arrow->type, a->for_arrow->style);
-			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", a->for_arrow->thickness);
-			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", a->for_arrow->wid);
-			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", a->for_arrow->ht);
+			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", a->for_arrow->thickness/15);
+			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", a->for_arrow->wid/15);
+			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", a->for_arrow->ht/15);
 			fprintf(tfp, "\n\t\t\tPoint=\"(%d,%d)\"", a->point[2].x, a->point[2].y);
 			fputs("/>\n", tfp);
 		}
@@ -890,9 +589,9 @@ genvdx_arc(F_arc *a)
 		if(a->back_arrow){
 			fputs("\n\t\t<BackArrow", tfp);
 			fprintf(tfp, "\n\t\t\tType=\"%d\"\n\t\t\tStyle=\"%d\"", a->back_arrow->type, a->back_arrow->style);
-			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", a->back_arrow->thickness);
-			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", a->back_arrow->wid);
-			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", a->back_arrow->ht);
+			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", a->back_arrow->thickness/15);
+			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", a->back_arrow->wid/15);
+			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", a->back_arrow->ht/15);
 			fprintf(tfp, "\n\t\t\tPoint=\"(%d,%d)\"", a->point[0].x, a->point[0].y);
 			fputs("/>\n", tfp);
 		}
@@ -900,48 +599,6 @@ genvdx_arc(F_arc *a)
 	}else{
 		fputs("/>\n",tfp);
 	}
-
-
-//    if (has_clip) {
-//	INIT_PAINT_W_CLIP(a->fill_style, a->thickness, a->for_arrow,
-//		a->back_arrow, &forw1, &forw2, &back1, &back2);
-  //  } else {
-//	INIT_PAINT(a->fill_style);
-  //  }
-
-    /* paint the object */
-    //fputs("<path d=\"M", tfp);
-//    if (a->type == T_PIE_WEDGE_ARC)
-//		fprintf(tfp, " %ld,%ld L",
-//			lround(a->center.x), lround(a->center.y));
-  //  fprintf(tfp, " %d,%d A %ld %ld %d %d %d %d %d",
-//	     a->point[0].x , a->point[0].y ,
-//	     lround(radius), lround(radius), 0,
-//	     (fabs(angle) > 180.) ? 1 : 0,
-//	     (fabs(angle) > 0. && a->direction == 0) ? 1 : 0,
-//	     a->point[2].x , a->point[2].y );
-  //  if (a->type == T_PIE_WEDGE_ARC)
-//	fputs(" z", tfp);
-  //  fputc('\"', tfp);
-
-    //if (has_clip)
-//	continue_paint_w_clip_vdx(a->fill_style, a->pen_color, a->fill_color);
-  //  else
-//	continue_paint_vdx(a->fill_style, a->pen_color, a->fill_color);
-//
-  //  if (a->thickness) {
-//	fprintf(tfp, "\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\"",
-//		rgbColorVal(a->pen_color),
-//		(int) ceil(linewidth_adj(a->thickness)));
-//	put_capstyle(a->cap_style);
-//	if (a->style > SOLID_LINE)
-//	    vdx_dash(a->style, a->style_val);
-  //  }
-
-    //fputs("/>\n", tfp);
-    //if (a->for_arrow || a->back_arrow)
-//	(void) vdx_arrows(a->thickness, a->for_arrow, a->back_arrow,
-//			&forw1, &forw2, &back1, &back2, a->pen_color);
 }
 
 /*
@@ -1022,345 +679,7 @@ genvdx_text(F_text *t)
 	fprintf(tfp, "\n\t\tFontFamily=\"%s\"",family[t -> font / 4]);
 	fprintf(tfp, "\n\t\tText=\"%s\"",t->cstring);
 	fprintf(tfp,"/>\n");
-
-
-//	fprintf(tfp, "x=\"%d\" y=\"%d\" fill=\"#%6.6x\" font-family=\"%s\" ",
-//			x, y, rgbColorVal(t->color), family[t->font / 4]);
-//	fprintf(tfp,
-//		"font-style=\"%s\" font-weight=\"%s\" font-size=\"%d\" text-anchor=\"%s\">",
-//		((t->font % 2 == 0 || t->font > 31) ? "normal" : "italic"),
-//		((t->font % 4 < 2 || t->font > 31) ? "normal" : "bold"),
-//		(int)ceil(t->size * 12), anchor[t->type]);
-
-//	if (t->font == 32) {
-//		for (cp = (unsigned char *)t->cstring; *cp; ++cp) {
-//			ch = *cp;
-//			fprintf(tfp, "&#%d;", symbolchar[ch]);
-//		}
-//	} else if (t->font == 34) {
-//		for (cp = (unsigned char *)t->cstring; *cp; ++cp) {
-//			ch = *cp;
-//			fprintf(tfp, "&#%d;", dingbatchar[ch]);
-//		}
-//	} else if (special_text(t)) {
-//		int supsub = 0;
-//#ifdef NOSUPER
-//		int old_dy=0;
-//#endif
-//		for (cp = (unsigned char *)t->cstring; *cp; cp++) {
-//			ch = *cp;
-//			if (( supsub == 2 &&ch == '}' ) || supsub==1) {
-//#ifdef NOSUPER
-//				fprintf(tfp,"</tspan><tspan dy=\"%d\">",-dy);
-//				old_dy=-dy;
-//#else
-//				fprintf(tfp,"</tspan>");
-//#endif
-//				supsub = 0;
-//				if (ch == '}') {
-//					++cp;
-//					ch = *cp;
-//				}
-//			}
-//			if (ch == '_' || ch == '^') {
-//				supsub=1;
-//#ifdef NOSUPER
-//				if (dy != 0)
-//					fprintf(tfp,"</tspan>");
-//				if (ch == '_')
-//					dy = 35.;
-//				if (ch == '^')
-//					dy = -50.;
-//				fprintf(tfp,
-//					"<tspan font-size=\"%d\" dy=\"%d\">",
-//					(int)ceil(t->size * 8), dy + old_dy);
-//				old_dy = 0;
-//#else
-//				fprintf(tfp,
-//					"<tspan font-size=\"%d\" baseline-shift=\"",
-//					(int)ceil(t->size * 8));
-//				if (ch == '_')
-//					fprintf(tfp,"sub\">");
-//				if (ch == '^')
-//					fprintf(tfp,"super\">");
-//#endif
-//				++cp;
-//				ch = *cp;
-//				if (ch == '{' ) {
-//					supsub=2;
-//					++cp;
-//					ch = *cp;
-//				}
-//			}
-//#ifdef NOSUPER
-//			else old_dy=0;
-//#endif
-//			if (ch != '$')
-//				put_sanitized_char_vdx(ch);
-//		}
-//	} else {
-//		for (cp = (unsigned char *)t->cstring; *cp; ++cp)
-//			put_sanitized_char_vdx((int)*cp);
-//	}
-//#ifdef NOSUPER
-//	if (dy != 0)
-///		fprintf(tfp,"</tspan>");
-//#endif
-//	fprintf(tfp, "</text>\n");
-//	if (t->angle != 0)
-//		fprintf(tfp, "</g>");
 }
-
-/*
-* Copied from gensvg.c. Did not use or edit. Looks to print out the details
-* for arrowheads on objects. Used in vdx_arrows.
-*/
-static void
-arrow_path(F_arrow *arrow, F_pos *arrow2, int pen_color, int npoints,
-	F_pos points[], int nfillpoints, F_pos *fillpoints
-#ifdef DEBUG
-	, int nclippoints, F_pos clippoints[]
-#endif
-	)
-{
-    int	    i, chars;
-
-    fprintf(tfp, " to point %d,%d -->\n", arrow2->x, arrow2->y);
-    chars = fprintf(tfp, "<%s points=\"",
-	    (points[0].x == points[npoints-1].x &&
-	     points[0].y == points[npoints-1].y ? "polygon" : "polyline"));
-    for (i = 0; i < npoints; ++i) {
-		chars += fprintf(tfp, " %d,%d", points[i].x ,
-			points[i].y );
-		if (chars > VDX_LINEWIDTH) {
-			fputc('\n', tfp);
-			chars = 0;
-		}
-    }
-    fprintf(tfp,
-	"\"\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\" stroke-miterlimit=\"8\"",
-	rgbColorVal(pen_color),
-	(int) ceil(linewidth_adj((int)arrow->thickness)));
-    if (arrow->type < 13 && (arrow->style != 0 || nfillpoints != 0)) {
-		if (nfillpoints == 0)
-			fprintf(tfp, " fill=\"#%6.6x\"/>\n", rgbColorVal(pen_color));
-		else { /* fill the special area */
-			fprintf(tfp, "/>\n<path d=\"M ");
-			for (i = 0; i < nfillpoints; ++i) {
-			fprintf(tfp, "%d,%d ", fillpoints[i].x ,
-				fillpoints[i].y );
-			}
-			fprintf(tfp, "z\"\n\tstroke=\"#%6.6x\" stroke-width=\"%dpx\"",
-				rgbColorVal(pen_color),
-				(int) ceil(linewidth_adj((int)arrow->thickness)));
-			fprintf(tfp, " stroke-miterlimit=\"8\" fill=\"#%6.6x\"/>\n",
-				rgbColorVal(pen_color));
-		}
-    } else
-      fprintf(tfp, "/>\n");
-#ifdef DEBUG
-    /* paint the clip path */
-    if (nclippoints) {
-	fputs("<!-- clip path -->\n<path d=\"M", tfp);
-	for (i = 0; i < nclippoints; ++i)
-	    fprintf(tfp,"%d,%d ", clippoints[i].x, clippoints[i].y);
-	fputs("z\"\n\tstroke=\"red\" opacity=\"0.5\" stroke-width=\"10px\" stroke-miterlimit=\"8\"/>\n", tfp);
-    }
-#endif
-}
-
-/*
-* Copied from gensvg.c used to output the data for forward and backward arrows
-*/
-static bool
-vdx_arrows(int line_thickness, F_arrow *for_arrow, F_arrow *back_arrow,
-	F_pos *forw1, F_pos *forw2, F_pos *back1, F_pos *back2, int pen_color)
-{
-    static int		fnpoints, fnfillpoints, fnclippoints;
-    static int		bnpoints, bnfillpoints, bnclippoints;
-    static F_pos	fpoints[50], ffillpoints[50], fclippoints[50];
-    static F_pos	bpoints[50], bfillpoints[50], bclippoints[50];
-    int			i;
-
-    if (pen_color == INIT) {
-	if (for_arrow) {
-	    calc_arrow(forw1->x, forw1->y, forw2->x, forw2->y,
-		    line_thickness, for_arrow, fpoints, &fnpoints,
-		    ffillpoints, &fnfillpoints, fclippoints, &fnclippoints);
-	}
-	if (back_arrow) {
-	    calc_arrow(back1->x, back1->y, back2->x, back2->y,
-		    line_thickness, back_arrow, bpoints, &bnpoints,
-		    bfillpoints, &bnfillpoints, bclippoints, &bnclippoints);
-	}
-	if (fnclippoints || bnclippoints)
-	    return true;
-	else
-	    return false;
-    }
-
-    if (pen_color == CLIP) {
-	fprintf(tfp, "<clipPath id=\"cp%d\">\n", ++clipno);
-	fprintf(tfp,
-		"\t<path clip-rule=\"evenodd\" d=\"M %d,%d H %d V %d H %d z",
-		llx, lly, urx, ury, llx);
-	if (fnclippoints) {
-	    fprintf(tfp, "\n\t\tM %d,%d", fclippoints[0].x,fclippoints[0].y);
-	    for (i = 1; i < fnclippoints; ++i)
-		fprintf(tfp, " %d,%d", fclippoints[i].x, fclippoints[i].y);
-	    fputc('z', tfp);
-	}
-	if (bnclippoints) {
-	    fprintf(tfp, "\n\t\tM %d,%d", bclippoints[0].x,bclippoints[0].y);
-	    for (i = 1; i < bnclippoints; ++i)
-		fprintf(tfp, " %d,%d", bclippoints[i].x, bclippoints[i].y);
-	    fputc('z', tfp);
-	}
-	fputs("\"/>\n</clipPath>\n", tfp);
-	return true;
-    }
-
-    if (for_arrow) {
-	fputs("<!-- Forward arrow", tfp);
-	arrow_path(for_arrow, forw2, pen_color, fnpoints, fpoints,
-		fnfillpoints, ffillpoints
-#ifdef DEBUG
-		, fnclippoints, fclippoints
-#endif
-		);
-    }
-    if (back_arrow) {
-	fputs("<!-- Backward arrow", tfp);
-	arrow_path(back_arrow, back2, pen_color, bnpoints, bpoints,
-		bnfillpoints, bfillpoints
-#ifdef DEBUG
-		, bnclippoints, bclippoints
-#endif
-		);
-    }
-    return true;
-}
-
-// static void
-// generate_tile(int number, int colorIndex)
-// {
-//     static const struct pattern {
-// 	char*	size;
-// 	char*	code;
-//     }	pattern[NUMPATTERNS] = {
-// 	/* 0	30 degrees left diagonal */
-// 	{"width=\"134\" height=\"67\">",
-// 	 "\"M -7,30 73,70 M 61,-3 141,37\""},
-// 	/* 1 	30 degrees right diagonal */
-// 	{"width=\"134\" height=\"67\">",
-// 	 /* M 0 33.5 67 0 M 67 67 134 33.5 */
-// 	 "\"M -7,37 73,-3 M 61,70 141,30\""},
-// 	 /* 2	30 degrees crosshatch */
-// 	{"width=\"134\" height=\"67\">",
-// 	 "\"M -7,30 73,70 M 61,-3 141,37 M -7,37 73,-3 M 61,70 141,30\""},
-// 	 /* 3	45 degrees left diagonal */
-// 	{"width=\"134\" height=\"134\">",
-// 	 "\"M -4,63 71,138 M 63,-4 138,71\""},
-// 	 /* 4	45 degrees right diagonal */
-// 	{"width=\"134\" height=\"134\">",
-// 	 "\"M -4,71 71,-4 M 63,138 138,63\""},
-// 	 /* 5	45 degrees crosshatch */
-// 	{"width=\"134\" height=\"134\">",
-// 	 "\"M-4,63 71,138 M63,-4 138,71 M-4,71 71,-4 M63,138 138,63\""},
-// 	 /* 6	horizontal bricks */
-// 	{"width=\"268\" height=\"268\">",
-// 	 "\"M-1,67 H269 M-1,201 H269 M67,-1 V67 M67,201 V269 M201,67 V201\""},
-// 	 /* 7	vertical bricks */
-// 	{"width=\"268\" height=\"268\">",
-// 	 "\"M67,-1 V269 M201,-1 V269 M-1,67 H67 M201,67 H269 M67,201 H201\""},
-// 	 /* 8	horizontal lines */
-// 	{"width=\"268\" height=\"67\">",
-// 	 "\"M -1,30 H 269\""},
-// 	 /* 9	vertical lines */
-// 	{"width=\"67\" height=\"268\">",
-// 	 "\"M 30,-1 V 269\""},
-// 	 /* 10	crosshatch */
-// 	{"width=\"67\" height=\"67\">",
-// 	 "\"M -1,30 H 68 M 30,-1 V 68\""},
-// 	 /* 11	left-pointing shingles */
-// 	{"width=\"402\" height=\"402\">",
-// 	 "\"M-1,30 H403 M-1,164 H403 M-1,298 H403 M238,30 l-67,134 M372,164 l-67,134 M104,298 l-60,120 M37,30 l20,-40\""},
-// 	 /* 12	right-pointing shingles */
-// 	{"width=\"402\" height=\"402\">",
-// 	 "\"M-1,30 H403 M-1,164 H403 M-1,298 H403 M164,30 l67,134 M30,164 l67,134 M298,298 l60,120 M365,30 l-20,-40\""},
-// 	 /* 13  vertical left-pointing shingles */
-// 	{"width=\"402\" height=\"402\">",
-// 	 "\"M30,-1 V403 M164,-1 V403 M298,-1 V403 M30,164 l134,67 M164,30 l134,67 M298,298 l120,60 M30,365 l-40,-20\""},
-// 	 /* 14	vertical right-pointing shingles */
-// 	{"width=\"402\" height=\"402\">",
-// 	 "\"M30,-1 V403 M164,-1 V403 M298,-1 V403 M30,238 l134,-67 M164,372 l134,-67 M298,104 l120,-60 M30,37 l-40,20\""},
-// 	 /* 15	fish scales */
-// 	{"width=\"268\" height=\"140\">",
-// 	 "\"M-104,-30 a167.5,167.5 0 0,0 268,0 a167.5,167.5 0 0,0 134,67 m0,3 a167.5,167.5 0 0,1 -268,0 a167.5,167.5 0 0,1 -134,67 m134,70 a167.5,167.5 0 0,0 134,-67 a167.5,167.5 0 0,0 134,67\""},
-// 	 /* 16	small fish scales */
-// 	{"width=\"134\" height=\"134\">",
-// 	 "\"M164,-30 a67,67 0 0,1 -134,0 a67,67 0 0,1 -67,67 a67,67 0 0,0 134,0 a67,67 0 0,0 67,67 a67,67 0 0,1 -134,0 a67,67 0 0,1 -67,67\""},
-// 	 /* 17	circles */
-// 	{"width=\"268\" height=\"268\">",
-// 	 "\"M0,134 a134,134 0 0,0 134,-134 a134,134 0 0,0 134,134 a134,134 0 0,0 -134,134 a134,134 0 0,0 -134,-134\""},
-// 	 /* 18	hexagons */
-// 	{"width=\"402\" height=\"232\">",
-// 	 "\"m97,-86 -67,116 67,116 -67,116 M231,-86 l67,116 l-67,116 l67,116 M-1,30 h31 m268,0 h105 M97,146 h134\""},
-// 	 /* 19	octagons */
-// 	{"width=\"280\" height=\"280\">",
-// 	 "\"m-1,140 59,0 82,-82 82,82 -82,82 -82,-82 m82,82 v59 m0,-282 v59 m82,82 h59\""},
-// 	 /* 20	horizontal sawtooth */
-// 	{"width=\"134\" height=\"134\">",
-// 	 "\"m-4,63 67,67 67,-67 20,20\""},
-// 	 /* 21	vertical sawtooth */
-// 	{"width=\"134\" height=\"134\">",
-// 	 "\"m63,-4 67,67 -67,67 20,20\""},
-//     };
-
-//     fprintf(tfp,
-// 	    "<pattern id=\"tile%d\" patternUnits=\"userSpaceOnUse\"\n",
-// 	    ++tileno);
-//     fputs("\tx=\"0\" y=\"0\" ", tfp);
-//     fputs(pattern[number - 1].size, tfp);
-//     /* Draw pattern lines with a width of .45 bp ( = 7.5 Fig units at
-//        ppi = 1200), consistent with line widths in gentikz.c.
-//        In genps.c, patterns are drawn with a linewidth of 1 bp
-//        ( = 16.6 Fig units, at 1200 ppi), or .7 bp ( = 11.7 Fig units). */
-//     fprintf(tfp,
-// 	    "\n<g stroke-width=\"%.2g\" stroke=\"#%6.6x\" fill=\"none\">\n",
-// 	    0.5*ppi/80., rgbColorVal(colorIndex));
-//     fputs("<path d=", tfp);
-//     fputs(pattern[number - 1].code, tfp);
-//     fputs("/>\n</g>\n</pattern>\n", tfp);
-// }
-
-// static void
-// vdx_dash(int style, double val)
-// {
-// 	fprintf(tfp, " stroke-dasharray=\"");
-// 	switch(style) {
-// 	case 1:
-// 	default:
-// 		fprintf(tfp,"%ld %ld\"", lround(val*10), lround(val*10));
-// 		break;
-// 	case 2:
-// 		fprintf(tfp,"10 %ld\"", lround(val*10));
-// 		break;
-// 	case 3:
-// 		fprintf(tfp,"%ld %ld 10 %ld\"", lround(val*10),
-// 			lround(val*5), lround(val*5));
-// 		break;
-// 	case 4:
-// 		fprintf(tfp,"%ld %ld 10 %ld 10 %ld\"", lround(val*10),
-// 			lround(val*3), lround(val*3), lround(val*3));
-// 		break;
-// 	case 5:
-// 		fprintf(tfp,"%ld %ld 10 %ld 10 %ld 10 %ld\"", lround(val*10),
-// 			lround(val*3), lround(val*3), lround(val*3),
-// 			lround(val*3));
-// 		break;
-// 	}
-// }
 
 /*
 * Function that takes in a LineStyle's integer value and returns the matching string
