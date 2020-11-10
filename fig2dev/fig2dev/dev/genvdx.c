@@ -541,10 +541,13 @@ genvdx_line(F_line *l)
 	fprintf(tfp, "\n\t\tPoints=\"");
 	chars += '\t';
 	chars += '\t';
+	F_point last;
 	for(p = l->points; p->next; p = p->next){
 		chars += fprintf(tfp, "(%d,%d)",p->x, p->y);
 		if(p->next->next){
 			chars += fprintf(tfp, ",");
+		}else{
+			last = p->next[0];
 		}
 
 		if(chars > VDX_LINEWIDTH){
@@ -552,8 +555,36 @@ genvdx_line(F_line *l)
 			chars = 0;
 		}
 	}
+	chars += fprintf(tfp, "(%d,%d)", p->x, p->y);
 	fprintf(tfp, "\"");
-	fprintf(tfp,"/>\n");
+	//Print Arrows info here
+	if(l->for_arrow || l->back_arrow){
+		//If there are any arrow objects to be added, close <ARC with >
+		fprintf(tfp,">\n");
+		if(l->for_arrow){
+			fputs("\n\t\t<FrontArrow", tfp);
+			fprintf(tfp, "\n\t\t\tType=\"%d\"\n\t\t\tStyle=\"%d\"", l->for_arrow->type, l->for_arrow->style);
+			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", l->for_arrow->thickness);
+			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", l->for_arrow->wid);
+			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", l->for_arrow->ht);
+			fprintf(tfp, "\n\t\t\tPoint=\"(%d,%d)\"", last.x, last.y);
+			fputs("/>\n", tfp);
+		}
+
+		if(l->back_arrow){
+			fputs("\n\t\t<BackArrow", tfp);
+			fprintf(tfp, "\n\t\t\tType=\"%d\"\n\t\t\tStyle=\"%d\"", l->back_arrow->type, l->back_arrow->style);
+			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", l->back_arrow->thickness);
+			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", l->back_arrow->wid);
+			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", l->back_arrow->ht);
+			fprintf(tfp, "\n\t\t\tPoint=\"(%d,%d)\"", l->points[0].x, l->points[0].y);
+			fputs("/>\n", tfp);
+		}
+		fputs("\t</POLYLINE>\n", tfp);
+	}else{
+		fputs("/>\n",tfp);
+	}
+	// fprintf(tfp,"/>\n");
     // if (l->type == T_BOX || l->type == T_ARC_BOX || l->type == T_POLYGON) {
 
 	//INIT_PAINT(l->fill_style);
@@ -703,12 +734,15 @@ genvdx_spline( /* not used by fig2dev */
 	fprintf(tfp, "\n\t\tLineStyle=\"%s\"",vdx_dash_string(s->style));
 	fprintf(tfp, "\n\t\tDot_Dash_Length=\"%1.1f\"",s->style_val);
 	fprintf(tfp, "\n\t\tPoints=\"");
+	F_point last;
 	chars += '\t';
 	chars += '\t';
 	for(p = s->points; p->next; p = p->next){
 		chars += fprintf(tfp, "(%d,%d)",p->x, p->y);
 		if(p->next->next){
 			chars += fprintf(tfp, ",");
+		}else{
+			last = p->next[0];
 		}
 
 		if(chars > VDX_LINEWIDTH){
@@ -716,8 +750,36 @@ genvdx_spline( /* not used by fig2dev */
 			chars = 0;
 		}
 	}
+	chars += fprintf(tfp, "(%d,%d)", p->x, p->y);
 	fprintf(tfp, "\"");
-	fprintf(tfp,"/>\n");
+	
+	//Print Arrows info here
+	if(s->for_arrow || s->back_arrow){
+		//If there are any arrow objects to be added, close <ARC with >
+		fprintf(tfp,">\n");
+		if(s->for_arrow){
+			fputs("\n\t\t<FrontArrow", tfp);
+			fprintf(tfp, "\n\t\t\tType=\"%d\"\n\t\t\tStyle=\"%d\"", s->for_arrow->type, s->for_arrow->style);
+			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", s->for_arrow->thickness);
+			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", s->for_arrow->wid);
+			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", s->for_arrow->ht);
+			fprintf(tfp, "\n\t\t\tPoint=\"(%d,%d)\"", last.x, last.y);
+			fputs("/>\n", tfp);
+		}
+
+		if(s->back_arrow){
+			fputs("\n\t\t<BackArrow", tfp);
+			fprintf(tfp, "\n\t\t\tType=\"%d\"\n\t\t\tStyle=\"%d\"", s->back_arrow->type, s->back_arrow->style);
+			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", s->back_arrow->thickness);
+			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", s->back_arrow->wid);
+			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", s->back_arrow->ht);
+			fprintf(tfp, "\n\t\t\tPoint=\"(%d,%d)\"", s->points[0].x, s->points[0].y);
+			fputs("/>\n", tfp);
+		}
+		fputs("\t</SPLINE>\n", tfp);
+	}else{
+		fputs("/>\n",tfp);
+	}
 }
 
 /*
@@ -817,18 +879,27 @@ genvdx_arc(F_arc *a)
 		fprintf(tfp,">\n");
 		if(a->for_arrow){
 			fputs("\n\t\t<FrontArrow", tfp);
-			fprintf(tfp, "\n\t\t\tPoint=\"(%d,%d)\"", a->point[2].x, a->point[2].y);
+			fprintf(tfp, "\n\t\t\tType=\"%d\"\n\t\t\tStyle=\"%d\"", a->for_arrow->type, a->for_arrow->style);
 			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", a->for_arrow->thickness);
 			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", a->for_arrow->wid);
 			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", a->for_arrow->ht);
+			fprintf(tfp, "\n\t\t\tPoint=\"(%d,%d)\"", a->point[2].x, a->point[2].y);
+			fputs("/>\n", tfp);
+		}
+
+		if(a->back_arrow){
+			fputs("\n\t\t<BackArrow", tfp);
+			fprintf(tfp, "\n\t\t\tType=\"%d\"\n\t\t\tStyle=\"%d\"", a->back_arrow->type, a->back_arrow->style);
+			fprintf(tfp, "\n\t\t\tThickness=\"%1.1f\"", a->back_arrow->thickness);
+			fprintf(tfp, "\n\t\t\tWidth=\"%1.1f\"", a->back_arrow->wid);
+			fprintf(tfp, "\n\t\t\tLength=\"%1.1f\"", a->back_arrow->ht);
+			fprintf(tfp, "\n\t\t\tPoint=\"(%d,%d)\"", a->point[0].x, a->point[0].y);
 			fputs("/>\n", tfp);
 		}
 		fputs("\t</ARC>\n", tfp);
 	}else{
 		fputs("/>\n",tfp);
 	}
-
-	
 
 
 //    if (has_clip) {
