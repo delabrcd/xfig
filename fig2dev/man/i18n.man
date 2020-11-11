@@ -1,3 +1,0 @@
-.TP
-.B \-j
-Enable the I18N internationalization facility.
