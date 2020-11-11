@@ -288,6 +288,9 @@ print_to_file(char *file, int xoff, int yoff, char *backgrnd, char *transparent,
 	if (cur_exp_lang == LANG_PSPDFTEX)
 		real_lang = "pstex";
 
+	//if (cur_exp_lang == LANG_VDX)
+		//real_lang = "svg";
+
 #ifdef I18N
 	/* set the numeric locale to C so we get decimal points for numbers */
 	setlocale(LC_NUMERIC, "C");
@@ -573,7 +576,7 @@ print_to_file(char *file, int xoff, int yoff, char *backgrnd, char *transparent,
 
 	/* now execute fig2dev */
 	if (exec_prcmd(prcmd, "EXPORT") == 0)
-		put_msg("Export to \"%s\" done", file);
+		put_msg("Export to \"%s\" done - %s", file, prcmd);
 
 	/* and reset the cursor */
 	reset_cursor();
