@@ -37,7 +37,8 @@ xfig_SOURCES = d_arcbox.c d_arcbox.h d_arc.c d_arc.h d_box.c d_box.h \
 	d_ellipse.c d_ellipse.h d_line.c d_line.h d_picobj.c d_picobj.h \
 	d_regpoly.c d_regpoly.h d_spline.c d_spline.h d_subspline.c \
 	d_subspline.h d_text.c d_text.h dirstruct.h e_addpt.c e_addpt.h \
-	e_align.c e_align.h e_arrow.c e_arrow.h e_break.c e_break.h e_chop.c \
+	e_align.c e_align.h e_arrow.c e_arrow.h e_break.c e_break.h \
+	e_bringtofrontsendtoback.c e_bringtofrontsendtoback.h e_chop.c \
 	e_chop.h e_compound.c e_compound.h e_convert.c e_convert.h e_copy.c \
 	e_copy.h e_delete.c e_delete.h e_deletept.c e_deletept.h e_edit.c \
 	e_edit.h e_flip.c e_flip.h e_glue.c e_glue.h e_joinsplit.c \

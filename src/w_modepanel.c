@@ -24,6 +24,7 @@
 #include "d_arc.h"
 #include "d_arcbox.h"
 #include "d_box.h"
+#include "e_bringtofrontsendtoback.h"
 #include "d_ellipse.h"
 #include "d_line.h"
 #include "d_picobj.h"
@@ -111,6 +112,7 @@ static void	stub_chop_selected(void);
 static void	stub_arrow_head_selected(void);
 static void	stub_edit_item_selected(void);
 static void	stub_update_selected(void);
+static void	stub_btfstb_selected(void);
 static void	stub_enter_mode_btn(Widget widget, XEvent *event, String *params, Cardinal *num_params);
 static void	stub_anglemeas_selected(void);
 static void	stub_lenmeas_selected(void);
@@ -270,7 +272,9 @@ mode_sw_info mode_switches[] = {
     {&areameas_ic, F_AREAMEAS, areameas_selected, M_AREAMEAS_OBJECT,
        I_MIN2,
        "Measure AREA of polygons, arcs and ellipses   (Ctrl-m)", False},
-
+    {&btfstb_ic, F_BTFSTB, bringtofrontsendtoback_selected, M_ALL,
+       I_DEPTH,
+       "Bring to FRONT / Send to BACK", False},
     /* This must be last for create_mode_panel() (in w_canvas.c) */
     { NULL, 0 }
 
@@ -348,6 +352,8 @@ static XtActionsRec mode_actions[] =
     {"ModeAnglemeas", (XtActionProc) stub_anglemeas_selected},
     {"ModeLenmeas", (XtActionProc) stub_lenmeas_selected},
     {"ModeAreameas", (XtActionProc) stub_areameas_selected},
+    {"ModeBtfStb", (XtActionProc) stub_btfstb_selected},
+
 };
 
 static String   mode_translations =
@@ -940,6 +946,12 @@ static void
 stub_update_selected(void)
 {
 	change_mode(&update_ic);
+}
+
+static void
+stub_btfstb_selected(void)
+{
+	change_mode(&btfstb_ic);
 }
 
 static void
